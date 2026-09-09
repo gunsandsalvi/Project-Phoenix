@@ -214,7 +214,7 @@ export const foundationSeed: SystemModule = {
       ctx.instruments.add({
         id: moneyInstrumentId(issuer, PHX),
         kind: MONEY_KIND,
-        issuer,
+        issuer: some(issuer),
         ccy: PHX,
         terms: { kind: MONEY_KIND },
         market: none(),
@@ -243,7 +243,7 @@ export const foundationSeed: SystemModule = {
       ctx.instruments.add({
         id,
         kind: line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL,
-        issuer: TREASURY_NORTH,
+        issuer: some(TREASURY_NORTH),
         ccy: PHX,
         terms,
         market: some(market),

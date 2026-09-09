@@ -1,7 +1,7 @@
 /**
  * Settlement: the one rule that applies an instruction, and the only writer of holdings.
  *
- * @spec Treasury D3 Central Bank E2 Money C2 Money C2.a Money C2.b Money C2.c Money C4 Money C4.a Money C4.b Money D1 Money D3 Money D4 Money E1 Money E1.a Money E1.b Money E2 Money E3 Money E4 Money B3 Money B3.a Money B3.b Money B3.c Register B1 Register B3 Register C1 Register C2.a Register C3 Register C3.a Register C3.b Register C4 Register D4 Audit B5 XI-5 XI-15 Equity C4 Equity F4
+ * @spec Goods E4 Goods F1 Treasury D3 Central Bank E2 Money C2 Money C2.a Money C2.b Money C2.c Money C4 Money C4.a Money C4.b Money D1 Money D3 Money D4 Money E1 Money E1.a Money E1.b Money E2 Money E3 Money E4 Money B3 Money B3.a Money B3.b Money B3.c Register B1 Register B3 Register C1 Register C2.a Register C3 Register C3.a Register C3.b Register C4 Register D4 Audit B5 XI-5 XI-15 Equity C4 Equity F4
  *
  * Payer minus, payee plus (C2). For a money leg between accounts at different issuers the interbank
  * reserve leg is generated here (C2.a); a same-issuer payment moves no reserves (C2.b). All legs of
@@ -19,6 +19,7 @@
  * transfer is income to one side and expense to the other; a sale away from the mark is a realised
  * gain or loss. Nothing else moves an equity account except revaluation (world/revalue.ts).
  */
+import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid, impossible } from '../core/assert.js';
 import { Forbidden, Mismatch, Missing } from '../core/errors.js';
@@ -41,6 +42,8 @@ import type {
   AccountRef,
   AssetLeg,
   CellSide,
+  CreateLeg,
+  DestroyLeg,
   EquityEffect,
   FailReason,
   Instruction,
@@ -101,6 +104,13 @@ type Op =
       readonly qty: number;
       readonly valuePerUnit: number | 'carrying';
       readonly fromDebit: number;
+    }
+  /** Goods E4: units of a physical kind coming into existence or leaving it; nobody issued them. */
+  | {
+      readonly op: 'exist';
+      readonly holder: PartyId;
+      readonly instrument: InstrumentId;
+      readonly qty: number;
     };
 
 export class Settlement {
@@ -179,6 +189,10 @@ export class Settlement {
         case 'asset':
           this.validateAsset(leg, ins);
           break;
+        case 'create':
+        case 'destroy':
+          this.validatePhysical(leg, ins);
+          break;
         default:
           assertNever(leg, 'Leg');
       }
@@ -221,6 +235,42 @@ export class Settlement {
       'Money A1.d',
       `instruction ${ins.id}: a cell cannot issue money`,
     );
+  }
+
+  /**
+   * Goods E4, F1: a physical thing is made or used up on one book. Only a kind that says its units
+   * are physical admits it — a claim that appeared with nobody on the other side is invented money
+   * (Money C1) — and a `create` must sit in the same instruction as the `destroy` legs of whatever
+   * it was made from, so nothing is consumed that was not produced or held (F1).
+   */
+  private validatePhysical(leg: CreateLeg | DestroyLeg, ins: Instruction): void {
+    impossible(
+      finite(leg.qty, 'physical leg qty') > 0,
+      'Register C1',
+      `a create or destroy moves a positive quantity, got ${leg.qty}`,
+    );
+    const inst = this.d.instruments.get(leg.instrument);
+    forbid(inst.status.live, 'Register B4', `instruction ${ins.id}: ${inst.id} has ceased`);
+    forbid(
+      this.d.registry.instrumentKind(inst.kind).physical === true,
+      'Goods A1',
+      `instruction ${ins.id}: ${inst.id} is a claim, and a claim is issued and redeemed, never made`,
+    );
+    this.alive(leg.party, ins);
+    const side = leg.kind === 'create' ? leg.toCell : leg.fromCell;
+    this.validateCellSide(leg.party, side, leg.qty, ins);
+    if (leg.kind === 'create') {
+      impossible(
+        finite(leg.costPerUnit, 'cost per unit') >= 0,
+        'Goods E1',
+        `what a unit cost to make cannot be negative`,
+      );
+      forbid(
+        ins.legs.some((l) => l.kind === 'destroy') || ins.cause === 'seed',
+        'Goods F1',
+        `instruction ${ins.id}: ${inst.id} would come from nothing; a create names what it was made from`,
+      );
+    }
   }
 
   private validateAsset(leg: AssetLeg, ins: Instruction): void {
@@ -327,6 +377,30 @@ export class Settlement {
         case 'asset':
           this.expandAsset(leg, ops);
           break;
+        case 'create':
+          ops.push({
+            op: 'credit',
+            party: leg.party,
+            instrument: leg.instrument,
+            qty: leg.toCell.some ? leg.toCell.value.perMember : leg.qty,
+            totalQty: leg.qty,
+            money: false,
+            basis: leg.costPerUnit,
+            fromDebit: -1,
+          });
+          ops.push({ op: 'exist', holder: leg.party, instrument: leg.instrument, qty: leg.qty });
+          break;
+        case 'destroy': {
+          ops.push({
+            op: 'debit',
+            party: leg.party,
+            instrument: leg.instrument,
+            qty: leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty,
+            money: false,
+          });
+          ops.push({ op: 'exist', holder: leg.party, instrument: leg.instrument, qty: -leg.qty });
+          break;
+        }
         default:
           assertNever(leg, 'Leg');
       }
@@ -437,7 +511,7 @@ export class Settlement {
     const perTo = leg.toCell.some ? leg.toCell.value.perMember : leg.qty;
     const price: number | 'carrying' = leg.pricePerUnit.some ? leg.pricePerUnit.value : 'carrying';
     let debitIndex = -1;
-    if (leg.from === inst.issuer) {
+    if (issuedBy(inst, leg.from)) {
       if (price === 'carrying') {
         throw new Missing('Register C2.a', `an issuance of ${inst.id} needs a price`, {
           instrument: inst.id,
@@ -445,7 +519,7 @@ export class Settlement {
       }
       ops.push({
         op: 'issue',
-        issuer: inst.issuer,
+        issuer: issuerOf(inst),
         instrument: inst.id,
         qty: leg.qty,
         valuePerUnit: price,
@@ -455,10 +529,10 @@ export class Settlement {
       debitIndex = ops.length;
       ops.push({ op: 'debit', party: leg.from, instrument: inst.id, qty: perFrom, money: false });
     }
-    if (leg.to === inst.issuer) {
+    if (issuedBy(inst, leg.to)) {
       ops.push({
         op: 'redeem',
-        issuer: inst.issuer,
+        issuer: issuerOf(inst),
         instrument: inst.id,
         qty: leg.qty,
         valuePerUnit: price,
@@ -512,20 +586,21 @@ export class Settlement {
         };
       }
       const inst = this.d.instruments.get(n.instrument);
-      const issuer = this.d.parties.get(inst.issuer);
+      const issuerId = issuerOf(inst);
+      const issuer = this.d.parties.get(issuerId);
       const moneyIssuer = this.d.registry.partyKind(issuer.kind).moneyIssuer;
       if (moneyIssuer === null) {
         return {
           kind: 'overdraftRefused',
           party: n.party,
-          issuer: inst.issuer,
+          issuer: issuerId,
           ccy: inst.ccy,
           short: -after,
         };
       }
       const decision = moneyIssuer.overdraft({
         holder: n.party,
-        issuer: inst.issuer,
+        issuer: issuerId,
         ccy: inst.ccy,
         shortfall: -after,
         holderIssuesMoney: this.d.registry.issuesMoney(this.d.parties.get(n.party).kind),
@@ -534,7 +609,7 @@ export class Settlement {
         return {
           kind: 'overdraftRefused',
           party: n.party,
-          issuer: inst.issuer,
+          issuer: issuerId,
           ccy: inst.ccy,
           short: -after,
         };
@@ -544,11 +619,11 @@ export class Settlement {
         ins.period,
         ins.cycle,
         'reserve.overdraft',
-        [n.party, inst.issuer],
+        [n.party, issuerId],
         {
           instruction: ins.id,
           holder: n.party,
-          issuer: inst.issuer,
+          issuer: issuerId,
           ccy: inst.ccy,
           shortfallPerMember: -after,
           recordedAs: decision.recordedAs,
@@ -635,7 +710,7 @@ export class Settlement {
             const inst = this.d.instruments.get(op.instrument);
             if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
               bump(
-                inst.issuer,
+                issuerOf(inst),
                 mul(op.totalQty, carryingOf(op.fromDebit) - basis, 'issuer re-mark'),
               );
             }
@@ -655,6 +730,18 @@ export class Settlement {
             const per = op.valuePerUnit === 'carrying' ? carryingOf(op.fromDebit) : op.valuePerUnit;
             bump(op.issuer, -mul(op.qty, per, 'issue value'));
           }
+          break;
+        }
+        case 'exist': {
+          // Goods E4: nothing issued these units, so the delta is booked against the party whose
+          // book they appeared on or left; the units family is what checks the identity.
+          this.d.instruments.adjustIssued(op.instrument, op.qty);
+          deltas.push({
+            party: op.holder,
+            instrument: op.instrument,
+            qty: op.qty,
+            target: 'issued',
+          });
           break;
         }
         case 'redeem': {
@@ -708,7 +795,9 @@ export class Settlement {
             leg.to.holder === party ||
             leg.from.issuer === party ||
             leg.to.issuer === party
-          : leg.from === party || leg.to === party;
+          : leg.kind === 'asset'
+            ? leg.from === party || leg.to === party
+            : leg.party === party;
       if (touches && ccy !== home) {
         throw new Mismatch(
           'Money A2.b',
@@ -730,9 +819,12 @@ function subjectsOf(ins: Instruction): string[] {
     if (leg.kind === 'money') {
       s.add(leg.from.holder);
       s.add(leg.to.holder);
-    } else {
+    } else if (leg.kind === 'asset') {
       s.add(leg.from);
       s.add(leg.to);
+      s.add(leg.instrument);
+    } else {
+      s.add(leg.party);
       s.add(leg.instrument);
     }
   }

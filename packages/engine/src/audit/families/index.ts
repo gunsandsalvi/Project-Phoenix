@@ -20,6 +20,6 @@ export function standardFamilies(memory: AuditMemory): Family[] {
     namesFamily(),
     flowsFamily(memory),
     zeroSumFamily(),
-    unitsFamily(),
+    unitsFamily(memory),
   ];
 }

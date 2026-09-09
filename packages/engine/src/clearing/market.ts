@@ -62,7 +62,8 @@ export interface MarketRunDeps {
   readonly accountOf: AccountResolver;
   /** Bond N9.b: what has accrued per unit at this session's date, from the instrument's own terms. */
   readonly accruedPerUnit: (instrument: InstrumentId, period: Period) => number;
-  readonly instrumentIssuer: (instrument: InstrumentId) => PartyId;
+  /** Who promised it, when somebody did: a physical thing has nobody on that side (Goods A1). */
+  readonly instrumentIssuer: (instrument: InstrumentId) => Option<PartyId>;
 }
 
 export interface MarketResult {
@@ -111,8 +112,9 @@ export function runMarket(
       'Law 4',
       `offer for ${offer.value.market} posted into ${m.id}`,
     );
+    const issuer = deps.instrumentIssuer(m.instrument);
     forbid(
-      deps.instrumentIssuer(m.instrument) === offer.value.issuer,
+      issuer.some && issuer.value === offer.value.issuer,
       'Sovereign C1.b',
       `${offer.value.issuer} does not issue ${m.instrument}`,
     );
@@ -326,7 +328,8 @@ function tradeInstruction(
       toCell: sellerCashCell === undefined ? none() : some(sellerCashCell),
     },
   ];
-  const cause = t.seller === deps.instrumentIssuer(m.instrument) ? 'issuance' : 'trade';
+  const issuer = deps.instrumentIssuer(m.instrument);
+  const cause = issuer.some && t.seller === issuer.value ? 'issuance' : 'trade';
   return { legs, cause, reason: `${m.name}: ${t.qty} @ ${price}` };
 }
 

@@ -27,7 +27,7 @@ import {
 } from '../core/ids.js';
 import { add, div, finite, invertDecreasing, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
-import type { Instrument } from '../register/instruments.js';
+import { issuedBy, type Instrument } from '../register/instruments.js';
 import type { CashFlow } from '../registry/kinds.js';
 import { tradedIn, type PriceStore } from './price-store.js';
 
@@ -129,7 +129,7 @@ export function readCurve(
   const on = inputs.calendar.startOf(at);
   const points: CurvePoint[] = [];
   for (const i of inputs.instruments()) {
-    if (i.issuer !== family.issuer || i.ccy !== family.ccy || !i.status.live) continue;
+    if (!issuedBy(i, family.issuer) || i.ccy !== family.ccy || !i.status.live) continue;
     const flows = inputs.cashFlows(i, on);
     if (flows.length === 0) continue;
     const print = inputs.prices.latest(i.id, at);

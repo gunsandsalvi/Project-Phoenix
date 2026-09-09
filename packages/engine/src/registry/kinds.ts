@@ -17,8 +17,16 @@ import type { Instrument, Terms } from '../register/instruments.js';
 /** Named individually or represented as cells with a weight (XI-15). */
 export type Representation = 'named' | 'cell';
 
-/** How an instrument gets its value (XI-6). */
+/** Where an instrument's price comes from (XI-6). */
 export type Pricing = 'money' | 'cleared' | 'carriedAtCost';
+
+/**
+ * How a holder carries it, which is a different question from where its price comes from (Goods
+ * E1, E2). A bond is carried at the mark and revalues with it; inventory is carried at what it cost
+ * and is only ever written DOWN to what a market says (E2.c) — and it still clears in a market,
+ * because a price and a carrying value are two things.
+ */
+export type Carry = 'mark' | 'cost';
 
 /**
  * The stated, consistently applied lot-flow assumption (Register D4; Goods E5 forbids LIFO).
@@ -40,8 +48,10 @@ export type DueAction =
 
 export interface InstrumentKindProfile {
   readonly id: InstrumentKindId;
-  /** How the instrument gets its value (XI-6). */
+  /** Where the instrument's price comes from (XI-6). */
   readonly pricing: Pricing;
+  /** How a holder carries it: at the mark, or at what it cost (Goods E1). */
+  readonly carry: Carry;
   /**
    * Whether a holding of it is a liability of the issuer. Money, bonds, loans, fund shares: yes.
    * A share is the residual claim, not a liability (Equity A1).
@@ -65,6 +75,28 @@ export interface InstrumentKindProfile {
    * yield is derived FROM). An instrument that promises nothing dated returns none of them.
    */
   readonly cashFlows: (i: Instrument, after: Civil, calendar: Calendar) => readonly CashFlow[];
+  /**
+   * Goods E2: what a lot carried at cost must be written down to when it is worth less than it
+   * cost. The kernel asks the profile per lot and books the delta; a POSITIVE delta is refused
+   * unless the kind says it marks to market both ways (E2.c: nobody but a dealer writes inventory
+   * up). A kind that never writes down does not answer.
+   */
+  readonly revalue?: (
+    i: Instrument,
+    lot: { readonly qty: number; readonly basisPerUnit: number },
+    marked: number,
+  ) => number;
+  /**
+   * Goods E2.c: whether this kind may be carried above cost. A dealer's book marks both ways; an
+   * ordinary holder's inventory does not.
+   */
+  readonly fairValueThroughIncome?: boolean;
+  /**
+   * Goods A1, E4: whether units of this kind are physical things that are made and used up, rather
+   * than claims that are issued and redeemed. Only such a kind admits a create or a destroy leg;
+   * for everything else, a unit that appeared without an issuer would be an invented claim.
+   */
+  readonly physical?: boolean;
 }
 
 /**

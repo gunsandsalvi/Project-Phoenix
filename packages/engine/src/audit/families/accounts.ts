@@ -7,6 +7,7 @@
  * The two sides are independent records: the register and the price store on one side, the equity
  * account moved by named events on the other. Equality is the check.
  */
+import { issuedBy } from '../../register/instruments.js';
 import { combineDust, sum, withinDust } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
 import type { Family, Violation } from '../audit.js';
@@ -30,7 +31,7 @@ export function accountsFamily(): Family {
         }
         const liabilityTerms: number[] = [];
         for (const inst of view.instruments.all()) {
-          if (inst.issuer !== p.id || !view.registry.instrumentKind(inst.kind).liabilityOfIssuer)
+          if (!issuedBy(inst, p.id) || !view.registry.instrumentKind(inst.kind).liabilityOfIssuer)
             continue;
           if (inst.ccy !== home) continue;
           for (const holder of view.register.holdersOf(inst.id)) {

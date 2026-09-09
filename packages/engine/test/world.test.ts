@@ -124,7 +124,7 @@ describe('assembly (Law 15, Part XIII)', () => {
       w.instruments.add({
         id: 'x' as never,
         kind: 'unknown.kind' as never,
-        issuer: TREASURY_NORTH,
+        issuer: some(TREASURY_NORTH),
         ccy: PHX,
         terms: { kind: 'unknown.kind' as never },
         market: none(),

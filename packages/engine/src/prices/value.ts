@@ -1,7 +1,7 @@
 /**
  * Value is a function, not a field (XI-6): units x price at read. Nothing stores a value beside units.
  *
- * @spec XI-6 Register D3 Money D2 Equity C3 Fund Shares B1 Audit B3
+ * @spec Goods E1 Goods E2 XI-6 Register D3 Money D2 Equity C3 Fund Shares B1 Audit B3
  *
  * Carrying value is what the equity account has already recognised for a lot: for a cleared
  * instrument, last period's print if the lot was acquired before this period, else its basis (the
@@ -60,6 +60,9 @@ export class Valuation {
       case 'carriedAtCost':
         return lot.basisPerUnit;
       case 'cleared':
+        // Goods E1: a lot carried at cost stays at cost until something writes it down; a lot
+        // carried at the mark has already recognised last period's print.
+        if (this.registry.instrumentKind(i.kind).carry === 'cost') return lot.basisPerUnit;
         return lot.acquired < now
           ? this.prices.printOrThrow(instrument, period(now - 1)).price
           : lot.basisPerUnit;
@@ -83,10 +86,10 @@ export class Valuation {
   /** Value of lots: at mark for cleared instruments and money, at basis for carried-at-cost. */
   valueOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): number {
     const i = this.instruments.get(instrument);
-    const pricing = this.registry.instrumentKind(i.kind).pricing;
+    const carry = this.registry.instrumentKind(i.kind).carry;
     let v = 0;
     for (const lot of lots) {
-      const per = pricing === 'carriedAtCost' ? lot.basisPerUnit : this.markPerUnit(instrument, at);
+      const per = carry === 'cost' ? lot.basisPerUnit : this.markPerUnit(instrument, at);
       v += mul(lot.qty, per, `value of ${instrument}`);
     }
     return v;

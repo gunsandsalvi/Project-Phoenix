@@ -21,6 +21,7 @@ import { tradedIn } from '../../prices/price-store.js';
 import { paramId } from '../../core/ids.js';
 import { BANK } from '../../registry/profiles.js';
 import type { Order } from '../../clearing/solver.js';
+import { issuedBy } from '../../register/instruments.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -92,7 +93,7 @@ export function sovereignValue(view: ParticipantView, issuer: PartyId, ccy: Curr
   const terms: number[] = [];
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
-    if (i.issuer !== issuer || i.ccy !== ccy || !i.status.live) continue;
+    if (!issuedBy(i, issuer) || i.ccy !== ccy || !i.status.live) continue;
     const print = view.print(i.id);
     if (!print.some) continue;
     terms.push(mul(view.quantity(i.id), print.value.price, 'sovereign value'));
@@ -106,7 +107,7 @@ export function bufferTarget(view: ParticipantView, ccy: CurrencyCode): number {
     .all()
     .find(
       (i) =>
-        i.issuer === view.self.id &&
+        issuedBy(i, view.self.id) &&
         i.ccy === ccy &&
         view.registry.instrumentKind(i.kind).pricing === 'money',
     );
@@ -168,7 +169,7 @@ export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule
         partyKind: BANK,
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           const i = view.instruments.get(m.instrument);
-          if (i.issuer !== issuer || i.ccy !== ccy) return [];
+          if (!issuedBy(i, issuer) || i.ccy !== ccy) return [];
           // A session carrying the issuer own offer is an auction: the bank bids there through its
           // obligation (Sovereign C3), and posting twice would be two reasons for one demand.
           if (view.offer(m.id).some) return [];
@@ -180,7 +181,7 @@ export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule
           if (!material(gap, 2, Math.abs(target) + Math.abs(value))) return [];
           const lines = view.markets.filter((x) => {
             const inst = view.instruments.get(x.instrument);
-            return inst.issuer === issuer && inst.ccy === ccy && inst.status.live;
+            return issuedBy(inst, issuer) && inst.ccy === ccy && inst.status.live;
           }).length;
           if (lines === 0) return [];
           const share = div(gap, lines, 'gap per line');
@@ -216,7 +217,7 @@ function pointsMatchPrints(family: CurveFamilyDecl): Family {
     check: (view) => {
       const out: Violation[] = [];
       for (const i of view.instruments.all()) {
-        if (i.issuer !== family.issuer || i.ccy !== family.ccy || !i.status.live) continue;
+        if (!issuedBy(i, family.issuer) || i.ccy !== family.ccy || !i.status.live) continue;
         const print = view.prices.read(i.id, view.period);
         const traded = print.some && tradedIn(print.value, view.period);
         const carried = view.prices.latest(i.id, view.period);

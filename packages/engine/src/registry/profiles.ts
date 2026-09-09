@@ -13,6 +13,7 @@ export const MONEY_KIND = instrumentKindId('money');
 export const moneyKind: InstrumentKindProfile = {
   id: MONEY_KIND,
   pricing: 'money',
+  carry: 'mark',
   liabilityOfIssuer: true,
   unit: (ccy) => currencyUnit(ccy),
   validateTerms: (t) => {

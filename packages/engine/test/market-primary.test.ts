@@ -223,7 +223,7 @@ describe('a line with no price (XI-6)', () => {
             ctx.issue({
               id: BILL,
               kind: SOVEREIGN_BILL,
-              issuer: TREASURY_NORTH,
+              issuer: some(TREASURY_NORTH),
               ccy: PHX,
               terms,
               market: some(BILL_MARKET),

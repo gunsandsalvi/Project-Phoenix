@@ -86,7 +86,7 @@ export interface Snapshot {
     id: string;
     name: string;
     kind: string;
-    issuer: string;
+    issuer: string | null;
     issued: number;
     unit: string;
     ccy: string;
@@ -199,7 +199,7 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
       id: i.id,
       name: displayName(i, w.parties, w.registry),
       kind: i.kind,
-      issuer: i.issuer,
+      issuer: i.issuer.some ? i.issuer.value : null,
       issued: i.issued,
       unit: i.unit,
       ccy: i.ccy,

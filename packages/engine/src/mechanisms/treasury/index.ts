@@ -40,6 +40,7 @@ import type { Leg } from '../../ledger/instruction.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { Family, Violation } from '../../audit/audit.js';
+import { issuedBy } from '../../register/instruments.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
@@ -83,7 +84,7 @@ interface Line {
 function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
   const out: Line[] = [];
   for (const i of ctx.instruments.all()) {
-    if (i.issuer !== issuer || !i.status.live) continue;
+    if (!issuedBy(i, issuer) || !i.status.live) continue;
     const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
     const last = flows[flows.length - 1];
     if (last === undefined) continue;
@@ -103,7 +104,7 @@ function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
 function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon: Period): number {
   const terms: number[] = [];
   for (const i of ctx.instruments.all()) {
-    if (i.issuer !== issuer || !i.status.live) continue;
+    if (!issuedBy(i, issuer) || !i.status.live) continue;
     for (const f of ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar)) {
       if (ctx.calendar.place(f.date) <= horizon) terms.push(mul(f.perUnit, i.issued, 'service'));
     }
@@ -454,7 +455,7 @@ function openLine(
   ctx.issue({
     id,
     kind: short ? SOVEREIGN_BILL : SOVEREIGN_BOND,
-    issuer,
+    issuer: some(issuer),
     ccy,
     terms,
     market: some(market),
@@ -574,7 +575,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
  */
 function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const inst = view.instruments.get(m.instrument);
-  if (inst.issuer !== view.self.id) return [];
+  if (!issuedBy(inst, view.self.id)) return [];
   // It never bids in its own auction: the offer is the other side of this book (C1.b in spirit).
   if (view.offer(m.id).some) return [];
   const print = view.print(inst.id);

@@ -6,13 +6,14 @@
  *
  * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Money C1.c Money G3.a Law 15
  */
+import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
 import type { CurrencyCode, PartyId } from '../core/ids.js';
 import { mul } from '../core/num.js';
-import { none, some } from '../core/option.js';
+import { none, some, type Option } from '../core/option.js';
 import type { Journal } from '../journal/journal.js';
-import type { InstructionDraft, Leg } from '../ledger/instruction.js';
+import type { CellSide, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, type Settlement, totalFor } from '../ledger/settlement.js';
 import type { Parties } from '../parties/party.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
@@ -60,7 +61,7 @@ function payToHolders(
   d: ActionDeps,
 ): void {
   for (const holderId of d.register.holdersOf(i.id)) {
-    if (holderId === i.issuer) continue;
+    if (issuedBy(i, holderId)) continue;
     const holder = d.parties.get(holderId);
     const perMemberUnits = d.register.quantity(holderId, i.id);
     if (perMemberUnits <= 0) continue;
@@ -68,7 +69,7 @@ function payToHolders(
     const total = totalFor(holder, perMemberCash);
     const leg: Leg = {
       kind: 'money',
-      from: d.accountOf(i.issuer, i.ccy),
+      from: d.accountOf(issuerOf(i), i.ccy),
       to: d.accountOf(holderId, i.ccy),
       ccy: i.ccy,
       amount: total,
@@ -88,7 +89,7 @@ function payToHolders(
 
 function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
   for (const holderId of [...d.register.holdersOf(i.id)]) {
-    if (holderId === i.issuer) continue;
+    if (issuedBy(i, holderId)) continue;
     const holder = d.parties.get(holderId);
     const perMemberUnits = d.register.quantity(holderId, i.id);
     if (perMemberUnits <= 0) continue;
@@ -98,7 +99,7 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
       {
         kind: 'asset',
         from: holderId,
-        to: i.issuer,
+        to: issuerOf(i),
         instrument: i.id,
         qty: units,
         pricePerUnit: some(1),
@@ -110,7 +111,7 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
       },
       {
         kind: 'money',
-        from: d.accountOf(i.issuer, i.ccy),
+        from: d.accountOf(issuerOf(i), i.ccy),
         to: d.accountOf(holderId, i.ccy),
         ccy: i.ccy,
         amount: units,
@@ -134,7 +135,7 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
   }
 }
 
-function optionalCell(c: ReturnType<typeof cellSide>): Leg['fromCell'] {
+function optionalCell(c: ReturnType<typeof cellSide>): Option<CellSide> {
   return c === undefined ? none() : some(c);
 }
 

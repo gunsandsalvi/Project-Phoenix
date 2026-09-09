@@ -35,7 +35,12 @@ export type InstrumentStatus =
 export interface InstrumentDecl {
   readonly id: InstrumentId;
   readonly kind: InstrumentKindId;
-  readonly issuer: PartyId;
+  /**
+   * Who promised it. A claim has an issuer whose liability it is (Register B3); a physical thing
+   * has none — nobody issued a tonne of wheat — and says so rather than naming a party that would
+   * then have to be carried through every check as a fiction (Goods A1).
+   */
+  readonly issuer: Option<PartyId>;
   readonly ccy: CurrencyCode;
   readonly terms: Terms;
   readonly market: Option<MarketId>;
@@ -54,6 +59,22 @@ export interface Instrument extends InstrumentDecl {
    */
   readonly issuedDust: number;
   readonly status: InstrumentStatus;
+}
+
+/**
+ * The party whose liability a claim is (Register B3). A physical thing has no issuer, and asking
+ * for one is a defect in the caller, not a number to invent (Appendix A).
+ */
+export function issuerOf(i: Instrument): PartyId {
+  if (!i.issuer.some) {
+    throw new Missing('Register B3', `${i.id} is a physical thing; nobody issued it`, { id: i.id });
+  }
+  return i.issuer.value;
+}
+
+/** Whether this instrument is a claim on the named party. */
+export function issuedBy(i: Instrument, party: PartyId): boolean {
+  return i.issuer.some && i.issuer.value === party;
 }
 
 export class Instruments {

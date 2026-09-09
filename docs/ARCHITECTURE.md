@@ -194,6 +194,30 @@ line that has never traded has no price, and the reader is told so at the readin
 prices family reports a _held_ position with no print, because its holder cannot mark it; an unheld
 line with no print is marked by nobody and is not a defect (Audit B3).
 
+**A module's own state** (Law 4). `ctx.state(name, initial)` hands a module an object it owns, kept
+between phases and periods under `<module>/<name>`: an employment register, a book of invoices, a
+party's outlooks. It is keyed data, never a second copy of what a kernel store already holds, and
+the observer reads it as data (a copy, so looking changes nothing).
+
+**What a party expects** (Expectations A2, XI-16). `view.outlook(variable)` answers with that
+party's own outlook or with nothing; there is no global expectation to fall back on (A2.b). Exactly
+one module may answer — an expectation is a fact about a party and has one writer — and the kernel
+asks it through that module's own context, so what it keeps stays its own.
+
+**Made and used up, not issued** (Goods A1, E4, F1). A physical thing has **no issuer**:
+`Instrument.issuer` is an option, and a claim on nobody is a defect the names family reports. Units
+come into existence and leave it through `create` and `destroy` legs — one side each, because
+nobody is on the other end of a harvest — admitted only for a kind that says its units are physical,
+and a `create` must sit in the same instruction as the `destroy` legs of what it was made from. The
+units family checks the identity: what the stock did against what said why.
+
+**Priced one way, carried another** (Goods E1, E2). `pricing` says where a price comes from;
+`carry` says how a holder carries it. Inventory clears in a market and is carried at what it cost,
+and `profile.revalue` writes it **down** to what the market says — never up, unless the kind marks
+both ways (E2.c). A write-down lands on the lot's basis and the equity account together, because
+they are one fact. A holder carrying at cost needs no print to value its book, so the prices family
+asks only about positions carried at the mark.
+
 **The curve is a read** (Sovereign D3). A curve family is declared once by the module that owns it
 (D3.a) with one compounding convention and one day count (D3.c). `ctx.curve(family)` builds it at
 the moment somebody asks, from the prints the market has already produced and the cash flows the

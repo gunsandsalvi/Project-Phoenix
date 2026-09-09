@@ -17,7 +17,15 @@ import type { CurveFamilyDecl } from '../prices/curve.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../registry/kinds.js';
 import type { ParamDecl } from '../registry/params.js';
 import type { UnitDecl } from '../registry/registry.js';
-import type { MechanismContext, ParticipantView, SeedContext } from './context.js';
+import type { PartyId } from '../core/ids.js';
+import type { Option } from '../core/option.js';
+import type {
+  MechanismContext,
+  Outlook,
+  OutlookVariable,
+  ParticipantView,
+  SeedContext,
+} from './context.js';
 
 /** The kernel's own phases, which a module's phase is anchored to (Clearing F1: a stated point). */
 export type KernelPhase = 'corporateActions' | 'markets' | 'revaluation';
@@ -63,6 +71,16 @@ export interface SystemModule {
   readonly participants: readonly ParticipantDecl[];
   /** Contributions to the audit families (a module may build or extend a family). */
   readonly families: readonly Family[];
+  /**
+   * Expectations A2, XI-16: what a party expects. Exactly one module may answer this — an
+   * expectation is a fact about a party and has one writer (Law 4) — and the kernel asks it
+   * through that module's own context, so the shape of what it keeps stays its own.
+   */
+  readonly outlooks?: (
+    ctx: MechanismContext,
+    party: PartyId,
+    variable: OutlookVariable,
+  ) => Option<Outlook>;
   /** Opening state this module contributes (Seed A1); runs in assembly order before the seed audit. */
   seed?(ctx: SeedContext): void;
 }

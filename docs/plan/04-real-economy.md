@@ -224,10 +224,10 @@ packages/engine/test/{state-slots,expectations,goods,labour,firms,households,res
 
 ## Steps
 
-- [ ] 4.1 State slots on `MechanismContext`; snapshotted; single-owner check; test
-- [ ] 4.1 `view.outlook()` door; `Missing` when unformed; test
-- [ ] 4.1 `destroy` and `create` legs for kinds that declare `destructible`/`producible`; equity effects; the units family counts them; tests
-- [ ] 4.1 `profile.revalue` for carried-at-cost kinds; the kernel refuses an upward revaluation for a non-dealer kind (Goods E2.c); test
+- [x] 4.1 State slots on `MechanismContext`; snapshotted; single-owner check; test
+- [x] 4.1 `view.outlook()` door; `Missing` when unformed; test
+- [x] 4.1 `destroy` and `create` legs for kinds that declare `destructible`/`producible`; equity effects; the units family counts them; tests
+- [x] 4.1 `profile.revalue` for carried-at-cost kinds; the kernel refuses an upward revaluation for a non-dealer kind (Goods E2.c); test
 - [ ] 4.2 `expectations` module: state, params (memory preference with a declared dispersion shape), `form` and `score` phases, surprise events, confidence read; test: an outlook lags a step change by its memory; no outlook reads period t
 - [ ] 4.2 The dispersion aggregate published lagged; test: it moves after the surprises (E2)
 - [ ] 4.3 `goods` kind and sub-unit registry; recipes as physical quantities; the lint refuses a currency-denominated recipe; tests

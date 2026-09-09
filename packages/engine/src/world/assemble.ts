@@ -9,6 +9,7 @@
  * the kernel states every equity account once as the read (Seed C1), and the world is sealed with
  * the audit at period zero (Seed A2).
  */
+import { issuedBy } from '../register/instruments.js';
 import { Calendar } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import { forbid } from '../core/assert.js';
@@ -71,6 +72,8 @@ export function assemble(spec: AssemblySpec): World {
   for (const m of modules) {
     for (const p of m.phases) world.addPhase(p, m.id);
     for (const p of m.participants) world.addParticipant(p);
+    const outlooks = m.outlooks;
+    if (outlooks !== undefined) world.provideOutlooks(m.id, (ctx, party, v) => outlooks(ctx, party, v));
   }
   const ctx = seedContext(world);
   for (const m of modules) m.seed?.(ctx);
@@ -154,7 +157,7 @@ function stateEquityAsRead(w: World): void {
     }
     let liabilities = 0;
     for (const inst of w.instruments.all()) {
-      if (inst.issuer !== p.id || !w.registry.instrumentKind(inst.kind).liabilityOfIssuer) continue;
+      if (!issuedBy(inst, p.id) || !w.registry.instrumentKind(inst.kind).liabilityOfIssuer) continue;
       for (const holder of store.holdersOf(inst.id)) {
         const h = store.holding(holder, inst.id);
         if (!h.some) continue;

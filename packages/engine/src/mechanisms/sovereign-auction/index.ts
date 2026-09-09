@@ -14,6 +14,7 @@
  * turned into what that yield is worth on this line's own cash flows. It can bid badly and wear it
  * (C3.b).
  */
+import { issuerOf } from '../../register/instruments.js';
 import { paramId } from '../../core/ids.js';
 import { div, material, mul, sub } from '../../core/num.js';
 import type { Order } from '../../clearing/solver.js';
@@ -63,7 +64,7 @@ export const sovereignAuction: SystemModule = {
         // the two is what it wants at the yield it requires, and anything beyond that costs more.
         const obliged = mul(offer.value.size, view.params.get(P_MIN_BID_SHARE), 'obligation');
         const target = bufferTarget(view, i.ccy);
-        const value = sovereignValue(view, i.issuer, i.ccy);
+        const value = sovereignValue(view, issuerOf(i), i.ccy);
         const gap = sub(target, value, 'gap');
         const wantedForBuffer =
           gap > 0 && material(gap, 2, Math.abs(target) + Math.abs(value))

@@ -12,6 +12,7 @@
  *   written directly (Seed A3: a stock the flows then act on).
  */
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
+import type { Periodicity } from '../core/rate.js';
 import type { MarketDecl, PrimaryOffer } from '../clearing/market.js';
 import type { CurrencyCode, CurveFamilyId, InstrumentId, MarketId, PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
@@ -44,6 +45,22 @@ export interface KernelReads {
   readonly markets: readonly MarketDecl[];
 }
 
+/**
+ * What a party expects of a variable it acts on (Expectations A1, A5): its own number, in its own
+ * unit and periodicity, with how much it trusts it and when it was formed. Never a market's.
+ */
+export interface Outlook {
+  readonly expected: number;
+  readonly unit: string;
+  readonly per: Periodicity;
+  /** B3: a read of how wide this party's own recent surprises have been, never a stated number. */
+  readonly confidence: number;
+  readonly formed: Period;
+}
+
+/** The variable an outlook is about: `goods.price.<subUnit>`, `labour.wage.<occupation>`, ... */
+export type OutlookVariable = string;
+
 /** Observer A1-A4: a party's own state plus the public state, and nothing else. */
 export interface ParticipantView extends KernelReads {
   readonly self: Party;
@@ -63,6 +80,12 @@ export interface ParticipantView extends KernelReads {
   accrued(instrument: InstrumentId): number;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
   curve(family: CurveFamilyId): CurveRead;
+  /**
+   * Expectations A1, A2: what THIS party expects of a variable, formed from what it observed. A
+   * party that has never observed the variable has no outlook, and gets none rather than a default
+   * (Appendix A). There is no global expectation to fall back on (A2.b).
+   */
+  outlook(variable: OutlookVariable): Option<Outlook>;
   /** Public events (A3): prints, weight events, cessations, facility draws, the audit's counts. */
   publicEvents(last: number): readonly Event[];
   /**
@@ -87,6 +110,12 @@ export interface CellEvents {
 }
 
 export interface MechanismContext extends KernelReads {
+  /**
+   * A module's own state, under a name of its choosing (Law 4: its module is the one writer). It is
+   * keyed data the module needs between phases — a register of employment rows, a book of invoices,
+   * a party's outlooks — and never a second copy of what a kernel store already holds.
+   */
+  state<T extends object>(name: string, initial: () => T): T;
   readonly parties: PartiesReads;
   readonly register: RegisterReads;
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history'>;

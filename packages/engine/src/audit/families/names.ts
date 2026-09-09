@@ -55,10 +55,20 @@ export function namesFamily(): Family {
         view.registry.region(p.region);
       }
       for (const i of view.instruments.all()) {
-        if (!view.parties.has(i.issuer))
-          v('Register A4', i.id, `instrument ${i.id} has issuer ${i.issuer}, which does not exist`);
-        if (i.kind === 'money' && !view.registry.issuesMoney(view.parties.get(i.issuer).kind))
-          v('Money A1.d', i.id, `${i.id} is money issued by a non-issuer`);
+        // A claim names the party that promised it; a physical thing names nobody (Goods A1).
+        if (i.issuer.some) {
+          const issuer = i.issuer.value;
+          if (!view.parties.has(issuer))
+            v('Register A4', i.id, `instrument ${i.id} has issuer ${issuer}, which does not exist`);
+          else if (
+            view.registry.instrumentKind(i.kind).pricing === 'money' &&
+            !view.registry.issuesMoney(view.parties.get(issuer).kind)
+          ) {
+            v('Money A1.d', i.id, `${i.id} is money issued by a non-issuer`);
+          }
+        } else if (view.registry.instrumentKind(i.kind).physical !== true) {
+          v('Register B3', i.id, `${i.id} is a claim on nobody`);
+        }
         if (
           i.market.some &&
           !view.markets.some(

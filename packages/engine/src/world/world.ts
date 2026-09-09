@@ -23,7 +23,7 @@ import {
   period,
 } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
-import { Missing } from '../core/errors.js';
+import { InvalidRegistry, Missing } from '../core/errors.js';
 import {
   type CurrencyCode,
   type CurveFamilyId,
@@ -56,9 +56,26 @@ import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
 import { mergeCells, splitCell, weightEvent } from './cells.js';
-import type { MechanismContext, ParticipantView } from './context.js';
+import type {
+  MechanismContext,
+  Outlook,
+  OutlookVariable,
+  ParticipantView,
+} from './context.js';
 import type { ParticipantDecl, PhaseDecl } from './module.js';
 import { revalue } from './revalue.js';
+
+/** The signature the one outlook-providing module answers with (Expectations A2). */
+export type OutlookFn = (
+  ctx: MechanismContext,
+  party: PartyId,
+  variable: OutlookVariable,
+) => Option<Outlook>;
+
+/** Maps are data too; the surface shows them as the entries they are (Observer D3). */
+function replacer(_key: string, value: unknown): unknown {
+  return value instanceof Map ? Object.fromEntries(value) : value;
+}
 
 export interface Phase {
   readonly name: string;
@@ -105,6 +122,10 @@ export class World {
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
   private readonly offerList = new Map<MarketId, PrimaryOffer>();
   private readonly participantDecls: ParticipantDecl[] = [];
+  /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
+  private readonly slots = new Map<string, object>();
+  /** Expectations A2: the one module that answers what a party expects. */
+  private outlookProvider: { owner: string; fn: OutlookFn } | undefined;
   private readonly phaseList: Phase[];
   private readonly audit: Audit;
   private readonly memory: AuditMemory = emptyMemory();
@@ -181,6 +202,10 @@ export class World {
         owner: 'kernel',
         run: (w) => {
           revalue(w.period, w.cycle, {
+            marked: (instrument, at) => {
+              const p = w.prices.latest(instrument, at);
+              return p.some ? some(p.value.price) : none<number>();
+            },
             registry: w.registry,
             parties: w.parties,
             instruments: w.instruments,
@@ -250,6 +275,45 @@ export class World {
     const m = this.marketList.find((x) => x.id === id);
     if (m === undefined) throw new Missing('Clearing D1', `market ${id} does not exist`);
     return m;
+  }
+
+  /** A module's own state, created once and then read and written by that module alone (Law 4). */
+  private slot<T extends object>(owner: string, name: string, initial: () => T): T {
+    const key = `${owner}/${name}`;
+    const existing = this.slots.get(key);
+    if (existing !== undefined) return existing as T;
+    const made = initial();
+    this.slots.set(key, made);
+    return made;
+  }
+
+  /**
+   * Every module's state, for the observer: a copy taken through JSON, so looking at it changes
+   * nothing (Observer E3) and a slot that cannot be described as data is a slot holding something
+   * it should not.
+   */
+  stateSlots(): Readonly<Record<string, unknown>> {
+    return Object.fromEntries(
+      [...this.slots].map(([k, v]) => [k, JSON.parse(JSON.stringify(v, replacer)) as unknown]),
+    );
+  }
+
+  /** Expectations A2: exactly one module answers what a party expects (Law 4). */
+  provideOutlooks(owner: string, fn: OutlookFn): void {
+    forbid(!this.sealed, 'Law 10', 'the outlook provider is declared at assembly');
+    if (this.outlookProvider !== undefined) {
+      throw new InvalidRegistry(
+        'Expectations A2.b',
+        `${owner} would be a second writer of what a party expects, after ${this.outlookProvider.owner}`,
+      );
+    }
+    this.outlookProvider = { owner, fn };
+  }
+
+  private outlookOf(party: PartyId, variable: OutlookVariable): Option<Outlook> {
+    const provider = this.outlookProvider;
+    if (provider === undefined) return none();
+    return provider.fn(this.mechanismContext(provider.owner), party, variable);
   }
 
   /** A module's participants: evaluated per party of the kind with that party's own view (Clearing B2). */
@@ -366,6 +430,7 @@ export class World {
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
       publicEvents: (last) => this.journal.visibleTo(party, last),
+      outlook: (variable) => this.outlookOf(party, variable),
       lastPublic: (kind) => {
         const events = this.journal.ofKind(kind).filter((e) => e.public);
         const last = events[events.length - 1];
@@ -402,6 +467,7 @@ export class World {
         },
       },
       rng: this.root.derive(`module/${owner}/${this.currentPeriod}`),
+      state: <T extends object>(name: string, initial: () => T): T => this.slot(owner, name, initial),
       participant: (party) => this.participantView(party),
       settle: (draft) => this.settlement.settle(draft, this.currentPeriod, this.currentCycle),
       issue: (decl) => this.instruments.add(decl),

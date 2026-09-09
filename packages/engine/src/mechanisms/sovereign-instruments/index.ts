@@ -61,6 +61,7 @@ function validateDates(issue: Civil, maturity: Civil, what: string): void {
 export const sovereignBond: InstrumentKindProfile = {
   id: SOVEREIGN_BOND,
   pricing: 'cleared',
+  carry: 'mark',
   liabilityOfIssuer: true,
   unit: () => PAR,
   validateTerms: (t) => {
@@ -135,6 +136,7 @@ function couponDates(t: SovereignBondTerms, cal: Calendar): readonly Civil[] {
 export const sovereignBill: InstrumentKindProfile = {
   id: SOVEREIGN_BILL,
   pricing: 'cleared',
+  carry: 'mark',
   liabilityOfIssuer: true,
   unit: () => PAR,
   validateTerms: (t) => {

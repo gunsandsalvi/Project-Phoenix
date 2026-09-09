@@ -177,6 +177,28 @@ export class Register {
   }
 
   /**
+   * Goods E2: write a lot down to what it is now worth. The carrying value of a lot held at cost IS
+   * its basis, so recognising a write-down in the equity account and leaving the lot at what it
+   * cost would be two answers to one question (Law 4). This is the only thing that changes a
+   * basis after acquisition, and it only ever lowers it.
+   */
+  writeDown(holder: PartyId, instrument: InstrumentId, lot: LotId, basisPerUnit: number): void {
+    const h = this.mutable(holder, instrument);
+    const i = h.lots.findIndex((l) => l.id === lot);
+    const current = h.lots[i];
+    if (current === undefined) {
+      throw new Missing('Register D3', `${holder} holds no lot ${lot} of ${instrument}`);
+    }
+    impossible(
+      basisPerUnit <= current.basisPerUnit,
+      'Goods E2.c',
+      `a lot is written down, never up: ${current.basisPerUnit} to ${basisPerUnit}`,
+      { holder, instrument, lot },
+    );
+    h.lots[i] = Object.freeze({ ...current, basisPerUnit: finite(basisPerUnit, 'written-down basis') });
+  }
+
+  /**
    * Draw units from lots first-in-first-out (Register D4; Registry.lotFlow). Throws if the free
    * quantity is short: a party cannot deliver what it does not hold (C4: no short by accident).
    */

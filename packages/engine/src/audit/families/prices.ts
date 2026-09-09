@@ -17,11 +17,14 @@ export function pricesFamily(): Family {
       const out: Violation[] = [];
       for (const i of view.instruments.all()) {
         if (!i.status.live) continue;
-        if (view.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
-        // B3 is about what anyone marks: a line nobody holds is marked by nobody, and a line that
-        // has never traded honestly has no price (XI-6). A HELD position with no print is the
-        // defect, because its holder cannot mark it.
-        const held = view.register.holdersOf(i.id).length > 0;
+        const profile = view.registry.instrumentKind(i.kind);
+        if (profile.pricing !== 'cleared') continue;
+        // B3 is about what anyone MARKS. A line nobody holds is marked by nobody; a line that has
+        // never traded honestly has no price (XI-6); and a holder carrying its lots at what they
+        // cost is not marking them at all (Goods E1) — it needs a print only to know whether to
+        // write down, and having none simply means nothing to write down. What is left is the real
+        // defect: a position carried at the mark whose mark does not exist.
+        const held = profile.carry === 'mark' && view.register.holdersOf(i.id).length > 0;
         const print = view.prices.read(i.id, view.period);
         if (!print.some) {
           if (held) {
