@@ -219,12 +219,22 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
   it('funds itself over a year when the market is there: the debt is serviced and the buffer survives', () => {
     const w = foundationWorld('tsy-g');
     for (let i = 0; i < 52; i += 1) w.step();
-    // A3.b, D3: what "it funds itself" means is that it never misses what it PROMISED. A coupon
-    // that did not arrive is a default (Bond N12) and there is none: every one was paid out of
-    // money it had raised, with no overdraft anywhere behind it.
+    // A3.b, D3: what "it funds itself" means is that it never misses what IT promised. A coupon of
+    // its own that did not arrive is a sovereign default (Bond N12) and there is none: every one
+    // was paid out of money it had raised, with no overdraft anywhere behind it.
+    //
+    // Its own, and not everybody's: a firm that borrowed and then died leaves an estate that owes
+    // interest and cannot borrow to pay it (XI-8), so the loan it inherited misses every week until
+    // the estate closes and the lender writes it off. That is the estate working, not the treasury
+    // failing, and reading it as one was what this filter used to do.
     const missed = w.ledger
       .all()
-      .filter((r) => r.outcome === 'failed' && r.instruction.cause === 'coupon');
+      .filter(
+        (r) =>
+          r.outcome === 'failed' &&
+          r.instruction.cause === 'coupon' &&
+          r.instruction.legs.some((l) => l.kind === 'money' && l.from.holder === TREASURY_NORTH),
+      );
     expect(missed).toHaveLength(0);
     // XI-9: the constraint is real, so a mandate can still go short in a week when the receipts do
     // not come — and what gives is a TRANSFER, which is a policy that was not funded, never the

@@ -131,20 +131,20 @@ packages/engine/test/{equity,issuance,buyback,dividend,split,dealers,desk-limits
 - [x] Issuance as a primary offer with a size and a reservation; dilution; failure
 - [x] Buyback: the firm bids at its own reservation and what it buys is cancelled
 - [x] Dividend decided from what the firm has spare over its management's own patience, paid to holders of record, declared publicly
-- [ ] `desk` party kind inside its bank; desks seeded with the opening float of every line they make a market in
-- [ ] Desk quotes: two schedules from own state; skew by inventory, width by its own surprise width and the flow it faced, size by remaining limit; no width constant exists (lint)
-- [ ] Desk rent every period at its bank's cost of funds plus the capital charge; test: a desk carrying inventory for free is unreachable
-- [ ] Desks in every market they make: bonds and shares; interdealer through the same session
-- [ ] D4.a: a market whose only liquidity was a desk at its limit fails and prints stale with reason
-- [ ] D5 as an observer read: inventory, spread, capital usage together
-- [ ] Split moves no value; the print rebases; test
-- [ ] Votes as a read (F3, A5) and free float as a read of what is encumbered (C1.b); tests
-- [ ] Estate: a share ranks last, takes the residual when there is one and is written off at zero when there is not (E4, F2); test
-- [ ] F4: no income without cash; test: a cell holding shares of a firm that retained earnings shows no income
+- [x] `desk` party kind inside its bank; desks seeded with the opening float of every line they make a market in
+- [x] Desk quotes: two schedules from own state; skew by inventory, width by its own surprise width and the flow it faced, size by remaining limit; no width constant exists (lint)
+- [x] Desk rent every period at its bank's cost of funds plus the capital charge; test: a desk carrying inventory for free is unreachable
+- [x] Desks in every market they make: bonds and shares; interdealer through the same session
+- [x] D4.a: a market whose only liquidity was a desk at its limit fails and prints stale with reason
+- [x] D5 as an observer read: inventory, spread, capital usage together
+- [x] Split moves no value; the print rebases; test
+- [x] Votes as a read (F3, A5) and free float as a read of what is encumbered (C1.b); tests
+- [x] Estate: a share ranks last, takes the residual when there is one and is written off at zero when there is not (E4, F2); test
+- [x] F4: no income without cash; test: a cell holding shares of a firm that retained earnings shows no income
 - [ ] From item 8 (Fund Shares E1, E2): an `etf.share` kind whose shares TRADE — a market, a cleared price, and its NAV read beside it from the same book, so it has two values and they are different numbers
 - [ ] From item 8 (E3, E3.a, G1.a): creation and redemption IN KIND against the basket, by a desk with a reason and a limit — which is why an exchange-traded fund is not a forced seller, and why the gap can persist when nobody will close it
 - [ ] From item 8 (E4): the premium or discount as a read of the two prices, on the observer; a persistently large one is a finding about liquidity and never a number to clamp
-- [ ] Year-long run green; determinism; XI-13 test: a desk's schedule is independent of the other orders in the book
+- [x] Year-long run green; determinism; XI-13 test: a desk's schedule is independent of the other orders in the book
 - [ ] Coverage re-marked; PARTIAL rows for C1.b, C2.b, C2.c, C2.d, C2.e, C5, C7, A5.a, E1–E3, G1, G2 named; record entry
 - [ ] Delete this file; worklist row 9 → done; commit and push
 

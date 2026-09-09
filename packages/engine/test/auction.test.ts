@@ -6,6 +6,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
+  DESK,
+  FIRM,
   PHX,
   TREASURY_NORTH,
   assemble,
@@ -70,15 +72,37 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
     // the market there is nothing to put reserves back into their hands either.
     const spec = foundationSpec('auc-c');
     const withoutCentralBank = spec.modules.filter((m) => m.id !== 'central-bank-omo');
-    const broke = withoutCentralBank.map((m) =>
+    const stepped = withoutCentralBank.map((m) =>
+      m.id === 'dealers'
+        ? {
+            ...m,
+            // Dealer Desks D1, D4, D4.a: the desks step back because their own limit binds — a
+            // book of nothing is all they will carry — which is the reason D1-D3 give and the one
+            // that makes a failed auction possible. A desk that will not take a position on is a
+            // legitimate, representable state, and this is what it looks like.
+            params: m.params.map((p) =>
+              p.id.startsWith('desk.limit.') ? { ...p, value: 0 } : p,
+            ),
+          }
+        : m,
+    );
+    const broke = stepped.map((m) =>
       m.id === 'seed.foundation'
         ? {
             ...m,
             seed: (ctx: Parameters<NonNullable<typeof m.seed>>[0]) => {
               m.seed?.(ctx);
-              // Nobody has any money: the dealers cannot bid however obliged they are, and the
-              // treasury cannot spend any into their hands either.
-              for (const party of [...ctx.parties.ofKind(BANK), ctx.parties.get(TREASURY_NORTH)]) {
+              // Nobody has any money and nobody is about to be paid any: the desks and the banks
+              // behind them cannot bid however obliged they are, the treasury cannot spend any
+              // into their hands, and the firms cannot pay a wage that would put some into a
+              // household's. A world with no money in it is the one in which an auction has to
+              // fail, and this is that world.
+              for (const party of [
+                ...ctx.parties.ofKind(BANK),
+                ...ctx.parties.ofKind(DESK),
+                ...ctx.parties.ofKind(FIRM),
+                ctx.parties.get(TREASURY_NORTH),
+              ]) {
                 const account = moneyInstrumentId(party.bank, PHX);
                 const held = ctx.register.quantity(party.id, account);
                 if (held <= 0) continue;

@@ -339,14 +339,20 @@ describe('the world it lives in', () => {
     const w = assemble(spec);
     expect(w.phases.map((p) => p.name)).toContain('lending.write');
     for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    // Nobody in this world borrows yet, and that is the honest state rather than a broken one:
-    // its firms hold more cash than they spend, its households never spend past what they hold,
-    // and the one party that runs out — the treasury — banks at the central bank, which refuses
-    // everyone that is not a money issuer (Treasury D3). The demand side arrives with investment
-    // (worklist 10) and consumer credit (13d). What is built here is the supply side, and it
-    // answers the moment anybody asks.
-    expect(w.journal.ofKind('credit.written')).toHaveLength(0);
-    expect(w.instruments.all().filter((i) => i.kind === LOAN)).toHaveLength(0);
+    // SOMEBODY BORROWS NOW, and it is the demand side this test used to say was missing. What
+    // changed is that a firm has owners to pay (Equity D3, worklist 9): money it used to sit on
+    // leaves it for its shareholders, and a week when its receipts are late is a week it is short.
+    // A bank quoted, it took the quote, and the row is a row like any other — which is what the
+    // supply side was built to answer with.
+    const written = w.journal.ofKind('credit.written');
+    expect(written.length).toBeGreaterThan(0);
+    const rows = w.instruments.all().filter((i) => i.kind === LOAN);
+    expect(rows.length).toBeGreaterThan(0);
+    // F1.a: every row has a lender of record holding every unit of it, which the flows family
+    // checks every period — and the year above was green.
+    for (const row of rows) {
+      expect(isLoan(row.terms) && row.terms.lender.startsWith('bank.')).toBe(true);
+    }
     expect(w.parties.ofKind(partyId('bank') as never).length).toBeGreaterThan(0);
     expect(TREASURY_NORTH).toBeDefined();
   });

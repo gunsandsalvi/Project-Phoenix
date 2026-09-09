@@ -121,8 +121,9 @@ function world(...extra: readonly SystemModule[]): World {
  */
 function paidWorld(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('households');
-  // Equity goes with the firms: a share is a claim on one, so a world with none has no shares.
-  const kept = spec.modules.filter((m) => m.id !== 'firms' && m.id !== 'equity');
+  // Equity goes with the firms: a share is a claim on one, so a world with none has no shares —
+  // and the desks go with it, because they open holding the lines they make a market in.
+  const kept = spec.modules.filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers');
   return assemble({ ...spec, modules: [...kept, ...extra] });
 }
 
@@ -130,7 +131,7 @@ function paidWorld(...extra: readonly SystemModule[]): World {
 function spreadWorld(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('households');
   const modules = spec.modules
-    .filter((m) => m.id !== 'firms' && m.id !== 'equity')
+    .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
     .map((m) =>
       m.id === 'seed.foundation'
         ? {
@@ -266,8 +267,15 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
         .filter((leg) => leg.kind === 'asset' && cells.has(leg.to) && paper.has(leg.instrument))
         .reduce((a, leg) => a + (leg.kind === 'asset' ? leg.qty : 0), 0);
     };
-    expect(bought(0.5)).toBe(0);
-    expect(bought(0.001)).toBeGreaterThan(0);
+    // FOUND (worklist 9): a saver that requires a great deal is no longer driven into its deposit.
+    // It is driven into EQUITY — a claim that promises nothing and pays a dividend that clears a
+    // requirement no bill could (Equity A4, B3) — which is D5's third reason, risk, arriving. So
+    // what the substitution says is that the one that wants less for giving up access gives it up
+    // more, and it says it about everything it could hold rather than about one thing it could not.
+    const dear = bought(0.5);
+    const keen = bought(0.001);
+    expect(keen).toBeGreaterThan(0);
+    expect(dear).toBeLessThan(keen);
   });
 
   it('counts what it owns and not only what it holds, so an asset price reaches demand (C1.b)', () => {

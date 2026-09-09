@@ -3,7 +3,7 @@
  * the period equal the change in the holding; for every instrument, issued deltas equal the change
  * in issued. A book that changed with nothing behind it is Money D4's defect.
  *
- * @spec Audit B7 Money D1.a Money D1.b Money D3 Money D4 Register F3 Law 7
+ * @spec Audit B7 Money D1.a Money D1.b Money D3 Money D4 Register E4 Register E5 Register F3 Equity D4 Law 7
  *
  * The two records are not two readings of one number, and Law 7's dust is what the arithmetic did.
  * The balance was carried from one end of the period to the other by applying these legs ONE AT A
@@ -12,7 +12,7 @@
  * the tolerance. Derived any smaller (as if two readings of one balance), a busy account reports a
  * violation every time it is paid more than a handful of times in a week.
  */
-import { carriedDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { carriedDust, moveDust, mul, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
 import { type AuditMemory, holdingKey } from '../memory.js';
 import type { AuditView } from '../view.js';
@@ -38,6 +38,26 @@ export function flowsFamily(memory: AuditMemory): Family {
           map.set(key, list);
         }
       }
+      // Register E4, E5, Equity D4: a SPLIT restates the unit a line is counted in. No units
+      // changed hands and no money moved — the event says so — so the identity is not "what the
+      // legs did" but "what the legs did to a balance that was restated first". The ratio is on
+      // the event, publicly, which is what makes this a read of the record rather than an
+      // exemption: a holding that moved for any other reason still has to be explained by a leg.
+      const restated = new Map<string, number>();
+      const ratioOf = (instrument: string): number => {
+        // A line nobody restated is counted in the unit it was counted in: one of it is one of it.
+        // eslint-disable-next-line phoenix/no-numeric-default -- absence here is "not restated"
+        return restated.get(instrument) ?? 1;
+      };
+      for (const e of view.journal.inPeriod(view.period)) {
+        if (e.kind !== 'instrument.split') continue;
+        const instrument = e.data['instrument'];
+        const ratio = e.data['ratio'];
+        if (typeof instrument !== 'string' || typeof ratio !== 'number') continue;
+        // Two restatements in one period compose, like two multiplications.
+        restated.set(instrument, mul(ratioOf(instrument), ratio, 'the restatement this period'));
+      }
+
       // Weight events copy state without an instruction (a split); those parties are exempt this period.
       const weightSubjects = new Set(
         view.journal
@@ -57,13 +77,15 @@ export function flowsFamily(memory: AuditMemory): Family {
         if (!view.parties.has(holder as never) || !view.instruments.has(instrument as never))
           continue;
         const remembered = memory.holdings.get(key);
-        const before = zeroIfNone(remembered?.qty);
+        const before = mul(zeroIfNone(remembered?.qty), ratioOf(instrument), 'restated by the split');
         const held = view.register.holding(holder as never, instrument as never);
         const now = view.register.quantity(holder as never, instrument as never);
         const legs = sum(holdingDeltas.get(key) ?? []);
         const change = sum([now, -before]);
         const lots = zeroIfNone(remembered?.lots) + (held.some ? held.value.lots.length : 0);
-        if (!withinDust(change.value, legs.value, carriedDust(before, now, lots, legs))) {
+        // Law 7: restating is one more rounding, at the magnitude the balance now is.
+        const dust = carriedDust(before, now, lots, legs) + moveDust(before, 0);
+        if (!withinDust(change.value, legs.value, dust)) {
           out.push({
             family: 'flows',
             spec: 'Money D3',
@@ -76,11 +98,12 @@ export function flowsFamily(memory: AuditMemory): Family {
         }
       }
       for (const i of view.instruments.all()) {
-        const before = zeroIfNone(memory.issued.get(i.id));
+        const before = mul(zeroIfNone(memory.issued.get(i.id)), ratioOf(i.id), 'restated by the split');
         const legs = sum(issuedDeltas.get(i.id) ?? []);
         const change = sum([i.issued, -before]);
         // Issued is one balance, not lots, but it is carried by the same leg-at-a-time walk.
-        if (!withinDust(change.value, legs.value, carriedDust(before, i.issued, 1, legs))) {
+        const dust = carriedDust(before, i.issued, 1, legs) + moveDust(before, 0);
+        if (!withinDust(change.value, legs.value, dust)) {
           out.push({
             family: 'flows',
             spec: 'Register B1',

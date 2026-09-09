@@ -55,6 +55,7 @@ import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { goodId, goodMarketId, goodTerms, goods, wipId } from '../mechanisms/goods/index.js';
+import { dealers } from '../mechanisms/dealers/index.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { funds } from '../mechanisms/funds/index.js';
 import { households } from '../mechanisms/households/index.js';
@@ -514,6 +515,7 @@ export function foundationSpec(seed: string): AssemblySpec {
       households(),
       funds(),
       equity(),
+      dealers(),
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
       sovereignAuction,

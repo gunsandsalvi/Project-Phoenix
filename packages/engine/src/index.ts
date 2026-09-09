@@ -54,4 +54,5 @@ export * from './mechanisms/labour/index.js';
 export * from './mechanisms/firms/index.js';
 export * from './mechanisms/households/index.js';
 export * from './mechanisms/equity/index.js';
+export * from './mechanisms/dealers/index.js';
 export * from './observer/observer.js';

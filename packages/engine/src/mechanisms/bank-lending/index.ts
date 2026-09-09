@@ -483,6 +483,7 @@ export const bankLending: SystemModule = {
       run: (ctx: MechanismContext): void => {
         bookDraws(ctx);
         publishStandard(ctx);
+        publishCostOfFunds(ctx);
       },
     },
   ],
@@ -561,6 +562,28 @@ function publishStandard(ctx: MechanismContext): void {
     },
     true,
   );
+}
+
+/**
+ * C1.a, XI-4 joint one: what each bank actually paid for what it owed, published under its own name.
+ *
+ * A bank's cost of funds is a FACT ABOUT THE BANK with one writer (Law 4), and it is public because
+ * something else in this world prices off it: a trading desk inside a bank pays that bank for the
+ * money its inventory ties up, every period it holds it (Dealer Desks D3), and a desk that read a
+ * different number from the one its bank pays would be two prices for one thing. It is a read of
+ * what already left the bank (Observer A5) and it causes nothing by itself.
+ */
+function publishCostOfFunds(ctx: MechanismContext): void {
+  for (const b of ctx.parties.ofKind(BANK)) {
+    if (declOf(b.id) === undefined || !b.status.alive) continue;
+    const ccy = ctx.registry.region(b.region).ccy;
+    ctx.record(
+      'bank.costOfFunds',
+      [b.id],
+      { bank: b.id, ccy, perAnnum: costOfFunds(ctx, b.id, ccy), owed: owedBy(ctx, b.id, ccy) },
+      true,
+    );
+  }
 }
 
 /** Re-exported so the observer and the tests can read a bank's own book as the sum of its rows. */
