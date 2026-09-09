@@ -212,8 +212,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Bond N9` | MET | packages/engine/src/clearing/market.ts |
 | `Bond N10` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts, packages/engine/src/world/actions.ts |
 | `Bond N11` | PARTIAL | the sovereign answers none; the corporate regime arrives with Corporate Credit |
-| `Bond N12` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
-| `Bond N13` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Bond N12` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts (missed payment only: there are no covenants to breach), packages/engine/src/world/actions.ts (the kernel asks the instrument's own profile after a payment it applied did not settle, and journals what it answers, publicly) |
+| `Bond N13` | MET | packages/engine/src/registry/kinds.ts (every kind states what a holder is entitled to on failure — required, because the clause is about stating it even when the answer is nothing), packages/engine/src/mechanisms/sovereign-instruments/index.ts (nothing seizable: a negotiated exchange, and exclusion from the market) |
 | `Bond N14` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts, packages/engine/src/register/instruments.ts |
 
 ## Derivative
@@ -349,7 +349,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign F5` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Sovereign G1` | MISSING |  |
 | `Sovereign G2` | MISSING |  |
-| `Sovereign G3` | MISSING |  |
+| `Sovereign G3` | PARTIAL | packages/engine/src/mechanisms/sovereign-instruments/index.ts states both halves — there is no estate (the claim is a negotiated exchange, nothing seizable) and a missed payment on one line does not accelerate the others. The negotiation itself is an exchange offer with holdouts (G4, worklist 13f) |
 | `Sovereign G4` | MISSING |  |
 | `Sovereign G5` | MISSING |  |
 | `Sovereign H1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
@@ -803,8 +803,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Banks Lending D3` | MISSING |  |
 | `Banks Lending D4` | MISSING |  |
 | `Banks Lending D5` | MISSING |  |
-| `Banks Lending E1` | MISSING |  |
-| `Banks Lending E2` | MISSING |  |
+| `Banks Lending E1` | PARTIAL | packages/engine/src/world/actions.ts (a missed payment IS an event, dated, named and public, for every instrument whose profile defines one). A covenant breach needs covenants, and those arrive with loans (worklist 6) |
+| `Banks Lending E2` | PARTIAL | packages/engine/src/register/instruments.ts (performing is written by exactly one path, the kernel's, on the instrument's own definition being met, and nothing restores it). Impaired as a third state, and the provision that goes with it, arrive with the credit-events module (worklist 5.2) |
 | `Banks Lending E3` | MISSING |  |
 | `Banks Lending E4` | MISSING |  |
 | `Banks Lending E5` | MISSING |  |
@@ -1179,10 +1179,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Firm Birth B2` | MISSING |  |
 | `Firm Birth B3` | MISSING |  |
 | `Firm Birth B4` | MISSING |  |
-| `Firm Birth C1` | MISSING |  |
+| `Firm Birth C1` | PARTIAL | packages/engine/src/registry/kinds.ts (the definition is the instrument's own and is observable by a holder: it is journalled publicly with the words it met). A firm's own definition needs a firm with debt (worklist 6) |
 | `Firm Birth C2` | MISSING |  |
-| `Firm Birth C2.a` | MISSING |  |
-| `Firm Birth C3` | MISSING |  |
+| `Firm Birth C2.a` | MET | packages/engine/src/world/actions.ts (a default exists only where a payment was applied and failed; there is no hazard rate, no draw and no assignment anywhere in the path), packages/engine/test/default-events.test.ts (and a world whose payments all settle produces none) |
+| `Firm Birth C3` | PARTIAL | packages/engine/src/world/actions.ts (the event is public, so anybody may react to it, and it names the issuer, the line, the holder and what was due). What it triggers — the lenders' loss, a rating action — arrives with the provision (worklist 5.2) and ratings (worklist 12) |
 | `Firm Birth C4` | MISSING |  |
 | `Firm Birth D1` | MISSING |  |
 | `Firm Birth D2` | MISSING |  |

@@ -28,8 +28,14 @@ export interface Terms {
   readonly kind: InstrumentKindId;
 }
 
+/**
+ * Banks Lending E2, Bond N12: a status no path ever writes is not a status. A live instrument is
+ * performing until a payment it promised failed, and then it is not — written once, by the kernel,
+ * off the instrument's own definition of default, and read by everybody.
+ */
 export type InstrumentStatus =
-  { readonly live: true } | { readonly live: false; readonly ceasedIn: Period };
+  | { readonly live: true; readonly performing: boolean }
+  | { readonly live: false; readonly ceasedIn: Period };
 
 /** What a module supplies to register an instrument; the kernel derives unit and status. */
 export interface InstrumentDecl {
@@ -106,7 +112,7 @@ export class Instruments {
     } else {
       forbid(!decl.market.some, 'XI-6', `${decl.id} is not priced by clearing but names a market`);
     }
-    const status: InstrumentStatus = { live: true };
+    const status: InstrumentStatus = { live: true, performing: true };
     const i: Instrument = Object.freeze({ ...decl, unit, issued: 0, issuedDust: 0, status });
     this.map.set(i.id, i);
     return i;
@@ -149,6 +155,22 @@ export class Instruments {
     );
   }
 
+  /**
+   * Banks Lending E1, E2: the one path that writes the status. It is called by the kernel when a
+   * payment this instrument promised failed and its own profile called that a default (Bond N12);
+   * nothing else may, and nothing restores it — a cure is a state of its own and needs a workout
+   * to reach it (E3, worklist 6).
+   */
+  markDefaulted(id: InstrumentId): void {
+    const i = this.get(id);
+    forbid(i.status.live, 'Banks Lending E2', `instrument ${id} has ceased; it cannot default`);
+    // Already written: a second missed payment on the same line is a second EVENT, and the journal
+    // has both, but the status only ever moves the one way and only once (E2).
+    if (!i.status.performing) return;
+    const status: InstrumentStatus = { live: true, performing: false };
+    this.map.set(id, Object.freeze({ ...i, status }));
+  }
+
   /** B4: an instrument ceases, and every holding in it has already resolved to something else, named. */
   cease(id: InstrumentId, period: Period): void {
     const i = this.get(id);
@@ -160,7 +182,8 @@ export class Instruments {
         { id, issued: i.issued },
       );
     }
-    this.map.set(id, Object.freeze({ ...i, status: { live: false, ceasedIn: period } }));
+    const ceased: InstrumentStatus = { live: false, ceasedIn: period };
+    this.map.set(id, Object.freeze({ ...i, status: ceased }));
   }
 }
 

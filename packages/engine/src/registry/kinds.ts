@@ -11,7 +11,15 @@
  */
 import type { Calendar, Period } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
-import type { CurrencyCode, InstrumentKindId, PartyId, PartyKindId, UnitId } from '../core/ids.js';
+import type {
+  CurrencyCode,
+  InstrumentId,
+  InstrumentKindId,
+  PartyId,
+  PartyKindId,
+  UnitId,
+} from '../core/ids.js';
+import type { Failed } from '../ledger/instruction.js';
 import type { Instrument, Terms } from '../register/instruments.js';
 import type { Namer } from './naming.js';
 
@@ -46,6 +54,33 @@ export interface CashFlow {
 export type DueAction =
   | { readonly kind: 'coupon'; readonly date: Civil; readonly amountPerUnit: number }
   | { readonly kind: 'maturity'; readonly date: Civil };
+
+/**
+ * Bond N12: an instrument's own definition of failure to perform, met by something that happened.
+ *
+ * The definition belongs to the instrument, not to the kernel: a sovereign bond has no covenants to
+ * breach, so nothing but a missed payment can be one; a loan (worklist 6) has both. The kernel knows
+ * only that a payment failed, and asks. And it must be OBSERVABLE BY A HOLDER — which is why what
+ * comes back is the words the definition uses, journalled publicly for everyone to react to, and not
+ * a flag whose meaning lives in the code that set it.
+ */
+export interface DefaultDefinition {
+  readonly met: string;
+}
+
+/**
+ * Bond N13, N13.a: what a holder is entitled to on failure, and where that claim stands against the
+ * issuer's others. Both are stated even when the answers are "nothing seizable" and "all equal" —
+ * an unstated ranking is the one that silently becomes a waterfall the first time somebody needs one.
+ */
+export interface Ranking {
+  /** N13.a: lower is more senior; equal numbers are pari passu. */
+  readonly seniority: number;
+  /** N13: what is pledged against it, which is nothing for an unsecured claim. */
+  readonly secured: readonly { readonly instrument: InstrumentId; readonly qty: number }[];
+  /** N13: what the holder is entitled to, in words. Never empty. */
+  readonly claim: string;
+}
 
 export interface InstrumentKindProfile {
   readonly id: InstrumentKindId;
@@ -102,6 +137,22 @@ export interface InstrumentKindProfile {
    * for everything else, a unit that appeared without an issuer would be an invented claim.
    */
   readonly physical?: boolean;
+  /**
+   * Bond N13, N13.a: what a holder is entitled to on failure and where it ranks. Required, because
+   * "stated even when the answer is nothing" is the whole point of the clause.
+   */
+  readonly ranking: (i: Instrument) => Ranking;
+  /**
+   * Bond N12: whether a payment that failed is a DEFAULT under this instrument's own definition.
+   * The kernel asks after a coupon or a maturity instruction fails, and journals what comes back.
+   * A kind that cannot default — money, a tonne of grain — does not answer.
+   */
+  readonly defaultOn?: (i: Instrument, failed: Failed) => DefaultDefinition | undefined;
+  /**
+   * Corporate Credit G2: whether a default on one of this issuer's instruments makes this one due
+   * as well. Stated, and false is an answer: a sovereign has no cross-default (Sovereign G3).
+   */
+  readonly accelerates?: boolean;
 }
 
 /**

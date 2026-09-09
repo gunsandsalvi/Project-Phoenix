@@ -101,9 +101,9 @@ packages/engine/test/{default-events,provision,writeoff}.test.ts
 
 ## Steps
 
-- [ ] 5.1 `profile.defaultOn`, `profile.ranking`, `profile.accelerates`; `performing` on instrument status with the kernel as its one writer; tests
-- [ ] 5.1 Corporate actions ask the profile after a failed coupon or maturity and journal `credit.default` publicly; test: an empty treasury account produces a default event on the line, not a silent skip
-- [ ] 5.1 Sovereign profiles: missed payment only (B5), pari passu (B4), no acceleration (B6); tests
+- [x] 5.1 `profile.defaultOn`, `profile.ranking`, `profile.accelerates`; `performing` on instrument status with the kernel as its one writer; tests
+- [x] 5.1 Corporate actions ask the profile after a failed coupon or maturity and journal `credit.default` publicly; test: an empty treasury account produces a default event on the line, not a silent skip
+- [x] 5.1 Sovereign profiles: missed payment only (B5), pari passu (B4), no acceleration (B6); tests
 - [ ] 5.2 `credit-events` module: provisions as lot write-downs to the holder's own recovery outlook, booked once per assessment change; accounts family holds; tests
 - [ ] 5.2 Provision unwinds as recoveries arrive (an upward re-assessment on a defaulted claim is allowed: it is a claim, not inventory); test
 - [ ] 5.2 Write-off as a redemption at zero price when the claim is extinguished; E5.a identity; test

@@ -43,6 +43,14 @@ export function goodProfile(d: GoodDecl): InstrumentKindProfile {
     liabilityOfIssuer: false,
     physical: true,
     unit: () => unit,
+    // Bond N13, N13.a: stated because the clause says to state it even when the answer is nothing.
+    // A tonne is a thing its holder owns, not a promise anybody made, so there is no issuer to fail
+    // and no claim to rank — which is a different answer from "unsecured", not a missing one.
+    ranking: () => ({
+      seniority: 0,
+      secured: [],
+      claim: 'nothing: it is owned outright, and nobody promised it',
+    }),
     validateTerms: (t) => {
       if (!isGoodTerms(t)) {
         throw new InvalidRegistry('Goods A1', `${d.subUnit}: these are not the terms of a good`);
@@ -84,6 +92,14 @@ export function wipProfile(d: GoodDecl): InstrumentKindProfile {
     liabilityOfIssuer: false,
     physical: true,
     unit: () => unit,
+    // Bond N13, N13.a: stated because the clause says to state it even when the answer is nothing.
+    // A tonne is a thing its holder owns, not a promise anybody made, so there is no issuer to fail
+    // and no claim to rank — which is a different answer from "unsecured", not a missing one.
+    ranking: () => ({
+      seniority: 0,
+      secured: [],
+      claim: 'nothing: it is owned outright, and nobody promised it',
+    }),
     validateTerms: (t) => {
       if (!isWipTerms(t)) {
         throw new InvalidRegistry('Goods B3', `${d.subUnit}: these are not the terms of a batch`);

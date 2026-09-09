@@ -40,6 +40,7 @@ const wheat: InstrumentKindProfile = {
   liabilityOfIssuer: false,
   physical: true,
   unit: () => TONNES,
+  ranking: () => ({ seniority: 0, secured: [], claim: 'nothing: it is owned outright' }),
   validateTerms: () => undefined,
   displayName: () => 'wheat, North',
   due: () => [],

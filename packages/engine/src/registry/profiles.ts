@@ -16,6 +16,14 @@ export const moneyKind: InstrumentKindProfile = {
   pricing: 'money',
   carry: 'mark',
   liabilityOfIssuer: true,
+  // Bond N13, N13.a: a deposit is an unsecured claim on the bank that issued it, and there is
+  // nothing else of that bank's to rank it against yet. Who pays it when the issuer cannot is the
+  // estate (worklist 7); whether anybody insures it is the corridor's neighbour (worklist 11).
+  ranking: () => ({
+    seniority: 0,
+    secured: [],
+    claim: 'the balance itself, as an unsecured claim on the issuer that owes it',
+  }),
   unit: (ccy) => currencyUnit(ccy),
   validateTerms: (t) => {
     if (t.kind !== MONEY_KIND) throw new InvalidRegistry('Money D2', 'money terms carry no fields');

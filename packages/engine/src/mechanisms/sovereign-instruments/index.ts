@@ -15,7 +15,7 @@ import { instrumentKindId, unitId } from '../../core/ids.js';
 import { add, mul } from '../../core/num.js';
 import { percent } from '../../core/format.js';
 import type { Periodicity, Rate } from '../../core/rate.js';
-import type { Terms } from '../../register/instruments.js';
+import { issuerOf, type Terms } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import { issuerName } from '../../registry/naming.js';
 import type { SystemModule } from '../../world/module.js';
@@ -65,6 +65,22 @@ export const sovereignBond: InstrumentKindProfile = {
   carry: 'mark',
   liabilityOfIssuer: true,
   unit: () => PAR,
+  // Bond N12, N13, N13.a as §8's table answers them, and every answer is stated rather than
+  // implied. There are no covenants to breach, so nothing but a missed payment can be a default.
+  // There is no estate — nothing of a state is seizable — so the claim is a negotiated exchange and
+  // the sanction is exclusion from the market (Sovereign G3, G5). And the ranking never varies:
+  // pari passu, always, which is why every line of an issuer carries the same seniority number.
+  ranking: () => ({
+    seniority: 0,
+    secured: [],
+    claim: 'nothing seizable: a negotiated exchange, and exclusion from the market until there is one',
+  }),
+  defaultOn: (i, failed) =>
+    failed.reason.party === issuerOf(i)
+      ? { met: 'a payment fell due and the issuer did not make it' }
+      : undefined,
+  // Sovereign G3: a missed payment on one line does not make the others due.
+  accelerates: false,
   validateTerms: (t) => {
     if (!isBond(t)) throw new InvalidRegistry('Sovereign B1', 'not sovereign bond terms');
     validateDates(t.issueDate, t.maturity, 'sovereign bond');
@@ -141,6 +157,22 @@ export const sovereignBill: InstrumentKindProfile = {
   carry: 'mark',
   liabilityOfIssuer: true,
   unit: () => PAR,
+  // Bond N12, N13, N13.a as §8's table answers them, and every answer is stated rather than
+  // implied. There are no covenants to breach, so nothing but a missed payment can be a default.
+  // There is no estate — nothing of a state is seizable — so the claim is a negotiated exchange and
+  // the sanction is exclusion from the market (Sovereign G3, G5). And the ranking never varies:
+  // pari passu, always, which is why every line of an issuer carries the same seniority number.
+  ranking: () => ({
+    seniority: 0,
+    secured: [],
+    claim: 'nothing seizable: a negotiated exchange, and exclusion from the market until there is one',
+  }),
+  defaultOn: (i, failed) =>
+    failed.reason.party === issuerOf(i)
+      ? { met: 'a payment fell due and the issuer did not make it' }
+      : undefined,
+  // Sovereign G3: a missed payment on one line does not make the others due.
+  accelerates: false,
   validateTerms: (t) => {
     if (!isBill(t)) throw new InvalidRegistry('Sovereign B1', 'not sovereign bill terms');
     validateDates(t.issueDate, t.maturity, 'sovereign bill');

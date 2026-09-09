@@ -4,7 +4,13 @@
  * face and extinguishes the instrument (Register E2, B4, Bond N10). Which actions fall due is the
  * instrument kind's profile to say (Law 15); the kernel only knows the vocabulary.
  *
- * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Money C1.c Money G3.a Law 15
+ * A payment that FAILS is where a default begins (XI-1). The kernel does not know what a default
+ * is — that is the instrument's own definition, observable by a holder (Bond N12) — so when a coupon
+ * or a maturity does not settle it asks the profile, and if the answer is yes it journals the event
+ * publicly and writes the status. It never decides, never draws and never repairs: a default here is
+ * the consequence of a payment that did not happen, which is Firm Birth C2.a's whole requirement.
+ *
+ * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Bond N12 Bond N13 Money C1.c Money E1 Money E1.a Money G3.a Banks Lending E1 Banks Lending E2 Firm Birth C1 Firm Birth C3 XI-1 Law 15
  */
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
@@ -13,7 +19,7 @@ import type { CurrencyCode, PartyId } from '../core/ids.js';
 import { mul } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Journal } from '../journal/journal.js';
-import type { CellSide, InstructionDraft, Leg } from '../ledger/instruction.js';
+import type { CellSide, Failed, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, type Settlement, totalFor } from '../ledger/settlement.js';
 import type { Parties } from '../parties/party.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
@@ -83,8 +89,54 @@ function payToHolders(
       cause: 'coupon',
       reason: `${reason} to ${holderId}`,
     };
-    d.settlement.settle(draft, period, cycle);
+    const record = d.settlement.settle(draft, period, cycle);
+    if (record.outcome === 'failed') defaulted(i, record, holderId, total, period, cycle, d);
   }
+}
+
+/**
+ * XI-1, Bond N12: a payment fell due and did not happen. Whether that is a DEFAULT is the
+ * instrument's own definition to say — a sovereign bond has no covenants, so nothing but this can
+ * be one; a loan will have both (worklist 6) — and a kind that cannot default does not answer.
+ *
+ * What the kernel does when the answer is yes is exactly three things, and nothing else: it says so
+ * publicly, because a default is an event others react to (Firm Birth C3); it writes the status,
+ * because a status no path writes is not a status (Banks Lending E2); and it leaves the claim where
+ * it is. It books no provision and takes no loss: whose loss it is, and how much, is the holders'
+ * own assessment and belongs to them (Banks Lending D2), not to the machinery that noticed.
+ */
+function defaulted(
+  i: Instrument,
+  failed: Failed,
+  holder: PartyId,
+  amountDue: number,
+  period: Period,
+  cycle: Cycle,
+  d: ActionDeps,
+): void {
+  const profile = d.registry.instrumentKind(i.kind);
+  if (profile.defaultOn === undefined) return;
+  const met = profile.defaultOn(i, failed);
+  if (met === undefined) return;
+  const issuer = issuerOf(i);
+  const rank = profile.ranking(i);
+  d.journal.record(
+    period,
+    cycle,
+    'credit.default',
+    [issuer, i.id, holder],
+    {
+      issuer,
+      instrument: i.id,
+      holder,
+      amountDue,
+      definition: met.met,
+      seniority: rank.seniority,
+      claim: rank.claim,
+    },
+    true,
+  );
+  d.instruments.markDefaulted(i.id);
 }
 
 function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
