@@ -36,7 +36,7 @@ import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { struckIn } from '../../prices/price-store.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
-import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
+import { isAssetLeg, isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -69,6 +69,8 @@ export const TREASURY_PARAMS = {
   transfers: paramId('treasury.outlays.transfers.perMember'),
   publicWages: paramId('treasury.outlays.publicWages.perMember'),
   taxInterest: paramId('treasury.tax.interestIncome'),
+  taxIncome: paramId('treasury.tax.income'),
+  taxConsumption: paramId('treasury.tax.consumption'),
   concession: paramId('treasury.walkAway.concession'),
   buybackStale: paramId('treasury.buyback.stalePeriods'),
 } as const;
@@ -214,6 +216,22 @@ export const treasury: SystemModule = {
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury C1, C1.a: a rate on a real base with a named payer who remits it. Interest received is the only base that exists before firms and households earn anything (worklist 4).',
+    },
+    {
+      id: TREASURY_PARAMS.taxIncome,
+      value: 0.15,
+      unit: 'ratio of what a household was paid',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Treasury C1, C1.a: a tax on income, on the base the payer own statement gives — what actually reached a household from somebody other than the state. Its own transfers are not taxed back out of it, and interest is taxed where it is received by anybody, so no base carries two rates.',
+    },
+    {
+      id: TREASURY_PARAMS.taxConsumption,
+      value: 0.1,
+      unit: 'ratio of what a household paid for goods',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Treasury C1: a tax on consumption, on what a household actually paid a seller for real things. A household finds it on top of the price when it decides what to spend (Households C4), and it is remitted out of its own account.',
     },
     {
       id: TREASURY_PARAMS.concession,
@@ -521,26 +539,56 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
   }
 }
 
-/** C1.a: the base is the payer's own statement — what it was actually paid last period. */
+/**
+ * C1, C1.a, C2, C3: what it collected, from bases that are what the payers themselves did. Three
+ * of them: interest anybody was paid, what a household was paid by anybody but the state, and what
+ * a household paid for real things. Every one is read off last period's settled instructions — the
+ * payer's own statement, not a proxy for it — and every one is remitted out of the payer's own
+ * account, so receipts fall when income and spending fall because there is less there to read.
+ *
+ * A base carries one rate: the state does not tax back the transfer it just paid, and interest is
+ * taxed where it is received rather than twice over as income as well.
+ */
 function runReceipts(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
-  const rateOnInterest = ctx.params.get(TREASURY_PARAMS.taxInterest);
   if (ctx.period === 0) return;
   const previous = period(ctx.period - 1);
-  const received = new Map<PartyId, number>();
+  const onInterest = ctx.params.get(TREASURY_PARAMS.taxInterest);
+  const onIncome = ctx.params.get(TREASURY_PARAMS.taxIncome);
+  const onConsumption = ctx.params.get(TREASURY_PARAMS.taxConsumption);
+  const cells = new Set(ctx.parties.ofKind(HOUSEHOLD).map((p) => p.id));
+  const due = new Map<PartyId, number>();
+  const bases = { interest: 0, income: 0, consumption: 0 };
   for (const r of ctx.ledger.inPeriod(previous)) {
-    if (r.outcome !== 'settled' || r.instruction.cause !== 'coupon') continue;
+    if (r.outcome !== 'settled') continue;
+    // C1: what a household bought in this instruction is what it paid for the real things in it.
+    const buyers = new Set<PartyId>();
     for (const leg of r.instruction.legs) {
-      if (!isMoneyLeg(leg) || leg.to.holder === id) continue;
-      addTo(received, leg.to.holder, leg.amount);
+      if (!isAssetLeg(leg) || !cells.has(leg.to)) continue;
+      const kind = ctx.registry.instrumentKind(ctx.instruments.get(leg.instrument).kind);
+      if (kind.physical === true) buyers.add(leg.to);
+    }
+    for (const leg of r.instruction.legs) {
+      if (!isMoneyLeg(leg)) continue;
+      if (buyers.has(leg.from.holder)) {
+        bases.consumption = add(bases.consumption, leg.amount, 'what households paid for goods');
+        addTo(due, leg.from.holder, mul(leg.amount, onConsumption, 'consumption tax'));
+      }
+      if (leg.to.holder === id) continue;
+      if (r.instruction.cause === 'coupon') {
+        bases.interest = add(bases.interest, leg.amount, 'interest received');
+        addTo(due, leg.to.holder, mul(leg.amount, onInterest, 'tax on interest'));
+      } else if (cells.has(leg.to.holder) && leg.from.holder !== id) {
+        bases.income = add(bases.income, leg.amount, 'what households were paid');
+        addTo(due, leg.to.holder, mul(leg.amount, onIncome, 'income tax'));
+      }
     }
   }
   let collected = 0;
-  for (const [payer, interest] of received) {
+  let unpaid = 0;
+  for (const [payer, total] of due) {
     const p = ctx.parties.get(payer);
-    if (!p.status.alive) continue;
-    const total = mul(interest, rateOnInterest, 'tax due');
-    if (total <= 0) continue;
+    if (!p.status.alive || total <= 0) continue;
     const perMember = p.representation === 'cell' ? div(total, p.weight, 'per member') : total;
     const leg: Leg = {
       kind: 'money',
@@ -551,14 +599,17 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       fromCell: p.representation === 'cell' ? some({ perMember, weight: p.weight }) : none(),
       toCell: none(),
     };
-    const r = ctx.settle({
-      legs: [leg],
-      cause: 'transfer',
-      reason: `tax on interest received by ${payer}`,
-    });
+    const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `tax due from ${payer}` });
+    // A payer that cannot pay its tax has not paid it: nothing advances it (Money E1, D3).
     if (r.outcome === 'settled') collected = add(collected, total, 'collected');
+    else unpaid = add(unpaid, total, 'unpaid');
   }
-  ctx.record('treasury.receipts', [id], { total: collected, payers: received.size }, true);
+  ctx.record(
+    'treasury.receipts',
+    [id],
+    { total: collected, unpaid, payers: due.size, bases },
+    true,
+  );
 }
 
 /**

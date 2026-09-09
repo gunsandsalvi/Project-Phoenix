@@ -52,6 +52,7 @@ import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { goods } from '../mechanisms/goods/index.js';
+import { households } from '../mechanisms/households/index.js';
 import { labour } from '../mechanisms/labour/index.js';
 import { sovereignAuction } from '../mechanisms/sovereign-auction/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
@@ -394,6 +395,7 @@ export function foundationSpec(seed: string): AssemblySpec {
       goods(),
       labour(),
       firms(),
+      households(),
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
       sovereignAuction,

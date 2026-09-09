@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   HOUSEHOLD,
+  isMoneyLeg,
   PHX,
   REGION,
   assemble,
@@ -145,12 +146,20 @@ describe('a hire (Labour A4, XI-10)', () => {
     const bill = 3 * hours(1) * row.wagePerHour;
     expect(w.cash(FIRM_1, PHX)).toBeCloseTo(firmBefore - bill, 9);
     const paidPerMember = hours(1) * row.wagePerHour;
-    const before = w.cash(row.worker, PHX);
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    // Every period, not once: the relationship persists and so does the wage bill (A4).
-    expect(w.cash(row.worker, PHX)).toBeGreaterThan(before);
-    expect(w.cash(row.worker, PHX) - before).toBeGreaterThanOrEqual(paidPerMember);
+    // Every period, not once: the relationship persists and so does the wage bill (A4). What the
+    // worker's balance then does is its own business — it spends, it saves, it pays its tax — so
+    // what is asserted here is the payment, read from the wire where it happened.
+    const wages = w.ledger
+      .inPeriod(r.period)
+      .filter((x) => x.outcome === 'settled')
+      .flatMap((x) => x.instruction.legs)
+      .filter((leg) => isMoneyLeg(leg) && leg.from.holder === FIRM_1 && leg.to.holder === row.worker);
+    expect(wages).toHaveLength(1);
+    const leg = wages[0];
+    expect(leg !== undefined && isMoneyLeg(leg) ? leg.toCell.some && leg.toCell.value.perMember : 0)
+      .toBeCloseTo(paidPerMember, 12);
   });
 });
 

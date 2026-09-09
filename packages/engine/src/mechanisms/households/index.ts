@@ -1,0 +1,297 @@
+/**
+ * Households: cells that earn, consume, save and own, each deciding for one possible household and
+ * carrying how many of them it is.
+ *
+ * @spec Households A1 Households A2 Households A2.a Households A2.b Households A2.c Households A2.d Households A2.e Households A2.f Households A3 Households B1 Households B2 Households B3 Households B3.a Households B5 Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households C5 Households D1 Households D1.a Households D3 Households D5 Households D5.a Households D6 Goods C1 Goods C3 Expectations C1 Sovereign E2.f XI-15 XI-16 Law 2 Law 4 Law 6
+ *
+ * EVERY DECISION IS THE CELL'S, taken for one member and carried at the cell's weight (A2.e, A2.f).
+ * The sector's consumption is the weighted sum of what its cells decided, and there is no number
+ * anywhere in this module that a sector took: no representative household, no propensity applied to
+ * an aggregate, no average anybody could have crossed a threshold at.
+ *
+ * WHAT IT DOES: it decides what to spend from its own outlook of its own income, its own cash and
+ * its own recent surprises (C1); it takes that to market as a demand curve, not a point (C3, D6);
+ * it keeps a cushion in its account and puts what is over it into paper when paper pays it enough
+ * to give up access (C2, D5.a); and it sells its members' hours in the labour venue, which the
+ * labour module runs. What it does not do is borrow — nobody lends to it yet (worklist 6) — so its
+ * budget is its own cash, and what it cannot pay for it does not buy.
+ *
+ * WHAT REACHES IT: wages from named employers (B1), the standing mandate from the treasury (B2),
+ * and coupons on the paper it holds (B3) — all of them money that actually arrived, because income
+ * a household did not receive is not income (B3.a).
+ */
+import type { Family, Violation } from '../../audit/audit.js';
+import type { MarketDecl } from '../../clearing/market.js';
+import type { Order } from '../../clearing/solver.js';
+import { period } from '../../calendar/calendar.js';
+import { paramId, type PartyId } from '../../core/ids.js';
+import { addTo, combineDust, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
+import { weightOf } from '../../parties/party.js';
+import { HOUSEHOLD } from '../../registry/profiles.js';
+import type { ParamDecl } from '../../registry/params.js';
+import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { SystemModule } from '../../world/module.js';
+import { CONSUMPTION, type ConsumptionDecl } from './data.js';
+import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
+import { paperBids, sparePerMember } from './portfolio.js';
+
+export * from './data.js';
+export { demandOf, spendPerMember } from './consume.js';
+export { paperBids, sparePerMember } from './portfolio.js';
+export type { DemandStep, HouseholdParams, Spending } from './consume.js';
+export type { PaperBid } from './portfolio.js';
+
+export const HOUSEHOLD_PARAMS = {
+  patience: paramId('households.patience'),
+  buffer: paramId('households.buffer.periods'),
+  liquidityPremium: paramId('households.liquidityPremium'),
+  horizon: paramId('households.horizon.periods'),
+  steps: paramId('households.demand.steps'),
+} as const;
+
+/** Treasury C1: the rate a household pays on what it buys, which it must find on top of the price. */
+export const CONSUMPTION_TAX = paramId('treasury.tax.consumption');
+
+function paramsOf(): ParamDecl[] {
+  return [
+    {
+      id: HOUSEHOLD_PARAMS.patience,
+      value: 6,
+      unit: 'periods',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Households C1: over how many of its own periods a household closes the gap between the cash it holds and the cushion it wants. It is the whole of its patience: a windfall it means to keep reaches its spending over this many weeks, and a hole it has fallen into is refilled over the same.',
+    },
+    {
+      id: HOUSEHOLD_PARAMS.buffer,
+      value: 4,
+      unit: 'periods of its own income',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Households C1.d, §46 B3: how many periods of what it expects a household wants to be sitting on. It is widened by how wrong its own income has recently been, which is a read of its own surprises and not a second number.',
+    },
+    {
+      id: HOUSEHOLD_PARAMS.liquidityPremium,
+      value: 0.005,
+      unit: 'per annum over what a deposit returns',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Households D5, D5.a: what a saver wants for giving up instant access to its money. It is the whole of the substitution between a deposit and paper held directly, and it is what makes a rate reach a saver at all.',
+    },
+    {
+      id: HOUSEHOLD_PARAMS.horizon,
+      value: 52,
+      unit: 'periods',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Households D5: how long a household will tie its money up. Paper that comes back inside it is a substitute for its deposit; anything longer it would have to sell at a price nobody can tell it, which is D5 other two reasons — yield against risk — and it cannot weigh those until something in this world prices risk (worklist 9).',
+    },
+    {
+      id: HOUSEHOLD_PARAMS.steps,
+      value: 5,
+      unit: 'count',
+      kind: 'resolution',
+      owner: 'model',
+      why: 'Goods C1, Clearing A2: how finely a household posts its own demand curve into the book. Its shape is the cell own — what it spends divided by the price — and this is only how many levels of it the book sees; change it and the answer must not move.',
+    },
+  ];
+}
+
+function numbers(view: ParticipantView): HouseholdParams {
+  return {
+    patience: view.params.get(HOUSEHOLD_PARAMS.patience),
+    bufferPeriods: view.params.get(HOUSEHOLD_PARAMS.buffer),
+    steps: view.params.get(HOUSEHOLD_PARAMS.steps),
+    consumptionTax: view.params.get(CONSUMPTION_TAX),
+  };
+}
+
+/**
+ * C5, D6, Firm F1 from the buying end: what a household consumed is what it paid a named seller
+ * for. Units of a physical thing reaching a household with no money going the other way in the same
+ * instruction is a gift nobody gave, and money going out with no units coming back is a payment for
+ * nothing; either would make the sector's consumption a number rather than a sum of purchases.
+ */
+function consumptionIsBought(): Family {
+  return {
+    name: 'flows',
+    contributor: 'households',
+    spec: 'Households C5 Households D6 Goods F1',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      const cells = new Set(view.parties.ofKind(HOUSEHOLD).map((p) => p.id));
+      for (const r of view.ledger.inPeriod(view.period)) {
+        if (r.outcome !== 'settled') continue;
+        const bought = new Map<PartyId, number>();
+        const paid = new Map<PartyId, number>();
+        for (const leg of r.instruction.legs) {
+          if (isAssetLeg(leg) && cells.has(leg.to)) {
+            const physical = view.registry.instrumentKind(
+              view.instruments.get(leg.instrument).kind,
+            ).physical;
+            if (physical !== true) continue;
+            addTo(bought, leg.to, mul(leg.qty, leg.pricePerUnit.some ? leg.pricePerUnit.value : 0, 'what it took'));
+          } else if (isMoneyLeg(leg) && cells.has(leg.from.holder)) {
+            addTo(paid, leg.from.holder, leg.amount);
+          }
+        }
+        for (const [cell, value] of bought) {
+          // A cell that took units and paid nothing paid nothing: absence of a payment is zero
+          // money, which is the one place absence becomes a number (core/num.ts).
+          const money = sum([zeroIfNone(paid.get(cell))]);
+          const took = sum([value]);
+          if (withinDust(took.value, money.value, combineDust(took, money))) continue;
+          out.push({
+            family: 'flows',
+            spec: 'Households C5',
+            owner: cell,
+            size: sub(took.value, money.value, 'goods against money'),
+            unit: view.registry.region(view.parties.get(cell).region).ccy,
+            period: view.period,
+            message: `${cell} took ${took.value} of goods and paid ${money.value} for them`,
+          });
+        }
+      }
+      return out;
+    },
+  };
+}
+
+/**
+ * B5, Observer A5: what the sector was actually paid, published about the period that closed. It is
+ * a SUM of what named payers paid named cells, read from the ledger — never an identity solved for
+ * — and it causes nothing: no decision in this world can read it, because a cell's own outlook is
+ * formed from what reached it and nothing else (§46 A2.b).
+ */
+function publishSectorIncome(ctx: MechanismContext): void {
+  if (ctx.period === 0) return;
+  const cells = new Set(ctx.parties.ofKind(HOUSEHOLD).map((p) => p.id));
+  const terms: number[] = [];
+  let payers = 0;
+  const seen = new Set<PartyId>();
+  const closed = period(ctx.period - 1);
+  for (const r of ctx.ledger.inPeriod(closed)) {
+    if (r.outcome !== 'settled') continue;
+    for (const leg of r.instruction.legs) {
+      if (!isMoneyLeg(leg) || !cells.has(leg.to.holder)) continue;
+      terms.push(leg.amount);
+      if (!seen.has(leg.from.holder)) {
+        seen.add(leg.from.holder);
+        payers += 1;
+      }
+    }
+  }
+  if (terms.length === 0) return;
+  ctx.record('households.income', [], { of: closed, received: sum(terms).value, payers }, true);
+}
+
+/** The module. `rows` is what each cohort spends its money on (Law 15: the data says). */
+export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): SystemModule {
+  return {
+    id: 'households',
+    spec: 'Households, Sovereign E2.f',
+    // It buys goods, it acts on its own outlook, and it sells its members' hours in the venue the
+    // labour module runs — so all three must be there before it decides anything.
+    requires: ['expectations', 'goods', 'labour'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: paramsOf(),
+    phases: [
+      {
+        name: 'households.decide',
+        spec: 'Households C1 Households C2 Households C3 Households D5 Households B5',
+        cycle: 0,
+        anchor: { before: 'labour.match' },
+        run: (ctx: MechanismContext) => {
+          publishSectorIncome(ctx);
+          for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
+            if (p.status.alive) decide(ctx, p.id, rows);
+          }
+        },
+      },
+    ],
+    participants: [
+      {
+        partyKind: HOUSEHOLD,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
+          const own = view.lastOwn('households.plan');
+          if (!own.some || own.value.period !== view.period) return [];
+          return ordersFrom(own.value.data['orders'], m.id, view.self.id);
+        },
+      },
+    ],
+    families: [consumptionIsBought()],
+  };
+}
+
+/**
+ * C1, C2, C3, D5: the decision, taken once for one member of the cell and carried at its weight,
+ * published under the cell's own name and read back by its own orders (Law 4).
+ */
+function decide(ctx: MechanismContext, cell: PartyId, rows: readonly ConsumptionDecl[]): void {
+  const view = ctx.participant(cell);
+  const self = view.self;
+  if (self.representation !== 'cell') return;
+  const p = numbers(view);
+  const decided = spendPerMember(view, p);
+  if (!decided.some) return;
+  const goods = demandOf(view, rows, p, decided.value.spend);
+  const spare = sparePerMember(
+    view.cash(view.registry.region(self.region).ccy),
+    decided.value.spend,
+    decided.value.buffer,
+  );
+  const paper = paperBids(
+    // D5.a: what it requires of paper is what its deposit pays it plus what giving up access costs
+    // it. A deposit pays nothing until a bank decides to pay for one (Banks Funding B1, worklist
+    // 11), so what it requires now is the premium alone, and that comparison becomes a real one
+    // the period a bank starts bidding for deposits.
+    view,
+    view.params.get(HOUSEHOLD_PARAMS.liquidityPremium),
+    view.params.get(HOUSEHOLD_PARAMS.horizon),
+    mul(spare, weightOf(self), 'what the cell has spare'),
+  );
+  ctx.record(
+    'households.plan',
+    [cell],
+    {
+      // Per member, because that is what it decided (A2.f); the orders carry the cell's weight.
+      spendPerMember: decided.value.spend,
+      wantedPerMember: decided.value.wanted,
+      bufferPerMember: decided.value.buffer,
+      cashPerMember: decided.value.cash,
+      wealthPerMember: decided.value.wealth,
+      expectedIncome: decided.value.expected,
+      // C1.d: its budget bound it. A2.g counts these, and a mean-preserving spread moves cells
+      // across the threshold while the weighted mean of what they were paid does not move.
+      constrained: decided.value.constrained,
+      sparePerMember: spare,
+      // C2: what it does not spend and does not put into paper is saved where it already is.
+      orders: [
+        ...goods.map((g) => ({ market: g.market, side: 'buy', price: g.price, qty: g.qty })),
+        ...paper.map((b) => ({ market: b.market, side: 'buy', price: b.price, qty: b.qty })),
+      ],
+    },
+    false,
+  );
+}
+
+/** The orders this cell decided on, read back from its own plan (Law 4: one decision, one writer). */
+function ordersFrom(rows: unknown, market: string, self: PartyId): Order[] {
+  if (!Array.isArray(rows)) return [];
+  const out: Order[] = [];
+  for (const row of rows as unknown[]) {
+    if (typeof row !== 'object' || row === null) continue;
+    const o = row as Record<string, unknown>;
+    const price = o['price'];
+    const qty = o['qty'];
+    if (o['market'] !== market || o['side'] !== 'buy') continue;
+    if (typeof price !== 'number' || typeof qty !== 'number' || qty <= 0) continue;
+    out.push({ party: self, side: 'buy', price, qty });
+  }
+  return out;
+}

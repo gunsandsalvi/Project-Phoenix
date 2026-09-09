@@ -176,23 +176,36 @@ that is where the placeholder would have died anyway. Dividends need owners of r
 register arrives at item 9: paying one now would be paying nobody. Firm C4, C4.b, E5 and Goods F2,
 F3 are PARTIAL with those items named.
 
-### 4.6 `households`
+### 4.6 `households` — as built
 
-- Phase `households.decide` (cycle 0, after `expectations.form`): per cell, from its view: expected
-  income (`outlook('household.income')`), wealth (own holdings at last prints), liquidity (cash),
-  confidence (C1.c, C1.d: a cell surprised widely holds more liquidity); consumption per member is
-  a decision from those with the cell's preferences (patience and risk aversion drawn at entry,
-  dispersed: preferences; the functional form is a SHAPE declared as such with a `why`); allocation
-  across goods by preference weights and relative prices (C3: the weights are preferences per cohort,
-  registry data); the residual is saving (C2); the portfolio decision between a deposit and a bill
-  (D5.a): the cell posts a bid in the bill market when the bill's yield from the curve exceeds its
-  deposit rate (zero until item 11) by its own liquidity preference.
-- Participants: `household` cells in goods markets (buy orders per member at the most they will pay:
-  C1 of Goods: the cell's outlook of the price plus its urgency), in the bill market (D5.a), in the
-  labour markets (sell hours).
-- Taxes: income tax on wages received and consumption tax on purchases, remitted by the payer to the
-  treasury (Households B4, Treasury C1.a) as instructions in `households.pay`.
-- Audit: `flows`: sector income equals what cells were paid, read from the ledger (B5).
+- Phase `households.decide` (cycle 0, before `labour.match`): per cell, for ONE member of it and
+  carried at its weight (A2.e, A2.f). It spends what it expects to earn (its own income outlook),
+  corrected towards the cushion it wants — so many periods of what it expects, widened by how wrong
+  that expectation has recently been (C1.c: confidence is a read of its own surprises) — with the
+  gap between what it OWNS (cash plus its holdings at the last prints: C1.b, D3) and that cushion
+  closed at its own patience, and never more than it holds, because nobody lends to it (C1.d).
+- What it takes to market is a demand CURVE and not a point (C3, Goods C1): its cohort's share of
+  what it decided to spend, less the tax it will owe on it (C4), divided by the price — posted as
+  the steps of that curve over the range its own surprises about that price make plausible.
+- What is left over after its cushion goes into paper when paper clears what it requires of it
+  (D5, D5.a): it bids at the price its OWN required yield gives, and only for paper that comes back
+  inside its own horizon, because anything longer it would have to sell at a price nobody can tell
+  it — which is D5's other two reasons and needs item 9. What it does not put into paper stays in
+  its account, which is what saving into a deposit is (C2).
+- Taxes: the treasury's own receipts phase now reads three real bases (Treasury C1, C1.a) — interest
+  anybody was paid, what a household was paid by anybody but the state, and what a household paid
+  for real things — each read off last period's settled instructions and remitted out of the payer's
+  own account. One base carries one rate.
+- Audit: `flows` contribution — what a household consumed is what it paid a named seller for (C5,
+  D6); and the sector's income is published as a lagged read of what named payers actually paid it
+  (B5, Observer A5), causing nothing.
+
+**Changed from the plan as written, and why.** There is no `households.pay` phase: a purchase is
+delivery against payment in one instruction, and the tax on it belongs to the receipts phase that
+already exists and has one writer (Law 4). Patience and a liquidity preference are declared;
+risk aversion is not, because nothing in this world prices risk yet (worklist 9) and a number
+nobody could derive is what Law 2 forbids. Neither preference is dispersed: cells already differ by
+income, cash, employment and memory, and the shape count does not rise.
 
 ### 4.7 Seed
 
@@ -252,11 +265,11 @@ packages/engine/test/{state-slots,expectations,goods,labour,firms,households,res
 - [x] 4.5 `firms.produce`: recipe consumption, work in progress at cost, yield and scrap, lead time, idle cost as period expense; tests: B5.a and B5.b
 - [x] 4.5 The supply schedule and the demand for inputs: what it cannot keep at the book's level, the rest above the value of holding, each input at what it is worth to it; tests: Goods C1, C5
 - [x] 4.5 Published expectation (E7) journaled and scored; test
-- [ ] 4.6 `households.decide`: consumption per member from own outlook, wealth, liquidity, confidence; allocation by preference and relative price; saving as residual; tests
-- [ ] 4.6 Households as participants in goods markets and the bill market (D5.a); test: a higher bill yield draws cells into bills
-- [ ] 4.6 Income and consumption taxes remitted by the payer; treasury receipts now read real bases; test: receipts are the sum of what payers paid
-- [ ] 4.6 Audit: sector income as a read (B5); test
-- [ ] 4.6 Households A2.g: a mean-preserving spread of income across cells changes consumption crossings while the weighted mean does not; test
+- [x] 4.6 `households.decide`: consumption per member from own outlook, wealth, liquidity, confidence; allocation by preference and relative price; saving as residual; tests
+- [x] 4.6 Households as participants in goods markets and in sovereign paper (D5.a); test: a saver that requires less of paper is drawn into it and one that requires more stays in its deposit
+- [x] 4.6 Income and consumption taxes remitted by the payer; treasury receipts now read real bases; test: receipts are the sum of what payers paid
+- [x] 4.6 Audit: sector income as a read (B5), and consumption as something a named seller was paid for (C5); test
+- [x] 4.6 Households A2.g: a mean-preserving spread of income across cells changes consumption crossings while the weighted mean does not; test
 - [ ] 4.7 Seed: recipes, firms, employment rows, work in progress consistent with lead times, outlooks; the three seed shapes deleted; placeholders declared with deaths
 - [ ] 4.7 Resolution test harness: 1x, 2x, 4x `cellsPerKey` give the same sector aggregates to dust after a year (XI-15)
 - [ ] Treasury: outlay programme gains public purchases in goods markets; public wages route through employment rows; receipts read wages and consumption bases

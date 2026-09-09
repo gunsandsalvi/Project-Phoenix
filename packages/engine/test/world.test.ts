@@ -204,7 +204,19 @@ describe('the period loop', () => {
     }
     // The treasury funded itself: it announced, the dealers bid, and the paper was allotted.
     expect(w.journal.ofKind('auction.result').length).toBeGreaterThan(8);
-    expect(w.journal.ofKind('treasury.shortfall')).toHaveLength(0);
+    // XI-9, Treasury D3: nothing advanced it, ever. Where it could not pay, the mandate simply
+    // went unpaid and the shortfall is a recorded event the next programme reads — which is the
+    // whole of the constraint, and it is what a treasury with an overdraft would never show.
+    const advances = w.journal
+      .ofKind('reserve.overdraft')
+      .filter((e) => e.subjects.includes(TREASURY_NORTH));
+    expect(advances).toHaveLength(0);
+    for (const e of w.journal.ofKind('treasury.shortfall')) {
+      expect(Number(e.data['unpaid'])).toBeGreaterThan(0);
+    }
+    // And it came back: what it could not pay out of an empty account it funded at the next
+    // auction, so the constraint bites and then releases rather than ending the world.
+    expect(w.cash(TREASURY_NORTH, PHX)).toBeGreaterThan(0);
   });
 
   it('pays coupons to holders of record and the cash lands in named accounts (Register E1)', () => {

@@ -338,7 +338,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign D6` | PARTIAL | the bid-offer is whatever the schedules produce; there are no dealers to produce one until worklist 9 |
 | `Sovereign E1` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
 | `Sovereign E1.a` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
-| `Sovereign E2` | PARTIAL | banks hold for the liquidity buffer and the central bank for policy; the other holder classes arrive with their own systems (worklist 4, 8, 12) |
+| `Sovereign E2` | PARTIAL | banks hold for the liquidity buffer, the central bank for policy and households directly out of what they save (packages/engine/src/mechanisms/households/portfolio.ts); funds arrive at worklist 8 and foreign holders at 12 |
 | `Sovereign E3` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
 | `Sovereign E4` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
 | `Sovereign E5` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts |
@@ -1008,10 +1008,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Treasury A3` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury B1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury B2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
-| `Treasury B3` | PARTIAL | outlays vary with the standing mandate; the cycle and unemployment arrive with the real economy (worklist 4) and policy with the polity (worklist 14) |
+| `Treasury B3` | PARTIAL | outlays vary with the standing mandate; the cycle and unemployment arrive with the real economy in full (worklist 4.7) and policy with the polity (worklist 14) |
 | `Treasury B4` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury C1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
-| `Treasury C2` | PARTIAL | receipts follow what was actually collected; income and consumption bases arrive with the real economy (worklist 4) |
+| `Treasury C2` | MET | packages/engine/src/mechanisms/treasury/index.ts (three bases read off what payers actually did: interest received, what households were paid, what they paid for real things — so receipts fall when income and spending fall) |
 | `Treasury C3` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury D1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury D2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
@@ -1385,30 +1385,30 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Households A1` | MISSING |  |
-| `Households A2` | MISSING |  |
-| `Households A2.d` | MISSING |  |
+| `Households A1` | MET | packages/engine/src/mechanisms/households/index.ts (it earns, decides what to spend, saves what is left and owns what it bought) |
+| `Households A2` | PARTIAL | packages/engine/src/mechanisms/households/consume.ts decides per cell from that cell own income, cash, holdings and surprises, so cells with different histories decide differently; life stage is a cohort and employment state is a row, and a cell that borrows arrives with credit (worklist 6) |
+| `Households A2.d` | MET | packages/engine/src/mechanisms/households/index.ts (every decision is one cell own, and there is no sector anywhere for one to be taken at) |
 | `Households A2.e` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/profiles.ts |
 | `Households A2.f` | MET | packages/engine/src/parties/party.ts |
-| `Households A2.g` | MISSING |  |
-| `Households A3` | MISSING |  |
-| `Households B1` | MISSING |  |
-| `Households B2` | MISSING |  |
-| `Households B3` | MISSING |  |
-| `Households B3.a` | MISSING |  |
-| `Households B4` | MISSING |  |
-| `Households B5` | MISSING |  |
-| `Households C1` | MISSING |  |
-| `Households C2` | MISSING |  |
-| `Households C3` | MISSING |  |
-| `Households C4` | MISSING |  |
-| `Households C5` | MISSING |  |
-| `Households D1` | MISSING |  |
+| `Households A2.g` | MET | packages/engine/test/households.test.ts (a mean-preserving spread over cells moves more of them below the cushion they want while what they were paid in total does not move) |
+| `Households A3` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/parties/party.ts (a cell is a named party with an account and a register) |
+| `Households B1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage leaves a named employer account and reaches the cell) |
+| `Households B2` | MET | packages/engine/src/mechanisms/treasury/index.ts (the standing mandate reaches each cell by name) |
+| `Households B3` | PARTIAL | coupons on the paper it holds reach it through corporate actions (packages/engine/src/world/actions.ts); dividends arrive with equity (worklist 9) |
+| `Households B3.a` | MET | packages/engine/src/mechanisms/households/consume.ts (what it acts on is what reached its account and what its holdings are worth, never anything retained on its behalf) |
+| `Households B4` | MET | packages/engine/src/mechanisms/treasury/index.ts (income and consumption are taxed on what the payer itself did, and remitted out of its own account) |
+| `Households B5` | MET | packages/engine/src/mechanisms/households/index.ts (the sector income is published as a sum of what named payers paid, read from the ledger and causing nothing) |
+| `Households C1` | MET | packages/engine/src/mechanisms/households/consume.ts (its own expected income, what it owns, its own recent surprises and the cash it can actually pay with) |
+| `Households C2` | MET | packages/engine/src/mechanisms/households/portfolio.ts (what it neither spends nor puts into paper stays in its account) |
+| `Households C3` | MET | packages/engine/src/mechanisms/households/data.ts (the shares are a cohort preference), packages/engine/src/mechanisms/households/consume.ts (what that buys is the price business) |
+| `Households C4` | MET | packages/engine/src/mechanisms/households/consume.ts (it finds the consumption tax on top of the price when it decides what to spend) |
+| `Households C5` | MET | packages/engine/src/mechanisms/households/index.ts (the audit contribution: what a household took is what it paid a named seller for) |
+| `Households D1` | PARTIAL | deposits and securities held directly, in the register (packages/engine/src/mechanisms/households/portfolio.ts); fund shares arrive at worklist 8, pensions at 13h and housing at 13d |
 | `Households D2` | MISSING |  |
 | `Households D3` | MET | packages/engine/src/audit/families/accounts.ts |
 | `Households D4` | MISSING |  |
-| `Households D5` | MISSING |  |
-| `Households D6` | MISSING |  |
+| `Households D5` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts weighs yield against liquidity — what a saver requires of paper for giving up access, against what a deposit returns; risk needs something that prices it (worklist 9) |
+| `Households D6` | MET | packages/engine/src/mechanisms/households/index.ts (a cell bids in the markets it is in and is nobody residual holder) |
 | `Households E1` | MISSING |  |
 | `Households E2` | MISSING |  |
 | `Households E3` | MISSING |  |
