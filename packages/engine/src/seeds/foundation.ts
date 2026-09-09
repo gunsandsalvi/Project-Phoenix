@@ -51,7 +51,7 @@ import {
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
-import { goodId, goodMarketId, goods, wipId } from '../mechanisms/goods/index.js';
+import { goodId, goodMarketId, goodTerms, goods, wipId } from '../mechanisms/goods/index.js';
 import { households } from '../mechanisms/households/index.js';
 import { labour } from '../mechanisms/labour/index.js';
 import { sovereignAuction } from '../mechanisms/sovereign-auction/index.js';
@@ -115,56 +115,70 @@ const SEED_DAY_COUNT: DayCount = 'ACT/ACT';
  * it can take — the households' own income says what that is — and not a hoard: a firm sitting on a
  * year of stock would produce nothing for a year, and the seed would have decided that.
  */
-interface SeedStock {
+interface SeedFirm {
   readonly firm: string;
+  readonly name: string;
+  /** Where it banks (Money A1): the wage and every invoice leave the account it holds there. */
+  readonly bank: PartyId;
+  /** Seed C1: the money it opens with, which is some bank's liability like anybody else's. */
+  readonly cash: number;
   readonly subUnit: string;
   /** Units finished and ready to sell. */
   readonly finished: number;
   /** Units started and not yet off the line: only a good whose batch takes longer than a period. */
   readonly onTheLine: number;
-  /** Seed C4: what the market it has never traded in opens at, per unit. */
-  readonly opensAt: number;
+  /** Seed D1: units of what its recipe draws, so its first batch is not waiting on a market. */
+  readonly inputs: number;
   readonly why: string;
 }
 
-const SEED_STOCK: readonly SeedStock[] = [
-  {
-    firm: 'firm.1',
-    subUnit: 'grain',
-    finished: 90,
-    onTheLine: 90,
-    opensAt: 0.4,
-    why: 'Grain takes two periods to grow, so a world that opens with an empty field produces nothing for two of them and the mill has nothing to buy. One crop in the barn and one in the ground is what a going concern looks like.',
-  },
-  {
-    firm: 'firm.2',
-    subUnit: 'flour',
-    finished: 75,
-    onTheLine: 0,
-    opensAt: 0.6,
-    why: 'Milling is inside the period, so there is nothing on the line; what the mill opens with is what it has already milled.',
-  },
-  {
-    firm: 'firm.3',
-    subUnit: 'bread',
-    finished: 105,
-    onTheLine: 0,
-    opensAt: 1.2,
-    why: 'A week of bread in the shop. It goes stale at a quarter a period, so what is not sold is a real loss from the first period on.',
-  },
-];
-
-/** The inputs each firm opens with: enough for the batch it will start before it can buy more. */
-const SEED_INPUTS: readonly { readonly firm: string; readonly subUnit: string; readonly qty: number }[] = [
-  { firm: 'firm.2', subUnit: 'grain', qty: 110 },
-  { firm: 'firm.3', subUnit: 'flour', qty: 75 },
-];
-
 /**
- * Seed C4: what the stock cost whoever is holding it, as a share of what its market opens at. It is
- * below the opening price because a firm holding stock it could only sell at a loss would not have
- * made it — and it is a cost, which is what a lot carries (Goods E1), never a second price.
+ * Seed B1, B1.a, B4: three firms in every line, no two the same size and no two the same cost.
+ *
+ * Every line has a firm at each bank (B3). A bank whose customers all sit on one side of the
+ * payment chain is a bank with a structural reserve drain, and until the corridor exists (worklist
+ * 11) nothing in this world could lend it the difference — so a seed that arranged one would be
+ * opening with a flow it has no mechanism for, which is what D1 forbids.
+ *
+ * The LINE TOTALS are exactly what they were when each line had one firm in it. This item changes
+ * the structure of the sector and not the scale of the world: choosing endowments to make some
+ * employment number come out would be steering the model, and measuring it is Part XII's job and
+ * not this one (Law 11). What each firm is worth is stated with a reason, as the one firm's was.
  */
+const SEED_FIRMS: readonly SeedFirm[] = [
+  // Grain — 200 of cash, 90 finished and 90 on the line, as the one farm held.
+  { firm: 'firm.4', name: 'Broadacre Farm', bank: BANK_B, cash: 100, subUnit: 'grain', finished: 45, onTheLine: 45, inputs: 0,
+    why: 'The largest farm in the region and the one that works the best ground.' },
+  { firm: 'firm.1', name: 'Middlefield Farm', bank: BANK_A, cash: 65, subUnit: 'grain', finished: 30, onTheLine: 30, inputs: 0,
+    why: 'An ordinary farm of ordinary size.' },
+  { firm: 'firm.7', name: 'Hollow Farm', bank: BANK_B, cash: 35, subUnit: 'grain', finished: 15, onTheLine: 15, inputs: 0,
+    why: 'The smallest, on the poorest ground, with the least cash to carry a bad season.' },
+  // Flour — 150 of cash, 75 milled and 110 tonnes of grain to mill, as the one mill held.
+  { firm: 'firm.5', name: 'Riverside Mill', bank: BANK_A, cash: 75, subUnit: 'flour', finished: 38, onTheLine: 0, inputs: 55,
+    why: 'The big mill, and the one that has already bought most of the grain it will grind.' },
+  { firm: 'firm.2', name: 'Town Mill', bank: BANK_B, cash: 50, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37,
+    why: 'An ordinary mill.' },
+  { firm: 'firm.8', name: 'Old Mill', bank: BANK_A, cash: 25, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18,
+    why: 'The smallest and the oldest.' },
+  // Bread — 250 of cash, 105 baked and 75 tonnes of flour, as the one bakery held.
+  { firm: 'firm.6', name: 'City Bakery', bank: BANK_A, cash: 125, subUnit: 'bread', finished: 52, onTheLine: 0, inputs: 38,
+    why: 'A plant bakery: the biggest oven and the biggest week of bread in the shop.' },
+  { firm: 'firm.3', name: 'High Street Bakery', bank: BANK_B, cash: 80, subUnit: 'bread', finished: 35, onTheLine: 0, inputs: 25,
+    why: 'An ordinary bakery.' },
+  { firm: 'firm.9', name: 'Corner Bakery', bank: BANK_A, cash: 45, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12,
+    why: 'The smallest, and the one holding the least flour against a week it cannot predict.' },
+];
+
+/** Seed C4: the level each market opens at, which is the good's and not any one firm's. */
+const SEED_MARKETS: readonly { readonly subUnit: string; readonly opensAt: number; readonly why: string }[] = [
+  { subUnit: 'grain', opensAt: 0.4,
+    why: 'Grain takes two periods to grow, so a world that opens with an empty field produces nothing for two of them and the mill has nothing to buy. One crop in the barn and one in the ground is what a going concern looks like.' },
+  { subUnit: 'flour', opensAt: 0.6,
+    why: 'Milling is inside the period, so there is nothing on the line; what a mill opens with is what it has already milled.' },
+  { subUnit: 'bread', opensAt: 1.2,
+    why: 'A week of bread in the shop. It goes stale at a quarter a period, so what is not sold is a real loss from the first period on.' },
+];
+
 const SEED_STOCK_BASIS = 0.8;
 
 const P = {
@@ -191,7 +205,7 @@ const openingPrice = (subUnit: string): ParamId => paramId(`seed.openingPrice.${
  * needs a way to open a market without stating one.
  */
 function openingPrices(): ParamDecl[] {
-  return SEED_STOCK.map((row) => ({
+  return SEED_MARKETS.map((row) => ({
     id: openingPrice(row.subUnit),
     value: row.opensAt,
     unit: `PHX per unit of ${row.subUnit}`,
@@ -265,9 +279,8 @@ export const foundationSeed: SystemModule = {
     ctx.parties.add(named(TREASURY_NORTH, TREASURY, 'Treasury of North', CB));
     ctx.parties.add(named(BANK_A, BANK, 'Bank A', CB));
     ctx.parties.add(named(BANK_B, BANK, 'Bank B', CB));
-    ctx.parties.add(named(partyId('firm.1'), FIRM, 'Firm One', BANK_A));
-    ctx.parties.add(named(partyId('firm.2'), FIRM, 'Firm Two', BANK_A));
-    ctx.parties.add(named(partyId('firm.3'), FIRM, 'Firm Three', BANK_B));
+    // Seed B1: three to a line, each a named party with its own bank (B2, B3).
+    for (const f of SEED_FIRMS) ctx.parties.add(named(partyId(f.firm), FIRM, f.name, f.bank));
 
     // Money instruments: one per issuer (Money A1, D2).
     for (const issuer of [CB, BANK_A, BANK_B]) {
@@ -336,9 +349,7 @@ export const foundationSeed: SystemModule = {
     ctx.endowMoney(TREASURY_NORTH, PHX, 900);
     ctx.endowMoney(BANK_A, PHX, 400);
     ctx.endowMoney(BANK_B, PHX, 300);
-    ctx.endowMoney(partyId('firm.1'), PHX, 200);
-    ctx.endowMoney(partyId('firm.2'), PHX, 150);
-    ctx.endowMoney(partyId('firm.3'), PHX, 250);
+    for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, f.cash);
     for (const line of SEED_LINES) {
       const id = instrumentId(line.id);
       const price = openingOf(opening, line.id);
@@ -353,25 +364,25 @@ export const foundationSeed: SystemModule = {
     // the line already, so the first period is not the only one that produces nothing. What a
     // market has never traded has no price at all, and somebody must state the one it opens at;
     // that number is a placeholder and the market's own first session replaces it.
-    for (const row of SEED_STOCK) {
+    for (const row of SEED_MARKETS) {
+      if (!ctx.instruments.has(goodId(row.subUnit, REGION))) continue;
+      openedGoods.add(row.subUnit);
+      ctx.prices.write({
+        instrument: goodId(row.subUnit, REGION),
+        market: goodMarketId(row.subUnit, REGION),
+        period: ctx.period,
+        price: ctx.params.get(openingPrice(row.subUnit)),
+        ccy: PHX,
+        provenance: { kind: 'opening' },
+      });
+    }
+    for (const row of SEED_FIRMS) {
       // A firm whose good this world does not make opens with nothing, because there is nothing
       // for it to hold: the seed endows what exists and never brings an instrument into being to
       // have something to endow (Seed A1).
       if (!ctx.instruments.has(goodId(row.subUnit, REGION))) continue;
       const firm = partyId(row.firm);
       const price = ctx.params.get(openingPrice(row.subUnit));
-      const market = goodMarketId(row.subUnit, REGION);
-      if (!openedGoods.has(row.subUnit)) {
-        openedGoods.add(row.subUnit);
-        ctx.prices.write({
-          instrument: goodId(row.subUnit, REGION),
-          market,
-          period: ctx.period,
-          price,
-          ccy: PHX,
-          provenance: { kind: 'opening' },
-        });
-      }
       // Seed C4: what it cost whoever holds it is the seed's, and it is below what the market
       // opens at — a firm holding stock it could only sell at a loss would never have made it.
       const basis = price * SEED_STOCK_BASIS;
@@ -379,11 +390,13 @@ export const foundationSeed: SystemModule = {
       if (row.onTheLine > 0) {
         ctx.endowUnits(firm, wipId(row.subUnit, REGION), row.onTheLine, basis);
       }
-    }
-    for (const row of SEED_INPUTS) {
-      if (!ctx.instruments.has(goodId(row.subUnit, REGION))) continue;
-      const price = ctx.params.get(openingPrice(row.subUnit));
-      ctx.endowUnits(partyId(row.firm), goodId(row.subUnit, REGION), row.qty, price * SEED_STOCK_BASIS);
+      // Seed D1: what its recipe draws, so its first batch is not waiting on a market session.
+      // Law 19: WHAT it draws is read from the good's own terms, never listed a second time here.
+      for (const input of goodTerms(ctx.instruments.get(goodId(row.subUnit, REGION))).recipe.inputs) {
+        if (row.inputs <= 0 || !ctx.instruments.has(goodId(input.subUnit, REGION))) continue;
+        const paid = ctx.params.get(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
+        ctx.endowUnits(firm, goodId(input.subUnit, REGION), row.inputs, paid);
+      }
     }
 
     // Households: cells per (region, cohort, bank) key, weights summing to the key's population

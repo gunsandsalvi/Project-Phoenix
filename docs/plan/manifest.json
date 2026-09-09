@@ -1,5 +1,10 @@
 [
-  { "id": "0", "title": "Foundation", "file": "00-foundation.md", "steps": 8 },
+  {
+    "id": "0",
+    "title": "Foundation",
+    "file": "00-foundation.md",
+    "steps": 8
+  },
   {
     "id": "1",
     "title": "Money and settlement, one calendar",
@@ -12,7 +17,12 @@
     "file": "02-register-clearing.md",
     "steps": 12
   },
-  { "id": "2a", "title": "Kernel/module boundary", "file": "02a-kernel-modules.md", "steps": 9 },
+  {
+    "id": "2a",
+    "title": "Kernel/module boundary",
+    "file": "02a-kernel-modules.md",
+    "steps": 9
+  },
   {
     "id": "3",
     "title": "The sovereign's funding constraint",
@@ -25,17 +35,48 @@
     "file": "04-real-economy.md",
     "steps": 34
   },
-  { "id": "5", "title": "A loss is an event", "file": "05-loss-events.md", "steps": 14 },
-  { "id": "6", "title": "Loans are rows", "file": "06-loans.md", "steps": 16 },
+  {
+    "id": "4a",
+    "title": "A line is more than one firm, and firms differ in cost",
+    "file": "04a-firm-dispersion.md",
+    "steps": 9
+  },
+  {
+    "id": "5",
+    "title": "A loss is an event",
+    "file": "05-loss-events.md",
+    "steps": 14
+  },
+  {
+    "id": "6",
+    "title": "Loans are rows",
+    "file": "06-loans.md",
+    "steps": 16
+  },
   {
     "id": "7",
     "title": "Forced seller, nothing immortal, the estate",
     "file": "07-failure-estate.md",
     "steps": 22
   },
-  { "id": "8", "title": "Redeemable claims", "file": "08-funds.md", "steps": 14 },
-  { "id": "9", "title": "Equity and dealers", "file": "09-equity-dealers.md", "steps": 20 },
-  { "id": "10", "title": "The cost of capital", "file": "10-cost-of-capital.md", "steps": 16 },
+  {
+    "id": "8",
+    "title": "Redeemable claims",
+    "file": "08-funds.md",
+    "steps": 14
+  },
+  {
+    "id": "9",
+    "title": "Equity and dealers",
+    "file": "09-equity-dealers.md",
+    "steps": 20
+  },
+  {
+    "id": "10",
+    "title": "The cost of capital",
+    "file": "10-cost-of-capital.md",
+    "steps": 16
+  },
   {
     "id": "11",
     "title": "Money market, corridor, bank capital",
@@ -48,7 +89,12 @@
     "file": "12-currency-benchmarks-ratings.md",
     "steps": 26
   },
-  { "id": "13a", "title": "The derivative layer", "file": "13a-derivative-layer.md", "steps": 16 },
+  {
+    "id": "13a",
+    "title": "The derivative layer",
+    "file": "13a-derivative-layer.md",
+    "steps": 16
+  },
   {
     "id": "13b",
     "title": "The derivative classes",
@@ -91,9 +137,34 @@
     "file": "13h-insurers-hedge-pe.md",
     "steps": 16
   },
-  { "id": "13i", "title": "Cross-border", "file": "13i-cross-border.md", "steps": 10 },
-  { "id": "14", "title": "The polity", "file": "14-polity.md", "steps": 12 },
-  { "id": "15", "title": "The recipe", "file": "15-recipe.md", "steps": 6 },
-  { "id": "16", "title": "Measure", "file": "16-measure.md", "steps": 12 },
-  { "id": "17", "title": "The app and the APK", "file": "17-app-apk.md", "steps": 12 }
+  {
+    "id": "13i",
+    "title": "Cross-border",
+    "file": "13i-cross-border.md",
+    "steps": 10
+  },
+  {
+    "id": "14",
+    "title": "The polity",
+    "file": "14-polity.md",
+    "steps": 12
+  },
+  {
+    "id": "15",
+    "title": "The recipe",
+    "file": "15-recipe.md",
+    "steps": 6
+  },
+  {
+    "id": "16",
+    "title": "Measure",
+    "file": "16-measure.md",
+    "steps": 12
+  },
+  {
+    "id": "17",
+    "title": "The app and the APK",
+    "file": "17-app-apk.md",
+    "steps": 12
+  }
 ]

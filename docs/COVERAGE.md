@@ -147,10 +147,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Seed A3` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed A4` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/world/context.ts |
 | `Seed A5` | MET | packages/engine/src/rng/prng.ts, packages/engine/src/seeds/foundation.ts, packages/engine/src/world/assemble.ts, packages/engine/src/world/world.ts |
-| `Seed B1` | PARTIAL | the foundation seed has one instance of several kinds; populations are cells with weights |
+| `Seed B1` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/mechanisms/firms/data.ts (three firms in each of the three lines, two banks, and populations as cells whose weights sum to what they stand for). The central bank and the treasury are one each because that is what they are, not a sample of one |
 | `Seed B2` | MET | packages/engine/src/parties/party.ts, packages/engine/src/seeds/foundation.ts |
 | `Seed B3` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/registry.ts, packages/engine/src/seeds/foundation.ts |
-| `Seed B4` | PARTIAL | firms differ by line, stock and work in progress (packages/engine/src/seeds/foundation.ts); the household cells open IDENTICAL and the dispersion that gives their market two sides is produced rather than stated — by the memory each draws at entry and by who was hired, at what wage (packages/engine/test/world.test.ts). That meets B4's reason and not its letter, and stating a size distribution instead would be seeding an outcome (E1) |
+| `Seed B4` | MET | packages/engine/src/seeds/foundation.ts (no two firms in a line open with the same stock or the same cash), packages/engine/src/mechanisms/firms/data.ts (and none of them takes the same hours to a tonne, so no two bid the same wage). The household cells open IDENTICAL on purpose and their dispersion is produced rather than stated — the memory each draws at entry, and who was hired at what wage (packages/engine/test/world.test.ts): stating a size distribution for them would be seeding an outcome (E1) |
 | `Seed B5` | MISSING |  |
 | `Seed C1` | MET | packages/engine/src/world/assemble.ts |
 | `Seed C2` | MET | packages/engine/src/seeds/foundation.ts |
@@ -1106,7 +1106,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Firm A1` | MET | packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/seeds/foundation.ts (a named party with an account and a register of what it holds) |
 | `Firm A2` | MET | packages/engine/src/mechanisms/firms/data.ts (the region fixes its money and the line fixes what it buys, sells and employs) |
-| `Firm A3` | PARTIAL | firms differ in line, stock, work in progress and the people they employ (packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/seeds/foundation.ts); leverage arrives with loans (worklist 6) |
+| `Firm A3` | PARTIAL | size and COST both: firms differ in stock, work in progress and cash, and each has its own labour productivity, so what it will pay for an hour differs from its neighbour's and one of them is the marginal employer (packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/mechanisms/firms/decide.ts). That dispersion is what makes the venue a market rather than one bid. Leverage arrives with loans (worklist 6) |
 | `Firm A4` | PARTIAL | the residual is the firm own equity account (packages/engine/src/audit/families/accounts.ts); owners of record are a share register (worklist 9) |
 | `Firm B1` | MET | packages/engine/src/mechanisms/firms/decide.ts (what it sells is what its own offers cleared at, against named buyers; never a rate applied to last period) |
 | `Firm B2` | MET | packages/engine/src/mechanisms/firms/produce.ts (what it bought, drawn at what it cost it: packages/engine/src/mechanisms/goods/inventory.ts) |
@@ -1336,7 +1336,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Labour C3` | MET | packages/engine/src/mechanisms/labour/matching.ts (severance paid to the people separated, out of the employer account) |
 | `Labour C4` | MISSING | a firm that fails releases its workers; firm death is worklist 7 |
 | `Labour C5` | MET | packages/engine/src/mechanisms/labour/matching.ts (a vacancy is a posting the employer owns, for the period it posts it) |
-| `Labour D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (every posting is a bid, the highest fill first, and the level is where the book cleared: in a slack market it falls to the seekers own option and no further, in a tight one the bids set it) |
+| `Labour D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (every posting is a bid, the highest fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT — read off the book rather than taken from the crossing, which in a slack market sits on a seeker's reservation and is a level no employer offered), packages/engine/src/mechanisms/labour/index.ts (the prices family checks every print against the bids that session) |
 | `Labour D2` | MET | packages/engine/src/mechanisms/labour/register.ts (the wage is the contract and does not move with the print), packages/engine/src/mechanisms/firms/decide.ts (a firm that wants fewer hours than it has sheds them and pays severance) |
 | `Labour D2.b` | MET | packages/engine/src/mechanisms/labour/matching.ts, packages/engine/src/mechanisms/firms/decide.ts (stickiness is the contract and the severance a change costs; nothing damps a series) |
 | `Labour D3` | MET | packages/engine/src/mechanisms/labour/matching.ts (whole people are matched from a queue of seekers; hours that do not make a person are no hire) |
@@ -1390,7 +1390,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Households A2.d` | MET | packages/engine/src/mechanisms/households/index.ts (every decision is one cell own, and there is no sector anywhere for one to be taken at) |
 | `Households A2.e` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/profiles.ts |
 | `Households A2.f` | MET | packages/engine/src/parties/party.ts |
-| `Households A2.g` | MET | packages/engine/test/households.test.ts (a mean-preserving spread over cells moves more of them below the cushion they want while what they were paid in total does not move) |
+| `Households A2.g` | PARTIAL | packages/engine/test/households.test.ts shows the half that can be shown: a mean-preserving spread widens what the cells decide while the mean of what they were paid does not move, and the sector's total is unchanged because spending is still linear in what a cell holds. The COUNT OF CROSSINGS cannot be measured yet — not because the sector is an average but because it is wholly on one side of every threshold it has, and a threshold only counts crossings when the sector straddles it. The first one that will is a default (worklist 5) |
 | `Households A3` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/parties/party.ts (a cell is a named party with an account and a register) |
 | `Households B1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage leaves a named employer account and reaches the cell) |
 | `Households B2` | MET | packages/engine/src/mechanisms/treasury/index.ts (the standing mandate reaches each cell by name) |

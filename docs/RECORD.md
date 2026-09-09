@@ -369,3 +369,103 @@ rather than stated, which meets the reason and not the letter).
 dominates should be a result (Labour E2.a). Nothing here measures it. The measurement is Part XII's:
 raise the wage in one venue and follow both channels. If output moves only one way, one of the two
 channels is not connected — most likely consumption reading something other than what was paid.
+
+## 4a — A line is more than one firm, and firms differ in cost
+
+**Where this landed and why (Law 10).** Inserted between 4 and 5, after item 4 closed. Item 4 ended
+green with every audit family at zero, and the first long run after it showed the real economy
+running down: households bought the finished good for twenty periods, less every period, and then
+nothing for the rest of the year. Item 5 is "a loss is an event", and every loss its scenario
+measured would have been measuring the starvation instead — so the fix goes in front of it.
+
+**What.** Three things that are one thing, because fixing any of them alone makes the world worse.
+
+**The wage prints where D1 says.** Item 4.5 set the labour venue's tie rule to `sellersCompete`,
+reasoning that a slack market should fall to what the seekers will work for. D1 says the opposite in
+as many words: *the bid that took the last match is the occupation's print*. It is now read off the
+book — the lowest bid actually allotted — rather than taken from the solver's crossing, because the
+crossing is a fact about both sides and in a slack market it sits on a **seller's** reservation,
+which is a level no employer offered.
+
+**A line is three firms.** There was one, and one is not a sector (Seed B1). Nine named firms, three
+to each line, each with its own bank, cash and opening stock, all from one roster the seed builds
+from. The line totals are exactly what they were: this changes the structure of the sector, not the
+scale of the world.
+
+**And no two of them alike.** Copies would not have helped — they share the good's recipe, so they
+bid the same number and the marginal bid is the common bid. Each firm now has its own labour
+productivity: the hours the recipe names, scaled by a number that is that firm's technology, read in
+one place. It is the only number the firms module declares, and it is deliberately only labour
+(Law 2): what makes one firm's wage bid differ from its neighbour's is what the venue needs two of.
+
+**Why.** Firm A3 says firms are heterogeneous in size, cost and leverage **and that the dispersion
+is the reason markets exist among them**. That is not decoration. A venue with one employer has one
+bid, so whichever end of the book the rule takes the level from, one side gets the whole surplus: at
+one end the employer pays what the last seeker will accept and the wage never rises towards what the
+work is worth; at the other it pays what an hour is worth to it and earns exactly nothing. Measured,
+both happened — 3.2e-2 bid against a 4.6e-4 print under the first rule, and unit cost 0.900 against
+an expected price of 0.900 with no batch started in a year under the second.
+
+**Found.**
+
+- **`marginalBid` was not enough, and the new audit family said so on its first run.** The `prices`
+  family gained one contribution — *the wage a venue printed is a level an employer actually bid* —
+  and it immediately reported the bakery venue printing 3.4e-4 an hour that nobody had bid. The tie
+  rule only breaks ties; the level itself still came from the volume-maximising crossing. D1 does not
+  describe a crossing, it describes an allotment, and the print is now the lowest allotted bid. This
+  is what a FORBID is for: it broke silently, because a wage looks like a number rather than a trade.
+- **A bank now runs out of reserves, eleven periods in fifty-two, every fourth one.** It is the
+  auction: a dealer bids out of the cash it has (C3.a) and its own customers move those reserves
+  before the allotment settles, and there is no money market to lend it the difference overnight.
+  B3.b says a bank overdrawn at the central bank is borrowing from the central bank and the corridor
+  prices it — worklist 11, which is also where `bank.liquidityBuffer.perDeposit` stops being a
+  placeholder. It appeared the moment wages became real, and the answer to it is the missing
+  mechanism, not a smaller wage. It is named in `packages/engine/test/expected.ts`, counted by the
+  year-long test, and every other violation any family reports still fails that test.
+- **A year-long assertion was passing on nothing.** "Households bought something" counted any asset
+  leg reaching a cell, sovereign paper included, so it stayed green while food purchases were zero
+  for thirty periods. It counts a physical good now. Written in item 4, found here, which is what a
+  long run is for.
+- **Households A2.g cannot be measured yet, and is now PARTIAL rather than MET.** Not because the
+  sector is an average — the spread is plainly visible cell by cell, and the test asserts it — but
+  because the sector sits wholly on one side of every threshold it has: with a real wage every cell
+  is below the cushion it wants, and none is up against what it holds. A threshold counts crossings
+  only when the sector straddles it. The first one that will is a default (worklist 5).
+
+**Measured, as it came out.** The three structural defects are fixed and the chain still runs down,
+so the item states it rather than steering it (Law 11). Over fifty-two periods: all three bakeries
+now plan, produce and hire, where one bakery produced nothing; the wage prints 53 times against 2;
+household cash goes from 545 to 4,863. And the mills never start a batch, the farms never plan at
+all, flour reaches zero, and households stop buying food around period thirty instead of period
+twenty-one. Three things stand behind that, none of them what this item was about:
+
+1. **A stage that needs less than a person.** Milling is three hours a tonne, and at this world's
+   throughput the whole milling step wants about a quarter of one person's week. A hire moves whole
+   people (Labour A4.b), so a mill that wants nine hours can never hire anybody, can never produce,
+   and can never grow enough to want a whole one.
+2. **A firm that has never sold can never sell.** A firm plans only once it has an outlook of its own
+   fills, and an offer that filled NOTHING is recorded as no observation rather than as an
+   observation of zero — so the farms, whose only buyer is a mill that never buys, stay silent for
+   ever instead of correctly deciding to produce nothing.
+3. **A price that cannot express excess demand.** The bread market printed 0.9 in every one of the
+   fifty-two periods. The seller offers most of its stock at what it expects less what will perish,
+   and the buyer posts a curve over the range its own surprises make plausible — so both sides are
+   anchored to the last print, and a market where demand is many times supply clears at the same
+   level for a year. A seller's expectation of demand is its own fills, its fills are capped by its
+   own output, and nothing tells it there was more.
+
+The third is the one that makes the other two matter, and all three want one item together.
+
+**Deleted.** Nothing. `sellersCompete` remains a rule the solver offers — it is right for a book of
+sellers undercutting each other, which is what a goods market is; it was wrong for a venue where
+every posting is a bid.
+
+**Not met, and named.** Firm A3 stays PARTIAL for leverage (worklist 6). Households A2.g is PARTIAL
+as above (worklist 5). Money B3.c stays PARTIAL, and is now visibly so eleven periods a year
+(worklist 11).
+
+**Forecast, with its killer.** A firm that does more with an hour should be inframarginal, so it
+should still be hiring when the one that takes the longest has stopped. Nothing here measures it over
+a cycle — the test only checks that they rank by productivity today. The measurement is Part XII's:
+raise the wage and watch which firms shed first. If they shed in any order but that one, the
+dispersion is not reaching the hiring decision and one of the two numbers is not being read.

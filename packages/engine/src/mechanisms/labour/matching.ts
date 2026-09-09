@@ -115,15 +115,30 @@ export function runVenue(
     else shed(ctx, book, posting.party, occupation, region as RegionId, -gap, p);
   }
   const offers = supply(ctx, book, v, p);
-  // D1: the highest bids are filled first, which is what the solver's own price priority does on
-  // either side. Where the level lands when volume and imbalance say nothing is the venue's stated
-  // rule, and for a labour market B1.a states it: in a slack market the print falls to what the
-  // seekers will work for and no further, and in a tight one the bids set it — which is exactly a
-  // book where the sellers compete. The marginal-bid rule belongs to a sealed-bid auction, where
-  // an issuer selling below a level somebody posted would be handing away what nobody asked it to.
-  const outcome = clear([...bids, ...offers], 'proRata', 'sellersCompete');
+  // D1: the highest bids fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT. That is the
+  // clause, and it is `marginalBid`: the lowest employer still allotted sets the wage, so one that
+  // bid above it fills and keeps the difference (D1.a) and the marginal one earns nothing on the
+  // margin, which is what being marginal means.
+  //
+  // It was `sellersCompete` for one item, on the reasoning that a slack market should fall to what
+  // the seekers will work for. That reads well, is not what D1 says, and does not survive contact:
+  // a seeker's reservation is what it lives on NOW, so an unemployed cell with a small transfer
+  // works for almost nothing, the venue prints there, and the wage never rises towards what the
+  // work is worth however hard employers bid. Either rule hands the whole surplus to one side when
+  // the book has one bidder on the other; what makes this one a market is that the line has three
+  // firms in it and they do not bid the same number (Firm A3, Seed B4).
+  const outcome = clear([...bids, ...offers], 'proRata', 'marginalBid');
   if (!isCleared(outcome)) return;
-  match(ctx, book, outcome, offers, occupation, region as RegionId, p);
+  // D1, and this is the whole of it: THE BID THAT TOOK THE LAST MATCH IS THE PRINT. The solver
+  // finds how much trades — the crossing, which is a fact about both sides — but the level it
+  // reports is the crossing's, and in a slack market the crossing sits on a SELLER's reservation.
+  // A wage struck there is a level no employer offered, which is a level the venue made up. So the
+  // wage is read off the book: the lowest bid that was actually allotted. Everyone who bid above it
+  // fills and keeps the difference (D1.a); the one that bid it is the marginal employer and keeps
+  // nothing. The `prices` family checks the print against the bids for exactly this reason.
+  const struck = marginalBid(outcome);
+  if (struck === undefined) return;
+  match(ctx, book, outcome, offers, struck, occupation, region as RegionId, p);
   // D1: the occupation's print. It is a wage, not an instrument's price, so it is an event and not
   // a mark: nothing is valued at it (Law 8: the unit is money per hour).
   ctx.record(
@@ -133,9 +148,13 @@ export function runVenue(
       venue: v.id,
       occupation,
       region,
-      wagePerHour: outcome.price,
+      wagePerHour: struck,
       hours: outcome.volume,
       rationed: outcome.rationed,
+      // D1: the levels employers actually posted this session, so the print can be checked against
+      // them rather than taken on trust (Part XII: no posted benchmark, in the one market whose
+      // price is not an instrument's). It is public because every bid in this venue is (C5).
+      bids: bids.map((b) => b.price),
     },
     true,
   );
@@ -149,17 +168,32 @@ export function runVenue(
  * somebody left, in a stable order. That is what makes matching imperfect (D3) rather than a
  * fraction of every seeker being employed a fraction of the time, which is nobody being employed.
  */
+/**
+ * D1: the lowest level among the bids that were allotted — the bid that took the last match. None
+ * means nothing on the buy side filled, and then there is no wage to print and nobody is hired.
+ */
+function marginalBid(outcome: Cleared): number | undefined {
+  let lowest: number | undefined;
+  for (const f of outcome.fills) {
+    if (f.side !== 'buy' || f.qty <= 0) continue;
+    if (lowest === undefined || f.at < lowest) lowest = f.at;
+  }
+  return lowest;
+}
+
 function match(
   ctx: MechanismContext,
   book: EmploymentBook,
   outcome: Cleared,
   offers: readonly Order[],
+  /** D1: the lowest allotted bid, which is what every match is struck at. */
+  struck: number,
   occupation: string,
   region: RegionId,
   p: LabourParams,
 ): void {
   const queue = offers
-    .filter((o) => o.price !== 'market' && o.price <= outcome.price)
+    .filter((o) => o.price !== 'market' && o.price <= struck)
     .sort((a, b) => (a.price === b.price ? (a.party < b.party ? -1 : 1) : Number(a.price) - Number(b.price)))
     .map((o) => o.party);
   const bidsFilled = outcome.fills
@@ -177,7 +211,7 @@ function match(
         continue;
       }
       const taken = people < available ? people : available;
-      hire(ctx, book, f.party, cell, taken, outcome.price, occupation, region, p);
+      hire(ctx, book, f.party, cell, taken, struck, occupation, region, p);
       people = sub(people, taken, 'people left to hire');
       if (taken === available) next += 1;
     }

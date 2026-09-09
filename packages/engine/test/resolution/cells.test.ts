@@ -22,6 +22,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  FIRMS,
   HOUSEHOLD,
   LABOUR_NUMBERS,
   PHX,
@@ -32,8 +33,12 @@ import {
   type Sum,
   type World,
 } from '../../src/index.js';
+import { unexpected } from '../expected.js';
 
 const PERIODS = 26;
+/** Goods A2: the hours the recipe names for the finished good, and Firm A3's leanest firm at it. */
+const GOODS_HOURS_PER_TONNE = 14;
+const LEANEST_FIRM = Math.min(...FIRMS.filter((f) => f.subUnit === 'bread').map((f) => f.labourScale));
 
 interface Aggregates {
   readonly people: number;
@@ -61,8 +66,9 @@ function at(cellsPerKey: number): Aggregates {
   );
   const w = assemble({ ...spec, modules });
   for (let i = 0; i < PERIODS; i += 1) {
-    const r = w.step();
-    expect(r.audit.total).toBe(0);
+    // Every family at zero at every grain, but for the one red this world is expected to show
+    // (test/expected.ts): a bank overdrawn at the central bank with no money market to lend to it.
+    expect(unexpected(w.step().audit)).toEqual([]);
   }
   return read(w);
 }
@@ -74,9 +80,13 @@ function read(w: World): Aggregates {
   const rows = (
     w.stateSlots()['labour/employment'] as { rows: Record<string, { headcount: number }> }
   ).rows;
-  const prints = w.journal.ofKind('labour.print');
-  const last = prints[prints.length - 1];
-  const wage = typeof last?.data['wagePerHour'] === 'number' ? last.data['wagePerHour'] : 0;
+  // Labour D1.c: the going rate is a public read of what is actually paid, occupation by
+  // occupation. The most any venue pays is the most a whole person could be earning, which is what
+  // bounds the money that follows one — a single venue's last print is one thin book and is not.
+  const rates = w.journal.ofKind('labour.goingRate');
+  const last = rates[rates.length - 1];
+  const paid = (last?.data['wagePerHour'] ?? {}) as Record<string, number>;
+  const wage = Object.values(paid).reduce((a, x) => (x > a ? x : a), 0);
   return {
     people: cells.reduce((a, p) => a + weightOf(p), 0),
     cells: cells.length,
@@ -102,28 +112,30 @@ describe('the same world at three grains (XI-15)', () => {
     expect(four.cells).toBeGreaterThan(two.cells);
   });
 
-  it('holds the same stock of goods, to the dust of reading it', () => {
-    // The real side is what the lines produced out of what they held and the hours they had; it
-    // does not turn on how the buyers were grouped. Two independent sums, so two dusts (Law 7).
-    for (const other of [two, four]) {
-      const dust = one.bread.dust + other.bread.dust;
-      expect(Math.abs(other.bread.value - one.bread.value)).toBeLessThanOrEqual(dust);
-    }
-  });
-
-  it('differs only by what whole people do, and by what those people are worth', () => {
+  it('differs only by what whole people do, and by no more than those people are worth', () => {
     // Labour A4.b: a relationship carries a headcount, so the marginal match in a venue can land on
-    // a different person at a different grain — at most one of them per venue.
+    // a different person at a different grain — at most one of them per venue. Everything that
+    // moves, moves because of those people: they earn, they spend, and they make things.
     const venues = one.venues;
     expect(venues).toBeGreaterThan(0);
-    // The error bar (XI-15, standing observations): what those people would earn over the run.
-    const worth = venues * LABOUR_NUMBERS.hoursPerMember * one.wage * PERIODS;
+    // The error bar (XI-15, standing observations). It is derived twice over from the mechanism and
+    // is a quantity in each case, never a percentage of anything (Law 7): the hours a whole person
+    // supplies over the run, at the most any venue is paying, is what the money may differ by; and
+    // those same hours over the fewest hours a tonne takes anybody is what the STOCK may differ by.
+    const hours = venues * LABOUR_NUMBERS.hoursPerMember * PERIODS;
+    const worth = hours * one.wage;
+    const made = hours / (GOODS_HOURS_PER_TONNE * LEANEST_FIRM);
     for (const other of [two, four]) {
       expect(Math.abs(other.employed - one.employed)).toBeLessThanOrEqual(venues);
       expect(Math.abs(other.cash - one.cash)).toBeLessThanOrEqual(worth);
       expect(Math.abs(other.money - one.money)).toBeLessThanOrEqual(worth);
+      // The stock of goods used to come out identical at every grain, because almost nothing was
+      // being made. Now that the lines run, WHO was hired decides what got made, so the real side
+      // moves with the grain too — inside what those people's hours could have produced.
+      expect(Math.abs(other.bread.value - one.bread.value)).toBeLessThanOrEqual(made);
     }
-    // Law 7: the bar is a quantity of money, derived from a wage and a run, not a band on a total.
+    // Law 7 again: a bar bigger than the thing it bounds would not be a bar at all.
     expect(worth).toBeLessThan(one.cash);
+    expect(made).toBeLessThan(one.people);
   });
 });

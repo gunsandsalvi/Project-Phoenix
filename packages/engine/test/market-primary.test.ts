@@ -121,10 +121,12 @@ function world(...extra: SystemModule[]): World {
 describe('the primary market (Sovereign C)', () => {
   it('clears at the stop-out, every winner pays it, and the issuance reaches the issuer', () => {
     const w = world(
-      auctioneer(300, 0.9, [
-        { party: 'firm.1', price: 0.99, qty: 200 },
-        { party: 'firm.2', price: 0.97, qty: 200 },
-        { party: 'firm.3', price: 0.93, qty: 200 },
+      // Sized to what these three bidders actually hold: a dealer bids out of the cash it has
+      // (C3.a), and a test whose bids exceed it would be testing that rule and not this one.
+      auctioneer(60, 0.9, [
+        { party: 'firm.1', price: 0.99, qty: 40 },
+        { party: 'firm.2', price: 0.97, qty: 40 },
+        { party: 'firm.3', price: 0.93, qty: 40 },
       ]),
     );
     const before = w.instruments.get(GOV_LINE).issued;
@@ -135,15 +137,15 @@ describe('the primary market (Sovereign C)', () => {
     expect(m.outcome).toBe('cleared');
     // C2: one level, the lowest accepted bid; the top bidder does not pay its own bid.
     expect(priceOf(m)).toBe(0.97);
-    expect(auctionOf(m).allotted).toBe(300);
+    expect(auctionOf(m).allotted).toBe(60);
     // C4: cover is what was bid over what was offered.
     expect(auctionOf(m).cover).toBeCloseTo(2, 12);
     // C4: the tail is the average winning bid against the stop-out, and it is positive here.
-    expect(auctionOf(m).tail).toBeCloseTo((200 * 0.99 + 100 * 0.97) / 300 - 0.97, 12);
-    expect(w.instruments.get(GOV_LINE).issued).toBeCloseTo(before + 300, 9);
+    expect(auctionOf(m).tail).toBeCloseTo((40 * 0.99 + 20 * 0.97) / 60 - 0.97, 12);
+    expect(w.instruments.get(GOV_LINE).issued).toBeCloseTo(before + 60, 9);
     // C6: the proceeds reach the treasury's account — the clean price and the interest that had
     // accrued on the paper it just sold (N9.b).
-    expect(w.cash(TREASURY_NORTH, PHX)).toBeCloseTo(cashBefore + 300 * (0.97 + accrued), 9);
+    expect(w.cash(TREASURY_NORTH, PHX)).toBeCloseTo(cashBefore + 60 * (0.97 + accrued), 9);
     const ev = w.journal.ofKind('auction.result');
     expect(ev).toHaveLength(1);
     expect(ev[0]?.public).toBe(true);
@@ -163,11 +165,11 @@ describe('the primary market (Sovereign C)', () => {
   });
 
   it('cuts the size when the book is thin: weak demand is a lower price or less paper (C5)', () => {
-    const w = world(auctioneer(300, 0.9, [{ party: 'firm.1', price: 0.92, qty: 100 }]));
+    const w = world(auctioneer(60, 0.9, [{ party: 'firm.1', price: 0.92, qty: 20 }]));
     const r = w.step();
     const m = result(r.markets, GOV_MARKET);
     expect(priceOf(m)).toBe(0.92);
-    expect(auctionOf(m).allotted).toBe(100);
+    expect(auctionOf(m).allotted).toBe(20);
     expect(auctionOf(m).cover).toBeCloseTo(1 / 3, 12);
   });
 });

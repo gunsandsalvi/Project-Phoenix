@@ -28,7 +28,7 @@ import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { FIRMS, type FirmDecl } from './data.js';
+import { FIRMS, labourScaleId, type FirmDecl } from './data.js';
 import { ordersFrom, plan, venueOf, type PlannedOrder } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
 
@@ -126,10 +126,19 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
     partyKinds: [],
     curveFamilies: [],
     units: [],
-    // Law 2: it declares no number at all. What it makes a thing out of, how long it takes and what
-    // survives the line are the good's technology; what an hour costs is what the market charged
-    // it; and there is no target margin, no buffer and no adjustment speed anywhere in it.
-    params: [],
+    // Law 2: one number per firm and nothing else. What a thing is made out of, how long it takes
+    // and what survives the line are the GOOD's technology, shared by everyone in the line; what an
+    // hour costs is what the market charged it; and there is no target margin, no buffer and no
+    // adjustment speed anywhere in it. What is declared here is Firm A3's dispersion: how many hours
+    // a tonne takes THIS firm, against the hours the trade takes.
+    params: rows.map((r) => ({
+      id: labourScaleId(r.firm),
+      value: r.labourScale,
+      unit: 'ratio of the hours the recipe names',
+      kind: 'technology' as const,
+      owner: 'model' as const,
+      why: `Firm A3: ${r.why}`,
+    })),
     phases: [
       {
         name: 'firms.decide',

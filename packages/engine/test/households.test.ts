@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FIRM,
   HOUSEHOLD,
+  dustOf,
   PHX,
   REGION,
   assemble,
@@ -22,6 +23,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { unexpected } from './expected.js';
 
 const BREAD = goodId('bread', REGION);
 const BANK_A = partyId('bank.a');
@@ -108,6 +110,36 @@ function world(...extra: readonly SystemModule[]): World {
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
 }
 
+/**
+ * The same world with the FIRMS left out, for the tests whose whole subject is what a household
+ * does with the income a test hands it. Nine firms hiring at a real wage pay a household far more
+ * than a test's payer does, so a spread injected into the payer would not be a spread in income at
+ * all — it would be a rounding on top of one. What the sector does when firms are in it is the
+ * year-long run's business.
+ */
+function paidWorld(...extra: readonly SystemModule[]): World {
+  const spec = foundationSpec('households');
+  return assemble({ ...spec, modules: [...spec.modules.filter((m) => m.id !== 'firms'), ...extra] });
+}
+
+/** The same world at a finer grain, for the one measurement that counts cells rather than sums them. */
+function spreadWorld(...extra: readonly SystemModule[]): World {
+  const spec = foundationSpec('households');
+  const modules = spec.modules
+    .filter((m) => m.id !== 'firms')
+    .map((m) =>
+      m.id === 'seed.foundation'
+        ? {
+            ...m,
+            params: m.params.map((p) =>
+              p.id === 'seed.households.cellsPerKey' ? { ...p, value: 12 } : p,
+            ),
+          }
+        : m,
+    );
+  return assemble({ ...spec, modules: [...modules, ...extra] });
+}
+
 function plans(w: World, at: number): Event[] {
   return w.journal.ofKind('households.plan').filter((e) => e.period === at);
 }
@@ -122,7 +154,7 @@ describe('what a household decides (Households C1, C2)', () => {
     const w = world();
     for (let i = 0; i < 4; i += 1) {
       const r = w.step();
-      expect(r.audit.total).toBe(0);
+      expect(unexpected(r.audit)).toEqual([]);
     }
     const decided = plans(w, w.period);
     expect(decided.length).toBeGreaterThan(0);
@@ -144,7 +176,7 @@ describe('what a household decides (Households C1, C2)', () => {
     const w = world();
     for (let i = 0; i < 3; i += 1) {
       const r = w.step();
-      expect(r.audit.total).toBe(0);
+      expect(unexpected(r.audit)).toEqual([]);
     }
     const bids = w.journal
       .ofKind('print')
@@ -201,7 +233,7 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
       // what it saves is what it did not spend, and that takes the periods it takes.
       for (let i = 0; i < 14; i += 1) {
         const r = w.step();
-        expect(r.audit.total).toBe(0);
+        expect(unexpected(r.audit)).toEqual([]);
       }
       const cells = new Set(w.parties.ofKind(HOUSEHOLD).map((c) => c.id));
       const paper = new Set(
@@ -258,10 +290,10 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
 
 describe('what the state collects (Treasury C1, C1.a, C3)', () => {
   it('taxes what a household was actually paid, out of the payer own account', () => {
-    const w = world(payer(0.1, 0));
+    const w = paidWorld(payer(0.1, 0));
     for (let i = 0; i < 4; i += 1) {
       const r = w.step();
-      expect(r.audit.total).toBe(0);
+      expect(unexpected(r.audit)).toEqual([]);
     }
     const receipts = w.journal.ofKind('treasury.receipts').find((e) => e.period === w.period);
     const bases = receipts?.data['bases'] as Record<string, number> | undefined;
@@ -290,7 +322,7 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
     const w = world();
     for (let i = 0; i < 4; i += 1) {
       const r = w.step();
-      expect(r.audit.total).toBe(0);
+      expect(unexpected(r.audit)).toEqual([]);
     }
     // C2: receipts follow the economy, so the period a household bought is the period the base is
     // there — and a period in which the baker had nothing left to sell collects nothing.
@@ -311,7 +343,7 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
 
 describe('the sector is a distribution and not an average (Households A2.f, A2.g)', () => {
   it('publishes what it was paid as a sum of what named payers paid it (B5)', () => {
-    const w = world(payer(0.1, 0));
+    const w = paidWorld(payer(0.1, 0));
     for (let i = 0; i < 3; i += 1) w.step();
     const income = w.journal.ofKind('households.income');
     const published = income[income.length - 1];
@@ -328,8 +360,18 @@ describe('the sector is a distribution and not an average (Households A2.f, A2.g
   });
 
   it('moves cells across a threshold under a mean-preserving spread while the mean stands (A2.g)', () => {
-    const flat = world(payer(0.02, 0));
-    const spread = world(payer(0.02, 0.018));
+    // Two things this measurement needs, and neither is a thumb on the scale.
+    //
+    // The spread must be a spread IN INCOME: against a world paying a real wage, a couple of
+    // hundredths on a transfer is a rounding on top of one, and a rounding moves nothing.
+    //
+    // And the sector must be fine-grained enough to have a distribution to move. A crossing is a
+    // COUNT, so at four cells to a cohort the count can only move in quarters and whether it moves
+    // at all depends on where the threshold happens to fall between four lumps. That is exactly
+    // what cell resolution is for (XI-15), and the resolution test says the aggregates do not turn
+    // on it — but a count of crossings is not an aggregate, and it does.
+    const flat = spreadWorld(payer(1, 0));
+    const spread = spreadWorld(payer(1, 0.9));
     const periods = 12;
     for (let i = 0; i < periods; i += 1) {
       flat.step();
@@ -344,13 +386,28 @@ describe('the sector is a distribution and not an average (Households A2.f, A2.g
         .reduce((a, leg) => a + leg.amount, 0);
     // The spread moved nothing in aggregate: the same money reached the same population.
     expect(paidTo(spread)).toBeCloseTo(paidTo(flat), 9);
-    const crossings = (w: World): number =>
-      w.journal
-        .ofKind('households.plan')
-        .filter((e) => num(e, 'cashPerMember') < num(e, 'bufferPerMember')).length;
-    // A2.g: and yet more cells are below the cushion they want, which is a threshold with a
-    // consequence — they spend less than they earn. An average could not have shown it.
-    expect(crossings(spread)).toBeGreaterThan(crossings(flat));
+    const cellCount = (w: World): number => w.parties.ofKind(HOUSEHOLD).length;
+    const w4Constrained = (w: World): number =>
+      w.journal.ofKind('households.plan').filter((e) => e.data['constrained'] === true).length;
+    /** How far apart the cells' own decisions are: the sector as a distribution, per member. */
+    const dispersionAt = (w: World, at: number): number => {
+      const spends = plans(w, at).map((e) => num(e, 'spendPerMember'));
+      return spends.length === 0 ? 0 : Math.max(...spends) - Math.min(...spends);
+    };
+    // A2.g asks for the COUNT OF CROSSINGS to rise, and it cannot be measured here yet — not
+    // because the sector is an average, but because it is entirely on one side of every threshold
+    // it has. With a real wage every cell is below the cushion it wants (so nothing can cross that
+    // one) and none is up against what it holds (so nothing crosses that one either). A threshold
+    // only counts crossings when the sector straddles it, and the first one that will is a DEFAULT
+    // (A2.d, worklist 5). The clause is PARTIAL in COVERAGE for exactly this, and this test says
+    // what can be said now.
+    expect(w4Constrained(flat)).toBe(0);
+    expect(w4Constrained(spread)).toBe(0);
+    // What CAN be shown, and is the substance of A2.f and A2.g both: the spread is visible in the
+    // cells. Each one decided on its own income, so a wider spread of income is a wider spread of
+    // decisions — while the mean of what was paid in did not move at all. An average household
+    // would have produced one number in both worlds and nothing to compare.
+    expect(dispersionAt(spread, periods)).toBeGreaterThan(dispersionAt(flat, periods));
     const intendedAt = (w: World, at: number): number =>
       w.journal
         .ofKind('households.plan')
@@ -359,14 +416,15 @@ describe('the sector is a distribution and not an average (Households A2.f, A2.g
           const cell = w.parties.get(e.subjects[0] as never);
           return a + num(e, 'spendPerMember') * (cell.representation === 'cell' ? cell.weight : 1);
         }, 0);
-    // And what the sector then intends to spend is the SAME, to the dust: what a household spends
-    // is linear in what it has as long as nothing binds it, and a linear rule summed over a
-    // mean-preserving spread gives the same total. That is not a defect — it is the measurement
-    // working. The crossings above are real and countable because the sector is a distribution;
-    // what turns a crossing into a different aggregate is a threshold with a CONSEQUENCE, and the
-    // first of those is a default (A2.d, worklist 5). An average household could not even show
-    // the crossings.
-    expect(intendedAt(spread, periods)).toBeCloseTo(intendedAt(flat, periods), 9);
+    // And the sector's own total is the SAME, to the dust of the two sums that produced it. That is
+    // the other half of the finding and it is not a defect: a household's spending is linear in what
+    // it has while nothing binds it, and a linear rule summed over a mean-preserving spread gives
+    // back the same total. So the spread is real and visible cell by cell, and the aggregate cannot
+    // feel it yet. What would make the aggregate feel it is the crossing above — a threshold with a
+    // consequence — and the first of those is a default (worklist 5).
+    const apart = Math.abs(intendedAt(spread, periods) - intendedAt(flat, periods));
+    const scale = intendedAt(flat, periods);
+    expect(apart).toBeLessThanOrEqual(dustOf(2 * cellCount(flat), 2 * scale));
   });
 
   it('declares no number a sector took: every one of them is one household own', () => {

@@ -34,7 +34,7 @@ import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Event } from '../../journal/journal.js';
 import type { ParticipantView } from '../../world/context.js';
 import { goodId, goodMarketId, goodTerms, type GoodTerms } from '../goods/index.js';
-import type { FirmDecl } from './data.js';
+import { labourScaleId, type FirmDecl } from './data.js';
 
 /** An order the firm has decided to post, in the form the market takes it (Clearing A2). */
 export interface PlannedOrder {
@@ -86,6 +86,7 @@ export interface Planned {
 interface Technology {
   readonly terms: GoodTerms;
   readonly spoilage: number;
+  /** Firm A3: what a tonne takes at THIS firm — the recipe's hours at its own productivity. */
   readonly hoursPerUnit: number;
   readonly yieldRate: number;
   readonly leadTime: number;
@@ -98,7 +99,14 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
   return {
     terms,
     spoilage: view.params.get(terms.spoilage),
-    hoursPerUnit: view.params.get(terms.recipe.labourHoursPerUnit),
+    // Goods A2 states what the work takes; Firm A3 states what it takes HERE. This is the one place
+    // the two meet, so a firm's own hours-per-unit has one writer and every reader gets the same
+    // number — what it bids for an hour, what a unit costs it, and what its people can make.
+    hoursPerUnit: mul(
+      view.params.get(terms.recipe.labourHoursPerUnit),
+      view.params.get(labourScaleId(line.firm)),
+      'hours a unit takes this firm',
+    ),
     yieldRate: view.params.get(terms.recipe.yieldRate),
     leadTime: view.params.get(terms.recipe.leadTimePeriods),
     inputs: terms.recipe.inputs.map((i) => ({

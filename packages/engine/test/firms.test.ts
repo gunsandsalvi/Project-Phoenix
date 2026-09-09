@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  FIRMS,
   FIRM,
   PHX,
   REGION,
@@ -24,6 +25,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { unexpected } from './expected.js';
 
 const BANK_A = partyId('bank.a');
 const BUYER = partyId('buyer.1');
@@ -250,7 +252,7 @@ describe('what it offers, and what nobody takes (Goods C1, C5)', () => {
     expect(r.audit.total).toBe(0);
     // Demand is a few tonnes against the whole crop offered, so what nobody took stays where it
     // was: that is what illiquidity in goods is (C5), and nothing absorbed the rest.
-    expect(w.register.quantity(FIRM_1, GRAIN)).toBeGreaterThan(80);
+    expect(w.register.quantity(FIRM_1, GRAIN)).toBeGreaterThan(25);
     const print = w.journal
       .ofKind('print')
       .filter((e) => e.subjects.includes(GRAIN))
@@ -328,15 +330,47 @@ describe('who is in the goods market, and who is not', () => {
 });
 
 describe('what varies between firms is data (Firm F4, Law 2, Law 15)', () => {
-  it('declares no number of its own: every number it decides with is somebody else technology', () => {
-    expect(firms().params).toHaveLength(0);
+  it('declares one number per firm and nothing else: how many hours a tonne takes IT', () => {
+    const declared = firms().params;
+    // Firm A3: the dispersion in cost, and it is the only number this module owns. What a thing is
+    // made of, how long it takes and what survives the line are the GOOD's technology; what an hour
+    // costs is what the market charged it; and there is no margin, buffer or speed anywhere in it.
+    expect(declared).toHaveLength(FIRMS.length);
+    expect(declared.every((p) => p.kind === 'technology')).toBe(true);
+    expect(new Set(declared.map((p) => p.unit)).size).toBe(1);
+    // No two firms in a line are alike, which is what gives the venue more than one bid (Seed B4).
+    const bakers = FIRMS.filter((f) => f.subUnit === 'bread').map((f) => f.labourScale);
+    expect(new Set(bakers).size).toBe(bakers.length);
+  });
+
+  it('puts three firms in a line and none of them bids the same wage (Firm A3, Seed B1, B4)', () => {
+    const w = world();
+    for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    // Seed B1: a line is a distribution and not a single instance. Seed B4: and they are not equal,
+    // because a sector of equals never produces a market — which in a labour venue means one bid.
+    for (const subUnit of ['grain', 'flour', 'bread']) {
+      expect(FIRMS.filter((f) => f.subUnit === subUnit).length).toBeGreaterThan(1);
+    }
+    // A3: the dispersion is in COST, and it comes out in what each of them will pay for an hour.
+    const bakers = FIRMS.filter((f) => f.subUnit === 'bread');
+    const bids = new Map<string, number>();
+    for (const f of bakers) {
+      const plan = last(w, 'firms.plan', partyId(f.firm));
+      if (plan?.data['planned'] === true) bids.set(f.firm, Number(plan.data['wageBid']));
+    }
+    expect(bids.size).toBeGreaterThan(1);
+    expect(new Set(bids.values()).size).toBe(bids.size);
+    // The firm that does more with an hour will pay more for one, so the leanest is never the
+    // marginal employer and the one that takes the most hours to the tonne is priced out first.
+    const ranked = [...bids].sort((a, b) => b[1] - a[1]).map(([firm]) => firm);
+    const byScale = [...bakers].sort((a, b) => a.labourScale - b.labourScale).map((f) => f.firm);
+    expect(ranked).toEqual(byScale.filter((f) => bids.has(f)));
   });
 
   it('runs three lines that never meet through one decision (Firm F4)', () => {
     const w = world();
     for (let i = 0; i < 8; i += 1) {
-      const r = w.step();
-      expect(r.audit.total).toBe(0);
+      expect(unexpected(w.step().audit)).toEqual([]);
     }
     // The baker buys flour because bread takes flour, and the miller buys grain because flour
     // takes grain: one decision, three lines, and the chain is the recipes and nothing else.

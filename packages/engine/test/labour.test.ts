@@ -19,6 +19,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { unexpected } from './expected.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -55,10 +56,16 @@ function employer(post: (ctx: MechanismContext) => void): SystemModule {
 /**
  * A small world: twenty people to a key, so a hire is a readable number of them. The seed's own
  * population is a RESOLUTION, and turning it down is what a test of a matching rule needs.
+ *
+ * The FIRMS module is left out. These are tests of the venue and the register, and the employer in
+ * them is the test's own — a world with nine real firms bidding in the same venues would be testing
+ * their decisions instead. What the venue does with several real bidders is its own test (Firm A3).
  */
 function world(post: (ctx: MechanismContext) => void = () => undefined): World {
   const spec = foundationSpec('labour');
-  const modules = spec.modules.map((m) =>
+  const modules = spec.modules
+    .filter((m) => m.id !== 'firms')
+    .map((m) =>
     m.id === 'seed.foundation'
       ? {
           ...m,
@@ -117,12 +124,11 @@ describe('a hire (Labour A4, XI-10)', () => {
     const row = hired[0];
     expect(row?.employer).toBe(FIRM_1);
     expect(row?.headcount).toBe(3);
-    // B1.a: the town offers far more hours than the bakery wants, so the market is slack and the
-    // print falls to what the seekers will work for — their own outside option — and no further.
-    // What the employer offered is the most it would have paid, not what it pays.
+    // D1: the bid that took the last match is the print, and with one employer in the venue that is
+    // its own bid — being the only bidder is being the marginal one. What a venue with several
+    // bidders in it does, where the difference between them is the whole point, is Firm A3's test.
     const struck = row === undefined ? 0 : row.wagePerHour;
-    expect(struck).toBeGreaterThan(0);
-    expect(struck).toBeLessThan(0.002);
+    expect(struck).toBe(0.002);
     const printed = w.journal.ofKind('labour.print').find((e) => e.subjects.includes(BAKERY));
     expect(printed?.data['wagePerHour']).toBe(struck);
     // A4.c: the three who took the job are their own cell now; the rest are still looking.
@@ -212,9 +218,64 @@ describe('the clearing (Labour D1)', () => {
     // An average over one row is that row, to the dust of the division that produced it (Law 7).
     expect(paid?.[BAKERY]).toBeCloseTo(bakery?.wagePerHour ?? 0, 15);
     expect(paid?.[MILL]).toBeCloseTo(mill?.wagePerHour ?? 0, 15);
-    expect(bakery?.wagePerHour).toBeLessThan(0.002);
-    expect(mill?.wagePerHour).toBeLessThan(0.004);
+    // D1: each venue printed the one bid posted into it, and the going rate is a read of the rows.
+    expect(bakery?.wagePerHour).toBe(0.002);
+    expect(mill?.wagePerHour).toBe(0.004);
     expect(last?.public).toBe(true);
+  });
+});
+
+describe('the level the venue prints (Labour D1, D1.a)', () => {
+  it('is the bid that took the last match, and the employer above it keeps the difference', () => {
+    const w = world((ctx) => {
+      if (ctx.period !== 2) return;
+      // Two employers, two different offers, and far more hours on sale than either wants.
+      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.006, qty: hours(2) });
+      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: 0.003, qty: hours(2) });
+    });
+    w.step();
+    w.step();
+    // D1: the lowest bid still allotted sets it. Both filled, so it is the lower of the two — not
+    // the crossing, which in a book this slack sits on what some seeker would have accepted, and
+    // not the higher bid either.
+    const print = w.journal.ofKind('labour.print').filter((e) => e.subjects.includes(BAKERY)).pop();
+    expect(print?.data['wagePerHour']).toBe(0.003);
+    // D1.a: and the employer that offered twice as much pays the same and keeps the difference.
+    expect(rows(w, FIRM_1)[0]?.wagePerHour).toBe(0.003);
+    expect(rows(w, FIRM_2)[0]?.wagePerHour).toBe(0.003);
+    expect(rows(w, FIRM_1)[0]?.headcount).toBe(2);
+  });
+
+  it('fills the higher offer first when there are not enough hours for both (D1.a)', () => {
+    const w = world((ctx) => {
+      if (ctx.period !== 2) return;
+      // Between them they want more people than this town has looking for work.
+      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.006, qty: hours(60) });
+      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: 0.003, qty: hours(60) });
+    });
+    w.step();
+    w.step();
+    const high = rows(w, FIRM_1).reduce((a, r) => a + r.headcount, 0);
+    const low = rows(w, FIRM_2).reduce((a, r) => a + r.headcount, 0);
+    // An offer above the going rate fills more than one below it — which is the whole of why a
+    // wage is a price here and not a number attached to a headcount.
+    expect(high).toBeGreaterThan(low);
+  });
+
+  it('never prints a level nobody bid: the prices family checks it (Part XII)', () => {
+    const w = world((ctx) => {
+      if (ctx.period === 2) ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.006, qty: hours(2) });
+    });
+    for (let i = 0; i < 4; i += 1) {
+      const r = w.step();
+      expect(unexpected(r.audit)).toEqual([]);
+      const family = r.audit.families.find((f) => f.family === 'prices');
+      expect(family?.contributions).toContain('labour');
+    }
+    for (const e of w.journal.ofKind('labour.print')) {
+      const bids = e.data['bids'] as number[];
+      expect(bids).toContain(e.data['wagePerHour']);
+    }
   });
 });
 

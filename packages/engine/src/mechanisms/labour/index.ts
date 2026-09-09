@@ -21,7 +21,7 @@ import {
   type RegionId,
   type VenueId,
 } from '../../core/ids.js';
-import { addTo, sum, zeroIfNone } from '../../core/num.js';
+import { addTo, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -222,6 +222,49 @@ function employersExist(book: EmploymentBook): Family {
  * Built per world: the employment register is this world's own, and the audit reads the same rows
  * the phases write — one book, one writer (Law 4).
  */
+/**
+ * Labour D1: the wage a venue printed is a level an employer actually bid.
+ *
+ * The clause says the bid that took the last match IS the print, so with the venue's stated rule
+ * the print is by construction one of the posted bids — and a print that is not one is a level the
+ * venue produced out of nothing. That is the posted-benchmark prohibition in the one market whose
+ * price is not an instrument's, and it is the kind of thing that breaks silently: nobody would
+ * notice a wage drifting off the book, because a wage looks like a number rather than a trade.
+ */
+function wageIsABid(): Family {
+  return {
+    name: 'prices',
+    contributor: 'labour',
+    spec: 'Labour D1 Labour D1.a',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const e of view.journal.ofKind('labour.print')) {
+        if (e.period !== view.period) continue;
+        const printed = e.data['wagePerHour'];
+        const bids = e.data['bids'];
+        if (typeof printed !== 'number' || !Array.isArray(bids)) continue;
+        const posted = bids.filter((b): b is number => typeof b === 'number');
+        // Law 7: the level is compared against levels that reached it through the same arithmetic,
+        // so the dust is that of one comparison over the numbers involved.
+        if (posted.some((b) => withinDust(b, printed, dustOf(2, Math.abs(b) + Math.abs(printed)))))
+          continue;
+        const venue = e.subjects[0] ?? 'a venue';
+        out.push({
+          family: 'prices',
+          spec: 'Labour D1',
+          owner: venue,
+          size: printed,
+          unit: 'wage per hour',
+          period: view.period,
+          message: `${venue} printed ${printed} an hour and no employer bid it`,
+        });
+      }
+      return out;
+    },
+  };
+}
+
 export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): SystemModule {
   const book = emptyBook();
   // The observer sees the register as the data it is; the slot holds this very object.
@@ -262,7 +305,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
       },
     ],
     participants: [],
-    families: [workforceIdentity(book), employersExist(book)],
+    families: [workforceIdentity(book), employersExist(book), wageIsABid()],
     seed(ctx: SeedContext): void {
       for (const region of ctx.registry.regions.values()) {
         for (const o of occupations) {
