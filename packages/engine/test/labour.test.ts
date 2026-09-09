@@ -64,7 +64,8 @@ function employer(post: (ctx: MechanismContext) => void): SystemModule {
 function world(post: (ctx: MechanismContext) => void = () => undefined): World {
   const spec = foundationSpec('labour');
   const modules = spec.modules
-    .filter((m) => m.id !== 'firms')
+    // Equity goes with it: a share is a claim on a firm, so a world with no firms has none.
+    .filter((m) => m.id !== 'firms' && m.id !== 'equity')
     .map((m) =>
     m.id === 'seed.foundation'
       ? {

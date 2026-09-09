@@ -167,6 +167,16 @@ export interface InstrumentKindProfile {
    */
   readonly accelerates?: boolean;
   /**
+   * Register E4, Equity D4: whether the COUNT of a line of this kind can be restated without
+   * anything else about it changing. A share can (a split), and it is the whole of what a split is:
+   * more units, each of them smaller, the same claim. A bond cannot — its unit is par, and par
+   * restated is a different promise — and neither can a good, whose unit is a tonne.
+   *
+   * A kind that says nothing is a kind that does not split, which is the answer for almost
+   * everything; the door refuses a line whose kind has not said it does.
+   */
+  readonly splits?: boolean;
+  /**
    * Fund Shares B1, XI-6: what one unit is worth, for a kind whose `pricing` is `derived`. The
    * kernel hands it the same reads it uses itself, so a share of a fund is valued off the marks
    * every other holder of those assets is valued off — never a second price system beside them

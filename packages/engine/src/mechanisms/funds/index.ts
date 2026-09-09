@@ -34,7 +34,6 @@ import {
   instrumentId,
   instrumentKindId,
   partyKindId,
-  unitId,
   venueId,
   type InstrumentId,
   type PartyId,
@@ -48,6 +47,7 @@ import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { weightOf } from '../../parties/party.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
+import { SHARES } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -61,7 +61,6 @@ export type { NavRead } from './nav.js';
 export const FUND = partyKindId('fund');
 export const FUND_MANAGER = partyKindId('fundManager');
 export const FUND_SHARE = instrumentKindId('fund.share');
-export const SHARES = unitId('shares');
 
 /** A2, G1.b: a claim with a SHARE COUNT — which is what makes it something an investor can redeem. */
 export interface FundShareTerms {
@@ -711,10 +710,10 @@ export function funds(decls: readonly FundDecl[] = FUNDS): SystemModule {
     instrumentKinds: [fundShareKind],
     partyKinds: [fundKind, fundManagerKind],
     curveFamilies: [],
-    // A2, D4: shares are what a fund is measured in, and they divide. A whole-share rule would
-    // leave a residual on every subscription with nobody to own it (Law 2), and it is the COUNT
-    // that matters — that there is one at all is what makes the claim redeemable (G1.b).
-    units: [{ id: SHARES, name: 'shares', countable: false }],
+    // A2, G1.b: shares are what a fund is measured in. The unit itself is the world's — a share
+    // count is what a claim on a book and a claim on a firm are both counted in (Equity A2), and
+    // two modules cannot each introduce it — so it is registry data and this module only uses it.
+    units: [],
     params: paramsOf(),
     phases: [
       {

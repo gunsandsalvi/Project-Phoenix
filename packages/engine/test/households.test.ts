@@ -121,14 +121,16 @@ function world(...extra: readonly SystemModule[]): World {
  */
 function paidWorld(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('households');
-  return assemble({ ...spec, modules: [...spec.modules.filter((m) => m.id !== 'firms'), ...extra] });
+  // Equity goes with the firms: a share is a claim on one, so a world with none has no shares.
+  const kept = spec.modules.filter((m) => m.id !== 'firms' && m.id !== 'equity');
+  return assemble({ ...spec, modules: [...kept, ...extra] });
 }
 
 /** The same world at a finer grain, for the one measurement that counts cells rather than sums them. */
 function spreadWorld(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('households');
   const modules = spec.modules
-    .filter((m) => m.id !== 'firms')
+    .filter((m) => m.id !== 'firms' && m.id !== 'equity')
     .map((m) =>
       m.id === 'seed.foundation'
         ? {

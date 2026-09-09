@@ -2,14 +2,21 @@
  * The kernel's own kinds: money, and the parties money needs (a central bank, a bank) plus the
  * party kinds every world has. Everything else is registered by a module.
  *
- * @spec Treasury D3 Sovereign A3.b Central Bank A1 Central Bank A1.a Central Bank E2 Money A1 Money A1.b Money A1.c Money D2 Money B3.a Money B3.b Money B3.c XI-15 Households A2.e Small-Business Pools A6
+ * @spec Equity A2 Fund Shares A2 Treasury D3 Sovereign A3.b Central Bank A1 Central Bank A1.a Central Bank E2 Money A1 Money A1.b Money A1.c Money D2 Money B3.a Money B3.b Money B3.c XI-15 Households A2.e Small-Business Pools A6
  */
 import { InvalidRegistry } from '../core/errors.js';
-import { currencyUnit, instrumentKindId, partyKindId } from '../core/ids.js';
+import { currencyUnit, instrumentKindId, partyKindId, unitId } from '../core/ids.js';
 import type { InstrumentKindProfile, OverdraftDecision, PartyKindProfile } from './kinds.js';
 import { issuerName } from './naming.js';
 
 export const MONEY_KIND = instrumentKindId('money');
+
+/**
+ * Equity A2, Fund Shares A2: a SHARE COUNT. More than one system counts in it — a claim on a book
+ * and a claim on a firm are both counted in shares — and no one of them owns it, so it is named
+ * here beside the currency unit and declared as registry data by the world that has any of them.
+ */
+export const SHARES = unitId('shares');
 
 export const moneyKind: InstrumentKindProfile = {
   id: MONEY_KIND,

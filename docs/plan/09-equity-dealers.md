@@ -25,41 +25,41 @@ F3; Clearing B3, B3.a, E3; Firm E5. Remain PARTIAL: Equity C5, C7 (leverage and 
 ### Module `equity`
 
 - `requires: ['firms', 'estate']`.
-- **Kind** `share`: `pricing: 'cleared'`, `liabilityOfIssuer: false` (A1: a residual claim), unit
-  `shares` (countable: A2), terms `{ votesPerShare: 1 }` (A5), `due`: dividends declared by the firm
-  (the profile reads the issuer's declared dividend from a journal event: `equity.dividendDeclared`,
-  and places it on the date), `defaultOn: null` (equity does not default; it is wiped: E4),
-  `ranking`: last. Display name: the issuer (A6).
-- **Register**: shares outstanding is `issued`; treasury shares are the issuer's own holding (C2.d):
-  a holder equal to the issuer is allowed for this kind (the kernel's settlement treats an asset leg
-  to the issuer as a redemption; for a kind that declares `issuerMayHold`, a buyback that is not a
-  cancellation credits the issuer's own holding instead: sub-item 9.1, kernel door). Free float (C1.b)
-  is a read: issued − insiders' and strategic holdings (holdings by parties whose relationship to
-  the issuer is declared in the register as a `strategic` flag on the holding: a register row
-  attribute set at acquisition by the acquiring module, e.g. founders at 13g; here the seed).
-- **The market** (B): one market per share, opened at seed for listed firms; participants: household
-  cells (C2.a) from their own view (their opinion is their outlook of the firm's earnings, discounted
-  at their own patience: B3 says a multiple or a DCF is an opinion held by a participant, so the
-  schedule is built from it, never the print), institutions with mandates (funds: item 8, their
-  mandate's eligible share), the issuer (buybacks), insiders (not for sale: C2.e), dealers (below).
-  Market capitalisation is a read (B4); B4.a forbids the tautology, so no test compares it to itself.
-- **Issuance** (D1): the firm's decision (Firm E4: when its investment programme needs funding it
-  prefers to meet with equity, item 10) posts a primary market (item 3.1's primary block) with size
-  and reservation; dilution is the register's arithmetic; it can fail (D1.c).
-- **Buyback** (D2): the firm posts a buy order; shares bought are cancelled (redemption) or held
-  (treasury shares); it competes with the dividend and investment (D2.c: the firm's phase decides
-  among them from its cash above its buffer and its cost of capital at 10).
-- **Dividend** (D3): declared in `firms.decide`, journaled publicly, paid by the kernel's corporate
-  actions to holders of record on the date (D3.a).
-- **Split** (D4): a journaled instrument event changing `issued` and every holding by the ratio in
-  one kernel operation (`instruments.split`, a door) that moves no value; the prices family's next
-  print is per new share (the market runner rebases the carried print by the ratio, journaled).
-- **Insolvency** (E4): the estate (item 7) wipes the register to zero before any creditor takes a
-  loss: shares are redeemed at zero as the estate opens.
-- **Entitlements** (F): dividends, the residual, the vote (F3: a read: `votes(party, share) =
-holding × votesPerShare × weight`, used at 13g and 14); F4: retained earnings reach holders only
-  through the price (no income credited: the households module reads dividends received, never the
-  firm's retained earnings).
+- **Kind** `share` (`equity.share`): `pricing: 'cleared'`, `carry: 'mark'`, `liabilityOfIssuer: false`
+  (A1: a residual claim), unit `shares`, terms `{ issuer, votesPerShare }` (A5), `due: []` and
+  `cashFlows: []` (A4: perpetual, promising nothing dated — a dividend is a DECISION, not a term),
+  no `defaultOn` (there is no promise to break), `ranking` last (A1.a). Display name: the issuer (A6).
+  `splits: true` (D4).
+- **The unit `shares`** moves to the kernel's `registry/profiles.ts` and the world's registry data: a
+  claim on a book and a claim on a firm are both counted in shares and no one module owns it.
+- **The market** (B): one per share line, opened at seed with an opening print. Participants: the
+  household cells (C2.a) and the issuer (D2). **A participant's reason lives in the participant's
+  own module**: the household's opinion of a share is in `households/portfolio.ts` beside its
+  opinion of paper, in ONE traversal with ONE budget, so the same money is never committed twice
+  (Law 4). A module that wrote other parties' reservations would be handing the market its answer.
+- **The opinion** (B3): what the issuer last declared per share (public, D3), capitalised at what
+  that cell requires of a claim that promises nothing — its liquidity premium plus how wrong its own
+  income has recently been (§46 B3). Two cells disagree because their histories differ (§46 A3).
+- **Issuance** (D1): a primary offer at the firm's own reservation (its book per share); dilution is
+  the register's arithmetic; it can fail (D1.c).
+- **Buyback** (D2): the firm bids at its reservation and what it buys is REDEEMED — the count falls
+  (D2.a) and the cash is gone (D2.b). No treasury share: a residual claim on yourself is not an
+  asset of yourself, and D2.b says the cash is gone rather than swapped for one. C2.d is PARTIAL.
+- **Dividend** (D3): decided in `equity.decide` from what the firm's own funding read says it has
+  spare, over its management's own patience, and paid to holders of record at the moment it is
+  applied (E1.a). Declared publicly, which is what makes a cut an event others react to (D3.b).
+- **Split** (D4): the kernel door (9.1).
+- **Insolvency** (E4) **and the residual** (F2): both through the ranking. A share ranks last, so an
+  estate reaches its holders after every creditor, pays them what is left and writes off the rest at
+  zero. Nothing wipes anything as a special case. The module stops pricing a line whose issuer has
+  been succeeded, and the print goes visibly stale (Clearing E4).
+- **Founders are not here.** C2.e's insider — a block that is not for sale, whose vote a takeover
+  must obtain (A5.a) — is a party that comes into existence by FUNDING A FIRM'S ENTRY (Firm Birth A),
+  which is 13g. Seeding one would state who owns this world before anybody bought anything (Seed E1,
+  E2), and a founder with no life to spend its dividends on is a hole money leaves the circuit
+  through: the first build of it drained 215 PHX in a year and the treasury missed eight coupons.
+  So C1.b's free float is a read of what is ENCUMBERED (Register D5.a: only free units move), which
+  is nothing yet and says so; C2.e, A5.a and E1–E3 are PARTIAL, named to 13g.
 
 ### Module `dealers`
 
@@ -124,28 +124,28 @@ packages/engine/test/{equity,issuance,buyback,dividend,split,dealers,desk-limits
 
 ## Steps
 
-- [ ] 9.1 Kernel: `issuerMayHold` for treasury shares; `instruments.split` door; `strategic` holding flag; tests
-- [ ] `share` kind: residual claim, countable, votes, dividend `due` from a declared event, wiped at insolvency; tests
-- [ ] Share markets opened at seed for listed firms; household participants build schedules from their own outlook and patience (B3 as an opinion in the schedule); test: two cells with different outlooks post different prices
-- [ ] Issuance as a primary market with size and reservation; dilution; failure; tests
-- [ ] Buyback: cancellation or treasury shares; competes with dividend and investment in `firms.decide`; tests
-- [ ] Dividend declared and paid to holders of record; F4: no income without cash; test: a cell holding shares of a firm that retained earnings shows no income
-- [ ] Split moves no value; the print rebases; test
-- [ ] Estate wipes equity to zero before creditors (E4); test
-- [ ] Votes as a read (F3, A5); test: a cell casts weight × votes
-- [ ] Free float as a read excluding strategic holders; test
-- [ ] `desk` party kind owned by its bank through `desk.equity`; consolidation by ownership; tests
-- [ ] Desk quotes: two schedules from own state; skew by inventory, width by surprise width and adverse selection, size by remaining limit; no width constant exists (lint); tests: long skews both sides down; a limit binding shrinks then stops
-- [ ] Desk rent every period at the bank's cost of funds plus the capital charge; test: a desk carrying inventory for free is unreachable
-- [ ] Desks in every market they make: bonds, shares; interdealer through the same session; test: two desks with opposite inventories trade with each other
-- [ ] D4.a: a market whose only liquidity was a desk at its limit fails and prints stale with reason; test
+- [x] 9.1 Kernel: `instruments.split`, `register.restate`, `prices.restate` and the `ctx.split` door; `splits` on the kind profile; the accounts family's dust takes in the walk behind every money balance it reads
+- [x] `share` kind: residual claim, countable in shares, votes, perpetual, promising nothing, ranking last; the `shares` unit moves to the kernel
+- [x] Share markets opened at seed for the listed firms, with an opening print that is a RESOLUTION and not a shape (a split is the invariance that proves it)
+- [x] Household participants build schedules from their own opinion, in their own module, out of one budget spread over every place their savings could go
+- [x] Issuance as a primary offer with a size and a reservation; dilution; failure
+- [x] Buyback: the firm bids at its own reservation and what it buys is cancelled
+- [x] Dividend decided from what the firm has spare over its management's own patience, paid to holders of record, declared publicly
+- [ ] `desk` party kind inside its bank; desks seeded with the opening float of every line they make a market in
+- [ ] Desk quotes: two schedules from own state; skew by inventory, width by its own surprise width and the flow it faced, size by remaining limit; no width constant exists (lint)
+- [ ] Desk rent every period at its bank's cost of funds plus the capital charge; test: a desk carrying inventory for free is unreachable
+- [ ] Desks in every market they make: bonds and shares; interdealer through the same session
+- [ ] D4.a: a market whose only liquidity was a desk at its limit fails and prints stale with reason
 - [ ] D5 as an observer read: inventory, spread, capital usage together
-- [ ] Households and funds as equity participants; the foundation seed lists firms with founders' strategic holdings
+- [ ] Split moves no value; the print rebases; test
+- [ ] Votes as a read (F3, A5) and free float as a read of what is encumbered (C1.b); tests
+- [ ] Estate: a share ranks last, takes the residual when there is one and is written off at zero when there is not (E4, F2); test
+- [ ] F4: no income without cash; test: a cell holding shares of a firm that retained earnings shows no income
 - [ ] From item 8 (Fund Shares E1, E2): an `etf.share` kind whose shares TRADE — a market, a cleared price, and its NAV read beside it from the same book, so it has two values and they are different numbers
-- [ ] From item 8 (E3, E3.a, G1.a): creation and redemption IN KIND against the basket, by a desk with a reason and a limit — which is why an exchange-traded fund is not a forced seller, and why the gap can persist when nobody will close it. It waits for this item because arbitraging a gap for nothing is the free arbitrage Appendix B forbids: it needs a party that carries inventory, pays for the capital it uses, and runs out of limit
+- [ ] From item 8 (E3, E3.a, G1.a): creation and redemption IN KIND against the basket, by a desk with a reason and a limit — which is why an exchange-traded fund is not a forced seller, and why the gap can persist when nobody will close it
 - [ ] From item 8 (E4): the premium or discount as a read of the two prices, on the observer; a persistently large one is a finding about liquidity and never a number to clamp
 - [ ] Year-long run green; determinism; XI-13 test: a desk's schedule is independent of the other orders in the book
-- [ ] Coverage re-marked; PARTIAL rows for C5, C7, E1–E3, G1, G2, hedging named; record entry
+- [ ] Coverage re-marked; PARTIAL rows for C1.b, C2.b, C2.c, C2.d, C2.e, C5, C7, A5.a, E1–E3, G1, G2 named; record entry
 - [ ] Delete this file; worklist row 9 → done; commit and push
 
 ## Exit criteria

@@ -2,7 +2,7 @@
  * Households: cells that earn, consume, save and own, each deciding for one possible household and
  * carrying how many of them it is.
  *
- * @spec Households A1 Households A2 Households A2.a Households A2.b Households A2.c Households A2.d Households A2.e Households A2.f Households A3 Households B1 Households B2 Households B3 Households B3.a Households B5 Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households C5 Households D1 Households D1.a Households D3 Households D5 Households D5.a Households D6 Goods C1 Goods C3 Expectations C1 Sovereign E2.f XI-15 XI-16 Law 2 Law 4 Law 6
+ * @spec Equity B1 Equity B3 Equity C2 Equity C2.a Households A1 Households A2 Households A2.a Households A2.b Households A2.c Households A2.d Households A2.e Households A2.f Households A3 Households B1 Households B2 Households B3 Households B3.a Households B5 Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households C5 Households D1 Households D1.a Households D3 Households D5 Households D5.a Households D6 Goods C1 Goods C3 Expectations C1 Sovereign E2.f XI-15 XI-16 Law 2 Law 4 Law 6
  *
  * EVERY DECISION IS THE CELL'S, taken for one member and carried at the cell's weight (A2.e, A2.f).
  * The sector's consumption is the weighted sum of what its cells decided, and there is no number
@@ -25,7 +25,7 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
 import { paramId, type PartyId } from '../../core/ids.js';
-import { addTo, combineDust, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, combineDust, div, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -38,7 +38,10 @@ import {
   cushionForFund,
   fundOrders,
   fundPositions,
+  ownUncertainty,
   paperBids,
+  savingLines,
+  shareOrders,
   shortForSpending,
   sparePerMember,
 } from './portfolio.js';
@@ -49,12 +52,15 @@ export {
   cushionForFund,
   fundOrders,
   fundPositions,
+  ownUncertainty,
   paperBids,
+  savingLines,
+  shareOrders,
   shortForSpending,
   sparePerMember,
 } from './portfolio.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
-export type { FundOrder, FundPosition, PaperBid } from './portfolio.js';
+export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
 export const HOUSEHOLD_PARAMS = {
   patience: paramId('households.patience'),
@@ -268,12 +274,20 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // 11), so what it requires now is the premium alone, and that comparison becomes a real one
   // the period a bank starts bidding for deposits.
   const required = view.params.get(HOUSEHOLD_PARAMS.liquidityPremium);
-  const paper = paperBids(
+  // D5: everywhere its savings could go, in one pass, with what it thinks each is worth — paper it
+  // can price off a public curve, and shares it can only price off what they have been paying.
+  const { paper, shares } = savingLines(
     view,
     required,
+    ownUncertainty(view),
     view.params.get(HOUSEHOLD_PARAMS.horizon),
-    mul(spare, weightOf(self), 'what the cell has spare'),
   );
+  // D5: one budget, spread over every place its money could go this period. Deciding it once and
+  // dividing it is what stops the same money being committed twice (Law 4) and what stops a rule
+  // nobody stated from preferring one class of thing to another.
+  const lines = paper.length + shares.length;
+  const perLine = lines > 0 ? div(spare, lines, 'what it puts into one line') : 0;
+  const paperOrders = paperBids(view, paper, mul(perLine, weightOf(self), 'the cell own share'), lines);
   // D2, D5: the third thing it can do with its money, and the reason it asks for it back. What the
   // fund published is public (Clearing F1: it acts on what it has already been told), and what it
   // offers is compared against the same requirement a bill is.
@@ -305,12 +319,21 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       // across the threshold while the weighted mean of what they were paid does not move.
       constrained: decided.value.constrained,
       sparePerMember: spare,
+      // D5: the places its money could go this period, and what goes into one of them.
+      linesItMayHold: lines,
+      perLinePerMember: perLine,
       shortForSpendingPerMember: short,
       toFundPerMember: toFund,
       // C2: what it does not spend and does not put into paper is saved where it already is.
       orders: [
         ...goods.map((g) => ({ market: g.market, side: 'buy', price: g.price, qty: g.qty })),
-        ...paper.map((b) => ({ market: b.market, side: 'buy', price: b.price, qty: b.qty })),
+        ...paperOrders.map((b) => ({ market: b.market, side: 'buy', price: b.price, qty: b.qty })),
+        ...shareOrders(view, shares, perLine, short, p.steps).map((o) => ({
+          market: o.market,
+          side: o.side,
+          price: o.price,
+          qty: o.qty,
+        })),
       ],
     },
     false,
@@ -326,9 +349,13 @@ function ordersFrom(rows: unknown, market: string, self: PartyId): Order[] {
     const o = row as Record<string, unknown>;
     const price = o['price'];
     const qty = o['qty'];
-    if (o['market'] !== market || o['side'] !== 'buy') continue;
-    if (typeof price !== 'number' || typeof qty !== 'number' || qty <= 0) continue;
-    out.push({ party: self, side: 'buy', price, qty });
+    const side = o['side'];
+    if (o['market'] !== market || (side !== 'buy' && side !== 'sell')) continue;
+    // XI-2: a cell selling because it needs the money names no price. Everything else it posts is
+    // a level of its own, and a level is a number.
+    if (price !== 'market' && typeof price !== 'number') continue;
+    if (typeof qty !== 'number' || qty <= 0) continue;
+    out.push({ party: self, side, price, qty });
   }
   return out;
 }

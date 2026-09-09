@@ -2,7 +2,7 @@
  * Firms: named parties that make a thing out of other things and the hours of named people, sell it
  * to named buyers, and keep whatever is left.
  *
- * @spec Firm A1 Firm A2 Firm A3 Firm B1 Firm B2 Firm B3 Firm B4 Firm B4.a Firm B4.b Firm B5 Firm B6 Firm C1 Firm C4 Firm D1 Firm E1 Firm E2 Firm E6 Firm E7 Firm F1 Firm F2 Firm F3 Goods B1 Goods B1.b Goods B1.c Goods B2 Goods B3 Goods B4 Goods B5 Goods B5.a Goods B5.b Goods C1 Goods C3 Goods C5 Goods F5 Goods F5.a Goods F5.b Labour C1 Labour C1.a Labour C5 Labour D1 Expectations C2 XI-16 Law 2 Law 6 Law 15
+ * @spec Firm A1 Firm A2 Firm A3 Firm E4 Firm E5 Firm B1 Firm B2 Firm B3 Firm B4 Firm B4.a Firm B4.b Firm B5 Firm B6 Firm C1 Firm C4 Firm D1 Firm E1 Firm E2 Firm E6 Firm E7 Firm F1 Firm F2 Firm F3 Goods B1 Goods B1.b Goods B1.c Goods B2 Goods B3 Goods B4 Goods B5 Goods B5.a Goods B5.b Goods C1 Goods C3 Goods C5 Goods F5 Goods F5.a Goods F5.b Labour C1 Labour C1.a Labour C5 Labour D1 Expectations C2 XI-16 Law 2 Law 6 Law 15
  *
  * The module owns the firm's DECISIONS and its LINE, and owns no data about the world beyond which
  * firm is in which line (its own registry). Everything it decides with — what a thing takes to make,
@@ -241,13 +241,15 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
 }
 
 /**
- * Firm E4, Banks Lending C2: what it is short of. A firm pays out of a balance and the balance can
- * hit zero (D1), so what it is about to have to pay — the payroll it has promised and the inputs it
- * decided to buy — against what it holds is a real number about its own position, and it says it.
+ * Firm E4, E5, Banks Lending C2: what it is short of, or what it has spare. A firm pays out of a
+ * balance and the balance can hit zero (D1), so what it is about to have to pay — the payroll it
+ * has promised and the inputs it decided to buy — against what it holds is a real number about its
+ * own position, and it says it. A NEGATIVE short is what it has over, and it is the same number
+ * read the other way: one fact, one writer, whichever side of zero it falls (Law 4).
  *
- * It says it and nothing more. Whether anybody lends against it, at what, and whether it takes the
- * quote are the lender's decision and its own, in the module that owns them (Law 4). A firm with
- * enough says nothing, because there is nothing to say.
+ * It says it and nothing more. Whether anybody lends against it, at what, whether it takes the
+ * quote, and whether what it has over goes to its owners are decisions in the modules that own
+ * them (Banks Lending C2, Equity D2.c).
  */
 function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned): void {
   const ccy = ctx.registry.region(view.self.region).ccy;
@@ -258,7 +260,6 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
   ).value;
   const owed = add(buying, wagesPromised(view), 'what it is about to have to pay');
   const short = sub(owed, view.cash(ccy), 'what it is short of');
-  if (short <= 0) return;
   ctx.record('firms.funding', [view.self.id], { short, owed, ccy }, false);
 }
 

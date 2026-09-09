@@ -3,7 +3,7 @@
  * an issuer, a currency, a unit, an issued amount, and kind-specific terms validated by its kind's
  * profile at registration.
  *
- * @spec Register A1.b Register A4 Register B1 Register B4 Register F1 Register F1.a Bond N1 Bond N2 Bond N3 Bond N14 Money D2 Law 15
+ * @spec Register A1.b Register A4 Register B1 Register B4 Register E4 Register F1 Register F1.a Bond N1 Bond N2 Bond N3 Bond N14 Equity A2.a Equity D4 Money D2 Law 15
  */
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
@@ -184,6 +184,27 @@ export class Instruments {
     forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; nobody owes it`);
     forbid(i.issuer.some, 'Register B3', `${id} was promised by nobody, so nobody can succeed to it`);
     this.map.set(id, Object.freeze({ ...i, issuer: some(issuer) }));
+  }
+
+  /**
+   * Register E4, Equity D4: the count of a line changes and nothing else does. Only the split door
+   * calls it, with the register restated in the same operation; what each holder holds and what it
+   * cost them is unchanged in value, so no equity moves and no money does either — which is the
+   * "explicitly says why not" E5 asks of an event that moves a register without moving money.
+   */
+  restate(id: InstrumentId, ratio: number): void {
+    const i = this.get(id);
+    forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; its count cannot change`);
+    const issued = finite(i.issued * ratio, `issued of ${id}`);
+    this.map.set(
+      id,
+      Object.freeze({
+        ...i,
+        issued,
+        // Law 7: restating every unit is one more rounding, at the magnitude the count now is.
+        issuedDust: finite(i.issuedDust * ratio + moveDust(issued, 0), `issued dust of ${id}`),
+      }),
+    );
   }
 
   /** B4: an instrument ceases, and every holding in it has already resolved to something else, named. */

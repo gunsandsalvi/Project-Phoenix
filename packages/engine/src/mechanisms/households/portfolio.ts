@@ -1,7 +1,7 @@
 /**
  * Where a household puts what it does not spend.
  *
- * @spec Households C2 Households D1 Households D1.a Households D5 Households D5.a Households D6 Sovereign E2.f Money A1 XI-15
+ * @spec Households C2 Households D1 Households D1.a Households D5 Households D5.a Households D6 Equity B1 Equity B3 Equity B6 Equity C2 Equity C2.a Expectations B3 Sovereign E2.f Money A1 XI-13 XI-15 Law 8
  *
  * D5.a: the choice between a deposit and paper bought directly is a real substitution, and it is
  * how a rate reaches a saver. A deposit is a holding of a bank's money — it returns nothing at all
@@ -20,8 +20,9 @@
  * reasons D5 names — yield against risk — which a household cannot weigh until something in this
  * world prices risk (worklist 9). Liquidity is the reason it has now, and this is the whole of it.
  */
-import { period } from '../../calendar/calendar.js';
+import { nextPeriod, period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
+import { yearFraction } from '../../calendar/daycount.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
@@ -39,53 +40,183 @@ export interface PaperBid {
   readonly qty: number;
 }
 
+/** A line this cell would hold, and what it thinks one unit of it is worth. */
+export interface SavingLine {
+  readonly instrument: Instrument;
+  readonly price: number;
+}
+
 /**
- * D5, D5.a: what it will hold instead of money, and at what price. The curve is a public read of
- * what this paper has been fetching (Sovereign D3); what it says a line returns is what the cell
- * compares against its own requirement, and the price it then bids is its own.
+ * D5, D5.a, Equity B3: everywhere this cell's savings could go, in one pass over the lines that
+ * exist, with what it thinks each is worth.
+ *
+ * TWO KINDS OF CLAIM and one traversal, because a line is one or the other by what it promises and
+ * the cell has to look at it once to find out (Law 4: one decision, one pass, one budget):
+ *
+ * - **Paper.** It promises dated payments (Bond N5), so the cell prices it at the level that makes
+ *   those payments return what it requires: its liquidity premium, what it wants for giving up
+ *   access to its money. It will only tie its money up for its own horizon, so anything that comes
+ *   back later is not somewhere its money can go.
+ * - **A share.** It promises NOTHING (Equity A4). Nothing about it can be discounted, so the only
+ *   thing the cell can go on is what the issuer has actually been paying, which the issuer declares
+ *   publicly (Equity D3), capitalised at what it requires of a claim that promises nothing — its
+ *   liquidity premium PLUS how wrong its own income has recently been (§46 B3). Two cells with
+ *   different histories therefore want different prices for the same firm, and that disagreement is
+ *   what gives the book two sides (§46 A3, XI-13).
+ *
+ * This is the "yield against risk" D5 names, and it is the reason the horizon comment above pointed
+ * at worklist 9: until something in this world priced risk, a cell had only liquidity to weigh.
  */
-export function paperBids(
+export function savingLines(
   view: ParticipantView,
   required: number,
+  uncertainty: number,
   horizonPeriods: number,
-  spare: number,
-): PaperBid[] {
-  if (spare <= 0) return [];
+): { readonly paper: SavingLine[]; readonly shares: SavingLine[] } {
   const region = view.self.region;
   const ccy = view.registry.region(region).ccy;
   const on = view.calendar.startOf(view.period);
   // Money G3.a: a horizon is a DATE the calendar places, never a count of periods turned into years.
   const by = view.calendar.startOf(period(view.period + horizonPeriods));
-  const eligible: { readonly instrument: Instrument; readonly price: number }[] = [];
+  const year = yearFraction('ACT/365F', on, view.calendar.startOf(nextPeriod(view.period)));
+  const forShares = add(required, uncertainty, 'what it requires of a claim that promises nothing');
   const sovereigns = new Set(
     view.parties.ofKind(TREASURY).filter((t) => t.region === region && t.status.alive).map((t) => t.id),
   );
+  const paper: SavingLine[] = [];
+  const shares: SavingLine[] = [];
   for (const i of view.instruments.all()) {
-    if (!i.status.live || !i.market.some || i.ccy !== ccy) continue;
-    if (!i.issuer.some || !sovereigns.has(i.issuer.value)) continue;
-    const family = view.registry.curveFamily(curveFamilyOf(i.issuer.value, ccy));
-    const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+    if (!i.status.live || !i.market.some || i.ccy !== ccy || !i.issuer.some) continue;
+    const profile = view.registry.instrumentKind(i.kind);
+    if (profile.physical === true) continue;
+    const flows = profile.cashFlows(i, on, view.calendar);
     const last = flows[flows.length - 1];
-    if (last === undefined) continue;
-    // D5: it will tie its money up for its own horizon and no longer.
-    if (compareCivil(last.date, by) > 0) continue;
-    const price = priceAt(flows, required, on, family.dayCount, `what ${i.id} is worth to a saver`);
-    if (price > 0) eligible.push({ instrument: i, price });
+    if (last !== undefined) {
+      // Paper. It has to be somebody's whose paper this cell can price off a public curve, and it
+      // has to come back inside its own horizon (D5).
+      if (!sovereigns.has(i.issuer.value)) continue;
+      if (compareCivil(last.date, by) > 0) continue;
+      const family = view.registry.curveFamily(curveFamilyOf(i.issuer.value, ccy));
+      const price = priceAt(flows, required, on, family.dayCount, `what ${i.id} is worth to a saver`);
+      if (price > 0) paper.push({ instrument: i, price });
+      continue;
+    }
+    // A share: what it has been paying, capitalised at what this cell requires of it.
+    if (forShares <= 0 || year <= 0) continue;
+    const declared = view.lastPublicAbout('equity.dividend', i.issuer.value);
+    if (!declared.some) continue;
+    const perShare = declared.value.data['perShare'];
+    if (typeof perShare !== 'number' || perShare <= 0) continue;
+    // Law 8: what it was paid is per period and what it requires is per annum, so the period is
+    // turned into the fraction of a year the calendar says it is.
+    const value = div(div(perShare, year, 'what it paid, per annum'), forShares, 'what it is worth');
+    if (value > 0) shares.push({ instrument: i, price: value });
   }
-  if (eligible.length === 0) return [];
-  // It has no reason to prefer one line over another once both clear what it requires, so it
-  // spreads what it has across them. The rule is stated once, like a rationing rule (Clearing C3).
-  const each = div(spare, eligible.length, 'what it puts into each line');
+  return { paper, shares };
+}
+
+/**
+ * D5, D5.a: the bids for paper, one per line, for the money the cell decided this line gets.
+ * `perLine` is its own budget divided by every place its money could go, so the same money is never
+ * committed twice and no class of thing is preferred by a rule nobody stated.
+ */
+export function paperBids(
+  view: ParticipantView,
+  eligible: readonly SavingLine[],
+  perLine: number,
+  lines: number,
+): PaperBid[] {
+  if (perLine <= 0) return [];
   const out: PaperBid[] = [];
   for (const e of eligible) {
     // Bond N9.b: what it must find is the clean price plus what has accrued and travels with it.
     const dirty = add(e.price, view.accrued(e.instrument.id), 'what a unit costs it');
-    const qty = div(each, dirty, 'units it bids for');
+    const qty = div(perLine, dirty, 'units it bids for');
     // Law 7: this line's share against what the whole budget would have bought — a share that
     // small is the rounding of the split, not a bid.
-    const whole = div(spare, dirty, 'what the whole of it would buy');
-    if (!material(qty, eligible.length + 1, whole) || !e.instrument.market.some) continue;
+    const whole = div(mul(perLine, lines, 'the whole of it'), dirty, 'what it would buy');
+    if (!material(qty, lines + 1, whole) || !e.instrument.market.some) continue;
     out.push({ market: e.instrument.market.value, instrument: e.instrument.id, price: e.price, qty });
+  }
+  return out;
+}
+
+/**
+ * §46 B3: the extra this cell wants for holding a claim that promises nothing — how wide its own
+ * income surprises have been against what it expects to be paid, as a rate. A read of its own
+ * history and its own outlook, in its own units, with nothing stated anywhere: a cell that has
+ * never been surprised wants nothing extra, and one whose income has been all over the place wants
+ * a great deal, which is why the same firm is worth different amounts to two of them.
+ */
+export function ownUncertainty(view: ParticipantView): number {
+  const income = view.outlook('income');
+  if (!income.some || income.value.expected <= 0) return 0;
+  const year = yearFraction(
+    'ACT/365F',
+    view.calendar.startOf(view.period),
+    view.calendar.startOf(nextPeriod(view.period)),
+  );
+  if (year <= 0) return 0;
+  return div(
+    div(income.value.confidence, income.value.expected, 'how wrong its income has been'),
+    year,
+    'per annum',
+  );
+}
+
+/** A bid or an offer in a share line, at the level this cell's own opinion puts on it. */
+export interface ShareOrder {
+  readonly market: MarketId;
+  readonly instrument: InstrumentId;
+  readonly side: 'buy' | 'sell';
+  /** 'market' only when it is selling because it needs the money (XI-2). */
+  readonly price: number | 'market';
+  readonly qty: number;
+}
+
+/**
+ * Equity B1, B6, Clearing A2: the opinion as a two-sided schedule.
+ *
+ * It BIDS below its opinion, in steps, for the money this line's share of its budget comes to; it
+ * OFFERS what it holds AT its opinion. The two can never both fill — every bid is strictly below
+ * the ask — so a holder never trades with itself, and a seller with no buyer keeps its shares (B6).
+ *
+ * A cell that needs its money back is a seller and NOT a buyer: it offers at whatever the market
+ * gives, which is what a forced seller posts (XI-2), and it bids for nothing.
+ */
+export function shareOrders(
+  view: ParticipantView,
+  lines: readonly SavingLine[],
+  perLine: number,
+  short: number,
+  steps: number,
+): ShareOrder[] {
+  const out: ShareOrder[] = [];
+  const weight = view.self.representation === 'cell' ? view.self.weight : 1;
+  for (const line of lines) {
+    if (!line.instrument.market.some) continue;
+    const market = line.instrument.market.value;
+    const units = mul(view.free(line.instrument.id), weight, 'shares it could sell');
+    if (short > 0) {
+      if (material(units, 2, units)) {
+        out.push({ market, instrument: line.instrument.id, side: 'sell', price: 'market', qty: units });
+      }
+      continue;
+    }
+    if (material(units, 2, units)) {
+      out.push({ market, instrument: line.instrument.id, side: 'sell', price: line.price, qty: units });
+    }
+    if (perLine <= 0 || steps < 1) continue;
+    const each = div(mul(perLine, weight, 'what the cell puts in'), steps, 'at each level');
+    for (let step = 1; step <= steps; step += 1) {
+      // Clearing A2.a: how much at each price. The ladder runs from just under its opinion down,
+      // so what it buys grows as the market asks it for less.
+      const price = mul(line.price, div(step, steps + 1, 'this rung'), 'level');
+      if (price <= 0) continue;
+      const qty = div(each, price, 'shares it bids for');
+      if (!material(qty, steps + 1, div(mul(each, steps, 'the whole of it'), price, 'what it would buy'))) continue;
+      out.push({ market, instrument: line.instrument.id, side: 'buy', price, qty });
+    }
   }
   return out;
 }

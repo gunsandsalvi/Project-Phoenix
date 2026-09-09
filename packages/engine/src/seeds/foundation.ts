@@ -55,6 +55,7 @@ import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { goodId, goodMarketId, goodTerms, goods, wipId } from '../mechanisms/goods/index.js';
+import { equity } from '../mechanisms/equity/index.js';
 import { funds } from '../mechanisms/funds/index.js';
 import { households } from '../mechanisms/households/index.js';
 import { labour } from '../mechanisms/labour/index.js';
@@ -63,7 +64,7 @@ import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
 import { displayName } from '../registry/naming.js';
-import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, TREASURY } from '../registry/profiles.js';
+import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, SHARES, TREASURY } from '../registry/profiles.js';
 import type { ParamDecl } from '../registry/params.js';
 import type { AssemblySpec } from '../world/assemble.js';
 import { assemble, KERNEL_PARAMS } from '../world/assemble.js';
@@ -456,7 +457,14 @@ export function foundationSpec(seed: string): AssemblySpec {
     registry: {
       currencies: [{ code: PHX, name: 'Phoenix unit', centralBank: CB }],
       regions: [{ id: REGION, name: 'North', ccy: PHX }],
-      units: [{ id: currencyUnit(PHX), name: 'PHX', countable: false }],
+      units: [
+        { id: currencyUnit(PHX), name: 'PHX', countable: false },
+        // Equity A2, Fund Shares A2: a SHARE COUNT, which more than one system counts in and no one
+        // of them owns. It divides: a whole-share rule would leave a residual on every pro-rata
+        // fill, every subscription and every split with nobody to own it (Law 2), and what the unit
+        // is for is that a share of one thing is never added to a share of another.
+        { id: SHARES, name: 'shares', countable: false },
+      ],
       cohorts: [
         { id: cohortId('working'), name: 'working age', fromAge: 18 },
         { id: cohortId('retired'), name: 'retired', fromAge: 65 },
@@ -505,6 +513,7 @@ export function foundationSpec(seed: string): AssemblySpec {
       firms(),
       households(),
       funds(),
+      equity(),
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
       sovereignAuction,

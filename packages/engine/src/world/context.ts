@@ -1,7 +1,7 @@
 /**
  * The contexts a module works through. There is no other door into the kernel.
  *
- * @spec Observer A1 Observer A2 Observer A3 Observer A4 Expectations D1 Law 4 Money D4 Clearing A3 Clearing A4 Seed A1 Seed A4
+ * @spec Observer A1 Observer A2 Observer A3 Observer A4 Expectations D1 Law 4 Money D4 Clearing A3 Clearing A4 Register E4 Equity D4 Seed A1 Seed A4
  *
  * - ParticipantView: what one party may see when it decides. Its own positions and accounts, public
  *   prints already produced, public instrument terms, public events. Nothing of any other party.
@@ -129,6 +129,13 @@ export interface ParticipantView extends KernelReads {
    */
   lastPublic(kind: EventKind): Option<Event>;
   /**
+   * A3: the most recent PUBLIC event of a kind about a NAMED subject — what that issuer declared,
+   * what that firm published, what that bank said it pays. It is the same read as `lastPublic` with
+   * the one question a participant actually asks: not "what was the last dividend anybody declared"
+   * but "what did THIS firm declare". A private event is never reachable through it, whoever asks.
+   */
+  lastPublicAbout(kind: EventKind, subject: string): Option<Event>;
+  /**
    * A4: the most recent event of a kind THIS party is a subject of — what it announced this period,
    * what its own wage bill came to, what it was told. A decision taken in a phase and an order
    * posted into a market are one decision (Law 4), and this is how the second reads the first
@@ -194,6 +201,13 @@ export interface MechanismContext extends KernelReads {
    * is there at the start and nothing else may — this is how anybody arrives after that.
    */
   enter(party: NamedParty): void;
+  /**
+   * Register E4, E5, Equity D4: restate the count of a line. Every holding's quantity is multiplied
+   * and its basis per unit divided, every price ever printed is re-denominated, and the issued
+   * amount moves with them — so no value moves, nothing changes hands and no money leg exists,
+   * which is what the event says out loud. Only a kind whose profile says it splits may.
+   */
+  split(instrument: InstrumentId, ratio: number): void;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   record(

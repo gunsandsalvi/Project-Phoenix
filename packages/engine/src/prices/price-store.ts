@@ -1,7 +1,7 @@
 /**
  * The price store: one cleared price per (instrument, period), written only by its market.
  *
- * @spec XI-6 Clearing D1 Clearing D4 Clearing E1 Clearing E4 Clearing F1 Clearing F1.a Clearing F2 Clearing C4.b Goods C2 Observer A1 Observer A1.a
+ * @spec XI-6 Clearing D1 Clearing D4 Clearing E1 Clearing E4 Clearing F1 Clearing F1.a Clearing F2 Clearing C4.b Equity D4 Goods C2 Observer A1 Observer A1.a
  *
  * A print carries its provenance. A market with no trades writes a STALE print carried from the last
  * traded one, visibly (E4); it never silently refreshes. A read of a period the market has not yet
@@ -67,6 +67,29 @@ export class PriceStore {
     );
     list.push(Object.freeze({ ...p }));
     this.byInstrument.set(p.instrument, list);
+  }
+
+  /**
+   * Equity D4: the line's unit changed, so every price denominated in it is restated.
+   *
+   * This is not a second writer of prices (Law 4): nothing here decides what anything is worth. A
+   * split multiplies the count and divides the size of each unit, and a number quoted per old unit
+   * says nothing about a new one — so every stored print is re-denominated by the same ratio the
+   * register was, which is exactly what an adjusted price history is. The split itself is a public
+   * event carrying the ratio, so the restatement is visible rather than a series that moved.
+   *
+   * Leaving them alone would be worse than a rewrite: the next session that fails to clear carries
+   * the last print forward (E4), and it would carry a price per old share into a book quoted per
+   * new one.
+   */
+  restate(instrument: InstrumentId, ratio: number): void {
+    forbid(finite(ratio, 'the split ratio') > 0, 'Equity D4', `a split ratio is positive: ${ratio}`);
+    const list = this.byInstrument.get(instrument);
+    if (list === undefined) return;
+    this.byInstrument.set(
+      instrument,
+      list.map((p) => Object.freeze({ ...p, price: finite(p.price / ratio, `print ${p.instrument}`) })),
+    );
   }
 
   /** The print for exactly this period, if the market has run. */

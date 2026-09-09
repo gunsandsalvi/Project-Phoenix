@@ -1,7 +1,7 @@
 /**
  * The kernel: every store, the one period loop, and the doors modules come through.
  *
- * @spec Money G1 Money G2 Money G4 Clearing F1 Clearing F1.a Clearing F3 Audit C1 Audit C2 Audit C3 Currency D3 Seed A5 Observer E3 Observer A4 Law 4 Law 10 Law 15
+ * @spec Money G1 Money G2 Money G4 Clearing F1 Clearing F1.a Clearing F3 Audit C1 Audit C2 Audit C3 Currency D3 Register E4 Register E5 Equity D4 Seed A5 Observer E3 Observer A4 Law 4 Law 10 Law 15
  *
  * A period is an ordered list of phases held as data: the kernel's own (corporate actions, markets,
  * revaluation) and the phases modules anchor around them. Every phase runs every period (Audit C3);
@@ -583,6 +583,12 @@ export class World {
         const last = events[events.length - 1];
         return last === undefined ? none() : some(last);
       },
+      lastPublicAbout: (kind, subject) => {
+        const e = this.journal.lastOf(kind, subject);
+        // Observer A3, A4: public or not at all. `lastOwn` is the door to a party's own private
+        // record; this one names somebody else, so only what everybody may read comes back.
+        return e?.public === true ? some(e) : none();
+      },
       lastOwn: (kind) => {
         const e = this.journal.lastOf(kind, party);
         return e === undefined ? none() : some(e);
@@ -656,6 +662,9 @@ export class World {
           true,
         );
       },
+      split: (instrument, ratio) => {
+        this.splitInstrument(instrument, ratio);
+      },
       cease: (party, successor) => {
         this.parties.cease(party, this.currentPeriod, successor);
         this.journal.record(
@@ -670,6 +679,48 @@ export class World {
       record: (kind, subjects, data, isPublic) =>
         this.journal.record(this.currentPeriod, this.currentCycle, kind, subjects, data, isPublic),
     };
+  }
+
+  /**
+   * Register E4, E5, Equity D4: a split. The count of a line changes and NOTHING else does.
+   *
+   * Three restatements in one operation, because they are three readings of one unit: the issued
+   * amount, every holding of it (quantity up, basis per unit down, so no lot's value moves), and
+   * every price ever printed for it (per new unit from now on, which is what an adjusted history
+   * is). Nobody's position changed hands and no equity account moves, so there is no instruction
+   * and no money leg — which is the reason E5 asks an event that moves a register without moving
+   * money to state. It is stated here and it is journalled publicly with the ratio and both counts.
+   *
+   * It is a door and not a leg because a split has no counterparty: there is no second side for the
+   * wire to name (Money D1). The module that owns the kind decides to do it; the kernel does it.
+   */
+  private splitInstrument(instrument: InstrumentId, ratio: number): void {
+    forbid(this.sealed, 'Seed A2', 'a split happens inside a period, not at assembly');
+    const before = this.instruments.get(instrument);
+    forbid(
+      this.registry.instrumentKind(before.kind).splits === true,
+      'Equity D4',
+      `${instrument} is not a kind whose count a split may change`,
+      { instrument },
+    );
+    this.store.restate(instrument, ratio);
+    this.instruments.restate(instrument, ratio);
+    this.prices.restate(instrument, ratio);
+    this.journal.record(
+      this.currentPeriod,
+      this.currentCycle,
+      'instrument.split',
+      [instrument, ...(before.issuer.some ? [before.issuer.value] : [])],
+      {
+        instrument,
+        ratio,
+        issuedBefore: before.issued,
+        issued: this.instruments.get(instrument).issued,
+        // Register E5: an event that moved a register and moved no money, saying why not.
+        movedNoMoney: 'a split restates the unit and moves no value: nothing changed hands',
+      },
+      true,
+    );
   }
 
   view(): AuditView {

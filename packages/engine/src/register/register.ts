@@ -1,7 +1,7 @@
 /**
  * The register: who holds what, in what units, with what basis and what encumbrance.
  *
- * @spec Register A1 Register A1.c Register A3 Register B2 Register B3 Register C1 Register C4 Register D1 Register D2 Register D2.a Register D4 Register D5 Register D5.a Register D5.b Audit B5 Audit B5.b XI-15
+ * @spec Register A1 Register A1.c Register A3 Register B2 Register B3 Register C1 Register C4 Register D1 Register D2 Register D2.a Register D4 Register D5 Register D5.a Register D5.b Register E4 Equity D4 Audit B5 Audit B5.b XI-15
  *
  * A holding is (holder, instrument) -> lots and liens. For a cell the quantities are PER MEMBER; the
  * cell's total is weight x member at read (XI-15). Both directions are indexed and both are written by
@@ -414,6 +414,40 @@ export class Register {
       throw new Missing('Register D5', `lien ${lien} on ${holder}/${instrument} does not exist`);
     h.liens.splice(idx, 1);
     if (h.lots.length === 0 && h.liens.length === 0) this.drop(holder, instrument);
+  }
+
+  /**
+   * Register E4, Equity D4: a share split — every holding of one line restated in a new unit.
+   *
+   * It moves NO VALUE and nothing else about the holding: each lot keeps what it cost, so its
+   * quantity is multiplied and its basis per unit divided by the same ratio, and the product — what
+   * the equity account has recognised — is arithmetically unchanged. Liens travel with the units
+   * they bind, or a pledge of half a holding would silently become a pledge of a quarter of it.
+   *
+   * This is the second thing that writes a lot's quantity, and it is not a transfer: nobody's
+   * position changed hands, so there is no instruction and no counterparty. The single writer of
+   * WHO HOLDS WHAT is still settlement; this restates HOW WHAT THEY HOLD IS COUNTED, and it is
+   * called from one place (the split door on the world) which journals it publicly.
+   */
+  restate(instrument: InstrumentId, ratio: number): void {
+    impossible(
+      finite(ratio, 'the split ratio') > 0,
+      'Equity D4',
+      `a split ratio is positive, got ${ratio}`,
+    );
+    for (const holder of this.holdersOf(instrument)) {
+      const h = this.mutable(holder, instrument);
+      h.lots = h.lots.map((l) =>
+        Object.freeze({
+          ...l,
+          qty: finite(l.qty * ratio, `${holder}'s units of ${instrument}`),
+          basisPerUnit: finite(l.basisPerUnit / ratio, `what a unit of ${instrument} cost`),
+        }),
+      );
+      h.liens = h.liens.map((l) =>
+        Object.freeze({ ...l, qty: finite(l.qty * ratio, `units of ${instrument} bound`) }),
+      );
+    }
   }
 
   /** Copy per-member state to a new party (a split: XI-15). The equity account is copied too. */
