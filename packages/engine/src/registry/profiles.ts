@@ -67,9 +67,10 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     id: BANK,
     representation: 'named',
     moneyIssuer: {
-      // B3.a: a customer overdrawn is a credit decision by its bank. The credit decision is Banks
-      // Lending (worklist 6); until then the bank refuses and the refusal is recorded.
-      overdraft: (): OverdraftDecision => ({ allow: false }),
+      // B3.a: a customer overdrawn is BORROWING, and it is a credit decision by its bank — the room
+      // its own capital supports, and a refusal past it. A party kind profile cannot take that
+      // decision, so it does not pretend to: the lending module registers it (Banks Lending C3).
+      overdraft: 'aCreditDecision',
     },
   },
   { id: TREASURY, representation: 'named', moneyIssuer: null },

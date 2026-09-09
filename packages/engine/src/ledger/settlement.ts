@@ -38,6 +38,8 @@ import type { Valuation } from '../prices/value.js';
 import type { Instruments } from '../register/instruments.js';
 import type { DrawnLot, Register } from '../register/register.js';
 import type { Registry } from '../registry/registry.js';
+import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
+import type { PartyKindId } from '../core/ids.js';
 import type {
   AccountRef,
   AssetLeg,
@@ -66,6 +68,12 @@ export interface SettlementDeps {
   readonly valuation: Valuation;
   readonly ledger: Ledger;
   readonly journal: Journal;
+  /**
+   * Money B3.a: the credit decision behind an overdraft, for an issuer kind that says its answer is
+   * one. It is a function of the party kind and not of the instrument, because it is the ISSUER's
+   * decision — the bank's — and every bank of a kind decides the same way from its own state.
+   */
+  creditDecision(kind: PartyKindId): (ctx: OverdraftContext) => OverdraftDecision;
 }
 
 /** One register-level operation an instruction expands into; quantities are per member for cells. */
@@ -608,13 +616,20 @@ export class Settlement {
           short: -after,
         };
       }
-      const decision = moneyIssuer.overdraft({
+      const context = {
         holder: n.party,
         issuer: issuerId,
         ccy: inst.ccy,
         shortfall: -after,
         holderIssuesMoney: this.d.registry.issuesMoney(this.d.parties.get(n.party).kind),
-      });
+      };
+      // B3.a: a kind whose answer is a credit decision does not answer here; the module that owns
+      // lending does, and assembly has already refused a world where nobody does.
+      const answer =
+        moneyIssuer.overdraft === 'aCreditDecision'
+          ? this.d.creditDecision(issuer.kind)
+          : moneyIssuer.overdraft;
+      const decision = answer(context);
       if (!decision.allow) {
         return {
           kind: 'overdraftRefused',

@@ -23,13 +23,13 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { PartyId } from '../../core/ids.js';
-import { combineDust, dustOf, sub, sum, withinDust } from '../../core/num.js';
+import { add, combineDust, dustOf, sub, sum, withinDust } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { FIRMS, labourScaleId, type FirmDecl } from './data.js';
-import { ordersFrom, plan, venueOf, type PlannedOrder } from './decide.js';
+import { ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
 
 export * from './data.js';
@@ -219,6 +219,7 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
       qty: wantsNobody ? 0 : p.hours,
     });
   }
+  publishFunding(ctx, view, p);
   // Private: what a firm is about to bid is between it and the book until the book clears. What it
   // expects to deliver is the public one (E7), and it is published separately.
   ctx.record(
@@ -237,6 +238,36 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
     },
     false,
   );
+}
+
+/**
+ * Firm E4, Banks Lending C2: what it is short of. A firm pays out of a balance and the balance can
+ * hit zero (D1), so what it is about to have to pay — the payroll it has promised and the inputs it
+ * decided to buy — against what it holds is a real number about its own position, and it says it.
+ *
+ * It says it and nothing more. Whether anybody lends against it, at what, and whether it takes the
+ * quote are the lender's decision and its own, in the module that owns them (Law 4). A firm with
+ * enough says nothing, because there is nothing to say.
+ */
+function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned): void {
+  const ccy = ctx.registry.region(view.self.region).ccy;
+  const buying = sum(
+    p.orders
+      .filter((o: PlannedOrder) => o.side === 'buy' && o.price !== 'market')
+      .map((o: PlannedOrder) => (typeof o.price === 'number' ? o.price * o.qty : 0)),
+  ).value;
+  const owed = add(buying, wagesPromised(view), 'what it is about to have to pay');
+  const short = sub(owed, view.cash(ccy), 'what it is short of');
+  if (short <= 0) return;
+  ctx.record('firms.funding', [view.self.id], { short, owed, ccy }, false);
+}
+
+/** D1: the payroll it has already promised, read from its own last wage bill (Law 19). */
+function wagesPromised(view: ParticipantView): number {
+  const own = view.lastOwn('labour.wages');
+  if (!own.some) return 0;
+  const due = own.value.data['due'];
+  return typeof due === 'number' ? due : 0;
 }
 
 /** The orders as the data they are, so the party's own participant can read them back. */

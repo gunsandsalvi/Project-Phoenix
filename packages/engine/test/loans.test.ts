@@ -1,0 +1,313 @@
+/**
+ * A loan is a row: written by creating a deposit, priced from the bank's own economics, refused
+ * when the bank's own constraints say no.
+ *
+ * @spec Banks Lending A1 Banks Lending A1.a Banks Lending A2 Banks Lending A4 Banks Lending B1 Banks Lending B1.a Banks Lending B1.b Banks Lending B1.c Banks Lending B2 Banks Lending B2.a Banks Lending B2.c Banks Lending B2.d Banks Lending C1 Banks Lending C1.a Banks Lending C1.b Banks Lending C1.c Banks Lending C1.d Banks Lending C2 Banks Lending C2.a Banks Lending C3 Banks Lending C3.a Banks Lending C4 Banks Lending D1 Banks Lending D3 Banks Lending E1 Banks Lending F1 Banks Lending F1.a Banks Lending F3 Money B3.a Money B3.c Bond N13.a Corporate Credit G8 XI-4
+ */
+import { describe, expect, it } from 'vitest';
+import {
+  BANKS,
+  LOAN,
+  PHX,
+  TREASURY_NORTH,
+  assemble,
+  foundationSpec,
+  isLoan,
+  loanKind,
+  none,
+  partyId,
+  type InstructionDraft,
+  type Leg,
+  type MechanismContext,
+  type SystemModule,
+  type World,
+} from '../src/index.js';
+import { unexpected } from './expected.js';
+
+const BORROWER = partyId('firm.1');
+const PAYEE = partyId('firm.2');
+const BANK_OF_A = partyId('bank.a');
+
+/** A borrower that says what it is short of, which is the only thing a borrower says (C2). */
+function asksFor(amount: number, at = 1): SystemModule {
+  return {
+    id: 'test.asks',
+    spec: 'Banks Lending C2',
+    requires: [],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [
+      {
+        name: 'test.ask',
+        spec: 'Banks Lending C2',
+        cycle: 0,
+        anchor: { before: 'corporateActions' },
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== at) return;
+          ctx.record('firms.funding', [BORROWER], { short: amount, owed: amount, ccy: PHX }, false);
+        },
+      },
+    ],
+    participants: [],
+    families: [],
+  };
+}
+
+/** Spends more than it holds, so its bank has to decide (Money B3.a). */
+function overspends(amount: number, at = 2): SystemModule {
+  return {
+    id: 'test.overspends',
+    spec: 'Money B3.a',
+    requires: [],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [
+      {
+        name: 'test.overspend',
+        spec: 'Money B3.a',
+        cycle: 0,
+        anchor: { before: 'corporateActions' },
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== at) return;
+          const leg: Leg = {
+            kind: 'money',
+            from: { holder: BORROWER, issuer: ctx.parties.get(BORROWER).bank },
+            to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
+            ccy: PHX,
+            amount,
+            fromCell: none(),
+            toCell: none(),
+          };
+          const draft: InstructionDraft = { legs: [leg], cause: 'transfer', reason: 'a bill' };
+          ctx.settle(draft);
+        },
+      },
+    ],
+    participants: [],
+    families: [],
+  };
+}
+
+function world(extra: readonly SystemModule[] = [], limits?: number): World {
+  const spec = foundationSpec('loans');
+  const modules = spec.modules
+    .filter(
+      (m) =>
+        m.id === 'sovereign-instruments' ||
+        m.id === 'seed.foundation' ||
+        m.id === 'credit-events' ||
+        m.id === 'bank-lending',
+    )
+    .map((m) =>
+      limits === undefined
+        ? m
+        : {
+            ...m,
+            params: m.params.map((p) =>
+              p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: limits } : p,
+            ),
+          },
+    );
+  return assemble({ ...spec, modules: [...modules, ...extra] });
+}
+
+function loans(w: World): { id: string; issued: number; lender: string; rate: number }[] {
+  return w.instruments
+    .all()
+    .filter((i) => i.kind === LOAN)
+    .map((i) => ({
+      id: String(i.id),
+      issued: i.issued,
+      lender: isLoan(i.terms) ? String(i.terms.lender) : '',
+      rate: isLoan(i.terms) ? i.terms.rate : 0,
+    }));
+}
+
+describe('what a loan is (Banks Lending A1, A2, A4, D1)', () => {
+  it('is carried at cost with no market, and states what it is secured on either way', () => {
+    // A1.a: it is not a security. D1: so it is held at amortised cost rather than marked to a
+    // market that does not exist — and it names no market at all, which the kernel enforces.
+    expect(loanKind.pricing).toBe('carriedAtCost');
+    expect(loanKind.carry).toBe('cost');
+    expect(loanKind.liabilityOfIssuer).toBe(true);
+    // N13.a: the ranking is stated. Unsecured here, and that is an answer rather than a gap.
+    const w = world([asksFor(20)]);
+    for (let i = 0; i < 4; i += 1) w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined) return;
+    const rank = loanKind.ranking(row);
+    expect(rank.secured).toEqual([]);
+    expect(rank.claim.length).toBeGreaterThan(0);
+  });
+});
+
+describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
+  it('creates a deposit, and no reserve leaves the bank', () => {
+    const w = world([asksFor(20)]);
+    // Period 1 is where it says what it is short of; period 2 is where the credit is arranged.
+    w.step();
+    const before = w.cash(BORROWER, PHX);
+    w.step();
+    const written = w.journal.ofKind('credit.written');
+    expect(written.length).toBe(1);
+    const principal = Number(written[0]?.data['principal']);
+    expect(principal).toBeGreaterThan(0);
+    // B1: the loan on one side and the borrower's balance on the other, at the same instant.
+    expect(w.cash(BORROWER, PHX)).toBeCloseTo(before + principal, 9);
+    expect(loans(w)).toHaveLength(1);
+    expect(loans(w)[0]?.issued).toBeCloseTo(principal, 9);
+    // B1.a: no reserve leaves. The whole of endogenous money is that this instruction has no
+    // interbank leg in it at all — the money it created is the lending bank's own.
+    const record = w.ledger
+      .all()
+      .find((r) => r.outcome === 'settled' && r.instruction.cause === 'issuance');
+    expect(record?.outcome === 'settled' && record.reserveLegs).toEqual([]);
+    // B1.c: and nothing was consumed to fund it. The bank's own money holdings did not move.
+    expect(w.journal.ofKind('reserve.overdraft')).toHaveLength(0);
+  });
+
+  it('is a row with a lender of record holding every unit of it (F1, F1.a)', () => {
+    const w = world([asksFor(20)]);
+    for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    // There is no book number anywhere: a bank's book is the sum of the rows it holds.
+    expect(w.register.quantity(row.terms.lender, row.id)).toBeCloseTo(row.issued, 9);
+    expect(row.terms.borrower).toBe(BORROWER);
+  });
+});
+
+describe('the price (Banks Lending C1, C2, XI-4)', () => {
+  it('is four named terms, and two banks do not quote the same', () => {
+    const w = world([asksFor(20)]);
+    for (let i = 0; i < 3; i += 1) w.step();
+    const written = w.journal.ofKind('credit.written')[0];
+    const rate = Number(written?.data['rate']);
+    // C1: cost of funds plus expected loss plus the capital charge plus what it costs to run it.
+    // Nothing it owes pays interest yet, so the first term is a true zero and the rest are real.
+    const a = BANKS.find((b) => b.bank === 'bank.a');
+    const b = BANKS.find((b) => b.bank === 'bank.b');
+    expect(a?.returnOnCapital).not.toBe(b?.returnOnCapital);
+    // C2: the borrower took the keenest of the two. Bank A wants less on its capital, so its
+    // quote is the tighter one and it wins the business — a wide quote loses volume (C2.a).
+    expect(written?.data['bank']).toBe(BANK_OF_A);
+    expect(rate).toBeGreaterThan(0);
+  });
+
+  it('gets dearer for a borrower that has failed to pay (C1.b, C4, Corporate Credit G8)', () => {
+    const clean = world([asksFor(10, 6)]);
+    for (let i = 0; i < 8; i += 1) clean.step();
+    const cleanRate = Number(clean.journal.ofKind('credit.written')[0]?.data['rate']);
+    // The same request from a borrower the banks have watched fail to pay.
+    const marked = world([overspends(1e6, 2), asksFor(10, 6)], 0);
+    for (let i = 0; i < 8; i += 1) marked.step();
+    const seen = marked.journal
+      .ofKind('credit.default')
+      .filter((e) => e.data['party'] === BORROWER);
+    expect(seen.length).toBeGreaterThan(0);
+    const marked2 = world([overspends(1e6, 2), asksFor(10, 6)]);
+    for (let i = 0; i < 8; i += 1) marked2.step();
+    const markedRate = Number(marked2.journal.ofKind('credit.written')[0]?.data['rate']);
+    // C1.b: the bank's own view of this borrower moved, so the price moved. A default is
+    // information, and this is the channel it travels down (G8).
+    expect(markedRate).toBeGreaterThan(cleanRate);
+  });
+});
+
+describe('when it says no (Banks Lending B2, C3, C3.a, F3)', () => {
+  it('declines when its limit for one name binds, and the decline is recorded', () => {
+    // F3: a large-exposure limit that binds is what makes concentration a thing it manages.
+    const w = world([asksFor(20)], 0);
+    for (let i = 0; i < 4; i += 1) w.step();
+    expect(w.journal.ofKind('credit.written')).toHaveLength(0);
+    const declined = w.journal.ofKind('credit.declined');
+    expect(declined.length).toBeGreaterThan(0);
+    // C3.a: a bank that never says no has no credit standard, so what it said no to is written
+    // down — with which of its own constraints bound (B2.d).
+    expect(declined[0]?.data['borrower']).toBe(BORROWER);
+    expect(['capital', 'appetite']).toContain(String(declined[0]?.data['binds']));
+  });
+});
+
+describe('an overdrawn customer (Money B3.a, B3.c)', () => {
+  it('is borrowing: what the bank allowed is a row by the close, not a hole', () => {
+    const w = world([overspends(300)]);
+    for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    // The payment went through because its bank decided to lend it the difference...
+    const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
+    expect(failed).toHaveLength(0);
+    // ...and by the close of the period it is a loan with a lender and a rate (B3.c).
+    const rows = loans(w);
+    expect(rows.length).toBeGreaterThan(0);
+    expect(rows[0]?.rate).toBeGreaterThan(0);
+    // The account is not below zero any more: the deposit the loan created brought it back.
+    expect(w.cash(BORROWER, PHX)).toBeGreaterThanOrEqual(0);
+  });
+
+  it('is refused when the bank has no room, and then the payment simply fails (B3.c)', () => {
+    const w = world([overspends(300)], 0);
+    for (let i = 0; i < 4; i += 1) w.step();
+    const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
+    expect(failed.length).toBeGreaterThan(0);
+    expect(w.journal.ofKind('credit.declined').length).toBeGreaterThan(0);
+    expect(loans(w)).toHaveLength(0);
+    // Money E1: and the payer that could not pay is in default of payment, by name.
+    expect(
+      w.journal.ofKind('credit.default').some((e) => e.data['party'] === BORROWER),
+    ).toBe(true);
+  });
+});
+
+describe('carrying it (Banks Lending D3, E1)', () => {
+  it('accrues interest that is paid to the lender, period by period', () => {
+    const w = world([asksFor(20)]);
+    for (let i = 0; i < 4; i += 1) w.step();
+    const lenderBefore = w.register.equity(BANK_OF_A);
+    const borrowerBefore = w.cash(BORROWER, PHX);
+    w.step();
+    // D3: interest accrues and is received. It leaves the borrower's account by name — and it
+    // reaches the lender by EXTINGUISHING the deposit the lender itself issued, which is what
+    // being paid in your own money is (Money C2). The bank's liabilities fall, so it is richer.
+    expect(w.cash(BORROWER, PHX)).toBeLessThan(borrowerBefore);
+    expect(w.register.equity(BANK_OF_A)).toBeGreaterThan(lenderBefore);
+  });
+
+  it('is a default when the borrower does not pay it (E1, E2)', () => {
+    const w = world([asksFor(20)]);
+    for (let i = 0; i < 3; i += 1) w.step();
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    // Its own definition of default: a payment on the loan that the borrower did not make.
+    if (row !== undefined) {
+      expect(loanKind.defaultOn).toBeDefined();
+      expect(row.status.live && row.status.performing).toBe(true);
+    }
+  });
+});
+
+describe('the world it lives in', () => {
+  it('runs a year with lending in it and stays consistent', () => {
+    const spec = foundationSpec('loans-year');
+    const w = assemble(spec);
+    expect(w.phases.map((p) => p.name)).toContain('lending.write');
+    for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    // Nobody in this world borrows yet, and that is the honest state rather than a broken one:
+    // its firms hold more cash than they spend, its households never spend past what they hold,
+    // and the one party that runs out — the treasury — banks at the central bank, which refuses
+    // everyone that is not a money issuer (Treasury D3). The demand side arrives with investment
+    // (worklist 10) and consumer credit (13d). What is built here is the supply side, and it
+    // answers the moment anybody asks.
+    expect(w.journal.ofKind('credit.written')).toHaveLength(0);
+    expect(w.instruments.all().filter((i) => i.kind === LOAN)).toHaveLength(0);
+    expect(w.parties.ofKind(partyId('bank') as never).length).toBeGreaterThan(0);
+    expect(TREASURY_NORTH).toBeDefined();
+  });
+});

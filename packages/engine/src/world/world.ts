@@ -32,8 +32,10 @@ import {
   moneyInstrumentId,
   paramId,
   type PartyId,
+  type PartyKindId,
   type VenueId,
 } from '../core/ids.js';
+
 import { addTo } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
@@ -65,7 +67,8 @@ import type {
   OutlookVariable,
   ParticipantView,
 } from './context.js';
-import type { OutlookProvider, ParticipantDecl, PhaseDecl } from './module.js';
+import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
+import type { CreditDecision, OutlookProvider, ParticipantDecl, PhaseDecl } from './module.js';
 import { revalue } from './revalue.js';
 
 
@@ -129,6 +132,7 @@ export class World {
   private readonly slots = new Map<string, object>();
   /** Expectations A2: the one module that answers what a party expects. */
   private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
+  private readonly creditDeciders = new Map<PartyKindId, { owner: string; decide: CreditDecision }>();
   private readonly phaseList: Phase[];
   private readonly audit: Audit;
   private readonly memory: AuditMemory = emptyMemory();
@@ -161,6 +165,7 @@ export class World {
       valuation: this.valuation,
       ledger: this.ledger,
       journal: this.journal,
+      creditDecision: (kind) => (o) => this.creditDecisionOf(kind)(o),
     });
     this.currentCycle = this.calendar.cycle(0);
     this.audit = new Audit(
@@ -320,6 +325,35 @@ export class World {
     );
   }
 
+  /**
+   * Money B3.a: exactly one module answers what a bank does about a customer overdrawn at it, and
+   * it answers for a whole party kind, because every bank of a kind decides the same way from its
+   * own state (Law 15). Registered at assembly; a kind whose profile says its answer is a credit
+   * decision and has nobody to take it is a world that cannot be sealed.
+   */
+  provideCreditDecision(owner: string, kind: PartyKindId, decide: CreditDecision): void {
+    forbid(!this.sealed, 'Law 10', 'the credit decision is declared at assembly');
+    const held = this.creditDeciders.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Banks Lending C3',
+        `${owner} would be a second decider of ${kind}'s overdrafts, after ${held.owner}`,
+      );
+    }
+    this.creditDeciders.set(kind, { owner, decide });
+  }
+
+  private creditDecisionOf(kind: PartyKindId): (o: OverdraftContext) => OverdraftDecision {
+    const held = this.creditDeciders.get(kind);
+    if (held === undefined) {
+      throw new Missing(
+        'Money B3.a',
+        `${kind} says an overdraft at it is a credit decision and nobody takes it`,
+      );
+    }
+    return (o) => held.decide(this.mechanismContext(held.owner), o);
+  }
+
   /** Expectations A2: exactly one module answers what a party expects (Law 4). */
   provideOutlooks(owner: string, provider: OutlookProvider): void {
     forbid(!this.sealed, 'Law 10', 'the outlook provider is declared at assembly');
@@ -392,8 +426,26 @@ export class World {
   }
 
   /** Seal the seed and audit it at period zero (Seed A2). */
+  /**
+   * Money B3.a: a kind that says an overdraft at it is a credit decision must have a module that
+   * takes it. Checked at the seal rather than at the moment somebody is overdrawn, because the
+   * world that cannot answer is broken from the start and finding out mid-period would make it look
+   * like a refusal — which is exactly the thing C3.a says must be visible and never defaulted to.
+   */
+  private requireCreditDeciders(): void {
+    for (const kind of this.registry.partyKinds.values()) {
+      if (kind.moneyIssuer?.overdraft !== 'aCreditDecision') continue;
+      if (this.creditDeciders.has(kind.id)) continue;
+      throw new InvalidRegistry(
+        'Money B3.a',
+        `${kind.id} says an overdraft at it is a credit decision and no module takes it`,
+      );
+    }
+  }
+
   seal(): AuditReport {
     forbid(!this.sealed, 'Seed A2', 'the world is already sealed');
+    this.requireCreditDeciders();
     this.sealed = true;
     const report = this.audit.run(this.view(), this.reads());
     remember(this.view(), this.memory);

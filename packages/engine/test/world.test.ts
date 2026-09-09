@@ -99,6 +99,25 @@ function bareWith(seed: string, ...extra: SystemModule[]): World {
   return bare(seed, ...extra);
 }
 
+/** The bare world where no bank will lend a penny: every limit for every name is nothing (C3). */
+function noLending(seed: string, ...extra: SystemModule[]): World {
+  const spec = foundationSpec(seed);
+  const modules = spec.modules
+    .filter(
+      (m) =>
+        m.id === 'sovereign-instruments' ||
+        m.id === 'seed.foundation' ||
+        m.id === 'bank-lending',
+    )
+    .map((m) => ({
+      ...m,
+      params: m.params.map((p) =>
+        p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: 0 } : p,
+      ),
+    }));
+  return assemble({ ...spec, modules: [...modules, ...extra] });
+}
+
 /**
  * The kernel and the opening state, with none of the mechanisms that act on it. Tests about the
  * kernel itself use this so what they measure is the kernel's, not a treasury's decisions.
@@ -106,7 +125,7 @@ function bareWith(seed: string, ...extra: SystemModule[]): World {
 function bare(seed: string, ...extra: SystemModule[]): World {
   const spec = foundationSpec(seed);
   const kernelOnly = spec.modules.filter(
-    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending',
   );
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
@@ -354,11 +373,15 @@ describe('the period loop', () => {
       families: [],
     };
     const w = bare('seed-H', probe);
+    // The bare world carries the lending module too: a bank says an overdraft at it is a credit
+    // decision (Money B3.a), and a world with a bank in it and nobody to take that cannot be sealed.
     expect(w.phases.map((p) => p.name)).toEqual([
       'corporateActions',
+      'lending.write',
       'probe',
       'markets',
       'revaluation',
+      'lending.book',
     ]);
     w.step();
     expect(seen).toEqual(['1:1']);
@@ -393,7 +416,9 @@ describe('a market with reasons on both sides', () => {
   });
 
   it('a buyer without the cash fails the whole trade, not half of it (Register C3.b)', () => {
-    const w = bareWith(
+    // Its bank will lend it nothing, so the shortfall is a refusal and not an overdraft (B3.a).
+    // A bank with no appetite for a name is a real bank, and it is what makes a fail a fail.
+    const w = noLending(
       'seed-J',
       traders((instrument, party) => {
         if (instrument !== GOV_LINE) return [];

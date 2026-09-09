@@ -14,7 +14,12 @@ import type { Order } from '../clearing/solver.js';
 import type { MarketDecl } from '../clearing/market.js';
 import type { PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
-import type { InstrumentKindProfile, PartyKindProfile } from '../registry/kinds.js';
+import type {
+  InstrumentKindProfile,
+  OverdraftContext,
+  OverdraftDecision,
+  PartyKindProfile,
+} from '../registry/kinds.js';
 import type { ParamDecl } from '../registry/params.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { PartyId } from '../core/ids.js';
@@ -54,6 +59,17 @@ export interface ParticipantDecl {
   orders(view: ParticipantView, market: MarketDecl): readonly Order[];
 }
 
+/**
+ * Money B3.a, Banks Lending C3: what a module decides about a customer overdrawn at an issuer of
+ * its kind. The kernel calls it through the module's own context — the same way the outlook door
+ * works — so the decision is taken with the module's own state and the issuer's own view, which is
+ * what a credit decision is made of.
+ */
+export type CreditDecision = (
+  ctx: MechanismContext,
+  o: OverdraftContext,
+) => OverdraftDecision;
+
 export interface OutlookProvider {
   of(ctx: MechanismContext, party: PartyId, variable: OutlookVariable): Option<Outlook>;
   /** A2: the variables this party has actually observed, in the order the module keeps them. */
@@ -88,6 +104,16 @@ export interface SystemModule {
    * a party that never observed a variable has no outlook of it).
    */
   readonly outlooks?: OutlookProvider;
+  /**
+   * Money B3.a, Banks Lending C3: what this module decides about a customer of a given party kind
+   * overdrawn at its issuer. Exactly one module may answer for a kind, and a kind whose profile
+   * says its answer is a credit decision must have one — a world where nobody takes it cannot be
+   * sealed, because a defaulted-to refusal looks exactly like a bank with a credit standard.
+   */
+  readonly creditDecisions?: readonly {
+    readonly partyKind: PartyKindId;
+    readonly decide: CreditDecision;
+  }[];
   /** Opening state this module contributes (Seed A1); runs in assembly order before the seed audit. */
   seed?(ctx: SeedContext): void;
 }

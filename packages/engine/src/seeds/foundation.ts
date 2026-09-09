@@ -48,6 +48,7 @@ import {
   type SovereignBillTerms,
   type SovereignBondTerms,
 } from '../mechanisms/sovereign-instruments/index.js';
+import { bankLending } from '../mechanisms/bank-lending/index.js';
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
@@ -495,6 +496,7 @@ export function foundationSpec(seed: string): AssemblySpec {
       labour(),
       firms(),
       households(),
+      bankLending,
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
       sovereignAuction,

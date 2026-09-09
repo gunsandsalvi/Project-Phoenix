@@ -75,7 +75,7 @@ const BREAD_ID = goodId('bread', REGION);
 function world(rows: readonly GoodDecl[], ...extra: SystemModule[]): World {
   const spec = foundationSpec('goods');
   const kernelOnly = spec.modules.filter(
-    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending',
   );
   return assemble({ ...spec, modules: [...kernelOnly, goods(rows), ...extra] });
 }
@@ -154,7 +154,7 @@ describe('what a good is (Goods A)', () => {
   it('refuses a recipe denominated in money: that is a substitution nobody declared (A2.b)', () => {
     const spec = foundationSpec('goods');
     const kernelOnly = spec.modules.filter(
-      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending',
     );
     const inMoney = goods(KEEPS);
     const doctored: SystemModule = {
@@ -271,7 +271,7 @@ describe('what perishes (Goods E4)', () => {
   const bread = (): World => {
     const spec = foundationSpec('goods.perish');
     const modules = spec.modules.filter(
-      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'goods',
+      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending' || m.id === 'goods',
     );
     return assemble({
       ...spec,
@@ -387,7 +387,7 @@ describe('the units identity (Part XII)', () => {
   it('is a contribution of its own and holds across making, selling and perishing', () => {
     const spec = foundationSpec('goods.units');
     const modules = spec.modules.filter(
-      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'goods',
+      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending' || m.id === 'goods',
     );
     const w = assemble({
       ...spec,

@@ -74,6 +74,7 @@ export function assemble(spec: AssemblySpec): World {
     for (const p of m.participants) world.addParticipant(p);
     const outlooks = m.outlooks;
     if (outlooks !== undefined) world.provideOutlooks(m.id, outlooks);
+    for (const d of m.creditDecisions ?? []) world.provideCreditDecision(m.id, d.partyKind, d.decide);
   }
   const ctx = seedContext(world);
   for (const m of modules) m.seed?.(ctx);

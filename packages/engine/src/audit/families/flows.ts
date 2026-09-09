@@ -12,7 +12,7 @@
  * the tolerance. Derived any smaller (as if two readings of one balance), a busy account reports a
  * violation every time it is paid more than a handful of times in a week.
  */
-import { dustOf, sum, withinDust, zeroIfNone, type Sum } from '../../core/num.js';
+import { carriedDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
 import { type AuditMemory, holdingKey } from '../memory.js';
 import type { AuditView } from '../view.js';
@@ -63,7 +63,7 @@ export function flowsFamily(memory: AuditMemory): Family {
         const legs = sum(holdingDeltas.get(key) ?? []);
         const change = sum([now, -before]);
         const lots = zeroIfNone(remembered?.lots) + (held.some ? held.value.lots.length : 0);
-        if (!withinDust(change.value, legs.value, walkDust(before, now, lots, legs))) {
+        if (!withinDust(change.value, legs.value, carriedDust(before, now, lots, legs))) {
           out.push({
             family: 'flows',
             spec: 'Money D3',
@@ -80,7 +80,7 @@ export function flowsFamily(memory: AuditMemory): Family {
         const legs = sum(issuedDeltas.get(i.id) ?? []);
         const change = sum([i.issued, -before]);
         // Issued is one balance, not lots, but it is carried by the same leg-at-a-time walk.
-        if (!withinDust(change.value, legs.value, walkDust(before, i.issued, 0, legs))) {
+        if (!withinDust(change.value, legs.value, carriedDust(before, i.issued, 1, legs))) {
           out.push({
             family: 'flows',
             spec: 'Register B1',
@@ -97,14 +97,3 @@ export function flowsFamily(memory: AuditMemory): Family {
   };
 }
 
-/**
- * The dust of carrying a balance from `before` to `now` by `legs`, read over `lots` at the two ends
- * (Law 7). Three walks: reading each end over its lots, applying each leg to a balance that never
- * exceeds where it started plus what moved, and the two sums the comparison itself makes.
- */
-function walkDust(before: number, now: number, lots: number, legs: Sum): number {
-  const ends = Math.abs(before) + Math.abs(now);
-  return (
-    dustOf(lots + 2, ends) + dustOf(legs.terms, Math.abs(before) + legs.magnitude) + legs.dust
-  );
-}

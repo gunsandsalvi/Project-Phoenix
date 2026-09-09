@@ -113,7 +113,7 @@ function auctioneer(
 function world(...extra: SystemModule[]): World {
   const spec = foundationSpec('seed-auction');
   const kernelOnly = spec.modules.filter(
-    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending',
   );
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }

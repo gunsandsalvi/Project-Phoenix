@@ -11,7 +11,7 @@
  *  - B3.c: no money balance is negative at the close without a lender; until the corridor prices a
  *    reserve overdraft, every one is reported here by holder and size.
  */
-import { combineDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { carriedDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditMemory } from '../memory.js';
@@ -75,7 +75,9 @@ export function moneyFamily(memory: AuditMemory): Family {
           }
           const s = sum(legs);
           const change = sum([now, -before]);
-          if (!withinDust(change.value, s.value, combineDust(s, change))) {
+          // Law 7: `issued` is a running total moved once per creation and once per destruction,
+          // so the comparison is a carried balance and not two readings (see carriedDust).
+          if (!withinDust(change.value, s.value, carriedDust(before, now, 1, s))) {
             out.push({
               family: 'money',
               spec: 'Money C4.c',

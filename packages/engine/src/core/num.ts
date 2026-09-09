@@ -96,6 +96,26 @@ export function dustOf(terms: number, magnitude: number): number {
   return terms * EPS * Math.abs(magnitude);
 }
 
+/**
+ * The dust of a balance CARRIED from one end of a period to the other (Law 7).
+ *
+ * Two records of one walk are being compared: a balance read at each end, and the legs that moved
+ * it in between. They are not two readings of one number — the balance was carried from the first
+ * to the second by applying those legs ONE AT A TIME, every application rounding at the magnitude
+ * the balance passed through rather than at the size of the leg — and each end was itself read over
+ * `reads` terms (the lots a holding is held in, or one for a single running total).
+ *
+ * Derived any smaller, as though two readings of one balance, a busy account reports a violation
+ * the moment it is moved more than a handful of times in a period. This is the one derivation, used
+ * by every family that compares a book against the wire that moved it.
+ */
+export function carriedDust(before: number, now: number, reads: number, legs: Sum): number {
+  const ends = Math.abs(before) + Math.abs(now);
+  return (
+    dustOf(reads + 2, ends) + dustOf(legs.terms, Math.abs(before) + legs.magnitude) + legs.dust
+  );
+}
+
 /** Combine the dust of several sums that are then compared or added. */
 export function combineDust(...sums: readonly Sum[]): number {
   let d = 0;

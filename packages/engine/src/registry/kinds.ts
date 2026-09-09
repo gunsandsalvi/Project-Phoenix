@@ -160,7 +160,24 @@ export interface InstrumentKindProfile {
  * Somebody lends it at a rate, or somebody refuses and the refusal is recorded (B3.c).
  */
 export type OverdraftDecision =
-  { readonly allow: true; readonly recordedAs: 'reserveOverdraft' } | { readonly allow: false };
+  | { readonly allow: true; readonly recordedAs: 'reserveOverdraft' | 'facilityDraw' }
+  | { readonly allow: false };
+
+/**
+ * WHO answers Money B3 for an issuer's customers.
+ *
+ * A kind whose answer is its own states the function — the central bank's is, because lending
+ * reserves to the banks that settle in them is what a central bank is (Central Bank D1). A kind
+ * whose answer is a CREDIT DECISION says so and answers nothing: B3.a is explicit that a customer
+ * overdrawn is borrowing and that it is its bank's decision, and a decision that weighs the room a
+ * bank's own capital supports is not something a kind profile could ever know how to take. The
+ * module that owns lending registers it at assembly, and assembly refuses a world where a kind says
+ * this and nobody answers — a refusal that exists because a defaulted-to "no" would look exactly
+ * like a bank with a credit standard.
+ */
+export type OverdraftPolicy = ((ctx: OverdraftContext) => OverdraftDecision) | 'aCreditDecision';
+
+
 
 export interface OverdraftContext {
   readonly holder: PartyId;
@@ -180,5 +197,5 @@ export interface PartyKindProfile {
   readonly id: PartyKindId;
   readonly representation: Representation;
   /** Present when parties of this kind issue money (Money A1): a bank, a central bank. */
-  readonly moneyIssuer: { readonly overdraft: (ctx: OverdraftContext) => OverdraftDecision } | null;
+  readonly moneyIssuer: { readonly overdraft: OverdraftPolicy } | null;
 }
