@@ -1,0 +1,43 @@
+{
+  "name": "project-phoenix",
+  "private": true,
+  "version": "0.0.1",
+  "description": "Project Phoenix — a simulated closed-circuit economy",
+  "type": "module",
+  "workspaces": [
+    "packages/engine",
+    "packages/app"
+  ],
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "check": "npm run lint && npm run typecheck && npm run test && npm run check:spec",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "tsc -b packages/engine packages/app tools",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:spec": "tsx tools/check-citations.ts",
+    "spec:index": "tsx tools/spec-index.ts",
+    "coverage:spec": "tsx tools/spec-coverage.ts",
+    "build": "npm run build --workspace packages/engine && npm run build --workspace packages/app",
+    "dev": "npm run dev --workspace packages/app",
+    "e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.63.0",
+    "@types/node": "^22.19.0",
+    "@vitest/coverage-v8": "^5.0.0",
+    "eslint": "^10.10.0",
+    "fast-check": "^4.9.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.20.0",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.70.0",
+    "vitest": "^5.0.0"
+  }
+}

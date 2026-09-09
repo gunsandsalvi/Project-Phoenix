@@ -1,0 +1,12 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.eslintcache
+playwright-report/
+test-results/
+packages/app/android/
+packages/app/ios/
+.DS_Store
+dist-types/
+dist-types-e2e/

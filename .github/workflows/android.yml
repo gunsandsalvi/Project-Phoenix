@@ -1,0 +1,42 @@
+name: Android APK
+
+# The Capacitor Android project is generated at build time from capacitor.config.ts
+# (docs/ARCHITECTURE.md §10). Debug APK only until a release keystore exists.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: android-actions/setup-android@v3
+      - run: npm ci
+      - name: Build web app for the WebView (served from root)
+        run: npm run build
+        env:
+          PHOENIX_BASE: /
+      - name: Generate and sync the Android project
+        working-directory: packages/app
+        run: |
+          npx cap add android
+          npx cap sync android
+      - name: Assemble debug APK
+        working-directory: packages/app/android
+        run: ./gradlew assembleDebug --no-daemon
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phoenix-debug-apk
+          path: packages/app/android/app/build/outputs/apk/debug/*.apk
+          retention-days: 30
