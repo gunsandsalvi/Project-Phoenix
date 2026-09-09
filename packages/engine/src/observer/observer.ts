@@ -3,12 +3,12 @@
  * visibly stale (A1.a), a missing number is missing (F4), and looking changes nothing (E3): the
  * snapshot is a plain copy the engine never reads back.
  *
- * @spec Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
+ * @spec Sovereign D3 Sovereign D3.b Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
  */
 import { formatCivil } from '../calendar/civil.js';
 import type { PartyId } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
-import type { Print } from '../prices/price-store.js';
+import { struckIn, type Print } from '../prices/price-store.js';
 import { displayName } from '../registry/naming.js';
 import type { World } from '../world/world.js';
 import type { AuditReport } from '../audit/audit.js';
@@ -28,6 +28,28 @@ export interface PrintView {
   /** Periods since the price last actually traded or opened (A1.a). */
   readonly age: number;
   readonly period: number;
+}
+
+/** Sovereign D3: a curve as it is read, with what each point is made of (D3.b). */
+export interface CurveView {
+  readonly family: string;
+  readonly name: string;
+  readonly compounding: string;
+  readonly points: readonly {
+    instrument: string;
+    name: string;
+    tenorYears: number;
+    yield: number;
+    provenance: string;
+  }[];
+}
+
+/** Observer F2: fixed income shows the price AND what is derived from it, never one alone. */
+export interface YieldView {
+  readonly instrument: string;
+  /** Missing when this line is on no curve, never zero (F4). */
+  readonly yield: number | null;
+  readonly tenorYears: number | null;
 }
 
 export interface PositionView {
@@ -71,6 +93,8 @@ export interface Snapshot {
     live: boolean;
   }[];
   readonly prints: readonly PrintView[];
+  readonly curves: readonly CurveView[];
+  readonly yields: readonly YieldView[];
   readonly positions: readonly PositionView[];
   readonly audit: AuditReport | null;
   readonly params: ParamReport;
@@ -89,7 +113,7 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
     const latest = w.prices.latest(i.id, w.period);
     if (!latest.some) continue;
     const p = latest.value;
-    const from = p.provenance.kind === 'stale' ? p.provenance.from : p.period;
+    const from = struckIn(p);
     prints.push({
       instrument: i.id,
       name: displayName(i, w.parties, w.registry),
@@ -99,6 +123,33 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
       age: w.period - from,
       period: p.period,
     });
+  }
+  // Sovereign D3, Observer F2: the curve as the read it is, and the yield beside every price it
+  // came from. Nothing here is stored; asking for the surface builds it and changes nothing (E3).
+  const curves: CurveView[] = [];
+  const yields: YieldView[] = [];
+  for (const family of w.registry.curveFamilies.values()) {
+    const read = w.curve(family.id);
+    curves.push({
+      family: family.id,
+      name: family.name,
+      compounding: read.compounding,
+      points: read.points.map((pt) => ({
+        instrument: pt.instrument,
+        name: displayName(w.instruments.get(pt.instrument), w.parties, w.registry),
+        tenorYears: pt.tenorYears,
+        yield: pt.yield,
+        provenance: pt.provenance,
+      })),
+    });
+    for (const pt of read.points) {
+      yields.push({ instrument: pt.instrument, yield: pt.yield, tenorYears: pt.tenorYears });
+    }
+  }
+  for (const p of prints) {
+    if (!yields.some((y) => y.instrument === p.instrument)) {
+      yields.push({ instrument: p.instrument, yield: null, tenorYears: null });
+    }
   }
   const positions: PositionView[] = [];
   for (const h of w.register.allHoldings()) {
@@ -155,6 +206,8 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
       live: i.status.live,
     })),
     prints,
+    curves,
+    yields,
     positions,
     audit: w.last?.audit ?? null,
     params: w.params.report(),

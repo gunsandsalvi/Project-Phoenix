@@ -45,6 +45,11 @@ export function struckIn(p: Print): Period {
   return p.provenance.kind === 'stale' ? p.provenance.from : p.period;
 }
 
+/** Whether this print is a trade the market made in `at`, rather than one carried into it (E4). */
+export function tradedIn(p: Print, at: Period): boolean {
+  return p.provenance.kind === 'traded' && p.period === at;
+}
+
 export class PriceStore {
   private readonly byInstrument = new Map<InstrumentId, Print[]>();
 

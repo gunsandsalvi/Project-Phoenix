@@ -1,7 +1,7 @@
 /**
  * The sovereign curve and the reasons a bank holds sovereign paper.
  *
- * @spec Sovereign D1 Sovereign D2 Sovereign D3 Sovereign D3.a Sovereign D3.b Sovereign D3.c Sovereign D4 Sovereign D5 Sovereign E1 Sovereign E2 Sovereign E2.a Sovereign E3 Sovereign E4 Sovereign E5 Sovereign B3.a Bond N7.b Clearing A3 Clearing B2 XI-14
+ * @spec Treasury E4 Sovereign E1.a Sovereign D1 Sovereign D2 Sovereign D3 Sovereign D3.a Sovereign D3.b Sovereign D3.c Sovereign D4 Sovereign D5 Sovereign E1 Sovereign E2 Sovereign E2.a Sovereign E3 Sovereign E4 Sovereign E5 Sovereign B3.a Bond N7.b Clearing A3 Clearing B2 XI-14
  *
  * This module owns one curve family (D3.a: one owner) and states its convention once (D3.c). The
  * curve itself is never stored: `ctx.curve` builds it from prints already produced when somebody
@@ -17,11 +17,13 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { add, div, material, mul, sub, sum } from '../../core/num.js';
 import { curveFamilyOf, priceAt, type CurveFamilyDecl } from '../../prices/curve.js';
+import { tradedIn } from '../../prices/price-store.js';
 import { paramId } from '../../core/ids.js';
 import { BANK } from '../../registry/profiles.js';
 import type { Order } from '../../clearing/solver.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParticipantView } from '../../world/context.js';
+import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 
 export const P_BUFFER = paramId('bank.liquidityBuffer.perDeposit');
@@ -196,6 +198,43 @@ export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule
         },
       },
     ],
-    families: [],
+    families: [pointsMatchPrints(family)],
+  };
+}
+
+/**
+ * Sovereign D3.b: a point that says it traded must correspond to a print that says the same. The
+ * curve is built at the read, so this is not a check against itself: it compares the label the read
+ * produced with the provenance the price store recorded when the market printed.
+ */
+function pointsMatchPrints(family: CurveFamilyDecl): Family {
+  return {
+    name: 'prices',
+    contributor: 'sovereign-curve',
+    spec: 'Sovereign D3.b',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const i of view.instruments.all()) {
+        if (i.issuer !== family.issuer || i.ccy !== family.ccy || !i.status.live) continue;
+        const print = view.prices.read(i.id, view.period);
+        const traded = print.some && tradedIn(print.value, view.period);
+        const carried = view.prices.latest(i.id, view.period);
+        if (!carried.some) continue;
+        const labelled = tradedIn(carried.value, view.period);
+        if (labelled !== traded) {
+          out.push({
+            family: 'prices',
+            spec: 'Sovereign D3.b',
+            owner: i.id,
+            size: 1,
+            unit: 'point',
+            period: view.period,
+            message: `${i.id}: the curve would call this point ${labelled ? 'traded' : 'stale'} and the price store says otherwise`,
+          });
+        }
+      }
+      return out;
+    },
   };
 }

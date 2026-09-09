@@ -2,7 +2,7 @@
  * The kernel's own kinds: money, and the parties money needs (a central bank, a bank) plus the
  * party kinds every world has. Everything else is registered by a module.
  *
- * @spec Money A1 Money A1.b Money A1.c Money D2 Money B3.a Money B3.b Money B3.c XI-15 Households A2.e Small-Business Pools A6
+ * @spec Treasury D3 Sovereign A3.b Central Bank A1 Central Bank A1.a Central Bank E2 Money A1 Money A1.b Money A1.c Money D2 Money B3.a Money B3.b Money B3.c XI-15 Households A2.e Small-Business Pools A6
  */
 import { InvalidRegistry } from '../core/errors.js';
 import { currencyUnit, instrumentKindId, partyKindId } from '../core/ids.js';

@@ -83,6 +83,7 @@ interface SeedLine {
   /** Which of the two sovereign instruments this line is (Sovereign B1: two, not one with a flag). */
   readonly paper: 'bill' | 'bond';
   readonly maturity: { y: number; m: number; d: number };
+  /** What the central bank opens holding: near the share its own policy names (Central Bank C1). */
   readonly cb: number;
   readonly bankA: number;
   readonly bankB: number;
@@ -94,9 +95,9 @@ const SEED_LINES: readonly SeedLine[] = [
   { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, cb: 0, bankA: 300, bankB: 200, perMember: 0 },
   { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, cb: 0, bankA: 200, bankB: 300, perMember: 0 },
   { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, cb: 0, bankA: 250, bankB: 250, perMember: 0.02 },
-  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 300, bankA: 200, bankB: 100, perMember: 0.04 },
-  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 500, bankA: 150, bankB: 150, perMember: 0.06 },
-  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 700, bankA: 150, bankB: 150, perMember: 0.08 },
+  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 150, bankA: 200, bankB: 100, perMember: 0.04 },
+  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 180, bankA: 150, bankB: 150, perMember: 0.06 },
+  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 205, bankA: 150, bankB: 150, perMember: 0.08 },
 ];
 
 /** One day count for the seeded paper, so an opening price and its yield use one convention. */
@@ -175,10 +176,10 @@ export const foundationSeed: SystemModule = {
       unit: 'per annum',
       kind: 'placeholder',
       owner: 'model',
-      why: 'Seed C4: the one level the opening world is priced at, flat across the profile so the seed asserts no shape. Every line opens at the price this yield gives it, and each dies at that line first traded print.',
+      why: 'Seed C4: the one level the opening world is priced at, flat across the profile so the seed asserts no shape. Every line opens at the price this yield gives it, and the auction and the secondary market replace it line by line as each one trades. It stays while some lines still carry an opening print: the sovereign secondary market has two sides only for the banks whose buffer moved, and a household that holds a line cannot yet act on it (Sovereign E2.f).',
       standsInFor: {
-        mechanism: 'Sovereign C (the auction) and D (the secondary market)',
-        worklistItem: '3',
+        mechanism: 'Sovereign E2.f (households and firms holding it directly, so every line has a two-sided market)',
+        worklistItem: '4',
       },
     },
   ],

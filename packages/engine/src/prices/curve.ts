@@ -29,7 +29,7 @@ import { add, div, finite, invertDecreasing, mul, sub, sum } from '../core/num.j
 import { none, type Option, some } from '../core/option.js';
 import type { Instrument } from '../register/instruments.js';
 import type { CashFlow } from '../registry/kinds.js';
-import type { PriceStore } from './price-store.js';
+import { tradedIn, type PriceStore } from './price-store.js';
 
 /**
  * The family of an issuer's own paper in one money. Any module can name it from what it already
@@ -143,8 +143,7 @@ export function readCurve(
       instrument: i.id,
       tenorYears,
       yield: yieldOf(flows, dirty, on, family.dayCount, `yield of ${i.id}`),
-      provenance:
-        print.value.provenance.kind === 'traded' && print.value.period === at ? 'traded' : 'stale',
+      provenance: tradedIn(print.value, at) ? 'traded' : 'stale',
     });
   }
   points.sort((a, b) => a.tenorYears - b.tenorYears);

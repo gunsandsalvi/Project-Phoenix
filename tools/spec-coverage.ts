@@ -52,6 +52,20 @@ export function citedByCode(): Set<string> {
  * COVERAGE.md is reproducible; after that the file is re-marked by hand (Appendix C).
  */
 const PARTIAL: Readonly<Record<string, string>> = {
+  'Treasury B3':
+    'outlays vary with the standing mandate; the cycle and unemployment arrive with the real economy (worklist 4) and policy with the polity (worklist 14)',
+  'Treasury C2':
+    'receipts follow what was actually collected; income and consumption bases arrive with the real economy (worklist 4)',
+  'Sovereign D6':
+    'the bid-offer is whatever the schedules produce; there are no dealers to produce one until worklist 9',
+  'Sovereign E2':
+    'banks hold for the liquidity buffer and the central bank for policy; the other holder classes arrive with their own systems (worklist 4, 8, 12)',
+  'Central Bank A3':
+    'the mandate exists as a stated objective in the register; parliament owns its text and its target from worklist 14',
+  'Central Bank A4':
+    'financially owned by the treasury through remittance; operational independence has no rate to be independent about until the corridor (worklist 11)',
+  'Central Bank E5':
+    'the two statements are both true of the books; measuring them is the measurement programme (worklist 16)',
   'Money B3.b':
     'reserve overdraft is allowed and recorded, not yet priced by the corridor (worklist 11)',
   'Money B3.c':
@@ -82,8 +96,6 @@ const PARTIAL: Readonly<Record<string, string>> = {
   'Seed B1':
     'the foundation seed has one instance of several kinds; populations are cells with weights',
   'Seed B4': 'sizes are dispersed by hand in the foundation seed; nothing draws them',
-  'Seed C3.a':
-    'one line outstanding; a spread maturity profile arrives with the sovereign programme (worklist 3)',
   'Seed D1':
     'coupons are payable from the treasury account; wages and work in progress arrive with worklist 4',
   'Seed E2': 'no reasons exist yet; the seed sets endowments only',
@@ -93,20 +105,13 @@ const PARTIAL: Readonly<Record<string, string>> = {
   'Observer A5': 'no published aggregates with a lag yet',
   'Observer A3':
     'public state is instrument terms and prints; issuer publications arrive with firms',
-  'Observer F2': 'prices shown; derived spread and yield arrive with the curve (worklist 3)',
-  'Bond N9.b':
-    'accrued interest does not yet travel with a trade; prices are clean without accrued (worklist 3)',
-  'Bond N6':
-    'periodicity and day count are on the instrument; accrual between payments is not yet read',
   'Bond N11': 'the sovereign answers none; the corporate regime arrives with Corporate Credit',
-  'Sovereign F1':
-    'coupon paid to the holder on the date; accrual to the holder of record between dates is not read',
   'XI-15':
     'cells, weights, split and merge exist; promotion has no cause yet, resolution not yet measured',
   'XI-5': 'DvP and fails are structural; basis is recorded; the no-print rider holds',
   'XI-6':
     'value is a function; carried-at-cost is declared per kind; inventory, plant and dwellings have no unit yet',
-  'XI-14': 'the register exists with one placeholder; the count is reported',
+  'XI-14': 'every number is declared with its kind and owner; the placeholders that remain name the mechanism and the item that deletes them',
 };
 
 function initialCoverage(): string {

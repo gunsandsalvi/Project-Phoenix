@@ -1,4 +1,4 @@
-import type { Snapshot } from '@phoenix/engine';
+import { percent, type Snapshot } from '@phoenix/engine';
 
 export interface Actions {
   step(periods: number): void;
@@ -184,6 +184,8 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
         {},
         el('th', {}, 'instrument'),
         el('th', {}, 'price'),
+        // Observer F2: fixed income shows the price AND the yield derived from it.
+        el('th', {}, 'yield'),
         el('th', {}, 'provenance'),
         el('th', {}, 'age'),
       ),
@@ -191,12 +193,15 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   );
   const pb = el('tbody');
   for (const p of s.prints) {
+    const y = s.yields.find((x) => x.instrument === p.instrument);
     pb.append(
       el(
         'tr',
         { class: p.provenance.kind === 'stale' ? 'stale' : '' },
         el('td', {}, p.name),
         el('td', {}, `${num(p.price)} ${p.ccy}`),
+        // F4: a line on no curve has no yield, and it says so rather than showing a zero.
+        el('td', {}, y?.yield === null || y === undefined ? '—' : percent(y.yield)),
         el('td', {}, provenance(p)),
         el('td', {}, `${p.age}`),
       ),
@@ -205,6 +210,46 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   pt.append(pb);
   prints.append(pt);
   root.append(prints);
+
+  // The curve, as the read it is: every point says what it is made of (Sovereign D3, D3.b).
+  for (const c of s.curves) {
+    const section = el('section', { class: 'curve' }, el('h2', {}, `Curve: ${c.name}`));
+    section.append(
+      el('p', { class: 'note' }, `compounded ${c.compounding}; built at the read, never stored`),
+    );
+    const ct = el(
+      'table',
+      {},
+      el(
+        'thead',
+        {},
+        el(
+          'tr',
+          {},
+          el('th', {}, 'line'),
+          el('th', {}, 'tenor (years)'),
+          el('th', {}, 'yield'),
+          el('th', {}, 'point'),
+        ),
+      ),
+    );
+    const cb = el('tbody');
+    for (const pt2 of c.points) {
+      cb.append(
+        el(
+          'tr',
+          { class: pt2.provenance === 'traded' ? '' : 'stale' },
+          el('td', {}, pt2.name),
+          el('td', {}, pt2.tenorYears.toFixed(2)),
+          el('td', {}, percent(pt2.yield)),
+          el('td', {}, pt2.provenance),
+        ),
+      );
+    }
+    ct.append(cb);
+    section.append(ct);
+    root.append(section);
+  }
 
   // Parties
   const parties = el('section', { id: 'parties' }, el('h2', {}, 'Parties'));
@@ -277,6 +322,67 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   xt.append(xb);
   positions.append(xt);
   root.append(positions);
+
+  // The sovereign's own state: what it published, and what its auctions did (Sovereign C1.a, C4).
+  const programmes = s.journal.filter((e) => e.kind === 'treasury.programme');
+  const latest = programmes[programmes.length - 1];
+  const auctionRows = s.journal.filter((e) => e.kind === 'auction.result');
+  if (latest !== undefined || auctionRows.length > 0) {
+    const sovereign = el('section', { id: 'sovereign' }, el('h2', {}, 'The sovereign'));
+    if (latest !== undefined) {
+      const d = latest.data as Record<string, number | string | null>;
+      sovereign.append(
+        el(
+          'p',
+          {},
+          `programme p${latest.period}: need ${num(Number(d['need']))} · service ${num(Number(d['service']))}` +
+            ` · mandate ${num(Number(d['mandate']))} · buffer ${num(Number(d['buffer']))} · cash ${num(Number(d['cash']))}` +
+            (d['line'] === null ? ' · nothing brought' : ` · bringing ${String(d['line'])}`),
+        ),
+      );
+    }
+    if (auctionRows.length > 0) {
+      const at = el(
+        'table',
+        {},
+        el(
+          'thead',
+          {},
+          el(
+            'tr',
+            {},
+            el('th', {}, 'period'),
+            el('th', {}, 'line'),
+            el('th', {}, 'size'),
+            el('th', {}, 'allotted'),
+            el('th', {}, 'cover'),
+            el('th', {}, 'stop-out'),
+            el('th', {}, 'tail'),
+          ),
+        ),
+      );
+      const ab = el('tbody');
+      for (const e of [...auctionRows].reverse()) {
+        const d = e.data as Record<string, number | string | null>;
+        ab.append(
+          el(
+            'tr',
+            { class: Number(d['allotted']) === 0 ? 'stale' : '' },
+            el('td', {}, `p${e.period}`),
+            el('td', {}, String(d['line'])),
+            el('td', {}, num(Number(d['size']))),
+            el('td', {}, num(Number(d['allotted']))),
+            el('td', {}, Number(d['cover']).toFixed(2)),
+            el('td', {}, d['stopOut'] === null ? '—' : num(Number(d['stopOut']))),
+            el('td', {}, d['tail'] === null ? '—' : num(Number(d['tail']))),
+          ),
+        );
+      }
+      at.append(ab);
+      sovereign.append(at);
+    }
+    root.append(sovereign);
+  }
 
   // Parameters
   const params = el('section', { id: 'params' }, el('h2', {}, 'Parameter register'));

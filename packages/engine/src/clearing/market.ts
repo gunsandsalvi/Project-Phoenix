@@ -2,7 +2,7 @@
  * A market: a venue where one instrument clears at a stated point in the period, and the phase that
  * runs every market in order.
  *
- * @spec Clearing A1 Clearing B1 Clearing B2 Clearing C4.a Clearing C4.b Clearing D2 Clearing D3 Clearing D4 Clearing E1 Clearing E4 Clearing F1 Clearing F2 Register C3 Register C3.a XI-5 Goods C2 Sovereign C1 Sovereign C1.b Sovereign C2 Sovereign C4 Sovereign C5 Sovereign C6 Sovereign C7 Sovereign B3.a Bond N9.b Treasury D2.a Treasury D5.a
+ * @spec Bond N7 Bond N7.a Bond N9 Bond N9.a Clearing A1 Clearing B1 Clearing B2 Clearing C4.a Clearing C4.b Clearing D2 Clearing D3 Clearing D4 Clearing E1 Clearing E4 Clearing F1 Clearing F2 Register C3 Register C3.a XI-5 Goods C2 Sovereign C1 Sovereign C1.b Sovereign C2 Sovereign C4 Sovereign C5 Sovereign C6 Sovereign C7 Sovereign B3.a Bond N9.b Treasury D2.a Treasury D5.a
  *
  * Trades become instructions with the paper one way and the cash the other, settled together (D3,
  * XI-5). The print is written once per period (F2): traded if anything cleared, otherwise the last

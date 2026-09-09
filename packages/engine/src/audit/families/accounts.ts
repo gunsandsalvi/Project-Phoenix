@@ -2,7 +2,7 @@
  * Accounts balance (Audit B5): assets minus liabilities, read from the register at marks, equals
  * the stated equity account, per party, per member.
  *
- * @spec Audit B5 Audit B5.a Audit B5.b Banks Funding F3 Central Bank A2.c Firm C3 Fund Shares A3 Households D3
+ * @spec Central Bank A2 Audit B5 Audit B5.a Audit B5.b Banks Funding F3 Central Bank A2.c Firm C3 Fund Shares A3 Households D3
  *
  * The two sides are independent records: the register and the price store on one side, the equity
  * account moved by named events on the other. Equality is the check.

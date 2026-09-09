@@ -194,6 +194,16 @@ line that has never traded has no price, and the reader is told so at the readin
 prices family reports a _held_ position with no print, because its holder cannot mark it; an unheld
 line with no print is marked by nobody and is not a defect (Audit B3).
 
+**The curve is a read** (Sovereign D3). A curve family is declared once by the module that owns it
+(D3.a) with one compounding convention and one day count (D3.c). `ctx.curve(family)` builds it at
+the moment somebody asks, from the prints the market has already produced and the cash flows the
+instruments' own terms promise (`profile.cashFlows`); nothing stores it, so the fit's own previous
+output can never be an observation (D3.b). Every point says whether it traded this period or was
+carried; a tenor between points reads `interpolated`, beyond them `extrapolated`, and a family with
+no points answers `none`. The yield is derived from the price and never the other way round (D2,
+N7.b): `yieldOf` inverts the discounting of the flows, and `priceAt` is how a participant turns a
+yield **it** decided into the level it posts.
+
 **Accrued interest travels with the paper** (Bond N9.b). An `AssetLeg` carries `accruedPerUnit`
 beside its clean `pricePerUnit`; the money leg moves the dirty amount. The lot's basis is the clean
 price, so the buyer's equity falls by the accrued now and rises by the whole coupon on the date: the

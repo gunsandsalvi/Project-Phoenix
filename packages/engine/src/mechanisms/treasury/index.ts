@@ -2,7 +2,7 @@
  * The treasury: what it owes, what it collects, and the constraint that it must raise money before
  * it spends it.
  *
- * @spec Treasury A1 Treasury A1.a Treasury A2 Treasury A3 Treasury A3.a Treasury B1 Treasury B2 Treasury B4 Treasury C1 Treasury C1.a Treasury C3 Treasury D1 Treasury D2 Treasury D2.a Treasury D3 Treasury D4 Treasury D4.a Treasury D4.b Treasury D5 Treasury D5.a Treasury E1 Treasury E2 Treasury E3 Sovereign A1 Sovereign A1.a Sovereign A1.b Sovereign A2 Sovereign A2.a Sovereign A2.b Sovereign A2.c Sovereign A3 Sovereign A3.a Sovereign B3.a Sovereign C1 Sovereign C1.a Sovereign C1.b Sovereign C5 Sovereign C7 Sovereign F4 Sovereign F5 XI-9
+ * @spec Treasury D6 Sovereign A1.c Sovereign A3.b Treasury A1 Treasury A1.a Treasury A2 Treasury A3 Treasury A3.a Treasury B1 Treasury B2 Treasury B4 Treasury C1 Treasury C1.a Treasury C3 Treasury D1 Treasury D2 Treasury D2.a Treasury D3 Treasury D4 Treasury D4.a Treasury D4.b Treasury D5 Treasury D5.a Treasury E1 Treasury E2 Treasury E3 Sovereign A1 Sovereign A1.a Sovereign A1.b Sovereign A2 Sovereign A2.a Sovereign A2.b Sovereign A2.c Sovereign A3 Sovereign A3.a Sovereign B3.a Sovereign C1 Sovereign C1.a Sovereign C1.b Sovereign C5 Sovereign C7 Sovereign F4 Sovereign F5 XI-9
  *
  * The programme is a READ, recomputed every period and journalled, never stored: what falls due
  * over its own horizon out of the paper it has actually issued (D4.a), what its standing mandate
@@ -30,7 +30,7 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
-import { add, addTo, div, mul, sub, sum } from '../../core/num.js';
+import { add, addTo, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -39,6 +39,7 @@ import { cellSide, totalFor } from '../../ledger/settlement.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { Family, Violation } from '../../audit/audit.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
@@ -267,11 +268,58 @@ export const treasury: SystemModule = {
   participants: [
     {
       partyKind: TREASURY,
-      orders: (view, m): readonly Order[] => buyback(view, m),
+      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => buyback(view, m),
     },
   ],
-  families: [],
+  families: [allotmentReconciles()],
 };
+
+/**
+ * Treasury D6: what the issuer said it placed and what the register issued are two records of one
+ * fact, written by two different writers — the market's own report of the session, and settlement.
+ * They reconcile to dust or somebody's debt is not what the auction said it was.
+ */
+function allotmentReconciles(): Family {
+  return {
+    name: 'flows',
+    contributor: 'treasury',
+    spec: 'Treasury D6 Sovereign C5 Sovereign C6',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      const issued = new Map<string, number[]>();
+      for (const r of view.ledger.inPeriod(view.period)) {
+        if (r.outcome !== 'settled' || r.instruction.cause !== 'issuance') continue;
+        for (const d of r.deltas) {
+          if (d.target !== 'issued') continue;
+          const list = issued.get(d.instrument) ?? [];
+          list.push(d.qty);
+          issued.set(d.instrument, list);
+        }
+      }
+      for (const e of view.journal.ofKind('auction.result')) {
+        if (e.period !== view.period) continue;
+        const line = String(e.data['line']);
+        const allotted = e.data['allotted'];
+        if (typeof allotted !== 'number') continue;
+        const registered = sum(issued.get(line) ?? []);
+        const claimed = sum([allotted]);
+        if (!withinDust(registered.value, claimed.value, combineDust(registered, claimed))) {
+          out.push({
+            family: 'flows',
+            spec: 'Treasury D6',
+            owner: line,
+            size: sub(registered.value, claimed.value, 'allotment gap'),
+            unit: 'units of par',
+            period: view.period,
+            message: `${line}: the auction placed ${allotted} but the register issued ${registered.value}`,
+          });
+        }
+      }
+      return out;
+    },
+  };
+}
 
 /** D1, D4: the need, then the announcement (C1). Everything here is a read. */
 function runProgramme(ctx: MechanismContext, id: PartyId): void {

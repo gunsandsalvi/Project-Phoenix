@@ -84,12 +84,12 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Clearing A1` | MET | packages/engine/src/clearing/market.ts |
 | `Clearing A2` | MET | packages/engine/src/clearing/solver.ts |
-| `Clearing A3` | MET | packages/engine/src/world/context.ts, packages/engine/src/world/module.ts |
+| `Clearing A3` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/world/context.ts, packages/engine/src/world/module.ts |
 | `Clearing A4` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/world/context.ts |
 | `Clearing B1` | MET | packages/engine/src/clearing/market.ts |
-| `Clearing B2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/world/module.ts |
+| `Clearing B2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/sovereign-auction/index.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/world/module.ts |
 | `Clearing B3` | PARTIAL | no dealer exists yet (worklist 9) |
-| `Clearing B4` | MISSING |  |
+| `Clearing B4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts, packages/engine/src/mechanisms/sovereign-auction/index.ts |
 | `Clearing B5` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing C1` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing C2` | MET | packages/engine/src/clearing/solver.ts |
@@ -204,12 +204,12 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Bond N3` | MET | packages/engine/src/register/instruments.ts |
 | `Bond N4` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Bond N5` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
-| `Bond N6` | PARTIAL | periodicity and day count are on the instrument; accrual between payments is not yet read |
-| `Bond N7` | MISSING |  |
-| `Bond N7.b` | MISSING |  |
+| `Bond N6` | MET | packages/engine/src/calendar/daycount.ts, packages/engine/src/core/rate.ts, packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Bond N7` | MET | packages/engine/src/clearing/market.ts |
+| `Bond N7.b` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/prices/curve.ts |
 | `Bond N8` | MISSING |  |
 | `Bond N8.a` | MET | packages/engine/src/audit/families/ownership.ts |
-| `Bond N9` | MISSING |  |
+| `Bond N9` | MET | packages/engine/src/clearing/market.ts |
 | `Bond N10` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts, packages/engine/src/world/actions.ts |
 | `Bond N11` | PARTIAL | the sovereign answers none; the corporate regime arrives with Corporate Credit |
 | `Bond N12` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
@@ -310,11 +310,11 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Sovereign A1` | MISSING |  |
-| `Sovereign A1.c` | MISSING |  |
-| `Sovereign A2` | MISSING |  |
-| `Sovereign A3` | MISSING |  |
-| `Sovereign A3.b` | MISSING |  |
+| `Sovereign A1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign A1.c` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign A2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign A3` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign A3.b` | MET | packages/engine/src/mechanisms/treasury/index.ts, packages/engine/src/registry/profiles.ts |
 | `Sovereign A4` | MISSING |  |
 | `Sovereign B1` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign B2` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
@@ -323,39 +323,39 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign B5` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign B6` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign B7` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
-| `Sovereign C1` | MISSING |  |
-| `Sovereign C2` | MET | packages/engine/src/clearing/solver.ts |
-| `Sovereign C3` | MISSING |  |
-| `Sovereign C4` | MISSING |  |
-| `Sovereign C5` | MISSING |  |
-| `Sovereign C6` | MISSING |  |
-| `Sovereign C7` | MISSING |  |
-| `Sovereign D1` | MISSING |  |
-| `Sovereign D2` | MISSING |  |
-| `Sovereign D3` | MISSING |  |
-| `Sovereign D4` | MISSING |  |
-| `Sovereign D5` | MISSING |  |
-| `Sovereign D6` | MISSING |  |
-| `Sovereign E1` | MISSING |  |
-| `Sovereign E1.a` | MISSING |  |
-| `Sovereign E2` | MISSING |  |
-| `Sovereign E3` | MISSING |  |
-| `Sovereign E4` | MISSING |  |
-| `Sovereign E5` | MISSING |  |
-| `Sovereign F1` | PARTIAL | coupon paid to the holder on the date; accrual to the holder of record between dates is not read |
-| `Sovereign F2` | MISSING |  |
+| `Sovereign C1` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign C2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/clearing/solver.ts, packages/engine/src/mechanisms/sovereign-auction/index.ts |
+| `Sovereign C3` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts |
+| `Sovereign C4` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/sovereign-auction/index.ts |
+| `Sovereign C5` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign C6` | MET | packages/engine/src/clearing/market.ts |
+| `Sovereign C7` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign D1` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign D2` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/prices/curve.ts |
+| `Sovereign D3` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/observer/observer.ts, packages/engine/src/prices/curve.ts |
+| `Sovereign D4` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/prices/curve.ts |
+| `Sovereign D5` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign D6` | PARTIAL | the bid-offer is whatever the schedules produce; there are no dealers to produce one until worklist 9 |
+| `Sovereign E1` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign E1.a` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign E2` | PARTIAL | banks hold for the liquidity buffer and the central bank for policy; the other holder classes arrive with their own systems (worklist 4, 8, 12) |
+| `Sovereign E3` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign E4` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign E5` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts |
+| `Sovereign F1` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Sovereign F2` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign F3` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
-| `Sovereign F4` | MISSING |  |
-| `Sovereign F5` | MISSING |  |
+| `Sovereign F4` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Sovereign F5` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Sovereign G1` | MISSING |  |
 | `Sovereign G2` | MISSING |  |
 | `Sovereign G3` | MISSING |  |
 | `Sovereign G4` | MISSING |  |
 | `Sovereign G5` | MISSING |  |
-| `Sovereign H1` | MISSING |  |
-| `Sovereign H2` | MISSING |  |
-| `Sovereign H3` | MISSING |  |
-| `Sovereign H4` | MISSING |  |
+| `Sovereign H1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Sovereign H2` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Sovereign H3` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Sovereign H4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H5` | MISSING |  |
 | `Sovereign I1` | MISSING |  |
 | `Sovereign I2` | MISSING |  |
@@ -902,7 +902,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Dealer Desks D1` | MISSING |  |
 | `Dealer Desks D2` | MISSING |  |
 | `Dealer Desks D3` | MISSING |  |
-| `Dealer Desks D4` | MISSING |  |
+| `Dealer Desks D4` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts |
 | `Dealer Desks D5` | MISSING |  |
 | `Dealer Desks E1` | MISSING |  |
 | `Dealer Desks E2` | MISSING |  |
@@ -1003,27 +1003,27 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Treasury A1` | MISSING |  |
-| `Treasury A2` | MISSING |  |
-| `Treasury A3` | MISSING |  |
-| `Treasury B1` | MISSING |  |
-| `Treasury B2` | MISSING |  |
-| `Treasury B3` | MISSING |  |
-| `Treasury B4` | MISSING |  |
-| `Treasury C1` | MISSING |  |
-| `Treasury C2` | MISSING |  |
-| `Treasury C3` | MISSING |  |
-| `Treasury D1` | MISSING |  |
-| `Treasury D2` | MISSING |  |
-| `Treasury D3` | MISSING |  |
-| `Treasury D4` | MISSING |  |
-| `Treasury D5` | MISSING |  |
-| `Treasury D5.a` | MISSING |  |
-| `Treasury D6` | MISSING |  |
-| `Treasury E1` | MISSING |  |
-| `Treasury E2` | MISSING |  |
-| `Treasury E3` | MISSING |  |
-| `Treasury E4` | MISSING |  |
+| `Treasury A1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury A2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury A3` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury B1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury B2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury B3` | PARTIAL | outlays vary with the standing mandate; the cycle and unemployment arrive with the real economy (worklist 4) and policy with the polity (worklist 14) |
+| `Treasury B4` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury C1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury C2` | PARTIAL | receipts follow what was actually collected; income and consumption bases arrive with the real economy (worklist 4) |
+| `Treasury C3` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury D1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury D2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury D3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/mechanisms/treasury/index.ts, packages/engine/src/registry/profiles.ts |
+| `Treasury D4` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury D5` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts, packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury D5.a` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/sovereign-auction/index.ts, packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury D6` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury E1` | MET | packages/engine/src/mechanisms/treasury/data.ts, packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury E2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury E3` | MET | packages/engine/src/mechanisms/treasury/index.ts |
+| `Treasury E4` | MET | packages/engine/src/mechanisms/sovereign-curve/index.ts |
 | `Treasury F1` | MISSING |  |
 | `Treasury F2` | MISSING |  |
 | `Treasury F3` | MISSING |  |
@@ -1033,31 +1033,31 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Central Bank A1` | MISSING |  |
-| `Central Bank A2` | MISSING |  |
+| `Central Bank A1` | MET | packages/engine/src/registry/profiles.ts |
+| `Central Bank A2` | MET | packages/engine/src/audit/families/accounts.ts |
 | `Central Bank A2.c` | MET | packages/engine/src/audit/families/accounts.ts |
-| `Central Bank A3` | MISSING |  |
-| `Central Bank A4` | MISSING |  |
+| `Central Bank A3` | PARTIAL | the mandate exists as a stated objective in the register; parliament owns its text and its target from worklist 14 |
+| `Central Bank A4` | PARTIAL | financially owned by the treasury through remittance; operational independence has no rate to be independent about until the corridor (worklist 11) |
 | `Central Bank B1` | MISSING |  |
 | `Central Bank B2` | MISSING |  |
 | `Central Bank B3` | MISSING |  |
 | `Central Bank B3.a` | MISSING |  |
 | `Central Bank B4` | MISSING |  |
-| `Central Bank C1` | MISSING |  |
-| `Central Bank C1.b` | MISSING |  |
-| `Central Bank C2` | MISSING |  |
-| `Central Bank C3` | MISSING |  |
-| `Central Bank C4` | MISSING |  |
+| `Central Bank C1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank C1.b` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank C2` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank C3` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank C4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank D1` | MISSING |  |
 | `Central Bank D2` | MISSING |  |
 | `Central Bank D3` | MISSING |  |
 | `Central Bank D3.a` | MISSING |  |
 | `Central Bank D4` | MISSING |  |
-| `Central Bank E1` | MISSING |  |
-| `Central Bank E2` | MISSING |  |
-| `Central Bank E3` | MISSING |  |
-| `Central Bank E4` | MISSING |  |
-| `Central Bank E5` | MISSING |  |
+| `Central Bank E1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank E2` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/profiles.ts |
+| `Central Bank E3` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank E4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank E5` | PARTIAL | the two statements are both true of the books; measuring them is the measurement programme (worklist 16) |
 | `Central Bank F1` | MISSING |  |
 | `Central Bank F2` | MISSING |  |
 | `Central Bank F3` | MISSING |  |
@@ -1538,7 +1538,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Observer E2` | MISSING |  |
 | `Observer E3` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/world.ts |
 | `Observer F1` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/registry/naming.ts |
-| `Observer F2` | PARTIAL | prices shown; derived spread and yield arrive with the curve (worklist 3) |
+| `Observer F2` | MET | packages/engine/src/observer/observer.ts |
 | `Observer F3` | MISSING |  |
 | `Observer F4` | MET | packages/engine/src/observer/observer.ts |
 
