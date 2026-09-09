@@ -157,17 +157,13 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
     const i = w.instruments.get(h.instrument);
     const qty = h.lots.reduce((s, l) => s + l.qty, 0);
     let value: number | null = null;
-    const pricing = w.registry.instrumentKind(i.kind).pricing;
-    if (pricing === 'money') value = qty;
-    else if (pricing === 'cleared' && w.prices.latest(i.id, w.period).some)
-      value = w.valuation.valueOfLots(
-        i.id,
-        h.lots,
-        w.prices.latest(i.id, w.period).some
-          ? (w.prices.latest(i.id, w.period) as { value: Print }).value.period
-          : w.period,
-      );
-    else if (pricing === 'carriedAtCost') value = w.valuation.valueOfLots(i.id, h.lots, w.period);
+    const profile = w.registry.instrumentKind(i.kind);
+    const latest = w.prices.latest(i.id, w.period);
+    if (profile.pricing === 'money') value = qty;
+    // A holding carried at cost is worth what it cost whether or not its market printed (Goods E1);
+    // one carried at the mark is worth nothing anyone can state until it has one (XI-6).
+    else if (profile.carry === 'cost') value = w.valuation.valueOfLots(i.id, h.lots, w.period);
+    else if (latest.some) value = w.valuation.valueOfLots(i.id, h.lots, latest.value.period);
     positions.push({
       holder: h.holder,
       instrument: i.id,

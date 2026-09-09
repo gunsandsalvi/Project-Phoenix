@@ -13,6 +13,7 @@ import type { Calendar, Period } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import type { CurrencyCode, InstrumentKindId, PartyId, PartyKindId, UnitId } from '../core/ids.js';
 import type { Instrument, Terms } from '../register/instruments.js';
+import type { Namer } from './naming.js';
 
 /** Named individually or represented as cells with a weight (XI-15). */
 export type Representation = 'named' | 'cell';
@@ -61,8 +62,12 @@ export interface InstrumentKindProfile {
   readonly unit: (ccy: CurrencyCode) => UnitId;
   /** Validate kind-specific terms at registration; throw InvalidRegistry otherwise. */
   readonly validateTerms: (terms: Terms) => void;
-  /** Law 9: the name a market would use, built from the instrument's own terms. */
-  readonly displayName: (i: Instrument, issuerName: string) => string;
+  /**
+   * Law 9: the name a market would use, built from the instrument's own terms and the name of
+   * whoever promised it — which is nobody for a physical thing (Goods A1), so the profile is given
+   * the issuer's name only when there is an issuer and says how it names itself without one.
+   */
+  readonly displayName: (i: Instrument, namer: Namer) => string;
   /** The dated actions the terms place in `period` (Money G3.a), in date order. */
   readonly due: (i: Instrument, period: Period, calendar: Calendar) => readonly DueAction[];
   /**

@@ -3,7 +3,7 @@
  * member; every represented party sits in exactly one cell. Physical-unit identities (goods,
  * dwellings, plant) join this family with their systems.
  *
- * @spec Goods D5 Goods E4 Goods F1 Part XII Appendix A Small-Business Pools E5 XI-15 Law 6
+ * @spec Part XII Commodities Spot D5 Commodities Spot F1 Goods E4 Appendix A Small-Business Pools E5 XI-15 Law 6
  */
 import { combineDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
@@ -32,9 +32,9 @@ export function unitsFamily(memory: AuditMemory): Family {
           });
         }
       }
-      // Goods D5: what exists now is what existed, plus what was made, less what was used up. The
-      // two sides are independent records — the register's count and the instruction legs that
-      // said why units appeared or left — so a unit conjured or lost shows here.
+      // Part XII, Commodities Spot D5: what exists now is what existed, plus what was made, less
+      // what was used up. The two records are independent — the instrument's issued total and the
+      // legs that said why units appeared or left — so a unit conjured or lost shows here.
       if (memory.period !== undefined && memory.period !== view.period) {
         const made = new Map<string, number[]>();
         for (const r of view.ledger.inPeriod(view.period)) {
@@ -54,7 +54,7 @@ export function unitsFamily(memory: AuditMemory): Family {
           if (!withinDust(change.value, legs.value, combineDust(legs, change) + i.issuedDust)) {
             out.push({
               family: 'units',
-              spec: 'Goods D5',
+              spec: 'Commodities Spot D5',
               owner: i.id,
               size: change.value - legs.value,
               unit: i.unit,

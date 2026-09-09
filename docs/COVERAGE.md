@@ -742,12 +742,12 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Commodities Spot D2` | MISSING |  |
 | `Commodities Spot D3` | MISSING |  |
 | `Commodities Spot D4` | MISSING |  |
-| `Commodities Spot D5` | MISSING |  |
+| `Commodities Spot D5` | PARTIAL | the identity holds for every physical kind the world has, checked from two independent records (packages/engine/src/audit/families/units.ts, packages/engine/src/mechanisms/goods/index.ts); commodities as a system arrive at worklist 13c |
 | `Commodities Spot E1` | MISSING |  |
 | `Commodities Spot E2` | MISSING |  |
 | `Commodities Spot E3` | MISSING |  |
 | `Commodities Spot E4` | MISSING |  |
-| `Commodities Spot F1` | MISSING |  |
+| `Commodities Spot F1` | MET | packages/engine/src/ledger/settlement.ts (a create names what it was made from; a destroy beyond what is held fails) |
 | `Commodities Spot F2` | MISSING |  |
 | `Commodities Spot F3` | MISSING |  |
 
@@ -1253,39 +1253,39 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Goods A1` | MISSING |  |
-| `Goods A2` | MISSING |  |
-| `Goods A2.b` | MISSING |  |
-| `Goods A3` | MISSING |  |
-| `Goods A4` | MISSING |  |
+| `Goods A1` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/goods/recipes.ts, packages/engine/src/mechanisms/goods/inventory.ts |
+| `Goods A2` | PARTIAL | the recipe is the good own public technology in physical quantities (packages/engine/src/mechanisms/goods/recipes.ts) and a create must destroy what it names; the firm that decides to run it arrives at worklist 4.5 |
+| `Goods A2.b` | MET | packages/engine/src/mechanisms/goods/index.ts (refused at assembly by the declared unit), tools/eslint-rules/index.js (phoenix/no-value-recipe) |
+| `Goods A3` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/goods/inventory.ts |
+| `Goods A4` | MET | packages/engine/src/mechanisms/goods/index.ts (one instrument per region and sub-unit) |
 | `Goods B1` | MISSING |  |
 | `Goods B1.d` | MISSING |  |
 | `Goods B2` | MISSING |  |
 | `Goods B3` | MISSING |  |
 | `Goods B4` | MISSING |  |
 | `Goods B5` | MISSING |  |
-| `Goods C1` | MISSING |  |
-| `Goods C2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts |
+| `Goods C1` | PARTIAL | the venue takes sizes from sellers and levels from buyers through the one solver (packages/engine/src/clearing/solver.ts); the firms that offer and the households that bid arrive at worklist 4.5 and 4.6 |
+| `Goods C2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/mechanisms/goods/index.ts |
 | `Goods C3` | MISSING |  |
-| `Goods C4` | MISSING |  |
-| `Goods C5` | MISSING |  |
-| `Goods C6` | MISSING |  |
+| `Goods C4` | MET | packages/engine/src/mechanisms/goods/index.ts (pro rata, stated once for every goods market), packages/engine/src/clearing/solver.ts |
+| `Goods C5` | MET | packages/engine/src/clearing/solver.ts (nothing is added to either side, so what nobody bought stays where it was) |
+| `Goods C6` | PARTIAL | packages/engine/src/mechanisms/goods/index.ts clears each good in the money of the region it is in; a foreign buyer buying that money arrives with the currency layer (worklist 12) |
 | `Goods D1` | MISSING |  |
 | `Goods D2` | MISSING |  |
 | `Goods D3` | MISSING |  |
 | `Goods D4` | MISSING |  |
 | `Goods D5` | MISSING |  |
-| `Goods E1` | MISSING |  |
-| `Goods E2` | MISSING |  |
-| `Goods E2.c` | MISSING |  |
-| `Goods E3` | MISSING |  |
-| `Goods E4` | MISSING |  |
-| `Goods E5` | MISSING |  |
-| `Goods F1` | MISSING |  |
-| `Goods F2` | MISSING |  |
+| `Goods E1` | MET | packages/engine/src/register/register.ts (lots), packages/engine/src/prices/value.ts |
+| `Goods E2` | MET | packages/engine/src/mechanisms/goods/inventory.ts, packages/engine/src/world/revalue.ts |
+| `Goods E2.c` | MET | packages/engine/src/world/revalue.ts (the kernel refuses an upward move for a kind that is not marked both ways) |
+| `Goods E3` | MET | packages/engine/src/world/revalue.ts, packages/engine/src/mechanisms/goods/inventory.ts (the write-down and the spoilage are journalled events with a size) |
+| `Goods E4` | MET | packages/engine/src/mechanisms/goods/inventory.ts, packages/engine/src/ledger/instruction.ts |
+| `Goods E5` | MET | packages/engine/src/register/register.ts, packages/engine/src/registry/registry.ts (the one stated lot flow is FIFO; the type admits no LIFO) |
+| `Goods F1` | MET | packages/engine/src/clearing/market.ts (the buyer pays the seller by name, in the same instruction as the goods) |
+| `Goods F2` | PARTIAL | immediate: the goods and the money settle together; terms arrive with trade credit (worklist 13e) |
 | `Goods F3` | MISSING |  |
 | `Goods F4` | MISSING |  |
-| `Goods F5` | MISSING |  |
+| `Goods F5` | PARTIAL | a sale debits the lots that left at what they cost and credits what was paid, so the difference is recognised on delivery; the income statement that presents it arrives with the firm (worklist 4.5) |
 | `Goods F5.b` | MISSING |  |
 | `Goods G1` | MISSING |  |
 | `Goods G1.c` | MISSING |  |

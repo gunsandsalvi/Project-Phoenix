@@ -230,10 +230,10 @@ packages/engine/test/{state-slots,expectations,goods,labour,firms,households,res
 - [x] 4.1 `profile.revalue` for carried-at-cost kinds; the kernel refuses an upward revaluation for a non-dealer kind (Goods E2.c); test
 - [x] 4.2 `expectations` module: state, params (memory preference with a declared dispersion shape), `form` and `score` phases, surprise events, confidence read; test: an outlook lags a step change by its memory; no outlook reads period t
 - [x] 4.2 The dispersion aggregate published lagged; test: it moves after the surprises (E2)
-- [ ] 4.3 `goods` kind and sub-unit registry; recipes as physical quantities; the lint refuses a currency-denominated recipe; tests
-- [ ] 4.3 Inventory lots at cost; spoilage and storage fee as two different things (E4.a); lower-of-cost-and-NRV write-down through `profile.revalue`; tests
-- [ ] 4.3 One market per (region, sub-unit); rationing pro rata; price in the seller's money; test: unsold output stays with the seller (C5)
-- [ ] 4.3 Audit: units identity per good and region (D5); test: a spoilage leg shows in `perished`
+- [x] 4.3 `goods` kind and sub-unit registry; recipes as physical quantities; the lint refuses a currency-denominated recipe; tests
+- [x] 4.3 Inventory lots at cost; spoilage and storage fee as two different things (E4.a); lower-of-cost-and-NRV write-down through `profile.revalue`; tests
+- [x] 4.3 One market per (region, sub-unit); rationing pro rata; price in the seller's money; test: unsold output stays with the seller (C5)
+- [x] 4.3 Audit: units identity per good and region (Part XII, Commodities Spot D5); test: a spoilage leg shows in `perished`
 - [ ] 4.4 Occupations registry; the employment register as rows with headcount = cell weight; hire and separation split cells; tests
 - [ ] 4.4 Vacancies as bids; cells' hours as offers at their reservation; `labour.match` clears highest bids first; the print is the last matched bid; tests: an offer above the going rate fills more (D1.a); the going rate is a read (D1.c)
 - [ ] 4.4 Contract stickiness: renegotiation at the firm's horizon past its cost; severance at separation; tests: a wage does not move with the going rate inside the cost; separation costs the firm

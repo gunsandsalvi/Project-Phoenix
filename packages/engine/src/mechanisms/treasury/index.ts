@@ -37,6 +37,7 @@ import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { struckIn } from '../../prices/price-store.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
+import { displayName } from '../../registry/naming.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -462,9 +463,7 @@ function openLine(
   });
   ctx.openMarket({
     id: market,
-    name: ctx.registry
-      .instrumentKind(short ? SOVEREIGN_BILL : SOVEREIGN_BOND)
-      .displayName(ctx.instruments.get(id), ctx.parties.get(issuer).name),
+    name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
     instrument: id,
     ccy,
     rationing: 'proRata',

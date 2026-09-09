@@ -56,6 +56,7 @@ export default tseslint.config(
       'phoenix/no-numeric-default': 'error',
       'phoenix/no-magic-numbers': 'error',
       'phoenix/no-clock-no-random': 'error',
+      'phoenix/no-value-recipe': 'error',
       'no-console': 'error',
       'no-restricted-syntax': [
         'error',

@@ -50,10 +50,12 @@ import {
 } from '../mechanisms/sovereign-instruments/index.js';
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
+import { goods } from '../mechanisms/goods/index.js';
 import { sovereignAuction } from '../mechanisms/sovereign-auction/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
+import { displayName } from '../registry/naming.js';
 import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, TREASURY } from '../registry/profiles.js';
 import type { Prng } from '../rng/prng.js';
 import type { AssemblySpec } from '../world/assemble.js';
@@ -251,8 +253,7 @@ export const foundationSeed: SystemModule = {
       });
       ctx.openMarket({
         id: market,
-        name: ctx.registry.instrumentKind(line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL)
-          .displayName(ctx.instruments.get(id), 'North'),
+        name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
         instrument: id,
         ccy: PHX,
         rationing: 'proRata',
@@ -388,6 +389,7 @@ export function foundationSpec(seed: string): AssemblySpec {
     ],
     modules: [
       expectations,
+      goods(),
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
       sovereignAuction,

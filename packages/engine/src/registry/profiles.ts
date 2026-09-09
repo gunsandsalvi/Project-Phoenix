@@ -7,6 +7,7 @@
 import { InvalidRegistry } from '../core/errors.js';
 import { currencyUnit, instrumentKindId, partyKindId } from '../core/ids.js';
 import type { InstrumentKindProfile, OverdraftDecision, PartyKindProfile } from './kinds.js';
+import { issuerName } from './naming.js';
 
 export const MONEY_KIND = instrumentKindId('money');
 
@@ -19,7 +20,7 @@ export const moneyKind: InstrumentKindProfile = {
   validateTerms: (t) => {
     if (t.kind !== MONEY_KIND) throw new InvalidRegistry('Money D2', 'money terms carry no fields');
   },
-  displayName: (i, issuerName) => `${issuerName} money ${i.ccy}`,
+  displayName: (i, namer) => `${issuerName(namer, i.id)} money ${i.ccy}`,
   due: () => [],
   // Money pays no interest: an account is a holding of it, and a deposit rate is a bank's decision
   // (Banks Funding B1), paid by an instruction, never accrued into the instrument.

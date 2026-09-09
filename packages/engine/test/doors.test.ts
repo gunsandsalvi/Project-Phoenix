@@ -2,7 +2,7 @@
  * The doors item 4 needs: a module's own state, what a party expects, things that are made and used
  * up rather than issued, and a write-down that only ever goes one way.
  *
- * @spec Expectations A1 Expectations A2 Expectations A2.b Goods A1 Goods D5 Goods E1 Goods E2 Goods E2.c Goods E4 Goods F1 Law 4 Observer E3
+ * @spec Expectations A1 Expectations A2 Expectations A2.b Goods A1 Commodities Spot D5 Goods E1 Goods E2 Goods E2.c Goods E4 Commodities Spot F1 Law 4 Observer E3
  */
 import { describe, expect, it } from 'vitest';
 import {
@@ -201,7 +201,7 @@ describe('what a party expects (Expectations A2)', () => {
   });
 });
 
-describe('things that are made and used up (Goods E4, F1)', () => {
+describe('things that are made and used up (Goods E4, Commodities Spot F1)', () => {
   it('come into existence on one book, at what they cost, and the stock says so', () => {
     const w = world(
       goodsModule(wheat, (ctx) => {
@@ -225,7 +225,7 @@ describe('things that are made and used up (Goods E4, F1)', () => {
     expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(2);
   });
 
-  it('leave it again, and the units identity is checked against what said why (D5)', () => {
+  it('leave it again, and the units identity is checked against what said why (Part XII)', () => {
     const w = world(
       goodsModule(wheat, (ctx) => {
         openWheat(ctx);
@@ -256,7 +256,7 @@ describe('things that are made and used up (Goods E4, F1)', () => {
     expect(w.instruments.get(WHEAT_ID).issued).toBe(6);
   });
 
-  it('refuses a create that names nothing it was made from (F1)', () => {
+  it('refuses a create that names nothing it was made from (Commodities Spot F1)', () => {
     const w = world(
       goodsModule(wheat, (ctx) => {
         openWheat(ctx);

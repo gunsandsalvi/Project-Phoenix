@@ -1,7 +1,7 @@
 /**
  * Settlement: the one rule that applies an instruction, and the only writer of holdings.
  *
- * @spec Goods E4 Goods F1 Treasury D3 Central Bank E2 Money C2 Money C2.a Money C2.b Money C2.c Money C4 Money C4.a Money C4.b Money D1 Money D3 Money D4 Money E1 Money E1.a Money E1.b Money E2 Money E3 Money E4 Money B3 Money B3.a Money B3.b Money B3.c Register B1 Register B3 Register C1 Register C2.a Register C3 Register C3.a Register C3.b Register C4 Register D4 Audit B5 XI-5 XI-15 Equity C4 Equity F4
+ * @spec Goods E4 Commodities Spot F1 Treasury D3 Central Bank E2 Money C2 Money C2.a Money C2.b Money C2.c Money C4 Money C4.a Money C4.b Money D1 Money D3 Money D4 Money E1 Money E1.a Money E1.b Money E2 Money E3 Money E4 Money B3 Money B3.a Money B3.b Money B3.c Register B1 Register B3 Register C1 Register C2.a Register C3 Register C3.a Register C3.b Register C4 Register D4 Audit B5 XI-5 XI-15 Equity C4 Equity F4
  *
  * Payer minus, payee plus (C2). For a money leg between accounts at different issuers the interbank
  * reserve leg is generated here (C2.a); a same-issuer payment moves no reserves (C2.b). All legs of
@@ -238,10 +238,10 @@ export class Settlement {
   }
 
   /**
-   * Goods E4, F1: a physical thing is made or used up on one book. Only a kind that says its units
-   * are physical admits it — a claim that appeared with nobody on the other side is invented money
-   * (Money C1) — and a `create` must sit in the same instruction as the `destroy` legs of whatever
-   * it was made from, so nothing is consumed that was not produced or held (F1).
+   * Goods E4, Commodities Spot F1: a physical thing is made or used up on one book. Only a kind
+   * that says its units are physical admits it — a claim that appeared with nobody on the other
+   * side is invented money (Money C1) — and a `create` must sit in the same instruction as the
+   * `destroy` legs of whatever it was made from: nothing is consumed that was not produced or held.
    */
   private validatePhysical(leg: CreateLeg | DestroyLeg, ins: Instruction): void {
     impossible(
@@ -267,7 +267,7 @@ export class Settlement {
       );
       forbid(
         ins.legs.some((l) => l.kind === 'destroy') || ins.cause === 'seed',
-        'Goods F1',
+        'Commodities Spot F1',
         `instruction ${ins.id}: ${inst.id} would come from nothing; a create names what it was made from`,
       );
     }

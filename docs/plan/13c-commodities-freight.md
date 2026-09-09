@@ -172,5 +172,5 @@ costs the roller; the consumer index can diverge from the producer index.
 
 ## Guard
 
-Commodities Spot F1–F3, D2.a; Commodity Futures C4.a, E1–E3; Freight E1–E3; Goods F1 (no negative
+Commodities Spot F1–F3, D2.a; Commodity Futures C4.a, E1–E3; Freight E1–E3; Commodities Spot F2 (no negative
 inventory).

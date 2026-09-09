@@ -2,7 +2,7 @@
  * The wire: every move of any asset, money included, is a numbered instruction with two named sides
  * per leg (Money D1). An instruction's legs settle together or not at all (Register C3, XI-5).
  *
- * @spec Goods B2 Goods E4 Goods F1 Bond N9.b Money C1 Money C1.a Money C1.b Money C1.c Money D1 Money D1.a Money D2 Money G4 Register C1 Register C2 Register C2.a Register C3 Register C3.a XI-5 XI-15
+ * @spec Goods B2 Goods E4 Commodities Spot F1 Bond N9.b Money C1 Money C1.a Money C1.b Money C1.c Money D1 Money D1.a Money D2 Money G4 Register C1 Register C2 Register C2.a Register C3 Register C3.a XI-5 XI-15
  *
  * Denomination on a cell (XI-15): a leg side on a cell carries the PER-MEMBER amount and the weight
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
@@ -55,11 +55,12 @@ export interface AssetLeg {
 }
 
 /**
- * A physical thing coming into existence or leaving it (Goods B, E4, F1). It is not a flow between
+ * A physical thing coming into existence or leaving it (Goods B, E4). It is not a flow between
  * two parties, so it has one side: nobody is on the other end of a harvest or of a batch that
  * spoiled. What keeps it honest is the units identity — produced plus opening equals consumed plus
  * closing plus perished — which the units family checks, and the rule that a `create` may only
- * appear in the same instruction as the `destroy` legs of what it was made from (F1).
+ * appear in the same instruction as the `destroy` legs of what it was made from (Commodities
+ * Spot F1: units cannot be conjured).
  */
 export interface CreateLeg {
   readonly kind: 'create';

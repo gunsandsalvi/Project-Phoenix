@@ -254,3 +254,40 @@ const noCrossModuleImport = {
 };
 
 pluginRules['no-cross-module-import'] = noCrossModuleImport;
+
+/**
+ * Goods A2.b — a recipe is a physical quantity per unit of output, never a share of cost or of
+ * revenue. The defect reads as an ordinary units calculation (money needed / the input's price),
+ * so it is refused by the name it has to be given: anything that calls itself a cost or value
+ * share, ratio or per-revenue coefficient is that defect wherever it appears.
+ */
+const noValueRecipe = {
+  meta: {
+    type: 'problem',
+    docs: { description: 'Goods A2.b: no recipe expressed as a share of cost or revenue' },
+    schema: [],
+    messages: {
+      share:
+        'Goods A2.b: "{{name}}" is a recipe in money. A price that doubles would halve the physical draw, which is the strongest substitution assumption there is, sitting where the model chose none. State the quantity in the input\'s own units.',
+    },
+  },
+  create(context) {
+    const pattern =
+      /^(input|recipe|bom|material|unit)?(cost|value|spend|price)(share|ratio|perrevenue|persale|persales|percurrency)$/i;
+    const report = (node, name) => {
+      if (pattern.test(name)) context.report({ node, messageId: 'share', data: { name } });
+    };
+    return {
+      Identifier(node) {
+        report(node, node.name);
+      },
+      Property(node) {
+        if (node.key.type === 'Literal' && typeof node.key.value === 'string') {
+          report(node, node.key.value);
+        }
+      },
+    };
+  },
+};
+
+pluginRules['no-value-recipe'] = noValueRecipe;

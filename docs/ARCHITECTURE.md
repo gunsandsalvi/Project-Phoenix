@@ -330,13 +330,29 @@ runtime-frozen read facade, not a type alias.
 Kinds are registered at assembly, not closed unions: adding an instrument kind is one profile in
 one module; the kernel learns how a kind behaves only by asking its profile (pricing, liability,
 unit, terms validation, display name, actions due). An instrument whose kind has no profile cannot
-be registered.
+be registered. A kind's `unit` is a property of the kind, so a family whose members are measured in
+different things is a kind per member, generated from one data table by one factory: the goods are
+`good.grain`, `good.flour`, `good.bread`, each with its unit, and nothing branches on which.
+
+**How technology crosses the boundary.** A module cannot import another, so a fact one system owns
+and another must read travels through the kernel's own stores. For a good's RECIPE that store is the
+instrument's **terms**: public structure (which inputs, and the `ParamId` of each quantity), with
+every number in the parameter register where its unit and owner are declared (XI-14). A firm reads
+what a thing takes to make from the thing itself; the coefficient exists once. The same route serves
+anything else a system must publish about an instrument.
+
+**Names are composed, not stored.** `registry/naming.ts` resolves the parts of a display name that
+are state — the issuer's name, a region's name — and hands them to the kind's profile as a `Namer`;
+the profile composes the name from its own terms (Law 9). A claim demands an issuer and throws
+without one; a physical thing has none and is named by what it is and where it trades.
 
 ### 4.10 Registry and parameters (Law 2, Law 15, XI-14)
 
 All data lives in the **registry**: currencies (each naming its issuing central bank), regions (each
-naming its currency), units, party kinds, instrument kinds, goods, recipes, cell-key dimensions,
-platforms. Behaviour that varies by kind lives in a **profile** behind a dispatch table keyed by kind,
+naming its currency), units, party kinds, instrument kinds, cell-key dimensions, platforms. A
+module's own tables are its own registry, in `mechanisms/<system>/data.ts` — the treasury's maturity
+grid, the goods and their recipes — and the numbers in them are declared parameters generated from
+those tables, so a table row and a register entry are never two copies of one number. Behaviour that varies by kind lives in a **profile** behind a dispatch table keyed by kind,
 with exhaustiveness enforced by the type system. Mechanics never branch on a kind (lint, §9).
 
 Every number that shapes behaviour is declared in the **parameter register** with value, unit, owner,
@@ -458,6 +474,7 @@ Enforced by ESLint over `packages/engine/src` (rules in `eslint.config.js`, cust
 | `phoenix/no-kind-branch`: no `=== '<kind>'` comparisons on `.kind/.sector/.industry` inside `mechanisms/`                  | Law 15, App B 48     |
 | `phoenix/no-clock-no-random`: no `Date`, `Math.random`, `performance.now` in engine                                        | Seed A5, Audit D3    |
 | `phoenix/no-cross-module-import`: a module imports only the kernel, never a sibling module or the world container          | Law 15, 4.9b         |
+| `phoenix/no-value-recipe`: no `costShare`, `valueShare`, `costPerRevenue` — a recipe is a physical quantity per unit       | Goods A2.b           |
 | `phoenix/no-console`, `no-empty` catch, `no-restricted-syntax` on `try` inside mechanisms                                  | §5                   |
 | `@typescript-eslint/switch-exhaustiveness-check`, `no-explicit-any`, `no-non-null-assertion`, `strict-boolean-expressions` | §5                   |
 

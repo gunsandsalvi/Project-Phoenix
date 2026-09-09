@@ -122,4 +122,4 @@ Every listed clause MET; three placeholders deleted, none added; the chain test 
 ## Guard
 
 Capital Programme B5 (no investment rate); XI-4 (no average coupon as the cost of capital; no free
-inventory); Firm Birth A2.a; Goods F1.
+inventory); Firm Birth A2.a; Commodities Spot F1.

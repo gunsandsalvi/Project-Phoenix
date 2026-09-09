@@ -17,6 +17,7 @@ import { percent } from '../../core/format.js';
 import type { Periodicity, Rate } from '../../core/rate.js';
 import type { Terms } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
+import { issuerName } from '../../registry/naming.js';
 import type { SystemModule } from '../../world/module.js';
 
 export const SOVEREIGN_BOND = instrumentKindId('sovereign.bond');
@@ -72,10 +73,11 @@ export const sovereignBond: InstrumentKindProfile = {
       throw new InvalidRegistry('Law 8', 'a bond coupon is quoted per annum');
     }
   },
-  displayName: (i, issuerName) => {
-    if (!isBond(i.terms)) return `${issuerName} bond`;
+  displayName: (i, namer) => {
+    const who = issuerName(namer, i.id);
+    if (!isBond(i.terms)) return `${who} bond`;
     // Law 9: issuer + coupon + maturity.
-    return `${issuerName} ${percent(i.terms.coupon.amount)} ${formatCivil(i.terms.maturity)}`;
+    return `${who} ${percent(i.terms.coupon.amount)} ${formatCivil(i.terms.maturity)}`;
   },
   due: (i, period, cal) => {
     if (!isBond(i.terms)) return [];
@@ -143,8 +145,10 @@ export const sovereignBill: InstrumentKindProfile = {
     if (!isBill(t)) throw new InvalidRegistry('Sovereign B1', 'not sovereign bill terms');
     validateDates(t.issueDate, t.maturity, 'sovereign bill');
   },
-  displayName: (i, issuerName) =>
-    isBill(i.terms) ? `${issuerName} bill ${formatCivil(i.terms.maturity)}` : `${issuerName} bill`,
+  displayName: (i, namer) =>
+    isBill(i.terms)
+      ? `${issuerName(namer, i.id)} bill ${formatCivil(i.terms.maturity)}`
+      : `${issuerName(namer, i.id)} bill`,
   // N5.c: no coupon; the return is the discount to par, and the bill accretes against its own print.
   due: (i, period, cal) =>
     isBill(i.terms) && cal.place(i.terms.maturity) === period

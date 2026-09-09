@@ -23,7 +23,7 @@ the run ladder and the fixed-point run; Appendix C (recount rather than adjust).
   the seed, `inputs: [{ good, unitsPerUnit }]`, `plant: [{ capitalKind, unitsPerUnit }]`, `labour:
 [{ occupation, hoursPerUnit }]`, `energy: [{ grade, unitsPerUnit }]`, `buildLag`, each declared
   `technology`; every good named appears as an output of some recipe or as a commodity produced
-  from plant (Goods F1: no consumption without production or inventory: assembly throws on a dangling
+  from plant (Commodities Spot F1: no consumption without production or inventory: assembly throws on a dangling
   input).
 - **Adoption is a mechanism that exists**: a recipe version carries an `effective` period; a firm on
   the old version adopts the new one only by investing in the plant the new recipe needs (item 10's
@@ -68,5 +68,5 @@ read against a frozen baseline.
 
 ## Guard
 
-Goods F1; Law 13 (a moved number is a finding, not a regression); Law 11 (no tuning to the
+Commodities Spot F1; Law 13 (a moved number is a finding, not a regression); Law 11 (no tuning to the
 baseline).
