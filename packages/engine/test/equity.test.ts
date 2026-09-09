@@ -192,9 +192,9 @@ describe('what a share is (Equity A)', () => {
     const w = foundationWorld('eq-kind-d');
     const decl = w.params.decl(OPENING_SHARE);
     expect(decl.kind).toBe('resolution');
-    // Law 2: the shapes this world declares are the goods' opening prices, the opening yield, one
-    // preference width and the two management fees, and equity added none of them.
-    expect(w.last?.audit.reads.shapes).toBe(7);
+    // Law 2: the shapes this world declares are the four goods' opening prices, the opening yield,
+    // one preference width and the two management fees, and equity added none of them.
+    expect(w.last?.audit.reads.shapes).toBe(8);
   });
 });
 
@@ -344,7 +344,10 @@ describe('what the holder gets (Equity F)', () => {
 
   it('is wiped by the waterfall when the firm fails, and not by a special case (E4, F2)', () => {
     const w = foundationWorld('eq-e4');
-    for (let i = 0; i < 45; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    // WHEN a bakery runs out of money is an outcome and moves whenever anything upstream of it
+    // does; what this test is about is what happens to its shares when one does — which is at the
+    // END of the winding-up, so the run has to be long enough for the programme to close as well.
+    for (let i = 0; i < 60; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const died = w.journal.ofKind('estate.opened').find((e) => e.data['dead'] === FIRM_6);
     expect(died).toBeDefined();
     // The module stopped pricing the line and said why, publicly.

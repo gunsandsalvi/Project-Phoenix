@@ -25,7 +25,7 @@ import {
   type InstrumentId,
   type PartyId,
 } from '../../core/ids.js';
-import { mul, sub } from '../../core/num.js';
+import { mul } from '../../core/num.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Namer } from '../../registry/naming.js';
@@ -142,7 +142,7 @@ export const loanKind: InstrumentKindProfile = {
    * movement lands in the equity account — booked and visible, never a reserve quietly absorbing
    * (D2.b). The kernel asks per lot with what the holder says a unit is worth now.
    */
-  revalue: (_i, lot, recovery) => mul(lot.qty, sub(recovery, lot.basisPerUnit, 'provision'), 'provision'),
+  carriedAt: (_i, _lot, recovery) => recovery,
   /**
    * D2.a: the provision moves when the assessment moves, and it moves BOTH WAYS — a bank that has
    * stopped expecting to lose on a borrower takes the charge back. Goods E2.c forbids writing

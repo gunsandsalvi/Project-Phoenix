@@ -77,6 +77,21 @@ export class Journal {
     return this.events.slice(-n);
   }
 
+  /**
+   * The most recent events of ONE kind that a viewer may see (Observer B1, D1). A surface showing
+   * something said once a period reads it here. Sifting it out of a fixed-depth feed of everything
+   * is a read that goes quiet as the world finds more to say each period, and says nothing when it
+   * does.
+   */
+  recentOfKind(kind: EventKind, n: number, sees: (e: Event) => boolean): readonly Event[] {
+    const out: Event[] = [];
+    for (let i = this.events.length - 1; i >= 0 && out.length < n; i -= 1) {
+      const e = this.events[i];
+      if (e?.kind === kind && sees(e)) out.push(e);
+    }
+    return out.reverse();
+  }
+
   /** What a party may see: public events, and private ones it is a subject of (A4). */
   visibleTo(party: string, last: number): readonly Event[] {
     const out: Event[] = [];

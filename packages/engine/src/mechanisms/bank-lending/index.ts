@@ -25,7 +25,7 @@ import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { paramId } from '../../core/ids.js';
-import { div, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
+import { add, div, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -35,16 +35,25 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { BANKS, bankParam, type BankDecl } from './data.js';
 import { LOAN, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
-import { lossGivenDefault, probabilityOfDefault, quote, room, type Quote, type Regulation } from './quote.js';
+import {
+  holderReservation,
+  lossGivenDefault,
+  probabilityOfDefault,
+  quote,
+  room,
+  type Quote,
+  type Regulation,
+} from './quote.js';
 
 export * from './data.js';
 export * from './loan.js';
-export { quote, room, probabilityOfDefault, lossGivenDefault, exposureTo } from './quote.js';
+export { quote, holderReservation, room, probabilityOfDefault, lossGivenDefault, exposureTo } from './quote.js';
 export type { Quote, Regulation, Room } from './quote.js';
 
 export const LENDING_PARAMS = {
   capitalRatio: paramId('regulation.capitalRatio'),
   riskWeight: paramId('regulation.riskWeight.loan'),
+  sovereignWeight: paramId('regulation.riskWeight.sovereign'),
   operatingCost: paramId('loan.operatingCost'),
 } as const;
 
@@ -77,12 +86,28 @@ function declOf(bank: PartyId): BankDecl | undefined {
 }
 
 /**
- * C1.a, XI-4 joint one: what this bank actually paid for what it owed, annualised — read off the
- * wire rather than assumed. Nothing a bank issues pays interest in this world yet, so it is zero;
- * the moment a deposit or a wholesale line does (worklist 11), this reads it without changing.
+ * C1.a, XI-4 joint one: this bank's BLENDED cost of funds, per annum — what it actually paid on
+ * what it owes, blended with what its own capital costs it, over the whole of what funds its book.
+ *
+ * XI-4 names the mix: "deposits, wholesale borrowing AND CAPITAL". The interest half is read off
+ * the wire and is zero today, because nothing a bank issues pays interest yet and the corridor that
+ * prices the rest arrives at worklist 11. The capital half is not zero and never was: a bank funds
+ * part of its book with money its owners require a return on, and a bank that ignored that would
+ * price every asset as though equity were free — which is the same deletion of the joint that
+ * pricing at the policy rate is, arrived at from the other side.
+ *
+ * It is a DIFFERENT number from C1.c's capital charge and both belong (XI-4 lists both): the blend
+ * is what funding the position costs, and the charge is what the regulatory capital that particular
+ * asset consumes has to earn on top.
  */
 function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
-  if (ctx.period === 0) return 0;
+  const owed = owedBy(ctx, bank, ccy);
+  const capital = ctx.participant(bank).equity();
+  const funding = add(owed, capital, 'what funds its book');
+  if (funding <= 0) return 0;
+  const required = ctx.params.get(bankParam(bank, 'returnOnCapital'));
+  const onCapital = mul(capital, required, 'what its own capital costs it');
+  if (ctx.period === 0) return div(onCapital, funding, 'its blended cost of funds');
   const previous = period(ctx.period - 1);
   const paid: number[] = [];
   for (const r of ctx.ledger.inPeriod(previous)) {
@@ -92,8 +117,6 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): n
       paid.push(leg.amount);
     }
   }
-  const owed = owedBy(ctx, bank, ccy);
-  if (owed <= 0) return 0;
   // Law 8: a rate is per annum, so what it paid over this period is divided by the fraction of a
   // year the period actually was — read off the calendar's own dates, never a periods-per-year.
   const year = yearFraction(
@@ -101,8 +124,9 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): n
     ctx.calendar.startOf(previous),
     ctx.calendar.startOf(ctx.period),
   );
-  if (year <= 0) return 0;
-  return div(div(sum(paid).value, owed, 'what it paid on what it owed'), year, 'per annum');
+  if (year <= 0) return div(onCapital, funding, 'its blended cost of funds');
+  const interest = div(sum(paid).value, year, 'what it paid on what it owes, per annum');
+  return div(add(interest, onCapital, 'what its funding costs it'), funding, 'per annum');
 }
 
 /** What this bank owes: every liability of its own that anybody holds. */
@@ -416,6 +440,14 @@ export const bankLending: SystemModule = {
       why: 'Banks Lending B2.a: how much of the requirement a unit of unsecured lending consumes. One, because an unsecured loan to a firm is the thing the requirement was written about; a weight per security arrives when there is security to weigh (worklist 13d).',
     },
     {
+      id: LENDING_PARAMS.sovereignWeight,
+      value: 0,
+      unit: 'ratio',
+      kind: 'policy',
+      owner: 'standardSetter',
+      why: 'Corporate Credit E5.c, Sovereign E5: how much of the capital requirement a unit of the sovereign own paper consumes. Zero under the standard for a claim on the issuer of the money it is promised in, and that is a RULE somebody wrote rather than a fact about the world — it is most of why a bank holds sovereign paper as its liquidity buffer instead of lending the money out, and it is exactly the kind of number a polity can change (worklist 14).',
+    },
+    {
       id: LENDING_PARAMS.operatingCost,
       value: 0.005,
       unit: 'per annum on the principal',
@@ -469,6 +501,12 @@ export const bankLending: SystemModule = {
       anchor: { after: 'corporateActions' },
       run: (ctx: MechanismContext): void => {
         runRequests(ctx);
+        // Clearing F1: everything that prices off a bank's own economics this period reads it here
+        // — a desk paying rent on its inventory, a firm deciding whether a project clears its cost
+        // of capital, a schedule in a bond market. One number, published once, read by all of them.
+        publishCostOfFunds(ctx);
+        publishQuotes(ctx);
+        publishReservations(ctx);
       },
     },
     {
@@ -483,7 +521,6 @@ export const bankLending: SystemModule = {
       run: (ctx: MechanismContext): void => {
         bookDraws(ctx);
         publishStandard(ctx);
-        publishCostOfFunds(ctx);
       },
     },
   ],
@@ -562,6 +599,98 @@ function publishStandard(ctx: MechanismContext): void {
     },
     true,
   );
+}
+
+/**
+ * C2, C9, XI-4 joint two: what the keenest bank would lend this borrower NOW, and how much of it.
+ *
+ * A firm deciding whether to invest needs what its debt costs AT THE MARGIN — not the average
+ * coupon on what it already owes, which XI-4 names as the way joint two is deleted. So every bank
+ * prices every name it could lend to, the borrower is told the keenest of them and how much room
+ * that bank has for it, and the decision it takes with that is its own. It is PRIVATE between the
+ * two of them: what a bank would lend one firm is nobody else's business, and a borrower reading
+ * its own quote is reading what it was told and not what anybody else was.
+ *
+ * A bank with no room quotes nothing, and a borrower nobody will lend to gets no quote at all —
+ * which is B2.a doing its work one step earlier than the loan: a firm with a good project and no
+ * lender does not invest.
+ */
+function publishQuotes(ctx: MechanismContext): void {
+  for (const p of ctx.parties.all()) {
+    if (!p.status.alive || !ctx.registry.partyKind(p.kind).borrows) continue;
+    const ccy = ctx.registry.region(p.region).ccy;
+    let best: Quote | undefined;
+    let most = 0;
+    for (const b of ctx.parties.ofKind(BANK)) {
+      const decl = declOf(b.id);
+      if (decl === undefined || !b.status.alive || b.id === p.id) continue;
+      const view = ctx.participant(b.id);
+      const reg = regulationOf(view);
+      const r = room(view, decl, p.id, reg);
+      if (r.most <= 0) continue;
+      const q = quote(view, decl, p.id, reg, costOfFunds(ctx, b.id, ccy), seenDefaults(ctx));
+      if (best === undefined || q.rate < best.rate) {
+        best = q;
+        most = r.most;
+      }
+    }
+    if (best === undefined) continue;
+    ctx.record(
+      'credit.quoted',
+      [p.id],
+      {
+        borrower: p.id,
+        bank: best.bank,
+        rate: best.rate,
+        most,
+        costOfFunds: best.costOfFunds,
+        expectedLoss: best.expectedLoss,
+        capitalCharge: best.capitalCharge,
+        operatingCost: best.operatingCost,
+        ccy,
+      },
+      false,
+    );
+  }
+}
+
+/**
+ * Corporate Credit E5, E5.a-c: what each bank requires, per annum, to hold a named issuer's paper.
+ *
+ * It is published because something else in this world prices off it and there is ONE of it (Law 4):
+ * a bank's schedule in a bond market is built from what it requires, and a schedule that computed
+ * its own version of the same three terms would be a second answer to one question. E5.d is what
+ * the market then does with it: the level a book clears at is where the marginal holder's
+ * reservation sits, and a spread below every reservation means demand is genuinely zero.
+ */
+function publishReservations(ctx: MechanismContext): void {
+  const obligors = new Set<PartyId>();
+  for (const i of ctx.instruments.all()) {
+    if (!i.status.live || !i.issuer.some) continue;
+    const profile = ctx.registry.instrumentKind(i.kind);
+    if (!profile.liabilityOfIssuer || profile.pricing === 'money') continue;
+    obligors.add(i.issuer.value);
+  }
+  for (const b of ctx.parties.ofKind(BANK)) {
+    const decl = declOf(b.id);
+    if (decl === undefined || !b.status.alive) continue;
+    const view = ctx.participant(b.id);
+    const ccy = ctx.registry.region(b.region).ccy;
+    const funds = costOfFunds(ctx, b.id, ccy);
+    const reg = { ...regulationOf(view), riskWeight: view.params.get(LENDING_PARAMS.sovereignWeight) };
+    const required: Record<string, number> = {};
+    const terms: Record<string, unknown> = {};
+    for (const obligor of obligors) {
+      const r = holderReservation(view, decl, reg, funds);
+      required[obligor] = r.rate;
+      terms[obligor] = {
+        costOfFunds: r.costOfFunds,
+        expectedLoss: r.expectedLoss,
+        capitalCharge: r.capitalCharge,
+      };
+    }
+    ctx.record('bank.reservation', [b.id], { bank: b.id, ccy, required, terms }, false);
+  }
 }
 
 /**

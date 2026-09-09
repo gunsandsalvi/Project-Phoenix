@@ -1,7 +1,7 @@
 /**
  * The sovereign curve and the reasons a bank holds sovereign paper.
  *
- * @spec Treasury E4 Sovereign E1.a Sovereign D1 Sovereign D2 Sovereign D3 Sovereign D3.a Sovereign D3.b Sovereign D3.c Sovereign D4 Sovereign D5 Sovereign E1 Sovereign E2 Sovereign E2.a Sovereign E3 Sovereign E4 Sovereign E5 Sovereign B3.a Bond N7.b Clearing A3 Clearing B2 XI-14
+ * @spec Treasury E4 Sovereign E1.a Sovereign D1 Sovereign D2 Sovereign D3 Sovereign D3.a Sovereign D3.b Sovereign D3.c Sovereign D4 Sovereign D5 Sovereign E1 Sovereign E2 Sovereign E2.a Sovereign E3 Sovereign E4 Sovereign E5 Sovereign B3.a Bond N7.b Corporate Credit E5 Corporate Credit E5.a Corporate Credit E5.b Corporate Credit E5.c Corporate Credit E5.d Clearing A3 Clearing B2 XI-4 XI-14
  *
  * This module owns one curve family (D3.a: one owner) and states its convention once (D3.c). The
  * curve itself is never stored: `ctx.curve` builds it from prints already produced when somebody
@@ -16,6 +16,7 @@
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import { none, some, type Option } from '../../core/option.js';
 import { curveFamilyOf, priceAt, type CurveFamilyDecl } from '../../prices/curve.js';
 import { tradedIn } from '../../prices/price-store.js';
 import { paramId } from '../../core/ids.js';
@@ -28,7 +29,6 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 
 export const P_BUFFER = paramId('bank.liquidityBuffer.perDeposit');
-export const P_REQUIRED_YIELD = paramId('sovereign.holders.requiredYield');
 export const P_SURPLUS_PREMIUM = paramId('sovereign.holders.surplusPremium');
 
 /** D3.c: one compounding convention and one day count, stated by the owner and used by everyone. */
@@ -60,8 +60,9 @@ export function demandSteps(
   m: MarketDecl,
   neededUnits: number,
   affordableUnits: number,
+  /** Corporate Credit E5: what THIS holder requires of this issuer's paper, per annum. */
+  required: number,
 ): readonly Order[] {
-  const required = view.params.get(P_REQUIRED_YIELD);
   const premium = view.params.get(P_SURPLUS_PREMIUM);
   const atRequired = priceAtYield(view, m, required);
   const atPremium = priceAtYield(view, m, add(required, premium, 'surplus yield'));
@@ -76,6 +77,27 @@ export function demandSteps(
     out.push({ party: view.self.id, side: 'buy', price: atPremium, qty: rest });
   }
   return out;
+}
+
+/**
+ * Corporate Credit E5, E5.a-c: what this holder requires, per annum, to hold a named issuer's paper.
+ *
+ * A bank's answer is built from its own cost of funds, its own expected loss on that issuer and the
+ * capital the position consumes, and the module that owns a bank's economics computes it and says
+ * it under the bank's own name (Banks Lending C1, Law 4). Reading it here rather than rebuilding it
+ * is what keeps ONE model per obligor per holder (C4): a schedule struck against a second copy of
+ * those three terms would be a bank pricing its book against a belief it does not hold.
+ *
+ * A bank that has not been told what it requires — before any period has run — has no reservation
+ * and posts nothing. That is a real state: a holder with no view does not bid.
+ */
+export function requiredYieldOf(view: ParticipantView, issuer: PartyId): Option<number> {
+  const own = view.lastOwn('bank.reservation');
+  if (!own.some) return none<number>();
+  const required = own.value.data['required'];
+  if (typeof required !== 'object' || required === null) return none<number>();
+  const rate = (required as Record<string, unknown>)[issuer];
+  return typeof rate === 'number' ? some(rate) : none<number>();
 }
 
 /** How long a line has to run, on the curve's own day count. */
@@ -143,18 +165,6 @@ export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule
         standsInFor: { mechanism: 'Money Market A2, A2.a (the buffer a bank chooses)', worklistItem: '11' },
       },
       {
-        id: P_REQUIRED_YIELD,
-        value: 0.02,
-        unit: 'per annum',
-        kind: 'placeholder',
-        owner: 'model',
-        why: 'Corporate Credit E5: a holder reservation is built from its own cost of funds, its expected loss and the capital the position consumes. None of the three exists yet, so one stated yield stands in for all three. It is deliberately NOT a spread over the curve: a reservation formed from the print is the fixed point XI-13 forbids, and the market could not then disagree with itself.',
-        standsInFor: {
-          mechanism: 'XI-4 and Corporate Credit E5 (cost of funds, expected loss, capital)',
-          worklistItem: '10',
-        },
-      },
-      {
         id: P_SURPLUS_PREMIUM,
         value: 0.01,
         unit: 'per annum over the required yield',
@@ -173,7 +183,9 @@ export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule
           // A session carrying the issuer own offer is an auction: the bank bids there through its
           // obligation (Sovereign C3), and posting twice would be two reasons for one demand.
           if (view.offer(m.id).some) return [];
-          const price = priceAtYield(view, m, view.params.get(P_REQUIRED_YIELD));
+          const required = requiredYieldOf(view, issuer);
+          if (!required.some) return [];
+          const price = priceAtYield(view, m, required.value);
           if (price === undefined || price <= 0) return [];
           const target = bufferTarget(view, ccy);
           const value = sovereignValue(view, issuer, ccy);
@@ -188,7 +200,7 @@ export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule
           const qty = div(share, price, 'units');
           if (qty > 0) {
             const affordable = div(view.cash(ccy), price, 'affordable');
-            return demandSteps(view, m, qty, affordable);
+            return demandSteps(view, m, qty, affordable, required.value);
           }
           // Above its buffer it is a seller, and what it will let go for is the same yield it
           // requires to hold the paper at all (D5: an offer no bid reaches simply does not clear).

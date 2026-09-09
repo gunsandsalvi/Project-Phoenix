@@ -212,6 +212,17 @@ halves is a trade.
 units (App B 39). An instrument declared `carriedAtCost` in the registry values at its lots' basis; any
 other unpriced instrument **throws** `Unpriced` when valued.
 
+**A kind says what a LOT is carried at, per lot** (Goods E2, Capital Programme A3, A6; item 10.1).
+`InstrumentKindProfile.carriedAt(instrument, lot, marked, period, calendar) -> Option<perUnit>` is
+asked lot by lot at revaluation; the kernel books the difference against the equity account and
+re-marks that lot to the answer, so one number lands on the stock and on income together. `none` means
+this lot is carried at what it was. It is per lot because the answer is: a good is written down to
+what its market last said (E2), and a vintage of plant wears out on a schedule of its own from what
+its own holder paid for it — two vintages of one kind have different lives left, and a lot bought
+second-hand carries what its buyer paid. A rise is refused unless the kind declares
+`fairValueThroughIncome` (E2.c), in that one place. The mark is handed in as an `Option` and a kind
+may ignore it: a thing that wears out has no print and does not want one.
+
 ### 4.6 The clearing engine (Clearing A–F)
 
 One solver for every market. A participant posts a `Schedule`: a monotone step function from price to
@@ -483,6 +494,36 @@ are state — the issuer's name, a region's name — and hands them to the kind'
 the profile composes the name from its own terms (Law 9). A claim demands an issuer and throws
 without one; a physical thing has none and is named by what it is and where it trades.
 
+### 4.9c The capital programme, and where the investment decision lives (Capital Programme, XI-4)
+
+**Plant is a dated VINTAGE, and a vintage is an instrument** (A6): its own kind, physical, issued by
+nobody, counted in its own unit, with the date it went into service and the date it is worn out in
+its terms. Vintages are keyed by `(capital kind, region, service date)` and shared by everybody who
+commissioned in that period, so their number is bounded by the kind's life rather than by the number
+of purchases — and a machine sold out of an estate keeps its age, which is the whole reason the date
+is on the instrument rather than on the lot. What it COST is the lot's, where a basis lives.
+
+**One schedule, charged in both places** (A3): the kind answers `carriedAt` with the straight line
+over the service the vintage has left, and the kernel does the rest (4.5). There is no accumulated
+total beside the stock; accumulated depreciation is a read over the journal's charges and gross is
+net plus accumulated.
+
+**Which module owns what.** `mechanisms/capital-programme` owns the STOCK — the kinds registry, the
+vintage instruments and their markets, the wearing-out schedule, retirement, the commissioning of a
+bought good into plant, and the A6.b units identity. It owns no decision. **The decision to invest is
+the firm's** and lives in `mechanisms/firms/invest.ts`, because it is made of the same things every
+other firm decision is made of (its own outlook, its own cash, the prices it faces) and it shares
+the same order list. `firms` therefore `requires` `capital-programme`, and `capital-programme`
+requires only `goods`.
+
+**Whether a purchase is plant is read off the wire** (A4.c). What a firm BOUGHT of a capital good is
+commissioned; what it MADE of one is stock. That is why nothing has to ask what industry a party is
+in, and why a workshop holding its own output is not investing in itself (Law 15).
+
+**A recipe names its capital services** (Goods A2.c): the good's own terms carry, per capital kind,
+the units of plant that let a line start one unit per period. Capacity is the scarcest of them
+(A4); a recipe naming none is not limited by plant, which is a different answer from a large number.
+
 ### 4.10 Registry and parameters (Law 2, Law 15, XI-14)
 
 All data lives in the **registry**: currencies (each naming its issuing central bank), regions (each
@@ -539,6 +580,14 @@ state at all, because a module's slot holds other parties' private state as ofte
 surface that showed it would be showing it to them. The module slots — employment rows, inventories,
 the outlook book — are therefore the **inspector's** product and are null for a party. The UI can
 only reach the engine through this API over the worker bridge.
+
+A viewer asks for the journal two ways, and the difference matters. `journalTail` is the last N
+events of **everything** — a feed, a display depth, nothing more. `follow` names the **kinds** it
+wants the recent events of, and they come back per kind at that same depth (`Journal.recentOfKind`,
+filtered by the same visibility rule as the feed). Anything a party says once a period — an issuer's
+programme, an auction's result — is read that way, because how far back a feed of everything reaches
+shrinks every time the world finds more to say, so sifting such an event out of the feed is a read
+that goes quiet as the model grows and never says that it has.
 
 ### 4.12 Reproducibility (Seed A5, Audit D3)
 

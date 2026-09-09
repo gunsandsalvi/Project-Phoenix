@@ -34,6 +34,11 @@ function populations(p: Readonly<Record<string, number>>): string {
   return entries.length === 0 ? '—' : entries.map(([k, v]) => `${num(v)} ${k}`).join(', ');
 }
 
+/** What the page asked the snapshot to follow (Observer B1): a kind it did not name has nothing. */
+function followed(s: Snapshot, kind: string): readonly Snapshot['journal'][number][] {
+  return s.followed[kind] ?? [];
+}
+
 function provenance(p: Snapshot['prints'][number]): string {
   switch (p.provenance.kind) {
     case 'traded':
@@ -324,9 +329,9 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   root.append(positions);
 
   // The sovereign's own state: what it published, and what its auctions did (Sovereign C1.a, C4).
-  const programmes = s.journal.filter((e) => e.kind === 'treasury.programme');
+  const programmes = followed(s, 'treasury.programme');
   const latest = programmes[programmes.length - 1];
-  const auctionRows = s.journal.filter((e) => e.kind === 'auction.result');
+  const auctionRows = followed(s, 'auction.result');
   if (latest !== undefined || auctionRows.length > 0) {
     const sovereign = el('section', { id: 'sovereign' }, el('h2', {}, 'The sovereign'));
     if (latest !== undefined) {

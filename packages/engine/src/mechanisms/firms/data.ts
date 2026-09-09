@@ -40,11 +40,27 @@ export interface FirmDecl {
    * bid different wages, and therefore why one of them is marginal and the other is not.
    */
   readonly labourScale: number;
+  /**
+   * Capital Programme B1.d: the margin over its cost of capital this MANAGEMENT insists on before
+   * it commits money it cannot get back, per annum. It is its risk aversion, and it is a preference:
+   * two managements facing the same price do not take the same project, which is what makes the
+   * line-up of who expands an outcome rather than a rule.
+   */
+  readonly hurdle: number;
+  /**
+   * Capital Programme B1.d: how many periods of service this management counts. It is its patience,
+   * and a short one is what a growth-against-margin orientation actually is: a management that will
+   * not look past two years values a machine at what two years of it are worth.
+   */
+  readonly horizonPeriods: number;
   readonly why: string;
 }
 
 /** The parameter carrying a named firm's own productivity (XI-14: declared, never a literal). */
 export const labourScaleId = (firm: string): ParamId => paramId(`firms.labourScale.${firm}`);
+
+/** A management's own numbers, one per firm (XI-14: declared, never a literal). */
+export const firmParam = (firm: string, what: string): ParamId => paramId(`firm.${what}.${firm}`);
 
 export const FIRMS: readonly FirmDecl[] = [
   {
@@ -52,6 +68,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'grain',
     occupation: 'field',
     labourScale: 0.9,
+    hurdle: 0.03,
+    horizonPeriods: 156,
     why: 'The best land in the region and the machinery to work it: fewer hours to the tonne than the trade takes on average.',
   },
   {
@@ -59,6 +77,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'grain',
     occupation: 'field',
     labourScale: 1,
+    hurdle: 0.04,
+    horizonPeriods: 104,
     why: 'An ordinary farm. It is the trade average by construction, which is what the recipe states.',
   },
   {
@@ -66,6 +86,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'grain',
     occupation: 'field',
     labourScale: 1.15,
+    hurdle: 0.06,
+    horizonPeriods: 52,
     why: 'Poorer ground and older equipment: the same tonne takes it longer, so it is the one that stops first when the wage rises.',
   },
   {
@@ -73,6 +95,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'flour',
     occupation: 'mill',
     labourScale: 0.92,
+    hurdle: 0.03,
+    horizonPeriods: 130,
     why: 'A modern mill: more of the grinding is done by the machine and less by the miller.',
   },
   {
@@ -80,6 +104,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'flour',
     occupation: 'mill',
     labourScale: 1,
+    hurdle: 0.04,
+    horizonPeriods: 104,
     why: 'An ordinary mill.',
   },
   {
@@ -87,6 +113,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'flour',
     occupation: 'mill',
     labourScale: 1.12,
+    hurdle: 0.055,
+    horizonPeriods: 52,
     why: 'An old mill kept running: it works, and it takes more hands to do it.',
   },
   {
@@ -94,6 +122,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'bread',
     occupation: 'bakery',
     labourScale: 0.88,
+    hurdle: 0.025,
+    horizonPeriods: 156,
     why: 'A plant bakery. Baking is the labour-intensive step, so this is where doing it better is worth the most.',
   },
   {
@@ -101,6 +131,8 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'bread',
     occupation: 'bakery',
     labourScale: 1,
+    hurdle: 0.04,
+    horizonPeriods: 104,
     why: 'An ordinary bakery.',
   },
   {
@@ -108,6 +140,37 @@ export const FIRMS: readonly FirmDecl[] = [
     subUnit: 'bread',
     occupation: 'bakery',
     labourScale: 1.18,
+    hurdle: 0.06,
+    horizonPeriods: 52,
     why: 'A craft bakery: the most hours to the tonne of anybody in this world, and the first to be priced out of the labour it needs.',
+  },
+  // Capital Programme C1: investment is a purchase from a NAMED capital-goods producer, and it is
+  // that seller's revenue. Three of them, for the same reason every other line has three (Seed B4).
+  {
+    firm: 'firm.10',
+    subUnit: 'machine',
+    occupation: 'works',
+    labourScale: 0.9,
+    hurdle: 0.035,
+    horizonPeriods: 130,
+    why: 'The best-equipped workshop: fewer hours to a machine than the trade takes.',
+  },
+  {
+    firm: 'firm.11',
+    subUnit: 'machine',
+    occupation: 'works',
+    labourScale: 1,
+    hurdle: 0.045,
+    horizonPeriods: 104,
+    why: 'An ordinary workshop.',
+  },
+  {
+    firm: 'firm.12',
+    subUnit: 'machine',
+    occupation: 'works',
+    labourScale: 1.14,
+    hurdle: 0.06,
+    horizonPeriods: 52,
+    why: 'The smallest workshop, and the one whose machines cost the most hours to build.',
   },
 ];

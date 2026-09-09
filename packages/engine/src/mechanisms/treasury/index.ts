@@ -506,7 +506,14 @@ function monthsOf(tenorYears: number): number {
   return Math.round(mul(tenorYears, MONTHS_PER_YEAR, 'tenor in months'));
 }
 
-/** A debut: a new line on the grid, with the coupon that makes it par at the curve (B3.a). */
+/**
+ * A debut: a new line on the grid, with the coupon that makes it par at the curve (B3.a).
+ *
+ * Bond N5, N6: a coupon is a payment the ISSUER promises, so an issuer facing a curve below zero
+ * brings a line that promises principal and nothing else rather than one on which its holders would
+ * have to pay it. That is not a bound on the yield — the market still pays whatever it pays, and a
+ * zero-coupon line above par IS a negative yield — it is what an issuer can actually promise.
+ */
 function openLine(
   ctx: MechanismContext,
   issuer: PartyId,
@@ -521,7 +528,7 @@ function openLine(
     ? { kind: SOVEREIGN_BILL, issueDate: on, maturity }
     : {
         kind: SOVEREIGN_BOND,
-        coupon: rate(y, ANNUAL),
+        coupon: rate(y > 0 ? y : 0, ANNUAL),
         couponPeriodicity: SEMI_ANNUAL,
         dayCount: CURVE_DAY_COUNT,
         issueDate: on,

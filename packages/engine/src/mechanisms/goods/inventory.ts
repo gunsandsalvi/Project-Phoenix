@@ -70,10 +70,10 @@ export function goodProfile(d: GoodDecl): InstrumentKindProfile {
     cashFlows: () => [],
     // E2, E2.a: down to the print when the print is below cost, and never back up. There is no
     // fairValueThroughIncome here: a holder of ordinary inventory is not a broker-dealer (E2.b).
-    revalue: (_i, lot, marked) =>
-      marked < lot.basisPerUnit
-        ? mul(lot.qty, sub(marked, lot.basisPerUnit, 'below cost'), 'write-down')
-        : 0,
+    // A stock nobody has priced has nothing to write down to, which is not the same as nothing to
+    // write down: it is carried at what it cost until a market says otherwise.
+    carriedAt: (_i, lot, marked) =>
+      marked.some && marked.value < lot.basisPerUnit ? some(marked.value) : none<number>(),
   };
 }
 

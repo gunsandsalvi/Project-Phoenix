@@ -38,11 +38,23 @@ export interface RecipeInput {
   readonly qtyPerUnit: ParamId;
 }
 
+/**
+ * A2.c, Capital Programme A2, A4: the capital services one unit takes, per kind of plant. It is in
+ * the recipe because it is technology about making the thing, and it is a LIST because a use that
+ * needs several kinds is limited by the scarcest of them (Capital Programme A4).
+ */
+export interface RecipePlant {
+  readonly capitalKind: string;
+  readonly unitsPerUnitPerPeriod: ParamId;
+}
+
 /** A2: the fixed way one unit of a good is made. Leontief: no substitution, no value share. */
 export interface Recipe {
   readonly inputs: readonly RecipeInput[];
   /** A2.c: hours of labour per unit of output. */
   readonly labourHoursPerUnit: ParamId;
+  /** A2.c: the plant a unit of it takes, per kind. Empty is a line that needs none. */
+  readonly plant: readonly RecipePlant[];
   /** B4: the fraction of what is started that is finished; the rest is scrap. */
   readonly yieldRate: ParamId;
   /** B3: periods a batch is work in progress before it yields. */
@@ -89,6 +101,8 @@ export const recipeParam = (output: string, input: string): ParamId =>
   paramId(`goods.${output}.recipe.${input}`);
 export const labourParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.labourHours`);
 export const leadTimeParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.leadTime`);
+export const plantParam = (subUnit: string, capitalKind: string): ParamId =>
+  paramId(`goods.${subUnit}.plant.${capitalKind}`);
 export const yieldParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.yield`);
 
 /** A2.b: what a recipe quantity is measured in. Physical on both sides, and nothing else. */
@@ -108,6 +122,10 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
         qtyPerUnit: recipeParam(d.subUnit, i.subUnit),
       })),
       labourHoursPerUnit: labourParam(d.subUnit),
+      plant: d.plant.map((r) => ({
+        capitalKind: r.capitalKind,
+        unitsPerUnitPerPeriod: plantParam(d.subUnit, r.capitalKind),
+      })),
       yieldRate: yieldParam(d.subUnit),
       leadTimePeriods: leadTimeParam(d.subUnit),
     },

@@ -1014,3 +1014,197 @@ The measurement is Part XII's: run the same seed with the desks' limits doubled 
 each desk's width beside its own inventory path through a period in which the float moves. If the
 width does not move with the book, the skew is decorative and the thing to look at is the rent —
 because the rent is the only reason a desk minds what it is holding.
+
+## 10.1 — The kernel asks a kind what a LOT is carried at
+
+**What.** `InstrumentKindProfile.revalue` became `carriedAt`. It was `(instrument, lot, mark) =>
+delta` and every lot of a holding was then re-marked to the same number; it is now
+`(instrument, lot, mark, period, calendar) => Option<perUnit>` — what THIS lot is carried at now —
+and the kernel books the difference against the equity account and re-marks that lot to the answer.
+Goods E2.c is unchanged and enforced in the same place: a rise is refused unless the kind says it
+marks both ways.
+
+**Why.** Inserted before item 10 because the capital programme cannot be written without it. Two
+vintages of the same plant have different lives left, and a vintage bought second-hand carries what
+its buyer paid rather than what the seller's book said (Capital Programme A6): the answer is per
+lot, and the old door could only give one answer per holding. It is also a truer contract — a kind
+now says what a lot is WORTH rather than how much to move it, which is what "one schedule, charged
+against profit and against the stock" (A3) means when the two have to be the same number.
+
+**Found.** The old shape had a rule nobody could see: a kind that wanted to be asked at all had to
+have a market print, because the kernel skipped the whole holding when there was none. A thing that
+wears out on a schedule of its own has no print and does not want one. `carriedAt` is handed the
+mark as an `Option` and may ignore it, which is what plant does and what a good never does.
+
+## 10 — The cost of capital
+
+**What.** XI-4's second joint, and the stock it acts on.
+
+**Plant** is a dated VINTAGE: an instrument of its own kind, physical, owned outright, issued by
+nobody, counted in its own unit, carrying the date it went into service and the date it is worn out.
+It wears out on one straight line over the service it has left, and the kernel books that write-down
+against the lot and against its holder's income in the same step (A3) — there is no second
+accumulated total beside it and no charge struck as a share of revenue, so a firm that doubles its
+plant takes twice the charge because it holds twice the units. Gross, net, accumulated and the
+period's charge are reads over the vintages and the journal. A vintage that reaches its retirement
+date leaves the register by a destroy leg, at a carrying value the schedule has already taken to
+nothing.
+
+**Capital is specific, and specific in kind** (A4). A registry of capital kinds states, per kind, the
+unit it is counted in, the GOOD it is built from, how long it works and how long it takes to build.
+A4.b is why that table has a life in it at all — the presence of a life is what makes a good a
+capital good — and it means no flag on any good says so. Capacity is the SCARCEST of the kinds a
+recipe names, in units the line can start per period; a line whose recipe names no plant is not
+limited by plant, which is a different answer from being limited by a large number.
+
+**A purchase becomes plant because of who bought it** (A4.c), and that is read off the wire: what a
+firm BOUGHT of a capital good is commissioned into plant when the build lag is up, and what it MADE
+of one is stock it sells. So a workshop holding its own output is not investing in itself and
+nothing had to ask anybody's industry to know it. Commissioning is one instruction — the machines
+are destroyed and the plant created at the same cost, in the same pass — so plant is never born from
+nothing (Firm Birth A2.a) and the spend is irreversible (C4): the money went to the producer.
+
+**The decision** (B) is the firm's, taken from its own view. Its cost of capital is what its debt
+costs AT THE MARGIN, NOW — the quote a bank has given it this period, which XI-4 names the average
+coupon as the way this joint is deleted — weighted with what its equity costs, read off its own
+share price against its own outlook of its own earnings, by its own balance sheet. Its hurdle and
+its horizon are its management's own, dispersed. What it commits to is what it would run at LESS the
+width of its own recent surprises, which is B4's option to wait with no coefficient anywhere: the
+margin IS the confidence read, applied to the quantity where that number's units live. The gap is
+that rate against what its plant will still let it run at NEXT period, so a firm running full is
+short of at least what is about to wear out and one running empty has no project at all (B3) — and
+nothing computed a utilisation ratio to get there. It invests when a unit of capacity is worth more
+to it than the plant that makes one is asking, which is exactly B1, and it posts what it could
+actually pay for (B2); the rest is a PROGRAMME it publishes, which is what a bank lends into and
+what a share issue is raised into (Firm E4.a).
+
+**The world grew a capital-goods line**: a fourth good with a life, three workshops that build it,
+and an occupation of their own. Investment is therefore somebody's revenue (C1), employs the people
+who build it (E2), and is demand now and capacity later (C1.a). Every firm opens with plant in three
+vintages of different ages, so replacement comes round a third at a time rather than all at once.
+
+**Goods B5 gained its third term**: unit cost is inputs plus wages plus a capital charge, and the
+charge is the same wear the stock is written down by. It reaches the decision, not just the report:
+what an hour is worth to a firm, and what it will pay for a tonne of what it is made from, are both
+net of what the plant that hour runs on wears out by.
+
+**Corporate Credit E5.** A bank's reservation for a named issuer's paper is now its own blended cost
+of funds and the capital the position consumes, computed where a bank's economics live and published
+under its own name. Two banks with different capital and different required returns on it do not
+require the same thing of the same bond, and a fund under a mandate requires something different
+again — which is what makes a book have two sides. **`sovereign.holders.requiredYield` is deleted**:
+one placeholder stands in this world now, and it names item 11.
+
+**Joint one grew its missing half.** A bank's cost of funds was what it paid on what it owed, which
+is nothing until deposits are priced. XI-4 says the blend is "deposits, wholesale borrowing AND
+CAPITAL", so it is now what it actually paid plus what its own capital costs it, over the whole of
+what funds its book. That number is not zero, it differs between the two banks, and it is what every
+loan quote and every bond schedule in this world is now built from.
+
+**Why.** Every cleared price in this model is inert until one of XI-4's three joints is closed. Item
+9 closed the third. This closes the second and finishes the first: a bank's own funding cost reaches
+a borrower, the borrower's cost of capital reaches a project, the project reaches a purchase from a
+named producer, and the plant it buys reaches what the line can make — after the build lag, and never
+directly.
+
+**Found.** Seven, and four of them are findings about the world rather than about the code.
+
+- **A firm that only sees its own fills can never see demand above its own ceiling.** The first build
+  measured the gap as what it expects to sell against what it can make. A capacity-bound firm sells
+  exactly what it makes, so its expectation converges on its ceiling, the gap is zero, and B3's
+  "a firm running full has an obvious reason to expand" is unreachable — a fixed point, not a
+  tuning problem. The gap is measured against what its plant will still let it run at NEXT period
+  instead: a firm at its ceiling is short of what is about to wear out, and replacement is
+  investment. Nothing had to be told what demand it could not see.
+- **A bidder that sizes its order at its own reservation buys MORE when capital gets dearer.** With
+  the funding constraint applied at the price it was bidding, a firm whose cost of capital rose bid
+  lower and could therefore "afford" more units of a thing it valued less. How many it can pay for
+  is a question about the price it expects to PAY; the most it would pay is a different question and
+  a different number, and the two had been the same one.
+- **A treasury can issue a coupon its holders would have to pay.** Once the sovereign secondary
+  market actually cleared, a short line printing above par gave the curve a wildly negative
+  annualised yield, and the debut stamped that as a coupon. A coupon is a payment the ISSUER
+  promises (Bond N5, N6), so an issuer facing a curve below zero brings a line that promises
+  principal and nothing else; the market still pays whatever it pays, and a zero-coupon line above
+  par IS a negative yield. The profile also stopped emitting a coupon action for nothing at all.
+- **The sovereign-bank doom loop, measured and then left out of scope.** E5.b's expected loss was
+  wired to the loan model — how often this bank has seen this name fail, times a loss given default
+  of all of it. One missed treasury payment then moved every bank's required yield by a
+  twenty-sixth, repriced the whole curve, met the money fund's forced sale (XI-2) at the desks' bids
+  and took a bank's capital with it. That is Corporate Credit G8 working exactly as written. It is
+  not in the build, because both halves of it are wrong for an issuer whose paper is marked to
+  market: a treasury that missed a payment has not stopped being able to create the money it
+  promised (Sovereign G1), and a recovery stated at zero is the fixed recovery Appendix B forbids.
+  The assessment E5.b needs is somebody's OPINION (Corporate Credit A4), which is the ratings system
+  and the second opinion — **item 12**. The world cannot resolve a failed bank either, which is
+  item 11; that is why the finding is recorded rather than shipped.
+- **The real chain still runs down, and it did before this item.** The foundation world's output
+  falls to nothing by about period thirty, unchanged by anything here — the same path, one period
+  later. It is a finding about the world with the mechanisms it has, and Law 11 says the answer is
+  the missing mechanism rather than a number. Investment is not visible in that world for the same
+  reason nothing else is: nobody is at their ceiling. The item's tests turn one technology number up
+  — a tonne of grain a week takes four machines instead of one — and the whole chain runs.
+- **A dust shortfall in the flows family, reachable only in a contrived world.** In the tight world
+  above, a household cell's share holding moves by about forty-five ulps more than its legs account
+  for, around period sixteen. The tolerance is not widened: the derivation counts the lots at each
+  END of the period and the legs between them, and a holding that was built up and sold down inside
+  one period passed through more lots than either end has. It is named here because Law 7 says a
+  check that only passes with a band is reporting a defect, and the defect is in the derivation.
+  The foundation world runs two hundred periods green.
+- **A surface that sifts a feed goes quiet as the world grows, and does not say so.** The inspector
+  showed the sovereign's published programme by taking the last forty events and looking through
+  them for it. A quote to every borrower from every bank made a period four hundred and seventy
+  events long, the programme fell off the back of the feed, and the page simply stopped showing a
+  section — no error, no missing marker, nothing. The depth was not the defect: reading a thing said
+  once a period out of a feed of everything was. A viewer now names the KINDS it follows and gets
+  the recent events of each (`Journal.recentOfKind`, same visibility rule), so what it reaches does
+  not depend on how much the rest of the world had to say that week.
+
+**Changed from the plan file, and why.** Four.
+
+1. **The decision lives with the firm, not with the capital programme.** The plan put `decide.ts`
+   in the module. What to invest is made of the same things every other firm decision is made of —
+   its own outlook, its own cash, the prices it faces — and it shares its orders with them, so it is
+   in `firms/invest.ts` and the module owns the STOCK: the kinds, the vintages, the schedule, the
+   commissioning and the identity.
+2. **A vintage is an instrument, not a lot.** A6 wants its own cost, its own service date, its own
+   life and its own kind on it; the service date has to survive a sale, or a machine sold out of an
+   estate would be brand new in its buyer's hands. Vintages are shared by everybody who commissioned
+   the same week, so their number is bounded by the life of the kind rather than by the number of
+   purchases.
+3. **There is no opening-stock placeholder to delete.** F1.b's stand-in is an opening stock of work
+   in progress handed to a firm TOUCHING A LINE FOR THE FIRST TIME. The work in progress this seed
+   states is Seed D1's — a stock consistent with the flows that will act on it, for firms that have
+   always been in their line — so deleting it would have removed a different thing for the wrong
+   reason. F1 is PARTIAL and named to 13g.
+4. **`labour.capacity.hoursPerFirm` was already gone**, deleted at item 4a; the plan's deletion list
+   was written before it.
+
+**Deleted.** One placeholder (`sovereign.holders.requiredYield`, item 3's), replaced by what a
+holder actually requires. One shape added: `seed.openingPrice.machine`, the level the fourth good's
+market opens at, which is the same kind of claim as the other three and dies the same way (it never
+does, and the record at item 8 says why). Placeholders: two → **one**.
+
+**Deferred, with where each lands.**
+
+- **E5.b's expected loss for a holder** (Corporate Credit E5.b) → **12**, with ratings and the second
+  opinion. A bank's model of a borrower it LENDS to is unchanged and still prices its loan book.
+- **Entering a line** (Capital Programme F1) → **13g**. The project is the same arithmetic in the
+  same market; what is missing is anything that can change a firm's line-up.
+- **A completed second-hand sale out of an estate** (D3) → measured at **16**. The estate offers the
+  plant into the vintage's own market and firms that can use it bid there, at what the service left
+  in it is worth to them; whether a bidder has a gap at the moment an estate is selling is an
+  outcome.
+- **A second capital kind** → **13d** (dwellings) and **13c** (storage). The scarcest-of-several
+  mechanism is built and tested; this world declares one kind so far and says so.
+- **E4's size** (Capital Programme E4) → **16**. The direction is asserted as a mechanism test.
+
+**Forecast, with its killer.** B1.c says a change in a market price changes real investment. The test
+here shows the direction over sixteen periods with one number moved. The measurement that would kill
+it is Part XII's: move the banks' required return on capital in small steps and plot total plant
+commissioned against it. If investment is flat in the shock until it falls off a cliff, then the only
+live channel is the gate — a firm invests or it does not — and the continuous margin B1 describes is
+missing, which would mean the quantity a firm wants is not a function of the price it faces. The
+thing to look at then is the gap: it is currently the capacity it is short of, and a firm that wanted
+LESS capacity because capital got dearer would need a reason to run at a lower rate, which is a
+different mechanism from this one.

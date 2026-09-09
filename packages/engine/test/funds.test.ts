@@ -166,21 +166,27 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
     // than its manager takes loses value, and the loss falls on the NAV — because there is nothing
     // else for it to fall on. A constant NAV would take a guarantor and the guarantor would be
     // nobody, so this is D4 met by an ABSENCE: no clamp, no floor, no sponsor.
+    const struckIn = (w: World, periods: number): number[] => {
+      const navs: number[] = [];
+      for (let i = 0; i < periods; i += 1) {
+        w.step();
+        const struck = w.journal.ofKind('fund.struck').find((e) => e.period === w.period);
+        if (struck !== undefined) navs.push(Number(struck.data['perShare']));
+      }
+      return navs;
+    };
     const w = greedy(0.015);
-    const navs: number[] = [];
-    for (let i = 0; i < 20; i += 1) {
-      w.step();
-      const struck = w.journal.ofKind('fund.struck').find((e) => e.period === w.period);
-      if (struck !== undefined) navs.push(Number(struck.data['perShare']));
-    }
+    const navs = struckIn(w, 20);
     const opened = w.params.get('fund.openingSharePrice' as never);
     expect(navs.some((x) => x < opened)).toBe(true);
-    // ...and it kept falling, which is what "if the assets fall, the NAV falls" means when nothing
-    // is standing under it. A bill that actually defaulted would reach it by the same read: the
-    // instrument stops performing (Bond N12), its holder writes it down (item 5), and the division
-    // is over a smaller book.
+    // ...and WHAT put it there is the fee, which is the whole of D4: the same fund whose manager
+    // charges a tenth as much is worth more per share on the same day, over the same book, at the
+    // same marks. Nothing is standing under either of them. A bill that actually defaulted would
+    // reach the same read by the same route: the instrument stops performing (Bond N12), its
+    // holder writes it down (item 5), and the division is over a smaller book.
+    const cheap = struckIn(greedy(0.0015), 20);
     const last = navs[navs.length - 1] ?? 0;
-    expect(last).toBeLessThan(navs[0] ?? 0);
+    expect(last).toBeLessThan(cheap[cheap.length - 1] ?? 0);
   });
 
   it('pays the manager, and the fee comes out of the holders (B3, F3)', () => {

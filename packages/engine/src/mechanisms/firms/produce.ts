@@ -1,7 +1,7 @@
 /**
  * The line: inputs consumed, a batch that carries what it cost, and what comes off it.
  *
- * @spec Firm B2 Firm B3 Firm B4 Goods B1.b Goods B2 Goods B3 Goods B4 Goods B5 Goods B5.a Goods B5.b Goods E1 Goods E5 Goods F5.a Goods F5.b Commodities Spot F1 Law 19
+ * @spec Firm B2 Firm B3 Firm B4 Goods B1.a Goods B1.b Goods B1.d Goods B2 Goods B3 Goods B4 Goods B5 Goods B5.a Goods B5.b Goods E1 Goods E5 Goods F5.a Goods F5.b Goods G4 Capital Programme A2 Capital Programme D4 Commodities Spot F1 Law 19
  *
  * PRODUCTION CONSUMES WHAT IT CONSUMES (B2): the recipe says how much, so the draw is not a second
  * decision — the firm chose the batch, and the tonnage follows. What it drew and what it made are
@@ -28,6 +28,7 @@ import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { costOfDraw, dueFromLine, goodId, wipId } from '../goods/index.js';
+import { capacityFrom, utilisation, vintagesHeld } from '../capital-programme/index.js';
 import type { FirmDecl } from './data.js';
 import { technologyOf } from './decide.js';
 
@@ -93,12 +94,18 @@ function start(
   // B1.b, B1.c: what it can actually make is the least of what it planned, the hours it has that
   // can make something, and what each of its inputs on hand reaches. The shortage is read here and
   // it binds, and which one bound it is recorded: a constraint nobody reads is not a constraint.
+  // Goods B1.a, Capital Programme A2: and its plant, because output is limited by the stock. A
+  // line whose recipe needs no plant is not limited by one, which is a different answer from being
+  // limited by a large number (Law 6).
+  const vintages = vintagesHeld(view, ctx.calendar.startOf(ctx.period));
+  const capacity = capacityFrom(tech.plant, vintages);
   const limits: readonly { readonly qty: number; readonly bound: string }[] = [
     { qty: planned, bound: 'plan' },
     {
       qty: div(productiveHours(ctx, firm), tech.hoursPerUnit, 'what its people can make'),
       bound: 'labour',
     },
+    ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: `capacity.${capacity.value.binding}` }] : []),
     ...tech.inputs.map((input) => ({
       qty: div(
         ctx.register.free(firm, input.instrument),
@@ -111,9 +118,10 @@ function start(
   const binding = limits.reduce((a, b) => (b.qty < a.qty ? b : a));
   const batch = binding.qty;
   const bound = binding.bound;
-  if (!material(batch, tech.inputs.length + 2, planned)) {
+  const room = capacity.some ? capacity.value.perPeriod : null;
+  if (!material(batch, tech.inputs.length + tech.plant.length + 2, planned)) {
     // B5.a: it started nothing, so it capitalises nothing; the wage stands as a period expense.
-    ctx.record('firms.idle', [firm], { planned, wages, bound }, false);
+    ctx.record('firms.idle', [firm], { planned, wages, bound, capacity: room, utilisation: 0 }, false);
     return;
   }
   const legs: Leg[] = [];
@@ -145,16 +153,22 @@ function start(
     cause: 'production',
     reason: `${firm} started ${batch} of ${tech.terms.subUnit}`,
   });
+  const started = record.outcome === 'settled' ? batch : 0;
+  const used = room === null ? none<number>() : utilisation(started, room);
   ctx.record(
     'firms.started',
     [firm],
     {
       planned,
-      started: record.outcome === 'settled' ? batch : 0,
+      started,
       bound,
       wages,
       cost: cost.value,
       settled: record.outcome === 'settled',
+      // Goods B1.d, D4, Goods G4: utilisation is a READ of the outcome against capacity, taken
+      // here because here is where the outcome is. Nothing decided anything with it.
+      capacity: room,
+      utilisation: used.some ? used.value : null,
     },
     false,
   );

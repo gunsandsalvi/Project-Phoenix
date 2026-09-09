@@ -225,6 +225,7 @@ export class World {
         run: (w) => {
           revalue(w.period, w.cycle, {
             marked: (instrument, at) => w.markOf(instrument, at),
+            calendar: w.calendar,
             registry: w.registry,
             parties: w.parties,
             instruments: w.instruments,

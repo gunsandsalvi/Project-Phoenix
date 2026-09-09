@@ -19,7 +19,7 @@
  * SHAPE: the curve opens flat and the auctions and the secondary market give it whatever shape they
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
-import { civil } from '../calendar/civil.js';
+import { addDays, civil } from '../calendar/civil.js';
 import {
   cohortId,
   currencyCode,
@@ -49,6 +49,12 @@ import {
   type SovereignBondTerms,
 } from '../mechanisms/sovereign-instruments/index.js';
 import { bankLending } from '../mechanisms/bank-lending/index.js';
+import {
+  CAPITAL_KINDS,
+  capitalProgramme,
+  plantKindId,
+  seedVintage,
+} from '../mechanisms/capital-programme/index.js';
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
@@ -135,6 +141,15 @@ interface SeedFirm {
   readonly onTheLine: number;
   /** Seed D1: units of what its recipe draws, so its first batch is not waiting on a market. */
   readonly inputs: number;
+  /**
+   * Capital Programme A2, Seed D1: the plant it opens with, in units of the kind its line needs.
+   * A world whose firms open with no plant produces nothing at all until somebody has built some,
+   * which is not an opening condition, it is a different world. It is stated with headroom over
+   * what the firm is currently making — a going concern is not running at its ceiling — and it is
+   * spread over three vintages so that replacement comes round a third at a time rather than all at
+   * once (Seed C3's reason, applied to plant instead of to the maturity profile).
+   */
+  readonly plant: number;
   readonly why: string;
 }
 
@@ -153,26 +168,36 @@ interface SeedFirm {
  */
 const SEED_FIRMS: readonly SeedFirm[] = [
   // Grain — 200 of cash, 90 finished and 90 on the line, as the one farm held.
-  { firm: 'firm.4', name: 'Broadacre Farm', bank: BANK_B, cash: 100, subUnit: 'grain', finished: 45, onTheLine: 45, inputs: 0,
+  { firm: 'firm.4', name: 'Broadacre Farm', bank: BANK_B, cash: 100, subUnit: 'grain', finished: 45, onTheLine: 45, inputs: 0, plant: 68,
     why: 'The largest farm in the region and the one that works the best ground.' },
-  { firm: 'firm.1', name: 'Middlefield Farm', bank: BANK_A, cash: 65, subUnit: 'grain', finished: 30, onTheLine: 30, inputs: 0,
+  { firm: 'firm.1', name: 'Middlefield Farm', bank: BANK_A, cash: 65, subUnit: 'grain', finished: 30, onTheLine: 30, inputs: 0, plant: 45,
     why: 'An ordinary farm of ordinary size.' },
-  { firm: 'firm.7', name: 'Hollow Farm', bank: BANK_B, cash: 35, subUnit: 'grain', finished: 15, onTheLine: 15, inputs: 0,
+  { firm: 'firm.7', name: 'Hollow Farm', bank: BANK_B, cash: 35, subUnit: 'grain', finished: 15, onTheLine: 15, inputs: 0, plant: 23,
     why: 'The smallest, on the poorest ground, with the least cash to carry a bad season.' },
   // Flour — 150 of cash, 75 milled and 110 tonnes of grain to mill, as the one mill held.
-  { firm: 'firm.5', name: 'Riverside Mill', bank: BANK_A, cash: 75, subUnit: 'flour', finished: 38, onTheLine: 0, inputs: 55,
+  { firm: 'firm.5', name: 'Riverside Mill', bank: BANK_A, cash: 75, subUnit: 'flour', finished: 38, onTheLine: 0, inputs: 55, plant: 46,
     why: 'The big mill, and the one that has already bought most of the grain it will grind.' },
-  { firm: 'firm.2', name: 'Town Mill', bank: BANK_B, cash: 50, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37,
+  { firm: 'firm.2', name: 'Town Mill', bank: BANK_B, cash: 50, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37, plant: 30,
     why: 'An ordinary mill.' },
-  { firm: 'firm.8', name: 'Old Mill', bank: BANK_A, cash: 25, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18,
+  { firm: 'firm.8', name: 'Old Mill', bank: BANK_A, cash: 25, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18, plant: 14,
     why: 'The smallest and the oldest.' },
   // Bread — 250 of cash, 105 baked and 75 tonnes of flour, as the one bakery held.
-  { firm: 'firm.6', name: 'City Bakery', bank: BANK_A, cash: 125, subUnit: 'bread', finished: 52, onTheLine: 0, inputs: 38,
+  { firm: 'firm.6', name: 'City Bakery', bank: BANK_A, cash: 125, subUnit: 'bread', finished: 52, onTheLine: 0, inputs: 38, plant: 39,
     why: 'A plant bakery: the biggest oven and the biggest week of bread in the shop.' },
-  { firm: 'firm.3', name: 'High Street Bakery', bank: BANK_B, cash: 80, subUnit: 'bread', finished: 35, onTheLine: 0, inputs: 25,
+  { firm: 'firm.3', name: 'High Street Bakery', bank: BANK_B, cash: 80, subUnit: 'bread', finished: 35, onTheLine: 0, inputs: 25, plant: 26,
     why: 'An ordinary bakery.' },
-  { firm: 'firm.9', name: 'Corner Bakery', bank: BANK_A, cash: 45, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12,
+  { firm: 'firm.9', name: 'Corner Bakery', bank: BANK_A, cash: 45, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12, plant: 14,
     why: 'The smallest, and the one holding the least flour against a week it cannot predict.' },
+  // Capital Programme C1, E2: the line that BUILDS the capital. Its output is somebody else's
+  // plant, its revenue is somebody else's investment, and the people it employs are employed by
+  // the decision to expand. It needs no plant of its own: a workshop is people and a bench, and
+  // saying so is a statement about this world's technology rather than a missing constraint.
+  { firm: 'firm.10', name: 'North Engineering', bank: BANK_B, cash: 60, subUnit: 'machine', finished: 4, onTheLine: 3, inputs: 0, plant: 0,
+    why: 'The best-equipped workshop in the region and the one with machines already on the bench.' },
+  { firm: 'firm.11', name: 'Town Works', bank: BANK_A, cash: 40, subUnit: 'machine', finished: 3, onTheLine: 2, inputs: 0, plant: 0,
+    why: 'An ordinary workshop.' },
+  { firm: 'firm.12', name: 'Lane Workshop', bank: BANK_B, cash: 25, subUnit: 'machine', finished: 2, onTheLine: 1, inputs: 0, plant: 0,
+    why: 'The smallest, and the one that will be priced out of engineering labour first.' },
 ];
 
 /** Seed C4: the level each market opens at, which is the good's and not any one firm's. */
@@ -183,7 +208,16 @@ const SEED_MARKETS: readonly { readonly subUnit: string; readonly opensAt: numbe
     why: 'Milling is inside the period, so there is nothing on the line; what a mill opens with is what it has already milled.' },
   { subUnit: 'bread', opensAt: 1.2,
     why: 'A week of bread in the shop. It goes stale at a quarter a period, so what is not sold is a real loss from the first period on.' },
+  { subUnit: 'machine', opensAt: 2.5,
+    why: 'A machine is sixty hours of engineering, and this is what sixty hours of it is worth at the level the rest of this world opens at — so a workshop bids for an hour somewhere between what a mill will pay and what a farm will, and the capital-goods line is neither the best nor the worst employer on the first morning.' },
 ];
+
+/**
+ * Capital Programme A6, Seed C3: the vintages the world opens with, as ages in periods. Three of
+ * them, evenly spread across a machine's life, so a third of every firm's plant comes up for
+ * replacement at a time and the world has a reason to invest before anything has grown.
+ */
+const SEED_PLANT_AGES: readonly number[] = [26, 78, 130];
 
 const SEED_STOCK_BASIS = 0.8;
 
@@ -403,6 +437,26 @@ export const foundationSeed: SystemModule = {
         const paid = ctx.params.get(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
         ctx.endowUnits(firm, goodId(input.subUnit, REGION), row.inputs, paid);
       }
+      // Capital Programme A2, A6, Seed D1: the plant its line runs on, spread over three vintages
+      // of different ages, each carried at what is left of what a new one costs. WHICH kind of
+      // plant is read from the good's own recipe (Law 19), and how many units it needs to make what
+      // it makes is that recipe's number too — the seed states only how much headroom it opens with.
+      for (const need of goodTerms(ctx.instruments.get(goodId(row.subUnit, REGION))).recipe.plant) {
+        const kind = CAPITAL_KINDS.find((k) => k.id === need.capitalKind);
+        // A world assembled without the capital programme has no plant to endow, exactly as a
+        // world that does not make a good has no stock of it to endow (Seed A1).
+        if (kind === undefined || row.plant <= 0) continue;
+        if (!ctx.registry.instrumentKinds.has(plantKindId(kind.id))) continue;
+        const newPrice = ctx.params.get(openingPrice(kind.madeFrom));
+        const life = ctx.params.get(paramId(`plant.usefulLife.${kind.id}`));
+        for (const age of SEED_PLANT_AGES) {
+          const serviceDate = addDays(ctx.calendar.epoch, -age * ctx.calendar.periodDays);
+          const id = seedVintage(ctx, kind, REGION, serviceDate);
+          // A3, A6: what a vintage that has already run for `age` periods is carried at — the
+          // straight line it has been on since it went into service, and nothing else.
+          ctx.endowUnits(ctx.parties.get(firm).id, id, row.plant / SEED_PLANT_AGES.length, (newPrice * (life - age)) / life);
+        }
+      }
     }
 
     // Households: cells per (region, cohort, bank) key, weights summing to the key's population
@@ -510,6 +564,10 @@ export function foundationSpec(seed: string): AssemblySpec {
       bankLending,
       estate,
       goods(),
+      // Capital Programme: the kind of thing plant is, and the schedule it wears out on. Before the
+      // firms, because a firm decides what to make against the plant it holds (A2) and what to
+      // invest against what a machine costs (B1) — and a kind has to be registered to be held.
+      capitalProgramme(),
       labour(),
       firms(),
       households(),

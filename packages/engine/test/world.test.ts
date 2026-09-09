@@ -171,18 +171,21 @@ describe('the seed (Seed A2)', () => {
       'crossMarket',
       'zeroSum',
     ]);
-    // XI-14: two placeholders stand, each naming the worklist item that deletes it — the bank's
-    // liquidity buffer (11) and the holder's required yield (10).
-    expect(report?.reads.placeholders).toBe(2);
-    // And seven shapes. Four of them are the levels the world opens at (Seed C4): a market that has
-    // never traded has no price, so a world that opens with stock in it opens with a level for that
-    // stock, and no worklist item will ever delete that — which is why they are shapes and not
-    // placeholders with a death nobody could keep. The fifth is the width of the one preference
-    // whose dispersion is still stated (§46 B1.a). What is unequal about households is not here:
-    // it is what happened to them. The last two are the two management fees, one per fund: what a
-    // manager charges is what competition among managers settles at (worklist 13h), and until there
-    // is any, it is a claim about the answer rather than a number this world produced.
-    expect(report?.reads.shapes).toBe(7);
+    // XI-14: one placeholder stands, and it names the worklist item that deletes it — the bank's
+    // liquidity buffer (11). The holder's required yield went with the cost of capital (10): what a
+    // bank requires to hold paper is now built from its own cost of funds and the capital the
+    // position consumes, so there is nothing left standing in for it.
+    expect(report?.reads.placeholders).toBe(1);
+    // And eight shapes. Five of them are the levels the world opens at (Seed C4) — the four goods
+    // and the opening yield: a market that has never traded has no price, so a world that opens
+    // with stock in it opens with a level for that stock, and no worklist item will ever delete
+    // that, which is why they are shapes and not placeholders with a death nobody could keep. The
+    // sixth is the width of the one preference whose dispersion is still stated (§46 B1.a). What is
+    // unequal about households is not here: it is what happened to them. The last two are the two
+    // management fees, one per fund: what a manager charges is what competition among managers
+    // settles at (worklist 13h), and until there is any, it is a claim about the answer rather than
+    // a number this world produced.
+    expect(report?.reads.shapes).toBe(8);
     expect(report?.reads.populations['household']).toBe(4000);
   });
 
@@ -496,6 +499,33 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
     expect(inspector.outlooks.some((o) => o.party !== firm)).toBe(true);
     // A2.b: what it expects is its own number, with its own confidence — there is no consensus row.
     expect(own.outlooks.every((o) => o.unit.length > 0 && o.confidence >= 0)).toBe(true);
+  });
+
+  it('reaches what is said once a period however much else was said (B1, D1)', () => {
+    const w = foundationWorld('seed-O2');
+    for (let i = 0; i < 6; i += 1) w.step();
+    // A period says far more than ten things, so the programme the treasury published this period
+    // is nowhere near the back of a ten-deep feed of everything.
+    const kind = 'treasury.programme';
+    const shallow = snapshot(w, { kind: 'inspector' }, 10, [kind]);
+    expect(shallow.journal.some((e) => e.kind === kind)).toBe(false);
+    const followed = shallow.followed[kind];
+    expect(followed?.length).toBe(w.journal.ofKind(kind).length);
+    expect(followed?.[followed.length - 1]?.period).toBe(w.period);
+    // A3, A4: it comes back by the same visibility rule as the feed — a party gets what is public
+    // and what names it, and nothing else, whatever kind it asks for.
+    const firm = partyId('firm.1');
+    const settled = 'instruction.settled';
+    const party = snapshot(w, { kind: 'party', party: firm }, 10, [kind, settled]);
+    expect(party.followed[kind]?.length).toBe(followed?.length);
+    expect(party.followed[settled]?.every((e) => e.public || e.subjects.includes(firm))).toBe(true);
+    expect(
+      snapshot(w, { kind: 'inspector' }, 10, [settled]).followed[settled]?.some(
+        (e) => !e.subjects.includes(firm),
+      ),
+    ).toBe(true);
+    // A viewer that names no kind follows none: the surface adds nothing of its own (E3).
+    expect(snapshot(w, { kind: 'inspector' }, 10).followed).toEqual({});
   });
 });
 

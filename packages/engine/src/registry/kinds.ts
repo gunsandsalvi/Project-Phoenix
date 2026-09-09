@@ -129,16 +129,28 @@ export interface InstrumentKindProfile {
    */
   readonly cashFlows: (i: Instrument, after: Civil, calendar: Calendar) => readonly CashFlow[];
   /**
-   * Goods E2: what a lot carried at cost must be written down to when it is worth less than it
-   * cost. The kernel asks the profile per lot and books the delta; a POSITIVE delta is refused
-   * unless the kind says it marks to market both ways (E2.c: nobody but a dealer writes inventory
-   * up). A kind that never writes down does not answer.
+   * Goods E2, Capital Programme A3: what a LOT of this kind is carried at now, per unit.
+   *
+   * The kernel asks the profile lot by lot, books the difference against the equity account and
+   * re-marks the lot to the answer: one number landing in both places, which is what "one schedule,
+   * charged against profit and against the stock" means (A3). A rise is refused unless the kind
+   * says it marks both ways (E2.c: nobody but a dealer writes inventory up). None means this lot
+   * is carried at what it was, which is the answer for a good whose market has not fallen below
+   * cost and for a kind that never writes anything down.
+   *
+   * It is asked PER LOT because the answer is per lot: two vintages of the same plant have
+   * different lives left, and a lot bought second-hand carries what its buyer paid, not what the
+   * seller's book said (A6: a vintage has its own cost and its own service date). `marked` is what
+   * a market last said a unit is worth, when anything did — a good is written down to it (E2), and
+   * a thing that wears out on a schedule of its own does not read it at all.
    */
-  readonly revalue?: (
+  readonly carriedAt?: (
     i: Instrument,
-    lot: { readonly qty: number; readonly basisPerUnit: number },
-    marked: number,
-  ) => number;
+    lot: { readonly qty: number; readonly basisPerUnit: number; readonly acquired: Period },
+    marked: Option<number>,
+    at: Period,
+    calendar: Calendar,
+  ) => Option<number>;
   /**
    * Goods E2.c: whether this kind may be carried above cost. A dealer's book marks both ways; an
    * ordinary holder's inventory does not.

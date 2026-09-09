@@ -47,13 +47,14 @@ const wheat: InstrumentKindProfile = {
   accrued: () => 0,
   cashFlows: () => [],
   // E2, E2.a: lower of cost and what it would fetch, and never the other way (E2.c).
-  revalue: (_i, lot, marked) => (marked < lot.basisPerUnit ? lot.qty * (marked - lot.basisPerUnit) : 0),
+  carriedAt: (_i, lot, marked) =>
+    marked.some && marked.value < lot.basisPerUnit ? some(marked.value) : none<number>(),
 };
 
 /** The same kind, but claiming it may be carried above cost: what E2.c forbids for a non-dealer. */
 const wheatMarkedUp: InstrumentKindProfile = {
   ...wheat,
-  revalue: (_i, lot, marked) => lot.qty * (marked - lot.basisPerUnit),
+  carriedAt: (_i, _lot, marked) => marked,
 };
 
 function goodsModule(profile: InstrumentKindProfile, run: (ctx: MechanismContext) => void): SystemModule {

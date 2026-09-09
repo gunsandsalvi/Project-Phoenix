@@ -2,12 +2,24 @@
  * The engine host. The world lives here and nowhere else; the page only ever receives snapshots
  * (Observer E3: no surface that changes the model).
  */
-import { foundationWorld, snapshot, type Scope, type Snapshot, type World } from '@phoenix/engine';
+import {
+  foundationWorld,
+  snapshot,
+  type EventKind,
+  type Scope,
+  type Snapshot,
+  type World,
+} from '@phoenix/engine';
 
 export type Request =
   | { readonly type: 'init'; readonly seed: string }
   | { readonly type: 'step'; readonly periods: number }
-  | { readonly type: 'snapshot'; readonly scope: Scope; readonly journalTail: number };
+  | {
+      readonly type: 'snapshot';
+      readonly scope: Scope;
+      readonly journalTail: number;
+      readonly follow: readonly EventKind[];
+    };
 
 export type Response =
   | { readonly type: 'ready'; readonly seed: string }
@@ -42,7 +54,10 @@ self.onmessage = (ev: MessageEvent<Request>): void => {
         return;
       }
       case 'snapshot': {
-        post({ type: 'snapshot', snapshot: snapshot(require(), req.scope, req.journalTail) });
+        post({
+          type: 'snapshot',
+          snapshot: snapshot(require(), req.scope, req.journalTail, req.follow),
+        });
         return;
       }
     }

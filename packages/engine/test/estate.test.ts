@@ -12,6 +12,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FIRM,
+  isMoneyLeg,
   HOUSEHOLD,
   PHX,
   REGION,
@@ -392,7 +393,9 @@ describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
 describe('what a death costs the real economy (Firm Birth D4, D4.a)', () => {
   it('releases the dead firm‘s workers through the labour market‘s own path (Labour C4, F1)', () => {
     const w = worldWithADeathInIt();
-    for (let i = 0; i < 14; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    // How LONG the buyer has to be hungry before a mill runs out of money is an outcome and moves
+    // when anything upstream of it does; what the test is about is what happens when one does.
+    for (let i = 0; i < 18; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const died = w.journal.ofKind('estate.opened');
     expect(died.length).toBeGreaterThan(0);
     const dead = String(died[0]?.data['dead']);
@@ -417,7 +420,7 @@ describe('what a death costs the real economy (Firm Birth D4, D4.a)', () => {
 
   it('shows the estate, its programme and where the dead party went (Observer B5)', () => {
     const w = worldWithADeathInIt();
-    for (let i = 0; i < 14; i += 1) w.step();
+    for (let i = 0; i < 18; i += 1) w.step();
     const view = snapshot(w, { kind: 'inspector' }, 200);
     const dead = String(w.journal.ofKind('estate.opened')[0]?.data['dead']);
     // D5: a dead party is not a name that stops — the surface says what it resolves to.
@@ -473,7 +476,16 @@ describe('what does not open an estate', () => {
     ).toEqual([]);
     // ...and there is nothing for either to fire on yet, because a cell spends what it holds. That
     // absence is the clause (C1.d) and it breaks silently, so it is asserted rather than assumed.
-    for (const cell of cells) expect(w.participantView(cell).failedPayments(200)).toEqual([]);
+    // What a cell sees of a failure is both sides of it (Money E1.b) — what it could not pay AND
+    // what did not reach it — and only the first is C1.d. A dividend that never arrived is the
+    // payer's failure and a real state of the world; it says nothing about the cell's own cash.
+    for (const cell of cells) {
+      const owedByIt = w
+        .participantView(cell)
+        .failedPayments(200)
+        .filter((f) => f.instruction.legs.some((l) => isMoneyLeg(l) && l.from.holder === cell));
+      expect(owedByIt).toEqual([]);
+    }
   });
 });
 

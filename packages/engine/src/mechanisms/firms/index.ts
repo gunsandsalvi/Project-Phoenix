@@ -2,7 +2,7 @@
  * Firms: named parties that make a thing out of other things and the hours of named people, sell it
  * to named buyers, and keep whatever is left.
  *
- * @spec Firm A1 Firm A2 Firm A3 Firm E4 Firm E5 Firm B1 Firm B2 Firm B3 Firm B4 Firm B4.a Firm B4.b Firm B5 Firm B6 Firm C1 Firm C4 Firm D1 Firm E1 Firm E2 Firm E6 Firm E7 Firm F1 Firm F2 Firm F3 Goods B1 Goods B1.b Goods B1.c Goods B2 Goods B3 Goods B4 Goods B5 Goods B5.a Goods B5.b Goods C1 Goods C3 Goods C5 Goods F5 Goods F5.a Goods F5.b Labour C1 Labour C1.a Labour C5 Labour D1 Expectations C2 XI-16 Law 2 Law 6 Law 15
+ * @spec Firm A1 Firm A2 Firm A3 Firm E4 Firm E4.a Firm E5 Firm B1 Firm B2 Firm B3 Firm B4 Firm B4.a Firm B4.b Firm B5 Firm B6 Firm C1 Firm C4 Firm D1 Firm E1 Firm E2 Firm E3 Firm E6 Firm E7 Firm F1 Firm F2 Firm F3 Goods B1 Goods B1.a Goods B1.b Goods B1.c Goods B1.d Goods B2 Goods B3 Goods B4 Goods B5 Goods B5.a Goods B5.b Goods C1 Goods C3 Goods C5 Goods F5 Goods F5.a Goods F5.b Labour C1 Labour C1.a Labour C5 Labour D1 Capital Programme B1 Capital Programme B2 Capital Programme B3 Capital Programme B4 Capital Programme C1 Capital Programme C2 Expectations C2 XI-4 XI-16 Law 2 Law 6 Law 15
  *
  * The module owns the firm's DECISIONS and its LINE, and owns no data about the world beyond which
  * firm is in which line (its own registry). Everything it decides with — what a thing takes to make,
@@ -28,7 +28,7 @@ import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { FIRMS, labourScaleId, type FirmDecl } from './data.js';
+import { FIRMS, firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
 
@@ -120,8 +120,10 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
     id: 'firms',
     spec: 'Firm, Goods B, Goods F',
     // It reads the recipe from the good's terms, posts openings into the labour venue, and decides
-    // from its own outlook: all three must exist before it does (Part XIII step 4).
-    requires: ['expectations', 'goods', 'labour'],
+    // from its own outlook: all three must exist before it does (Part XIII step 4). And it decides
+    // what to invest, which is measured against the plant it holds — so the kind of thing plant is
+    // has to be registered before a firm can be asked what it has (Capital Programme A2).
+    requires: ['expectations', 'goods', 'labour', 'capital-programme'],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],
@@ -131,14 +133,32 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
     // hour costs is what the market charged it; and there is no target margin, no buffer and no
     // adjustment speed anywhere in it. What is declared here is Firm A3's dispersion: how many hours
     // a tonne takes THIS firm, against the hours the trade takes.
-    params: rows.map((r) => ({
-      id: labourScaleId(r.firm),
-      value: r.labourScale,
-      unit: 'ratio of the hours the recipe names',
-      kind: 'technology' as const,
-      owner: 'model' as const,
-      why: `Firm A3: ${r.why}`,
-    })),
+    params: rows.flatMap((r) => [
+      {
+        id: labourScaleId(r.firm),
+        value: r.labourScale,
+        unit: 'ratio of the hours the recipe names',
+        kind: 'technology' as const,
+        owner: 'model' as const,
+        why: `Firm A3: ${r.why}`,
+      },
+      {
+        id: firmParam(r.firm, 'hurdle'),
+        value: r.hurdle,
+        unit: 'per annum over its cost of capital',
+        kind: 'preference' as const,
+        owner: 'model' as const,
+        why: `Capital Programme B1.d, XI-4: the margin ${r.firm}'s management insists on before it commits money it cannot get back. It is the management's own risk aversion and it is why two firms facing the same quote do not take the same project.`,
+      },
+      {
+        id: firmParam(r.firm, 'horizon'),
+        value: r.horizonPeriods,
+        unit: 'periods of service it counts',
+        kind: 'preference' as const,
+        owner: 'model' as const,
+        why: `Capital Programme B1.d: how far ahead ${r.firm}'s management looks. It is its patience, and a short one values a machine at what the years it will look at are worth rather than at what the machine will give.`,
+      },
+    ]),
     phases: [
       {
         name: 'firms.decide',
@@ -232,6 +252,22 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
       unitCost: p.unitCost.some ? p.unitCost.value : null,
       batch: p.batch,
       bound: p.bound,
+      // Capital Programme A2, D4, Goods B1.d: what its plant lets it make, what that plant costs it
+      // to use, and what it decided to do about the gap. Utilisation is a READ of what it produced
+      // against this, taken where the outcome is (produce.ts), never an input to the decision.
+      capacity: p.capacity,
+      capacityNext: p.capacityNext,
+      runRate: p.runRate,
+      capitalCharge: p.capitalCharge,
+      // B4: what it is sure enough of to build for — its run rate less the width of its own recent
+      // surprises. The gap is measured from THIS, which is the option to wait doing its work.
+      cautiousRunRate: p.project === null ? null : p.project.cautiousRunRate,
+      costOfCapital: p.costOfCapital === null ? null : p.costOfCapital.perAnnum,
+      costOfDebt: p.costOfCapital?.debt.some === true ? p.costOfCapital.debt.value : null,
+      costOfEquity: p.costOfCapital?.equity.some === true ? p.costOfCapital.equity.value : null,
+      investmentGap: p.project === null ? 0 : p.project.gap,
+      investmentSpend: p.project === null ? 0 : p.project.funded,
+      programme: p.project === null ? 0 : p.project.programme,
       hours: p.hours,
       wageBid: p.wageBid,
       orders: orderData(p.orders),
@@ -258,9 +294,18 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
       .filter((o: PlannedOrder) => o.side === 'buy' && o.price !== 'market')
       .map((o: PlannedOrder) => (typeof o.price === 'number' ? o.price * o.qty : 0)),
   ).value;
-  const owed = add(buying, wagesPromised(view), 'what it is about to have to pay');
+  // Firm E4.a, Capital Programme B2: the money raised is raised INTO AN ACTUAL INVESTMENT
+  // PROGRAMME. What it wants to spend on plant and cannot pay for out of what it holds is part of
+  // what it is short of, so a bank lends against a programme and a share issue is raised into one —
+  // and a firm with no programme is short of nothing on that account and raises nothing.
+  const programme = p.project === null ? 0 : p.project.programme;
+  const owed = add(
+    add(buying, wagesPromised(view), 'what it is about to have to pay'),
+    programme,
+    'and what it wants to build',
+  );
   const short = sub(owed, view.cash(ccy), 'what it is short of');
-  ctx.record('firms.funding', [view.self.id], { short, owed, ccy }, false);
+  ctx.record('firms.funding', [view.self.id], { short, owed, programme, ccy }, false);
 }
 
 /** D1: the payroll it has already promised, read from its own last wage bill (Law 19). */

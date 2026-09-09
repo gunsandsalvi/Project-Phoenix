@@ -44,6 +44,7 @@ import {
   isWipTerms,
   labourParam,
   leadTimeParam,
+  plantParam,
   recipeParam,
   recipeUnit,
   spoilageParam,
@@ -95,6 +96,16 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       owner: 'model',
       why: `Goods A2.c: ${d.labourWhy}`,
     });
+    for (const plant of d.plant) {
+      out.push({
+        id: plantParam(d.subUnit, plant.capitalKind),
+        value: plant.unitsPerUnitPerPeriod,
+        unit: `units of ${plant.capitalKind} in service per ${d.unit} of ${d.subUnit} started per period`,
+        kind: 'technology',
+        owner: 'model',
+        why: `Goods A2.c, Capital Programme A2: ${plant.why} It is the stock that lets the line run at a rate, so what it can make is a function of what it holds and not of what it wants.`,
+      });
+    }
     out.push({
       id: yieldParam(d.subUnit),
       value: d.yieldRate,

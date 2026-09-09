@@ -40,6 +40,59 @@ export interface Regulation {
 }
 
 /**
+ * Corporate Credit E5, E5.a, E5.c, XI-4: what a BANK requires, per annum, to hold a named issuer's
+ * paper. It is built where a bank's own economics live and computed once (Law 4), because a
+ * schedule struck against a second copy of these terms would be a bank pricing its book against a
+ * belief it does not hold.
+ *
+ * TWO OF E5's THREE TERMS ARE HERE. E5.a is its blended cost of funds — the same number its loans
+ * are priced off (C1.a), so a bank whose funding gets dearer requires more of every asset it holds
+ * and not only of the ones it writes. E5.c is the capital the position consumes times the return it
+ * needs on that capital, at the weight the standard puts on that kind of claim. What is NOT here is
+ * C1.d's operating cost: making and servicing a loan is work and holding a bond is not, which is
+ * why a bank will buy an issuer's paper at a level it would not lend to it at.
+ *
+ * E5.b IS NOT HERE, AND IT IS A SCOPE BOUNDARY RATHER THAN AN OVERSIGHT. Expected loss is "A4's
+ * assessment, times a loss given default", and A4 is explicit that an assessment is an OPINION HELD
+ * BY SOMEBODY and not a property of the issuer. What exists today is a bank's own model of a
+ * BORROWER it lends to (C4, worklist 6): how often it has seen that name fail to pay, times a loss
+ * given default of ALL OF IT. Both halves are wrong for an issuer whose paper is marked to market
+ * — a treasury that missed one payment has not stopped being able to create the money it promised
+ * (Sovereign G1), and a recovery stated at zero is the fixed recovery Appendix B forbids. The
+ * assessment those two terms need is the ratings system and the second opinion (§44, XI-13), which
+ * is worklist 12; until then this says nothing rather than saying the loan model's answer.
+ *
+ * WHAT THAT COSTS, MEASURED: wiring the loan model in here anyway was tried, and one missed treasury
+ * payment moved every bank's required yield by a twenty-sixth, repriced the whole curve, met a money
+ * fund's forced sale (XI-2) at the desks' bids and took a bank's capital with it — a doom loop that
+ * this world cannot yet resolve, because a failed bank's depositors have no account to bank at until
+ * bank resolution exists (worklist 11). The finding is recorded; the number is not.
+ */
+export function holderReservation(
+  view: ParticipantView,
+  decl: BankDecl,
+  reg: Regulation,
+  /** E5.a: what this bank actually pays for what funds its book, read off the wire (C1.a). */
+  funds: number,
+): Quote {
+  const consumed = mul(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit held');
+  const capitalCharge = mul(
+    consumed,
+    view.params.get(bankParam(decl.bank, 'returnOnCapital')),
+    'capital charge',
+  );
+  return {
+    bank: view.self.id,
+    costOfFunds: funds,
+    // E5.b: see above. Zero is what this bank has to SAY about the issuer, not what it believes.
+    expectedLoss: 0,
+    capitalCharge,
+    operatingCost: 0,
+    rate: add(funds, capitalCharge, 'what it requires to hold it'),
+  };
+}
+
+/**
  * C1.b, C4: this bank's own view of this borrower — how often it has seen it fail to pay, over the
  * memory this bank keeps. One model, used for the price and for the provision alike.
  */

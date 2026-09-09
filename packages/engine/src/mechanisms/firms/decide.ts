@@ -2,7 +2,7 @@
  * What a firm decides: how much to make, how many people to employ, what to offer its output at,
  * and what it will pay for what it is made from.
  *
- * @spec Firm B1 Firm B1.a Firm B2 Firm B3 Firm B4 Firm B4.a Firm B5 Firm E1 Firm E2 Firm E6 Firm E7 Firm F1 Firm F2 Goods B1 Goods B1.b Goods B1.c Goods B5 Goods C1 Goods C5 Goods E4 Labour C1 Labour C1.a Labour C5 Labour D1 Expectations A2 Expectations A2.a Expectations C2 XI-16 Law 2 Law 6
+ * @spec Firm B1 Firm B1.a Firm B2 Firm B3 Firm B4 Firm B4.a Firm B5 Firm E1 Firm E2 Firm E3 Firm E6 Firm E7 Firm F1 Firm F2 Goods B1 Goods B1.a Goods B1.b Goods B1.c Goods B1.d Goods B5 Goods C1 Goods C5 Goods E4 Labour C1 Labour C1.a Labour C5 Labour D1 Capital Programme A2 Capital Programme B1 Capital Programme B3 Capital Programme C1 Capital Programme D4 Expectations A2 Expectations A2.a Expectations C2 XI-4 XI-16 Law 2 Law 6
  *
  * Every one of these is a function of the firm's OWN state, its OWN outlook and the prices it faces
  * (E6), and of nothing else. There is no target margin anywhere: the margin is what is left when
@@ -34,7 +34,26 @@ import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Event } from '../../journal/journal.js';
 import type { ParticipantView } from '../../world/context.js';
 import { goodId, goodMarketId, goodTerms, type GoodTerms } from '../goods/index.js';
-import { labourScaleId, type FirmDecl } from './data.js';
+import {
+  CAPITAL_KINDS,
+  capacityFrom,
+  capitalChargePerUnit,
+  capitalKindOf,
+  isPlant,
+  lifeParam,
+  plantTerms,
+  serviceLeft,
+  vintagesHeld,
+  type PlantNeed,
+} from '../capital-programme/index.js';
+import { firmParam, labourScaleId, type FirmDecl } from './data.js';
+import {
+  costOfCapital,
+  project,
+  type CostOfCapital,
+  type PlantOffer,
+  type Project,
+} from './invest.js';
 
 /** An order the firm has decided to post, in the form the market takes it (Clearing A2). */
 export interface PlannedOrder {
@@ -74,7 +93,19 @@ export interface Planned {
   /** Goods B1: the units it will start this period. The outcome, not a target. */
   readonly batch: number;
   /** B1.a, B1.c: what stopped it being larger. A binding constraint is a real state. */
-  readonly bound: 'demand' | 'labour' | 'margin';
+  readonly bound: 'demand' | 'labour' | 'margin' | 'capacity';
+  /** Capital Programme A2, Goods B1.a: what its plant lets it start a period. None: it needs none. */
+  readonly capacity: number | null;
+  /** Capital Programme D1: what it will still let it start next period, once this period's wear is off. */
+  readonly capacityNext: number | null;
+  /** B1.a: the units it would START each period at what it expects to sell, period after period. */
+  readonly runRate: number;
+  /** Goods B5: what the plant a unit takes wears out by — the capital charge in unit cost. */
+  readonly capitalCharge: number;
+  /** Firm E3, Capital Programme B1: the project it decided on, if it has one. */
+  readonly project: Project | null;
+  /** B1.b: what money costs it at the margin now, which is what a project is measured against. */
+  readonly costOfCapital: CostOfCapital | null;
   /** E2: the employment it wants, in hours — the labour that makes what it expects to sell. */
   readonly hours: number;
   /** Labour C1: the most it will pay for an hour, which is what an hour is worth to it. */
@@ -91,6 +122,8 @@ interface Technology {
   readonly yieldRate: number;
   readonly leadTime: number;
   readonly inputs: readonly { readonly instrument: InstrumentId; readonly qtyPerUnit: number }[];
+  /** Goods A2.c, Capital Programme A2: the plant a unit takes, per kind, at the declared numbers. */
+  readonly plant: readonly PlantNeed[];
 }
 
 export function technologyOf(view: ParticipantView, line: FirmDecl): Technology {
@@ -112,6 +145,10 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
     inputs: terms.recipe.inputs.map((i) => ({
       instrument: goodId(i.subUnit, terms.region),
       qtyPerUnit: view.params.get(i.qtyPerUnit),
+    })),
+    plant: terms.recipe.plant.map((r) => ({
+      capitalKind: r.capitalKind,
+      unitsPerUnitPerPeriod: view.params.get(r.unitsPerUnitPerPeriod),
     })),
   };
 }
@@ -236,20 +273,41 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   const inputCost = sum(
     tech.inputs.map((i, n) => mul(i.qtyPerUnit, priceOf(inputPrices, n), 'input cost')),
   ).value;
-  // Labour C1, C1.a: what an hour is worth to it — the output an hour makes possible at the price
-  // it expects, less what the rest of the recipe takes. It is the most it will pay for one.
-  const perHour = div(
-    sub(mul(price.value, tech.yieldRate, 'what an hour of it fetches'), inputCost, 'less its inputs'),
-    tech.hoursPerUnit,
-    'the value of an hour',
+  // Capital Programme A2, A4: what its plant lets it make, and what that plant costs it to use.
+  const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
+  const capacity = capacityFrom(tech.plant, vintages);
+  // Capital Programme D1, A6: what its plant will still let it run at next period — this period's
+  // stock less the vintages whose life ends before then. It is computed once and both the decision
+  // and the record it publishes read the same number (Law 4).
+  const surviving = capacityFrom(
+    tech.plant,
+    vintages.filter((v) => v.periodsLeft > 1),
   );
+  // Goods B5, Capital Programme A3: unit cost is inputs plus wages plus a CAPITAL CHARGE, and the
+  // charge is the same wear the stock is written down by. A firm with none of a kind it needs wears
+  // nothing out, because it has nothing to wear out — and it makes nothing either.
+  const charge = capitalChargePerUnit(tech.plant, vintages);
+  const capitalCharge = charge.some ? charge.value : 0;
+  // Labour C1, C1.a: what an hour is worth to it — the output an hour makes possible at the price
+  // it expects, less what the rest of the recipe takes, which now includes what the plant that hour
+  // runs on wears out by. It is the most it will pay for one.
+  const contribution = sub(
+    sub(mul(price.value, tech.yieldRate, 'what a unit of it fetches'), inputCost, 'less its inputs'),
+    capitalCharge,
+    'less what its plant wears out by',
+  );
+  const perHour = div(contribution, tech.hoursPerUnit, 'the value of an hour');
   // B5: what a unit costs to start and what a unit that survives the line costs (Goods B4) — known
   // once it has paid a wage. A firm that has never employed anybody knows only what an hour is
   // worth to it, and posting that bid IS how it finds out what one costs (Labour C1, D1).
   const unitCost = wage.some
     ? some(
         div(
-          add(inputCost, mul(tech.hoursPerUnit, wage.value, 'wages per unit'), 'unit cost'),
+          add(
+            add(inputCost, mul(tech.hoursPerUnit, wage.value, 'wages per unit'), 'inputs and wages'),
+            capitalCharge,
+            'and what its plant wears out by',
+          ),
           tech.yieldRate,
           'cost per unit finished',
         ),
@@ -264,8 +322,16 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     ? div(sub(sales.value.expected, stock, 'what it is short of'), tech.yieldRate, 'batch wanted')
     : 0;
   const fromLabour = div(hoursUnderContract(view), tech.hoursPerUnit, 'what its people can make');
-  const batch = wanted <= 0 ? 0 : wanted < fromLabour ? wanted : fromLabour;
-  const bound = !worthMaking ? 'margin' : wanted <= fromLabour ? 'demand' : 'labour';
+  // Goods B1.a, Capital Programme A2: capacity is one of the reasons, and binding capacity is a
+  // real state. A line whose recipe needs no plant is limited by its people and its inputs.
+  const limits: readonly { readonly qty: number; readonly bound: Planned['bound'] }[] = [
+    { qty: wanted, bound: 'demand' },
+    { qty: fromLabour, bound: 'labour' },
+    ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: 'capacity' as const }] : []),
+  ];
+  const binding = limits.reduce((a, b) => (b.qty < a.qty ? b : a));
+  const batch = !worthMaking || wanted <= 0 ? 0 : binding.qty;
+  const bound = !worthMaking ? 'margin' : binding.bound;
   const orders = [...selling];
   for (const [n, input] of tech.inputs.entries()) {
     const need = mul(batch, input.qtyPerUnit, 'what the batch draws');
@@ -275,10 +341,14 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
       market: marketOf(view, input.instrument),
       side: 'buy',
       // What this input is worth to it: the output it makes possible at the price it expects, less
-      // the wages and the other inputs that unit still needs.
+      // the wages, the plant and the other inputs that unit still needs.
       price: div(
         sub(
-          sub(mul(price.value, tech.yieldRate, 'the output it makes possible'), mul(tech.hoursPerUnit, wage.some ? wage.value : 0, 'its wages'), 'less wages'),
+          sub(
+            sub(mul(price.value, tech.yieldRate, 'the output it makes possible'), mul(tech.hoursPerUnit, wage.some ? wage.value : 0, 'its wages'), 'less wages'),
+            capitalCharge,
+            'less what its plant wears out by',
+          ),
           sum(tech.inputs.map((other, m) => (m === n ? 0 : mul(other.qtyPerUnit, priceOf(inputPrices, m), 'other inputs')))).value,
           'less the other inputs',
         ),
@@ -288,6 +358,29 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
       qty: buy,
     });
   }
+  // Firm E3, Capital Programme B: the investment decision. It is taken last because it is measured
+  // against what the rest of the plan leaves it — the cash it is not about to need — and it adds
+  // its own orders to the same list, because a purchase of plant is a purchase like any other.
+  const cost = costOfCapital(view);
+  const decided = cost.some
+    ? project(
+        view,
+        tech.plant,
+        vintages,
+        surviving.some ? surviving.value.perPeriod : 0,
+        plantOffers(view, tech, price.value),
+        // B1.a: the units it would START each period at what it expects to sell — the same number
+        // its employment is decided from, read once and used in both (Law 4).
+        perPeriod,
+        div(sales.value.confidence, tech.yieldRate, 'how wide its own surprises are, per unit started'),
+        contribution,
+        view.params.get(firmParam(line.firm, 'hurdle')),
+        view.params.get(firmParam(line.firm, 'horizon')),
+        cost.value,
+        spendable(view, orders),
+      )
+    : none<Project>();
+  if (decided.some) orders.push(...decided.value.orders);
   return some<Plan>({
     planned: true,
     output,
@@ -295,6 +388,12 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     unitCost,
     batch,
     bound,
+    capacity: capacity.some ? capacity.value.perPeriod : null,
+    capacityNext: surviving.some ? surviving.value.perPeriod : null,
+    runRate: perPeriod,
+    capitalCharge,
+    project: decided.some ? decided.value : null,
+    costOfCapital: cost.some ? cost.value : null,
     // E2: the labour that makes what it expects to sell, period after period. The stock it happens
     // to hold moves the batch, not the workforce: people are a relationship and letting them go
     // costs severance (Labour C3), so a firm does not shed a soft week's worth of them.
@@ -302,6 +401,77 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     wageBid: perHour,
     orders,
   });
+}
+
+/**
+ * Capital Programme B2: what it can put into plant right now — the cash it holds less the payroll
+ * it has promised and the inputs it has just decided to buy. What it wants beyond that is its
+ * programme, and a programme is what a lender lends into and a share issue is raised into (Firm
+ * E4.a); it is not spendable until the money is actually there.
+ */
+function spendable(view: ParticipantView, orders: readonly PlannedOrder[]): number {
+  const ccy = view.registry.region(view.self.region).ccy;
+  const buying = sum(
+    orders
+      .filter((o) => o.side === 'buy' && o.price !== 'market')
+      .map((o) => (typeof o.price === 'number' ? mul(o.price, o.qty, 'what it is about to buy') : 0)),
+  ).value;
+  return sub(sub(view.cash(ccy), wagesDue(view), 'after its payroll'), buying, 'after what it is buying');
+}
+
+/**
+ * Capital Programme C1, D3: where the plant it needs could come from — built by a capital-goods
+ * producer, or bought second-hand from whoever is selling a vintage that already exists. Both are
+ * ordinary markets and both are on the same list, because a project does not care which one filled
+ * it; what differs is how much service is left in what is on offer (A6).
+ */
+function plantOffers(
+  view: ParticipantView,
+  tech: Technology,
+  ownPrice: number,
+): PlantOffer[] {
+  const out: PlantOffer[] = [];
+  for (const need of tech.plant) {
+    const d = capitalKindOf(CAPITAL_KINDS, need.capitalKind);
+    if (d === undefined) continue;
+    const life = view.params.get(lifeParam(d.id));
+    const built = goodId(d.madeFrom, tech.terms.region);
+    if (!view.instruments.has(built)) continue;
+    const asking = expectedPrice(view, built);
+    if (!asking.some || asking.value <= 0) continue;
+    out.push({
+      capitalKind: need.capitalKind,
+      unitsPerUnitPerPeriod: need.unitsPerUnitPerPeriod,
+      market: goodMarketId(d.madeFrom, tech.terms.region),
+      price: asking.value,
+      periodsOfService: life,
+      newBuild: true,
+    });
+    for (const i of view.instruments.all()) {
+      if (!i.status.live || !isPlant(i) || !i.market.some) continue;
+      const terms = plantTerms(i);
+      if (terms.capitalKind !== need.capitalKind || terms.region !== view.self.region) continue;
+      const left = serviceLeft(terms, view.calendar.startOf(view.period), view.calendar);
+      if (left <= 0 || life <= 0) continue;
+      // What it expects a second-hand machine to ask: what one that traded went for, and otherwise
+      // what a new one costs for the service it has left. It is what this firm expects to have to
+      // pay, and it is never what it bids — the bid is its own reservation (Clearing A2).
+      const printed = expectedPrice(view, i.id);
+      out.push({
+        capitalKind: need.capitalKind,
+        unitsPerUnitPerPeriod: need.unitsPerUnitPerPeriod,
+        market: i.market.value,
+        price: printed.some
+          ? printed.value
+          : mul(asking.value, div(left, life, 'the service it has left'), 'what a used one asks'),
+        periodsOfService: left,
+        newBuild: false,
+      });
+    }
+  }
+  // `ownPrice` is what its own output fetches; a project's return is built from it upstream, and it
+  // is named here so the offer list and the return are read from one plan (Law 4).
+  return ownPrice > 0 ? out : [];
 }
 
 /** The price of the nth input, which the caller has already established this firm knows. */

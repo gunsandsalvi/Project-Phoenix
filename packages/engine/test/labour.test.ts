@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FUNDS,
   HOUSEHOLD,
+  OCCUPATIONS,
   funds,
   isMoneyLeg,
   PHX,
@@ -109,7 +110,7 @@ describe('the venue (Labour A3, D1)', () => {
     expect(v.clearedBy).toBe('labour');
     expect(v.key['occupation']).toBe('bakery');
     // A3: a job in one occupation is not a job in another, so they are different venues entirely.
-    expect(w.venues.filter((x) => x.clearedBy === 'labour')).toHaveLength(4);
+    expect(w.venues.filter((x) => x.clearedBy === 'labour')).toHaveLength(OCCUPATIONS.length);
     expect(w.venue(MILL).id).not.toBe(v.id);
   });
 });

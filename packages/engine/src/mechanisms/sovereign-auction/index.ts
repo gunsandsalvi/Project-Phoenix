@@ -23,9 +23,9 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import {
-  P_REQUIRED_YIELD,
   bufferTarget,
   demandSteps,
+  requiredYieldOf,
   priceAtYield,
   sovereignValue,
 } from '../sovereign-curve/index.js';
@@ -58,7 +58,12 @@ export const sovereignAuction: SystemModule = {
         const offer = view.offer(m.id);
         if (!offer.some) return [];
         const i = view.instruments.get(m.instrument);
-        const price = priceAtYield(view, m, view.params.get(P_REQUIRED_YIELD));
+        // Corporate Credit E5: it bids at what IT requires of this issuer's paper — its own cost
+        // of funds, its own expected loss and the capital the position consumes. A dealer with no
+        // reservation has no level to bid at, and an obligation to bid is not a level.
+        const required = requiredYieldOf(view, issuerOf(i));
+        if (!required.some) return [];
+        const price = priceAtYield(view, m, required.value);
         if (price === undefined || price <= 0) return [];
         // What it must bid for (C3), and what its own buffer is short of (E2.a, E5): the larger of
         // the two is what it wants at the yield it requires, and anything beyond that costs more.
@@ -74,7 +79,7 @@ export const sovereignAuction: SystemModule = {
         // C3.a: it bids out of the cash it has. A bank with none bids nothing, and that is how an
         // auction fails: not because a rule allowed it to, but because nobody could pay.
         const affordable = div(view.cash(i.ccy), price, 'affordable');
-        return demandSteps(view, m, needed, affordable);
+        return demandSteps(view, m, needed, affordable, required.value);
       },
     },
   ],

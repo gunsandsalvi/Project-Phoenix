@@ -280,8 +280,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Corporate Credit E2` | MISSING |  |
 | `Corporate Credit E3` | MISSING |  |
 | `Corporate Credit E4` | MET | packages/engine/src/world/revalue.ts |
-| `Corporate Credit E5` | MISSING |  |
-| `Corporate Credit E5.d` | MISSING |  |
+| `Corporate Credit E5` | PARTIAL | packages/engine/src/mechanisms/bank-lending/quote.ts (a bank's reservation is its own blended cost of funds and the capital the position consumes, published under its own name and read by its schedules), packages/engine/src/mechanisms/funds/index.ts (a fund's is what its own investors require of it, under its mandate), packages/engine/src/mechanisms/households/portfolio.ts (a cell's is its own patience). E5.b's EXPECTED LOSS is the one term still missing for a holder: it needs A4's assessment, and an assessment is an opinion somebody holds — the ratings system and the second opinion, which is worklist 12 |
+| `Corporate Credit E5.d` | PARTIAL | every schedule in a bond market is now built from what its own poster requires, so the level a book clears at IS where the marginal holder sits and nothing floors it (packages/engine/src/mechanisms/sovereign-curve/index.ts). Measuring that it is, over a run, is Part XII (worklist 16) |
 | `Corporate Credit E6` | MISSING |  |
 | `Corporate Credit E7` | MISSING |  |
 | `Corporate Credit E8` | MISSING |  |
@@ -1123,10 +1123,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Firm D3` | MISSING |  |
 | `Firm D4` | MET | packages/engine/src/mechanisms/estate/index.ts (both failures are asked of every party whose kind names them, and the answer says which one fired: what fell due out of its own balance and it still cannot pay, or its liabilities past its assets at marks), packages/engine/test/estate.test.ts |
 | `Firm D5` | MET | packages/engine/src/mechanisms/credit-events/index.ts (when it cannot pay, it is in default of payment — publicly, by name, with the payee that did not get paid and the amount that did not arrive) |
-| `Firm E1` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts prices and sizes what it offers from its own outlook and what holding is worth; entering and leaving a line is firm birth (worklist 13g) |
+| `Firm E1` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts prices and sizes what it offers from its own outlook and what holding is worth, and how much to invest in the line it is in; entering and leaving a line is firm birth (worklist 13g) |
 | `Firm E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the employment it wants is the labour that makes what it expects to sell, at what an hour is worth to it) |
-| `Firm E3` | MISSING |  |
-| `Firm E4` | PARTIAL | packages/engine/src/mechanisms/firms/index.ts (a firm says what it is short of against what it holds, and debt is what answers). Choosing BETWEEN retained cash, debt and equity by what each costs needs equity to have a cost, which is worklist 9, and an investment programme to raise into, which is 10 |
+| `Firm E3` | MET | packages/engine/src/mechanisms/firms/invest.ts (how much to invest, decided from its own view against its own cost of capital) |
+| `Firm E4` | MET | packages/engine/src/mechanisms/firms/invest.ts (what its debt costs at the margin and what its equity costs, weighted by its own balance sheet, are what a project is measured against), packages/engine/src/mechanisms/firms/index.ts (what it cannot fund out of cash is a programme, and E4.a is that a firm with no programme is short of nothing on that account and raises nothing) |
 | `Firm E5` | PARTIAL | what it does not pay out stays in its own account; a dividend needs owners of record, which is a share register (worklist 9) |
 | `Firm E6` | MET | packages/engine/src/mechanisms/firms/decide.ts (every decision is a function of its own state, its own outlook and the prices it faces, and of nothing else) |
 | `Firm E7` | MET | packages/engine/src/mechanisms/firms/produce.ts (it publishes its own outlook of its own earnings), packages/engine/src/mechanisms/expectations/index.ts (and the surprise against it is a recorded event) |
@@ -1139,31 +1139,31 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Capital Programme A1` | MISSING |  |
-| `Capital Programme A2` | MISSING |  |
-| `Capital Programme A3` | MISSING |  |
-| `Capital Programme A4` | MISSING |  |
-| `Capital Programme A5` | MISSING |  |
-| `Capital Programme A6` | MISSING |  |
-| `Capital Programme A6.b` | MISSING |  |
-| `Capital Programme B1` | MISSING |  |
-| `Capital Programme B2` | MISSING |  |
-| `Capital Programme B3` | MISSING |  |
-| `Capital Programme B4` | MISSING |  |
-| `Capital Programme B5` | MISSING |  |
-| `Capital Programme C1` | MISSING |  |
-| `Capital Programme C2` | MISSING |  |
-| `Capital Programme C3` | MISSING |  |
-| `Capital Programme C4` | MISSING |  |
-| `Capital Programme D1` | MISSING |  |
-| `Capital Programme D2` | MISSING |  |
-| `Capital Programme D3` | MISSING |  |
-| `Capital Programme D4` | MISSING |  |
-| `Capital Programme E1` | MISSING |  |
-| `Capital Programme E2` | MISSING |  |
-| `Capital Programme E3` | MISSING |  |
-| `Capital Programme E4` | MISSING |  |
-| `Capital Programme F1` | MISSING |  |
+| `Capital Programme A1` | MET | packages/engine/src/mechanisms/capital-programme/plant.ts (a dated vintage of productive assets, held by a named firm, owned outright and issued by nobody) |
+| `Capital Programme A2` | MET | packages/engine/src/mechanisms/capital-programme/capacity.ts (capacity is a function of the stock, per kind), packages/engine/src/mechanisms/firms/produce.ts (and output is limited by it) |
+| `Capital Programme A3` | MET | packages/engine/src/mechanisms/capital-programme/plant.ts, packages/engine/src/world/revalue.ts (one schedule: the kernel asks the kind what a lot is carried at now and books the difference against the stock and against income together), packages/engine/src/mechanisms/capital-programme/capacity.ts (and the same wear is the capital charge in unit cost) |
+| `Capital Programme A4` | MET | packages/engine/src/mechanisms/capital-programme/data.ts (a registry of kinds, each with its own unit, its own good and its own life), packages/engine/src/mechanisms/capital-programme/capacity.ts (a use that needs several is limited by the scarcest of them) |
+| `Capital Programme A5` | MET | packages/engine/src/mechanisms/capital-programme/plant.ts (its value is what it can still produce: the carrying value is what it cost over the service it has left, so a vintage with a third of its life left is carried at a third) |
+| `Capital Programme A6` | MET | packages/engine/src/mechanisms/capital-programme/plant.ts (dated vintages, each with its own cost, service date, life and kind; it leaves the register when fully worn), packages/engine/src/mechanisms/capital-programme/capacity.ts (gross, net, accumulated and the period charge are reads over the vintages) |
+| `Capital Programme A6.b` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (the units family: plant and capital in transit move only by a leg that says why, per firm per kind, every period) |
+| `Capital Programme B1` | MET | packages/engine/src/mechanisms/firms/invest.ts (it invests when a unit of capacity is worth more to it than the plant that makes one costs, which is the return exceeding its cost of capital) |
+| `Capital Programme B2` | MET | packages/engine/src/mechanisms/firms/invest.ts (what it posts is what it can pay for; what it cannot is a programme it publishes), packages/engine/src/mechanisms/firms/index.ts (and a bank lends against it and a share issue is raised into it) |
+| `Capital Programme B3` | MET | packages/engine/src/mechanisms/firms/invest.ts (the gap is the rate it would run at against what its plant will still let it run at next period; a firm running empty has none) |
+| `Capital Programme B4` | MET | packages/engine/src/mechanisms/firms/invest.ts (what it commits to is what it would run at LESS the width of its own recent surprises, so a firm whose expectation is inside its own dispersion waits) |
+| `Capital Programme B5` | MET | packages/engine/src/mechanisms/firms/invest.ts (no fraction of profit or output anywhere: the only reason anything is bought is that a unit of capacity was worth more than the plant that makes one), packages/engine/test/capital.test.ts (asserted over the module’s declared numbers) |
+| `Capital Programme C1` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (what a firm BOUGHT of a capital good becomes plant; the seller is a named capital-goods producer and it is that seller’s revenue) |
+| `Capital Programme C2` | MET | packages/engine/src/mechanisms/firms/invest.ts (a purchase order in the capital good’s market, paid out of its account in a currency like any other trade) |
+| `Capital Programme C3` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (a build lag between the machines arriving and the vintage going into service, declared as the capital kind’s own technology) |
+| `Capital Programme C4` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (the good is destroyed into the plant in the same instruction: the money went to the producer and nothing can turn it back) |
+| `Capital Programme D1` | MET | packages/engine/src/mechanisms/capital-programme/plant.ts, packages/engine/src/mechanisms/firms/decide.ts (capital next period is capital now plus what was commissioned less what wears out, and the decision is measured against it) |
+| `Capital Programme D2` | MET | packages/engine/src/mechanisms/capital-programme/capacity.ts (the aggregate is a sum over the vintages firms hold; nothing stores one) |
+| `Capital Programme D3` | PARTIAL | a dead firm’s plant goes to its estate and is offered into the vintage’s own market (packages/engine/src/mechanisms/estate/index.ts), and a firm that can use it bids what the service LEFT in it is worth to it, from its own view (packages/engine/src/mechanisms/firms/invest.ts). What is not shown is a completed sale out of an estate in this world’s own run: a bidder needs a gap at the moment the estate is selling, and whether the two coincide is an outcome. Measuring it is Part XII (worklist 16) |
+| `Capital Programme D4` | MET | packages/engine/src/mechanisms/capital-programme/capacity.ts, packages/engine/src/mechanisms/firms/produce.ts (utilisation is a read of the outcome against capacity, taken where the outcome is and used by nothing) |
+| `Capital Programme E1` | MET | packages/engine/src/mechanisms/firms/invest.ts (the order is demand in the capital good’s market in the period it is placed, and the capacity arrives after the build lag) |
+| `Capital Programme E2` | MET | packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/mechanisms/labour/data.ts (the capital-goods line employs people in a venue of its own, and its hours are bought by somebody else’s decision to expand) |
+| `Capital Programme E3` | MET | packages/engine/src/mechanisms/firms/index.ts (what it cannot fund out of cash is a programme, and a programme is what a bank lends into: investment drives the credit it is funded by) |
+| `Capital Programme E4` | PARTIAL | the chain is built and asserted by direction in packages/engine/test/capital.test.ts (a dearer cost of capital means a dearer quote, less investment, less capacity and less output after the build lag). Measuring the size of it, and over the run ladder, is Part XII (worklist 16) |
+| `Capital Programme F1` | PARTIAL | a project for a line the firm does not yet make is the same arithmetic and the same market, but a firm’s line-up is registry data until something can change it: entering a line is a decision that needs firm birth and corporate control (worklist 13g). There is no opening-stock stand-in to delete: the work in progress the seed states is Seed D1’s stock for the flows that act on it, not F1.b’s stand-in for entry |
 
 ## Firm Birth
 
@@ -1259,11 +1259,11 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Goods A3` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/goods/inventory.ts |
 | `Goods A4` | MET | packages/engine/src/mechanisms/goods/index.ts (one instrument per region and sub-unit) |
 | `Goods B1` | MET | packages/engine/src/mechanisms/firms/decide.ts (expected demand, margin, inputs and labour are the reasons; the quantity is what comes out of them) |
-| `Goods B1.d` | MISSING | utilisation is a read against capacity, and capacity is plant (worklist 10) |
+| `Goods B1.d` | MET | packages/engine/src/mechanisms/capital-programme/capacity.ts, packages/engine/src/mechanisms/firms/produce.ts (utilisation is a read of the outcome against capacity, taken where the outcome is; no decision reads it) |
 | `Goods B2` | MET | packages/engine/src/mechanisms/firms/produce.ts, packages/engine/src/mechanisms/goods/index.ts (the audit contribution: what a batch consumed IS its recipe) |
 | `Goods B3` | MET | packages/engine/src/mechanisms/goods/inventory.ts (work in progress is a kind of its own, carried at what it has cost), packages/engine/src/mechanisms/firms/produce.ts |
 | `Goods B4` | MET | packages/engine/src/mechanisms/firms/produce.ts (what is started is not what is finished; the scrap is units and the whole batch cost lands on the survivors) |
-| `Goods B5` | MET | packages/engine/src/mechanisms/firms/produce.ts (inputs consumed plus the period wage bill; the capital charge arrives with the capital programme, worklist 10) |
+| `Goods B5` | MET | packages/engine/src/mechanisms/firms/produce.ts (inputs consumed plus the period wage bill), packages/engine/src/mechanisms/capital-programme/capacity.ts (plus a capital charge: the plant a unit takes times what a unit of that plant wears out by, which is the same schedule the stock is written down on) |
 | `Goods C1` | MET | packages/engine/src/mechanisms/firms/decide.ts (a seller offers what it holds in steps with a reason behind each; a buyer posts what the thing is worth to it) |
 | `Goods C2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/mechanisms/goods/index.ts |
 | `Goods C3` | MET | packages/engine/src/mechanisms/firms/decide.ts (firms bid what an input is worth to them), packages/engine/src/mechanisms/households/consume.ts (households bid a curve out of what they decided to spend), packages/engine/src/mechanisms/treasury/index.ts (and the state buys with a budget and is rationed with everybody else) |
@@ -1291,7 +1291,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Goods G1.c` | MISSING |  |
 | `Goods G2` | MISSING |  |
 | `Goods G3` | MISSING |  |
-| `Goods G4` | MISSING |  |
+| `Goods G4` | MET | packages/engine/src/mechanisms/capital-programme/capacity.ts (a read of the outcome against capacity), packages/engine/src/mechanisms/firms/produce.ts (published where the outcome is) |
 
 ## Freight
 
@@ -1390,7 +1390,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Households A2.d` | MET | packages/engine/src/mechanisms/households/index.ts (every decision is one cell own, and there is no sector anywhere for one to be taken at) |
 | `Households A2.e` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/profiles.ts |
 | `Households A2.f` | MET | packages/engine/src/parties/party.ts |
-| `Households A2.g` | PARTIAL | packages/engine/test/households.test.ts shows the half that can be shown: a mean-preserving spread widens what the cells decide while the mean of what they were paid does not move, and the sector's total is unchanged because spending is still linear in what a cell holds. The COUNT OF CROSSINGS cannot be measured yet — not because the sector is an average but because it is wholly on one side of every threshold it has, and a threshold only counts crossings when the sector straddles it. The first one that will is a default (worklist 5) |
+| `Households A2.g` | PARTIAL | packages/engine/test/households.test.ts shows the half that can be shown: a mean-preserving spread widens what the cells decide while the mean of what they were paid does not move, and NOT ONE CELL decides at that mean. The COUNT OF CROSSINGS still cannot be measured — not because the sector is an average but because it is wholly on one side of every threshold it has. Item 8 found one in the lumpiness of the small paper holding a cell could afford; item 10 put a bank's own capital into what it requires to hold paper, the money fund became where a cell's spare money actually goes, and the sector is comfortably on one side of that. The first threshold that will straddle is a default (worklist 5) or a household that borrows (13d) |
 | `Households A3` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/parties/party.ts (a cell is a named party with an account and a register) |
 | `Households B1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage leaves a named employer account and reaches the cell) |
 | `Households B2` | MET | packages/engine/src/mechanisms/treasury/index.ts (the standing mandate reaches each cell by name) |
@@ -1520,7 +1520,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Observer A3` | MET | packages/engine/src/observer/observer.ts (terms, prints and curves), packages/engine/src/mechanisms/treasury/index.ts (the programme it announces), packages/engine/src/mechanisms/firms/produce.ts (what a firm says it expects to earn) |
 | `Observer A4` | MET | packages/engine/src/journal/journal.ts, packages/engine/src/observer/observer.ts, packages/engine/src/world/context.ts, packages/engine/src/world/world.ts |
 | `Observer A5` | MET | packages/engine/src/mechanisms/households/index.ts (the sector's income, published a period late as a sum of what named payers paid), packages/engine/src/mechanisms/expectations/index.ts (and the dispersion of outlooks, likewise lagged); both are reads and nothing in the engine acts on them |
-| `Observer B1` | MET | packages/engine/src/journal/journal.ts |
+| `Observer B1` | MET | packages/engine/src/journal/journal.ts, packages/engine/src/observer/observer.ts (a viewer asks for the recent events of the kinds it follows, not only the last N of everything) |
 | `Observer B2` | MET | packages/engine/src/journal/journal.ts |
 | `Observer B2.a` | MET | packages/engine/src/journal/journal.ts |
 | `Observer B3` | MET | packages/engine/src/journal/journal.ts |

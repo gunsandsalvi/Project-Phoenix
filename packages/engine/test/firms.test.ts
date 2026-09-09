@@ -129,10 +129,15 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
     expect(plan?.data['planned']).toBe(true);
     expect(plan?.data['hours']).toBeGreaterThan(0);
     // Labour C1, C1.a: the most it will pay for an hour is what an hour is worth to it — the
-    // output an hour makes possible, at the price it expects, less what the recipe else takes.
-    // The price it expects is the one it sold at, which is its own and not the opening print.
+    // output an hour makes possible, at the price it expects, less what the recipe else takes:
+    // the inputs (a farm draws none) and what the plant that hour runs on wears out by (Goods B5,
+    // Capital Programme A3). The price it expects is the one it sold at, not the opening print.
     const expected = plan?.data['expectedPrice'];
-    const worth = ((typeof expected === 'number' ? expected : 0) * 0.92) / 9;
+    const charge = plan?.data['capitalCharge'];
+    const worth =
+      ((typeof expected === 'number' ? expected : 0) * 0.92 -
+        (typeof charge === 'number' ? charge : 0)) /
+      9;
     const bid = plan?.data['wageBid'];
     expect(typeof bid === 'number' ? bid : 0).toBeCloseTo(worth, 12);
     const hired = last(w, 'labour.hire', FIRM_1);
@@ -334,14 +339,18 @@ describe('who is in the goods market, and who is not', () => {
 });
 
 describe('what varies between firms is data (Firm F4, Law 2, Law 15)', () => {
-  it('declares one number per firm and nothing else: how many hours a tonne takes IT', () => {
+  it('declares what varies between firms and nothing else: its cost and its management', () => {
     const declared = firms().params;
-    // Firm A3: the dispersion in cost, and it is the only number this module owns. What a thing is
-    // made of, how long it takes and what survives the line are the GOOD's technology; what an hour
+    // Firm A3 and Capital Programme B1.d, and nothing else this module owns. What a thing is made
+    // of, how long it takes and what survives the line are the GOOD's technology; what an hour
     // costs is what the market charged it; and there is no margin, buffer or speed anywhere in it.
-    expect(declared).toHaveLength(FIRMS.length);
-    expect(declared.every((p) => p.kind === 'technology')).toBe(true);
-    expect(new Set(declared.map((p) => p.unit)).size).toBe(1);
+    // The three per firm are: how many hours a tonne takes IT, the margin over its cost of capital
+    // its management insists on, and how far ahead that management looks.
+    expect(declared).toHaveLength(FIRMS.length * 3);
+    expect(declared.filter((p) => p.kind === 'technology')).toHaveLength(FIRMS.length);
+    // B1.d: a hurdle and a horizon are the management's own, which makes them preferences.
+    expect(declared.filter((p) => p.kind === 'preference')).toHaveLength(FIRMS.length * 2);
+    expect(new Set(declared.map((p) => p.unit)).size).toBe(3);
     // No two firms in a line are alike, which is what gives the venue more than one bid (Seed B4).
     const bakers = FIRMS.filter((f) => f.subUnit === 'bread').map((f) => f.labourScale);
     expect(new Set(bakers).size).toBe(bakers.length);

@@ -104,7 +104,11 @@ export const sovereignBond: InstrumentKindProfile = {
       if (cal.place(date) === period) {
         // N6: the coupon for the accrual period, by the instrument's own day count (G3.c).
         const frac = yearFraction(t.dayCount, prev, date);
-        out.push({ kind: 'coupon', date, amountPerUnit: mul(t.coupon.amount, frac, 'coupon') });
+        const amountPerUnit = mul(t.coupon.amount, frac, 'coupon');
+        // N6: a coupon of nothing is not a payment, and a line that promises none has none falling
+        // due. A zero-coupon line is the ordinary shape of paper an issuer brings when the market
+        // will pay above par for the principal alone.
+        if (amountPerUnit > 0) out.push({ kind: 'coupon', date, amountPerUnit });
       }
       prev = date;
     }

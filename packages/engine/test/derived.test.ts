@@ -51,7 +51,7 @@ function claimKind(countsItsOwn = false): InstrumentKindProfile {
     due: () => [],
     accrued: () => 0,
     cashFlows: () => [],
-    revalue: (_i, lot, marked) => (lot.qty === 0 ? 0 : lot.qty * (marked - lot.basisPerUnit)),
+    carriedAt: (_i, lot, marked) => (lot.qty === 0 ? none<number>() : marked),
     derive: (i, at, reads) => {
       const issued = reads.issued(i.id);
       if (issued <= 0) throw new Error('no claims outstanding');

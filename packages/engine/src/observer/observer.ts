@@ -14,7 +14,7 @@ import { displayName } from '../registry/naming.js';
 import type { World } from '../world/world.js';
 import type { AuditReport } from '../audit/audit.js';
 import type { ParamReport } from '../registry/params.js';
-import type { Event } from '../journal/journal.js';
+import type { Event, EventKind } from '../journal/journal.js';
 
 /** A4: an inspector's full view and a participant's partial view are different products. */
 export type Scope =
@@ -125,6 +125,13 @@ export interface Snapshot {
   readonly params: ParamReport;
   readonly moneyStock: Readonly<Record<string, number>>;
   readonly journal: readonly Event[];
+  /**
+   * Observer B1, D1: the recent events of each kind the viewer said it follows, at the same depth.
+   * A page shows things a party says once a period — an issuer's programme, an auction's result —
+   * and the feed above is the last N of EVERYTHING, so what it reaches back to shrinks every time
+   * the world finds more to say. These are read by kind, so it reaches them whatever else happened.
+   */
+  readonly followed: Readonly<Record<string, readonly Event[]>>;
   readonly ledgerLength: number;
   readonly phases: readonly { name: string; cycle: number; spec: string }[];
   /** A2: every party's outlooks for an inspector; only its own for a party (A2: private state). */
@@ -137,9 +144,21 @@ export interface Snapshot {
   readonly state: Readonly<Record<string, unknown>> | null;
 }
 
-/** `journalTail`: how many recent events the viewer asked for; the surface adds nothing of its own. */
-export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot {
+/**
+ * `journalTail`: how many recent events the viewer asked for; the surface adds nothing of its own.
+ * `follow`: the kinds it also wants the recent events OF, at that same depth. A viewer that names
+ * none follows none.
+ */
+export function snapshot(
+  w: World,
+  scope: Scope,
+  journalTail: number,
+  follow: readonly EventKind[] = [],
+): Snapshot {
   const visible = (party: PartyId): boolean => scope.kind === 'inspector' || scope.party === party;
+  // A3, A4: an inspector sees the journal whole; a party sees what is public and what names it.
+  const sees = (e: Event): boolean =>
+    scope.kind === 'inspector' || e.public || e.subjects.includes(scope.party);
   const prints: PrintView[] = [];
   for (const i of w.instruments.all()) {
     if (w.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
@@ -266,6 +285,9 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
       scope.kind === 'inspector'
         ? w.journal.tail(journalTail)
         : w.journal.visibleTo(scope.party, journalTail),
+    followed: Object.fromEntries(
+      follow.map((kind) => [kind, w.journal.recentOfKind(kind, journalTail, sees)]),
+    ),
     ledgerLength: w.ledger.length,
     phases: w.phases.map((p) => ({ name: p.name, cycle: p.cycle, spec: p.spec })),
     outlooks,

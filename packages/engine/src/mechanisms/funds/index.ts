@@ -136,7 +136,7 @@ export const fundShareKind: InstrumentKindProfile = {
   due: () => [],
   accrued: () => 0,
   cashFlows: () => [],
-  revalue: (_i, lot, marked) => mul(lot.qty, sub(marked, lot.basisPerUnit, 'value moved'), 'revaluation'),
+  carriedAt: (_i, _lot, marked) => marked,
   derive: (i, at, reads) => navOf(i, at, reads).perShare,
 };
 
