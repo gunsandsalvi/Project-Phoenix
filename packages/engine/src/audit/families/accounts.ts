@@ -1,0 +1,76 @@
+/**
+ * Accounts balance (Audit B5): assets minus liabilities, read from the register at marks, equals
+ * the stated equity account, per party, per member.
+ *
+ * @spec Audit B5 Audit B5.a Audit B5.b Banks Funding F3 Central Bank A2.c Firm C3 Fund Shares A3 Households D3
+ *
+ * The two sides are independent records: the register and the price store on one side, the equity
+ * account moved by named events on the other. Equality is the check.
+ */
+import { combineDust, sum, withinDust } from '../../core/num.js';
+import { weightOf } from '../../parties/party.js';
+import { INSTRUMENT_PROFILES } from '../../registry/profiles.js';
+import type { Family, Violation } from '../audit.js';
+import type { AuditView } from '../view.js';
+
+export function accountsFamily(): Family {
+  return {
+    name: 'accounts',
+    spec: 'Audit B5',
+    built: true,
+    check(view: AuditView): Violation[] {
+      const out: Violation[] = [];
+      for (const p of view.parties.alive()) {
+        const home = view.registry.region(p.region).ccy;
+        const assetTerms: number[] = [];
+        for (const h of view.register.holdingsOf(p.id)) {
+          const inst = view.instruments.get(h.instrument);
+          if (inst.ccy !== home) continue; // currency layer not built: foreign positions cannot be added (Money A2.b)
+          assetTerms.push(view.valuation.valueOfLots(inst.id, h.lots, view.period));
+        }
+        const liabilityTerms: number[] = [];
+        for (const inst of view.instruments.all()) {
+          if (inst.issuer !== p.id || !INSTRUMENT_PROFILES[inst.kind].liabilityOfIssuer) continue;
+          if (inst.ccy !== home) continue;
+          for (const holder of view.register.holdersOf(inst.id)) {
+            const h = view.register.holding(holder, inst.id);
+            if (!h.some) continue;
+            const w = weightOf(view.parties.get(holder));
+            liabilityTerms.push(view.valuation.valueOfLots(inst.id, h.value.lots, view.period) * w);
+          }
+        }
+        // Per member of the party (XI-15): holdings are per member; liabilities are held by others in
+        // total and are divided by the party's own weight.
+        const w = weightOf(p);
+        const assets = sum(assetTerms);
+        const liabilities = sum(liabilityTerms.map((t) => t / w));
+        if (!view.register.hasEquityAccount(p.id)) {
+          out.push({
+            family: 'accounts',
+            spec: 'Audit B5',
+            owner: p.id,
+            size: assets.value - liabilities.value,
+            unit: home,
+            period: view.period,
+            message: `${p.id} has no stated equity account`,
+          });
+          continue;
+        }
+        const equity = sum([view.register.equity(p.id)]);
+        const read = sum([assets.value, -liabilities.value]);
+        if (!withinDust(read.value, equity.value, combineDust(assets, liabilities, equity, read))) {
+          out.push({
+            family: 'accounts',
+            spec: 'Audit B5',
+            owner: p.id,
+            size: read.value - equity.value,
+            unit: home,
+            period: view.period,
+            message: `${p.id}: assets ${assets.value} - liabilities ${liabilities.value} != equity account ${equity.value} (per member)`,
+          });
+        }
+      }
+      return out;
+    },
+  };
+}
