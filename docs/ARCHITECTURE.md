@@ -154,6 +154,14 @@ that reader existed the settlement pre-check and the register's own draw each de
 themselves, disagreed at the fifteenth decimal, and turned a trade that had already been admitted
 into a throw. A number two callers must agree about has one writer (Law 4).
 
+**A split is one door and it moves nothing** (Register E4, E5, Equity D4). `MechanismContext.split`
+restates a line: every holding's quantity is multiplied and its basis per unit divided, every lien
+scales with the units it binds, every print ever written is re-denominated, and the issued amount
+moves with them. No holding changes hands, so there is no instruction and no money leg — which is
+exactly what the event says out loud, and is why a split is the invariance that proves an opening
+price was a RESOLUTION rather than a shape. Only a kind whose profile says it `splits` may, and the
+audit's flow family reads the published ratio so a restated unit is not mistaken for a move.
+
 Derivative contracts are **not holdings** (Derivative X1). They live in a separate `Contracts` store
 whose invariant is zero-sum (D1.b). The foundation defines the store interface; the layer (§16) fills
 it in its worklist position.
@@ -184,6 +192,21 @@ change and a re-stratification event, never a mechanism change (Small-Business P
 the clearing engine. Provenance is one of `traded`, `stale(fromPeriod)`, `interpolated`,
 `extrapolated`, `none`. A market with no trades writes a **stale** print carried from the last traded
 one, visibly (Clearing E4, C4.b); it never silently refreshes.
+
+**A print is not always the mark, and one line can have both** (XI-6, Fund Shares E2). A kind whose
+`pricing` is `derived` is a claim ON A BOOK: what a unit is carried at is what that book comes to
+over the claims on it, read fresh at every ask, and the kernel asks the kind BEFORE it looks for a
+print. That ordering is what lets a derived kind also name a market: an exchange-traded fund's
+shares trade, so a session prints what somebody paid for one, and the fund's own book says what one
+is a claim on. The two are different numbers and neither is the other's approximation — which is
+E2 rather than a discrepancy, and is why nothing anywhere reconciles them.
+
+**Whether a market MADE a price is part of the price** (Clearing E4, Law 3). `wasTraded(print)` is
+the kernel's one reader of that: a mark carried forward because nobody traded is not a level anybody
+could transact at, and a party deriving anything from one would be building a derivative on an
+uncleared price (App B). The desks' creation and redemption arbitrage stands down on a carried mark
+for exactly that reason, and the premium an exchange-traded fund publishes says which of its two
+halves is a trade.
 
 `value(holding, period) = qty × price(instrument, period)` at read. There is no stored value beside
 units (App B 39). An instrument declared `carriedAtCost` in the registry values at its lots' basis; any
@@ -303,6 +326,14 @@ value — the fix is the order (F1.a). Every period ends with settlement of the 
 revaluation ordering checks, then the **audit** (Audit C1–C3). The loop is the same every period;
 phases are never skipped conditionally (Audit C3).
 
+**Where a phase goes is decided by what it READS, and one system can need two slots.** A test of
+solvency asks whether liabilities exceed assets AT MARKS, so it belongs after revaluation — asked
+before it, a party whose own liabilities are marked reads as insolvent by whatever it paid out this
+period. Paying and being paid belongs with the period's other payments, before the marks are taken —
+done after them, a write-off nobody has marked yet leaves the party that carried it owing more than
+it holds for a whole period. So the estate opens in one phase and settles in another, and the split
+is not bookkeeping: each half sits where the thing it reads is true.
+
 ### 4.9 The audit (Audit A–E)
 
 Each **family** (money, ownership, prices, cross-market, accounts, names, flows, zero-sum, units) is a
@@ -395,6 +426,16 @@ most recent event of a kind the party is a SUBJECT of — its own record: what i
 period, what its own wage bill came to. A decision taken in a phase and an order posted into a
 market are one decision (Law 4), and this is how the second reads the first instead of taking it
 again.
+
+**Two more reads, and why they are reads and not imports.** `ParticipantView.mark(instrument)`
+answers what a unit of a line is carried at — the print, or, for a claim on a book, what that book
+comes to (§4.5). `ParticipantView.lastPublicAbout(kind, subject)` answers the question a participant
+actually asks: not "what was the last dividend anybody declared" but "what did THIS issuer declare".
+Both are public by construction — a print is public by Clearing E1, a derived value is arithmetic on
+a register anybody may read, and a public event is public — and both exist so that a module reading
+another system's decision reads the event it PUBLISHED rather than importing the module that took
+it. A saver values a share off `payout.declared` and a desk arbitrages off `etf.struck`, and neither
+knows which module wrote it.
 
 Kinds are registered at assembly, not closed unions: adding an instrument kind is one profile in
 one module; the kernel learns how a kind behaves only by asking its profile (pricing, liability,

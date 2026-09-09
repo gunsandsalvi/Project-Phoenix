@@ -390,42 +390,42 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Equity A1` | MISSING |  |
-| `Equity A2` | MISSING |  |
-| `Equity A3` | MISSING |  |
-| `Equity A4` | MISSING |  |
-| `Equity A5` | MISSING |  |
-| `Equity A5.b` | MISSING |  |
-| `Equity A6` | MISSING |  |
-| `Equity B1` | MISSING |  |
-| `Equity B2` | MISSING |  |
-| `Equity B3` | MISSING |  |
-| `Equity B4` | MISSING |  |
+| `Equity A1` | MET | packages/engine/src/mechanisms/equity/share.ts (a residual claim and not a liability of its issuer, ranking below everything it owes; A1.b: it is written off at zero and never below, because limited liability means a holder cannot be asked for more) |
+| `Equity A2` | MET | packages/engine/src/mechanisms/equity/share.ts, packages/engine/src/registry/profiles.ts (counted in `shares`, a unit that is not money and is never added to one); A2.a: the count moves only by an issuance, a buyback the kernel extinguishes on arrival, or a split (packages/engine/src/register/instruments.ts) |
+| `Equity A3` | MET | packages/engine/src/mechanisms/equity/index.ts (quoted in the issuer's own money, and its market clears in that currency) |
+| `Equity A4` | MET | packages/engine/src/mechanisms/equity/share.ts (perpetual: no maturity, nothing due, no cash flows — so there is nothing in this world that COULD discount it, which is how B3 is kept rather than policed) |
+| `Equity A5` | MET | packages/engine/src/mechanisms/equity/share.ts, packages/engine/test/equity.test.ts (a vote per share, and a cell casts weight × its member's votes, so a represented holder is not disenfranchised by its representation) |
+| `Equity A5.b` | MISSING | control has a value distinct from the cash flows only where a takeover pays for it, and there is no tender market yet: worklist 13g |
+| `Equity A6` | MET | packages/engine/src/mechanisms/equity/index.ts, packages/engine/src/mechanisms/equity/share.ts (the issuer names the line, as a market names a share; the internal id is never the display name, Law 9) |
+| `Equity B1` | MET | packages/engine/src/mechanisms/households/portfolio.ts (a holder or buyer posts its own schedule, off its own opinion and its own budget, and who trades is the outcome), packages/engine/src/mechanisms/dealers/quote.ts (and a desk posts two out of its own state) |
+| `Equity B2` | MET | packages/engine/src/mechanisms/equity/index.ts, packages/engine/src/clearing/market.ts (one cleared price per line per period, out of the same solver as every other market) |
+| `Equity B3` | MET | packages/engine/src/mechanisms/equity/share.ts (there is no multiple, book value, discounted cash flow or target anywhere: the kind promises nothing dated, so nothing could discount it, and the price is what the session made of the schedules). An opinion is a participant's own and enters its schedule (packages/engine/src/mechanisms/households/portfolio.ts) |
+| `Equity B4` | MET | packages/engine/src/mechanisms/equity/opinion.ts (shares times price, read in one place so nobody derives it a second way); B4.a: nothing compares it against shares times price, because the read is the only writer of it |
 | `Equity B4.a` | MISSING |  |
-| `Equity B5` | MISSING |  |
-| `Equity B6` | MISSING |  |
-| `Equity C1` | MISSING |  |
+| `Equity B5` | MET | packages/engine/src/mechanisms/dealers/index.ts, packages/engine/src/mechanisms/dealers/quote.ts (a desk quotes both sides out of its own inventory and its own capital, and what it earns is the width it quoted less what the inventory did) |
+| `Equity B6` | MET | packages/engine/test/equity.test.ts (a seller with no buyer keeps its shares: the session prints `noOverlap` and nothing moves. There is no invisible bid because the only bids are the ones somebody posted) |
+| `Equity C1` | MET | packages/engine/src/register/register.ts (who holds how many, indexed both ways, with lots and liens like any other holding). C1.b: the free float is a READ of what is bound — units under a lien cannot move and packages/engine/src/mechanisms/equity/index.ts reads them off the register rather than storing a float; insiders and strategic holders whose stake is not for sale are worklist 13g, so until there is one the read is honestly zero |
 | `Equity C1.a` | MET | packages/engine/src/audit/families/ownership.ts |
-| `Equity C2` | MISSING |  |
+| `Equity C2` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts (C2.a: households directly, out of one budget and their own opinion), packages/engine/src/mechanisms/funds/etf.ts (C2.c: an index fund that does not price at all — it holds weight, whatever it costs). C2.b's institutions with mandates is so far that one fund (insurers and the rest: 13h); C2.d's treasury shares are not representable while a share arriving at its issuer is extinguished (packages/engine/src/ledger/settlement.ts), which is what makes D2.a's count fall; C2.e's insiders are 13g |
 | `Equity C3` | MET | packages/engine/src/prices/value.ts |
 | `Equity C4` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/world/revalue.ts |
-| `Equity C5` | MISSING |  |
-| `Equity C6` | MISSING |  |
-| `Equity C7` | MISSING |  |
-| `Equity D1` | MISSING |  |
-| `Equity D2` | MISSING |  |
-| `Equity D3` | MISSING |  |
-| `Equity D4` | MISSING |  |
-| `Equity E1` | MISSING |  |
-| `Equity E2` | MISSING |  |
-| `Equity E3` | MISSING |  |
-| `Equity E4` | MISSING |  |
-| `Equity F1` | MISSING |  |
-| `Equity F2` | MISSING |  |
-| `Equity F3` | MISSING |  |
+| `Equity C5` | MISSING | a leveraged holder that funds its position and can be forced to sell needs margin and somebody lending against shares: worklist 13f |
+| `Equity C6` | PARTIAL | packages/engine/src/register/register.ts (a lien binds units, only free units move, and packages/engine/src/mechanisms/equity/index.ts reads the bound ones). Nothing yet pledges a share or lends one: collateral against a loan and securities lending are worklist 13f |
+| `Equity C7` | MISSING | a short is a borrow with a real cost and a real squeeze: worklist 13f |
+| `Equity D1` | MET | packages/engine/src/mechanisms/equity/decide.ts, packages/engine/src/mechanisms/equity/index.ts (a primary offer with a size and a reservation; D1.a: the count rises and each claim shrinks; D1.b: the reason is a funding need it prefers to meet with equity, read off its own funding gap; D1.c: the session prices it and it can fail), packages/engine/test/equity.test.ts |
+| `Equity D2` | MET | packages/engine/src/mechanisms/equity/decide.ts, packages/engine/src/mechanisms/equity/index.ts (it bids in its own line at its own reservation and takes what the session gives it, which may be nothing; D2.a: what it buys is extinguished on arrival, so the count falls and each remaining claim grows; D2.b: the cash is gone; D2.c: it is the same money the dividend would have been, and never both in one period) |
+| `Equity D3` | MET | packages/engine/src/mechanisms/equity/decide.ts, packages/engine/src/mechanisms/equity/index.ts (cash per share to whoever the register says holds one; D3.a: it leaves the firm and arrives at named holders, per member for a cell; D3.b: the number is the decision, and a firm with less to spare declares less — which is the cut others read) |
+| `Equity D4` | MET | packages/engine/src/register/register.ts, packages/engine/src/register/instruments.ts, packages/engine/src/prices/price-store.ts (the count, the lots' basis, the liens and the print all rebase in one door, and nothing else moves), packages/engine/test/equity.test.ts |
+| `Equity E1` | MISSING | worklist 13g |
+| `Equity E2` | MISSING | worklist 13g |
+| `Equity E3` | MISSING | worklist 13g |
+| `Equity E4` | MET | packages/engine/src/mechanisms/estate/index.ts (a share ranks last, so the waterfall reaches it only if every other claim was paid in full; when it does not, the register goes to zero rather than to a recovery — and it is the ranking that does it, not a special case), packages/engine/test/equity.test.ts |
+| `Equity F1` | MET | packages/engine/src/mechanisms/equity/index.ts (the declared dividend, to the holders the register says held on the day) |
+| `Equity F2` | MET | packages/engine/src/mechanisms/estate/index.ts, packages/engine/test/equity.test.ts (the residual on wind-up, after every other claim, through the same waterfall as everything else) |
+| `Equity F3` | MET | packages/engine/src/mechanisms/equity/share.ts (a vote, per share, and a cell's is its whole weight) |
 | `Equity F4` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/kinds.ts |
-| `Equity G1` | MISSING |  |
-| `Equity G2` | MISSING |  |
+| `Equity G1` | MISSING | an index of real prices and real free-float weights is worklist 12 |
+| `Equity G2` | MISSING | worklist 12 |
 | `Equity G3` | MISSING |  |
 
 ## Money Market
@@ -515,14 +515,14 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Fund Shares D3` | MET | packages/engine/src/mechanisms/funds/index.ts (it is a buyer in the bill market, and its size is what determines how much paper it can place: the savers' money reaches the state's paper through it) |
 | `Fund Shares D4` | MET | packages/engine/src/mechanisms/funds/nav.ts (nothing can hold the number at one because there is nothing to hold it WITH: the value is the division, and if the assets fall it falls), packages/engine/test/funds.test.ts |
 | `Fund Shares D5` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts (the flow into the fund is a consequence of the cell's own budget and stops when what the fund offers stops clearing what the cell requires). Whether flows rise when its yield beats DEPOSITS cannot be measured until a deposit has a rate (worklist 11); it is a VERIFY for Part XII |
-| `Fund Shares E1` | MISSING | the traded share needs a market with somebody in it: worklist 9, with the desks |
-| `Fund Shares E2` | MISSING | worklist 9 |
-| `Fund Shares E3` | MISSING | E3.a asks for a participant with a reason and a LIMIT, and carrying a position is what a desk does: worklist 9 |
-| `Fund Shares E4` | MISSING | worklist 9 |
+| `Fund Shares E1` | MET | packages/engine/src/mechanisms/funds/index.ts (its shares have a market and a session prices them, which is the whole of what makes it exchange-traded: it is the same claim on the same kind of book as any other fund's), packages/engine/test/etf.test.ts |
+| `Fund Shares E2` | MET | packages/engine/src/mechanisms/funds/etf.ts, packages/engine/src/mechanisms/funds/index.ts (the NAV read off its own book and the print the session made, published together and different numbers; neither is the other's approximation), packages/engine/test/etf.test.ts |
+| `Fund Shares E3` | MET | packages/engine/src/mechanisms/funds/etf.ts (a creation unit is a pro-rata slice of what the fund ACTUALLY holds, so a creation cannot change what the fund is; delivered and taken back in one instruction, every leg or none), packages/engine/src/mechanisms/dealers/index.ts (E3.a: a desk does it because the gap is worth more than a period of carrying the position costs it, and does nothing when it is not — so a gap nobody will close stays open) |
+| `Fund Shares E4` | MET | packages/engine/src/mechanisms/funds/index.ts (the premium is a READ of the two prices published beside them; nothing anywhere clamps it and nothing tries to close it), packages/engine/test/etf.test.ts (a large one persists, which is E4's finding about liquidity rather than a defect in the arithmetic) |
 | `Fund Shares F1` | MET | packages/engine/src/mechanisms/funds/index.ts (it does not create its assets: every unit it holds it bought from a named seller in a market that cleared), packages/engine/test/funds.test.ts |
 | `Fund Shares F2` | MET | packages/engine/src/mechanisms/funds/index.ts, packages/engine/src/registry/profiles.ts (nobody lends to it, stated on the kind, so it cannot hold more than it raised; and the kernel refuses to value a book that holds its own claim) |
 | `Fund Shares F3` | MET | packages/engine/src/mechanisms/funds/index.ts (the manager is a separate party and the fee is its income and the fund's cost) |
-| `Fund Shares G1` | PARTIAL | packages/engine/src/mechanisms/funds/index.ts (a share count, a redemption request, a sale in the same period's books, and the cost of a late sale landing on the holders who stayed). G1.a's in-kind redemption is the exchange-traded fund, worklist 9 |
+| `Fund Shares G1` | MET | packages/engine/src/mechanisms/funds/index.ts (a share count, a redemption request, a sale in the same period's books, and the cost of a late sale landing on the holders who stayed), packages/engine/src/mechanisms/funds/etf.ts (G1.a: an exchange-traded fund redeems IN KIND against a pro-rata slice of its own book — nothing is sold and no market is touched, which is exactly why this vehicle is not the forced seller and why XI-2 runs through the money fund instead) |
 
 ## Securities Lending
 
@@ -884,33 +884,33 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Dealer Desks A1` | MISSING |  |
-| `Dealer Desks A2` | MISSING |  |
-| `Dealer Desks A3` | MISSING |  |
-| `Dealer Desks A4` | MISSING |  |
-| `Dealer Desks B1` | MISSING |  |
-| `Dealer Desks B2` | MISSING |  |
-| `Dealer Desks B3` | MISSING |  |
-| `Dealer Desks B4` | MISSING |  |
-| `Dealer Desks C1` | MISSING |  |
-| `Dealer Desks C2` | MISSING |  |
-| `Dealer Desks C3` | MISSING |  |
-| `Dealer Desks C4` | MISSING |  |
-| `Dealer Desks C5` | MISSING |  |
-| `Dealer Desks C5.a` | MISSING |  |
-| `Dealer Desks C5.b` | MISSING |  |
-| `Dealer Desks D1` | MISSING |  |
-| `Dealer Desks D2` | MISSING |  |
-| `Dealer Desks D3` | MISSING |  |
-| `Dealer Desks D4` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts |
-| `Dealer Desks D5` | MISSING |  |
-| `Dealer Desks E1` | MISSING |  |
-| `Dealer Desks E2` | MISSING |  |
-| `Dealer Desks E3` | MISSING |  |
-| `Dealer Desks E4` | MISSING |  |
-| `Dealer Desks F1` | MISSING |  |
-| `Dealer Desks F2` | MISSING |  |
-| `Dealer Desks F3` | MISSING |  |
+| `Dealer Desks A1` | MET | packages/engine/src/mechanisms/dealers/data.ts, packages/engine/src/mechanisms/dealers/index.ts (a named party with its own account inside a bank's, and it pays that bank for what it carries) |
+| `Dealer Desks A2` | MET | packages/engine/src/mechanisms/dealers/quote.ts (a price it will buy at and a price it will sell at, both posted, both real sizes it will do) |
+| `Dealer Desks A3` | MET | packages/engine/src/mechanisms/dealers/index.ts (it holds inventory: it opens with the float of the lines it makes a market in, and what it has bought and not sold is on its own register) |
+| `Dealer Desks A4` | MET | packages/engine/src/mechanisms/dealers/quote.ts, packages/engine/src/world/revalue.ts (it earns the width it quoted and its inventory is marked every period like anybody's, and the two together are its whole result) |
+| `Dealer Desks B1` | MET | packages/engine/src/mechanisms/dealers/quote.ts (it quotes both sides because buyers and sellers arrive at different times; nothing tells it to be there) |
+| `Dealer Desks B2` | PARTIAL | packages/engine/src/mechanisms/dealers/quote.ts (it prices off the flow it FACED — how one-sided its own fills were — which is information it has and nobody else does). Whom it faced is named on every fill in the ledger, but the quote does not read the name yet: a counterparty expensive to face needs clients that repeat, worklist 13f |
+| `Dealer Desks B3` | MET | packages/engine/src/mechanisms/dealers/quote.ts (what a taker pays for immediacy is the desk's own edge; the alternative is waiting for a natural counterparty, and the `noOverlap` sessions are what that waiting looks like) |
+| `Dealer Desks B4` | MET | packages/engine/src/mechanisms/dealers/quote.ts, packages/engine/test/dealers.test.ts (the schedule is a function of the desk's own state and of nothing in the book: the XI-13 test posts the same quote with the book empty and with it full of other people's orders) |
+| `Dealer Desks C1` | MET | packages/engine/src/mechanisms/dealers/quote.ts (the quote comes from its inventory, its cost of funds, its limit and its own view — every one of them read off itself) |
+| `Dealer Desks C2` | MET | packages/engine/src/mechanisms/dealers/quote.ts (the further into its limit it is, the more the next unit costs it, so both sides come down together: long, it bids lower AND offers lower; C2.a: the book mean-reverts with nobody telling it to, which is why order flow moves prices) |
+| `Dealer Desks C3` | MET | packages/engine/src/mechanisms/dealers/quote.ts (risk is the width of the desk's OWN recent surprises about that line, in the line's own money — a read, not a number) |
+| `Dealer Desks C4` | MET | packages/engine/src/mechanisms/dealers/quote.ts (adverse selection is how one-sided the flow it faced was, priced at its own uncertainty on the share of the flow that went one way) |
+| `Dealer Desks C5` | MET | packages/engine/src/mechanisms/dealers/quote.ts (the two sides are derived separately and the width is what is left of them; the same posted quote goes into every book the desk makes a market in) |
+| `Dealer Desks C5.a` | MET | packages/engine/src/mechanisms/dealers/quote.ts (there is no mid in the file: what it wants for a unit and what it will pay for one are two different questions answered separately, so each can skew, widen and refuse on its own) |
+| `Dealer Desks C5.b` | MET | packages/engine/src/mechanisms/dealers/quote.ts, tools/eslint-rules (there is no width to state: the only declared numbers a desk reads are its limits, the return it needs on capital and the capital charge, and the lint refuses any other literal) |
+| `Dealer Desks D1` | MET | packages/engine/src/mechanisms/dealers/data.ts, packages/engine/src/mechanisms/dealers/quote.ts (a limit per instrument and one on the whole book, each the desk's own, and the binding one is what shrinks the size — recorded on the quote) |
+| `Dealer Desks D2` | MET | packages/engine/src/mechanisms/dealers/index.ts (a capital charge on what it holds, at a risk weight and a ratio somebody wrote, and it pays for that capital every period) |
+| `Dealer Desks D3` | MET | packages/engine/src/mechanisms/dealers/index.ts, packages/engine/test/dealers.test.ts (rent every period at its own bank's cost of funds plus the charge on the capital its book consumes; the flows family reports any desk that carried inventory and paid nothing, so a desk carrying for free is unreachable) |
+| `Dealer Desks D4` | MET | packages/engine/src/mechanisms/sovereign-auction/index.ts, packages/engine/src/mechanisms/dealers/quote.ts (a desk at its limit widens, shrinks its size, and at the limit stops quoting altogether — a state, not an error); D4.a: packages/engine/test/dealers.test.ts (a market whose only liquidity was a desk that stepped back prints stale with the reason) |
+| `Dealer Desks D5` | MET | packages/engine/src/mechanisms/dealers/index.ts (`dealers.book` publishes inventory, the width, the skew and the room left together, per line, so a period in which spreads widened and inventory did not is visible rather than inferred), packages/engine/test/dealers.test.ts |
+| `Dealer Desks E1` | MISSING | a bond against a swap, a share against an index: worklist 13b |
+| `Dealer Desks E2` | MISSING | the basis a hedge leaves behind needs a hedge: worklist 13b |
+| `Dealer Desks E3` | MET | packages/engine/src/mechanisms/dealers/index.ts (two desks quoting into the same session, so inventory is redistributed between them through the book everybody else trades in — not a separate venue) |
+| `Dealer Desks E4` | MET | packages/engine/src/audit/families/ownership.ts (held equals issued is the identity, and dealer inventory is the part of it the rest of the world does not hold), packages/engine/src/mechanisms/dealers/index.ts (and what each desk is carrying is published every period, so it can be watched against client flow) |
+| `Dealer Desks F1` | MET | packages/engine/src/mechanisms/dealers/quote.ts (three real constraints — the line's limit, the book's, and the money it actually has — and the binding one is named on the quote; nothing here is unbounded) |
+| `Dealer Desks F2` | PARTIAL | packages/engine/src/mechanisms/dealers/index.ts (it pays its own bank for the funding AND for the capital its inventory consumes, at that bank's own cost of funds, every period). The bank's own ratio does not yet carry the trading book: capital that can fall and be raised is worklist 11 |
+| `Dealer Desks F3` | MET | packages/engine/src/world/revalue.ts, packages/engine/src/mechanisms/dealers/index.ts (its P&L is the width it earned MINUS what the inventory did: the marks reach its equity like any other holder's, so a desk that is wrong loses money) |
 
 ## Insurers
 

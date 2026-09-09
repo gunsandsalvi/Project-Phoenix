@@ -881,3 +881,136 @@ is not measured here. The measurement is Part XII's: run the same seed with the 
 and compare what a bank's bill book is marked at through the wave. If the mark does not move, the
 forced sale is meeting a book deep enough to absorb it and the channel is decorative — and the thing
 to look at next is who is on the other side of the sale, not the fund.
+
+## 9 — Equity, and dealers that carry inventory
+
+**What.** A share is an instrument that is not a liability of anybody: a residual claim, counted in
+shares, ranking below everything its issuer owes, perpetual, promising nothing dated, carrying a
+vote — and a cell casts its whole weight of them. Three firms are listed, each with a market. What a
+share is worth is nobody's formula: a saver reads what the issuer has actually been PAYING, which
+every issuer that pays anything declares under one public name, and capitalises it at what it
+requires of a claim that promises nothing — its own liquidity premium plus how wrong its own income
+has recently been. Two cells with different histories therefore want different prices for the same
+firm, and that disagreement is what gives the book two sides. The firm is in its own book too: it
+issues when it is short and its shares are dear, buys them back when they are cheap to it, and pays
+a dividend when they are dear and it has money spare — one of the three, never two, and the session
+can refuse any of them. A split restates the count and moves nothing at all.
+
+A **desk** is a named party inside a bank with its own account there. It opens holding the float of
+every line it makes a market in, and it pays that bank RENT every period at that bank's own cost of
+funds plus the charge on the capital its book consumes. Its two prices come out of its own state and
+there is no width anywhere: what it wants to give a unit up for is its view plus what holding one
+must earn it; what it will pay is its view minus what holding one will cost it; the difference is
+the spread and nobody stated it. The further into its limit it already is, the more the next unit
+costs it, so both sides come down together — long, it bids lower AND offers lower — which is how a
+book mean-reverts with nobody telling it to and why order flow moves prices. Three limits bind its
+size (this line's, the whole book's, and the money it actually has), the binding one is named on the
+quote, and at the limit it stops quoting, which is what a failed market is made of.
+
+Item 8's **exchange-traded fund** landed here, because E3.a asks for a party with a reason and a
+limit rather than a rule tying two numbers together. Its shares trade, so a session prices them; its
+book is read over the claims on it, so it has a net asset value at the same instant; the two are
+different numbers and nothing anywhere reconciles them. Investors come and go IN KIND — a creation
+takes a pro-rata slice of what the fund actually holds and gives shares against it, a redemption
+gives the slice back — so nothing is sold, no market is touched, and this vehicle is not the forced
+seller. A desk closes the gap when it is worth more than a period of carrying the position costs it,
+and when neither direction is worth its while the gap simply stays open and the premium read says
+how big it is.
+
+**Why.** Two things could not be built without this item. Item 10 asks what equity COSTS a firm, and
+a cost of capital with no traded claim behind it is a number somebody wrote down. And every market
+in this world could fail only for want of orders until there was a party whose stepping back is the
+failure — D4.a is what makes an auction's failure a consequence of somebody's limit rather than an
+absence. XI-4's third joint runs through the rent: a desk never charged for its inventory carries a
+position for free, has no reason to shed it, never skews, and order flow stops moving prices.
+
+**Found.** Nine, and most were defects the desks and the fund made visible rather than caused.
+
+- **A desk that guessed how long it would hold.** The first build charged the carry over the desk's
+  own expected holding period, read off its own turnover. A desk that had sold a line once, in small
+  size, expected to hold the next unit for fifty thousand periods, offered a bill worth one at
+  nearly three, a market order took it, and the curve derived a yield that does not exist. What a
+  desk KNOWS it will pay is this period's charge; the rest is the skew, which is what a position it
+  has not shed does to what it will pay for the next one.
+- **A desk that promised the same money in every book at once.** It sized each bid by the room left
+  in that line, so a desk quoting four books committed its account four times. It ran out of cash
+  and its bank followed it down. Three limits, and the binding one decides — which is also D4's
+  "shrinks its size" made real rather than described.
+- **A named holder with nothing to spend on.** The seed gave the listed firms a founder, to make the
+  free float mean something. A named party that receives dividends and has no reason to buy anything
+  is a hole in a closed circuit: the sector's money drained into it over a year and the treasury
+  started missing coupons. There is no founder. The float is a read of what is ENCUMBERED, which is
+  honestly zero until something pledges a share (13f) or somebody's stake is not for sale (13g).
+- **A split moved holdings with no instruction, and the flows family said so.** It was right to:
+  every other change of a holding is a numbered two-sided instruction. The family reads the
+  published ratio now and carries the period's opening position forward restated, so the one event
+  that legitimately moves no value is the one event it can account for.
+- **The mark asked the market before it asked the book.** A claim on a book that also trades has two
+  values, and the kernel was answering with the print — so the fund's own liability was carried at
+  something other than what it owed, and its equity, which is zero by construction, was not. A
+  `derived` kind is asked FIRST now, and the print is the other answer to a different question.
+- **The fee was charged after the marks were taken**, so the book the shares were a claim on shrank
+  after the claim had been valued. What an exchange-traded fund DOES belongs with the period's other
+  payments; what it READS belongs after revaluation. Two phases.
+- **Two names for one public fact.** A firm declared `dividend on <line>`, a fund declared
+  `distribution on <line>`, and a saver had to know which system a claim came out of to find what it
+  had been paying. One name, `payout.declared`, for every issuer that pays anything (Law 4).
+- **A basket backing shares nobody took.** The launch credited the fund with the whole declared
+  basket while endowing only the shares that parties who EXIST had taken, so a world without the
+  desks had a fund whose net asset value was a multiple of what it owed. The launch is what somebody
+  actually took.
+- **A RESOLUTION that was deciding the answer.** `households.demand.steps` is declared a resolution
+  — change it and the answer must not move — but the share ladder put its rungs at `k/(steps+1)` of
+  the cell's own opinion. The top bid therefore sat BELOW what the cell said the claim was worth, and
+  crept up as the count rose: a haircut on what a saver would pay that nobody had stated and no
+  clause asked for. It was enough to keep the fund's market from ever crossing a desk's offer. Goods
+  and shares build one curve now, the rungs reach the opinion, and a cell is on one side of a book —
+  a bid and an ask from the same party in one session is a party trading with itself, and what
+  printed out of it would be a trade that moved nothing between two balance sheets.
+
+**Changed from the plan file, and why.** Three.
+
+1. **A buyback is not a mechanism.** The plan had the firm cancel what it bought. It does not have
+   to: a share arriving at its own issuer is extinguished by the kernel already, the same door that
+   destroys a bank's money when it is paid back to that bank. So D2.a's falling count is what the
+   wire does, and treasury shares (C2.d) are not representable here — which is stated rather than
+   quietly true.
+2. **The desk's arbitrage stands down on a carried mark.** The plan had it act on the gap between
+   the print and the book. A price nobody traded at is not a level a desk could sell into, and a
+   creation against one is a derivative on an uncleared price: the "gap" it closes is the carry's own
+   artefact, and the first run of it emptied both desks' equity books into the fund against a level
+   the market had not printed in twenty periods. `wasTraded` is the kernel's reader of that, beside
+   `tradedIn`.
+3. **The file layout is by DECISION, not by event.** The plan named `issuance.ts`, `buyback.ts`,
+   `dividend.ts`. They are one decision with three answers — the firm looks at what it is short, what
+   its shares are worth to it and what it has spare, and does one thing — so they are one function in
+   `decide.ts`, and splitting them would have been three copies of the same read.
+
+**Deferred, with where each lands.**
+
+- **Insiders, founders, and a stake that is not for sale** (Equity C1.b, C2.e), **a majority that can
+  be bought** (A5.a, A5.b), **M&A, spin-offs and take-privates** (E1–E3) → **13g**. All of them need
+  a tender market, and a firm's birth is what puts a founder in a register with a reason to be there.
+- **A leveraged holder, margin, shorts and stock lending** (Equity C5, C6's lending half, C7) →
+  **13f**. Each is a borrow, and there is nothing that lends against a share yet.
+- **The index** (Equity G1, G2) → **12**, with the other benchmarks: an index of real prices and real
+  free-float weights needs a float that is not zero.
+- **Hedging and the basis it leaves** (Dealer Desks E1, E2) → **13b**: a share against an index, a
+  bond against a swap, and there are no derivatives yet.
+- **The desk inside its bank's own ratio** (Dealer Desks F2) → **11**. It pays its bank for the
+  funding and for the capital its book consumes, at that bank's own cost of funds; what the bank's
+  ratio is and whether the trading book fits inside it is Banks Capital.
+
+**A finding left standing, and where it is fixed.** A bank's estate cannot pay its depositors. Money
+moves by a money leg and the waterfall builds asset legs, so a claim that IS the failed bank's own
+money has no path through the distribution. It is not patched here: what a failed bank owes its
+depositors is bail-in and deposit insurance, which is **item 11**, and the estate will take its
+waterfall from there rather than growing a special case for one instrument.
+
+**Forecast, with its killer.** D5 says that in a stress period inventory, spreads and capital usage
+move together, and that a spread widening while inventory does not is a widening somebody imposed.
+Nothing here measures it, and the numbers are all published together every period for the purpose.
+The measurement is Part XII's: run the same seed with the desks' limits doubled and halved, and put
+each desk's width beside its own inventory path through a period in which the float moves. If the
+width does not move with the book, the skew is decorative and the thing to look at is the rent —
+because the rent is the only reason a desk minds what it is holding.

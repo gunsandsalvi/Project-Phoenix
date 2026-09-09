@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 41.3%** (183 of 443 steps across 28 items).
-**Requirement coverage: 27.7%** (367 MET, 58 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
+**Plan completion: 41.8%** (185 of 443 steps across 28 items).
+**Requirement coverage: 31.4%** (415 MET, 61 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -30,7 +30,7 @@ The plan has two parts:
 | 6 — Loans are rows | 16 | 16 | closed |
 | 7 — Forced seller, nothing immortal, the estate | 15 | 15 | closed |
 | 8 — Redeemable claims | 12 | 12 | closed |
-| [9 — Equity and dealers](plan/09-equity-dealers.md) | 24 | 22 | in progress |
+| 9 — Equity and dealers | 24 | 24 | closed |
 | [10 — The cost of capital](plan/10-cost-of-capital.md) | 16 | 0 | open |
 | [11 — Money market, corridor, bank capital](plan/11-money-market-capital.md) | 28 | 0 | open |
 | [12 — Currencies, benchmarks, ratings](plan/12-currency-benchmarks-ratings.md) | 26 | 0 | open |
