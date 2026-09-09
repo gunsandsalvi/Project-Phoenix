@@ -294,7 +294,7 @@ packages/engine/src/
   register/    instruments.ts holdings.ts lots.ts liens.ts register.ts
   prices/      price-store.ts value.ts
   clearing/    schedule.ts solver.ts outcome.ts
-  contracts/   contracts.ts            (interface; the derivative layer fills it)
+  contracts/   (arrives with the derivative layer: the zero-sum store, Derivative X1)
   audit/       audit.ts families/{money,ownership,prices,accounts,names,flows,units,...}.ts
   journal/     journal.ts events.ts
   world/       world.ts schedule.ts step.ts seed.ts snapshot.ts
