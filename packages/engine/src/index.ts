@@ -43,4 +43,5 @@ export * from './mechanisms/sovereign-curve/index.js';
 export * from './mechanisms/sovereign-auction/index.js';
 export * from './mechanisms/treasury/index.js';
 export * from './mechanisms/central-bank-omo/index.js';
+export * from './mechanisms/expectations/index.js';
 export * from './observer/observer.js';

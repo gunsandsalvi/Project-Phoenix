@@ -36,7 +36,7 @@ import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { struckIn } from '../../prices/price-store.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
-import type { Leg } from '../../ledger/instruction.js';
+import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -520,12 +520,6 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
     // and the next programme sees a need that did not shrink.
     ctx.record('treasury.shortfall', [id], { unpaid: short, paid }, true);
   }
-}
-
-/** A money leg, the side of an instruction that carries cash (Money C1). */
-function isMoneyLeg(leg: Leg): leg is Extract<Leg, { kind: 'money' }> {
-  // eslint-disable-next-line phoenix/no-kind-branch -- a leg's own discriminant, not a party or product kind
-  return leg.kind === 'money';
 }
 
 /** C1.a: the base is the payer's own statement — what it was actually paid last period. */

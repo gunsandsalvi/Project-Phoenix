@@ -83,6 +83,12 @@ export interface DestroyLeg {
 
 export type Leg = MoneyLeg | AssetLeg | CreateLeg | DestroyLeg;
 
+/** Which side of the wire a leg is, for readers that must tell them apart (Law 15's dispatch). */
+export const isMoneyLeg = (leg: Leg): leg is MoneyLeg => leg.kind === 'money';
+export const isAssetLeg = (leg: Leg): leg is AssetLeg => leg.kind === 'asset';
+export const isCreateLeg = (leg: Leg): leg is CreateLeg => leg.kind === 'create';
+export const isDestroyLeg = (leg: Leg): leg is DestroyLeg => leg.kind === 'destroy';
+
 /** C1.b / Register C2: why the units moved. */
 export type Cause =
   | 'trade'

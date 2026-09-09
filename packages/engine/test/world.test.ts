@@ -153,7 +153,8 @@ describe('the seed (Seed A2)', () => {
     ]);
     // XI-14: the opening yield, the bank's liquidity buffer and the holder's required yield.
     expect(report?.reads.placeholders).toBe(3);
-    expect(report?.reads.shapes).toBe(3);
+    // The three the seed states about endowments, and the width of the memories it disperses.
+    expect(report?.reads.shapes).toBe(4);
     expect(report?.reads.populations['household']).toBe(4000);
   });
 
