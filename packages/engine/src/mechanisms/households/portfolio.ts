@@ -31,6 +31,7 @@ import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
 import { TREASURY } from '../../registry/profiles.js';
 import type { ParticipantView } from '../../world/context.js';
+import { levelsBelow, rungsOver } from './demand.js';
 
 /** A bid for paper: a size at the level this cell's own requirement puts on it. */
 export interface PaperBid {
@@ -58,8 +59,9 @@ export interface SavingLine {
  *   access to its money. It will only tie its money up for its own horizon, so anything that comes
  *   back later is not somewhere its money can go.
  * - **A share.** It promises NOTHING (Equity A4). Nothing about it can be discounted, so the only
- *   thing the cell can go on is what the issuer has actually been paying, which the issuer declares
- *   publicly (Equity D3), capitalised at what it requires of a claim that promises nothing — its
+ *   thing the cell can go on is what the issuer has actually been paying, which every issuer that
+ *   pays anything declares publicly under one name (`payout.declared`: Equity D3 for a firm, Fund
+ *   Shares B3 for a fund), capitalised at what it requires of a claim that promises nothing — its
  *   liquidity premium PLUS how wrong its own income has recently been (§46 B3). Two cells with
  *   different histories therefore want different prices for the same firm, and that disagreement is
  *   what gives the book two sides (§46 A3, XI-13).
@@ -103,7 +105,7 @@ export function savingLines(
     }
     // A share: what it has been paying, capitalised at what this cell requires of it.
     if (forShares <= 0 || year <= 0) continue;
-    const declared = view.lastPublicAbout('equity.dividend', i.issuer.value);
+    const declared = view.lastPublicAbout('payout.declared', i.issuer.value);
     if (!declared.some) continue;
     const perShare = declared.value.data['perShare'];
     if (typeof perShare !== 'number' || perShare <= 0) continue;
@@ -175,14 +177,23 @@ export interface ShareOrder {
 }
 
 /**
- * Equity B1, B6, Clearing A2: the opinion as a two-sided schedule.
+ * Equity B1, B6, Clearing A2, A2.a: the opinion as a schedule — ONE LINE, ONE SIDE.
  *
- * It BIDS below its opinion, in steps, for the money this line's share of its budget comes to; it
- * OFFERS what it holds AT its opinion. The two can never both fill — every bid is strictly below
- * the ask — so a holder never trades with itself, and a seller with no buyer keeps its shares (B6).
+ * A cell is never on both sides of one book. A bid and an ask from the same party in the same
+ * session is a party trading with itself, and the price that came out of it would be a wash: the
+ * book would print a trade that moved nothing between two balance sheets (Law 5, Observer B4).
  *
- * A cell that needs its money back is a seller and NOT a buyer: it offers at whatever the market
- * gives, which is what a forced seller posts (XI-2), and it bids for nothing.
+ * Which side it is on is its own circumstance and not a rule about shares:
+ *
+ * - It has money to put into this line, so it is a BUYER of it. Its curve tops out at its own
+ *   opinion — the most the claim is worth to it — and runs down from there, because a claim that
+ *   gets cheaper is one it wants more of (demand.ts). What it already holds it is holding; what it
+ *   would take for that is not a question it is asking in a period when it is buying.
+ * - It has nothing to put in, so the only thing it can do in this line is let go of what it has:
+ *   it OFFERS its holding at what it thinks the holding is worth, and a seller with no buyer above
+ *   that keeps its shares (B6).
+ * - It needs its money back, so it offers at whatever the market gives, which is what a forced
+ *   seller posts and never a price it named (XI-2).
  */
 export function shareOrders(
   view: ParticipantView,
@@ -196,26 +207,19 @@ export function shareOrders(
   for (const line of lines) {
     if (!line.instrument.market.some) continue;
     const market = line.instrument.market.value;
-    const units = mul(view.free(line.instrument.id), weight, 'shares it could sell');
-    if (short > 0) {
-      if (material(units, 2, units)) {
-        out.push({ market, instrument: line.instrument.id, side: 'sell', price: 'market', qty: units });
-      }
+    const id = line.instrument.id;
+    const units = mul(view.free(id), weight, 'shares it could sell');
+    if (short > 0 || perLine <= 0 || steps < 1) {
+      if (!material(units, 2, units)) continue;
+      const price = short > 0 ? ('market' as const) : line.price;
+      out.push({ market, instrument: id, side: 'sell', price, qty: units });
       continue;
     }
-    if (material(units, 2, units)) {
-      out.push({ market, instrument: line.instrument.id, side: 'sell', price: line.price, qty: units });
-    }
-    if (perLine <= 0 || steps < 1) continue;
-    const each = div(mul(perLine, weight, 'what the cell puts in'), steps, 'at each level');
-    for (let step = 1; step <= steps; step += 1) {
-      // Clearing A2.a: how much at each price. The ladder runs from just under its opinion down,
-      // so what it buys grows as the market asks it for less.
-      const price = mul(line.price, div(step, steps + 1, 'this rung'), 'level');
-      if (price <= 0) continue;
-      const qty = div(each, price, 'shares it bids for');
-      if (!material(qty, steps + 1, div(mul(each, steps, 'the whole of it'), price, 'what it would buy'))) continue;
-      out.push({ market, instrument: line.instrument.id, side: 'buy', price, qty });
+    for (const rung of rungsOver(
+      levelsBelow(line.price, steps),
+      mul(perLine, weight, 'what the cell puts in'),
+    )) {
+      out.push({ market, instrument: id, side: 'buy', price: rung.price, qty: rung.qty });
     }
   }
   return out;

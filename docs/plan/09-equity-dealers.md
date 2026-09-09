@@ -128,6 +128,7 @@ packages/engine/test/{equity,issuance,buyback,dividend,split,dealers,desk-limits
 - [x] `share` kind: residual claim, countable in shares, votes, perpetual, promising nothing, ranking last; the `shares` unit moves to the kernel
 - [x] Share markets opened at seed for the listed firms, with an opening print that is a RESOLUTION and not a shape (a split is the invariance that proves it)
 - [x] Household participants build schedules from their own opinion, in their own module, out of one budget spread over every place their savings could go
+- [x] Law 2 defect found building the ETF and fixed at the cause: `households.demand.steps` is declared a RESOLUTION, and a ladder whose rungs sat at `k/(steps+1)` of the cell's own opinion topped out BELOW it and crept up with the count — a haircut on what a saver would pay that nobody stated, and enough to keep a market from ever crossing. One curve builder for goods and shares alike (`demand.ts`), rungs reaching the opinion, and one line one side so a cell is never on both sides of a book; invariance test added
 - [x] Issuance as a primary offer with a size and a reservation; dilution; failure
 - [x] Buyback: the firm bids at its own reservation and what it buys is cancelled
 - [x] Dividend decided from what the firm has spare over its management's own patience, paid to holders of record, declared publicly
@@ -141,9 +142,9 @@ packages/engine/test/{equity,issuance,buyback,dividend,split,dealers,desk-limits
 - [x] Votes as a read (F3, A5) and free float as a read of what is encumbered (C1.b); tests
 - [x] Estate: a share ranks last, takes the residual when there is one and is written off at zero when there is not (E4, F2); test
 - [x] F4: no income without cash; test: a cell holding shares of a firm that retained earnings shows no income
-- [ ] From item 8 (Fund Shares E1, E2): an `etf.share` kind whose shares TRADE — a market, a cleared price, and its NAV read beside it from the same book, so it has two values and they are different numbers
-- [ ] From item 8 (E3, E3.a, G1.a): creation and redemption IN KIND against the basket, by a desk with a reason and a limit — which is why an exchange-traded fund is not a forced seller, and why the gap can persist when nobody will close it
-- [ ] From item 8 (E4): the premium or discount as a read of the two prices, on the observer; a persistently large one is a finding about liquidity and never a number to clamp
+- [x] From item 8 (Fund Shares E1, E2): an `etf.share` kind whose shares TRADE — a market, a cleared price, and its NAV read beside it from the same book, so it has two values and they are different numbers
+- [x] From item 8 (E3, E3.a, G1.a): creation and redemption IN KIND against the basket, by a desk with a reason and a limit — which is why an exchange-traded fund is not a forced seller, and why the gap can persist when nobody will close it
+- [x] From item 8 (E4): the premium or discount as a read of the two prices, on the observer; a persistently large one is a finding about liquidity and never a number to clamp
 - [x] Year-long run green; determinism; XI-13 test: a desk's schedule is independent of the other orders in the book
 - [ ] Coverage re-marked; PARTIAL rows for C1.b, C2.b, C2.c, C2.d, C2.e, C5, C7, A5.a, E1–E3, G1, G2 named; record entry
 - [ ] Delete this file; worklist row 9 → done; commit and push

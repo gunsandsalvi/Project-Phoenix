@@ -7,8 +7,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   FIRM,
+  FUNDS,
   HOUSEHOLD,
   dustOf,
+  funds,
   PHX,
   REGION,
   assemble,
@@ -122,8 +124,10 @@ function world(...extra: readonly SystemModule[]): World {
 function paidWorld(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('households');
   // Equity goes with the firms: a share is a claim on one, so a world with none has no shares —
-  // and the desks go with it, because they open holding the lines they make a market in.
-  const kept = spec.modules.filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers');
+  // and the desks go with it, because they open holding the lines they make a market in. The money
+  // fund stays; the exchange-traded one does not, because its basket was those shares.
+  const kept = spec.modules.filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
+    .map((m) => (m.id === 'funds' ? funds(FUNDS, []) : m));
   return assemble({ ...spec, modules: [...kept, ...extra] });
 }
 
@@ -132,6 +136,7 @@ function spreadWorld(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('households');
   const modules = spec.modules
     .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
+    .map((m) => (m.id === 'funds' ? funds(FUNDS, []) : m))
     .map((m) =>
       m.id === 'seed.foundation'
         ? {

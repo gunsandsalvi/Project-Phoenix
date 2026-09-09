@@ -96,16 +96,17 @@ const least = (a: number, b: number): number => (a < b ? a : b);
  * C1, XI-13: the desk's own view of what a unit is worth.
  *
  * Its OWN outlook of the price where it has one — formed from what it actually traded at, corrected
- * at its own speed (Expectations B1) — and what the market last printed where it has none, because
- * a desk that has never traded a line has exactly one thing to go on and it is public. Neither is
- * the price this session is about to produce (Clearing A4): an outlook is last period's correction
- * and a print is last period's answer.
+ * at its own speed (Expectations B1) — and what its own book CARRIES a unit at where it has none,
+ * because a desk that has never traded a line has exactly one thing to go on and that is it. For
+ * almost everything the carrying value is the last print, so this is the last print; for a claim on
+ * a book it is what the book comes to (Fund Shares B1), which is what a market maker in one quotes
+ * around and is not derived from the price this session is about to discover (XI-13, Clearing A4).
  */
 function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number> {
   const own = view.outlook(`price.${instrument}`);
   if (own.some && own.value.expected > 0) return some(own.value.expected);
-  const print = view.print(instrument);
-  return print.some && print.value.price > 0 ? some(print.value.price) : none();
+  const carried = view.mark(instrument);
+  return carried.some && carried.value > 0 ? some(carried.value) : none();
 }
 
 /**

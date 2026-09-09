@@ -3,7 +3,7 @@
  * an issuer, a currency, a unit, an issued amount, and kind-specific terms validated by its kind's
  * profile at registration.
  *
- * @spec Register A1.b Register A4 Register B1 Register B4 Register E4 Register F1 Register F1.a Bond N1 Bond N2 Bond N3 Bond N14 Equity A2.a Equity D4 Money D2 Law 15
+ * @spec Register A1.b Register A4 Register B1 Register B4 Register E4 Register F1 Register F1.a Fund Shares E1 Fund Shares E2 Bond N1 Bond N2 Bond N3 Bond N14 Equity A2.a Equity D4 Money D2 Law 15
  */
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
@@ -109,9 +109,16 @@ export class Instruments {
         'Clearing D1',
         `${decl.id} is priced by clearing but names no market`,
       );
-    } else {
+    } else if (profile.pricing !== 'derived') {
+      // XI-6: a thing whose value is what it cost, or one of itself, has nothing to clear.
       forbid(!decl.market.some, 'XI-6', `${decl.id} is not priced by clearing but names a market`);
     }
+    // Fund Shares E1, E2: a DERIVED line may also trade, and then it has TWO VALUES and they are
+    // different numbers. What its holders and its issuer carry it at is the derived one — a claim
+    // on a book is worth what the book comes to over how many claims there are, whatever anybody
+    // paid for one this morning — and what the market printed is what a third party paid. Neither
+    // is the other's approximation and neither is invented: the gap between them is a read (E4),
+    // and it is the reason an exchange-traded fund has an arbitrageur at all (E3).
     const status: InstrumentStatus = { live: true, performing: true };
     const i: Instrument = Object.freeze({ ...decl, unit, issued: 0, issuedDust: 0, status });
     this.map.set(i.id, i);

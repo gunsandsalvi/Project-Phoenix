@@ -2,7 +2,7 @@
  * Dealer desks: named parties inside banks that carry inventory, pay rent on it every period, and
  * quote two prices out of what that costs them.
  *
- * @spec Dealer Desks A1 Dealer Desks A2 Dealer Desks A3 Dealer Desks A4 Dealer Desks B1 Dealer Desks B2 Dealer Desks B3 Dealer Desks B4 Dealer Desks C1 Dealer Desks C2 Dealer Desks C2.a Dealer Desks C3 Dealer Desks C4 Dealer Desks C5 Dealer Desks C5.a Dealer Desks C5.b Dealer Desks D1 Dealer Desks D2 Dealer Desks D3 Dealer Desks D4 Dealer Desks D4.a Dealer Desks D5 Dealer Desks E3 Dealer Desks E4 Dealer Desks F1 Dealer Desks F3 Clearing B3 Clearing B3.a Clearing B4 Clearing E3 Equity B5 XI-3 XI-4 XI-13 Law 2 Law 15
+ * @spec Fund Shares E3 Fund Shares E3.a Dealer Desks A1 Dealer Desks A2 Dealer Desks A3 Dealer Desks A4 Dealer Desks B1 Dealer Desks B2 Dealer Desks B3 Dealer Desks B4 Dealer Desks C1 Dealer Desks C2 Dealer Desks C2.a Dealer Desks C3 Dealer Desks C4 Dealer Desks C5 Dealer Desks C5.a Dealer Desks C5.b Dealer Desks D1 Dealer Desks D2 Dealer Desks D3 Dealer Desks D4 Dealer Desks D4.a Dealer Desks D5 Dealer Desks E3 Dealer Desks E4 Dealer Desks F1 Dealer Desks F3 Clearing B3 Clearing B3.a Clearing B4 Clearing E3 Equity B5 XI-3 XI-4 XI-13 Law 2 Law 15
  *
  * WHY IT IS HERE (XI-4 joint three). Every cleared price in this model is inert until somebody's
  * position costs them something. A desk that carries inventory for free has no reason to shed it,
@@ -33,11 +33,12 @@
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import { partyKindId, type InstrumentId, type PartyId } from '../../core/ids.js';
-import { material, mul, sub, sum } from '../../core/num.js';
+import { instrumentId, partyKindId, type InstrumentId, type PartyId } from '../../core/ids.js';
+import { div, material, mul, sub, sum } from '../../core/num.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { NamedParty } from '../../parties/party.js';
+import { wasTraded } from '../../prices/price-store.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { BANK } from '../../registry/profiles.js';
@@ -255,6 +256,89 @@ function ordersOf(view: ParticipantView, m: MarketDecl, rows: readonly DeskDecl[
 }
 
 /**
+ * Fund Shares E3, E3.a: the desk's reason to close a gap between an exchange-traded fund's two
+ * values — and its reason not to.
+ *
+ * The fund publishes what its book comes to per share; the market prints what somebody paid for
+ * one. When the print is above the book by more than what the trade costs the desk, the desk can
+ * deliver a basket it already holds and take shares worth more than the basket was; when it is
+ * below, it can deliver shares and take a basket worth more than the shares were. Either way it is
+ * a TRADE it does because it is worth doing (E1.a's rule for a hedge, applied here), never a rule
+ * tying the two numbers together — so a gap nobody will close stays open, which is E3.a exactly,
+ * and E4 says a persistently large one is a finding about liquidity.
+ *
+ * What it costs the desk is one period of carrying the position it is about to take on, at its own
+ * rate (D3). What limits it is what it holds and what its own limits leave it room for (D1, F1).
+ */
+function arbitrage(ctx: MechanismContext, d: DeskDecl): void {
+  const desk = d.desk as PartyId;
+  if (!ctx.parties.has(desk) || !ctx.parties.get(desk).status.alive) return;
+  const view = ctx.participant(desk);
+  const state = stateOf(view, d);
+  if (state === undefined) return;
+  for (const v of ctx.venues) {
+    if (v.key['kind'] !== 'etf') continue;
+    const fund = v.key['fund'];
+    const line = v.key['share'];
+    if (fund === undefined || line === undefined) continue;
+    const share = instrumentId(line);
+    if (!ctx.instruments.has(share) || !ctx.instruments.get(share).status.live) continue;
+    if (!d.makes.includes(ctx.instruments.get(share).kind)) continue;
+    const struck = view.lastPublicAbout('etf.struck', fund);
+    const nav = struck.some ? struck.value.data['perShare'] : undefined;
+    const print = view.print(share);
+    if (typeof nav !== 'number' || nav <= 0 || !print.some) continue;
+    // Appendix B, Clearing E4: the gap is against a price the market MADE. A mark carried forward
+    // because nobody traded is not a level the desk could sell into, and a desk that delivered a
+    // basket against one would be trading on its own carried number — the arbitrage would be a
+    // derivative on an uncleared price, and the "gap" it closed would be an artefact of the carry.
+    if (!wasTraded(print.value)) continue;
+    const gap = sub(print.value.price, nav, 'what the market pays over the book');
+    // What one period of carrying it costs the desk. Below that it is not worth its while, and it
+    // does nothing — which is how a gap survives (E3.a).
+    const worth = mul(nav, state.ratePerPeriod, 'what a share costs it to carry for a period');
+    if (Math.abs(gap) <= worth) continue;
+    const held = view.quantity(share);
+    // Clearing A3: what it posts is what it can actually do. A creation is a basket it has to
+    // DELIVER, so it is worth what the thinnest line of that basket in its own inventory is worth
+    // — the fund publishes what a creation unit is made of (E3), and this reads it against what
+    // the desk is holding. A redemption is shares it has to deliver, so it is what it holds.
+    const shares = gap > 0
+      ? deliverable(view, struck.some ? struck.value.data['basket'] : undefined,
+          sub(state.limitPerInstrument, held, 'room it has for more of this line'))
+      : held;
+    if (shares <= 0 || !material(shares, 2, state.limitPerInstrument)) continue;
+    // The venue is not a market and it does not clear: everybody who brings a basket gets what
+    // that basket is worth (Clearing B2). It names no price because there is no price to name.
+    ctx.post(v.id, { party: desk, side: gap > 0 ? 'buy' : 'sell', price: 'market', qty: shares });
+    ctx.record(
+      'dealers.arbitrage',
+      [desk, fund, share],
+      { desk, fund, share, nav, price: print.value.price, gap, worth, shares, side: gap > 0 ? 'create' : 'redeem' },
+      false,
+    );
+  }
+}
+
+/**
+ * E3: how many creation units this desk could actually deliver, out of what it is holding and the
+ * room it has left. A basket it cannot make up is a creation it cannot do, and posting one would
+ * be posting a schedule it could not honour (Clearing A3).
+ */
+function deliverable(view: ParticipantView, basket: unknown, room: number): number {
+  if (typeof basket !== 'object' || basket === null || room <= 0) return 0;
+  let most = room;
+  let lines = 0;
+  for (const [line, perShare] of Object.entries(basket as Record<string, unknown>)) {
+    if (typeof perShare !== 'number' || perShare <= 0) continue;
+    lines += 1;
+    const canMake = div(view.free(instrumentId(line)), perShare, 'creation units this line backs');
+    if (canMake < most) most = canMake;
+  }
+  return lines > 0 ? most : 0;
+}
+
+/**
  * D5, E4: what every desk is carrying, what it is quoting and what room it has left, published
  * together. E4's identity — dealer inventory is the position the rest of the world does not hold —
  * is the ownership family's already (held equals issued); what this adds is that the three numbers
@@ -373,8 +457,9 @@ export function dealers(rows: readonly DeskDecl[] = DESKS): SystemModule {
     id: 'dealers',
     spec: 'Dealer Desks, XI-4',
     // A desk lives inside a bank and borrows from it (A1), and it opens holding the lines it makes
-    // a market in — so whoever registered those lines has to have done it first.
-    requires: ['bank-lending', 'equity', 'sovereign-instruments'],
+    // a market in — so whoever registered those lines, and whoever created the banks, has to have
+    // done it first.
+    requires: ['bank-lending', 'equity', 'sovereign-instruments', 'seed.foundation'],
     instrumentKinds: [],
     partyKinds: [deskKind],
     curveFamilies: [],
@@ -391,6 +476,17 @@ export function dealers(rows: readonly DeskDecl[] = DESKS): SystemModule {
         anchor: { after: 'corporateActions' },
         run: (ctx: MechanismContext) => {
           for (const d of rows) payRent(ctx, d);
+        },
+      },
+      {
+        name: 'dealers.arbitrage',
+        spec: 'Fund Shares E3 Fund Shares E3.a Dealer Desks D1',
+        cycle: 0,
+        // With the rent, because what it costs the desk to carry a position is what decides whether
+        // closing a gap is worth doing at all, and that is the number the rent phase just struck.
+        anchor: { after: 'dealers.rent' },
+        run: (ctx: MechanismContext) => {
+          for (const d of rows) arbitrage(ctx, d);
         },
       },
       {

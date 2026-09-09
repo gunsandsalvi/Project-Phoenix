@@ -47,7 +47,18 @@ export function struckIn(p: Print): Period {
 
 /** Whether this print is a trade the market made in `at`, rather than one carried into it (E4). */
 export function tradedIn(p: Print, at: Period): boolean {
-  return p.provenance.kind === 'traded' && p.period === at;
+  return wasTraded(p) && p.period === at;
+}
+
+/**
+ * E4, Law 3: whether the last thing this market said was a TRADE — a level real supply met real
+ * demand at — rather than an opening condition or a mark carried because nobody traded.
+ *
+ * A party acting on a price needs to know this, because a carried mark is not a level it could
+ * transact at: anything derived from one is a derivative on an uncleared price (Appendix B).
+ */
+export function wasTraded(p: Print): boolean {
+  return p.provenance.kind === 'traded';
 }
 
 export class PriceStore {

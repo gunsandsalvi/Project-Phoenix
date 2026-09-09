@@ -48,6 +48,8 @@ import {
 
 export * from './data.js';
 export { demandOf, spendPerMember } from './consume.js';
+export { levelsBelow, rungsOver } from './demand.js';
+export type { Rung } from './demand.js';
 export {
   cushionForFund,
   fundOrders,

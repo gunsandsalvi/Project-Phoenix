@@ -6,7 +6,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  FUNDS,
   HOUSEHOLD,
+  funds,
   isMoneyLeg,
   PHX,
   REGION,
@@ -66,7 +68,9 @@ function world(post: (ctx: MechanismContext) => void = () => undefined): World {
   const modules = spec.modules
     // Equity goes with it: a share is a claim on a firm, so a world with no firms has none —
     // and the desks go with the equity, because they open holding the lines they make a market in.
+    // The money fund stays; the exchange-traded one does not, because its basket was those shares.
     .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
+    .map((m) => (m.id === 'funds' ? funds(FUNDS, []) : m))
     .map((m) =>
     m.id === 'seed.foundation'
       ? {

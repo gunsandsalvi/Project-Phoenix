@@ -1,7 +1,7 @@
 /**
  * The kernel: every store, the one period loop, and the doors modules come through.
  *
- * @spec Money G1 Money G2 Money G4 Clearing F1 Clearing F1.a Clearing F3 Audit C1 Audit C2 Audit C3 Currency D3 Register E4 Register E5 Equity D4 Seed A5 Observer E3 Observer A4 Law 4 Law 10 Law 15
+ * @spec Money G1 Money G2 Money G4 Clearing F1 Clearing F1.a Clearing F3 Audit C1 Audit C2 Audit C3 Currency D3 Register E4 Register E5 Equity D4 Fund Shares B1 Fund Shares E2 Fund Shares E4 Seed A5 Observer E3 Observer A4 Law 4 Law 10 Law 15
  *
  * A period is an ordered list of phases held as data: the kernel's own (corporate actions, markets,
  * revaluation) and the phases modules anchor around them. Every phase runs every period (Audit C3);
@@ -276,8 +276,11 @@ export class World {
   addMarket(m: MarketDecl): void {
     forbid(!this.marketList.some((x) => x.id === m.id), 'Law 4', `market ${m.id} declared twice`);
     const inst = this.instruments.get(m.instrument);
+    const pricing = this.registry.instrumentKind(inst.kind).pricing;
     forbid(
-      this.registry.instrumentKind(inst.kind).pricing === 'cleared',
+      // Fund Shares E1, E2: a derived line may trade as well as be valued, and then it has two
+      // values that are different numbers. Everything else with a market is priced by clearing.
+      pricing === 'cleared' || pricing === 'derived',
       'Clearing D1',
       `${inst.id} is not priced by clearing`,
     );
@@ -382,14 +385,18 @@ export class World {
   }
 
   private markOf(instrument: InstrumentId, at: Period): Option<number> {
-    const printed = this.prices.latest(instrument, at);
-    if (printed.some) return some(printed.value.price);
     const i = this.instruments.get(instrument);
-    // Fund Shares B1: a derived value is not somebody's assessment and has no owner to ask — it is
-    // arithmetic on a book anybody may read, so the kernel reads it rather than a module answering.
+    // Fund Shares B1, E2: a derived value is not somebody's assessment and has no owner to ask —
+    // it is arithmetic on a book anybody may read, so the kernel reads it rather than a module
+    // answering. It is asked FIRST, and that is what E2 means: a line that also trades has two
+    // values and they are different numbers, and what its holders and its issuer carry it at is
+    // the claim on the book. What the session printed is what a third party paid for one, and the
+    // gap between the two is a read (E4) rather than one of them being the other's approximation.
     if (this.registry.instrumentKind(i.kind).pricing === 'derived') {
       return some(this.valuation.markPerUnit(i.id, at));
     }
+    const printed = this.prices.latest(instrument, at);
+    if (printed.some) return some(printed.value.price);
     const held = this.valuers.get(i.kind);
     if (held === undefined) return none<number>();
     return held.value(this.mechanismContext(held.owner), i, at);
@@ -583,6 +590,7 @@ export class World {
         const last = events[events.length - 1];
         return last === undefined ? none() : some(last);
       },
+      mark: (instrument) => this.markOf(instrument, this.currentPeriod),
       lastPublicAbout: (kind, subject) => {
         const e = this.journal.lastOf(kind, subject);
         // Observer A3, A4: public or not at all. `lastOwn` is the door to a party's own private

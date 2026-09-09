@@ -42,7 +42,7 @@ export const DESKS: readonly DeskDecl[] = [
     desk: 'desk.a',
     name: 'Bank A trading',
     bank: 'bank.a',
-    makes: ['equity.share', 'sovereign.bond', 'sovereign.bill'],
+    makes: ['equity.share', 'sovereign.bond', 'sovereign.bill', 'fund.share'],
     cash: 400,
     // Seed A3: it opens holding shares and no paper. A share line has no other holder at period
     // zero — nobody has founded anything and nobody has bought anything (Seed E1) — so what a desk
@@ -59,7 +59,7 @@ export const DESKS: readonly DeskDecl[] = [
     desk: 'desk.b',
     name: 'Bank B trading',
     bank: 'bank.b',
-    makes: ['equity.share', 'sovereign.bond', 'sovereign.bill'],
+    makes: ['equity.share', 'sovereign.bond', 'sovereign.bill', 'fund.share'],
     cash: 250,
     opens: { 'equity.share': 80 },
     limitPerInstrument: 220,

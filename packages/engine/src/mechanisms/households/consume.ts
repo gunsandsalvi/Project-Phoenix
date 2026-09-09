@@ -33,6 +33,7 @@ import type { CellParty } from '../../parties/party.js';
 import type { ParticipantView } from '../../world/context.js';
 import { goodId, goodMarketId } from '../goods/index.js';
 import type { ConsumptionDecl } from './data.js';
+import { rungsOver } from './demand.js';
 
 /** One line of a cell's demand: a size at a level, in the market it is posted in. */
 export interface DemandStep {
@@ -169,9 +170,7 @@ export function demandOf(
 }
 
 /**
- * Goods C1, Clearing A2: the demand curve, posted as the step function a book takes. It spends the
- * same on the good whatever the price, so the quantity it wants at a price is the budget divided by
- * it; the steps are cumulative, so what the book sees at any posted level is exactly that.
+ * Goods C1, Clearing A2: the demand curve, posted as the step function a book takes (demand.ts).
  *
  * The range is the cell's OWN uncertainty about that price (§46 B3): a cell that has never been
  * surprised posts one point at what it expects, and one that has seen the price move posts across
@@ -194,23 +193,12 @@ function schedule(
       : undefined;
   if (expected === undefined || expected <= 0) return [];
   const width = outlook.some ? outlook.value.confidence : 0;
-  const levels = pricesOver(expected, width, steps);
-  const out: DemandStep[] = [];
-  // Highest level first: what it would take at that price, then the extra each cheaper level adds.
-  let taken = 0;
-  for (const price of levels) {
-    const wants = div(budget, price, 'units it would take at that price');
-    const extra = sub(wants, taken, 'the extra this level adds');
-    taken = wants;
-    if (!material(extra, 2, wants)) continue;
-    out.push({
-      market: goodMarketId(subUnit, self.region),
-      instrument,
-      price,
-      qty: mul(extra, self.weight, 'what the cell asks for'),
-    });
-  }
-  return out;
+  return rungsOver(pricesOver(expected, width, steps), budget).map((r) => ({
+    market: goodMarketId(subUnit, self.region),
+    instrument,
+    price: r.price,
+    qty: mul(r.qty, self.weight, 'what the cell asks for'),
+  }));
 }
 
 /** The levels a cell posts over, highest first: what it expects, spread by its own surprises. */

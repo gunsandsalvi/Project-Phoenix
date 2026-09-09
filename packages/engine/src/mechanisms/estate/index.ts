@@ -572,7 +572,6 @@ export const estate: SystemModule = {
       // Fund Shares A3) reads as insolvent by exactly whatever it paid out this period.
       anchor: { after: 'revaluation' },
       run: (ctx: MechanismContext): void => {
-        const b = book(ctx);
         for (const p of ctx.parties.all()) {
           if (!p.status.alive) continue;
           // An estate is not asked either, and nothing here says so: its kind states that it fails
@@ -580,6 +579,27 @@ export const estate: SystemModule = {
           const why = failed(ctx, ctx.participant(p.id));
           if (why !== undefined) open(ctx, p.id, why);
         }
+      },
+    },
+    {
+      name: 'estates.settle',
+      spec: 'XI-8 Firm Birth D2 Firm Birth D3 Firm Birth D6 Banks Lending E5',
+      cycle: 2,
+      /**
+       * The period's payments, after the session it sold into (docs/PLAN.md §8 puts it here). It is
+       * NOT after revaluation, and the reason is a party whose own liability IS its book: a fund's
+       * claim on itself is re-marked when the marks are taken (Fund Shares B1), so an estate that
+       * wrote off a line the fund held AFTER that left the fund owing more than it had for a whole
+       * period — sixty of equity on a book of sixty, reported as a fund that had mislaid somebody's
+       * money (A3) when what had actually happened was a write-off nobody had marked yet.
+       *
+       * Opening an estate still happens after revaluation, because Firm D4 asks whether liabilities
+       * exceed assets AT MARKS. What an estate then DOES is paying and being paid, and that belongs
+       * with the period's other payments.
+       */
+      anchor: { after: 'markets' },
+      run: (ctx: MechanismContext): void => {
+        const b = book(ctx);
         for (const [id, w] of Object.entries(b.estates)) {
           if (w.closed) continue;
           const estateId = partyId(id);

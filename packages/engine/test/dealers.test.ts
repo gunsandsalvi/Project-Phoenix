@@ -254,7 +254,9 @@ describe('a world with no desks in it (Law 15)', () => {
     });
     for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     expect(w.parties.ofKind(DESK)).toHaveLength(0);
-    // Nothing was issued into a line nobody holds, so its market has nothing to clear.
-    expect(w.instruments.get(LINE).issued).toBe(0);
+    // What is outstanding of a share line is what somebody took: with no desks, only the slice the
+    // index fund's own sponsor put in (Fund Shares E1). Nothing else in this world holds a share,
+    // so its market has almost nothing to clear and nobody at all is making it.
+    expect(w.instruments.get(LINE).issued).toBe(20);
   });
 });

@@ -33,9 +33,11 @@ import { yearFraction } from '../../calendar/daycount.js';
 import {
   instrumentId,
   instrumentKindId,
+  marketId,
   partyKindId,
   venueId,
   type InstrumentId,
+  type MarketId,
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
@@ -44,6 +46,7 @@ import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
+import { wasTraded } from '../../prices/price-store.js';
 import { weightOf } from '../../parties/party.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
@@ -51,12 +54,18 @@ import { SHARES } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { FUNDS, FUND_PARAMS, fundParam, type FundDecl } from './data.js';
+import { ETFS, FUNDS, FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
+import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
 import { navOf } from './nav.js';
 
 export * from './data.js';
+export * from './etf.js';
 export { navOf } from './nav.js';
 export type { NavRead } from './nav.js';
+
+/** E1: the venue an exchange-traded fund's shares are created and redeemed in, in kind (G1.a). */
+export const etfVenue = (fund: string): VenueId => venueId(`etf.${fund}`);
+export const etfMarketOf = (fund: string): MarketId => marketId(`mkt.${shareLineOf(fund)}`);
 
 export const FUND = partyKindId('fund');
 export const FUND_MANAGER = partyKindId('fundManager');
@@ -158,6 +167,17 @@ function emptyBook(): Book {
 }
 
 const declOf = (fund: string): FundDecl | undefined => FUNDS.find((f) => f.fund === fund);
+
+function etfParamsOf(etfs: readonly EtfDecl[]): ParamDecl[] {
+  return etfs.map((e) => ({
+    id: fundParam(e.fund, 'fee'),
+    value: e.fee,
+    unit: 'per annum on net assets',
+    kind: 'shape' as const,
+    owner: 'model' as const,
+    why: `Fund Shares B3, F3: what ${e.managerName} charges for running ${e.name}. It is a SHAPE — a claim about what running an index costs — until managers compete for mandates and the fee is what that competition settles at (worklist 13h).`,
+  }));
+}
 
 function paramsOf(): ParamDecl[] {
   return [
@@ -525,6 +545,183 @@ function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
 }
 
 /**
+ * E1-E4, G1.a: the exchange-traded fund's period.
+ *
+ * It runs AFTER the marks are in the books, because the NAV is a read of those marks (B1, B2) and
+ * because the premium is a read of that NAV against what the session actually printed. Then it
+ * clears what anybody posted into its creation venue — in kind, against a pro-rata slice of its own
+ * book — and says what both of its two values were.
+ *
+ * Nothing here closes the gap between them. What closes it is somebody creating or redeeming
+ * because the difference is worth more than what the trade costs them (E3.a), and what happens when
+ * nobody will is that the gap stays and this read says so (E4).
+ */
+function runEtf(ctx: MechanismContext, d: EtfDecl): void {
+  const fund = d.fund as PartyId;
+  if (!ctx.parties.get(fund).status.alive) return;
+  const share = ctx.instruments.get(shareLineOf(d.fund));
+  if (!share.status.live) return;
+  // B3, F3: the fee is a real payment out of what the fund holds, and it reduces the NAV because
+  // the NAV is a read of the book and the book is smaller once it has left. It is never more than
+  // the fund actually has: a manager cannot be paid out of money that is not there, and what it
+  // could not be paid this period it is not owed later — its income is what the fund earned.
+  const money = moneyOf(ctx, fund, ctx.registry.region(ctx.parties.get(fund).region).ccy);
+  const cash = ctx.register.quantity(fund, money);
+  if (share.issued > 0 && cash > 0) {
+    const owed = mul(
+      mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
+      mul(
+        ctx.params.get(fundParam(d.fund, 'fee')),
+        yearFraction(FEE_DAY_COUNT, ctx.calendar.startOf(ctx.period), ctx.calendar.endOf(ctx.period)),
+        'this period of a year',
+      ),
+      'the fee',
+    );
+    payManager(ctx, d, owed > cash ? cash : owed);
+  }
+  // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
+  // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
+  for (const o of ctx.posted(etfVenue(d.fund))) {
+    if (o.qty <= 0) continue;
+    if (o.side === 'buy') create(ctx, d, share.id, o.party, o.qty);
+    else redeemInKind(ctx, d, share.id, o.party, o.qty);
+  }
+  distribute(ctx, d, share.id, money);
+}
+
+/** F3: the manager's income, paid out of the fund's own account (B3). */
+function payManager(ctx: MechanismContext, d: EtfDecl, amount: number): void {
+  if (!material(amount, 2, amount) || amount <= 0) return;
+  const fund = ctx.parties.get(d.fund as PartyId);
+  const manager = ctx.parties.get(d.manager as PartyId);
+  const r = ctx.settle({
+    legs: [
+      {
+        kind: 'money',
+        from: { holder: fund.id, issuer: fund.bank },
+        to: { holder: manager.id, issuer: manager.bank },
+        ccy: ctx.registry.region(fund.region).ccy,
+        amount,
+        fromCell: none(),
+        toCell: none(),
+      },
+    ],
+    cause: 'transfer',
+    reason: `${d.fund} pays its manager`,
+  });
+  ctx.record(
+    'fund.fee',
+    [d.fund, d.manager],
+    { fund: d.fund, manager: d.manager, amount, paid: r.outcome === 'settled' },
+    false,
+  );
+}
+
+/**
+ * B3, Equity F1, C4: what the fund received it passes on.
+ *
+ * An index fund owns the firms in its basket and the dividends they declare arrive in its account
+ * (Equity D3.a). It is a claim on a book and not a box money goes into: what came in goes out, per
+ * share, to whoever the register says holds one — which is what makes an exchange-traded fund a
+ * thing a saver can value at all, because a claim that has never paid anything gives an outsider
+ * nothing to go on (Equity B3).
+ *
+ * It is declared under the one name every issuer that pays anything declares under, so that a saver
+ * reads one public fact and does not have to know which system it came out of (Law 4).
+ */
+function distribute(ctx: MechanismContext, d: EtfDecl, share: InstrumentId, money: InstrumentId): void {
+  const fund = ctx.parties.get(d.fund as PartyId);
+  const issued = ctx.instruments.get(share).issued;
+  const cash = ctx.register.quantity(fund.id, money);
+  if (issued <= 0 || cash <= 0) return;
+  const perShare = div(cash, issued, 'what it passes on per share');
+  if (!material(perShare, 2, perShare)) return;
+  const ccy = ctx.registry.region(fund.region).ccy;
+  const paid: number[] = [];
+  let failed = 0;
+  for (const holder of ctx.register.holdersOf(share)) {
+    if (holder === fund.id) continue;
+    const party = ctx.parties.get(holder);
+    const perMemberUnits = ctx.register.quantity(holder, share);
+    if (perMemberUnits <= 0) continue;
+    const perMemberCash = mul(perMemberUnits, perShare, 'what a member is paid');
+    const total = totalFor(party, perMemberCash);
+    if (!material(total, 2, total)) continue;
+    const side = cellSide(party, perMemberCash);
+    const r = ctx.settle({
+      legs: [
+        {
+          kind: 'money',
+          from: { holder: fund.id, issuer: fund.bank },
+          to: { holder, issuer: party.bank },
+          ccy,
+          amount: total,
+          fromCell: none(),
+          toCell: side === undefined ? none() : some(side),
+        },
+      ],
+      cause: 'corporateAction',
+      reason: `payout on ${share} to ${holder}`,
+    });
+    if (r.outcome === 'settled') paid.push(total);
+    else failed += 1;
+  }
+  if (paid.length === 0 && failed === 0) return;
+  ctx.record(
+    'payout.declared',
+    [d.fund, share],
+    {
+      line: share,
+      perShare,
+      shares: issued,
+      paid: sum(paid).value,
+      failedPayments: failed,
+    },
+    true,
+  );
+}
+
+/**
+ * E2, E4: the two values, side by side, after the marks are in the books.
+ *
+ * The NAV is a read of what the fund holds over the claims on it (B1); the price is what a third
+ * party paid for one this session. Nothing here brings them together and nothing anywhere clamps
+ * the difference: what closes a gap is somebody creating or redeeming because it is worth their
+ * while (E3.a), and a gap that stays is a finding about liquidity (E4).
+ */
+function readEtf(ctx: MechanismContext, d: EtfDecl): void {
+  const fund = d.fund as PartyId;
+  if (!ctx.parties.get(fund).status.alive) return;
+  const share = ctx.instruments.get(shareLineOf(d.fund));
+  if (!share.status.live) return;
+  const basket = basketOf(ctx, d, share.id);
+  const nav = share.issued > 0
+    ? ctx.valuation.markPerUnit(share.id, ctx.period)
+    : basketValue(basket);
+  const print = ctx.prices.latest(share.id, ctx.period);
+  const premium = premiumOf(print.some ? some(print.value.price) : none<number>(), nav);
+  ctx.record(
+    'etf.struck',
+    [d.fund, share.id],
+    {
+      fund: d.fund,
+      share: share.id,
+      shares: share.issued,
+      // E2: the two of them, because that they are different numbers is the point.
+      perShare: nav,
+      price: print.some ? print.value.price : null,
+      // E4: a read of the two. Nothing anywhere clamps it, and a persistently large one is a
+      // finding about liquidity rather than a defect in the arithmetic.
+      premium: premium.some ? premium.value : null,
+      // Clearing E4: whether the price half of it is a trade or a mark carried forward.
+      stale: print.some ? !wasTraded(print.value) : true,
+      basket: Object.fromEntries(basket.map((b) => [b.instrument, b.perShare])),
+    },
+    true,
+  );
+}
+
+/**
  * A4, C1.a, C2.b: what the fund takes to market. It has exactly two reasons to be there and they
  * are opposites: cash it must put to work per its mandate, and a redemption it must find the money
  * for. The second is the forced sale (XI-2): it names no price, because it has no choice.
@@ -697,16 +894,113 @@ function totalAsked(view: AuditView, data: Record<string, unknown>): number {
   return totalFor(view.parties.get(holder as PartyId), per);
 }
 
-export function funds(decls: readonly FundDecl[] = FUNDS): SystemModule {
+/**
+ * E1, Seed A3: an exchange-traded fund opens LAUNCHED — a sponsor put a basket in and holds the
+ * shares that came out. That is what a fund launch is, and it is endowment state like anything else
+ * the seed states (A3): what nobody may state is what its shares are worth from then on, which is
+ * why its market opens at the basket it holds and is repriced by its first session (C4.a).
+ */
+function seedEtf(ctx: SeedContext, e: EtfDecl): void {
+  const bank = ctx.parties.get(e.bank as PartyId);
+  const region = ctx.registry.region(bank.region);
+  for (const [id, kind, name] of [
+    [e.fund, FUND, e.name],
+    [e.manager, FUND_MANAGER, e.managerName],
+  ] as const) {
+    ctx.parties.add({
+      id: id as PartyId,
+      kind,
+      region: region.id,
+      name,
+      bank: bank.id,
+      representation: 'named',
+      status: { alive: true },
+    });
+  }
+  const share = shareLineOf(e.fund);
+  const market = etfMarketOf(e.fund);
+  const terms: FundShareTerms = { kind: FUND_SHARE, fund: e.fund as PartyId };
+  ctx.instruments.add({
+    id: share,
+    kind: FUND_SHARE,
+    issuer: some(e.fund as PartyId),
+    ccy: region.ccy,
+    terms,
+    // E1: its shares TRADE, which is the whole of what makes it an exchange-traded fund. It is the
+    // same claim on the same kind of book as any other fund's; what is different is that there is
+    // a session in it, so it has a cleared price as well as a book value (E2).
+    market: some(market),
+  });
+  ctx.openMarket({
+    id: market,
+    name: `${e.name} shares`,
+    instrument: share,
+    ccy: region.ccy,
+    rationing: 'proRata',
+  });
+  // G1.a: where it is created and redeemed IN KIND. It is not a market and it does not clear —
+  // everybody who brings a basket gets the shares that basket is worth — so the module that owns
+  // it runs it itself (Clearing B2).
+  ctx.openVenue({
+    id: etfVenue(e.fund),
+    name: `${e.name} creations and redemptions`,
+    clearedBy: 'funds',
+    unit: SHARES,
+    ccy: region.ccy,
+    key: { kind: 'etf', fund: e.fund, share },
+  });
+  // Seed A3: only what somebody who EXISTS actually took. A world without the desks that launch it
+  // has a smaller fund, and its basket has to back the shares that were taken and no more — a
+  // basket backing shares nobody holds would be a fund whose NAV was a multiple of what it owed.
+  const holders = Object.entries(e.launchedBy).filter(
+    ([holder, shares]) => shares > 0 && ctx.parties.has(holder as PartyId),
+  );
+  const launched = sum(holders.map(([, shares]) => shares)).value;
+  if (launched <= 0) return;
+  const contributions: number[] = [];
+  for (const [line, perShare] of Object.entries(e.basket)) {
+    const id = instrumentId(line);
+    if (!ctx.instruments.has(id) || perShare <= 0) continue;
+    const opening = ctx.prices.latest(id, ctx.period);
+    if (!opening.some) continue;
+    const units = mul(perShare, launched, 'units of this line the launch put in');
+    ctx.register.credit(e.fund as PartyId, id, units, opening.value.price, ctx.period);
+    ctx.instruments.adjustIssued(id, units);
+    contributions.push(mul(perShare, opening.value.price, 'what this line contributes to a share'));
+  }
+  const perShare = sum(contributions).value;
+  if (perShare <= 0) return;
+  for (const [holder, shares] of holders) ctx.endowUnits(holder as PartyId, share, shares, perShare);
+  // Seed C4: the level its market opens at, which is what its book was worth when it opened. The
+  // first session reprices it, and the two have been able to differ ever since (E2).
+  ctx.prices.write({
+    instrument: share,
+    market,
+    period: ctx.period,
+    price: perShare,
+    ccy: region.ccy,
+    provenance: { kind: 'opening' },
+  });
+}
+
+export function funds(
+  decls: readonly FundDecl[] = FUNDS,
+  etfs: readonly EtfDecl[] = ETFS,
+): SystemModule {
   const state = emptyBook();
   // The observer sees the book as the data it is; the slot holds this very object (Law 4).
   const book = (ctx: MechanismContext): Book => ctx.state<Book>('funds', () => state);
+  // E3: an exchange-traded fund's basket is lines somebody else registered and its launch names
+  // parties somebody else created, so those modules have to have run first. It is a dependency of
+  // THIS WORLD's funds and not of funds, which is why it is read off the data rather than written
+  // into the module (Law 15): a world with no such fund in it needs none of them.
+  const needs = [...new Set(etfs.flatMap((e) => e.needs))];
   return {
     id: 'funds',
     spec: 'Fund Shares, XI-2',
     // Its investors are households (D2), a fund that fails resolves through the same estate as
     // anything else (XI-3), and it banks somewhere — so all three are there before it opens.
-    requires: ['households', 'estate', 'seed.foundation'],
+    requires: ['households', 'estate', 'seed.foundation', ...needs],
     instrumentKinds: [fundShareKind],
     partyKinds: [fundKind, fundManagerKind],
     curveFamilies: [],
@@ -714,7 +1008,7 @@ export function funds(decls: readonly FundDecl[] = FUNDS): SystemModule {
     // count is what a claim on a book and a claim on a firm are both counted in (Equity A2), and
     // two modules cannot each introduce it — so it is registry data and this module only uses it.
     units: [],
-    params: paramsOf(),
+    params: [...paramsOf(), ...etfParamsOf(etfs)],
     phases: [
       {
         name: 'funds.strike',
@@ -736,6 +1030,29 @@ export function funds(decls: readonly FundDecl[] = FUNDS): SystemModule {
         run: (ctx: MechanismContext) => {
           const b = book(ctx);
           for (const d of decls) payQueue(ctx, b, d);
+        },
+      },
+      {
+        name: 'funds.etf',
+        spec: 'Fund Shares B3 Fund Shares E3 Fund Shares G1.a',
+        cycle: 0,
+        // With the other fund's own strike, and before the session: what a desk brought in this
+        // morning is shares it can offer this afternoon, and the fee is inside the period so the
+        // revaluation that closes it carries the claim at what the book then comes to (A3).
+        anchor: { after: 'funds.strike' },
+        run: (ctx: MechanismContext) => {
+          for (const d of etfs) runEtf(ctx, d);
+        },
+      },
+      {
+        name: 'funds.etf.read',
+        spec: 'Fund Shares E1 Fund Shares E2 Fund Shares E4',
+        cycle: 'anchor',
+        // After the marks are in the books, because the NAV is a read of those marks and the
+        // premium is a read of that NAV against what the session printed (Clearing F1.a).
+        anchor: { after: 'revaluation' },
+        run: (ctx: MechanismContext) => {
+          for (const d of etfs) readEtf(ctx, d);
         },
       },
     ],
@@ -789,6 +1106,7 @@ export function funds(decls: readonly FundDecl[] = FUNDS): SystemModule {
         // household takes, at the unit its shares are counted in (FUND_PARAMS.openingShare).
         ctx.openVenue(venue);
       }
+      for (const e of etfs) seedEtf(ctx, e);
     },
   };
 }

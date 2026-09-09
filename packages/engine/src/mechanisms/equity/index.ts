@@ -187,13 +187,13 @@ function payDividend(ctx: MechanismContext, row: ListedDecl, line: Instrument, p
     const r = ctx.settle({
       legs: [leg],
       cause: 'corporateAction',
-      reason: `dividend on ${line.id} to ${holderId}`,
+      reason: `payout on ${line.id} to ${holderId}`,
     });
     if (r.outcome === 'settled') paid.push(total);
     else failed += 1;
   }
   ctx.record(
-    'equity.dividend',
+    'payout.declared',
     [firm, line.id],
     {
       line: line.id,
@@ -232,22 +232,28 @@ function announceSuccession(ctx: MechanismContext, row: ListedDecl, line: Instru
 }
 
 /**
- * D3.a: what was declared is what left the firm, or a payment failed and is on the record as one.
+ * D3.a, Fund Shares B3: what was DECLARED is what left the issuer, or a payment failed and is on
+ * the record as one.
  *
- * A dividend that is declared and does not arrive is a firm that could not pay it, which is a real
- * state (Money E1) and the beginning of a great deal else. A dividend that is declared and quietly
- * never leaves anybody's account is money credited to holders out of nothing, and it would look
- * exactly like a firm that paid.
+ * A payout that is declared and does not arrive is an issuer that could not pay it, which is a real
+ * state (Money E1) and the beginning of a great deal else. One that is declared and quietly never
+ * leaves anybody's account is money credited to holders out of nothing, and it would look exactly
+ * like an issuer that paid.
+ *
+ * It checks every declared payout and not only a firm's. What an issuer said it would pay per unit
+ * is one public fact with one shape whoever said it — a firm declaring a dividend (D3) or a fund
+ * passing on what it received (B3) — so it is one check, over the events and the ledger, both of
+ * which are the kernel's and neither of which belongs to either module.
  */
 function declaredIsPaid(): Family {
   return {
     name: 'flows',
     contributor: 'equity',
-    spec: 'Equity D3 Equity D3.a Register E5',
+    spec: 'Equity D3 Equity D3.a Fund Shares B3 Register E5',
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      for (const e of view.journal.ofKind('equity.dividend')) {
+      for (const e of view.journal.ofKind('payout.declared')) {
         if (e.period !== view.period) continue;
         const line = e.data['line'];
         const paid = e.data['paid'];
@@ -262,7 +268,7 @@ function declaredIsPaid(): Family {
           size: sub(paid, moved.value, 'recorded paid against what left the firm'),
           unit: view.registry.region(view.parties.get(firm as PartyId).region).ccy,
           period: view.period,
-          message: `${line}: ${paid} of dividend was recorded paid and ${moved.value} left ${firm}`,
+          message: `${line}: ${paid} of payout was recorded paid and ${moved.value} left ${firm}`,
         });
       }
       return out;
@@ -270,12 +276,12 @@ function declaredIsPaid(): Family {
   };
 }
 
-/** What actually left the firm this period on a dividend instruction (Law 19: read the legs). */
+/** What actually left the issuer this period on a payout instruction (Law 19: read the legs). */
 function dividendLegs(view: AuditView, line: string, firm: string): ReturnType<typeof sum> {
   const terms: number[] = [];
   for (const r of view.ledger.inPeriod(view.period)) {
     if (r.outcome !== 'settled') continue;
-    if (!r.instruction.reason.startsWith(`dividend on ${line} `)) continue;
+    if (!r.instruction.reason.startsWith(`payout on ${line} `)) continue;
     for (const leg of r.instruction.legs) {
       if (isMoneyLeg(leg) && leg.from.holder === firm) terms.push(leg.amount);
     }
@@ -337,9 +343,10 @@ export function equity(rows: readonly ListedDecl[] = LISTED): SystemModule {
     id: 'equity',
     spec: 'Equity',
     // The firm whose residual claim it is decides about it (Firm E4, E5) and publishes what it has
-    // spare; the estate is what a share ranks last on. Its buyers decide in their own modules and
-    // need nothing from this one but the line, the market and what the issuer declared.
-    requires: ['firms', 'estate'],
+    // spare; the estate is what a share ranks last on; and the firms it lists are parties somebody
+    // else's seed created, so that seed runs first. Its buyers decide in their own modules and need
+    // nothing from this one but the line, the market and what the issuer declared.
+    requires: ['firms', 'estate', 'seed.foundation'],
     instrumentKinds: [shareKind],
     partyKinds: [],
     curveFamilies: [],

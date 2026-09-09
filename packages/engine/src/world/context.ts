@@ -102,6 +102,14 @@ export interface ParticipantView extends KernelReads {
   equityWalk(): Running;
   /** The latest public print at or before now (A1); its provenance says how stale it is (A1.a). */
   print(instrument: InstrumentId): Option<Print>;
+  /**
+   * XI-6, Fund Shares B1, E2: what a unit of a line is carried at — the last thing its market said
+   * about it, or, for a claim ON A BOOK, what that book comes to over the claims on it. Both are
+   * public: a print is public by Clearing E1, and a derived value is arithmetic on a register
+   * anybody may read. It is a DIFFERENT question from `print` for exactly one shape — a line that
+   * has a book value AND trades — and that the two answers differ is E2 rather than a discrepancy.
+   */
+  mark(instrument: InstrumentId): Option<number>;
   /** The issuer's announced supply in this period's session, if any (Sovereign C1.a: public). */
   offer(market: MarketId): Option<PrimaryOffer>;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */

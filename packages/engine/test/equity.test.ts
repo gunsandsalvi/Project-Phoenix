@@ -192,9 +192,9 @@ describe('what a share is (Equity A)', () => {
     const w = foundationWorld('eq-kind-d');
     const decl = w.params.decl(OPENING_SHARE);
     expect(decl.kind).toBe('resolution');
-    // Law 2: the shapes this world declares are the goods' opening prices and the opening yield,
-    // and equity added none of them.
-    expect(w.last?.audit.reads.shapes).toBe(6);
+    // Law 2: the shapes this world declares are the goods' opening prices, the opening yield, one
+    // preference width and the two management fees, and equity added none of them.
+    expect(w.last?.audit.reads.shapes).toBe(7);
   });
 });
 
@@ -255,7 +255,7 @@ describe('what the firm does with it (Equity D)', () => {
   it('declares a dividend publicly and it reaches the accounts of whoever holds it (D3, D3.a)', () => {
     const w = foundationWorld('eq-div');
     for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const declared = w.journal.ofKind('equity.dividend');
+    const declared = w.journal.ofKind('payout.declared');
     expect(declared.length).toBeGreaterThan(0);
     const one = declared[0];
     expect(one?.public).toBe(true);
@@ -329,7 +329,7 @@ describe('what the holder gets (Equity F)', () => {
     // F4: retained earnings reach a holder through the PRICE and never as income credited to it.
     // What reaches a holder's account is a settled money leg, so a period in which a firm retained
     // and paid nothing is a period in which nothing reached anybody on account of holding it.
-    const dividends = w.journal.ofKind('equity.dividend').filter((e) => e.period === w.period);
+    const dividends = w.journal.ofKind('payout.declared').filter((e) => e.period === w.period);
     const lines = new Set(dividends.map((e) => String(e.data['line'])));
     for (const row of ['firm.4', 'firm.5', 'firm.6']) {
       const line = equityLineOf(row);
@@ -337,7 +337,7 @@ describe('what the holder gets (Equity F)', () => {
       // It retained: nothing left it this period on account of that line at all.
       const paid = w.ledger
         .inPeriod(w.period)
-        .filter((r) => r.outcome === 'settled' && r.instruction.reason.startsWith(`dividend on ${line}`));
+        .filter((r) => r.outcome === 'settled' && r.instruction.reason.startsWith(`payout on ${line}`));
       expect(paid).toHaveLength(0);
     }
   });
@@ -426,7 +426,7 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
     const w = saversWorld('eq-schedule');
     for (let i = 0; i < 12; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     let ladders = 0;
-    let twoSided = 0;
+    let books = 0;
     for (const plan of w.journal.ofKind('households.plan').filter((e) => e.period === w.period)) {
       const orders = plan.data['orders'];
       if (!Array.isArray(orders)) continue;
@@ -435,18 +435,18 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
       );
       for (const market of new Set(rows.map((o) => o.market))) {
         const here = rows.filter((o) => o.market === market);
-        const buys = here.filter((o) => o.side === 'buy').map((o) => Number(o.price));
-        const sells = here.filter((o) => o.side === 'sell').map((o) => Number(o.price));
+        const buys = here.filter((o) => o.side === 'buy');
+        const sells = here.filter((o) => o.side === 'sell');
+        books += 1;
         // A2.a: how much at each price, not one quantity at one price.
         if (buys.length > 1) ladders += 1;
-        if (buys.length > 0 && sells.length > 0) twoSided += 1;
-        // B6: every bid it posts is strictly below every ask it posts, so the two can never both
-        // fill and a seller with no buyer keeps its shares. No invisible bid anywhere in this.
-        for (const bid of buys) for (const ask of sells) expect(bid).toBeLessThan(ask);
+        // One line, one side: a bid and an ask from the same party in the same book is a party
+        // trading with itself, and what printed out of it would be a trade that moved nothing.
+        expect(buys.length > 0 && sells.length > 0).toBe(false);
       }
     }
+    expect(books).toBeGreaterThan(0);
     expect(ladders).toBeGreaterThan(0);
-    expect(twoSided).toBeGreaterThan(0);
   });
 });
 

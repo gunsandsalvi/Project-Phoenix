@@ -297,6 +297,7 @@ describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {
     expect(held).toBeGreaterThan(0);
     expect(unexpected(w.step().audit)).toEqual([]);
 
+    const opening = w.period;
     const opened = w.journal.ofKind('estate.opened');
     expect(opened).toHaveLength(1);
     expect(opened[0]?.public).toBe(true);
@@ -306,13 +307,16 @@ describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {
 
     // Register F2: the move is an instruction, not an assignment — the ledger shows it.
     const moves = w.ledger
-      .inPeriod(w.period)
+      .inPeriod(opening)
       .filter((r) => r.instruction.reason === `${DEBTOR} to its estate`);
     expect(moves.length).toBeGreaterThan(0);
     expect(moves.every((r) => r.outcome === 'settled')).toBe(true);
     expect(w.cash(DEBTOR, PHX)).toBe(0);
-    // It arrived and then went straight out again in the same phase: what the estate had is what
-    // it distributed, which is D2.a's whole point — a recovery is what the assets fetched.
+    // It arrived, and it goes out again with the NEXT period's payments — because paying is what
+    // an estate does and payments have a slot (estates.settle). What the estate had is what it then
+    // distributed, which is D2.a's whole point: a recovery is what the assets fetched.
+    expect(w.cash(ESTATE_OF_DEBTOR, PHX)).toBeCloseTo(held, 9);
+    expect(unexpected(w.step().audit)).toEqual([]);
     const out = w.journal.ofKind('estate.paid').filter((e) => e.data['estate'] === ESTATE_OF_DEBTOR);
     expect(out.reduce((t, e) => t + Number(e.data['paid']), 0)).toBeCloseTo(held, 9);
 
@@ -324,7 +328,7 @@ describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {
     expect(w.instruments.get(SENIOR).issued).toBeGreaterThan(0);
     // Law 5: the obligation moved between two balance sheets in one numbered instruction.
     const assumed = w.ledger
-      .inPeriod(w.period)
+      .inPeriod(opening)
       .filter((r) => r.instruction.legs.some((l) => l.kind === 'assume'));
     expect(assumed).toHaveLength(2);
     expect(assumed.every((r) => r.outcome === 'settled')).toBe(true);
@@ -349,6 +353,9 @@ describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
   it('pays senior first, pro rata within the rank, and the junior recovers nothing (G5.a)', () => {
     const w = failingWorld(owesMoreThanItHas());
     const had = w.cash(DEBTOR, PHX);
+    // The estate opens in the first period and pays in the second: what it holds is distributed
+    // with the period's other payments, not in the phase that opened it (estates.settle).
+    w.step();
     w.step();
     const paid = w.journal.ofKind('estate.paid').filter((e) => e.period === w.period);
     // Two claims at the top rank, one at the bottom, and not enough for the top one.

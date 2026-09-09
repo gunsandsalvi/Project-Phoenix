@@ -1,7 +1,7 @@
 /**
  * The funds this world has, and what each one may hold.
  *
- * @spec Fund Shares A1 Fund Shares A4 Fund Shares D1 Fund Shares F3 Seed B1 Law 2 Law 15
+ * @spec Fund Shares A1 Fund Shares A4 Fund Shares D1 Fund Shares E1 Fund Shares E2 Fund Shares E3 Fund Shares F3 Equity C2.c Seed A3 Seed B1 Law 2 Law 15
  *
  * Data only (Law 15). A MANDATE is what a fund may hold and how long it may hold it for, and it is
  * a real constraint on what the fund buys rather than a label on it (A4): the module never posts an
@@ -43,6 +43,63 @@ export const fundParam = (fund: string, what: string): ParamId => paramId(`fund.
 export const FUND_PARAMS = {
   openingShare: paramId('fund.openingSharePrice'),
 } as const;
+
+/**
+ * E1-E3: a fund whose shares are LISTED. It is not another kind of thing — its shares are the same
+ * claim on the same kind of book (A2, B1) — and what makes it an exchange-traded fund is two facts
+ * about it: its shares trade, so it has a market and a cleared price beside its NAV (E2), and its
+ * investors come and go IN KIND against a basket rather than for cash (G1.a), which is why it is
+ * not a forced seller and why some other vehicle has to carry that.
+ */
+export interface EtfDecl {
+  readonly fund: string;
+  readonly name: string;
+  readonly manager: string;
+  readonly managerName: string;
+  readonly bank: string;
+  /**
+   * E3: the creation basket — units of each line one share is a claim on. It is what a creation
+   * unit is made of before there is a fund to take a slice of; once there is one, a creation unit
+   * is a pro-rata slice of what the fund actually holds, which is what keeps its composition its
+   * own rather than a thing the last creator chose.
+   */
+  readonly basket: Readonly<Record<string, number>>;
+  /**
+   * Seed A3: who holds its shares at launch and how many. A fund is launched by somebody putting a
+   * basket in and taking the shares that came out, and in this world that is its sponsor and the
+   * desks that will make its market — an authorised participant with no shares can only ever
+   * create, and a gap the other way would have nobody able to close it (E3.a).
+   */
+  readonly launchedBy: Readonly<Record<string, number>>;
+  /**
+   * Law 15, Part XIII: the modules whose parties and lines this launch NAMES. It is data about
+   * this world's fund rather than about funds, so the module reads its dependencies off it instead
+   * of carrying them: a world whose exchange-traded fund holds nothing anybody else registered
+   * needs none of them.
+   */
+  readonly needs: readonly string[];
+  /** B3, F3: what the manager charges, per annum on net assets. */
+  readonly fee: number;
+  readonly why: string;
+}
+
+export const ETFS: readonly EtfDecl[] = [
+  {
+    fund: 'etf.north',
+    name: 'North Listed Equity Fund',
+    manager: 'manager.etf.north',
+    managerName: 'North Index Managers',
+    bank: 'bank.b',
+    // Equity C2.c: an index fund does not price at all — it holds weight, whatever it costs. One
+    // share of it is one share of each of the three firms this world listed, and that is the whole
+    // of its mandate: it never bids for anything and it never sells anything.
+    basket: { 'equity.firm.4': 1, 'equity.firm.5': 1, 'equity.firm.6': 1 },
+    launchedBy: { 'manager.etf.north': 20, 'desk.a': 25, 'desk.b': 15 },
+    needs: ['equity', 'dealers'],
+    fee: 0.001,
+    why: 'Fund Shares E1-E4: the vehicle that has TWO values. Its shares trade, so a session prices them; its book is the three listed firms, so a read prices them too; and the gap between the two is what somebody has to want to close for it to close at all (E3.a).',
+  },
+];
 
 export const FUNDS: readonly FundDecl[] = [
   {
