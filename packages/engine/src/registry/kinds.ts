@@ -21,13 +21,26 @@ import type {
 } from '../core/ids.js';
 import type { Failed } from '../ledger/instruction.js';
 import type { Instrument, Terms } from '../register/instruments.js';
+import type { Holding } from '../register/register.js';
+import type { Option } from '../core/option.js';
 import type { Namer } from './naming.js';
 
 /** Named individually or represented as cells with a weight (XI-15). */
 export type Representation = 'named' | 'cell';
 
-/** Where an instrument's price comes from (XI-6). */
-export type Pricing = 'money' | 'cleared' | 'carriedAtCost';
+/**
+ * Where an instrument's price comes from (XI-6).
+ *
+ * `derived` is the one that is neither a market nor a cost, and it exists for exactly one shape:
+ * a claim ON A BOOK, whose value IS that book read through the share count (Fund Shares B1). It is
+ * not an exception to Law 3 — nothing here prices a thing by a formula in place of a market, and
+ * everything the book holds is itself marked at what a market cleared — it is the arithmetic that
+ * says what a claim on those marks comes to. Read every time, never stored, the same number for
+ * every holder, which is what separates it from a valuer's answer: `marks` says what a lot is worth
+ * to the party HOLDING it (a lender's own assessment of its own loan, Banks Lending D2), and that
+ * is a different question with a different answer per holder.
+ */
+export type Pricing = 'money' | 'cleared' | 'carriedAtCost' | 'derived';
 
 /**
  * How a holder carries it, which is a different question from where its price comes from (Goods
@@ -153,6 +166,43 @@ export interface InstrumentKindProfile {
    * as well. Stated, and false is an answer: a sovereign has no cross-default (Sovereign G3).
    */
   readonly accelerates?: boolean;
+  /**
+   * Fund Shares B1, XI-6: what one unit is worth, for a kind whose `pricing` is `derived`. The
+   * kernel hands it the same reads it uses itself, so a share of a fund is valued off the marks
+   * every other holder of those assets is valued off — never a second price system beside them
+   * (Law 4). Required on a derived kind and meaningless on any other; assembly refuses a derived
+   * kind without one, because a derived value nobody derives is an unpriced position pretending.
+   */
+  readonly derive?: (i: Instrument, at: Period, reads: DerivedReads) => number;
+}
+
+/**
+ * What a derived value may read: the register, the instruments, and the kernel's own marks. It is
+ * the kernel's own reads and nothing else — no party's view, no module state — because a derived
+ * value is a fact about a book that anybody may compute and everybody gets the same answer from.
+ */
+export interface DerivedReads {
+  /** Every holding of a party, and every holder of an instrument (Register B2, both directions). */
+  holdingsOf(holder: PartyId): readonly Holding[];
+  holdersOf(instrument: InstrumentId): readonly PartyId[];
+  quantity(holder: PartyId, instrument: InstrumentId): number;
+  /**
+   * XI-6, Fund Shares B2, B2.a: what a holder's whole position in one instrument is worth at the
+   * last mark on or before `at`, and WHICH period that mark came from. A stale mark is neither an
+   * error nor a hole — it is a stale value, and the period is how a reader knows it is stale and
+   * says so. None when nothing has ever marked it, which is a different answer from zero.
+   */
+  worthOf(
+    holder: PartyId,
+    instrument: InstrumentId,
+    at: Period,
+  ): Option<{ readonly value: number; readonly from: Period }>;
+  /** Every instrument, so a book's liabilities can be found by who issued them (Register B3). */
+  instruments(): readonly Instrument[];
+  /** How many units of a line exist (Register B2): a share count is `issued`, never a stored total. */
+  issued(instrument: InstrumentId): number;
+  /** A kind's profile, for a book that must ask what its own holdings are (Law 15). */
+  kindOf(instrument: InstrumentId): InstrumentKindProfile;
 }
 
 /**

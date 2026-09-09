@@ -160,7 +160,7 @@ export class World {
     this.instruments = new Instruments(this.registry);
     this.store = new Register(this.parties);
     this.register = registerReads(this.store);
-    this.valuation = new Valuation(this.registry, this.instruments, this.prices);
+    this.valuation = new Valuation(this.registry, this.instruments, this.prices, this.register);
     this.root = prng(spec.seed);
     this.accountOf = accountResolver(this.parties);
     this.settlement = new Settlement({
@@ -380,6 +380,11 @@ export class World {
     const printed = this.prices.latest(instrument, at);
     if (printed.some) return some(printed.value.price);
     const i = this.instruments.get(instrument);
+    // Fund Shares B1: a derived value is not somebody's assessment and has no owner to ask — it is
+    // arithmetic on a book anybody may read, so the kernel reads it rather than a module answering.
+    if (this.registry.instrumentKind(i.kind).pricing === 'derived') {
+      return some(this.valuation.markPerUnit(i.id, at));
+    }
     const held = this.valuers.get(i.kind);
     if (held === undefined) return none<number>();
     return held.value(this.mechanismContext(held.owner), i, at);

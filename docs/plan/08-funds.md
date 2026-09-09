@@ -90,7 +90,7 @@ packages/engine/test/{funds,nav,redemption,money-fund,etf}.test.ts
 
 ## Steps
 
-- [ ] 8.1 Kernel: `pricing: 'derived'` with `profile.value(...)`; valuation, revaluation and the prices family accept it; a derived value that throws is `Unpriced`; tests
+- [x] 8.1 Kernel: `pricing: 'derived'` with `profile.derive(i, at, reads)`; the valuation answers from it, the registry refuses a derived kind that derives nothing (and a non-derived one that derives), revaluation re-marks off it, and a book whose value depends on itself throws with the citation; tests
 - [ ] `fund`, `fundManager` party kinds; `fund.share` and `etf.share` kinds; mandates as party terms; tests
 - [ ] NAV as a read; stale prints make a stale NAV, journaled; fee instruction to the manager each period; tests
 - [ ] Subscription: one instruction (cash in, shares issued); the fund invests the cash per mandate above its buffer; test: an ineligible kind is never ordered

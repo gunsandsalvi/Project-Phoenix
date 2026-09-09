@@ -123,6 +123,19 @@ export class Registry {
     if (!this.instrumentKinds.has('money' as InstrumentKindId)) {
       throw new InvalidRegistry('Money D2', 'the money instrument kind must be registered');
     }
+    for (const k of this.instrumentKinds.values()) {
+      // XI-6, Fund Shares B1: a kind that says its value is derived and derives nothing is an
+      // unpriced position pretending to be a priced one, and it would read as a hole at every mark.
+      if (k.pricing === 'derived' && k.derive === undefined) {
+        throw new InvalidRegistry('XI-6', `instrument kind ${k.id} is derived and derives nothing`);
+      }
+      if (k.pricing !== 'derived' && k.derive !== undefined) {
+        throw new InvalidRegistry(
+          'Law 4',
+          `instrument kind ${k.id} derives a value but is priced by ${k.pricing}`,
+        );
+      }
+    }
     for (const f of this.curveFamilies.values()) {
       if (!this.currencies.has(f.ccy)) {
         throw new InvalidRegistry(

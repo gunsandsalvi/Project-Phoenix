@@ -10,20 +10,115 @@
  */
 import { type Period, period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
-import { Unpriced } from '../core/errors.js';
-import type { InstrumentId } from '../core/ids.js';
+import { Forbidden, Unpriced } from '../core/errors.js';
+import type { InstrumentId, PartyId } from '../core/ids.js';
+import { none, some, type Option } from '../core/option.js';
 import { mul } from '../core/num.js';
 import type { InstrumentsReads as Instruments } from '../register/instruments.js';
-import type { Lot } from '../register/register.js';
+import type { Lot, RegisterReads } from '../register/register.js';
+import type { DerivedReads } from '../registry/kinds.js';
 import type { Registry } from '../registry/registry.js';
-import type { PriceStore } from './price-store.js';
+import { struckIn, type PriceStore } from './price-store.js';
 
 export class Valuation {
+  /**
+   * Fund Shares B1, F2: which derivations are in flight. A book whose value depends on its own is
+   * not a number that needs a limit — it is a claim on itself, and there is nothing to read. It
+   * throws with the citation rather than iterating to something.
+   */
+  private readonly deriving = new Set<InstrumentId>();
+
   constructor(
     private readonly registry: Registry,
     private readonly instruments: Instruments,
     private readonly prices: PriceStore,
+    private readonly register: RegisterReads,
   ) {}
+
+  /** Fund Shares B1: the reads a derived value is given — the kernel's own, and nothing else. */
+  private reads(): DerivedReads {
+    return {
+      holdingsOf: (holder) => this.register.holdingsOf(holder),
+      holdersOf: (instrument) => this.register.holdersOf(instrument),
+      quantity: (holder, instrument) => this.register.quantity(holder, instrument),
+      worthOf: (holder, instrument, at) => this.worthOf(holder, instrument, at),
+      instruments: () => this.instruments.all(),
+      issued: (instrument) => this.instruments.get(instrument).issued,
+      kindOf: (instrument) => this.registry.instrumentKind(this.instruments.get(instrument).kind),
+    };
+  }
+
+  /**
+   * XI-6, Fund Shares B2, B2.a: what a holder's position is worth at the last mark on or before
+   * `at`, with the period that mark came from. Lots carried at cost are worth what the book carries
+   * them at, which is this period by construction; a cleared line is worth the last print, and how
+   * old that print is travels with the number instead of being lost in it.
+   */
+  worthOf(
+    holder: PartyId,
+    instrument: InstrumentId,
+    at: Period,
+  ): Option<{ readonly value: number; readonly from: Period }> {
+    const held = this.register.holding(holder, instrument);
+    if (!held.some) return none();
+    const lots = held.value.lots;
+    const i = this.instruments.get(instrument);
+    const profile = this.registry.instrumentKind(i.kind);
+    const qty = lots.reduce((t, l) => t + l.qty, 0);
+    // A derived value is asked FIRST, before the carrying rule: it is available fresh at every ask
+    // (B1), and reading the lot's basis instead would be a stale mirror of a number the kernel can
+    // read now (Law 19). What the equity account has RECOGNISED is a different question and stays
+    // with the lot (carryingPerUnit).
+    if (profile.pricing !== 'derived' && profile.carry === 'cost') {
+      return some({ value: this.valueOfLots(instrument, lots, at), from: at });
+    }
+    switch (profile.pricing) {
+      case 'money':
+        return some({ value: qty, from: at });
+      case 'cleared': {
+        const p = this.prices.latest(instrument, at);
+        return p.some
+          ? some({ value: mul(qty, p.value.price, `what ${instrument} is worth`), from: struckIn(p.value) })
+          : none();
+      }
+      case 'derived':
+        return some({
+          value: mul(qty, this.derived(instrument, at), `what ${instrument} is worth`),
+          from: at,
+        });
+      case 'carriedAtCost':
+        return some({ value: this.valueOfLots(instrument, lots, at), from: at });
+      default:
+        return assertNever(profile.pricing, 'Pricing');
+    }
+  }
+
+  /**
+   * Fund Shares B1: the derived value of one unit, read at the moment it is asked. A kind that says
+   * its price is derived and derives nothing is a defect the registry should have refused.
+   */
+  private derived(instrument: InstrumentId, at: Period): number {
+    const i = this.instruments.get(instrument);
+    const derive = this.registry.instrumentKind(i.kind).derive;
+    if (derive === undefined) {
+      throw new Unpriced('XI-6', `${instrument} says its value is derived and derives nothing`, {
+        instrument,
+      });
+    }
+    if (this.deriving.has(instrument)) {
+      throw new Forbidden(
+        'Fund Shares F2',
+        `the value of ${instrument} depends on itself: a book that holds its own claim`,
+        { instrument },
+      );
+    }
+    // No try/finally: a derivation that throws stops the run at its site (§5), so there is no
+    // later read for a stale entry to confuse — and the engine does not catch.
+    this.deriving.add(instrument);
+    const value = derive(i, at, this.reads());
+    this.deriving.delete(instrument);
+    return value;
+  }
 
   /** The mark per unit in force for `at` (throws NotYetProduced before the market has printed). */
   markPerUnit(instrument: InstrumentId, at: Period): number {
@@ -34,6 +129,8 @@ export class Valuation {
         return 1; // Money D2: the only admissible hard-coded price of one.
       case 'cleared':
         return this.prices.printOrThrow(instrument, at).price;
+      case 'derived':
+        return this.derived(instrument, at);
       case 'carriedAtCost':
         throw new Unpriced('XI-6', `${instrument} is carried at cost and has no mark`, {
           instrument,
@@ -57,6 +154,11 @@ export class Valuation {
     switch (pricing) {
       case 'money':
         return 1;
+      // A derived value has no history to read: nothing stored what a book came to last week, and
+      // re-deriving it from today's register would be answering a different question. So what the
+      // equity account has recognised is what the lot carries, which revaluation re-marks each
+      // period to the value read then — the same walk a provision takes (Banks Lending D2).
+      case 'derived':
       case 'carriedAtCost':
         return lot.basisPerUnit;
       case 'cleared':
