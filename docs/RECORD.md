@@ -95,3 +95,26 @@ were exercising a path no mechanism has. Rewritten to act inside a phase, which 
 
 **Placeholders and shapes.** One placeholder (the opening price); three shapes (mean deposit, mean
 bond holding, dispersion width of the seed), all scheduled for worklist 4.
+
+## Between 2a and 3 — the plan in full, and the syndicate
+
+**What.** `docs/PLAN.md` rewritten as the standing plan (what Phoenix is, the rules, the
+architecture, the module contract, the build loop, the strategies, the canonical period, dos and
+don'ts, risks, glossary) for a reader with no context; one detailed file per open item under
+`docs/plan/` (objective, clauses met, design with kernel doors as sub-items, parameters, audit
+contributions, files, a step checklist, tests, exit criteria, guard); `docs/plan/manifest.json`
+with every item's step count; `tools/plan-progress.ts` recounts the completion figure into
+`docs/PLAN.md` and `npm run check` fails when the figure is stale. Item 13 split into 13a–13i;
+13g (corporate control) placed before 13h (insurers, hedge funds, private equity) because a buyout
+bids through the tender market.
+
+**Spec amendment.** The specification had no syndicate: an issue larger than one underwriter's own
+limit could only be downsized or carried past a limit. Added Corporate Credit C10, C10.a, C10.b
+(FORBID), C10.c (VERIFY): a lead forms a syndicate of named banks each taking a stated share of the
+underwriting risk and fee against its own limit and capital; shares struck before the book opens;
+a syndicate that cannot be filled is a deal downsized or pulled, an observable event. Added Banks
+Lending D4.a: a syndicated loan is one loan with several lenders of record, a row per (lender,
+borrower), one margin struck by a lead that takes a fee, each share against its own capital and
+large-exposure limit. Both are built at 13f on one kernel mechanism, the commitment market
+(demand is a deal's size; supply is commitment schedules from members' own limits). Coverage
+regenerated: 1320 clauses; the two FORBID/VERIFY rows are MISSING until 13f.

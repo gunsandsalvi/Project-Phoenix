@@ -1046,6 +1046,18 @@ Satisfies **the bond contract** in full. This system covers the **market**, the 
 - **C9** REASON — a **committed facility** is one line per lender per borrower. A draw taps the
   existing line at the margin it was struck at; a new line opens only when none is live, at the margin
   the lender quotes now, for a stated term. A draw does not mint a facility per period.
+- **C10** REASON — **a syndicate.** When an issue exceeds what one underwriter's own limit (Dealer
+  Desks D1, D2) can carry between commitment and placement, the **lead** forms a syndicate of **named**
+  banks, each taking a **stated share** of the underwriting risk and of the fee (C6, C7). Each member's
+  share sits against **its own** limit and its own capital, and a syndicate that cannot be filled to
+  the deal's size is a deal **downsized or pulled** (C4) — never one carried by a member past its limit.
+  - **C10.a** the shares are struck **before the book opens** and each member is left holding **its
+    share** of what the book did not take (C7.a); the lead's share is its own, not the remainder.
+  - **C10.b** FORBID — **no syndicate share above a member's own limit.** The lead cannot lend a member
+    capacity it does not have, and a member cannot be assigned what it did not agree to carry.
+  - **C10.c** VERIFY — the largest deal the market can bring is bounded by the **sum of the willing
+    members' limits**, and a deal larger than that fails to find a syndicate — an observable event
+    with a named issuer, not a deal that silently shrinks to fit.
 
 ### D. The secondary market
 - **D1** REASON — holders who want out and buyers who want in **post schedules**, and who trades is
@@ -2347,6 +2359,11 @@ absent independently.
     booking is visible. **A realised loss rate is not a provision stock.**
 - **D3** REASON — interest **accrues** and is **received**, and non-payment is observable.
 - **D4** REASON — a loan can be **sold or syndicated**, and then it has a price and a buyer.
+  - **D4.a** a **syndicated loan** is one loan with **several lenders of record**, each a row per
+    (lender, borrower) in its own share, struck together at **one margin** by a **lead** that arranges
+    it and takes a fee. Each lender's share sits against its own capital (B2.a) and its own
+    large-exposure limit (F3); a loan too large for one bank's limit is written by several, or not at
+    all — never by one bank past its limit.
 - **D5** REASON — it can be **pledged**, at a haircut.
 
 ### E. When it goes bad

@@ -8,10 +8,12 @@ Work order is `docs/WORKLIST.md`; outcomes go in `docs/RECORD.md`; requirement s
 `docs/COVERAGE.md`.
 
 ## The single ambition
+
 A closed circuit: every dollar and share has a named counterparty at every instant; every priced
-asset has a *cleared* price and shows it; nothing is bounded, plugged or invented; the audit is true.
+asset has a _cleared_ price and shows it; nothing is bounded, plugged or invented; the audit is true.
 
 ## The 19 laws (Part I)
+
 1. **Reflect the real mechanism.** Real named counterparties, intermediaries, lags, fees, refusals, failures.
 2. **Fewest primitives.** A declared number is exactly one of: TECHNOLOGY, PREFERENCE, POLICY (the only
    primitives), RESOLUTION (tested by invariance), or SHAPE (a claim about the answer; count must fall).
@@ -19,7 +21,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
    else (ownership, prices, quantities, shares, allocations) is an OUTCOME. Real-world primitives may be
    imported; real-world equilibria may not. A residual with no holder is a defect.
 3. **Every price is cleared** from real supply meeting real demand. Yield/spread/DM/OAS/PE are
-   *derived from* price, never the mechanism. Only exception: administered central-bank rates with a
+   _derived from_ price, never the mechanism. Only exception: administered central-bank rates with a
    real quantity response booked on both balance sheets.
 4. **"1$ is 1$".** One representation per real thing; every fact has exactly one writer. Hunt parallel
    formulas, mirrored copies, two probabilities for one borrower, two index systems.
@@ -34,7 +36,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
    name it in the identifier. A displayed change with no history is a lie — show the level.
 9. **Instruments are named as a market names them** (issuer+coupon+maturity; issuer+tenor; the
    issuer for a share). Internal ids are never display names and never groupings/buckets. Every
-   priced asset shows its price; fixed income shows price *and* derived spread.
+   priced asset shows its price; fixed income shows price _and_ derived spread.
 10. **One ordered list, in order, one item at a time.** Finish (checks green, record written) before
     opening the next. A new idea is INSERTED at its dependency position, not appended; say where.
 11. **Do not measure, evaluate or diagnose mid-build.** Incomplete-model checks are deliberately
@@ -46,7 +48,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
 14. **One bounded change per item**, with a record saying what and why.
 15. **Targeted-change test.** All DATA in a registry; all kind-varying BEHAVIOUR in a profile behind a
     dispatch table. No mechanism branches on industry/sector/entity type/product id.
-16. **Brevity.** A comment says *why*; a stale comment is a defect. The record is a ledger of outcomes.
+16. **Brevity.** A comment says _why_; a stale comment is a defect. The record is a ledger of outcomes.
 17. **No forecast without a falsification test.**
 18. **Performance work**: mechanisms/economics/boundaries never change; layout/traversal is free.
     Gate on behaviour, not bits.
@@ -55,6 +57,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
     re-derived price. Every deletion names the read that replaces it.
 
 ## The method (Part II)
+
 - Every requirement is one of **REASON** (a cause a participant has), **VERIFY** (a thing to MEASURE,
   never enforce), **FORBID** (a required absence). An outcome written as a rule is a defect.
 - A VERIFY that fails is a finding about a mechanism, never a licence to adjust the number.
@@ -62,6 +65,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
 - "MISSING" and "OUT OF SCOPE" are different answers; never delete a clause to look better.
 
 ## Core structure (see ARCHITECTURE.md for detail)
+
 - **Money is an instrument** issued by a bank/central bank; an account is a holding of it. Price 1 for
   money is the only hard-coded price.
 - **The wire**: state changes only by a numbered, two-sided `Instruction` applied by settlement;
@@ -72,7 +76,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
 - **Prices**: `(market, instrument, period)` prints with provenance; value = units × price at read;
   unpriced throws unless declared carried-at-cost; stale is visibly stale.
 - **Clearing**: one solver over posted schedules; outcomes `cleared | noDemand | noSupply |
-  noOverlap | excessCommitted`; a bracket is never a print; trades are instructions.
+noOverlap | excessCommitted`; a bracket is never a print; trades are instructions.
 - **One calendar**: 7-day period, cycles within; periodicities placed by date; day counts from dates.
 - **Period loop**: ordered phases as data; a phase reading a not-yet-produced print throws.
 - **Audit**: independent families; violation = owner + size + period + citation; never repairs;
@@ -84,8 +88,9 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
   expectation; no peeking at the period's own result.
 
 ## Kernel and modules (docs/ARCHITECTURE.md 4.9b, docs/PLAN.md)
+
 - The **kernel** (`core calendar registry parties register ledger prices clearing journal audit
-  world`) owns every store and the period loop. It changes only by an inserted worklist item.
+world`) owns every store and the period loop. It changes only by an inserted worklist item.
 - A **module** (`src/mechanisms/<system>/`, `src/seeds/<name>.ts`) is one spec system, instrument
   family or seed: a `SystemModule` declaring kinds+profiles, units, params, phases (anchored to
   `corporateActions | markets | revaluation`), participants (per party kind, evaluated with that
@@ -97,6 +102,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
 - Kinds are registered at assembly; the kernel asks a kind's profile, never branches on its id.
 
 ## Error discipline
+
 - **Contract violations throw** `PhoenixError` with a citation, at the site, never caught in the
   engine: currency/unit mismatch, one-sided leg, moving encumbered units, unpriced read, missing
   period/periodicity, NaN/Infinity, phase ordering, weight written outside the five events.
@@ -109,6 +115,7 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
 - Every module cites the clauses it implements with `@spec`; `npm run check:spec` must pass.
 
 ## Consolidated prohibitions (Appendix B, abridged — read the full list before touching an area)
+
 Money/ownership: no money without an issuer; two currencies never added; no holding without holder
 or issuer; no move without a two-sided numbered instruction; no silent overdraft; no conversion at the
 ledger boundary or without a counterparty; the numéraire is not where value lives; no short without a
@@ -121,7 +128,7 @@ arbitrageur.
 Bounds: no cap/floor/clamp; no percentage tolerance; no fixed recovery/discount rate/constant NAV;
 no enforced convergence; no investment rate, earnings path, unemployment rate, birth rate, hazard-rate
 default, exogenous trade or capital-flow series.
-Institutions: nothing immortal (firm, fund, bank — liquidity *and* solvency —, clearing house,
+Institutions: nothing immortal (firm, fund, bank — liquidity _and_ solvency —, clearing house,
 sovereign in foreign money); no death without a destination; no constant population; no central-bank
 overdraft for the treasury; no forced buyer; LOLR has all four classical conditions; no unlimited
 exposure or infinite balance sheet; no netting across counterparties; no margin that is only a number;
@@ -140,6 +147,7 @@ price, quantity, outcome, or the central-bank rate.
 Method: the audit never repairs; no forecast without its killer; no clause deleted to look better.
 
 ## Sequencing (Part XIII) — the worklist follows this
+
 1 money+settlement+calendar → 2 register+clearing (+cells XI-15, DvP XI-5, value XI-6, parameter
 register XI-14) → 3 sovereign funding constraint XI-9 → 4 firm cost base + households + labour +
 outlooks XI-16 → 5 loss is an event XI-1 → 6 loans are rows → 7 forced seller XI-2 + nothing immortal
@@ -149,13 +157,16 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
 15 the recipe → then, and only then, measure (Part XII).
 
 ## Working here
+
 - Toolchain: TypeScript strict, npm workspaces (`packages/engine`, `packages/app`), Vitest,
   fast-check, ESLint (custom rules in `tools/eslint-rules`), Vite, Capacitor for Android.
-- Run `npm run check` (lint + typecheck + tests + spec citations) before every commit. All green or
-  the item is not done.
+- Run `npm run check` (lint + typecheck + tests + spec citations + plan progress) before every
+  commit. All green or the item is not done.
 - Take the first open item in `docs/WORKLIST.md`. Read `docs/PLAN.md` (the build loop, the module
-  contract, the item's section, the canonical period) before writing code. One item, one commit.
-  Write the RECORD entry and re-mark COVERAGE in the same commit.
+  contract, the canonical period) and the item's own file `docs/plan/<item>.md` (design, steps,
+  tests, exit criteria, guard) before writing code. Tick the item's steps (`- [x]`) as they close;
+  run `npm run plan:progress` to recount the completion figure; delete the item file when the item
+  closes. One item, one commit. Write the RECORD entry and re-mark COVERAGE in the same commit.
 - Update `docs/ARCHITECTURE.md` in the same change as any structural decision.
 - Ask the owner only for decisions the spec explicitly reserves (e.g. §45 A4 inspector vs
   participant surface); everything else is derived from the spec and stated in the record.

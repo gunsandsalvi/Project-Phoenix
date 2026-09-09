@@ -12,7 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "npm run lint && npm run typecheck && npm run test && npm run check:spec",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run plan:check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -23,6 +23,8 @@
     "check:spec": "tsx tools/check-citations.ts",
     "spec:index": "tsx tools/spec-index.ts",
     "coverage:spec": "tsx tools/spec-coverage.ts",
+    "plan:progress": "tsx tools/plan-progress.ts",
+    "plan:check": "tsx tools/plan-progress.ts --check",
     "build": "npm run build --workspace packages/engine && npm run build --workspace packages/app",
     "dev": "npm run dev --workspace packages/app",
     "e2e": "playwright test"
