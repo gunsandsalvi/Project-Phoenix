@@ -117,4 +117,16 @@ Lending D4.a: a syndicated loan is one loan with several lenders of record, a ro
 borrower), one margin struck by a lead that takes a fee, each share against its own capital and
 large-exposure limit. Both are built at 13f on one kernel mechanism, the commitment market
 (demand is a deal's size; supply is commitment schedules from members' own limits). Coverage
-regenerated: 1320 clauses; the two FORBID/VERIFY rows are MISSING until 13f.
+regenerated. Also added Corporate Credit C11, C11.a–C11.e: a placement has a stated basis — best
+effort (the bank is an agent: no commitment, no balance-sheet risk, a lower fee, the unplaced
+remainder never issued) or backstopped (the underwriter commits and is paid for the risk; the
+syndicate is the shared form) — chosen by the issuer from its own outlook of the book against the
+fee gap; FORBID: no best-effort deal that leaves the agent holding paper; VERIFY: the backstop fee
+exceeds the best-effort fee and weaker or less confident issuers buy it more often. Built at 13f.
+
+**Checked, already present.** Personal expectations: §46 A2–A3 and XI-16 state that every party
+acts on its own outlook formed from its own history, that outlooks disagree, and that the
+disagreement is load-bearing (two sides of a book, threshold crossings under a mean-preserving
+spread, the transmission of a shock). Nothing to add to the spec; the digest in `CLAUDE.md` and
+`docs/PLAN.md` 6.2 now say so explicitly. Coverage: 1323 clauses; the new FORBID/VERIFY rows are
+MISSING until 13f.

@@ -2,7 +2,8 @@
 
 **Objective.** The corporate bond as a full instrument: a capital-structure decision by management,
 covenants that are observed before default and can be waived at a price, a primary market that is
-brought by an underwriter, built from indications, priced at one level, allocated, walked away from,
+brought by a bank on a stated basis (best effort as agent, or backstopped by an underwriter that
+commits), built from indications, priced at one level, allocated, walked away from,
 tapped, and — when the deal is too big for one underwriter's own limit — **syndicated** among named
 banks each carrying a stated share against its own limit and capital; a secondary market with the
 existing dealers; holders that are leveraged by named lenders whose funding can be withdrawn;
@@ -23,6 +24,7 @@ phase, item 5's events.
 
 **Clauses this item meets.** Corporate Credit A1, A2, A2.a, A2.b, A2.c, A3, A3.a, A3.b, A4, A4.a,
 A4.b, A4.c, B1, B2, B2.a, B2.b, B3, B4, C1–C9, C2.a, C2.b, C7.a, C7.b, C10, C10.a, C10.b, C10.c,
+C11, C11.a–C11.e,
 D1–D8, D3.a, D3.b, D3.c, E1–E9, E4.a, E5.d, E6.a, E6.b, F1–F6, G4, G5, G5.a, G7, G8, H1, H2, H3
 (H4 at 13b); Short-Term Debt A1, A1.a–A1.d, A2, A2.a, A3, B1–B5, B3.a, B3.b, C1–C4, C2.a, D1–D4,
 E1–E3; Securities Lending A1–A5, A5.a, A5.b, B1–B4, B2.a, C1–C5, C2.a, D1–D3, D2.a, E1–E3; Prime
@@ -74,12 +76,17 @@ riskAversion`, dispersed) approached at its own pace (`firm.horizon`, item 10); 
   `view.published(issuer)`); a breach is a journaled event; the issuer may propose a **waiver** (a fee
   per unit of face) which holders accept or refuse by the same vote as restructuring (below); a
   cured breach is an event too.
-- **The primary market** (C): the issuer appoints an **underwriter** (C1): every desk quotes a fee
-  and a commitment from its remaining underwriting limit (Dealer Desks D1, D2: `desk.limit.
-underwriting` preference); the issuer takes the keenest; the fee is an instruction issuer →
-  underwriter at pricing (C6); the underwriter **commits** to take what the book does not (C7); its
-  unplaced share lands in its inventory (C7.a: an ordinary holding it must fund and rent, item 9);
-  C7.b (fee vs risk) is measured. **Bookbuilding** (C2): the primary block of item 3.1 opened with the
+- **The primary market** (C): the issuer appoints a bank (C1) on a **stated basis** (C11): every
+  desk quotes **two** fees — a best-effort fee for placing as agent with no commitment (C11.a), and
+  a backstop fee with a commitment from its remaining underwriting limit (C11.b; Dealer Desks D1, D2:
+  `desk.limit.underwriting` preference); the issuer chooses basis and bank from its own outlook of
+  the book against the fee gap (C11.c: a confident issuer saves the fee; one that must have the money
+  buys the backstop; the deal's `basis` term is stamped and public). The fee is an instruction issuer →
+  bank at pricing (C6). On a **backstopped** deal the underwriter **commits** to take what the book
+  does not (C7) and its unplaced share lands in its inventory (C7.a: an ordinary holding it must fund
+  and rent, item 9). On a **best-effort** deal the unplaced remainder is **not issued** (C11.d: the
+  issuer's `issued` grows only by what the book took; a selling group is a fee-sharing list, never a
+  commitment). C7.b and C11.e (fee vs risk; who buys the backstop) are measured. **Bookbuilding** (C2): the primary block of item 3.1 opened with the
   underwriter as the seller of record; indications are schedules (C2.a); the book is information the
   observer shows after pricing (C2.b); it prices at one level (C3: the solver); **walk-away** (C4):
   the issuer's reservation is a spread over its own cost expectation from its outlook: below it the
@@ -258,7 +265,7 @@ packages/engine/test/{commitment-market,corporate-bond,capital-structure,covenan
 - [ ] `bond` corporate kind: coupon forms, seniority honoured by the waterfall, call regime stamped at issuance by dispatch, covenants as terms, display name; tests (A1, A2.a, B1, B3, B4, N11–N13.a)
 - [ ] The capital-structure decision: management's own target from the covenant line and its risk aversion at its own pace; issuance and refinancing as decisions; the structure as an outcome; tests (A2, A2.b, A2.c, A3, F5)
 - [ ] Covenants tested on published accounts with the lag; breach and cure as events; waiver at a fee by the holders' vote; tests (B2, B2.a, B2.b, G1)
-- [ ] Underwriter: desks quote fee and commitment from their own limit; appointment; fee by instruction; unplaced paper in the underwriter's inventory funded and rented; tests (C1, C6, C7, C7.a)
+- [ ] Placement basis and the bank: desks quote a best-effort fee and a backstop fee with a commitment from their own limit; the issuer chooses basis and bank from its own outlook against the fee gap; fee by instruction; on a backstopped deal the unplaced paper is the underwriter's inventory, funded and rented; on a best-effort deal it is never issued; tests: an agent can never be left holding paper (C1, C6, C7, C7.a, C11, C11.a–C11.d)
 - [ ] The syndicate: a commitment market opened by the lead when the deal exceeds its own commitment; shares struck before the book from each member's own limit and capital; the lead's share its own; fee split by shares; `filled < size` → the issuer downsizes or pulls; `syndicate.failed` journaled with issuer and size; unplaced paper split by shares; tests: no member ever holds above what it posted (C10, C10.a, C10.b, C10.c)
 - [ ] Bookbuilding: indications as schedules, one price, allocation from the book, walk-away with no instrument created; tests (C2, C2.a, C2.b, C3, C4, C5)
 - [ ] Taps cleared in the same solve as the existing paper; debut vs tap as the issuer's decision; tests (C8)
@@ -286,6 +293,6 @@ call moves cash or closes positions and its line can go negative.
 
 ## Guard
 
-Corporate Credit C10.b, D5, D8, E5.d; Short-Term Debt E1–E3; Securities Lending C4, E1–E3; Prime
+Corporate Credit C10.b, C11.d, D5, D8, E5.d; Short-Term Debt E1–E3; Securities Lending C4, E1–E3; Prime
 Brokerage C3.b, C5, E4; Banks Lending F3; Dealer Desks D1, D2 (a share sits against the member's
 own limit).

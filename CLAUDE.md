@@ -85,7 +85,9 @@ noOverlap | excessCommitted`; a bracket is never a print; trades are instruction
   placeholders name their mechanism; engine reads numbers only via `params`.
 - **Expectations** (§46, XI-16): every deciding party has its own outlook formed adaptively from its
   own history; one PREFERENCE (memory); surprise is a recorded event; confidence is a read; no global
-  expectation; no peeking at the period's own result.
+  expectation; no peeking at the period's own result. Outlooks **disagree**, and the disagreement is
+  load-bearing (§46 A3): it is what gives a market two sides and what a shock transmits through; a
+  world where every party expected the same thing would trade once and stop.
 
 ## Kernel and modules (docs/ARCHITECTURE.md 4.9b, docs/PLAN.md)
 

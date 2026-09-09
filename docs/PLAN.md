@@ -14,40 +14,38 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-
 **Plan completion: 8.3%** (36 of 434 steps across 27 items).
-**Requirement coverage: 11.4%** (151 MET, 25 PARTIAL, 0 OUT OF SCOPE of 1320 REASON/VERIFY/FORBID clauses).
+**Requirement coverage: 11.4%** (151 MET, 25 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
-| item                                                                                                     | steps | done | state  |
-| -------------------------------------------------------------------------------------------------------- | ----- | ---- | ------ |
-| 0 — Foundation                                                                                           | 8     | 8    | closed |
-| 1 — Money and settlement, one calendar                                                                   | 7     | 7    | closed |
-| 2 — Register, clearing, cells, DvP, value, parameters                                                    | 12    | 12   | closed |
-| 2a — Kernel/module boundary                                                                              | 9     | 9    | closed |
-| [3 — The sovereign's funding constraint](plan/03-sovereign-funding.md)                                   | 26    | 0    | open   |
-| [4 — Firms, goods, labour, households, outlooks](plan/04-real-economy.md)                                | 34    | 0    | open   |
-| [5 — A loss is an event](plan/05-loss-events.md)                                                         | 14    | 0    | open   |
-| [6 — Loans are rows](plan/06-loans.md)                                                                   | 16    | 0    | open   |
-| [7 — Forced seller, nothing immortal, the estate](plan/07-failure-estate.md)                             | 22    | 0    | open   |
-| [8 — Redeemable claims](plan/08-funds.md)                                                                | 14    | 0    | open   |
-| [9 — Equity and dealers](plan/09-equity-dealers.md)                                                      | 20    | 0    | open   |
-| [10 — The cost of capital](plan/10-cost-of-capital.md)                                                   | 16    | 0    | open   |
-| [11 — Money market, corridor, bank capital](plan/11-money-market-capital.md)                             | 22    | 0    | open   |
-| [12 — Currencies, benchmarks, ratings](plan/12-currency-benchmarks-ratings.md)                           | 26    | 0    | open   |
-| [13a — The derivative layer](plan/13a-derivative-layer.md)                                               | 16    | 0    | open   |
-| [13b — The derivative classes](plan/13b-derivative-classes.md)                                           | 20    | 0    | open   |
-| [13c — Commodities and freight](plan/13c-commodities-freight.md)                                         | 14    | 0    | open   |
-| [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md)             | 18    | 0    | open   |
-| [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md)      | 18    | 0    | open   |
-| [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 22    | 0    | open   |
-| [13g — Corporate control and firm birth](plan/13g-mna-birth.md)                                          | 12    | 0    | open   |
-| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md)                             | 16    | 0    | open   |
-| [13i — Cross-border](plan/13i-cross-border.md)                                                           | 10    | 0    | open   |
-| [14 — The polity](plan/14-polity.md)                                                                     | 12    | 0    | open   |
-| [15 — The recipe](plan/15-recipe.md)                                                                     | 6     | 0    | open   |
-| [16 — Measure](plan/16-measure.md)                                                                       | 12    | 0    | open   |
-| [17 — The app and the APK](plan/17-app-apk.md)                                                           | 12    | 0    | open   |
-
+| item | steps | done | state |
+|---|---|---|---|
+| 0 — Foundation | 8 | 8 | closed |
+| 1 — Money and settlement, one calendar | 7 | 7 | closed |
+| 2 — Register, clearing, cells, DvP, value, parameters | 12 | 12 | closed |
+| 2a — Kernel/module boundary | 9 | 9 | closed |
+| [3 — The sovereign's funding constraint](plan/03-sovereign-funding.md) | 26 | 0 | open |
+| [4 — Firms, goods, labour, households, outlooks](plan/04-real-economy.md) | 34 | 0 | open |
+| [5 — A loss is an event](plan/05-loss-events.md) | 14 | 0 | open |
+| [6 — Loans are rows](plan/06-loans.md) | 16 | 0 | open |
+| [7 — Forced seller, nothing immortal, the estate](plan/07-failure-estate.md) | 22 | 0 | open |
+| [8 — Redeemable claims](plan/08-funds.md) | 14 | 0 | open |
+| [9 — Equity and dealers](plan/09-equity-dealers.md) | 20 | 0 | open |
+| [10 — The cost of capital](plan/10-cost-of-capital.md) | 16 | 0 | open |
+| [11 — Money market, corridor, bank capital](plan/11-money-market-capital.md) | 22 | 0 | open |
+| [12 — Currencies, benchmarks, ratings](plan/12-currency-benchmarks-ratings.md) | 26 | 0 | open |
+| [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
+| [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
+| [13c — Commodities and freight](plan/13c-commodities-freight.md) | 14 | 0 | open |
+| [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 18 | 0 | open |
+| [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 18 | 0 | open |
+| [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 22 | 0 | open |
+| [13g — Corporate control and firm birth](plan/13g-mna-birth.md) | 12 | 0 | open |
+| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 16 | 0 | open |
+| [13i — Cross-border](plan/13i-cross-border.md) | 10 | 0 | open |
+| [14 — The polity](plan/14-polity.md) | 12 | 0 | open |
+| [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |
+| [16 — Measure](plan/16-measure.md) | 12 | 0 | open |
+| [17 — The app and the APK](plan/17-app-apk.md) | 12 | 0 | open |
 <!-- progress:end -->
 
 ---
@@ -364,6 +362,13 @@ is added to `ParticipantView` at item 4 as a kernel door reading that slot. No g
 exists anywhere; a published aggregate is a lagged read that causes nothing.
 
 A decision is a function of (own state, own outlook, public prints, params). Nothing else.
+
+Outlooks are meant to disagree (§46 A3, XI-16): two parties with different histories expect
+different prices, and that is the reason a book has two sides, the reason a mean-preserving spread
+of outlooks produces threshold crossings that one outlook never would, and the channel a shock
+transmits through (the parties surprised first act first). Never average outlooks into a sector
+view, never seed them equal, never let one party read another's; the dispersion of outlooks is a
+standing read (§46 E1) and a test asserts it is non-zero at the seed and widens in a downturn.
 
 ### 6.3 Markets and participants (Clearing)
 

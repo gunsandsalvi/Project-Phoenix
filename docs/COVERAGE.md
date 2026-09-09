@@ -265,6 +265,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Corporate Credit C10` | MISSING |  |
 | `Corporate Credit C10.b` | MISSING |  |
 | `Corporate Credit C10.c` | MISSING |  |
+| `Corporate Credit C11` | MISSING |  |
+| `Corporate Credit C11.d` | MISSING |  |
+| `Corporate Credit C11.e` | MISSING |  |
 | `Corporate Credit D1` | MISSING |  |
 | `Corporate Credit D2` | MISSING |  |
 | `Corporate Credit D3` | MISSING |  |

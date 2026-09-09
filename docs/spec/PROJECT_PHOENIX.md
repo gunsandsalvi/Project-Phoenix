@@ -1058,6 +1058,26 @@ Satisfies **the bond contract** in full. This system covers the **market**, the 
   - **C10.c** VERIFY — the largest deal the market can bring is bounded by the **sum of the willing
     members' limits**, and a deal larger than that fails to find a syndicate — an observable event
     with a named issuer, not a deal that silently shrinks to fit.
+- **C11** REASON — **a placement has a stated basis**, chosen by the issuer as a decision, and the two
+  bases are different products with different prices:
+  - **C11.a** **best effort** — the bank is an **agent**: it builds the book and places what the book
+    takes, commits **nothing** and carries **no balance-sheet risk**; what the book did not take is
+    **not issued**, and the issuer bears the placement risk — a deal smaller than it wanted, or pulled
+    (C4). The fee is lower because no risk sits behind it (C7.b). A selling group sharing that fee is
+    named like a syndicate (C10) but commits nothing.
+  - **C11.b** **backstopped** — the bank **underwrites**: it commits to take what the book does not
+    (C7, C7.a) and is paid for the risk; a syndicate (C10) is the backstopped basis shared among named
+    members. This is the basis an issuer that needs certainty of funds pays for.
+  - **C11.c** the issuer chooses the basis from **its own** outlook of the book against the fee
+    difference the banks quote — an issuer confident of demand goes best effort and saves the fee; one
+    that must have the money buys the backstop. The basis is stamped on the deal and reported.
+  - **C11.d** FORBID — **no best-effort deal that leaves the agent holding paper**, and no backstopped
+    deal whose underwriter does not. On a best-effort basis the unplaced remainder is never issued; on a
+    backstopped basis it is the underwriter's position. A fee with no stated basis is a transfer with
+    no reason.
+  - **C11.e** VERIFY — the backstop fee exceeds the best-effort fee for the same issuer and size, as a
+    consequence of the risk behind it, and issuers with weaker credit or less confidence of demand buy
+    the backstop more often. Measure, never enforce.
 
 ### D. The secondary market
 - **D1** REASON — holders who want out and buyers who want in **post schedules**, and who trades is
