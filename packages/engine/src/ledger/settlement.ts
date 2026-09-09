@@ -53,6 +53,7 @@ import type {
   ReserveLeg,
   SettlementRecord,
 } from './instruction.js';
+import { subjectsOf } from './instruction.js';
 import type { Ledger } from './ledger.js';
 
 export interface SettlementDeps {
@@ -827,23 +828,6 @@ export class Settlement {
   }
 }
 
-function subjectsOf(ins: Instruction): string[] {
-  const s = new Set<string>();
-  for (const leg of ins.legs) {
-    if (leg.kind === 'money') {
-      s.add(leg.from.holder);
-      s.add(leg.to.holder);
-    } else if (leg.kind === 'asset') {
-      s.add(leg.from);
-      s.add(leg.to);
-      s.add(leg.instrument);
-    } else {
-      s.add(leg.party);
-      s.add(leg.instrument);
-    }
-  }
-  return [...s];
-}
 
 /** Helpers for mechanisms building legs (XI-15: a cell side is per member). */
 export function cellSide(p: Party, perMember: number): CellSide | undefined {

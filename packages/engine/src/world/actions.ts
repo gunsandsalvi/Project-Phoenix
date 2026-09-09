@@ -137,6 +137,35 @@ function defaulted(
     true,
   );
   d.instruments.markDefaulted(i.id);
+  accelerate(i, period, cycle, d);
+}
+
+/**
+ * Corporate Credit G2: a default on one of an issuer's instruments makes the others DUE, where
+ * their own terms say so. Which is a thing the terms say and not a thing the kernel decides: a
+ * sovereign's do not (Sovereign G3), and a corporate line's will (worklist 13f).
+ *
+ * Being made due is being redeemed now, through the same path a maturity takes — so an issuer that
+ * cannot pay the accelerated face fails that too, and each failure is its own event. There is no
+ * separate acceleration machinery for a state to get out of step with.
+ */
+function accelerate(defaultedOn: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
+  if (d.registry.instrumentKind(defaultedOn.kind).accelerates !== true) return;
+  const issuer = issuerOf(defaultedOn);
+  for (const other of d.instruments.all()) {
+    if (other.id === defaultedOn.id || !other.status.live) continue;
+    if (!issuedBy(other, issuer)) continue;
+    if (d.registry.instrumentKind(other.kind).accelerates !== true) continue;
+    d.journal.record(
+      period,
+      cycle,
+      'credit.accelerated',
+      [issuer, other.id, defaultedOn.id],
+      { issuer, instrument: other.id, because: defaultedOn.id },
+      true,
+    );
+    redeem(other, period, cycle, d);
+  }
 }
 
 function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): void {
@@ -173,11 +202,13 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
         ),
       },
     ];
-    d.settlement.settle(
+    const record = d.settlement.settle(
       { legs, cause: 'maturity', reason: `maturity of ${i.id} to ${holderId}` },
       period,
       cycle,
     );
+    // N10, N12: face that fell due and was not paid is a missed payment like any other.
+    if (record.outcome === 'failed') defaulted(i, record, holderId, units, period, cycle, d);
   }
   const still = d.instruments.get(i.id);
   if (still.issued === 0 || Math.abs(still.issued) <= d.register.heldTotal(i.id).dust) {

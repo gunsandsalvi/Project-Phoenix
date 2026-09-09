@@ -31,7 +31,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money D2` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/prices/value.ts, packages/engine/src/register/instruments.ts, packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money D3` | MET | packages/engine/src/audit/families/flows.ts, packages/engine/src/audit/memory.ts, packages/engine/src/ledger/settlement.ts |
 | `Money D4` | MET | packages/engine/src/audit/families/flows.ts, packages/engine/src/ledger/settlement.ts, packages/engine/src/world/context.ts |
-| `Money E1` | PARTIAL | a fail is recorded; the default state and its downstream consequences arrive with XI-1 (worklist 5) |
+| `Money E1` | MET | packages/engine/src/ledger/settlement.ts (a payer that cannot pay does not pay, and nothing half-settles), packages/engine/src/mechanisms/credit-events/index.ts (and there is a named thing it then IS: in default of payment, publicly, with the payee and the amount that did not arrive). What that state then costs it — a lender's reaction, a rating, its death — arrives with lending (worklist 6) and the estate (worklist 7) |
 | `Money E2` | MET | packages/engine/src/ledger/ledger.ts, packages/engine/src/ledger/settlement.ts |
 | `Money E3` | MET | packages/engine/src/ledger/settlement.ts |
 | `Money E4` | PARTIAL | a ceased party is refused by name; re-seating on the estate arrives with XI-8 (worklist 7) |
@@ -71,7 +71,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Register D5` | MET | packages/engine/src/register/register.ts |
 | `Register E1` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
 | `Register E2` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
-| `Register E3` | PARTIAL | a default converts nothing yet; XI-1 (worklist 5) |
+| `Register E3` | PARTIAL | packages/engine/src/mechanisms/credit-events/index.ts names every holder of a claim that stopped performing and how much of it they are carrying, so the exposure has a holder and a size. The loss LANDS when there is a recovery to land against, and a sovereign has nothing seizable (G3): it takes an estate (worklist 7) or a negotiated exchange (worklist 13f) |
 | `Register E4` | PARTIAL | split, buyback and new issue apply through issuance legs; no corporate-action driver yet |
 | `Register E5` | PARTIAL | every register event so far moves money; no explicit why-not record for the exceptions |
 | `Register F1` | MET | packages/engine/src/register/instruments.ts |
@@ -292,12 +292,12 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Corporate Credit F4` | MISSING |  |
 | `Corporate Credit F5` | MISSING |  |
 | `Corporate Credit F6` | MISSING |  |
-| `Corporate Credit G1` | MISSING |  |
-| `Corporate Credit G2` | MISSING |  |
+| `Corporate Credit G1` | PARTIAL | packages/engine/src/world/actions.ts (a missed payment is an event, public, so a holder observes it rather than inferring it from the issuer's accounts). A breached covenant needs covenants, which arrive with corporate paper (worklist 13f) |
+| `Corporate Credit G2` | MET | packages/engine/src/world/actions.ts (a default on one line makes the issuer's others due where their own terms say so, through the same path a maturity takes, so an issuer that cannot pay the accelerated face fails that too), packages/engine/test/credit-events.test.ts |
 | `Corporate Credit G3` | MISSING |  |
 | `Corporate Credit G4` | MISSING |  |
 | `Corporate Credit G5` | MISSING |  |
-| `Corporate Credit G6` | MISSING |  |
+| `Corporate Credit G6` | PARTIAL | packages/engine/test/credit-events.test.ts holds the identity — a claim leaving the book at what it fetched moves the holder's equity by exactly what it was carrying, and the issuer's by the same the other way. What a recovery IS needs an estate that realises something (worklist 7) |
 | `Corporate Credit G7` | MISSING |  |
 | `Corporate Credit G8` | MISSING |  |
 | `Corporate Credit H1` | MISSING |  |
@@ -804,11 +804,11 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Banks Lending D4` | MISSING |  |
 | `Banks Lending D5` | MISSING |  |
 | `Banks Lending E1` | PARTIAL | packages/engine/src/world/actions.ts (a missed payment IS an event, dated, named and public, for every instrument whose profile defines one). A covenant breach needs covenants, and those arrive with loans (worklist 6) |
-| `Banks Lending E2` | PARTIAL | packages/engine/src/register/instruments.ts (performing is written by exactly one path, the kernel's, on the instrument's own definition being met, and nothing restores it). Impaired as a third state, and the provision that goes with it, arrive with the credit-events module (worklist 5.2) |
+| `Banks Lending E2` | PARTIAL | packages/engine/src/register/instruments.ts (performing is written by exactly one path, the kernel's, on the instrument's own definition being met, and nothing restores it), packages/engine/src/mechanisms/credit-events/index.ts (and every holder of a claim that stopped performing carries a stated exposure from then on). A bigger PROVISION against it is a write-down to an expected recovery, and both the claim carried at cost and the recovery to expect arrive with lending (worklist 6) |
 | `Banks Lending E3` | MISSING |  |
 | `Banks Lending E4` | MISSING |  |
-| `Banks Lending E5` | MISSING |  |
-| `Banks Lending E5.a` | MISSING |  |
+| `Banks Lending E5` | PARTIAL | a write-off is a redemption at whatever the claim fetched — a real leg back to whoever promised it, never a number vanishing (packages/engine/test/credit-events.test.ts). Nothing in this world writes one off yet: a sovereign default is negotiated and has no estate (Sovereign G3), so the first is a firm's (worklist 7) |
+| `Banks Lending E5.a` | MET | packages/engine/test/credit-events.test.ts (the loss reaching capital is principal minus recovery minus provisions already taken, which with nothing recovered and nothing provisioned is exactly the carrying value — and it is settlement's own arithmetic, not a second sum) |
 | `Banks Lending E6` | MISSING |  |
 | `Banks Lending F1` | MISSING |  |
 | `Banks Lending F1.a` | MISSING |  |
@@ -1121,8 +1121,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Firm D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (a wage that does not settle is recorded and the people are not paid), packages/engine/src/ledger/settlement.ts |
 | `Firm D2` | MISSING |  |
 | `Firm D3` | MISSING |  |
-| `Firm D4` | MISSING |  |
-| `Firm D5` | MISSING |  |
+| `Firm D4` | PARTIAL | the cash failure is real and named: a firm that cannot pay something due has a failed instruction and is in default of payment (packages/engine/src/mechanisms/credit-events/index.ts). Liabilities exceeding assets is a read of the accounts family and needs liabilities a firm can have, which arrive with loans (worklist 6) |
+| `Firm D5` | MET | packages/engine/src/mechanisms/credit-events/index.ts (when it cannot pay, it is in default of payment — publicly, by name, with the payee that did not get paid and the amount that did not arrive) |
 | `Firm E1` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts prices and sizes what it offers from its own outlook and what holding is worth; entering and leaving a line is firm birth (worklist 13g) |
 | `Firm E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the employment it wants is the labour that makes what it expects to sell, at what an hour is worth to it) |
 | `Firm E3` | MISSING |  |
@@ -1180,10 +1180,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Firm Birth B3` | MISSING |  |
 | `Firm Birth B4` | MISSING |  |
 | `Firm Birth C1` | PARTIAL | packages/engine/src/registry/kinds.ts (the definition is the instrument's own and is observable by a holder: it is journalled publicly with the words it met). A firm's own definition needs a firm with debt (worklist 6) |
-| `Firm Birth C2` | MISSING |  |
+| `Firm Birth C2` | MET | packages/engine/src/world/actions.ts, packages/engine/src/mechanisms/credit-events/index.ts (a default is what is left when a payment out of a party's own balance did not go through; there is no other way to produce one) |
 | `Firm Birth C2.a` | MET | packages/engine/src/world/actions.ts (a default exists only where a payment was applied and failed; there is no hazard rate, no draw and no assignment anywhere in the path), packages/engine/test/default-events.test.ts (and a world whose payments all settle produces none) |
-| `Firm Birth C3` | PARTIAL | packages/engine/src/world/actions.ts (the event is public, so anybody may react to it, and it names the issuer, the line, the holder and what was due). What it triggers — the lenders' loss, a rating action — arrives with the provision (worklist 5.2) and ratings (worklist 12) |
-| `Firm Birth C4` | MISSING |  |
+| `Firm Birth C3` | PARTIAL | packages/engine/src/world/actions.ts, packages/engine/src/mechanisms/credit-events/index.ts (the event is public, so anybody may react to it, and it names who failed, on what, to whom and for how much). What it triggers — a lender's loss, a rating action — arrives with lending (worklist 6) and ratings (worklist 12) |
+| `Firm Birth C4` | PARTIAL | packages/engine/src/mechanisms/credit-events/index.ts (every default carries the instruction that failed and what it was for, so the cash failure behind it is traceable from the event). A default caused by solvency rather than cash needs the other failure (D4, worklist 6) |
 | `Firm Birth D1` | MISSING |  |
 | `Firm Birth D2` | MISSING |  |
 | `Firm Birth D3` | MISSING |  |

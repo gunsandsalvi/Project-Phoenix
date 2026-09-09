@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 24.4%** (108 of 443 steps across 28 items).
-**Requirement coverage: 24.0%** (317 MET, 45 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
+**Plan completion: 26.7%** (118 of 442 steps across 28 items).
+**Requirement coverage: 24.3%** (322 MET, 49 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -26,7 +26,7 @@ The plan has two parts:
 | 3 — The sovereign's funding constraint | 26 | 26 | closed |
 | 4 — Firms, goods, labour, households, outlooks | 34 | 34 | closed |
 | 4a — A line is more than one firm, and firms differ in cost | 9 | 9 | closed |
-| [5 — A loss is an event](plan/05-loss-events.md) | 14 | 3 | in progress |
+| 5 — A loss is an event | 13 | 13 | closed |
 | [6 — Loans are rows](plan/06-loans.md) | 16 | 0 | open |
 | [7 — Forced seller, nothing immortal, the estate](plan/07-failure-estate.md) | 22 | 0 | open |
 | [8 — Redeemable claims](plan/08-funds.md) | 14 | 0 | open |

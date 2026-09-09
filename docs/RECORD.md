@@ -469,3 +469,88 @@ should still be hiring when the one that takes the longest has stopped. Nothing 
 a cycle — the test only checks that they rank by productivity today. The measurement is Part XII's:
 raise the wage and watch which firms shed first. If they shed in any order but that one, the
 dispersion is not reaching the hiring decision and one of the two numbers is not being read.
+
+## 5 — A loss is an event
+
+**What.** A claim that goes unpaid, and a party that could not pay, are now both dated events with
+names on them. In two halves, because they are two different facts about two different things.
+
+**The instrument's half, in the kernel.** An instrument states its own **definition of default**
+(Bond N12), its **claim on failure** and its **ranking** (N13, N13.a) — the last two required of
+every kind, because "stated even when the answer is nothing seizable" and "stated even when all
+equal" is the whole of those clauses. Money is an unsecured claim on its issuer; a tonne of grain is
+owned outright and nobody promised it; sovereign paper is pari passu, always, with nothing seizable
+and exclusion from the market as the sanction. When a coupon or a maturity the kernel applied does
+not settle, it asks the profile whether that meets the definition, and if it does it journals
+`credit.default` publicly and writes `performing` false — a status one path writes and nothing
+restores (Banks Lending E2). A kind may also declare that a default **accelerates** its issuer's
+other lines (Corporate Credit G2); being made due is being redeemed now, through the same path a
+maturity takes, so an issuer that cannot pay the accelerated face fails that too and each failure is
+its own event. A sovereign declares it false (Sovereign G3).
+
+**The party's half, in a module.** `credit-events` reads settlements that failed and statuses the
+kernel wrote, and writes down what Money E1 says must exist: a payer that could not pay is **in
+default of payment**, publicly, by name, with the payee that did not get paid and the amount that did
+not arrive (E1.b). A holder of a claim that stopped performing carries a private **impairment** with
+units and a carrying value, so the exposure has a holder and a size (Register E3). It decides
+nothing, and it declares **not one number** — no probability of default, no loss given default, no
+recovery rate. That absence is the clause.
+
+**And the payee's side became readable.** `unpaid()` reads a failed instruction's money legs, and
+`view.failedPayments` gives a party its own failures and nobody else's. It is a reader rather than a
+stored field on `Failed`: the legs are the source, and a copy of them would be a second thing to
+keep true (Law 19).
+
+**Why.** XI-1 is first of the seventeen because at least four other mechanisms need "a claim goes
+unpaid" to already be a thing that happens. Tranching, foreclosure, a credit market's second
+opinion and a bank resolution all need an event with a date, a borrower and a recovery; a rate
+subtracted from a book gives none of them.
+
+**Found.**
+
+- **The state services its debt before it services its mandate, and nothing said so.** It falls out
+  of the canonical period rather than out of a rule: corporate actions are cycle 0 order 2 and the
+  treasury's outlays order 5, so a stretched state pays its coupon and fails its transfers. It takes
+  a mandate large enough to break both before its own paper defaults. That ordering is now asserted
+  in the year-long scenario rather than left to be discovered again.
+- **A maturity that fails is a missed payment too.** The first pass hooked only the coupon path, and
+  the first thing the test caught was a default arriving on a different line from the one expected —
+  a bill's face that fell due and was not paid. Both paths ask now.
+- **A phase at cycle 0 cannot read today's mark.** The impairment wanted to say what a holder is
+  carrying, and asking the valuation for the current period threw `NotYetProduced` — correctly
+  (Clearing F1.a). It reads what the last mark made it, which is what the holder is exposed for at
+  that moment, and the lag is stated where it happens.
+
+**Changed from the plan file, and why.** The plan wanted **provisions as lot write-downs to the
+holder's own recovery outlook**, unwinding as recoveries arrive. Neither was built, and the reason is
+not that it was hard. A provision is a write-down of a claim to what its holder expects to recover.
+Every claim in this world is carried at the **mark**, where a write-down would be a second
+representation of a number the price store already owns (Law 4) — and the recovery to expect does not
+exist, because a sovereign has nothing seizable (G3) and the negotiated exchange that would produce
+one is worklist 13f. Inventing a recovery expectation to book against a marked bond is inventing
+exactly the rate XI-1 exists to forbid. So the module states the exposure and stops (Law 11). The
+door for a claim carried at cost is `profile.revalue`, which exists and is used by the goods module;
+the first claim that will provision through it is a loan (worklist 6). Two steps became one, and the
+manifest count fell from 14 to 13.
+
+The write-off was kept, as the identity rather than the trigger: nothing in this world extinguishes a
+claim yet, but E5.a is checkable now and is checked — a claim leaving the book at what it fetched
+moves its holder's equity by exactly what it was carrying, and the issuer's by the same the other
+way, out of settlement's own arithmetic rather than a second sum.
+
+**Deleted.** Nothing. `subjectsOf` moved from settlement to `instruction.ts`, where it is a pure
+function of an instruction and a party can use it to tell whether an instruction was its own.
+
+**Not met, and named.** Register E3 is PARTIAL: the exposure has a holder and a size, and the loss
+lands when there is a recovery to land against — an estate (7) or a negotiated exchange (13f). Banks
+Lending E2 and E5, Corporate Credit G1 and G6, Firm D4, Firm Birth C1, C3 and C4 are each PARTIAL
+with the half that is missing named: a covenant to breach, a claim carried at cost, a solvency test
+with liabilities in it, an estate to realise. Sovereign G2 stays MISSING — a sovereign can only
+genuinely default in a money it does not issue, and the currency layer is worklist 12.
+
+**Forecast, with its killer.** A default should be **information** (Corporate Credit G8): it should
+move what holders require of every other issuer, which is how contagion travels without a
+correlation parameter. Nothing here does that — a holder's required yield is still a placeholder
+that reads nothing. The measurement is Part XII's: default one issuer and watch what the others'
+paper clears at. If nothing moves, the second opinion is not being formed from what a holder saw,
+and the placeholder is standing in for more than it admits.

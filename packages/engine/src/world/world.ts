@@ -45,6 +45,7 @@ import {
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import { Journal } from '../journal/journal.js';
+import { subjectsOf, type Failed } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf } from '../parties/party.js';
@@ -461,6 +462,14 @@ export class World {
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
+      // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
+      failedPayments: (last: number) =>
+        this.ledger
+          .all()
+          .filter(
+            (r): r is Failed => r.outcome === 'failed' && subjectsOf(r.instruction).includes(party),
+          )
+          .slice(-last),
       publicEvents: (last) => this.journal.visibleTo(party, last),
       outlook: (variable) => this.outlookOf(party, variable),
       lastPublic: (kind) => {

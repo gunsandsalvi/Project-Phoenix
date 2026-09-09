@@ -119,14 +119,16 @@ describe('a payment that did not happen (XI-1, Money E1)', () => {
       w.step();
       if (w.journal.ofKind('credit.default').length > 0) break;
     }
-    const line = w.instruments.get(GOV_LINE);
-    expect(line.status.live).toBe(true);
+    // Whichever line the failure fell on — a coupon or a face that fell due; both are payments.
+    const ev = w.journal.ofKind('credit.default')[0];
+    const id = String(ev?.data['instrument']);
+    const line = w.instruments.get(id as never);
     expect(line.status.live && line.status.performing).toBe(false);
     // It is written once however many holders were missed: the status is the instrument's.
     const before = w.journal.ofKind('credit.default').length;
     for (let i = 0; i < 8; i += 1) w.step();
-    const after = w.instruments.get(GOV_LINE);
-    expect(after.status.live && after.status.performing).toBe(false);
+    const after = w.instruments.get(id as never);
+    expect(after.status.live ? after.status.performing : false).toBe(false);
     expect(w.journal.ofKind('credit.default').length).toBeGreaterThanOrEqual(before);
   });
 

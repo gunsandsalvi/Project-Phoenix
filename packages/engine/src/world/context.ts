@@ -26,7 +26,7 @@ import type {
 } from '../core/ids.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
-import type { InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
+import type { Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
 import type { CurveRead } from '../prices/curve.js';
@@ -107,6 +107,12 @@ export interface ParticipantView extends KernelReads {
    * (Appendix A). There is no global expectation to fall back on (A2.b).
    */
   outlook(variable: OutlookVariable): Option<Outlook>;
+  /**
+   * Money E1.b, Firm D4, D5: its OWN payments that did not go through, most recent last. A party
+   * knows what it failed to pay and what did not reach it, because it was a side of both; it learns
+   * nothing here about anybody else's failures, which reach it as public events or not at all.
+   */
+  failedPayments(last: number): readonly Failed[];
   /** Public events (A3): prints, weight events, cessations, facility draws, the audit's counts. */
   publicEvents(last: number): readonly Event[];
   /**

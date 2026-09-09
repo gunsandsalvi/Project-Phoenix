@@ -154,6 +154,30 @@ export interface Failed {
   readonly reason: FailReason;
 }
 
+/** Money E1.b: a payment that did not arrive, from the side that was owed it. */
+export interface Unpaid {
+  readonly payer: PartyId;
+  readonly payee: PartyId;
+  readonly amount: number;
+  readonly ccy: CurrencyCode;
+  readonly reason: string;
+}
+
+/**
+ * Money E1.b: what a failed instruction did not pay, and to whom — the payee's receivable that did
+ * not arrive, read off the instruction that failed rather than stored beside it (Law 19: the legs
+ * are the source, and a second copy of them would be a second thing to keep true).
+ */
+export function unpaid(f: Failed): readonly Unpaid[] {
+  return f.instruction.legs.filter(isMoneyLeg).map((l) => ({
+    payer: l.from.holder,
+    payee: l.to.holder,
+    amount: l.amount,
+    ccy: l.ccy,
+    reason: f.instruction.reason,
+  }));
+}
+
 export type SettlementRecord = Settled | Failed;
 
 export interface RegisterDelta {
@@ -177,4 +201,27 @@ export interface ReserveLeg {
   readonly centralBank: PartyId;
   readonly ccy: CurrencyCode;
   readonly amount: number;
+}
+
+/**
+ * Every name an instruction touches: the parties on both sides of every leg and the instruments
+ * that moved. It is what an event about the instruction is filed under, and what tells a party
+ * whether the instruction was its own (Observer A4).
+ */
+export function subjectsOf(ins: Instruction): string[] {
+  const s = new Set<string>();
+  for (const leg of ins.legs) {
+    if (isMoneyLeg(leg)) {
+      s.add(leg.from.holder);
+      s.add(leg.to.holder);
+    } else if (isAssetLeg(leg)) {
+      s.add(leg.from);
+      s.add(leg.to);
+      s.add(leg.instrument);
+    } else {
+      s.add(leg.party);
+      s.add(leg.instrument);
+    }
+  }
+  return [...s];
 }

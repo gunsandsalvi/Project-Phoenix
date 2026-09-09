@@ -108,6 +108,8 @@ export interface Snapshot {
     unit: string;
     ccy: string;
     live: boolean;
+    /** Banks Lending E2: false once a payment it promised was missed; null once it has ceased. */
+    performing: boolean | null;
   }[];
   readonly prints: readonly PrintView[];
   readonly curves: readonly CurveView[];
@@ -242,6 +244,9 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
       unit: i.unit,
       ccy: i.ccy,
       live: i.status.live,
+      // Banks Lending E2: a status is only a status if something shows it. A line that stopped
+      // performing looks exactly like one that never missed anything unless the surface says so.
+      performing: i.status.live ? i.status.performing : null,
     })),
     prints,
     curves,

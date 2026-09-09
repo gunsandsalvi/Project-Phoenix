@@ -49,6 +49,7 @@ import {
   type SovereignBondTerms,
 } from '../mechanisms/sovereign-instruments/index.js';
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
+import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { goodId, goodMarketId, goodTerms, goods, wipId } from '../mechanisms/goods/index.js';
@@ -489,6 +490,7 @@ export function foundationSpec(seed: string): AssemblySpec {
     ],
     modules: [
       expectations,
+      creditEvents,
       goods(),
       labour(),
       firms(),
