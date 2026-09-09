@@ -82,13 +82,31 @@ export interface DestroyLeg {
   readonly fromCell: Option<CellSide>;
 }
 
-export type Leg = MoneyLeg | AssetLeg | CreateLeg | DestroyLeg;
+/**
+ * XI-8, Firm Birth D5, Banks Capital D6: an issuer died and its paper did not die with it — whoever
+ * succeeded it OWES the line from now on. Nothing moves in the register: the same holders hold the
+ * same units of the same instrument, on the same terms. What moves is the obligation, and it moves
+ * between two named balance sheets — which is why this is a leg and not a door. The liability
+ * leaves one book and lands on the other in the same numbered instruction (Law 5), at what the
+ * holders carry it at, because a liability is the same number read from the other side (Register B3).
+ */
+export interface AssumeLeg {
+  readonly kind: 'assume';
+  /** Who has owed it until now. */
+  readonly from: PartyId;
+  /** Who owes it from now on. */
+  readonly to: PartyId;
+  readonly instrument: InstrumentId;
+}
+
+export type Leg = MoneyLeg | AssetLeg | CreateLeg | DestroyLeg | AssumeLeg;
 
 /** Which side of the wire a leg is, for readers that must tell them apart (Law 15's dispatch). */
 export const isMoneyLeg = (leg: Leg): leg is MoneyLeg => leg.kind === 'money';
 export const isAssetLeg = (leg: Leg): leg is AssetLeg => leg.kind === 'asset';
 export const isCreateLeg = (leg: Leg): leg is CreateLeg => leg.kind === 'create';
 export const isDestroyLeg = (leg: Leg): leg is DestroyLeg => leg.kind === 'destroy';
+export const isAssumeLeg = (leg: Leg): leg is AssumeLeg => leg.kind === 'assume';
 
 /** C1.b / Register C2: why the units moved. */
 export type Cause =
@@ -214,7 +232,7 @@ export function subjectsOf(ins: Instruction): string[] {
     if (isMoneyLeg(leg)) {
       s.add(leg.from.holder);
       s.add(leg.to.holder);
-    } else if (isAssetLeg(leg)) {
+    } else if (isAssetLeg(leg) || isAssumeLeg(leg)) {
       s.add(leg.from);
       s.add(leg.to);
       s.add(leg.instrument);

@@ -28,7 +28,7 @@ import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
-import type { Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
+import type { NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { PriceStore, Print } from '../prices/price-store.js';
 import type { Valuation } from '../prices/value.js';
@@ -181,6 +181,12 @@ export interface MechanismContext extends KernelReads {
   accrued(instrument: InstrumentId): number;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
   curve(family: CurveFamilyId): CurveRead;
+  /**
+   * XI-8, Firm Birth E1, E3: a party comes into existence mid-run. An estate opens because
+   * something died; a firm is born because somebody funded it (worklist 13g). The seed states who
+   * is there at the start and nothing else may — this is how anybody arrives after that.
+   */
+  enter(party: NamedParty): void;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   record(

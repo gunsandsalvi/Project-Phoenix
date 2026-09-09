@@ -615,6 +615,24 @@ export class World {
       posted: (venue) => this.posted(venue),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
+      // XI-8, Firm Birth E1: somebody arrives after the seed. It is journalled, because a party
+      // appearing is an event anybody watching the world should see.
+      enter: (party) => {
+        forbid(this.sealed, 'Seed A2', 'a party enters a world that has begun');
+        this.parties.add(party);
+        // Seed C1's rule, applied wherever a party begins: its equity is the READ of what it holds
+        // against what it owes, and a party that has just arrived holds nothing and owes nothing.
+        // Everything from here moves it by a named event (Audit B5.b).
+        this.store.stateEquity(party.id, 0);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'party.entered',
+          [party.id],
+          { party: party.id, kind: party.kind, name: party.name },
+          true,
+        );
+      },
       cease: (party, successor) => {
         this.parties.cease(party, this.currentPeriod, successor);
         this.journal.record(
@@ -730,6 +748,10 @@ export class World {
     const orders: Order[] = [];
     for (const decl of this.participantDecls) {
       for (const party of this.parties.ofKind(decl.partyKind)) {
+        // A ceased party takes no part (Money E4): it has no reasons, and an order in its name
+        // would be an instruction addressed to somebody who is not there. What it held is its
+        // estate's now, and the estate posts its own orders under its own name (XI-8).
+        if (!party.status.alive) continue;
         orders.push(...decl.orders(this.participantView(party.id), m));
       }
     }

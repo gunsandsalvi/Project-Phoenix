@@ -5,6 +5,8 @@
  * @spec Audit A1 Audit C4
  */
 import type { Calendar, Period } from '../calendar/calendar.js';
+import type { InstrumentId, PartyId } from '../core/ids.js';
+import { withinDust } from '../core/num.js';
 import type { Journal } from '../journal/journal.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Parties } from '../parties/party.js';
@@ -37,6 +39,7 @@ export interface AuditView {
     | 'equity'
     | 'equityWalk'
     | 'hasEquityAccount'
+    | 'moneyWalk'
   >;
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history' | 'instruments'>;
   readonly valuation: Pick<
@@ -46,4 +49,23 @@ export interface AuditView {
   readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'tail'>;
   readonly markets: readonly MarketDecl[];
+}
+
+/**
+ * Law 7: whether a party is really holding something, or whether the balance is the rounding of the
+ * moves that produced it. Money is ONE balance with a walk behind it, so what it may call nothing is
+ * that walk — the same number settlement uses when it decides whether an account is short enough to
+ * ask its issuer for an overdraft, because it is one fact and it may not have two tolerances (Law 4).
+ * Anything else is lots drawn at the quantities the legs named, where nothing but zero is nothing.
+ */
+export function holdsSomething(
+  view: AuditView,
+  holder: PartyId,
+  instrument: InstrumentId,
+): boolean {
+  const qty = view.register.quantity(holder, instrument);
+  if (qty === 0) return false;
+  const kind = view.registry.instrumentKind(view.instruments.get(instrument).kind);
+  if (kind.pricing !== 'money') return true;
+  return !withinDust(qty, 0, view.register.moneyWalk(holder, instrument).dust);
 }

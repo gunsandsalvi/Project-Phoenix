@@ -95,7 +95,11 @@ export function moneyFamily(memory: AuditMemory): Family {
       for (const h of view.register.allHoldings()) {
         if (!moneyInstruments.has(h.instrument)) continue;
         const qty = sum(h.lots.map((l) => l.qty)).value;
-        if (qty < 0) {
+        // Law 7: the balance is a walk, not a reading — every leg that ever moved this account is
+        // entitled to its rounding, and a negative that small is that rounding rather than credit
+        // anybody extended. It is the same tolerance settlement uses when it decides whether the
+        // account is short enough to ask the issuer for an overdraft, because it is one fact (Law 4).
+        if (qty < 0 && !withinDust(qty, 0, view.register.moneyWalk(h.holder, h.instrument).dust)) {
           out.push({
             family: 'money',
             spec: 'Money B3.c',

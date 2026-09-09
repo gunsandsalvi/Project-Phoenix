@@ -153,7 +153,15 @@ export class Parties {
     const p = this.get(id);
     forbid(p.status.alive, 'Register F2', `party ${id} has already ceased`);
     forbid(this.has(successor), 'Register F2', `successor ${successor} of ${id} does not exist`);
-    forbid(successor !== id, 'Register F2', `party ${id} cannot succeed itself`);
+    // XI-8, Firm Birth D5: every reference resolves to the estate or the successor — and an estate
+    // that has paid everything away has nobody left to succeed IT. A kind that says it is terminal
+    // may end there, and the names family checks it ended holding nothing (D6.a). Everything else
+    // must name somebody: a party that succeeded itself would be a reference that never resolves.
+    forbid(
+      successor !== id || this.registry.partyKind(p.kind).terminal === true,
+      'Register F2',
+      `party ${id} cannot succeed itself`,
+    );
     this.map.set(
       id,
       Object.freeze({ ...p, status: { alive: false, ceasedIn: period, successor } }),
@@ -165,6 +173,9 @@ export class Parties {
     let p = this.get(id);
     let hops = 0;
     while (!p.status.alive) {
+      // A terminal cessation is where the chain ENDS: an estate that paid everything away is
+      // succeeded by nobody, and a reference to it resolves to it (XI-8, Firm Birth D5).
+      if (p.status.successor === p.id) return p;
       p = this.get(p.status.successor);
       hops += 1;
       if (hops > this.map.size) {

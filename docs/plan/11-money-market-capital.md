@@ -137,6 +137,12 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [ ] The run: wholesale depositors move on public observables; the loop shows in a scenario test (D5.b, E3.a); insurance breaks it for retail (E4); tests
 - [ ] Interbank exposure as contagion: a failed bank's interbank rows land losses on lenders by name (E3); test with item 7's resolution
 - [ ] Capital: requirements against risk weights, leverage backstop, which binds as a read; buffer as choice; distributions restricted near the line; tests
+- [ ] From item 7.5 (Banks Capital D1): a failed bank's book valued at marks and at its own carrying values; the hole is liabilities minus that; test
+- [ ] From item 7.5 (D2): the hierarchy — equity to zero, subordinated rows bailed in by partial redemption, senior and depositors untouched outside liquidation; tests
+- [ ] From item 7.5 (D3, D6): every other bank bids for the book from its own view; the winner pays or is paid the difference; deposits and rows are assumed by the acquirer over the wire; test: a resolution with no bid falls to the public path
+- [ ] From item 7.5 (D4, D5): deposit insurance per member up to the limit, the insurer as an estate creditor; test with a cell of small and a cell of large depositors
+- [ ] From item 7.5 (E3): the resolution conserves — acquirer paid plus insurer paid plus estate realised plus holders lost equals the hole; audit contribution and test
+- [ ] From item 7.6 (XI-2, Prime Brokerage C3.b): a bank whose capital falls cuts a borrower's limit below what it has drawn, and the borrower's own module posts the sales that repay it, at whatever the book gives; test: the sale moves the print and the print reaches other holders, and `limit − exposure` is negative with no floor anywhere in the path
 - [ ] Raising: equity issuance (item 9) and subordinated debt (`bank.subordinated` kind) into markets that can refuse; test: a failed raise leaves the bank where it was
 - [ ] Reports: deposits by class, reserves as one row, liquidity metric published with a lag; observer
 - [ ] Central bank: policy rate as a decision on its mandate (a stated rule reading its own outlook; the mandate text and target are parliament's at 14); test: a change moves the market rate through the corridor, never by assignment (B4)

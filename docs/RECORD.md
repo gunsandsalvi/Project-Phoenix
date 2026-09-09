@@ -655,3 +655,116 @@ makes a credit cycle a cycle rather than a level. Nothing here measures it, beca
 enough for either limit to bind. The measurement is Part XII's: stress the borrowers until capital
 binds, and watch which constraint each bank hits first. If they bind together, the dispersion is not
 reaching the decision and the two banks are one bank with two names.
+
+---
+
+## 7 — The forced seller, nothing is immortal, the estate
+
+**What.** Nothing in this world is immortal any more. Every party kind states what it can FAIL on;
+each period the two questions those answers name are asked of every party — did something fall due
+out of its own balance that it could not pay and still cannot, and are its liabilities past its
+assets at marks — and a party that answers yes to either dies. An `estate` module opens an estate
+banking where it banked, moves every holding to it by instruction at carrying value, has it ASSUME
+everything the dead party issued, and then ceases the party naming the estate, so every reference
+still resolves to somebody who exists. The estate sells what it holds into the markets those things
+always traded in, at a reservation that falls as its programme runs out and takes whatever the book
+gives on the last period; distributes what it realises in rank order, pro rata within a rank, by the
+instrument's own stated seniority; abandons what nobody bought; writes off what it never paid, so
+the loss lands on the named holders; and then ends, succeeded by nobody, holding nothing in any
+account. The labour module reads the party store and releases a dead employer's workers through its
+own separation path. The `estate.programme.periods` policy is the whole of the difference between an
+orderly wind-down and a fire sale.
+
+**Why.** XI-3 is the reason: an immortal party is the TERMINATION CONDITION of every loss chain in
+the model, and a cascade that reaches one stops there without saying so. Every institution in this
+world could absorb an unlimited loss until now, which made every measurement of loss a measurement
+of that absorption. XI-8 is what makes the death real rather than an accounting step: the assets are
+SOLD rather than valued, every claim ranks by the instrument's own seniority, the real-economy
+consequences are part of it, and it conserves and terminates.
+
+**Found.** Six, and five of them were defects the deaths exposed rather than caused.
+
+- **Re-seating an issuer was a one-sided flow.** The kernel had a `reseat` door that changed an
+  instrument's issuer directly. The liability moved from one balance sheet to another with no
+  equity effect on either — a change of state that never went over the wire, which is the one thing
+  the wire rule forbids. It is a leg now: `assume`, from the party that owed it to the party that
+  owes it from now on, valued at what the holders carry it at (Register B3), and the door is gone.
+  The accounts family caught it on the first death.
+- **A bank was lending to an estate, every week, to pay the interest on the loan it was winding
+  up.** The overdraft decision asked only whether the bank had room, never whether the borrower was
+  somebody to have a contract with (Banks Lending A1). A party kind now states whether anybody lends
+  to it at all; an estate says no, a household says no (C1.d), and the refusal is recorded. The
+  estate's interest simply goes unpaid after that, which is what happens in a liquidation.
+- **Three audit families were comparing a walked balance as if it were one reading.** A money
+  balance is one lot moved once per leg since the account opened, and what it is entitled to call
+  nothing is that walk — the same number settlement already uses when it decides whether an account
+  is short enough to ask its issuer for an overdraft. Two tolerances for one fact is Law 4's defect,
+  and it showed up as a dust-sized overdraft on an estate that had divided a pot into shares, and as
+  a 1.3e-9 gap between reserves held and reserves issued after fifty-two weeks. The register keeps
+  the walk now (`moneyWalk`), and the money, names, ownership and estate families all read it.
+- **An estate could not see money it was holding.** A loan creates its deposit at the LENDER
+  (Banks Lending B1), so a firm that borrowed from two banks banks in two places — and `cash` reads
+  the account at a party's own bank. The estate distributed one account and closed holding the
+  other. Both the waterfall and the residual check work over every account it holds now, which is
+  what D6.a asks for in as many words.
+- **A firm that died had its rows read off it in the wrong direction.** Severance is a cost the
+  employer pays — while there is an employer to pay it. One that has ceased owes it to the claimants
+  on its estate, and D2.b says a claim like that ranks and is paid in the distribution, not in cash
+  at the door: a liquidator does not borrow to settle a claim it is winding up. There is no
+  instrument for a claim like that to rank AS until payables exist (worklist 13e), so it is recorded
+  owed and unpaid on the separation event. MISSING named, not a payment invented.
+- **The world now runs a year with firms dying in it and the audit stays green.** In the stressed
+  world five firms die over fifty-two weeks — mills that bid the grain price up against each other
+  until one of them is paying more for the grain than the flour fetches. Each one's estate opens,
+  sells, pays its banks what it realised, releases its workers, writes off the rest and ends. The
+  same seed gives the same world twice.
+
+**Changed from the plan file, and why.** Three.
+
+1. **`instruments.reseat` is not a door; it is a leg.** The plan had it as an estate-only kernel
+   door with the estate module as its one caller. A door with one caller that moves value with no
+   second side is a smaller version of the thing the wire exists to prevent, and the fix removed
+   code rather than adding a rule to it (Law 12).
+2. **A dead employer's severance is a recorded unranked claim, not a payment.** The plan said the
+   estate pays it. It cannot: it has no instrument for the claim to rank as, and paying it in cash
+   at the door would jump a waterfall the spec spends four clauses building.
+3. **The household trigger has nothing to fire on, and that is the clause.** The plan wanted a cell
+   whose members cannot pay to split and record the failed payment. Nothing a household does can
+   commit it past its cash (Households C1.d: nobody lends to it), so there is no crossing to split.
+   The absence is asserted rather than assumed, because a FORBID that holds breaks silently.
+
+**Deleted.** `MechanismContext.reseat` and its journal event. The kernel's single-account residual
+check on a closing estate.
+
+**Deferred, with where each lands.** Two sub-items, and they were split in the plan file already.
+Neither is left sitting unticked in a closed item: each is written into the file of the item that can
+actually build it, and item 11 grew by six steps for them (Law 10 — inserted at its dependency
+position, and this says where).
+
+- **7.5, bank resolution** → **worklist 11**. Valuation of the book, the bail-in hierarchy, an
+  acquirer's bid, the public path and deposit insurance all need a bank's capital to be RAISABLE and
+  its funding failure to be reachable, and both arrive with the money market and the corridor. What
+  is built here is the trigger: a bank states both failures, is asked them like anything else, and a
+  failed bank resolves through the same estate as a firm. Banks Capital C1 is PARTIAL and says so.
+- **7.6, the other forced-sale doors** → **each to the item that creates its door**, which is what
+  the plan file said. The estate IS a forced seller and it is built: a party with no choice about
+  selling, a reservation that falls to whatever the book gives, and a print that moves and reaches
+  every other holder through their marks — XI-2's mechanism, working. The doors that push somebody
+  else through it are a margin call (13a), a redemption (8), a funding line cut (11: a bank's limit
+  is a ratio of its own capital, so it takes capital that can fall) and a covenant or downgrade
+  (12/13f). The FORBID they must not break — no floor at zero on an available line — holds today by
+  the lint rule and by the read itself: `limit − exposure` is published on every refusal, and no
+  world yet reaches it negative, which is stated rather than tested green.
+
+**Not met, and named.** Firm Birth D2 is PARTIAL for trade creditors (13e) and close-out claims
+(13a); D4 is PARTIAL for suppliers' receivables (13e) and capital going to a buyer (10); E2 is
+PARTIAL for contracts that are not instruments, because there are none. Banks Capital C1 is PARTIAL
+per above and the rest of that section is MISSING with worklist 11.
+
+**Forecast, with its killer.** A death should be CONTAGIOUS through prices rather than through a
+parameter: an estate selling its stock into a thin market should move the print, and the mark
+should reach every other holder of that good and reduce what each of them can borrow against it —
+so the second death should come sooner after the first than the first came after nothing. Nothing
+here measures it. The measurement is Part XII's: run the same seed with the programme long and
+short, and count the periods between deaths. If the gap does not shorten, the forced sale is not
+reaching the other balance sheets and the estate is selling into a market with no memory.

@@ -17,7 +17,7 @@ import type {
   UnitId,
 } from '../core/ids.js';
 import { finite, moveDust } from '../core/num.js';
-import type { Option } from '../core/option.js';
+import { some, type Option } from '../core/option.js';
 import type { Registry } from '../registry/registry.js';
 
 /**
@@ -169,6 +169,21 @@ export class Instruments {
     if (!i.status.performing) return;
     const status: InstrumentStatus = { live: true, performing: false };
     this.map.set(id, Object.freeze({ ...i, status }));
+  }
+
+  /**
+   * XI-8, Firm Birth D5, Banks Capital D6: an issuer died and its paper did not vanish with it. The
+   * estate that succeeded it becomes the issuer of record, so every holder still holds a claim on
+   * somebody who exists — which is what "every reference to the party must resolve" means when the
+   * reference is inside an instrument rather than beside it. Only the module that opens estates
+   * calls it, and it never changes anything else about the line: same terms, same holders, same
+   * amount outstanding, a different name owing it.
+   */
+  reseat(id: InstrumentId, issuer: PartyId): void {
+    const i = this.get(id);
+    forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; nobody owes it`);
+    forbid(i.issuer.some, 'Register B3', `${id} was promised by nobody, so nobody can succeed to it`);
+    this.map.set(id, Object.freeze({ ...i, issuer: some(issuer) }));
   }
 
   /** B4: an instrument ceases, and every holding in it has already resolved to something else, named. */

@@ -5,6 +5,7 @@
  * @spec Audit B6 Register A1.a Register A3 Register A4 Register F2 Currency A2 XI-15
  */
 import type { Family, Violation } from '../audit.js';
+import { holdsSomething } from '../view.js';
 import type { AuditView } from '../view.js';
 
 export function namesFamily(): Family {
@@ -89,7 +90,7 @@ export function namesFamily(): Family {
             h.holder,
             `holding of ${h.instrument} on ${h.holder}, which does not exist`,
           );
-        else if (!view.parties.get(h.holder).status.alive)
+        else if (!view.parties.get(h.holder).status.alive && holdsSomething(view, h.holder, h.instrument))
           v('Register F2', h.holder, `${h.holder} has ceased but still holds ${h.instrument}`);
         if (!view.instruments.has(h.instrument))
           v('Register A4', h.instrument, `${h.holder} holds ${h.instrument}, which does not exist`);

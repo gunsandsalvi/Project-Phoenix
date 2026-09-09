@@ -43,6 +43,7 @@ import type { PartyKindId } from '../core/ids.js';
 import type {
   AccountRef,
   AssetLeg,
+  AssumeLeg,
   CellSide,
   CreateLeg,
   DestroyLeg,
@@ -120,6 +121,13 @@ type Op =
       readonly holder: PartyId;
       readonly instrument: InstrumentId;
       readonly qty: number;
+    }
+  /** XI-8: the issuer of record changes; the holders and the units do not. */
+  | {
+      readonly op: 'reseat';
+      readonly from: PartyId;
+      readonly to: PartyId;
+      readonly instrument: InstrumentId;
     };
 
 export class Settlement {
@@ -201,6 +209,9 @@ export class Settlement {
         case 'create':
         case 'destroy':
           this.validatePhysical(leg, ins);
+          break;
+        case 'assume':
+          this.validateAssume(leg, ins);
           break;
         default:
           assertNever(leg, 'Leg');
@@ -284,6 +295,24 @@ export class Settlement {
         `instruction ${ins.id}: ${inst.id} would come into the world by ${ins.cause}; units are produced`,
       );
     }
+  }
+
+  /**
+   * XI-8, Firm Birth D5: who owes a line changes. The line must be one this party actually issued,
+   * both books must be somebody who exists, and it must not be a party assuming its own paper —
+   * which would be a reference that never resolves and a liability that netted itself away.
+   */
+  private validateAssume(leg: AssumeLeg, ins: Instruction): void {
+    const inst = this.d.instruments.get(leg.instrument);
+    forbid(inst.status.live, 'Register B4', `instruction ${ins.id}: ${inst.id} has ceased`);
+    forbid(
+      issuedBy(inst, leg.from),
+      'Register F2',
+      `instruction ${ins.id}: ${leg.from} is not the issuer of ${inst.id}`,
+    );
+    forbid(leg.from !== leg.to, 'Register F2', `instruction ${ins.id}: ${leg.from} assumes its own paper`);
+    this.alive(leg.from, ins);
+    this.alive(leg.to, ins);
   }
 
   private validateAsset(leg: AssetLeg, ins: Instruction): void {
@@ -414,6 +443,14 @@ export class Settlement {
           ops.push({ op: 'exist', holder: leg.party, instrument: leg.instrument, qty: -leg.qty });
           break;
         }
+        case 'assume':
+          ops.push({
+            op: 'reseat',
+            from: leg.from,
+            to: leg.to,
+            instrument: leg.instrument,
+          });
+          break;
         default:
           assertNever(leg, 'Leg');
       }
@@ -795,6 +832,30 @@ export class Settlement {
           }
           break;
         }
+        case 'reseat': {
+          const inst = this.d.instruments.get(op.instrument);
+          const liability = this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer;
+          // Register B3: what the obligation is worth is what its holders carry it at — read from
+          // their side, never re-derived from the issuer's (Law 19). A line nobody owes (a good) is
+          // re-seated with no equity effect at all, which is a different answer from zero.
+          const owed = !liability
+            ? 0
+            : sum(
+                this.d.register.holdersOf(op.instrument).map((h) => {
+                  const held = this.d.register.holding(h, op.instrument);
+                  if (!held.some) return 0;
+                  return mul(
+                    this.d.valuation.valueOfLots(op.instrument, held.value.lots, ins.period),
+                    weightOf(this.d.parties.get(h)),
+                    'liability held',
+                  );
+                }),
+              ).value;
+          this.d.instruments.reseat(op.instrument, op.to);
+          bump(op.from, owed);
+          bump(op.to, -owed);
+          break;
+        }
         default:
           assertNever(op, 'Op');
       }
@@ -825,7 +886,7 @@ export class Settlement {
             leg.to.holder === party ||
             leg.from.issuer === party ||
             leg.to.issuer === party
-          : leg.kind === 'asset'
+          : leg.kind === 'asset' || leg.kind === 'assume'
             ? leg.from === party || leg.to === party
             : leg.party === party;
       if (touches && ccy !== home) {

@@ -49,6 +49,12 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   {
     id: CENTRAL_BANK,
     representation: 'named',
+    // XI-3's one named exception, and it is a consequence of its balance sheet rather than an
+    // oversight: it cannot run out of what it alone issues (§31 A1.a), and a loss reduces its
+    // equity without ending it — the deferred asset is a row the treasury may make good (§31 E4).
+    fails: [],
+    // §31 A1.a: it is the other side of everybody's borrowing, and it does not have a bank.
+    borrows: false,
     moneyIssuer: {
       // B3.b: a bank overdrawn at the central bank is borrowing from it and the corridor prices it.
       // Until the corridor exists (worklist 11, Central Bank D3.b) the overdraft is allowed and
@@ -66,6 +72,14 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   {
     id: BANK,
     representation: 'named',
+    // XI-3, Banks Capital C1, C1.a: it cannot fund itself, or its capital is gone. Both triggers
+    // must exist and the resolution must say which fired. What follows a bank's failure — the
+    // bail-in hierarchy, an acquirer's bid, deposit insurance (Banks Capital D) — is worklist 11,
+    // where its capital becomes raisable and the corridor makes the funding failure reachable.
+    // Until then a failed bank resolves through the same estate as anything else.
+    fails: ['cash', 'solvency'],
+    // Banks Funding: it borrows constantly — deposits, the interbank market, the window (11).
+    borrows: true,
     moneyIssuer: {
       // B3.a: a customer overdrawn is BORROWING, and it is a credit decision by its bank — the room
       // its own capital supports, and a refusal past it. A party kind profile cannot take that
@@ -73,8 +87,17 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
       overdraft: 'aCreditDecision',
     },
   },
-  { id: TREASURY, representation: 'named', moneyIssuer: null },
-  { id: FIRM, representation: 'named', moneyIssuer: null },
-  { id: HOUSEHOLD, representation: 'cell', moneyIssuer: null },
-  { id: SMALL_BUSINESS, representation: 'cell', moneyIssuer: null },
+  // Sovereign G1: in its own money the failure mode is inflation, not default. A treasury that
+  // cannot pay does not pay, and that is a real recorded state (Treasury D3) — it does not end it.
+  // A default in a money it cannot create is real, and that needs the currency layer (worklist 12).
+  { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true },
+  // XI-3, Firm D4: it can fail two ways and they are different — no cash to pay something due, or
+  // liabilities exceeding assets. Both, because a firm can be either without the other.
+  { id: FIRM, representation: 'named', moneyIssuer: null, fails: ['cash', 'solvency'], borrows: true },
+  // XI-3: a household cell dissolves into a NAMED HEIR CELL rather than into an estate (Households
+  // F1, F2), and what happens when its members cannot pay is their lender's enforcement. Both are
+  // the household life cycle and consumer credit, which is worklist 13d.
+  // Households C1.d: nobody lends to a household in this world; consumer credit is 13d.
+  { id: HOUSEHOLD, representation: 'cell', moneyIssuer: null, fails: [], borrows: false },
+  { id: SMALL_BUSINESS, representation: 'cell', moneyIssuer: null, fails: [], borrows: false },
 ];

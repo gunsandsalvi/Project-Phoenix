@@ -60,10 +60,20 @@ export interface EquityMove {
   readonly cause: string;
 }
 
+/** One money account is one (holder, instrument) pair; this names it. */
+const moneyKey = (holder: PartyId, instrument: InstrumentId): string => `${holder}/${instrument}`;
+
 export class Register {
   private readonly byHolder = new Map<PartyId, Map<InstrumentId, MutableHolding>>();
   private readonly byInstrument = new Map<InstrumentId, Set<PartyId>>();
   private readonly equityAccount = new Map<PartyId, Running>();
+  /**
+   * Money D2, Law 7: the walk behind every money balance. A balance is one lot moved once per leg
+   * since the account was opened, so what a check asking "is this account overdrawn" is entitled to
+   * call dust is that walk — not a band, and not a second tolerance beside the one settlement uses
+   * when it decides whether to ask the issuer for an overdraft at all (Law 4).
+   */
+  private readonly moneyAccount = new Map<string, Running>();
   private nextLot = 1;
   private nextLien = 1;
 
@@ -139,6 +149,14 @@ export class Register {
 
   hasEquityAccount(party: PartyId): boolean {
     return this.equityAccount.has(party);
+  }
+
+  /** The walk behind a money balance: what every move on that account has cost it in rounding. */
+  moneyWalk(holder: PartyId, instrument: InstrumentId): Running {
+    return (
+      this.moneyAccount.get(moneyKey(holder, instrument)) ??
+      opened(0, `balance of ${holder}/${instrument}`)
+    );
   }
 
   // ---- writes (settlement, seed, cell events only) ------------------------------------------
@@ -317,6 +335,12 @@ export class Register {
       `${holder} would be overdrawn ${after} on ${instrument} with no lender and no recorded refusal`,
       { holder, instrument, before, delta },
     );
+    const key = moneyKey(holder, instrument);
+    const walk = this.moneyAccount.get(key);
+    this.moneyAccount.set(
+      key,
+      moved(walk ?? opened(before, key), delta, `balance of ${key}`),
+    );
     if (after === 0 && h.liens.length === 0) {
       this.drop(holder, instrument);
       return 0;
@@ -468,6 +492,7 @@ export type RegisterReads = Pick<
   | 'equity'
   | 'equityWalk'
   | 'hasEquityAccount'
+  | 'moneyWalk'
 >;
 
 /** A real read-only facade: no write is reachable through it, at runtime as well as in the types. */
@@ -484,6 +509,7 @@ export function registerReads(store: Register): RegisterReads {
     heldTotal: (instrument: InstrumentId) => store.heldTotal(instrument),
     allHoldings: () => store.allHoldings(),
     equity: (party: PartyId) => store.equity(party),
+    moneyWalk: (holder: PartyId, instrument: InstrumentId) => store.moneyWalk(holder, instrument),
     equityWalk: (party: PartyId) => store.equityWalk(party),
     hasEquityAccount: (party: PartyId) => store.hasEquityAccount(party),
   });

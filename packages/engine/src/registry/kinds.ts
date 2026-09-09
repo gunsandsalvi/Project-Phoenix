@@ -198,4 +198,27 @@ export interface PartyKindProfile {
   readonly representation: Representation;
   /** Present when parties of this kind issue money (Money A1): a bank, a central bank. */
   readonly moneyIssuer: { readonly overdraft: OverdraftPolicy } | null;
+  /**
+   * XI-3, XI-8: whether a party of this kind may end the chain of successors. An estate that has
+   * sold everything and paid it away has nobody left to succeed it, and every other kind must name
+   * somebody: a party that succeeded itself would be a reference that never resolves (Register F2).
+   */
+  readonly terminal?: boolean;
+  /**
+   * XI-3: what a party of this kind can FAIL on, stated per kind because the answers differ and
+   * because "every kind of party can cease" needs its exceptions named rather than left out. A
+   * central bank says nothing on either: it can never run out of what it alone issues, and a loss
+   * reduces its equity without ending it (§31 A1.a, E4). A treasury in its own money says nothing
+   * either: its failure mode is inflation and not default (Sovereign G1).
+   */
+  readonly fails?: readonly ('cash' | 'solvency')[];
+  /**
+   * Banks Lending A1, C3, XI-8: whether anybody can lend to a party of this kind at all. A going
+   * concern can borrow, and whether it does is a bank's credit decision; a party whose whole
+   * business is being wound up cannot, because there is nobody left to sign and nothing to repay
+   * out of. It is declared here rather than asked in a mechanism (Law 15): a bank that funded an
+   * estate's own interest week after week would be lending to a liquidation for ever, and the
+   * refusal it should have made is a real one that gets recorded (Money B3.c).
+   */
+  readonly borrows: boolean;
 }

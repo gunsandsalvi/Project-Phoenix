@@ -291,6 +291,19 @@ function shed(
 }
 
 /**
+ * C4, Firm Birth D4.a: an employer that has ceased releases its workers AT ONCE, and it does it
+ * through the same separation path as any other separation — never by a headcount going down
+ * somewhere, which is the shape the clause forbids. What triggers it is the party store itself:
+ * the row names an employer that is dead, whatever killed it and whoever is winding it up.
+ */
+export function release(ctx: MechanismContext, book: EmploymentBook, p: LabourParams): void {
+  for (const row of allRows(book)) {
+    if (ctx.parties.get(row.employer).status.alive) continue;
+    separate(ctx, book, row, row.headcount, `${row.employer} ceased`, p);
+  }
+}
+
+/**
  * C3: a separation ends the relationship for those members and costs the employer severance, paid
  * to the people it separates. A4.c: separating part of a row splits its cell, so the members who
  * stay employed and the members who no longer are never share one state.
@@ -314,7 +327,15 @@ export function separate(
   // The trade stays with the person who has it: an unemployed baker looks for baking (A3).
   book.skill[gone] = row.occupation;
   const perMember = mul(wagePerMember(row), p.severancePeriods, 'severance per member');
-  const paid = payFrom(ctx, row.employer, gone, perMember, `severance from ${row.employer}`);
+  // C3, XI-8: severance is a cost the employer pays — while there is an employer to pay it. One
+  // that has ceased owes it to the claimants on its estate, and Firm Birth D2.b says a claim like
+  // that RANKS with the other unsecured ones and is paid in the distribution, not in cash at the
+  // door: a liquidator does not borrow to settle a claim it is winding up. There is no instrument
+  // for it to rank AS until trade payables exist (worklist 13), so it is recorded owed and unpaid.
+  // That is a missing mechanism named, not a payment invented (Part II: MISSING is an answer).
+  const trading = ctx.parties.get(row.employer).status.alive;
+  const paid =
+    trading && payFrom(ctx, row.employer, gone, perMember, `severance from ${row.employer}`);
   ctx.record(
     'labour.separation',
     [row.employer, gone],
@@ -327,6 +348,8 @@ export function separate(
       cause,
       severancePerMember: perMember,
       severancePaid: paid,
+      // What is owed and has nowhere to rank, per member, said out loud rather than dropped.
+      severanceRanking: trading ? 0 : perMember,
     },
     true,
   );

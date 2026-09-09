@@ -225,11 +225,15 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
       const r = w.step();
       expect(r.audit.total).toBe(0);
     }
-    const throttled = [
-      ...events(w, 'firms.started', FIRM_2),
-      ...events(w, 'firms.idle', FIRM_2),
-    ].find((e) => e.data['bound'] === GRAIN && Number(e.data['started'] ?? 0) > 0);
+    // WHICH mill the grain runs out under is an outcome, not something to name (Law 2): there are
+    // three on the line and they differ, so the one that is squeezed is the one whose own cost and
+    // own bid left it last in the queue for the crop.
+    const mills = FIRMS.filter((f) => f.subUnit === 'flour').map((f) => partyId(f.firm));
+    const throttled = mills
+      .flatMap((mill) => [...events(w, 'firms.started', mill), ...events(w, 'firms.idle', mill)])
+      .find((e) => e.data['bound'] === GRAIN && Number(e.data['started'] ?? 0) > 0);
     expect(throttled).toBeDefined();
+    const mill = throttled?.subjects[0] ?? '';
     const planned = Number(throttled?.data['planned']);
     const started = Number(throttled?.data['started']);
     const cost = Number(throttled?.data['cost']);
@@ -239,7 +243,7 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
     // throttled period IS a higher unit cost — which is what running a line below its rate does.
     const wageBill = w.journal
       .ofKind('labour.wages')
-      .find((e) => e.period === throttled?.period && e.subjects.includes(FIRM_2));
+      .find((e) => e.period === throttled?.period && e.subjects.includes(mill));
     expect(wages).toBe(wageBill?.data['paid']);
     expect(cost / started).toBeGreaterThan(cost / planned);
   });

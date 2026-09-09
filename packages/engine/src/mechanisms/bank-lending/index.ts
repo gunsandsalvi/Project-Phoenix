@@ -294,12 +294,22 @@ function overdraft(ctx: MechanismContext, o: OverdraftContext): OverdraftDecisio
   const decl = declOf(o.issuer);
   if (decl === undefined) return { allow: false };
   const view = ctx.participant(o.issuer);
+  // A1, XI-8: a loan is a contract with somebody, and some parties are nobody to contract with —
+  // an estate is being wound up, and a household has no lender in this world at all (Households
+  // C1.d). The kind says so and the bank reads it (Law 15); the refusal is the answer, recorded.
+  const borrows = ctx.registry.partyKind(ctx.parties.get(o.holder).kind).borrows;
   const r = room(view, decl, o.holder, regulationOf(view));
-  if (r.most < o.shortfall) {
+  if (!borrows || r.most < o.shortfall) {
     ctx.record(
       'credit.declined',
       [o.issuer, o.holder],
-      { bank: o.issuer, borrower: o.holder, asked: o.shortfall, binds: r.binds, overdraft: true },
+      {
+        bank: o.issuer,
+        borrower: o.holder,
+        asked: o.shortfall,
+        binds: borrows ? r.binds : 'nobody lends to a party of this kind',
+        overdraft: true,
+      },
       false,
     );
     return { allow: false };
@@ -465,9 +475,11 @@ export const bankLending: SystemModule = {
       name: 'lending.book',
       spec: 'Money B3.a Money B3.c Banks Lending B1',
       cycle: 'anchor',
-      // Before the audit sees the period: an overdraft the bank allowed is a drawing, and a drawing
-      // is a row. What is left at the close is a loan with a lender, never a silent negative.
-      anchor: { after: 'revaluation' },
+      // Before the audit sees the period, and before anything can DIE of it: an overdraft the bank
+      // allowed is a drawing, and a drawing is a row. A party that ceased still carrying a raw
+      // negative balance would leave its bank holding a claim with no instrument behind it, and the
+      // estate nothing to assume — so this runs first and what is left is always a loan.
+      anchor: { before: 'revaluation' },
       run: (ctx: MechanismContext): void => {
         bookDraws(ctx);
         publishStandard(ctx);
@@ -511,6 +523,10 @@ function runRequests(ctx: MechanismContext): void {
     const want = e.data['short'];
     if (borrower === undefined || typeof want !== 'number' || want <= 0) continue;
     const party = ctx.parties.get(borrower as PartyId);
+    // XI-8, Firm Birth D5: what it asked for last period it asked for as a going concern. It has
+    // since ceased, and an estate is winding it up rather than borrowing: there is nobody left to
+    // sign, so the request dies with the borrower.
+    if (!party.status.alive) continue;
     const ccy = ctx.registry.region(party.region).ccy;
     const { best, lend } = shop(ctx, borrower as PartyId, want, ccy);
     if (best === undefined || lend <= 0) continue;

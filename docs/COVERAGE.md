@@ -34,7 +34,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money E1` | MET | packages/engine/src/ledger/settlement.ts (a payer that cannot pay does not pay, and nothing half-settles), packages/engine/src/mechanisms/credit-events/index.ts (and there is a named thing it then IS: in default of payment, publicly, with the payee and the amount that did not arrive). What that state then costs it — a lender's reaction, a rating, its death — arrives with lending (worklist 6) and the estate (worklist 7) |
 | `Money E2` | MET | packages/engine/src/ledger/ledger.ts, packages/engine/src/ledger/settlement.ts |
 | `Money E3` | MET | packages/engine/src/ledger/settlement.ts |
-| `Money E4` | PARTIAL | a ceased party is refused by name; re-seating on the estate arrives with XI-8 (worklist 7) |
+| `Money E4` | MET | packages/engine/src/ledger/settlement.ts (a leg naming a ceased party throws at the site), packages/engine/src/mechanisms/estate/index.ts (and its estate assumes what it issued, so a holder's claim names somebody who exists) |
 | `Money F1` | MISSING |  |
 | `Money F1.a` | MISSING |  |
 | `Money F2` | MISSING |  |
@@ -71,7 +71,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Register D5` | MET | packages/engine/src/register/register.ts |
 | `Register E1` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
 | `Register E2` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
-| `Register E3` | PARTIAL | packages/engine/src/mechanisms/credit-events/index.ts names every holder of a claim that stopped performing and how much of it they are carrying, so the exposure has a holder and a size. The loss LANDS when there is a recovery to land against, and a sovereign has nothing seizable (G3): it takes an estate (worklist 7) or a negotiated exchange (worklist 13f) |
+| `Register E3` | PARTIAL | packages/engine/src/mechanisms/credit-events/index.ts names every holder of a claim that stopped performing and how much of it they are carrying. The loss now LANDS: a firm's estate realises what it holds, pays in rank order and writes off the rest, and the write-off is what each holder was carrying (packages/engine/src/mechanisms/estate/index.ts). A sovereign still has nothing seizable (G3): its loss takes a negotiated exchange (worklist 13f) |
 | `Register E4` | PARTIAL | split, buyback and new issue apply through issuance legs; no corporate-action driver yet |
 | `Register E5` | PARTIAL | every register event so far moves money; no explicit why-not record for the exceptions |
 | `Register F1` | MET | packages/engine/src/register/instruments.ts |
@@ -295,8 +295,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Corporate Credit G1` | PARTIAL | packages/engine/src/world/actions.ts (a missed payment is an event, public, so a holder observes it rather than inferring it from the issuer's accounts). A breached covenant needs covenants, which arrive with corporate paper (worklist 13f) |
 | `Corporate Credit G2` | MET | packages/engine/src/world/actions.ts (a default on one line makes the issuer's others due where their own terms say so, through the same path a maturity takes, so an issuer that cannot pay the accelerated face fails that too), packages/engine/test/credit-events.test.ts |
 | `Corporate Credit G3` | MISSING |  |
-| `Corporate Credit G4` | MISSING |  |
-| `Corporate Credit G5` | MISSING |  |
+| `Corporate Credit G4` | MET | packages/engine/src/mechanisms/estate/index.ts (the estate is realised into the markets those things trade in, at what bidders pay: there is no formula discount to book anywhere in the path) |
+| `Corporate Credit G5` | MET | packages/engine/src/mechanisms/estate/index.ts (senior in full first, then the next rank, by the instrument's own ranking; G5.a: a junior claim recovers nothing when the senior rank exhausts the proceeds, and packages/engine/test/estate.test.ts asserts it) |
 | `Corporate Credit G6` | PARTIAL | packages/engine/test/credit-events.test.ts holds the identity — a claim leaving the book at what it fetched moves the holder's equity by exactly what it was carrying, and the issuer's by the same the other way. What a recovery IS needs an estate that realises something (worklist 7) |
 | `Corporate Credit G7` | MISSING |  |
 | `Corporate Credit G8` | MISSING |  |
@@ -866,7 +866,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Banks Capital B2` | MISSING |  |
 | `Banks Capital B3` | MISSING |  |
 | `Banks Capital B3.a` | MISSING |  |
-| `Banks Capital C1` | MISSING |  |
+| `Banks Capital C1` | PARTIAL | packages/engine/src/registry/profiles.ts, packages/engine/src/mechanisms/estate/index.ts (a bank states both failures and is asked them like anything else, and a failed bank resolves through the same estate). C1.a's funding failure is only reachable once the corridor and the money market exist, and the resolution mechanics — bail-in, an acquirer's bid, deposit insurance (D) — are worklist 11 |
 | `Banks Capital C2` | MISSING |  |
 | `Banks Capital C3` | MISSING |  |
 | `Banks Capital D1` | MISSING |  |
@@ -1121,7 +1121,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Firm D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (a wage that does not settle is recorded and the people are not paid), packages/engine/src/ledger/settlement.ts |
 | `Firm D2` | MISSING |  |
 | `Firm D3` | MISSING |  |
-| `Firm D4` | PARTIAL | the cash failure is real and named: a firm that cannot pay something due has a failed instruction and is in default of payment (packages/engine/src/mechanisms/credit-events/index.ts). Liabilities exceeding assets is a read of the accounts family and needs liabilities a firm can have, which arrive with loans (worklist 6) |
+| `Firm D4` | MET | packages/engine/src/mechanisms/estate/index.ts (both failures are asked of every party whose kind names them, and the answer says which one fired: what fell due out of its own balance and it still cannot pay, or its liabilities past its assets at marks), packages/engine/test/estate.test.ts |
 | `Firm D5` | MET | packages/engine/src/mechanisms/credit-events/index.ts (when it cannot pay, it is in default of payment — publicly, by name, with the payee that did not get paid and the amount that did not arrive) |
 | `Firm E1` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts prices and sizes what it offers from its own outlook and what holding is worth; entering and leaving a line is firm birth (worklist 13g) |
 | `Firm E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the employment it wants is the labour that makes what it expects to sell, at what an hour is worth to it) |
@@ -1184,14 +1184,14 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Firm Birth C2.a` | MET | packages/engine/src/world/actions.ts (a default exists only where a payment was applied and failed; there is no hazard rate, no draw and no assignment anywhere in the path), packages/engine/test/default-events.test.ts (and a world whose payments all settle produces none) |
 | `Firm Birth C3` | PARTIAL | packages/engine/src/world/actions.ts, packages/engine/src/mechanisms/credit-events/index.ts (the event is public, so anybody may react to it, and it names who failed, on what, to whom and for how much). What it triggers — a lender's loss, a rating action — arrives with lending (worklist 6) and ratings (worklist 12) |
 | `Firm Birth C4` | PARTIAL | packages/engine/src/mechanisms/credit-events/index.ts (every default carries the instruction that failed and what it was for, so the cash failure behind it is traceable from the event). A default caused by solvency rather than cash needs the other failure (D4, worklist 6) |
-| `Firm Birth D1` | MISSING |  |
-| `Firm Birth D2` | MISSING |  |
-| `Firm Birth D3` | MISSING |  |
-| `Firm Birth D4` | MISSING |  |
-| `Firm Birth D5` | MISSING |  |
-| `Firm Birth D6` | MISSING |  |
-| `Firm Birth E1` | MISSING |  |
-| `Firm Birth E2` | MISSING |  |
+| `Firm Birth D1` | MET | packages/engine/src/mechanisms/estate/index.ts (the estate sells what it holds into the market that thing always traded in, at a reservation that falls as its programme runs out and takes what the book gives on the last period; what nobody bought is abandoned by a destroy leg) |
+| `Firm Birth D2` | PARTIAL | packages/engine/src/mechanisms/estate/index.ts (proceeds distributed in rank order, pro rata within a rank, by the instrument's own stated seniority; a partial payment redeems that much at par and the rest stays outstanding). D2.b's trade creditors need payables (worklist 13e) and D2.c's close-out claims need the derivative layer (13a); severance owed by a dead employer is recorded owed and unranked for the same reason (packages/engine/src/mechanisms/labour/matching.ts) |
+| `Firm Birth D3` | MET | packages/engine/src/mechanisms/estate/index.ts (what is never paid is written off against the holder at what it fetched, which was nothing, so the loss lands on the named holders in proportion to what each was owed), packages/engine/test/estate.test.ts |
+| `Firm Birth D4` | PARTIAL | packages/engine/src/mechanisms/labour/matching.ts (its employees lose their jobs, through the labour market's own separation path and never by a headcount going down — D4.a). Its suppliers' receivables need payables (worklist 13e) and its capital going to a buyer needs kinds of capital (worklist 10) |
+| `Firm Birth D5` | MET | packages/engine/src/mechanisms/estate/index.ts (everything it held moves to the estate by instruction, everything it issued is assumed by the estate over the wire, and then it ceases naming the estate; the estate ends the chain and resolving still terminates), packages/engine/src/parties/party.ts |
+| `Firm Birth D6` | MET | packages/engine/src/mechanisms/estate/index.ts (nothing leaves an estate except to somebody holding a claim on it, so what the assets fetched is what the claimants got and the rest is the loss; and no dead party keeps anything, in any account it held — D6.a), packages/engine/test/estate.test.ts |
+| `Firm Birth E1` | MET | packages/engine/src/registry/profiles.ts, packages/engine/src/mechanisms/estate/index.ts (every kind states what it can fail on, and a firm states both; the two exceptions — the central bank and a treasury in its own money — are named consequences and not omissions) |
+| `Firm Birth E2` | PARTIAL | packages/engine/src/mechanisms/estate/index.ts (every asset moves to the estate, every liability is assumed by it, and every employee is separated through the labour market). A contract that is not an instrument has no destination yet, because there are none: payables are worklist 13e and derivatives 13a |
 | `Firm Birth E3` | MISSING |  |
 | `Firm Birth E4` | MISSING |  |
 
@@ -1334,7 +1334,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Labour C1` | MET | packages/engine/src/mechanisms/firms/decide.ts (it hires when an hour adds more than an hour costs; what it offers is what an hour is worth to it, from its own outlook of its output price) |
 | `Labour C2` | PARTIAL | packages/engine/src/mechanisms/labour/register.ts carries the lag from the match to the day the person is productive, and the firm plans on the hours it already has (packages/engine/src/mechanisms/firms/decide.ts); the cost of finding somebody arrives with the search side (worklist 13d) |
 | `Labour C3` | MET | packages/engine/src/mechanisms/labour/matching.ts (severance paid to the people separated, out of the employer account) |
-| `Labour C4` | MISSING | a firm that fails releases its workers; firm death is worklist 7 |
+| `Labour C4` | MET | packages/engine/src/mechanisms/labour/matching.ts (an employer that has ceased releases its workers at once, through the same separation path as any other separation; a merger that removes jobs is worklist 13g) |
 | `Labour C5` | MET | packages/engine/src/mechanisms/labour/matching.ts (a vacancy is a posting the employer owns, for the period it posts it) |
 | `Labour D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (every posting is a bid, the highest fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT — read off the book rather than taken from the crossing, which in a slack market sits on a seeker's reservation and is a level no employer offered), packages/engine/src/mechanisms/labour/index.ts (the prices family checks every print against the bids that session) |
 | `Labour D2` | MET | packages/engine/src/mechanisms/labour/register.ts (the wage is the contract and does not move with the print), packages/engine/src/mechanisms/firms/decide.ts (a firm that wants fewer hours than it has sheds them and pays severance) |

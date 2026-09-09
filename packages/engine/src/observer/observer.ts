@@ -89,6 +89,12 @@ export interface PartyView {
   readonly weight: number;
   readonly region: string;
   readonly alive: boolean;
+  /**
+   * XI-8, Firm Birth D5: where a reference to it goes now that it has ceased — its estate, or
+   * itself where the chain of successors ends. Null while it is still here. Without it a dead party
+   * is a name that stops, and the estate winding it up is a party nobody can connect it to.
+   */
+  readonly successor: string | null;
   /** Only in scope (A4): the party's own equity account per member, else null. */
   readonly equityPerMember: number | null;
 }
@@ -232,6 +238,7 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
       weight: weightOf(p),
       region: p.region,
       alive: p.status.alive,
+      successor: p.status.alive ? null : p.status.successor,
       equityPerMember:
         visible(p.id) && w.register.hasEquityAccount(p.id) ? w.register.equity(p.id) : null,
     })),

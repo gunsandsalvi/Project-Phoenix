@@ -28,7 +28,7 @@ import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { LABOUR_NUMBERS, OCCUPATIONS, type OccupationDecl } from './data.js';
-import { payWages, publishGoingRate, runVenue, type LabourParams } from './matching.js';
+import { payWages, publishGoingRate, release, runVenue, type LabourParams } from './matching.js';
 import { allRows, emptyBook, rowOfWorker, type EmploymentBook } from './register.js';
 
 export * from './data.js';
@@ -301,6 +301,18 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
         anchor: { after: 'markets' },
         run: (ctx: MechanismContext) => {
           payWages(ctx, bookOf(ctx));
+        },
+      },
+      {
+        name: 'labour.release',
+        spec: 'Labour C3 Labour C4 Labour F1 Firm Birth D4.a XI-8',
+        cycle: 'anchor',
+        // After the estates, because a module assembled before this one resolves the failures here:
+        // a party that died this period has already ceased when this reads the rows, and what it
+        // owes the people it employed leaves the account every reference to it now resolves to.
+        anchor: { before: 'revaluation' },
+        run: (ctx: MechanismContext) => {
+          release(ctx, bookOf(ctx), numbers(ctx));
         },
       },
     ],

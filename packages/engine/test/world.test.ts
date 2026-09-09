@@ -380,8 +380,8 @@ describe('the period loop', () => {
       'lending.write',
       'probe',
       'markets',
-      'revaluation',
       'lending.book',
+      'revaluation',
     ]);
     w.step();
     expect(seen).toEqual(['1:1']);

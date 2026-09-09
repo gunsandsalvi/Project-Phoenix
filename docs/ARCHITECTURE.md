@@ -48,7 +48,7 @@ balance adds that dust to its own. Derived any smaller — as though two reading
 busy account reports a violation the moment it is paid more than a handful of times in a week, and
 the audit spends its credibility on floating point. This is Law 7 taken literally in the one place
 it is easy to get wrong: the tolerance is what the arithmetic **did**, not what it looks like it did.
-`moveDust(balance, delta)` is the single rule for what one more move costs.
+`moveDust(balance, delta)` is the single rule for what one more move costs. The register keeps a walk per equity account (`equityWalk`) and per money account (`moneyWalk`), and the families that ask whether a balance is negative, whether a dead party still holds something, and whether holdings sum to issued all read the same walk settlement itself reads when it decides whether an account is short enough to ask its issuer for an overdraft — one fact, one tolerance (Law 4).
 
 **Derived from.** Law 7 defines the only admissible tolerance as _(number of terms) × (machine epsilon)
 × (sum of absolute magnitudes)_, i.e. floating-point error — so the representation is floating point,
@@ -110,7 +110,17 @@ Instruction {
 }
 Leg = MoneyLeg { fromAccount, toAccount, amount: Money }
     | AssetLeg { from, to, instrument, qty: Qty, lots? }
+    | CreateLeg / DestroyLeg { party, instrument, qty }   // Goods B, E4: units entering or leaving
+    | AssumeLeg { from, to, instrument }                  // XI-8: who OWES a line changes
 ```
+
+`AssumeLeg` is the odd one and it is here for a reason (item 7). When an issuer dies its paper does
+not die with it: whoever succeeds it owes the line from then on (Firm Birth D5). Nothing moves in the
+register — the same holders hold the same units on the same terms — but the **obligation** moves
+between two balance sheets, and a change of balance sheet that does not go over the wire is exactly
+what D1 exists to prevent. So it is a leg, valued at what the holders carry it at (Register B3: a
+liability is the same number read from the other side), and both equity effects land in the one
+instruction.
 
 **Settlement** applies an instruction with one rule (C2): payer minus, payee plus. For a money leg
 between accounts at different issuers it generates the **interbank reserve leg** itself (C2.a); a
@@ -440,6 +450,15 @@ module's own tables are its own registry, in `mechanisms/<system>/data.ts` — t
 grid, the goods and their recipes — and the numbers in them are declared parameters generated from
 those tables, so a table row and a register entry are never two copies of one number. Behaviour that varies by kind lives in a **profile** behind a dispatch table keyed by kind,
 with exhaustiveness enforced by the type system. Mechanics never branch on a kind (lint, §9).
+
+A **party kind** states three things about its life beyond its representation and its money issuance
+(item 7). `fails` says what a party of that kind can FAIL on — nothing, a cash failure it cannot
+cure, its liabilities past its assets, or both — and a kind that names neither cannot die, which is
+how XI-3's two exceptions (the central bank, and a treasury in its own money) are named consequences
+rather than omissions. `terminal` says whether it may end the chain of successors, which only an
+estate that has paid everything away may. `borrows` says whether anybody lends to it at all: a going
+concern yes, an estate and a household no (Banks Lending A1, Households C1.d). All three are read by
+mechanisms and never branched on by kind id.
 
 Every number that shapes behaviour is declared in the **parameter register** with value, unit, owner,
 and provenance kind: `technology | preference | policy | resolution | shape | placeholder`. A

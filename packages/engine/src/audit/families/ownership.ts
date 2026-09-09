@@ -18,9 +18,18 @@ export function ownershipFamily(): Family {
       for (const i of view.instruments.all()) {
         const held = view.register.heldTotal(i.id);
         const issued = sum([i.issued]);
-        // The dust of the comparison is the dust of both sides: what the walk over holdings is
-        // entitled to, and what the running issued total has accumulated over its own history.
-        const dust = combineDust(held, issued) + i.issuedDust;
+        // The dust of the comparison is the dust of both sides, and neither side is one reading.
+        // The issued total is a running number moved once per creation and once per destruction,
+        // and — for money — so is every balance summed on the other side (Money D2: one lot, moved
+        // by every leg that ever touched the account). So the comparison is entitled to the sum's
+        // own rounding PLUS what each of those walks has accumulated getting here (Law 7); a
+        // holding of lots is not a walk, and brings nothing of its own.
+        const walked =
+          view.registry.instrumentKind(i.kind).pricing === 'money'
+            ? sum(view.register.holdersOf(i.id).map((h) => view.register.moneyWalk(h, i.id).dust))
+                .value
+            : 0;
+        const dust = combineDust(held, issued) + i.issuedDust + walked;
         if (!withinDust(held.value, issued.value, dust)) {
           out.push({
             family: 'ownership',

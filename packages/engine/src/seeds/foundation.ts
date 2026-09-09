@@ -50,6 +50,7 @@ import {
 } from '../mechanisms/sovereign-instruments/index.js';
 import { bankLending } from '../mechanisms/bank-lending/index.js';
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
+import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
@@ -490,13 +491,18 @@ export function foundationSpec(seed: string): AssemblySpec {
       },
     ],
     modules: [
+      // The order matters at one anchor: three phases sit before the revaluation, and they must run
+      // in this order — a drawing becomes a loan row, then anything that cannot pay dies, then the
+      // people it employed are released. Assembly keeps declaration order for modules that do not
+      // require each other, and that is what puts them in it.
       expectations,
       creditEvents,
+      bankLending,
+      estate,
       goods(),
       labour(),
       firms(),
       households(),
-      bankLending,
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
       sovereignAuction,
