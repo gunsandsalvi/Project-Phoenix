@@ -20,6 +20,9 @@ export const moneyKind: InstrumentKindProfile = {
   },
   displayName: (i, issuerName) => `${issuerName} money ${i.ccy}`,
   due: () => [],
+  // Money pays no interest: an account is a holding of it, and a deposit rate is a bank's decision
+  // (Banks Funding B1), paid by an instruction, never accrued into the instrument.
+  accrued: () => 0,
 };
 
 export const CENTRAL_BANK = partyKindId('centralBank');

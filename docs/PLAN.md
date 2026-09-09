@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 8.3%** (36 of 434 steps across 27 items).
+**Plan completion: 9.0%** (39 of 434 steps across 27 items).
 **Requirement coverage: 11.4%** (151 MET, 25 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -23,7 +23,7 @@ The plan has two parts:
 | 1 — Money and settlement, one calendar | 7 | 7 | closed |
 | 2 — Register, clearing, cells, DvP, value, parameters | 12 | 12 | closed |
 | 2a — Kernel/module boundary | 9 | 9 | closed |
-| [3 — The sovereign's funding constraint](plan/03-sovereign-funding.md) | 26 | 0 | open |
+| [3 — The sovereign's funding constraint](plan/03-sovereign-funding.md) | 26 | 3 | in progress |
 | [4 — Firms, goods, labour, households, outlooks](plan/04-real-economy.md) | 34 | 0 | open |
 | [5 — A loss is an event](plan/05-loss-events.md) | 14 | 0 | open |
 | [6 — Loans are rows](plan/06-loans.md) | 16 | 0 | open |

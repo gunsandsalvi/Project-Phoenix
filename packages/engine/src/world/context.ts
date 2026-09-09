@@ -12,7 +12,7 @@
  *   written directly (Seed A3: a stock the flows then act on).
  */
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
-import type { MarketDecl } from '../clearing/market.js';
+import type { MarketDecl, PrimaryOffer } from '../clearing/market.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
@@ -56,6 +56,10 @@ export interface ParticipantView extends KernelReads {
   equity(): number;
   /** The latest public print at or before now (A1); its provenance says how stale it is (A1.a). */
   print(instrument: InstrumentId): Option<Print>;
+  /** The issuer's announced supply in this period's session, if any (Sovereign C1.a: public). */
+  offer(market: MarketId): Option<PrimaryOffer>;
+  /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
+  accrued(instrument: InstrumentId): number;
   /** Public events (A3): prints, weight events, cessations, facility draws, the audit's counts. */
   publicEvents(last: number): readonly Event[];
   /** A random stream that is this party's own, deterministic in (seed, party, period). */
@@ -89,6 +93,10 @@ export interface MechanismContext extends KernelReads {
   /** Register a new instrument with nothing issued; issuance is a settlement leg (Register B1). */
   issue(decl: InstrumentDecl): Instrument;
   openMarket(decl: MarketDecl): void;
+  /** Announce the issuer's supply for this period's session (Sovereign C1); cleared by the market. */
+  offer(o: PrimaryOffer): void;
+  /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
+  accrued(instrument: InstrumentId): number;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   record(

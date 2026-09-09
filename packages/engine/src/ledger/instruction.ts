@@ -2,7 +2,7 @@
  * The wire: every move of any asset, money included, is a numbered instruction with two named sides
  * per leg (Money D1). An instruction's legs settle together or not at all (Register C3, XI-5).
  *
- * @spec Money C1 Money C1.a Money C1.b Money C1.c Money D1 Money D1.a Money D2 Money G4 Register C1 Register C2 Register C2.a Register C3 Register C3.a XI-5 XI-15
+ * @spec Bond N9.b Money C1 Money C1.a Money C1.b Money C1.c Money D1 Money D1.a Money D2 Money G4 Register C1 Register C2 Register C2.a Register C3 Register C3.a XI-5 XI-15
  *
  * Denomination on a cell (XI-15): a leg side on a cell carries the PER-MEMBER amount and the weight
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
@@ -44,6 +44,12 @@ export interface AssetLeg {
   readonly qty: number;
   /** C2.a: the print if it is a trade, per unit in the instrument's currency; none for a transfer at carrying value. */
   readonly pricePerUnit: Option<number>;
+  /**
+   * Bond N9.b: what accrued since the last coupon and travelled with the paper, per unit. It is
+   * part of the money leg's amount and not of the lot's basis; recorded here so the ledger says
+   * what was paid for and nobody has to re-derive it (Law 19).
+   */
+  readonly accruedPerUnit: Option<number>;
   readonly fromCell: Option<CellSide>;
   readonly toCell: Option<CellSide>;
 }

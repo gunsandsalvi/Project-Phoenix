@@ -102,6 +102,7 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
         instrument: i.id,
         qty: units,
         pricePerUnit: some(1),
+        accruedPerUnit: none(),
         fromCell: optionalCell(
           holder.representation === 'cell' ? cellSide(holder, perMemberUnits) : undefined,
         ),

@@ -1,7 +1,7 @@
 /**
  * Kinds and their profiles: the dispatch tables behind Law 15.
  *
- * @spec Law 15 Law 9 XI-6 XI-15 Equity F4 Fund Shares A3 Money B3 Money B3.a Money B3.b Money B3.c Register E1 Register E2 Granularity
+ * @spec Bond N9.b Law 15 Law 9 XI-6 XI-15 Equity F4 Fund Shares A3 Money B3 Money B3.a Money B3.b Money B3.c Register E1 Register E2 Granularity
  *
  * A kind is registered at assembly by the module that owns it, with the whole of its behaviour in
  * one profile. The kernel never branches on a kind id; it asks the profile. Adding an instrument or
@@ -48,6 +48,11 @@ export interface InstrumentKindProfile {
   readonly displayName: (i: Instrument, issuerName: string) => string;
   /** The dated actions the terms place in `period` (Money G3.a), in date order. */
   readonly due: (i: Instrument, period: Period, calendar: Calendar) => readonly DueAction[];
+  /**
+   * Bond N9.b: interest accrued per unit since the last payment date, on a date. Zero for an
+   * instrument that pays no coupon: a bill accretes against its own cleared price (Sovereign F2).
+   */
+  readonly accrued: (i: Instrument, on: Civil, calendar: Calendar) => number;
 }
 
 /**

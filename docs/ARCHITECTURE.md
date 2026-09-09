@@ -19,7 +19,7 @@ Worker. The Android build wraps the same web app with Capacitor.
 **Derived from.** The deployment path is stated by the owner: continuous testing on GitHub Pages, final
 delivery as an APK for a Pixel 11 Pro XL. A browser runtime is the only one that serves both without a
 second implementation, and one implementation is law 4 applied to the codebase itself. The worker
-boundary is §45 E3 — *no surface that changes the model* — made physical: the UI never holds a
+boundary is §45 E3 — _no surface that changes the model_ — made physical: the UI never holds a
 reference to engine memory; it receives structured-clone snapshots.
 
 **Toolchain.** TypeScript 5.9 in strict mode with `exactOptionalPropertyTypes`,
@@ -40,8 +40,8 @@ percentage anywhere.
 `NaN`, `±Infinity` and `-0` cannot enter the state: every numeric constructor (`money()`, `qty()`,
 `price()`, `rate()`) and every arithmetic helper validates and **throws** on a non-finite result.
 
-**Derived from.** Law 7 defines the only admissible tolerance as *(number of terms) × (machine epsilon)
-× (sum of absolute magnitudes)*, i.e. floating-point error — so the representation is floating point,
+**Derived from.** Law 7 defines the only admissible tolerance as _(number of terms) × (machine epsilon)
+× (sum of absolute magnitudes)_, i.e. floating-point error — so the representation is floating point,
 and the check carries its own dust. Audit A4/A4.a. Register B2.b.
 
 **Rejected.** Integer minor units. Every trade at a real price would then produce a rounding residual,
@@ -54,13 +54,13 @@ floats.
 
 Every quantity carries its unit and cannot be combined with a different one (App A, Units):
 
-| Type | Fields | Rule |
-|---|---|---|
-| `Money` | `amount`, `ccy` | `add` throws across currencies (Money A2.b). No implicit currency (Currency A4). |
-| `Qty` | `amount`, `unit` (`par`, `shares`, `tonnes`, `contracts`, `dwellings`, `hours`, …) | `add` throws across units. |
-| `Price` | `amount`, `ccy`, `perUnit` | A price of money in itself is `1` — the only hard-coded one (Money D2). |
-| `Rate` | `amount`, `per: Periodicity` | A rate without its periodicity does not construct (Law 8). Conversion is an explicit call through the calendar's day count (Money G3.c). |
-| `Period` | integer index on the one calendar | No default period; a record without one does not construct (Money G4.a). |
+| Type     | Fields                                                                             | Rule                                                                                                                                     |
+| -------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| `Money`  | `amount`, `ccy`                                                                    | `add` throws across currencies (Money A2.b). No implicit currency (Currency A4).                                                         |
+| `Qty`    | `amount`, `unit` (`par`, `shares`, `tonnes`, `contracts`, `dwellings`, `hours`, …) | `add` throws across units.                                                                                                               |
+| `Price`  | `amount`, `ccy`, `perUnit`                                                         | A price of money in itself is `1` — the only hard-coded one (Money D2).                                                                  |
+| `Rate`   | `amount`, `per: Periodicity`                                                       | A rate without its periodicity does not construct (Law 8). Conversion is an explicit call through the calendar's day count (Money G3.c). |
+| `Period` | integer index on the one calendar                                                  | No default period; a record without one does not construct (Money G4.a).                                                                 |
 
 **Missing is missing** (App A, Missing values). A read of something absent throws a
 `Missing` error naming what was asked. There is no `?? 0`, no `|| 0`, no formatted default; the
@@ -139,7 +139,7 @@ Consequences the representation enforces rather than checks:
 - the weight changes by exactly five events — entry, death, promotion, split, merge — through one
   `weightEvent` API that journals cause and date; nothing else can write it;
 - aggregation is `cell.integrate(f) = f(memberState) × weight`. There is no `mean()`; the average is
-  unreachable (XI-15: *a question that cannot be phrased will not be asked wrong*).
+  unreachable (XI-15: _a question that cannot be phrased will not be asked wrong_).
 
 The cell **key** (region, cohort, bank) is registry data; lifting a relationship into the key is a data
 change and a re-stratification event, never a mechanism change (Small-Business Pools A6.a).
@@ -167,6 +167,39 @@ rule (C3), and returns one of the representable outcomes (C4.b):
 A search bracket is never returned as a price (C4.c). Trades are emitted as instructions (D2, D3), and
 the print becomes the mark (D4). The solver is a pure function of the schedules (C5) and is tested for
 determinism with property tests.
+
+**A quantity with no level** (Central Bank C3). A participant may post `price: 'market'`: a size and no
+level. It is resolved before price formation to the worst level the other side actually posted — the
+highest ask for a buyer, the lowest bid for a seller — so it is a level somebody posted (C4.c) and
+never a bracket. With nothing posted opposite it, there is no level to take and the order is not in
+the book.
+
+**The stated price rule.** When several levels execute the same volume with the same imbalance the tie
+is struck by a rule the venue states, like its rationing rule: `sellersCompete` (the lowest such
+level: an open book where supply exceeds demand is sellers undercutting each other) or `marginalBid`
+(the highest: the **stop-out** a uniform-price sealed-bid auction allots at, Sovereign C2).
+
+**The primary form** (Sovereign C). An issuer's own supply for one session is a `PrimaryOffer`: a size
+(C1.b) and a walk-away level (C5, C7), posted through `MechanismContext.offer` before the session and
+public to bidders through `ParticipantView.offer` (C1.a). The same solver clears it under the
+`marginalBid` rule, so every winner pays the stop-out (C2); the market reads the **cover** and the
+**tail** off the book (C4) and journals `auction.result`; the paper nobody bid for is withdrawn and
+the withdrawal is that event (C7). Nothing absorbs the remainder (Treasury D5.a). A trade whose seller
+is the instrument's issuer is an issuance leg, which settlement already knows, so a debut and a
+re-opening (B3.a) are the same act in the same book, and there is still one print per instrument per
+period.
+
+**A line with no price.** A market that did not clear and has nothing to carry writes **no print**: a
+line that has never traded has no price, and the reader is told so at the reading site (XI-6). The
+prices family reports a _held_ position with no print, because its holder cannot mark it; an unheld
+line with no print is marked by nobody and is not a defect (Audit B3).
+
+**Accrued interest travels with the paper** (Bond N9.b). An `AssetLeg` carries `accruedPerUnit`
+beside its clean `pricePerUnit`; the money leg moves the dirty amount. The lot's basis is the clean
+price, so the buyer's equity falls by the accrued now and rises by the whole coupon on the date: the
+coupon is not a windfall to whoever holds it then, and the seller's income is what it earned. What
+accrued is a read of the instrument's own terms through `profile.accrued`, never a stored receivable
+(Appendix B: no stored value beside units).
 
 ### 4.7 Time (Money G)
 
@@ -207,7 +240,7 @@ These fell out of building items 1 and 2 and are recorded here because they are 
   total appears is a leg's other side and the register's `heldTotal`. Mixing the two was the first
   defect the audit caught.
 - **Routing across issuers** (Money C2.a). A money leg from account (h1, i1) to (h2, i2): payer minus
-  (or *creation* if h1 = i1), payee plus (or *destruction* if h2 = i2). If i1 ≠ i2, then for each
+  (or _creation_ if h1 = i1), payee plus (or _destruction_ if h2 = i2). If i1 ≠ i2, then for each
   issuer that is a bank (not the central bank): the bank's own money is redeemed on the paying side or
   issued on the receiving side, and its reserve account at the central bank moves by the amount. Money
   whose issuer is the central bank changes holder and is never redeemed by a transfer. Creation and
@@ -249,11 +282,11 @@ order (`requires`), seeds, states equity as the read, and seals the world with t
 
 Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else:
 
-| Context | Who gets it | Can | Cannot |
-|---|---|---|---|
-| `ParticipantView` | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; public prints, public instrument terms, public events; its own random stream | see any other party's private state (Observer A4, Expectations D1) |
-| `MechanismContext` | a module phase | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal | write the register, write a print, write a weight, reach the world container |
-| `SeedContext` | a seed module at period zero | add parties and instruments; endow money and units; write opening prints; open markets | anything after the seal |
+| Context            | Who gets it                                                 | Can                                                                                                                                          | Cannot                                                                       |
+| ------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; public prints, public instrument terms, public events; its own random stream                            | see any other party's private state (Observer A4, Expectations D1)           |
+| `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal | write the register, write a print, write a weight, reach the world container |
+| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets                                                       | anything after the seal                                                      |
 
 Two rules hold this shape: a module never imports another module or the world container (lint
 `phoenix/no-cross-module-import`), and the register's write methods are reachable only through a
@@ -301,10 +334,10 @@ violations.
 
 Two kinds of wrongness, kept apart on purpose:
 
-| Kind | Example | What happens |
-|---|---|---|
-| **Contract violation** — something impossible by construction | adding USD to EUR; a leg with one side; a move of encumbered units; an unpriced read; a rate with no periodicity; NaN; a missing period; a phase reading a print not yet produced; a weight changed outside the five events | **Throws** a `PhoenixError` subclass carrying the spec citation. Never caught inside the engine. The run stops at the site. |
-| **Invariant violation** — a statement about the state that is false | holdings ≠ issued; money stock moved with no issuer act; equity account ≠ assets − liabilities | **Audit finding** with owner and size; reported, never repaired, never thrown (Audit C4; Law 11: deliberately failing checks are the normal state of an incomplete model). Tests assert on the report. |
+| Kind                                                                | Example                                                                                                                                                                                                                     | What happens                                                                                                                                                                                           |
+| ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Contract violation** — something impossible by construction       | adding USD to EUR; a leg with one side; a move of encumbered units; an unpriced read; a rate with no periodicity; NaN; a missing period; a phase reading a print not yet produced; a weight changed outside the five events | **Throws** a `PhoenixError` subclass carrying the spec citation. Never caught inside the engine. The run stops at the site.                                                                            |
+| **Invariant violation** — a statement about the state that is false | holdings ≠ issued; money stock moved with no issuer act; equity account ≠ assets − liabilities                                                                                                                              | **Audit finding** with owner and size; reported, never repaired, never thrown (Audit C4; Law 11: deliberately failing checks are the normal state of an incomplete model). Tests assert on the report. |
 
 Rules that follow:
 
@@ -383,16 +416,16 @@ citation does not resolve. `docs/COVERAGE.md` is the requirement → status map 
 Enforced by ESLint over `packages/engine/src` (rules in `eslint.config.js`, custom rules in
 `tools/eslint-rules/`):
 
-| Rule | Law |
-|---|---|
-| `phoenix/no-bounds`: no `Math.min`, `Math.max`, `clamp`, `Math.abs` used as a floor, outside `core/num.ts` | Law 6, App B 22 |
-| `phoenix/no-numeric-default`: no `?? <number>`, `\|\| <number>`, `= 0` default params for amounts | App A Missing values |
-| `phoenix/no-magic-numbers`: literals other than `0, 1, -1, 2` outside `core/`, `registry/`, tests | Law 2, XI-14 |
-| `phoenix/no-kind-branch`: no `=== '<kind>'` comparisons on `.kind/.sector/.industry` inside `mechanisms/` | Law 15, App B 48 |
-| `phoenix/no-clock-no-random`: no `Date`, `Math.random`, `performance.now` in engine | Seed A5, Audit D3 |
-| `phoenix/no-cross-module-import`: a module imports only the kernel, never a sibling module or the world container | Law 15, 4.9b |
-| `phoenix/no-console`, `no-empty` catch, `no-restricted-syntax` on `try` inside mechanisms | §5 |
-| `@typescript-eslint/switch-exhaustiveness-check`, `no-explicit-any`, `no-non-null-assertion`, `strict-boolean-expressions` | §5 |
+| Rule                                                                                                                       | Law                  |
+| -------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| `phoenix/no-bounds`: no `Math.min`, `Math.max`, `clamp`, `Math.abs` used as a floor, outside `core/num.ts`                 | Law 6, App B 22      |
+| `phoenix/no-numeric-default`: no `?? <number>`, `\|\| <number>`, `= 0` default params for amounts                          | App A Missing values |
+| `phoenix/no-magic-numbers`: literals other than `0, 1, -1, 2` outside `core/`, `registry/`, tests                          | Law 2, XI-14         |
+| `phoenix/no-kind-branch`: no `=== '<kind>'` comparisons on `.kind/.sector/.industry` inside `mechanisms/`                  | Law 15, App B 48     |
+| `phoenix/no-clock-no-random`: no `Date`, `Math.random`, `performance.now` in engine                                        | Seed A5, Audit D3    |
+| `phoenix/no-cross-module-import`: a module imports only the kernel, never a sibling module or the world container          | Law 15, 4.9b         |
+| `phoenix/no-console`, `no-empty` catch, `no-restricted-syntax` on `try` inside mechanisms                                  | §5                   |
+| `@typescript-eslint/switch-exhaustiveness-check`, `no-explicit-any`, `no-non-null-assertion`, `strict-boolean-expressions` | §5                   |
 
 The parameter register is checked at engine start: a placeholder without a named mechanism and
 worklist item fails construction.

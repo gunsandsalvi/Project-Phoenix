@@ -2,11 +2,12 @@
  * Sovereign instruments: the bond and the bill, two instruments and not one with a flag
  * (Sovereign B1), answering the bond contract the sovereign's way.
  *
- * @spec Sovereign B1 Sovereign B2 Sovereign B4 Sovereign B5 Sovereign B6 Sovereign B7 Sovereign F1 Sovereign F3 Bond N4 Bond N5 Bond N5.a Bond N5.c Bond N6 Bond N10 Bond N11 Bond N12 Bond N13 Bond N13.a Bond N14 Money G3.a Money G3.c Law 9 Law 15
+ * @spec Bond N9.b Sovereign F2 Sovereign B1 Sovereign B2 Sovereign B4 Sovereign B5 Sovereign B6 Sovereign B7 Sovereign F1 Sovereign F3 Bond N4 Bond N5 Bond N5.a Bond N5.c Bond N6 Bond N10 Bond N11 Bond N12 Bond N13 Bond N13.a Bond N14 Money G3.a Money G3.c Law 9 Law 15
  *
  * A module: it registers kinds and profiles and touches no kernel store. The auction, the curve and
  * the treasury's programme are separate modules (worklist 3); this one is only the paper.
  */
+import type { Calendar } from '../../calendar/calendar.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -80,7 +81,7 @@ export const sovereignBond: InstrumentKindProfile = {
     const t = i.terms;
     const out: DueAction[] = [];
     let prev = t.issueDate;
-    for (const date of cal.schedule(t.issueDate, t.maturity, t.couponPeriodicity)) {
+    for (const date of couponDates(t, cal)) {
       if (cal.place(date) === period) {
         // N6: the coupon for the accrual period, by the instrument's own day count (G3.c).
         const frac = yearFraction(t.dayCount, prev, date);
@@ -91,7 +92,28 @@ export const sovereignBond: InstrumentKindProfile = {
     if (cal.place(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
     return out.sort((a, b) => compareCivil(a.date, b.date));
   },
+  // N9.b: what the buyer owes the seller on top of the clean price, from the last coupon date to
+  // the settlement date, on the line's own day count (G3.c).
+  accrued: (i, on, cal) => {
+    if (!isBond(i.terms)) return 0;
+    const t = i.terms;
+    let prev = t.issueDate;
+    for (const date of couponDates(t, cal)) {
+      if (compareCivil(date, on) > 0) break;
+      prev = date;
+    }
+    if (compareCivil(on, prev) <= 0) return 0;
+    return mul(t.coupon.amount, yearFraction(t.dayCount, prev, on), 'accrued');
+  },
 };
+
+/**
+ * The coupon dates of a line, in order (N6). The schedule is generated from the issue date so
+ * month-ends do not drift (Money G3.a); it is a read of the terms and is never stored.
+ */
+function couponDates(t: SovereignBondTerms, cal: Calendar): readonly Civil[] {
+  return cal.schedule(t.issueDate, t.maturity, t.couponPeriodicity);
+}
 
 export const sovereignBill: InstrumentKindProfile = {
   id: SOVEREIGN_BILL,
@@ -109,6 +131,9 @@ export const sovereignBill: InstrumentKindProfile = {
     isBill(i.terms) && cal.place(i.terms.maturity) === period
       ? [{ kind: 'maturity', date: i.terms.maturity }]
       : [],
+  // F2: a bill accretes against its own cleared price; nothing accrues on the paper itself, so
+  // nothing travels with a trade beyond the price.
+  accrued: () => 0,
 };
 
 export const sovereignInstruments: SystemModule = {

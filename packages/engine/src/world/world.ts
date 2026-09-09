@@ -26,13 +26,20 @@ import { forbid } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import {
   type CurrencyCode,
+  type InstrumentId,
   type MarketId,
   moneyInstrumentId,
   paramId,
   type PartyId,
 } from '../core/ids.js';
 import { addTo } from '../core/num.js';
-import { runMarket, type MarketDecl, type MarketResult } from '../clearing/market.js';
+import { none, type Option, some } from '../core/option.js';
+import {
+  runMarket,
+  type MarketDecl,
+  type MarketResult,
+  type PrimaryOffer,
+} from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import { Journal } from '../journal/journal.js';
 import { Ledger } from '../ledger/ledger.js';
@@ -93,6 +100,8 @@ export class World {
   private readonly store: Register;
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
+  /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
+  private readonly offerList = new Map<MarketId, PrimaryOffer>();
   private readonly participantDecls: ParticipantDecl[] = [];
   private readonly phaseList: Phase[];
   private readonly audit: Audit;
@@ -300,6 +309,7 @@ export class World {
   /** Advance one period: every phase in order, then the audit (Audit C1). */
   step(): PeriodReport {
     forbid(this.sealed, 'Seed A2', 'seal the seed before stepping');
+    this.offerList.clear();
     this.currentPeriod = nextPeriod(this.currentPeriod);
     this.currentCycle = this.calendar.cycle(0);
     for (const phase of this.phaseList) {
@@ -341,6 +351,8 @@ export class World {
       cash: (ccy) => this.cash(party, ccy),
       equity: () => this.store.equity(party),
       print: (instrument) => this.prices.latest(instrument, this.currentPeriod),
+      offer: (market) => this.offer(market),
+      accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       publicEvents: (last) => this.journal.visibleTo(party, last),
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
     };
@@ -379,6 +391,10 @@ export class World {
       openMarket: (decl) => {
         this.addMarket(decl);
       },
+      offer: (o) => {
+        this.postOffer(o);
+      },
+      accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       cease: (party, successor) => {
         this.parties.cease(party, this.currentPeriod, successor);
         this.journal.record(
@@ -430,6 +446,30 @@ export class World {
 
   // ---- internals -------------------------------------------------------------------------------
 
+  /** The issuer's supply for this period's session (Sovereign C1); one offer per market per period. */
+  postOffer(o: PrimaryOffer): void {
+    forbid(this.sealed, 'Seed A2', 'an offer is posted inside a period, not at assembly');
+    forbid(
+      !this.offerList.has(o.market),
+      'Law 4',
+      `${o.market} already carries an offer this period`,
+    );
+    this.market(o.market);
+    this.offerList.set(o.market, o);
+  }
+
+  /** Public before the session (Sovereign C1.a): bidders prepare against a size they can see. */
+  offer(market: MarketId): Option<PrimaryOffer> {
+    const o = this.offerList.get(market);
+    return o === undefined ? none() : some(o);
+  }
+
+  /** Bond N9.b: what has accrued per unit on a line at the start of a period, from its own terms. */
+  accruedPerUnit(instrument: InstrumentId, at: Period): number {
+    const i = this.instruments.get(instrument);
+    return this.registry.instrumentKind(i.kind).accrued(i, this.calendar.startOf(at), this.calendar);
+  }
+
   private runOne(m: MarketDecl): MarketResult {
     const orders: Order[] = [];
     for (const decl of this.participantDecls) {
@@ -437,12 +477,14 @@ export class World {
         orders.push(...decl.orders(this.participantView(party.id), m));
       }
     }
-    return runMarket(m, orders, this.currentPeriod, this.currentCycle, {
+    return runMarket(m, orders, this.offer(m.id), this.currentPeriod, this.currentCycle, {
       parties: this.parties,
       prices: this.prices,
       settlement: this.settlement,
       journal: this.journal,
       accountOf: this.accountOf,
+      accruedPerUnit: (instrument, at) => this.accruedPerUnit(instrument, at),
+      instrumentIssuer: (instrument) => this.instruments.get(instrument).issuer,
     });
   }
 

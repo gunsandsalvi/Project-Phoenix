@@ -197,10 +197,10 @@ packages/engine/test/{market-primary,accrued,curve,treasury,auction,omo}.test.ts
 
 ## Steps
 
-- [ ] 3.1 Kernel: primary block on `MarketDecl`; `runMarket` builds the issuer's supply from it; `auction.result` journaled; market-order bids; tests: a primary market clears at the stop-out, fails on `noOverlap` and writes no print
+- [x] 3.1 Kernel: primary block on `MarketDecl`; `runMarket` builds the issuer's supply from it; `auction.result` journaled; market-order bids; tests: a primary market clears at the stop-out, fails on `noOverlap` and writes no print
 - [ ] 3.1 Kernel: `MarketResult` carries `cover` and `tail`; the inspector shows them
-- [ ] 3.2 Kernel: `accruedPerUnit` on `AssetLeg`; settlement moves it and books the equity effects; the accounts family holds across a coupon date with a mid-period trade; test
-- [ ] 3.2 Profiles: `accrued()` on the bond profile by day count; zero on the bill; tests
+- [x] 3.2 Kernel: `accruedPerUnit` on `AssetLeg`; settlement moves it and books the equity effects; the accounts family holds across a coupon date with a mid-period trade; test
+- [x] 3.2 Profiles: `accrued()` on the bond profile by day count; zero on the bill; tests
 - [ ] 3.3 Kernel: curve families registered by modules; `curve()` on both contexts; provenance per point; one compounding convention; tests: traded, stale, interpolated, extrapolated, none
 - [ ] `treasury` module skeleton: params declared (table above); phases anchored; module-private programme state journaled
 - [ ] `treasury.programme`: the need from due actions and outlays; the tenor mix; the auction calendar; test: redemptions ahead raise the need in the periods before them

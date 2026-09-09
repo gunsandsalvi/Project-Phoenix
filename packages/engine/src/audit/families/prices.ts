@@ -18,20 +18,23 @@ export function pricesFamily(): Family {
       for (const i of view.instruments.all()) {
         if (!i.status.live) continue;
         if (view.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
+        // B3 is about what anyone marks: a line nobody holds is marked by nobody, and a line that
+        // has never traded honestly has no price (XI-6). A HELD position with no print is the
+        // defect, because its holder cannot mark it.
         const held = view.register.holdersOf(i.id).length > 0;
         const print = view.prices.read(i.id, view.period);
         if (!print.some) {
-          out.push({
-            family: 'prices',
-            spec: 'Clearing F2',
-            owner: i.id,
-            size: view.register.heldTotal(i.id).value,
-            unit: i.unit,
-            period: view.period,
-            message: held
-              ? `${i.id} is held and has no print for this period`
-              : `${i.id} has no print for this period`,
-          });
+          if (held) {
+            out.push({
+              family: 'prices',
+              spec: 'Clearing F2',
+              owner: i.id,
+              size: view.register.heldTotal(i.id).value,
+              unit: i.unit,
+              period: view.period,
+              message: `${i.id} is held and has no print for this period`,
+            });
+          }
           continue;
         }
         if (!i.market.some) {
