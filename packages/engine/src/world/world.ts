@@ -91,6 +91,8 @@ export interface Phase {
   /** The settlement cycle this phase runs in (Money G2). */
   readonly cycle: number;
   readonly owner: string;
+  /** The phase this one was anchored to, so a later module lands after an earlier one (Law 10). */
+  readonly anchoredTo: string | null;
   run(world: World): void;
 }
 
@@ -183,6 +185,7 @@ export class World {
     this.phaseList = [
       {
         name: 'corporateActions',
+        anchoredTo: null,
         spec: 'Register E1 Register E2',
         cycle: 0,
         owner: 'kernel',
@@ -201,6 +204,7 @@ export class World {
       },
       {
         name: 'markets',
+        anchoredTo: null,
         spec: 'Clearing F1',
         cycle: 1,
         owner: 'kernel',
@@ -214,6 +218,7 @@ export class World {
       },
       {
         name: 'revaluation',
+        anchoredTo: null,
         spec: 'Clearing D4 Currency D3',
         cycle: this.calendar.cyclesPerPeriod - 1,
         owner: 'kernel',
@@ -445,11 +450,23 @@ export class World {
       spec: decl.spec,
       cycle,
       owner,
+      anchoredTo: anchorName,
       run: (w) => {
         decl.run(w.mechanismContext(owner));
       },
     };
-    this.phaseList.splice('before' in decl.anchor ? idx : idx + 1, 0, phase);
+    // Law 10: modules assembled in order run in order. Anchoring BEFORE a phase gives that for
+    // nothing — each insert lands just before it, behind the ones already there. Anchoring AFTER
+    // does not: inserting immediately after the anchor would put a later module's phase in FRONT
+    // of an earlier module's, which is the reverse of what assembly promised, and the order is
+    // load-bearing wherever one phase must see what another wrote.
+    let at = idx + 1;
+    if (!('before' in decl.anchor)) {
+      while (this.phaseList[at]?.anchoredTo === anchorName) at += 1;
+    } else {
+      at = idx;
+    }
+    this.phaseList.splice(at, 0, phase);
     let last = 0;
     for (const p of this.phaseList) {
       forbid(
@@ -546,6 +563,7 @@ export class World {
       free: (instrument) => this.store.free(party, instrument),
       cash: (ccy) => this.cash(party, ccy),
       equity: () => this.store.equity(party),
+      equityWalk: () => this.store.equityWalk(party),
       print: (instrument) => this.prices.latest(instrument, this.currentPeriod),
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),

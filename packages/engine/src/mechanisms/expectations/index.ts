@@ -23,6 +23,7 @@ import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
 import { isAssetLeg, isMoneyLeg, type CellSide } from '../../ledger/instruction.js';
+import { issuedBy } from '../../register/instruments.js';
 import type { MechanismContext, Outlook, OutlookVariable } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
@@ -80,8 +81,19 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
       list.push(e.delta);
       earnings.set(e.party, list);
     }
+    // Households B3, B3.a: what a party was PAID, which is not the same as what reached it. A claim
+    // handed back to WHOEVER PROMISED IT is capital returning — a bill that matured, a fund share
+    // redeemed (Fund Shares C2) — and a party that counted that as income would think itself richer
+    // every time it spent its own savings. A sale to somebody else is a trade and is not this.
+    const returned = new Set<PartyId>(
+      r.instruction.legs
+        .filter(isAssetLeg)
+        .filter((leg) => issuedBy(ctx.instruments.get(leg.instrument), leg.to))
+        .map((leg) => leg.from),
+    );
     for (const leg of r.instruction.legs) {
       if (isMoneyLeg(leg)) {
+        if (returned.has(leg.to.holder)) continue;
         // XI-15: what a cell observes is what a MEMBER of it received. The whole cell's receipt is
         // a sector aggregate, and a decision taken on one would be a decision at an average.
         const list = income.get(leg.to.holder) ?? [];

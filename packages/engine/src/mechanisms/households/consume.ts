@@ -74,12 +74,23 @@ export interface Spending {
   readonly constrained: boolean;
 }
 
-export function spendPerMember(view: ParticipantView, p: HouseholdParams): Option<Spending> {
+/**
+ * `onDemand`: what it can ask back from a fund at any time, per member (Fund Shares D2). A money
+ * fund is a SUBSTITUTE for a deposit, so what is in one is money this cell can pay with — it asks
+ * for it in the same period it means to spend it. Anything it cannot get back on demand is wealth
+ * (C1.b) but not budget (C1.d), which is the whole difference between a fund share and a bond.
+ */
+export function spendPerMember(
+  view: ParticipantView,
+  p: HouseholdParams,
+  onDemand: number,
+): Option<Spending> {
   const income = view.outlook('income');
   if (!income.some) return none();
   const ccy = view.registry.region(view.self.region).ccy;
   const cash = view.cash(ccy);
-  const wealth = wealthOf(view, cash);
+  const budget = add(cash, onDemand, 'what it can pay with');
+  const wealth = add(wealthOf(view, cash), onDemand, 'what it owns');
   // C1.c, §46 B3: the cushion is so many periods of what it expects, widened by how wrong that
   // expectation has recently been. Confidence is in the same unit as the variable, so a cell whose
   // income has been unpredictable by a given amount wants that much more in hand per period.
@@ -91,7 +102,7 @@ export function spendPerMember(view: ParticipantView, p: HouseholdParams): Optio
   const gap = div(sub(wealth, buffer, 'what it owns over its cushion'), p.patience, 'closed at its own patience');
   const wanted = add(income.value.expected, gap, 'what it decides to spend');
   // C1.d: it spends what it has, whatever it wants. And nobody buys a negative loaf.
-  const afforded = wanted > cash ? cash : wanted;
+  const afforded = wanted > budget ? budget : wanted;
   return some({
     spend: afforded > 0 ? afforded : 0,
     wanted,
@@ -99,7 +110,7 @@ export function spendPerMember(view: ParticipantView, p: HouseholdParams): Optio
     expected: income.value.expected,
     cash,
     wealth,
-    constrained: wanted > cash,
+    constrained: wanted > budget,
   });
 }
 

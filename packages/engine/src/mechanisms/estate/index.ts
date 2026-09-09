@@ -91,9 +91,13 @@ function failed(ctx: MechanismContext, view: ParticipantView): string | undefine
     }
   }
   if (can.includes('solvency')) {
-    const equity = view.equity();
-    if (equity < 0 && material(equity, 2, Math.abs(equity))) {
-      return `its liabilities are past its assets by ${-equity}`;
+    // Law 7: the equity account is a walk, and what it may call nothing is what that walk has cost
+    // it in rounding. A party whose equity is ZERO by construction — a fund (Fund Shares A3) — sits
+    // at the dust either side of it every period, and a test that called that insolvency would kill
+    // one every week. It is the same tolerance the accounts family compares it against (Law 4).
+    const walk = view.equityWalk();
+    if (walk.value < 0 && !withinDust(walk.value, 0, ctx.valuation.equityDust(view.self.id, walk, ctx.period))) {
+      return `its liabilities are past its assets by ${-walk.value}`;
     }
   }
   return undefined;
@@ -134,6 +138,21 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
     status: { alive: true },
   });
   const ccy = ctx.registry.region(p.region).ccy;
+  // D5: everything the dead party ISSUED is assumed by the estate, so a holder of that paper still
+  // holds a claim on somebody who exists. It goes over the wire like any other change of book: the
+  // obligation leaves one balance sheet and lands on the other in one numbered instruction (Law 5).
+  //
+  // BEFORE the assets move, because what a liability is worth is read off the book behind it: a
+  // claim ON this party's book (Fund Shares B1) is worth nothing once the book has gone to the
+  // estate, and the estate would assume nothing while its holders still carried the old value.
+  for (const i of ctx.instruments.all()) {
+    if (!i.status.live || !i.issuer.some || i.issuer.value !== dead) continue;
+    ctx.settle({
+      legs: [{ kind: 'assume', from: dead, to: id, instrument: i.id }],
+      cause: 'corporateAction',
+      reason: `${id} assumes ${i.id} from ${dead}`,
+    });
+  }
   for (const h of ctx.register.holdingsOf(dead)) {
     const i = ctx.instruments.get(h.instrument);
     const units = ctx.register.quantity(dead, h.instrument);
@@ -170,17 +189,6 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
             toCell: none(),
           };
     ctx.settle({ legs: [leg], cause: 'transfer', reason: `${dead} to its estate` });
-  }
-  // D5: everything the dead party ISSUED is assumed by the estate, so a holder of that paper still
-  // holds a claim on somebody who exists. It goes over the wire like any other change of book: the
-  // obligation leaves one balance sheet and lands on the other in one numbered instruction (Law 5).
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== dead) continue;
-    ctx.settle({
-      legs: [{ kind: 'assume', from: dead, to: id, instrument: i.id }],
-      cause: 'corporateAction',
-      reason: `${id} assumes ${i.id} from ${dead}`,
-    });
   }
   ctx.cease(dead, id);
   const closesAfter = ctx.period + ctx.params.get(ESTATE_PARAMS.programme);
@@ -557,11 +565,12 @@ export const estate: SystemModule = {
       name: 'estates.resolve',
       spec: 'XI-3 XI-8 Firm Birth D1 Firm Birth D5 Banks Capital C1',
       cycle: 'anchor',
-      // The resolution slot: after the markets, the period's payments, and — because a module
-      // assembled before this one puts its phase here first — the drawings that became rows. So
-      // what a party could not pay is known, what it holds is what it ended with, and what it owes
-      // is an instrument somebody can hold rather than a hole in an account.
-      anchor: { before: 'revaluation' },
+      // The resolution slot: after the markets, the period's payments, the drawings that became
+      // rows — and after REVALUATION, because Firm D4 asks whether liabilities exceed assets AT
+      // MARKS, and the marks are not in anybody's book until revaluation has put them there. Asked
+      // before it, a party whose own liabilities are marked (a fund, whose shares ARE its book:
+      // Fund Shares A3) reads as insolvent by exactly whatever it paid out this period.
+      anchor: { after: 'revaluation' },
       run: (ctx: MechanismContext): void => {
         const b = book(ctx);
         for (const p of ctx.parties.all()) {

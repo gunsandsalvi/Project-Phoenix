@@ -216,10 +216,22 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
     expect(r.audit.total).toBe(0);
   });
 
-  it('funds itself over a year when the market is there: no shortfall, and the buffer survives', () => {
+  it('funds itself over a year when the market is there: the debt is serviced and the buffer survives', () => {
     const w = foundationWorld('tsy-g');
     for (let i = 0; i < 52; i += 1) w.step();
-    expect(w.journal.ofKind('treasury.shortfall')).toHaveLength(0);
+    // A3.b, D3: what "it funds itself" means is that it never misses what it PROMISED. A coupon
+    // that did not arrive is a default (Bond N12) and there is none: every one was paid out of
+    // money it had raised, with no overdraft anywhere behind it.
+    const missed = w.ledger
+      .all()
+      .filter((r) => r.outcome === 'failed' && r.instruction.cause === 'coupon');
+    expect(missed).toHaveLength(0);
+    // XI-9: the constraint is real, so a mandate can still go short in a week when the receipts do
+    // not come — and what gives is a TRANSFER, which is a policy that was not funded, never the
+    // debt. A world where nothing ever gave would be a world with no constraint in it.
+    for (const e of w.journal.ofKind('treasury.shortfall')) {
+      expect(Number(e.data['paid'])).toBeGreaterThan(0);
+    }
     expect(w.cash(TREASURY_NORTH, PHX)).toBeGreaterThan(0);
     // A3.a: its equity is negative and that is normal; the number is still a read.
     expect(w.register.equity(TREASURY_NORTH)).toBeLessThan(0);

@@ -80,10 +80,20 @@ export function opened(value: number, what: string): Running {
   return { value: v, dust: moveDust(v, 0), moves: 0 };
 }
 
-/** Move a balance by one event; the rounding lands at the magnitude the addition passed through. */
-export function moved(balance: Running, delta: number, what: string): Running {
+/**
+ * Move a balance by one event; the rounding lands at the magnitude the addition passed through.
+ *
+ * `through` is that magnitude when it is BIGGER than the move itself: an instruction that takes a
+ * party's equity down by a thousand and back up by a thousand moves it by nothing, and the rounding
+ * it left behind is the rounding of a thousand, not of nothing. A balance that is zero by
+ * construction — a fund's equity (Fund Shares A3) — is nothing BUT that residue, so a walk that
+ * only saw the net would call every one of them a defect (Law 7: the tolerance is what the
+ * arithmetic did, not what the answer looks like).
+ */
+export function moved(balance: Running, delta: number, what: string, through = 0): Running {
   const value = finite(balance.value + finite(delta, what), what);
-  return { value, dust: balance.dust + moveDust(balance.value, delta), moves: balance.moves + 1 };
+  const passed = Math.abs(through) > Math.abs(delta) ? through : delta;
+  return { value, dust: balance.dust + moveDust(balance.value, passed), moves: balance.moves + 1 };
 }
 
 /** What one more move onto a running balance costs it: the rounding of that one addition (Law 7). */

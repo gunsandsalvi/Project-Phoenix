@@ -29,7 +29,7 @@ import {
   moneyInstrumentId,
   type PartyId,
 } from '../core/ids.js';
-import { addTo, dustOf, finite, mul, sum } from '../core/num.js';
+import { addTo, dustOf, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties, Party } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -718,8 +718,13 @@ export class Settlement {
       ).value;
       return total === 0 ? 0 : value / total;
     };
+    // Law 7: what each party's equity NETTED to, and what it passed THROUGH getting there. A
+    // trade takes a book down by the price and up by the value in one instruction, and the
+    // rounding that leaves behind is the price's, not the difference's.
+    const gross = new Map<PartyId, number>();
     const bump = (party: PartyId, delta: number): void => {
       addTo(equity, party, delta);
+      addTo(gross, party, Math.abs(delta));
     };
 
     ops.forEach((op, index) => {
@@ -865,7 +870,12 @@ export class Settlement {
     for (const [party, delta] of equity) {
       if (delta === 0) continue;
       this.checkHomeCurrency(party, ins);
-      this.d.register.moveEquity({ party, delta, cause: `instruction ${ins.id}` });
+      this.d.register.moveEquity({
+        party,
+        delta,
+        cause: `instruction ${ins.id}`,
+        through: zeroIfNone(gross.get(party)),
+      });
       effects.push({ party, delta });
     }
     return { deltas, equity: effects };

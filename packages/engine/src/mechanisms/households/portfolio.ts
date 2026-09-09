@@ -22,7 +22,9 @@
  */
 import { period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
-import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
+import type { VenueDecl } from '../../clearing/venue.js';
+import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
+import type { Event } from '../../journal/journal.js';
 import { add, div, material, mul } from '../../core/num.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -83,6 +85,123 @@ export function paperBids(
     out.push({ market: e.instrument.market.value, instrument: e.instrument.id, price: e.price, qty });
   }
   return out;
+}
+
+/**
+ * D2, D5, D5.a: the third thing a saver can do with its money. A deposit returns nothing; a bill
+ * returns what a bill returns and ties the money up; a MONEY FUND is a claim on short paper that
+ * can be asked for back at any time, and what it returns is what the fund published it returned.
+ *
+ * The substitution is a consequence, not an allocation (D5): the cell puts new savings into the
+ * fund only when what the fund actually returned clears what it requires of anything it holds
+ * instead of money, and it asks for its money back when its own cushion is short — which is the
+ * real reason anybody redeems, and the reason a shock to incomes becomes a redemption wave.
+ */
+export interface FundOrder {
+  readonly venue: VenueId;
+  readonly side: 'buy' | 'sell';
+  /** Per member of the cell (XI-15); the posting carries the cell's weight. */
+  readonly sharesPerMember: number;
+}
+
+/** What a cell holds in one fund, and what the fund last said a share of it is worth. */
+export interface FundPosition {
+  readonly venue: VenueId;
+  readonly fund: string;
+  readonly line: InstrumentId;
+  readonly perShare: number;
+  /** D2.a: what it offers a saver, after its manager. This is what competes with a deposit. */
+  readonly offered: number;
+  readonly sharesPerMember: number;
+  readonly worthPerMember: number;
+}
+
+/**
+ * D2, D5: what this cell has in the funds it can reach, at what each of them last published. The
+ * venue says which line its shares are and the fund publishes what a share is worth (B1), so a
+ * saver reads two public facts and nothing private (Observer A3).
+ */
+export function fundPositions(
+  venues: readonly VenueDecl[],
+  struck: readonly Event[],
+  view: ParticipantView,
+): FundPosition[] {
+  const out: FundPosition[] = [];
+  for (const v of venues) {
+    if (v.key['kind'] !== 'fund') continue;
+    const fund = v.key['fund'];
+    // The venue says which line its shares are, because the venue is public data about itself and
+    // a household has no business knowing how another module names things (Law 15).
+    const line = v.key['share'];
+    if (fund === undefined || line === undefined) continue;
+    const last = struck.filter((e) => e.data['fund'] === fund).pop();
+    if (last === undefined) continue;
+    const perShare = last.data['perShare'];
+    const offered = last.data['offered'];
+    if (typeof perShare !== 'number' || perShare <= 0) continue;
+    const held = view.quantity(instrumentId(line));
+    out.push({
+      venue: v.id,
+      fund,
+      line: instrumentId(line),
+      perShare,
+      offered: typeof offered === 'number' ? offered : 0,
+      sharesPerMember: held,
+      worthPerMember: mul(held, perShare, 'what its shares are worth'),
+    });
+  }
+  return out;
+}
+
+/**
+ * D2, D5, D5.a: what a saver does with a money fund. It is where its CUSHION lives, because a fund
+ * of short paper is a substitute for a deposit that pays it something (D2) — so what it holds over
+ * what it is about to spend goes in, and what it is short of what it is about to spend comes back
+ * out. Nothing here is an allocation: the flow is a consequence of the cell's own budget, and it
+ * stops entirely the moment what the fund offers stops clearing what the cell requires (D5).
+ */
+export function fundOrders(
+  positions: readonly FundPosition[],
+  required: number,
+  toFund: number,
+  short: number,
+): FundOrder[] {
+  const out: FundOrder[] = [];
+  for (const p of positions) {
+    // C2: it asks for its money back because it needs it. Nothing else in a household's life is a
+    // reason to redeem, and a rule that redeemed on a bad return would be a run written into it.
+    if (short > 0) {
+      if (p.sharesPerMember <= 0) continue;
+      const want = div(short, p.perShare, 'shares it must give back');
+      out.push({
+        venue: p.venue,
+        side: 'sell',
+        sharesPerMember: want > p.sharesPerMember ? p.sharesPerMember : want,
+      });
+      continue;
+    }
+    // D2.a: and it puts money in when what the fund offers clears what it wants for giving up its
+    // money — the competition D2 names, against a deposit that pays it nothing.
+    if (toFund <= 0 || p.offered < required) continue;
+    out.push({ venue: p.venue, side: 'buy', sharesPerMember: div(toFund, p.perShare, 'shares it asks for') });
+  }
+  return out;
+}
+
+/** C2: how much of what it is about to spend its account cannot cover, per member. */
+export function shortForSpending(cash: number, spend: number): number {
+  const gap = spend - cash;
+  return gap > 0 ? gap : 0;
+}
+
+/**
+ * D2: the part of its money that belongs in a fund rather than in its account — what it holds over
+ * what it is about to spend, up to the cushion it wants. Above the cushion it would rather have
+ * paper (D5), and below what it is about to spend there is nothing to put anywhere.
+ */
+export function cushionForFund(cash: number, spend: number, spare: number): number {
+  const over = cash - spend - spare;
+  return over > 0 ? over : 0;
 }
 
 /** C2, D1: what a cell has left over once it has spent and kept its cushion, per member. */

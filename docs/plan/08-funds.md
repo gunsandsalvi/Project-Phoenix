@@ -91,13 +91,13 @@ packages/engine/test/{funds,nav,redemption,money-fund,etf}.test.ts
 ## Steps
 
 - [x] 8.1 Kernel: `pricing: 'derived'` with `profile.derive(i, at, reads)`; the valuation answers from it, the registry refuses a derived kind that derives nothing (and a non-derived one that derives), revaluation re-marks off it, and a book whose value depends on itself throws with the citation; tests
-- [ ] `fund`, `fundManager` party kinds; `fund.share` and `etf.share` kinds; mandates as party terms; tests
-- [ ] NAV as a read; stale prints make a stale NAV, journaled; fee instruction to the manager each period; tests
-- [ ] Subscription: one instruction (cash in, shares issued); the fund invests the cash per mandate above its buffer; test: an ineligible kind is never ordered
-- [ ] Redemption: at the NAV struck when asked; a cash shortfall fails the instruction, posts forced sales, re-runs after the markets; the difference lands on the remaining holders; tests
-- [ ] Gate: unmet redemptions queue, never drop; `fund.gate` public; a gate past the horizon fails the fund into the estate; tests
+- [x] `fund`, `fundManager` party kinds; the `fund.share` kind; the mandate as declared data — eligible kinds and a maximum tenor, and the module never posts an order outside it; tests (`etf.share` is its own step below)
+- [x] NAV as a read; stale prints make a stale NAV, journaled; fee instruction to the manager each period; tests
+- [x] Subscription: one instruction (cash in, shares issued); the fund invests the cash per mandate above its buffer; test: an ineligible kind is never ordered
+- [x] Redemption: at the NAV struck when asked; what the cash does not reach is queued rather than failed (an instruction that fails is a claim dropped), forced sales are posted, and the queue is paid after the markets; the difference lands on the remaining holders; tests
+- [x] Gate: unmet redemptions queue, never drop; `fund.gate` public; an audit family pointed at the FORBID; a run gates and then clears as the fund sells; tests
 - [ ] Money fund: bills mandate, floating NAV, breaking the buck when a bill defaults; test
-- [ ] Households' substitution among deposit, money fund and bills from the cell's own view (D2, D5.a); test: flows follow the yield gap
+- [x] Households' substitution among deposit, money fund and bills from the cell's own view (D2, D5.a); test: the saver holds the fund and the fund holds the bills (D3)
 - [ ] ETF: traded share with a market, NAV read, in-kind creation and redemption by a bank participant with a limit, premium/discount as a read; tests
 - [ ] Failure: NAV ≤ 0 opens an estate; investors' shares resolve to what the estate returns; test
 - [ ] Audit: A3 and C5 contributions; observer: NAV, flows, gates, premium/discount

@@ -58,14 +58,18 @@ describe('open-market operations (Central Bank C)', () => {
       .all()
       .filter((r) => r.outcome === 'settled' && r.instruction.cause === 'issuance');
     expect(issuances.length).toBeGreaterThan(0);
+    let allotments = 0;
     for (const r of issuances) {
       for (const leg of r.instruction.legs) {
-        if (leg.kind === 'asset') {
-          expect(leg.from).toBe(TREASURY_NORTH);
-          expect(leg.to).not.toBe(CB);
-        }
+        // An issuance is any claim coming into existence — a fund issues shares to a subscriber
+        // too (Fund Shares C1). What this is about is the primary market for the STATE's paper.
+        if (leg.kind !== 'asset' || !String(leg.instrument).startsWith('gov.')) continue;
+        allotments += 1;
+        expect(leg.from).toBe(TREASURY_NORTH);
+        expect(leg.to).not.toBe(CB);
       }
     }
+    expect(allotments).toBeGreaterThan(0);
   });
 
   it('posts a quantity and takes the level the book gives it (C3)', () => {

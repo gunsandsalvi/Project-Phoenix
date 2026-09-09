@@ -13,7 +13,7 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import type { InstrumentId, PartyId } from '../core/ids.js';
 import { impossible } from '../core/assert.js';
 import type { Option } from '../core/option.js';
-import { addTo, finite, mul } from '../core/num.js';
+import { addTo, finite, mul, zeroIfNone } from '../core/num.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -35,6 +35,10 @@ export interface RevalueDeps {
 
 export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
   const issuerMoves = new Map<PartyId, number>();
+  // Law 7: what the re-marking passed THROUGH, which is the position's whole value and not the
+  // change in it. A book re-marked from 6000 to 6000.01 moved by a penny and rounded a 6000, and
+  // an account that is zero by construction (a fund's, Fund Shares A3) is nothing but that residue.
+  const issuerThrough = new Map<PartyId, number>();
   for (const h of d.register.allHoldings()) {
     const inst = d.instruments.get(h.instrument);
     const profile = d.registry.instrumentKind(inst.kind);
@@ -72,10 +76,16 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       }
     } else continue;
     if (delta === 0) continue;
+    const through = mul(
+      h.lots.reduce((t, l) => t + Math.abs(l.qty), 0),
+      Math.abs(mark),
+      'what the re-marking passed through',
+    );
     d.register.moveEquity({
       party: h.holder,
       delta,
       cause: `revaluation of ${inst.id} in period ${period}`,
+      through,
     });
     d.journal.record(
       period,
@@ -89,8 +99,9 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       false,
     );
     if (profile.liabilityOfIssuer) {
-      const total = mul(delta, weightOf(d.parties.get(h.holder)), 'issuer revaluation');
-      addTo(issuerMoves, issuerOf(inst), -total);
+      const weight = weightOf(d.parties.get(h.holder));
+      addTo(issuerMoves, issuerOf(inst), -mul(delta, weight, 'issuer revaluation'));
+      addTo(issuerThrough, issuerOf(inst), mul(through, weight, 'what its liability passed through'));
     }
   }
   for (const [issuer, delta] of issuerMoves) {
@@ -99,6 +110,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: issuer,
       delta,
       cause: `revaluation of own liabilities in period ${period}`,
+      through: zeroIfNone(issuerThrough.get(issuer)),
     });
     d.journal.record(
       period,

@@ -1,0 +1,794 @@
+/**
+ * Funds: a named party whose liability is its shares, whose equity is zero, and whose investors can
+ * ask for their money back — which is the second door into the forced seller.
+ *
+ * @spec Fund Shares A1 Fund Shares A2 Fund Shares A3 Fund Shares A4 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B3 Fund Shares B4 Fund Shares C1 Fund Shares C1.a Fund Shares C2 Fund Shares C2.a Fund Shares C2.b Fund Shares C3 Fund Shares C4 Fund Shares C4.a Fund Shares C5 Fund Shares D1 Fund Shares D2 Fund Shares D3 Fund Shares D4 Fund Shares F1 Fund Shares F2 Fund Shares F3 Fund Shares G1 Fund Shares G1.b XI-2 XI-3 XI-6 Law 2 Law 4 Law 15
+ *
+ * WHY IT IS HERE (XI-2). A price falls; somebody must sell into the fall; the sale makes the fall
+ * worse. Without a party that MUST sell, a price shock is absorbed by nobody and dissipates, and
+ * every measurement of contagion measures that dissipation. A fund is the cleanest such party: its
+ * investors can ask for cash at any time, the fund promised nothing about being able to pay, and
+ * what it must do when its buffer runs out is sell into whatever market is there (C2.a, C2.b).
+ *
+ * WHAT A FUND IS (A1-A3). A party with an account and a register of holdings, whose liability is
+ * its shares and whose equity is therefore ZERO: the holders own the assets, and a fund with equity
+ * has mislaid somebody's money. Nothing here enforces that — it falls out of the wire. Cash in and
+ * shares out is one instruction; a mark that moves the assets moves the share liability by the same
+ * amount through the NAV; a fee out reduces both sides. The audit checks it and never repairs it.
+ *
+ * WHAT A GATE IS (C2.b). A redemption this fund cannot meet is NOT rationed away. It is paid as far
+ * as the cash goes, the rest stays queued under the holder's name at the NAV struck when it asked
+ * (C4), and the fund sells to meet it. The difference between that NAV and what the sales actually
+ * fetched falls on the holders who stayed, which is why a redemption is a real cost to them and why
+ * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
+ */
+import type { Family, Violation } from '../../audit/audit.js';
+import type { AuditView } from '../../audit/view.js';
+import type { MarketDecl } from '../../clearing/market.js';
+import type { Order } from '../../clearing/solver.js';
+import type { VenueDecl } from '../../clearing/venue.js';
+import { period as periodOf } from '../../calendar/calendar.js';
+import { compareCivil } from '../../calendar/civil.js';
+import { yearFraction } from '../../calendar/daycount.js';
+import {
+  instrumentId,
+  instrumentKindId,
+  partyKindId,
+  unitId,
+  venueId,
+  type InstrumentId,
+  type PartyId,
+  type VenueId,
+} from '../../core/ids.js';
+import { add, addTo, div, dustOf, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { none, some } from '../../core/option.js';
+import type { Leg } from '../../ledger/instruction.js';
+import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { curveFamilyOf, priceAt } from '../../prices/curve.js';
+import { weightOf } from '../../parties/party.js';
+import { issuerOf, type Instrument } from '../../register/instruments.js';
+import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
+import type { ParamDecl } from '../../registry/params.js';
+import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
+import type { SystemModule } from '../../world/module.js';
+import { FUNDS, FUND_PARAMS, fundParam, type FundDecl } from './data.js';
+import { navOf } from './nav.js';
+
+export * from './data.js';
+export { navOf } from './nav.js';
+export type { NavRead } from './nav.js';
+
+export const FUND = partyKindId('fund');
+export const FUND_MANAGER = partyKindId('fundManager');
+export const FUND_SHARE = instrumentKindId('fund.share');
+export const SHARES = unitId('shares');
+
+/** A2, G1.b: a claim with a SHARE COUNT — which is what makes it something an investor can redeem. */
+export interface FundShareTerms {
+  readonly kind: typeof FUND_SHARE;
+  readonly fund: PartyId;
+}
+
+export const shareLineOf = (fund: string): InstrumentId => instrumentId(`share.${fund}`);
+export const fundVenue = (fund: string): VenueId => venueId(`funds.${fund}`);
+
+/**
+ * A1, F2: a fund is a party like any other. It fails on solvency and on nothing else: its equity is
+ * zero by construction (A3), so with no leverage there is nothing for it to be insolvent WITH — and
+ * XI-3's fund row ("its equity is gone; its broker eats the shortfall") is the levered case, which
+ * needs a prime broker (13a) and a hedge fund (13h). The trigger is declared so that it fires the
+ * moment leverage makes negative equity reachable, rather than being remembered later.
+ *
+ * Nobody lends to it (F2: no leverage without a lender), so it cannot overdraw either: a fund short
+ * of cash sells, which is the whole point of it being here.
+ */
+export const fundKind: PartyKindProfile = {
+  id: FUND,
+  representation: 'named',
+  moneyIssuer: null,
+  fails: ['solvency'],
+  borrows: false,
+};
+
+/** F3: the manager is a separate party. The fee is its income and the fund's cost. */
+export const fundManagerKind: PartyKindProfile = {
+  id: FUND_MANAGER,
+  representation: 'named',
+  moneyIssuer: null,
+  fails: ['cash', 'solvency'],
+  borrows: true,
+};
+
+/**
+ * A2, B1: the share. Its value is DERIVED — a claim on a book is worth what the book comes to over
+ * how many claims there are — so it needs no market of its own and prints no price (an open-ended
+ * fund's shares do not trade; the ETF's do, and that is a different kind, E1).
+ */
+export const fundShareKind: InstrumentKindProfile = {
+  id: FUND_SHARE,
+  pricing: 'derived',
+  // What a holder's book has recognised is the last value read, which revaluation re-marks each
+  // period; a derived value has no stored history for a carrying rule to read back (prices/value.ts).
+  carry: 'cost',
+  // C4, D4: it moves both ways. A share is not inventory — its value follows the book up and down,
+  // and a fund that could only be written down would be a fund with a hidden guarantor on the way up.
+  fairValueThroughIncome: true,
+  liabilityOfIssuer: true,
+  unit: () => SHARES,
+  // Bond N13.a: a share ranks behind anything else the fund owes and takes what is left. That is
+  // what "the holders own the assets" means when there is not enough (A3).
+  ranking: () => ({
+    seniority: 1,
+    secured: [],
+    claim: 'a pro-rata share of what is left of the fund once anything else it owes is paid',
+  }),
+  validateTerms: () => undefined,
+  // Law 9: a fund share is named by the fund, which is how anybody would name it.
+  displayName: (_i, namer) => `${namer.issuer.some ? namer.issuer.value : 'a fund'} shares`,
+  due: () => [],
+  accrued: () => 0,
+  cashFlows: () => [],
+  revalue: (_i, lot, marked) => mul(lot.qty, sub(marked, lot.basisPerUnit, 'value moved'), 'revaluation'),
+  derive: (i, at, reads) => navOf(i, at, reads).perShare,
+};
+
+/** XI-2, C2.b: what a holder asked for and has not been paid, at the NAV struck when it asked. */
+interface Queued {
+  readonly fund: string;
+  readonly holder: PartyId;
+  /** Shares still to redeem, per member of the holder if it is a cell (XI-15). */
+  sharesPerMember: number;
+  /** C4: the NAV of the day it asked, which is what it is owed at. */
+  readonly navStruck: number;
+  readonly since: number;
+}
+
+interface Book {
+  queued: Queued[];
+  /** The NAV struck this period, so the orders and the settlement read one number (Law 4). */
+  struck: Record<string, number>;
+  /** D2.a, B1: what a share was worth last time, so what it RETURNED is a read and not a series. */
+  previous: Record<string, number>;
+}
+
+/** ACT/365F for a fee quoted per annum: a rate is not a number until its periodicity is (Law 8). */
+const FEE_DAY_COUNT = 'ACT/365F' as const;
+
+function emptyBook(): Book {
+  return { queued: [], struck: {}, previous: {} };
+}
+
+const declOf = (fund: string): FundDecl | undefined => FUNDS.find((f) => f.fund === fund);
+
+function paramsOf(): ParamDecl[] {
+  return [
+    {
+      id: FUND_PARAMS.openingShare,
+      value: 1,
+      unit: 'currency per share at the first subscription',
+      kind: 'resolution',
+      owner: 'model',
+      why: 'Fund Shares B1: a fund with no shares has nothing to divide by, so the first subscription fixes the unit its shares are counted in. Double it and every share count halves and no value, flow or decision moves — which is what makes it a resolution and not a price (Law 2).',
+    },
+    ...FUNDS.flatMap((f): ParamDecl[] => [
+      {
+        id: fundParam(f.fund, 'buffer'),
+        value: f.buffer,
+        unit: 'share of net assets held as cash',
+        kind: 'preference',
+        owner: 'model',
+        why: `Fund Shares C2.a: how much of ${f.fund} sits in cash so an ordinary redemption needs no sale. It is the whole of the difference between a redemption that is invisible and one that reaches a market, and a fund that held none would sell on every request.`,
+      },
+      {
+        id: fundParam(f.fund, 'fee'),
+        value: f.fee,
+        unit: 'per annum on net assets',
+        kind: 'shape',
+        owner: 'model',
+        why: `Fund Shares B3, F3: what ${f.managerName} charges. It is a SHAPE — a claim about what management costs — until managers compete for mandates and the fee is what that competition settles at (worklist 13h).`,
+      },
+      {
+        id: fundParam(f.fund, 'requiredYield'),
+        value: f.requiredYield,
+        unit: 'per annum over what a deposit returns',
+        kind: 'preference',
+        owner: 'model',
+        why: `Fund Shares D2, D2.a: what ${f.fund}'s investors require of it over a deposit, and therefore what it will pay for paper. A deposit returns nothing until a bank decides to pay for one (Banks Funding B1, worklist 11), and this becomes a comparison rather than a level the period one does.`,
+      },
+      {
+        id: fundParam(f.fund, 'maxTenorPeriods'),
+        value: f.maxTenorPeriods,
+        unit: 'periods',
+        kind: 'policy',
+        owner: 'model',
+        why: `Fund Shares A4, D1: the longest anything ${f.fund} holds may still have to run. A mandate is a rule somebody wrote in a prospectus, and it is a real constraint on what the fund buys rather than a label on it.`,
+      },
+    ]),
+  ];
+}
+
+/** B3: the fee, for the days this period actually has (Law 8: a per annum rate is not a per period one). */
+function payFee(ctx: MechanismContext, d: FundDecl, net: number): void {
+  const fund = ctx.parties.get(d.fund as PartyId);
+  const manager = ctx.parties.get(d.manager as PartyId);
+  const ccy = ctx.registry.region(fund.region).ccy;
+  const from = ctx.calendar.startOf(ctx.period);
+  const to = ctx.calendar.endOf(ctx.period);
+  const rate = ctx.params.get(fundParam(d.fund, 'fee'));
+  const amount = mul(net, mul(rate, yearFraction(FEE_DAY_COUNT, from, to), 'this period of a year'), 'the fee');
+  if (!material(amount, 2, net) || amount <= 0) return;
+  const leg: Leg = {
+    kind: 'money',
+    from: { holder: fund.id, issuer: fund.bank },
+    to: { holder: manager.id, issuer: manager.bank },
+    ccy,
+    amount,
+    fromCell: none(),
+    toCell: none(),
+  };
+  const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `${d.fund} pays its manager` });
+  ctx.record(
+    'fund.fee',
+    [d.fund, d.manager],
+    { fund: d.fund, manager: d.manager, amount, paid: r.outcome === 'settled' },
+    false,
+  );
+}
+
+/** C1: cash in, shares out, one instruction. C3: the shares outstanding change, so a fund is not fixed-size. */
+function subscribe(
+  ctx: MechanismContext,
+  d: FundDecl,
+  share: Instrument,
+  holder: PartyId,
+  sharesAsked: number,
+  perShare: number,
+): void {
+  const party = ctx.parties.get(holder);
+  const fund = ctx.parties.get(d.fund as PartyId);
+  const ccy = ctx.registry.region(fund.region).ccy;
+  // C1.d of the buyer's own budget: it subscribes with the money it has, and what it cannot pay
+  // for it does not buy. That is a budget, not a bound on the decision.
+  const cash = ctx.participant(holder).cash(ccy);
+  const wanted = mul(sharesAsked, perShare, 'what it asked to put in');
+  const paid = wanted > cash ? cash : wanted;
+  const shares = div(paid, perShare, 'shares it gets');
+  if (!material(shares, 2, sharesAsked)) return;
+  const side = cellSide(party, shares);
+  const money = cellSide(party, paid);
+  const legs: Leg[] = [
+    {
+      kind: 'money',
+      from: { holder, issuer: party.bank },
+      to: { holder: fund.id, issuer: fund.bank },
+      ccy,
+      amount: totalFor(party, paid),
+      fromCell: money === undefined ? none() : some(money),
+      toCell: none(),
+    },
+    {
+      kind: 'asset',
+      from: fund.id,
+      to: holder,
+      instrument: share.id,
+      qty: totalFor(party, shares),
+      pricePerUnit: some(perShare),
+      accruedPerUnit: none(),
+      fromCell: none(),
+      toCell: side === undefined ? none() : some(side),
+    },
+  ];
+  const r = ctx.settle({ legs, cause: 'issuance', reason: `${holder} subscribes to ${d.fund}` });
+  ctx.record(
+    'fund.subscribed',
+    [d.fund, holder],
+    { fund: d.fund, holder, sharesPerMember: shares, perShare, settled: r.outcome === 'settled' },
+    false,
+  );
+}
+
+/**
+ * C2, C2.a: shares back, cash out, at the NAV struck when it asked. Returns how many shares per
+ * member it could NOT pay for, which is what stays queued (C2.b: never dropped).
+ */
+function redeem(
+  ctx: MechanismContext,
+  d: FundDecl,
+  share: Instrument,
+  holder: PartyId,
+  sharesAsked: number,
+  perShare: number,
+): number {
+  const party = ctx.parties.get(holder);
+  const fund = ctx.parties.get(d.fund as PartyId);
+  const ccy = ctx.registry.region(fund.region).ccy;
+  // XI-15: the register holds a cell's position PER MEMBER, which is the unit a request is in.
+  const held = ctx.register.quantity(holder, share.id);
+  const weight = weightOf(party);
+  const asked = sharesAsked > held ? held : sharesAsked;
+  if (asked <= 0) return 0;
+  // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
+  const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
+  const owedNow = mul(totalFor(party, asked), perShare, 'what it owes this holder');
+  const paying = owedNow > cash ? cash : owedNow;
+  const sharesNow = div(div(paying, perShare, 'shares it can pay for'), weight, 'per member');
+  if (material(sharesNow, 2, asked) && sharesNow > 0) {
+    const side = cellSide(party, sharesNow);
+    const money = cellSide(party, mul(sharesNow, perShare, 'what a member is paid'));
+    const legs: Leg[] = [
+      {
+        kind: 'asset',
+        from: holder,
+        to: fund.id,
+        instrument: share.id,
+        qty: totalFor(party, sharesNow),
+        pricePerUnit: some(perShare),
+        accruedPerUnit: none(),
+        fromCell: side === undefined ? none() : some(side),
+        toCell: none(),
+      },
+      {
+        kind: 'money',
+        from: { holder: fund.id, issuer: fund.bank },
+        to: { holder, issuer: party.bank },
+        ccy,
+        amount: mul(totalFor(party, sharesNow), perShare, 'what it is paid'),
+        fromCell: none(),
+        toCell: money === undefined ? none() : some(money),
+      },
+    ];
+    const r = ctx.settle({ legs, cause: 'maturity', reason: `${d.fund} redeems for ${holder}` });
+    if (r.outcome === 'settled') {
+      ctx.record(
+        'fund.redeemed',
+        [d.fund, holder],
+        { fund: d.fund, holder, sharesPerMember: sharesNow, perShare },
+        false,
+      );
+      return sub(asked, sharesNow, 'what is left to pay');
+    }
+  }
+  return asked;
+}
+
+/** The fund's own money account, which is where its buffer is (Money D2). */
+function moneyOf(ctx: MechanismContext, party: PartyId, ccy: string): InstrumentId {
+  const bank = ctx.parties.get(party).bank;
+  return instrumentId(`money:${bank}:${ccy}`);
+}
+
+/**
+ * B1, B3, C1, C2: the day's work. Read what a share is worth, pay the manager, take in what was
+ * subscribed and pay out what was asked for — and say what it could not pay, because that is what
+ * it must sell for (C2.a) and what the market is about to see.
+ */
+function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
+  // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
+  // through its estate like anybody else's (Firm Birth D5).
+  if (!ctx.parties.get(d.fund as PartyId).status.alive) return;
+  const share = ctx.instruments.get(shareLineOf(d.fund));
+  const opening = ctx.params.get(FUND_PARAMS.openingShare);
+  const ccy = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region).ccy;
+  const previous = b.previous[d.fund];
+  // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
+  // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
+  if (share.issued > 0) {
+    payFee(ctx, d, mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'));
+  }
+  const perShare = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
+  b.struck[d.fund] = perShare;
+  // B2.a: how old the oldest mark behind it is. A stale mark makes a stale NAV and somebody
+  // transacts on it: that is a real transfer between holders and it is said out loud.
+  let oldest = ctx.period;
+  for (const h of ctx.register.holdingsOf(d.fund as PartyId)) {
+    if (h.instrument === share.id) continue;
+    const worth = ctx.valuation.worthOf(d.fund as PartyId, h.instrument, ctx.period);
+    if (worth.some && worth.value.from < oldest) oldest = worth.value.from;
+  }
+  if (oldest < ctx.period) {
+    ctx.record(
+      'fund.staleNav',
+      [d.fund],
+      { fund: d.fund, perShare, oldestMark: oldest, periodsStale: ctx.period - oldest },
+      true,
+    );
+  }
+  for (const o of ctx.posted(fundVenue(d.fund))) {
+    if (o.qty <= 0) continue;
+    // XI-15: a posting is a total and a cell's decision is per member; this is the one place the
+    // two meet, and it is the same conversion every other market makes.
+    const asked = div(o.qty, weightOf(ctx.parties.get(o.party)), 'shares per member');
+    if (o.side === 'buy') {
+      subscribe(ctx, d, share, o.party, asked, perShare);
+    } else {
+      // A holder cannot ask back what it does not have, and what it has already asked for is
+      // already on the book — a second ask for the same shares is the same claim, not another one.
+      // This is not C2.b's rationing: nothing that was ever a claim is dropped here.
+      const held = ctx.register.quantity(o.party, share.id);
+      const already = sum(
+        b.queued.filter((q) => q.fund === d.fund && q.holder === o.party).map((q) => q.sharesPerMember),
+      ).value;
+      const room = sub(held, already, 'shares it has not already asked back');
+      const taking = asked > room ? room : asked;
+      if (taking <= 0) continue;
+      // C2.b: the request goes on the book under its own name at the NAV of the day it asked. What
+      // happens to it after that is a question of cash, never of whether it counts.
+      b.queued.push({
+        fund: d.fund,
+        holder: o.party,
+        sharesPerMember: taking,
+        navStruck: perShare,
+        since: ctx.period,
+      });
+      ctx.record(
+        'fund.requested',
+        [d.fund, o.party],
+        { fund: d.fund, holder: o.party, sharesPerMember: taking, perShare },
+        false,
+      );
+    }
+  }
+  b.previous[d.fund] = perShare;
+  payQueue(ctx, b, d);
+  const owed = owedOn(ctx, b, d);
+  const cash = ctx.register.quantity(d.fund as PartyId, moneyOf(ctx, d.fund as PartyId, ccy));
+  const buffer = mul(
+    ctx.params.get(fundParam(d.fund, 'buffer')),
+    mul(perShare, share.issued, 'net assets'),
+    'the cash it keeps back',
+  );
+  ctx.record(
+    'fund.struck',
+    [d.fund],
+    {
+      fund: d.fund,
+      perShare,
+      shares: share.issued,
+      // D2, D2.a: what it actually returned over the period that closed — a read of two values it
+      // published, not a series it keeps. It is what a saver compares against a deposit, and it is
+      // published because the competition D2 names cannot happen against a number nobody can see.
+      returned: previous === undefined ? 0 : div(sub(perShare, previous, 'what it made'), previous, 'per share it returned'),
+      // C2.a: what it must find, and what it has spare. Its orders read these and nothing else,
+      // so the decision and the schedule are one decision (Law 4).
+      shortfall: owed,
+      spare: sub(sub(cash, buffer, 'over its buffer'), owed, 'and after what it owes'),
+      oldestMark: oldest,
+      // D2, D2.a: what it offers a saver — what the paper its mandate lets it hold is yielding,
+      // less what its manager takes. Both halves are public reads (Sovereign D3, B3), it causes
+      // nothing by itself (Observer A5), and it is the number that competes with a deposit rate.
+      offered: offeredYield(ctx, d),
+    },
+    true,
+  );
+}
+
+/**
+ * D2.a: what the fund offers, read from the public curve at the longest thing its mandate lets it
+ * hold, less its fee. It is not a forecast and not a promise: it is what that paper is fetching
+ * today (Sovereign D3), which is the only thing anybody can compare a deposit against.
+ */
+function offeredYield(ctx: MechanismContext, d: FundDecl): number {
+  const region = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region);
+  const fee = ctx.params.get(fundParam(d.fund, 'fee'));
+  const tenor = ctx.params.get(fundParam(d.fund, 'maxTenorPeriods'));
+  const on = ctx.calendar.startOf(ctx.period);
+  const by = ctx.calendar.startOf(periodOf(ctx.period + tenor));
+  let best = 0;
+  for (const family of ctx.registry.curveFamilies.values()) {
+    if (family.ccy !== region.ccy) continue;
+    const read = ctx.curve(family.id).at(yearFraction(family.dayCount, on, by));
+    if (read.yield.some) best = read.yield.value;
+  }
+  return sub(best, fee, 'what a saver gets after the manager');
+}
+
+/** What this fund still owes its redeemers, at the NAV each of them struck (C4). */
+function owedOn(ctx: MechanismContext, b: Book, d: FundDecl): number {
+  const terms: number[] = [];
+  for (const q of b.queued) {
+    if (q.fund !== d.fund) continue;
+    const holder = ctx.parties.get(q.holder);
+    terms.push(mul(totalFor(holder, q.sharesPerMember), q.navStruck, 'what it is owed'));
+  }
+  return sum(terms).value;
+}
+
+/**
+ * C2.a, C2.b, C4: pay what the cash reaches, oldest request first, at the NAV each one struck. What
+ * it cannot pay stays on the book under its own name — never rationed away — and the fund is gated
+ * until it is paid, which is public because a gate is information (C4.a: it is a cost to those who
+ * stay, and they may want to leave too).
+ */
+function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
+  if (!ctx.parties.get(d.fund as PartyId).status.alive) return;
+  const share = ctx.instruments.get(shareLineOf(d.fund));
+  // Clearing C3: first come, first served is a stated rule, applied the same way every time.
+  const mine = b.queued.filter((q) => q.fund === d.fund).sort((x, y) => x.since - y.since);
+  if (mine.length === 0) return;
+  const left: Queued[] = [];
+  for (const q of mine) {
+    const unpaid = redeem(ctx, d, share, q.holder, q.sharesPerMember, q.navStruck);
+    if (unpaid > 0) left.push({ ...q, sharesPerMember: unpaid });
+  }
+  b.queued = [...b.queued.filter((q) => q.fund !== d.fund), ...left];
+  if (left.length === 0) return;
+  ctx.record(
+    'fund.gate',
+    [d.fund, ...left.map((q) => q.holder)],
+    {
+      fund: d.fund,
+      requests: left.length,
+      sharesOwed: sum(left.map((q) => totalFor(ctx.parties.get(q.holder), q.sharesPerMember))).value,
+      oldest: left.reduce<number>((at, q) => (q.since < at ? q.since : at), ctx.period),
+    },
+    true,
+  );
+}
+
+/**
+ * A4, C1.a, C2.b: what the fund takes to market. It has exactly two reasons to be there and they
+ * are opposites: cash it must put to work per its mandate, and a redemption it must find the money
+ * for. The second is the forced sale (XI-2): it names no price, because it has no choice.
+ */
+function ordersOf(view: ParticipantView, m: MarketDecl): readonly Order[] {
+  const d = declOf(view.self.id);
+  if (d === undefined) return [];
+  const own = view.lastOwn('fund.struck');
+  if (!own.some || own.value.period !== view.period) return [];
+  const shortfall = own.value.data['shortfall'];
+  const spare = own.value.data['spare'];
+  if (typeof shortfall !== 'number' || typeof spare !== 'number') return [];
+  const i = view.instruments.get(m.instrument);
+  if (shortfall > 0) {
+    // Clearing C1.b, Treasury D3.a: in a primary market the seller is the ISSUER. A holder with
+    // paper to sell waits for the secondary session; it does not stand beside the issuer in its
+    // own auction.
+    if (view.offer(m.id).some) return [];
+    const units = view.free(m.instrument);
+    if (units <= 0) return [];
+    // It sells across what it holds in proportion to what each is worth: nothing tells it to
+    // prefer one line over another, so the rule is stated once and applied the same way (C3).
+    const worth = view.print(m.instrument);
+    if (!worth.some) return [];
+    const total = holdingsWorth(view);
+    if (total <= 0) return [];
+    const fraction = div(shortfall, total, 'the share of its book it must raise');
+    const qty = fraction >= 1 ? units : mul(units, fraction, 'units it must sell');
+    if (!material(qty, 2, units)) return [];
+    // XI-2: at whatever the market gives. A forced seller that named a price would not be one.
+    return [{ party: view.self.id, side: 'sell', price: 'market', qty }];
+  }
+  if (spare <= 0 || !eligible(view, d, i)) return [];
+  // C1.a: it must buy something with the cash, and what it will pay is what makes the paper return
+  // what its own investors require of it (D2). A price it will not pay does not fill.
+  const on = view.calendar.startOf(view.period);
+  const family = view.registry.curveFamily(curveFamilyOf(issuerOf(i), i.ccy));
+  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+  if (flows.length === 0) return [];
+  const required = view.params.get(fundParam(d.fund, 'requiredYield'));
+  const price = priceAt(flows, required, on, family.dayCount, `what ${i.id} is worth to ${d.fund}`);
+  if (price <= 0) return [];
+  const lines = eligibleLines(view, d);
+  if (lines === 0) return [];
+  const each = div(spare, lines, 'what it puts into each line it may hold');
+  const dirty = add(price, view.accrued(i.id), 'what a unit costs it');
+  const qty = div(each, dirty, 'units it bids for');
+  if (!material(qty, 2, qty)) return [];
+  return [{ party: view.self.id, side: 'buy', price, qty }];
+}
+
+/** What everything it holds is worth, at the last marks — the base a pro-rata sale is struck on. */
+function holdingsWorth(view: ParticipantView): number {
+  const terms: number[] = [];
+  for (const h of view.holdings()) {
+    const print = view.print(h.instrument);
+    if (!print.some) continue;
+    terms.push(mul(sum(h.lots.map((l) => l.qty)).value, print.value.price, 'what it holds'));
+  }
+  return sum(terms).value;
+}
+
+/** A4, D1: what the mandate allows — the kind, and how long it may still have to run. */
+function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
+  if (!i.status.live || !d.eligible.includes(i.kind)) return false;
+  const on = view.calendar.startOf(view.period);
+  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+  const last = flows[flows.length - 1];
+  if (last === undefined) return false;
+  const by = view.calendar.startOf(
+    periodOf(view.period + view.params.get(fundParam(d.fund, 'maxTenorPeriods'))),
+  );
+  return compareCivil(last.date, by) <= 0;
+}
+
+/** How many lines the mandate lets it into, so what it has spare is spread over them and no more. */
+function eligibleLines(view: ParticipantView, d: FundDecl): number {
+  let n = 0;
+  for (const i of view.instruments.all()) {
+    if (i.market.some && eligible(view, d, i)) n += 1;
+  }
+  return n;
+}
+
+/**
+ * A3: a fund's equity is ZERO. The holders own the assets, so assets minus liabilities is nothing —
+ * and a fund with equity has mislaid somebody's money. Nothing in the module enforces it: it falls
+ * out of the wire, and this is the check that says whether the wire actually did it.
+ */
+function equityIsZero(): Family {
+  return {
+    name: 'accounts',
+    contributor: 'funds',
+    spec: 'Fund Shares A3',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const p of view.parties.ofKind(FUND)) {
+        if (!p.status.alive || !view.register.hasEquityAccount(p.id)) continue;
+        const walk = view.register.equityWalk(p.id);
+        // Law 7: the same derivation the failure test uses, because it is the same fact — whether
+        // this account is at zero or not (Law 4). A fund lives on that difference every period.
+        if (withinDust(walk.value, 0, view.valuation.equityDust(p.id, walk, view.period))) continue;
+        out.push({
+          family: 'accounts',
+          spec: 'Fund Shares A3',
+          owner: p.id,
+          size: walk.value,
+          unit: view.registry.region(p.region).ccy,
+          period: view.period,
+          message: `${p.id} has equity of ${walk.value}: a fund with equity has mislaid somebody's money`,
+        });
+      }
+      return out;
+    },
+  };
+}
+
+/**
+ * C2.b: no redemption request disappears. Everything ever asked for is either paid or still on the
+ * book — a request rationed away with the unfilled part dropped deletes the entire system, and it
+ * would break in silence, because the number that vanished is the number nobody is looking at.
+ */
+function noRequestVanishes(b: Book): Family {
+  return {
+    name: 'flows',
+    contributor: 'funds',
+    spec: 'Fund Shares C2.b Fund Shares C5',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      const asked = new Map<string, number>();
+      const paid = new Map<string, number>();
+      for (const e of view.journal.ofKind('fund.requested')) {
+        addTo(asked, key(e.data), totalAsked(view, e.data));
+      }
+      for (const e of view.journal.ofKind('fund.redeemed')) {
+        addTo(paid, key(e.data), totalAsked(view, e.data));
+      }
+      const queued = new Map<string, number>();
+      for (const q of b.queued) {
+        addTo(queued, `${q.fund}|${q.holder}`, totalFor(view.parties.get(q.holder), q.sharesPerMember));
+      }
+      for (const [k, want] of asked) {
+        const done = zeroIfNone(paid.get(k)) + zeroIfNone(queued.get(k));
+        // Law 7: both sides are sums of the same per-member numbers at the same magnitudes.
+        if (withinDust(want, done, dustOf(asked.size + 2, Math.abs(want) + Math.abs(done)))) continue;
+        out.push({
+          family: 'flows',
+          spec: 'Fund Shares C2.b',
+          owner: k.split('|')[0] ?? k,
+          size: sub(want, done, 'asked against paid and queued'),
+          unit: 'shares',
+          period: view.period,
+          message: `${k} asked to redeem ${want} shares and only ${done} were paid or are still on the book`,
+        });
+      }
+      return out;
+    },
+  };
+}
+
+const key = (data: Record<string, unknown>): string => `${String(data['fund'])}|${String(data['holder'])}`;
+
+function totalAsked(view: AuditView, data: Record<string, unknown>): number {
+  const per = data['sharesPerMember'];
+  const holder = data['holder'];
+  if (typeof per !== 'number' || typeof holder !== 'string') return 0;
+  return totalFor(view.parties.get(holder as PartyId), per);
+}
+
+export function funds(decls: readonly FundDecl[] = FUNDS): SystemModule {
+  const state = emptyBook();
+  // The observer sees the book as the data it is; the slot holds this very object (Law 4).
+  const book = (ctx: MechanismContext): Book => ctx.state<Book>('funds', () => state);
+  return {
+    id: 'funds',
+    spec: 'Fund Shares, XI-2',
+    // Its investors are households (D2), a fund that fails resolves through the same estate as
+    // anything else (XI-3), and it banks somewhere — so all three are there before it opens.
+    requires: ['households', 'estate', 'seed.foundation'],
+    instrumentKinds: [fundShareKind],
+    partyKinds: [fundKind, fundManagerKind],
+    curveFamilies: [],
+    // A2, D4: shares are what a fund is measured in, and they divide. A whole-share rule would
+    // leave a residual on every subscription with nobody to own it (Law 2), and it is the COUNT
+    // that matters — that there is one at all is what makes the claim redeemable (G1.b).
+    units: [{ id: SHARES, name: 'shares', countable: false }],
+    params: paramsOf(),
+    phases: [
+      {
+        name: 'funds.strike',
+        spec: 'Fund Shares B1 Fund Shares B3 Fund Shares C1 Fund Shares C2 Fund Shares C2.b',
+        cycle: 0,
+        // After the households have decided, because what they decided is posted into the venue
+        // this phase reads; before the markets, because what it cannot pay is what it must sell.
+        anchor: { after: 'households.decide' },
+        run: (ctx: MechanismContext) => {
+          const b = book(ctx);
+          for (const d of decls) strike(ctx, b, d);
+        },
+      },
+      {
+        name: 'funds.settle',
+        spec: 'Fund Shares C2.a Fund Shares C2.b Fund Shares C4 Fund Shares C4.a',
+        cycle: 2,
+        anchor: { after: 'markets' },
+        run: (ctx: MechanismContext) => {
+          const b = book(ctx);
+          for (const d of decls) payQueue(ctx, b, d);
+        },
+      },
+    ],
+    participants: [
+      {
+        partyKind: FUND,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => ordersOf(view, m),
+      },
+    ],
+    families: [equityIsZero(), noRequestVanishes(state)],
+    seed(ctx: SeedContext): void {
+      for (const d of decls) {
+        for (const [id, kind, name] of [
+          [d.fund, FUND, d.name],
+          [d.manager, FUND_MANAGER, d.managerName],
+        ] as const) {
+          ctx.parties.add({
+            id: id as PartyId,
+            kind,
+            region: ctx.registry.region(ctx.parties.get(d.bank as PartyId).region).id,
+            name,
+            bank: d.bank as PartyId,
+            representation: 'named',
+            status: { alive: true },
+          });
+        }
+        const ccy = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region).ccy;
+        const terms: FundShareTerms = { kind: FUND_SHARE, fund: d.fund as PartyId };
+        ctx.instruments.add({
+          id: shareLineOf(d.fund),
+          kind: FUND_SHARE,
+          issuer: some(d.fund as PartyId),
+          ccy,
+          terms,
+          market: none(),
+        });
+        // Clearing B2: the venue where its investors ask. It is not a market and it does not clear
+        // — everybody who asks transacts at the same NAV (C1, C2) — which is exactly why the module
+        // that owns it runs it itself rather than the solver.
+        const venue: VenueDecl = {
+          id: fundVenue(d.fund),
+          name: `${d.name} subscriptions and redemptions`,
+          clearedBy: 'funds',
+          unit: SHARES,
+          ccy,
+          key: { kind: 'fund', fund: d.fund, share: shareLineOf(d.fund) },
+        };
+        // Seed E: the fund opens with NOBODY in it and nothing in its account. Everything anybody
+        // has in this world is something they were paid or something they decided to buy, and that
+        // is as true of a fund share as of a deposit — so the first subscription is a decision a
+        // household takes, at the unit its shares are counted in (FUND_PARAMS.openingShare).
+        ctx.openVenue(venue);
+      }
+    },
+  };
+}

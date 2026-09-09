@@ -58,7 +58,22 @@ export interface EquityMove {
   /** Per member for a cell, in the party's home currency. */
   readonly delta: number;
   readonly cause: string;
+  /**
+   * Law 7: the magnitude the arithmetic actually passed through, when it is bigger than the move.
+   * One instruction can take a party's equity down by a thousand and back up by a thousand — the
+   * move is nothing and the rounding is a thousand's, and a walk that only saw the net would owe
+   * a party whose equity is zero by construction an apology every period.
+   */
+  readonly through?: number;
 }
+
+/**
+ * Law 7: the magnitude a move passed through, when the arithmetic went further than the answer did.
+ * Nothing is missing when a caller says nothing — it is saying the move IS what happened — so this
+ * is not a numeric default standing in for a number nobody read.
+ */
+// eslint-disable-next-line phoenix/no-numeric-default -- absence here means "the move itself", stated above
+const throughOf = (move: EquityMove): number => move.through ?? 0;
 
 /** One money account is one (holder, instrument) pair; this names it. */
 const moneyKey = (holder: PartyId, instrument: InstrumentId): string => `${holder}/${instrument}`;
@@ -175,7 +190,10 @@ export class Register {
   /** Move the equity account by a named event (Audit B5). */
   moveEquity(move: EquityMove): void {
     const cur = this.equityWalk(move.party);
-    this.equityAccount.set(move.party, moved(cur, move.delta, `equity of ${move.party}`));
+    this.equityAccount.set(
+      move.party,
+      moved(cur, move.delta, `equity of ${move.party}`, throughOf(move)),
+    );
   }
 
   credit(

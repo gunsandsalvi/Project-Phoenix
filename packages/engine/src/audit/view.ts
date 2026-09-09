@@ -44,7 +44,7 @@ export interface AuditView {
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history' | 'instruments'>;
   readonly valuation: Pick<
     Valuation,
-    'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots'
+    'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots' | 'equityDust'
   >;
   readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'tail'>;

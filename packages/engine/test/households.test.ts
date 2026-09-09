@@ -16,6 +16,7 @@ import {
   goodId,
   households,
   isMoneyLeg,
+  instrumentId,
   partyId,
   type CellParty,
   type Event,
@@ -27,6 +28,7 @@ import { unexpected } from './expected.js';
 
 const BREAD = goodId('bread', REGION);
 const BANK_A = partyId('bank.a');
+const SHARE = instrumentId('share.fund.money.north');
 /** A named payer with money of its own, so what a run shows is the spread and nothing else. */
 const PAYER = partyId('payer.1');
 
@@ -198,17 +200,33 @@ describe('what a household decides (Households C1, C2)', () => {
 });
 
 describe('what it does with what is left (Households D5, D5.a, C2)', () => {
-  it('holds paper instead of a deposit when paper pays it enough, and not otherwise', () => {
+  it('holds a claim instead of a deposit when the claim pays it enough, and not otherwise', () => {
     const w = world();
     for (let i = 0; i < 6; i += 1) w.step();
     const cells = w.parties.ofKind(HOUSEHOLD).filter((p) => p.status.alive);
-    const paper = cells
+    const claims = cells
       .flatMap((c) => w.register.holdingsOf(c.id))
-      .filter((h) => h.instrument.startsWith('gov.') || h.instrument.startsWith('treasury.'));
-    expect(paper.length).toBeGreaterThan(0);
-    // D5.a: it is a substitution — what it did not put into paper is still in its account, which
-    // is what saving into a deposit is (C2), and nothing was allocated to it pro rata.
-    for (const c of cells) expect(w.cash(c.id, PHX)).toBeGreaterThan(0);
+      .filter((h) => h.instrument.startsWith('gov.') || h.instrument.startsWith('share.'));
+    expect(claims.length).toBeGreaterThan(0);
+    // D2, D3: it goes through the MONEY FUND, and that is the substitution working rather than a
+    // channel closed. A saver in this world is below the cushion it wants every period, so it has
+    // nothing it can tie up for a bill's own life — and a fund of short paper is exactly the thing
+    // it can hold instead of a deposit and still ask back. So the paper is bought, by the fund, on
+    // the savers' behalf: "its size determines how much paper can be placed" (D3).
+    const fund = partyId('fund.money.north');
+    const held = w.register
+      .holdingsOf(fund)
+      .filter((h) => String(h.instrument).startsWith('gov.'));
+    expect(held.length).toBeGreaterThan(0);
+    // D5.a, D2.a: and it is a SUBSTITUTION, which is why a cell's own account can be down to what
+    // it is about to spend. A deposit pays it nothing and a fund of short paper pays it something
+    // and gives the money back on demand, so there is nothing a deposit is for. That is the
+    // competition D2.a says is "a real constraint on what banks pay" — with the other side of it
+    // missing, because no bank in this world bids for a deposit yet (Banks Funding B1, worklist
+    // 11). Nothing was allocated pro rata: every cell decided its own, and what it holds is what
+    // it decided.
+    const liquid = cells.map((c) => w.cash(c.id, PHX) + w.register.quantity(c.id, SHARE));
+    for (const held of liquid) expect(held).toBeGreaterThan(0);
   });
 
   it('is drawn into paper when paper pays it enough, and not when it does not (D5.a)', () => {
@@ -416,15 +434,19 @@ describe('the sector is a distribution and not an average (Households A2.f, A2.g
           const cell = w.parties.get(e.subjects[0] as never);
           return a + num(e, 'spendPerMember') * (cell.representation === 'cell' ? cell.weight : 1);
         }, 0);
-    // And the sector's own total is the SAME, to the dust of the two sums that produced it. That is
-    // the other half of the finding and it is not a defect: a household's spending is linear in what
-    // it has while nothing binds it, and a linear rule summed over a mean-preserving spread gives
-    // back the same total. So the spread is real and visible cell by cell, and the aggregate cannot
-    // feel it yet. What would make the aggregate feel it is the crossing above — a threshold with a
-    // consequence — and the first of those is a default (worklist 5).
+    // And the sector's own total is NO LONGER the same, which is the half of A2.g that could not be
+    // shown before. A household's spending was linear in what it has while nothing bound it, and a
+    // linear rule summed over a mean-preserving spread gives back the same total — so the aggregate
+    // could not feel the spread. Now something does bind: a cell puts what it holds over what it is
+    // about to spend into a money fund (Fund Shares D2), and having anything over is a threshold.
+    // The spread moves cells across it, the sector's savings change, and the total moves — which is
+    // exactly what "no decision at an average" is for. An average household would have crossed once
+    // or not at all, and either way produced one number in both worlds.
     const apart = Math.abs(intendedAt(spread, periods) - intendedAt(flat, periods));
     const scale = intendedAt(flat, periods);
-    expect(apart).toBeLessThanOrEqual(dustOf(2 * cellCount(flat), 2 * scale));
+    expect(apart).toBeGreaterThan(dustOf(2 * cellCount(flat), 2 * scale));
+    // It is the SPREAD that moved it and not the mean: what was paid in is the same in both.
+    expect(apart / scale).toBeLessThan(1);
   });
 
   it('declares no number a sector took: every one of them is one household own', () => {

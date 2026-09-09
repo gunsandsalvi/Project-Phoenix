@@ -24,6 +24,7 @@ import type {
   PartyId,
   VenueId,
 } from '../core/ids.js';
+import type { Running } from '../core/num.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
@@ -93,6 +94,12 @@ export interface ParticipantView extends KernelReads {
   cash(ccy: CurrencyCode): number;
   /** Own equity account, per member. */
   equity(): number;
+  /**
+   * Law 7: the same account WITH the walk that produced it. A balance moved once per event since
+   * the party was born is not one rounding old, and for a party whose equity is zero by
+   * construction (a fund, Fund Shares A3) the difference is what decides whether it is insolvent.
+   */
+  equityWalk(): Running;
   /** The latest public print at or before now (A1); its provenance says how stale it is (A1.a). */
   print(instrument: InstrumentId): Option<Print>;
   /** The issuer's announced supply in this period's session, if any (Sovereign C1.a: public). */
@@ -153,7 +160,7 @@ export interface MechanismContext extends KernelReads {
   readonly parties: PartiesReads;
   readonly register: RegisterReads;
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history'>;
-  readonly valuation: Pick<Valuation, 'markPerUnit' | 'valueOfLots'>;
+  readonly valuation: Pick<Valuation, 'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust'>;
   readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail'>;
   readonly ledger: Pick<Ledger, 'inPeriod' | 'length'>;
   readonly cells: CellEvents;

@@ -13,7 +13,7 @@ import { assertNever } from '../core/assert.js';
 import { Forbidden, Unpriced } from '../core/errors.js';
 import type { InstrumentId, PartyId } from '../core/ids.js';
 import { none, some, type Option } from '../core/option.js';
-import { mul } from '../core/num.js';
+import { dustOf, mul, sum, type Running } from '../core/num.js';
 import type { InstrumentsReads as Instruments } from '../register/instruments.js';
 import type { Lot, RegisterReads } from '../register/register.js';
 import type { DerivedReads } from '../registry/kinds.js';
@@ -171,6 +171,23 @@ export class Valuation {
       default:
         return assertNever(pricing, 'Pricing');
     }
+  }
+
+  /**
+   * Law 7: what a check on a party's equity account is entitled to call nothing. The account is a
+   * walk, and the zero it is compared against is a difference between two sides of a balance sheet
+   * — so the dust is that walk plus what those magnitudes cost in rounding. It is ONE derivation
+   * because it is one fact (Law 4): the audit and the test that decides a party is insolvent must
+   * not disagree about a millionth of a penny, and a party whose equity is zero by construction
+   * (a fund, Fund Shares A3) sits on that difference every period of its life.
+   */
+  equityDust(party: PartyId, walk: Running, at: Period): number {
+    const sides = sum(
+      this.register
+        .holdingsOf(party)
+        .map((h) => Math.abs(this.valueOfLots(h.instrument, h.lots, at))),
+    );
+    return walk.dust + dustOf(sides.terms + 2, mul(sides.value, 2, 'both sides of the balance sheet'));
   }
 
   /** Value of a quantity at the mark in force for `at`, in the instrument's currency. */

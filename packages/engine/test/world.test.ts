@@ -174,13 +174,15 @@ describe('the seed (Seed A2)', () => {
     // XI-14: two placeholders stand, each naming the worklist item that deletes it — the bank's
     // liquidity buffer (11) and the holder's required yield (10).
     expect(report?.reads.placeholders).toBe(2);
-    // And five shapes. Four of them are the levels the world opens at (Seed C4): a market that has
+    // And six shapes. Four of them are the levels the world opens at (Seed C4): a market that has
     // never traded has no price, so a world that opens with stock in it opens with a level for that
     // stock, and no worklist item will ever delete that — which is why they are shapes and not
     // placeholders with a death nobody could keep. The fifth is the width of the one preference
     // whose dispersion is still stated (§46 B1.a). What is unequal about households is not here:
-    // it is what happened to them.
-    expect(report?.reads.shapes).toBe(5);
+    // it is what happened to them. The sixth is the management fee: what a manager charges is what
+    // competition among managers settles at (worklist 13h), and until there is any, it is a claim
+    // about the answer rather than a number this world produced.
+    expect(report?.reads.shapes).toBe(6);
     expect(report?.reads.populations['household']).toBe(4000);
   });
 

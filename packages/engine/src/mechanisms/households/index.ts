@@ -25,7 +25,7 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
 import { paramId, type PartyId } from '../../core/ids.js';
-import { addTo, combineDust, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, combineDust, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -34,13 +34,27 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { CONSUMPTION, type ConsumptionDecl } from './data.js';
 import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
-import { paperBids, sparePerMember } from './portfolio.js';
+import {
+  cushionForFund,
+  fundOrders,
+  fundPositions,
+  paperBids,
+  shortForSpending,
+  sparePerMember,
+} from './portfolio.js';
 
 export * from './data.js';
 export { demandOf, spendPerMember } from './consume.js';
-export { paperBids, sparePerMember } from './portfolio.js';
+export {
+  cushionForFund,
+  fundOrders,
+  fundPositions,
+  paperBids,
+  shortForSpending,
+  sparePerMember,
+} from './portfolio.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
-export type { PaperBid } from './portfolio.js';
+export type { FundOrder, FundPosition, PaperBid } from './portfolio.js';
 
 export const HOUSEHOLD_PARAMS = {
   patience: paramId('households.patience'),
@@ -237,7 +251,11 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   const self = view.self;
   if (self.representation !== 'cell') return;
   const p = numbers(view);
-  const decided = spendPerMember(view, p);
+  // D2: what it can pay with is its account AND what it can ask back from a fund on demand — that
+  // is what makes a money fund a substitute for a deposit rather than an investment (D2).
+  const positions = fundPositions(ctx.venues, ctx.journal.ofKind('fund.struck'), view);
+  const onDemand = sum(positions.map((f) => f.worthPerMember)).value;
+  const decided = spendPerMember(view, p, onDemand);
   if (!decided.some) return;
   const goods = demandOf(view, rows, p, decided.value.spend);
   const spare = sparePerMember(
@@ -245,16 +263,33 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     decided.value.spend,
     decided.value.buffer,
   );
+  // D5.a: what it requires of paper is what its deposit pays it plus what giving up access costs
+  // it. A deposit pays nothing until a bank decides to pay for one (Banks Funding B1, worklist
+  // 11), so what it requires now is the premium alone, and that comparison becomes a real one
+  // the period a bank starts bidding for deposits.
+  const required = view.params.get(HOUSEHOLD_PARAMS.liquidityPremium);
   const paper = paperBids(
-    // D5.a: what it requires of paper is what its deposit pays it plus what giving up access costs
-    // it. A deposit pays nothing until a bank decides to pay for one (Banks Funding B1, worklist
-    // 11), so what it requires now is the premium alone, and that comparison becomes a real one
-    // the period a bank starts bidding for deposits.
     view,
-    view.params.get(HOUSEHOLD_PARAMS.liquidityPremium),
+    required,
     view.params.get(HOUSEHOLD_PARAMS.horizon),
     mul(spare, weightOf(self), 'what the cell has spare'),
   );
+  // D2, D5: the third thing it can do with its money, and the reason it asks for it back. What the
+  // fund published is public (Clearing F1: it acts on what it has already been told), and what it
+  // offers is compared against the same requirement a bill is.
+  const short = shortForSpending(decided.value.cash, decided.value.spend);
+  const toFund = cushionForFund(decided.value.cash, decided.value.spend, spare);
+  for (const o of fundOrders(positions, required, toFund, short)) {
+    if (!material(o.sharesPerMember, 2, o.sharesPerMember)) continue;
+    ctx.post(o.venue, {
+      party: cell,
+      side: o.side,
+      // C1, C2: nobody names a price here. Everybody who asks transacts at the NAV the fund strikes.
+      price: 'market',
+      // A posting is a total, like every other posting; what the cell decided was per member.
+      qty: mul(o.sharesPerMember, weightOf(self), 'shares the cell asks about'),
+    });
+  }
   ctx.record(
     'households.plan',
     [cell],
@@ -270,6 +305,8 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       // across the threshold while the weighted mean of what they were paid does not move.
       constrained: decided.value.constrained,
       sparePerMember: spare,
+      shortForSpendingPerMember: short,
+      toFundPerMember: toFund,
       // C2: what it does not spend and does not put into paper is saved where it already is.
       orders: [
         ...goods.map((g) => ({ market: g.market, side: 'buy', price: g.price, qty: g.qty })),
