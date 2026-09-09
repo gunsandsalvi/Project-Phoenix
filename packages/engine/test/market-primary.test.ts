@@ -19,6 +19,7 @@ import {
   instrumentId,
   marketId,
   partyId,
+  period,
   resolveMarketOrders,
   some,
   type SovereignBillTerms,
@@ -30,7 +31,7 @@ import {
 } from '../src/index.js';
 
 /** The one market this test drives, with its optional readings taken. */
-const BILL = instrumentId('gov.north.bill.2026-06-15');
+const BILL = instrumentId('gov.north.bill.2027-12-15');
 const BILL_MARKET = marketId('mkt.bill');
 
 function result(markets: readonly MarketResult[], id: string): MarketResult {
@@ -72,6 +73,7 @@ function auctioneer(
     requires: ['seed.foundation'],
     instrumentKinds: [],
     partyKinds: [],
+    curveFamilies: [],
     units: [],
     params: [],
     phases: [
@@ -107,9 +109,13 @@ function auctioneer(
   };
 }
 
+/** The kernel and the opening state: the auction under test is the only one in the world. */
 function world(...extra: SystemModule[]): World {
   const spec = foundationSpec('seed-auction');
-  return assemble({ ...spec, modules: [...spec.modules, ...extra] });
+  const kernelOnly = spec.modules.filter(
+    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+  );
+  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 
 describe('the primary market (Sovereign C)', () => {
@@ -122,7 +128,8 @@ describe('the primary market (Sovereign C)', () => {
       ]),
     );
     const before = w.instruments.get(GOV_LINE).issued;
-    const cashBefore = w.cash(TREASURY_NORTH, 'PHX' as never);
+    const cashBefore = w.cash(TREASURY_NORTH, PHX);
+    const accrued = w.accruedPerUnit(GOV_LINE, period(1));
     const r = w.step();
     const m = result(r.markets, GOV_MARKET);
     expect(m.outcome).toBe('cleared');
@@ -134,8 +141,9 @@ describe('the primary market (Sovereign C)', () => {
     // C4: the tail is the average winning bid against the stop-out, and it is positive here.
     expect(auctionOf(m).tail).toBeCloseTo((200 * 0.99 + 100 * 0.97) / 300 - 0.97, 12);
     expect(w.instruments.get(GOV_LINE).issued).toBeCloseTo(before + 300, 9);
-    // C6: the proceeds reach the treasury's account.
-    expect(w.cash(TREASURY_NORTH, 'PHX' as never)).toBeCloseTo(cashBefore + 300 * 0.97, 9);
+    // C6: the proceeds reach the treasury's account — the clean price and the interest that had
+    // accrued on the paper it just sold (N9.b).
+    expect(w.cash(TREASURY_NORTH, PHX)).toBeCloseTo(cashBefore + 300 * (0.97 + accrued), 9);
     const ev = w.journal.ofKind('auction.result');
     expect(ev).toHaveLength(1);
     expect(ev[0]?.public).toBe(true);
@@ -190,13 +198,13 @@ describe('a quantity with no level (Central Bank C3, Clearing C4.c)', () => {
 
 describe('a line with no price (XI-6)', () => {
   it('writes no print when nothing cleared and there is nothing to carry', () => {
-    const spec = foundationSpec('seed-noprint');
     const newLine: SystemModule = {
       id: 'test.newline',
       spec: 'Sovereign C',
       requires: ['seed.foundation'],
       instrumentKinds: [],
       partyKinds: [],
+      curveFamilies: [],
       units: [],
       params: [],
       phases: [
@@ -210,7 +218,7 @@ describe('a line with no price (XI-6)', () => {
             const terms: SovereignBillTerms = {
               kind: SOVEREIGN_BILL,
               issueDate: civil(2026, 1, 5),
-              maturity: civil(2026, 6, 15),
+              maturity: civil(2027, 12, 15),
             };
             ctx.issue({
               id: BILL,
@@ -222,7 +230,7 @@ describe('a line with no price (XI-6)', () => {
             });
             ctx.openMarket({
               id: BILL_MARKET,
-              name: 'North bill 2026-06-15',
+              name: 'North bill 2027-12-15',
               instrument: BILL,
               ccy: PHX,
               rationing: 'proRata',
@@ -240,7 +248,7 @@ describe('a line with no price (XI-6)', () => {
       participants: [],
       families: [],
     };
-    const w = assemble({ ...spec, modules: [...spec.modules, newLine] });
+    const w = world(newLine);
     const r = w.step();
     const m = result(r.markets, BILL_MARKET);
     expect(m.outcome).toBe('noDemand');

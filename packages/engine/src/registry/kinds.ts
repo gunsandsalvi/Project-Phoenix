@@ -26,6 +26,13 @@ export type Pricing = 'money' | 'cleared' | 'carriedAtCost';
  */
 export type LotFlow = 'FIFO';
 
+/** One dated payment per unit the terms promise (Bond N5, N10): the curve reads these. */
+export interface CashFlow {
+  readonly date: Civil;
+  /** Per unit of the instrument, in its currency. */
+  readonly perUnit: number;
+}
+
 /** What an instrument's terms say falls due in a period (Register E1, E2). */
 export type DueAction =
   | { readonly kind: 'coupon'; readonly date: Civil; readonly amountPerUnit: number }
@@ -53,6 +60,11 @@ export interface InstrumentKindProfile {
    * instrument that pays no coupon: a bill accretes against its own cleared price (Sovereign F2).
    */
   readonly accrued: (i: Instrument, on: Civil, calendar: Calendar) => number;
+  /**
+   * Every payment the terms promise strictly after a date, in date order (Sovereign D2: what a
+   * yield is derived FROM). An instrument that promises nothing dated returns none of them.
+   */
+  readonly cashFlows: (i: Instrument, after: Civil, calendar: Calendar) => readonly CashFlow[];
 }
 
 /**
@@ -68,6 +80,12 @@ export interface OverdraftContext {
   readonly ccy: CurrencyCode;
   /** How far below zero the balance would go, per member of the holder. */
   readonly shortfall: number;
+  /**
+   * Whether the holder issues money itself. A central bank lends reserves to the banks that settle
+   * in them (Central Bank D1, D3); everyone else banking with it — the treasury above all — has an
+   * account, not a facility (Central Bank E2, Treasury D3).
+   */
+  readonly holderIssuesMoney: boolean;
 }
 
 export interface PartyKindProfile {

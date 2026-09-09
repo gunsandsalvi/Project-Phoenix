@@ -13,12 +13,13 @@
  */
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { MarketDecl, PrimaryOffer } from '../clearing/market.js';
-import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../core/ids.js';
+import type { CurrencyCode, CurveFamilyId, InstrumentId, MarketId, PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
+import type { CurveRead } from '../prices/curve.js';
 import type { PriceStore, Print } from '../prices/price-store.js';
 import type { Valuation } from '../prices/value.js';
 import type { Holding, Register, RegisterReads } from '../register/register.js';
@@ -60,8 +61,16 @@ export interface ParticipantView extends KernelReads {
   offer(market: MarketId): Option<PrimaryOffer>;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): number;
+  /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
+  curve(family: CurveFamilyId): CurveRead;
   /** Public events (A3): prints, weight events, cessations, facility draws, the audit's counts. */
   publicEvents(last: number): readonly Event[];
+  /**
+   * The most recent event of a kind this party may see (A3) — a published programme, a rating, a
+   * policy decision. What an announcement said is public; a party reading its own is reading what
+   * everyone else can read too.
+   */
+  lastPublic(kind: EventKind): Option<Event>;
   /** A random stream that is this party's own, deterministic in (seed, party, period). */
   readonly rng: Prng;
 }
@@ -97,6 +106,8 @@ export interface MechanismContext extends KernelReads {
   offer(o: PrimaryOffer): void;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): number;
+  /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
+  curve(family: CurveFamilyId): CurveRead;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   record(

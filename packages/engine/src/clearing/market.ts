@@ -25,7 +25,7 @@ import type { Journal } from '../journal/journal.js';
 import type { AccountRef, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
 import type { Parties } from '../parties/party.js';
-import type { PriceStore, StaleReason } from '../prices/price-store.js';
+import { struckIn, type PriceStore, type StaleReason } from '../prices/price-store.js';
 import { clear, type Fill, type Order, type Rationing } from './solver.js';
 
 export interface MarketDecl {
@@ -210,8 +210,7 @@ export function runMarket(
           auction,
         };
       }
-      const from =
-        last.value.provenance.kind === 'stale' ? last.value.provenance.from : last.value.period;
+      const from = struckIn(last.value);
       deps.prices.write({
         instrument: m.instrument,
         market: m.id,

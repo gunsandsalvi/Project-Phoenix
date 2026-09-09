@@ -12,11 +12,11 @@ import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { instrumentKindId, unitId } from '../../core/ids.js';
-import { mul } from '../../core/num.js';
+import { add, mul } from '../../core/num.js';
 import { percent } from '../../core/format.js';
 import type { Periodicity, Rate } from '../../core/rate.js';
 import type { Terms } from '../../register/instruments.js';
-import type { DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
+import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { SystemModule } from '../../world/module.js';
 
 export const SOVEREIGN_BOND = instrumentKindId('sovereign.bond');
@@ -105,6 +105,23 @@ export const sovereignBond: InstrumentKindProfile = {
     if (compareCivil(on, prev) <= 0) return 0;
     return mul(t.coupon.amount, yearFraction(t.dayCount, prev, on), 'accrued');
   },
+  // Every coupon left, and par at maturity (N5.a, N10). A yield is derived from these against the
+  // price (Sovereign D2); nothing here reads a price.
+  cashFlows: (i, after, cal) => {
+    if (!isBond(i.terms)) return [];
+    const t = i.terms;
+    const out: CashFlow[] = [];
+    let prev = t.issueDate;
+    for (const date of couponDates(t, cal)) {
+      const coupon = mul(t.coupon.amount, yearFraction(t.dayCount, prev, date), 'coupon');
+      const isMaturity = compareCivil(date, t.maturity) === 0;
+      if (compareCivil(date, after) > 0) {
+        out.push({ date, perUnit: isMaturity ? add(coupon, 1, 'final flow') : coupon });
+      }
+      prev = date;
+    }
+    return out;
+  },
 };
 
 /**
@@ -134,6 +151,11 @@ export const sovereignBill: InstrumentKindProfile = {
   // F2: a bill accretes against its own cleared price; nothing accrues on the paper itself, so
   // nothing travels with a trade beyond the price.
   accrued: () => 0,
+  // N5.c: one payment, par at maturity. The discount to it is the whole return.
+  cashFlows: (i, after) =>
+    isBill(i.terms) && compareCivil(i.terms.maturity, after) > 0
+      ? [{ date: i.terms.maturity, perUnit: 1 }]
+      : [],
 };
 
 export const sovereignInstruments: SystemModule = {
@@ -142,6 +164,7 @@ export const sovereignInstruments: SystemModule = {
   requires: [],
   instrumentKinds: [sovereignBond, sovereignBill],
   partyKinds: [],
+  curveFamilies: [],
   units: [{ id: PAR, name: 'units of par', countable: false }],
   params: [],
   phases: [],

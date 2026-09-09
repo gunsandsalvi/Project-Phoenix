@@ -14,7 +14,7 @@ import type { Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import type { InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
-import { finite, sum } from '../core/num.js';
+import { dustOf, finite, sum } from '../core/num.js';
 import { type Option, none, some } from '../core/option.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -186,20 +186,24 @@ export class Register {
       instrument,
     });
     const freeNow = this.free(holder, instrument);
+    const h = this.mutable(holder, instrument);
+    // Law 7: one dust for the whole walk, derived from the arithmetic that produces it — a quantity
+    // asked for that was itself summed over these lots, matched against the lots one at a time. The
+    // same tolerance decides whether the holder can deliver and whether the walk finished, because
+    // it is the same comparison made twice.
+    const dust = dustOf(h.lots.length + 2, Math.abs(qty) + Math.abs(freeNow));
     forbid(
-      qty <= freeNow || withinDebitDust(qty, freeNow),
+      qty <= freeNow || qty - freeNow <= dust,
       'Register C4',
       `${holder} cannot deliver ${qty} of ${instrument}: free ${freeNow}`,
-      { holder, instrument, qty, free: freeNow },
+      { holder, instrument, qty, free: freeNow, dust },
     );
-    const h = this.mutable(holder, instrument);
     const drawn: DrawnLot[] = [];
     let remaining = qty;
     while (remaining > 0 && h.lots.length > 0) {
       const lot = h.lots[0];
       if (lot === undefined) break;
-      const take =
-        lot.qty <= remaining || withinDebitDust(lot.qty, remaining) ? lot.qty : remaining;
+      const take = lot.qty <= remaining || lot.qty - remaining <= dust ? lot.qty : remaining;
       drawn.push({
         lot: lot.id,
         qty: take,
@@ -209,7 +213,15 @@ export class Register {
       remaining = finite(remaining - take, 'debit remaining');
       if (take === lot.qty) h.lots.shift();
       else h.lots[0] = Object.freeze({ ...lot, qty: finite(lot.qty - take, 'lot qty') });
-      if (withinDebitDust(remaining, 0)) remaining = 0;
+      if (remaining <= dust) remaining = 0;
+    }
+    if (remaining <= dust) remaining = 0;
+    // What a full debit leaves behind, when it is smaller than the dust of the walk, is nothing:
+    // dropping it is arithmetic, not a transfer. A residue larger than that stays and the ownership
+    // family reports it (Appendix B: no residual with no holder).
+    if (remaining === 0 && h.lots.length > 0) {
+      const left = sum(h.lots.map((l) => l.qty));
+      if (left.value <= dust) h.lots.length = 0;
     }
     impossible(
       remaining === 0,
@@ -249,7 +261,9 @@ export class Register {
     const after = finite(before + delta, `balance of ${holder}/${instrument}`);
     const encumbered = sum(h.liens.map((l) => l.qty)).value;
     forbid(
-      allowNegative || after - encumbered >= 0 || withinDebitDust(after - encumbered, 0),
+      allowNegative ||
+        after - encumbered >= 0 ||
+        encumbered - after <= dustOf(2, Math.abs(before) + Math.abs(delta)),
       'Money B3.c',
       `${holder} would be overdrawn ${after} on ${instrument} with no lender and no recorded refusal`,
       { holder, instrument, before, delta },
@@ -385,11 +399,6 @@ function snapshot(h: MutableHolding): Holding {
  * A debit that asks for the whole balance may differ from the sum of lots by the dust of that sum
  * (Law 7); anything beyond dust is a genuine short (C4).
  */
-function withinDebitDust(a: number, b: number): boolean {
-  const s = sum([a, b]);
-  return Math.abs(a - b) <= s.dust + 2 * Number.EPSILON * (Math.abs(a) + Math.abs(b));
-}
-
 /**
  * The read-only face of the register. The World exposes only this; the store with its writes is
  * handed to settlement, the cell events and the seed, and to nothing else (Law 4: one writer).

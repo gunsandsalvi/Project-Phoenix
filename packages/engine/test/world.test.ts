@@ -5,6 +5,7 @@ import {
   CB,
   Forbidden,
   GOV_LINE,
+  GOV_MARKET,
   HOUSEHOLD,
   FIRM,
   InvalidRegistry,
@@ -47,6 +48,7 @@ function traders(orders: (m: string, party: string) => Order[]): SystemModule {
     requires: ['seed.foundation'],
     instrumentKinds: [],
     partyKinds: [],
+    curveFamilies: [],
     units: [],
     params: [],
     phases: [],
@@ -69,6 +71,7 @@ function phase(fn: (ctx: MechanismContext) => void): SystemModule {
     requires: ['seed.foundation'],
     instrumentKinds: [],
     partyKinds: [],
+    curveFamilies: [],
     units: [],
     params: [],
     phases: [
@@ -88,6 +91,23 @@ function phase(fn: (ctx: MechanismContext) => void): SystemModule {
 function withModules(seed: string, ...extra: SystemModule[]): World {
   const spec = foundationSpec(seed);
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
+}
+
+/** The bare world with extra modules: the kernel's own behaviour, driven by the test alone. */
+function bareWith(seed: string, ...extra: SystemModule[]): World {
+  return bare(seed, ...extra);
+}
+
+/**
+ * The kernel and the opening state, with none of the mechanisms that act on it. Tests about the
+ * kernel itself use this so what they measure is the kernel's, not a treasury's decisions.
+ */
+function bare(seed: string, ...extra: SystemModule[]): World {
+  const spec = foundationSpec(seed);
+  const kernelOnly = spec.modules.filter(
+    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+  );
+  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 
 describe('assembly (Law 15, Part XIII)', () => {
@@ -131,7 +151,8 @@ describe('the seed (Seed A2)', () => {
       'crossMarket',
       'zeroSum',
     ]);
-    expect(report?.reads.placeholders).toBe(1);
+    // XI-14: the opening yield, the bank's liquidity buffer and the holder's required yield.
+    expect(report?.reads.placeholders).toBe(3);
     expect(report?.reads.shapes).toBe(3);
     expect(report?.reads.populations['household']).toBe(4000);
   });
@@ -163,19 +184,30 @@ describe('the seed (Seed A2)', () => {
 
 describe('the period loop', () => {
   it('runs every phase, prints stale when nobody posts, and stays consistent over a year', () => {
-    const w = foundationWorld('seed-E');
+    const w = bare('seed-E');
     for (let i = 0; i < 52; i += 1) {
       const r = w.step();
       expect(violations(w)).toEqual([]);
-      expect(r.markets[0]?.outcome).toBe('noDemand');
+      expect(r.markets.find((m) => m.market === GOV_MARKET)?.outcome).toBe('noDemand');
     }
     const print = w.prices.printOrThrow(GOV_LINE, w.period);
     expect(print.provenance.kind).toBe('stale');
     if (print.provenance.kind === 'stale') expect(print.provenance.from).toBe(0);
   });
 
+  it('runs a year with its mechanisms in it and stays consistent (XI-9)', () => {
+    const w = foundationWorld('seed-E2');
+    for (let i = 0; i < 52; i += 1) {
+      w.step();
+      expect(violations(w)).toEqual([]);
+    }
+    // The treasury funded itself: it announced, the dealers bid, and the paper was allotted.
+    expect(w.journal.ofKind('auction.result').length).toBeGreaterThan(8);
+    expect(w.journal.ofKind('treasury.shortfall')).toHaveLength(0);
+  });
+
   it('pays coupons to holders of record and the cash lands in named accounts (Register E1)', () => {
-    const w = foundationWorld('seed-F');
+    const w = bare('seed-F');
     const cbBefore = w.register.equity(CB);
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell === undefined) throw new Error('no cell');
@@ -187,7 +219,8 @@ describe('the period loop', () => {
     }
     expect(violations(w)).toEqual([]);
     const coupons = w.ledger.all().filter((r) => r.instruction.cause === 'coupon');
-    expect(coupons.length).toBe(3 + 8);
+    // Three bonds outstanding, each paying its first coupon to eleven holders of record.
+    expect(coupons.length).toBe(3 * (3 + 8));
     expect(coupons.every((r) => r.outcome === 'settled')).toBe(true);
     expect(w.register.equity(CB)).toBeGreaterThan(cbBefore);
     expect(w.cash(cell.id, PHX)).toBeGreaterThan(hhBefore);
@@ -207,6 +240,7 @@ describe('the period loop', () => {
       requires: ['seed.foundation'],
       instrumentKinds: [],
       partyKinds: [],
+      curveFamilies: [],
       units: [],
       params: [],
       phases: [
@@ -225,7 +259,7 @@ describe('the period loop', () => {
       participants: [],
       families: [],
     };
-    const w = withModules('seed-H', probe);
+    const w = bare('seed-H', probe);
     expect(w.phases.map((p) => p.name)).toEqual([
       'corporateActions',
       'probe',
@@ -239,7 +273,7 @@ describe('the period loop', () => {
 
 describe('a market with reasons on both sides', () => {
   it('clears, settles paper against cash in one instruction, and revalues everyone (XI-5, D4)', () => {
-    const w = withModules(
+    const w = bareWith(
       'seed-I',
       traders((instrument, party) => {
         if (instrument !== GOV_LINE) return [];
@@ -252,30 +286,32 @@ describe('a market with reasons on both sides', () => {
     );
     const r = w.step();
     expect(violations(w)).toEqual([]);
-    expect(r.markets[0]?.outcome).toBe('cleared');
-    expect(r.markets[0]?.settledVolume).toBe(100);
+    const gov = r.markets.find((m) => m.market === GOV_MARKET);
+    expect(gov?.outcome).toBe('cleared');
+    expect(gov?.settledVolume).toBe(100);
     expect(w.register.quantity(partyId('firm.1'), GOV_LINE)).toBe(100);
-    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(400);
+    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(50);
     const print = w.prices.printOrThrow(GOV_LINE, w.period);
     expect(print.provenance.kind).toBe('traded');
     expect([0.97, 0.99]).toContain(print.price);
   });
 
   it('a buyer without the cash fails the whole trade, not half of it (Register C3.b)', () => {
-    const w = withModules(
+    const w = bareWith(
       'seed-J',
       traders((instrument, party) => {
         if (instrument !== GOV_LINE) return [];
         if (party === 'firm.2')
-          return [{ party: partyId(party), side: 'buy', price: 1.0, qty: 400 }];
+          return [{ party: partyId(party), side: 'buy', price: 1.2, qty: 140 }];
         if (party === 'bank.a')
-          return [{ party: partyId(party), side: 'sell', price: 1.0, qty: 400 }];
+          return [{ party: partyId(party), side: 'sell', price: 1.2, qty: 140 }];
         return [];
       }),
     );
     const r = w.step();
-    expect(r.markets[0]?.failedTrades).toBe(1);
-    expect(r.markets[0]?.settledVolume).toBe(0);
+    const gov = r.markets.find((m) => m.market === GOV_MARKET);
+    expect(gov?.failedTrades).toBe(1);
+    expect(gov?.settledVolume).toBe(0);
     expect(w.register.quantity(partyId('firm.2'), GOV_LINE)).toBe(0);
     expect(w.cash(partyId('firm.2'), PHX)).toBe(150);
     const failed = w.ledger.all().filter((x) => x.outcome === 'failed');

@@ -12,12 +12,14 @@ import { InvalidRegistry, Missing } from '../core/errors.js';
 import type {
   CohortId,
   CurrencyCode,
+  CurveFamilyId,
   InstrumentKindId,
   PartyId,
   PartyKindId,
   RegionId,
   UnitId,
 } from '../core/ids.js';
+import type { CurveFamilyDecl } from '../prices/curve.js';
 import type { InstrumentKindProfile, LotFlow, PartyKindProfile } from './kinds.js';
 
 export interface CurrencyDecl {
@@ -63,6 +65,8 @@ export interface RegistryData {
   /** The kind profiles the kernel and the assembled modules register (Law 15). */
   readonly instrumentKinds: readonly InstrumentKindProfile[];
   readonly partyKinds: readonly PartyKindProfile[];
+  /** The curve families their owning modules declare (Sovereign D3.a: one owner each). */
+  readonly curveFamilies: readonly CurveFamilyDecl[];
 }
 
 export class Registry {
@@ -72,6 +76,7 @@ export class Registry {
   readonly cohorts: readonly CohortDecl[];
   readonly cellKey: readonly CellKeyDimension[];
   readonly lotFlow: LotFlow;
+  readonly curveFamilies: ReadonlyMap<CurveFamilyId, CurveFamilyDecl>;
   readonly instrumentKinds: ReadonlyMap<InstrumentKindId, InstrumentKindProfile>;
   readonly partyKinds: ReadonlyMap<PartyKindId, PartyKindProfile>;
 
@@ -84,6 +89,7 @@ export class Registry {
     this.lotFlow = data.lotFlow;
     this.instrumentKinds = unique(data.instrumentKinds, (k) => k.id, 'instrument kind');
     this.partyKinds = unique(data.partyKinds, (k) => k.id, 'party kind');
+    this.curveFamilies = unique(data.curveFamilies, (c) => c.id, 'curve family');
 
     for (const r of this.regions.values()) {
       if (!this.currencies.has(r.ccy)) {
@@ -117,6 +123,23 @@ export class Registry {
     if (!this.instrumentKinds.has('money' as InstrumentKindId)) {
       throw new InvalidRegistry('Money D2', 'the money instrument kind must be registered');
     }
+    for (const f of this.curveFamilies.values()) {
+      if (!this.currencies.has(f.ccy)) {
+        throw new InvalidRegistry(
+          'Sovereign D3.a',
+          `curve family ${f.id} names currency ${f.ccy}, which does not exist`,
+        );
+      }
+    }
+  }
+
+  /** Sovereign D3.a: the family, or nothing — a curve nobody declared is not a curve. */
+  curveFamily(id: CurveFamilyId): CurveFamilyDecl {
+    const f = this.curveFamilies.get(id);
+    if (f === undefined) {
+      throw new Missing('Sovereign D3.a', `curve family ${id} is not declared`, { id });
+    }
+    return f;
   }
 
   currency(code: CurrencyCode): CurrencyDecl {

@@ -92,11 +92,29 @@ const noMagicNumbers = {
         ) {
           return;
         }
+        // A parameter's own declared value IS the register (Law 2, XI-14): a ParamDecl states the
+        // number with its kind, unit, owner and reason, which is exactly what this rule asks for.
+        if (isParamDeclValue(parent)) return;
         context.report({ node, messageId: 'magic', data: { value: String(node.value) } });
       },
     };
   },
 };
+
+/** True when this literal is the `value` of an object literal that declares a parameter. */
+function isParamDeclValue(parent) {
+  if (!parent || parent.type !== 'Property' || parent.key === undefined) return false;
+  const name = parent.key.name ?? parent.key.value;
+  if (name !== 'value') return false;
+  const object = parent.parent;
+  if (!object || object.type !== 'ObjectExpression') return false;
+  const keys = new Set(
+    object.properties
+      .filter((p) => p.type === 'Property' && p.key !== undefined)
+      .map((p) => p.key.name ?? p.key.value),
+  );
+  return keys.has('kind') && keys.has('unit') && keys.has('owner') && keys.has('why');
+}
 
 /** Law 15 / App B 48 — mechanics never branch on a kind. */
 const noKindBranch = {

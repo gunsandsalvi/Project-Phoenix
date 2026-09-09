@@ -36,6 +36,15 @@ export interface Print {
   readonly provenance: Provenance;
 }
 
+/**
+ * The period the price in a print was actually struck: its own when the market printed it, and the
+ * one it was carried from when it is stale (E4). How old a mark is belongs with the print, so no
+ * reader has to take the provenance apart itself.
+ */
+export function struckIn(p: Print): Period {
+  return p.provenance.kind === 'stale' ? p.provenance.from : p.period;
+}
+
 export class PriceStore {
   private readonly byInstrument = new Map<InstrumentId, Print[]>();
 

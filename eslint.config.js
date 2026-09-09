@@ -92,6 +92,12 @@ export default tseslint.config(
     rules: { 'phoenix/no-magic-numbers': 'off' },
   },
   {
+    // Law 15: all DATA in a registry. A module's own data.ts IS its registry — declared tables and
+    // nothing else — so the numbers in it are data, not behaviour smuggled into code.
+    files: ['packages/engine/src/mechanisms/*/data.ts'],
+    rules: { 'phoenix/no-magic-numbers': 'off' },
+  },
+  {
     files: ['**/*.test.ts', 'packages/app/e2e/**/*.ts', 'tools/**/*.ts', 'packages/app/**/*.ts'],
     rules: {
       'phoenix/no-magic-numbers': 'off',

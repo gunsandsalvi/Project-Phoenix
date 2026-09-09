@@ -12,15 +12,20 @@
  * claim about the answer, counted until the mechanisms that produce wealth (wages, saving, XI-16)
  * replace it (worklist 4). How many cells stand for the population is a RESOLUTION (XI-15).
  *
- * Seeded TERMS (Seed C4.b) are permanent structure and are justified here: the line is a ten-year
- * fixed 2% semi-annual bond on ACT/ACT, chosen as a plain benchmark shape a treasury would issue,
- * with a remaining life so the seed has a maturity ahead of it (C3) rather than a bond at issue.
+ * Seeded TERMS (Seed C4.b) are permanent structure and are justified here: the treasury opens with a
+ * MATURITY PROFILE (Seed C3, Treasury D4.a) — bills at three, six and twelve months and bonds at two,
+ * five and ten years, on the issuer's own quarterly maturity grid, no two redeeming in one period —
+ * so there is always a wall ahead of it to fund and a curve with more than one point on it. Each bond
+ * carries the coupon that makes it par at the one opening yield, so the seed asserts a LEVEL and no
+ * SHAPE: the curve opens flat and the auctions and the secondary market give it whatever shape they
+ * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
 import { civil } from '../calendar/civil.js';
 import {
   cohortId,
   currencyCode,
   currencyUnit,
+  curveFamilyId,
   instrumentId,
   marketId,
   moneyInstrumentId,
@@ -29,15 +34,24 @@ import {
   regionId,
   type PartyId,
 } from '../core/ids.js';
+import { Missing } from '../core/errors.js';
+import type { DayCount } from '../calendar/daycount.js';
+import { priceAt } from '../prices/curve.js';
 import { positiveCount } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
 import {
   PAR,
+  SOVEREIGN_BILL,
   SOVEREIGN_BOND,
   sovereignInstruments,
+  type SovereignBillTerms,
   type SovereignBondTerms,
 } from '../mechanisms/sovereign-instruments/index.js';
+import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
+import { sovereignAuction } from '../mechanisms/sovereign-auction/index.js';
+import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
+import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
 import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, TREASURY } from '../registry/profiles.js';
 import type { Prng } from '../rng/prng.js';
@@ -53,8 +67,40 @@ export const CB = partyId('cb.north');
 export const TREASURY_NORTH = partyId('treasury.north');
 export const BANK_A = partyId('bank.a');
 export const BANK_B = partyId('bank.b');
-export const GOV_LINE = instrumentId('gov.north.2.0.2036-03-15');
-export const GOV_MARKET = marketId('mkt.gov.north.2036');
+/** The ten-year benchmark: the line every other price is quoted against (Sovereign D4). */
+export const GOV_LINE = instrumentId('gov.north.2036-03-15');
+export const GOV_MARKET = marketId('mkt.gov.north.2036-03-15');
+/** Sovereign D3.a: one owner of the curve, one convention, declared by the module that owns it. */
+export const GOV_CURVE = curveFamilyId('gov.north');
+
+/** The issuer's own maturity grid: it places every line it brings on one of these days (B3.a). */
+export const MATURITY_MONTHS: readonly number[] = [3, 6, 9, 12];
+export const MATURITY_DAY = 15;
+
+/** What the seed opens outstanding: a profile, not one line (Seed C3, Treasury D4.a). */
+interface SeedLine {
+  readonly id: string;
+  /** Which of the two sovereign instruments this line is (Sovereign B1: two, not one with a flag). */
+  readonly paper: 'bill' | 'bond';
+  readonly maturity: { y: number; m: number; d: number };
+  readonly cb: number;
+  readonly bankA: number;
+  readonly bankB: number;
+  /** Per member of every household cell, before dispersion (Seed B4). */
+  readonly perMember: number;
+}
+
+const SEED_LINES: readonly SeedLine[] = [
+  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, cb: 0, bankA: 300, bankB: 200, perMember: 0 },
+  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, cb: 0, bankA: 200, bankB: 300, perMember: 0 },
+  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, cb: 0, bankA: 250, bankB: 250, perMember: 0.02 },
+  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 300, bankA: 200, bankB: 100, perMember: 0.04 },
+  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 500, bankA: 150, bankB: 150, perMember: 0.06 },
+  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 700, bankA: 150, bankB: 150, perMember: 0.08 },
+];
+
+/** One day count for the seeded paper, so an opening price and its yield use one convention. */
+const SEED_DAY_COUNT: DayCount = 'ACT/ACT';
 
 const P = {
   cellsPerKey: paramId('seed.households.cellsPerKey'),
@@ -62,7 +108,7 @@ const P = {
   depositPerMember: paramId('seed.households.depositPerMember'),
   bondPerMember: paramId('seed.households.bondPerMember'),
   dispersion: paramId('seed.households.dispersion'),
-  openingPrice: paramId('seed.openingPrice.gov.north.2036'),
+  openingYield: paramId('seed.openingYield'),
 } as const;
 
 /**
@@ -80,6 +126,7 @@ export const foundationSeed: SystemModule = {
   requires: ['sovereign-instruments'],
   instrumentKinds: [],
   partyKinds: [],
+  curveFamilies: [],
   units: [],
   params: [
     {
@@ -123,12 +170,12 @@ export const foundationSeed: SystemModule = {
       why: 'Seed B4: sizes are dispersed, or a sector of equals never produces a market; the width is a claim about the answer.',
     },
     {
-      id: P.openingPrice,
-      value: 0.98,
-      unit: 'PHX per unit of par',
+      id: P.openingYield,
+      value: 0.02,
+      unit: 'per annum',
       kind: 'placeholder',
       owner: 'model',
-      why: 'Seed C4: an opening condition the first clearing replaces; there is no auction yet to print one.',
+      why: 'Seed C4: the one level the opening world is priced at, flat across the profile so the seed asserts no shape. Every line opens at the price this yield gives it, and each dies at that line first traded print.',
       standsInFor: {
         mechanism: 'Sovereign C (the auction) and D (the secondary market)',
         worklistItem: '3',
@@ -173,50 +220,72 @@ export const foundationSeed: SystemModule = {
       });
     }
 
-    // The sovereign benchmark line, outstanding with a remaining life (Seed C3).
-    const terms: SovereignBondTerms = {
-      kind: SOVEREIGN_BOND,
-      coupon: rate(0.02, ANNUAL),
-      couponPeriodicity: SEMI_ANNUAL,
-      dayCount: 'ACT/ACT',
-      issueDate: civil(2026, 3, 15),
-      maturity: civil(2036, 3, 15),
-    };
-    ctx.instruments.add({
-      id: GOV_LINE,
-      kind: SOVEREIGN_BOND,
-      issuer: TREASURY_NORTH,
-      ccy: PHX,
-      terms,
-      market: some(GOV_MARKET),
-    });
-    ctx.openMarket({
-      id: GOV_MARKET,
-      name: 'North 2% 2036',
-      instrument: GOV_LINE,
-      ccy: PHX,
-      rationing: 'proRata',
-    });
-    const opening = ctx.params.get(P.openingPrice);
-    ctx.prices.write({
-      instrument: GOV_LINE,
-      market: GOV_MARKET,
-      period: ctx.period,
-      price: opening,
-      ccy: PHX,
-      provenance: { kind: 'opening' },
-    });
+    // The maturity profile, outstanding with remaining lives (Seed C3, Treasury D4.a). Every bond
+    // carries the coupon that makes it par at the opening yield, so nothing but a level is claimed.
+    const y = ctx.params.get(P.openingYield);
+    const opening = new Map<string, number>();
+    for (const line of SEED_LINES) {
+      const id = instrumentId(line.id);
+      const market = marketId(`mkt.${line.id}`);
+      const maturity = civil(line.maturity.y, line.maturity.m, line.maturity.d);
+      const terms: SovereignBondTerms | SovereignBillTerms =
+        line.paper === 'bond'
+          ? {
+              kind: SOVEREIGN_BOND,
+              coupon: rate(y, ANNUAL),
+              couponPeriodicity: SEMI_ANNUAL,
+              dayCount: SEED_DAY_COUNT,
+              issueDate: ctx.calendar.epoch,
+              maturity,
+            }
+          : { kind: SOVEREIGN_BILL, issueDate: ctx.calendar.epoch, maturity };
+      ctx.instruments.add({
+        id,
+        kind: line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL,
+        issuer: TREASURY_NORTH,
+        ccy: PHX,
+        terms,
+        market: some(market),
+      });
+      ctx.openMarket({
+        id: market,
+        name: ctx.registry.instrumentKind(line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL)
+          .displayName(ctx.instruments.get(id), 'North'),
+        instrument: id,
+        ccy: PHX,
+        rationing: 'proRata',
+      });
+      const flows = ctx.registry
+        .instrumentKind(line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL)
+        .cashFlows(ctx.instruments.get(id), ctx.calendar.epoch, ctx.calendar);
+      const price = priceAt(flows, y, ctx.calendar.epoch, SEED_DAY_COUNT, `opening ${line.id}`);
+      opening.set(line.id, price);
+      ctx.prices.write({
+        instrument: id,
+        market,
+        period: ctx.period,
+        price,
+        ccy: PHX,
+        provenance: { kind: 'opening' },
+      });
+    }
 
     // Institutions and firms: endowments as state (Seed A3).
-    ctx.endowMoney(TREASURY_NORTH, PHX, 500);
+    // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
+    // single auction clearing. The programme manages it from here.
+    ctx.endowMoney(TREASURY_NORTH, PHX, 900);
     ctx.endowMoney(BANK_A, PHX, 400);
     ctx.endowMoney(BANK_B, PHX, 300);
     ctx.endowMoney(partyId('firm.1'), PHX, 200);
     ctx.endowMoney(partyId('firm.2'), PHX, 150);
     ctx.endowMoney(partyId('firm.3'), PHX, 250);
-    ctx.endowUnits(CB, GOV_LINE, 1500, opening);
-    ctx.endowUnits(BANK_A, GOV_LINE, 500, opening);
-    ctx.endowUnits(BANK_B, GOV_LINE, 500, opening);
+    for (const line of SEED_LINES) {
+      const id = instrumentId(line.id);
+      const price = openingOf(opening, line.id);
+      if (line.cb > 0) ctx.endowUnits(CB, id, line.cb, price);
+      if (line.bankA > 0) ctx.endowUnits(BANK_A, id, line.bankA, price);
+      if (line.bankB > 0) ctx.endowUnits(BANK_B, id, line.bankB, price);
+    }
 
     // Households: cells per (region, cohort, bank) key, weights summing to the key's population
     // (Seed B1.a), endowments dispersed around the stated means (Seed B4).
@@ -241,17 +310,28 @@ export const foundationSeed: SystemModule = {
           };
           ctx.parties.add(cell);
           ctx.endowMoney(cell.id, PHX, ctx.params.get(P.depositPerMember) * dispersed(rng, spread));
-          ctx.endowUnits(
-            cell.id,
-            GOV_LINE,
-            ctx.params.get(P.bondPerMember) * dispersed(rng, spread),
-            opening,
-          );
+          const scale = ctx.params.get(P.bondPerMember) * dispersed(rng, spread);
+          for (const line of SEED_LINES) {
+            if (line.perMember === 0) continue;
+            ctx.endowUnits(
+              cell.id,
+              instrumentId(line.id),
+              line.perMember * scale,
+              openingOf(opening, line.id),
+            );
+          }
         });
       }
     }
   },
 };
+
+/** The opening price the seed computed for a line; a line with none is a defect, never a default. */
+function openingOf(opening: ReadonlyMap<string, number>, id: string): number {
+  const p = opening.get(id);
+  if (p === undefined) throw new Missing('Seed C4', `no opening price for ${id}`, { id });
+  return p;
+}
 
 /** Split a population into `cells` whole counts that sum to it exactly (Appendix A: a weight is a count). */
 function splitPopulation(population: number, cells: number): number[] {
@@ -276,6 +356,7 @@ export function foundationSpec(seed: string): AssemblySpec {
       ],
       cellKey: ['region', 'cohort', 'bank'],
       lotFlow: 'FIFO',
+      curveFamilies: [],
     },
     params: [
       {
@@ -303,7 +384,14 @@ export function foundationSpec(seed: string): AssemblySpec {
         why: 'Audit D2: how many worst instances a family reports; a reporting depth, not a behaviour.',
       },
     ],
-    modules: [sovereignInstruments, foundationSeed],
+    modules: [
+      sovereignInstruments,
+      sovereignCurve(TREASURY_NORTH, PHX),
+      sovereignAuction,
+      treasury,
+      centralBankOmo,
+      foundationSeed,
+    ],
   };
 }
 

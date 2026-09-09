@@ -13,6 +13,7 @@ import type { Family } from '../audit/audit.js';
 import type { Order } from '../clearing/solver.js';
 import type { MarketDecl } from '../clearing/market.js';
 import type { PartyKindId } from '../core/ids.js';
+import type { CurveFamilyDecl } from '../prices/curve.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../registry/kinds.js';
 import type { ParamDecl } from '../registry/params.js';
 import type { UnitDecl } from '../registry/registry.js';
@@ -24,8 +25,12 @@ export type KernelPhase = 'corporateActions' | 'markets' | 'revaluation';
 export interface PhaseDecl {
   readonly name: string;
   readonly spec: string;
-  /** The settlement cycle this phase runs in (Money G2); must not run before an earlier phase's cycle. */
-  readonly cycle: number;
+  /**
+   * The settlement cycle this phase runs in (Money G2); must not run before an earlier phase's
+   * cycle. 'anchor' means the same cycle as the phase it is anchored to, which is how a module says
+   * "with that one" without knowing how many cycles this world's calendar has.
+   */
+  readonly cycle: number | 'anchor';
   /** Where in the period it runs, relative to a kernel phase or another module's phase. */
   readonly anchor: { readonly before: string } | { readonly after: string };
   run(ctx: MechanismContext): void;
@@ -50,6 +55,8 @@ export interface SystemModule {
   readonly requires: readonly string[];
   readonly instrumentKinds: readonly InstrumentKindProfile[];
   readonly partyKinds: readonly PartyKindProfile[];
+  /** Curve families this module owns (Sovereign D3.a: one owner, one convention). */
+  readonly curveFamilies: readonly CurveFamilyDecl[];
   readonly units: readonly UnitDecl[];
   readonly params: readonly ParamDecl[];
   readonly phases: readonly PhaseDecl[];

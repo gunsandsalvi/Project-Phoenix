@@ -17,6 +17,7 @@ export type CohortId = Brand<string, 'CohortId'>;
 export type PartyKindId = Brand<string, 'PartyKindId'>;
 export type InstrumentKindId = Brand<string, 'InstrumentKindId'>;
 export type ParamId = Brand<string, 'ParamId'>;
+export type CurveFamilyId = Brand<string, 'CurveFamilyId'>;
 export type InstructionId = Brand<number, 'InstructionId'>;
 export type LotId = Brand<number, 'LotId'>;
 export type LienId = Brand<number, 'LienId'>;
@@ -40,6 +41,8 @@ export const partyKindId = (s: string): PartyKindId => nonEmpty(s, 'PartyKindId'
 export const instrumentKindId = (s: string): InstrumentKindId =>
   nonEmpty(s, 'InstrumentKindId') as InstrumentKindId;
 export const paramId = (s: string): ParamId => nonEmpty(s, 'ParamId') as ParamId;
+export const curveFamilyId = (s: string): CurveFamilyId =>
+  nonEmpty(s, 'CurveFamilyId') as CurveFamilyId;
 
 /** The unit in which a currency's money is counted: `ccy:<code>` (Appendix A, Units). */
 export const currencyUnit = (ccy: CurrencyCode): UnitId => `ccy:${ccy}` as UnitId;

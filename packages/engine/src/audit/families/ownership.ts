@@ -18,7 +18,10 @@ export function ownershipFamily(): Family {
       for (const i of view.instruments.all()) {
         const held = view.register.heldTotal(i.id);
         const issued = sum([i.issued]);
-        if (!withinDust(held.value, issued.value, combineDust(held, issued))) {
+        // The dust of the comparison is the dust of both sides: what the walk over holdings is
+        // entitled to, and what the running issued total has accumulated over its own history.
+        const dust = combineDust(held, issued) + i.issuedDust;
+        if (!withinDust(held.value, issued.value, dust)) {
           out.push({
             family: 'ownership',
             spec: 'Register B2',
@@ -32,7 +35,7 @@ export function ownershipFamily(): Family {
                 : `somebody's claim on ${i.id} vanished`,
           });
         }
-        if (!i.status.live && held.value !== 0) {
+        if (!i.status.live && Math.abs(held.value) > dust) {
           out.push({
             family: 'ownership',
             spec: 'Register B4',

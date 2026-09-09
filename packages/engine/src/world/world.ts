@@ -26,6 +26,7 @@ import { forbid } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import {
   type CurrencyCode,
+  type CurveFamilyId,
   type InstrumentId,
   type MarketId,
   moneyInstrumentId,
@@ -45,6 +46,7 @@ import { Journal } from '../journal/journal.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
 import { Parties, weightOf } from '../parties/party.js';
+import { type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore } from '../prices/price-store.js';
 import { Valuation } from '../prices/value.js';
 import { Instruments } from '../register/instruments.js';
@@ -165,7 +167,11 @@ export class World {
         cycle: 1,
         owner: 'kernel',
         run: (w) => {
-          w.lastMarkets = w.marketList.map((m) => w.runOne(m));
+          // Register B4: a matured line moves no units, so its market has nothing left to clear.
+          // The instrument's cessation is the event; the venue simply stops (Bond N10).
+          w.lastMarkets = w.marketList
+            .filter((m) => w.instruments.get(m.instrument).status.live)
+            .map((m) => w.runOne(m));
         },
       },
       {
@@ -261,14 +267,19 @@ export class World {
       'Law 4',
       `phase ${decl.name} declared twice`,
     );
-    this.calendar.cycle(decl.cycle);
     const anchorName = 'before' in decl.anchor ? decl.anchor.before : decl.anchor.after;
     const idx = this.phaseList.findIndex((p) => p.name === anchorName);
     forbid(idx >= 0, 'Law 10', `phase ${decl.name} anchors to ${anchorName}, which does not exist`);
+    const anchored = this.phaseList[idx];
+    if (anchored === undefined) {
+      throw new Missing('Law 10', `phase ${anchorName} vanished between lookup and use`);
+    }
+    const cycle = decl.cycle === 'anchor' ? anchored.cycle : decl.cycle;
+    this.calendar.cycle(cycle);
     const phase: Phase = {
       name: decl.name,
       spec: decl.spec,
-      cycle: decl.cycle,
+      cycle,
       owner,
       run: (w) => {
         decl.run(w.mechanismContext(owner));
@@ -353,7 +364,13 @@ export class World {
       print: (instrument) => this.prices.latest(instrument, this.currentPeriod),
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
+      curve: (family) => this.curve(family),
       publicEvents: (last) => this.journal.visibleTo(party, last),
+      lastPublic: (kind) => {
+        const events = this.journal.ofKind(kind).filter((e) => e.public);
+        const last = events[events.length - 1];
+        return last === undefined ? none() : some(last);
+      },
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
     };
   }
@@ -395,6 +412,7 @@ export class World {
         this.postOffer(o);
       },
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
+      curve: (family) => this.curve(family),
       cease: (party, successor) => {
         this.parties.cease(party, this.currentPeriod, successor);
         this.journal.record(
@@ -462,6 +480,22 @@ export class World {
   offer(market: MarketId): Option<PrimaryOffer> {
     const o = this.offerList.get(market);
     return o === undefined ? none() : some(o);
+  }
+
+  /**
+   * Sovereign D3: the curve as a read, built when it is asked for from the prints the market has
+   * already produced and the instruments' own cash flows. Nothing stores it, so the fit's own
+   * previous output can never be an observation (D3.b).
+   */
+  curve(family: CurveFamilyId): CurveRead {
+    return readCurve(this.registry.curveFamily(family), this.currentPeriod, {
+      calendar: this.calendar,
+      prices: this.prices,
+      instruments: () => this.instruments.all(),
+      cashFlows: (i, after) =>
+        this.registry.instrumentKind(i.kind).cashFlows(i, after, this.calendar),
+      accrued: (i, on) => this.registry.instrumentKind(i.kind).accrued(i, on, this.calendar),
+    });
   }
 
   /** Bond N9.b: what has accrued per unit on a line at the start of a period, from its own terms. */

@@ -23,6 +23,8 @@ export const moneyKind: InstrumentKindProfile = {
   // Money pays no interest: an account is a holding of it, and a deposit rate is a bank's decision
   // (Banks Funding B1), paid by an instruction, never accrued into the instrument.
   accrued: () => 0,
+  // Money promises no dated payment: it is the numéraire, worth one of itself at every date.
+  cashFlows: () => [],
 };
 
 export const CENTRAL_BANK = partyKindId('centralBank');
@@ -41,7 +43,14 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
       // B3.b: a bank overdrawn at the central bank is borrowing from it and the corridor prices it.
       // Until the corridor exists (worklist 11, Central Bank D3.b) the overdraft is allowed and
       // recorded as a reserve overdraft; the Money audit family reports every one as unpriced.
-      overdraft: (): OverdraftDecision => ({ allow: true, recordedAs: 'reserveOverdraft' }),
+      //
+      // Everyone else is REFUSED, and the treasury is the case that matters: an advance whenever
+      // its account is empty converts a fiscal failure into an accounting entry and deletes the
+      // reason a funding programme exists at all (Treasury D3, Central Bank E2, Sovereign A3.b).
+      // A treasury that has not funded itself has failed to fund itself, and the refusal is what
+      // makes that a real event with a consequence (Treasury A3.a, D5).
+      overdraft: (ctx): OverdraftDecision =>
+        ctx.holderIssuesMoney ? { allow: true, recordedAs: 'reserveOverdraft' } : { allow: false },
     },
   },
   {

@@ -135,6 +135,50 @@ export function zeroIfNone(q: number | undefined): number {
   return q === undefined ? 0 : finite(q, 'quantity');
 }
 
+/**
+ * Invert a strictly decreasing function by bisection: the x in [lo, hi] at which f(x) = target.
+ * Arithmetic, not a decision: it inverts a function somebody else stated. The bracket is a bracket
+ * and is never reported as an answer (Clearing C4.c is about prices; this returns an x it found).
+ * Throws Impossible when the target is outside what the bracket can reach.
+ */
+export function invertDecreasing(f: (x: number) => number, target: number, what: string): number {
+  // Find a bracket by walking outward from zero. A bracket is arithmetic and is never an answer:
+  // what comes back is the x where f(x) meets the target, not an end of the search.
+  let a = 0;
+  let b = 1;
+  for (let i = 0; i < 64 && finite(f(a), what) < target; i += 1) a = a === 0 ? -0.5 : (a - 1) / 2;
+  for (let i = 0; i < 64 && finite(f(b), what) > target; i += 1) b *= 2;
+  const fa = finite(f(a), what);
+  const fb = finite(f(b), what);
+  if (fa < target || fb > target) {
+    throw new Impossible('Law 7', `${what}: ${target} is outside [${fb}, ${fa}]`, {
+      what,
+      target,
+      lo: fa,
+      hi: fb,
+    });
+  }
+  // Halve the bracket until it is narrower than the dust of the numbers being compared, and no
+  // more than a stated number of times, so the loop terminates on any input.
+  for (let i = 0; i < 128; i += 1) {
+    const mid = (a + b) / 2;
+    if (b - a <= dustOf(2, Math.abs(a) + Math.abs(b))) break;
+    if (f(mid) > target) a = mid;
+    else b = mid;
+  }
+  return finite((a + b) / 2, what);
+}
+
+/**
+ * Whether a computed quantity is a real one or just the dust of the arithmetic that produced it.
+ * A difference of two numbers of size `magnitude` is not a decision to act on when it is smaller
+ * than the rounding of that subtraction: posting an order for it, or booking a lot of it, invents a
+ * position out of floating point. Law 7 applied at the point a number becomes an action.
+ */
+export function material(value: number, terms: number, magnitude: number): boolean {
+  return Math.abs(finite(value, 'material')) > dustOf(terms, magnitude);
+}
+
 /** Add a term into a keyed accumulator; a key with no terms yet has accumulated nothing. */
 export function addTo<K>(acc: Map<K, number>, key: K, delta: number): void {
   const cur = acc.get(key) ?? 0;

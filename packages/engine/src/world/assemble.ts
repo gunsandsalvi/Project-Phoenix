@@ -53,6 +53,7 @@ export function assemble(spec: AssemblySpec): World {
     units: [...spec.registry.units, ...modules.flatMap((m) => m.units)],
     instrumentKinds: [moneyKind, ...modules.flatMap((m) => m.instrumentKinds)],
     partyKinds: [...KERNEL_PARTY_KINDS, ...modules.flatMap((m) => m.partyKinds)],
+    curveFamilies: modules.flatMap((m) => m.curveFamilies),
   });
   const params = new ParamRegister([...spec.params, ...modules.flatMap((m) => m.params)]);
   const calendar = new Calendar({

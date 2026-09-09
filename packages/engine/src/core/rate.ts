@@ -20,6 +20,9 @@ export const SEMI_ANNUAL: Periodicity = Object.freeze({ kind: 'months', n: 6 });
 export const QUARTERLY: Periodicity = Object.freeze({ kind: 'months', n: 3 });
 export const MONTHLY: Periodicity = Object.freeze({ kind: 'months', n: 1 });
 
+/** A periodicity of n months, for a schedule whose spacing is itself a declared number. */
+export const months = (n: number): Periodicity => Object.freeze({ kind: 'months', n });
+
 export interface Rate {
   readonly amount: number;
   readonly per: Periodicity;

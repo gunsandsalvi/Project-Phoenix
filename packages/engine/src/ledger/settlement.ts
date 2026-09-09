@@ -1,7 +1,7 @@
 /**
  * Settlement: the one rule that applies an instruction, and the only writer of holdings.
  *
- * @spec Money C2 Money C2.a Money C2.b Money C2.c Money C4 Money C4.a Money C4.b Money D1 Money D3 Money D4 Money E1 Money E1.a Money E1.b Money E2 Money E3 Money E4 Money B3 Money B3.a Money B3.b Money B3.c Register B1 Register B3 Register C1 Register C2.a Register C3 Register C3.a Register C3.b Register C4 Register D4 Audit B5 XI-5 XI-15 Equity C4 Equity F4
+ * @spec Treasury D3 Central Bank E2 Money C2 Money C2.a Money C2.b Money C2.c Money C4 Money C4.a Money C4.b Money D1 Money D3 Money D4 Money E1 Money E1.a Money E1.b Money E2 Money E3 Money E4 Money B3 Money B3.a Money B3.b Money B3.c Register B1 Register B3 Register C1 Register C2.a Register C3 Register C3.a Register C3.b Register C4 Register D4 Audit B5 XI-5 XI-15 Equity C4 Equity F4
  *
  * Payer minus, payee plus (C2). For a money leg between accounts at different issuers the interbank
  * reserve leg is generated here (C2.a); a same-issuer payment moves no reserves (C2.b). All legs of
@@ -528,6 +528,7 @@ export class Settlement {
         issuer: inst.issuer,
         ccy: inst.ccy,
         shortfall: -after,
+        holderIssuesMoney: this.d.registry.issuesMoney(this.d.parties.get(n.party).kind),
       });
       if (!decision.allow) {
         return {

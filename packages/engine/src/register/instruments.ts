@@ -16,7 +16,7 @@ import type {
   PartyId,
   UnitId,
 } from '../core/ids.js';
-import { finite } from '../core/num.js';
+import { dustOf, finite } from '../core/num.js';
 import type { Option } from '../core/option.js';
 import type { Registry } from '../registry/registry.js';
 
@@ -46,6 +46,13 @@ export interface Instrument extends InstrumentDecl {
   readonly unit: UnitId;
   /** B1: set at issuance, changed only by issuance, re-opening, buyback, amortisation, maturity. */
   readonly issued: number;
+  /**
+   * Law 7: the arithmetic dust `issued` has accumulated. It is a running total over every issuance
+   * and redemption this line has seen, so the tolerance any comparison against it may use grows
+   * with that history — it is not the dust of one addition. Carried with the number because it IS
+   * the number's own error bar, not a second representation of it.
+   */
+  readonly issuedDust: number;
   readonly status: InstrumentStatus;
 }
 
@@ -79,7 +86,7 @@ export class Instruments {
       forbid(!decl.market.some, 'XI-6', `${decl.id} is not priced by clearing but names a market`);
     }
     const status: InstrumentStatus = { live: true };
-    const i: Instrument = Object.freeze({ ...decl, unit, issued: 0, status });
+    const i: Instrument = Object.freeze({ ...decl, unit, issued: 0, issuedDust: 0, status });
     this.map.set(i.id, i);
     return i;
   }
@@ -108,7 +115,17 @@ export class Instruments {
       'Register B4',
       `instrument ${id} has ceased; nothing can be issued or redeemed`,
     );
-    this.map.set(id, Object.freeze({ ...i, issued: finite(i.issued + delta, `issued of ${id}`) }));
+    this.map.set(
+      id,
+      Object.freeze({
+        ...i,
+        issued: finite(i.issued + delta, `issued of ${id}`),
+        issuedDust: finite(
+          i.issuedDust + dustOf(1, Math.abs(i.issued) + Math.abs(delta)),
+          `issued dust of ${id}`,
+        ),
+      }),
+    );
   }
 
   /** B4: an instrument ceases, and every holding in it has already resolved to something else, named. */
