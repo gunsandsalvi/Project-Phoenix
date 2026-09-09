@@ -79,6 +79,12 @@ export type OutlookVariable = string;
 /** Observer A1-A4: a party's own state plus the public state, and nothing else. */
 export interface ParticipantView extends KernelReads {
   readonly self: Party;
+  /**
+   * A3: WHO somebody is — its kind, its region, its bank, whether it is still here, how many people
+   * a cell stands for. All of it is public: a market knows whose paper it is trading. What anybody
+   * holds, expects or is worth is not here and is not reachable from here (A4).
+   */
+  readonly parties: PartiesReads;
   /** Own holdings, per member (A2). */
   holdings(): readonly Holding[];
   quantity(instrument: InstrumentId): number;
@@ -109,6 +115,13 @@ export interface ParticipantView extends KernelReads {
    * everyone else can read too.
    */
   lastPublic(kind: EventKind): Option<Event>;
+  /**
+   * A4: the most recent event of a kind THIS party is a subject of — what it announced this period,
+   * what its own wage bill came to, what it was told. A decision taken in a phase and an order
+   * posted into a market are one decision (Law 4), and this is how the second reads the first
+   * instead of computing it again.
+   */
+  lastOwn(kind: EventKind): Option<Event>;
   /** A random stream that is this party's own, deterministic in (seed, party, period). */
   readonly rng: Prng;
 }

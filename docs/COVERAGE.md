@@ -747,7 +747,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Commodities Spot E2` | MISSING |  |
 | `Commodities Spot E3` | MISSING |  |
 | `Commodities Spot E4` | MISSING |  |
-| `Commodities Spot F1` | MET | packages/engine/src/ledger/settlement.ts (a create names what it was made from; a destroy beyond what is held fails) |
+| `Commodities Spot F1` | MET | packages/engine/src/ledger/settlement.ts (units enter the world only through a production event; a destroy beyond what is held fails), packages/engine/src/mechanisms/goods/index.ts (and what a batch consumed is checked against its recipe) |
 | `Commodities Spot F2` | MISSING |  |
 | `Commodities Spot F3` | MISSING |  |
 
@@ -1043,7 +1043,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Central Bank B3` | MISSING |  |
 | `Central Bank B3.a` | MISSING |  |
 | `Central Bank B4` | MISSING |  |
-| `Central Bank C1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
+| `Central Bank C1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts (sovereign paper only: it stands in no other market) |
 | `Central Bank C1.b` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank C2` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank C3` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/mechanisms/central-bank-omo/index.ts |
@@ -1104,36 +1104,36 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Firm A1` | MISSING |  |
-| `Firm A2` | MISSING |  |
-| `Firm A3` | MISSING |  |
-| `Firm A4` | MISSING |  |
-| `Firm B1` | MISSING |  |
-| `Firm B2` | MISSING |  |
-| `Firm B3` | MISSING |  |
-| `Firm B4` | MISSING |  |
-| `Firm B5` | MISSING |  |
-| `Firm B6` | MISSING |  |
-| `Firm C1` | MISSING |  |
-| `Firm C2` | MISSING |  |
+| `Firm A1` | MET | packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/seeds/foundation.ts (a named party with an account and a register of what it holds) |
+| `Firm A2` | MET | packages/engine/src/mechanisms/firms/data.ts (the region fixes its money and the line fixes what it buys, sells and employs) |
+| `Firm A3` | PARTIAL | firms differ in line, stock and cost (packages/engine/src/mechanisms/firms/data.ts); leverage arrives with loans (worklist 6) and the dispersion of size with the seed (worklist 4.7) |
+| `Firm A4` | PARTIAL | the residual is the firm own equity account (packages/engine/src/audit/families/accounts.ts); owners of record are a share register (worklist 9) |
+| `Firm B1` | MET | packages/engine/src/mechanisms/firms/decide.ts (what it sells is what its own offers cleared at, against named buyers; never a rate applied to last period) |
+| `Firm B2` | MET | packages/engine/src/mechanisms/firms/produce.ts (what it bought, drawn at what it cost it: packages/engine/src/mechanisms/goods/inventory.ts) |
+| `Firm B3` | MET | packages/engine/src/mechanisms/labour/matching.ts (headcount times wage, paid to named cells), packages/engine/src/mechanisms/firms/produce.ts (and absorbed into what it made) |
+| `Firm B4` | MET | packages/engine/src/mechanisms/expectations/index.ts (its result is the sum of what every instruction and every mark did to its own equity, and it is often negative) |
+| `Firm B5` | MET | packages/engine/src/mechanisms/firms/produce.ts (the period wage bill lands whole on whatever batch was started, and the inputs scale with it: a smaller batch is a higher unit cost) |
+| `Firm B6` | MET | packages/engine/src/mechanisms/firms/index.ts (the audit contribution: nothing is on a batch that nobody was paid), packages/engine/src/audit/families/flows.ts |
+| `Firm C1` | PARTIAL | cash and inventory, in lots at what they cost (packages/engine/src/mechanisms/goods/inventory.ts); receivables arrive with trade credit (worklist 13e) and fixed capital with the capital programme (worklist 10) |
+| `Firm C2` | MISSING | payables arrive with trade credit (worklist 13e), bank debt with loans (worklist 6), bonds with corporate credit (worklist 13f) |
 | `Firm C3` | MET | packages/engine/src/audit/families/accounts.ts |
-| `Firm C4` | MISSING |  |
-| `Firm D1` | MISSING |  |
+| `Firm C4` | PARTIAL | inventory bought and not sold is a real use of cash and it is carried in lots; invoices sent and not paid arrive with trade credit (worklist 13e) |
+| `Firm D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (a wage that does not settle is recorded and the people are not paid), packages/engine/src/ledger/settlement.ts |
 | `Firm D2` | MISSING |  |
 | `Firm D3` | MISSING |  |
 | `Firm D4` | MISSING |  |
 | `Firm D5` | MISSING |  |
-| `Firm E1` | MISSING |  |
-| `Firm E2` | MISSING |  |
+| `Firm E1` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts prices and sizes what it offers from its own outlook and what holding is worth; entering and leaving a line is firm birth (worklist 13g) |
+| `Firm E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the employment it wants is the labour that makes what it expects to sell, at what an hour is worth to it) |
 | `Firm E3` | MISSING |  |
 | `Firm E4` | MISSING |  |
-| `Firm E5` | MISSING |  |
-| `Firm E6` | MISSING |  |
-| `Firm E7` | MISSING |  |
-| `Firm F1` | MISSING |  |
-| `Firm F2` | MISSING |  |
-| `Firm F3` | MISSING |  |
-| `Firm F4` | MISSING |  |
+| `Firm E5` | PARTIAL | what it does not pay out stays in its own account; a dividend needs owners of record, which is a share register (worklist 9) |
+| `Firm E6` | MET | packages/engine/src/mechanisms/firms/decide.ts (every decision is a function of its own state, its own outlook and the prices it faces, and of nothing else) |
+| `Firm E7` | MET | packages/engine/src/mechanisms/firms/produce.ts (it publishes its own outlook of its own earnings), packages/engine/src/mechanisms/expectations/index.ts (and the surprise against it is a recorded event) |
+| `Firm F1` | MET | packages/engine/src/mechanisms/firms/index.ts (the audit contribution), packages/engine/src/ledger/settlement.ts (every leg has two named sides) |
+| `Firm F2` | MET | packages/engine/src/mechanisms/firms/index.ts (the module declares no number at all: there is no earnings path, no target margin and no adjustment speed in it) |
+| `Firm F3` | MET | packages/engine/src/mechanisms/labour/matching.ts, packages/engine/src/ledger/settlement.ts (nothing advances a firm that cannot pay; the payment fails and is recorded) |
+| `Firm F4` | PARTIAL | no aggregate is stored anywhere, so a sector total can only be a sum over its firms; measuring it is Part XII (worklist 16) |
 
 ## Capital Programme
 
@@ -1254,19 +1254,19 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | requirement | status | where / why |
 |---|---|---|
 | `Goods A1` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/goods/recipes.ts, packages/engine/src/mechanisms/goods/inventory.ts |
-| `Goods A2` | PARTIAL | the recipe is the good own public technology in physical quantities (packages/engine/src/mechanisms/goods/recipes.ts) and a create must destroy what it names; the firm that decides to run it arrives at worklist 4.5 |
+| `Goods A2` | MET | packages/engine/src/mechanisms/goods/recipes.ts (the recipe is the good own public technology in physical quantities), packages/engine/src/mechanisms/firms/produce.ts (and the firm draws exactly it) |
 | `Goods A2.b` | MET | packages/engine/src/mechanisms/goods/index.ts (refused at assembly by the declared unit), tools/eslint-rules/index.js (phoenix/no-value-recipe) |
 | `Goods A3` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/goods/inventory.ts |
 | `Goods A4` | MET | packages/engine/src/mechanisms/goods/index.ts (one instrument per region and sub-unit) |
-| `Goods B1` | MISSING |  |
-| `Goods B1.d` | MISSING |  |
-| `Goods B2` | MISSING |  |
-| `Goods B3` | MISSING |  |
-| `Goods B4` | MISSING |  |
-| `Goods B5` | MISSING |  |
-| `Goods C1` | PARTIAL | the venue takes sizes from sellers and levels from buyers through the one solver (packages/engine/src/clearing/solver.ts); the firms that offer and the households that bid arrive at worklist 4.5 and 4.6 |
+| `Goods B1` | MET | packages/engine/src/mechanisms/firms/decide.ts (expected demand, margin, inputs and labour are the reasons; the quantity is what comes out of them) |
+| `Goods B1.d` | MISSING | utilisation is a read against capacity, and capacity is plant (worklist 10) |
+| `Goods B2` | MET | packages/engine/src/mechanisms/firms/produce.ts, packages/engine/src/mechanisms/goods/index.ts (the audit contribution: what a batch consumed IS its recipe) |
+| `Goods B3` | MET | packages/engine/src/mechanisms/goods/inventory.ts (work in progress is a kind of its own, carried at what it has cost), packages/engine/src/mechanisms/firms/produce.ts |
+| `Goods B4` | MET | packages/engine/src/mechanisms/firms/produce.ts (what is started is not what is finished; the scrap is units and the whole batch cost lands on the survivors) |
+| `Goods B5` | MET | packages/engine/src/mechanisms/firms/produce.ts (inputs consumed plus the period wage bill; the capital charge arrives with the capital programme, worklist 10) |
+| `Goods C1` | MET | packages/engine/src/mechanisms/firms/decide.ts (a seller offers what it holds in steps with a reason behind each; a buyer posts what the thing is worth to it) |
 | `Goods C2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/mechanisms/goods/index.ts |
-| `Goods C3` | MISSING |  |
+| `Goods C3` | PARTIAL | firms buying inputs bid what the input is worth to them (packages/engine/src/mechanisms/firms/decide.ts); households arrive at worklist 4.6 and estates at worklist 7 |
 | `Goods C4` | MET | packages/engine/src/mechanisms/goods/index.ts (pro rata, stated once for every goods market), packages/engine/src/clearing/solver.ts |
 | `Goods C5` | MET | packages/engine/src/clearing/solver.ts (nothing is added to either side, so what nobody bought stays where it was) |
 | `Goods C6` | PARTIAL | packages/engine/src/mechanisms/goods/index.ts clears each good in the money of the region it is in; a foreign buyer buying that money arrives with the currency layer (worklist 12) |
@@ -1285,8 +1285,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Goods F2` | PARTIAL | immediate: the goods and the money settle together; terms arrive with trade credit (worklist 13e) |
 | `Goods F3` | MISSING |  |
 | `Goods F4` | MISSING |  |
-| `Goods F5` | PARTIAL | a sale debits the lots that left at what they cost and credits what was paid, so the difference is recognised on delivery; the income statement that presents it arrives with the firm (worklist 4.5) |
-| `Goods F5.b` | MISSING |  |
+| `Goods F5` | MET | packages/engine/src/clearing/market.ts (recognised on delivery), packages/engine/src/mechanisms/goods/inventory.ts (cost of what left, at what it cost) |
+| `Goods F5.b` | MET | packages/engine/src/mechanisms/firms/produce.ts (the wage is paid once and capitalised once: a period that starts nothing capitalises nothing) |
 | `Goods G1` | MISSING |  |
 | `Goods G1.c` | MISSING |  |
 | `Goods G2` | MISSING |  |
@@ -1331,19 +1331,19 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Labour B3` | MET | packages/engine/src/mechanisms/labour/index.ts (employed, unemployed or inactive, one state each, read from the rows and the cohort) |
 | `Labour B4` | MET | packages/engine/src/mechanisms/labour/matching.ts (an unemployed cell posts every period; what it meets is finite) |
 | `Labour B5` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: the three states against the population) |
-| `Labour C1` | MISSING | the decision to hire is the firm own (worklist 4.5) |
-| `Labour C2` | PARTIAL | packages/engine/src/mechanisms/labour/register.ts carries the lag from the match to the day the person is productive; the cost of finding is the firm own hours and arrives with the firm (worklist 4.5) |
+| `Labour C1` | MET | packages/engine/src/mechanisms/firms/decide.ts (it hires when an hour adds more than an hour costs; what it offers is what an hour is worth to it, from its own outlook of its output price) |
+| `Labour C2` | PARTIAL | packages/engine/src/mechanisms/labour/register.ts carries the lag from the match to the day the person is productive, and the firm plans on the hours it already has (packages/engine/src/mechanisms/firms/decide.ts); the cost of finding somebody arrives with the search side (worklist 13d) |
 | `Labour C3` | MET | packages/engine/src/mechanisms/labour/matching.ts (severance paid to the people separated, out of the employer account) |
 | `Labour C4` | MISSING | a firm that fails releases its workers; firm death is worklist 7 |
 | `Labour C5` | MET | packages/engine/src/mechanisms/labour/matching.ts (a vacancy is a posting the employer owns, for the period it posts it) |
-| `Labour D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (every posting is a bid; highest first; the bid that took the last match is the print) |
-| `Labour D2` | PARTIAL | the wage is the contract and does not move with the print (packages/engine/src/mechanisms/labour/register.ts); renegotiation at the firm horizon past its cost arrives with the firm (worklist 4.5) |
-| `Labour D2.b` | PARTIAL | stickiness is the contract and nothing damps a series; the renegotiation cost that makes it a decision arrives with the firm (worklist 4.5) |
+| `Labour D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (every posting is a bid, the highest fill first, and the level is where the book cleared: in a slack market it falls to the seekers own option and no further, in a tight one the bids set it) |
+| `Labour D2` | MET | packages/engine/src/mechanisms/labour/register.ts (the wage is the contract and does not move with the print), packages/engine/src/mechanisms/firms/decide.ts (a firm that wants fewer hours than it has sheds them and pays severance) |
+| `Labour D2.b` | MET | packages/engine/src/mechanisms/labour/matching.ts, packages/engine/src/mechanisms/firms/decide.ts (stickiness is the contract and the severance a change costs; nothing damps a series) |
 | `Labour D3` | MET | packages/engine/src/mechanisms/labour/matching.ts (whole people are matched from a queue of seekers; hours that do not make a person are no hire) |
 | `Labour D4` | MISSING |  |
 | `Labour D5` | MISSING |  |
 | `Labour E1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage reaches the household cell every period) |
-| `Labour E2` | PARTIAL | the wage leaves the employer account every period; what it does to margin and price arrives with the firm (worklist 4.5) |
+| `Labour E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the wage is in what a unit costs and therefore in what the firm will make and offer) |
 | `Labour E3` | MISSING |  |
 | `Labour E4` | MISSING |  |
 | `Labour F1` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: every row is a job at a named firm that exists) |
@@ -1546,30 +1546,30 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Expectations A1` | MISSING |  |
-| `Expectations A2` | MISSING |  |
-| `Expectations A2.b` | MISSING |  |
-| `Expectations A3` | MISSING |  |
-| `Expectations A4` | MISSING |  |
-| `Expectations A5` | MISSING |  |
-| `Expectations B1` | MISSING |  |
-| `Expectations B1.b` | MISSING |  |
-| `Expectations B2` | MISSING |  |
-| `Expectations B2.a` | MISSING |  |
-| `Expectations B3` | MISSING |  |
-| `Expectations B4` | MISSING |  |
+| `Expectations A1` | MET | packages/engine/src/world/context.ts (an outlook carries its number, its unit, its periodicity and how much the party trusts it), packages/engine/src/mechanisms/expectations/index.ts |
+| `Expectations A2` | MET | packages/engine/src/mechanisms/expectations/index.ts (formed only from legs the party was a side of and from what happened to its own account) |
+| `Expectations A2.b` | MET | packages/engine/src/world/context.ts (the only door answers about self), packages/engine/src/mechanisms/expectations/index.ts (the published aggregate is a lagged read no decision can consult) |
+| `Expectations A3` | MET | packages/engine/src/mechanisms/expectations/index.ts (memory is drawn per party and dispersed, so parties with the same history still move differently) |
+| `Expectations A4` | MET | packages/engine/src/mechanisms/expectations/index.ts (an outlook is last period outlook corrected towards what happened; nothing runs the world forward) |
+| `Expectations A5` | MET | packages/engine/src/world/context.ts (unit and periodicity are part of an outlook) |
+| `Expectations B1` | MET | packages/engine/src/mechanisms/expectations/index.ts (corrected towards what it observed, at its own speed) |
+| `Expectations B1.b` | MET | packages/engine/src/mechanisms/expectations/index.ts (one preference — memory — and nothing else; confidence is a read of its own surprises) |
+| `Expectations B2` | MET | packages/engine/src/mechanisms/expectations/index.ts (observed minus expected, recorded per party and variable, and the only thing that moves an outlook) |
+| `Expectations B2.a` | MET | packages/engine/src/mechanisms/expectations/index.ts (the update reads the surprise and nothing else) |
+| `Expectations B3` | MET | packages/engine/src/mechanisms/expectations/index.ts (confidence is the width of that party own recent surprises) |
+| `Expectations B4` | MET | packages/engine/src/mechanisms/expectations/index.ts (form runs at the top of the period on what the close of the last one recorded) |
 | `Expectations B5` | MISSING |  |
 | `Expectations C1` | MISSING |  |
-| `Expectations C2` | MISSING |  |
-| `Expectations C3` | MISSING |  |
+| `Expectations C2` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (output and hiring read the firm own outlook of what it sells and what it fetches), packages/engine/src/mechanisms/firms/produce.ts (and it publishes it); investment arrives with the capital programme (worklist 10) |
+| `Expectations C3` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts (what a firm offers and what it will pay are its own expectation of the price); the sovereign holders required yield is still a placeholder (worklist 10) |
 | `Expectations C4` | MISSING |  |
 | `Expectations C5` | MISSING |  |
 | `Expectations C6` | MISSING |  |
 | `Expectations D1` | MET | packages/engine/src/world/context.ts |
-| `Expectations D2` | MISSING |  |
-| `Expectations D3` | MISSING |  |
-| `Expectations D4` | MISSING |  |
+| `Expectations D2` | MET | packages/engine/src/mechanisms/expectations/index.ts (every observation is per member of the party that made it, never a cell total) |
+| `Expectations D3` | MET | packages/engine/src/mechanisms/expectations/index.ts (every outlook is scored against what happened, every period it is observed) |
+| `Expectations D4` | MET | packages/engine/src/mechanisms/expectations/index.ts (the dispersion aggregate is published with a lag and nothing can read it back) |
 | `Expectations E1` | MISSING |  |
-| `Expectations E2` | MISSING |  |
+| `Expectations E2` | MET | packages/engine/src/mechanisms/expectations/index.ts (the aggregate is a read of outlooks already formed, published about the period that closed) |
 | `Expectations E3` | MISSING |  |
 | `Expectations E4` | MISSING |  |

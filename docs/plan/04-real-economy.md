@@ -140,31 +140,41 @@ headcount }>` where `headcount` is always the whole cell's weight (A4.b, A4.c): 
 - Audit: `units` contribution: employed + unemployed + inactive weights = the population (B5), and
   every employment row's headcount equals its cell's weight (A4.c).
 
-### 4.5 `firms`
+### 4.5 `firms` — as built
 
-- Phase `firms.decide` (cycle 0, after `expectations.form`, after `treasury.outlays`): for each
-  firm, from its view: expected demand per sub-unit it makes (`outlook('firm.demand.<subUnit>')`),
-  its inventory, its capacity (until item 10, capacity is the recipe's labour hours it can hire:
-  B1.a's plant arrives at 10), inputs on hand (B1.b: a shortage is read and binds), labour (B1.c);
-  decides the production quantity (B1) and the vacancies to post (Labour C1: hire when the expected
-  price × marginal output exceeds the wage it must offer, from its outlook of the going rate), the
-  price it will offer finished goods at (E1: its outlook of demand against its unit cost), and the
-  dividend (E5: cash above its own buffer preference).
-- Phase `firms.produce` (cycle 2, after `markets`): consumes inputs per the recipe (Goods B2),
-  charges wages and the capital charge (none until 10) into work in progress at cost (B3, B5), yields
-  finished lots after the lead time (B4: scrap as `destroy` legs at the lot's cost); a period that
-  starts nothing capitalises nothing (B5.a); a throttled batch carries the whole period cost (B5.b).
-  Idle labour is a period expense (F5.a).
-- Phase `firms.invoice` (cycle 2): for every delivery this period, a receivable row (module state
-  `invoices`, mirrored as a payable on the buyer, one object read from both sides: C4.b) with terms
-  (Goods F2: immediate until trade credit at 13e makes terms a decision; declared placeholder
-  `firms.terms.periods = 0` with death 13e).
-- Phase `firms.pay` (cycle 2): wages to cells per member (Labour F1), invoices due, dividends;
-  failures are recorded and read by item 5.
+- Phase `firms.decide` (cycle 0, before `labour.match`): for each firm, from its own view: what it
+  expects a unit to fetch (its outlook of the price it has traded at, or the public print until it
+  has one), what it expects to sell (its outlook of its own fills: a seller sees no book), its
+  stock, the inputs it holds, the hours it has under contract, and what an hour and each input are
+  worth to it. It decides the batch to start (B1), the employment it wants and the wage it will
+  offer (E2, Labour C1), and the orders it will post in the goods markets (E1). The decision is
+  taken once and published under the firm's own name; its own orders and its own line read it back
+  (Law 4). A firm that has never sold has no expectation of demand and plans nothing: it posts no
+  opening, and what it employs does not move.
+- The supply schedule (Goods C1, C5, E4): what it cannot keep — what will perish before another
+  session, and what it must turn into cash to meet a payroll it has promised — at whatever the book
+  gives it; the rest above the value of holding it, which is what it expects to fetch less what
+  perishes in the meantime. Its demand for inputs is what each input is worth to it: the output
+  that input makes possible at the price it expects, less what the rest of the recipe takes.
+- Phase `firms.produce` (cycle 2, after `labour.pay`): consumes inputs per the recipe (Goods B2)
+  and creates the batch as units of work in progress carrying what it cost — the inputs at what
+  they cost it plus the period's wage bill (B3, B5). What the lead time says is due comes off the
+  line at the yield, and the whole batch's cost lands on the survivors (B4). A period that starts
+  nothing capitalises nothing and the wage stands as a period expense (B5.a, F5.a); a throttled
+  batch carries the whole period cost (B5.b).
 - Decisions are dispatch tables keyed by nothing: every firm decides the same way from its own state;
   what varies by industry is data (recipes, lead times), never a branch (Firm F4, Law 15).
-- Published expectation (E7): the firm journals its expected earnings (public) and the surprise is
-  scored by the expectations module.
+- Published expectation (E7): the firm publishes its own outlook of its own earnings (§46 C2) and
+  the surprise against it is scored by the expectations module.
+
+**Changed from the plan as written, and why.** The step for `firms.invoice` and `firms.pay` is
+replaced by the supply schedule and the derived demand for inputs. Wages are paid by the labour
+module, which owns the employment register and is the one writer of it (Law 4); a goods trade is
+delivery against payment in one instruction, so an invoice book of immediate terms would be a second
+representation of the trade (Law 4) — receivables and payables arrive with trade credit at 13e, and
+that is where the placeholder would have died anyway. Dividends need owners of record, and a share
+register arrives at item 9: paying one now would be paying nobody. Firm C4, C4.b, E5 and Goods F2,
+F3 are PARTIAL with those items named.
 
 ### 4.6 `households`
 
@@ -238,10 +248,10 @@ packages/engine/test/{state-slots,expectations,goods,labour,firms,households,res
 - [x] 4.4 Vacancies as bids; cells' hours as offers at their reservation; `labour.match` clears highest bids first; the print is the last matched bid; tests: an offer above the going rate fills more (D1.a); the going rate is a read (D1.c)
 - [x] 4.4 Contract stickiness: the wage is the contract's and does not move with the print; severance paid at separation; tests: a wage does not move with the going rate; separation costs the firm
 - [x] 4.4 Participation from the cell's own view; states employed/unemployed/inactive per cell; search every period; audit: states sum to the population; tests
-- [ ] 4.5 `firms.decide`: production, vacancies, price, dividend and renegotiation at its own horizon past its cost, from the firm's own view; test: an input shortage binds (B1.b); a firm never branches on industry (lint)
-- [ ] 4.5 `firms.produce`: recipe consumption, work in progress at cost, yield and scrap, lead time, idle cost as period expense; tests: B5.a and B5.b
-- [ ] 4.5 `firms.invoice` and `firms.pay`: receivable/payable as one object read from both sides; wages per member; dividends; failed payments recorded; tests
-- [ ] 4.5 Published expectation (E7) journaled and scored; test
+- [x] 4.5 `firms.decide`: the batch, the employment and the wage it offers, the price it asks and what it will pay for its inputs, from the firm's own view, published as its plan; tests: an input shortage binds (B1.b); a firm never branches on industry (lint)
+- [x] 4.5 `firms.produce`: recipe consumption, work in progress at cost, yield and scrap, lead time, idle cost as period expense; tests: B5.a and B5.b
+- [x] 4.5 The supply schedule and the demand for inputs: what it cannot keep at the book's level, the rest above the value of holding, each input at what it is worth to it; tests: Goods C1, C5
+- [x] 4.5 Published expectation (E7) journaled and scored; test
 - [ ] 4.6 `households.decide`: consumption per member from own outlook, wealth, liquidity, confidence; allocation by preference and relative price; saving as residual; tests
 - [ ] 4.6 Households as participants in goods markets and the bill market (D5.a); test: a higher bill yield draws cells into bills
 - [ ] 4.6 Income and consumption taxes remitted by the payer; treasury receipts now read real bases; test: receipts are the sum of what payers paid

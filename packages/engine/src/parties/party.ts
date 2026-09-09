@@ -180,3 +180,21 @@ export type PartiesReads = Pick<
   Parties,
   'has' | 'get' | 'cell' | 'all' | 'alive' | 'ofKind' | 'resolve'
 >;
+
+/**
+ * A real read-only facade: entry, death and the weight events are not reachable through it, at
+ * runtime as well as in the types. It is what a PARTICIPANT is handed — who somebody is, is public
+ * (Observer A3) — and what a party may not do to the world's population is then a fact, not a
+ * promise about how the type is used.
+ */
+export function partiesReads(parties: Parties): PartiesReads {
+  return Object.freeze({
+    has: (id: PartyId) => parties.has(id),
+    get: (id: PartyId) => parties.get(id),
+    cell: (id: PartyId) => parties.cell(id),
+    all: () => parties.all(),
+    alive: () => parties.alive(),
+    ofKind: (kind: PartyKindId) => parties.ofKind(kind),
+    resolve: (id: PartyId) => parties.resolve(id),
+  });
+}

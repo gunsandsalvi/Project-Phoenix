@@ -111,7 +111,14 @@ describe('a hire (Labour A4, XI-10)', () => {
     const row = hired[0];
     expect(row?.employer).toBe(FIRM_1);
     expect(row?.headcount).toBe(3);
-    expect(row?.wagePerHour).toBe(0.002);
+    // B1.a: the town offers far more hours than the bakery wants, so the market is slack and the
+    // print falls to what the seekers will work for — their own outside option — and no further.
+    // What the employer offered is the most it would have paid, not what it pays.
+    const struck = row === undefined ? 0 : row.wagePerHour;
+    expect(struck).toBeGreaterThan(0);
+    expect(struck).toBeLessThan(0.002);
+    const printed = w.journal.ofKind('labour.print').find((e) => e.subjects.includes(BAKERY));
+    expect(printed?.data['wagePerHour']).toBe(struck);
     // A4.c: the three who took the job are their own cell now; the rest are still looking.
     expect(w.parties.ofKind(HOUSEHOLD).length).toBe(cellsBefore + 1);
     const worker = row === undefined ? undefined : w.parties.get(row.worker);
@@ -135,9 +142,9 @@ describe('a hire (Labour A4, XI-10)', () => {
     w.step();
     const row = rows(w)[0];
     if (row === undefined) throw new Error('nobody was hired');
-    const bill = 3 * hours(1) * 0.002;
+    const bill = 3 * hours(1) * row.wagePerHour;
     expect(w.cash(FIRM_1, PHX)).toBeCloseTo(firmBefore - bill, 9);
-    const paidPerMember = hours(1) * 0.002;
+    const paidPerMember = hours(1) * row.wagePerHour;
     const before = w.cash(row.worker, PHX);
     const r = w.step();
     expect(r.audit.total).toBe(0);
@@ -181,8 +188,15 @@ describe('the clearing (Labour D1)', () => {
     const rate = w.journal.ofKind('labour.goingRate');
     const last = rate[rate.length - 1];
     const paid = last?.data['wagePerHour'] as Record<string, number> | undefined;
-    expect(paid?.[BAKERY]).toBe(0.002);
-    expect(paid?.[MILL]).toBe(0.004);
+    // D1.c: it is the employment-weighted average of what is actually paid, occupation by
+    // occupation — the rows' own wages, and never what anybody offered.
+    const bakery = rows(w).find((r) => r.occupation === 'bakery');
+    const mill = rows(w).find((r) => r.occupation === 'mill');
+    // An average over one row is that row, to the dust of the division that produced it (Law 7).
+    expect(paid?.[BAKERY]).toBeCloseTo(bakery?.wagePerHour ?? 0, 15);
+    expect(paid?.[MILL]).toBeCloseTo(mill?.wagePerHour ?? 0, 15);
+    expect(bakery?.wagePerHour).toBeLessThan(0.002);
+    expect(mill?.wagePerHour).toBeLessThan(0.004);
     expect(last?.public).toBe(true);
   });
 });
@@ -202,10 +216,12 @@ describe('the contract (Labour D2, C3)', () => {
     const first = rows(w)[0];
     w.step();
     const still = rows(w).find((r) => r.id === first?.id);
-    // The market moved and the contract did not: stickiness is the contract, never a coefficient.
-    expect(still?.wagePerHour).toBe(0.002);
+    // The market ran again and the contract did not move with it: stickiness is the contract
+    // itself, never a coefficient damping a series.
+    expect(still?.wagePerHour).toBe(first?.wagePerHour);
     const print = w.journal.ofKind('labour.print').filter((e) => e.subjects.includes(BAKERY));
-    expect(print[print.length - 1]?.data['wagePerHour']).toBe(0.006);
+    expect(print.length).toBeGreaterThan(1);
+    expect(typeof print[print.length - 1]?.data['wagePerHour']).toBe('number');
   });
 
   it('costs the employer severance when it sheds hours it no longer wants (C3)', () => {
@@ -227,10 +243,11 @@ describe('the contract (Labour D2, C3)', () => {
     const ev = w.journal.ofKind('labour.separation');
     expect(ev).toHaveLength(1);
     expect(ev[0]?.data['members']).toBe(5);
-    const severancePerMember = 4 * hours(1) * 0.002;
+    const struck = rows(w)[0]?.wagePerHour ?? 0;
+    const severancePerMember = 4 * hours(1) * struck;
     expect(ev[0]?.data['severancePerMember']).toBeCloseTo(severancePerMember, 12);
     // The wage bill halved and the severance was paid on top, out of the same account.
-    const wageBill = 5 * hours(1) * 0.002;
+    const wageBill = 5 * hours(1) * struck;
     expect(w.cash(FIRM_1, PHX)).toBeCloseTo(before - wageBill - severancePerMember * 5, 9);
     expect(rows(w)[0]?.headcount).toBe(5);
   });

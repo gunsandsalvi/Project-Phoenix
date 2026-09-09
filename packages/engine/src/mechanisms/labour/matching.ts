@@ -115,9 +115,13 @@ export function runVenue(
     else shed(ctx, book, posting.party, occupation, region as RegionId, -gap, p);
   }
   const offers = supply(ctx, book, v, p);
-  // D1: the highest bids are filled first and the bid that took the last match is the print, which
-  // is the marginal-bid rule the kernel's solver already clears sealed-bid sessions under.
-  const outcome = clear([...bids, ...offers], 'proRata', 'marginalBid');
+  // D1: the highest bids are filled first, which is what the solver's own price priority does on
+  // either side. Where the level lands when volume and imbalance say nothing is the venue's stated
+  // rule, and for a labour market B1.a states it: in a slack market the print falls to what the
+  // seekers will work for and no further, and in a tight one the bids set it — which is exactly a
+  // book where the sellers compete. The marginal-bid rule belongs to a sealed-bid auction, where
+  // an issuer selling below a level somebody posted would be handing away what nobody asked it to.
+  const outcome = clear([...bids, ...offers], 'proRata', 'sellersCompete');
   if (!isCleared(outcome)) return;
   match(ctx, book, outcome, offers, occupation, region as RegionId, p);
   // D1: the occupation's print. It is a wage, not an instrument's price, so it is an event and not
@@ -294,11 +298,36 @@ export function separate(
   );
 }
 
-/** F1, E1: the wage leaves the employer's account and reaches the worker's, every period. */
+/**
+ * F1, E1, E2: the wage leaves the employer's account and reaches the worker's, every period — and
+ * what an employer paid, and for how many hours, is a fact about that employer. It is recorded
+ * under its name so the employer can read its own wage bill (Goods B5: it is part of what a unit
+ * cost) without anybody keeping a second copy of the register (Law 4). It is private: what one
+ * firm pays is between it and the people it employs, and what the market pays is the going rate.
+ *
+ * A wage that did not settle is a real state (Money E1): the employer had no money, the worker was
+ * not paid, and the difference between what was due and what was paid says so.
+ */
 export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
+  const bills = new Map<PartyId, { due: number; paid: number; hours: number; productive: number; headcount: number }>();
   for (const row of allRows(book)) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
-    payFrom(ctx, row.employer, row.worker, wagePerMember(row), `wages from ${row.employer}`);
+    const perMember = wagePerMember(row);
+    const settled = payFrom(ctx, row.employer, row.worker, perMember, `wages from ${row.employer}`);
+    const bill = bills.get(row.employer) ?? { due: 0, paid: 0, hours: 0, productive: 0, headcount: 0 };
+    const total = mul(perMember, row.headcount, 'wage bill');
+    const hours = mul(row.hoursPerMember, row.headcount, 'hours under contract');
+    bills.set(row.employer, {
+      due: add(bill.due, total, 'wages due'),
+      paid: add(bill.paid, settled ? total : 0, 'wages paid'),
+      hours: add(bill.hours, hours, 'hours'),
+      // C2: hours that can make something. Somebody found last period is paid and not yet working.
+      productive: add(bill.productive, row.productiveFrom <= ctx.period ? hours : 0, 'productive hours'),
+      headcount: add(bill.headcount, row.headcount, 'headcount'),
+    });
+  }
+  for (const [employer, bill] of bills) {
+    ctx.record('labour.wages', [employer], { ...bill }, false);
   }
 }
 

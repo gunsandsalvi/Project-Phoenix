@@ -21,7 +21,15 @@ import { cellSide, totalFor } from '../../ledger/settlement.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { GoodDecl } from './data.js';
-import { goodKindId, goodTerms, goodUnitId, isGoodTerms } from './recipes.js';
+import type { Lot } from '../../register/register.js';
+import {
+  goodKindId,
+  goodTerms,
+  goodUnitId,
+  isGoodTerms,
+  isWipTerms,
+  wipKindId,
+} from './recipes.js';
 
 /** The kind profile of one good: everything that varies by good, in one place (Law 15). */
 export function goodProfile(d: GoodDecl): InstrumentKindProfile {
@@ -42,8 +50,7 @@ export function goodProfile(d: GoodDecl): InstrumentKindProfile {
       if (t.subUnit !== d.subUnit) {
         throw new InvalidRegistry('Goods A4', `${d.subUnit} terms carry sub-unit ${t.subUnit}`);
       }
-      const inputs = new Set(t.recipe.inputs.map((i) => i.kind));
-      if (inputs.has(goodKindId(d.subUnit))) {
+      if (t.recipe.inputs.some((i) => i.subUnit === d.subUnit)) {
         throw new InvalidRegistry('Goods A2', `${d.subUnit} would be made from itself`);
       }
     },
@@ -60,6 +67,66 @@ export function goodProfile(d: GoodDecl): InstrumentKindProfile {
         ? mul(lot.qty, sub(marked, lot.basisPerUnit, 'below cost'), 'write-down')
         : 0,
   };
+}
+
+/**
+ * B3: a batch on its way to being a good. It is physical and it is carried at what it has cost so
+ * far, and at nothing else: it has no market, so there is no net realisable value to write it down
+ * to (E2), and no mark to write it up to. It never perishes in store, because it is not in store —
+ * it is on the line, and what happens to it there is the yield (B4).
+ */
+export function wipProfile(d: GoodDecl): InstrumentKindProfile {
+  const unit = goodUnitId(d.unit);
+  return {
+    id: wipKindId(d.subUnit),
+    pricing: 'carriedAtCost',
+    carry: 'cost',
+    liabilityOfIssuer: false,
+    physical: true,
+    unit: () => unit,
+    validateTerms: (t) => {
+      if (!isWipTerms(t)) {
+        throw new InvalidRegistry('Goods B3', `${d.subUnit}: these are not the terms of a batch`);
+      }
+      if (t.subUnit !== d.subUnit) {
+        throw new InvalidRegistry('Goods B3', `${d.subUnit} batch carries sub-unit ${t.subUnit}`);
+      }
+    },
+    displayName: (i, namer) =>
+      isWipTerms(i.terms)
+        ? `${d.name} in progress, ${namer.region(i.terms.region)}`
+        : `${d.name} in progress`,
+    due: () => [],
+    accrued: () => 0,
+    cashFlows: () => [],
+  };
+}
+
+/**
+ * E5: what giving up `qty` units costs the holder, under the one lot flow this registry states —
+ * first in, first out. It is a read of the lots themselves, which are where the cost lives (E1);
+ * nothing here stores or re-derives a value beside them (Law 19).
+ */
+export function costOfDraw(lots: readonly Lot[], qty: number): number {
+  const terms: number[] = [];
+  let left = qty;
+  for (const lot of lots) {
+    if (left <= 0) break;
+    const take = lot.qty < left ? lot.qty : left;
+    terms.push(mul(take, lot.basisPerUnit, 'cost of the units drawn'));
+    left = sub(left, take, 'units left to draw');
+  }
+  return sum(terms).value;
+}
+
+/**
+ * B3, B4: the units of a batch that are due off the line — started at or before the period the
+ * lead time names. The lots are the batch book, so this is a read of when each was started; with
+ * one lead time per good the oldest lots are exactly the ones due, which is the order they are
+ * drawn in anyway (E5).
+ */
+export function dueFromLine(lots: readonly Lot[], startedBy: number): number {
+  return sum(lots.filter((l) => l.acquired <= startedBy).map((l) => l.qty)).value;
 }
 
 /**

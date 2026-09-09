@@ -33,7 +33,8 @@ import type { GoodDecl } from './data.js';
 
 /** A2.a: one input, in physical units per unit of output, at the number the register declares. */
 export interface RecipeInput {
-  readonly kind: InstrumentKindId;
+  /** A1, A4: the thing itself. Its kind and its instrument in a region are both read off this. */
+  readonly subUnit: string;
   readonly qtyPerUnit: ParamId;
 }
 
@@ -42,8 +43,24 @@ export interface Recipe {
   readonly inputs: readonly RecipeInput[];
   /** A2.c: hours of labour per unit of output. */
   readonly labourHoursPerUnit: ParamId;
+  /** B4: the fraction of what is started that is finished; the rest is scrap. */
+  readonly yieldRate: ParamId;
   /** B3: periods a batch is work in progress before it yields. */
   readonly leadTimePeriods: ParamId;
+}
+
+/**
+ * B3: a batch between the input and the output. It is a physical thing on its maker's book, carried
+ * at what it has cost so far, in the unit of what it will become; it has no market, because nobody
+ * buys half a loaf of bread (E2's net realisable value has nothing to read, so it is carried at
+ * cost and never written down). Its lots ARE the batch book: each carries what it cost and the
+ * period it was started, so what is due to come off the line is a read of the register (Law 19).
+ */
+export interface WipTerms extends Terms {
+  readonly subUnit: string;
+  readonly region: RegionId;
+  /** What this batch becomes: the good whose recipe made it and whose units it will be. */
+  readonly output: InstrumentId;
 }
 
 export interface GoodTerms extends Terms {
@@ -58,6 +75,9 @@ export interface GoodTerms extends Terms {
 
 export const goodKindId = (subUnit: string): InstrumentKindId =>
   instrumentKindId(`good.${subUnit}`);
+export const wipKindId = (subUnit: string): InstrumentKindId => instrumentKindId(`wip.${subUnit}`);
+export const wipId = (subUnit: string, region: RegionId): InstrumentId =>
+  instrumentId(`wip.${subUnit}.${region}`);
 export const goodId = (subUnit: string, region: RegionId): InstrumentId =>
   instrumentId(`good.${subUnit}.${region}`);
 export const goodMarketId = (subUnit: string, region: RegionId): MarketId =>
@@ -69,6 +89,7 @@ export const recipeParam = (output: string, input: string): ParamId =>
   paramId(`goods.${output}.recipe.${input}`);
 export const labourParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.labourHours`);
 export const leadTimeParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.leadTime`);
+export const yieldParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.yield`);
 
 /** A2.b: what a recipe quantity is measured in. Physical on both sides, and nothing else. */
 export const recipeUnit = (input: GoodDecl, output: GoodDecl): string =>
@@ -83,13 +104,37 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
     spoilage: spoilageParam(d.subUnit),
     recipe: {
       inputs: inputs.map((i) => ({
-        kind: goodKindId(i.subUnit),
+        subUnit: i.subUnit,
         qtyPerUnit: recipeParam(d.subUnit, i.subUnit),
       })),
       labourHoursPerUnit: labourParam(d.subUnit),
+      yieldRate: yieldParam(d.subUnit),
       leadTimePeriods: leadTimeParam(d.subUnit),
     },
   };
+}
+
+/** B3: the terms of a batch of one good, in one region, on its way to being that good. */
+export function wipTermsOf(d: GoodDecl, region: RegionId): WipTerms {
+  return {
+    kind: wipKindId(d.subUnit),
+    subUnit: d.subUnit,
+    region,
+    output: goodId(d.subUnit, region),
+  };
+}
+
+/** Whether these terms are a batch's: it says what it will become, and a good never does. */
+export function isWipTerms(t: Terms): t is WipTerms {
+  return 'output' in t && 'subUnit' in t && !('recipe' in t);
+}
+
+/** The terms of a batch; asking anything else for them is a defect in the caller. */
+export function wipTerms(i: Instrument): WipTerms {
+  if (!isWipTerms(i.terms)) {
+    throw new Missing('Goods B3', `${i.id} is not work in progress`, { instrument: i.id });
+  }
+  return i.terms;
 }
 
 /**

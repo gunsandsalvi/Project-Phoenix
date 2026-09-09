@@ -36,6 +36,9 @@ export interface GoodDecl {
   /** A2.c: hours of labour per unit of output. */
   readonly labourHoursPerUnit: number;
   readonly labourWhy: string;
+  /** B4: the fraction of what is started that is finished. The rest is scrap, at the point it would have been made. */
+  readonly yieldRate: number;
+  readonly yieldWhy: string;
   /** B3, B4: periods a batch spends in work in progress before it yields. */
   readonly leadTimePeriods: number;
   readonly leadTimeWhy: string;
@@ -54,6 +57,9 @@ export const GOODS: readonly GoodDecl[] = [
     labourHoursPerUnit: 9,
     labourWhy:
       'Hours of field labour per tonne harvested. It is drawn from land and labour, so it starts the chain and nothing upstream of it can be short.',
+    yieldRate: 0.92,
+    yieldWhy:
+      'Weather, pests and handling take part of every crop between the sowing and the barn. It is the largest yield loss in the chain, which is why a farmer commits labour for a tonnage it does not get.',
     leadTimePeriods: 2,
     leadTimeWhy:
       'Two periods between committing the labour and having the tonne, so a decision taken on a stale view of demand cannot be unwound.',
@@ -73,6 +79,8 @@ export const GOODS: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 3,
     labourWhy: 'Hours at the mill per tonne of flour.',
+    yieldRate: 0.98,
+    yieldWhy: 'A little of every batch is lost to the machinery and to sweeping up.',
     leadTimePeriods: 0,
     leadTimeWhy: 'Milling is within the period: grain in at the start is flour by the end.',
   },
@@ -92,6 +100,8 @@ export const GOODS: readonly GoodDecl[] = [
     ],
     labourHoursPerUnit: 14,
     labourWhy: 'Hours at the bakery per tonne of bread: it is the labour-intensive step.',
+    yieldRate: 0.97,
+    yieldWhy: 'Loaves come out of the oven wrong, and the ones that do are a loss of units, not of margin.',
     leadTimePeriods: 0,
     leadTimeWhy: 'Baked and sold inside the week.',
   },

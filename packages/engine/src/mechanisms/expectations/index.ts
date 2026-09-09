@@ -18,11 +18,11 @@
  * causes nothing (D4, Observer A5), and no decision can consult it.
  */
 import { period, type Period } from '../../calendar/calendar.js';
-import { paramId, type PartyId } from '../../core/ids.js';
+import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
-import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
+import { isAssetLeg, isMoneyLeg, type CellSide } from '../../ledger/instruction.js';
 import type { MechanismContext, Outlook } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
@@ -61,12 +61,25 @@ function memoryOf(ctx: MechanismContext, party: PartyId): number {
   return drawn < 1 ? 1 : drawn;
 }
 
-/** What a party observed this period, from the instructions it was actually a side of (A2). */
+/**
+ * What a party observed this period, from the instructions it was actually a side of (A2): what
+ * reached it, what it traded at, how much of its own it sold and bought, and what it all came to.
+ *
+ * Nothing here is anybody else's: every one of these is read off a leg this party was a side of, or
+ * off an effect on its own equity account. A party sees its own fills, not the book (A2, D1).
+ */
 function observations(ctx: MechanismContext): Map<string, { value: number; unit: string }> {
   const out = new Map<string, { value: number; unit: string }>();
   const income = new Map<PartyId, number[]>();
+  const quantities = new Map<string, { instrument: InstrumentId; party: PartyId; amounts: number[] }>();
+  const earnings = new Map<PartyId, number[]>();
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     if (r.outcome !== 'settled') continue;
+    for (const e of r.equity) {
+      const list = earnings.get(e.party) ?? [];
+      list.push(e.delta);
+      earnings.set(e.party, list);
+    }
     for (const leg of r.instruction.legs) {
       if (isMoneyLeg(leg)) {
         // XI-15: what a cell observes is what a MEMBER of it received. The whole cell's receipt is
@@ -80,15 +93,66 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
         const price = leg.pricePerUnit.value;
         const ccy = ctx.instruments.get(leg.instrument).ccy;
         for (const p of [leg.from, leg.to]) out.set(`${p}|price.${leg.instrument}`, { value: price, unit: ccy });
+        // C2: a seller's own fills are what it knows of the demand for what it sells — never the
+        // book, which it cannot see, and never the demand it did not win.
+        traded(quantities, leg.from, 'sold', leg.instrument, perMemberOf(leg.fromCell, leg.qty));
+        traded(quantities, leg.to, 'bought', leg.instrument, perMemberOf(leg.toCell, leg.qty));
       }
     }
   }
+  // What a mark did to it is its result too, and it arrives without an instruction (XI-6).
+  for (const e of ctx.journal.ofKind('revaluation')) {
+    if (e.period !== ctx.period) continue;
+    const party = e.subjects[0];
+    const delta = e.data['deltaPerMember'];
+    if (party === undefined || typeof delta !== 'number') continue;
+    push(earnings, party as PartyId, delta);
+  }
   for (const [party, amounts] of income) {
-    const total = sum(amounts);
     const ccy = ctx.registry.region(ctx.parties.get(party).region).ccy;
-    out.set(`${party}|income`, { value: total.value, unit: ccy });
+    out.set(`${party}|income`, { value: sum(amounts).value, unit: ccy });
+  }
+  for (const [key, seen] of quantities) {
+    if (!ctx.parties.has(seen.party)) continue;
+    out.set(key, {
+      value: sum(seen.amounts).value,
+      unit: ctx.instruments.get(seen.instrument).unit,
+    });
+  }
+  // §32 E7, §46 C2: what a party made this period, per member — the sum of what every settled
+  // instruction and every mark did to its own equity account. It is the number a firm publishes an
+  // expectation of and is then judged against, and it is a read of the account, never a statement.
+  for (const [party, deltas] of earnings) {
+    if (!ctx.parties.has(party)) continue;
+    const ccy = ctx.registry.region(ctx.parties.get(party).region).ccy;
+    out.set(`${party}|earnings`, { value: sum(deltas).value, unit: ccy });
   }
   return out;
+}
+
+function push<K>(acc: Map<K, number[]>, key: K, value: number): void {
+  const list = acc.get(key) ?? [];
+  list.push(value);
+  acc.set(key, list);
+}
+
+/** One side's own fill, kept under the variable it will be asked for (`sold.<instrument>`). */
+function traded(
+  acc: Map<string, { instrument: InstrumentId; party: PartyId; amounts: number[] }>,
+  party: PartyId,
+  side: 'sold' | 'bought',
+  instrument: InstrumentId,
+  qty: number,
+): void {
+  const key = `${party}|${side}.${instrument}`;
+  const seen = acc.get(key) ?? { instrument, party, amounts: [] };
+  seen.amounts.push(qty);
+  acc.set(key, seen);
+}
+
+/** XI-15: a cell observes what a member of it did, which is what the leg was struck at. */
+function perMemberOf(side: Option<CellSide>, total: number): number {
+  return side.some ? side.value.perMember : total;
 }
 
 /** B3: how wide this party's own recent surprises have been. A read, never a number anybody stated. */

@@ -96,6 +96,13 @@ export const centralBankOmo: SystemModule = {
         const i = view.instruments.get(m.instrument);
         if (view.registry.instrumentKind(i.kind).pricing !== 'cleared') return [];
         if (i.ccy !== view.registry.region(view.self.region).ccy) return [];
+        // C1: it buys SOVEREIGN paper. Everything else that clears in its money — a tonne of grain,
+        // a share, a corporate line — is somebody else's market, and a central bank standing in it
+        // with a size set by its own policy is the buyer of last resort this world does not have
+        // (Appendix B). What makes paper sovereign is who promised it, which is public.
+        if (!i.issuer.some) return [];
+        const sovereigns = new Set(view.parties.ofKind(TREASURY).map((t) => t.id));
+        if (!sovereigns.has(i.issuer.value)) return [];
         const held = view.quantity(i.id);
         // C4: with reinvestment off there is no target to restore, so the book runs off.
         if (view.params.get(CB_PARAMS.reinvest) === 0) return [];

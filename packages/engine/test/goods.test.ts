@@ -44,6 +44,8 @@ const STONE: GoodDecl = {
   inputs: [],
   labourHoursPerUnit: 4,
   labourWhy: 'Hours at the quarry per tonne.',
+  yieldRate: 1,
+  yieldWhy: 'Nothing is lost cutting stone, so a batch test says what the batch did and nothing else.',
   leadTimePeriods: 0,
   leadTimeWhy: 'Cut and stacked inside the week.',
 };
@@ -57,6 +59,8 @@ const GRAVEL: GoodDecl = {
   inputs: [{ subUnit: 'stone', qtyPerUnit: 1.5, why: 'A tonne and a half of stone per tonne.' }],
   labourHoursPerUnit: 1,
   labourWhy: 'Hours at the crusher per tonne.',
+  yieldRate: 1,
+  yieldWhy: 'Nor crushing it.',
   leadTimePeriods: 0,
   leadTimeWhy: 'Crushed inside the week.',
 };

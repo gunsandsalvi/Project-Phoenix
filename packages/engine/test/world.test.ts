@@ -332,9 +332,16 @@ describe('participant views (Observer A4, Expectations D1)', () => {
     expect(view.holdings().every((h) => h.holder === 'firm.1')).toBe(true);
     expect(view.print(GOV_LINE).some).toBe(true);
     const keys = Object.keys(view);
-    expect(keys).not.toContain('parties');
+    // WHO somebody is, is public — a market knows whose paper it trades (Observer A3) — and what
+    // anybody holds, owes or has been paid is not: there is no register and no ledger here.
+    expect(view.parties.get(partyId('bank.a')).name).toBe('Bank A');
+    // And it cannot change who is here: the facade is a real one, at runtime as well as in types.
+    expect(Object.keys(view.parties)).not.toContain('add');
+    expect(Object.keys(view.parties)).not.toContain('cease');
+    expect(Object.isFrozen(view.parties)).toBe(true);
     expect(keys).not.toContain('register');
     expect(keys).not.toContain('ledger');
+    expect(keys).not.toContain('valuation');
     const events = view.publicEvents(100);
     expect(events.every((e) => e.public || e.subjects.includes('firm.1'))).toBe(true);
     expect(events.some((e) => e.kind === 'print')).toBe(true);

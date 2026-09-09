@@ -318,7 +318,7 @@ Modules reach the kernel only through three contexts (`world/context.ts`), and n
 
 | Context            | Who gets it                                                 | Can                                                                                                                                          | Cannot                                                                       |
 | ------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
-| `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; public prints, public instrument terms, public events; its own random stream                            | see any other party's private state (Observer A4, Expectations D1)           |
+| `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; who anybody IS (kind, region, bank, weight); public prints, public instrument terms, public events, its own record; its own random stream | see any other party's private state (Observer A4, Expectations D1)           |
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal | write the register, write a print, write a weight, reach the world container |
 | `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets                                                       | anything after the seal                                                      |
 
@@ -326,6 +326,23 @@ Two rules hold this shape: a module never imports another module or the world co
 `phoenix/no-cross-module-import`), and the register's write methods are reachable only through a
 store the kernel hands to settlement, the seed and the cell events. `World.register` is a
 runtime-frozen read facade, not a type alias.
+
+**The one import a module may make** is the **terms accessor** the owner of a kind publishes — the
+type, its guard, and the functions that name that kind's instruments (`goodTerms`, `goodId`). It is
+not a door into another module: the thing being read is an INSTRUMENT, which is kernel state that
+every module can already see, and the accessor is only the shape of its terms, which the kernel
+itself refuses to look at (Law 15). The treasury reads a bond's coupon this way; a firm reads a
+good's recipe this way. Nothing else crosses: no state, no phase, no behaviour, and a module that
+wants another module's decision reads the event it published or the row it wrote.
+
+**Who somebody is, is public** (Observer A3). `ParticipantView.parties` answers a party's kind, its
+region, its bank, whether it is still here, and how many people a cell stands for — the facts a
+market needs to know whose paper it is trading. What that party holds, owes, expects or is worth is
+not reachable from any view but its own (A4). **`ParticipantView.lastOwn(kind)`** answers with the
+most recent event of a kind the party is a SUBJECT of — its own record: what it announced this
+period, what its own wage bill came to. A decision taken in a phase and an order posted into a
+market are one decision (Law 4), and this is how the second reads the first instead of taking it
+again.
 
 Kinds are registered at assembly, not closed unions: adding an instrument kind is one profile in
 one module; the kernel learns how a kind behaves only by asking its profile (pricing, liability,
@@ -340,6 +357,23 @@ instrument's **terms**: public structure (which inputs, and the `ParamId` of eac
 every number in the parameter register where its unit and owner are declared (XI-14). A firm reads
 what a thing takes to make from the thing itself; the coefficient exists once. The same route serves
 anything else a system must publish about an instrument.
+
+**Units come into the world by production, and by nothing else.** A `create` leg is admitted only
+in an instruction whose cause is `production` (or `seed`), and only for a kind whose profile says
+its units are physical: a claim that appeared with nobody on the other side is invented money
+(Money C1). What a batch had to DRAW to make those units is the recipe's business, and the recipe
+lives in the good's own terms, which the kernel never opens — so the kernel cannot check it and does
+not pretend to. The goods module checks it instead, as an audit contribution: what a production
+instruction consumed is the recipe times what it created, and a good comes off its own batch and
+takes at least its own units of it (Goods B2, B4). The first stage of every chain is drawn from
+labour and land and consumes no units at all, which is why the kernel cannot require a destroy.
+
+**A batch is a thing (Goods B3).** Work in progress is an instrument kind of its own per good —
+physical, carried at what it has cost, no market, never written down because there is nothing to
+write it down to. Its LOTS are the batch book: each carries what that batch cost and the period it
+was started, so what is due off the line is a read of the register rather than a second register in
+a module's state (Law 4, Law 19). A firm's balance sheet is therefore true at every instant between
+the spending and the selling, instead of having a hole in it for the length of the lead time.
 
 **Venues (Clearing B2, Labour D1).** A market moves an instrument against money and the kernel
 settles it. A **venue** is where posted schedules clear into something that is not a transfer: a

@@ -87,6 +87,19 @@ export class Journal {
     return out.reverse();
   }
 
+  /**
+   * A4: the most recent event of a kind this party is a subject of — its own record: what it
+   * announced, what it was told, what it was paid. Reading it is a party reading about itself, so
+   * a private event of somebody else is never reachable through here.
+   */
+  lastOf(kind: EventKind, subject: string): Event | undefined {
+    for (let i = this.events.length - 1; i >= 0; i -= 1) {
+      const e = this.events[i];
+      if (e?.kind === kind && e.subjects.includes(subject)) return e;
+    }
+    return undefined;
+  }
+
   publicTail(last: number): readonly Event[] {
     const out: Event[] = [];
     for (let i = this.events.length - 1; i >= 0 && out.length < last; i -= 1) {

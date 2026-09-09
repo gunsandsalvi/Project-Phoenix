@@ -41,7 +41,14 @@ describe('an outlook is personal (Expectations A2)', () => {
     const w = foundationWorld('exp-b');
     for (let i = 0; i < 6; i += 1) w.step();
     const view = w.participantView(BANK_A);
-    expect(Object.keys(view)).not.toContain('parties');
+    // WHO somebody is, is public: a market knows whose paper it trades (Observer A3). What that
+    // somebody holds, expects or is worth is not, and there is no door to it from here (A4).
+    const other = w.parties.ofKind(HOUSEHOLD)[0];
+    if (other === undefined) throw new Error('no cell');
+    expect(view.parties.get(other.id).kind).toBe(HOUSEHOLD);
+    expect(Object.keys(view.parties)).not.toContain('holdings');
+    expect(Object.keys(view)).not.toContain('register');
+    expect(Object.keys(view)).not.toContain('outlooks');
     // What it can ask for is its own; asking is a read about self and nothing else.
     expect(expected(w, BANK_A, 'income')).not.toBeNull();
   });

@@ -240,8 +240,12 @@ export class Settlement {
   /**
    * Goods E4, Commodities Spot F1: a physical thing is made or used up on one book. Only a kind
    * that says its units are physical admits it — a claim that appeared with nobody on the other
-   * side is invented money (Money C1) — and a `create` must sit in the same instruction as the
-   * `destroy` legs of whatever it was made from: nothing is consumed that was not produced or held.
+   * side is invented money (Money C1) — and units enter the world only through a PRODUCTION event
+   * that says so. What a batch had to draw to make them is the recipe's, which is the good's own
+   * technology and lives in its terms: the kernel never looks inside terms (Law 15), so that is
+   * checked where the recipe is readable, by the goods module's own audit contribution (Goods B2).
+   * A thing made from labour and land alone consumes no units at all, and requiring it to destroy
+   * something would have made the first stage of every production chain impossible.
    */
   private validatePhysical(leg: CreateLeg | DestroyLeg, ins: Instruction): void {
     impossible(
@@ -266,9 +270,9 @@ export class Settlement {
         `what a unit cost to make cannot be negative`,
       );
       forbid(
-        ins.legs.some((l) => l.kind === 'destroy') || ins.cause === 'seed',
+        ins.cause === 'production' || ins.cause === 'seed',
         'Commodities Spot F1',
-        `instruction ${ins.id}: ${inst.id} would come from nothing; a create names what it was made from`,
+        `instruction ${ins.id}: ${inst.id} would come into the world by ${ins.cause}; units are produced`,
       );
     }
   }

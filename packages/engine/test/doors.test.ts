@@ -256,7 +256,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
     expect(w.instruments.get(WHEAT_ID).issued).toBe(6);
   });
 
-  it('refuses a create that names nothing it was made from (Commodities Spot F1)', () => {
+  it('refuses units that come into the world by anything but production (Commodities Spot F1)', () => {
     const w = world(
       goodsModule(wheat, (ctx) => {
         openWheat(ctx);
@@ -265,12 +265,35 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
           legs: [
             { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: 1, costPerUnit: 1, toCell: none() },
           ],
-          cause: 'production',
+          // A trade moves units that exist; it does not make them.
+          cause: 'trade',
           reason: 'wheat from nowhere',
         });
       }),
     );
     expect(() => w.step()).toThrow();
+  });
+
+  it('lets a thing drawn from labour and land alone be produced with nothing destroyed (Goods A2)', () => {
+    // The first stage of every chain is made from labour and land, so there are no units to
+    // consume. What a batch had to draw is its recipe's business and the goods module audits it;
+    // requiring a destroy here would have made a harvest impossible (Goods B2).
+    const w = world(
+      goodsModule(wheat, (ctx) => {
+        openWheat(ctx);
+        if (ctx.period !== 1) return;
+        ctx.settle({
+          legs: [
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: 3, costPerUnit: 1, toCell: none() },
+          ],
+          cause: 'production',
+          reason: 'the harvest',
+        });
+      }),
+    );
+    const r = w.step();
+    expect(r.audit.total).toBe(0);
+    expect(w.register.quantity(FIRM_1, WHEAT_ID)).toBe(3);
   });
 
   it('refuses to make a claim: a claim is issued and redeemed, never made (Goods A1)', () => {

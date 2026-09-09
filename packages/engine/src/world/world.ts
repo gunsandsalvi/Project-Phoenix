@@ -47,7 +47,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import { Journal } from '../journal/journal.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
-import { Parties, weightOf } from '../parties/party.js';
+import { Parties, partiesReads, weightOf } from '../parties/party.js';
 import { type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore } from '../prices/price-store.js';
 import { Valuation } from '../prices/value.js';
@@ -109,6 +109,8 @@ export class World {
   readonly params: ParamRegister;
   readonly calendar: Calendar;
   readonly parties: Parties;
+  /** What a participant is handed: who somebody is, with no way to change who is here (Law 4). */
+  private readonly partyReads: ReturnType<typeof partiesReads>;
   readonly instruments: Instruments;
   /** The read face; the store with its writes is private to the kernel (Law 4). */
   readonly register: RegisterReads;
@@ -146,6 +148,7 @@ export class World {
     this.params = spec.params;
     this.calendar = spec.calendar;
     this.parties = new Parties(this.registry);
+    this.partyReads = partiesReads(this.parties);
     this.instruments = new Instruments(this.registry);
     this.store = new Register(this.parties);
     this.register = registerReads(this.store);
@@ -445,6 +448,7 @@ export class World {
       markets: this.marketList,
       venues: this.venueList,
       self,
+      parties: this.partyReads,
       holdings: () => this.store.holdingsOf(party),
       quantity: (instrument) => this.store.quantity(party, instrument),
       free: (instrument) => this.store.free(party, instrument),
@@ -460,6 +464,10 @@ export class World {
         const events = this.journal.ofKind(kind).filter((e) => e.public);
         const last = events[events.length - 1];
         return last === undefined ? none() : some(last);
+      },
+      lastOwn: (kind) => {
+        const e = this.journal.lastOf(kind, party);
+        return e === undefined ? none() : some(e);
       },
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
     };
