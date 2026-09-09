@@ -141,6 +141,9 @@ packages/engine/test/{equity,issuance,buyback,dividend,split,dealers,desk-limits
 - [ ] D4.a: a market whose only liquidity was a desk at its limit fails and prints stale with reason; test
 - [ ] D5 as an observer read: inventory, spread, capital usage together
 - [ ] Households and funds as equity participants; the foundation seed lists firms with founders' strategic holdings
+- [ ] From item 8 (Fund Shares E1, E2): an `etf.share` kind whose shares TRADE — a market, a cleared price, and its NAV read beside it from the same book, so it has two values and they are different numbers
+- [ ] From item 8 (E3, E3.a, G1.a): creation and redemption IN KIND against the basket, by a desk with a reason and a limit — which is why an exchange-traded fund is not a forced seller, and why the gap can persist when nobody will close it. It waits for this item because arbitraging a gap for nothing is the free arbitrage Appendix B forbids: it needs a party that carries inventory, pays for the capital it uses, and runs out of limit
+- [ ] From item 8 (E4): the premium or discount as a read of the two prices, on the observer; a persistently large one is a finding about liquidity and never a number to clamp
 - [ ] Year-long run green; determinism; XI-13 test: a desk's schedule is independent of the other orders in the book
 - [ ] Coverage re-marked; PARTIAL rows for C5, C7, E1–E3, G1, G2, hedging named; record entry
 - [ ] Delete this file; worklist row 9 → done; commit and push

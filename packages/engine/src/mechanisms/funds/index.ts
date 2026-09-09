@@ -573,7 +573,8 @@ function ordersOf(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const each = div(spare, lines, 'what it puts into each line it may hold');
   const dirty = add(price, view.accrued(i.id), 'what a unit costs it');
   const qty = div(each, dirty, 'units it bids for');
-  if (!material(qty, 2, qty)) return [];
+  // Law 7: this line's share against what the whole of what it has spare would have bought.
+  if (!material(qty, lines + 1, div(spare, dirty, 'what the whole of it would buy'))) return [];
   return [{ party: view.self.id, side: 'buy', price, qty }];
 }
 

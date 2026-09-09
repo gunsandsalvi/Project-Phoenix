@@ -14,6 +14,9 @@ import { Impossible, NonFinite } from './errors.js';
 
 export const EPS: number = Number.EPSILON;
 
+/** The smallest double that still carries a full mantissa; below it there is no relative precision. */
+const SMALLEST_NORMAL: number = Number.MIN_VALUE / EPS;
+
 /** Validate that a number is finite and normalise -0 to 0. Throws NonFinite otherwise. */
 export function finite(x: number, what: string): number {
   if (!Number.isFinite(x)) {
@@ -103,7 +106,16 @@ export function moveDust(balance: number, delta: number): number {
 
 /** Dust for a comparison of two quantities computed from `terms` terms of total magnitude `magnitude`. */
 export function dustOf(terms: number, magnitude: number): number {
-  return terms * EPS * Math.abs(magnitude);
+  const d = terms * EPS * Math.abs(magnitude);
+  // Law 7, and the one thing floating point does that arithmetic does not: below the smallest
+  // NORMAL double there is no relative precision left. A magnitude down there has a dust of its
+  // own that underflows to zero, so every identity in the wire becomes EXACT at exactly the scale
+  // where the representation is least exact — a per-member share multiplied back by a weight stops
+  // giving the total again, and the settlement refuses a leg nothing is wrong with. This is not a
+  // widened band and not a bound on anything the model decides (Law 6): nothing is clamped to it
+  // and no flow is cut short at it. It says that a quantity below the representation's own floor
+  // is not distinguishable from nothing, which is true, and it is stated once here.
+  return d > SMALLEST_NORMAL ? d : SMALLEST_NORMAL;
 }
 
 /**

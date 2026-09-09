@@ -76,6 +76,18 @@ function runWorld(seed: string, at: number): World {
   return assemble({ ...spec, modules: [...spec.modules, everybodyRedeems(at)] });
 }
 
+/** The same world with a manager that charges more than the paper earns (B3, D4). */
+function greedy(fee: number): World {
+  const spec = foundationSpec('funds-greedy');
+  const modules = spec.modules.map((m) => ({
+    ...m,
+    params: m.params.map((p) =>
+      p.id === 'fund.fee.fund.money.north' ? { ...p, value: fee } : p,
+    ),
+  }));
+  return assemble({ ...spec, modules });
+}
+
 /** What a share is worth, read from the kernel the same way anybody else would read it (XI-6). */
 const nav = (w: World): number => w.valuation.markPerUnit(SHARE, w.period);
 
@@ -147,6 +159,28 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
     // moves when the bills it holds are marked at what the market said this week.
     expect(moves.some((x) => x !== before)).toBe(true);
     expect(new Set(moves).size).toBeGreaterThan(1);
+  });
+
+  it('breaks the buck: nothing holds it at the price it opened at (D4)', () => {
+    // The one thing that differs is what the manager charges. A fund whose paper earns it less
+    // than its manager takes loses value, and the loss falls on the NAV — because there is nothing
+    // else for it to fall on. A constant NAV would take a guarantor and the guarantor would be
+    // nobody, so this is D4 met by an ABSENCE: no clamp, no floor, no sponsor.
+    const w = greedy(0.015);
+    const navs: number[] = [];
+    for (let i = 0; i < 20; i += 1) {
+      w.step();
+      const struck = w.journal.ofKind('fund.struck').find((e) => e.period === w.period);
+      if (struck !== undefined) navs.push(Number(struck.data['perShare']));
+    }
+    const opened = w.params.get('fund.openingSharePrice' as never);
+    expect(navs.some((x) => x < opened)).toBe(true);
+    // ...and it kept falling, which is what "if the assets fall, the NAV falls" means when nothing
+    // is standing under it. A bill that actually defaulted would reach it by the same read: the
+    // instrument stops performing (Bond N12), its holder writes it down (item 5), and the division
+    // is over a smaller book.
+    const last = navs[navs.length - 1] ?? 0;
+    expect(last).toBeLessThan(navs[0] ?? 0);
   });
 
   it('pays the manager, and the fee comes out of the holders (B3, F3)', () => {
@@ -250,5 +284,19 @@ describe('what a saver does with it (Fund Shares D2, D2.a, D3)', () => {
     const pos = view.positions.filter((p) => p.instrument === SHARE);
     expect(pos.length).toBeGreaterThan(0);
     expect(pos.every((p) => p.valuePerMember !== null)).toBe(true);
+  });
+});
+
+describe('a year with a redemption wave in it', () => {
+  it('stays green and gives the same world twice from the same seed (Law 13, Observer E3)', () => {
+    const a = runWorld('funds-year', 20);
+    for (let i = 0; i < 52; i += 1) expect(unexpected(a.step().audit)).toEqual([]);
+    // The wave happened, it was met by selling, and the fund is still there afterwards.
+    expect(a.journal.ofKind('fund.gate').length).toBeGreaterThan(0);
+    expect(a.parties.get(FUND_ID).status.alive).toBe(true);
+    expect(a.instruments.get(SHARE).issued).toBeGreaterThan(0);
+    const b = runWorld('funds-year', 20);
+    for (let i = 0; i < 52; i += 1) b.step();
+    expect(snapshot(b, { kind: 'inspector' }, 50)).toEqual(snapshot(a, { kind: 'inspector' }, 50));
   });
 });

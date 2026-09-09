@@ -451,6 +451,16 @@ grid, the goods and their recipes — and the numbers in them are declared param
 those tables, so a table row and a register entry are never two copies of one number. Behaviour that varies by kind lives in a **profile** behind a dispatch table keyed by kind,
 with exhaustiveness enforced by the type system. Mechanics never branch on a kind (lint, §9).
 
+An **instrument kind** says where its price comes from: `money` (the one hard-coded one),
+`cleared` (a market printed it), `carriedAtCost` (nobody prices it and its holder carries what it
+cost), or `derived` (item 8) — a value that is neither, because the thing IS a claim on a book and
+is worth what that book comes to over how many claims there are (Fund Shares B1). A derived value is
+read at every ask and stored nowhere; it is given the kernel's own reads and nothing else, so it is
+the same number for every holder — which is what separates it from the `marks` valuer, which says
+what a lot is worth to the party HOLDING it and has a different answer per holder. The registry
+refuses a derived kind that derives nothing, and the valuation refuses a book whose value depends on
+its own claim.
+
 A **party kind** states three things about its life beyond its representation and its money issuance
 (item 7). `fails` says what a party of that kind can FAIL on — nothing, a cash failure it cannot
 cure, its liabilities past its assets, or both — and a kind that names neither cannot die, which is

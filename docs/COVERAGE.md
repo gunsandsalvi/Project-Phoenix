@@ -497,32 +497,32 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Fund Shares A1` | MISSING |  |
-| `Fund Shares A2` | MISSING |  |
-| `Fund Shares A3` | MET | packages/engine/src/audit/families/accounts.ts, packages/engine/src/registry/kinds.ts |
-| `Fund Shares A4` | MISSING |  |
-| `Fund Shares B1` | MET | packages/engine/src/prices/value.ts |
-| `Fund Shares B2` | MISSING |  |
-| `Fund Shares B3` | MISSING |  |
-| `Fund Shares B4` | MISSING |  |
-| `Fund Shares C1` | MISSING |  |
-| `Fund Shares C2` | MISSING |  |
-| `Fund Shares C3` | MISSING |  |
-| `Fund Shares C4` | MISSING |  |
-| `Fund Shares C5` | MISSING |  |
-| `Fund Shares D1` | MISSING |  |
-| `Fund Shares D2` | MISSING |  |
-| `Fund Shares D3` | MISSING |  |
-| `Fund Shares D4` | MISSING |  |
-| `Fund Shares D5` | MISSING |  |
-| `Fund Shares E1` | MISSING |  |
-| `Fund Shares E2` | MISSING |  |
-| `Fund Shares E3` | MISSING |  |
-| `Fund Shares E4` | MISSING |  |
-| `Fund Shares F1` | MISSING |  |
-| `Fund Shares F2` | MISSING |  |
-| `Fund Shares F3` | MISSING |  |
-| `Fund Shares G1` | MISSING |  |
+| `Fund Shares A1` | MET | packages/engine/src/mechanisms/funds/index.ts (a named party with an account and a register of holdings, like anything else) |
+| `Fund Shares A2` | MET | packages/engine/src/mechanisms/funds/index.ts (its liability is its shares, counted in shares, held by named holders) |
+| `Fund Shares A3` | MET | packages/engine/src/mechanisms/funds/index.ts (its equity is nothing, and nothing in the module enforces it: it falls out of the wire, and the audit family says whether the wire did it), packages/engine/test/funds.test.ts |
+| `Fund Shares A4` | MET | packages/engine/src/mechanisms/funds/data.ts, packages/engine/src/mechanisms/funds/index.ts (the mandate is what it may hold and how long for, and the module never posts an order outside it — so a flow into it becomes a purchase of exactly what the mandate allows) |
+| `Fund Shares B1` | MET | packages/engine/src/mechanisms/funds/nav.ts, packages/engine/src/prices/value.ts (assets at market minus liabilities over shares outstanding, read every time it is asked; there is no NAV series anywhere and nothing stores one) |
+| `Fund Shares B2` | MET | packages/engine/src/mechanisms/funds/nav.ts (marked at cleared prices, and a holding nothing has ever priced makes the read fail rather than be guessed at); B2.a: the oldest mark travels with the value and a stale one is journalled as stale (packages/engine/src/mechanisms/funds/index.ts) |
+| `Fund Shares B3` | MET | packages/engine/src/mechanisms/funds/index.ts (the fee is a real payment to the manager each period, for the days the period has, and the NAV read after it is lower by exactly that) |
+| `Fund Shares B4` | MET | packages/engine/test/funds.test.ts (holders' share value against the fund's assets minus liabilities, asserted as arithmetic rather than checked against itself in the audit) |
+| `Fund Shares C1` | MET | packages/engine/src/mechanisms/funds/index.ts (cash in and shares out in ONE instruction at the NAV struck; C1.a: the cash above its buffer is then posted per its mandate) |
+| `Fund Shares C2` | MET | packages/engine/src/mechanisms/funds/index.ts (shares back and cash out at the NAV struck when it asked; C2.a: from its buffer or by selling; C2.b: what it cannot pay stays on the book and the sale is into the market that thing trades in, at whatever it gives) |
+| `Fund Shares C3` | MET | packages/engine/src/mechanisms/funds/index.ts (shares outstanding move with every subscription and redemption; a fund is not fixed-size) |
+| `Fund Shares C4` | MET | packages/engine/src/mechanisms/funds/index.ts (a queued redeemer is paid at the NAV it struck, and what the sales fetched is what the remaining holders carry through the same read — C4.a: which is why a redemption is a cost to those who stay) |
+| `Fund Shares C5` | PARTIAL | packages/engine/src/mechanisms/funds/index.ts (the flows family checks that everything ever asked for is paid or still on the book, which is the half that breaks in silence). Shares created minus redeemed against outstanding is the kernel's ownership family already; cash in and out against the shares is the two legs of one instruction and is asserted in packages/engine/test/funds.test.ts rather than audited against itself |
+| `Fund Shares D1` | MET | packages/engine/src/mechanisms/funds/data.ts (a mandate of bills, and a maximum tenor: short, high-quality paper) |
+| `Fund Shares D2` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts (a saver holds it instead of a deposit and asks the money back when it cannot cover what it means to spend; its account falls to what it is about to spend, because a deposit pays it nothing). D2.a is only half a competition until a bank BIDS for a deposit (Banks Funding B1, worklist 11): the fund publishes what it offers, and nothing yet answers |
+| `Fund Shares D3` | MET | packages/engine/src/mechanisms/funds/index.ts (it is a buyer in the bill market, and its size is what determines how much paper it can place: the savers' money reaches the state's paper through it) |
+| `Fund Shares D4` | MET | packages/engine/src/mechanisms/funds/nav.ts (nothing can hold the number at one because there is nothing to hold it WITH: the value is the division, and if the assets fall it falls), packages/engine/test/funds.test.ts |
+| `Fund Shares D5` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts (the flow into the fund is a consequence of the cell's own budget and stops when what the fund offers stops clearing what the cell requires). Whether flows rise when its yield beats DEPOSITS cannot be measured until a deposit has a rate (worklist 11); it is a VERIFY for Part XII |
+| `Fund Shares E1` | MISSING | the traded share needs a market with somebody in it: worklist 9, with the desks |
+| `Fund Shares E2` | MISSING | worklist 9 |
+| `Fund Shares E3` | MISSING | E3.a asks for a participant with a reason and a LIMIT, and carrying a position is what a desk does: worklist 9 |
+| `Fund Shares E4` | MISSING | worklist 9 |
+| `Fund Shares F1` | MET | packages/engine/src/mechanisms/funds/index.ts (it does not create its assets: every unit it holds it bought from a named seller in a market that cleared), packages/engine/test/funds.test.ts |
+| `Fund Shares F2` | MET | packages/engine/src/mechanisms/funds/index.ts, packages/engine/src/registry/profiles.ts (nobody lends to it, stated on the kind, so it cannot hold more than it raised; and the kernel refuses to value a book that holds its own claim) |
+| `Fund Shares F3` | MET | packages/engine/src/mechanisms/funds/index.ts (the manager is a separate party and the fee is its income and the fund's cost) |
+| `Fund Shares G1` | PARTIAL | packages/engine/src/mechanisms/funds/index.ts (a share count, a redemption request, a sale in the same period's books, and the cost of a late sale landing on the holders who stayed). G1.a's in-kind redemption is the exchange-traded fund, worklist 9 |
 
 ## Securities Lending
 

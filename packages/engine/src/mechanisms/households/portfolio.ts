@@ -25,7 +25,7 @@ import { compareCivil } from '../../calendar/civil.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { add, div, material, mul } from '../../core/num.js';
+import { add, div, material, mul, sum } from '../../core/num.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
 import { TREASURY } from '../../registry/profiles.js';
@@ -81,7 +81,10 @@ export function paperBids(
     // Bond N9.b: what it must find is the clean price plus what has accrued and travels with it.
     const dirty = add(e.price, view.accrued(e.instrument.id), 'what a unit costs it');
     const qty = div(each, dirty, 'units it bids for');
-    if (!material(qty, 2, qty) || !e.instrument.market.some) continue;
+    // Law 7: this line's share against what the whole budget would have bought — a share that
+    // small is the rounding of the split, not a bid.
+    const whole = div(spare, dirty, 'what the whole of it would buy');
+    if (!material(qty, eligible.length + 1, whole) || !e.instrument.market.some) continue;
     out.push({ market: e.instrument.market.value, instrument: e.instrument.id, price: e.price, qty });
   }
   return out;
@@ -188,10 +191,11 @@ export function fundOrders(
   return out;
 }
 
-/** C2: how much of what it is about to spend its account cannot cover, per member. */
+/** C2: how much of what it is about to spend its account cannot cover, per member (Law 7 as above). */
 export function shortForSpending(cash: number, spend: number): number {
   const gap = spend - cash;
-  return gap > 0 ? gap : 0;
+  const scale = sum([cash, spend]);
+  return gap > 0 && material(gap, scale.terms, scale.value) ? gap : 0;
 }
 
 /**
@@ -201,13 +205,22 @@ export function shortForSpending(cash: number, spend: number): number {
  */
 export function cushionForFund(cash: number, spend: number, spare: number): number {
   const over = cash - spend - spare;
-  return over > 0 ? over : 0;
+  const scale = sum([cash, spend, spare]);
+  return over > 0 && material(over, scale.terms, scale.value) ? over : 0;
 }
 
-/** C2, D1: what a cell has left over once it has spent and kept its cushion, per member. */
+/**
+ * C2, D1: what a cell has left over once it has spent and kept its cushion, per member.
+ *
+ * Law 7: a residue that is the rounding of the subtraction is not money it has over. A cell that
+ * ends up with 1e-310 "spare" would post an order for 1e-313 units, and a quantity that small
+ * cannot be a cell's per-member share of anything: multiplied back by the weight it does not give
+ * the total again, and the wire refuses it (XI-15). The dust is the magnitudes it came out of.
+ */
 export function sparePerMember(cash: number, spend: number, buffer: number): number {
   const left = cash - spend - buffer;
-  return left > 0 ? left : 0;
+  const scale = sum([cash, spend, buffer]);
+  return left > 0 && material(left, scale.terms, scale.value) ? left : 0;
 }
 
 /** The total a cell of this weight commits, from a per-member decision (XI-15). */

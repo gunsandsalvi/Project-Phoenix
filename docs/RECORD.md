@@ -768,3 +768,116 @@ so the second death should come sooner after the first than the first came after
 here measures it. The measurement is Part XII's: run the same seed with the programme long and
 short, and count the periods between deaths. If the gap does not shorten, the forced sale is not
 reaching the other balance sheets and the estate is selling into a market with no memory.
+
+---
+
+## 8 — Redeemable claims: the money fund, the gate, and the second forced seller
+
+**What.** A fund is a named party whose liability is its shares, whose equity is therefore nothing,
+and whose investors can ask for their money back. It has a mandate that constrains what it buys —
+bills, and nothing else at any price — a net asset value that is a READ of its book over its share
+count, and a manager, a separate party, that it pays a fee to. Households hold it instead of a
+deposit and ask for the money back when they cannot cover what they mean to spend. A redemption its
+buffer cannot meet is paid as far as the cash goes; the rest stays on the book under the holder's
+own name at the NAV struck when it asked; the fund is GATED, publicly; and it sells into the bills'
+own market at whatever that market gives, until the queue is paid.
+
+The kernel gained a fourth pricing for it. `derived` is a value that is neither a print nor a cost,
+because the thing IS a claim on a book: it is read at every ask, stored nowhere, and the same number
+for every holder. It is not an exception to Law 3 — everything the book holds is marked at what a
+market cleared — and it is a different question from the `marks` valuer, which says what a lot is
+worth to the party HOLDING it and has a different answer per holder.
+
+**Why.** XI-2. A price falls, somebody must sell into the fall, and the sale makes the fall worse.
+Without a party that MUST sell, a shock is absorbed by nobody and dissipates, and every measurement
+of contagion measures that dissipation. A fund is the cleanest such party: its investors can ask for
+cash at any moment, it promised nothing about being able to pay, and what it must do when its buffer
+runs out is sell. C2.b is the clause that makes it real — a redemption rationed by the fund's cash,
+with the unfilled part dropped, deletes the entire system — so the guard against that is an audit
+family pointed at it, and the test that fires it is a run in which every holder asks at once.
+
+**Found.** Six, and five were defects the fund made visible rather than caused.
+
+- **`material(x, 2, |x|)` is a no-op**: true for every non-zero number, because the dust it compares
+  against is a fraction of the number itself. The estate's solvency test used it, and a fund's
+  equity is zero by construction, so a fund was dying of dust every few periods. Two other sites
+  were dropping nothing while looking like they dropped dust. There is one derivation now,
+  `Valuation.equityDust`, and the audit and the failure test share it — one fact, one tolerance.
+- **Solvency was asked before revaluation.** Firm D4 asks whether liabilities exceed assets AT
+  MARKS, and the marks are not in anybody's book until revaluation has put them there. Asked
+  before it, a party whose own liabilities are marked reads as insolvent by exactly whatever it paid
+  out that week. The estate and the labour release now run after it.
+- **Anchoring a phase AFTER another reversed assembly order.** Each insert landed immediately after
+  the anchor, so a later module's phase ran in FRONT of an earlier module's — the opposite of what
+  assembly promises. It is load-bearing wherever one phase must see what another wrote, and it
+  silently stopped a dead firm's workers being released.
+- **An equity walk's dust only saw the NET of an instruction.** A trade takes a book down by the
+  price and up by the value; the move is the difference and the rounding is the price's. An account
+  that is zero by construction is nothing BUT that residue, so a move now carries what the
+  arithmetic passed THROUGH, in settlement and in revaluation both.
+- **A party's income outlook counted capital coming back as income** — a matured bill, a redeemed
+  share — so a household spending its own savings thought itself richer, and its expectation of its
+  own income drifted up every time it drew on its savings. A claim handed back to whoever promised
+  it is capital returning; a sale to somebody else is a trade and still counts.
+- **Dust underflows at denormal magnitudes.** Below the smallest normal double there is no relative
+  precision left, so a magnitude down there has a dust of its own that rounds to zero — and every
+  identity in the wire becomes EXACT at exactly the scale where the representation is least exact.
+  A cell with 1e-310 of spare cash posted an order for 1e-313 units, and settlement refused a leg
+  with nothing wrong with it, because per-member × weight no longer gave the total back. `dustOf`
+  is never smaller than the representation's own floor now. That is not a widened band and not a
+  bound on anything the model decides: it says a quantity below the floor is not distinguishable
+  from nothing, which is true.
+
+**Changed from the plan file, and why.** Three.
+
+1. **`pricing: 'derived'` carries a `derive` on the profile, not a kernel door.** The plan had a
+   `profile.value(instrument, period, view)`. What it is given is the kernel's OWN reads and nothing
+   else — no party's view, no module state — because a derived value is a fact about a book that
+   anybody may compute and everybody gets the same answer from. A book whose value depends on its
+   own claim throws with Fund Shares F2 rather than iterating to a number.
+2. **A redemption the fund cannot fund does not FAIL.** The plan had the instruction fail and be
+   recorded. A failed instruction is a claim that did not happen; C2.b wants a claim that did happen
+   and has not been paid. So the module never drafts an instruction it cannot settle: it pays what
+   the cash reaches and queues the rest under the holder's name, oldest first.
+3. **A fund's investors are not seeded.** The plan implied an opening state; the foundation seed says
+   households open with NOTHING, because everything anybody has in this world is something they were
+   paid or something they decided to buy. So the fund opens with nobody in it, and the first
+   subscription strikes at the unit its shares are counted in — a RESOLUTION, tested by invariance:
+   double it and every share count halves and nothing else moves.
+
+**Deferred, with where each lands.** Two, each written into the file of the item that can build it;
+item 9 grew by three steps.
+
+- **The exchange-traded fund (E1–E4, G1.a)** → **worklist 9**. E3.a asks for a participant with a
+  reason and a LIMIT, not a rule tying the traded price to the NAV, and there is no party in this
+  world whose business is carrying a position. Building it here would mean a market nobody trades in
+  or an arbitrageur closing a gap for nothing — the free arbitrage Appendix B forbids. Item 9 brings
+  desks that hold inventory, pay for the capital it uses, and run out of limit.
+- **A fund failing into an estate (XI-3)** → **worklist 13h**. Its equity is zero by construction and
+  nobody lends to it, so there is nothing for it to be insolvent WITH: XI-3's fund row is the levered
+  case and needs a prime broker (13a) and a hedge fund (13h). The trigger is declared on the kind
+  here and asked every period, so it fires the week leverage makes negative equity reachable.
+
+**Three findings, restated in the tests they moved rather than tidied away.**
+
+- **Savers stopped buying bills directly.** Every cell in this world is below the cushion it wants
+  every week, so it has nothing it can tie up for a bill's own life — and a fund of short paper is
+  exactly the thing it can hold instead and still ask back. The paper is still bought: by the fund,
+  on their behalf, which is D3 in one sentence.
+- **A saver's own account falls to what it is about to spend.** A deposit pays it nothing and the
+  fund pays it something with same-period access, so there is nothing a deposit is for. That is
+  D2.a's competition with the other side of it missing, and it becomes a real comparison the week a
+  bank bids for a deposit (Banks Funding B1, worklist 11).
+- **The sector's aggregate now feels a mean-preserving spread.** It could not before: a household's
+  spending was linear in what it has while nothing bound it, so a linear rule summed over a spread
+  gave back the same total. Having anything over what you are about to spend is a threshold, the
+  spread moves cells across it, and the total moves — which is what "no decision at an average" is
+  for (Households A2.g).
+
+**Forecast, with its killer.** A redemption wave should move the price of what the fund holds, and
+the move should reach every OTHER holder of that paper through their marks — so a run on a fund
+should cost the banks that hold the same bills, without anything connecting them but the market. It
+is not measured here. The measurement is Part XII's: run the same seed with the fund large and small
+and compare what a bank's bill book is marked at through the wave. If the mark does not move, the
+forced sale is meeting a book deep enough to absorb it and the channel is decorative — and the thing
+to look at next is who is on the other side of the sale, not the fund.

@@ -102,7 +102,17 @@ export function spendPerMember(
   const gap = div(sub(wealth, buffer, 'what it owns over its cushion'), p.patience, 'closed at its own patience');
   const wanted = add(income.value.expected, gap, 'what it decides to spend');
   // C1.d: it spends what it has, whatever it wants. And nobody buys a negative loaf.
-  const afforded = wanted > budget ? budget : wanted;
+  //
+  // Law 7: nor an unrepresentable one. A cell whose budget is the rounding of a subtraction would
+  // take a demand curve to market in quantities so small that the per-member share of a fill
+  // cannot be multiplied back by the weight to give the total again — below the smallest normal
+  // number there is no relative precision left, so dust itself underflows to zero and every
+  // identity in the wire becomes exact. A spend that is dust of what it has is nothing.
+  const affordable = wanted > budget ? budget : wanted;
+  const scale = sum([budget, Math.abs(wanted)]);
+  const afforded = material(affordable, scale.terms + 1, scale.value)
+    ? affordable
+    : 0;
   return some({
     spend: afforded > 0 ? afforded : 0,
     wanted,
