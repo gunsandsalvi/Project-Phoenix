@@ -161,6 +161,13 @@ export interface RegisterDelta {
   readonly instrument: InstrumentId;
   /** Per member for a cell. */
   readonly qty: number;
+  /**
+   * XI-15: the multiplicity this delta was struck at, one for a named party. A cell's weight can
+   * change later in the same period — it splits when part of it takes a job — so a reader that
+   * multiplied by today's weight would be reconstructing a different instruction from the one that
+   * settled (Law 19: read what was recorded).
+   */
+  readonly weight: number;
   /** 'holding' moves a holding; 'issued' moves the issuer's issued amount (an issuance or redemption). */
   readonly target: 'holding' | 'issued';
 }

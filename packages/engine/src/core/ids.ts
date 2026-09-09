@@ -10,6 +10,8 @@ export type Brand<T, B extends string> = T & { readonly [brand]: B };
 export type PartyId = Brand<string, 'PartyId'>;
 export type InstrumentId = Brand<string, 'InstrumentId'>;
 export type MarketId = Brand<string, 'MarketId'>;
+/** A venue a module clears itself, where what is struck is not a transfer of an instrument. */
+export type VenueId = Brand<string, 'VenueId'>;
 export type CurrencyCode = Brand<string, 'CurrencyCode'>;
 export type UnitId = Brand<string, 'UnitId'>;
 export type RegionId = Brand<string, 'RegionId'>;
@@ -32,6 +34,7 @@ export const partyId = (s: string): PartyId => nonEmpty(s, 'PartyId') as PartyId
 export const instrumentId = (s: string): InstrumentId =>
   nonEmpty(s, 'InstrumentId') as InstrumentId;
 export const marketId = (s: string): MarketId => nonEmpty(s, 'MarketId') as MarketId;
+export const venueId = (s: string): VenueId => nonEmpty(s, 'VenueId') as VenueId;
 export const currencyCode = (s: string): CurrencyCode =>
   nonEmpty(s, 'CurrencyCode') as CurrencyCode;
 export const unitId = (s: string): UnitId => nonEmpty(s, 'UnitId') as UnitId;

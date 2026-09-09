@@ -64,6 +64,10 @@ export type Outcome =
 
 export type Rationing = 'proRata';
 
+/** A cleared session, for readers that must tell the outcomes apart (Law 15's dispatch). */
+export type Cleared = Extract<Outcome, { kind: 'cleared' }>;
+export const isCleared = (o: Outcome): o is Cleared => o.kind === 'cleared';
+
 /**
  * Which level a tie is struck at when several execute the same volume with the same imbalance: a
  * stated rule of the venue, like the rationing rule (C3), and never a bound of a search (C4.c).

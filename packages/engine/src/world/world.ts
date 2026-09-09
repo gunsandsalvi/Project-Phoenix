@@ -32,6 +32,7 @@ import {
   moneyInstrumentId,
   paramId,
   type PartyId,
+  type VenueId,
 } from '../core/ids.js';
 import { addTo } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
@@ -42,6 +43,7 @@ import {
   type PrimaryOffer,
 } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
+import type { VenueDecl } from '../clearing/venue.js';
 import { Journal } from '../journal/journal.js';
 import { Ledger } from '../ledger/ledger.js';
 import { Settlement } from '../ledger/settlement.js';
@@ -121,6 +123,9 @@ export class World {
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
   private readonly offerList = new Map<MarketId, PrimaryOffer>();
+  /** Clearing B2: schedules posted into venues a module clears itself, for this period only. */
+  private readonly postings = new Map<VenueId, Order[]>();
+  private readonly venueList: VenueDecl[] = [];
   private readonly participantDecls: ParticipantDecl[] = [];
   /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
   private readonly slots = new Map<string, object>();
@@ -230,6 +235,10 @@ export class World {
     return this.marketList;
   }
 
+  get venues(): readonly VenueDecl[] {
+    return this.venueList;
+  }
+
   get phases(): readonly Phase[] {
     return this.phaseList;
   }
@@ -269,6 +278,20 @@ export class World {
       `market ${m.id} clears ${inst.id} in ${m.ccy}, instrument is ${inst.ccy}`,
     );
     this.marketList.push(m);
+  }
+
+  /** Declare a venue a module clears itself (Clearing B2); like a market, it is declared once. */
+  addVenue(v: VenueDecl): void {
+    forbid(!this.venueList.some((x) => x.id === v.id), 'Law 4', `venue ${v.id} declared twice`);
+    this.registry.unit(v.unit);
+    this.registry.currency(v.ccy);
+    this.venueList.push(v);
+  }
+
+  venue(id: VenueId): VenueDecl {
+    const v = this.venueList.find((x) => x.id === id);
+    if (v === undefined) throw new Missing('Clearing B2', `venue ${id} does not exist`);
+    return v;
   }
 
   market(id: MarketId): MarketDecl {
@@ -385,6 +408,7 @@ export class World {
   step(): PeriodReport {
     forbid(this.sealed, 'Seed A2', 'seal the seed before stepping');
     this.offerList.clear();
+    this.postings.clear();
     this.currentPeriod = nextPeriod(this.currentPeriod);
     this.currentCycle = this.calendar.cycle(0);
     for (const phase of this.phaseList) {
@@ -419,6 +443,7 @@ export class World {
       params: this.params,
       instruments: this.instruments,
       markets: this.marketList,
+      venues: this.venueList,
       self,
       holdings: () => this.store.holdingsOf(party),
       quantity: (instrument) => this.store.quantity(party, instrument),
@@ -450,6 +475,7 @@ export class World {
       params: this.params,
       instruments: this.instruments,
       markets: this.marketList,
+      venues: this.venueList,
       parties: this.parties,
       register: this.register,
       prices: this.prices,
@@ -474,9 +500,16 @@ export class World {
       openMarket: (decl) => {
         this.addMarket(decl);
       },
+      openVenue: (decl) => {
+        this.addVenue(decl);
+      },
       offer: (o) => {
         this.postOffer(o);
       },
+      post: (venue, order) => {
+        this.post(venue, order);
+      },
+      posted: (venue) => this.posted(venue),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
       cease: (party, successor) => {
@@ -540,6 +573,26 @@ export class World {
     );
     this.market(o.market);
     this.offerList.set(o.market, o);
+  }
+
+  /**
+   * Clearing B2, Labour C5: a schedule posted into a venue that a module clears for itself, for
+   * this period. A venue is where something is struck that is not the transfer of an instrument — a
+   * job, at a wage — so the kernel's market runner cannot settle it, but the book is still the
+   * kernel's: one place schedules are collected, emptied at the top of every period.
+   */
+  post(venue: VenueId, order: Order): void {
+    forbid(this.sealed, 'Seed A2', 'a posting is made inside a period, not at assembly');
+    this.venue(venue);
+    this.parties.get(order.party);
+    const list = this.postings.get(venue) ?? [];
+    list.push(order);
+    this.postings.set(venue, list);
+  }
+
+  /** What has been posted into a venue this period, in the order it was posted. */
+  posted(venue: VenueId): readonly Order[] {
+    return this.postings.get(venue) ?? [];
   }
 
   /** Public before the session (Sovereign C1.a): bidders prepare against a size they can see. */

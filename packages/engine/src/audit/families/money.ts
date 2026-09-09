@@ -39,8 +39,9 @@ export function moneyFamily(memory: AuditMemory): Family {
         for (const d of r.deltas) {
           if (!moneyInstruments.has(d.instrument)) continue;
           const ccy = view.instruments.get(d.instrument).ccy;
-          const w = d.target === 'holding' ? weightOf(view.parties.get(d.party)) : 1;
-          const signed = d.target === 'holding' ? d.qty * w : -d.qty;
+          // XI-15: the weight the delta was struck at, not the weight the cell has now — it may
+          // have split since, and this instruction moved what it moved.
+          const signed = d.target === 'holding' ? d.qty * d.weight : -d.qty;
           const list = perCcy.get(ccy) ?? [];
           list.push(signed);
           perCcy.set(ccy, list);

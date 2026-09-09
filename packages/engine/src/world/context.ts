@@ -14,7 +14,16 @@
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { Periodicity } from '../core/rate.js';
 import type { MarketDecl, PrimaryOffer } from '../clearing/market.js';
-import type { CurrencyCode, CurveFamilyId, InstrumentId, MarketId, PartyId } from '../core/ids.js';
+import type { Order } from '../clearing/solver.js';
+import type { VenueDecl } from '../clearing/venue.js';
+import type {
+  CurrencyCode,
+  CurveFamilyId,
+  InstrumentId,
+  MarketId,
+  PartyId,
+  VenueId,
+} from '../core/ids.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
@@ -43,6 +52,8 @@ export interface KernelReads {
   readonly params: Pick<ParamRegister, 'get' | 'decl' | 'report' | 'all'>;
   readonly instruments: InstrumentsReads;
   readonly markets: readonly MarketDecl[];
+  /** Clearing B2: the venues modules clear themselves; declared and public, like a market. */
+  readonly venues: readonly VenueDecl[];
 }
 
 /**
@@ -58,7 +69,11 @@ export interface Outlook {
   readonly formed: Period;
 }
 
-/** The variable an outlook is about: `goods.price.<subUnit>`, `labour.wage.<occupation>`, ... */
+/**
+ * The variable an outlook is about. The module that forms outlooks names them from what a party can
+ * actually observe — `income` for what reached it, `price.<instrument>` for what it traded at — and
+ * a party that has never observed one has no outlook of it (Expectations A2).
+ */
 export type OutlookVariable = string;
 
 /** Observer A1-A4: a party's own state plus the public state, and nothing else. */
@@ -131,8 +146,18 @@ export interface MechanismContext extends KernelReads {
   /** Register a new instrument with nothing issued; issuance is a settlement leg (Register B1). */
   issue(decl: InstrumentDecl): Instrument;
   openMarket(decl: MarketDecl): void;
+  /** Declare a venue this module clears itself (Clearing B2, Labour D1). */
+  openVenue(decl: VenueDecl): void;
   /** Announce the issuer's supply for this period's session (Sovereign C1); cleared by the market. */
   offer(o: PrimaryOffer): void;
+  /**
+   * Clearing B2: post a schedule into a venue that a module clears for itself — a labour market
+   * strikes a contract rather than moving an instrument, so it is not a market the kernel can
+   * settle. The book is emptied at the top of every period, so a posting is for this period only.
+   */
+  post(venue: VenueId, order: Order): void;
+  /** What every party has posted into a venue this period (the module that clears it reads this). */
+  posted(venue: VenueId): readonly Order[];
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): number;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
@@ -159,6 +184,7 @@ export interface SeedContext {
   readonly register: Register;
   readonly prices: Pick<PriceStore, 'write' | 'latest'>;
   openMarket(decl: MarketDecl): void;
+  openVenue(decl: VenueDecl): void;
   /** Endow a party with money at its own bank, per member (Seed A4: every deposit is a liability). */
   endowMoney(party: PartyId, ccy: CurrencyCode, perMember: number): void;
   /** Endow a party with units of an instrument at a basis, per member (Seed C4: an opening condition). */

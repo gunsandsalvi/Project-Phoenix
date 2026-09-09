@@ -341,6 +341,16 @@ every number in the parameter register where its unit and owner are declared (XI
 what a thing takes to make from the thing itself; the coefficient exists once. The same route serves
 anything else a system must publish about an instrument.
 
+**Venues (Clearing B2, Labour D1).** A market moves an instrument against money and the kernel
+settles it. A **venue** is where posted schedules clear into something that is not a transfer: a
+labour market strikes a RELATIONSHIP — a firm, a worker, a wage, a start date — which then persists
+and is paid period after period, so what a match produces is a row in the owning module's register.
+The kernel owns the book (`world.post(venue, order)`, emptied at the top of every period) and the
+solver; the module that declared the venue clears it in its own phase and acts on the matches. A
+venue is declared like a market and is public — an employer's opening is a posted intention anyone
+can see — and its `key` says what makes it itself (region, occupation), so another system finds the
+venue it needs without knowing how this one names things.
+
 **Names are composed, not stored.** `registry/naming.ts` resolves the parts of a display name that
 are state — the issuer's name, a region's name — and hands them to the kind's profile as a `Namer`;
 the profile composes the name from its own terms (Law 9). A claim demands an issuer and throws
@@ -361,6 +371,15 @@ placeholder names the mechanism whose absence it stands in for and the worklist 
 The count of shapes and placeholders is a reported metric and must fall (XI-14). Engine code reads
 numbers only through `params.get(id)`; numeric literals other than `0, 1, -1, 2` are linted out of the
 engine except in `core/num.ts`.
+
+### 4.10a What a module knows between periods
+
+A module's own register — employment rows, a book of invoices, a party's outlooks — lives in a state
+slot (`ctx.state(name, initial)`), keyed by the module that owns it and snapshotted by the observer
+as the data it is. Two rules keep it honest: a slot is never a second copy of what a kernel store
+already holds, and a module that must also **audit** its own register builds the object once, per
+world, and hands the same object to its phases and to its audit contribution — one book, one writer
+(Law 4). That is why `goods()` and `labour()` are factories: a module with a memory is this world's.
 
 ### 4.11 Events and the observer surface (§45)
 

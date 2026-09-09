@@ -69,8 +69,10 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
     if (r.outcome !== 'settled') continue;
     for (const leg of r.instruction.legs) {
       if (isMoneyLeg(leg)) {
+        // XI-15: what a cell observes is what a MEMBER of it received. The whole cell's receipt is
+        // a sector aggregate, and a decision taken on one would be a decision at an average.
         const list = income.get(leg.to.holder) ?? [];
-        list.push(leg.amount);
+        list.push(leg.toCell.some ? leg.toCell.value.perMember : leg.amount);
         income.set(leg.to.holder, list);
       } else if (isAssetLeg(leg) && leg.pricePerUnit.some) {
         // A2: the price this party traded at is something it saw; a print it did not trade at is

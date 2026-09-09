@@ -21,7 +21,7 @@ export interface AuditView {
   readonly calendar: Calendar;
   readonly registry: Registry;
   readonly params: Pick<ParamRegister, 'report' | 'all' | 'get'>;
-  readonly parties: Pick<Parties, 'get' | 'has' | 'all' | 'alive' | 'resolve'>;
+  readonly parties: Pick<Parties, 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve'>;
   readonly instruments: Pick<Instruments, 'get' | 'has' | 'all'>;
   readonly register: Pick<
     Register,

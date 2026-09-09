@@ -1,0 +1,357 @@
+/**
+ * The matching: who is hired, at what wage, and what the wage bill then does every period.
+ *
+ * @spec Labour A1 Labour A2 Labour A4 Labour A4.b Labour A4.c Labour B1 Labour B1.a Labour B2 Labour B3 Labour B4 Labour C2 Labour C3 Labour C4 Labour C5 Labour D1 Labour D1.a Labour D1.c Labour D2 Labour D3 Labour D5 Labour E1 Labour F1 Labour F2 XI-10 XI-15 Clearing C3
+ *
+ * EVERY POSTING IS A BID (D1): the employer's openings at the wage it offers. The period's matches
+ * go to the highest bids first and pro rata within a tie — which is what the kernel's own solver
+ * does under the marginal-bid rule — and the bid that took the last match is the occupation's print.
+ * An offer above the going rate therefore fills and one below it does not (D1.a).
+ *
+ * A POSTING IS THE EMPLOYER'S DESIRED EMPLOYMENT, not its desired hire: the hours it wants at that
+ * wage, against what it already has under contract. The difference upward is a vacancy; downward it
+ * is a separation, and a separation costs severance (C3). That asymmetry — a hire is free and a
+ * firing is paid for — is where the cycle in employment comes from, and it is a cost, never a pair
+ * of speeds.
+ *
+ * SUPPLY is a decision each cell takes for itself (B1): it will not work below its own outside
+ * option, which is what this world already pays it when it does not work (B1.a) — read from its own
+ * outlook of its income, never from a stated replacement rate. A cell with a trade looks for that
+ * trade; one that has never worked can enter any occupation (A3.b, at the bottom, since it posts at
+ * its own reservation and not at the going rate).
+ */
+import { period as periodOf, type Period } from '../../calendar/calendar.js';
+import { clear, isCleared, type Cleared, type Order } from '../../clearing/solver.js';
+import type { VenueDecl } from '../../clearing/venue.js';
+import type { PartyId, RegionId } from '../../core/ids.js';
+import { add, div, material, mul, sub } from '../../core/num.js';
+import { none, some } from '../../core/option.js';
+import type { Leg } from '../../ledger/instruction.js';
+import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { weightOf, type Party } from '../../parties/party.js';
+import { HOUSEHOLD } from '../../registry/profiles.js';
+import type { MechanismContext } from '../../world/context.js';
+import {
+  allRows,
+  employed,
+  goingRate,
+  hoursAt,
+  rowOfWorker,
+  wagePerMember,
+  type EmploymentBook,
+  type EmploymentRow,
+} from './register.js';
+
+/** The numbers the matching reads, all declared by the module (Law 2). */
+export interface LabourParams {
+  readonly hoursPerMember: number;
+  readonly retirementAge: number;
+  readonly hiringLagPeriods: number;
+  readonly severancePeriods: number;
+}
+
+/** B3: whether a cohort's members are in the workforce at all, or out of it by age. */
+function participates(ctx: MechanismContext, p: Party, retirementAge: number): boolean {
+  if (p.representation !== 'cell' || !p.status.alive) return false;
+  return ctx.registry.cohort(p.key.cohort).fromAge < retirementAge;
+}
+
+/**
+ * B1.a: the least a cell will work for. Its outside option is what it lives on without the job —
+ * read from its own outlook of its own income, which for somebody not working is the benefit this
+ * world pays it. A cell that has never observed an income has no outside option to compare against
+ * and does not post: it cannot say what it will not work for.
+ */
+function reservation(ctx: MechanismContext, cell: PartyId, hours: number): number | undefined {
+  // `income` is what the expectations module names what a party observes reaching it (A2).
+  const outlook = ctx.participant(cell).outlook('income');
+  if (!outlook.some) return undefined;
+  return div(outlook.value.expected, hours, 'reservation wage');
+}
+
+/** B1, B4: every cell that is not working offers its members' hours, at its own reservation. */
+function supply(ctx: MechanismContext, book: EmploymentBook, v: VenueDecl, p: LabourParams): Order[] {
+  const out: Order[] = [];
+  const occupation = v.key['occupation'];
+  const region = v.key['region'];
+  if (occupation === undefined || region === undefined) return out;
+  for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
+    if (!participates(ctx, cell, p.retirementAge) || cell.region !== region) continue;
+    if (rowOfWorker(book, cell.id) !== undefined) continue;
+    const skill = book.skill[cell.id];
+    // A3: a job in one occupation is not a job in another. Somebody who has worked looks for the
+    // trade they have; somebody who never has can start anywhere.
+    if (skill !== undefined && skill !== occupation) continue;
+    const hours = mul(weightOf(cell), p.hoursPerMember, 'hours offered');
+    const wage = reservation(ctx, cell.id, p.hoursPerMember);
+    if (wage === undefined || hours <= 0) continue;
+    out.push({ party: cell.id, side: 'sell', price: wage, qty: hours });
+  }
+  return out;
+}
+
+/**
+ * The venue's session: what the employers posted against what they already employ, and the cells
+ * that are looking. Returns the wage that cleared, if anything did.
+ */
+export function runVenue(
+  ctx: MechanismContext,
+  book: EmploymentBook,
+  v: VenueDecl,
+  p: LabourParams,
+): void {
+  const occupation = v.key['occupation'];
+  const region = v.key['region'];
+  if (occupation === undefined || region === undefined) return;
+  const bids: Order[] = [];
+  for (const posting of ctx.posted(v.id)) {
+    if (posting.side !== 'buy' || posting.price === 'market') continue;
+    const held = hoursAt(book, posting.party, occupation, region as RegionId);
+    const gap = sub(posting.qty, held, 'employment gap');
+    if (!material(gap, 2, add(posting.qty, held, 'employment'))) continue;
+    if (gap > 0) bids.push({ party: posting.party, side: 'buy', price: posting.price, qty: gap });
+    // C3, C4: the employer wants fewer hours than it has under contract, so it separates the
+    // difference and pays for doing it. It is the employer's decision; this is the mechanism.
+    else shed(ctx, book, posting.party, occupation, region as RegionId, -gap, p);
+  }
+  const offers = supply(ctx, book, v, p);
+  // D1: the highest bids are filled first and the bid that took the last match is the print, which
+  // is the marginal-bid rule the kernel's solver already clears sealed-bid sessions under.
+  const outcome = clear([...bids, ...offers], 'proRata', 'marginalBid');
+  if (!isCleared(outcome)) return;
+  match(ctx, book, outcome, offers, occupation, region as RegionId, p);
+  // D1: the occupation's print. It is a wage, not an instrument's price, so it is an event and not
+  // a mark: nothing is valued at it (Law 8: the unit is money per hour).
+  ctx.record(
+    'labour.print',
+    [v.id],
+    {
+      venue: v.id,
+      occupation,
+      region,
+      wagePerHour: outcome.price,
+      hours: outcome.volume,
+      rationed: outcome.rationed,
+    },
+    true,
+  );
+}
+
+/**
+ * D1, D3, A4.b: who actually gets the job. The solver said what the wage is and how many hours
+ * changed hands; this says which people, and people are whole (A4.b). Each employer's hours become
+ * a headcount, largest bid first; the seekers who would work for least are taken first, and among
+ * seekers who would work for the same — which is most of them — somebody has to be taken and
+ * somebody left, in a stable order. That is what makes matching imperfect (D3) rather than a
+ * fraction of every seeker being employed a fraction of the time, which is nobody being employed.
+ */
+function match(
+  ctx: MechanismContext,
+  book: EmploymentBook,
+  outcome: Cleared,
+  offers: readonly Order[],
+  occupation: string,
+  region: RegionId,
+  p: LabourParams,
+): void {
+  const queue = offers
+    .filter((o) => o.price !== 'market' && o.price <= outcome.price)
+    .sort((a, b) => (a.price === b.price ? (a.party < b.party ? -1 : 1) : Number(a.price) - Number(b.price)))
+    .map((o) => o.party);
+  const bidsFilled = outcome.fills
+    .filter((f) => f.side === 'buy')
+    .sort((a, b) => b.at - a.at);
+  let next = 0;
+  for (const f of bidsFilled) {
+    let people = Math.floor(div(f.qty, p.hoursPerMember, 'people hired'));
+    while (people > 0 && next < queue.length) {
+      const cell = queue[next];
+      if (cell === undefined) break;
+      const available = weightOf(ctx.parties.get(cell));
+      if (available <= 0) {
+        next += 1;
+        continue;
+      }
+      const taken = people < available ? people : available;
+      hire(ctx, book, f.party, cell, taken, outcome.price, occupation, region, p);
+      people = sub(people, taken, 'people left to hire');
+      if (taken === available) next += 1;
+    }
+  }
+}
+
+/** A4.b, A4.c: a hire moves a whole number of people, and part of a cell splits off first. */
+function hire(
+  ctx: MechanismContext,
+  book: EmploymentBook,
+  employer: PartyId,
+  worker: PartyId,
+  members: number,
+  wagePerHour: number,
+  occupation: string,
+  region: RegionId,
+  p: LabourParams,
+): void {
+  const cell = ctx.parties.get(worker);
+  if (members <= 0) return;
+  const whole = members >= weightOf(cell);
+  const hired = whole ? worker : ctx.cells.split(worker, members, `hired by ${employer}`);
+  const row: EmploymentRow = {
+    id: `row.${book.next}`,
+    employer,
+    worker: hired,
+    occupation,
+    region,
+    wagePerHour,
+    hoursPerMember: p.hoursPerMember,
+    start: ctx.period,
+    // C2: finding somebody is not having them; the person is productive after the hiring lag.
+    productiveFrom: periodOf(ctx.period + p.hiringLagPeriods),
+    headcount: weightOf(ctx.parties.get(hired)),
+  };
+  book.next += 1;
+  book.rows[row.id] = row;
+  book.skill[hired] = occupation;
+  ctx.record(
+    'labour.hire',
+    [employer, hired],
+    {
+      row: row.id,
+      employer,
+      worker: hired,
+      occupation,
+      headcount: row.headcount,
+      wagePerHour,
+      productiveFrom: row.productiveFrom,
+    },
+    true,
+  );
+}
+
+/** C3: the employer sheds hours it no longer wants, oldest row first, and pays to do it. */
+function shed(
+  ctx: MechanismContext,
+  book: EmploymentBook,
+  employer: PartyId,
+  occupation: string,
+  region: RegionId,
+  hours: number,
+  p: LabourParams,
+): void {
+  let left = hours;
+  const rows = allRows(book)
+    .filter((r) => r.employer === employer && r.occupation === occupation && r.region === region)
+    .sort((a, b) => b.start - a.start);
+  for (const row of rows) {
+    if (left <= 0) break;
+    const members = Math.floor(div(left, row.hoursPerMember, 'members to separate'));
+    if (members <= 0) break;
+    const taken = members >= row.headcount ? row.headcount : members;
+    separate(ctx, book, row, taken, `${employer} cut its hours`, p);
+    left = sub(left, mul(taken, row.hoursPerMember, 'hours shed'), 'hours left to shed');
+  }
+}
+
+/**
+ * C3: a separation ends the relationship for those members and costs the employer severance, paid
+ * to the people it separates. A4.c: separating part of a row splits its cell, so the members who
+ * stay employed and the members who no longer are never share one state.
+ */
+export function separate(
+  ctx: MechanismContext,
+  book: EmploymentBook,
+  row: EmploymentRow,
+  members: number,
+  cause: string,
+  p: LabourParams,
+): void {
+  if (members <= 0) return;
+  const whole = members >= row.headcount;
+  const gone = whole ? row.worker : ctx.cells.split(row.worker, members, cause);
+  if (whole) {
+    book.rows = Object.fromEntries(Object.entries(book.rows).filter(([id]) => id !== row.id));
+  } else {
+    row.headcount = sub(row.headcount, members, 'headcount after separation');
+  }
+  // The trade stays with the person who has it: an unemployed baker looks for baking (A3).
+  book.skill[gone] = row.occupation;
+  const perMember = mul(wagePerMember(row), p.severancePeriods, 'severance per member');
+  const paid = payFrom(ctx, row.employer, gone, perMember, `severance from ${row.employer}`);
+  ctx.record(
+    'labour.separation',
+    [row.employer, gone],
+    {
+      row: row.id,
+      employer: row.employer,
+      worker: gone,
+      occupation: row.occupation,
+      members,
+      cause,
+      severancePerMember: perMember,
+      severancePaid: paid,
+    },
+    true,
+  );
+}
+
+/** F1, E1: the wage leaves the employer's account and reaches the worker's, every period. */
+export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
+  for (const row of allRows(book)) {
+    if (!ctx.parties.get(row.employer).status.alive) continue;
+    payFrom(ctx, row.employer, row.worker, wagePerMember(row), `wages from ${row.employer}`);
+  }
+}
+
+/** One payment from a named payer to a named cell, per member (XI-15). Returns whether it settled. */
+function payFrom(
+  ctx: MechanismContext,
+  payer: PartyId,
+  cell: PartyId,
+  perMember: number,
+  reason: string,
+): boolean {
+  if (perMember <= 0) return true;
+  const from = ctx.parties.get(payer);
+  const to = ctx.parties.get(cell);
+  const side = cellSide(to, perMember);
+  const leg: Leg = {
+    kind: 'money',
+    from: { holder: payer, issuer: from.bank },
+    to: { holder: cell, issuer: to.bank },
+    ccy: ctx.registry.region(from.region).ccy,
+    amount: totalFor(to, perMember),
+    fromCell: none(),
+    toCell: side === undefined ? none() : some(side),
+  };
+  // A failed wage is a real state, recorded by settlement: the employer did not have the money.
+  return ctx.settle({ legs: [leg], cause: 'transfer', reason }).outcome === 'settled';
+}
+
+/**
+ * D1.c, Observer A5: the going rate is a read over the rows, published about the period that has
+ * closed. It causes nothing by itself — a firm forms its own outlook of what it must offer (XI-16)
+ * — and it is the only channel from what is paid to what a bid is worth comparing against (D5).
+ */
+export function publishGoingRate(
+  ctx: MechanismContext,
+  book: EmploymentBook,
+  venues: readonly VenueDecl[],
+  now: Period,
+): void {
+  if (now === periodOf(0)) return;
+  const rows: Record<string, number> = {};
+  for (const v of venues) {
+    const occupation = v.key['occupation'];
+    const region = v.key['region'];
+    if (occupation === undefined || region === undefined) continue;
+    const rate = goingRate(book, occupation, region as RegionId);
+    if (rate !== undefined) rows[v.id] = rate;
+  }
+  if (Object.keys(rows).length === 0) return;
+  ctx.record(
+    'labour.goingRate',
+    [],
+    { of: now - 1, wagePerHour: rows, employed: employed(book) },
+    true,
+  );
+}

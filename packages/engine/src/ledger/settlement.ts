@@ -687,6 +687,7 @@ export class Settlement {
             party: op.party,
             instrument: op.instrument,
             qty: -op.qty,
+            weight: weightOf(this.d.parties.get(op.party)),
             target: 'holding',
           });
           break;
@@ -701,6 +702,7 @@ export class Settlement {
             party: op.party,
             instrument: op.instrument,
             qty: op.qty,
+            weight: weightOf(this.d.parties.get(op.party)),
             target: 'holding',
           });
           if (!op.money && op.fromDebit >= 0) {
@@ -723,6 +725,7 @@ export class Settlement {
             party: op.issuer,
             instrument: op.instrument,
             qty: op.qty,
+            weight: 1,
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);
@@ -740,6 +743,7 @@ export class Settlement {
             party: op.holder,
             instrument: op.instrument,
             qty: op.qty,
+            weight: 1,
             target: 'issued',
           });
           break;
@@ -750,6 +754,7 @@ export class Settlement {
             party: op.issuer,
             instrument: op.instrument,
             qty: -op.qty,
+            weight: 1,
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);

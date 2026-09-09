@@ -1322,33 +1322,33 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Labour A1` | MISSING |  |
-| `Labour A2` | MISSING |  |
-| `Labour A3` | MISSING |  |
-| `Labour A4` | MISSING |  |
-| `Labour B1` | MISSING |  |
-| `Labour B2` | MISSING |  |
-| `Labour B3` | MISSING |  |
-| `Labour B4` | MISSING |  |
-| `Labour B5` | MISSING |  |
-| `Labour C1` | MISSING |  |
-| `Labour C2` | MISSING |  |
-| `Labour C3` | MISSING |  |
-| `Labour C4` | MISSING |  |
-| `Labour C5` | MISSING |  |
-| `Labour D1` | MISSING |  |
-| `Labour D2` | MISSING |  |
-| `Labour D2.b` | MISSING |  |
-| `Labour D3` | MISSING |  |
+| `Labour A1` | MET | packages/engine/src/mechanisms/labour/index.ts, packages/engine/src/mechanisms/labour/matching.ts (hours of a person time, supplied by a named cell to a named firm) |
+| `Labour A2` | MET | packages/engine/src/mechanisms/labour/index.ts (the venue prices hours in the money of its region) |
+| `Labour A3` | MET | packages/engine/src/mechanisms/labour/data.ts, packages/engine/src/mechanisms/labour/index.ts (one venue per region and occupation; a trade is what a seeker looks for) |
+| `Labour A4` | MET | packages/engine/src/mechanisms/labour/register.ts (a relationship with a firm, a worker, a wage and a start date) |
+| `Labour B1` | MET | packages/engine/src/mechanisms/labour/matching.ts (each cell decides from its own view whether to offer its hours) |
+| `Labour B2` | MET | packages/engine/src/mechanisms/labour/matching.ts (supply is the cells weights times the hours a person has) |
+| `Labour B3` | MET | packages/engine/src/mechanisms/labour/index.ts (employed, unemployed or inactive, one state each, read from the rows and the cohort) |
+| `Labour B4` | MET | packages/engine/src/mechanisms/labour/matching.ts (an unemployed cell posts every period; what it meets is finite) |
+| `Labour B5` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: the three states against the population) |
+| `Labour C1` | MISSING | the decision to hire is the firm own (worklist 4.5) |
+| `Labour C2` | PARTIAL | packages/engine/src/mechanisms/labour/register.ts carries the lag from the match to the day the person is productive; the cost of finding is the firm own hours and arrives with the firm (worklist 4.5) |
+| `Labour C3` | MET | packages/engine/src/mechanisms/labour/matching.ts (severance paid to the people separated, out of the employer account) |
+| `Labour C4` | MISSING | a firm that fails releases its workers; firm death is worklist 7 |
+| `Labour C5` | MET | packages/engine/src/mechanisms/labour/matching.ts (a vacancy is a posting the employer owns, for the period it posts it) |
+| `Labour D1` | MET | packages/engine/src/mechanisms/labour/matching.ts (every posting is a bid; highest first; the bid that took the last match is the print) |
+| `Labour D2` | PARTIAL | the wage is the contract and does not move with the print (packages/engine/src/mechanisms/labour/register.ts); renegotiation at the firm horizon past its cost arrives with the firm (worklist 4.5) |
+| `Labour D2.b` | PARTIAL | stickiness is the contract and nothing damps a series; the renegotiation cost that makes it a decision arrives with the firm (worklist 4.5) |
+| `Labour D3` | MET | packages/engine/src/mechanisms/labour/matching.ts (whole people are matched from a queue of seekers; hours that do not make a person are no hire) |
 | `Labour D4` | MISSING |  |
 | `Labour D5` | MISSING |  |
-| `Labour E1` | MISSING |  |
-| `Labour E2` | MISSING |  |
+| `Labour E1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage reaches the household cell every period) |
+| `Labour E2` | PARTIAL | the wage leaves the employer account every period; what it does to margin and price arrives with the firm (worklist 4.5) |
 | `Labour E3` | MISSING |  |
 | `Labour E4` | MISSING |  |
-| `Labour F1` | MISSING |  |
-| `Labour F2` | MISSING |  |
-| `Labour F3` | MISSING |  |
+| `Labour F1` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: every row is a job at a named firm that exists) |
+| `Labour F2` | MET | packages/engine/src/mechanisms/labour/index.ts (headcount is a count of people and never exceeds the population) |
+| `Labour F3` | MET | packages/engine/src/mechanisms/labour/index.ts (unemployment is a read of the cells with no row; no rate exists anywhere) |
 
 ## Housing
 

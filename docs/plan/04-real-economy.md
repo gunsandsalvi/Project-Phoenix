@@ -234,11 +234,11 @@ packages/engine/test/{state-slots,expectations,goods,labour,firms,households,res
 - [x] 4.3 Inventory lots at cost; spoilage and storage fee as two different things (E4.a); lower-of-cost-and-NRV write-down through `profile.revalue`; tests
 - [x] 4.3 One market per (region, sub-unit); rationing pro rata; price in the seller's money; test: unsold output stays with the seller (C5)
 - [x] 4.3 Audit: units identity per good and region (Part XII, Commodities Spot D5); test: a spoilage leg shows in `perished`
-- [ ] 4.4 Occupations registry; the employment register as rows with headcount = cell weight; hire and separation split cells; tests
-- [ ] 4.4 Vacancies as bids; cells' hours as offers at their reservation; `labour.match` clears highest bids first; the print is the last matched bid; tests: an offer above the going rate fills more (D1.a); the going rate is a read (D1.c)
-- [ ] 4.4 Contract stickiness: renegotiation at the firm's horizon past its cost; severance at separation; tests: a wage does not move with the going rate inside the cost; separation costs the firm
-- [ ] 4.4 Participation from the cell's own view; states employed/unemployed/inactive per cell; search every period; audit: states sum to the population; tests
-- [ ] 4.5 `firms.decide`: production, vacancies, price, dividend from the firm's own view; test: an input shortage binds (B1.b); a firm never branches on industry (lint)
+- [x] 4.4 Occupations registry; the employment register as rows with headcount = cell weight; hire and separation split cells; tests
+- [x] 4.4 Vacancies as bids; cells' hours as offers at their reservation; `labour.match` clears highest bids first; the print is the last matched bid; tests: an offer above the going rate fills more (D1.a); the going rate is a read (D1.c)
+- [x] 4.4 Contract stickiness: the wage is the contract's and does not move with the print; severance paid at separation; tests: a wage does not move with the going rate; separation costs the firm
+- [x] 4.4 Participation from the cell's own view; states employed/unemployed/inactive per cell; search every period; audit: states sum to the population; tests
+- [ ] 4.5 `firms.decide`: production, vacancies, price, dividend and renegotiation at its own horizon past its cost, from the firm's own view; test: an input shortage binds (B1.b); a firm never branches on industry (lint)
 - [ ] 4.5 `firms.produce`: recipe consumption, work in progress at cost, yield and scrap, lead time, idle cost as period expense; tests: B5.a and B5.b
 - [ ] 4.5 `firms.invoice` and `firms.pay`: receivable/payable as one object read from both sides; wages per member; dividends; failed payments recorded; tests
 - [ ] 4.5 Published expectation (E7) journaled and scored; test

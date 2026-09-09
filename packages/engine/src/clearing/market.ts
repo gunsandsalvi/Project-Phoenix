@@ -130,7 +130,7 @@ export function runMarket(
   const outcome = clear(orders, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
   switch (outcome.kind) {
     case 'cleared': {
-      const trades = match(outcome.fills);
+      const trades = pairFills(outcome.fills);
       const accrued = deps.accruedPerUnit(m.instrument, period);
       let settledVolume = 0;
       let allotted = 0;
@@ -249,7 +249,7 @@ export function runMarket(
 }
 
 /** Pair buy fills with sell fills, walking both lists; every trade has two named sides (D2). */
-function match(fills: readonly Fill[]): Trade[] {
+function pairFills(fills: readonly Fill[]): Trade[] {
   const buys = fills.filter((f) => f.side === 'buy').map((f) => ({ ...f }));
   const sells = fills.filter((f) => f.side === 'sell').map((f) => ({ ...f }));
   const out: Trade[] = [];

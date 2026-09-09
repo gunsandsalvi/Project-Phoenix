@@ -126,6 +126,9 @@ function seedContext(w: World): SeedContext {
     openMarket: (decl) => {
       w.addMarket(decl);
     },
+    openVenue: (decl) => {
+      w.addVenue(decl);
+    },
     endowMoney: (party: PartyId, ccy: CurrencyCode, perMember: number) => {
       const p = w.parties.get(party);
       const inst = moneyInstrumentId(p.bank, ccy);
