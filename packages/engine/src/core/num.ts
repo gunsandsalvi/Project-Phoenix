@@ -28,9 +28,11 @@ export interface Sum {
   /** The tolerance any comparison involving this sum may use: terms × ε × Σ|terms|. */
   readonly dust: number;
   readonly terms: number;
+  /** Σ|terms|: the magnitude the arithmetic passed through, which is rarely |value|. */
+  readonly magnitude: number;
 }
 
-export const ZERO_SUM: Sum = Object.freeze({ value: 0, dust: 0, terms: 0 });
+export const ZERO_SUM: Sum = Object.freeze({ value: 0, dust: 0, terms: 0, magnitude: 0 });
 
 /**
  * Neumaier compensated summation. The returned dust is the specification's bound,
@@ -51,7 +53,42 @@ export function sum(terms: Iterable<number>): Sum {
     s = u;
   }
   const value = finite(s + c, 'sum');
-  return { value, dust: n * EPS * mag, terms: n };
+  return { value, dust: n * EPS * mag, terms: n, magnitude: mag };
+}
+
+/**
+ * A balance reached by accumulation: a total stated once and then moved, one named event at a time,
+ * for as long as its owner exists — an equity account, a money balance.
+ *
+ * Law 7's dust is the dust of the arithmetic that produced the number, and for such a balance that
+ * is every rounding since it was stated: each one landing at the magnitude of the balance it made,
+ * not at the size of the move that made it. A check comparing a fresh read against a balance moved
+ * a thousand times is comparing against a thousand roundings, so the walk travels with the number
+ * rather than being guessed back — badly — by whoever reads it.
+ */
+export interface Running {
+  readonly value: number;
+  /** Σ ε|balance after each move|: what the walk itself is entitled to. */
+  readonly dust: number;
+  /** How many moves it took to get here. */
+  readonly moves: number;
+}
+
+/** State a balance: the one rounding is the statement of the number itself. */
+export function opened(value: number, what: string): Running {
+  const v = finite(value, what);
+  return { value: v, dust: moveDust(v, 0), moves: 0 };
+}
+
+/** Move a balance by one event; the rounding lands at the magnitude the addition passed through. */
+export function moved(balance: Running, delta: number, what: string): Running {
+  const value = finite(balance.value + finite(delta, what), what);
+  return { value, dust: balance.dust + moveDust(balance.value, delta), moves: balance.moves + 1 };
+}
+
+/** What one more move onto a running balance costs it: the rounding of that one addition (Law 7). */
+export function moveDust(balance: number, delta: number): number {
+  return dustOf(1, Math.abs(balance) + Math.abs(delta));
 }
 
 /** Dust for a comparison of two quantities computed from `terms` terms of total magnitude `magnitude`. */

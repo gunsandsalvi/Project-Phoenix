@@ -22,6 +22,8 @@ export const OCCUPATIONS: readonly OccupationDecl[] = [
   { id: 'field', name: 'field work', skill: 'manual', sector: 'agriculture' },
   { id: 'mill', name: 'milling', skill: 'machine operation', sector: 'processing' },
   { id: 'bakery', name: 'baking', skill: 'craft', sector: 'food' },
+  // Labour F1: the state employs people too, and the wage leaves its account like anybody else's.
+  { id: 'public', name: 'public service', skill: 'administration', sector: 'government' },
 ];
 
 /** Hours one person supplies in a period (a week), and the numbers around the relationship. */

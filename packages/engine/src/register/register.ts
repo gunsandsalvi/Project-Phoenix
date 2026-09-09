@@ -14,7 +14,7 @@ import type { Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import type { InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
-import { dustOf, finite, sum } from '../core/num.js';
+import { dustOf, finite, moved, opened, sum, type Running, type Sum } from '../core/num.js';
 import { type Option, none, some } from '../core/option.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -63,7 +63,7 @@ export interface EquityMove {
 export class Register {
   private readonly byHolder = new Map<PartyId, Map<InstrumentId, MutableHolding>>();
   private readonly byInstrument = new Map<InstrumentId, Set<PartyId>>();
-  private readonly equityAccount = new Map<PartyId, number>();
+  private readonly equityAccount = new Map<PartyId, Running>();
   private nextLot = 1;
   private nextLien = 1;
 
@@ -110,7 +110,7 @@ export class Register {
   }
 
   /** B2: the sum of holdings, weight x member for cells, as a Sum with its dust. */
-  heldTotal(instrument: InstrumentId): { value: number; dust: number; terms: number } {
+  heldTotal(instrument: InstrumentId): Sum {
     return sum(this.holdersOf(instrument).map((h) => this.totalQuantity(h, instrument)));
   }
 
@@ -122,6 +122,15 @@ export class Register {
 
   /** The stated equity account, per member (Audit B5). Missing until the seed states it. */
   equity(party: PartyId): number {
+    return this.equityWalk(party).value;
+  }
+
+  /**
+   * The same account with the walk that produced it: what a check comparing it against a fresh read
+   * of assets and liabilities is entitled to call dust (Law 7). It is not one number one rounding
+   * old; it is every event that ever moved it.
+   */
+  equityWalk(party: PartyId): Running {
     const e = this.equityAccount.get(party);
     if (e === undefined)
       throw new Missing('Audit B5', `equity account of ${party} has not been stated`);
@@ -142,13 +151,13 @@ export class Register {
       `equity of ${party} already stated; move it by events`,
     );
     this.parties.get(party);
-    this.equityAccount.set(party, finite(value, `equity of ${party}`));
+    this.equityAccount.set(party, opened(value, `equity of ${party}`));
   }
 
   /** Move the equity account by a named event (Audit B5). */
   moveEquity(move: EquityMove): void {
-    const cur = this.equity(move.party);
-    this.equityAccount.set(move.party, finite(cur + move.delta, `equity of ${move.party}`));
+    const cur = this.equityWalk(move.party);
+    this.equityAccount.set(move.party, moved(cur, move.delta, `equity of ${move.party}`));
   }
 
   credit(
@@ -199,6 +208,23 @@ export class Register {
   }
 
   /**
+   * C4: whether this holder can deliver these units — the one place that question is answered, so
+   * that whoever asks before an instruction settles and the walk that settles it cannot disagree
+   * about it (Law 4). The tolerance is the dust of the walk itself: a quantity that was summed over
+   * these lots, matched against them one at a time, and against a free quantity summed the same way.
+   */
+  deliverable(holder: PartyId, instrument: InstrumentId, qty: number): boolean {
+    const free = this.free(holder, instrument);
+    return qty <= free || qty - free <= this.deliveryDust(holder, instrument, qty);
+  }
+
+  private deliveryDust(holder: PartyId, instrument: InstrumentId, qty: number): number {
+    const h = this.holding(holder, instrument);
+    const lots = h.some ? h.value.lots.length : 0;
+    return dustOf(lots + 2, Math.abs(qty) + Math.abs(this.free(holder, instrument)));
+  }
+
+  /**
    * Draw units from lots first-in-first-out (Register D4; Registry.lotFlow). Throws if the free
    * quantity is short: a party cannot deliver what it does not hold (C4: no short by accident).
    */
@@ -212,10 +238,10 @@ export class Register {
     // Law 7: one dust for the whole walk, derived from the arithmetic that produces it — a quantity
     // asked for that was itself summed over these lots, matched against the lots one at a time. The
     // same tolerance decides whether the holder can deliver and whether the walk finished, because
-    // it is the same comparison made twice.
-    const dust = dustOf(h.lots.length + 2, Math.abs(qty) + Math.abs(freeNow));
+    // it is the same comparison made twice, by the same reader (Law 4).
+    const dust = this.deliveryDust(holder, instrument, qty);
     forbid(
-      qty <= freeNow || qty - freeNow <= dust,
+      this.deliverable(holder, instrument, qty),
       'Register C4',
       `${holder} cannot deliver ${qty} of ${instrument}: free ${freeNow}`,
       { holder, instrument, qty, free: freeNow, dust },
@@ -363,7 +389,9 @@ export class Register {
       }
       this.byHolder.set(to, dst);
     }
-    if (this.equityAccount.has(from)) this.equityAccount.set(to, this.equity(from));
+    // The copy is the same number reached the same way, so it inherits the walk as well (XI-15).
+    const e = this.equityAccount.get(from);
+    if (e !== undefined) this.equityAccount.set(to, e);
   }
 
   /** Remove every trace of a party that has merged away; the caller has verified identical state. */
@@ -437,6 +465,7 @@ export type RegisterReads = Pick<
   | 'heldTotal'
   | 'allHoldings'
   | 'equity'
+  | 'equityWalk'
   | 'hasEquityAccount'
 >;
 
@@ -454,6 +483,7 @@ export function registerReads(store: Register): RegisterReads {
     heldTotal: (instrument: InstrumentId) => store.heldTotal(instrument),
     allHoldings: () => store.allHoldings(),
     equity: (party: PartyId) => store.equity(party),
+    equityWalk: (party: PartyId) => store.equityWalk(party),
     hasEquityAccount: (party: PartyId) => store.hasEquityAccount(party),
   });
 }

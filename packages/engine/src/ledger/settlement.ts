@@ -579,9 +579,12 @@ export class Settlement {
       if (n.delta >= 0) continue;
       const free = this.d.register.free(n.party, n.instrument);
       const after = finite(free + n.delta, 'balance after');
-      if (after >= 0 || Math.abs(after) <= dustOf(ops.length, Math.abs(free) + Math.abs(n.delta)))
-        continue;
+      // C4: whether a holder can deliver is the REGISTER's question, and it is asked once — here,
+      // before anything moves, and again by the walk that moves it, with the same answer. Two
+      // readers with two tolerances would let an instruction pass this check and then throw
+      // inside the walk, which is one fact with two writers (Law 4).
       if (!n.money) {
+        if (this.d.register.deliverable(n.party, n.instrument, -n.delta)) continue;
         return {
           kind: 'insufficientUnits',
           party: n.party,
@@ -589,6 +592,8 @@ export class Settlement {
           short: -after,
         };
       }
+      if (after >= 0 || Math.abs(after) <= dustOf(ops.length, Math.abs(free) + Math.abs(n.delta)))
+        continue;
       const inst = this.d.instruments.get(n.instrument);
       const issuerId = issuerOf(inst);
       const issuer = this.d.parties.get(issuerId);

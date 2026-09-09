@@ -3,9 +3,16 @@
  * the period equal the change in the holding; for every instrument, issued deltas equal the change
  * in issued. A book that changed with nothing behind it is Money D4's defect.
  *
- * @spec Audit B7 Money D1.a Money D1.b Money D3 Money D4 Register F3
+ * @spec Audit B7 Money D1.a Money D1.b Money D3 Money D4 Register F3 Law 7
+ *
+ * The two records are not two readings of one number, and Law 7's dust is what the arithmetic did.
+ * The balance was carried from one end of the period to the other by applying these legs ONE AT A
+ * TIME — every application rounding at the magnitude the balance passed through, not at the size of
+ * the leg — and each end of it was itself read as a sum over the lots it is held in. That walk is
+ * the tolerance. Derived any smaller (as if two readings of one balance), a busy account reports a
+ * violation every time it is paid more than a handful of times in a week.
  */
-import { combineDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { dustOf, sum, withinDust, zeroIfNone, type Sum } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
 import { type AuditMemory, holdingKey } from '../memory.js';
 import type { AuditView } from '../view.js';
@@ -49,11 +56,14 @@ export function flowsFamily(memory: AuditMemory): Family {
         if (weightSubjects.has(holder)) continue;
         if (!view.parties.has(holder as never) || !view.instruments.has(instrument as never))
           continue;
-        const before = zeroIfNone(memory.holdings.get(key)?.qty);
+        const remembered = memory.holdings.get(key);
+        const before = zeroIfNone(remembered?.qty);
+        const held = view.register.holding(holder as never, instrument as never);
         const now = view.register.quantity(holder as never, instrument as never);
         const legs = sum(holdingDeltas.get(key) ?? []);
         const change = sum([now, -before]);
-        if (!withinDust(change.value, legs.value, combineDust(legs, change))) {
+        const lots = zeroIfNone(remembered?.lots) + (held.some ? held.value.lots.length : 0);
+        if (!withinDust(change.value, legs.value, walkDust(before, now, lots, legs))) {
           out.push({
             family: 'flows',
             spec: 'Money D3',
@@ -69,7 +79,8 @@ export function flowsFamily(memory: AuditMemory): Family {
         const before = zeroIfNone(memory.issued.get(i.id));
         const legs = sum(issuedDeltas.get(i.id) ?? []);
         const change = sum([i.issued, -before]);
-        if (!withinDust(change.value, legs.value, combineDust(legs, change))) {
+        // Issued is one balance, not lots, but it is carried by the same leg-at-a-time walk.
+        if (!withinDust(change.value, legs.value, walkDust(before, i.issued, 0, legs))) {
           out.push({
             family: 'flows',
             spec: 'Register B1',
@@ -84,4 +95,16 @@ export function flowsFamily(memory: AuditMemory): Family {
       return out;
     },
   };
+}
+
+/**
+ * The dust of carrying a balance from `before` to `now` by `legs`, read over `lots` at the two ends
+ * (Law 7). Three walks: reading each end over its lots, applying each leg to a balance that never
+ * exceeds where it started plus what moved, and the two sums the comparison itself makes.
+ */
+function walkDust(before: number, now: number, lots: number, legs: Sum): number {
+  const ends = Math.abs(before) + Math.abs(now);
+  return (
+    dustOf(lots + 2, ends) + dustOf(legs.terms, Math.abs(before) + legs.magnitude) + legs.dust
+  );
 }

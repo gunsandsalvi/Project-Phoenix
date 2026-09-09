@@ -9,12 +9,15 @@ import {
   CB,
   HOUSEHOLD,
   PHX,
+  REGION,
   TREASURY_NORTH,
   TREASURY_PARAMS,
   assemble,
   foundationSpec,
   foundationWorld,
+  goodId,
   moneyInstrumentId,
+  type EmploymentRow,
   type World,
 } from '../src/index.js';
 
@@ -99,11 +102,83 @@ describe('outlays and receipts (Treasury B1, C1)', () => {
         .find((e) => e.period === next.period);
       // What it collected is the rate applied to what was really paid, party by party — never to an
       // aggregate nobody was charged.
-      expect(receipts?.data['total']).toBeCloseTo(paid * rate, 6);
+      // C1.a: the base is what was really paid, party by party, and never an aggregate nobody was
+      // charged. What was collected in total is every base at its own rate; this is the interest one.
+      const bases = receipts?.data['bases'] as Record<string, number> | undefined;
+      expect(bases?.['interest']).toBeCloseTo(paid, 9);
+      expect(Number(receipts?.data['total'])).toBeGreaterThanOrEqual(paid * rate - 1e-9);
       checked = true;
       break;
     }
     expect(checked).toBe(true);
+  });
+});
+
+describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => {
+  it('employs people on rows like any employer, and the wage leaves its own account', () => {
+    const w = foundationWorld('tsy-f');
+    for (let i = 0; i < 12; i += 1) w.step();
+    const rows = Object.values(
+      (w.stateSlots()['labour/employment'] as { rows: Record<string, EmploymentRow> }).rows,
+    );
+    const public_ = rows.filter((r) => r.employer === TREASURY_NORTH);
+    // Labour F1: the state is an employer, not a payer of a mandate number to a cohort.
+    expect(public_.length).toBeGreaterThan(0);
+    expect(public_.every((r) => r.headcount > 0 && r.wagePerHour > 0)).toBe(true);
+    // What it pays is what its own rows say, and it leaves its account by name.
+    const bill = w.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(TREASURY_NORTH));
+    const last = bill[bill.length - 1];
+    expect(Number(last?.data['paid'])).toBeGreaterThan(0);
+    const account = moneyInstrumentId(w.parties.get(TREASURY_NORTH).bank, PHX);
+    const workers = new Set(public_.map((r) => r.worker));
+    const paid = w.ledger
+      .inPeriod(w.period)
+      .filter((r) => r.outcome === 'settled')
+      .flatMap((r) => r.instruction.legs)
+      .filter(
+        (l) =>
+          l.kind === 'money' &&
+          l.from.holder === TREASURY_NORTH &&
+          moneyInstrumentId(l.from.issuer, l.ccy) === account &&
+          workers.has(l.to.holder),
+      );
+    expect(paid.length).toBeGreaterThan(0);
+  });
+
+  it('buys real things in the market a household buys them in, and is rationed there like anybody', () => {
+    const w = foundationWorld('tsy-g');
+    const bread = goodId('bread', REGION);
+    let bought = 0;
+    for (let i = 0; i < 12; i += 1) {
+      const r = w.step();
+      bought += w.ledger
+        .inPeriod(r.period)
+        .filter((x) => x.outcome === 'settled')
+        .flatMap((x) => x.instruction.legs)
+        .filter((l) => l.kind === 'asset' && l.instrument === bread && l.to === TREASURY_NORTH)
+        .reduce((a, l) => a + (l.kind === 'asset' ? l.qty : 0), 0);
+    }
+    // Goods C3, C4: it holds what it managed to buy, from named sellers, at the price the market
+    // made — never a quantity it asked for and always got.
+    expect(bought).toBeGreaterThan(0);
+    const budget = w.params.get(TREASURY_PARAMS.purchases);
+    const print = w.prices.latest(bread, w.period);
+    expect(print.some).toBe(true);
+    // It never buys more than the budget it stated: the budget is what it spends, and what that
+    // buys is the market's business (Goods C4).
+    if (print.some) expect(bought * print.value.price).toBeLessThan(budget * 12);
+  });
+
+  it('collects on what households were paid and on what they bought (C1, C1.a)', () => {
+    const w = foundationWorld('tsy-h');
+    for (let i = 0; i < 12; i += 1) w.step();
+    const events = w.journal.ofKind('treasury.receipts');
+    const last = events[events.length - 1];
+    const bases = last?.data['bases'] as Record<string, number> | undefined;
+    // Three bases, each read off what a named payer actually paid, each carrying one rate.
+    expect(bases?.['income']).toBeGreaterThan(0);
+    expect(bases?.['consumption']).toBeGreaterThan(0);
+    expect(Number(last?.data['total'])).toBeGreaterThan(0);
   });
 });
 

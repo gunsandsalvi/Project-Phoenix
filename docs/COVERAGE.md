@@ -150,19 +150,19 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Seed B1` | PARTIAL | the foundation seed has one instance of several kinds; populations are cells with weights |
 | `Seed B2` | MET | packages/engine/src/parties/party.ts, packages/engine/src/seeds/foundation.ts |
 | `Seed B3` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/registry.ts, packages/engine/src/seeds/foundation.ts |
-| `Seed B4` | PARTIAL | sizes are dispersed by hand in the foundation seed; nothing draws them |
+| `Seed B4` | PARTIAL | firms differ by line, stock and work in progress (packages/engine/src/seeds/foundation.ts); the household cells open IDENTICAL and the dispersion that gives their market two sides is produced rather than stated — by the memory each draws at entry and by who was hired, at what wage (packages/engine/test/world.test.ts). That meets B4's reason and not its letter, and stating a size distribution instead would be seeding an outcome (E1) |
 | `Seed B5` | MISSING |  |
 | `Seed C1` | MET | packages/engine/src/world/assemble.ts |
 | `Seed C2` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed C3` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed C4` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed C5` | MISSING |  |
-| `Seed D1` | PARTIAL | coupons are payable from the treasury account; wages and work in progress arrive with worklist 4 |
+| `Seed D1` | MET | packages/engine/src/seeds/foundation.ts (a coupon the treasury can pay, a stock of every good at what it cost, and one lead time of work in progress on every line, so period one is the line running and not the line starting). Employment is deliberately NOT seeded: a seeded row needs a seeded wage, which is a price nobody cleared (Law 3). The venue strikes the first rows in period two and the seeded stock is what carries the lines until it does |
 | `Seed D2` | MISSING |  |
 | `Seed D3` | MISSING |  |
-| `Seed D4` | MISSING |  |
+| `Seed D4` | MET | packages/engine/test/world.test.ts (with nothing shocking it the world still moves: cells that opened identical hold different cash within eight periods, because each remembers at its own speed and they were not all hired) |
 | `Seed E1` | MISSING |  |
-| `Seed E2` | PARTIAL | no reasons exist yet; the seed sets endowments only |
+| `Seed E2` | MET | packages/engine/src/seeds/foundation.ts (it states technology — the recipes, the lead times, the yields — and endowments of stock; what is produced, what is paid and who holds what afterwards are all outcomes) |
 | `Seed E3` | MISSING |  |
 
 ## Currency
@@ -1008,7 +1008,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Treasury A3` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury B1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury B2` | MET | packages/engine/src/mechanisms/treasury/index.ts |
-| `Treasury B3` | PARTIAL | outlays vary with the standing mandate; the cycle and unemployment arrive with the real economy in full (worklist 4.7) and policy with the polity (worklist 14) |
+| `Treasury B3` | PARTIAL | outlays now vary with what the state actually faces: its wage bill is a read of its own employment rows at the wage the venue cleared at, and its purchases are a budget the goods market rations (packages/engine/src/mechanisms/treasury/index.ts). Nothing in them rises with unemployment, because a benefit somebody draws on losing a job needs the loss to be an event (worklist 5), and policy that varies them is the polity (worklist 14) |
 | `Treasury B4` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury C1` | MET | packages/engine/src/mechanisms/treasury/index.ts |
 | `Treasury C2` | MET | packages/engine/src/mechanisms/treasury/index.ts (three bases read off what payers actually did: interest received, what households were paid, what they paid for real things — so receipts fall when income and spending fall) |
@@ -1106,7 +1106,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Firm A1` | MET | packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/seeds/foundation.ts (a named party with an account and a register of what it holds) |
 | `Firm A2` | MET | packages/engine/src/mechanisms/firms/data.ts (the region fixes its money and the line fixes what it buys, sells and employs) |
-| `Firm A3` | PARTIAL | firms differ in line, stock and cost (packages/engine/src/mechanisms/firms/data.ts); leverage arrives with loans (worklist 6) and the dispersion of size with the seed (worklist 4.7) |
+| `Firm A3` | PARTIAL | firms differ in line, stock, work in progress and the people they employ (packages/engine/src/mechanisms/firms/data.ts, packages/engine/src/seeds/foundation.ts); leverage arrives with loans (worklist 6) |
 | `Firm A4` | PARTIAL | the residual is the firm own equity account (packages/engine/src/audit/families/accounts.ts); owners of record are a share register (worklist 9) |
 | `Firm B1` | MET | packages/engine/src/mechanisms/firms/decide.ts (what it sells is what its own offers cleared at, against named buyers; never a rate applied to last period) |
 | `Firm B2` | MET | packages/engine/src/mechanisms/firms/produce.ts (what it bought, drawn at what it cost it: packages/engine/src/mechanisms/goods/inventory.ts) |
@@ -1266,7 +1266,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Goods B5` | MET | packages/engine/src/mechanisms/firms/produce.ts (inputs consumed plus the period wage bill; the capital charge arrives with the capital programme, worklist 10) |
 | `Goods C1` | MET | packages/engine/src/mechanisms/firms/decide.ts (a seller offers what it holds in steps with a reason behind each; a buyer posts what the thing is worth to it) |
 | `Goods C2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/mechanisms/goods/index.ts |
-| `Goods C3` | PARTIAL | firms buying inputs bid what the input is worth to them (packages/engine/src/mechanisms/firms/decide.ts); households arrive at worklist 4.6 and estates at worklist 7 |
+| `Goods C3` | MET | packages/engine/src/mechanisms/firms/decide.ts (firms bid what an input is worth to them), packages/engine/src/mechanisms/households/consume.ts (households bid a curve out of what they decided to spend), packages/engine/src/mechanisms/treasury/index.ts (and the state buys with a budget and is rationed with everybody else) |
 | `Goods C4` | MET | packages/engine/src/mechanisms/goods/index.ts (pro rata, stated once for every goods market), packages/engine/src/clearing/solver.ts |
 | `Goods C5` | MET | packages/engine/src/clearing/solver.ts (nothing is added to either side, so what nobody bought stays where it was) |
 | `Goods C6` | PARTIAL | packages/engine/src/mechanisms/goods/index.ts clears each good in the money of the region it is in; a foreign buyer buying that money arrives with the currency layer (worklist 12) |
@@ -1344,9 +1344,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Labour D5` | MISSING |  |
 | `Labour E1` | MET | packages/engine/src/mechanisms/labour/matching.ts (the wage reaches the household cell every period) |
 | `Labour E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the wage is in what a unit costs and therefore in what the firm will make and offer) |
-| `Labour E3` | MISSING |  |
+| `Labour E3` | MET | packages/engine/src/mechanisms/treasury/index.ts (the income base is what named payers actually paid a household, wages included, remitted out of the household's own account) |
 | `Labour E4` | MISSING |  |
-| `Labour F1` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: every row is a job at a named firm that exists) |
+| `Labour F1` | MET | packages/engine/src/mechanisms/labour/index.ts (the audit contribution: every row is a job at a named employer that exists), packages/engine/src/mechanisms/treasury/index.ts (the state employs on the same rows, in the same venue, and its wage leaves its own account like anybody else's) |
 | `Labour F2` | MET | packages/engine/src/mechanisms/labour/index.ts (headcount is a count of people and never exceeds the population) |
 | `Labour F3` | MET | packages/engine/src/mechanisms/labour/index.ts (unemployment is a read of the cells with no row; no rate exists anywhere) |
 
@@ -1517,9 +1517,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Observer A1` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/world/context.ts |
 | `Observer A2` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/context.ts |
-| `Observer A3` | PARTIAL | public state is instrument terms and prints; issuer publications arrive with firms |
+| `Observer A3` | MET | packages/engine/src/observer/observer.ts (terms, prints and curves), packages/engine/src/mechanisms/treasury/index.ts (the programme it announces), packages/engine/src/mechanisms/firms/produce.ts (what a firm says it expects to earn) |
 | `Observer A4` | MET | packages/engine/src/journal/journal.ts, packages/engine/src/observer/observer.ts, packages/engine/src/world/context.ts, packages/engine/src/world/world.ts |
-| `Observer A5` | PARTIAL | no published aggregates with a lag yet |
+| `Observer A5` | MET | packages/engine/src/mechanisms/households/index.ts (the sector's income, published a period late as a sum of what named payers paid), packages/engine/src/mechanisms/expectations/index.ts (and the dispersion of outlooks, likewise lagged); both are reads and nothing in the engine acts on them |
 | `Observer B1` | MET | packages/engine/src/journal/journal.ts |
 | `Observer B2` | MET | packages/engine/src/journal/journal.ts |
 | `Observer B2.a` | MET | packages/engine/src/journal/journal.ts |

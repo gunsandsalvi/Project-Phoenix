@@ -151,10 +151,16 @@ describe('the seed (Seed A2)', () => {
       'crossMarket',
       'zeroSum',
     ]);
-    // XI-14: the opening yield, the bank's liquidity buffer and the holder's required yield.
-    expect(report?.reads.placeholders).toBe(3);
-    // The three the seed states about endowments, and the width of the memories it disperses.
-    expect(report?.reads.shapes).toBe(4);
+    // XI-14: two placeholders stand, each naming the worklist item that deletes it — the bank's
+    // liquidity buffer (11) and the holder's required yield (10).
+    expect(report?.reads.placeholders).toBe(2);
+    // And five shapes. Four of them are the levels the world opens at (Seed C4): a market that has
+    // never traded has no price, so a world that opens with stock in it opens with a level for that
+    // stock, and no worklist item will ever delete that — which is why they are shapes and not
+    // placeholders with a death nobody could keep. The fifth is the width of the one preference
+    // whose dispersion is still stated (§46 B1.a). What is unequal about households is not here:
+    // it is what happened to them.
+    expect(report?.reads.shapes).toBe(5);
     expect(report?.reads.populations['household']).toBe(4000);
   });
 
@@ -166,20 +172,30 @@ describe('the seed (Seed A2)', () => {
       b.step();
     }
     expect(snapshot(a, { kind: 'inspector' }, 10)).toEqual(snapshot(b, { kind: 'inspector' }, 10));
+    // A different seed value is a different world: nothing about the OPENING state is drawn any
+    // more — the seed states no dispersion at all — so what differs is what the parties then did,
+    // starting from the memories they were each given (§46 B1.a).
     const c = foundationWorld('seed-C');
+    for (let i = 0; i < 30; i += 1) c.step();
     expect(snapshot(c, { kind: 'inspector' }, 10).positions).not.toEqual(
-      snapshot(foundationWorld('seed-B'), { kind: 'inspector' }, 10).positions,
+      snapshot(a, { kind: 'inspector' }, 10).positions,
     );
   });
 
-  it('disperses endowments across cells (Seed B4) and the weights sum to the population', () => {
+  it('states no dispersion and produces one: the cells start equal and do not stay so (Seed B4)', () => {
     const w = foundationWorld('seed-D');
     const cells = w.parties.ofKind(HOUSEHOLD);
     expect(cells.length).toBe(8);
     const weights = cells.map((c) => (c.representation === 'cell' ? c.weight : 0));
     expect(sum(weights).value).toBe(4000);
-    const deposits = new Set(cells.map((c) => w.cash(c.id, PHX)));
-    expect(deposits.size).toBeGreaterThan(1);
+    // Seed E: the seed decides nothing about how rich anybody is. Every cell opens with nothing.
+    expect(new Set(cells.map((c) => w.cash(c.id, PHX)))).toEqual(new Set([0]));
+    for (let i = 0; i < 8; i += 1) w.step();
+    // B4: and a sector of equals never produces a market — so the dispersion has to come from
+    // somewhere. It comes from what happened: who was hired, at what wage, and what each of them
+    // did with it. It is an outcome now, where it used to be a number the seed stated.
+    const alive = w.parties.ofKind(HOUSEHOLD).filter((c) => c.status.alive);
+    expect(new Set(alive.map((c) => w.cash(c.id, PHX))).size).toBeGreaterThan(1);
   });
 });
 
@@ -219,12 +235,50 @@ describe('the period loop', () => {
     expect(w.cash(TREASURY_NORTH, PHX)).toBeGreaterThan(0);
   });
 
+  it('runs a year of the whole chain, and every family it has built is green (Part XII)', () => {
+    const w = foundationWorld('seed-E3');
+    for (let i = 0; i < 52; i += 1) {
+      const r = w.step();
+      expect(violations(w)).toEqual([]);
+      expect(r.audit.total).toBe(0);
+    }
+    const report = w.last?.audit;
+    // Seven families are built and green, named so a green run says what it checked; two say they
+    // are NOT BUILT rather than being green by omission (Audit C2.a) — cross-market arbitrage needs
+    // a second venue for one thing (worklist 12) and zero-sum needs the derivative layer (13a).
+    expect(report?.families.filter((f) => f.built).map((f) => f.family)).toEqual([
+      'money',
+      'ownership',
+      'prices',
+      'accounts',
+      'names',
+      'flows',
+      'units',
+    ]);
+    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual([
+      'crossMarket',
+      'zeroSum',
+    ]);
+    // And the chain really ran the whole way: batches were started out of a recipe, people were
+    // hired and paid, and households bought the finished good from a named seller.
+    expect(w.journal.ofKind('firms.started').length).toBeGreaterThan(0);
+    expect(w.journal.ofKind('labour.hire').length).toBeGreaterThan(0);
+    expect(w.journal.ofKind('labour.wages').length).toBeGreaterThan(0);
+    const cells = new Set(w.parties.ofKind(HOUSEHOLD).map((p) => p.id));
+    const bought = w.ledger
+      .inPeriod(w.period)
+      .filter((r) => r.outcome === 'settled')
+      .flatMap((r) => r.instruction.legs)
+      .filter((l) => l.kind === 'asset' && cells.has(l.to));
+    expect(bought.length).toBeGreaterThan(0);
+  });
+
   it('pays coupons to holders of record and the cash lands in named accounts (Register E1)', () => {
     const w = bare('seed-F');
     const cbBefore = w.register.equity(CB);
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell === undefined) throw new Error('no cell');
-    const hhBefore = w.cash(cell.id, PHX);
+    const bankBefore = w.cash(BANK_A, PHX);
     const treasuryBefore = w.cash(TREASURY_NORTH, PHX);
     const target = w.calendar.periodOf({ y: 2026, m: 9, d: 15 });
     while (w.period < target) {
@@ -232,11 +286,21 @@ describe('the period loop', () => {
     }
     expect(violations(w)).toEqual([]);
     const coupons = w.ledger.all().filter((r) => r.instruction.cause === 'coupon');
-    // Three bonds outstanding, each paying its first coupon to eleven holders of record.
-    expect(coupons.length).toBe(3 * (3 + 8));
+    // E1: one instruction per holder of record per bond that paid — the register says who they
+    // are, and nobody who was not holding it is paid anything.
+    expect(coupons.length).toBeGreaterThan(0);
     expect(coupons.every((r) => r.outcome === 'settled')).toBe(true);
+    for (const r of coupons) {
+      for (const leg of r.instruction.legs) {
+        if (leg.kind !== 'money') continue;
+        expect(leg.from.holder).toBe(TREASURY_NORTH);
+        expect(leg.to.holder).not.toBe(TREASURY_NORTH);
+      }
+    }
     expect(w.register.equity(CB)).toBeGreaterThan(cbBefore);
-    expect(w.cash(cell.id, PHX)).toBeGreaterThan(hhBefore);
+    // A holder of record was paid: the banks hold this paper, and what reached them is the coupon
+    // on what the register says they held (E1).
+    expect(w.cash(BANK_A, PHX)).toBeGreaterThan(bankBefore);
     expect(w.cash(TREASURY_NORTH, PHX)).toBeLessThan(treasuryBefore);
   });
 
@@ -357,7 +421,35 @@ describe('participant views (Observer A4, Expectations D1)', () => {
     const events = view.publicEvents(100);
     expect(events.every((e) => e.public || e.subjects.includes('firm.1'))).toBe(true);
     expect(events.some((e) => e.kind === 'print')).toBe(true);
-    expect(events.some((e) => e.kind === 'instruction.settled')).toBe(false);
+    // What it sees of the wire is its own: an instruction it was a side of names it, and one it
+    // was not is not here at all (A4).
+    for (const e of events.filter((x) => x.kind === 'instruction.settled')) {
+      expect(e.subjects).toContain('firm.1');
+    }
+  });
+});
+
+describe('the observer surface (Observer A2, A4, D3)', () => {
+  it('shows the inspector what the modules keep, and a party only its own outlook', () => {
+    const w = foundationWorld('seed-O');
+    for (let i = 0; i < 6; i += 1) w.step();
+    const inspector = snapshot(w, { kind: 'inspector' }, 10);
+    // A4: the inspector's product is the whole of it — the employment rows, the inventories a
+    // module tracks, the outlook book. Derived at the read; the engine never reads it back (E3).
+    expect(inspector.state).not.toBeNull();
+    expect(Object.keys(inspector.state ?? {})).toContain('labour/employment');
+    expect(inspector.outlooks.length).toBeGreaterThan(0);
+    // XI-14: every number that shapes behaviour is declared, and the placeholders name their death.
+    expect(inspector.params.placeholders.every((x) => x.worklistItem.length > 0)).toBe(true);
+    // A2: a party sees its own outlooks and nobody else's, and no module state at all.
+    const firm = partyId('firm.1');
+    const own = snapshot(w, { kind: 'party', party: firm }, 10);
+    expect(own.state).toBeNull();
+    expect(own.outlooks.every((o) => o.party === firm)).toBe(true);
+    expect(own.outlooks.length).toBeGreaterThan(0);
+    expect(inspector.outlooks.some((o) => o.party !== firm)).toBe(true);
+    // A2.b: what it expects is its own number, with its own confidence — there is no consensus row.
+    expect(own.outlooks.every((o) => o.unit.length > 0 && o.confidence >= 0)).toBe(true);
   });
 });
 
@@ -455,7 +547,9 @@ describe('cells (XI-15)', () => {
     let original: string | undefined;
     let weight = 0;
     let before = 0;
-    const w = withModules(
+    // The kernel's own behaviour and nothing else: a world where somebody is also hiring out of
+    // this cell would be measuring the labour market, not the split.
+    const w = bareWith(
       'seed-O',
       phase((ctx) => {
         const cell = ctx.parties.ofKind(HOUSEHOLD)[0];

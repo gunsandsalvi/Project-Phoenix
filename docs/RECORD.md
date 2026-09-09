@@ -216,3 +216,156 @@ to keep every module a shared, stateless object.
 **Forecast, with its killer.** The two-step demand schedule should make a heavier auction clear
 lower (Treasury E4). Nothing here measures it; the measurement is Part XII's, and if issuance size
 turns out not to move the clearing price, the schedule is not reading its own size.
+
+## 4 — Firms, goods, labour, households, outlooks
+
+**What.** The real economy, as five modules over four new kernel doors, in seven commits.
+
+The **kernel doors** first (4.1). A module keeps its own register in a **state slot**
+(`ctx.state(name, initial)`), owned by the module that created it and read by the observer as data.
+A party's expectation is asked through **one door with two halves** — what it expects of a variable,
+and which variables it has an outlook of at all — answered by exactly one module. Physical things
+come into the world and leave it through **`create` and `destroy` legs**, one side each, because
+nobody is on the other end of a harvest; a `create` is admitted only under production or the seed,
+and only for a kind that says its units are physical. And an instrument kind may declare a
+**`revalue`** so a thing carried at cost can be written down, never up unless it is marked both ways.
+
+**Expectations** (4.2). Every deciding party carries its own outlook of every variable it has
+observed, corrected towards what it observed at its own speed — a memory drawn once at entry, the
+one preference here. Confidence is a read of how wide its own recent surprises have been, and a
+surprise is a recorded event. There is no sector outlook and no consensus anywhere: the disagreement
+between parties is what gives a market two sides, so it is the thing being built, not noise.
+
+**Goods** (4.3). One instrument kind, a registry of sub-units, a market per (region, sub-unit), and
+a **recipe** in physical quantities that lives on the good's own terms — so a firm reads what a
+thing takes to make rather than being told. Inventory is lots at what it cost; spoilage destroys
+units at their own basis; storage is a fee somebody is paid, and the two are different things. The
+units family checks the identity every period: what the stock did against what said why.
+
+**Labour** (4.4). An **employment register** of rows — employer, worker cell, occupation, contract
+wage, start, headcount — and one venue per (region, occupation) in hours. Every posting is a bid;
+the book fills the highest first and the level is where it cleared, so in a slack market the wage
+falls to the seekers' own reservation and no further. A hire moves whole people, splitting the cell
+first, and the wage is the contract's: it moves by renegotiation, and a separation costs severance.
+Unemployment is a read of the cells with no row; there is no rate anywhere.
+
+**Firms** (4.5). One decision function and no branch on what the firm makes. From its own view it
+decides the batch to start, the hours it wants and the wage it will offer, what it will ask for its
+output and what each input is worth to it. Production draws the recipe, capitalises the period's
+wage bill into work in progress carried at cost, and takes off what the lead time says is due at the
+yield — the whole batch's cost landing on the survivors. A period that starts nothing capitalises
+nothing. It employs nobody directly and pays no wage: the labour module owns the relationship and is
+the one writer of it.
+
+**Households** (4.6). A cell decides for one household and carries how many of them it is. It spends
+what it expects to earn, corrected towards the cushion it wants — so many periods of that
+expectation, widened by how wrong it has recently been — closing the gap to what it owns at its own
+patience, and never more than it holds, because nobody lends to it. What it takes to market is a
+demand curve over the range its own surprises make plausible, not a point. What is left after the
+cushion goes into sovereign paper when the paper clears what that cell requires of it, and what does
+not stays in its account, which is what saving into a deposit is.
+
+**The seed and the state** (4.7). The seed states technology and a stock: recipes, lead times,
+yields, one lead time of work in progress on every line, and a level for each market that has never
+traded. It states no wealth at all — every household cell opens with nothing — and no employment,
+because a seeded row needs a seeded wage and a wage is a price. The **treasury** became an employer
+and a buyer: it posts its own openings in the same venue as everybody else at what an hour has been
+costing it, its wage bill is a read of its own rows, and it buys real things with a budget the goods
+market rations it on like any other buyer. Its receipts now read three real bases off what named
+payers actually did — interest received, what households were paid, what they paid for real things.
+
+**Why.** Item 5 is "a loss is an event", and a loss needs somebody with something to lose. Before
+this item nothing produced, nobody worked and no household earned; the only cash flows in the world
+were the sovereign's. This is the item that gives the model a real cost base, a real income and a
+real reason for a price to move.
+
+**Found.**
+
+- Settlement refused a **harvest**: a `create` leg had to sit beside the `destroy` legs of what it
+  was made from, so a good made out of labour alone was unbuildable. Creation is admitted under
+  production and the seed, and the recipe identity — not the leg rule — is what checks it.
+- The central bank's open-market operation was buying **grain**. It bought anything with a market
+  and a price; it now buys only paper a treasury issued, and a test says so.
+- A firm paid **its own ceiling wage**. The labour venue cleared at the marginal bid, so the buyer's
+  own number set the price even with the book slack. Sellers compete there now, and a slack market
+  falls to the seekers' own reservation and no further (Labour D1).
+- A firm planned on the hours that were **productive** last period, which are zero the period after
+  a hire because finding somebody takes time — so a firm that hired could never plan on having
+  hired. It plans on the hours under contract.
+- Settlement's pre-check and the register's own draw each derived the dust of "can this party
+  deliver" **for themselves**, disagreed at the fifteenth decimal, and turned a trade that had
+  already been admitted into a throw. `Register.deliverable` is now the one reader of it.
+- The **accounts** and **flows** families compared a fresh read against a balance that had been
+  moved once per event since the party was born, using the dust of two additions. Over a year of a
+  busy account that is a violation a week made of floating point. A balance now carries the walk that
+  produced it (`Running`: value, moves, and Σ ε|balance after each move|), and the check adds it.
+  This is the same defect the `issued` total had at item 3, in the two places it was left.
+- The four numbers the world **opens at** — three goods levels and the sovereign opening yield —
+  were declared placeholders with a scheduled death. No worklist item can keep it: a market that has
+  never traded has no price, and a world that opens with stock and with paper outstanding opens with
+  a level for them (Seed C3, C4). They are SHAPES, and what retires them is a measurement, not a
+  mechanism: run the same world from different opening levels and see whether its path depends on
+  where its markets opened. The placeholder count fell 6 → 2 and the shape count rose 1 → 5, which
+  is the honest pair of numbers rather than the flattering one.
+- **Households A2.g** holds exactly as written and is worth stating precisely, because it is easy to
+  ask it for more than it says. A mean-preserving spread of income across cells raises the count of
+  crossings — 25 cells below the cushion they want become 27 — while the weighted mean does not
+  move. It was tempting to expect the sector's consumption to move too, and it does not: consumption
+  is still linear in income at every cell, so a crossing here is a crossing with no consequence
+  behind it yet. The first one that has a consequence is a default (worklist 5), and until then the
+  crossings are the whole of what the representation buys.
+
+**Measured, and what it means.** The **resolution** check (XI-15) runs the same world at one, two
+and four cells per key for half a year. The population is exactly the same number of people at every
+grain, the audit is at zero every period at every grain, and the stock of goods comes out the same
+number to the dust of reading it. What moves is what whole people do: employment differs by at most
+one person a venue, and the money follows those people — bounded by what a person earns over the
+run, which is a quantity of money and not a percentage of anything. Turning the memory dispersion
+off does not remove the move, so it is not only the finer draw of outlooks: the marginal match in a
+venue lands on a different person when the seekers are grouped differently, and that is XI-15's
+granularity, not error. **The size of that move is the honest error bar on every number the
+represented sectors produce**, and judging whether it is material is Part XII's job (worklist 16).
+
+**Deleted.** Three seed shapes: `seed.households.depositPerMember`, `seed.households.bondPerMember`
+and `seed.households.dispersion`. What was unequal about households used to be drawn; it is now what
+happened to them — who was hired, at what wage, and what each of them did with it. A sector of
+equals never produces a market, and this one stops being equal in the first eight periods without
+anybody stating that it should.
+
+**Placeholders.** Two stand, and both are item 3's: `bank.liquidityBuffer.perDeposit` (Money Market
+A2.a, worklist 11) and `sovereign.holders.requiredYield` (a holder's cost of funds, expected loss and
+capital, worklist 10). This item added **none** — the four the plan expected (`firms.terms.periods`,
+`seed.wage.<occupation>`, `seed.expectedIncome`, `labour.capacity.hoursPerFirm`) were each avoided by
+building the thing instead of standing in for it: trade credit was left to 13e rather than faked, the
+wage is cleared, the first outlook is the first observation, and there is no plant to have capacity.
+
+**Not met, and named.** Goods D (freight, 13c), Goods E2.b (a dealer marking its book, 9), Goods G
+(indices, 12); Labour A3.b, C4 and E4 (mobility, firm death, debt service — 13d and 7); Households
+E1–E4 and F (borrowing and the life cycle, 6 and 13d); Firm A4 and E5 (owners of record and a
+dividend, 9), C2 and C4 (payables and receivables, 13e), E3 and E4 (investment against a hurdle, 10);
+Treasury B3 (outlays that rise with unemployment need the loss to be an event, 5, and a policy that
+varies them, 14); Seed B4 (the household cells open identical and their dispersion is produced
+rather than stated, which meets the reason and not the letter).
+
+**Departures from the plan file, and why.** Six.
+
+1. No `firms.invoice` and no `firms.pay`. A goods trade is delivery against payment in one
+   instruction, so an invoice book of immediate terms would be a second representation of the trade;
+   receivables arrive with trade credit at 13e, which is where the placeholder would have died.
+2. Wages are paid by the **labour** module, which owns the employment register and is its one
+   writer. The firm decides the employment it wants; it does not pay anybody.
+3. No `households.pay`: a purchase is one instruction, and the tax on it belongs to the receipts
+   phase that already exists and already has one writer.
+4. No risk aversion is declared. Nothing in this world prices risk yet (worklist 9), and a number
+   nobody could derive is what Law 2 forbids.
+5. Employment is not seeded. The plan wanted rows at a seeded wage with `seed.wage.<occupation>` as
+   a placeholder; a seeded wage is a price nobody cleared, and the seeded stock and work in progress
+   carry the lines until the venue strikes the first rows in period two.
+6. The resolution test does not claim the aggregates are **identical to dust**, because they are
+   not and cannot be — see "Measured" above. It claims what XI-15 actually guarantees, and states
+   the move as the error bar the spec says it is.
+
+**Forecast, with its killer.** A wage rise should be more demand and more cost at once, and which
+dominates should be a result (Labour E2.a). Nothing here measures it. The measurement is Part XII's:
+raise the wage in one venue and follow both channels. If output moves only one way, one of the two
+channels is not connected — most likely consumption reading something other than what was paid.

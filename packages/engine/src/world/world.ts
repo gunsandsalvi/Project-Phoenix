@@ -64,15 +64,10 @@ import type {
   OutlookVariable,
   ParticipantView,
 } from './context.js';
-import type { ParticipantDecl, PhaseDecl } from './module.js';
+import type { OutlookProvider, ParticipantDecl, PhaseDecl } from './module.js';
 import { revalue } from './revalue.js';
 
-/** The signature the one outlook-providing module answers with (Expectations A2). */
-export type OutlookFn = (
-  ctx: MechanismContext,
-  party: PartyId,
-  variable: OutlookVariable,
-) => Option<Outlook>;
+
 
 /** Maps are data too; the surface shows them as the entries they are (Observer D3). */
 function replacer(_key: string, value: unknown): unknown {
@@ -132,7 +127,7 @@ export class World {
   /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
   private readonly slots = new Map<string, object>();
   /** Expectations A2: the one module that answers what a party expects. */
-  private outlookProvider: { owner: string; fn: OutlookFn } | undefined;
+  private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
   private readonly phaseList: Phase[];
   private readonly audit: Audit;
   private readonly memory: AuditMemory = emptyMemory();
@@ -325,7 +320,7 @@ export class World {
   }
 
   /** Expectations A2: exactly one module answers what a party expects (Law 4). */
-  provideOutlooks(owner: string, fn: OutlookFn): void {
+  provideOutlooks(owner: string, provider: OutlookProvider): void {
     forbid(!this.sealed, 'Law 10', 'the outlook provider is declared at assembly');
     if (this.outlookProvider !== undefined) {
       throw new InvalidRegistry(
@@ -333,13 +328,21 @@ export class World {
         `${owner} would be a second writer of what a party expects, after ${this.outlookProvider.owner}`,
       );
     }
-    this.outlookProvider = { owner, fn };
+    this.outlookProvider = { owner, provider };
   }
 
-  private outlookOf(party: PartyId, variable: OutlookVariable): Option<Outlook> {
-    const provider = this.outlookProvider;
-    if (provider === undefined) return none();
-    return provider.fn(this.mechanismContext(provider.owner), party, variable);
+  /** Expectations A1, A2: what a named party expects of a variable, asked of the one provider. */
+  outlookOf(party: PartyId, variable: OutlookVariable): Option<Outlook> {
+    const p = this.outlookProvider;
+    if (p === undefined) return none();
+    return p.provider.of(this.mechanismContext(p.owner), party, variable);
+  }
+
+  /** A2: what this party has an outlook of at all — nothing, for one that has observed nothing. */
+  outlookVariables(party: PartyId): readonly OutlookVariable[] {
+    const p = this.outlookProvider;
+    if (p === undefined) return [];
+    return p.provider.variables(this.mechanismContext(p.owner), party);
   }
 
   /** A module's participants: evaluated per party of the kind with that party's own view (Clearing B2). */

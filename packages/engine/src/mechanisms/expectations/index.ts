@@ -23,7 +23,7 @@ import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
 import { isAssetLeg, isMoneyLeg, type CellSide } from '../../ledger/instruction.js';
-import type { MechanismContext, Outlook } from '../../world/context.js';
+import type { MechanismContext, Outlook, OutlookVariable } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
 export const EXPECTATION_PARAMS = {
@@ -249,16 +249,20 @@ export const expectations: SystemModule = {
   ],
   participants: [],
   families: [],
-  outlooks: (ctx, party, variable): Option<Outlook> => {
-    const h = book(ctx)[party]?.[variable];
-    if (h === undefined) return none();
-    return some<Outlook>({
-      expected: h.expected,
-      unit: h.unit,
-      per: PER_PERIOD,
-      confidence: width(h.surprises),
-      formed: period(h.formed),
-    });
+  outlooks: {
+    of: (ctx, party, variable): Option<Outlook> => {
+      const h = book(ctx)[party]?.[variable];
+      if (h === undefined) return none();
+      return some<Outlook>({
+        expected: h.expected,
+        unit: h.unit,
+        per: PER_PERIOD,
+        confidence: width(h.surprises),
+        formed: period(h.formed),
+      });
+    },
+    // A2: what it has observed, and nothing more. A party with no history answers with nothing.
+    variables: (ctx, party): readonly OutlookVariable[] => Object.keys(book(ctx)[party] ?? {}),
   },
 };
 

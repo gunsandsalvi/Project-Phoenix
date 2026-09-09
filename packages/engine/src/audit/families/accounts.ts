@@ -6,6 +6,11 @@
  *
  * The two sides are independent records: the register and the price store on one side, the equity
  * account moved by named events on the other. Equality is the check.
+ *
+ * The two sides are not reached by the same arithmetic, and Law 7 says the tolerance is what the
+ * arithmetic did: one side is a fresh sum over today's holdings, the other a balance that has been
+ * moved once per event since the party was born. So the account brings its own walk (`equityWalk`)
+ * and the read brings the sum's, and the dust is the two together — never a band anyone chose.
  */
 import { issuedBy } from '../../register/instruments.js';
 import { combineDust, sum, withinDust } from '../../core/num.js';
@@ -58,9 +63,10 @@ export function accountsFamily(): Family {
           });
           continue;
         }
-        const equity = sum([view.register.equity(p.id)]);
+        const equity = view.register.equityWalk(p.id);
         const read = sum([assets.value, -liabilities.value]);
-        if (!withinDust(read.value, equity.value, combineDust(assets, liabilities, equity, read))) {
+        const dust = combineDust(assets, liabilities, read) + equity.dust;
+        if (!withinDust(read.value, equity.value, dust)) {
           out.push({
             family: 'accounts',
             spec: 'Audit B5',

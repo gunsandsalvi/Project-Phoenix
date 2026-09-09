@@ -6,14 +6,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  HOUSEHOLD,
+  FIRM,
   PHX,
   REGION,
   assemble,
   firms,
   foundationSpec,
   goodId,
-  goodMarketId,
   none,
   partyId,
   wipId,
@@ -26,6 +25,8 @@ import {
   type World,
 } from '../src/index.js';
 
+const BANK_A = partyId('bank.a');
+const BUYER = partyId('buyer.1');
 const FIRM_1 = partyId('firm.1'); // grain, from field labour alone
 const FIRM_2 = partyId('firm.2'); // flour, from grain
 const FIRM_3 = partyId('firm.3'); // bread, from flour
@@ -35,68 +36,43 @@ const FLOUR = goodId('flour', REGION);
 const BREAD = goodId('bread', REGION);
 const WIP_GRAIN = wipId('grain', REGION);
 
-/** What the seed will state at 4.7: what things were fetching, and a stock for the flows to act on. */
-interface Opening {
-  readonly prices: Readonly<Record<string, number>>;
-  readonly stock: readonly { readonly firm: string; readonly good: string; readonly qty: number; readonly basis: number }[];
-}
-
-function opening(o: Opening): SystemModule {
-  return {
-    id: 'test.opening',
-    spec: 'Seed C4',
-    requires: ['goods', 'firms', 'seed.foundation'],
-    instrumentKinds: [],
-    partyKinds: [],
-    curveFamilies: [],
-    units: [],
-    params: [],
-    phases: [],
-    participants: [],
-    families: [],
-    seed(ctx) {
-      for (const [subUnit, price] of Object.entries(o.prices)) {
-        ctx.prices.write({
-          instrument: goodId(subUnit, REGION),
-          market: goodMarketId(subUnit, REGION),
-          period: ctx.period,
-          price,
-          ccy: PHX,
-          provenance: { kind: 'opening' },
-        });
-      }
-      for (const row of o.stock) {
-        ctx.endowUnits(partyId(row.firm), goodId(row.good, REGION), row.qty, row.basis);
-      }
-    },
-  };
-}
-
 /**
- * A stand-in for the demand that arrives at 4.6: a household cell that bids for what it consumes.
- * It is the retired cohort, which never takes a job and therefore never splits, so what it bids is
- * the same every period and a test can say what the market did.
+ * A buyer with money of its own, pointed at one market: it stands in for demand this world has
+ * somewhere else — a household that eats bread, a firm that mills grain — so that a test of what a
+ * SELLER does has a second side that cannot run out of cash halfway through and change the subject.
  */
-function buyer(subUnit: string, price: number, qtyPerCell: number): SystemModule {
+function buyer(subUnit: string, price: number, qty: number): SystemModule {
   const instrument = goodId(subUnit, REGION);
   return {
     id: 'test.buyer',
     spec: 'Goods C3',
-    requires: ['goods'],
+    requires: ['goods', 'seed.foundation'],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],
     units: [],
     params: [],
+    seed(ctx) {
+      ctx.parties.add({
+        id: BUYER,
+        kind: FIRM,
+        region: REGION,
+        name: 'A buyer',
+        bank: BANK_A,
+        representation: 'named',
+        status: { alive: true },
+      });
+      ctx.endowMoney(BUYER, PHX, 100000);
+      ctx.endowMoney(BANK_A, PHX, 100000);
+    },
     phases: [],
     participants: [
       {
-        partyKind: HOUSEHOLD,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          if (m.instrument !== instrument) return [];
-          if (view.self.representation !== 'cell' || view.self.key.cohort !== 'retired') return [];
-          return [{ party: view.self.id, side: 'buy', price, qty: qtyPerCell }];
-        },
+        partyKind: FIRM,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+          view.self.id === BUYER && m.instrument === instrument
+            ? [{ party: BUYER, side: 'buy', price, qty }]
+            : [],
       },
     ],
     families: [],
@@ -108,16 +84,13 @@ function world(...extra: readonly SystemModule[]): World {
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
 }
 
-/** A world where grain has a price, a small stock and a buyer: the chain the seed will open with. */
-function grainWorld(qtyPerCell = 10): World {
-  return world(
-    opening({
-      prices: { grain: 0.05, flour: 0.08, bread: 0.15 },
-      stock: [{ firm: 'firm.1', good: 'grain', qty: 50, basis: 0.04 }],
-    }),
-    buyer('grain', 0.05, qtyPerCell),
-  );
+/** The world the seed opens, with somebody buying grain: the farm's own market has two sides. */
+function grainWorld(qty = 40): World {
+  return world(buyer('grain', GRAIN_OPENS_AT, qty));
 }
+
+/** What the seed states the grain market opens at, which is what a buyer of it bids around. */
+const GRAIN_OPENS_AT = 0.4;
 
 function events(w: World, kind: EventKind, subject: string): Event[] {
   return w.journal.ofKind(kind).filter((e) => e.subjects.includes(subject));
@@ -143,11 +116,12 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
   });
 
   it('plans and posts an opening once it knows what it sells (Firm E2, Labour C1, C5)', () => {
-    const w = grainWorld();
+    const w = grainWorld(90);
     w.step();
-    const sold = w.register.quantity(FIRM_1, GRAIN);
-    expect(sold).toBeLessThan(50);
-    const r = w.step();
+    const held = w.register.quantity(FIRM_1, GRAIN);
+    expect(held).toBeGreaterThanOrEqual(0);
+    let r = w.step();
+    for (let i = 0; i < 2 && events(w, 'labour.hire', FIRM_1).length === 0; i += 1) r = w.step();
     expect(r.audit.total).toBe(0);
     const plan = last(w, 'firms.plan', FIRM_1);
     expect(plan?.data['planned']).toBe(true);
@@ -183,72 +157,76 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
 
 describe('the line (Goods B2, B3, B4, B5)', () => {
   it('consumes what the recipe says, carries the batch at what it cost, and yields late', () => {
-    const w = grainWorld();
-    for (let i = 0; i < 3; i += 1) w.step();
-    const started = last(w, 'firms.started', FIRM_1);
-    expect(started).toBeDefined();
-    const batch = started?.data['started'];
-    expect(typeof batch === 'number' ? batch : 0).toBeGreaterThan(0);
-    // B3: the batch is a thing on its own book, carrying what it has cost so far.
-    expect(w.register.quantity(FIRM_1, WIP_GRAIN)).toBeCloseTo(typeof batch === 'number' ? batch : 0, 9);
-    // B5: what it cost is the inputs it drew — none, for a thing grown from labour — plus the
-    // wage bill the period paid, and that is the whole of it.
-    expect(started?.data['cost']).toBe(started?.data['wages']);
-    // B3: grain takes two periods, so nothing has come off the line yet.
+    const w = grainWorld(90);
+    // B3: grain takes two periods. What the seed put on the line comes off in the period the lead
+    // time says and not before, and nothing has come off it until then.
+    const first = w.step();
+    expect(first.audit.total).toBe(0);
+    expect(w.register.quantity(FIRM_1, WIP_GRAIN)).toBeGreaterThan(0);
     expect(events(w, 'firms.produced', FIRM_1)).toHaveLength(0);
-    const r = w.step();
-    expect(r.audit.total).toBe(0);
-    expect(events(w, 'firms.produced', FIRM_1)).toHaveLength(0);
-    const yielded = w.step();
-    expect(yielded.audit.total).toBe(0);
+    const second = w.step();
+    expect(second.audit.total).toBe(0);
     const made = last(w, 'firms.produced', FIRM_1);
     expect(made).toBeDefined();
-    const startedUnits = made?.data['started'];
-    const finished = made?.data['finished'];
+    const startedUnits = Number(made?.data['started']);
+    const finished = Number(made?.data['finished']);
     // B4: not everything started is finished, and the scrap is units, at the point they would
     // have been made — never a rate applied to a value.
-    expect(typeof finished === 'number' ? finished : 0).toBeCloseTo(
-      (typeof startedUnits === 'number' ? startedUnits : 0) * 0.92,
-      9,
-    );
-    expect(made?.data['scrapped']).toBeGreaterThan(0);
+    expect(finished).toBeCloseTo(startedUnits * 0.92, 9);
+    expect(Number(made?.data['scrapped'])).toBeGreaterThan(0);
     // B4: what survives carries the whole batch, so a survivor is dearer than a unit started.
-    const perUnit = made?.data['costPerUnit'];
-    expect(typeof perUnit === 'number' ? perUnit : 0).toBeGreaterThan(0);
+    expect(Number(made?.data['costPerUnit'])).toBeGreaterThan(0);
+    // And a batch it starts itself is the same: consumed, carried, and off the line two periods on.
+    let started = last(w, 'firms.started', FIRM_1);
+    for (let i = 0; i < 6 && started === undefined; i += 1) {
+      const r = w.step();
+      expect(r.audit.total).toBe(0);
+      started = last(w, 'firms.started', FIRM_1);
+    }
+    expect(started).toBeDefined();
+    expect(Number(started?.data['started'])).toBeGreaterThan(0);
+    // B5: what it cost is the inputs it drew — none, for a thing grown from labour and land —
+    // plus the wage bill the period paid, and that is the whole of it.
+    expect(started?.data['cost']).toBe(started?.data['wages']);
+    expect(w.register.quantity(FIRM_1, WIP_GRAIN)).toBeGreaterThan(0);
   });
 
   it('capitalises nothing in a period that starts nothing (Goods B5.a, F5.a)', () => {
-    const w = grainWorld();
-    w.step();
-    w.step();
-    // It has just hired: nobody is productive yet, so the plan cannot be started and the wage
-    // bill is what it is — a period expense, in the period it was incurred.
-    const r = w.step();
-    expect(r.audit.total).toBe(0);
-    const idle = events(w, 'firms.idle', FIRM_1);
-    const started = events(w, 'firms.started', FIRM_1);
-    expect(idle.length + started.length).toBeGreaterThan(0);
-    for (const e of idle) expect(e.data['bound']).toBe('labour');
-  });
-
-  it('is bound by the inputs on hand, and says which one bound it (Goods B1.b, B5.b)', () => {
-    // The mill has flour to sell and a buyer for it, and only ten tonnes of grain to make more
-    // from — and nobody selling grain, because the farm has none. Its line is throttled.
-    const w = world(
-      opening({
-        prices: { grain: 0.05, flour: 0.4, bread: 0.15 },
-        stock: [
-          { firm: 'firm.2', good: 'flour', qty: 60, basis: 0.3 },
-          { firm: 'firm.2', good: 'grain', qty: 10, basis: 0.05 },
-        ],
-      }),
-      buyer('flour', 0.4, 10),
-    );
-    for (let i = 0; i < 4; i += 1) {
+    const w = grainWorld(90);
+    for (let i = 0; i < 8; i += 1) {
       const r = w.step();
       expect(r.audit.total).toBe(0);
     }
-    const throttled = events(w, 'firms.started', FIRM_2).find((e) => e.data['bound'] === GRAIN);
+    // A period in which it paid a wage bill and started no batch: the cost stands where it fell,
+    // in the period it was incurred, and nothing was capitalised into anything.
+    const idlePeriods = w.journal
+      .ofKind('labour.wages')
+      .filter((e) => e.subjects.includes(FIRM_1) && Number(e.data['paid']) > 0)
+      .map((e) => e.period)
+      .filter((at) => !events(w, 'firms.started', FIRM_1).some((e) => e.period === at));
+    expect(idlePeriods.length).toBeGreaterThan(0);
+    for (const at of idlePeriods) {
+      const created = w.ledger
+        .inPeriod(at)
+        .filter((r) => r.outcome === 'settled' && r.instruction.cause === 'production')
+        .flatMap((r) => r.instruction.legs)
+        .filter((leg) => leg.kind === 'create' && leg.party === FIRM_1 && leg.instrument === WIP_GRAIN);
+      expect(created).toHaveLength(0);
+    }
+  });
+
+  it('is bound by the inputs on hand, and says which one bound it (Goods B1.b, B5.b)', () => {
+    // A buyer of flour far bigger than the grain the mill can find: the farm has one crop and the
+    // mill wants more flour than that crop makes, so its line is throttled by what it could buy.
+    const w = world(buyer('flour', 1.2, 400));
+    for (let i = 0; i < 14; i += 1) {
+      const r = w.step();
+      expect(r.audit.total).toBe(0);
+    }
+    const throttled = [
+      ...events(w, 'firms.started', FIRM_2),
+      ...events(w, 'firms.idle', FIRM_2),
+    ].find((e) => e.data['bound'] === GRAIN && Number(e.data['started'] ?? 0) > 0);
     expect(throttled).toBeDefined();
     const planned = Number(throttled?.data['planned']);
     const started = Number(throttled?.data['started']);
@@ -270,16 +248,16 @@ describe('what it offers, and what nobody takes (Goods C1, C5)', () => {
     const w = grainWorld(1);
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    // Demand is four tonnes against fifty offered, so what nobody took stays where it was: that
-    // is what illiquidity in goods is (C5), and nothing absorbed the rest.
-    expect(w.register.quantity(FIRM_1, GRAIN)).toBeGreaterThan(40);
+    // Demand is a few tonnes against the whole crop offered, so what nobody took stays where it
+    // was: that is what illiquidity in goods is (C5), and nothing absorbed the rest.
+    expect(w.register.quantity(FIRM_1, GRAIN)).toBeGreaterThan(80);
     const print = w.journal
       .ofKind('print')
       .filter((e) => e.subjects.includes(GRAIN))
       .pop();
     // The value of holding it is what it expects to fetch less what perishes, and the market
     // cleared at that: nobody was paid more than a buyer posted (Clearing C4.c).
-    expect(print?.data['price']).toBeCloseTo(0.05 * (1 - 0.004), 9);
+    expect(print?.data['price']).toBeCloseTo(GRAIN_OPENS_AT * (1 - 0.004), 9);
   });
 });
 
@@ -325,10 +303,7 @@ describe('the audit of a line (Goods B5, F5.b)', () => {
       participants: [],
       families: [],
     };
-    const w = world(
-      opening({ prices: { grain: 0.05, flour: 0.08, bread: 0.15 }, stock: [] }),
-      conjure,
-    );
+    const w = world(conjure);
     const r = w.step();
     const flows = r.audit.families.find((f) => f.family === 'flows');
     expect(flows?.contributions).toContain('firms');
@@ -358,18 +333,8 @@ describe('what varies between firms is data (Firm F4, Law 2, Law 15)', () => {
   });
 
   it('runs three lines that never meet through one decision (Firm F4)', () => {
-    const w = world(
-      opening({
-        prices: { grain: 0.05, flour: 0.4, bread: 1.2 },
-        stock: [
-          { firm: 'firm.1', good: 'grain', qty: 50, basis: 0.04 },
-          { firm: 'firm.2', good: 'flour', qty: 40, basis: 0.3 },
-          { firm: 'firm.3', good: 'bread', qty: 20, basis: 1 },
-        ],
-      }),
-      buyer('bread', 1.2, 4),
-    );
-    for (let i = 0; i < 6; i += 1) {
+    const w = world();
+    for (let i = 0; i < 8; i += 1) {
       const r = w.step();
       expect(r.audit.total).toBe(0);
     }

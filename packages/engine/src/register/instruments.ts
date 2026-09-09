@@ -16,7 +16,7 @@ import type {
   PartyId,
   UnitId,
 } from '../core/ids.js';
-import { dustOf, finite } from '../core/num.js';
+import { finite, moveDust } from '../core/num.js';
 import type { Option } from '../core/option.js';
 import type { Registry } from '../registry/registry.js';
 
@@ -142,7 +142,7 @@ export class Instruments {
         ...i,
         issued: finite(i.issued + delta, `issued of ${id}`),
         issuedDust: finite(
-          i.issuedDust + dustOf(1, Math.abs(i.issued) + Math.abs(delta)),
+          i.issuedDust + moveDust(i.issued, delta),
           `issued dust of ${id}`,
         ),
       }),

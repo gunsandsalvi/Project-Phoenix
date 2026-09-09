@@ -35,6 +35,7 @@ export interface AuditView {
     | 'heldTotal'
     | 'allHoldings'
     | 'equity'
+    | 'equityWalk'
     | 'hasEquityAccount'
   >;
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history' | 'instruments'>;

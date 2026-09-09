@@ -6,6 +6,7 @@
  * @spec Sovereign D3 Sovereign D3.b Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
  */
 import { formatCivil } from '../calendar/civil.js';
+import { periodicityLabel } from '../core/rate.js';
 import type { PartyId } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
@@ -64,6 +65,22 @@ export interface PositionView {
   readonly ccy: string;
 }
 
+/**
+ * Expectations A1, A2, Observer A2: what a party expects, shown beside the party that expects it.
+ * There is no sector outlook and no consensus here, because there is none in the model (A2.b), and
+ * a viewer that is a party sees its own and nobody else's (Observer A2: no private state).
+ */
+export interface OutlookView {
+  readonly party: string;
+  readonly variable: string;
+  readonly expected: number;
+  readonly unit: string;
+  readonly per: string;
+  /** B3: how wide this party's own recent surprises have been — a read, never a stated number. */
+  readonly confidence: number;
+  readonly formed: number;
+}
+
 export interface PartyView {
   readonly id: string;
   readonly name: string;
@@ -102,6 +119,14 @@ export interface Snapshot {
   readonly journal: readonly Event[];
   readonly ledgerLength: number;
   readonly phases: readonly { name: string; cycle: number; spec: string }[];
+  /** A2: every party's outlooks for an inspector; only its own for a party (A2: private state). */
+  readonly outlooks: readonly OutlookView[];
+  /**
+   * Observer A4: what the modules keep — employment rows, inventories, the outlook book. It is the
+   * INSPECTOR's product and is null for a party, because a module's state is other parties' private
+   * state as often as not, and a surface that showed it would be showing it to them.
+   */
+  readonly state: Readonly<Record<string, unknown>> | null;
 }
 
 /** `journalTail`: how many recent events the viewer asked for; the surface adds nothing of its own. */
@@ -175,6 +200,23 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
       ccy: i.ccy,
     });
   }
+  const outlooks: OutlookView[] = [];
+  for (const p of w.parties.all()) {
+    if (!visible(p.id)) continue;
+    for (const variable of w.outlookVariables(p.id)) {
+      const o = w.outlookOf(p.id, variable);
+      if (!o.some) continue;
+      outlooks.push({
+        party: p.id,
+        variable,
+        expected: o.value.expected,
+        unit: o.value.unit,
+        per: periodicityLabel(o.value.per),
+        confidence: o.value.confidence,
+        formed: o.value.formed,
+      });
+    }
+  }
   return {
     seed: w.seed,
     period: w.period,
@@ -214,5 +256,7 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
         : w.journal.visibleTo(scope.party, journalTail),
     ledgerLength: w.ledger.length,
     phases: w.phases.map((p) => ({ name: p.name, cycle: p.cycle, spec: p.spec })),
+    outlooks,
+    state: scope.kind === 'inspector' ? w.stateSlots() : null,
   };
 }

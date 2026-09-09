@@ -71,11 +71,16 @@ function world(post: (ctx: MechanismContext) => void = () => undefined): World {
   return assemble({ ...spec, modules: [...modules, employer(post)] });
 }
 
-function rows(w: World): EmploymentRow[] {
+function allRows(w: World): EmploymentRow[] {
   const slot = w.stateSlots()['labour/employment'] as
     | { rows: Record<string, EmploymentRow> }
     | undefined;
   return slot === undefined ? [] : Object.values(slot.rows);
+}
+
+/** The rows of the employer a test is about: the state employs people in this world too. */
+function rows(w: World, employer: string = FIRM_1): EmploymentRow[] {
+  return allRows(w).filter((r) => r.employer === employer);
 }
 
 function hours(people: number): number {
@@ -91,7 +96,7 @@ describe('the venue (Labour A3, D1)', () => {
     expect(v.clearedBy).toBe('labour');
     expect(v.key['occupation']).toBe('bakery');
     // A3: a job in one occupation is not a job in another, so they are different venues entirely.
-    expect(w.venues.filter((x) => x.clearedBy === 'labour')).toHaveLength(3);
+    expect(w.venues.filter((x) => x.clearedBy === 'labour')).toHaveLength(4);
     expect(w.venue(MILL).id).not.toBe(v.id);
   });
 });
@@ -127,7 +132,7 @@ describe('a hire (Labour A4, XI-10)', () => {
     expect(worker?.representation === 'cell' ? worker.weight : 0).toBe(3);
     // C2: paid from the start, productive after the lag — finding somebody is not having them.
     expect(row !== undefined && row.productiveFrom > row.start).toBe(true);
-    const ev = w.journal.ofKind('labour.hire');
+    const ev = w.journal.ofKind('labour.hire').filter((e) => e.subjects.includes(FIRM_1));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.public).toBe(true);
   });
@@ -173,9 +178,12 @@ describe('the clearing (Labour D1)', () => {
     });
     w.step();
     w.step();
-    const hired = rows(w);
+    const hired = allRows(w).filter((r) => r.occupation === 'bakery');
     expect(hired.length).toBeGreaterThan(0);
-    expect(hired.every((r) => r.employer === FIRM_1)).toBe(true);
+    // D1.a: the one that offered more filled, and the one that offered less filled nothing —
+    // which is what makes the wage an employer offers matter at all.
+    expect(hired.some((r) => r.employer === FIRM_1)).toBe(true);
+    expect(hired.some((r) => r.employer === FIRM_2)).toBe(false);
     // D1: the bid that took the last match is the print, and here that is the only bid filled.
     const print = w.journal.ofKind('labour.print').find((e) => e.subjects.includes(BAKERY));
     expect(print?.data['wagePerHour']).toBe(0.002);
@@ -199,8 +207,8 @@ describe('the clearing (Labour D1)', () => {
     const paid = last?.data['wagePerHour'] as Record<string, number> | undefined;
     // D1.c: it is the employment-weighted average of what is actually paid, occupation by
     // occupation — the rows' own wages, and never what anybody offered.
-    const bakery = rows(w).find((r) => r.occupation === 'bakery');
-    const mill = rows(w).find((r) => r.occupation === 'mill');
+    const bakery = allRows(w).find((r) => r.occupation === 'bakery');
+    const mill = allRows(w).find((r) => r.occupation === 'mill');
     // An average over one row is that row, to the dust of the division that produced it (Law 7).
     expect(paid?.[BAKERY]).toBeCloseTo(bakery?.wagePerHour ?? 0, 15);
     expect(paid?.[MILL]).toBeCloseTo(mill?.wagePerHour ?? 0, 15);
@@ -249,7 +257,7 @@ describe('the contract (Labour D2, C3)', () => {
     const before = w.cash(FIRM_1, PHX);
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    const ev = w.journal.ofKind('labour.separation');
+    const ev = w.journal.ofKind('labour.separation').filter((e) => e.subjects.includes(FIRM_1));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.data['members']).toBe(5);
     const struck = rows(w)[0]?.wagePerHour ?? 0;
@@ -278,7 +286,7 @@ describe('who is in the workforce (Labour B3, B5)', () => {
       expect(names?.count).toBe(0);
     }
     // B3: nobody out of the workforce holds a job.
-    for (const row of rows(w)) {
+    for (const row of allRows(w)) {
       const cell = w.parties.get(row.worker);
       expect(cell.representation === 'cell' && cell.key.cohort).toBe('working');
     }
@@ -287,7 +295,7 @@ describe('who is in the workforce (Labour B3, B5)', () => {
       .ofKind(HOUSEHOLD)
       .filter((p) => p.status.alive)
       .reduce((s, p) => s + (p.representation === 'cell' ? p.weight : 0), 0);
-    const employed = rows(w).reduce((s, r) => s + r.headcount, 0);
+    const employed = allRows(w).reduce((s, r) => s + r.headcount, 0);
     expect(employed).toBeGreaterThan(0);
     expect(employed).toBeLessThan(people);
   });

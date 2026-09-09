@@ -286,15 +286,22 @@ describe('what perishes (Goods E4)', () => {
 
   it('leaves the world at the lot own cost, with nobody on the other side and no money moved', () => {
     const w = bread();
-    const before = w.register.equity(FIRM_1);
     const r = w.step();
     expect(r.audit.total).toBe(0);
     // A quarter of the ten tonnes went stale in the week it sat there.
     expect(w.register.quantity(FIRM_1, BREAD_ID)).toBeCloseTo(7.5, 12);
-    expect(w.instruments.get(BREAD_ID).issued).toBeCloseTo(7.5, 12);
+    // What is issued is what is held, by everybody: this baker is not the only one in the world.
+    expect(w.instruments.get(BREAD_ID).issued).toBeCloseTo(
+      w.register.heldTotal(BREAD_ID).value,
+      9,
+    );
     const spoiled = w.ledger
       .inPeriod(w.period)
-      .filter((x) => x.outcome === 'settled' && x.instruction.legs.some(isDestroyLeg));
+      .filter(
+        (x) =>
+          x.outcome === 'settled' &&
+          x.instruction.legs.some((l) => isDestroyLeg(l) && l.party === FIRM_1 && l.instrument === BREAD_ID),
+      );
     expect(spoiled).toHaveLength(1);
     const legs = spoiled[0]?.instruction.legs ?? [];
     expect(legs).toHaveLength(1);
@@ -303,11 +310,14 @@ describe('what perishes (Goods E4)', () => {
     expect(legs.some(isMoneyLeg)).toBe(false);
     const leg = legs[0];
     expect(leg !== undefined && isDestroyLeg(leg) && leg.why).toBe('perished');
-    // It was made at 2 and 2.5 tonnes of it perished: the charge is what those units cost.
-    expect(w.register.equity(FIRM_1)).toBeCloseTo(before + 10 * 2 - 2.5 * 2, 9);
-    const ev = w.journal.ofKind('goods.perished');
+    // It was made at 2 and 2.5 tonnes of it perished: the charge is what those units cost, and
+    // settlement is what said so — the event carries what it charged, not a number recomputed.
+    const ev = w.journal
+      .ofKind('goods.perished')
+      .filter((e) => e.subjects.includes(FIRM_1) && e.subjects.includes(BREAD_ID));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.data['unitsPerMember']).toBeCloseTo(2.5, 12);
+    expect(ev[0]?.data['chargePerMember']).toBeCloseTo(-2.5 * 2, 9);
     expect(ev[0]?.public).toBe(false);
   });
 

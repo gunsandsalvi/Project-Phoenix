@@ -12,8 +12,8 @@ export interface AuditMemory {
   period: Period | undefined;
   /** issued amount per instrument at the last audit. */
   issued: Map<InstrumentId, number>;
-  /** per-member quantity per (holder, instrument) at the last audit. */
-  holdings: Map<string, { holder: PartyId; instrument: InstrumentId; qty: number }>;
+  /** per-member quantity per (holder, instrument) at the last audit, and the lots it was read over. */
+  holdings: Map<string, { holder: PartyId; instrument: InstrumentId; qty: number; lots: number }>;
 }
 
 export function emptyMemory(): AuditMemory {
@@ -34,6 +34,7 @@ export function remember(view: AuditView, m: AuditMemory): void {
       holder: h.holder,
       instrument: h.instrument,
       qty,
+      lots: h.lots.length,
     });
   }
 }

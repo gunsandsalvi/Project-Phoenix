@@ -22,7 +22,6 @@
  * that starts a small batch puts the whole period's cost on it (B5.b), which is what running a line
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
-import { period as periodOf } from '../../calendar/calendar.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { div, material, mul, sub, sum } from '../../core/num.js';
 import { none } from '../../core/option.js';
@@ -172,8 +171,11 @@ function yieldBatch(
   const wip = wipId(tech.terms.subUnit, tech.terms.region);
   const holding = ctx.register.holding(firm, wip);
   if (!holding.some) return;
-  const started = periodOf(sub(view.period, tech.leadTime, 'started by'));
-  const due = dueFromLine(holding.value.lots, started);
+  // Nothing can have been started before the world had periods, so a line whose lead time is
+  // longer than the world is old has nothing off it yet — and a batch the seed put on the line
+  // came off at period zero plus its lead time, like any other (Goods B3).
+  const startedBy = sub(view.period, tech.leadTime, 'started by');
+  const due = dueFromLine(holding.value.lots, startedBy);
   if (!material(due, holding.value.lots.length + 1, due)) return;
   const cost = costOfDraw(holding.value.lots, due);
   const finished = mul(due, tech.yieldRate, 'what came off the line');

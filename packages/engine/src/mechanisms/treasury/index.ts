@@ -52,11 +52,15 @@ import {
   type SovereignBondTerms,
 } from '../sovereign-instruments/index.js';
 import { CURVE_DAY_COUNT } from '../sovereign-curve/index.js';
+import { findVenue } from '../../clearing/venue.js';
+import { isGoodTerms } from '../goods/index.js';
 import {
   GRID_DAY,
   GRID_MONTHS,
   LONG_TENORS,
   MONTHS_PER_YEAR,
+  PROCUREMENT,
+  PUBLIC_OCCUPATION,
   SHORT_TENORS,
   TENOR_WINDOW_YEARS,
 } from './data.js';
@@ -67,7 +71,8 @@ export const TREASURY_PARAMS = {
   tenorMixShort: paramId('treasury.tenorMix.short'),
   auctionEvery: paramId('treasury.auction.everyPeriods'),
   transfers: paramId('treasury.outlays.transfers.perMember'),
-  publicWages: paramId('treasury.outlays.publicWages.perMember'),
+  publicService: paramId('treasury.publicService.hours'),
+  purchases: paramId('treasury.purchases.perPeriod'),
   taxInterest: paramId('treasury.tax.interestIncome'),
   taxIncome: paramId('treasury.tax.income'),
   taxConsumption: paramId('treasury.tax.consumption'),
@@ -115,21 +120,49 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
   return sum(terms).value;
 }
 
-/** The standing mandate's outlay per period: every member of every household cell (B1, B3). */
-function mandatePerPeriod(ctx: MechanismContext): number {
+/**
+ * B1, B3: what the standing mandate costs a period — the transfers it pays every member of every
+ * household, the wage bill of the people it employs, and the budget it buys real things with. The
+ * wage bill is a READ of what it actually paid last period, not a rate on a headcount (B2's rule
+ * applied to labour): what it owes its own staff is what its own rows say.
+ */
+function mandatePerPeriod(ctx: MechanismContext, id: PartyId): number {
   const transfers = ctx.params.get(TREASURY_PARAMS.transfers);
-  const wages = ctx.params.get(TREASURY_PARAMS.publicWages);
-  const terms: number[] = [];
+  const terms: number[] = [ctx.params.get(TREASURY_PARAMS.purchases), lastWageBill(ctx, id)];
   for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
     if (!p.status.alive || p.representation !== 'cell') continue;
-    terms.push(mul(p.weight, add(transfers, working(p.key.cohort) ? wages : 0, 'per member'), 'outlay'));
+    terms.push(mul(p.weight, transfers, 'transfers'));
   }
   return sum(terms).value;
 }
 
-/** Public wages reach the working cohort; the retired draw a transfer (B1). A cohort is data. */
-function working(cohort: string): boolean {
-  return cohort === 'working';
+/** What its own payroll came to last time it was paid, read from its own record (Law 19). */
+function lastWageBill(ctx: MechanismContext, id: PartyId): number {
+  const events = ctx.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(id));
+  const last = events[events.length - 1];
+  if (last === undefined) return 0;
+  const due = last.data['due'];
+  return typeof due === 'number' ? due : 0;
+}
+
+/** What an hour costs it: what its own payroll paid for one, or what the market last printed. */
+function wageItFaces(ctx: MechanismContext, id: PartyId): number | undefined {
+  const own = ctx.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(id));
+  const mine = own[own.length - 1];
+  if (mine !== undefined) {
+    const due = mine.data['due'];
+    const hours = mine.data['hours'];
+    if (typeof due === 'number' && typeof hours === 'number' && hours > 0) {
+      return div(due, hours, 'what an hour costs it');
+    }
+  }
+  // Expectations A2.a: what the market last paid is a published fact, and it is what a state with
+  // no payroll of its own has to go on. It offers it and takes what the venue gives it.
+  const prints = ctx.journal.ofKind('labour.print');
+  const last = prints[prints.length - 1];
+  if (last === undefined) return undefined;
+  const wage = last.data['wagePerHour'];
+  return typeof wage === 'number' ? wage : undefined;
 }
 
 /** What it collected last period, which is what it has to go on until it has an outlook (§46 C5). */
@@ -202,12 +235,20 @@ export const treasury: SystemModule = {
       why: 'Treasury B1, B3: transfers to households. Until the polity exists this is the standing mandate declared at the seed, and the register prints parliament as its owner (Polity D5, XI-17).',
     },
     {
-      id: TREASURY_PARAMS.publicWages,
-      value: 0.02,
-      unit: 'PHX per working-age member per period',
+      id: TREASURY_PARAMS.publicService,
+      value: 7000,
+      unit: 'hours per period',
       kind: 'policy',
       owner: 'parliament',
-      why: 'Treasury B1: public wages. Until labour exists (worklist 4) they reach the working cohort directly rather than through an employment relationship, which is why they are a mandate number and not a wage bill.',
+      why: 'Treasury B1, Labour F1: how big a public service the state keeps. It is a size, not a wage: the state posts these hours in the same venue everybody else posts in, at what the market has been paying, and what it ends up paying is what the venue cleared at. A state that stated the wage would be setting a price, which is not something a parliament does (Polity D5).',
+    },
+    {
+      id: TREASURY_PARAMS.purchases,
+      value: 30,
+      unit: 'PHX per period',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Treasury B1: what the state puts aside to buy real things with. It is a budget and not a quantity: how much that buys is the market\'s business, and the state is rationed in it like any other buyer (Goods C4).',
     },
     {
       id: TREASURY_PARAMS.taxInterest,
@@ -274,6 +315,19 @@ export const treasury: SystemModule = {
       },
     },
     {
+      name: 'treasury.employment',
+      spec: 'Treasury B1 Labour C5 Labour F1',
+      cycle: 0,
+      // Before the jobs are struck: the state posts what it wants like any other employer, in the
+      // same venue, and what it pays is what that venue cleared at.
+      anchor: { before: 'labour.match' },
+      run: (ctx: MechanismContext): void => {
+        for (const t of ctx.parties.ofKind(TREASURY)) {
+          if (t.status.alive) postPublicService(ctx, t.id);
+        }
+      },
+    },
+    {
       name: 'treasury.receipts',
       spec: 'Treasury C1 Treasury C1.a Treasury C3',
       cycle: 0,
@@ -288,7 +342,10 @@ export const treasury: SystemModule = {
   participants: [
     {
       partyKind: TREASURY,
-      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => buyback(view, m),
+      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => [
+        ...buyback(view, m),
+        ...procure(view, m),
+      ],
     },
   ],
   families: [allotmentReconciles()],
@@ -348,7 +405,7 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
   const horizon = period(ctx.period + horizonPeriods);
   const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
   const service = debtService(ctx, id, on, horizon);
-  const perPeriod = mandatePerPeriod(ctx);
+  const perPeriod = mandatePerPeriod(ctx, id);
   const mandate = mul(perPeriod, horizonPeriods, 'mandate over horizon');
   const receipts = mul(lastReceipts(ctx), horizonPeriods, 'receipts over horizon');
   const buffer = mul(perPeriod, ctx.params.get(TREASURY_PARAMS.bufferPeriods), 'buffer');
@@ -503,16 +560,19 @@ function accountOf(ctx: MechanismContext, party: PartyId, ccy: CurrencyCode): In
   return moneyInstrumentId(p.bank, ccy);
 }
 
-/** B1: each outlay reaches a named recipient's account, one instruction each (A1.b). */
+/**
+ * B1: each outlay reaches a named recipient's account, one instruction each (A1.b). The transfers
+ * are here; the wage bill is not, because the people it employs are on employment rows and the
+ * module that owns those rows is the one writer of what they are paid (Labour F1, Law 4).
+ */
 function runOutlays(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
   const transfers = ctx.params.get(TREASURY_PARAMS.transfers);
-  const wages = ctx.params.get(TREASURY_PARAMS.publicWages);
   let paid = 0;
   let short = 0;
   for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
     if (!p.status.alive || p.representation !== 'cell') continue;
-    const perMember = add(transfers, working(p.key.cohort) ? wages : 0, 'per member');
+    const perMember = transfers;
     if (perMember <= 0) continue;
     const total = totalFor(p, perMember);
     const leg: Leg = {
@@ -610,6 +670,44 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     { total: collected, unpaid, payers: due.size, bases },
     true,
   );
+}
+
+/**
+ * B1, Labour C5, F1: the state's own openings. It posts the hours its own policy says it keeps, at
+ * what an hour has been costing it — or, when it has never employed anybody, at what the market
+ * last printed for one. It never states the wage: a state that did would be setting a price, and
+ * what it ends up paying is what the venue cleared at like everybody else.
+ */
+function postPublicService(ctx: MechanismContext, id: PartyId): void {
+  const hours = ctx.params.get(TREASURY_PARAMS.publicService);
+  const wage = wageItFaces(ctx, id);
+  if (wage === undefined || hours <= 0) return;
+  const region = ctx.parties.get(id).region;
+  const venue = findVenue(ctx.venues, { region, occupation: PUBLIC_OCCUPATION });
+  if (venue === undefined) return;
+  ctx.post(venue.id, { party: id, side: 'buy', price: wage, qty: hours });
+}
+
+/**
+ * B1, Goods C3: procurement. It puts a stated budget into the market for real things and takes
+ * what that buys at the price the market makes — it is one buyer among the others, it is rationed
+ * with them (C4), and it never states what a thing is worth.
+ */
+function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
+  const budget = view.params.get(TREASURY_PARAMS.purchases);
+  if (budget <= 0) return [];
+  const terms = view.instruments.get(m.instrument).terms;
+  const row = PROCUREMENT.find((p) => isGoodTerms(terms) && terms.subUnit === p.subUnit);
+  if (row === undefined || !isGoodTerms(terms) || terms.region !== view.self.region) return [];
+  const print = view.print(m.instrument);
+  if (!print.some || print.value.price <= 0) return [];
+  const spend = mul(budget, row.share, 'what it puts into this market');
+  const ccy = view.registry.region(view.self.region).ccy;
+  const cash = view.cash(ccy);
+  // D1: it buys out of the balance it has, and an empty account buys nothing.
+  const afford = spend < cash ? spend : cash;
+  const qty = div(afford, print.value.price, 'what the budget buys');
+  return qty > 0 ? [{ party: view.self.id, side: 'buy', price: print.value.price, qty }] : [];
 }
 
 /**

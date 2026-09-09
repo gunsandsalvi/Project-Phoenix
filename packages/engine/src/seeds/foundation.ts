@@ -1,7 +1,6 @@
 /**
- * The foundation seed: one region, one currency, a central bank, a treasury, two banks, three firms,
- * and household cells with dispersed endowments drawn from the seed's own random stream, holding
- * deposits and one sovereign benchmark line at an opening price.
+ * The foundation seed: one region, one currency, a central bank, a treasury, two banks, three firms
+ * with stock and a line running, and household cells that open with nothing at all.
  *
  * @spec Seed A1 Seed A3 Seed A4 Seed A5 Seed B1 Seed B1.a Seed B2 Seed B3 Seed B4 Seed C2 Seed C3 Seed C4 Seed C4.a Seed C4.b Seed E2 XI-14 XI-15 Money A1 Money D2 Law 2
  *
@@ -32,6 +31,7 @@ import {
   paramId,
   partyId,
   regionId,
+  type ParamId,
   type PartyId,
 } from '../core/ids.js';
 import { Missing } from '../core/errors.js';
@@ -51,7 +51,7 @@ import {
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
-import { goods } from '../mechanisms/goods/index.js';
+import { goodId, goodMarketId, goods, wipId } from '../mechanisms/goods/index.js';
 import { households } from '../mechanisms/households/index.js';
 import { labour } from '../mechanisms/labour/index.js';
 import { sovereignAuction } from '../mechanisms/sovereign-auction/index.js';
@@ -60,7 +60,7 @@ import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
 import { displayName } from '../registry/naming.js';
 import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, TREASURY } from '../registry/profiles.js';
-import type { Prng } from '../rng/prng.js';
+import type { ParamDecl } from '../registry/params.js';
 import type { AssemblySpec } from '../world/assemble.js';
 import { assemble, KERNEL_PARAMS } from '../world/assemble.js';
 import type { SeedContext } from '../world/context.js';
@@ -109,22 +109,96 @@ const SEED_LINES: readonly SeedLine[] = [
 /** One day count for the seeded paper, so an opening price and its yield use one convention. */
 const SEED_DAY_COUNT: DayCount = 'ACT/ACT';
 
+/**
+ * What each firm opens with of what it makes, and what is already on its line (Seed D1: a stock
+ * consistent with the flows that will act on it). It is ONE PERIOD of what the chain downstream of
+ * it can take — the households' own income says what that is — and not a hoard: a firm sitting on a
+ * year of stock would produce nothing for a year, and the seed would have decided that.
+ */
+interface SeedStock {
+  readonly firm: string;
+  readonly subUnit: string;
+  /** Units finished and ready to sell. */
+  readonly finished: number;
+  /** Units started and not yet off the line: only a good whose batch takes longer than a period. */
+  readonly onTheLine: number;
+  /** Seed C4: what the market it has never traded in opens at, per unit. */
+  readonly opensAt: number;
+  readonly why: string;
+}
+
+const SEED_STOCK: readonly SeedStock[] = [
+  {
+    firm: 'firm.1',
+    subUnit: 'grain',
+    finished: 90,
+    onTheLine: 90,
+    opensAt: 0.4,
+    why: 'Grain takes two periods to grow, so a world that opens with an empty field produces nothing for two of them and the mill has nothing to buy. One crop in the barn and one in the ground is what a going concern looks like.',
+  },
+  {
+    firm: 'firm.2',
+    subUnit: 'flour',
+    finished: 75,
+    onTheLine: 0,
+    opensAt: 0.6,
+    why: 'Milling is inside the period, so there is nothing on the line; what the mill opens with is what it has already milled.',
+  },
+  {
+    firm: 'firm.3',
+    subUnit: 'bread',
+    finished: 105,
+    onTheLine: 0,
+    opensAt: 1.2,
+    why: 'A week of bread in the shop. It goes stale at a quarter a period, so what is not sold is a real loss from the first period on.',
+  },
+];
+
+/** The inputs each firm opens with: enough for the batch it will start before it can buy more. */
+const SEED_INPUTS: readonly { readonly firm: string; readonly subUnit: string; readonly qty: number }[] = [
+  { firm: 'firm.2', subUnit: 'grain', qty: 110 },
+  { firm: 'firm.3', subUnit: 'flour', qty: 75 },
+];
+
+/**
+ * Seed C4: what the stock cost whoever is holding it, as a share of what its market opens at. It is
+ * below the opening price because a firm holding stock it could only sell at a loss would not have
+ * made it — and it is a cost, which is what a lot carries (Goods E1), never a second price.
+ */
+const SEED_STOCK_BASIS = 0.8;
+
 const P = {
   cellsPerKey: paramId('seed.households.cellsPerKey'),
   membersPerKey: paramId('seed.households.membersPerKey'),
-  depositPerMember: paramId('seed.households.depositPerMember'),
-  bondPerMember: paramId('seed.households.bondPerMember'),
-  dispersion: paramId('seed.households.dispersion'),
   openingYield: paramId('seed.openingYield'),
 } as const;
 
+/** Seed C4: what a good fetched in the market that has not opened yet, per unit of it. */
+const openingPrice = (subUnit: string): ParamId => paramId(`seed.openingPrice.${subUnit}`);
+
 /**
- * A multiplier dispersed around one: the product of `n` uniform draws scaled so the mean stays one.
- * A SHAPE (Law 2): the seed's claim about how unequal endowments are, replaced by mechanisms.
+ * Law 2, Seed C4: the level a market opens at, which is a SHAPE and not a placeholder.
+ *
+ * A placeholder names the worklist item that deletes it, and no item ever will: a market that has
+ * never traded has no price (XI-6) and its first buyer has nothing to bid against, so a world that
+ * opens with stock in it opens with a level for that stock. The mechanism that replaces the number
+ * is the market's own first session, and it already runs — in period one, of every run. What is
+ * claimed is a level and it is claimed once; what it is worth from then on is cleared (C4.a).
+ *
+ * What would retire it is a measurement and not a mechanism (Part XII, worklist 16): run the same
+ * world from different opening levels and see whether its path depends on where its markets opened.
+ * If it does not, this is a RESOLUTION; if it does, the seed is claiming something load-bearing and
+ * needs a way to open a market without stating one.
  */
-function dispersed(rng: Prng, spread: number): number {
-  const u = rng.next();
-  return 1 + spread * (2 * u - 1);
+function openingPrices(): ParamDecl[] {
+  return SEED_STOCK.map((row) => ({
+    id: openingPrice(row.subUnit),
+    value: row.opensAt,
+    unit: `PHX per unit of ${row.subUnit}`,
+    kind: 'shape' as const,
+    owner: 'model' as const,
+    why: `Seed C4: ${row.why} It is the first clearing's input and not a permanent mark: the session in period one prints a price nobody stated and nothing reads this number again.`,
+  }));
 }
 
 export const foundationSeed: SystemModule = {
@@ -152,41 +226,21 @@ export const foundationSeed: SystemModule = {
       owner: 'model',
       why: 'The population each key stands for; a read once populations are generated, a stated size until then.',
     },
-    {
-      id: P.depositPerMember,
-      value: 0.3,
-      unit: 'PHX',
-      kind: 'shape',
-      owner: 'model',
-      why: 'Mean opening deposit per household; replaced by wages and saving (worklist 4).',
-    },
-    {
-      id: P.bondPerMember,
-      value: 0.2,
-      unit: 'units of par',
-      kind: 'shape',
-      owner: 'model',
-      why: 'Mean opening holding of the benchmark line per household; replaced by portfolio choice (worklist 4).',
-    },
-    {
-      id: P.dispersion,
-      value: 0.5,
-      unit: 'ratio',
-      kind: 'shape',
-      owner: 'model',
-      why: 'Seed B4: sizes are dispersed, or a sector of equals never produces a market; the width is a claim about the answer.',
-    },
+    ...openingPrices(),
     {
       id: P.openingYield,
       value: 0.02,
       unit: 'per annum',
-      kind: 'placeholder',
+      kind: 'shape',
       owner: 'model',
-      why: 'Seed C4: the one level the opening world is priced at, flat across the profile so the seed asserts no shape. Every line opens at the price this yield gives it, and the auction and the secondary market replace it line by line as each one trades. It stays while some lines still carry an opening print: the sovereign secondary market has two sides only for the banks whose buffer moved, and a household that holds a line cannot yet act on it (Sovereign E2.f).',
-      standsInFor: {
-        mechanism: 'Sovereign E2.f (households and firms holding it directly, so every line has a two-sided market)',
-        worklistItem: '4',
-      },
+      // It was declared a placeholder dying at this item, on the reasoning that once households
+      // held sovereign paper directly (Sovereign E2.f) every line would have a two-sided market and
+      // the number would go. They do hold it now, and the number cannot go: a two-sided market from
+      // period one says nothing about period zero, which is before any market has run. Seed C3
+      // requires a maturity profile outstanding at period zero, and paper outstanding at period
+      // zero has to be worth something. So it is a SHAPE — one level, flat across the profile, so
+      // the seed claims no curve — retired by the same measurement as the opening prices above.
+      why: 'Seed C4, C4.b: the one level the opening world is priced at, flat across the profile so the seed asserts no shape of its own. Every line opens at the price this yield gives it and carries the coupon that makes it par there, so the level is claimed once and the term follows from it rather than from a table. The auction and the secondary market re-price line by line from period one.',
     },
   ],
   phases: [],
@@ -293,12 +347,53 @@ export const foundationSeed: SystemModule = {
       if (line.bankB > 0) ctx.endowUnits(BANK_B, id, line.bankB, price);
     }
 
+    const openedGoods = new Set<string>();
+    // Goods (Seed A3, C4, D1): every firm opens with stock of what it makes, with the inputs its
+    // recipe draws, and — where a batch takes more than the period it is started in — with one on
+    // the line already, so the first period is not the only one that produces nothing. What a
+    // market has never traded has no price at all, and somebody must state the one it opens at;
+    // that number is a placeholder and the market's own first session replaces it.
+    for (const row of SEED_STOCK) {
+      // A firm whose good this world does not make opens with nothing, because there is nothing
+      // for it to hold: the seed endows what exists and never brings an instrument into being to
+      // have something to endow (Seed A1).
+      if (!ctx.instruments.has(goodId(row.subUnit, REGION))) continue;
+      const firm = partyId(row.firm);
+      const price = ctx.params.get(openingPrice(row.subUnit));
+      const market = goodMarketId(row.subUnit, REGION);
+      if (!openedGoods.has(row.subUnit)) {
+        openedGoods.add(row.subUnit);
+        ctx.prices.write({
+          instrument: goodId(row.subUnit, REGION),
+          market,
+          period: ctx.period,
+          price,
+          ccy: PHX,
+          provenance: { kind: 'opening' },
+        });
+      }
+      // Seed C4: what it cost whoever holds it is the seed's, and it is below what the market
+      // opens at — a firm holding stock it could only sell at a loss would never have made it.
+      const basis = price * SEED_STOCK_BASIS;
+      if (row.finished > 0) ctx.endowUnits(firm, goodId(row.subUnit, REGION), row.finished, basis);
+      if (row.onTheLine > 0) {
+        ctx.endowUnits(firm, wipId(row.subUnit, REGION), row.onTheLine, basis);
+      }
+    }
+    for (const row of SEED_INPUTS) {
+      if (!ctx.instruments.has(goodId(row.subUnit, REGION))) continue;
+      const price = ctx.params.get(openingPrice(row.subUnit));
+      ctx.endowUnits(partyId(row.firm), goodId(row.subUnit, REGION), row.qty, price * SEED_STOCK_BASIS);
+    }
+
     // Households: cells per (region, cohort, bank) key, weights summing to the key's population
-    // (Seed B1.a), endowments dispersed around the stated means (Seed B4).
+    // (Seed B1.a). They open with NOTHING — no deposit and no paper — because everything a
+    // household has in this world is something it was paid or something it decided to buy, and
+    // the seed has no business saying how rich anybody already is (Seed E: what the seed must not
+    // decide). What they are unequal in is therefore an outcome from the first period on: who was
+    // hired, at what wage, and what each of them made of it.
     const cells = positiveCount(ctx.params.get(P.cellsPerKey), 'cellsPerKey');
     const members = positiveCount(ctx.params.get(P.membersPerKey), 'membersPerKey');
-    const spread = ctx.params.get(P.dispersion);
-    const rng = ctx.rng.derive('households');
     for (const cohort of ctx.registry.cohorts) {
       for (const bank of [BANK_A, BANK_B]) {
         const weights = splitPopulation(members, cells);
@@ -315,17 +410,6 @@ export const foundationSeed: SystemModule = {
             key: { region: REGION, cohort: cohortId(cohort.id), bank },
           };
           ctx.parties.add(cell);
-          ctx.endowMoney(cell.id, PHX, ctx.params.get(P.depositPerMember) * dispersed(rng, spread));
-          const scale = ctx.params.get(P.bondPerMember) * dispersed(rng, spread);
-          for (const line of SEED_LINES) {
-            if (line.perMember === 0) continue;
-            ctx.endowUnits(
-              cell.id,
-              instrumentId(line.id),
-              line.perMember * scale,
-              openingOf(opening, line.id),
-            );
-          }
         });
       }
     }

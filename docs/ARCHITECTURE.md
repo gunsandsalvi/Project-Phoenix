@@ -40,6 +40,16 @@ percentage anywhere.
 `NaN`, `±Infinity` and `-0` cannot enter the state: every numeric constructor (`money()`, `qty()`,
 `price()`, `rate()`) and every arithmetic helper validates and **throws** on a non-finite result.
 
+**A balance reached by accumulation carries the walk that produced it.** An equity account, a money
+balance and an issued amount are not numbers one rounding old: they are stated once and then moved,
+one named event at a time, for as long as their owner exists. `Running` (`opened` / `moved`) carries
+the value with `Σ ε|balance after each move|`, and a check comparing a fresh read against such a
+balance adds that dust to its own. Derived any smaller — as though two readings of one number — a
+busy account reports a violation the moment it is paid more than a handful of times in a week, and
+the audit spends its credibility on floating point. This is Law 7 taken literally in the one place
+it is easy to get wrong: the tolerance is what the arithmetic **did**, not what it looks like it did.
+`moveDust(balance, delta)` is the single rule for what one more move costs.
+
 **Derived from.** Law 7 defines the only admissible tolerance as _(number of terms) × (machine epsilon)
 × (sum of absolute magnitudes)_, i.e. floating-point error — so the representation is floating point,
 and the check carries its own dust. Audit A4/A4.a. Register B2.b.
@@ -119,6 +129,13 @@ a cycle is the instruction order (E3).
 (D5.a). Both directions are indexed — by holder and by instrument (D2.a) — and both indexes are
 written by the single settlement path. Issued amount per instrument (B1) is changed only by issuance,
 re-opening, buyback, amortisation, maturity; the audit compares holdings to it (B2).
+
+**One reader of what a party can deliver.** Whether a holding can give up `qty` is asked and answered
+in exactly one place, `Register.deliverable`, which compares the ask against the free quantity within
+the dust of the walk that produced both — the lots it was summed over, matched one at a time. Before
+that reader existed the settlement pre-check and the register's own draw each derived that dust for
+themselves, disagreed at the fifteenth decimal, and turned a trade that had already been admitted
+into a throw. A number two callers must agree about has one writer (Law 4).
 
 Derivative contracts are **not holdings** (Derivative X1). They live in a separate `Contracts` store
 whose invariant is zero-sum (D1.b). The foundation defines the store interface; the layer (§16) fills
@@ -202,7 +219,10 @@ the observer reads it as data (a copy, so looking changes nothing).
 **What a party expects** (Expectations A2, XI-16). `view.outlook(variable)` answers with that
 party's own outlook or with nothing; there is no global expectation to fall back on (A2.b). Exactly
 one module may answer — an expectation is a fact about a party and has one writer — and the kernel
-asks it through that module's own context, so what it keeps stays its own.
+asks it through that module's own context, so what it keeps stays its own. The door has two halves
+and they are one door: `of(party, variable)` and `variables(party)`. A surface that could ask the
+first but not the second would have to guess the names it asks about, and a guessed name is a default
+outlook by another route.
 
 **Made and used up, not issued** (Goods A1, E4, F1). A physical thing has **no issuer**:
 `Instrument.issuer` is an option, and a claim on nobody is a defect the names family reports. Units
@@ -421,8 +441,12 @@ The `Journal` is an append-only list of events **generated from state transition
 (defaults, fails, weight events, prints, failed auctions, …); it is a read of what happened, never an
 input. The observer API (`observer/`) takes a `Scope` — `inspector` or `party(id)` — and answers
 queries from a snapshot: prints with their provenance and age (A1.a), positions, public state,
-published aggregates with a stated lag (A5), and the journal. A party scope filters out other
-parties' private state (A4). The UI can only reach the engine through this API over the worker bridge.
+published aggregates with a stated lag (A5), the outlooks of the parties in scope, and the journal.
+A party scope filters out other parties' private state (A4): it sees its own outlooks and no module
+state at all, because a module's slot holds other parties' private state as often as not and a
+surface that showed it would be showing it to them. The module slots — employment rows, inventories,
+the outlook book — are therefore the **inspector's** product and are null for a party. The UI can
+only reach the engine through this API over the worker bridge.
 
 ### 4.12 Reproducibility (Seed A5, Audit D3)
 

@@ -170,18 +170,24 @@ describe('what a party expects (Expectations A2)', () => {
     const outlooks: SystemModule = {
       ...goodsModule(wheat, () => undefined),
       id: 'test.outlooks',
-      outlooks: (ctx, party, variable) => {
-        const s = ctx.state<Record<string, number>>('outlooks', () => ({ 'firm.1|x': 3 }));
-        const v = s[`${party}|${variable}`];
-        return v === undefined
-          ? none<Outlook>()
-          : some<Outlook>({
-              expected: v,
-              unit: 'PHX',
-              per: ANNUAL,
-              confidence: 0,
-              formed: ctx.period,
-            });
+      outlooks: {
+        of: (ctx, party, variable) => {
+          const s = ctx.state<Record<string, number>>('outlooks', () => ({ 'firm.1|x': 3 }));
+          const v = s[`${party}|${variable}`];
+          return v === undefined
+            ? none<Outlook>()
+            : some<Outlook>({
+                expected: v,
+                unit: 'PHX',
+                per: ANNUAL,
+                confidence: 0,
+                formed: ctx.period,
+              });
+        },
+        variables: (ctx, party) =>
+          Object.keys(ctx.state<Record<string, number>>('outlooks', () => ({ 'firm.1|x': 3 })))
+            .filter((k) => k.startsWith(`${party}|`))
+            .map((k) => k.slice(`${party}|`.length)),
       },
     };
     const w = world(outlooks);
@@ -189,14 +195,19 @@ describe('what a party expects (Expectations A2)', () => {
     const got = view.outlook('x');
     expect(got.some).toBe(true);
     expect(got.some ? got.value.expected : null).toBe(3);
+    // A2: the door also says WHICH variables this party has an outlook of, so nothing has to guess
+    // a name — and a party that has observed nothing answers with nothing.
+    expect(w.outlookVariables(FIRM_1)).toEqual(['x']);
+    expect(w.outlookVariables(BANK_A)).toEqual([]);
     // A2.b: nobody else's expectation is reachable, and an unobserved variable has none.
     expect(view.outlook('y').some).toBe(false);
     expect(w.participantView(BANK_A).outlook('x').some).toBe(false);
   });
 
   it('refuses a second writer of what a party expects (Law 4)', () => {
-    const one: SystemModule = { ...goodsModule(wheat, () => undefined), id: 'a', outlooks: () => none() };
-    const two: SystemModule = { ...goodsModule(wheat, () => undefined), id: 'b', outlooks: () => none() };
+    const nothing = { of: () => none<Outlook>(), variables: () => [] };
+    const one: SystemModule = { ...goodsModule(wheat, () => undefined), id: 'a', outlooks: nothing };
+    const two: SystemModule = { ...goodsModule(wheat, () => undefined), id: 'b', outlooks: nothing };
     expect(() => world(one, two)).toThrow(InvalidRegistry);
   });
 });

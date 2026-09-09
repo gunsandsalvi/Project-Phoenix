@@ -54,6 +54,12 @@ export interface ParticipantDecl {
   orders(view: ParticipantView, market: MarketDecl): readonly Order[];
 }
 
+export interface OutlookProvider {
+  of(ctx: MechanismContext, party: PartyId, variable: OutlookVariable): Option<Outlook>;
+  /** A2: the variables this party has actually observed, in the order the module keeps them. */
+  variables(ctx: MechanismContext, party: PartyId): readonly OutlookVariable[];
+}
+
 export interface SystemModule {
   /** Stable id, also the directory name under src/mechanisms or src/seeds. */
   readonly id: string;
@@ -75,12 +81,13 @@ export interface SystemModule {
    * Expectations A2, XI-16: what a party expects. Exactly one module may answer this — an
    * expectation is a fact about a party and has one writer (Law 4) — and the kernel asks it
    * through that module's own context, so the shape of what it keeps stays its own.
+   *
+   * It answers two questions and they are one door: what a party expects OF a variable, and which
+   * variables it has an outlook of at all. A surface that could ask the first but not the second
+   * would have to guess the names, and a guessed name is a default outlook by another route (A2:
+   * a party that never observed a variable has no outlook of it).
    */
-  readonly outlooks?: (
-    ctx: MechanismContext,
-    party: PartyId,
-    variable: OutlookVariable,
-  ) => Option<Outlook>;
+  readonly outlooks?: OutlookProvider;
   /** Opening state this module contributes (Seed A1); runs in assembly order before the seed audit. */
   seed?(ctx: SeedContext): void;
 }

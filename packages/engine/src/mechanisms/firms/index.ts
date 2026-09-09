@@ -23,7 +23,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { PartyId } from '../../core/ids.js';
-import { combineDust, sub, sum, withinDust } from '../../core/num.js';
+import { combineDust, dustOf, sub, sum, withinDust } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -63,6 +63,10 @@ function productionCosts(rows: readonly FirmDecl[]): Family {
     check: (view) => {
       const out: Violation[] = [];
       const moved = new Map<PartyId, number[]>();
+      // Law 7: the dust of this comparison is the dust of the arithmetic that produced it — a walk
+      // over the lots each leg drew from, inside settlement, and then a sum over the legs. What is
+      // visible here is the legs and what they cost, and that is what the tolerance is derived from.
+      const walked = new Map<PartyId, { terms: number; magnitude: number }>();
       for (const r of view.ledger.inPeriod(view.period)) {
         if (r.outcome !== 'settled' || r.instruction.cause !== 'production') continue;
         if (!r.instruction.legs.some(isCreateLeg)) continue;
@@ -71,6 +75,11 @@ function productionCosts(rows: readonly FirmDecl[]): Family {
           const list = moved.get(e.party) ?? [];
           list.push(e.delta);
           moved.set(e.party, list);
+          const walk = walked.get(e.party) ?? { terms: 0, magnitude: 0 };
+          walked.set(e.party, {
+            terms: walk.terms + r.instruction.legs.length + r.deltas.length,
+            magnitude: walk.magnitude + Math.abs(e.delta) + sum(r.deltas.map((d) => Math.abs(d.qty))).value,
+          });
         }
       }
       for (const [firm, deltas] of moved) {
@@ -81,7 +90,11 @@ function productionCosts(rows: readonly FirmDecl[]): Family {
           .filter((w): w is number => typeof w === 'number');
         const wages = sum(capitalised);
         const effect = sum(deltas);
-        if (withinDust(effect.value, wages.value, combineDust(effect, wages))) continue;
+        const walk = walked.get(firm) ?? { terms: 0, magnitude: 0 };
+        const dust =
+          combineDust(effect, wages) +
+          dustOf(walk.terms, walk.magnitude + Math.abs(wages.value));
+        if (withinDust(effect.value, wages.value, dust)) continue;
         out.push({
           family: 'flows',
           spec: 'Goods F5.b',
