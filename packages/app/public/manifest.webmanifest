@@ -1,0 +1,10 @@
+{
+  "name": "Phoenix",
+  "short_name": "Phoenix",
+  "description": "A simulated closed-circuit economy",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#131312",
+  "theme_color": "#131312",
+  "icons": []
+}
