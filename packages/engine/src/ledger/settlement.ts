@@ -36,7 +36,6 @@ import type { PriceStore } from '../prices/price-store.js';
 import type { Valuation } from '../prices/value.js';
 import type { Instruments } from '../register/instruments.js';
 import type { DrawnLot, Register } from '../register/register.js';
-import { INSTRUMENT_PROFILES, MONEY_ISSUER_PROFILES } from '../registry/profiles.js';
 import type { Registry } from '../registry/registry.js';
 import type {
   AccountRef,
@@ -128,11 +127,18 @@ export class Settlement {
     if (fail !== undefined) {
       const record: SettlementRecord = { outcome: 'failed', instruction, reason: fail };
       this.d.ledger.append(record);
-      this.d.journal.record(period, cycle, 'instruction.failed', subjectsOf(instruction), {
-        id: instruction.id,
-        cause: instruction.cause,
-        reason: fail,
-      });
+      this.d.journal.record(
+        period,
+        cycle,
+        'instruction.failed',
+        subjectsOf(instruction),
+        {
+          id: instruction.id,
+          cause: instruction.cause,
+          reason: fail,
+        },
+        false,
+      );
       return record;
     }
 
@@ -145,11 +151,18 @@ export class Settlement {
       reserveLegs,
     };
     this.d.ledger.append(record);
-    this.d.journal.record(period, cycle, 'instruction.settled', subjectsOf(instruction), {
-      id: instruction.id,
-      cause: instruction.cause,
-      legs: instruction.legs.length,
-    });
+    this.d.journal.record(
+      period,
+      cycle,
+      'instruction.settled',
+      subjectsOf(instruction),
+      {
+        id: instruction.id,
+        cause: instruction.cause,
+        legs: instruction.legs.length,
+      },
+      false,
+    );
     return record;
   }
 
@@ -193,7 +206,7 @@ export class Settlement {
     const holder = this.alive(acct.holder, ins);
     const issuer = this.alive(acct.issuer, ins);
     forbid(
-      MONEY_ISSUER_PROFILES[issuer.kind].issuesMoney,
+      this.d.registry.issuesMoney(issuer.kind),
       'Money A1.d',
       `instruction ${ins.id}: ${issuer.id} (${issuer.kind}) does not issue money`,
     );
@@ -500,7 +513,17 @@ export class Settlement {
       }
       const inst = this.d.instruments.get(n.instrument);
       const issuer = this.d.parties.get(inst.issuer);
-      const decision = MONEY_ISSUER_PROFILES[issuer.kind].overdraft({
+      const moneyIssuer = this.d.registry.partyKind(issuer.kind).moneyIssuer;
+      if (moneyIssuer === null) {
+        return {
+          kind: 'overdraftRefused',
+          party: n.party,
+          issuer: inst.issuer,
+          ccy: inst.ccy,
+          short: -after,
+        };
+      }
+      const decision = moneyIssuer.overdraft({
         holder: n.party,
         issuer: inst.issuer,
         ccy: inst.ccy,
@@ -516,14 +539,21 @@ export class Settlement {
         };
       }
       // B3.c: never a silent negative. Recorded here; priced by the corridor when it exists.
-      this.d.journal.record(ins.period, ins.cycle, 'reserve.overdraft', [n.party, inst.issuer], {
-        instruction: ins.id,
-        holder: n.party,
-        issuer: inst.issuer,
-        ccy: inst.ccy,
-        shortfallPerMember: -after,
-        recordedAs: decision.recordedAs,
-      });
+      this.d.journal.record(
+        ins.period,
+        ins.cycle,
+        'reserve.overdraft',
+        [n.party, inst.issuer],
+        {
+          instruction: ins.id,
+          holder: n.party,
+          issuer: inst.issuer,
+          ccy: inst.ccy,
+          shortfallPerMember: -after,
+          recordedAs: decision.recordedAs,
+        },
+        true,
+      );
     }
     return undefined;
   }
@@ -602,7 +632,7 @@ export class Settlement {
             // value to the receiver's basis: the liability is the same number read from the other
             // side (Register B3), so the change lands on the issuer.
             const inst = this.d.instruments.get(op.instrument);
-            if (INSTRUMENT_PROFILES[inst.kind].liabilityOfIssuer) {
+            if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
               bump(
                 inst.issuer,
                 mul(op.totalQty, carryingOf(op.fromDebit) - basis, 'issuer re-mark'),
@@ -620,7 +650,7 @@ export class Settlement {
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);
-          if (INSTRUMENT_PROFILES[inst.kind].liabilityOfIssuer) {
+          if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
             const per = op.valuePerUnit === 'carrying' ? carryingOf(op.fromDebit) : op.valuePerUnit;
             bump(op.issuer, -mul(op.qty, per, 'issue value'));
           }
@@ -635,7 +665,7 @@ export class Settlement {
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);
-          if (INSTRUMENT_PROFILES[inst.kind].liabilityOfIssuer) {
+          if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
             // The issuer's liability is the same number read from the holder's side (Register B3).
             const per =
               op.fromDebit >= 0

@@ -4,20 +4,20 @@
  *
  * @spec Audit B3 Clearing E4 Clearing F2 XI-6 Observer A1.a
  */
-import { INSTRUMENT_PROFILES } from '../../registry/profiles.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
 export function pricesFamily(): Family {
   return {
     name: 'prices',
+    contributor: 'kernel',
     spec: 'Audit B3',
     built: true,
     check(view: AuditView): Violation[] {
       const out: Violation[] = [];
       for (const i of view.instruments.all()) {
         if (!i.status.live) continue;
-        if (INSTRUMENT_PROFILES[i.kind].pricing !== 'cleared') continue;
+        if (view.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
         const held = view.register.holdersOf(i.id).length > 0;
         const print = view.prices.read(i.id, view.period);
         if (!print.some) {

@@ -1,13 +1,12 @@
 /**
- * Corporate actions read from instrument terms: a coupon pays to the holders of record, read at the
- * moment it is applied (Register E1, E1.a); a maturity pays face and extinguishes the instrument
- * (Register E2, B4, Bond N10). Dates are placed on the one calendar by date (Money G3.a).
+ * Corporate actions: what an instrument's terms say falls due, applied by the kernel. A coupon pays
+ * to the holders of record, read at the moment it is applied (Register E1, E1.a); a maturity pays
+ * face and extinguishes the instrument (Register E2, B4, Bond N10). Which actions fall due is the
+ * instrument kind's profile to say (Law 15); the kernel only knows the vocabulary.
  *
- * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N4 Bond N5.a Bond N6 Bond N10 Sovereign F1 Sovereign F3 Sovereign B1 Money C1.c Money G3.a Money G3.c
+ * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Money C1.c Money G3.a Law 15
  */
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
-import { type Civil, compareCivil } from '../calendar/civil.js';
-import { yearFraction } from '../calendar/daycount.js';
 import { assertNever } from '../core/assert.js';
 import type { CurrencyCode, PartyId } from '../core/ids.js';
 import { mul } from '../core/num.js';
@@ -18,10 +17,12 @@ import { cellSide, type Settlement, totalFor } from '../ledger/settlement.js';
 import type { Parties } from '../parties/party.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Register } from '../register/register.js';
+import type { Registry } from '../registry/registry.js';
 import type { AccountResolver } from '../clearing/market.js';
 
 export interface ActionDeps {
   readonly calendar: Calendar;
+  readonly registry: Registry;
   readonly parties: Parties;
   readonly instruments: Instruments;
   readonly register: Register;
@@ -30,48 +31,15 @@ export interface ActionDeps {
   readonly accountOf: AccountResolver;
 }
 
-/** What an instrument's terms say falls due in a period. */
-export type DueAction =
-  | { readonly kind: 'coupon'; readonly date: Civil; readonly amountPerUnit: number }
-  | { readonly kind: 'maturity'; readonly date: Civil };
-
-/** The dated actions an instrument's terms place in `period` (Money G3.a). */
-export function dueActions(i: Instrument, period: Period, cal: Calendar): DueAction[] {
-  const t = i.terms;
-  switch (t.kind) {
-    case 'money':
-      return [];
-    case 'sovereign.bill': {
-      return cal.place(t.maturity) === period ? [{ kind: 'maturity', date: t.maturity }] : [];
-    }
-    case 'sovereign.bond': {
-      const out: DueAction[] = [];
-      const dates = cal.schedule(t.issueDate, t.maturity, t.couponPeriodicity);
-      let prev = t.issueDate;
-      for (const date of dates) {
-        if (cal.place(date) === period) {
-          // N6: the coupon for the accrual period, by the instrument's own day count (G3.c).
-          const frac = yearFraction(t.dayCount, prev, date);
-          out.push({ kind: 'coupon', date, amountPerUnit: mul(t.coupon.amount, frac, 'coupon') });
-        }
-        prev = date;
-      }
-      if (cal.place(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
-      return out.sort((a, b) => compareCivil(a.date, b.date));
-    }
-    default:
-      return assertNever(t, 'InstrumentTerms');
-  }
-}
-
 /** Run every action due this period, one instruction per holder of record (Register E1.a). */
 export function runCorporateActions(period: Period, cycle: Cycle, d: ActionDeps): void {
   for (const i of d.instruments.all()) {
     if (!i.status.live) continue;
-    for (const action of dueActions(i, period, d.calendar)) {
+    const profile = d.registry.instrumentKind(i.kind);
+    for (const action of profile.due(i, period, d.calendar)) {
       switch (action.kind) {
         case 'coupon':
-          payToHolders(i, action.amountPerUnit, 'coupon', `coupon on ${i.id}`, period, cycle, d);
+          payToHolders(i, action.amountPerUnit, `coupon on ${i.id}`, period, cycle, d);
           break;
         case 'maturity':
           redeem(i, period, cycle, d);
@@ -86,7 +54,6 @@ export function runCorporateActions(period: Period, cycle: Cycle, d: ActionDeps)
 function payToHolders(
   i: Instrument,
   perUnit: number,
-  cause: 'coupon',
   reason: string,
   period: Period,
   cycle: Cycle,
@@ -110,7 +77,11 @@ function payToHolders(
         holder.representation === 'cell' ? cellSide(holder, perMemberCash) : undefined,
       ),
     };
-    const draft: InstructionDraft = { legs: [leg], cause, reason: `${reason} to ${holderId}` };
+    const draft: InstructionDraft = {
+      legs: [leg],
+      cause: 'coupon',
+      reason: `${reason} to ${holderId}`,
+    };
     d.settlement.settle(draft, period, cycle);
   }
 }
@@ -158,7 +129,7 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
   if (still.issued === 0 || Math.abs(still.issued) <= d.register.heldTotal(i.id).dust) {
     if (still.issued !== 0) d.instruments.adjustIssued(i.id, -still.issued);
     d.instruments.cease(i.id, period);
-    d.journal.record(period, cycle, 'instrument.ceased', [i.id], { reason: 'maturity' });
+    d.journal.record(period, cycle, 'instrument.ceased', [i.id], { reason: 'maturity' }, true);
   }
 }
 

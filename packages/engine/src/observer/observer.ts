@@ -10,7 +10,6 @@ import type { PartyId } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
 import type { Print } from '../prices/price-store.js';
 import { displayName } from '../registry/naming.js';
-import { INSTRUMENT_PROFILES } from '../registry/profiles.js';
 import type { World } from '../world/world.js';
 import type { AuditReport } from '../audit/audit.js';
 import type { ParamReport } from '../registry/params.js';
@@ -86,14 +85,14 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
   const visible = (party: PartyId): boolean => scope.kind === 'inspector' || scope.party === party;
   const prints: PrintView[] = [];
   for (const i of w.instruments.all()) {
-    if (INSTRUMENT_PROFILES[i.kind].pricing !== 'cleared') continue;
+    if (w.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
     const latest = w.prices.latest(i.id, w.period);
     if (!latest.some) continue;
     const p = latest.value;
     const from = p.provenance.kind === 'stale' ? p.provenance.from : p.period;
     prints.push({
       instrument: i.id,
-      name: displayName(i, w.parties),
+      name: displayName(i, w.parties, w.registry),
       price: p.price,
       ccy: p.ccy,
       provenance: p.provenance,
@@ -107,7 +106,7 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
     const i = w.instruments.get(h.instrument);
     const qty = h.lots.reduce((s, l) => s + l.qty, 0);
     let value: number | null = null;
-    const pricing = INSTRUMENT_PROFILES[i.kind].pricing;
+    const pricing = w.registry.instrumentKind(i.kind).pricing;
     if (pricing === 'money') value = qty;
     else if (pricing === 'cleared' && w.prices.latest(i.id, w.period).some)
       value = w.valuation.valueOfLots(
@@ -121,7 +120,7 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
     positions.push({
       holder: h.holder,
       instrument: i.id,
-      name: displayName(i, w.parties),
+      name: displayName(i, w.parties, w.registry),
       qtyPerMember: qty,
       qtyTotal: qty * weightOf(w.parties.get(h.holder)),
       unit: i.unit,
@@ -147,7 +146,7 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
     })),
     instruments: w.instruments.all().map((i) => ({
       id: i.id,
-      name: displayName(i, w.parties),
+      name: displayName(i, w.parties, w.registry),
       kind: i.kind,
       issuer: i.issuer,
       issued: i.issued,
@@ -160,15 +159,10 @@ export function snapshot(w: World, scope: Scope, journalTail: number): Snapshot 
     audit: w.last?.audit ?? null,
     params: w.params.report(),
     moneyStock: w.moneyStock(),
-    journal: w.journal
-      .tail(journalTail)
-      .filter(
-        (e) =>
-          scope.kind === 'inspector' ||
-          e.subjects.includes(scope.party) ||
-          e.kind === 'print' ||
-          e.kind === 'audit',
-      ),
+    journal:
+      scope.kind === 'inspector'
+        ? w.journal.tail(journalTail)
+        : w.journal.visibleTo(scope.party, journalTail),
     ledgerLength: w.ledger.length,
     phases: w.phases.map((p) => ({ name: p.name, cycle: p.cycle, spec: p.spec })),
   };

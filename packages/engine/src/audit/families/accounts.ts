@@ -9,13 +9,13 @@
  */
 import { combineDust, sum, withinDust } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
-import { INSTRUMENT_PROFILES } from '../../registry/profiles.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
 export function accountsFamily(): Family {
   return {
     name: 'accounts',
+    contributor: 'kernel',
     spec: 'Audit B5',
     built: true,
     check(view: AuditView): Violation[] {
@@ -30,7 +30,8 @@ export function accountsFamily(): Family {
         }
         const liabilityTerms: number[] = [];
         for (const inst of view.instruments.all()) {
-          if (inst.issuer !== p.id || !INSTRUMENT_PROFILES[inst.kind].liabilityOfIssuer) continue;
+          if (inst.issuer !== p.id || !view.registry.instrumentKind(inst.kind).liabilityOfIssuer)
+            continue;
           if (inst.ccy !== home) continue;
           for (const holder of view.register.holdersOf(inst.id)) {
             const h = view.register.holding(holder, inst.id);

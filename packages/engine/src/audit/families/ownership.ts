@@ -10,6 +10,7 @@ import type { AuditView } from '../view.js';
 export function ownershipFamily(): Family {
   return {
     name: 'ownership',
+    contributor: 'kernel',
     spec: 'Audit B2',
     built: true,
     check(view: AuditView): Violation[] {

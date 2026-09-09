@@ -3,8 +3,11 @@
  *
  * @spec Audit A1 Audit A1.a Audit A2 Audit A2.a Audit A3 Audit A4 Audit B8 Audit C1 Audit C2 Audit C2.a Audit C3 Audit C4 Audit D1 Audit D2 Audit D3 Audit E1 Audit E2 Audit E3 Part XII
  *
- * Every family runs every period with the same checks (C3). A violation names who and how much, in a
- * unit (A2, A3). A family that is not yet built says so and is never green by omission.
+ * There are nine families (Part XII). A family is made of contributions: the kernel's, and any a
+ * module adds (a goods module contributes its units identity to the units family, the derivative
+ * layer builds the zero-sum family). Every family runs every period with the same checks (C3). A
+ * violation names who and how much, in a unit (A2, A3). A family with no built contribution says so
+ * and is never green by omission.
  */
 import type { Period } from '../calendar/calendar.js';
 import { finite, positiveCount } from '../core/num.js';
@@ -48,6 +51,8 @@ export interface FamilyReport {
   readonly family: FamilyName;
   readonly spec: string;
   readonly built: boolean;
+  /** Which contributions ran. */
+  readonly contributions: readonly string[];
   readonly count: number;
   /** The worst instances by size (D2). */
   readonly worst: readonly Violation[];
@@ -72,47 +77,58 @@ export interface AuditReport {
   readonly reads: Reads;
 }
 
+/** A contribution to one of the nine families. */
 export interface Family {
   readonly name: FamilyName;
+  /** Which module or kernel part contributes this check. */
+  readonly contributor: string;
   readonly spec: string;
   readonly built: boolean;
   check(view: AuditView): Violation[];
 }
 
 export class Audit {
-  private readonly families: readonly Family[];
+  private readonly byFamily: ReadonlyMap<FamilyName, readonly Family[]>;
   private readonly worst: number;
 
   /** `worst` is how many worst instances each family reports (D2): a RESOLUTION parameter. */
   constructor(families: readonly Family[], worst: number) {
     this.worst = positiveCount(worst, 'audit.worstInstances');
-    const seen = new Set<FamilyName>();
+    const map = new Map<FamilyName, Family[]>();
+    for (const name of FAMILY_NAMES) map.set(name, []);
     for (const f of families) {
-      if (seen.has(f.name)) throw new Error(`audit family ${f.name} registered twice`);
-      seen.add(f.name);
+      const list = map.get(f.name);
+      if (list === undefined) throw new Error(`unknown audit family ${f.name}`);
+      if (list.some((x) => x.contributor === f.contributor)) {
+        throw new Error(`audit family ${f.name}: contribution ${f.contributor} registered twice`);
+      }
+      list.push(f);
     }
-    for (const name of FAMILY_NAMES) {
-      if (!seen.has(name))
-        throw new Error(
-          `audit family ${name} is not registered; an absent family must report itself`,
-        );
-    }
-    this.families = families;
+    this.byFamily = map;
   }
 
   run(view: AuditView, reads: Reads): AuditReport {
     const reports: FamilyReport[] = [];
     let total = 0;
-    for (const f of this.families) {
-      const violations = f.built ? f.check(view) : [];
-      for (const v of violations) finite(v.size, `violation size in ${f.name}`);
+    for (const name of FAMILY_NAMES) {
+      const contributions = this.byFamily.get(name) ?? [];
+      const built = contributions.some((c) => c.built);
+      const violations: Violation[] = [];
+      for (const c of contributions) {
+        if (!c.built) continue;
+        for (const v of c.check(view)) {
+          finite(v.size, `violation size in ${name}`);
+          violations.push(v);
+        }
+      }
       const worst = [...violations]
         .sort((a, b) => Math.abs(b.size) - Math.abs(a.size))
         .slice(0, this.worst);
       reports.push({
-        family: f.name,
-        spec: f.spec,
-        built: f.built,
+        family: name,
+        spec: contributions.length === 0 ? 'Part XII' : contributions.map((c) => c.spec).join(' '),
+        built,
+        contributions: contributions.filter((c) => c.built).map((c) => c.contributor),
         count: violations.length,
         worst,
         violations,

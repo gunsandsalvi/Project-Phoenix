@@ -32,7 +32,6 @@ self.onmessage = (ev: MessageEvent<Request>): void => {
     switch (req.type) {
       case 'init': {
         world = foundationWorld(req.seed);
-        world.auditNow();
         post({ type: 'ready', seed: req.seed });
         return;
       }

@@ -2,11 +2,15 @@
  * The journal: events generated FROM state transitions by the engine (Observer B2). It is a read of
  * what happened, never an input to anything (B2.a: news never causes anything).
  *
- * @spec Observer B1 Observer B2 Observer B2.a Observer B3 Observer D1 Money G4
+ * @spec Observer B1 Observer B2 Observer B2.a Observer B3 Observer A3 Observer A4 Observer D1 Money G4 Money Market D5.a
+ *
+ * An event is public or private (Observer A3, A4): a print, a weight event, a cessation, a facility
+ * draw and the audit's counts are public; an instruction between two parties is theirs.
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
 import type { EventId } from '../core/ids.js';
 
+/** Kernel event kinds; modules add their own as `<module>.<event>`. */
 export type EventKind =
   | 'instruction.settled'
   | 'instruction.failed'
@@ -16,7 +20,8 @@ export type EventKind =
   | 'revaluation'
   | 'party.ceased'
   | 'instrument.ceased'
-  | 'audit';
+  | 'audit'
+  | `${string}.${string}`;
 
 export interface Event {
   readonly id: EventId;
@@ -26,6 +31,8 @@ export interface Event {
   /** B3: named subjects, so the event can be checked against the state. */
   readonly subjects: readonly string[];
   readonly data: Readonly<Record<string, unknown>>;
+  /** A3/A4: whether any observer may see it, or only its subjects. */
+  readonly public: boolean;
 }
 
 export class Journal {
@@ -38,6 +45,7 @@ export class Journal {
     kind: EventKind,
     subjects: readonly string[],
     data: Record<string, unknown>,
+    isPublic: boolean,
   ): Event {
     const ev: Event = Object.freeze({
       id: this.next as EventId,
@@ -46,6 +54,7 @@ export class Journal {
       kind,
       subjects: [...subjects],
       data: Object.freeze({ ...data }),
+      public: isPublic,
     });
     this.next += 1;
     this.events.push(ev);
@@ -66,5 +75,24 @@ export class Journal {
 
   tail(n: number): readonly Event[] {
     return this.events.slice(-n);
+  }
+
+  /** What a party may see: public events, and private ones it is a subject of (A4). */
+  visibleTo(party: string, last: number): readonly Event[] {
+    const out: Event[] = [];
+    for (let i = this.events.length - 1; i >= 0 && out.length < last; i -= 1) {
+      const e = this.events[i];
+      if (e !== undefined && (e.public || e.subjects.includes(party))) out.push(e);
+    }
+    return out.reverse();
+  }
+
+  publicTail(last: number): readonly Event[] {
+    const out: Event[] = [];
+    for (let i = this.events.length - 1; i >= 0 && out.length < last; i -= 1) {
+      const e = this.events[i];
+      if (e?.public === true) out.push(e);
+    }
+    return out.reverse();
   }
 }

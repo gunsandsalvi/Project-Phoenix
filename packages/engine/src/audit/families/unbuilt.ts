@@ -9,10 +9,22 @@ import type { Family } from '../audit.js';
 
 /** Cross-market consistency (Audit B4) needs a second venue for the same economic thing. */
 export function crossMarketFamily(): Family {
-  return { name: 'crossMarket', spec: 'Audit B4', built: false, check: () => [] };
+  return {
+    name: 'crossMarket',
+    contributor: 'kernel',
+    spec: 'Audit B4',
+    built: false,
+    check: () => [],
+  };
 }
 
 /** Zero-sum (Derivative D1.b) needs the derivative layer's contracts store. */
 export function zeroSumFamily(): Family {
-  return { name: 'zeroSum', spec: 'Derivative D1.b', built: false, check: () => [] };
+  return {
+    name: 'zeroSum',
+    contributor: 'kernel',
+    spec: 'Derivative D1.b',
+    built: false,
+    check: () => [],
+  };
 }

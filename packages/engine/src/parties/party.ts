@@ -1,18 +1,19 @@
 /**
  * Parties: named individually, or a cell standing for a population with a weight (XI-15).
  *
- * @spec XI-15 Households A2.e Households A2.f Small-Business Pools A6 Register F2 Seed B2 Seed B3
+ * @spec XI-15 Households A2.e Households A2.f Small-Business Pools A6 Register F2 Seed B2 Seed B3 Law 15
  *
  * A cell is one possible member carried with a multiplicity. It is homogeneous by construction: the
  * register stores per-member state for it, and the cell's totals are `weight x member` at read.
  * The weight is a count and changes by exactly five events: entry, death, promotion, split, merge.
+ * Which representation a kind takes is its profile's to say (Law 15).
  */
 import { forbid } from '../core/assert.js';
 import type { Period } from '../calendar/calendar.js';
 import { Forbidden, Missing } from '../core/errors.js';
-import type { CohortId, PartyId, RegionId } from '../core/ids.js';
+import type { CohortId, PartyId, PartyKindId, RegionId } from '../core/ids.js';
 import { positiveCount } from '../core/num.js';
-import type { PartyKind, Representation } from '../registry/kinds.js';
+import type { Registry } from '../registry/registry.js';
 
 export type PartyStatus =
   | { readonly alive: true }
@@ -27,7 +28,7 @@ export interface CellKey {
 
 interface PartyBase {
   readonly id: PartyId;
-  readonly kind: PartyKind;
+  readonly kind: PartyKindId;
   readonly region: RegionId;
   /** A display name, never a key (Appendix A, Keys). */
   readonly name: string;
@@ -64,16 +65,6 @@ export interface WeightEvent {
   readonly cause: string;
 }
 
-/** The representation each party kind takes (XI-15: institutions named, households and small firms cells). */
-export const REPRESENTATION_OF: Readonly<Record<PartyKind, Representation>> = Object.freeze({
-  centralBank: 'named',
-  treasury: 'named',
-  bank: 'named',
-  firm: 'named',
-  household: 'cell',
-  smallBusiness: 'cell',
-});
-
 export function weightOf(p: Party): number {
   return p.representation === 'cell' ? p.weight : 1;
 }
@@ -81,14 +72,18 @@ export function weightOf(p: Party): number {
 export class Parties {
   private readonly map = new Map<PartyId, Party>();
 
+  constructor(private readonly registry: Registry) {}
+
   add(p: Party): void {
     forbid(!this.map.has(p.id), 'Seed B2', `party ${p.id} already exists`, { id: p.id });
+    const profile = this.registry.partyKind(p.kind);
     forbid(
-      REPRESENTATION_OF[p.kind] === p.representation,
+      profile.representation === p.representation,
       'XI-15',
-      `a ${p.kind} is represented as ${REPRESENTATION_OF[p.kind]}, not ${p.representation}`,
+      `a ${p.kind} is represented as ${profile.representation}, not ${p.representation}`,
       { id: p.id },
     );
+    this.registry.region(p.region);
     if (p.representation === 'cell') {
       positiveCount(p.weight, `weight of ${p.id}`);
       forbid(
@@ -101,6 +96,7 @@ export class Parties {
         'XI-15',
         `cell ${p.id} is in ${p.region} but its key says ${p.key.region}`,
       );
+      this.registry.cohort(p.key.cohort);
     }
     this.map.set(p.id, Object.freeze({ ...p }));
   }
@@ -117,8 +113,9 @@ export class Parties {
 
   cell(id: PartyId): CellParty {
     const p = this.get(id);
-    if (p.representation !== 'cell')
+    if (p.representation !== 'cell') {
       throw new Forbidden('XI-15', `${id} is a named party, not a cell`);
+    }
     return p;
   }
 
@@ -129,6 +126,11 @@ export class Parties {
   /** Alive parties only; a ceased party keeps its identity (Seed B2) but takes no part. */
   alive(): readonly Party[] {
     return this.all().filter((p) => p.status.alive);
+  }
+
+  /** Alive parties of one kind, in insertion order (deterministic). */
+  ofKind(kind: PartyKindId): readonly Party[] {
+    return this.alive().filter((p) => p.kind === kind);
   }
 
   /**
@@ -165,9 +167,16 @@ export class Parties {
     while (!p.status.alive) {
       p = this.get(p.status.successor);
       hops += 1;
-      if (hops > this.map.size)
+      if (hops > this.map.size) {
         throw new Forbidden('Register F2', `successor chain from ${id} is cyclic`);
+      }
     }
     return p;
   }
 }
+
+/** The read-only face of the party store. */
+export type PartiesReads = Pick<
+  Parties,
+  'has' | 'get' | 'cell' | 'all' | 'alive' | 'ofKind' | 'resolve'
+>;

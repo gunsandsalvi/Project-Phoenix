@@ -230,6 +230,41 @@ These fell out of building items 1 and 2 and are recorded here because they are 
   flows and money families compare the ledger's deltas with the register's change: two independent
   records (Audit A1.a). Both skip when asked twice in one period.
 
+### 4.9b Kernel and modules (Law 15, Granularity)
+
+The engine is a **kernel** and a set of **system modules**.
+
+The kernel owns the stores and the loop: calendar, registry and parameter register, parties,
+instruments, register, ledger and settlement, price store and valuation, clearing solver and market
+runner, journal, audit runner, corporate actions, revaluation, cells. It owns the money instrument
+kind and the party kinds money needs. It changes only when a Part III clause demands it, by an
+inserted worklist item.
+
+A module (`src/mechanisms/<system>/`, `src/seeds/<name>/`) implements one system of the
+specification, one instrument family, or one seed. It declares, as data (`SystemModule` in
+`world/module.ts`): instrument kinds with their profiles, party kinds with their profiles, units,
+parameters, phases anchored to kernel phases, participants evaluated per party of a kind, audit
+contributions, and a seed contribution. Assembly (`world/assemble.ts`) merges these in dependency
+order (`requires`), seeds, states equity as the read, and seals the world with the audit.
+
+Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else:
+
+| Context | Who gets it | Can | Cannot |
+|---|---|---|---|
+| `ParticipantView` | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; public prints, public instrument terms, public events; its own random stream | see any other party's private state (Observer A4, Expectations D1) |
+| `MechanismContext` | a module phase | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal | write the register, write a print, write a weight, reach the world container |
+| `SeedContext` | a seed module at period zero | add parties and instruments; endow money and units; write opening prints; open markets | anything after the seal |
+
+Two rules hold this shape: a module never imports another module or the world container (lint
+`phoenix/no-cross-module-import`), and the register's write methods are reachable only through a
+store the kernel hands to settlement, the seed and the cell events. `World.register` is a
+runtime-frozen read facade, not a type alias.
+
+Kinds are registered at assembly, not closed unions: adding an instrument kind is one profile in
+one module; the kernel learns how a kind behaves only by asking its profile (pricing, liability,
+unit, terms validation, display name, actions due). An instrument whose kind has no profile cannot
+be registered.
+
 ### 4.10 Registry and parameters (Law 2, Law 15, XI-14)
 
 All data lives in the **registry**: currencies (each naming its issuing central bank), regions (each
@@ -286,7 +321,7 @@ Rules that follow:
 
 ```
 packages/engine/src/
-  core/        num.ts errors.ts ids.ts money.ts qty.ts rate.ts option.ts assert.ts
+  core/        num.ts errors.ts ids.ts money.ts rate.ts option.ts assert.ts format.ts
   calendar/    calendar.ts periodicity.ts daycount.ts
   registry/    registry.ts params.ts profiles.ts naming.ts
   parties/     party.ts cells.ts
@@ -297,8 +332,10 @@ packages/engine/src/
   contracts/   (arrives with the derivative layer: the zero-sum store, Derivative X1)
   audit/       audit.ts families/{money,ownership,prices,accounts,names,flows,units,...}.ts
   journal/     journal.ts events.ts
-  world/       world.ts schedule.ts step.ts seed.ts snapshot.ts
-  observer/    observer.ts scope.ts
+  world/       world.ts (kernel) module.ts context.ts assemble.ts actions.ts revalue.ts cells.ts
+  mechanisms/  <system>/index.ts       one module per spec system or instrument family
+  seeds/       <name>.ts               seed modules (foundation.ts)
+  observer/    observer.ts
   rng/         prng.ts
   index.ts
 packages/engine/test/      mirrors src; property tests under test/property
@@ -307,9 +344,9 @@ tools/                     spec-index.ts (parses the spec), check-citations.ts
 docs/                      spec/ ARCHITECTURE.md WORKLIST.md RECORD.md COVERAGE.md
 ```
 
-Mechanisms (Parts V–X) will live in `packages/engine/src/mechanisms/<system>/`, one directory per
-spec system, each exporting the phases it contributes to the period schedule. They are added in
-worklist order only.
+Mechanisms (Parts V–X) live in `packages/engine/src/mechanisms/<system>/`, one directory per spec
+system, each a `SystemModule`. They are added in worklist order only. `docs/PLAN.md` is the plan
+for building them.
 
 ---
 
@@ -353,6 +390,7 @@ Enforced by ESLint over `packages/engine/src` (rules in `eslint.config.js`, cust
 | `phoenix/no-magic-numbers`: literals other than `0, 1, -1, 2` outside `core/`, `registry/`, tests | Law 2, XI-14 |
 | `phoenix/no-kind-branch`: no `=== '<kind>'` comparisons on `.kind/.sector/.industry` inside `mechanisms/` | Law 15, App B 48 |
 | `phoenix/no-clock-no-random`: no `Date`, `Math.random`, `performance.now` in engine | Seed A5, Audit D3 |
+| `phoenix/no-cross-module-import`: a module imports only the kernel, never a sibling module or the world container | Law 15, 4.9b |
 | `phoenix/no-console`, `no-empty` catch, `no-restricted-syntax` on `try` inside mechanisms | §5 |
 | `@typescript-eslint/switch-exhaustiveness-check`, `no-explicit-any`, `no-non-null-assertion`, `strict-boolean-expressions` | §5 |
 

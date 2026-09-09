@@ -83,8 +83,13 @@ export default tseslint.config(
     rules: { 'phoenix/no-magic-numbers': 'off' },
   },
   {
-    files: ['packages/engine/src/mechanisms/**/*.ts'],
-    rules: { 'phoenix/no-kind-branch': 'error' },
+    files: ['packages/engine/src/mechanisms/**/*.ts', 'packages/engine/src/seeds/**/*.ts'],
+    rules: { 'phoenix/no-kind-branch': 'error', 'phoenix/no-cross-module-import': 'error' },
+  },
+  {
+    // A seed states endowments: its numbers are the seed's, declared in its param list.
+    files: ['packages/engine/src/seeds/**/*.ts'],
+    rules: { 'phoenix/no-magic-numbers': 'off' },
   },
   {
     files: ['**/*.test.ts', 'packages/app/e2e/**/*.ts', 'tools/**/*.ts', 'packages/app/**/*.ts'],

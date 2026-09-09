@@ -66,3 +66,32 @@ currency layer exists (worklist 12) and is declared there.
 **Forecast, with its killer.** The `flows` and `money` families will fail the period a mechanism
 writes a holding outside settlement; if a year of stepping with coupons ever passes with such a write
 unreported, the families are not independent reads and must be rebuilt.
+
+## 2a — Kernel/module boundary
+
+**What.** The engine is now a kernel and modules (`docs/ARCHITECTURE.md` 4.9b). Kinds are registered
+at assembly with their profiles (`registry/kinds.ts`); the kernel asks a profile how an instrument
+prices, whether it is a liability, what unit it takes, how its terms validate, how it is named, and
+what falls due. `SystemModule` (`world/module.ts`) declares kinds, units, params, phases anchored to
+the kernel's, participants per party kind, audit contributions and a seed contribution;
+`assemble()` orders modules by `requires`, seeds, states equity as the read and seals. Modules act
+through `ParticipantView`, `MechanismContext` and `SeedContext` only; `World.register` is a frozen
+read facade and the store with writes is handed to settlement, the seed and the cell events. A lint
+rule forbids a module importing a sibling or the world container. The audit takes contributions per
+family, so a module can build or extend a family. Journal events carry public/private visibility;
+a participant sees public events and its own. The sovereign bond and bill are the first module; the
+foundation seed is a module that draws dispersed household endowments from the seed's own stream
+with cells per key and members per key as RESOLUTION parameters and the dispersion width as a
+declared SHAPE.
+
+**Why.** Before this, an order provider and a phase received the whole world, including every
+party's private state and the register's writes; a mechanism could have bypassed settlement or
+read another party's book and only the audit would have noticed afterwards. Making the contexts
+the only door, and the single-writer rule a runtime fact, is cheaper now than after fifteen
+mechanisms are written against the wrong surface. Inserted before item 3 for that reason (Law 10).
+
+**Found.** Two tests had been settling instructions directly at period zero after the seal; they
+were exercising a path no mechanism has. Rewritten to act inside a phase, which is the only path.
+
+**Placeholders and shapes.** One placeholder (the opening price); three shapes (mean deposit, mean
+bond holding, dispersion width of the seed), all scheduled for worklist 4.

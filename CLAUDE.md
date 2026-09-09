@@ -83,6 +83,19 @@ asset has a *cleared* price and shows it; nothing is bounded, plugged or invente
   own history; one PREFERENCE (memory); surprise is a recorded event; confidence is a read; no global
   expectation; no peeking at the period's own result.
 
+## Kernel and modules (docs/ARCHITECTURE.md 4.9b, docs/PLAN.md)
+- The **kernel** (`core calendar registry parties register ledger prices clearing journal audit
+  world`) owns every store and the period loop. It changes only by an inserted worklist item.
+- A **module** (`src/mechanisms/<system>/`, `src/seeds/<name>.ts`) is one spec system, instrument
+  family or seed: a `SystemModule` declaring kinds+profiles, units, params, phases (anchored to
+  `corporateActions | markets | revaluation`), participants (per party kind, evaluated with that
+  party's `ParticipantView`), audit contributions, and a seed contribution.
+- A module reaches the kernel **only** through `ParticipantView`, `MechanismContext`, `SeedContext`.
+  It never imports another module or `world/world.ts` (lint). It never writes the register, a print
+  or a weight: settlement, markets and the cell events are the one writer of each.
+- Adding a system = one module + one worklist item. Replacing a system = replacing its module.
+- Kinds are registered at assembly; the kernel asks a kind's profile, never branches on its id.
+
 ## Error discipline
 - **Contract violations throw** `PhoenixError` with a citation, at the site, never caught in the
   engine: currency/unit mismatch, one-sided leg, moving encumbered units, unpriced read, missing
@@ -140,8 +153,9 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   fast-check, ESLint (custom rules in `tools/eslint-rules`), Vite, Capacitor for Android.
 - Run `npm run check` (lint + typecheck + tests + spec citations) before every commit. All green or
   the item is not done.
-- Take the first open item in `docs/WORKLIST.md`. One item, one commit. Write the RECORD entry and
-  re-mark COVERAGE in the same commit.
+- Take the first open item in `docs/WORKLIST.md`. Read `docs/PLAN.md` (the build loop, the module
+  contract, the item's section, the canonical period) before writing code. One item, one commit.
+  Write the RECORD entry and re-mark COVERAGE in the same commit.
 - Update `docs/ARCHITECTURE.md` in the same change as any structural decision.
 - Ask the owner only for decisions the spec explicitly reserves (e.g. §45 A4 inspector vs
   participant surface); everything else is derived from the spec and stated in the record.

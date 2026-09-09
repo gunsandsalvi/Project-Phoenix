@@ -10,7 +10,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Money A1` | MET | packages/engine/src/world/seed.ts |
+| `Money A1` | MET | packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money A1.d` | MET | packages/engine/src/audit/families/money.ts |
 | `Money A2` | MET | packages/engine/src/core/money.ts |
 | `Money A2.b` | MET | packages/engine/src/core/money.ts |
@@ -19,7 +19,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money B1` | MISSING |  |
 | `Money B1.b` | MISSING |  |
 | `Money B2` | MISSING |  |
-| `Money B3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/profiles.ts |
+| `Money B3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/kinds.ts |
 | `Money B3.c` | PARTIAL | refusal is recorded; a lender row for an allowed overdraft arrives with the corridor (worklist 11) |
 | `Money C1` | MET | packages/engine/src/ledger/instruction.ts |
 | `Money C2` | MET | packages/engine/src/ledger/settlement.ts |
@@ -28,9 +28,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money C4` | MET | packages/engine/src/audit/families/money.ts, packages/engine/src/ledger/settlement.ts |
 | `Money C4.c` | MET | packages/engine/src/audit/families/money.ts, packages/engine/src/audit/memory.ts |
 | `Money D1` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/ledger/ledger.ts, packages/engine/src/ledger/settlement.ts |
-| `Money D2` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/prices/value.ts, packages/engine/src/register/instruments.ts, packages/engine/src/world/seed.ts |
+| `Money D2` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/prices/value.ts, packages/engine/src/register/instruments.ts, packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money D3` | MET | packages/engine/src/audit/families/flows.ts, packages/engine/src/audit/memory.ts, packages/engine/src/ledger/settlement.ts |
-| `Money D4` | MET | packages/engine/src/audit/families/flows.ts, packages/engine/src/ledger/settlement.ts |
+| `Money D4` | MET | packages/engine/src/audit/families/flows.ts, packages/engine/src/ledger/settlement.ts, packages/engine/src/world/context.ts |
 | `Money E1` | PARTIAL | a fail is recorded; the default state and its downstream consequences arrive with XI-1 (worklist 5) |
 | `Money E2` | MET | packages/engine/src/ledger/ledger.ts, packages/engine/src/ledger/settlement.ts |
 | `Money E3` | MET | packages/engine/src/ledger/settlement.ts |
@@ -69,8 +69,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Register D3` | MET | packages/engine/src/prices/value.ts |
 | `Register D4` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/register/register.ts |
 | `Register D5` | MET | packages/engine/src/register/register.ts |
-| `Register E1` | MET | packages/engine/src/world/actions.ts |
-| `Register E2` | MET | packages/engine/src/world/actions.ts |
+| `Register E1` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
+| `Register E2` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
 | `Register E3` | PARTIAL | a default converts nothing yet; XI-1 (worklist 5) |
 | `Register E4` | PARTIAL | split, buyback and new issue apply through issuance legs; no corporate-action driver yet |
 | `Register E5` | PARTIAL | every register event so far moves money; no explicit why-not record for the exceptions |
@@ -84,10 +84,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Clearing A1` | MET | packages/engine/src/clearing/market.ts |
 | `Clearing A2` | MET | packages/engine/src/clearing/solver.ts |
-| `Clearing A3` | MISSING |  |
-| `Clearing A4` | MET | packages/engine/src/clearing/solver.ts |
+| `Clearing A3` | MET | packages/engine/src/world/context.ts, packages/engine/src/world/module.ts |
+| `Clearing A4` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/world/context.ts |
 | `Clearing B1` | MET | packages/engine/src/clearing/market.ts |
-| `Clearing B2` | MET | packages/engine/src/clearing/market.ts |
+| `Clearing B2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/world/module.ts |
 | `Clearing B3` | PARTIAL | no dealer exists yet (worklist 9) |
 | `Clearing B4` | MISSING |  |
 | `Clearing B5` | MET | packages/engine/src/clearing/solver.ts |
@@ -142,20 +142,20 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Seed A1` | MET | packages/engine/src/world/seed.ts |
-| `Seed A2` | MET | packages/engine/src/world/seed.ts |
-| `Seed A3` | MET | packages/engine/src/world/seed.ts |
-| `Seed A4` | MET | packages/engine/src/world/seed.ts |
-| `Seed A5` | MET | packages/engine/src/rng/prng.ts, packages/engine/src/world/seed.ts, packages/engine/src/world/world.ts |
+| `Seed A1` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/world/assemble.ts, packages/engine/src/world/context.ts |
+| `Seed A2` | MET | packages/engine/src/world/assemble.ts |
+| `Seed A3` | MET | packages/engine/src/seeds/foundation.ts |
+| `Seed A4` | MET | packages/engine/src/seeds/foundation.ts, packages/engine/src/world/context.ts |
+| `Seed A5` | MET | packages/engine/src/rng/prng.ts, packages/engine/src/seeds/foundation.ts, packages/engine/src/world/assemble.ts, packages/engine/src/world/world.ts |
 | `Seed B1` | PARTIAL | the foundation seed has one instance of several kinds; populations are cells with weights |
-| `Seed B2` | MET | packages/engine/src/parties/party.ts, packages/engine/src/world/seed.ts |
-| `Seed B3` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/registry.ts, packages/engine/src/world/seed.ts |
+| `Seed B2` | MET | packages/engine/src/parties/party.ts, packages/engine/src/seeds/foundation.ts |
+| `Seed B3` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/registry.ts, packages/engine/src/seeds/foundation.ts |
 | `Seed B4` | PARTIAL | sizes are dispersed by hand in the foundation seed; nothing draws them |
 | `Seed B5` | MISSING |  |
-| `Seed C1` | MET | packages/engine/src/world/seed.ts |
-| `Seed C2` | MET | packages/engine/src/world/seed.ts |
-| `Seed C3` | MET | packages/engine/src/world/seed.ts |
-| `Seed C4` | MET | packages/engine/src/world/seed.ts |
+| `Seed C1` | MET | packages/engine/src/world/assemble.ts |
+| `Seed C2` | MET | packages/engine/src/seeds/foundation.ts |
+| `Seed C3` | MET | packages/engine/src/seeds/foundation.ts |
+| `Seed C4` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed C5` | MISSING |  |
 | `Seed D1` | PARTIAL | coupons are payable from the treasury account; wages and work in progress arrive with worklist 4 |
 | `Seed D2` | MISSING |  |
@@ -202,19 +202,19 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Bond N1` | MET | packages/engine/src/register/instruments.ts |
 | `Bond N2` | MET | packages/engine/src/register/instruments.ts |
 | `Bond N3` | MET | packages/engine/src/register/instruments.ts |
-| `Bond N4` | MET | packages/engine/src/register/instruments.ts, packages/engine/src/world/actions.ts |
-| `Bond N5` | MET | packages/engine/src/register/instruments.ts |
+| `Bond N4` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Bond N5` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Bond N6` | PARTIAL | periodicity and day count are on the instrument; accrual between payments is not yet read |
 | `Bond N7` | MISSING |  |
 | `Bond N7.b` | MISSING |  |
 | `Bond N8` | MISSING |  |
 | `Bond N8.a` | MET | packages/engine/src/audit/families/ownership.ts |
 | `Bond N9` | MISSING |  |
-| `Bond N10` | MET | packages/engine/src/register/instruments.ts, packages/engine/src/world/actions.ts |
+| `Bond N10` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts, packages/engine/src/world/actions.ts |
 | `Bond N11` | PARTIAL | the sovereign answers none; the corporate regime arrives with Corporate Credit |
-| `Bond N12` | MISSING |  |
-| `Bond N13` | MISSING |  |
-| `Bond N14` | MET | packages/engine/src/register/instruments.ts |
+| `Bond N12` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Bond N13` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Bond N14` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts, packages/engine/src/register/instruments.ts |
 
 ## Derivative
 
@@ -310,13 +310,13 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign A3` | MISSING |  |
 | `Sovereign A3.b` | MISSING |  |
 | `Sovereign A4` | MISSING |  |
-| `Sovereign B1` | MET | packages/engine/src/register/instruments.ts, packages/engine/src/world/actions.ts |
-| `Sovereign B2` | MISSING |  |
+| `Sovereign B1` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Sovereign B2` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign B3` | MISSING |  |
-| `Sovereign B4` | MISSING |  |
-| `Sovereign B5` | MISSING |  |
-| `Sovereign B6` | MISSING |  |
-| `Sovereign B7` | MISSING |  |
+| `Sovereign B4` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Sovereign B5` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Sovereign B6` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
+| `Sovereign B7` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign C1` | MISSING |  |
 | `Sovereign C2` | MET | packages/engine/src/clearing/solver.ts |
 | `Sovereign C3` | MISSING |  |
@@ -338,7 +338,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign E5` | MISSING |  |
 | `Sovereign F1` | PARTIAL | coupon paid to the holder on the date; accrual to the holder of record between dates is not read |
 | `Sovereign F2` | MISSING |  |
-| `Sovereign F3` | MET | packages/engine/src/world/actions.ts |
+| `Sovereign F3` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts |
 | `Sovereign F4` | MISSING |  |
 | `Sovereign F5` | MISSING |  |
 | `Sovereign G1` | MISSING |  |
@@ -417,7 +417,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Equity F1` | MISSING |  |
 | `Equity F2` | MISSING |  |
 | `Equity F3` | MISSING |  |
-| `Equity F4` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/profiles.ts |
+| `Equity F4` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/kinds.ts |
 | `Equity G1` | MISSING |  |
 | `Equity G2` | MISSING |  |
 | `Equity G3` | MISSING |  |
@@ -493,7 +493,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Fund Shares A1` | MISSING |  |
 | `Fund Shares A2` | MISSING |  |
-| `Fund Shares A3` | MET | packages/engine/src/audit/families/accounts.ts, packages/engine/src/registry/profiles.ts |
+| `Fund Shares A3` | MET | packages/engine/src/audit/families/accounts.ts, packages/engine/src/registry/kinds.ts |
 | `Fund Shares A4` | MISSING |  |
 | `Fund Shares B1` | MET | packages/engine/src/prices/value.ts |
 | `Fund Shares B2` | MISSING |  |
@@ -1382,7 +1382,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Households A1` | MISSING |  |
 | `Households A2` | MISSING |  |
 | `Households A2.d` | MISSING |  |
-| `Households A2.e` | MET | packages/engine/src/parties/party.ts |
+| `Households A2.e` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/profiles.ts |
 | `Households A2.f` | MET | packages/engine/src/parties/party.ts |
 | `Households A2.g` | MISSING |  |
 | `Households A3` | MISSING |  |
@@ -1423,7 +1423,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Small-Business Pools A3` | MISSING |  |
 | `Small-Business Pools A4` | MISSING |  |
 | `Small-Business Pools A5` | MISSING |  |
-| `Small-Business Pools A6` | MET | packages/engine/src/parties/party.ts |
+| `Small-Business Pools A6` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/profiles.ts |
 | `Small-Business Pools B1` | MISSING |  |
 | `Small-Business Pools B2` | MISSING |  |
 | `Small-Business Pools B3` | MISSING |  |
@@ -1509,10 +1509,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Observer A1` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/prices/price-store.ts |
-| `Observer A2` | MET | packages/engine/src/observer/observer.ts |
+| `Observer A1` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/world/context.ts |
+| `Observer A2` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/context.ts |
 | `Observer A3` | PARTIAL | public state is instrument terms and prints; issuer publications arrive with firms |
-| `Observer A4` | MET | packages/engine/src/observer/observer.ts |
+| `Observer A4` | MET | packages/engine/src/journal/journal.ts, packages/engine/src/observer/observer.ts, packages/engine/src/world/context.ts, packages/engine/src/world/world.ts |
 | `Observer A5` | PARTIAL | no published aggregates with a lag yet |
 | `Observer B1` | MET | packages/engine/src/journal/journal.ts |
 | `Observer B2` | MET | packages/engine/src/journal/journal.ts |
@@ -1559,7 +1559,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Expectations C4` | MISSING |  |
 | `Expectations C5` | MISSING |  |
 | `Expectations C6` | MISSING |  |
-| `Expectations D1` | MISSING |  |
+| `Expectations D1` | MET | packages/engine/src/world/context.ts |
 | `Expectations D2` | MISSING |  |
 | `Expectations D3` | MISSING |  |
 | `Expectations D4` | MISSING |  |

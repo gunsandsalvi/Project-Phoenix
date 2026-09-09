@@ -49,13 +49,20 @@ export function splitCell(
     period,
     cause,
   });
-  d.journal.record(period, cycle, 'weight', [cell, id], {
-    kind: 'split',
-    from: cell,
-    to: id,
-    members,
-    cause,
-  });
+  d.journal.record(
+    period,
+    cycle,
+    'weight',
+    [cell, id],
+    {
+      kind: 'split',
+      from: cell,
+      to: id,
+      members,
+      cause,
+    },
+    true,
+  );
   return id;
 }
 
@@ -87,13 +94,20 @@ export function mergeCells(
   });
   d.register.forget(b);
   d.parties.cease(b, period, a);
-  d.journal.record(period, cycle, 'weight', [a, b], {
-    kind: 'merge',
-    into: a,
-    from: b,
-    members: cb.weight,
-    cause,
-  });
+  d.journal.record(
+    period,
+    cycle,
+    'weight',
+    [a, b],
+    {
+      kind: 'merge',
+      into: a,
+      from: b,
+      members: cb.weight,
+      cause,
+    },
+    true,
+  );
 }
 
 /** Entry, death or promotion change a weight by a count of members, with a cause (XI-15). */
@@ -115,13 +129,20 @@ export function weightEvent(
     `${kind} of ${members} would leave ${cell} with ${after} members; a cell of nobody is nobody's`,
   );
   d.parties.applyWeight({ kind, party: cell, before: c.weight, after, period, cause });
-  d.journal.record(period, cycle, 'weight', [cell], {
-    kind,
-    members,
-    before: c.weight,
-    after,
-    cause,
-  });
+  d.journal.record(
+    period,
+    cycle,
+    'weight',
+    [cell],
+    {
+      kind,
+      members,
+      before: c.weight,
+      after,
+      cause,
+    },
+    true,
+  );
 }
 
 function sameKey(a: CellParty, b: CellParty): boolean {

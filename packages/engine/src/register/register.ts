@@ -389,3 +389,40 @@ function withinDebitDust(a: number, b: number): boolean {
   const s = sum([a, b]);
   return Math.abs(a - b) <= s.dust + 2 * Number.EPSILON * (Math.abs(a) + Math.abs(b));
 }
+
+/**
+ * The read-only face of the register. The World exposes only this; the store with its writes is
+ * handed to settlement, the cell events and the seed, and to nothing else (Law 4: one writer).
+ */
+export type RegisterReads = Pick<
+  Register,
+  | 'holding'
+  | 'quantity'
+  | 'totalQuantity'
+  | 'encumbered'
+  | 'free'
+  | 'holdingsOf'
+  | 'holdersOf'
+  | 'heldTotal'
+  | 'allHoldings'
+  | 'equity'
+  | 'hasEquityAccount'
+>;
+
+/** A real read-only facade: no write is reachable through it, at runtime as well as in the types. */
+export function registerReads(store: Register): RegisterReads {
+  return Object.freeze({
+    holding: (holder: PartyId, instrument: InstrumentId) => store.holding(holder, instrument),
+    quantity: (holder: PartyId, instrument: InstrumentId) => store.quantity(holder, instrument),
+    totalQuantity: (holder: PartyId, instrument: InstrumentId) =>
+      store.totalQuantity(holder, instrument),
+    encumbered: (holder: PartyId, instrument: InstrumentId) => store.encumbered(holder, instrument),
+    free: (holder: PartyId, instrument: InstrumentId) => store.free(holder, instrument),
+    holdingsOf: (holder: PartyId) => store.holdingsOf(holder),
+    holdersOf: (instrument: InstrumentId) => store.holdersOf(instrument),
+    heldTotal: (instrument: InstrumentId) => store.heldTotal(instrument),
+    allHoldings: () => store.allHoldings(),
+    equity: (party: PartyId) => store.equity(party),
+    hasEquityAccount: (party: PartyId) => store.hasEquityAccount(party),
+  });
+}

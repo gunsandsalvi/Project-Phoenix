@@ -11,6 +11,7 @@ import type { AuditView } from '../view.js';
 export function unitsFamily(): Family {
   return {
     name: 'units',
+    contributor: 'kernel',
     spec: 'Part XII',
     built: true,
     check(view: AuditView): Violation[] {

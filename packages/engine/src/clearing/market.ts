@@ -85,13 +85,20 @@ export function runMarket(
         ccy: m.ccy,
         provenance: { kind: 'traded', qty: settledVolume, trades: trades.length - failed },
       });
-      deps.journal.record(period, cycle, 'print', [m.id, m.instrument], {
-        price: outcome.price,
-        volume: outcome.volume,
-        settledVolume,
-        failedTrades: failed,
-        rationed: outcome.rationed,
-      });
+      deps.journal.record(
+        period,
+        cycle,
+        'print',
+        [m.id, m.instrument],
+        {
+          price: outcome.price,
+          volume: outcome.volume,
+          settledVolume,
+          failedTrades: failed,
+          rationed: outcome.rationed,
+        },
+        true,
+      );
       return {
         market: m.id,
         outcome: 'cleared',
@@ -119,12 +126,19 @@ export function runMarket(
         ccy: m.ccy,
         provenance: { kind: 'stale', from, reason: outcome.kind },
       });
-      deps.journal.record(period, cycle, 'print', [m.id, m.instrument], {
-        stale: true,
-        reason: outcome.kind,
-        carriedFrom: from,
-        price: last.value.price,
-      });
+      deps.journal.record(
+        period,
+        cycle,
+        'print',
+        [m.id, m.instrument],
+        {
+          stale: true,
+          reason: outcome.kind,
+          carriedFrom: from,
+          price: last.value.price,
+        },
+        true,
+      );
       return {
         market: m.id,
         outcome: outcome.kind,

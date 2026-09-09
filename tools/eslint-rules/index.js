@@ -183,12 +183,56 @@ const noClockNoRandom = {
   },
 };
 
-export default {
-  rules: {
-    'no-bounds': noBounds,
-    'no-numeric-default': noNumericDefault,
-    'no-magic-numbers': noMagicNumbers,
-    'no-kind-branch': noKindBranch,
-    'no-clock-no-random': noClockNoRandom,
+const pluginRules = {
+  'no-bounds': noBounds,
+  'no-numeric-default': noNumericDefault,
+  'no-magic-numbers': noMagicNumbers,
+  'no-kind-branch': noKindBranch,
+  'no-clock-no-random': noClockNoRandom,
+};
+
+export default { rules: pluginRules };
+
+/**
+ * Law 15 / docs/ARCHITECTURE.md: a module never imports another module, and never imports the
+ * kernel's world container. Everything crosses through the kernel's stores and contexts.
+ */
+const noCrossModuleImport = {
+  meta: {
+    type: 'problem',
+    docs: {
+      description: 'A mechanism or seed module imports only the kernel, never a sibling module',
+    },
+    schema: [],
+    messages: {
+      sibling:
+        'A module never imports another module ({{target}}); it reaches other systems only through the kernel state and contexts.',
+      world:
+        'A module never imports the world container; it works through MechanismContext, ParticipantView and SeedContext.',
+    },
+  },
+  create(context) {
+    const file = context.filename.replace(/\\/g, '/');
+    const m = /\/src\/(mechanisms|seeds)\/([^/]+)\//.exec(file);
+    if (m === null) return {};
+    const own = `${m[1]}/${m[2]}`;
+    return {
+      ImportDeclaration(node) {
+        const source = String(node.source.value);
+        const resolved = source.replace(/^(\.\.\/)+/, '').replace(/^\.\//, '');
+        const sib = /^(mechanisms|seeds)\/([^/]+)/.exec(resolved);
+        if (sib !== null && `${sib[1]}/${sib[2]}` !== own) {
+          context.report({ node, messageId: 'sibling', data: { target: `${sib[1]}/${sib[2]}` } });
+        }
+        if (
+          /world\/world\.js$/.test(resolved) &&
+          !/^import type/.test(context.sourceCode.getText(node))
+        ) {
+          context.report({ node, messageId: 'world' });
+        }
+      },
+    };
   },
 };
+
+pluginRules['no-cross-module-import'] = noCrossModuleImport;

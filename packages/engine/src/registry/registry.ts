@@ -1,5 +1,6 @@
 /**
- * The registry: all DATA lives here (Law 15). Behaviour that varies by kind lives in profiles.
+ * The registry: all DATA lives here (Law 15), and the dispatch tables of kind profiles that
+ * modules register at assembly. Behaviour that varies by kind lives in those profiles.
  *
  * @spec Law 15 Currency A5 Currency A2 Seed B3 Appendix A XI-15
  *
@@ -8,8 +9,16 @@
  * world is built, because parties are state, not data.
  */
 import { InvalidRegistry, Missing } from '../core/errors.js';
-import type { CohortId, CurrencyCode, PartyId, RegionId, UnitId } from '../core/ids.js';
-import type { LotFlow } from './kinds.js';
+import type {
+  CohortId,
+  CurrencyCode,
+  InstrumentKindId,
+  PartyId,
+  PartyKindId,
+  RegionId,
+  UnitId,
+} from '../core/ids.js';
+import type { InstrumentKindProfile, LotFlow, PartyKindProfile } from './kinds.js';
 
 export interface CurrencyDecl {
   readonly code: CurrencyCode;
@@ -51,6 +60,9 @@ export interface RegistryData {
   readonly cellKey: readonly CellKeyDimension[];
   /** The stated, consistently applied lot-flow assumption for securities (Register D4). */
   readonly lotFlow: LotFlow;
+  /** The kind profiles the kernel and the assembled modules register (Law 15). */
+  readonly instrumentKinds: readonly InstrumentKindProfile[];
+  readonly partyKinds: readonly PartyKindProfile[];
 }
 
 export class Registry {
@@ -60,6 +72,8 @@ export class Registry {
   readonly cohorts: readonly CohortDecl[];
   readonly cellKey: readonly CellKeyDimension[];
   readonly lotFlow: LotFlow;
+  readonly instrumentKinds: ReadonlyMap<InstrumentKindId, InstrumentKindProfile>;
+  readonly partyKinds: ReadonlyMap<PartyKindId, PartyKindProfile>;
 
   constructor(data: RegistryData) {
     this.currencies = unique(data.currencies, (c) => c.code, 'currency');
@@ -68,6 +82,8 @@ export class Registry {
     this.cohorts = [...data.cohorts];
     this.cellKey = [...data.cellKey];
     this.lotFlow = data.lotFlow;
+    this.instrumentKinds = unique(data.instrumentKinds, (k) => k.id, 'instrument kind');
+    this.partyKinds = unique(data.partyKinds, (k) => k.id, 'party kind');
 
     for (const r of this.regions.values()) {
       if (!this.currencies.has(r.ccy)) {
@@ -83,8 +99,9 @@ export class Registry {
         throw new InvalidRegistry('Appendix A', `currency ${c.code} has no unit ${unit} declared`);
       }
     }
-    if (this.cohorts.length === 0)
+    if (this.cohorts.length === 0) {
       throw new InvalidRegistry('XI-15', 'at least one cohort is needed');
+    }
     for (let i = 1; i < this.cohorts.length; i += 1) {
       const prev = this.cohorts[i - 1];
       const cur = this.cohorts[i];
@@ -93,15 +110,20 @@ export class Registry {
       }
     }
     const dims = new Set(this.cellKey);
-    if (dims.size !== this.cellKey.length)
+    if (dims.size !== this.cellKey.length) {
       throw new InvalidRegistry('XI-15', 'cell key dimension repeated');
+    }
     if (!dims.has('region')) throw new InvalidRegistry('XI-15', 'the cell key must include region');
+    if (!this.instrumentKinds.has('money' as InstrumentKindId)) {
+      throw new InvalidRegistry('Money D2', 'the money instrument kind must be registered');
+    }
   }
 
   currency(code: CurrencyCode): CurrencyDecl {
     const c = this.currencies.get(code);
-    if (c === undefined)
+    if (c === undefined) {
       throw new Missing('Currency A5', `currency ${code} does not exist`, { code });
+    }
     return c;
   }
 
@@ -126,6 +148,27 @@ export class Registry {
   /** The central bank that issues a currency (Currency A2). */
   centralBankOf(code: CurrencyCode): PartyId {
     return this.currency(code).centralBank;
+  }
+
+  /** The profile of an instrument kind (Law 15): the only way the kernel learns how a kind behaves. */
+  instrumentKind(id: InstrumentKindId): InstrumentKindProfile {
+    const k = this.instrumentKinds.get(id);
+    if (k === undefined) {
+      throw new Missing('Law 15', `instrument kind ${id} has no profile registered`, { id });
+    }
+    return k;
+  }
+
+  partyKind(id: PartyKindId): PartyKindProfile {
+    const k = this.partyKinds.get(id);
+    if (k === undefined) {
+      throw new Missing('Law 15', `party kind ${id} has no profile registered`, { id });
+    }
+    return k;
+  }
+
+  issuesMoney(kind: PartyKindId): boolean {
+    return this.partyKind(kind).moneyIssuer !== null;
   }
 }
 

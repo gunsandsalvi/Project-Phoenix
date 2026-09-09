@@ -13,6 +13,7 @@ import type { AuditView } from '../view.js';
 export function flowsFamily(memory: AuditMemory): Family {
   return {
     name: 'flows',
+    contributor: 'kernel',
     spec: 'Audit B7',
     built: true,
     check(view: AuditView): Violation[] {

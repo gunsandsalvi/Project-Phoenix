@@ -13,13 +13,14 @@ import { assertNever } from '../core/assert.js';
 import { Unpriced } from '../core/errors.js';
 import type { InstrumentId } from '../core/ids.js';
 import { mul } from '../core/num.js';
-import type { Instruments } from '../register/instruments.js';
+import type { InstrumentsReads as Instruments } from '../register/instruments.js';
 import type { Lot } from '../register/register.js';
-import { INSTRUMENT_PROFILES } from '../registry/profiles.js';
+import type { Registry } from '../registry/registry.js';
 import type { PriceStore } from './price-store.js';
 
 export class Valuation {
   constructor(
+    private readonly registry: Registry,
     private readonly instruments: Instruments,
     private readonly prices: PriceStore,
   ) {}
@@ -27,7 +28,7 @@ export class Valuation {
   /** The mark per unit in force for `at` (throws NotYetProduced before the market has printed). */
   markPerUnit(instrument: InstrumentId, at: Period): number {
     const i = this.instruments.get(instrument);
-    const pricing = INSTRUMENT_PROFILES[i.kind].pricing;
+    const pricing = this.registry.instrumentKind(i.kind).pricing;
     switch (pricing) {
       case 'money':
         return 1; // Money D2: the only admissible hard-coded price of one.
@@ -52,7 +53,7 @@ export class Valuation {
     now: Period,
   ): number {
     const i = this.instruments.get(instrument);
-    const pricing = INSTRUMENT_PROFILES[i.kind].pricing;
+    const pricing = this.registry.instrumentKind(i.kind).pricing;
     switch (pricing) {
       case 'money':
         return 1;
@@ -70,7 +71,7 @@ export class Valuation {
   /** Value of a quantity at the mark in force for `at`, in the instrument's currency. */
   valueAtMark(instrument: InstrumentId, qty: number, at: Period): number {
     const i = this.instruments.get(instrument);
-    const pricing = INSTRUMENT_PROFILES[i.kind].pricing;
+    const pricing = this.registry.instrumentKind(i.kind).pricing;
     if (pricing === 'carriedAtCost') {
       throw new Unpriced('XI-6', `${instrument} is carried at cost; value its lots`, {
         instrument,
@@ -82,7 +83,7 @@ export class Valuation {
   /** Value of lots: at mark for cleared instruments and money, at basis for carried-at-cost. */
   valueOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): number {
     const i = this.instruments.get(instrument);
-    const pricing = INSTRUMENT_PROFILES[i.kind].pricing;
+    const pricing = this.registry.instrumentKind(i.kind).pricing;
     let v = 0;
     for (const lot of lots) {
       const per = pricing === 'carriedAtCost' ? lot.basisPerUnit : this.markPerUnit(instrument, at);

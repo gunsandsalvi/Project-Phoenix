@@ -20,6 +20,7 @@ import type { AuditView } from '../view.js';
 export function moneyFamily(memory: AuditMemory): Family {
   return {
     name: 'money',
+    contributor: 'kernel',
     spec: 'Audit B1',
     built: true,
     check(view: AuditView): Violation[] {
@@ -27,7 +28,7 @@ export function moneyFamily(memory: AuditMemory): Family {
       const moneyInstruments = new Set(
         view.instruments
           .all()
-          .filter((i) => i.kind === 'money')
+          .filter((i) => view.registry.instrumentKind(i.kind).pricing === 'money')
           .map((i) => i.id),
       );
 

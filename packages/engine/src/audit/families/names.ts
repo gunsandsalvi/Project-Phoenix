@@ -4,13 +4,13 @@
  *
  * @spec Audit B6 Register A1.a Register A3 Register A4 Register F2 Currency A2 XI-15
  */
-import { MONEY_ISSUER_PROFILES } from '../../registry/profiles.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
 export function namesFamily(): Family {
   return {
     name: 'names',
+    contributor: 'kernel',
     spec: 'Audit B6',
     built: true,
     check(view: AuditView): Violation[] {
@@ -33,13 +33,13 @@ export function namesFamily(): Family {
             c.code,
             `currency ${c.code} names issuer ${c.centralBank}, which does not exist`,
           );
-        else if (view.parties.get(c.centralBank).kind !== 'centralBank')
+        else if (view.registry.partyKind(view.parties.get(c.centralBank).kind).moneyIssuer === null)
           v('Currency A2', c.code, `issuer of ${c.code} is not a central bank`);
       }
       for (const p of view.parties.all()) {
         if (!view.parties.has(p.bank))
           v('Money B1', p.id, `${p.id} banks at ${p.bank}, which does not exist`);
-        else if (!MONEY_ISSUER_PROFILES[view.parties.get(p.bank).kind].issuesMoney)
+        else if (!view.registry.issuesMoney(view.parties.get(p.bank).kind))
           v('Money A1.d', p.id, `${p.id} banks at ${p.bank}, which issues no money`);
         if (!p.status.alive && !view.parties.has(p.status.successor))
           v(
@@ -57,10 +57,7 @@ export function namesFamily(): Family {
       for (const i of view.instruments.all()) {
         if (!view.parties.has(i.issuer))
           v('Register A4', i.id, `instrument ${i.id} has issuer ${i.issuer}, which does not exist`);
-        if (
-          i.kind === 'money' &&
-          !MONEY_ISSUER_PROFILES[view.parties.get(i.issuer).kind].issuesMoney
-        )
+        if (i.kind === 'money' && !view.registry.issuesMoney(view.parties.get(i.issuer).kind))
           v('Money A1.d', i.id, `${i.id} is money issued by a non-issuer`);
         if (
           i.market.some &&

@@ -17,9 +17,10 @@ import { weightOf } from '../parties/party.js';
 import type { Valuation } from '../prices/value.js';
 import type { Instruments } from '../register/instruments.js';
 import type { Register } from '../register/register.js';
-import { INSTRUMENT_PROFILES } from '../registry/profiles.js';
+import type { Registry } from '../registry/registry.js';
 
 export interface RevalueDeps {
+  readonly registry: Registry;
   readonly parties: Parties;
   readonly instruments: Instruments;
   readonly register: Register;
@@ -31,7 +32,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
   const issuerMoves = new Map<PartyId, number>();
   for (const h of d.register.allHoldings()) {
     const inst = d.instruments.get(h.instrument);
-    const profile = INSTRUMENT_PROFILES[inst.kind];
+    const profile = d.registry.instrumentKind(inst.kind);
     if (profile.pricing !== 'cleared') continue;
     const mark = d.valuation.markPerUnit(inst.id, period);
     let delta = 0;
@@ -45,10 +46,17 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       delta,
       cause: `revaluation of ${inst.id} in period ${period}`,
     });
-    d.journal.record(period, cycle, 'revaluation', [h.holder, inst.id], {
-      deltaPerMember: delta,
-      mark,
-    });
+    d.journal.record(
+      period,
+      cycle,
+      'revaluation',
+      [h.holder, inst.id],
+      {
+        deltaPerMember: delta,
+        mark,
+      },
+      false,
+    );
     if (profile.liabilityOfIssuer) {
       const total = mul(delta, weightOf(d.parties.get(h.holder)), 'issuer revaluation');
       addTo(issuerMoves, inst.issuer, -total);
@@ -61,9 +69,16 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       delta,
       cause: `revaluation of own liabilities in period ${period}`,
     });
-    d.journal.record(period, cycle, 'revaluation', [issuer], {
-      deltaPerMember: delta,
-      liabilities: true,
-    });
+    d.journal.record(
+      period,
+      cycle,
+      'revaluation',
+      [issuer],
+      {
+        deltaPerMember: delta,
+        liabilities: true,
+      },
+      false,
+    );
   }
 }
