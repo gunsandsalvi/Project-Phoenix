@@ -25,20 +25,21 @@ import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { paramId } from '../../core/ids.js';
-import { div, sub, sum } from '../../core/num.js';
-import { none, some } from '../../core/option.js';
+import { div, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
+import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
+import type { Instrument } from '../../register/instruments.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { BANKS, bankParam, type BankDecl } from './data.js';
 import { LOAN, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
-import { quote, room, type Quote, type Regulation } from './quote.js';
+import { lossGivenDefault, probabilityOfDefault, quote, room, type Quote, type Regulation } from './quote.js';
 
 export * from './data.js';
 export * from './loan.js';
-export { quote, room, probabilityOfDefault, exposureTo } from './quote.js';
+export { quote, room, probabilityOfDefault, lossGivenDefault, exposureTo } from './quote.js';
 export type { Quote, Regulation, Room } from './quote.js';
 
 export const LENDING_PARAMS = {
@@ -164,8 +165,17 @@ function write(
   principal: number,
   rate: number,
   ccy: CurrencyCode,
+  /**
+   * Corporate Credit C9, A3: whether this is a drawing on the borrower's LINE at this bank. A line
+   * is drawn and repaid at the borrower's option, so it is ONE row that its outstanding moves on —
+   * never a new loan every period, which would turn a facility into a pile of term loans and make
+   * the borrower's exposure a thing you have to add up rather than a thing you can look at.
+   */
+  onTheLine = false,
 ): InstrumentId | undefined {
   const b = book(ctx);
+  const existing = onTheLine ? lineOf(ctx, bank, borrower) : undefined;
+  if (existing !== undefined) return draw(ctx, existing, principal, ccy);
   const id = loanId(bank, borrower, b.next);
   const drawn = ctx.calendar.startOf(ctx.period);
   const terms: LoanTerms = {
@@ -216,6 +226,64 @@ function write(
   return id;
 }
 
+/** C9: the borrower's live line at this bank, if it has one. One row, whatever it has drawn. */
+function lineOf(ctx: MechanismContext, bank: PartyId, borrower: PartyId): Instrument | undefined {
+  return ctx.instruments
+    .all()
+    .find(
+      (i) =>
+        i.status.live &&
+        isLoan(i.terms) &&
+        i.terms.lender === bank &&
+        i.terms.borrower === borrower,
+    );
+}
+
+/**
+ * C9, A3: a further drawing on a line that already exists. More of the same instrument is issued
+ * and more of the bank's money is created against it — the outstanding moves, the row does not
+ * multiply, and what the borrower owes this bank stays one number you can look at.
+ */
+function draw(
+  ctx: MechanismContext,
+  line: Instrument,
+  amount: number,
+  ccy: CurrencyCode,
+): InstrumentId | undefined {
+  if (!isLoan(line.terms)) return undefined;
+  const { lender, borrower } = line.terms;
+  const legs: Leg[] = [
+    {
+      kind: 'asset',
+      from: borrower,
+      to: lender,
+      instrument: line.id,
+      qty: amount,
+      pricePerUnit: some(1),
+      accruedPerUnit: none(),
+      fromCell: none(),
+      toCell: none(),
+    },
+    {
+      kind: 'money',
+      from: { holder: lender, issuer: lender },
+      to: { holder: borrower, issuer: lender },
+      ccy,
+      amount,
+      fromCell: none(),
+      toCell: none(),
+    },
+  ];
+  const r = ctx.settle({
+    legs,
+    cause: 'issuance',
+    reason: `${borrower} draws ${amount} on its line at ${lender}`,
+  });
+  if (r.outcome !== 'settled') return undefined;
+  ctx.record('credit.draw', [lender, borrower, line.id], { bank: lender, borrower, loan: line.id, amount }, false);
+  return line.id;
+}
+
 /**
  * Money B3.a: the credit decision behind an overdraft. It is the same decision as any other loan —
  * the room this bank's own capital supports and its own limit for that name — and what it allows is
@@ -262,7 +330,8 @@ function bookDraws(ctx: MechanismContext): void {
       costOfFunds(ctx, bank, d.ccy as CurrencyCode),
       seenDefaults(ctx),
     );
-    write(ctx, bank, d.holder as PartyId, d.amount, q.rate, d.ccy as CurrencyCode);
+    // C9: an overdraft is a drawing on the borrower's line, not a new loan every week.
+    write(ctx, bank, d.holder as PartyId, d.amount, q.rate, d.ccy as CurrencyCode, true);
   }
 }
 
@@ -283,9 +352,16 @@ function bookMoves(): Family {
       for (const i of view.instruments.all()) {
         if (!isLoan(i.terms)) continue;
         const held = view.register.quantity(i.terms.lender, i.id);
+        const holding = view.register.holding(i.terms.lender, i.id);
+        // Law 7: `issued` is a running total that carries the dust of every drawing it has taken,
+        // and what the lender holds is a sum over the lots those drawings made. The comparison is
+        // entitled to both walks and to nothing else.
+        const lots = holding.some ? holding.value.lots.length : 0;
+        const dust =
+          i.issuedDust + dustOf(lots + 2, Math.abs(i.issued) + Math.abs(held));
         // F1.a: the lender of record holds every unit of it. A loan somebody else is holding is a
         // loan that was sold, and selling one is worklist 13f — so until then this must be true.
-        if (held === i.issued) continue;
+        if (withinDust(held, i.issued, dust)) continue;
         out.push({
           family: 'flows',
           spec: 'Banks Lending F1.a',
@@ -394,13 +470,36 @@ export const bankLending: SystemModule = {
       anchor: { after: 'revaluation' },
       run: (ctx: MechanismContext): void => {
         bookDraws(ctx);
+        publishStandard(ctx);
       },
     },
   ],
   participants: [],
+  marks: [{ instrumentKind: LOAN, value: worthToItsLender }],
   creditDecisions: [{ partyKind: BANK, decide: overdraft }],
   families: [bookMoves()],
 };
+
+/**
+ * D1, D2: what a unit of this loan is worth to the bank that holds it. Amortised cost less what
+ * that bank expects to lose on it — its OWN assessment, from the SAME model it priced the loan
+ * with (C4: two models that disagree mean the price and the provision are struck against different
+ * beliefs). The kernel books the difference against the lot and the equity account together, so the
+ * provision is a charge to income that is visible (D2.a) and never a reserve absorbing things
+ * quietly (D2.b); and it moves back up when the assessment does, because a claim is not inventory.
+ *
+ * A bank that has seen this borrower fail half the time carries the loan at half. That is the whole
+ * of it: no coverage ratio, no stage, no through-the-cycle anything.
+ */
+function worthToItsLender(ctx: MechanismContext, i: Instrument): Option<number> {
+  if (!isLoan(i.terms)) return none<number>();
+  const decl = declOf(i.terms.lender);
+  if (decl === undefined) return none<number>();
+  const view = ctx.participant(i.terms.lender);
+  const pd = probabilityOfDefault(view, decl, i.terms.borrower, seenDefaults(ctx));
+  const loss = mul(pd, lossGivenDefault(i.terms.security), 'what it expects to lose per unit');
+  return some(sub(1, loss, 'what a unit is worth to it'));
+}
 
 /** C2: a borrower that said what it is short of gets quotes, and takes the keenest that will have it. */
 function runRequests(ctx: MechanismContext): void {
@@ -415,8 +514,37 @@ function runRequests(ctx: MechanismContext): void {
     const ccy = ctx.registry.region(party.region).ccy;
     const { best, lend } = shop(ctx, borrower as PartyId, want, ccy);
     if (best === undefined || lend <= 0) continue;
-    write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy);
+    // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
+    // drawing on what it already has there, not taking a new loan every week — and the margin it
+    // draws at is the one that was struck when the line was agreed (A2, A3).
+    write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, true);
   }
+}
+
+/**
+ * C3.a: declined volume is visible. A bank that never says no has no credit standard, so what the
+ * banks between them turned away this period is published as a count and a volume — an aggregate
+ * read of events that already happened, causing nothing (Observer A5). Who was refused stays
+ * between the two of them; that it happened, and how much of it, does not.
+ */
+function publishStandard(ctx: MechanismContext): void {
+  const declined = ctx.journal
+    .ofKind('credit.declined')
+    .filter((e) => e.period === ctx.period);
+  const written = ctx.journal.ofKind('credit.written').filter((e) => e.period === ctx.period);
+  const volume = (rows: readonly Event[], key: string): number =>
+    sum(rows.map((e) => (typeof e.data[key] === 'number' ? (e.data[key]) : 0))).value;
+  ctx.record(
+    'credit.standard',
+    [],
+    {
+      declined: declined.length,
+      declinedVolume: volume(declined, 'asked'),
+      written: written.length,
+      writtenVolume: volume(written, 'principal'),
+    },
+    true,
+  );
 }
 
 /** Re-exported so the observer and the tests can read a bank's own book as the sum of its rows. */

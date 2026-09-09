@@ -55,6 +55,9 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       mark = priced.value;
       for (const lot of h.lots) {
         const one = written(inst, lot, mark);
+        // Goods E2.c: which way a lot may move is the KIND's rule, and this is the one place that
+        // holds it. Inventory is written down and never up; a claim moves both ways, because a
+        // provision unwinds when its holder stops expecting the loss (Banks Lending D2.a).
         impossible(
           one <= 0 || profile.fairValueThroughIncome === true,
           'Goods E2.c',
@@ -62,9 +65,9 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
           { instrument: inst.id, holder: h.holder, delta: one },
         );
         if (one === 0) continue;
-        // The lot itself is what the book carries it at, so the write-down lands there and in the
-        // equity account together: one fact, one writer, two reads that agree (Law 4).
-        d.register.writeDown(h.holder, inst.id, lot.id, mark);
+        // The lot itself is what the book carries it at, so the re-measurement lands there and in
+        // the equity account together: one fact, one writer, two reads that agree (Law 4).
+        d.register.remark(h.holder, inst.id, lot.id, mark);
         delta = finite(delta + one, 'write-down');
       }
     } else continue;

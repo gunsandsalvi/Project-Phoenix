@@ -191,20 +191,21 @@ export class Register {
    * cost would be two answers to one question (Law 4). This is the only thing that changes a
    * basis after acquisition, and it only ever lowers it.
    */
-  writeDown(holder: PartyId, instrument: InstrumentId, lot: LotId, basisPerUnit: number): void {
+  /**
+   * Re-measure what a lot is carried at (Goods E2, Banks Lending D2). WHICH WAY it may move is the
+   * kind's business and not the register's: inventory is written down and never up because nobody
+   * but a dealer marks up a thing it made (E2.c), and a claim moves both ways because a provision
+   * unwinds when the assessment does (D2.a). Revaluation asks the profile and holds that rule; the
+   * register once held it too, which made one rule with two writers and the wrong one deciding.
+   */
+  remark(holder: PartyId, instrument: InstrumentId, lot: LotId, basisPerUnit: number): void {
     const h = this.mutable(holder, instrument);
     const i = h.lots.findIndex((l) => l.id === lot);
     const current = h.lots[i];
     if (current === undefined) {
       throw new Missing('Register D3', `${holder} holds no lot ${lot} of ${instrument}`);
     }
-    impossible(
-      basisPerUnit <= current.basisPerUnit,
-      'Goods E2.c',
-      `a lot is written down, never up: ${current.basisPerUnit} to ${basisPerUnit}`,
-      { holder, instrument, lot },
-    );
-    h.lots[i] = Object.freeze({ ...current, basisPerUnit: finite(basisPerUnit, 'written-down basis') });
+    h.lots[i] = Object.freeze({ ...current, basisPerUnit: finite(basisPerUnit, 'the new basis') });
   }
 
   /**

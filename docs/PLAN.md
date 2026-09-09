@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 26.7%** (118 of 442 steps across 28 items).
-**Requirement coverage: 24.3%** (322 MET, 49 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
+**Plan completion: 30.3%** (134 of 442 steps across 28 items).
+**Requirement coverage: 25.8%** (341 MET, 52 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -27,7 +27,7 @@ The plan has two parts:
 | 4 — Firms, goods, labour, households, outlooks | 34 | 34 | closed |
 | 4a — A line is more than one firm, and firms differ in cost | 9 | 9 | closed |
 | 5 — A loss is an event | 13 | 13 | closed |
-| [6 — Loans are rows](plan/06-loans.md) | 16 | 0 | open |
+| 6 — Loans are rows | 16 | 16 | closed |
 | [7 — Forced seller, nothing immortal, the estate](plan/07-failure-estate.md) | 22 | 0 | open |
 | [8 — Redeemable claims](plan/08-funds.md) | 14 | 0 | open |
 | [9 — Equity and dealers](plan/09-equity-dealers.md) | 20 | 0 | open |

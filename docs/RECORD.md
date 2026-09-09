@@ -554,3 +554,104 @@ correlation parameter. Nothing here does that — a holder's required yield is s
 that reads nothing. The measurement is Part XII's: default one issuer and watch what the others'
 paper clears at. If nothing moves, the second opinion is not being formed from what a holder saw,
 and the placeholder is standing in for more than it admits.
+
+## 6 — Loans are rows
+
+**What.** A bank lends by creating a deposit, and everything else follows from that being literally
+what the instruction does.
+
+**The loan.** An instrument like any other, held in the same register as anything else a bank owns,
+with a lender of record, a borrower who issues it, a rate struck at origination and a maturity
+placed by date. It is **not a security** (A1.a), so it names no market — the kernel refuses a
+cleared kind that names none, which is what makes "carried at amortised cost, not marked to a market
+that does not exist" (D1) a thing the type system holds rather than a convention. Interest accrues
+by day count on what is outstanding and falls due every period the calendar places, through the
+kernel's corporate actions, so a missed one is a default by item 5's machinery with nothing added.
+
+**Writing it is one instruction.** The borrower issues the loan to the bank; the bank creates its
+own money into the borrower's account. Both ends of the money leg have the same issuer, so
+settlement generates **no interbank leg at all** — B1.a is not asserted anywhere, it is what the
+wire does. There is nowhere in the module where a deposit or a reserve is consumed to fund a loan
+(B1.c), and the test asserts the instruction's reserve legs are empty.
+
+**The price is C1's four terms and nothing else.** What its funding costs it, what it expects to
+lose on this borrower, the capital the loan consumes times what it needs on that capital, and what
+it costs to run. Two banks differ in three of the four — how far back they look at a borrower, what
+they need on capital, how far above the requirement they run, and how much they will have out to one
+name — so they quote differently and the borrower takes the keenest, which is what makes C2 a
+negotiation rather than a schedule.
+
+**A customer overdrawn is borrowing** (Money B3.a). The kernel now asks the module the moment a
+payment would take an account below zero, and the answer is the same credit decision: the room this
+bank's capital supports, its own limit for that name. What it allows is a **drawing on that
+borrower's line**, and the line is one row that the drawing moves (C9) — never a new loan every week.
+What it refuses is a payment that fails, recorded.
+
+**The provision** (D2). A loan is carried at what its lender expects to recover, from the **same
+model** the price was struck with (C4) — two models would mean the price and the provision are
+struck against different beliefs. The kernel writes the lot down and moves the equity account by the
+same amount, so the charge is on the thing the book carries and there is no reserve anywhere for a
+loss to be absorbed into (D2.b).
+
+**Why.** XI-4 calls the bank's cost of funds joint one of the transmission chain, and says what
+breaks it: a bank with no cost-of-funds term prices every loan as though it funded at the policy
+rate whatever its own position. And Banks Lending B1.c says a model in which a bank lends out of its
+deposits cannot produce a credit cycle. Both are structural, and both are now closed.
+
+**Found.**
+
+- **A rule with two writers, and the wrong one deciding.** The register refused to write a lot up,
+  and the revaluation ALSO refused it unless the kind marks both ways. Which way a lot may move is
+  the kind's business: inventory is written down and never up because nobody but a dealer marks up a
+  thing it made (Goods E2.c), and a claim moves both ways because a provision unwinds when its
+  holder stops expecting the loss (D2.a). The register's copy of the rule made the second one
+  impossible. It is `remark` now, and the rule lives in the one place that knows the kind.
+- **The money family had the same too-tight dust as the flows family**, in the third place that
+  shape appears: a running `issued` total compared against a period's creation legs with the dust of
+  two additions. It surfaced the moment lending made banks create and destroy money many times a
+  period. There is one derivation now — `carriedDust` in `core/num.ts` — and every family that
+  compares a book against the wire that moved it uses it.
+- **Nobody in this world borrows**, and that is the honest state rather than a broken one. Its firms
+  hold more cash than they spend; its households never spend past what they hold; and the one party
+  that runs out — the treasury — banks at the central bank, which refuses everyone that is not a
+  money issuer (Treasury D3). Stress the state's mandate until it cannot fund itself and the credit
+  channel comes alive at once: 2 lines, 65 drawings and 22 written commitments over a year, one firm
+  borrowing from both banks at 1.30% and 1.62% — the keener bank's line dearer, as its own numbers
+  say it should be. What is built here is the supply side, and it answers the moment anybody asks.
+  The demand side arrives with investment (worklist 10) and consumer credit (13d).
+
+**Changed from the plan file, and why.** Three.
+
+1. **No cost-of-funds placeholder and no `centralBank.policyRate`.** The plan would have priced the
+   loan off the policy rate until worklist 11. The cost of funds is a READ instead — what a bank
+   actually paid on what it actually owed. Nothing a bank issues pays interest in this world, so it
+   is a true zero, and it becomes the term that differs between banks the moment deposits are priced
+   without anything here changing. A placeholder standing where a read works stands in for nothing
+   (Law 2), and using the policy rate as a bank's cost of funds is the precise mistake XI-4 names.
+2. **No `bank.pd.curve` shape.** The plan would have mapped a borrower's coverage to a default
+   probability by a stated curve. What a bank assesses instead is how often it has SEEN that
+   borrower fail to pay, over the memory it keeps — a frequency of events it observed, not a hazard
+   rate that produces them, and the channel by which a default becomes information about what the
+   next loan costs (Corporate Credit G8). No shape was added and the count did not rise.
+3. **The workout is deferred to worklist 7, and the undrawn commitment to 10 and 13f.** Restructure,
+   extend and enforce are decisions between what each path is expected to bring, and what a defaulted
+   claim brings is exactly the recovery that needs an estate to realise something. Building the three
+   branches now would mean inventing the numbers that choose between them. Likewise a committed limit
+   needs a borrower that asks for a limit rather than an amount.
+
+**Deleted.** The kernel's placeholder refusal of every customer overdraft. `Register.writeDown` — it
+is `remark`, and it no longer holds a rule that was not its to hold.
+
+**Not met, and named.** Banks Lending A3.b, A5, D4, D5, E3, E4 and E6 are MISSING with the item that
+brings each. B2 is PARTIAL for liquidity: the deposit a bank creates may be spent away and it must
+fund that, and there is no market to fund in until the corridor (worklist 11) — a ratio invented in
+its place would be a bound standing where a market belongs. E2 is PARTIAL for "impaired" as a state
+of its own. Money B3.c is PARTIAL still, but for the other half now: a bank overdrawn at the central
+bank has no lender row, which is B3.b's corridor.
+
+**Forecast, with its killer.** Two banks with different appetites should stop lending at different
+moments, so a downturn should show one still writing while the other has closed — which is what
+makes a credit cycle a cycle rather than a level. Nothing here measures it, because nothing borrows
+enough for either limit to bind. The measurement is Part XII's: stress the borrowers until capital
+binds, and watch which constraint each bank hits first. If they bind together, the dispersion is not
+reaching the decision and the two banks are one bank with two names.

@@ -12,7 +12,7 @@
 import type { Family } from '../audit/audit.js';
 import type { Order } from '../clearing/solver.js';
 import type { MarketDecl } from '../clearing/market.js';
-import type { PartyKindId } from '../core/ids.js';
+import type { InstrumentKindId, PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type {
   InstrumentKindProfile,
@@ -24,6 +24,8 @@ import type { ParamDecl } from '../registry/params.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
+import type { Period } from '../calendar/calendar.js';
+import type { Instrument } from '../register/instruments.js';
 import type {
   MechanismContext,
   Outlook,
@@ -70,6 +72,22 @@ export type CreditDecision = (
   o: OverdraftContext,
 ) => OverdraftDecision;
 
+/**
+ * XI-6, Banks Lending D1, D2: what a lot of a kind that has NO MARKET is worth to whoever holds it.
+ *
+ * Almost everything is worth what a market said (XI-6), and the kernel reads that from the price
+ * store. A loan is the exception the spec names: it is not a security, it has no market price, and
+ * D1 says it is carried at amortised cost — less what its holder expects to lose on it, which is
+ * that holder's own assessment (D2) and cannot be anybody else's. So the module that owns the kind
+ * answers, exactly one module per kind, and the kernel books the difference as the provision:
+ * charged to income, visible, and never a reserve sitting beside the loan absorbing things (D2.b).
+ */
+export type Valuer = (
+  ctx: MechanismContext,
+  instrument: Instrument,
+  at: Period,
+) => Option<number>;
+
 export interface OutlookProvider {
   of(ctx: MechanismContext, party: PartyId, variable: OutlookVariable): Option<Outlook>;
   /** A2: the variables this party has actually observed, in the order the module keeps them. */
@@ -110,6 +128,8 @@ export interface SystemModule {
    * says its answer is a credit decision must have one — a world where nobody takes it cannot be
    * sealed, because a defaulted-to refusal looks exactly like a bank with a credit standard.
    */
+  /** XI-6: what a lot of a kind with no market is worth. Exactly one module answers per kind. */
+  readonly marks?: readonly { readonly instrumentKind: InstrumentKindId; readonly value: Valuer }[];
   readonly creditDecisions?: readonly {
     readonly partyKind: PartyKindId;
     readonly decide: CreditDecision;

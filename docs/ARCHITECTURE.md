@@ -130,6 +130,13 @@ a cycle is the instruction order (E3).
 written by the single settlement path. Issued amount per instrument (B1) is changed only by issuance,
 re-opening, buyback, amortisation, maturity; the audit compares holdings to it (B2).
 
+**Which way a lot may be re-measured is the kind's rule, and one place holds it.** The register
+re-marks a lot (`remark`); whether the move may be upward is asked of the profile in revaluation,
+where the kind is known. Inventory is written down and never up because nobody but a dealer marks up
+a thing it made (Goods E2.c); a claim moves both ways because a provision unwinds when its holder
+stops expecting the loss (Banks Lending D2.a). The register held a copy of that rule for two items
+and made the second case impossible.
+
 **One reader of what a party can deliver.** Whether a holding can give up `qty` is asked and answered
 in exactly one place, `Register.deliverable`, which compares the ask against the free quantity within
 the dust of the walk that produced both — the lots it was summed over, matched one at a time. Before
@@ -215,6 +222,21 @@ line with no print is marked by nobody and is not a defect (Audit B3).
 between phases and periods under `<module>/<name>`: an employment register, a book of invoices, a
 party's outlooks. It is keyed data, never a second copy of what a kernel store already holds, and
 the observer reads it as data (a copy, so looking changes nothing).
+
+**What a bank does about an overdrawn customer** (Money B3.a). A party kind may state its answer to
+B3 or say that its answer is a **credit decision**, and then it answers nothing: a decision weighing
+the room a bank's own capital supports is not something a kind profile could take. The module that
+owns lending registers it, one module per kind, and the kernel calls it through that module's own
+context. A world whose kind says this and has nobody to answer **cannot be sealed** — a defaulted-to
+refusal would look exactly like a bank with a credit standard, which is the thing C3.a says must
+never be invisible.
+
+**What a lot with no market is worth** (XI-6, Banks Lending D1, D2). Almost everything is worth what
+a market said, and the kernel reads that from the price store. A loan is the exception the spec
+names: not a security, no market price, carried at amortised cost less what its holder expects to
+lose on it — which is that holder's own assessment and cannot be anybody else's. So one module per
+kind answers, and the kernel asks it **only when the price store has nothing**: a holder's own
+assessment stands where there is no market, never instead of one.
 
 **What a party expects** (Expectations A2, XI-16). `view.outlook(variable)` answers with that
 party's own outlook or with nothing; there is no global expectation to fall back on (A2.b). Exactly

@@ -7,6 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANKS,
+  InvalidRegistry,
   LOAN,
   PHX,
   TREASURY_NORTH,
@@ -129,6 +130,19 @@ function loans(w: World): { id: string; issued: number; lender: string; rate: nu
     }));
 }
 
+describe('who answers for an overdraft (Money B3.a)', () => {
+  it('refuses to seal a world whose bank says it is a credit decision and nobody takes it', () => {
+    const spec = foundationSpec('no-decider');
+    const modules = spec.modules.filter(
+      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+    );
+    // A bank kind that says an overdraft at it is a credit decision, in a world with no lender to
+    // take it, is broken from the start — and a defaulted-to refusal would look exactly like a bank
+    // with a credit standard, which is the thing C3.a says must never be invisible.
+    expect(() => assemble({ ...spec, modules })).toThrow(InvalidRegistry);
+  });
+});
+
 describe('what a loan is (Banks Lending A1, A2, A4, D1)', () => {
   it('is carried at cost with no market, and states what it is secured on either way', () => {
     // A1.a: it is not a security. D1: so it is held at amortised cost rather than marked to a
@@ -219,6 +233,32 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     // C1.b: the bank's own view of this borrower moved, so the price moved. A default is
     // information, and this is the channel it travels down (G8).
     expect(markedRate).toBeGreaterThan(cleanRate);
+  });
+});
+
+describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
+  it('carries the loan at what its lender expects to recover, and the charge is visible', () => {
+    // The same borrower, seen to fail, then borrowing: the bank prices it dearer AND carries it
+    // lower, off the one model (C4) — two beliefs would mean the price and the provision disagree.
+    const w = world([overspends(1e6, 2), asksFor(10, 6)]);
+    for (let i = 0; i < 9; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    const row = w.instruments.all().find((i) => i.kind === LOAN);
+    expect(row).toBeDefined();
+    if (row === undefined || !isLoan(row.terms)) return;
+    const holding = w.register.holding(row.terms.lender, row.id);
+    expect(holding.some).toBe(true);
+    if (!holding.some) return;
+    // D1, D2: amortised cost less what this bank expects to lose. It is ON the lot, which is what
+    // the book carries it at — not a reserve sitting beside it (D2.b).
+    const basis = holding.value.lots[0]?.basisPerUnit ?? 1;
+    expect(basis).toBeLessThan(1);
+    expect(basis).toBeGreaterThan(0);
+    // D2.a: and the charge went through income — the equity account moved with it, journalled.
+    const marks = w.journal
+      .ofKind('revaluation')
+      .filter((e) => e.subjects.includes(String(row.id)));
+    expect(marks.length).toBeGreaterThan(0);
+    expect(Number(marks[0]?.data['deltaPerMember'])).toBeLessThan(0);
   });
 });
 

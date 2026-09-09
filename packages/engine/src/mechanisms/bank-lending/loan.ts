@@ -143,6 +143,14 @@ export const loanKind: InstrumentKindProfile = {
    * (D2.b). The kernel asks per lot with what the holder says a unit is worth now.
    */
   revalue: (_i, lot, recovery) => mul(lot.qty, sub(recovery, lot.basisPerUnit, 'provision'), 'provision'),
+  /**
+   * D2.a: the provision moves when the assessment moves, and it moves BOTH WAYS — a bank that has
+   * stopped expecting to lose on a borrower takes the charge back. Goods E2.c forbids writing
+   * INVENTORY above cost because nobody but a dealer marks a thing it made up; a claim is not
+   * inventory, and its carrying value is a belief about a payment rather than a price of a thing.
+   * It can never exceed par all the same, because what the holder expects to recover cannot.
+   */
+  fairValueThroughIncome: true,
   // E1: a missed payment is a default. A covenant breach is the other half and needs covenants a
   // borrower's own accounts can be tested against (A5, worklist 13f).
   defaultOn: (i, failed) =>

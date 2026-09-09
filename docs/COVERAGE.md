@@ -20,7 +20,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money B1.b` | MISSING |  |
 | `Money B2` | MISSING |  |
 | `Money B3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/kinds.ts |
-| `Money B3.c` | PARTIAL | refusal is recorded; a lender row for an allowed overdraft arrives with the corridor (worklist 11) |
+| `Money B3.c` | PARTIAL | a customer overdrawn at its bank now has a lender and a rate: the bank takes a credit decision, and what it allows is a drawing that becomes a loan row before the period closes (packages/engine/src/mechanisms/bank-lending/index.ts). A refusal is recorded either way. A BANK overdrawn at the central bank still has no lender row: that is B3.b's corridor (worklist 11), and the audit reports every one of them |
 | `Money C1` | MET | packages/engine/src/ledger/instruction.ts |
 | `Money C2` | MET | packages/engine/src/ledger/settlement.ts |
 | `Money C2.c` | MET | packages/engine/src/audit/families/money.ts, packages/engine/src/ledger/settlement.ts |
@@ -782,38 +782,38 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Banks Lending A1` | MISSING |  |
-| `Banks Lending A2` | MISSING |  |
-| `Banks Lending A3` | MISSING |  |
-| `Banks Lending A3.b` | MISSING |  |
-| `Banks Lending A4` | MISSING |  |
-| `Banks Lending A5` | MISSING |  |
-| `Banks Lending B1` | MISSING |  |
-| `Banks Lending B1.c` | MISSING |  |
-| `Banks Lending B2` | MISSING |  |
-| `Banks Lending B2.d` | MISSING |  |
-| `Banks Lending C1` | MISSING |  |
-| `Banks Lending C2` | MISSING |  |
-| `Banks Lending C3` | MISSING |  |
-| `Banks Lending C3.a` | MISSING |  |
-| `Banks Lending C4` | MISSING |  |
-| `Banks Lending D1` | MISSING |  |
-| `Banks Lending D2` | MISSING |  |
-| `Banks Lending D2.b` | MISSING |  |
-| `Banks Lending D3` | MISSING |  |
-| `Banks Lending D4` | MISSING |  |
-| `Banks Lending D5` | MISSING |  |
-| `Banks Lending E1` | PARTIAL | packages/engine/src/world/actions.ts (a missed payment IS an event, dated, named and public, for every instrument whose profile defines one). A covenant breach needs covenants, and those arrive with loans (worklist 6) |
-| `Banks Lending E2` | PARTIAL | packages/engine/src/register/instruments.ts (performing is written by exactly one path, the kernel's, on the instrument's own definition being met, and nothing restores it), packages/engine/src/mechanisms/credit-events/index.ts (and every holder of a claim that stopped performing carries a stated exposure from then on). A bigger PROVISION against it is a write-down to an expected recovery, and both the claim carried at cost and the recovery to expect arrive with lending (worklist 6) |
-| `Banks Lending E3` | MISSING |  |
-| `Banks Lending E4` | MISSING |  |
+| `Banks Lending A1` | MET | packages/engine/src/mechanisms/bank-lending/loan.ts (a bilateral contract between a named bank and a named borrower: the lender is on the terms, the borrower is the issuer, and neither is a class of anything) |
+| `Banks Lending A2` | MET | packages/engine/src/mechanisms/bank-lending/loan.ts (principal, maturity, rate and currency fixed at origination; the maturity is placed by date like every other in this world) |
+| `Banks Lending A3` | PARTIAL | packages/engine/src/mechanisms/bank-lending/index.ts drawn and repaid on ONE line per lender and borrower, at the margin struck when the line was agreed. A committed UNDRAWN limit needs a borrower that asks for a limit rather than an amount, and that is a firm with an investment programme (worklist 10) or corporate paper (13f) |
+| `Banks Lending A3.b` | MISSING | undrawn commitments need a committed limit to be undrawn against (worklist 10, 13f) |
+| `Banks Lending A4` | MET | packages/engine/src/mechanisms/bank-lending/loan.ts (secured on named collateral or unsecured, and it says which — every loan here is unsecured because there is nothing a bank could realise until an estate exists, worklist 7) |
+| `Banks Lending A5` | MISSING | covenants need a borrower with accounts to test against; the first are corporate paper's (worklist 13f) |
+| `Banks Lending B1` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (one instruction: the borrower issues the loan and the bank creates its own money into the borrower's account, at the same instant) |
+| `Banks Lending B1.c` | MET | packages/engine/src/mechanisms/bank-lending/index.ts, packages/engine/test/loans.test.ts (there is nowhere a deposit or a reserve is consumed to fund a loan, and the test asserts the instruction carries no interbank leg at all) |
+| `Banks Lending B2` | PARTIAL | packages/engine/src/mechanisms/bank-lending/quote.ts (capital and its own appetite, separately, with which one bound recorded). LIQUIDITY is stated as absent rather than approximated: the deposit it creates may be spent away and it must fund that, and there is no market to fund in until the corridor (worklist 11) — a ratio in its place would be a bound standing where a market belongs (Law 6) |
+| `Banks Lending B2.d` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (which constraint binds is computed from the bank's own state and recorded on the decline, so it differs by bank and by period rather than being decided once) |
+| `Banks Lending C1` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (four named terms and their sum: what its funding costs it, what it expects to lose on this borrower, the capital the loan consumes times what it needs on it, and what it costs to run) |
+| `Banks Lending C2` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (every bank quotes from its own state and the borrower takes the keenest that will have it; a bank with no room does not quote) |
+| `Banks Lending C3` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (declining IS the credit decision: a bank with no room writes nothing and says so) |
+| `Banks Lending C3.a` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (what was declined and what was written is published every period as a count and a volume; who was refused stays between the two of them, that it happened does not) |
+| `Banks Lending C4` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (one function of one set of observations answers both the price and the provision, so they cannot be struck against different beliefs), packages/engine/test/loans.test.ts |
+| `Banks Lending D1` | MET | packages/engine/src/mechanisms/bank-lending/loan.ts (carried at cost, and it names no market at all — the kernel refuses a cleared kind without one, so a loan cannot be marked to a market that does not exist) |
+| `Banks Lending D2` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (what a unit is worth to the bank holding it is that bank's own expected recovery), packages/engine/src/world/revalue.ts (and the kernel writes the lot down to it and moves the equity account by the same, which is the charge to income) |
+| `Banks Lending D2.b` | MET | packages/engine/src/world/revalue.ts (the provision is ON the lot the book carries the loan at; there is no reserve anywhere for a loss to be absorbed into, and every movement is journalled with its size) |
+| `Banks Lending D3` | MET | packages/engine/src/mechanisms/bank-lending/loan.ts (interest accrues by day count on what is outstanding and falls due every period the calendar places), packages/engine/src/world/actions.ts (paid by the kernel to the lender of record, and observably not paid when it is not) |
+| `Banks Lending D4` | MISSING | a loan row is transferable like any instrument; a buyer for one, and the syndicate of D4.a, arrive with corporate credit (worklist 13f) |
+| `Banks Lending D5` | MISSING | pledging needs a lender to pledge to, which is the money market (worklist 11) |
+| `Banks Lending E1` | PARTIAL | packages/engine/src/world/actions.ts (a missed payment IS an event, dated, named and public, for every instrument whose profile defines one). A covenant breach needs covenants, and those need a borrower with accounts to test against (A5, worklist 13f) |
+| `Banks Lending E2` | PARTIAL | packages/engine/src/register/instruments.ts (performing is written by exactly one path, the kernel's, on the instrument's own definition being met, and nothing restores it), packages/engine/src/mechanisms/credit-events/index.ts (and every holder of a claim that stopped performing carries a stated exposure from then on). A bigger provision against it is now real for a loan (packages/engine/src/mechanisms/bank-lending/index.ts: it is carried at what its lender expects to recover). IMPAIRED as a third state of its own, distinct from not-performing, arrives with the workout (worklist 7) |
+| `Banks Lending E3` | MISSING | restructure, extend and enforce are decisions between what each path would bring, and what a defaulted claim brings is the recovery that needs an estate (worklist 7) |
+| `Banks Lending E4` | MISSING | there is nothing a bank can take security over and realise until an estate exists (worklist 7) |
 | `Banks Lending E5` | PARTIAL | a write-off is a redemption at whatever the claim fetched — a real leg back to whoever promised it, never a number vanishing (packages/engine/test/credit-events.test.ts). Nothing in this world writes one off yet: a sovereign default is negotiated and has no estate (Sovereign G3), so the first is a firm's (worklist 7) |
 | `Banks Lending E5.a` | MET | packages/engine/test/credit-events.test.ts (the loss reaching capital is principal minus recovery minus provisions already taken, which with nothing recovered and nothing provisioned is exactly the carrying value — and it is settlement's own arithmetic, not a second sum) |
-| `Banks Lending E6` | MISSING |  |
-| `Banks Lending F1` | MISSING |  |
-| `Banks Lending F1.a` | MISSING |  |
-| `Banks Lending F2` | MISSING |  |
-| `Banks Lending F3` | MISSING |  |
+| `Banks Lending E6` | MISSING | correlated losses need borrowers that share a cause, which needs enough borrowers to correlate (worklist 13e) |
+| `Banks Lending F1` | MET | packages/engine/src/mechanisms/bank-lending/index.ts, packages/engine/src/mechanisms/bank-lending/loan.ts (a bank's book is the rows it holds and there is no book number anywhere) |
+| `Banks Lending F1.a` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (the audit contribution: every unit outstanding is held by the lender of record, so a book with no loans in it cannot exist) |
+| `Banks Lending F2` | MET | packages/engine/src/audit/families/flows.ts (the kernel already holds, for every holder and instrument, that the change equals the legs; a bank's book is the sum of its rows, so what accounts for the change in the book is checked row by row. A second sum over the same legs would be the parallel formula Law 4 hunts) |
+| `Banks Lending F3` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (the most it will have out to one name, as a share of its own capital — a limit that binds and changes what it writes), packages/engine/test/loans.test.ts |
 
 ## Banks Funding
 
@@ -1126,7 +1126,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Firm E1` | PARTIAL | packages/engine/src/mechanisms/firms/decide.ts prices and sizes what it offers from its own outlook and what holding is worth; entering and leaving a line is firm birth (worklist 13g) |
 | `Firm E2` | MET | packages/engine/src/mechanisms/firms/decide.ts (the employment it wants is the labour that makes what it expects to sell, at what an hour is worth to it) |
 | `Firm E3` | MISSING |  |
-| `Firm E4` | MISSING |  |
+| `Firm E4` | PARTIAL | packages/engine/src/mechanisms/firms/index.ts (a firm says what it is short of against what it holds, and debt is what answers). Choosing BETWEEN retained cash, debt and equity by what each costs needs equity to have a cost, which is worklist 9, and an investment programme to raise into, which is 10 |
 | `Firm E5` | PARTIAL | what it does not pay out stays in its own account; a dividend needs owners of record, which is a share register (worklist 9) |
 | `Firm E6` | MET | packages/engine/src/mechanisms/firms/decide.ts (every decision is a function of its own state, its own outlook and the prices it faces, and of nothing else) |
 | `Firm E7` | MET | packages/engine/src/mechanisms/firms/produce.ts (it publishes its own outlook of its own earnings), packages/engine/src/mechanisms/expectations/index.ts (and the surprise against it is a recorded event) |

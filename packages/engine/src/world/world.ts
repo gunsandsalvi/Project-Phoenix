@@ -28,6 +28,7 @@ import {
   type CurrencyCode,
   type CurveFamilyId,
   type InstrumentId,
+  type InstrumentKindId,
   type MarketId,
   moneyInstrumentId,
   paramId,
@@ -68,7 +69,13 @@ import type {
   ParticipantView,
 } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
-import type { CreditDecision, OutlookProvider, ParticipantDecl, PhaseDecl } from './module.js';
+import type {
+  CreditDecision,
+  OutlookProvider,
+  ParticipantDecl,
+  PhaseDecl,
+  Valuer,
+} from './module.js';
 import { revalue } from './revalue.js';
 
 
@@ -133,6 +140,7 @@ export class World {
   /** Expectations A2: the one module that answers what a party expects. */
   private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
   private readonly creditDeciders = new Map<PartyKindId, { owner: string; decide: CreditDecision }>();
+  private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
   private readonly phaseList: Phase[];
   private readonly audit: Audit;
   private readonly memory: AuditMemory = emptyMemory();
@@ -211,10 +219,7 @@ export class World {
         owner: 'kernel',
         run: (w) => {
           revalue(w.period, w.cycle, {
-            marked: (instrument, at) => {
-              const p = w.prices.latest(instrument, at);
-              return p.some ? some(p.value.price) : none<number>();
-            },
+            marked: (instrument, at) => w.markOf(instrument, at),
             registry: w.registry,
             parties: w.parties,
             instruments: w.instruments,
@@ -352,6 +357,32 @@ export class World {
       );
     }
     return (o) => held.decide(this.mechanismContext(held.owner), o);
+  }
+
+  /**
+   * XI-6: exactly one module answers what a lot of a kind with no market is worth (Law 4). The
+   * kernel asks it only when the price store has nothing, so a market always wins: a holder's own
+   * assessment is what stands where there is no market, never what stands instead of one.
+   */
+  provideMark(owner: string, kind: InstrumentKindId, value: Valuer): void {
+    forbid(!this.sealed, 'Law 10', 'a valuer is declared at assembly');
+    const held = this.valuers.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'XI-6',
+        `${owner} would be a second valuer of ${kind}, after ${held.owner}`,
+      );
+    }
+    this.valuers.set(kind, { owner, value });
+  }
+
+  private markOf(instrument: InstrumentId, at: Period): Option<number> {
+    const printed = this.prices.latest(instrument, at);
+    if (printed.some) return some(printed.value.price);
+    const i = this.instruments.get(instrument);
+    const held = this.valuers.get(i.kind);
+    if (held === undefined) return none<number>();
+    return held.value(this.mechanismContext(held.owner), i, at);
   }
 
   /** Expectations A2: exactly one module answers what a party expects (Law 4). */
