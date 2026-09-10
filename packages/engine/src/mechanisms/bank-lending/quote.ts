@@ -7,8 +7,8 @@
  * joint one and says what breaks it: a bank with no cost-of-funds term prices every loan as though
  * it funded at the policy rate whatever its own position, and then nothing about its funding can
  * ever reach a borrower. So the cost of funds here is a READ of what this bank actually pays on
- * what it owes — which is zero today, because nothing it owes pays interest yet, and which becomes
- * the thing that differs between banks the moment deposits are priced (worklist 11).
+ * what it owes — deposits at the rate it set and rows at the rate the session struck — and two
+ * banks with different mixes quote differently because of it (Banks Funding B2, B2.a).
  *
  * C1.b is the bank's OWN assessment of the borrower, and C4 says there is one model per borrower:
  * how often it has seen that borrower fail to pay, over the memory it keeps. It is a frequency of
@@ -19,6 +19,7 @@
 import type { PartyId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
 import { add, div, mul, sub } from '../../core/num.js';
+import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
 import { isLoan } from './loan.js';
@@ -156,8 +157,40 @@ export function quote(
 export interface Room {
   readonly capital: number;
   readonly appetite: number;
+  /**
+   * Banks Funding D4: what its own funding leaves it able to lend. Missing where no funding market
+   * has said anything about this bank yet — a world with none has no funding condition to transmit.
+   */
+  readonly funding: Option<number>;
   readonly most: number;
-  readonly binds: 'capital' | 'appetite' | 'nothing';
+  readonly binds: 'capital' | 'appetite' | 'funding' | 'nothing';
+}
+
+/**
+ * Banks Funding D4, D4.a: THE CREDIT CRUNCH, and it belongs here rather than in a rule about
+ * lending. A bank writes a loan by creating a deposit (B1.a), and a deposit walks: the borrower
+ * borrowed in order to pay somebody, and paying somebody who banks elsewhere moves liquid assets it
+ * has to have. So what it will lend is what it holds beyond what could leave it — its own two
+ * published sides (C1 against C2) — and a bank already short of that lends nothing at all.
+ *
+ * Both numbers are the funding module's (C1, C2.a) and they arrive the only way anything crosses a
+ * module boundary: as the public thing that bank published about itself (F4). It is last period's
+ * publication, which is what a lag IS — the credit decision is taken before this period's session
+ * has told anybody anything.
+ */
+export function fundingRoom(view: ParticipantView): Option<number> {
+  const said = view.lastOwn('bank.liquidity');
+  if (!said.some) return none<number>();
+  const liquid = said.value.data['liquid'];
+  const exposed = said.value.data['couldLeave'];
+  if (typeof liquid !== 'number' || typeof exposed !== 'number') return none<number>();
+  return some(sub(liquid, exposed, 'what it can lend and still cover what could leave'));
+}
+
+/** Which of the three is the constraint: the smallest of them, named so a refusal says why (C3.a). */
+function bindingOf(capital: number, appetite: number, funding: Option<number>): Room['binds'] {
+  if (funding.some && funding.value <= capital && funding.value <= appetite) return 'funding';
+  return capital < appetite ? 'capital' : 'appetite';
 }
 
 export function room(
@@ -175,12 +208,15 @@ export function room(
   // F3, B2.c: the most it will have out to one name, whatever its capital would allow.
   const limit = mul(capital, view.params.get(bankParam(decl.bank, 'limitPerBorrower')), 'its limit for one name');
   const byAppetite = sub(limit, exposureTo(view, borrower), 'room under its limit');
-  const most = byCapital < byAppetite ? byCapital : byAppetite;
+  const byFunding = fundingRoom(view);
+  const ofTwo = byCapital < byAppetite ? byCapital : byAppetite;
+  const most = byFunding.some && byFunding.value < ofTwo ? byFunding.value : ofTwo;
   return {
     capital: byCapital,
     appetite: byAppetite,
+    funding: byFunding,
     most,
-    binds: most <= 0 ? (byCapital < byAppetite ? 'capital' : 'appetite') : 'nothing',
+    binds: most <= 0 ? bindingOf(byCapital, byAppetite, byFunding) : 'nothing',
   };
 }
 

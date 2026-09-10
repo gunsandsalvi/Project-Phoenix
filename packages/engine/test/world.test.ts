@@ -107,7 +107,8 @@ function noLending(seed: string, ...extra: SystemModule[]): World {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
-        m.id === 'bank-lending',
+        m.id === 'bank-lending' ||
+        m.id === 'money-market',
     )
     .map((m) => ({
       ...m,
@@ -119,13 +120,20 @@ function noLending(seed: string, ...extra: SystemModule[]): World {
 }
 
 /**
- * The kernel and the opening state, with none of the mechanisms that act on it. Tests about the
- * kernel itself use this so what they measure is the kernel's, not a treasury's decisions.
+ * The kernel and the opening state, with none of the mechanisms that act on it except the two that
+ * answer Money B3.a — a bank's overdraft is its bank's credit decision and a bank's own overdraft at
+ * the central bank is the corridor's, and a world where either kind has nobody to answer cannot be
+ * sealed. Tests about the kernel itself use this so what they measure is the kernel's, not a
+ * treasury's decisions.
  */
 function bare(seed: string, ...extra: SystemModule[]): World {
   const spec = foundationSpec(seed);
   const kernelOnly = spec.modules.filter(
-    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending',
+    (m) =>
+      m.id === 'sovereign-instruments' ||
+      m.id === 'seed.foundation' ||
+      m.id === 'bank-lending' ||
+      m.id === 'money-market',
   );
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
@@ -316,32 +324,52 @@ describe('the period loop', () => {
 
   it('pays coupons to holders of record and the cash lands in named accounts (Register E1)', () => {
     const w = bare('seed-F');
-    const cbBefore = w.register.equity(CB);
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell === undefined) throw new Error('no cell');
-    const bankBefore = w.cash(BANK_A, PHX);
     const treasuryBefore = w.cash(TREASURY_NORTH, PHX);
     const target = w.calendar.periodOf({ y: 2026, m: 9, d: 15 });
     while (w.period < target) {
       w.step();
     }
     expect(violations(w)).toEqual([]);
-    const coupons = w.ledger.all().filter((r) => r.instruction.cause === 'coupon');
+    // A coupon is what a LINE pays its holders of record, and in a world with a funding market
+    // the sovereign is not the only payer of one: a bank pays its depositors and the central bank
+    // pays for the cash it took in overnight, both by the same cause. This is about the bond.
+    const coupons = w.ledger
+      .all()
+      .filter(
+        (r) =>
+          r.instruction.cause === 'coupon' &&
+          r.instruction.reason.startsWith(`coupon on ${GOV_LINE}`),
+      );
     // E1: one instruction per holder of record per bond that paid — the register says who they
     // are, and nobody who was not holding it is paid anything.
     expect(coupons.length).toBeGreaterThan(0);
     expect(coupons.every((r) => r.outcome === 'settled')).toBe(true);
+    let reachedCb = 0;
     for (const r of coupons) {
       for (const leg of r.instruction.legs) {
         if (leg.kind !== 'money') continue;
         expect(leg.from.holder).toBe(TREASURY_NORTH);
         expect(leg.to.holder).not.toBe(TREASURY_NORTH);
+        if (leg.to.holder === CB) reachedCb += leg.amount;
       }
     }
-    expect(w.register.equity(CB)).toBeGreaterThan(cbBefore);
+    // The central bank is a holder of record too and the coupon reached it. Its EQUITY is not the
+    // read for that any more: with a corridor in the world it also pays for the reserves parked
+    // with it overnight (Central Bank B2, D1), so its own funding cost is inside that number.
+    expect(reachedCb).toBeGreaterThan(0);
     // A holder of record was paid: the banks hold this paper, and what reached them is the coupon
-    // on what the register says they held (E1).
-    expect(w.cash(BANK_A, PHX)).toBeGreaterThan(bankBefore);
+    // on what the register says they held (E1). Its ACCOUNT is not the read for that any more —
+    // a bank lends its spare cash to the central bank overnight at the floor and the balance leaves
+    // the banking system with it (Money Market C1.a) — so this is what landed, not what stayed.
+    let reachedBank = 0;
+    for (const r of coupons) {
+      for (const leg of r.instruction.legs) {
+        if (leg.kind === 'money' && leg.to.holder === BANK_A) reachedBank += leg.amount;
+      }
+    }
+    expect(reachedBank).toBeGreaterThan(0);
     expect(w.cash(TREASURY_NORTH, PHX)).toBeLessThan(treasuryBefore);
   });
 
@@ -378,14 +406,18 @@ describe('the period loop', () => {
       families: [],
     };
     const w = bare('seed-H', probe);
-    // The bare world carries the lending module too: a bank says an overdraft at it is a credit
-    // decision (Money B3.a), and a world with a bank in it and nobody to take that cannot be sealed.
+    // The bare world carries the lending and money-market modules too: an overdraft at a bank and
+    // an overdraft at the central bank are both credit decisions (Money B3.a), and a world with
+    // nobody to take either cannot be sealed. Their phases are here, in the order assembly gave.
     expect(w.phases.map((p) => p.name)).toEqual([
       'corporateActions',
       'lending.write',
+      'moneyMarket.rates',
       'probe',
       'markets',
+      'moneyMarket.clear',
       'lending.book',
+      'moneyMarket.book',
       'revaluation',
     ]);
     w.step();

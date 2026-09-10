@@ -23,6 +23,7 @@ import {
 } from '../../core/ids.js';
 import { add, div, dustOf, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
+import { downTick } from '../../core/tick.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
@@ -43,6 +44,7 @@ import {
 import {
   announced,
   bufferOf,
+  couldLeave,
   depositBase,
   rateFor,
   depositsByClass,
@@ -58,6 +60,7 @@ import { interbankKind, isRow, repoKind, rowTerms, INTERBANK, REPO } from './row
 import {
   averageRate,
   banksOf,
+  fallsDueToIt,
   bankOrders,
   collateralFor,
   corridorOf,
@@ -181,6 +184,12 @@ function setAndPayDeposits(ctx: MechanismContext): void {
  * is a read over many periods (Banks Funding B2).
  */
 export function worthOfMoney(ctx: MechanismContext, bank: PartyId, c: Corridor): number {
+  // D3: AND WHEN THE MARKET WOULD NOT HAVE IT, IT BIDS UP FOR DEPOSITS. A bank the last session
+  // left short is not funded at its own average any more: the dollar it could not raise is worth
+  // what its remaining alternative costs, and that is the window at the top of the corridor. So it
+  // offers a depositor that rather than go without, which is the rung itself — the rate is public
+  // (D5.a), the depositors answer it (E1), and the money it keeps is money it did not have to draw.
+  if (refusedLastSession(ctx, bank)) return c.ceiling;
   const memory = ctx.params.get(mmParam(bank, 'bufferMemory'));
   const from = ctx.period > memory ? ctx.period - memory : 0;
   const weights: number[] = [];
@@ -197,6 +206,18 @@ export function worthOfMoney(ctx: MechanismContext, bank: PartyId, c: Corridor):
   if (total <= 0) return c.floor;
   const paid = div(sum(weighted).value, total, 'what its funding has been costing it');
   return paid > c.floor ? paid : c.floor;
+}
+
+/**
+ * B7, D3: whether the last session ended with this name still short. It is the session's own public
+ * refusal read back (Law 19), not a second count of it.
+ */
+function refusedLastSession(ctx: MechanismContext, bank: PartyId): boolean {
+  if (ctx.period === 0) return false;
+  const last = ctx.period - 1;
+  return ctx.journal
+    .ofKind('moneyMarket.refused')
+    .some((e) => e.period === last && e.subjects.includes(bank));
 }
 
 /** The banks' positions after the flows, and what each one's own week has taught it (A1, C2.a). */
@@ -239,7 +260,16 @@ function runSession(ctx: MechanismContext): void {
     const cb = ctx.registry.centralBankOf(ccy);
     // A2.a: what it is short of, plus what it has to repay tomorrow. A bank funds its maturity
     // ladder in today's session, because tomorrow's payment falls due before tomorrow's session.
-    let need = add(-p.gap, fallsDueNext(ctx, borrower, ccy), 'what it has to raise');
+    //
+    // Law 8: IN WHOLE PIECES OF MONEY. It can only borrow pieces and it can only be short of
+    // pieces, so what the arithmetic leaves below one is not a shortfall — and a session that
+    // recorded it as a refusal would publish a funding squeeze made of rounding, which every
+    // uninsured depositor in the world then reads as a reason to leave (B7, D5.a, E1).
+    const piece = ctx.registry.tick(currencyUnit(ccy));
+    let need = downTick(
+      add(-p.gap, fallsDueNext(ctx, borrower, ccy), 'what it has to raise'),
+      piece,
+    );
     // Every lender's schedule for this name goes into the book before anything clears, so what a
     // borrower chooses between is what was actually posted (Clearing C5) and not what it guessed.
     for (const book of BOOKS) {
@@ -273,7 +303,7 @@ function runSession(ctx: MechanismContext): void {
       const bid = bankOrders(ctx.participant(borrower), book, borrower, p, need, c, power);
       for (const o of bid) ctx.post(venue, o);
       const raised = clearBook(ctx, m, book, borrower, ccy, on, ctx.posted(venue));
-      need = stillNeeded(need, raised);
+      need = downTick(stillNeeded(need, raised), piece);
     }
     if (need > 0) {
       // B7, B2.a: the market did not clear for this name. It is an outcome of real schedules — no
@@ -292,7 +322,10 @@ function runSession(ctx: MechanismContext): void {
 
 /** The books this borrower can reach, cheapest posted ask first: the treasurer's own preference. */
 function cheapestFirst(ctx: MechanismContext, borrower: PartyId): readonly BookDecl[] {
-  const priced = BOOKS.map((book) => ({ book, best: bestAsk(ctx.posted(sessionVenue(book, borrower))) }));
+  const priced = BOOKS.map((book) => ({
+    book,
+    best: bestAsk(ctx.posted(sessionVenue(book, borrower))),
+  }));
   return priced
     .filter((x) => x.best.some)
     .sort((a, b) => (a.best.some && b.best.some ? a.best.value - b.best.value : 0))
@@ -476,13 +509,32 @@ function declareVenues(ctx: MechanismContext, banks: readonly PartyId[]): void {
  */
 function publishFunding(ctx: MechanismContext): void {
   const m = market(ctx);
+  const on = ctx.calendar.startOf(ctx.period);
+  const haircut = ctx.params.get(MM_PARAMS.haircut);
+  const limit = ctx.params.get(MM_PARAMS.insuranceLimit);
   for (const bank of banksOf(ctx)) {
     const ccy = ccyOf(ctx, bank);
     const cb = ctx.registry.centralBankOf(ccy);
     const byClass = depositsByClass(ctx, bank, ccy);
     const reserves = ctx.register.quantity(bank, moneyInstrumentId(cb, ccy));
+    // C1, C1.a: LIQUID ASSETS ARE NOT JUST RESERVES. They are the account plus what its own
+    // unencumbered eligible paper would actually raise — at the haircut the central bank declared,
+    // which is C1.a's "how surely it converts" as a real number and not an adjective. Paper it has
+    // already pledged is not here: it is somebody's collateral (C4.b).
+    const paper = borrowingPower(
+      windowAdvances(ctx.participant(cb), ctx.participant(bank), on, haircut),
+    );
+    // C1: and what it lent overnight is liquid too — it comes back into the account tomorrow
+    // morning. A bank that parked its spare cash at the floor (C1.a) still holds it, as a claim.
+    const overnight = fallsDueToIt(ctx, bank, ccy);
     const buffer = bufferOf(m.deposits, bank);
-    const metric = liquidityMetric(reserves, depositBase(byClass));
+    const liquid = add(
+      add(reserves, overnight, 'cash and what comes back'),
+      paper,
+      'liquid assets',
+    );
+    const exposed = couldLeave(ctx, bank, ccy, limit);
+    const metric = liquidityMetric(liquid, exposed);
     ctx.record(
       'bank.liquidity',
       [bank],
@@ -490,9 +542,15 @@ function publishFunding(ctx: MechanismContext): void {
         bank,
         ccy,
         reserves,
+        overnight,
+        paper,
+        liquid,
         buffer,
+        couldLeave: exposed,
         deposits: Object.fromEntries(byClass),
         base: depositBase(byClass),
+        // F4: what somebody outside can see. Liquid assets over what could leave — both of them
+        // reads of this bank's own two sides, and neither of them a ratio anybody stated.
         metric: metric.some ? metric.value : null,
       },
       true,
@@ -613,9 +671,8 @@ function collateralHolds(): Family {
         for (const c of i.terms.collateral) {
           const holding = view.register.holding(i.terms.borrower, c.instrument);
           const bound = holding.some
-            ? sum(
-                holding.value.liens.filter((l) => l.reason === String(i.id)).map((l) => l.qty),
-              ).value
+            ? sum(holding.value.liens.filter((l) => l.reason === String(i.id)).map((l) => l.qty))
+                .value
             : 0;
           // Law 7: what is bound is a sum over liens and what the row says is a sum over parcels,
           // so the comparison is entitled to the dust of both walks and to nothing else.
@@ -726,9 +783,7 @@ export function printed(ctx: MechanismContext, borrower: PartyId): Option<number
   const rows = ctx.journal
     .ofKind('moneyMarket.print')
     .filter((e) => e.period === ctx.period && e.subjects.includes(borrower));
-  const rates = rows
-    .map((e) => e.data['rate'])
-    .filter((r): r is number => typeof r === 'number');
+  const rates = rows.map((e) => e.data['rate']).filter((r): r is number => typeof r === 'number');
   return rates.length === 0 ? none<number>() : some(div(sum(rates).value, rates.length, 'rate'));
 }
 

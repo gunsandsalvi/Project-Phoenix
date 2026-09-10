@@ -112,6 +112,28 @@ export function fallsDueNext(ctx: MechanismContext, bank: PartyId, ccy: Currency
   return sum(terms).value;
 }
 
+/**
+ * C1, B5.a: the same ladder from the LENDER's side — what is owed to this bank at the start of the
+ * next period. A bank that parked its spare cash at the floor has not stopped holding it: it holds
+ * an overnight claim on the central bank that turns back into its account balance tomorrow morning,
+ * and that is as liquid as an asset gets. Read off the rows it holds, never off what it parked.
+ */
+export function fallsDueToIt(ctx: MechanismContext, lender: PartyId, ccy: CurrencyCode): number {
+  const next = ctx.period + 1;
+  const terms: number[] = [];
+  for (const i of ctx.instruments.all()) {
+    if (!i.status.live || !isRow(i.terms) || i.terms.lender !== lender || i.ccy !== ccy) continue;
+    if (ctx.calendar.place(i.terms.maturity) !== next) continue;
+    const held = ctx.register.quantity(lender, i.id);
+    if (held <= 0) continue;
+    const profile = ctx.registry.instrumentKind(i.kind);
+    const flows = profile.cashFlows(i, ctx.calendar.startOf(ctx.period), ctx.calendar);
+    const perUnit = sum(flows.map((f) => f.perUnit)).value;
+    terms.push(mul(held, perUnit, 'what comes back tomorrow'));
+  }
+  return sum(terms).value;
+}
+
 /** A1: the net of what this bank's customers paid other banks' customers this period (Law 19). */
 export function netReserveFlow(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
   const terms: number[] = [];

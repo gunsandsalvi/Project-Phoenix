@@ -92,8 +92,13 @@ export function depositsByClass(
   return out;
 }
 
-/** A1.a, D4: what this world insures, per member, of what a depositor holds at a bank (XI-15). */
-export function insuredAt(
+/**
+ * A1.a: THE SPLIT, per member, and the one place it is taken. The limit applies PER MEMBER and the
+ * cell is homogeneous, so what is covered is exact rather than an average of a distribution — which
+ * is what makes E4's break in the loop real rather than notional: a large cell of small depositors
+ * is covered and a cell of large ones is not.
+ */
+function coveredPerMember(
   ctx: MechanismContext,
   bank: PartyId,
   holder: PartyId,
@@ -103,11 +108,56 @@ export function insuredAt(
   const cls = classOf(ctx.parties.get(holder).kind);
   if (cls?.insured !== true) return 0;
   const perMember = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
-  // A1.a: the limit applies PER MEMBER, and the cell is homogeneous, so `weight x min(balance,
-  // limit)` is exact. That is what makes E4's break in the loop real rather than notional: a large
-  // cell of small depositors is covered and a cell of large ones is not.
-  const covered = perMember < limit ? perMember : limit;
+  return perMember < limit ? perMember : limit;
+}
+
+/** A1.a, D4: what this world insures, per member, of what a depositor holds at a bank (XI-15). */
+export function insuredAt(
+  ctx: MechanismContext,
+  bank: PartyId,
+  holder: PartyId,
+  ccy: CurrencyCode,
+  limit: number,
+): number {
+  const covered = coveredPerMember(ctx, bank, holder, ccy, limit);
   return covered <= 0 ? 0 : mul(covered, weightOf(ctx.parties.get(holder)), 'insured');
+}
+
+/** A1.a, E4: the other side of the same split — what nobody insures, per member. */
+export function uninsuredAt(
+  ctx: MechanismContext,
+  bank: PartyId,
+  holder: PartyId,
+  ccy: CurrencyCode,
+  limit: number,
+): number {
+  const perMember = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
+  if (perMember <= 0) return 0;
+  return sub(perMember, coveredPerMember(ctx, bank, holder, ccy, limit), 'uninsured');
+}
+
+/**
+ * C2, C2.a, E4, E4.a: WHAT COULD LEAVE — and it is not a ratio of the deposit base. It is the part
+ * of that base nobody insures, holder by holder, which is A1.a read the other way round and is
+ * derived from its own liabilities exactly as C2.a asks. A bank funded by a few large wholesale
+ * accounts has nearly all of it exposed; one funded by a cell of small insured households has
+ * nearly none, which is why a run is a wholesale phenomenon first.
+ */
+export function couldLeave(
+  ctx: MechanismContext,
+  bank: PartyId,
+  ccy: CurrencyCode,
+  limit: number,
+): number {
+  const money = moneyInstrumentId(bank, ccy);
+  const terms: number[] = [];
+  for (const holder of ctx.register.holdersOf(money)) {
+    if (holder === bank) continue;
+    const p = ctx.parties.get(holder);
+    if (classOf(p.kind) === undefined) continue;
+    terms.push(mul(uninsuredAt(ctx, bank, holder, ccy, limit), weightOf(p), 'what can run'));
+  }
+  return sum(terms).value;
 }
 
 /**
@@ -313,8 +363,7 @@ export function moveDeposits(ctx: MechanismContext, banks: readonly PartyId[], l
     if (best === undefined) continue;
     const perMember = ctx.register.quantity(p.id, moneyInstrumentId(p.bank, ccy));
     if (perMember <= 0) continue;
-    const uninsured = cls.insured ? sub(perMember, perMember < limit ? perMember : limit, 'uninsured') : perMember;
-    const forSafety = shaky.has(p.bank) && uninsured > 0;
+    const forSafety = shaky.has(p.bank) && uninsuredAt(ctx, p.bank, p.id, ccy, limit) > 0;
     const forRate = own.some && sub(best.rate, own.value, 'what it would gain') > sticky;
     if (!forSafety && !forRate) continue;
     ctx.moveBank(

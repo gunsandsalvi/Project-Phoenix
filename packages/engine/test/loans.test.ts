@@ -103,7 +103,8 @@ function world(extra: readonly SystemModule[] = [], limits?: number): World {
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
         m.id === 'credit-events' ||
-        m.id === 'bank-lending',
+        m.id === 'bank-lending' ||
+        m.id === 'money-market',
     )
     .map((m) =>
       limits === undefined

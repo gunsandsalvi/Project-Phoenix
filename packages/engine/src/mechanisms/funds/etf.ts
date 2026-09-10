@@ -27,7 +27,8 @@ import { instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js
 import { div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { weightOf } from '../../parties/party.js';
+import { shareFor } from '../../ledger/settlement.js';
+import { weightOf, type Party } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { EtfDecl } from './data.js';
 
@@ -100,30 +101,51 @@ export function basketValue(basket: readonly BasketLine[]): number {
 }
 
 /**
+ * Law 8: what a party can actually take or hand over of a line — whole pieces of it, and for a cell
+ * whole pieces PER MEMBER, because every member of it is a real holder of a real piece. What the
+ * grid leaves over is not created, delivered or redeemed: it stays where it already was.
+ */
+function onGrid(
+  ctx: MechanismContext,
+  holder: Party,
+  instrument: InstrumentId,
+  total: number,
+): { readonly perMember: number; readonly total: number } {
+  const unit = ctx.instruments.get(instrument).unit;
+  return shareFor(ctx.registry, holder, unit, div(total, weightOf(holder), 'per member'));
+}
+
+/**
  * E3, G1.a, C3: a CREATION. The party delivers a pro-rata slice of the fund's book and takes new
  * shares against it, in one instruction: every leg or none (XI-5). No cash moves, no market is
  * touched, and the fund's composition is exactly what it was.
  *
  * The shares are issued at what the basket delivered is worth, so the fund's assets and the claims
  * on them move by the same amount and its equity stays at zero (A3). That is not an adjustment: it
- * is what "a share is a claim on the book" means when the book grows by a slice of itself.
+ * is what "a share is a claim on the book" means when the book grows by a slice of itself — and it
+ * is why the price the shares are struck at is read off what the grid let the creator actually
+ * deliver, rather than off what a whole basket would have been worth (Law 8, Law 19).
  */
 export function create(
   ctx: MechanismContext,
   d: EtfDecl,
   share: InstrumentId,
   party: PartyId,
-  shares: number,
+  wanted: number,
 ): boolean {
   const basket = basketOf(ctx, d, share);
-  if (basket.length === 0 || shares <= 0) return false;
-  const perShare = basketValue(basket);
-  if (!(perShare > 0)) return false;
+  if (basket.length === 0 || wanted <= 0) return false;
+  if (!(basketValue(basket) > 0)) return false;
   const holder = ctx.parties.get(party);
   const weight = weightOf(holder);
+  const made = onGrid(ctx, holder, share, wanted);
+  const shares = made.total;
+  if (shares <= 0) return false;
   const legs: Leg[] = [];
+  const delivered: number[] = [];
   for (const line of basket) {
-    const units = mul(shares, line.perShare, 'units of this line it must deliver');
+    const put = onGrid(ctx, holder, line.instrument, mul(shares, line.perShare, 'units of this line'));
+    const units = put.total;
     if (!material(units, 2, units)) return false;
     // F1: it delivers what it holds. A creator that has not got the basket does not create.
     if (mul(ctx.register.free(party, line.instrument), weight, 'what it holds') < units) return false;
@@ -135,10 +157,12 @@ export function create(
       qty: units,
       pricePerUnit: some(line.markPerUnit),
       accruedPerUnit: none(),
-      fromCell: cellOf(holder, div(units, weight, 'per member')),
+      fromCell: cellOf(holder, put.perMember),
       toCell: none(),
     });
+    delivered.push(mul(units, line.markPerUnit, 'what this line delivered'));
   }
+  const perShare = div(sum(delivered).value, shares, 'what a share was issued at');
   legs.push({
     kind: 'asset',
     from: d.fund as PartyId,
@@ -148,7 +172,7 @@ export function create(
     pricePerUnit: some(perShare),
     accruedPerUnit: none(),
     fromCell: none(),
-    toCell: cellOf(holder, div(shares, weight, 'per member')),
+    toCell: cellOf(holder, made.perMember),
   });
   const r = ctx.settle({
     legs,
@@ -174,31 +198,23 @@ export function redeemInKind(
   d: EtfDecl,
   share: InstrumentId,
   party: PartyId,
-  shares: number,
+  wanted: number,
 ): boolean {
   const basket = basketOf(ctx, d, share);
-  if (basket.length === 0 || shares <= 0) return false;
-  const perShare = basketValue(basket);
-  if (!(perShare > 0)) return false;
+  if (basket.length === 0 || wanted <= 0) return false;
+  if (!(basketValue(basket) > 0)) return false;
   const holder = ctx.parties.get(party);
   const weight = weightOf(holder);
+  const back = onGrid(ctx, holder, share, wanted);
+  const shares = back.total;
+  if (shares <= 0) return false;
   const held = mul(ctx.register.free(party, share), weight, 'shares it can give back');
   if (held < shares) return false;
-  const legs: Leg[] = [
-    {
-      kind: 'asset',
-      from: party,
-      to: d.fund as PartyId,
-      instrument: share,
-      qty: shares,
-      pricePerUnit: some(perShare),
-      accruedPerUnit: none(),
-      fromCell: cellOf(holder, div(shares, weight, 'per member')),
-      toCell: none(),
-    },
-  ];
+  const legs: Leg[] = [];
+  const taken: number[] = [];
   for (const line of basket) {
-    const units = mul(shares, line.perShare, 'units of this line it takes back');
+    const got = onGrid(ctx, holder, line.instrument, mul(shares, line.perShare, 'units of this line'));
+    const units = got.total;
     if (!material(units, 2, units)) return false;
     if (ctx.register.free(d.fund as PartyId, line.instrument) < units) return false;
     legs.push({
@@ -210,9 +226,22 @@ export function redeemInKind(
       pricePerUnit: some(line.markPerUnit),
       accruedPerUnit: none(),
       fromCell: none(),
-      toCell: cellOf(holder, div(units, weight, 'per member')),
+      toCell: cellOf(holder, got.perMember),
     });
+    taken.push(mul(units, line.markPerUnit, 'what this line gave back'));
   }
+  const perShare = div(sum(taken).value, shares, 'what a share was redeemed at');
+  legs.unshift({
+    kind: 'asset',
+    from: party,
+    to: d.fund as PartyId,
+    instrument: share,
+    qty: shares,
+    pricePerUnit: some(perShare),
+    accruedPerUnit: none(),
+    fromCell: cellOf(holder, back.perMember),
+    toCell: none(),
+  });
   const r = ctx.settle({
     legs,
     cause: 'maturity',

@@ -161,7 +161,15 @@ function shop(ctx: MechanismContext, borrower: PartyId, want: number, ccy: Curre
       ctx.record(
         'credit.declined',
         [b.id, borrower],
-        { bank: b.id, borrower, asked: want, binds: r.binds, capitalRoom: r.capital, appetiteRoom: r.appetite },
+        {
+          bank: b.id,
+          borrower,
+          asked: want,
+          binds: r.binds,
+          capitalRoom: r.capital,
+          appetiteRoom: r.appetite,
+          fundingRoom: r.funding.some ? r.funding.value : null,
+        },
         false,
       );
       continue;

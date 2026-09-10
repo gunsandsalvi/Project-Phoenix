@@ -216,7 +216,7 @@ function paysAStranger(): SystemModule {
   };
 }
 
-/** The kernel and the two modules a death needs: what fails, and where it goes. */
+/** The kernel, the two modules a death needs — what fails, and where it goes — and the two lenders. */
 function failingWorld(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('estate');
   const kernel = spec.modules
@@ -225,6 +225,7 @@ function failingWorld(...extra: readonly SystemModule[]): World {
         'sovereign-instruments',
         'seed.foundation',
         'bank-lending',
+        'money-market',
         'credit-events',
         'estate',
       ].includes(m.id),

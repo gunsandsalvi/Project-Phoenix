@@ -70,7 +70,11 @@ function drain(): SystemModule {
 function world(...extra: SystemModule[]): World {
   const spec = foundationSpec('default-events');
   const kernelOnly = spec.modules.filter(
-    (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' || m.id === 'bank-lending',
+    (m) =>
+      m.id === 'sovereign-instruments' ||
+      m.id === 'seed.foundation' ||
+      m.id === 'bank-lending' ||
+      m.id === 'money-market',
   );
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
