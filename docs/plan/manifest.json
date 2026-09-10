@@ -91,9 +91,15 @@
   },
   {
     "id": "11.1",
-    "title": "One bank with lines of business, and a depositor that decides from its own balance",
+    "title": "One bank: one balance sheet, one treasury, one face to every market",
     "file": "11.1-one-bank.md",
-    "steps": 14
+    "steps": 15
+  },
+  {
+    "id": "11.2",
+    "title": "A depositor decides from its own balance, and the count of banks is a resolution",
+    "file": "11.2-depositors-and-the-count-of-banks.md",
+    "steps": 5
   },
   {
     "id": "12",
