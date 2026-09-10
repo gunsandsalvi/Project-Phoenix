@@ -268,6 +268,28 @@ not: a world that opened with more banks ended with fewer, in eight of nine conf
 
 ### The currency layer, benchmarks, ratings
 
+**CORRECTED WHILE WORKING IT (PLAN §5.2): the first five steps were missing.** This section began at
+`indices`, and the item's own Design section above specifies four things ahead of it that no step
+named — the FX revaluation and the deletion of the single-currency guard (12.1), the market whose
+price is a rate and whose trade is two money legs (12.2), the views the modules need (12.3), and the
+`spot-fx` module itself — plus the second region and currency the seed has to open with for any of
+it to be reachable. A step that is not written is a step that gets skipped, so they are written.
+
+- [ ] 12.1 kernel: the rate IN FORCE for a period (the previous period's print during the cycles,
+      this period's at revaluation); every foreign holding revalues to it against the holder's
+      equity or a central bank's revaluation account; `checkHomeCurrency` and the accounts family's
+      skip of foreign instruments are both deleted in the same change (Currency D1–D3, Money A2.b)
+- [ ] 12.2 kernel: a market whose print is a RATE and whose trade is two money legs in two
+      currencies, settling atomically; markets run in a declared order so a payer short of a money
+      can buy it before the market that needs it (Spot FX A1, C1, F1.a)
+- [ ] 12.3 kernel: the reads the modules need — `view.index`, a view with no prints for an assessor
+      (Ratings A2.a, structurally), and what a party owes in a money it does not have (Spot FX B1)
+- [ ] `spot-fx`: every pair a market on its own flow; the participants with their own reasons; the
+      dealer left with the other side; triangular consistency as an outcome bounded arbitrageurs
+      enforce and a persistent gap measurable; one convention for what a payment settles in
+      (Currency C1–C3, Spot FX B, C, D, E, F; XI-12)
+- [ ] The seed opens a second region and a second currency, with cross holdings, so a coupon crosses
+      a border and somebody is short a money it does not issue (Seed B3, Currency B1)
 - [ ] `indices`: the rate benchmark as the overnight money-market print; a policy rate is not a benchmark; test
 - [ ] `indices`: producer and consumer price indices from the ledger's trades with different baskets and weights; test: they diverge when a distribution wedge exists (G1.c: partial until 13c)
 - [ ] `indices`: no stored level (E2), no history before the first print (D5.a); test: a beta over a window with fewer prints than the window is Missing

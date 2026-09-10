@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 54.3%** (275 of 506 steps across 34 items).
+**Plan completion: 54.0%** (276 of 511 steps across 34 items).
 **Requirement coverage: 38.6%** (525 MET, 74 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -38,7 +38,7 @@ The plan has two parts:
 | 10.4 — What a lot is carried at, after the marks are taken | — | — | closed (no item file) |
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
 | pre12 — The guards that keep the documents true | 16 | 16 | closed |
-| [12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer](plan/12-currency-benchmarks-ratings.md) | 27 | 11 | in progress |
+| [12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer](plan/12-currency-benchmarks-ratings.md) | 32 | 12 | in progress |
 | [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 25 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
