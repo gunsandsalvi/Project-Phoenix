@@ -45,6 +45,7 @@ import {
   type World,
 } from '../src/index.js';
 import { GOODS_PIECE, sameQuantity, unexpected } from './expected.js';
+import { perTonne, phx, tonnes } from './units.js';
 
 const FIRM_1 = partyId('firm.1'); // grain, at bank.a
 const FIRM_4 = partyId('firm.4'); // grain, the biggest farm
@@ -81,8 +82,8 @@ function hungryFor(instrument: string, price: number, qty: number): SystemModule
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, PHX, 1000000);
-      ctx.endowMoney(BANK_A, PHX, 1000000);
+      ctx.endowMoney(BUYER, PHX, phx(1_000_000));
+      ctx.endowMoney(BANK_A, PHX, phx(1_000_000));
     },
     participants: [
       {
@@ -112,7 +113,7 @@ function tightWorld(seed: string, over: Readonly<Record<string, number>> = {}): 
       return value === undefined ? p : { ...p, value };
     }),
   }));
-  return assemble({ ...spec, modules: [...modules, hungryFor(GRAIN, 0.6, 500)] });
+  return assemble({ ...spec, modules: [...modules, hungryFor(GRAIN, perTonne(600), tonnes(500))] });
 }
 
 const TIGHT = { 'goods.grain.plant.machinery': 4 } as const;

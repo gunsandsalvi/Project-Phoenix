@@ -29,7 +29,7 @@ import { none, some } from '../../core/option.js';
 import { isCreateLeg, isDestroyLeg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
 import type { ParamDecl } from '../../registry/params.js';
-import { TONNE_PIECES, WHOLE_PIECES } from '../../registry/grid.js';
+import { TIME_PIECES, TONNE_PIECES, WHOLE_PIECES } from '../../registry/grid.js';
 import type { UnitDecl } from '../../registry/registry.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -78,6 +78,11 @@ function inputsOf(d: GoodDecl, rows: readonly GoodDecl[]): GoodDecl[] {
  * They are all TECHNOLOGY: how much of a thing it takes to make another thing, how long it takes,
  * and what the weather does to it in store. None of them is a claim about an answer.
  */
+/** Law 8: how many pieces one named unit of a good is — a tonne is a million grams, a machine one. */
+function piecesOf(unit: string): number {
+  return unit === 'tonnes' ? TONNE_PIECES : WHOLE_PIECES;
+}
+
 function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
   const out: ParamDecl[] = [];
   for (const d of rows) {
@@ -89,10 +94,13 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       owner: 'model',
       why: `Goods E4: ${d.spoilageWhy} It is units that leave, never a fee: a storage charge is cash to whoever stores the goods and is a different thing (E4.a).`,
     });
+    // Law 8: the technology is stated per NAMED unit — hours for a tonne — and the state counts
+    // in pieces of each. What a piece of this good takes is therefore that ratio carried onto both
+    // grids, and it is done here, once, where the number is declared (Law 4).
     out.push({
       id: labourParam(d.subUnit),
-      value: d.labourHoursPerUnit,
-      unit: `hours per ${d.unit} of ${d.subUnit}`,
+      value: (d.labourHoursPerUnit * TIME_PIECES) / piecesOf(d.unit),
+      unit: `minutes per piece of ${d.subUnit}`,
       kind: 'technology',
       owner: 'model',
       why: `Goods A2.c: ${d.labourWhy}`,
@@ -100,8 +108,8 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
     for (const plant of d.plant) {
       out.push({
         id: plantParam(d.subUnit, plant.capitalKind),
-        value: plant.unitsPerUnitPerPeriod,
-        unit: `units of ${plant.capitalKind} in service per ${d.unit} of ${d.subUnit} started per period`,
+        value: (plant.unitsPerUnitPerPeriod * WHOLE_PIECES) / piecesOf(d.unit),
+        unit: `pieces of ${plant.capitalKind} in service per piece of ${d.subUnit} started per period`,
         kind: 'technology',
         owner: 'model',
         why: `Goods A2.c, Capital Programme A2: ${plant.why} It is the stock that lets the line run at a rate, so what it can make is a function of what it holds and not of what it wants.`,
@@ -152,7 +160,7 @@ function unitsOf(rows: readonly GoodDecl[]): UnitDecl[] {
     byUnit.set(d.unit, {
       id: goodUnitId(d.unit),
       name: d.unit,
-      perUnit: d.unit === 'tonnes' ? TONNE_PIECES : WHOLE_PIECES,
+      perUnit: piecesOf(d.unit),
     });
   }
   return [...byUnit.values()];

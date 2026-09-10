@@ -4,6 +4,8 @@
  *
  * @spec Goods A1 Goods A2 Goods A2.a Goods A2.b Goods A3 Goods A4 Goods C1 Goods C2 Goods C4 Goods C5 Goods C6 Goods E1 Goods E2 Goods E2.a Goods E2.c Goods E4 Goods E4.a Commodities Spot D5 Commodities Spot F1 Law 9 XI-6
  */
+import { paidTo } from './expected.js';
+import { perTonne, phx, tonnes } from './units.js';
 import { describe, expect, it } from 'vitest';
 import {
   FIRM,
@@ -180,7 +182,7 @@ describe('what a good is (Goods A)', () => {
     const w = world(
       KEEPS,
       acts((ctx) => {
-        if (ctx.period === 1) make(ctx, 'firm.1', 'stone', 15, 2);
+        if (ctx.period === 1) make(ctx, 'firm.1', 'stone', tonnes(15), perTonne(2));
         if (ctx.period === 2) {
           ctx.settle({
             legs: [
@@ -188,7 +190,7 @@ describe('what a good is (Goods A)', () => {
                 kind: 'destroy',
                 party: FIRM_1,
                 instrument: STONE_ID,
-                qty: 1.5,
+                qty: tonnes(1.5),
                 why: 'consumed',
                 fromCell: none(),
               },
@@ -210,7 +212,7 @@ describe('what a good is (Goods A)', () => {
     w.step();
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    expect(w.register.quantity(FIRM_1, STONE_ID)).toBeCloseTo(13.5, 12);
+    expect(w.register.quantity(FIRM_1, STONE_ID)).toBe(tonnes(13.5));
     expect(w.register.quantity(FIRM_1, GRAVEL_ID)).toBe(1);
   });
 });
@@ -220,15 +222,15 @@ describe('inventory (Goods E)', () => {
     const w = world(
       KEEPS,
       acts((ctx) => {
-        if (ctx.period === 1) make(ctx, 'firm.1', 'stone', 10, 2);
+        if (ctx.period === 1) make(ctx, 'firm.1', 'stone', tonnes(10), perTonne(2));
       }),
     );
     const r = w.step();
     expect(r.audit.total).toBe(0);
     const h = w.register.holding(FIRM_1, STONE_ID);
-    expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(2);
+    expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(perTonne(2));
     // XI-6: value is a function of the lots, and for a good carried at cost that is what it cost.
-    expect(w.valuation.valueOfLots(STONE_ID, h.some ? h.value.lots : [], w.period)).toBe(20);
+    expect(w.valuation.valueOfLots(STONE_ID, h.some ? h.value.lots : [], w.period)).toBe(phx(20));
     // A good that has never traded has no print, and nothing pretends otherwise.
     expect(w.prices.latest(STONE_ID, w.period).some).toBe(false);
   });
@@ -239,15 +241,17 @@ describe('inventory (Goods E)', () => {
         KEEPS,
         acts(
           (ctx) => {
-            if (ctx.period === 1) make(ctx, 'firm.1', 'stone', 10, 2);
+            if (ctx.period === 1) make(ctx, 'firm.1', 'stone', tonnes(10), perTonne(2));
           },
           [
             {
               partyKind: FIRM,
               orders: (view, m): readonly Order[] => {
                 if (m.instrument !== STONE_ID || view.period < 2) return [];
-                if (view.self.id === FIRM_1) return [{ party: FIRM_1, side: 'sell', price: at, qty: 1 }];
-                if (view.self.id === FIRM_2) return [{ party: FIRM_2, side: 'buy', price: at, qty: 1 }];
+                if (view.self.id === FIRM_1)
+                  return [{ party: FIRM_1, side: 'sell', price: perTonne(at), qty: tonnes(1) }];
+                if (view.self.id === FIRM_2)
+                  return [{ party: FIRM_2, side: 'buy', price: perTonne(at), qty: tonnes(1) }];
                 return [];
               },
             },
@@ -260,20 +264,22 @@ describe('inventory (Goods E)', () => {
     const r = down.step();
     expect(r.audit.total).toBe(0);
     const h = down.register.holding(FIRM_1, STONE_ID);
-    expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(1);
+    expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(perTonne(1));
     // E3: a charge to income in the period it happens — one realised on the tonne that sold at 1
     // against a cost of 2, and one on each of the nine that stayed and are now worth less.
-    expect(down.register.equity(FIRM_1)).toBeCloseTo(before - 10, 9);
+    // ...and its equity moved by that write-down and by the one other thing that reached it this
+    // period: the week of deposit interest its bank paid it (Banks Funding B1).
+    expect(down.register.equity(FIRM_1)).toBe(before - phx(10) + paidTo(down, FIRM_1, 'coupon'));
 
     const up = build(3);
     up.step();
     const flat = up.register.equity(FIRM_1);
     up.step();
     const held = up.register.holding(FIRM_1, STONE_ID);
-    expect(held.some && held.value.lots[0]?.basisPerUnit).toBe(2);
+    expect(held.some && held.value.lots[0]?.basisPerUnit).toBe(perTonne(2));
     // The sale at 3 is a realised gain on the one tonne that left; the nine that stayed do not
     // move at all, because inventory is never carried above cost (E2.c).
-    expect(up.register.equity(FIRM_1)).toBeCloseTo(flat + 1, 9);
+    expect(up.register.equity(FIRM_1)).toBe(flat + phx(1) + paidTo(up, FIRM_1, 'coupon'));
   });
 });
 
@@ -293,7 +299,7 @@ describe('what perishes (Goods E4)', () => {
       modules: [
         ...modules,
         acts((ctx) => {
-          if (ctx.period === 1) make(ctx, 'firm.1', 'bread', 10, 2);
+          if (ctx.period === 1) make(ctx, 'firm.1', 'bread', tonnes(10), perTonne(2));
         }),
       ],
     });
@@ -304,7 +310,7 @@ describe('what perishes (Goods E4)', () => {
     const r = w.step();
     expect(r.audit.total).toBe(0);
     // A quarter of the ten tonnes went stale in the week it sat there.
-    expect(w.register.quantity(FIRM_1, BREAD_ID)).toBeCloseTo(7.5, 12);
+    expect(w.register.quantity(FIRM_1, BREAD_ID)).toBe(tonnes(7.5));
     // What is issued is what is held, by everybody: this baker is not the only one in the world.
     expect(w.instruments.get(BREAD_ID).issued).toBeCloseTo(
       w.register.heldTotal(BREAD_ID).value,
@@ -331,8 +337,8 @@ describe('what perishes (Goods E4)', () => {
       .ofKind('goods.perished')
       .filter((e) => e.subjects.includes(FIRM_1) && e.subjects.includes(BREAD_ID));
     expect(ev).toHaveLength(1);
-    expect(ev[0]?.data['unitsPerMember']).toBeCloseTo(2.5, 12);
-    expect(ev[0]?.data['chargePerMember']).toBeCloseTo(-2.5 * 2, 9);
+    expect(ev[0]?.data['unitsPerMember']).toBe(tonnes(2.5));
+    expect(ev[0]?.data['chargePerMember']).toBe(-phx(2.5 * 2));
     expect(ev[0]?.public).toBe(false);
   });
 
@@ -341,7 +347,7 @@ describe('what perishes (Goods E4)', () => {
     w.step();
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    expect(w.register.quantity(FIRM_1, BREAD_ID)).toBeCloseTo(7.5 * 0.75, 12);
+    expect(w.register.quantity(FIRM_1, BREAD_ID)).toBe(tonnes(7.5 * 0.75));
   });
 });
 
@@ -351,18 +357,26 @@ describe('the market (Goods C)', () => {
       KEEPS,
       acts(
         (ctx) => {
-          if (ctx.period === 1) make(ctx, 'firm.1', 'stone', 10, 1);
+          if (ctx.period === 1) make(ctx, 'firm.1', 'stone', tonnes(10), perTonne(1));
         },
         [
           {
             partyKind: FIRM,
             orders: (view, m): readonly Order[] => {
               if (m.instrument !== STONE_ID || view.period < 2) return [];
-              if (view.self.id === FIRM_1) return [{ party: FIRM_1, side: 'sell', price: 1, qty: 4 }];
+              if (view.self.id === FIRM_1)
+                return [{ party: FIRM_1, side: 'sell', price: perTonne(1), qty: tonnes(4) }];
               const bid = bids.find((b) => b.party === view.self.id);
               return bid === undefined
                 ? []
-                : [{ party: partyId(bid.party), side: 'buy', price: bid.price, qty: bid.qty }];
+                : [
+                    {
+                      party: partyId(bid.party),
+                      side: 'buy',
+                      price: perTonne(bid.price),
+                      qty: tonnes(bid.qty),
+                    },
+                  ];
             },
           },
         ],
@@ -377,11 +391,15 @@ describe('the market (Goods C)', () => {
     expect(r.audit.total).toBe(0);
     const m = r.markets.find((x) => x.market === goodMarketId('stone', REGION));
     expect(m?.outcome).toBe('cleared');
-    expect(m?.price.some === true && m.price.value).toBe(1);
-    expect(m?.settledVolume).toBe(1);
+    expect(m?.price.some === true && m.price.value).toBe(perTonne(1));
+    expect(m?.settledVolume).toBe(tonnes(1));
     // C5: illiquidity in goods is unsold stock. Nine tonnes stayed where they were.
-    expect(w.register.quantity(FIRM_1, STONE_ID)).toBe(9);
-    expect(w.cash(FIRM_1, PHX)).toBeCloseTo(cash + 1, 9);
+    expect(w.register.quantity(FIRM_1, STONE_ID)).toBe(tonnes(9));
+    // C6: and what reached the seller is what the trade came to, in its own money. Its ACCOUNT
+    // moved by more than that — a week of deposit interest reached it too — which is its bank's
+    // business and not this market's, so what this reads is the payment (Law 19).
+    expect(paidTo(w, FIRM_1, 'trade')).toBe(phx(1));
+    expect(w.cash(FIRM_1, PHX)).toBeGreaterThan(cash);
   });
 
   it('rations pro rata when the buyers want more than there is (C4)', () => {
@@ -392,9 +410,9 @@ describe('the market (Goods C)', () => {
     w.step();
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    expect(w.register.quantity(FIRM_2, STONE_ID)).toBeCloseTo(3, 12);
-    expect(w.register.quantity(FIRM_3, STONE_ID)).toBeCloseTo(1, 12);
-    expect(w.register.quantity(FIRM_1, STONE_ID)).toBeCloseTo(6, 12);
+    expect(w.register.quantity(FIRM_2, STONE_ID)).toBe(tonnes(3));
+    expect(w.register.quantity(FIRM_3, STONE_ID)).toBe(tonnes(1));
+    expect(w.register.quantity(FIRM_1, STONE_ID)).toBe(tonnes(6));
   });
 });
 
@@ -415,7 +433,7 @@ describe('the units identity (Part XII)', () => {
         ...modules,
         acts(
           (ctx) => {
-            if (ctx.period === 1) make(ctx, 'firm.1', 'bread', 8, 2);
+            if (ctx.period === 1) make(ctx, 'firm.1', 'bread', tonnes(8), perTonne(2));
             if (ctx.period === 3) {
               ctx.settle({
                 legs: [

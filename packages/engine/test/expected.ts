@@ -17,7 +17,7 @@
  * This helper hides ONE thing. Everything else any family reports still fails the test that calls
  * it, and `overdrafts` lets a test assert the expected red is still exactly what it was.
  */
-import type { AuditReport, Violation } from '../src/index.js';
+import type { AuditReport, SettlementRecord, Violation } from '../src/index.js';
 
 function isReserveOverdraft(v: Violation): boolean {
   return v.family === 'money' && v.spec === 'Money B3.c' && v.message.includes('no lender row');
@@ -81,3 +81,27 @@ export function sameQuantity(
 
 /** The smallest piece of a good in this world: about a gram of a tonne (see goods/index.ts). */
 export const GOODS_PIECE = Math.pow(2, -20);
+
+/**
+ * Money A2, Law 19: what actually reached a party this period, by cause, read off the wire.
+ *
+ * A test that measured a BALANCE would be measuring everything else that happened to the account
+ * too — and in a world with a funding market that includes the week of deposit interest its bank
+ * paid it, which is its bank's business and not the market's under test. This reads the payment.
+ */
+export function paidTo(
+  w: { ledger: { inPeriod(p: number): readonly SettlementRecord[] }; period: number },
+  party: string,
+  cause: string,
+): number {
+  let total = 0;
+  for (const r of w.ledger.inPeriod(w.period)) {
+    if (r.outcome !== 'settled' || r.instruction.cause !== cause) continue;
+    for (const leg of r.instruction.legs) {
+      if (leg.kind !== 'money') continue;
+      if (leg.to.holder === party) total += leg.amount;
+      if (leg.from.holder === party) total -= leg.amount;
+    }
+  }
+  return total;
+}
