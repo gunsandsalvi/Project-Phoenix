@@ -38,7 +38,9 @@ import {
 import { Missing } from '../core/errors.js';
 import type { DayCount } from '../calendar/daycount.js';
 import { priceAt } from '../prices/curve.js';
-import { positiveCount, zeroIfNone } from '../core/num.js';
+import { forbid } from '../core/assert.js';
+import { weightOf } from '../parties/party.js';
+import { add, div, mul, positiveCount, sub, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
 import {
@@ -104,8 +106,6 @@ interface SeedLine {
   /** Which of the two sovereign instruments this line is (Sovereign B1: two, not one with a flag). */
   readonly paper: 'bill' | 'bond';
   readonly maturity: { y: number; m: number; d: number };
-  /** What the central bank opens holding: near the share its own policy names (Central Bank C1). */
-  readonly cb: number;
   readonly bankA: number;
   readonly bankB: number;
   readonly bankC: number;
@@ -114,12 +114,12 @@ interface SeedLine {
 }
 
 const SEED_LINES: readonly SeedLine[] = [
-  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, cb: 0, bankA: 200000, bankB: 150000, bankC: 150000, perMember: 0 },
-  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, cb: 0, bankA: 150000, bankB: 200000, bankC: 150000, perMember: 0 },
-  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, cb: 0, bankA: 175000, bankB: 175000, bankC: 150000, perMember: 20 },
-  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 150000, bankA: 130000, bankB: 80000, bankC: 90000, perMember: 40 },
-  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 180000, bankA: 100000, bankB: 100000, bankC: 100000, perMember: 60 },
-  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 205000, bankA: 100000, bankB: 100000, bankC: 100000, perMember: 80 },
+  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, bankA: 200000, bankB: 150000, bankC: 150000, perMember: 0 },
+  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, bankA: 150000, bankB: 200000, bankC: 150000, perMember: 0 },
+  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, bankA: 175000, bankB: 175000, bankC: 150000, perMember: 20 },
+  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, bankA: 130000, bankB: 80000, bankC: 90000, perMember: 40 },
+  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, bankA: 100000, bankB: 100000, bankC: 100000, perMember: 60 },
+  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, bankA: 100000, bankB: 100000, bankC: 100000, perMember: 80 },
 ];
 
 /** One day count for the seeded paper, so an opening price and its yield use one convention. */
@@ -229,6 +229,11 @@ const P = {
   cellsPerKey: paramId('seed.households.cellsPerKey'),
   membersPerKey: paramId('seed.households.membersPerKey'),
   openingYield: paramId('seed.openingYield'),
+  // Declared by other modules and read here by id, because a seed may not import a mechanism
+  // (phoenix/no-cross-module-import). The opening state is derived from the SAME numbers that
+  // govern the running world, so nothing opens where its own rule would immediately move it.
+  omoTargetShare: paramId('centralBank.omo.targetHoldingShare'),
+  leverageRatio: paramId('regulation.leverageRatio'),
 } as const;
 
 /** Seed C4: what a good fetched in the market that has not opened yet, per unit of it. */
@@ -392,29 +397,157 @@ export const foundationSeed: SystemModule = {
       });
     }
 
-    // Institutions and firms: endowments as state (Seed A3).
-    // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
-    // single auction clearing. The programme manages it from here.
-    ctx.endowMoney(TREASURY_NORTH, PHX, cash(ctx, 900_000));
-    // Dealer Desks A1, F2: UNCHANGED BY THE DESKS GOING. What a desk held was a DEPOSIT at its own
-    // bank — that bank's liability, not the central bank's — so when the desk stops existing the
-    // deposit stops existing with it and the bank is left owing less, not holding more. Reserves
-    // handed to a bank here are central-bank money issued against nothing, and every one of them is
-    // a hole in the central bank's own balance sheet that it then pays the floor rate on for ever.
-    // The same reserves as before, over three banks instead of two: a third bank is a third
-    // balance sheet, not a reason for the central bank to issue more money against nothing.
-    ctx.endowMoney(BANK_A, PHX, cash(ctx, 300_000));
-    ctx.endowMoney(BANK_B, PHX, cash(ctx, 250_000));
-    ctx.endowMoney(BANK_C, PHX, cash(ctx, 150_000));
-    for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, f.cash));
+    // Households: cells per (region, cohort, bank) key, weights summing to the key's population
+    // (Seed B1.a). They are created BEFORE the endowments because they are the parties the
+    // endowments have to add up against: a bank's funding is its depositors' money, and until the
+    // depositors exist there is nobody for it to be owed to.
+    //
+    // THEY OPEN WITH SOMETHING, and the comment that used to stand here said the opposite. It
+    // justified a household holding nothing by citing Seed E — which says "no OUTCOME is seeded"
+    // (E1) and "the seed sets reasons and ENDOWMENTS" (E2). Opening wealth is an endowment, in
+    // exactly the sense E2 names, and every other party in this seed has one stated: the firms get
+    // cash and stock, the banks reserves and paper, the treasury a buffer. Households alone held
+    // nothing, and what that produced is measurable: no saver funds a bank, so the banks were 63%
+    // to 84% their own equity; equity at the return it asks is the dearest money a bank has, so
+    // every bank required 5.7% to 8.9% of every issuer; and paper near par yields 2%, so no bid was
+    // ever posted. 187 of 312 sovereign sessions cleared with NO DEMAND AT ALL. The seed was not
+    // declining to say how rich anybody is — it was saying everybody is poor, which is a statement
+    // about the answer with no mechanism behind it.
+    //
+    // What they are unequal in is still an outcome from the first period on: who was hired, at what
+    // wage, and what each of them made of it. What is endowed is the stock they start from.
+    const cells = positiveCount(ctx.params.get(P.cellsPerKey), 'cellsPerKey');
+    const members = positiveCount(ctx.params.get(P.membersPerKey), 'membersPerKey');
+    for (const cohort of ctx.registry.cohorts) {
+      for (const bank of [BANK_A, BANK_B, BANK_C]) {
+        const weights = splitPopulation(members, cells);
+        weights.forEach((weight, n) => {
+          const cell: CellParty = {
+            id: partyId(`hh.${cohort.id}.${bank}.${n}`),
+            kind: HOUSEHOLD,
+            region: REGION,
+            name: `Households ${cohort.name} at ${bank} #${n}`,
+            bank,
+            representation: 'cell',
+            status: { alive: true },
+            weight,
+            key: { region: REGION, cohort: cohortId(cohort.id), bank },
+          };
+          ctx.parties.add(cell);
+        });
+      }
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // THE OPENING BALANCE SHEET (Seed A3, C1, C5, E2; Central Bank A2, C1; Banks Capital B1.b)
+    //
+    // What is STATED here is what somebody chose: how much paper each bank holds, how much each
+    // household member holds, and how much of its liquid buffer a bank keeps as reserves rather
+    // than paper. Everything else is DERIVED from a rule that already governs the party's own
+    // behaviour, so nothing opens somewhere its own mechanism would immediately move it away from,
+    // and no number here was chosen by looking at the answer (the 11.3 record is what that costs).
+    // ------------------------------------------------------------------------------------------
+
+    // The paper each bank holds is stated; what a household member holds is stated per member.
+    const householdMembers = ctx.parties
+      .ofKind(HOUSEHOLD)
+      .reduce((t, c) => t + weightOf(c), 0);
+    const bankPaper = new Map<PartyId, number>([[BANK_A, 0], [BANK_B, 0], [BANK_C, 0]]);
+    let centralBankAssets = 0;
+
     for (const line of SEED_LINES) {
       const id = instrumentId(line.id);
       const price = openingOf(opening, line.id);
       const par = priced(ctx, id, price);
-      if (line.cb > 0) ctx.endowUnits(CB, id, held(ctx, id, line.cb), par);
-      if (line.bankA > 0) ctx.endowUnits(BANK_A, id, held(ctx, id, line.bankA), par);
-      if (line.bankB > 0) ctx.endowUnits(BANK_B, id, held(ctx, id, line.bankB), par);
-      if (line.bankC > 0) ctx.endowUnits(BANK_C, id, held(ctx, id, line.bankC), par);
+      for (const [party, units] of [
+        [BANK_A, line.bankA],
+        [BANK_B, line.bankB],
+        [BANK_C, line.bankC],
+      ] as const) {
+        if (units <= 0) continue;
+        ctx.endowUnits(party, id, held(ctx, id, units), par);
+        bankPaper.set(party, add(zeroIfNone(bankPaper.get(party)), units * price, 'bank paper'));
+      }
+      // Seed E2, XI-15: every member of every cell holds the same stated amount, and the cell
+      // carries it with its weight. This column has been in this table since the seed was written
+      // and nothing has ever read it — which is why the sovereign's book had one side.
+      if (line.perMember > 0) {
+        for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
+          ctx.endowUnits(cell.id, id, held(ctx, id, line.perMember), par);
+        }
+      }
+      // Central Bank C1: the central bank opens at THE SHARE ITS OWN POLICY NAMES, so its first
+      // open-market session has nothing to correct. Its holding is therefore not a number in this
+      // table: it is that share of what the line comes to outstanding once everybody else holds
+      // theirs, which is `others × share / (1 − share)` — the same equation the OMO phase solves
+      // every period, solved once here (Law 4: one rule, not a second one for the opening).
+      const others = line.bankA + line.bankB + line.bankC + line.perMember * householdMembers;
+      const share = ctx.params.get(P.omoTargetShare);
+      const cbUnits = div(mul(others, share, 'the share it targets'), 1 - share, 'its holding');
+      if (cbUnits > 0) {
+        ctx.endowUnits(CB, id, held(ctx, id, cbUnits), par);
+        centralBankAssets = add(centralBankAssets, cbUnits * price, 'central bank assets');
+      }
+    }
+
+    // Money A1, Central Bank A2: NO CENTRAL-BANK MONEY EXISTS THAT ITS ISSUER BOUGHT NOTHING WITH.
+    // Every reserve here is against the paper endowed above, so the two sides of the central bank
+    // are equal by construction rather than by luck. The seed used to hand out 160,000,000 of
+    // reserves against 53,531,106 of assets and leave the difference — 106,468,894 — as a hole the
+    // central bank then paid the floor rate on for ever.
+    const bankReserves = new Map<PartyId, number>([
+      [BANK_A, 300_000],
+      [BANK_B, 250_000],
+      [BANK_C, 150_000],
+    ]);
+    let issued = 0;
+    for (const [bank, reserve] of bankReserves) {
+      ctx.endowMoney(bank, PHX, cash(ctx, reserve));
+      issued = add(issued, reserve, 'reserves issued');
+    }
+    // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
+    // single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what it can be is what is
+    // left of that balance sheet once the banks have theirs. Derived, never stated (11.3's third
+    // finding). A world whose central bank cannot fund both does not open.
+    const buffer = sub(centralBankAssets, issued, "the treasury's opening buffer");
+    forbid(
+      buffer > 0,
+      'Central Bank A2',
+      `the central bank holds ${centralBankAssets} and owes ${issued} in reserves: there is nothing left for the treasury`,
+      { centralBankAssets, issued },
+    );
+    ctx.endowMoney(TREASURY_NORTH, PHX, cash(ctx, buffer));
+
+    for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, f.cash));
+
+    // Banks Capital B1.b, A3: a bank opens where ITS OWN CAPITAL RULE puts it, so it neither has to
+    // shrink on the first morning nor opens with headroom nobody gave it. At the opening its assets
+    // are reserves and this issuer's paper, both of which the risk weights put at zero
+    // (`regulation.riskWeight.sovereign`), so the weighted rule asks for nothing and the UNWEIGHTED
+    // one binds — which is the whole reason a leverage ratio exists. Its funding is therefore what
+    // is left, and its depositors are the parties that hold it: the firms above, and the households
+    // for the rest. `bank-capital.test.ts` asserts the opening capital satisfies BOTH rules as the
+    // banks module itself computes them, so this derivation cannot drift from that one (Law 4).
+    const leverage = ctx.params.get(P.leverageRatio);
+    for (const [bank, reserve] of bankReserves) {
+      const assets = add(reserve, zeroIfNone(bankPaper.get(bank)), "the bank's opening assets");
+      const funding = mul(assets, 1 - leverage, 'what its own leverage rule leaves it to fund');
+      const fromFirms = SEED_FIRMS.filter((f) => f.bank === bank).reduce(
+        (t, f) => add(t, f.cash, 'firm deposits'),
+        0,
+      );
+      const fromHouseholds = sub(funding, fromFirms, 'what the households must hold');
+      const cells = [...ctx.parties.ofKind(HOUSEHOLD)].filter((c) => c.bank === bank);
+      const members = cells.reduce((t, c) => t + weightOf(c), 0);
+      forbid(
+        fromHouseholds > 0 && members > 0,
+        'Banks Capital B1.b',
+        `${bank} opens with ${assets} of assets and ${fromFirms} of firm deposits, which leaves nothing for its households to hold`,
+        { bank, assets, fromFirms, funding },
+      );
+      // XI-15: per member, and the cell carries it with its weight.
+      const perMember = div(fromHouseholds, members, 'the deposit one member opens with');
+      for (const cell of cells) ctx.endowMoney(cell.id, PHX, cash(ctx, perMember));
     }
 
     const openedGoods = new Set<string>();
@@ -489,33 +622,6 @@ export const foundationSeed: SystemModule = {
       }
     }
 
-    // Households: cells per (region, cohort, bank) key, weights summing to the key's population
-    // (Seed B1.a). They open with NOTHING — no deposit and no paper — because everything a
-    // household has in this world is something it was paid or something it decided to buy, and
-    // the seed has no business saying how rich anybody already is (Seed E: what the seed must not
-    // decide). What they are unequal in is therefore an outcome from the first period on: who was
-    // hired, at what wage, and what each of them made of it.
-    const cells = positiveCount(ctx.params.get(P.cellsPerKey), 'cellsPerKey');
-    const members = positiveCount(ctx.params.get(P.membersPerKey), 'membersPerKey');
-    for (const cohort of ctx.registry.cohorts) {
-      for (const bank of [BANK_A, BANK_B, BANK_C]) {
-        const weights = splitPopulation(members, cells);
-        weights.forEach((weight, n) => {
-          const cell: CellParty = {
-            id: partyId(`hh.${cohort.id}.${bank}.${n}`),
-            kind: HOUSEHOLD,
-            region: REGION,
-            name: `Households ${cohort.name} at ${bank} #${n}`,
-            bank,
-            representation: 'cell',
-            status: { alive: true },
-            weight,
-            key: { region: REGION, cohort: cohortId(cohort.id), bank },
-          };
-          ctx.parties.add(cell);
-        });
-      }
-    }
   },
 };
 
