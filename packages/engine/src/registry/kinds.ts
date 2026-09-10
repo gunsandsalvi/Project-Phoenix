@@ -230,9 +230,14 @@ export interface DerivedReads {
 /**
  * What a money issuer does when a payment would take a holder's account below zero (Money B3).
  * Somebody lends it at a rate, or somebody refuses and the refusal is recorded (B3.c).
+ *
+ * There is nothing else to say. Whoever ALLOWED it writes the row that prices it before the period
+ * closes — a bank its customer's drawing (B3.a), the central bank the reserve overdraft it stood
+ * behind (D3.b) — so by the audit there is a lender, a rate and a date behind every negative, and
+ * an account still below zero is a defect in whichever module allowed it.
  */
 export type OverdraftDecision =
-  | { readonly allow: true; readonly recordedAs: 'reserveOverdraft' | 'facilityDraw' }
+  | { readonly allow: true }
   | { readonly allow: false };
 
 /**

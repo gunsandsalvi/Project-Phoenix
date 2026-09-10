@@ -89,25 +89,49 @@ function declOf(bank: PartyId): BankDecl | undefined {
  * C1.a, XI-4 joint one: this bank's BLENDED cost of funds, per annum — what it actually paid on
  * what it owes, blended with what its own capital costs it, over the whole of what funds its book.
  *
- * XI-4 names the mix: "deposits, wholesale borrowing AND CAPITAL". The interest half is read off
- * the wire and is zero today, because nothing a bank issues pays interest yet and the corridor that
- * prices the rest arrives at worklist 11. The capital half is not zero and never was: a bank funds
- * part of its book with money its owners require a return on, and a bank that ignored that would
- * price every asset as though equity were free — which is the same deletion of the joint that
- * pricing at the policy rate is, arrived at from the other side.
+ * XI-4 names the mix: "deposits, wholesale borrowing AND CAPITAL", and all three of them are in
+ * this number. THE INTEREST HALF IS READ OFF THE WIRE — every coupon this bank actually paid last
+ * period, whoever it was paid to: its depositors by class (Banks Funding B1), the banks and funds
+ * that lent it money overnight or for a month (Money Market B), and the central bank's window where
+ * it went there (C4). Nothing here is a rate anybody stated: it is what left the account, divided
+ * by what it owes. The capital half is what its owners require on the part of the book they fund,
+ * because a bank that ignored that would price every asset as though equity were free — which is
+ * the same deletion of the joint that pricing at the policy rate is, from the other side.
+ *
+ * B2, B2.b: ONE RATE PER LIABILITY, and it is the paid one. The deposit decision and this read do
+ * not compute the same number twice — the decision pays an instruction and this reads the payment,
+ * so a bank that paid up for money is dearer here the period after it did, by exactly what it paid.
  *
  * It is a DIFFERENT number from C1.c's capital charge and both belong (XI-4 lists both): the blend
  * is what funding the position costs, and the charge is what the regulatory capital that particular
  * asset consumes has to earn on top.
  */
-function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
+export interface FundingCost {
+  /** B2: the blend — what one unit of what funds this bank's book costs it, per annum. */
+  readonly perAnnum: number;
+  /** B2.b: what it ACTUALLY PAID on what it owes last period, annualised. Read off the wire. */
+  readonly interest: number;
+  /** XI-4: what its owners require on the part of the book they fund. */
+  readonly onCapital: number;
+  readonly owed: number;
+  readonly capital: number;
+}
+
+function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): FundingCost {
   const owed = owedBy(ctx, bank, ccy);
   const capital = ctx.participant(bank).equity();
   const funding = add(owed, capital, 'what funds its book');
-  if (funding <= 0) return 0;
   const required = ctx.params.get(bankParam(bank, 'returnOnCapital'));
   const onCapital = mul(capital, required, 'what its own capital costs it');
-  if (ctx.period === 0) return div(onCapital, funding, 'its blended cost of funds');
+  const blend = (interest: number): FundingCost => ({
+    perAnnum:
+      funding <= 0 ? 0 : div(add(interest, onCapital, 'what its funding costs it'), funding, 'per annum'),
+    interest,
+    onCapital,
+    owed,
+    capital,
+  });
+  if (funding <= 0 || ctx.period === 0) return blend(0);
   const previous = period(ctx.period - 1);
   const paid: number[] = [];
   for (const r of ctx.ledger.inPeriod(previous)) {
@@ -124,9 +148,8 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): n
     ctx.calendar.startOf(previous),
     ctx.calendar.startOf(ctx.period),
   );
-  if (year <= 0) return div(onCapital, funding, 'its blended cost of funds');
-  const interest = div(sum(paid).value, year, 'what it paid on what it owes, per annum');
-  return div(add(interest, onCapital, 'what its funding costs it'), funding, 'per annum');
+  if (year <= 0) return blend(0);
+  return blend(div(sum(paid).value, year, 'what it paid on what it owes, per annum'));
 }
 
 /** What this bank owes: every liability of its own that anybody holds. */
@@ -174,7 +197,7 @@ function shop(ctx: MechanismContext, borrower: PartyId, want: number, ccy: Curre
       );
       continue;
     }
-    const q = quote(view, decl, borrower, reg, costOfFunds(ctx, b.id, ccy), seenDefaults(ctx));
+    const q = quote(view, decl, borrower, reg, costOfFunds(ctx, b.id, ccy).perAnnum, seenDefaults(ctx));
     const takeable = r.most < want ? r.most : want;
     if (best === undefined || q.rate < best.rate) {
       best = q;
@@ -351,7 +374,7 @@ function overdraft(ctx: MechanismContext, o: OverdraftContext): OverdraftDecisio
     return { allow: false };
   }
   book(ctx).draws.push({ holder: o.holder, issuer: o.issuer, ccy: o.ccy, amount: o.shortfall });
-  return { allow: true, recordedAs: 'facilityDraw' };
+  return { allow: true };
 }
 
 /**
@@ -373,7 +396,7 @@ function bookDraws(ctx: MechanismContext): void {
       decl,
       d.holder as PartyId,
       regulationOf(view),
-      costOfFunds(ctx, bank, d.ccy as CurrencyCode),
+      costOfFunds(ctx, bank, d.ccy as CurrencyCode).perAnnum,
       seenDefaults(ctx),
     );
     // C9: an overdraft is a drawing on the borrower's line, not a new loan every week.
@@ -397,8 +420,12 @@ function bookMoves(): Family {
       const out: Violation[] = [];
       for (const i of view.instruments.all()) {
         if (!isLoan(i.terms)) continue;
-        const held = view.register.quantity(i.terms.lender, i.id);
-        const holding = view.register.holding(i.terms.lender, i.id);
+        // Register F2, Banks Capital D6: the lender of record can have CEASED since the row was
+        // written — an acquirer takes a resolved bank's loans, an estate takes a dead firm's — and
+        // a reference to it resolves to whoever succeeded it. Nothing about the row changed.
+        const lender = view.parties.resolve(i.terms.lender).id;
+        const held = view.register.quantity(lender, i.id);
+        const holding = view.register.holding(lender, i.id);
         // Law 7: `issued` is a running total that carries the dust of every drawing it has taken,
         // and what the lender holds is a sum over the lots those drawings made. The comparison is
         // entitled to both walks and to nothing else.
@@ -640,7 +667,7 @@ function publishQuotes(ctx: MechanismContext): void {
       const reg = regulationOf(view);
       const r = room(view, decl, p.id, reg);
       if (r.most <= 0) continue;
-      const q = quote(view, decl, p.id, reg, costOfFunds(ctx, b.id, ccy), seenDefaults(ctx));
+      const q = quote(view, decl, p.id, reg, costOfFunds(ctx, b.id, ccy).perAnnum, seenDefaults(ctx));
       if (best === undefined || q.rate < best.rate) {
         best = q;
         most = r.most;
@@ -692,7 +719,7 @@ function publishReservations(ctx: MechanismContext): void {
     if (decl === undefined || !b.status.alive) continue;
     const view = ctx.participant(b.id);
     const ccy = ctx.registry.region(b.region).ccy;
-    const funds = costOfFunds(ctx, b.id, ccy);
+    const funds = costOfFunds(ctx, b.id, ccy).perAnnum;
     const reg = { ...regulationOf(view), riskWeight: view.params.get(LENDING_PARAMS.sovereignWeight) };
     const required: Record<string, number> = {};
     const expectedLoss: Record<string, number> = {};
@@ -742,7 +769,10 @@ function publishCostOfFunds(ctx: MechanismContext): void {
     ctx.record(
       'bank.costOfFunds',
       [b.id],
-      { bank: b.id, ccy, perAnnum: costOfFunds(ctx, b.id, ccy), owed: owedBy(ctx, b.id, ccy) },
+      // B2.b, Law 4: the blend AND ITS PARTS, so what it paid and what its capital costs it are
+      // readable separately by whoever needs one of them — and so that nobody has to re-derive
+      // either from the other (Law 19).
+      { bank: b.id, ccy, ...costOfFunds(ctx, b.id, ccy) },
       true,
     );
   }

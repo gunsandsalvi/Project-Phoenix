@@ -30,12 +30,13 @@ import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId, partyKindId } from '../../core/ids.js';
 import { div, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { isMoneyLeg, unpaid, type Leg } from '../../ledger/instruction.js';
+import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import { issuerOf } from '../../register/instruments.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import { failedWhy } from '../../world/failure.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
@@ -80,46 +81,6 @@ export const estateKind: PartyKindProfile = {
   // than running it. Shopping for a deposit rate is not something a liquidation does.
   choosesBank: false,
 };
-
-/**
- * XI-3, Firm D4, Banks Capital C1: the two questions, asked of every party whose kind says it can
- * be asked them. They are DIFFERENT failures with different causes — a party can be either without
- * the other (C1.a) — so the answer says which one fired, and the event carries it.
- */
-function failed(ctx: MechanismContext, view: ParticipantView): string | undefined {
-  const can = ctx.registry.partyKind(view.self.kind).fails ?? [];
-  const ccy = ctx.registry.region(view.self.region).ccy;
-  if (can.includes('cash')) {
-    const owed = stillOwed(ctx, view);
-    if (owed > 0 && owed > view.cash(ccy)) {
-      return `it could not pay ${owed} that fell due and still cannot`;
-    }
-  }
-  if (can.includes('solvency')) {
-    // Law 7: the equity account is a walk, and what it may call nothing is what that walk has cost
-    // it in rounding. A party whose equity is ZERO by construction — a fund (Fund Shares A3) — sits
-    // at the dust either side of it every period, and a test that called that insolvency would kill
-    // one every week. It is the same tolerance the accounts family compares it against (Law 4).
-    const walk = view.equityWalk();
-    if (walk.value < 0 && !withinDust(walk.value, 0, ctx.valuation.equityDust(view.self.id, walk, ctx.period))) {
-      return `its liabilities are past its assets by ${-walk.value}`;
-    }
-  }
-  return undefined;
-}
-
-/** What it failed to pay this period out of its own balance, and has not since covered (Money E1). */
-function stillOwed(ctx: MechanismContext, view: ParticipantView): number {
-  const mine = view.failedPayments(Number.MAX_SAFE_INTEGER);
-  const terms: number[] = [];
-  for (const f of mine) {
-    if (f.instruction.period !== view.period) continue;
-    // eslint-disable-next-line phoenix/no-kind-branch -- a fail reason's tag, not a party or product kind
-    if (f.reason.kind !== 'overdraftRefused') continue;
-    for (const owed of unpaid(f)) if (owed.payer === view.self.id) terms.push(owed.amount);
-  }
-  return sum(terms).value;
-}
 
 /**
  * XI-8, Firm Birth D5: the estate opens. Everything the dead party held moves to it by a real
@@ -494,6 +455,12 @@ function nothingLeaksOut(): Family {
       }
       for (const r of view.ledger.inPeriod(view.period)) {
         if (r.outcome !== 'settled') continue;
+        // D6 is about DISTRIBUTIONS — money an estate paid away out of what it realised. A
+        // corporate action is not one: when the bank an estate banks at is resolved, the estate's
+        // own balance is extinguished at the failed bank and re-issued by the acquirer in one
+        // instruction (Banks Capital C3.b), and the first leg of that reads as a payment to a bank
+        // it has no claim on. Nothing left the estate: it holds the same money at a new issuer.
+        if (r.instruction.cause === 'corporateAction') continue;
         for (const leg of r.instruction.legs) {
           if (!isMoneyLeg(leg) || !estates.has(leg.from.holder)) continue;
           if (claimants.get(leg.from.holder)?.has(leg.to.holder) === true) continue;
@@ -591,7 +558,13 @@ export const estate: SystemModule = {
           if (!p.status.alive) continue;
           // An estate is not asked either, and nothing here says so: its kind states that it fails
           // on nothing, and a kind that names nothing cannot die (Law 15, XI-3).
-          const why = failed(ctx, ctx.participant(p.id));
+          //
+          // XI-3, Banks Capital C3.b: and a kind whose failure another module takes charge of is
+          // left to it. A bank is the one: an estate cannot owe a depositor, because an estate does
+          // not issue money (Money A1), so a bank goes to a resolution instead — a valuation, a
+          // hierarchy, an acquirer and a guarantee. Nothing here knows what a bank is; it asks.
+          if (ctx.resolvesItsOwn(p.kind)) continue;
+          const why = failedWhy(ctx, ctx.participant(p.id));
           if (why !== undefined) open(ctx, p.id, why);
         }
       },

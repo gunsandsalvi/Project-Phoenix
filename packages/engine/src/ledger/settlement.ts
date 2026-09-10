@@ -789,7 +789,10 @@ export class Settlement {
           short: -after,
         };
       }
-      // B3.c: never a silent negative. Recorded here; priced by the corridor when it exists.
+      // B3.c: never a silent negative. It is public because a drawing is information — a depositor
+      // answers it (Money Market D5.a) and a rival bank sees it (E2.a). What it IS, is whatever the
+      // module that allowed it writes behind it before the period closes.
+      forbid(decision.allow, 'Money B3.c', 'an overdraft was neither allowed nor refused');
       this.d.journal.record(
         ins.period,
         ins.cycle,
@@ -801,7 +804,6 @@ export class Settlement {
           issuer: issuerId,
           ccy: inst.ccy,
           shortfallPerMember: -after,
-          recordedAs: decision.recordedAs,
         },
         true,
       );

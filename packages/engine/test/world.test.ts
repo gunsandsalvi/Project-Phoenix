@@ -411,6 +411,10 @@ describe('the period loop', () => {
       'moneyMarket.clear',
       'lending.book',
       'moneyMarket.book',
+      // Banks Capital C3.b: a bank does not go to an estate, so this is where it goes instead —
+      // just before the marks are taken, so the book it moves is re-marked on the acquirer's own
+      // balance sheet in the same period it lands there.
+      'moneyMarket.resolve',
       'revaluation',
     ]);
     w.step();

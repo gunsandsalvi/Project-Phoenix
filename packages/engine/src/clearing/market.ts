@@ -268,6 +268,21 @@ function pairFills(fills: readonly Fill[], weight: (party: PartyId) => number): 
     const buyer = buys[b];
     const seller = sells[s];
     if (buyer === undefined || seller === undefined) break;
+    // D2, Clearing A2: NOBODY TRADES WITH ITSELF. A party can be on both sides of one book — it
+    // wants more of a line at one level and is willing to let some go at another, and a desk quotes
+    // exactly that (Dealer Desks A2) — but a fill between its own two orders would be an
+    // instruction with one named side, which is not a trade and which the wire refuses. It steps
+    // past whichever of its own two has less left, and the other meets somebody it can deal with.
+    if (buyer.party === seller.party) {
+      if (bLeft <= sLeft) {
+        b += 1;
+        bLeft = zeroIfNone(buys[b]?.qty);
+      } else {
+        s += 1;
+        sLeft = zeroIfNone(sells[s]?.qty);
+      }
+      continue;
+    }
     const want = bLeft < sLeft ? bLeft : sLeft;
     // Law 8, XI-15: what these two can actually exchange. Between named parties that is the unit's
     // own smallest piece; where one side is a population it is that piece for every member of it,

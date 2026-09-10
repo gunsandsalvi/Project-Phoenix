@@ -27,6 +27,7 @@ import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
 import { add, div, material, mul, sum } from '../../core/num.js';
+import { downTick } from '../../core/tick.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
 import { TREASURY } from '../../registry/profiles.js';
@@ -310,7 +311,13 @@ export function fundOrders(
     // reason to redeem, and a rule that redeemed on a bad return would be a run written into it.
     if (short > 0) {
       if (p.sharesPerMember <= 0) continue;
-      const want = div(short, p.perShare, 'shares it must give back');
+      // Law 8: A SHARE IS INDIVISIBLE, so what a member hands back is a whole number of them, and
+      // it is the number DOWN — a member short of less than one share's worth asks for nothing and
+      // stays short, which is a real state and is what an indivisible claim does to somebody who
+      // needs a little of it. Asking for the share above would be redeeming a hundred times the
+      // need on every small shortfall in the population, which is the cell grain deciding the
+      // aggregate (XI-15) rather than anybody's decision.
+      const want = downTick(div(short, p.perShare, 'shares it must give back'));
       out.push({
         venue: p.venue,
         side: 'sell',
@@ -319,9 +326,12 @@ export function fundOrders(
       continue;
     }
     // D2.a: and it puts money in when what the fund offers clears what it wants for giving up its
-    // money — the competition D2 names, against a deposit that pays it nothing.
+    // money — the competition D2 names, against a deposit that pays it nothing. Whole shares again,
+    // and DOWN this time: what its money buys, never a share it cannot pay for.
     if (toFund <= 0 || p.offered < required) continue;
-    out.push({ venue: p.venue, side: 'buy', sharesPerMember: div(toFund, p.perShare, 'shares it asks for') });
+    const buying = downTick(div(toFund, p.perShare, 'shares it asks for'));
+    if (buying <= 0) continue;
+    out.push({ venue: p.venue, side: 'buy', sharesPerMember: buying });
   }
   return out;
 }

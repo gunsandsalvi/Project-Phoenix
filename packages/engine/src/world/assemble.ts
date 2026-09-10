@@ -85,6 +85,7 @@ export function assemble(spec: AssemblySpec): World {
     const outlooks = m.outlooks;
     if (outlooks !== undefined) world.provideOutlooks(m.id, outlooks);
     for (const d of m.creditDecisions ?? []) world.provideCreditDecision(m.id, d.partyKind, d.decide);
+    for (const k of m.resolves ?? []) world.provideResolution(m.id, k);
     for (const v of m.marks ?? []) world.provideMark(m.id, v.instrumentKind, v.value);
   }
   const ctx = seedContext(world);

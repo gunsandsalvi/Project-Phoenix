@@ -134,6 +134,14 @@ export interface SystemModule {
     readonly partyKind: PartyKindId;
     readonly decide: CreditDecision;
   }[];
+  /**
+   * XI-3, Banks Capital C3.b: party kinds whose FAILURE this module takes charge of itself, so the
+   * estate does not open one for them. A bank is the case: its liabilities are the money everybody
+   * else pays with, an estate cannot owe them (Money A1), and what happens instead is a resolution
+   * — a valuation, a hierarchy, an acquirer and a guarantee. Declaring it here is what lets the
+   * estate leave a kind alone without knowing which kind it is (Law 15: nothing branches).
+   */
+  readonly resolves?: readonly PartyKindId[];
   /** Opening state this module contributes (Seed A1); runs in assembly order before the seed audit. */
   seed?(ctx: SeedContext): void;
 }

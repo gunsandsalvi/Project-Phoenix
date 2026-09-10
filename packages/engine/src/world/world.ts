@@ -142,6 +142,8 @@ export class World {
   /** Expectations A2: the one module that answers what a party expects. */
   private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
   private readonly creditDeciders = new Map<PartyKindId, { owner: string; decide: CreditDecision }>();
+  /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
+  private readonly resolvers = new Map<PartyKindId, string>();
   private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
   private readonly phaseList: Phase[];
   private readonly audit: Audit;
@@ -345,6 +347,24 @@ export class World {
    * own state (Law 15). Registered at assembly; a kind whose profile says its answer is a credit
    * decision and has nobody to take it is a world that cannot be sealed.
    */
+  /** XI-3: a kind whose failure a module resolves itself, so the estate leaves it alone. */
+  provideResolution(owner: string, kind: PartyKindId): void {
+    forbid(!this.sealed, 'Law 10', 'a resolution is declared at assembly');
+    const held = this.resolvers.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Banks Capital C3',
+        `${owner} would be a second resolver of ${kind}, after ${held}`,
+      );
+    }
+    this.resolvers.set(kind, owner);
+  }
+
+  /** Whether some module takes charge of what happens when a party of this kind fails (XI-3). */
+  resolvesItsOwn(kind: PartyKindId): boolean {
+    return this.resolvers.has(kind);
+  }
+
   provideCreditDecision(owner: string, kind: PartyKindId, decide: CreditDecision): void {
     forbid(!this.sealed, 'Law 10', 'the credit decision is declared at assembly');
     const held = this.creditDeciders.get(kind);
@@ -561,6 +581,7 @@ export class World {
       calendar: this.calendar,
       registry: this.registry,
       params: this.params,
+      resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
@@ -614,6 +635,7 @@ export class World {
       calendar: this.calendar,
       registry: this.registry,
       params: this.params,
+      resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,

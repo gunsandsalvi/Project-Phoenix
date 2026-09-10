@@ -8,8 +8,10 @@
  *    per currency: a transfer is two-sided, and an issuance is counted as the thing being measured.
  *  - C4.c: the change in each money instrument's stock over the period equals the creation and
  *    destruction legs the ledger recorded for it, and nothing else.
- *  - B3.c: no money balance is negative at the close without a lender; until the corridor prices a
- *    reserve overdraft, every one is reported here by holder and size.
+ *  - B3.c: no money balance is negative at the close, because a negative one IS borrowing and the
+ *    module that allowed it writes the row behind it before the period ends — a bank its customer's
+ *    drawing (B3.a), the central bank the reserve overdraft it stood behind (D3.b). One reported
+ *    here is a defect in whichever of them allowed it, named by holder and size.
  */
 import { carriedDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
@@ -92,6 +94,8 @@ export function moneyFamily(memory: AuditMemory): Family {
       }
 
       // B3.c: a negative balance at the close is borrowing from somebody named, or it is a defect.
+      // Both deciders (Money B3.a's bank, Central Bank D3.b's corridor) turn what they allowed into
+      // a row before this runs, so what reaches here is an account nobody wrote a lender behind.
       for (const h of view.register.allHoldings()) {
         if (!moneyInstruments.has(h.instrument)) continue;
         const qty = sum(h.lots.map((l) => l.qty)).value;
@@ -107,7 +111,7 @@ export function moneyFamily(memory: AuditMemory): Family {
             size: qty * weightOf(view.parties.get(h.holder)),
             unit: view.instruments.get(h.instrument).ccy,
             period: view.period,
-            message: `${h.holder} closes ${qty} per member on ${h.instrument} with no lender row (corridor not built)`,
+            message: `${h.holder} closes ${qty} per member on ${h.instrument} with no lender row behind it`,
           });
         }
       }

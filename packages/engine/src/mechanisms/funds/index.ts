@@ -437,17 +437,16 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   }
   for (const o of ctx.posted(fundVenue(d.fund))) {
     if (o.qty <= 0) continue;
-    // XI-15: a posting is a total and a cell's decision is per member; this is the one place the
-    // two meet, and it is the same conversion every other market makes.
-    //
-    // Law 8, FOUND AND NOT FIXED HERE: `asked` can be a FRACTION OF A SHARE, because the cell's own
-    // request is a sum of money divided by the NAV (households/portfolio.ts, `fundOrders`). A share
-    // is indivisible, so what cannot be paid back rounds down to nothing and the remainder sits on
-    // this book for ever — a fund that owes nobody anything reporting a gate every period. Rounding
-    // it at the cause takes the money fund's forced sale past what this world can absorb: the bank
-    // funded against the bills it dumps fails, and there is no resolution for one yet. Both belong
-    // to the same change and it is worklist 11's (Banks Capital D, XI-2).
-    const asked = div(o.qty, weightOf(ctx.parties.get(o.party)), 'shares per member');
+    // XI-15, Law 8: a posting is a total and a cell's decision is per member; this is the one place
+    // the two meet, and it is the same conversion every other market makes. A SHARE IS INDIVISIBLE,
+    // so what a member can ask for or hand back is a whole number of them — whoever posted it has
+    // already decided in whole shares, and this is where a posting that did not is refused rather
+    // than quietly queued for ever.
+    const asked = ctx.registry.deliverable(
+      share.unit,
+      div(o.qty, weightOf(ctx.parties.get(o.party)), 'shares per member'),
+    );
+    if (asked <= 0) continue;
     if (o.side === 'buy') {
       subscribe(ctx, d, share, o.party, asked, perShare);
     } else {

@@ -217,8 +217,9 @@ describe('how fine the pieces are, is a RESOLUTION (Law 2)', () => {
     const w = foundationWorld('piece-conserve');
     for (let i = 0; i < 8; i += 1) w.step();
     const money = w.last?.audit.families.find((f) => f.family === 'money');
-    // Every violation this family has left is the one this world is known to report (test/
-    // expected.ts); what it does NOT report any more is a balance that drifted off its own grid.
-    expect(money?.violations.every((v) => v.message.includes('no lender row'))).toBe(true);
+    // NOTHING. Money is conserved, no stock moved by more than its own creation legs, and no
+    // account closes below zero without a lender behind it — with no tolerance anywhere in any of
+    // the three, because whole pieces add exactly.
+    expect(money?.violations).toEqual([]);
   });
 });

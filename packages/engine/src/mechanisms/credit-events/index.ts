@@ -146,7 +146,16 @@ function eventsNameSomebody(): Family {
         if (typeof instrument !== 'string' || typeof issuer !== 'string') continue;
         if (!view.instruments.has(instrument as InstrumentId)) continue;
         const i = view.instruments.get(instrument as InstrumentId);
-        if (i.issuer.some && i.issuer.value === issuer) continue;
+        // Register F2, Banks Capital D6: an event names who promised it WHEN IT HAPPENED, and the
+        // obligation can move afterwards — an estate assumes a dead firm's paper, an acquirer
+        // assumes a resolved bank's rows. So the comparison resolves through successors on both
+        // sides: the same party, read at two moments, is the same party.
+        const owes = i.issuer.some ? view.parties.resolve(i.issuer.value).id : undefined;
+        const said = view.parties.has(issuer as PartyId)
+          ? view.parties.resolve(issuer as PartyId).id
+          : issuer;
+        if (owes !== undefined && ((i.issuer.some && i.issuer.value === issuer) || owes === said))
+          continue;
         out.push({
           family: 'names',
           spec: 'Bond N12',

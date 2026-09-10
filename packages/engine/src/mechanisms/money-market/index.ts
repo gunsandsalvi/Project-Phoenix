@@ -29,6 +29,8 @@ import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { borrowingPower, pledgeable, windowAdvances, type Advance } from './collateral.js';
+import { collectPremiums, DEPOSIT_INSURER, INSURER, INSURER_PARAMS, insurerKind } from './insurer.js';
+import { failedBanks, resolve } from './resolution.js';
 import {
   BOOKS,
   DEPOSIT_CLASSES,
@@ -120,7 +122,16 @@ function corridor(ctx: MechanismContext): Corridor {
 function freeRepaidCollateral(ctx: MechanismContext): void {
   for (const i of ctx.instruments.all()) {
     if (!isRow(i.terms) || i.terms.collateral.length === 0 || i.status.live) continue;
-    const borrower = i.terms.borrower;
+    // Register F2, Money E4: the borrower can have CEASED since it pledged — a resolution moves a
+    // bank's whole book, collateral and all, to whoever succeeded it — and the lien is on the
+    // successor's holding now. A leg addressed to the dead party would be a defect in this module.
+    const borrower = ctx.parties.resolve(i.terms.borrower).id;
+    const beneficiary = ctx.parties.resolve(i.terms.lender).id;
+    // Register D5, Banks Capital D6: and both ends of the row can resolve to the SAME party, when
+    // one bank's resolution put the borrower's book into the lender's hands. There is nothing left
+    // to free: a party does not hold security over its own paper, and the resolution ended the lien
+    // when it took the book (nobody pledges to itself).
+    if (borrower === beneficiary) continue;
     for (const c of i.terms.collateral) {
       const holding = ctx.register.holding(borrower, c.instrument);
       if (!holding.some) continue;
@@ -130,7 +141,7 @@ function freeRepaidCollateral(ctx: MechanismContext): void {
             {
               kind: 'release',
               pledgor: borrower,
-              beneficiary: i.terms.lender,
+              beneficiary,
               instrument: c.instrument,
               lien: lien.id,
             },
@@ -614,6 +625,14 @@ function paramsOf(): ParamDecl[] {
       owner: 'parliament',
       why: 'Banks Funding A1.a, Banks Capital D4: what is insured, PER MEMBER of a cell (XI-15). It is what makes E4 break the run loop for retail money and not for wholesale, and it is a rule somebody wrote — parliament owns it from worklist 14.',
     },
+    {
+      id: INSURER_PARAMS.premium,
+      value: 0.002,
+      unit: 'per annum on the insured part of a bank own deposit base',
+      kind: 'policy',
+      owner: 'parliament',
+      why: 'Banks Capital D4: what the guarantee costs the banks that have it. It is a rule somebody wrote and parliament owns it from worklist 14, and it is what makes deposit insurance a price a bank pays for taking retail money rather than a free option written by the state.',
+    },
     ...DEPOSIT_CLASSES.map((c) => ({
       id: switchingCost(c.id),
       value: c.switchingCost,
@@ -664,7 +683,13 @@ function collateralHolds(): Family {
         if (i.issued <= 0) continue;
         live.add(String(i.id));
         for (const c of i.terms.collateral) {
-          const holding = view.register.holding(i.terms.borrower, c.instrument);
+          // Register F2, Banks Capital D6: the borrower can have CEASED since the row was written —
+          // a resolution moves a bank's whole book, collateral and all, to whoever succeeded it —
+          // and a reference to it resolves there. The security did not change; who is behind it did.
+          const holding = view.register.holding(
+            view.parties.resolve(i.terms.borrower).id,
+            c.instrument,
+          );
           const bound = holding.some
             ? sum(holding.value.liens.filter((l) => l.reason === String(i.id)).map((l) => l.qty))
                 .value
@@ -711,7 +736,10 @@ export const moneyMarket: SystemModule = {
   // it needs is that those modules are there — not their code (Law 15).
   requires: ['bank-lending', 'sovereign-instruments'],
   instrumentKinds: [interbankKind, repoKind],
-  partyKinds: [],
+  // Banks Capital D4: the guarantee behind the deposits this module prices is a PARTY, with an
+  // account and an income of its own, because a guarantee nobody funded is one the treasury makes
+  // silently every time (see `insurer.ts`).
+  partyKinds: [insurerKind],
   curveFamilies: [],
   units: [],
   params: paramsOf(),
@@ -725,6 +753,7 @@ export const moneyMarket: SystemModule = {
         freeRepaidCollateral(ctx);
         publishCorridor(ctx);
         setAndPayDeposits(ctx);
+        collectPremiums(ctx, banksOf(ctx));
       },
     },
     {
@@ -737,6 +766,29 @@ export const moneyMarket: SystemModule = {
       anchor: { before: 'revaluation' },
       run: (ctx: MechanismContext): void => {
         bookOverdrafts(ctx);
+      },
+    },
+    {
+      name: 'moneyMarket.resolve',
+      spec: 'Banks Capital C3 Banks Capital D1 Banks Capital D2 Banks Capital D3 Banks Capital D4 Banks Capital D5 Banks Capital D6',
+      cycle: 'anchor',
+      // BEFORE revaluation, and after this module's own booking phase — so what is still below
+      // zero has already become a row, and the whole book moves at what it is carried at and is
+      // re-marked on the acquirer's balance sheet in the same period it lands there. Moving it
+      // after the marks were taken would crystallise a gain the revaluation had already booked.
+      //
+      // D1's valuation is unaffected: what the assets are WORTH is read off the prints the market
+      // made this period, and a print is there the moment the session ends. What IS one period
+      // stale here is the solvency trigger, which reads the equity account — so a bank whose assets
+      // fell this period is found insolvent next period rather than this one. That is a lag and is
+      // stated as one; the cash trigger, which is the one that fires in practice, has no such lag.
+      //
+      // It does not anchor to the estate's phase, because a world can have this module and no
+      // estate at all — the estate leaves a bank alone by asking the kernel whether some module
+      // resolves the kind (`resolvesItsOwn`), which is this one saying `resolves: [BANK]`.
+      anchor: { before: 'revaluation' },
+      run: (ctx: MechanismContext): void => {
+        for (const f of failedBanks(ctx)) resolve(ctx, f.bank, f.why);
       },
     },
     {
@@ -757,13 +809,28 @@ export const moneyMarket: SystemModule = {
   ],
   participants: [],
   creditDecisions: [{ partyKind: CENTRAL_BANK, decide: reserveOverdraft }],
+  // C3.b: a bank does not go to an estate. This module takes charge of what happens instead.
+  resolves: [BANK],
   families: [collateralHolds()],
   seed(ctx: SeedContext): void {
     const banks = ctx.parties.ofKind(BANK).map((b) => b.id);
     const first = banks[0];
     if (first === undefined) return;
-    const ccy = ctx.registry.region(ctx.parties.get(first).region).ccy;
+    const region = ctx.parties.get(first).region;
+    const ccy = ctx.registry.region(region).ccy;
     for (const v of venuesOf(ccy, [...banks, ctx.registry.centralBankOf(ccy)])) ctx.openVenue(v);
+    // D4: the fund exists from period zero and opens with NOTHING, because a fund that opened full
+    // would be a seed deciding how much of a future failure the banking system had already paid
+    // for. What it has when one fails is what the premiums have actually brought in (Seed E1).
+    ctx.parties.add({
+      id: INSURER,
+      kind: DEPOSIT_INSURER,
+      region,
+      name: 'North Deposit Guarantee',
+      bank: ctx.registry.centralBankOf(ccy),
+      representation: 'named',
+      status: { alive: true },
+    });
   },
 };
 
@@ -829,7 +896,7 @@ function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): Overdraft
     return { allow: false };
   }
   m.overdrawn.push({ bank: o.holder, ccy: o.ccy });
-  return { allow: true, recordedAs: 'reserveOverdraft' };
+  return { allow: true };
 }
 
 /**

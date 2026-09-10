@@ -628,17 +628,28 @@ describe('the chain (XI-4)', () => {
     expect(spent(dear)).toBeLessThan(spent(cheap));
     // ...and less plant is less capacity, WITH THE LAG IN C3 and never directly: what fell is what
     // its plant lets it make, which is the only way the financial price reaches the real quantity.
-    // ...and less spending is less PLANT, which is the quantity the whole chain exists to move.
+    // ...and less spending is NO MORE PLANT. Law 8 is why this one is not a strict inequality and
+    // the others are: a machine is INDIVISIBLE, so a third less money buys fewer machines only once
+    // the difference has reached a whole one. Over this run it has not — the dear world spends a
+    // third less and commissions the same twelve — and the difference goes into what it paid for
+    // them and into what its plant is then asked to make, which is where the next two assertions
+    // find it. A world whose capital came in arbitrarily divisible units would separate here; this
+    // one separates one step later, and that is the lumpiness rather than a broken chain.
     const commissioned = (w: World): number =>
       w.journal.ofKind('capital.commissioned').reduce((a, e) => a + num(e, 'units'), 0);
-    expect(commissioned(dear)).toBeLessThan(commissioned(cheap));
-    // ...and less plant is less capacity, WITH THE LAG IN C3 and never directly: what fell is what
-    // the line's plant lets it make, which is the only way a financial price reaches a real one.
+    expect(commissioned(dear)).toBeLessThanOrEqual(commissioned(cheap));
+    // ...and the capacity that plant gives the line is no greater either, for the same reason and
+    // WITH THE LAG IN C3: capacity is what whole machines let a line make, so it moves when the
+    // machine count does and not before.
     const capacityOf = (w: World): number =>
       [FIRM_1, FIRM_4, FIRM_7]
         .map((f) => num(lastPlan(w, f), 'capacity'))
         .reduce((a, b) => a + b, 0);
-    expect(capacityOf(dear)).toBeLessThan(capacityOf(cheap));
+    expect(capacityOf(dear)).toBeLessThanOrEqual(capacityOf(cheap));
+    // ...AND LESS IS MADE, which is the end of the chain and the thing XI-4 exists to assert. It is
+    // strict: the dear world's firms run their plant less hard, because what they can sell at a
+    // price that clears their own dearer cost of capital is less — so the financial price reaches a
+    // real quantity even in the periods where it did not reach a machine.
     const made = (w: World): number =>
       w.journal
         .ofKind('firms.produced')

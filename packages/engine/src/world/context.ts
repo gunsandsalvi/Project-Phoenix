@@ -22,6 +22,7 @@ import type {
   InstrumentId,
   MarketId,
   PartyId,
+  PartyKindId,
   VenueId,
 } from '../core/ids.js';
 import type { Running } from '../core/num.js';
@@ -55,6 +56,13 @@ export interface KernelReads {
   readonly markets: readonly MarketDecl[];
   /** Clearing B2: the venues modules clear themselves; declared and public, like a market. */
   readonly venues: readonly VenueDecl[];
+  /**
+   * XI-3, Banks Capital C3.b: whether some module takes charge of what happens when a party of this
+   * kind fails. The estate asks it so that it can leave a bank alone without knowing what a bank is
+   * (Law 15), and a module that answers yes must actually do it — a kind claimed by nobody's phase
+   * would be a party that failed and stayed where it was.
+   */
+  resolvesItsOwn(kind: PartyKindId): boolean;
 }
 
 /**

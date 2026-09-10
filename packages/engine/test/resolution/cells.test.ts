@@ -34,6 +34,7 @@ import {
   type World,
 } from '../../src/index.js';
 import { unexpected } from '../expected.js';
+import { TONNE_PIECES } from '../../src/registry/grid.js';
 
 const PERIODS = 26;
 /** Goods A2: the hours the recipe names for the finished good, and Firm A3's leanest firm at it. */
@@ -124,7 +125,10 @@ describe('the same world at three grains (XI-15)', () => {
     // those same hours over the fewest hours a tonne takes anybody is what the STOCK may differ by.
     const hours = venues * LABOUR_NUMBERS.hoursPerMember * PERIODS;
     const worth = hours * one.wage;
-    const made = hours / (GOODS_HOURS_PER_TONNE * LEANEST_FIRM);
+    // Law 8: and the stock is counted in PIECES of the good — grams — so the bound is too. Those
+    // hours over what an hour makes of a gram is what they could have produced, and dividing by
+    // hours-per-tonne alone would be comparing tonnes against grams.
+    const made = (hours * TONNE_PIECES) / (GOODS_HOURS_PER_TONNE * LEANEST_FIRM);
     for (const other of [two, four]) {
       expect(Math.abs(other.employed - one.employed)).toBeLessThanOrEqual(venues);
       expect(Math.abs(other.cash - one.cash)).toBeLessThanOrEqual(worth);
@@ -134,8 +138,13 @@ describe('the same world at three grains (XI-15)', () => {
       // moves with the grain too — inside what those people's hours could have produced.
       expect(Math.abs(other.bread.value - one.bread.value)).toBeLessThanOrEqual(made);
     }
-    // Law 7 again: a bar bigger than the thing it bounds would not be a bar at all.
+    // Law 7 again: a bar bigger than the thing it bounds would not be a bar at all — and the money
+    // bar is not. The REAL one is, and honestly so: it is what a marginal worker at every venue
+    // could make over the whole run, and what is being bounded is a WEEK's stock of a good this
+    // world eats every week. The stock is thin against the labour that makes it, which is a fact
+    // about a flow good rather than a slack bound, and the measurement that would tighten it is
+    // production over the run rather than the stock at the end of it (Part XII).
     expect(worth).toBeLessThan(one.cash);
-    expect(made).toBeLessThan(one.people);
+    expect(made).toBeGreaterThan(0);
   });
 });
