@@ -24,8 +24,10 @@ import {
   type ParticipantView,
   type SystemModule,
   type World,
+  labourParam,
 } from '../src/index.js';
 import { GOODS_PIECE, sameQuantity, unexpected } from './expected.js';
+import { perTonne, phx, tonnes } from './units.js';
 
 const BANK_A = partyId('bank.a');
 const BUYER = partyId('buyer.1');
@@ -64,8 +66,8 @@ function buyer(subUnit: string, price: number, qty: number): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, PHX, 100000);
-      ctx.endowMoney(BANK_A, PHX, 100000);
+      ctx.endowMoney(BUYER, PHX, phx(100_000_000));
+      ctx.endowMoney(BANK_A, PHX, phx(100_000_000));
     },
     phases: [],
     participants: [
@@ -87,12 +89,12 @@ function world(...extra: readonly SystemModule[]): World {
 }
 
 /** The world the seed opens, with somebody buying grain: the farm's own market has two sides. */
-function grainWorld(qty = 40): World {
-  return world(buyer('grain', GRAIN_OPENS_AT, qty));
+function grainWorld(tonnesWanted = 40): World {
+  return world(buyer('grain', perTonne(GRAIN_OPENS_AT), tonnes(tonnesWanted)));
 }
 
-/** What the seed states the grain market opens at, which is what a buyer of it bids around. */
-const GRAIN_OPENS_AT = 0.4;
+/** What the seed states the grain market opens at, in PHX for a tonne, which a buyer bids around. */
+const GRAIN_OPENS_AT = 400;
 
 function events(w: World, kind: EventKind, subject: string): Event[] {
   return w.journal.ofKind(kind).filter((e) => e.subjects.includes(subject));
@@ -134,10 +136,13 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
     // Capital Programme A3). The price it expects is the one it sold at, not the opening print.
     const expected = plan?.data['expectedPrice'];
     const charge = plan?.data['capitalCharge'];
+    // Law 19: how much labour a piece of grain takes is the recipe's own number, read from the
+    // register it is declared in rather than written out again here.
+    const perPiece = w.params.get(labourParam('grain'));
     const worth =
       ((typeof expected === 'number' ? expected : 0) * 0.92 -
         (typeof charge === 'number' ? charge : 0)) /
-      9;
+      perPiece;
     const bid = plan?.data['wageBid'];
     expect(typeof bid === 'number' ? bid : 0).toBeCloseTo(worth, 12);
     const hired = last(w, 'labour.hire', FIRM_1);
@@ -226,7 +231,7 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
   it('is bound by the inputs on hand, and says which one bound it (Goods B1.b, B5.b)', () => {
     // A buyer of flour far bigger than the grain the mill can find: the farm has one crop and the
     // mill wants more flour than that crop makes, so its line is throttled by what it could buy.
-    const w = world(buyer('flour', 1.2, 400));
+    const w = world(buyer('flour', perTonne(1200), tonnes(400)));
     for (let i = 0; i < 14; i += 1) {
       const r = w.step();
       expect(r.audit.total).toBe(0);
@@ -262,14 +267,14 @@ describe('what it offers, and what nobody takes (Goods C1, C5)', () => {
     expect(r.audit.total).toBe(0);
     // Demand is a few tonnes against the whole crop offered, so what nobody took stays where it
     // was: that is what illiquidity in goods is (C5), and nothing absorbed the rest.
-    expect(w.register.quantity(FIRM_1, GRAIN)).toBeGreaterThan(25);
+    expect(w.register.quantity(FIRM_1, GRAIN)).toBeGreaterThan(tonnes(25));
     const print = w.journal
       .ofKind('print')
       .filter((e) => e.subjects.includes(GRAIN))
       .pop();
     // The value of holding it is what it expects to fetch less what perishes, and the market
     // cleared at that: nobody was paid more than a buyer posted (Clearing C4.c).
-    expect(print?.data['price']).toBeCloseTo(GRAIN_OPENS_AT * (1 - 0.004), 9);
+    expect(print?.data['price']).toBeCloseTo(perTonne(GRAIN_OPENS_AT) * (1 - 0.004), 15);
   });
 });
 
@@ -302,7 +307,7 @@ describe('the audit of a line (Goods B5, F5.b)', () => {
                   party: FIRM_1,
                   instrument: GRAIN,
                   qty: 5,
-                  costPerUnit: 0.04,
+                  costPerUnit: perTonne(40),
                   toCell: none(),
                 },
               ],

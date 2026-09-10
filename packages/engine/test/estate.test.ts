@@ -36,6 +36,7 @@ import {
   type World,
 } from '../src/index.js';
 import { unexpected } from './expected.js';
+import { perTonne, phx, tonnes } from './units.js';
 
 const DEBTOR = partyId('firm.1');
 const SENIOR_HOLDER = partyId('firm.2');
@@ -101,9 +102,9 @@ function owesMoreThanItHas(): SystemModule {
           market: none(),
         });
       }
-      ctx.endowUnits(SENIOR_HOLDER, SENIOR, 1e6, 1);
-      ctx.endowUnits(OTHER_SENIOR_HOLDER, SENIOR, 1e6, 1);
-      ctx.endowUnits(JUNIOR_HOLDER, JUNIOR, 1e6, 1);
+      ctx.endowUnits(SENIOR_HOLDER, SENIOR, phx(1_000_000), 1);
+      ctx.endowUnits(OTHER_SENIOR_HOLDER, SENIOR, phx(1_000_000), 1);
+      ctx.endowUnits(JUNIOR_HOLDER, JUNIOR, phx(1_000_000), 1);
     },
   };
 }
@@ -162,7 +163,7 @@ function cannotPay(amount: number): SystemModule {
         terms: { kind: SENIOR_KIND },
         market: none(),
       });
-      ctx.endowUnits(SENIOR_HOLDER, SENIOR, 1, 1);
+      ctx.endowUnits(SENIOR_HOLDER, SENIOR, phx(1_000_000), 1);
     },
   };
 }
@@ -270,15 +271,15 @@ function hungryBuyer(): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, PHX, 100000);
-      ctx.endowMoney(partyId('bank.a'), PHX, 100000);
+      ctx.endowMoney(BUYER, PHX, phx(100_000_000));
+      ctx.endowMoney(partyId('bank.a'), PHX, phx(100_000_000));
     },
     participants: [
       {
         partyKind: FIRM,
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
           view.self.id === BUYER && m.instrument === instrument
-            ? [{ party: BUYER, side: 'buy', price: 1.2, qty: 400 }]
+            ? [{ party: BUYER, side: 'buy', price: perTonne(1200), qty: tonnes(400) }]
             : [],
       },
     ],
@@ -370,7 +371,7 @@ describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
     // D2.a: what they got is what the assets fetched, split by what they were owed — never a rate.
     expect(a).toBeCloseTo(b, 9);
     expect(a + b).toBeCloseTo(had, 9);
-    expect(w.register.quantity(JUNIOR_HOLDER, JUNIOR)).toBe(1e6);
+    expect(w.register.quantity(JUNIOR_HOLDER, JUNIOR)).toBe(phx(1_000_000));
   });
 
   it('writes off what it never paid, and the loss lands on the holders (D3, E5)', () => {
@@ -383,7 +384,9 @@ describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
     expect(w.register.quantity(JUNIOR_HOLDER, JUNIOR)).toBe(0);
     expect(w.register.equity(SENIOR_HOLDER)).toBeLessThan(seniorBefore);
     // The junior was paid nothing at all, so it lost the whole of what it was carrying.
-    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeCloseTo(1e6, 6);
+    // It also earned a week of deposit interest on its account while this ran, which is its
+    // bank's business and not the waterfall's (Banks Funding B1).
+    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeCloseTo(phx(1_000_000), -5);
     // ...and it lost MORE than the senior did, which is the whole of what being junior means.
     expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeGreaterThan(
       seniorBefore - w.register.equity(SENIOR_HOLDER),
@@ -397,14 +400,14 @@ describe('what a death costs the real economy (Firm Birth D4, D4.a)', () => {
     // How LONG the buyer has to be hungry before a mill runs out of money is an outcome and moves
     // when anything upstream of it does; what the test is about is what happens when one does.
     for (let i = 0; i < 18; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const died = w.journal.ofKind('estate.opened');
+    const died = w.journal.ofKind('estate.opened').map((e) => String(e.data['dead']));
     expect(died.length).toBeGreaterThan(0);
-    const dead = String(died[0]?.data['dead']);
     // D4.a: a death drops a headcount only through the separation path, so every job that ended
-    // ended as a separation event with the death as its cause — never by a row disappearing.
+    // ended as a separation event with the death as its cause — never by a row disappearing. WHICH
+    // of them had people on the day it died is an outcome, so this is about the ones that did.
     const released = w.journal
       .ofKind('labour.separation')
-      .filter((e) => e.data['employer'] === dead && e.data['cause'] === `${dead} ceased`);
+      .filter((e) => died.some((d) => e.data['employer'] === d && e.data['cause'] === `${d} ceased`));
     expect(released.length).toBeGreaterThan(0);
     expect(released.every((e) => Number(e.data['members']) > 0)).toBe(true);
     // Labour F1: and no job is left at a firm that has ceased — the audit family that says so is
@@ -423,7 +426,10 @@ describe('what a death costs the real economy (Firm Birth D4, D4.a)', () => {
     const w = worldWithADeathInIt();
     for (let i = 0; i < 18; i += 1) w.step();
     const view = snapshot(w, { kind: 'inspector' }, 200);
-    const dead = String(w.journal.ofKind('estate.opened')[0]?.data['dead']);
+    // The MOST RECENT death: an estate that opened early enough is finished winding up by now,
+    // and a finished estate is a party that has ceased in its turn (D5).
+    const opened = w.journal.ofKind('estate.opened');
+    const dead = String(opened[opened.length - 1]?.data['dead']);
     // D5: a dead party is not a name that stops — the surface says what it resolves to.
     const gone = view.parties.find((p) => p.id === dead);
     expect(gone?.alive).toBe(false);
@@ -447,7 +453,7 @@ describe('the other failure, and what an estate may not do (Firm D4, Firm Birth 
   it('dies of no cash while solvent, and pays only the people with a claim on it', () => {
     // A world where no bank will lend: what it could not pay it still cannot, which is the cash
     // failure, and it is a different one from the balance sheet's (Banks Capital C1.a).
-    const w = failingWorld(cannotPay(1e6), paysAStranger());
+    const w = failingWorld(cannotPay(phx(1_000_000)), paysAStranger());
     const violations: string[] = [];
     for (let i = 0; i < 3; i += 1) {
       violations.push(...w.step().audit.families.flatMap((f) => f.violations).map((v) => v.message));
