@@ -99,6 +99,9 @@ export const fundKind: PartyKindProfile = {
   moneyIssuer: null,
   fails: ['solvency'],
   borrows: false,
+  // Money Market A1.c, E1: its cash is somebody's deposit and it is in the market all day — this
+  // is the money that leaves first, and it leaves because it chose to.
+  choosesBank: true,
 };
 
 /** F3: the manager is a separate party. The fee is its income and the fund's cost. */
@@ -108,6 +111,7 @@ export const fundManagerKind: PartyKindProfile = {
   moneyIssuer: null,
   fails: ['cash', 'solvency'],
   borrows: true,
+  choosesBank: true,
 };
 
 /**
@@ -435,6 +439,14 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
     if (o.qty <= 0) continue;
     // XI-15: a posting is a total and a cell's decision is per member; this is the one place the
     // two meet, and it is the same conversion every other market makes.
+    //
+    // Law 8, FOUND AND NOT FIXED HERE: `asked` can be a FRACTION OF A SHARE, because the cell's own
+    // request is a sum of money divided by the NAV (households/portfolio.ts, `fundOrders`). A share
+    // is indivisible, so what cannot be paid back rounds down to nothing and the remainder sits on
+    // this book for ever — a fund that owes nobody anything reporting a gate every period. Rounding
+    // it at the cause takes the money fund's forced sale past what this world can absorb: the bank
+    // funded against the bills it dumps fails, and there is no resolution for one yet. Both belong
+    // to the same change and it is worklist 11's (Banks Capital D, XI-2).
     const asked = div(o.qty, weightOf(ctx.parties.get(o.party)), 'shares per member');
     if (o.side === 'buy') {
       subscribe(ctx, d, share, o.party, asked, perShare);

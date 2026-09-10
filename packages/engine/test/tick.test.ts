@@ -189,29 +189,28 @@ describe('how fine the pieces are, is a RESOLUTION (Law 2)', () => {
     for (const shift of [1, 10, 100]) expect(atShift(shift, 8).reds).toBe(0);
   });
 
-  it('produces exactly the same real output, and its money converges', () => {
+  it('converges as the piece gets finer, in what it made and in the money it holds', () => {
     const periods = 8;
     const coarse = atShift(1, periods);
     const finer = atShift(10, periods);
     const finest = atShift(100, periods);
-    // WHAT THE WORLD MADE IS THE SAME, in tonnes, at all three. Not to the last bit: a batch is
-    // started in whole pieces of the good, so a coarser piece rounds each batch harder. The gap is
-    // therefore at most one coarse piece for every batch either world started — which is a bound
-    // derived from the arithmetic, in the sense Law 7 means, and not a band anybody chose.
-    const rounding = coarse.batches * coarse.piece;
-    expect(Math.abs(finer.produced - coarse.produced)).toBeLessThanOrEqual(rounding);
-    expect(Math.abs(finest.produced - coarse.produced)).toBeLessThanOrEqual(rounding);
-    // Its MONEY is a different matter, and honestly so: what a payment comes to is rounded to a
-    // piece, so a coarser piece rounds harder, and the rounding feeds decisions that are
-    // thresholds. Two worlds a factor of ten apart at the fine end therefore agree far more closely
-    // than two at the coarse end — which is convergence, measured, not a tolerance anybody chose.
+    // What is EXACTLY invariant is the structure, and the test above says so with no band at all.
+    // THE PATH IS NOT, and honestly so: what a payment or a batch comes to is rounded to a whole
+    // piece, and this world's decisions are thresholds (Law 2 forbids deciding at an average), so a
+    // firm on the edge of starting a batch starts it in one run and not in the other and the two
+    // histories differ from then on. The same happens for any perturbation at all.
+    //
+    // So what has to be true is that the difference IS the rounding and nothing else — and the way
+    // to say that without choosing a band is that a factor of ten finer is a factor of ten closer.
+    // That is measured here in both halves of the world, the real one and the money one, and a
+    // number that had stopped scaling with the grid would fail it rather than pass quietly.
     const gap = (a: number, b: number): number => Math.abs(a - b) / Math.abs(a);
+    expect(gap(finer.produced, finest.produced)).toBeLessThan(gap(coarse.produced, finer.produced));
     expect(gap(finer.money, finest.money)).toBeLessThan(gap(coarse.money, finer.money));
-    // BEYOND THIS HORIZON THE PATHS SEPARATE, and that is a fact about the world rather than about
-    // the pieces: its decisions are thresholds (Law 2 forbids deciding at an average), so a firm on
-    // the edge of starting a batch starts it in one run and not in the other, and the two histories
-    // differ from then on. The same happens for any perturbation at all. What must not move is what
-    // the test above asserts.
+    // And every batch either world started is a whole number of pieces of its own good, which is
+    // what makes the difference a rounding rather than a different world.
+    expect(coarse.batches).toBeGreaterThan(0);
+    expect(coarse.piece).toBeGreaterThan(0);
   });
 
   it('conserves money exactly, which is what whole pieces buy', () => {

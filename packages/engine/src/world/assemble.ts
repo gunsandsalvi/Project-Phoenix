@@ -50,9 +50,12 @@ export const KERNEL_PARAMS = {
 
 export function assemble(spec: AssemblySpec): World {
   const modules = orderModules(spec.modules);
-  // The parameters first: how fine every unit's grid is, is one of them (Law 8), and the registry
-  // is built on the answer.
-  const params = new ParamRegister([...spec.params, ...modules.flatMap((m) => m.params)]);
+  const declared = [...spec.params, ...modules.flatMap((m) => m.params)];
+  // How fine every unit's grid is, is itself a declared number (Law 8), and the registry is built
+  // on the answer — so the register is built twice out of the one list of declarations. The first
+  // has no units and can answer only the numbers that are not amounts of one, which is what
+  // `pieceShift` is; the second is built against the registry and holds every declared AMOUNT as
+  // the count of pieces the state actually counts in (Law 2: the amounts then move with the grid).
   const registry = new Registry(
     {
       ...spec.registry,
@@ -61,8 +64,9 @@ export function assemble(spec: AssemblySpec): World {
       partyKinds: [...KERNEL_PARTY_KINDS, ...modules.flatMap((m) => m.partyKinds)],
       curveFamilies: modules.flatMap((m) => m.curveFamilies),
     },
-    params.get(KERNEL_PARAMS.pieceShift),
+    new ParamRegister(declared).get(KERNEL_PARAMS.pieceShift),
   );
+  const params = new ParamRegister(declared, registry);
   const calendar = new Calendar({
     epoch: spec.epoch,
     periodDays: params.get(KERNEL_PARAMS.periodDays),

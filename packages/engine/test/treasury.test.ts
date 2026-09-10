@@ -13,6 +13,7 @@ import {
   TREASURY_NORTH,
   TREASURY_PARAMS,
   assemble,
+  currencyUnit,
   foundationSpec,
   foundationWorld,
   goodId,
@@ -161,7 +162,8 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
     // Goods C3, C4: it holds what it managed to buy, from named sellers, at the price the market
     // made — never a quantity it asked for and always got.
     expect(bought).toBeGreaterThan(0);
-    const budget = w.params.get(TREASURY_PARAMS.purchases);
+    // Law 8: a budget is an AMOUNT of the state's own money, so it is read in the pieces of it.
+    const budget = w.params.amount(TREASURY_PARAMS.purchases, currencyUnit(PHX));
     const print = w.prices.latest(bread, w.period);
     expect(print.some).toBe(true);
     // It never buys more than the budget it stated: the budget is what it spends, and what that

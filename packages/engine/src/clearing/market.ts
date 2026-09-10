@@ -18,7 +18,7 @@
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
-import { currencyUnit, type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
+import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
 import { add, div, finite, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import { commonGrain, downToGrain, toGrain } from '../core/tick.js';

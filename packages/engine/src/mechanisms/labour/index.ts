@@ -50,7 +50,7 @@ export const labourVenue = (region: RegionId, occupation: string): VenueId =>
 
 function numbers(ctx: MechanismContext): LabourParams {
   return {
-    hoursPerMember: ctx.params.get(LABOUR_PARAMS.hoursPerMember),
+    hoursPerMember: ctx.params.amount(LABOUR_PARAMS.hoursPerMember, HOURS),
     retirementAge: ctx.params.get(LABOUR_PARAMS.retirementAge),
     hiringLagPeriods: ctx.params.get(LABOUR_PARAMS.hiringLag),
     severancePeriods: ctx.params.get(LABOUR_PARAMS.severance),
@@ -61,8 +61,9 @@ function paramsOf(): ParamDecl[] {
   return [
     {
       id: LABOUR_PARAMS.hoursPerMember,
-      value: LABOUR_NUMBERS.hoursPerMember * TIME_PIECES,
-      unit: 'minutes per person per period (thirty-five hours)',
+      value: LABOUR_NUMBERS.hoursPerMember,
+      denominated: true,
+      unit: 'of somebody own time, per person per period',
       kind: 'technology',
       owner: 'model',
       why: 'Labour A1, B2: what one person has to sell in a week. The workforce is people and this is their time, so a headcount and an hour count are the same fact read two ways (F2).',

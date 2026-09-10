@@ -76,6 +76,9 @@ export const estateKind: PartyKindProfile = {
   // nobody left to sign and no future income to repay out of, so a bank asked for an overdraft by
   // one declines, which is the credit decision Money B3.a wants and the refusal B3.c records.
   borrows: false,
+  // XI-8: it holds the account of the party it succeeded, and it is realising that party rather
+  // than running it. Shopping for a deposit rate is not something a liquidation does.
+  choosesBank: false,
 };
 
 /**

@@ -24,8 +24,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
-import {
-  currencyUnit, paramId, type PartyId } from '../../core/ids.js';
+import { paramId, type PartyId } from '../../core/ids.js';
 import { addTo, combineDust, div, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';

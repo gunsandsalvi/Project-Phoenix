@@ -43,6 +43,7 @@ import {
   classOf,
   DEPOSIT_CLASSES,
   funderOf,
+  MM_PARAMS,
   mmParam,
   switchingCost,
   type DepositClassDecl,
@@ -343,11 +344,13 @@ export function announced(ctx: MechanismContext, bank: PartyId, cls: string): Op
  * The move is the kernel's door and it can FAIL: a bank that cannot pay the withdrawal does not,
  * and the depositor is still there when the next period opens (Money E1.b).
  */
-export function moveDeposits(ctx: MechanismContext, banks: readonly PartyId[], limit: number): void {
+export function moveDeposits(ctx: MechanismContext, banks: readonly PartyId[]): void {
   const since = ctx.period > 0 ? asPeriod(ctx.period - 1) : asPeriod(0);
   const shaky = new Set(banks.filter((b) => looksInTrouble(ctx, b, since)));
   for (const p of ctx.parties.all()) {
-    if (!p.status.alive || banks.includes(p.id)) continue;
+    // E1: only a depositor that chooses where it banks answers a rate. A bank settles at the
+    // central bank and a desk is its own bank's arm (Law 15: the profile says, nothing branches).
+    if (!p.status.alive || !ctx.registry.partyKind(p.kind).choosesBank) continue;
     const cls = classOf(p.kind);
     if (cls === undefined || !banks.includes(p.bank)) continue;
     const ccy = ctx.registry.region(p.region).ccy;
@@ -363,6 +366,8 @@ export function moveDeposits(ctx: MechanismContext, banks: readonly PartyId[], l
     if (best === undefined) continue;
     const perMember = ctx.register.quantity(p.id, moneyInstrumentId(p.bank, ccy));
     if (perMember <= 0) continue;
+    // A2, XI-15: what is insured is a stated amount of the money the deposit is IN, per member.
+    const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
     const forSafety = shaky.has(p.bank) && uninsuredAt(ctx, p.bank, p.id, ccy, limit) > 0;
     const forRate = own.some && sub(best.rate, own.value, 'what it would gain') > sticky;
     if (!forSafety && !forRate) continue;

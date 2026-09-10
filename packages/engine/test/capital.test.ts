@@ -44,7 +44,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { GOODS_PIECE, sameQuantity, unexpected } from './expected.js';
+import { sameQuantity, unexpected } from './expected.js';
 import { machinesPerTonne, perTonne, phx, tonnes } from './units.js';
 
 const FIRM_1 = partyId('firm.1'); // grain, at bank.a
@@ -356,11 +356,13 @@ describe('what the stock lets it make (Capital Programme A2, D4, Goods B1.a, B1.
     expect(started.length).toBeGreaterThan(0);
     for (const one of started) {
       // Law 8: what it started is its capacity taken down to a whole piece of the good.
-      sameQuantity(num(one, 'started'), num(one, 'capacity'), GOODS_PIECE);
+      sameQuantity(num(one, 'started'), num(one, 'capacity'));
       // B1.d, D4: utilisation is a READ of the outcome against capacity, taken where the outcome
       // is. Nothing decided anything with it, and at the ceiling it is one.
       // ...and utilisation is that read against the ceiling, so it is one to within the piece.
-      sameQuantity(num(one, 'utilisation'), 1, GOODS_PIECE / num(one, 'capacity'));
+      // Utilisation is a ratio, so the one piece of rounding in the numerator is that many
+      // pieces of the capacity it is read against.
+      sameQuantity(num(one, 'utilisation'), 1, 1 / num(one, 'capacity'));
     }
     // ...and when its plant is NOT what bound it, utilisation is below one and nothing pretends
     // otherwise: it is the outcome over the capacity, whatever the outcome was.

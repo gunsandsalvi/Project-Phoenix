@@ -202,8 +202,15 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
     const last = struck[struck.length - 1];
     const premium = Number(last?.data['premium']);
     // The desks sold their inventory and gave their baskets back, so nothing in this world can
-    // turn one value into the other any more. The gap is large and it is not going anywhere.
-    expect(Math.abs(premium)).toBeGreaterThan(0.1);
+    // turn one value into the other any more. The gap is bigger than what closing it would earn —
+    // which is the module's OWN condition for acting (E3.a: a period of carry) and so is the size
+    // that says the gap is open rather than a number this test chose — and nobody acted on it.
+    const rents = w.journal.ofKind('dealers.rent');
+    const carry = Number(rents[rents.length - 1]?.data['rate']);
+    expect(carry).toBeGreaterThan(0);
+    expect(Math.abs(premium)).toBeGreaterThan(carry);
+    const acted = w.journal.ofKind('dealers.arbitrage').filter((e) => e.period > w.period - 10);
+    expect(acted).toEqual([]);
     // E4, Law 6: it is a finding about liquidity and never a number to adjust. Nothing moved it,
     // and the audit — which is where a finding belongs — did not report it as a violation.
     expect(unexpected(w.step().audit)).toEqual([]);

@@ -24,7 +24,7 @@ import {
   type World,
 } from '../src/index.js';
 import { paidTheSame, unexpected } from './expected.js';
-import { minutes, perHour, phx } from './units.js';
+import { minutes, perHour } from './units.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');

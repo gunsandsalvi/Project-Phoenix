@@ -27,6 +27,7 @@ import {
   type World,
 } from '../src/index.js';
 import { paidTheSame, unexpected } from './expected.js';
+import { phx } from './units.js';
 
 const BREAD = goodId('bread', REGION);
 const BANK_A = partyId('bank.a');
@@ -62,12 +63,12 @@ function payer(perMember: number, spread: number): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(PAYER, PHX, 100000);
+      ctx.endowMoney(PAYER, PHX, phx(100_000_000));
       // Seed A4: a deposit is a bank's liability, and a bank that owes it holds something against
       // it. Without the reserves, the first payment across banks would be an overdraft this world
       // has no lender for yet (Money B3.c, worklist 11) — an artefact of the seed, not of anything
       // a household did.
-      ctx.endowMoney(BANK_A, PHX, 100000);
+      ctx.endowMoney(BANK_A, PHX, phx(100_000_000));
     },
     phases: [
       {
@@ -328,7 +329,7 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
 
 describe('what the state collects (Treasury C1, C1.a, C3)', () => {
   it('taxes what a household was actually paid, out of the payer own account', () => {
-    const w = paidWorld(payer(0.1, 0));
+    const w = paidWorld(payer(phx(100), 0));
     for (let i = 0; i < 4; i += 1) {
       const r = w.step();
       expect(unexpected(r.audit)).toEqual([]);
@@ -389,7 +390,7 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
 
 describe('the sector is a distribution and not an average (Households A2.f, A2.g)', () => {
   it('publishes what it was paid as a sum of what named payers paid it (B5)', () => {
-    const w = paidWorld(payer(0.1, 0));
+    const w = paidWorld(payer(phx(100), 0));
     for (let i = 0; i < 3; i += 1) w.step();
     const income = w.journal.ofKind('households.income');
     const published = income[income.length - 1];
@@ -416,8 +417,8 @@ describe('the sector is a distribution and not an average (Households A2.f, A2.g
     // at all depends on where the threshold happens to fall between four lumps. That is exactly
     // what cell resolution is for (XI-15), and the resolution test says the aggregates do not turn
     // on it — but a count of crossings is not an aggregate, and it does.
-    const flat = spreadWorld(payer(1, 0));
-    const spread = spreadWorld(payer(1, 0.9));
+    const flat = spreadWorld(payer(phx(1000), 0));
+    const spread = spreadWorld(payer(phx(1000), phx(900)));
     const periods = 12;
     for (let i = 0; i < periods; i += 1) {
       flat.step();
@@ -477,7 +478,12 @@ describe('the sector is a distribution and not an average (Households A2.f, A2.g
     // The mean of what the sector decided did not move — the same money reached the same people —
     // and NOT ONE CELL decided at it. That is the whole of "no decision at an average" (A2.f), and
     // an average household would have failed it by construction: it would have BEEN the mean.
-    expect(meanSpend(spread)).toBeCloseTo(meanSpend(flat), 9);
+    //
+    // Law 8: "did not move" is to within ONE PIECE PER MEMBER, and that is arithmetic and not a
+    // band. Every member holds a whole number of cents and decides out of what it holds, so moving
+    // the same total money between cells moves which member holds which cent — and the mean of
+    // what they then decide can differ by that and by nothing else.
+    expect(Math.abs(meanSpend(spread) - meanSpend(flat))).toBeLessThanOrEqual(1);
     const decided = plans(spread, periods).map((e) => num(e, 'spendPerMember'));
     expect(decided.length).toBeGreaterThan(1);
     expect(

@@ -12,6 +12,7 @@ import {
   PHX,
   TREASURY_NORTH,
   assemble,
+  dustOf,
   foundationSpec,
   foundationWorld,
   type SystemModule,
@@ -136,7 +137,12 @@ describe('remittance (Central Bank E3)', () => {
       }
     }
     // The number it remitted is exactly the equity its settled instructions produced. Revaluation
-    // never passes through an instruction, so it cannot have reached this.
-    expect(e.data['income'] as number).toBeCloseTo(ledgerIncome, 9);
+    // never passes through an instruction, so it cannot have reached this. Law 7: both sides are
+    // sums over the same settled effects, so what separates them is the dust of adding them up —
+    // derived from how many were added and how big they are, never a band anybody chose.
+    const terms = w.ledger.all().filter((r) => r.outcome === 'settled').length;
+    expect(Math.abs((e.data['income'] as number) - ledgerIncome)).toBeLessThanOrEqual(
+      dustOf(terms, ledgerIncome),
+    );
   });
 });

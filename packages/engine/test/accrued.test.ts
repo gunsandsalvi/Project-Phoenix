@@ -11,7 +11,6 @@ import {
   FIRM,
   GOV_LINE,
   MONTHLY,
-  PHX,
   assemble,
   civil,
   foundationSpec,
@@ -24,10 +23,13 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { paidTheSame } from './expected.js';
+import { paidTheSame, paidTo } from './expected.js';
+import { par } from './units.js';
 
 const FIRM_1 = partyId('firm.1');
-const QTY = 50;
+/** Five hundred PHX of face, in the pieces the register counts par in (Law 8). */
+const QTY = par(500);
+/** A price for a unit of par is a ratio of money to face, so it is the same number on the grid. */
 const CLEAN = 0.98;
 
 /** bank.a offers, firm.1 bids, both at one level, in one stated period. */
@@ -132,7 +134,6 @@ describe('a trade in the middle of a coupon period', () => {
     const at = 20;
     const w = world(at);
     stepTo(w, at);
-    const buyerCashBefore = w.cash(FIRM_1, PHX);
     const carrying = w.prices.latest(GOV_LINE, w.period);
     if (!carrying.some) throw new Error('no mark before the trade');
     const report = w.step();
@@ -140,8 +141,9 @@ describe('a trade in the middle of a coupon period', () => {
     const acc = w.accruedPerUnit(GOV_LINE, w.period);
     expect(acc).toBeGreaterThan(0);
     expect(report.audit.total).toBe(0);
-    // The cash that moved is the dirty amount: clean plus what accrued.
-    paidTheSame(buyerCashBefore - w.cash(FIRM_1, PHX), QTY * (CLEAN + acc));
+    // The cash that moved is the dirty amount: clean plus what accrued. Read off the wire and not
+    // off the balance, which also carries the week of deposit interest the buyer's bank paid it.
+    paidTheSame(-paidTo(w, FIRM_1, 'trade'), QTY * (CLEAN + acc));
     const trades = tradesOf(w, GOV_LINE);
     expect(trades).toHaveLength(1);
     const money = trades[0]?.instruction.legs.filter((l) => l.kind === 'money');

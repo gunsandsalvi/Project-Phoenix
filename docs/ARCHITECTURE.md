@@ -422,11 +422,11 @@ order (`requires`), seeds, states equity as the read, and seals the world with t
 
 Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else:
 
-| Context            | Who gets it                                                 | Can                                                                                                                                          | Cannot                                                                       |
-| ------------------ | ----------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- |
+| Context            | Who gets it                                                 | Can                                                                                                                                                                            | Cannot                                                                       |
+| ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; who anybody IS (kind, region, bank, weight); public prints, public instrument terms, public events, its own record; its own random stream | see any other party's private state (Observer A4, Expectations D1)           |
-| `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal | write the register, write a print, write a weight, reach the world container |
-| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets                                                       | anything after the seal                                                      |
+| `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
+| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets                                                                                         | anything after the seal                                                      |
 
 Two rules hold this shape: a module never imports another module or the world container (lint
 `phoenix/no-cross-module-import`), and the register's write methods are reachable only through a
@@ -555,14 +555,18 @@ what a lot is worth to the party HOLDING it and has a different answer per holde
 refuses a derived kind that derives nothing, and the valuation refuses a book whose value depends on
 its own claim.
 
-A **party kind** states three things about its life beyond its representation and its money issuance
+A **party kind** states four things about its life beyond its representation and its money issuance
 (item 7). `fails` says what a party of that kind can FAIL on — nothing, a cash failure it cannot
 cure, its liabilities past its assets, or both — and a kind that names neither cannot die, which is
 how XI-3's two exceptions (the central bank, and a treasury in its own money) are named consequences
 rather than omissions. `terminal` says whether it may end the chain of successors, which only an
 estate that has paid everything away may. `borrows` says whether anybody lends to it at all: a going
-concern yes, an estate and a household no (Banks Lending A1, Households C1.d). All three are read by
-mechanisms and never branched on by kind id.
+concern yes, an estate and a household no (Banks Lending A1, Households C1.d). `choosesBank` says
+whether it picks where it banks and leaves when somebody pays it more (Money Market E1) — a household
+and a firm do; a bank and a treasury settle at the central bank because that is what settling in
+central bank money means; a trading desk IS its bank's own arm and an account at a rival would make
+it a different firm (Dealer Desks A1); an estate holds the account of the party it succeeded and is
+realising it, not running it. All four are read by mechanisms and never branched on by kind id.
 
 Every number that shapes behaviour is declared in the **parameter register** with value, unit, owner,
 and provenance kind: `technology | preference | policy | resolution | shape | placeholder`. A
@@ -570,6 +574,17 @@ placeholder names the mechanism whose absence it stands in for and the worklist 
 The count of shapes and placeholders is a reported metric and must fall (XI-14). Engine code reads
 numbers only through `params.get(id)`; numeric literals other than `0, 1, -1, 2` are linted out of the
 engine except in `core/num.ts`.
+
+A parameter that is an **AMOUNT** of something — thirty thousand PHX a period, seven thousand hours,
+four hundred thousand units of a line — says so with `denominated: true` and is read with
+`params.amount(id, unit)` rather than `get`. The declaration then says what a person means and the
+register hands back the count of indivisible pieces that unit is counted in at this world's
+resolution (§4.11a), so **a declared amount moves with `pieceShift`** instead of being multiplied by
+a subdivision at every declaration site. WHICH unit is the reader's to name, because one policy is a
+number for whatever money, time or paper the party reading it deals in — a `get` on such a parameter
+throws rather than answering in the wrong number. The register is therefore built twice at assembly
+out of one list of declarations: once with no units, which can answer only `resolution.pieceShift`,
+and once against the registry that number built.
 
 ### 4.10a What a module knows between periods
 
@@ -601,44 +616,75 @@ programme, an auction's result — is read that way, because how far back a feed
 shrinks every time the world finds more to say, so sifting such an event out of the feed is a read
 that goes quiet as the model grows and never says that it has.
 
-### 4.11a Every unit has a smallest piece (Law 1, Law 8)
+### 4.11a A quantity is a whole number of indivisible pieces (Law 1, Law 8)
 
-A unit of anything real has a smallest piece. There is no half-cent, no gram of a cargo measured in
-tonnes: **a quantity is a whole number of ticks and anything finer does not exist**. Each `UnitDecl`
-declares its own grid as `tickExponent` (the tick is `2^-exponent`), the numbers are chosen together
-in `registry/grid.ts`, and `resolution.tickShift` moves them all at once so the choice can be tested.
+A unit of anything real has a smallest piece and nothing finer exists: there is no half-cent, no
+gram of a cargo weighed in kilos, no thousandth of a share certificate. **So a quantity IS A COUNT
+OF PIECES and the count is an integer** — not a fraction of a named unit. The state holds 18,849
+cents, never 188.49 of anything; a cargo is counted in grams, a workforce in hours, a register of
+members in whole shares.
 
-**Ticks are powers of two**, and that is the whole of why this works. A decimal grid (10⁻²) is not
-representable in binary floating point, so sums of "exact" decimal amounts drift off their own grid
-and the dust comes back with an extra step. On a binary grid every sum and difference of whole ticks
-is **exact**, so a balance moved a million times is exactly the balance — and the checks that compare
-it need no tolerance at all rather than a derived one.
+**Integers are why this works.** Integers add, subtract and compare exactly in binary floating point
+up to 2^53 of them, so a balance moved a million times is exactly the balance and the checks that
+compare it need no tolerance at all rather than a derived one. The decimal arithmetic everybody
+actually does (x.xx + y.yy) is exact because it is integer arithmetic on cents, which is what it
+always was. The earlier attempt at this — a power-of-two tick of 2^-20 of a named unit — bought the
+same exactness and paid for it with a granularity nothing real has, and it showed: a bank was
+recorded as refused funding for a shortfall of 1.8e-7, and every uninsured depositor left it.
+
+`UnitDecl.perUnit` says **how many pieces one NAMED unit is divided into**; the numbers are chosen
+together in `registry/grid.ts` (money 100 — the cent; a tonne 1,000,000 — the gram; a whole thing 1;
+an hour 1) and `resolution.pieceShift` multiplies them all at once so the choice can be tested.
+
+**The boundary is the registry and it is the only one.** `registry.pieces(unit, named)` turns a
+person's number into the count the state holds and `registry.named(unit, pieces)` turns it back for
+a reader; `registry.priceOf(ccy, unit, perNamedUnit)` does the same for a price, which is a ratio
+carrying both subdivisions. Nothing between those two ever divides by a subdivision, because
+everything between them is already a count. A **parameter** declared as an AMOUNT says so
+(`ParamDecl.denominated`) and is read with `params.amount(id, unit)`: the declaration says what a
+person means — thirty thousand PHX, seven thousand hours — and the register hands back the count of
+pieces, so every declared amount moves with `pieceShift` instead of being restated against it at
+every site.
 
 The wire enforces it: `Settlement` throws `Impossible [Law 8]` on any leg carrying a quantity that is
-not a whole number of its unit's tick — money amounts, asset and physical quantities, pledges, and
-the **per-member** side of every cell leg (each member of a cell is a real holder with a real
-account, XI-15). It never rounds for you: the kernel rounding somebody's payment would be the kernel
-deciding what they paid. Whoever builds the leg decides, with `registry.payable` / `deliverable`
-(what somebody CAN pay or deliver: down), `registry.cashFor` (what a value COMES TO: nearest),
-`upTick` (what a requirement NEEDS: up) or `shareFor` (a cell's own share, per member).
+not a whole number of pieces — money amounts, asset and physical quantities, pledges, and the
+**per-member** side of every cell leg (each member of a cell is a real holder with a real account,
+XI-15). It never rounds for you: the kernel rounding somebody's payment would be the kernel deciding
+what they paid. Whoever builds the leg decides, with `registry.payable` / `deliverable` (what
+somebody CAN pay or deliver: down), `registry.cashFor` (what a value COMES TO: nearest), `upTick`
+(what a requirement NEEDS: up) or `shareFor` (a cell's own share, per member).
 
-**Splitting is where the real mechanism shows.** Ten pieces shared three ways is four, three and
+**Splitting is where the real mechanism shows.** Ten cents shared three ways is four, three and
 three: `splitOnTick` gives the odd piece to the largest remainder, ties to the earlier claimant, and
 the parts sum to **exactly** the whole. That makes "no residual with no holder" (Law 2) something the
 arithmetic cannot violate rather than something the audit reports afterwards. Where two parties trade
-and one is a population, the smallest amount they can exchange is `commonGrain` — the tick times the
-least common multiple of their weights — because a cell of five hundred deals in five hundred pieces
-at a time.
+and one is a population, the smallest amount they can exchange is `commonGrain` — the least common
+multiple of their weights — because a cell of five hundred deals in five hundred pieces at a time.
 
-What is **not** on a grid: prices, rates and values. A price is a ratio and rounding happens where it
-becomes a payment; a value is an opinion about worth. So Law 7's arithmetic dust survives exactly
-where it belongs — in what things are worth — and has left the places where money moved.
+What is **not** a count: prices, rates and values. A price is a ratio of two counts and rounding
+happens where it becomes a payment; a value is an opinion about worth. So Law 7's arithmetic dust
+survives exactly where it belongs — in what things are worth — and has left the places where money
+moved.
 
-How fine the grid is, is a **RESOLUTION** (Law 2), and `test/tick.test.ts` measures it: every
-structural invariant holds exactly at grids four thousand times coarser and finer, and refining the
-grid makes two runs converge. Beyond about a dozen periods the paths separate anyway — a firm on the
-edge of starting a batch starts it in one run and not the other — which is a property of a world
-whose decisions are thresholds, not of the grid.
+**The world is denominated so that a cent is a sensible piece of it.** A weekly wage is around 940
+PHX, a firm opens with 25,000-125,000 PHX, grain is 400 PHX the tonne. Before that a person's week
+was two-thirds of a currency unit, at which scale a cent is a fifth of a week's pay: if the world
+changes when the amounts are made realistic, the world was wrong.
+
+How fine the pieces are, is a **RESOLUTION** (Law 2), and `test/tick.test.ts` measures it two ways.
+Every **structural** invariant holds EXACTLY at the cent, a tenth of a cent and a hundredth of one —
+money conserved, holdings summing to what is issued, no residual anywhere, nothing "within" anything.
+The **path** is not exactly invariant and honestly so: what a payment or a batch comes to is rounded
+to a whole piece and this world's decisions are thresholds, so a firm on the edge of starting a batch
+starts it in one run and not the other. What is asserted instead is that a factor of ten finer is a
+factor of ten closer, in what the world made and in the money it holds — which says the difference is
+the rounding and nothing else, without anybody choosing a band. A number that stopped scaling with
+the grid fails that test rather than passing quietly.
+
+**The surface reads back in named units.** `Snapshot.subdivisions` hands the reader how many pieces
+one named unit is, and the app divides by it where it prints (`packages/app/src/ui/render.ts`).
+Nothing is converted on the way out of the engine: a surface that quietly rewrote the state's numbers
+would be a surface with arithmetic of its own in it (Observer E3).
 
 ### 4.12 Reproducibility (Seed A5, Audit D3)
 

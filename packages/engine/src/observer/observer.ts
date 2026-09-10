@@ -23,8 +23,15 @@ export type Scope =
 export interface PrintView {
   readonly instrument: string;
   readonly name: string;
+  /**
+   * Law 8: money PIECES for one PIECE of the thing, which is what the state holds. What a person
+   * reads is money for one NAMED unit, and turning one into the other needs both subdivisions —
+   * this unit's and the currency's, both in `subdivisions`.
+   */
   readonly price: number;
   readonly ccy: string;
+  /** The unit one of these is counted in, so a reader can put the price in a person's terms. */
+  readonly unit: string;
   readonly provenance: Print['provenance'];
   /** Periods since the price last actually traded or opened (A1.a). */
   readonly age: number;
@@ -97,6 +104,8 @@ export interface PartyView {
   readonly successor: string | null;
   /** Only in scope (A4): the party's own equity account per member, else null. */
   readonly equityPerMember: number | null;
+  /** The money its own region books in, so a reader knows what the equity above is counted in. */
+  readonly ccy: string;
 }
 
 export interface Snapshot {
@@ -124,6 +133,16 @@ export interface Snapshot {
   readonly audit: AuditReport | null;
   readonly params: ParamReport;
   readonly moneyStock: Readonly<Record<string, number>>;
+  /**
+   * Law 8, Observer F1: HOW MANY PIECES ONE NAMED UNIT IS, by unit name — a hundred cents to the
+   * PHX, a million grams to the tonne.
+   *
+   * Every quantity in this snapshot is a COUNT OF PIECES, because that is what the state holds and
+   * a surface that quietly rewrote them would be a surface with arithmetic of its own in it. What a
+   * person reads is the named unit, so the reader is handed the one number that turns one into the
+   * other and nothing is converted on the way out.
+   */
+  readonly subdivisions: Readonly<Record<string, number>>;
   readonly journal: readonly Event[];
   /**
    * Observer B1, D1: the recent events of each kind the viewer said it follows, at the same depth.
@@ -171,6 +190,7 @@ export function snapshot(
       name: displayName(i, w.parties, w.registry),
       price: p.price,
       ccy: p.ccy,
+      unit: i.unit,
       provenance: p.provenance,
       age: w.period - from,
       period: p.period,
@@ -260,6 +280,7 @@ export function snapshot(
       successor: p.status.alive ? null : p.status.successor,
       equityPerMember:
         visible(p.id) && w.register.hasEquityAccount(p.id) ? w.register.equity(p.id) : null,
+      ccy: w.registry.region(p.region).ccy,
     })),
     instruments: w.instruments.all().map((i) => ({
       id: i.id,
@@ -281,6 +302,9 @@ export function snapshot(
     audit: w.last?.audit ?? null,
     params: w.params.report(),
     moneyStock: w.moneyStock(),
+    subdivisions: Object.fromEntries(
+      [...w.registry.units.values()].map((u) => [u.name, w.registry.subdivision(u.id)]),
+    ),
     journal:
       scope.kind === 'inspector'
         ? w.journal.tail(journalTail)

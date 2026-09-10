@@ -72,8 +72,12 @@ export interface DeskQuote {
 
 /** The desk's own numbers, read from its own view before it prices anything. */
 export interface DeskState {
-  /** D1: the most it will be long of one line. */
-  readonly limitPerInstrument: number;
+  /**
+   * D1, Law 8: the most it will be long of ONE line, in the pieces that line is counted in. A limit
+   * of four hundred thousand units is four hundred thousand shares of one line and forty million
+   * cents of face of another, so it is read against the instrument and not once for the desk.
+   */
+  limitIn(instrument: InstrumentId): number;
   /** D1: the most its whole book may be worth. */
   readonly limitAggregate: number;
   /** D3, D2: what a unit of value costs it to carry for one period — funding plus capital charge. */
@@ -149,6 +153,7 @@ export function quoteFor(
   const value = viewOf(view, instrument);
   if (!value.some) return none();
   const mine = value.value;
+  const limitPerInstrument = state.limitIn(instrument);
   const inventory = view.free(instrument);
   const risk = riskOf(view, instrument);
   const adverse = adverseOf(view, instrument, risk);
@@ -159,13 +164,13 @@ export function quoteFor(
   const carry = mul(mine, state.ratePerPeriod, 'what a unit costs it for a period');
   const edge = add(add(carry, risk, 'what it must earn on a unit'), adverse, 'and for who it faces');
   // C2: how full it already is. Past its limit it is not a buyer at any price (D4).
-  const used = state.limitPerInstrument > 0
-    ? div(inventory, state.limitPerInstrument, 'how much of its room it has used')
+  const used = limitPerInstrument > 0
+    ? div(inventory, limitPerInstrument, 'how much of its room it has used')
     : 1;
   const skew = mul(used, edge, 'what its own position does to both sides');
   const bid = sub(sub(mine, edge, 'what it will pay'), skew, 'less what it is already carrying');
   const offer = sub(add(mine, edge, 'what it wants for one'), skew, 'less what it wants to shed');
-  const room = sub(state.limitPerInstrument, inventory, 'units of room left');
+  const room = sub(limitPerInstrument, inventory, 'units of room left');
   // D1, D4, F1: three real constraints and the binding one decides, which is what "it shrinks its
   // size" means. A position limit it set itself; the room left in its whole book, so a desk full of
   // one thing stops bidding for everything; and the money it actually has, spread over the lines it
@@ -182,7 +187,7 @@ export function quoteFor(
       : size === room ? 'position'
         : size === inBook ? 'book'
           : 'money';
-  const canBid = bid > 0 && size > 0 && material(size, 2, state.limitPerInstrument);
+  const canBid = bid > 0 && size > 0 && material(size, 2, limitPerInstrument);
   return some({
     instrument,
     view: mine,

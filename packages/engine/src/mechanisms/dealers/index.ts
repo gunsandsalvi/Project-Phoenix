@@ -79,6 +79,10 @@ export const deskKind: PartyKindProfile = {
   moneyIssuer: null,
   fails: ['cash', 'solvency'],
   borrows: true,
+  // A1: it IS its bank's trading arm and its account is there because that is what it is. A desk
+  // that moved its account to a rival for a better deposit rate would be a different firm — and,
+  // being the largest single balance its bank has, it would take the bank with it.
+  choosesBank: false,
 };
 
 function paramsOf(rows: readonly DeskDecl[]): ParamDecl[] {
@@ -95,7 +99,8 @@ function paramsOf(rows: readonly DeskDecl[]): ParamDecl[] {
       {
         id: deskParam(r.desk, 'limit.perInstrument'),
         value: r.limitPerInstrument,
-        unit: 'units of one line',
+        denominated: true,
+        unit: 'of one line',
         kind: 'preference',
         owner: 'model',
         why: `Dealer Desks D1: the most ${r.name} will be long of one line. ${r.why} A dealer without a limit is a synthetic counterparty wearing a dealer's name (Clearing B3.a), and this is the number that makes it one.`,
@@ -103,7 +108,8 @@ function paramsOf(rows: readonly DeskDecl[]): ParamDecl[] {
       {
         id: deskParam(r.desk, 'limit.aggregate'),
         value: r.limitAggregate,
-        unit: 'currency of its own book at the last marks',
+        denominated: true,
+        unit: 'of its own money, at the last marks',
         kind: 'preference',
         owner: 'model',
         why: `Dealer Desks D1, F1: the most ${r.name}'s whole book may be worth. Every desk's capacity is finite and enumerable, and a desk full of one thing stops bidding for everything — which is how one line's trouble reaches another.`,
@@ -168,7 +174,8 @@ function payRent(ctx: MechanismContext, d: DeskDecl): void {
   if (!ctx.parties.get(desk).status.alive) return;
   const rate = rateFor(ctx, d);
   const base = bookValue(ctx, desk);
-  const bank = ctx.parties.get(d.bank as PartyId);
+  // Law 19, Money E4: WHERE THE DESK BANKS is the party register's to say, not this module's data.
+  const bank = ctx.parties.get(ctx.parties.get(desk).bank);
   const ccy = ctx.registry.region(bank.region).ccy;
   // Law 8: what it can actually pay is a whole number of the smallest piece of the money.
   const amount = ctx.registry.payable(
@@ -197,16 +204,19 @@ function payRent(ctx: MechanismContext, d: DeskDecl): void {
   // is what makes "spreads widened without inventory moving" a thing anybody can notice.
   ctx.record(
     'dealers.rent',
-    [desk, d.bank],
+    [desk, bank.id],
     {
       desk,
-      bank: d.bank,
+      bank: bank.id,
       rate,
       book: base,
       amount,
       paid,
       linesQuoted: linesQuoted(ctx, d),
-      limitAggregate: ctx.params.get(deskParam(d.desk, 'limit.aggregate')),
+      limitAggregate: ctx.params.amount(
+        deskParam(d.desk, 'limit.aggregate'),
+        currencyUnit(ctx.registry.region(ctx.parties.get(desk).region).ccy),
+      ),
     },
     false,
   );
@@ -222,12 +232,18 @@ function stateOf(view: ParticipantView, d: DeskDecl): DeskState | undefined {
   if (typeof rate !== 'number' || typeof book !== 'number' || typeof lines !== 'number') {
     return undefined;
   }
+  const ccy = view.registry.region(view.self.region).ccy;
   return {
-    limitPerInstrument: view.params.get(deskParam(d.desk, 'limit.perInstrument')),
-    limitAggregate: view.params.get(deskParam(d.desk, 'limit.aggregate')),
+    // Law 8: the limit is an amount of a LINE, so it is counted in that line's own pieces.
+    limitIn: (instrument) =>
+      view.params.amount(
+        deskParam(d.desk, 'limit.perInstrument'),
+        view.instruments.get(instrument).unit,
+      ),
+    limitAggregate: view.params.amount(deskParam(d.desk, 'limit.aggregate'), currencyUnit(ccy)),
     ratePerPeriod: rate,
     bookValue: book,
-    cash: view.cash(view.registry.region(view.self.region).ccy),
+    cash: view.cash(ccy),
     linesQuoted: lines,
   };
 }
@@ -314,11 +330,12 @@ function arbitrage(ctx: MechanismContext, d: DeskDecl): void {
     // DELIVER, so it is worth what the thinnest line of that basket in its own inventory is worth
     // — the fund publishes what a creation unit is made of (E3), and this reads it against what
     // the desk is holding. A redemption is shares it has to deliver, so it is what it holds.
+    const room = state.limitIn(share);
     const shares = gap > 0
       ? deliverable(view, struck.some ? struck.value.data['basket'] : undefined,
-          sub(state.limitPerInstrument, held, 'room it has for more of this line'))
+          sub(room, held, 'room it has for more of this line'))
       : held;
-    if (shares <= 0 || !material(shares, 2, state.limitPerInstrument)) continue;
+    if (shares <= 0 || !material(shares, 2, room)) continue;
     // The venue is not a market and it does not clear: everybody who brings a basket gets what
     // that basket is worth (Clearing B2). It names no price because there is no price to name.
     ctx.post(v.id, { party: desk, side: gap > 0 ? 'buy' : 'sell', price: 'market', qty: shares });
@@ -537,7 +554,10 @@ export function dealers(rows: readonly DeskDecl[] = DESKS): SystemModule {
           status: { alive: true },
         };
         ctx.parties.add(desk);
-        ctx.endowMoney(desk.id, ctx.registry.region(bank.region).ccy, d.cash);
+        const ccy = ctx.registry.region(bank.region).ccy;
+        // Law 8: the data says what its bank put in as a person says it, and the register holds
+        // the count of pieces of that money.
+        ctx.endowMoney(desk.id, ccy, ctx.registry.pieces(currencyUnit(ccy), d.cash));
         // A3, Seed A3: the inventory it opens with, of every line of a kind its data says it opens
         // holding. What it opens holding of a line nobody else holds IS that line — the float the
         // rest of the world buys from — and what it opens holding of a line the seed already gave
@@ -548,7 +568,7 @@ export function dealers(rows: readonly DeskDecl[] = DESKS): SystemModule {
           if (units === undefined || units <= 0 || !i.status.live) continue;
           const opening = ctx.prices.latest(i.id, ctx.period);
           if (!opening.some) continue;
-          ctx.endowUnits(desk.id, i.id, units, opening.value.price);
+          ctx.endowUnits(desk.id, i.id, ctx.registry.pieces(i.unit, units), opening.value.price);
         }
       }
     },

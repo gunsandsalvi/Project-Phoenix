@@ -11,7 +11,6 @@
  * anything clamps it (B3.a: the policy rate is never a cleared rate; C3 is a read, at 16).
  */
 import type { Family, Violation } from '../../audit/audit.js';
-import { period as asPeriod } from '../../calendar/calendar.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { Order } from '../../clearing/solver.js';
 import {
@@ -24,7 +23,6 @@ import {
 import { add, div, dustOf, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { downTick } from '../../core/tick.js';
-import { MONEY_PIECES } from '../../registry/grid.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
@@ -43,7 +41,6 @@ import {
   type BookDecl,
 } from './data.js';
 import {
-  announced,
   bufferOf,
   couldLeave,
   depositBase,
@@ -169,7 +166,7 @@ function setAndPayDeposits(ctx: MechanismContext): void {
     ctx.record('bank.depositRate', [bank], { bank, ccy, rates }, true);
   }
   // E1: and then the depositors answer, which is the only thing that stops a bank paying less.
-  moveDeposits(ctx, banks, ctx.params.get(MM_PARAMS.insuranceLimit));
+  moveDeposits(ctx, banks);
 }
 
 /**
@@ -508,9 +505,9 @@ function publishFunding(ctx: MechanismContext): void {
   const m = market(ctx);
   const on = ctx.calendar.startOf(ctx.period);
   const haircut = ctx.params.get(MM_PARAMS.haircut);
-  const limit = ctx.params.get(MM_PARAMS.insuranceLimit);
   for (const bank of banksOf(ctx)) {
     const ccy = ccyOf(ctx, bank);
+    const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
     const cb = ctx.registry.centralBankOf(ccy);
     const byClass = depositsByClass(ctx, bank, ccy);
     const reserves = ctx.register.quantity(bank, moneyInstrumentId(cb, ccy));
@@ -610,8 +607,9 @@ function paramsOf(): ParamDecl[] {
     },
     {
       id: MM_PARAMS.insuranceLimit,
-      value: 100 * MONEY_PIECES,
-      unit: 'pieces of money per member (a hundred PHX)',
+      value: 100,
+      denominated: true,
+      unit: 'of the money it is a deposit in, per member',
       kind: 'policy',
       owner: 'parliament',
       why: 'Banks Funding A1.a, Banks Capital D4: what is insured, PER MEMBER of a cell (XI-15). It is what makes E4 break the run loop for retail money and not for wholesale, and it is a rule somebody wrote — parliament owns it from worklist 14.',

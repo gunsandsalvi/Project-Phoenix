@@ -33,7 +33,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { overdrafts, unexpected } from './expected.js';
+import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
 function violations(w: World): string[] {
@@ -270,20 +270,12 @@ describe('the period loop', () => {
 
   it('runs a year of the whole chain, and every family it has built is green (Part XII)', () => {
     const w = foundationWorld('seed-E3');
-    let short = 0;
-    for (let i = 0; i < 52; i += 1) {
-      const r = w.step();
-      expect(unexpected(r.audit)).toEqual([]);
-      // The one red this world is expected to show, named rather than tolerated (see test/expected.ts):
-      // a bank that paid for what it won at the auction out of reserves its own customers had
-      // already moved, with no money market to lend it the difference overnight (Money B3.b).
-      const over = overdrafts(r.audit);
-      if (over.length > 0) short += 1;
-      expect(over.every((v) => v.owner.startsWith('bank.'))).toBe(true);
-    }
-    // It is the auction cycle and nothing else: every fourth period, and never any other family.
-    expect(short).toBeGreaterThan(0);
-    expect(short).toBeLessThanOrEqual(52 / 4);
+    // Nothing is forgiven here any more. Until the corridor existed this world reported one red
+    // every auction cycle — a bank that paid for what it won out of reserves its own customers had
+    // already moved, with nobody able to lend it the difference overnight (Money B3.b). The window
+    // is what a bank goes to for that (Money Market C, worklist 11), and now that it is there the
+    // whole year is clean: every family the world has built, every period, no exceptions.
+    for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const report = w.last?.audit;
     // Seven families are built and green, named so a green run says what it checked; two say they
     // are NOT BUILT rather than being green by omission (Audit C2.a) — cross-market arbitrage needs
@@ -563,11 +555,11 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
 });
 
 /**
- * Law 8: a test pays real money, so it pays a whole number of the smallest piece of it. A tenth is
- * not one — a decimal grid is not representable in binary — and the wire refuses it, which is the
- * rule doing its job on the person writing the test as much as on the engine.
+ * Law 8: a test pays real money, so it pays a whole number of the smallest piece of it — a count of
+ * cents. Half a cent is not one, and the wire refuses it, which is the rule doing its job on the
+ * person writing the test as much as on the engine.
  */
-const PAYMENT = 1 / 128;
+const PAYMENT = phx(1);
 
 describe('settlement contracts', () => {
   it('refuses a cell side without a per-member amount (XI-15)', () => {
@@ -622,13 +614,12 @@ describe('settlement contracts', () => {
         expect(rec.outcome).toBe('settled');
         if (rec.outcome !== 'settled') return;
         expect(rec.reserveLegs).toHaveLength(2);
-        expect(ctx.register.quantity(BANK_A, moneyInstrumentId(CB, PHX))).toBeCloseTo(
+        // Counts of cents, so the two sides are EXACTLY equal and no closeness is asked for.
+        expect(ctx.register.quantity(BANK_A, moneyInstrumentId(CB, PHX))).toBe(
           reservesA - totalFor(cell, PAYMENT),
-          9,
         );
-        expect(ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, PHX))).toBeCloseTo(
+        expect(ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, PHX))).toBe(
           cellBefore + PAYMENT,
-          12,
         );
 
         const same: InstructionDraft = {

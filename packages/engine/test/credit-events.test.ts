@@ -422,7 +422,11 @@ describe('the world it lives in', () => {
     const modules = spec.modules.map((m) => ({
       ...m,
       params: m.params.map((p) =>
-        p.id === 'treasury.outlays.transfers.perMember' ? { ...p, value: 1 } : p,
+        // Law 8: a declared amount, in the money a person says it in — a hundred PHX a member a
+        // week against a standing mandate of twelve, which is about a tenth of a week's wage paid
+        // to every member of the population and far more than this state can raise. The register
+        // turns it into the pieces the wire counts, like any other amount.
+        p.id === 'treasury.outlays.transfers.perMember' ? { ...p, value: 100 } : p,
       ),
     }));
     const w = assemble({ ...spec, modules });

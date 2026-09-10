@@ -38,7 +38,6 @@ import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { struckIn } from '../../prices/price-store.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { isAssetLeg, isMoneyLeg, type Leg } from '../../ledger/instruction.js';
-import { MONEY_PIECES } from '../../registry/grid.js';
 import { displayName } from '../../registry/naming.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
@@ -130,8 +129,12 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
  * applied to labour): what it owes its own staff is what its own rows say.
  */
 function mandatePerPeriod(ctx: MechanismContext, id: PartyId): number {
-  const transfers = ctx.params.get(TREASURY_PARAMS.transfers);
-  const terms: number[] = [ctx.params.get(TREASURY_PARAMS.purchases), lastWageBill(ctx, id)];
+  const money = currencyUnit(ctx.registry.region(ctx.parties.get(id).region).ccy);
+  const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, money);
+  const terms: number[] = [
+    ctx.params.amount(TREASURY_PARAMS.purchases, money),
+    lastWageBill(ctx, id),
+  ];
   for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
     if (!p.status.alive || p.representation !== 'cell') continue;
     terms.push(mul(p.weight, transfers, 'transfers'));
@@ -231,8 +234,9 @@ export const treasury: SystemModule = {
     },
     {
       id: TREASURY_PARAMS.transfers,
-      value: 12 * MONEY_PIECES,
-      unit: 'pieces of money per member per period (twelve PHX)',
+      value: 12,
+      denominated: true,
+      unit: 'of its own money, per member per period',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1, B3: transfers to households. Until the polity exists this is the standing mandate declared at the seed, and the register prints parliament as its owner (Polity D5, XI-17).',
@@ -240,15 +244,17 @@ export const treasury: SystemModule = {
     {
       id: TREASURY_PARAMS.publicService,
       value: 7000,
-      unit: 'hours per period',
+      denominated: true,
+      unit: 'of the venue own time, per period',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1, Labour F1: how big a public service the state keeps. It is a size, not a wage: the state posts these hours in the same venue everybody else posts in, at what the market has been paying, and what it ends up paying is what the venue cleared at. A state that stated the wage would be setting a price, which is not something a parliament does (Polity D5).',
     },
     {
       id: TREASURY_PARAMS.purchases,
-      value: 30_000 * MONEY_PIECES,
-      unit: 'pieces of money per period (thirty thousand PHX)',
+      value: 30_000,
+      denominated: true,
+      unit: 'of its own money, per period',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1: what the state puts aside to buy real things with. It is a budget and not a quantity: how much that buys is the market\'s business, and the state is rationed in it like any other buyer (Goods C4).',
@@ -577,7 +583,7 @@ function accountOf(ctx: MechanismContext, party: PartyId, ccy: CurrencyCode): In
  */
 function runOutlays(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
-  const transfers = ctx.params.get(TREASURY_PARAMS.transfers);
+  const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, currencyUnit(ccy));
   let paid = 0;
   let short = 0;
   for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
@@ -698,12 +704,14 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
  * what it ends up paying is what the venue cleared at like everybody else.
  */
 function postPublicService(ctx: MechanismContext, id: PartyId): void {
-  const hours = ctx.params.get(TREASURY_PARAMS.publicService);
   const wage = wageItFaces(ctx, id);
-  if (wage === undefined || hours <= 0) return;
+  if (wage === undefined) return;
   const region = ctx.parties.get(id).region;
   const venue = findVenue(ctx.venues, { region, occupation: PUBLIC_OCCUPATION });
   if (venue === undefined) return;
+  // Law 8: the hours it keeps, counted in the pieces the venue counts somebody's time in.
+  const hours = ctx.params.amount(TREASURY_PARAMS.publicService, venue.unit);
+  if (hours <= 0) return;
   ctx.post(venue.id, { party: id, side: 'buy', price: wage, qty: hours });
 }
 
@@ -713,7 +721,7 @@ function postPublicService(ctx: MechanismContext, id: PartyId): void {
  * with them (C4), and it never states what a thing is worth.
  */
 function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const budget = view.params.get(TREASURY_PARAMS.purchases);
+  const budget = view.params.amount(TREASURY_PARAMS.purchases, currencyUnit(m.ccy));
   if (budget <= 0) return [];
   const terms = view.instruments.get(m.instrument).terms;
   const row = PROCUREMENT.find((p) => isGoodTerms(terms) && terms.subUnit === p.subUnit);

@@ -19,6 +19,7 @@ import {
   equityLineOf,
   foundationSpec,
   foundationWorld,
+  currencyUnit,
   instrumentId,
   partyId,
   quoteFor,
@@ -26,6 +27,7 @@ import {
   type World,
 } from '../src/index.js';
 import { unexpected } from './expected.js';
+import { phx } from './units.js';
 
 const DESK_A = partyId('desk.a');
 const DESK_B = partyId('desk.b');
@@ -40,8 +42,15 @@ function stateOf(w: World, desk: string, over: Partial<DeskState> = {}): DeskSta
   const book = rent.some ? Number(rent.value.data['book']) : 0;
   const lines = rent.some ? Number(rent.value.data['linesQuoted']) : 1;
   return {
-    limitPerInstrument: view.params.get(instrumentId(`desk.limit.perInstrument.${desk}`) as never),
-    limitAggregate: view.params.get(instrumentId(`desk.limit.aggregate.${desk}`) as never),
+    limitIn: (instrument) =>
+      view.params.amount(
+        instrumentId(`desk.limit.perInstrument.${desk}`) as never,
+        view.instruments.get(instrument).unit,
+      ),
+    limitAggregate: view.params.amount(
+      instrumentId(`desk.limit.aggregate.${desk}`) as never,
+      currencyUnit(PHX),
+    ),
     ratePerPeriod: rate,
     bookValue: book,
     cash: view.cash(PHX),
@@ -68,8 +77,14 @@ describe('what a desk is (Dealer Desks A)', () => {
   it('has a finite, enumerable capacity: a dealer without a limit is not a dealer (F1, Clearing B3.a)', () => {
     const w = foundationWorld('dl-b');
     for (const d of DESKS) {
-      expect(w.params.get(instrumentId(`desk.limit.perInstrument.${d.desk}`) as never)).toBeGreaterThan(0);
-      expect(w.params.get(instrumentId(`desk.limit.aggregate.${d.desk}`) as never)).toBeGreaterThan(0);
+      // Law 8: both are AMOUNTS, so both are read in the pieces of the unit they are amounts of —
+      // the line for a position, the desk's own money for the book.
+      expect(
+        w.params.amount(instrumentId(`desk.limit.perInstrument.${d.desk}`) as never, w.instruments.get(LINE).unit),
+      ).toBeGreaterThan(0);
+      expect(
+        w.params.amount(instrumentId(`desk.limit.aggregate.${d.desk}`) as never, currencyUnit(PHX)),
+      ).toBeGreaterThan(0);
     }
   });
 });
@@ -124,15 +139,20 @@ describe('how it prices (Dealer Desks C)', () => {
     const w = foundationWorld('dl-skew');
     for (let i = 0; i < 3; i += 1) w.step();
     const view = w.participantView(DESK_A);
-    const empty = quoteFor(view, LINE, stateOf(w, 'desk.a', { limitAggregate: 1e6 }));
+    const empty = quoteFor(view, LINE, stateOf(w, 'desk.a', { limitAggregate: phx(10_000) }));
     // The same desk, the same view, the same rate — and a limit twice as far from its position, so
     // the position it holds is half as much of what it will carry.
     const roomier = quoteFor(
       view,
       LINE,
       stateOf(w, 'desk.a', {
-        limitAggregate: 1e6,
-        limitPerInstrument: 2 * w.params.get(instrumentId('desk.limit.perInstrument.desk.a') as never),
+        limitAggregate: phx(10_000),
+        limitIn: (instrument) =>
+          2 *
+          w.params.amount(
+            instrumentId('desk.limit.perInstrument.desk.a') as never,
+            w.instruments.get(instrument).unit,
+          ),
       }),
     );
     expect(empty.some && roomier.some).toBe(true);
@@ -165,7 +185,7 @@ describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
     const view = w.participantView(DESK_A);
     const held = view.quantity(LINE);
     // Its position limit is what it holds: there is no room left in the line at all.
-    const full = quoteFor(view, LINE, stateOf(w, 'desk.a', { limitPerInstrument: held }));
+    const full = quoteFor(view, LINE, stateOf(w, 'desk.a', { limitIn: () => held }));
     expect(full.some).toBe(true);
     if (full.some) {
       expect(full.value.bidSize).toBe(0);
@@ -257,6 +277,6 @@ describe('a world with no desks in it (Law 15)', () => {
     // What is outstanding of a share line is what somebody took: with no desks, only the slice the
     // index fund's own sponsor put in (Fund Shares E1). Nothing else in this world holds a share,
     // so its market has almost nothing to clear and nobody at all is making it.
-    expect(w.instruments.get(LINE).issued).toBe(20);
+    expect(w.instruments.get(LINE).issued).toBe(20_000);
   });
 });

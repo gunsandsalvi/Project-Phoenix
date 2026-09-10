@@ -29,6 +29,44 @@ function num(x: number | null | undefined, digits = 4): string {
   return x.toLocaleString(undefined, { maximumFractionDigits: digits });
 }
 
+/**
+ * Law 8: the state holds a COUNT OF INDIVISIBLE PIECES — cents, grams, whole machines — and a
+ * person reads the named unit. This is the one place the two meet on this surface, and it is a
+ * division by a number the snapshot handed over (`subdivisions`): nothing here decides anything,
+ * and a unit the snapshot did not declare is shown as the count it is rather than guessed at.
+ */
+function named(s: Snapshot, unit: string, pieces: number | null | undefined, digits = 4): string {
+  if (pieces === null || pieces === undefined) return '—';
+  const per = s.subdivisions[unit];
+  return per === undefined ? num(pieces, digits) : num(pieces / per, digits);
+}
+
+/** The same for money, which is counted in the pieces of its own currency's unit. */
+function money(s: Snapshot, ccy: string, pieces: number | null | undefined, digits = 2): string {
+  return pieces === null || pieces === undefined ? '—' : `${named(s, ccy, pieces, digits)} ${ccy}`;
+}
+
+/**
+ * A PRICE is money pieces for one piece of the thing, so what a person reads is that carried up by
+ * both subdivisions: four hundredths of a cent the gram IS four hundred PHX the tonne.
+ */
+function priceOf(s: Snapshot, ccy: string, unit: string, price: number): string {
+  const perMoney = s.subdivisions[ccy];
+  const perUnit = s.subdivisions[unit];
+  if (perMoney === undefined || perUnit === undefined) return `${num(price)} ${ccy}`;
+  return `${num((price * perUnit) / perMoney)} ${ccy} / ${unit}`;
+}
+
+/** The money a party books in, so an event it published can be read in it (Law 8). */
+function ccyOf(s: Snapshot, party: string | undefined): string {
+  return s.parties.find((p) => p.id === party)?.ccy ?? '';
+}
+
+/** The unit a line is counted in, so a size announced on it can be read in it (Law 8). */
+function unitOf(s: Snapshot, instrument: string | undefined): string {
+  return s.instruments.find((i) => i.id === instrument)?.unit ?? '';
+}
+
 function populations(p: Readonly<Record<string, number>>): string {
   const entries = Object.entries(p);
   return entries.length === 0 ? '—' : entries.map(([k, v]) => `${num(v)} ${k}`).join(', ');
@@ -39,10 +77,10 @@ function followed(s: Snapshot, kind: string): readonly Snapshot['journal'][numbe
   return s.followed[kind] ?? [];
 }
 
-function provenance(p: Snapshot['prints'][number]): string {
+function provenance(s: Snapshot, p: Snapshot['prints'][number]): string {
   switch (p.provenance.kind) {
     case 'traded':
-      return `traded ${num(p.provenance.qty)} in ${p.provenance.trades} trade(s)`;
+      return `traded ${named(s, p.unit, p.provenance.qty)} ${p.unit} in ${p.provenance.trades} trade(s)`;
     case 'opening':
       return 'opening condition';
     case 'stale':
@@ -144,7 +182,7 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
             el(
               'td',
               { colspan: '4' },
-              `${v.spec} · ${v.owner} · ${num(v.size)} ${v.unit} · ${v.message}`,
+              `${v.spec} · ${v.owner} · ${named(s, v.unit, v.size)} ${v.unit} · ${v.message}`,
             ),
           ),
         );
@@ -161,7 +199,7 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
           'li',
           {},
           `money stock: ${Object.entries(r.moneyStock)
-            .map(([c, v]) => `${num(v)} ${c}`)
+            .map(([c, v]) => money(s, c, v))
             .join(', ')}`,
         ),
         el('li', {}, `populations: ${populations(r.populations)}`),
@@ -204,10 +242,10 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
         'tr',
         { class: p.provenance.kind === 'stale' ? 'stale' : '' },
         el('td', {}, p.name),
-        el('td', {}, `${num(p.price)} ${p.ccy}`),
+        el('td', {}, priceOf(s, p.ccy, p.unit, p.price)),
         // F4: a line on no curve has no yield, and it says so rather than showing a zero.
         el('td', {}, y?.yield === null || y === undefined ? '—' : percent(y.yield)),
-        el('td', {}, provenance(p)),
+        el('td', {}, provenance(s, p)),
         el('td', {}, `${p.age}`),
       ),
     );
@@ -283,7 +321,7 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
         el('td', {}, p.name),
         el('td', {}, `${p.kind} (${p.representation})`),
         el('td', {}, num(p.weight)),
-        el('td', {}, num(p.equityPerMember)),
+        el('td', {}, money(s, p.ccy, p.equityPerMember)),
       ),
     );
   }
@@ -318,9 +356,9 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
         {},
         el('td', {}, p.holder),
         el('td', {}, p.name),
-        el('td', {}, `${num(p.qtyPerMember)} ${p.unit}`),
-        el('td', {}, num(p.qtyTotal)),
-        el('td', {}, p.valuePerMember === null ? '—' : `${num(p.valuePerMember)} ${p.ccy}`),
+        el('td', {}, `${named(s, p.unit, p.qtyPerMember)} ${p.unit}`),
+        el('td', {}, named(s, p.unit, p.qtyTotal)),
+        el('td', {}, money(s, p.ccy, p.valuePerMember)),
       ),
     );
   }
@@ -340,8 +378,12 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
         el(
           'p',
           {},
-          `programme p${latest.period}: need ${num(Number(d['need']))} · service ${num(Number(d['service']))}` +
-            ` · mandate ${num(Number(d['mandate']))} · buffer ${num(Number(d['buffer']))} · cash ${num(Number(d['cash']))}` +
+          ((c: string): string =>
+            `programme p${latest.period}: need ${money(s, c, Number(d['need']))}` +
+            ` · service ${money(s, c, Number(d['service']))}` +
+            ` · mandate ${money(s, c, Number(d['mandate']))}` +
+            ` · buffer ${money(s, c, Number(d['buffer']))}` +
+            ` · cash ${money(s, c, Number(d['cash']))}`)(ccyOf(s, latest.subjects[0])) +
             (d['line'] === null ? ' · nothing brought' : ` · bringing ${String(d['line'])}`),
         ),
       );
@@ -375,8 +417,8 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
             { class: Number(d['allotted']) === 0 ? 'stale' : '' },
             el('td', {}, `p${e.period}`),
             el('td', {}, String(d['line'])),
-            el('td', {}, num(Number(d['size']))),
-            el('td', {}, num(Number(d['allotted']))),
+            el('td', {}, named(s, unitOf(s, String(d['line'])), Number(d['size']))),
+            el('td', {}, named(s, unitOf(s, String(d['line'])), Number(d['allotted']))),
             el('td', {}, Number(d['cover']).toFixed(2)),
             el('td', {}, d['stopOut'] === null ? '—' : num(Number(d['stopOut']))),
             el('td', {}, d['tail'] === null ? '—' : num(Number(d['tail']))),

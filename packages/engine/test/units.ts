@@ -26,6 +26,12 @@ export const tonnes = (weight: number): number => Math.round(weight * TONNE_PIEC
 /** A count of a good that comes in whole things — a machine, a dwelling. */
 export const machines = (count: number): number => Math.round(count * WHOLE_PIECES);
 
+/**
+ * An amount of a money-denominated unit — par of a bond, a loan's principal — as the pieces of it
+ * the state holds. A unit of par is divided like the money it is denominated in.
+ */
+export const par = (amount: number): number => Math.round(amount * MONEY_PIECES);
+
 /** A count of shares. */
 export const shares = (count: number): number => Math.round(count * SHARE_PIECES);
 

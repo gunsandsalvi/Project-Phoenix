@@ -210,7 +210,7 @@ red here is red for that reason rather than this one.
    world with a bank already carried `bank-lending`. Ten test files were changed to say so.
 3. **Deposit interest reaches every balance.** A bank pays its depositors every period, so any test
    that asserted an exact cash or equity level now measures that too. The fix is `paidTo(w, party,
-   'coupon')` in `test/expected.ts`: read the payment, not the balance.
+'coupon')` in `test/expected.ts`: read the payment, not the balance.
 4. **`toGrain` rounded twice.** Rounding to a piece and then to the two parties' common grain moved a
    trade's cash by half a piece more than the grain, and the households flows family reported the
    second rounding as a discrepancy. It rounds once now.
@@ -218,53 +218,69 @@ red here is red for that reason rather than this one.
 ### Open — in the order the plan wants them
 
 - **D1/D2, the rest of the ladder: it sells or pledges liquid assets, at whatever they fetch, in
-      a real book.** A bank that closes short still cannot post a sale. `sovereign-curve` already
-      makes a bank a seller above its buffer target, so the hook exists; what is missing is the link
-      from a published shortfall to an order, and the target itself is still item 3's placeholder.
+  a real book.** A bank that closes short still cannot post a sale. `sovereign-curve` already
+  makes a bank a seller above its buffer target, so the hook exists; what is missing is the link
+  from a published shortfall to an order, and the target itself is still item 3's placeholder.
 - **Item 3's placeholder `bank.liquidityBuffer.perDeposit` is still there** (`sovereign-curve/
-      index.ts`, `kind: 'placeholder'`, `standsInFor` Money Market A2.a, worklist 11). It is the only
-      placeholder left in the engine. C2.a says the buffer is derived from its own liabilities, and
-      `couldLeave` (the uninsured part of the deposit base) is now published for exactly this: the
-      paper target should read it.
+    index.ts`, `kind: 'placeholder'`, `standsInFor` Money Market A2.a, worklist 11). It is the only
+  placeholder left in the engine. C2.a says the buffer is derived from its own liabilities, and
+  `couldLeave` (the uninsured part of the deposit base) is now published for exactly this: the
+  paper target should read it.
 - **The run (137).** Uninsured money moves away from a publicly refused bank, which is half of
-      E1/E2.a. Missing: the self-reinforcing loop shown in a scenario test (D5.b/E3.a — the deposit
-      leaves with the reserves behind it, so the bank is shorter at the next close), and the test
-      that insurance breaks it for retail and not for wholesale (E4).
+  E1/E2.a. Missing: the self-reinforcing loop shown in a scenario test (D5.b/E3.a — the deposit
+  leaves with the reserves behind it, so the bank is shorter at the next close), and the test
+  that insurance breaks it for retail and not for wholesale (E4).
 - **Interbank contagion (138).** A failed bank's rows must land losses on its lenders by name
-      (E3). Not started; the plan says to test it with item 7's resolution, so it waits on the next.
+  (E3). Not started; the plan says to test it with item 7's resolution, so it waits on the next.
 - **Bank capital (139).** Requirement against risk weights, leverage backstop, which of them
-      binds as a read, the buffer as a choice, distributions restricted near the line. Not started.
-      `bank-lending`'s `room()` already has the capital and appetite constraints to hang it on.
+  binds as a read, the buffer as a choice, distributions restricted near the line. Not started.
+  `bank-lending`'s `room()` already has the capital and appetite constraints to hang it on.
 - **BANK RESOLUTION (140–144) — this is the blocker.** A bank can now genuinely fail for
-      liquidity, and when one does the world breaks: its deposits are money issued by a party that
-      has ceased, its paper sits in a dead holder's account, its rows default, and other modules
-      throw `Money E4` addressing it. Every year-long run that reaches a bank failure is red for this
-      reason and no other. Needed: the failed book valued at marks and at its own carrying values,
-      the hole as liabilities minus that, the hierarchy (equity to zero first), the acquirer's bid
-      with deposits and rows assumed over the wire, the public path when nobody bids, deposit
-      insurance per member with the insurer as an estate creditor, and the conservation family
-      (acquirer paid + insurer paid + estate realised + holders lost = the hole).
+  liquidity, and when one does the world breaks: its deposits are money issued by a party that
+  has ceased, its paper sits in a dead holder's account, its rows default, and other modules
+  throw `Money E4` addressing it. Every year-long run that reaches a bank failure is red for this
+  reason and no other. Needed: the failed book valued at marks and at its own carrying values,
+  the hole as liabilities minus that, the hierarchy (equity to zero first), the acquirer's bid
+  with deposits and rows assumed over the wire, the public path when nobody bids, deposit
+  insurance per member with the insurer as an estate creditor, and the conservation family
+  (acquirer paid + insurer paid + estate realised + holders lost = the hole).
 - **XI-2's funding-line cut (145).** Not started.
 - **Raising (146).** Equity issuance and a `bank.subordinated` kind into markets that can refuse;
-      a failed raise leaves the bank where it was. Not started. The bail-in hierarchy in 141 has only
-      two layers until this exists.
+  a failed raise leaves the bank where it was. Not started. The bail-in hierarchy in 141 has only
+  two layers until this exists.
 - **The policy rate as the central bank's own decision (148).** It is still a declared parameter.
-      §31 B says it is a decision on its mandate, and the test is that a change moves the market rate
-      THROUGH the corridor and never by assignment (B4).
+  §31 B says it is a decision on its mandate, and the test is that a change moves the market rate
+  THROUGH the corridor and never by assignment (B4).
 - **Reports and observer (147, 150).** `bank.liquidity` and `centralBank.corridor` are published;
-      deposits by class are in the event. Missing: the observer surface for the corridor, the session
-      prints per book, refusals, facility draws and runs.
-- **Delete the expected red.** `test/expected.ts: unexpected()` still hides one violation —
-      `Money B3.c … no lender row (corridor not built)` in `audit/families/money.ts`. The corridor IS
-      built now and `bookOverdrafts` writes a row for every overdraft at the close, so both the
-      hidden red and the helper that hides it should go, and the message in the family with them.
-      Until they do, every year-long test is quietly forgiving one thing.
+  deposits by class are in the event. Missing: the observer surface for the corridor, the session
+  prints per book, refusals, facility draws and runs.
+- **~~Delete the expected red.~~ DONE in 10.3.** The corridor is what a bank goes to instead, so
+  every foundation world now runs a full year with ZERO violations in every family and the
+  exemption in `test/expected.ts` is deleted rather than widened: `unexpected()` is every
+  violation the audit reported. **The unpriced path is still there**, though, and the one world
+  that still reaches it says so: with the central bank's reinvestment off, bank A is overdrawn at
+  it on `recordedAs: 'reserveOverdraft'` by period 5 (`omo.test.ts`, red). Pricing that path and
+  deleting it is still on this list, and until it goes the base can grow by central-bank money
+  created with no lender row — which is why `omo.test.ts`'s own claim (reinvestment off means a
+  smaller base) currently comes out backwards.
+- **A fund can be gated for ever on a fraction of a share, and fixing it needs the resolution.**
+  `households/portfolio.ts:fundOrders` asks for `short / perShare` shares per member, which is
+  not a whole number; the fund pays the whole shares it can and the remainder never leaves the
+  book, so a fund that owes nobody anything reports a gate every period (Law 8, named at the site
+  in `funds/index.ts`). Rounding it at the cause was tried in 10.3 and reverted: it takes the
+  money fund's forced sale past what this world can absorb — the bank funded against the bills it
+  dumps fails at period 22 — so it belongs in the same change as bank resolution below (XI-2).
 - **Re-mark MET**: Money B3.b, B3.c; Banks Lending B2.b, C1.a (COVERAGE.md).
 - **A year green with a funding-squeeze scenario, and determinism** (151). Blocked on resolution.
 - Coverage, record, delete this file and 10.3's, one commit each (152–154).
 
 ### Where the work is
 
-Branch `claude/project-phoenix-task-10-pzeoao`, pushed. The history is WIP commits: item 11's
+Branch `claude/project-review-continuation-bh8ugh`, pushed. The history is WIP commits: item 11's
 mechanisms and 10.3's conversion are interleaved and want splitting into two commits before either
 is closed — 10.3 first, since 11 sits on it.
+
+10.3 is now complete but for four tests, and three of the four are the resolution blocker below. The
+grid work found two things that belong here and are recorded above; it also found that the world is
+much more robust than it looked, because the desks had been a hundred times too small since 10.2.
+Every world green over a year, with nothing forgiven, is the state this item starts from.

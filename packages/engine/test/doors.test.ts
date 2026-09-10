@@ -30,6 +30,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { paidTo } from './expected.js';
 
 const WHEAT = instrumentKindId('good.wheat');
 const TONNES = unitId('tonnes');
@@ -381,9 +382,10 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
     expect(r.audit.total).toBe(0);
     const print = w.prices.latest(WHEAT_ID, w.period);
     expect(print.some && print.value.price).toBe(1);
-    // E2: down to the print on what it still holds, and nothing more.
+    // E2: down to the print on what it still holds, and nothing more. What its bank paid it for
+    // the week's deposit is its bank's business and not the write-down's, so it comes out.
     const held = w.register.quantity(FIRM_1, WHEAT_ID);
-    expect(w.register.equity(FIRM_1)).toBeLessThan(before);
+    expect(w.register.equity(FIRM_1) - paidTo(w, FIRM_1, 'coupon')).toBeLessThan(before);
     expect(held).toBeLessThan(10);
   });
 

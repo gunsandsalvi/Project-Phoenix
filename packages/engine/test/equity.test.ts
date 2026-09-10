@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FIRM,
   HOUSEHOLD,
+  REGION,
   OPENING_SHARE,
   PHX,
   SHARE,
@@ -21,6 +22,7 @@ import {
   equityMarketOf,
   foundationSpec,
   foundationWorld,
+  goodId,
   instrumentId,
   isShare,
   moneyInstrumentId,
@@ -28,11 +30,15 @@ import {
   shareTerms,
   snapshot,
   votesOf,
+  type MarketDecl,
   type MechanismContext,
+  type Order,
+  type ParticipantView,
   type SystemModule,
   type World,
 } from '../src/index.js';
 import { unexpected } from './expected.js';
+import { perTonne, phx, tonnes } from './units.js';
 
 const FIRM_6 = partyId('firm.6');
 const LINE_4 = equityLineOf('firm.4');
@@ -114,6 +120,51 @@ function splits(line: string, ratio: number, at: number): SystemModule {
       },
     ],
     participants: [],
+    families: [],
+  };
+}
+
+/**
+ * Goods C3, XI-3: a buyer of one good far bigger than the line that makes it. The firms in the line
+ * below bid their own input up against each other until one of them is paying more for it than its
+ * output fetches — which is a firm failing on its own decisions rather than on anything this test
+ * did to its balance directly.
+ */
+function hungryFor(subUnit: string): SystemModule {
+  const BUYER = partyId('buyer.1');
+  const instrument = goodId(subUnit, REGION);
+  return {
+    id: 'test.buyer',
+    spec: 'Goods C3',
+    requires: ['goods', 'seed.foundation'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [],
+    seed(ctx) {
+      ctx.parties.add({
+        id: BUYER,
+        kind: FIRM,
+        region: REGION,
+        name: 'A buyer',
+        bank: BANK_A,
+        representation: 'named',
+        status: { alive: true },
+      });
+      ctx.endowMoney(BUYER, PHX, phx(100_000_000));
+      ctx.endowMoney(BANK_A, PHX, phx(100_000_000));
+    },
+    participants: [
+      {
+        partyKind: FIRM,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+          view.self.id === BUYER && m.instrument === instrument
+            ? [{ party: BUYER, side: 'buy', price: perTonne(1200), qty: tonnes(400) }]
+            : [],
+      },
+    ],
     families: [],
   };
 }
@@ -343,11 +394,14 @@ describe('what the holder gets (Equity F)', () => {
   });
 
   it('is wiped by the waterfall when the firm fails, and not by a special case (E4, F2)', () => {
-    const w = foundationWorld('eq-e4');
-    // WHEN a bakery runs out of money is an outcome and moves whenever anything upstream of it
-    // does; what this test is about is what happens to its shares when one does — which is at the
-    // END of the winding-up, so the run has to be long enough for the programme to close as well.
-    for (let i = 0; i < 60; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    // A firm dying is an outcome, and waiting for the foundation world to produce one at a listed
+    // firm would be a test about how long that takes rather than about what happens when it does.
+    // So this world has a reason in it: a buyer of bread far bigger than the ovens that bake it,
+    // so the bakeries bid the flour price up against each other until one of them is paying more
+    // for the flour than the bread fetches. That is a firm dying of its own decisions in a world
+    // otherwise running normally, and the run is long enough for the winding-up to close as well.
+    const w = worldWith('eq-e4', [hungryFor('bread')]);
+    for (let i = 0; i < 40; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const died = w.journal.ofKind('estate.opened').find((e) => e.data['dead'] === FIRM_6);
     expect(died).toBeDefined();
     // The module stopped pricing the line and said why, publicly.
@@ -392,7 +446,8 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
     const jolted = 'hh.working.bank.a.1';
     const w = saversWorld('eq-opinion', [
       // The second cell is paid something it was not expecting, and it remembers being surprised.
-      pays([{ to: jolted, amount: 0.5 }], 6),
+      // Law 8: a real payment, so a whole number of cents to every member of the cell.
+      pays([{ to: jolted, amount: phx(500) }], 6),
     ]);
     for (let i = 0; i < 12; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const bidsOf = (cell: string): Map<string, number> => {

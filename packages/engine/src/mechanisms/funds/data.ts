@@ -94,7 +94,10 @@ export const ETFS: readonly EtfDecl[] = [
     // share of it is one share of each of the three firms this world listed, and that is the whole
     // of its mandate: it never bids for anything and it never sells anything.
     basket: { 'equity.firm.4': 1, 'equity.firm.5': 1, 'equity.firm.6': 1 },
-    launchedBy: { 'manager.etf.north': 20, 'desk.a': 25, 'desk.b': 15 },
+    // Law 8: whole shares, and enough of them to be a real fund beside the float the desks make a
+    // market in — a launch of sixty shares against a line of a hundred and twenty thousand is a
+    // rounding error with a manager attached, and nothing it did would reach a price.
+    launchedBy: { 'manager.etf.north': 20_000, 'desk.a': 25_000, 'desk.b': 15_000 },
     needs: ['equity', 'dealers'],
     fee: 0.001,
     why: 'Fund Shares E1-E4: the vehicle that has TWO values. Its shares trade, so a session prices them; its book is the three listed firms, so a read prices them too; and the gap between the two is what somebody has to want to close for it to close at all (E3.a).',
