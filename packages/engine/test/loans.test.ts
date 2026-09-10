@@ -23,7 +23,8 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { unexpected } from './expected.js';
+import { paidTo, unexpected } from './expected.js';
+import { phx } from './units.js';
 
 const BORROWER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -152,7 +153,7 @@ describe('what a loan is (Banks Lending A1, A2, A4, D1)', () => {
     expect(loanKind.carry).toBe('cost');
     expect(loanKind.liabilityOfIssuer).toBe(true);
     // N13.a: the ranking is stated. Unsecured here, and that is an answer rather than a gap.
-    const w = world([asksFor(20)]);
+    const w = world([asksFor(phx(20_000))]);
     for (let i = 0; i < 4; i += 1) w.step();
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
@@ -165,7 +166,7 @@ describe('what a loan is (Banks Lending A1, A2, A4, D1)', () => {
 
 describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
   it('creates a deposit, and no reserve leaves the bank', () => {
-    const w = world([asksFor(20)]);
+    const w = world([asksFor(phx(20_000))]);
     // Period 1 is where it says what it is short of; period 2 is where the credit is arranged.
     w.step();
     const before = w.cash(BORROWER, PHX);
@@ -175,7 +176,9 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
     const principal = Number(written[0]?.data['principal']);
     expect(principal).toBeGreaterThan(0);
     // B1: the loan on one side and the borrower's balance on the other, at the same instant.
-    expect(w.cash(BORROWER, PHX)).toBeCloseTo(before + principal, 9);
+    // ...and the one other thing that reached the account this period: a week of deposit interest
+    // from its own bank (Banks Funding B1), which is not this loan's doing.
+    expect(w.cash(BORROWER, PHX)).toBe(before + principal + paidTo(w, BORROWER, 'coupon'));
     expect(loans(w)).toHaveLength(1);
     expect(loans(w)[0]?.issued).toBeCloseTo(principal, 9);
     // B1.a: no reserve leaves. The whole of endogenous money is that this instruction has no
@@ -189,7 +192,7 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
   });
 
   it('is a row with a lender of record holding every unit of it (F1, F1.a)', () => {
-    const w = world([asksFor(20)]);
+    const w = world([asksFor(phx(20_000))]);
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
@@ -202,7 +205,7 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
 
 describe('the price (Banks Lending C1, C2, XI-4)', () => {
   it('is four named terms, and two banks do not quote the same', () => {
-    const w = world([asksFor(20)]);
+    const w = world([asksFor(phx(20_000))]);
     for (let i = 0; i < 3; i += 1) w.step();
     const written = w.journal.ofKind('credit.written')[0];
     const rate = Number(written?.data['rate']);
@@ -218,17 +221,17 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
   });
 
   it('gets dearer for a borrower that has failed to pay (C1.b, C4, Corporate Credit G8)', () => {
-    const clean = world([asksFor(10, 6)]);
+    const clean = world([asksFor(phx(10_000), 6)]);
     for (let i = 0; i < 8; i += 1) clean.step();
     const cleanRate = Number(clean.journal.ofKind('credit.written')[0]?.data['rate']);
     // The same request from a borrower the banks have watched fail to pay.
-    const marked = world([overspends(1e6, 2), asksFor(10, 6)], 0);
+    const marked = world([overspends(phx(1_000_000), 2), asksFor(phx(10_000), 6)], 0);
     for (let i = 0; i < 8; i += 1) marked.step();
     const seen = marked.journal
       .ofKind('credit.default')
       .filter((e) => e.data['party'] === BORROWER);
     expect(seen.length).toBeGreaterThan(0);
-    const marked2 = world([overspends(1e6, 2), asksFor(10, 6)]);
+    const marked2 = world([overspends(phx(1_000_000), 2), asksFor(phx(10_000), 6)]);
     for (let i = 0; i < 8; i += 1) marked2.step();
     const markedRate = Number(marked2.journal.ofKind('credit.written')[0]?.data['rate']);
     // C1.b: the bank's own view of this borrower moved, so the price moved. A default is
@@ -241,7 +244,7 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
   it('carries the loan at what its lender expects to recover, and the charge is visible', () => {
     // The same borrower, seen to fail, then borrowing: the bank prices it dearer AND carries it
     // lower, off the one model (C4) — two beliefs would mean the price and the provision disagree.
-    const w = world([overspends(1e6, 2), asksFor(10, 6)]);
+    const w = world([overspends(phx(1_000_000), 2), asksFor(phx(10_000), 6)]);
     for (let i = 0; i < 9; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
@@ -266,7 +269,7 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
 describe('when it says no (Banks Lending B2, C3, C3.a, F3)', () => {
   it('declines when its limit for one name binds, and the decline is recorded', () => {
     // F3: a large-exposure limit that binds is what makes concentration a thing it manages.
-    const w = world([asksFor(20)], 0);
+    const w = world([asksFor(phx(20_000))], 0);
     for (let i = 0; i < 4; i += 1) w.step();
     expect(w.journal.ofKind('credit.written')).toHaveLength(0);
     const declined = w.journal.ofKind('credit.declined');
@@ -280,7 +283,7 @@ describe('when it says no (Banks Lending B2, C3, C3.a, F3)', () => {
 
 describe('an overdrawn customer (Money B3.a, B3.c)', () => {
   it('is borrowing: what the bank allowed is a row by the close, not a hole', () => {
-    const w = world([overspends(300)]);
+    const w = world([overspends(phx(300_000))]);
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     // The payment went through because its bank decided to lend it the difference...
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
@@ -294,7 +297,7 @@ describe('an overdrawn customer (Money B3.a, B3.c)', () => {
   });
 
   it('is refused when the bank has no room, and then the payment simply fails (B3.c)', () => {
-    const w = world([overspends(300)], 0);
+    const w = world([overspends(phx(300_000))], 0);
     for (let i = 0; i < 4; i += 1) w.step();
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
     expect(failed.length).toBeGreaterThan(0);
@@ -309,7 +312,7 @@ describe('an overdrawn customer (Money B3.a, B3.c)', () => {
 
 describe('carrying it (Banks Lending D3, E1)', () => {
   it('accrues interest that is paid to the lender, period by period', () => {
-    const w = world([asksFor(20)]);
+    const w = world([asksFor(phx(20_000))]);
     for (let i = 0; i < 4; i += 1) w.step();
     const lenderBefore = w.register.equity(BANK_OF_A);
     const borrowerBefore = w.cash(BORROWER, PHX);
@@ -322,7 +325,7 @@ describe('carrying it (Banks Lending D3, E1)', () => {
   });
 
   it('is a default when the borrower does not pay it (E1, E2)', () => {
-    const w = world([asksFor(20)]);
+    const w = world([asksFor(phx(20_000))]);
     for (let i = 0; i < 3; i += 1) w.step();
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();

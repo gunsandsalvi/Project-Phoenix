@@ -33,7 +33,8 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { unexpected } from './expected.js';
+import { paidTo, unexpected } from './expected.js';
+import { phx } from './units.js';
 
 const PAYER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -189,7 +190,7 @@ function cellCannotPay(): SystemModule {
             .ofKind(HOUSEHOLD)
             .find((p): p is CellParty => p.representation === 'cell');
           if (cell === undefined) return;
-          const perMember = 1000;
+          const perMember = phx(1_000);
           const leg: Leg = {
             kind: 'money',
             from: { holder: cell.id, issuer: cell.bank },
@@ -223,7 +224,7 @@ function world(...extra: SystemModule[]): World {
 
 describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
   it('is a named state, publicly, with the payee that did not get paid (E1.b)', () => {
-    const w = world(overpromise(1e6));
+    const w = world(overpromise(phx(1_000_000)));
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const ev = w.journal.ofKind('credit.default').find((e) => e.data['party'] === PAYER);
     expect(ev).toBeDefined();
@@ -232,7 +233,7 @@ describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
     expect(ev?.subjects).toContain(PAYER);
     expect(ev?.subjects).toContain(PAYEE);
     expect(ev?.data['payee']).toBe(PAYEE);
-    expect(ev?.data['amountDue']).toBe(1e6);
+    expect(ev?.data['amountDue']).toBe(phx(1_000_000));
     expect(String(ev?.data['why']).length).toBeGreaterThan(0);
     // E1.a: it did not silently not happen, and it did not silently overdraw.
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
@@ -247,7 +248,7 @@ describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
   });
 
   it('shows a party its own failures and nobody else (Observer A4, Money E1.b)', () => {
-    const w = world(overpromise(1e6));
+    const w = world(overpromise(phx(1_000_000)));
     for (let i = 0; i < 4; i += 1) w.step();
     const mine = w.participantView(PAYER).failedPayments(10);
     expect(mine.length).toBeGreaterThan(0);
@@ -277,7 +278,7 @@ function acceleratingKind(): InstrumentKindProfile {
     displayName: (i) => String(i.id),
     // A coupon this issuer cannot possibly pay, on the one line only.
     due: (i, p, calendar) =>
-      i.id === LINE_A ? [{ kind: 'coupon', date: calendar.startOf(p), amountPerUnit: 1e6 }] : [],
+      i.id === LINE_A ? [{ kind: 'coupon', date: calendar.startOf(p), amountPerUnit: phx(1_000_000) }] : [],
     accrued: () => 0,
     cashFlows: () => [],
   };
@@ -359,7 +360,9 @@ describe('what a holder is left carrying (Register E3, Banks Lending E2)', () =>
     expect(creditEvents.params).toHaveLength(0);
     const equity = w.register.equity(PAYEE);
     w.step();
-    expect(w.register.equity(PAYEE)).toBe(equity);
+    // ...and the only thing that DID move its equity is the week of deposit interest its bank paid
+    // it (Banks Funding B1), which is not the impairment doing anything.
+    expect(w.register.equity(PAYEE)).toBe(equity + paidTo(w, PAYEE, 'coupon'));
   });
 });
 
@@ -376,9 +379,9 @@ describe('a claim that is extinguished (Banks Lending E5, E5.a)', () => {
     expect(w.register.quantity(PAYEE, LINE_B)).toBe(0);
     // E5.a: the loss that reaches capital is principal minus recovery minus what was already taken,
     // and with nothing recovered and nothing provisioned that is exactly the carrying value.
-    expect(w.register.equity(PAYEE)).toBeCloseTo(before - carrying, 9);
+    expect(w.register.equity(PAYEE)).toBe(before - carrying + paidTo(w, PAYEE, 'coupon'));
     // And it is not a loss to the world: the issuer it was owed by is relieved of the same amount.
-    expect(w.register.equity(PAYER)).toBeCloseTo(issuerBefore + carrying, 9);
+    expect(w.register.equity(PAYER)).toBe(issuerBefore + carrying + paidTo(w, PAYER, 'coupon'));
   });
 });
 
