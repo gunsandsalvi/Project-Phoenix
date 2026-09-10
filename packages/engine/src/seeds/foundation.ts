@@ -87,6 +87,7 @@ export const CB = partyId('cb.north');
 export const TREASURY_NORTH = partyId('treasury.north');
 export const BANK_A = partyId('bank.a');
 export const BANK_B = partyId('bank.b');
+export const BANK_C = partyId('bank.c');
 /** The ten-year benchmark: the line every other price is quoted against (Sovereign D4). */
 export const GOV_LINE = instrumentId('gov.north.2036-03-15');
 export const GOV_MARKET = marketId('mkt.gov.north.2036-03-15');
@@ -107,17 +108,18 @@ interface SeedLine {
   readonly cb: number;
   readonly bankA: number;
   readonly bankB: number;
+  readonly bankC: number;
   /** Per member of every household cell, before dispersion (Seed B4). */
   readonly perMember: number;
 }
 
 const SEED_LINES: readonly SeedLine[] = [
-  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, cb: 0, bankA: 300000, bankB: 200000, perMember: 0 },
-  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, cb: 0, bankA: 200000, bankB: 300000, perMember: 0 },
-  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, cb: 0, bankA: 250000, bankB: 250000, perMember: 20 },
-  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 150000, bankA: 200000, bankB: 100000, perMember: 40 },
-  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 180000, bankA: 150000, bankB: 150000, perMember: 60 },
-  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 205000, bankA: 150000, bankB: 150000, perMember: 80 },
+  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, cb: 0, bankA: 200000, bankB: 150000, bankC: 150000, perMember: 0 },
+  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, cb: 0, bankA: 150000, bankB: 200000, bankC: 150000, perMember: 0 },
+  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, cb: 0, bankA: 175000, bankB: 175000, bankC: 150000, perMember: 20 },
+  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 150000, bankA: 130000, bankB: 80000, bankC: 90000, perMember: 40 },
+  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 180000, bankA: 100000, bankB: 100000, bankC: 100000, perMember: 60 },
+  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 205000, bankA: 100000, bankB: 100000, bankC: 100000, perMember: 80 },
 ];
 
 /** One day count for the seeded paper, so an opening price and its yield use one convention. */
@@ -179,16 +181,16 @@ const SEED_FIRMS: readonly SeedFirm[] = [
   // Flour — 150 of cash, 75 milled and 110 tonnes of grain to mill, as the one mill held.
   { firm: 'firm.5', name: 'Riverside Mill', bank: BANK_A, cash: 75000, subUnit: 'flour', finished: 38, onTheLine: 0, inputs: 55, plant: 46,
     why: 'The big mill, and the one that has already bought most of the grain it will grind.' },
-  { firm: 'firm.2', name: 'Town Mill', bank: BANK_B, cash: 50000, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37, plant: 30,
+  { firm: 'firm.2', name: 'Town Mill', bank: BANK_C, cash: 50000, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37, plant: 30,
     why: 'An ordinary mill.' },
-  { firm: 'firm.8', name: 'Old Mill', bank: BANK_A, cash: 25000, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18, plant: 14,
+  { firm: 'firm.8', name: 'Old Mill', bank: BANK_C, cash: 25000, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18, plant: 14,
     why: 'The smallest and the oldest.' },
   // Bread — 250 of cash, 105 baked and 75 tonnes of flour, as the one bakery held.
   { firm: 'firm.6', name: 'City Bakery', bank: BANK_A, cash: 125000, subUnit: 'bread', finished: 52, onTheLine: 0, inputs: 38, plant: 39,
     why: 'A plant bakery: the biggest oven and the biggest week of bread in the shop.' },
   { firm: 'firm.3', name: 'High Street Bakery', bank: BANK_B, cash: 80000, subUnit: 'bread', finished: 35, onTheLine: 0, inputs: 25, plant: 26,
     why: 'An ordinary bakery.' },
-  { firm: 'firm.9', name: 'Corner Bakery', bank: BANK_A, cash: 45000, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12, plant: 14,
+  { firm: 'firm.9', name: 'Corner Bakery', bank: BANK_C, cash: 45000, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12, plant: 14,
     why: 'The smallest, and the one holding the least flour against a week it cannot predict.' },
   // Capital Programme C1, E2: the line that BUILDS the capital. Its output is somebody else's
   // plant, its revenue is somebody else's investment, and the people it employs are employed by
@@ -198,7 +200,7 @@ const SEED_FIRMS: readonly SeedFirm[] = [
     why: 'The best-equipped workshop in the region and the one with machines already on the bench.' },
   { firm: 'firm.11', name: 'Town Works', bank: BANK_A, cash: 40000, subUnit: 'machine', finished: 3, onTheLine: 2, inputs: 0, plant: 0,
     why: 'An ordinary workshop.' },
-  { firm: 'firm.12', name: 'Lane Workshop', bank: BANK_B, cash: 25000, subUnit: 'machine', finished: 2, onTheLine: 1, inputs: 0, plant: 0,
+  { firm: 'firm.12', name: 'Lane Workshop', bank: BANK_C, cash: 25000, subUnit: 'machine', finished: 2, onTheLine: 1, inputs: 0, plant: 0,
     why: 'The smallest, and the one that will be priced out of engineering labour first.' },
 ];
 
@@ -321,11 +323,16 @@ export const foundationSeed: SystemModule = {
     ctx.parties.add(named(TREASURY_NORTH, TREASURY, 'Treasury of North', CB));
     ctx.parties.add(named(BANK_A, BANK, 'Bank A', CB));
     ctx.parties.add(named(BANK_B, BANK, 'Bank B', CB));
+    // THREE, not two. With two banks every depositor that answers a rate is the whole of one side
+    // of the deposit market, every interbank session is one name facing one name, and a bank in
+    // trouble has exactly one place to go — so the count of banks is load-bearing in a way no
+    // mechanism states (11.4 measures it at 2, 3 and 4 the way the cell grain is measured).
+    ctx.parties.add(named(BANK_C, BANK, 'Bank C', CB));
     // Seed B1: three to a line, each a named party with its own bank (B2, B3).
     for (const f of SEED_FIRMS) ctx.parties.add(named(partyId(f.firm), FIRM, f.name, f.bank));
 
     // Money instruments: one per issuer (Money A1, D2).
-    for (const issuer of [CB, BANK_A, BANK_B]) {
+    for (const issuer of [CB, BANK_A, BANK_B, BANK_C]) {
       ctx.instruments.add({
         id: moneyInstrumentId(issuer, PHX),
         kind: MONEY_KIND,
@@ -394,8 +401,11 @@ export const foundationSeed: SystemModule = {
     // deposit stops existing with it and the bank is left owing less, not holding more. Reserves
     // handed to a bank here are central-bank money issued against nothing, and every one of them is
     // a hole in the central bank's own balance sheet that it then pays the floor rate on for ever.
-    ctx.endowMoney(BANK_A, PHX, cash(ctx, 400_000));
-    ctx.endowMoney(BANK_B, PHX, cash(ctx, 300_000));
+    // The same reserves as before, over three banks instead of two: a third bank is a third
+    // balance sheet, not a reason for the central bank to issue more money against nothing.
+    ctx.endowMoney(BANK_A, PHX, cash(ctx, 300_000));
+    ctx.endowMoney(BANK_B, PHX, cash(ctx, 250_000));
+    ctx.endowMoney(BANK_C, PHX, cash(ctx, 150_000));
     for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, f.cash));
     for (const line of SEED_LINES) {
       const id = instrumentId(line.id);
@@ -404,6 +414,7 @@ export const foundationSeed: SystemModule = {
       if (line.cb > 0) ctx.endowUnits(CB, id, held(ctx, id, line.cb), par);
       if (line.bankA > 0) ctx.endowUnits(BANK_A, id, held(ctx, id, line.bankA), par);
       if (line.bankB > 0) ctx.endowUnits(BANK_B, id, held(ctx, id, line.bankB), par);
+      if (line.bankC > 0) ctx.endowUnits(BANK_C, id, held(ctx, id, line.bankC), par);
     }
 
     const openedGoods = new Set<string>();
@@ -487,7 +498,7 @@ export const foundationSeed: SystemModule = {
     const cells = positiveCount(ctx.params.get(P.cellsPerKey), 'cellsPerKey');
     const members = positiveCount(ctx.params.get(P.membersPerKey), 'membersPerKey');
     for (const cohort of ctx.registry.cohorts) {
-      for (const bank of [BANK_A, BANK_B]) {
+      for (const bank of [BANK_A, BANK_B, BANK_C]) {
         const weights = splitPopulation(members, cells);
         weights.forEach((weight, n) => {
           const cell: CellParty = {

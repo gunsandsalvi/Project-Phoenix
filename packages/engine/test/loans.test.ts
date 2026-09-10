@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  moneyInstrumentId,
   BANKS,
   InvalidRegistry,
   LOAN,
@@ -60,6 +61,56 @@ function asksFor(amount: number, at = 1): SystemModule {
 }
 
 /** Spends more than it holds, so its bank has to decide (Money B3.a). */
+/**
+ * A payment BIGGER THAN THE ACCOUNT, sized to what the payer's own bank has said it will have out
+ * to one name (Banks Lending F3, published as `limitPerName`). Naming an amount here would be
+ * naming one this world's banks happen to be able to allow, and what the test is about is the door
+ * (Money B3.a) rather than the number: it overdraws the account by half of what its bank itself
+ * says it will lend it.
+ */
+function overspendsItsLimit(at = 2): SystemModule {
+  return {
+    id: 'test.overspends',
+    spec: 'Money B3.a',
+    requires: [],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [
+      {
+        name: 'test.overspend',
+        spec: 'Money B3.a',
+        cycle: 0,
+        anchor: { before: 'corporateActions' },
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== at) return;
+          const bank = ctx.parties.get(BORROWER).bank;
+          const said = ctx.journal
+            .ofKind('bank.capital')
+            .filter((e) => e.subjects.includes(bank));
+          const limit = Number(said[said.length - 1]?.data['limitPerName']);
+          if (!Number.isFinite(limit) || limit <= 0) return;
+          const held = ctx.register.quantity(BORROWER, moneyInstrumentId(bank, PHX));
+          const leg: Leg = {
+            kind: 'money',
+            from: { holder: BORROWER, issuer: bank },
+            to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
+            ccy: PHX,
+            amount: ctx.registry.payable(PHX, held + limit / 2),
+            fromCell: none(),
+            toCell: none(),
+          };
+          ctx.settle({ legs: [leg], cause: 'transfer', reason: 'a bill' });
+        },
+      },
+    ],
+    participants: [],
+    families: [],
+  };
+}
+
 function overspends(amount: number, at = 2): SystemModule {
   return {
     id: 'test.overspends',
@@ -212,12 +263,14 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     const rate = Number(written?.data['rate']);
     // C1: cost of funds plus expected loss plus the capital charge plus what it costs to run it.
     // Nothing it owes pays interest yet, so the first term is a true zero and the rest are real.
-    const a = BANKS.find((b) => b.bank === 'bank.a');
-    const b = BANKS.find((b) => b.bank === 'bank.b');
-    expect(a?.returnOnCapital).not.toBe(b?.returnOnCapital);
-    // C2: the borrower took the keenest of the two. Bank A wants less on its capital, so its
-    // quote is the tighter one and it wins the business — a wide quote loses volume (C2.a).
-    expect(written?.data['bank']).toBe(BANK_OF_A);
+    // No two of them ask the same on their own capital, so no two of them quote the same.
+    const asked = BANKS.map((x) => x.returnOnCapital);
+    expect(new Set(asked).size).toBe(BANKS.length);
+    // C2: the borrower took the KEENEST, and which bank that is falls out of the data rather than
+    // being named here — the one that wants least on its capital quotes the tighter loan and wins
+    // the business, and a wide quote loses volume (C2.a).
+    const keenest = [...BANKS].sort((x, y) => x.returnOnCapital - y.returnOnCapital)[0];
+    expect(written?.data['bank']).toBe(keenest?.bank);
     expect(rate).toBeGreaterThan(0);
   });
 
@@ -284,7 +337,7 @@ describe('when it says no (Banks Lending B2, C3, C3.a, F3)', () => {
 
 describe('an overdrawn customer (Money B3.a, B3.c)', () => {
   it('is borrowing: what the bank allowed is a row by the close, not a hole', () => {
-    const w = world([overspends(phx(300_000))]);
+    const w = world([overspendsItsLimit()]);
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     // The payment went through because its bank decided to lend it the difference...
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');

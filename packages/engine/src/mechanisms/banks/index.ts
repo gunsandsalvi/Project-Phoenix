@@ -366,7 +366,15 @@ function write(
     {
       kind: 'money',
       from: { holder: bank, issuer: bank },
-      to: { holder: borrower, issuer: bank },
+      // B1, B1.b: INTO THE BORROWER'S OWN ACCOUNT, which is at the borrower's own bank and not at
+      // whichever bank won the business. When they are the same bank the money leg has one issuer
+      // on both ends and no reserve leaves it, which is B1.a and the whole of endogenous money.
+      // When they are not, the lender has paid somebody who banks elsewhere: the borrower's bank
+      // owes the deposit, the lending bank settles the reserves, and B1.b's "reserves move when
+      // the borrower spends it" arrives at the moment of the drawing rather than after it. A
+      // borrower left holding the LENDER's money would be a borrower with an account it never
+      // opened, invisible to every read that asks what it has (Money A1, B3).
+      to: { holder: borrower, issuer: ctx.parties.get(borrower).bank },
       ccy,
       amount: principal,
       fromCell: none(),
@@ -426,7 +434,8 @@ function draw(
     {
       kind: 'money',
       from: { holder: lender, issuer: lender },
-      to: { holder: borrower, issuer: lender },
+      // B1.b, as above: the drawing lands in the borrower's own account, wherever that is.
+      to: { holder: borrower, issuer: ctx.parties.get(borrower).bank },
       ccy,
       amount,
       fromCell: none(),

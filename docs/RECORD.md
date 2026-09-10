@@ -1588,3 +1588,52 @@ holding them in four tables was what let one bank hold four opinions of itself.
 `money-market`'s `DepositBook`, `setRates`, `defended`, `rateFor`, `rememberReserves`, `bufferOf`,
 `positionOf`, `lenderReservation`, `bankOrders`, `worthOfMoney`, `pledgeable`, `nameCost`, `FUNDERS`
 and the `desk` entry in the wholesale deposit class. Every deletion names the read that replaced it.
+
+
+## 11.2 — a third bank, and what it exposed
+
+**Why a third.** With two banks every depositor that answers a rate is the whole of one side of the
+deposit market, every interbank session is one name facing one name, a bank that must raise capital
+has exactly one possible buyer, and a bank in trouble has exactly one possible acquirer. None of
+those is a mechanism; they are all "there are two of them". `bank.c` is now in the foundation world:
+the careful one, and the smallest — it remembers a borrower and its own bad weeks for a whole year,
+asks the least on its capital, runs the widest cushion over both requirements, keeps the widest
+margin on the money it takes in, and makes a market in the paper it holds for liquidity and in the
+fund its own depositors buy but NOT in shares, which is what makes `makes` data about a bank rather
+than a list they all share.
+
+Nothing was created to make room for it: the same reserves over three banks instead of two, the same
+sovereign debt outstanding split three ways, four firms banking at each, and the households' cells
+per (cohort, bank) unchanged — so this world has half again as many households in it, because a key
+is a cohort AT A BANK. The dealership share the issuer announces is a third and a little over rather
+than a half, for the same reason it was a half: its dealers between them cover what it brings.
+
+**A defect it found on the first run.** A loan was credited to the borrower's account AT THE LENDER.
+With two banks the keenest quote was always the borrower's own bank and it never showed; with three
+it does, and the borrower ends up holding money issued by a bank it never opened an account at,
+invisible to every read that asks what it has. A drawing now lands in the borrower's own account
+wherever that is: when lender and bank are the same the money leg has one issuer on both ends and no
+reserve leaves it (Banks Lending B1.a, the whole of endogenous money); when they are not, the
+lending bank has paid somebody who banks elsewhere and the reserves move at the drawing rather than
+after it (B1.b).
+
+**Twenty-six checks are red.** Sixteen of them are the one cause 11.3 names, and the third bank
+sharpens it rather than changing it: **a bank funded three quarters by its own capital cannot be
+driven insolvent, because its equity is larger than everything it can convert to cash.** The
+resolution suite's ten reds are exactly that — a penalty of a third of `bank.a`'s equity, paid every
+week, settles twice and then fails, and the bank is left with a hole of MINUS forty-two million: the
+window refuses it for collateral, never for capital, so the bail-in, the acquirer, the guarantee and
+the conservation all have nothing to work on. With a normal balance sheet the first instalment would
+have buried it. The other six of the sixteen are the ones already recorded: the treasury cannot place
+its debt, the central bank books a loss instead of a remittance, the curve describes neither of the
+two prices this world has for one line, and the interbank session never opens, so the run and the
+corridor's pass-through are unreachable.
+
+**Ten are not that cause and are carried, each named here rather than adjusted:** `capital.test.ts`
+(the XI-4 chain's middle link, and a firm whose cost of equity reads negative off its own share
+price), `estate.test.ts` (a year with a death in it, and what the observer shows of the estate),
+`credit-events.test.ts` (a state that spends past what it can fund), `tick.test.ts` (the piece-size
+convergence, which is a RESOLUTION and now measured on a bigger world), `labour.test.ts` (a venue
+that prints the higher of two bids and fills nothing — the employer cannot pay what the print asks,
+and whether that is the venue's rationing or the employer's cash is not yet known), and one more of
+`omo.test.ts` (the base grows when it buys). None has been adjusted to pass and none deleted.

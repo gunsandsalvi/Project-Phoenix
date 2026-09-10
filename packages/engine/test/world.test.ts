@@ -199,7 +199,9 @@ describe('the seed (Seed A2)', () => {
     // settles at (worklist 13h), and until there is any, it is a claim about the answer rather than
     // a number this world produced.
     expect(report?.reads.shapes).toBe(8);
-    expect(report?.reads.populations['household']).toBe(4000);
+    // Three banks, two cohorts, a thousand people to a (cohort, bank) key: a key is where a
+    // population is REPRESENTED, so a world with a third bank in it has a third more households.
+    expect(report?.reads.populations['household']).toBe(6000);
   });
 
   it('is reproducible from the seed value (Seed A5, Audit D3)', () => {
@@ -223,9 +225,9 @@ describe('the seed (Seed A2)', () => {
   it('states no dispersion and produces one: the cells start equal and do not stay so (Seed B4)', () => {
     const w = foundationWorld('seed-D');
     const cells = w.parties.ofKind(HOUSEHOLD);
-    expect(cells.length).toBe(8);
+    expect(cells.length).toBe(12);
     const weights = cells.map((c) => (c.representation === 'cell' ? c.weight : 0));
-    expect(sum(weights).value).toBe(4000);
+    expect(sum(weights).value).toBe(6000);
     // Seed E: the seed decides nothing about how rich anybody is. Every cell opens with nothing.
     expect(new Set(cells.map((c) => w.cash(c.id, PHX)))).toEqual(new Set([0]));
     for (let i = 0; i < 8; i += 1) w.step();
@@ -464,7 +466,7 @@ describe('a market with reasons on both sides', () => {
     expect(gov?.outcome).toBe('cleared');
     expect(gov?.settledVolume).toBe(phx(60_000));
     expect(w.register.quantity(partyId('firm.1'), GOV_LINE)).toBe(phx(60_000));
-    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(phx(90_000));
+    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(phx(40_000));
     const print = w.prices.printOrThrow(GOV_LINE, w.period);
     expect(print.provenance.kind).toBe('traded');
     expect([0.97, 0.99]).toContain(print.price);
@@ -477,10 +479,12 @@ describe('a market with reasons on both sides', () => {
       'seed-J',
       traders((instrument, party) => {
         if (instrument !== GOV_LINE) return [];
+        // Sized to what the seller actually holds: what this tests is a buyer that cannot pay,
+        // and a seller that cannot deliver would fail the trade one step earlier for another reason.
         if (party === 'firm.2')
-          return [{ party: partyId(party), side: 'buy', price: 1.2, qty: phx(140_000) }];
+          return [{ party: partyId(party), side: 'buy', price: 1.2, qty: phx(90_000) }];
         if (party === 'bank.a')
-          return [{ party: partyId(party), side: 'sell', price: 1.2, qty: phx(140_000) }];
+          return [{ party: partyId(party), side: 'sell', price: 1.2, qty: phx(90_000) }];
         return [];
       }),
     );

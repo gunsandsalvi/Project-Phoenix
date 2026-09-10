@@ -19,13 +19,11 @@ import { describe, expect, it } from 'vitest';
 import {
   BANK,
   BANKS,
-  PHX,
   assemble,
   dealingParam,
   equityLineOf,
   foundationSpec,
   foundationWorld,
-  currencyUnit,
   partyId,
   quoteFor,
   stateOf as stateFromView,
@@ -59,9 +57,12 @@ describe('what a dealer is here (Dealer Desks A1, F2)', () => {
     for (const d of BANKS) {
       const bank = w.parties.get(partyId(d.bank));
       expect(bank.kind).toBe(BANK);
-      // A3: it opens holding inventory, which is what it has bought and not yet sold — and it is
-      // the BANK's holding, in the bank's own register row.
-      expect(w.register.quantity(bank.id, LINE)).toBeGreaterThan(0);
+      // A3: a bank that MAKES a market in shares opens holding inventory — what it has bought and
+      // not yet sold — and it is the BANK's holding, in the bank's own register row. One that does
+      // not make that market opens holding none, and that is what makes `makes` data about a bank
+      // rather than a list they all share.
+      const makesShares = d.makes.includes('equity.share');
+      expect(w.register.quantity(bank.id, LINE) > 0).toBe(makesShares);
     }
   });
 

@@ -121,4 +121,22 @@ export const BANKS: readonly BankDecl[] = [
     concentration: 0.5,
     why: 'The keener one: a short memory, a higher return demanded on its capital, a twentieth of a cushion above the liquidity rule and half a point above the capital one and a bigger appetite for a single name and for a trading book: four fifths of its capital will stand behind one, and it spreads that book over fewer lines. It is the smaller book and the harder-skewing one, and it is the book whose stopping is what a thin market looks like. It will win the business the other one turns away and it will wear what comes with it. A short memory of its own outflows means a thinner buffer, and a thin margin on funding means it pays up for deposits and lives on the volume — the same disposition on both sides of its balance sheet.',
   },
+  {
+    bank: 'bank.c',
+    memoryPeriods: 52,
+    returnOnCapital: 0.07,
+    capitalBuffer: 0.04,
+    liquidityCushion: 0.4,
+    limitPerBorrower: 0.15,
+    depositMargin: 0.008,
+    bufferMemory: 52,
+    // It makes a market in the paper it holds for liquidity and in the fund whose shares its own
+    // depositors buy, and in NOTHING ELSE. A share is a claim on a business it has no view of, and
+    // a bank that will not take a view does not quote one — which is a real disposition and the
+    // reason `makes` is data about a bank rather than a list every bank shares (Law 15).
+    makes: ['fund.share', 'sovereign.bill', 'sovereign.bond'],
+    capitalAtRisk: 0.2,
+    concentration: 0.25,
+    why: 'The careful one, and the smallest: it remembers a borrower and its own bad weeks for a whole year, asks the least on its capital and runs the widest cushion over both requirements, will not have more than a seventh of its capital out to one name, keeps the widest margin on the money it takes in and puts a fifth of its capital behind a trading book it spreads over more lines than either of the others. It wins nothing on price and it is still there when the other two have filled up — which is what a third bank is for: with two, every depositor that moves is the whole of one side of the market and every session is one name facing one name.',
+  },
 ];

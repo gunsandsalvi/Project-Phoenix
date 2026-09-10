@@ -294,13 +294,13 @@ export const treasury: SystemModule = {
     },
     {
       id: TREASURY_PARAMS.dealershipShare,
-      value: 0.5,
+      value: 0.34,
       unit: 'ratio of the size offered',
       kind: 'policy',
       // The ISSUER's own term, and it is declared in the issuer's module and announced by it. The
       // owner enum has no treasury in it, and adding one is a kernel change this item may not make.
       owner: 'model',
-      why: 'Sovereign C3, C3.a: primary dealers bid because they are obliged to, in exchange for privileges, and that obligation is what makes an auction hard to fail. It is a TERM OF THE DEALERSHIP and therefore the ISSUER own number — it announces it with the line, and a dealer reads it off the announcement rather than holding a copy. The issuer states a share such that its dealers between them cover what it brings: with two dealers in this world, half each. It does not make failure impossible, because a dealer bids out of the money it has.',
+      why: 'Sovereign C3, C3.a: primary dealers bid because they are obliged to, in exchange for privileges, and that obligation is what makes an auction hard to fail. It is a TERM OF THE DEALERSHIP and therefore the ISSUER own number — it announces it with the line, and a dealer reads it off the announcement rather than holding a copy. The issuer states a share such that its dealers between them cover what it brings: with three dealers in this world, a third each and a little over, so the announcement covers the size rather than falling just short of it. It does not make failure impossible, because a dealer bids out of the money it has.',
     },
     {
       id: TREASURY_PARAMS.buybackStale,

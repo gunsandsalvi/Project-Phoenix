@@ -13,6 +13,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  BANKS,
   SUBORDINATED,
   assemble,
   foundationSpec,
@@ -64,7 +65,7 @@ function num(e: Event | undefined, key: string): number {
 const TIGHT: Readonly<Record<string, number>> = { 'bank.capitalBuffer.bank.a': 0.9 };
 
 describe('raising the layer between the owners and the creditors (C2, A2.b, A3)', () => {
-  const w = run(withParam('raise-a', TIGHT), 8);
+  const w = run(withParam('raise-a', TIGHT), 16);
 
   it('asks for what it published, into a book that prices its name (C2, C2.a, Clearing C3)', () => {
     const raised = events(w, 'bank.raise');
@@ -125,7 +126,10 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     const first = num(got[0], 'raised');
     const last = num(got[got.length - 1], 'raised');
     expect(first).toBeGreaterThan(0);
-    expect(last).toBeLessThan(first / 100);
+    // It collapses to a trickle as the OTHER banks fill up their own limits for this name. It
+    // takes longer with three of them than it did with two, which is the point of the clause: what
+    // says no is somebody else's limit, and there is more of somebody else now.
+    expect(last).toBeLessThan(first / 10);
     // And it is not that it stopped asking: what it wanted grew every week it went unmet.
     expect(num(got[got.length - 1], 'wanted')).toBeGreaterThan(num(got[0], 'wanted'));
   });
@@ -135,7 +139,13 @@ describe('when nobody will (C2.b)', () => {
   it('is a real refusal, and it leaves the bank where it was', () => {
     // C2.b: NOBODY HAS TO BUY. Take the lenders' appetite away — no bank will have anything out to
     // any one name — and the same bank asks for the same money and gets none of it.
-    const w = run(withParam('raise-b', { ...TIGHT, 'bank.limitPerBorrower.bank.b': 0 }), 8);
+    // Every OTHER bank's appetite, not one of them: with three banks in the world, taking one
+    // lender's limit away leaves two, and "nobody will" has to mean nobody.
+    const noAppetite: Record<string, number> = { ...TIGHT };
+    for (const b of BANKS) {
+      if (b.bank !== String(BANK_A)) noAppetite[`bank.limitPerBorrower.${b.bank}`] = 0;
+    }
+    const w = run(withParam('raise-b', noAppetite), 8);
     const failed = events(w, 'bank.raise.failed', BANK_A);
     expect(failed.length).toBeGreaterThan(0);
     expect(num(failed[0], 'wanted')).toBeGreaterThan(0);
