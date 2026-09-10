@@ -137,14 +137,14 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [x] The reserve overdraft priced and collateralised through the decider; the kernel's recorded-unpriced path deleted; the money family updated; tests: a bank with no collateral cannot draw (C4.b) and fails for liquidity (D4)
 - [x] LOLR's four conditions (D6): freely, good collateral, penalty, solvent: the decider refuses an insolvent bank; test
 - [x] `banks.funding`: sell liquid assets, bid up deposits, stop originating (item 6's B2.b constraint now real), draw the facility, fail; tests for each branch as a state reached
-- [ ] The run: wholesale depositors move on public observables; the loop shows in a scenario test (D5.b, E3.a); insurance breaks it for retail (E4); tests
+- [x] The run: wholesale depositors move on public observables; the loop shows in a scenario test (D5.b, E3.a); insurance breaks it for retail (E4); tests
 - [ ] Interbank exposure as contagion: a failed bank's interbank rows land losses on lenders by name (E3); test with item 7's resolution
 - [ ] Capital: requirements against risk weights, leverage backstop, which binds as a read; buffer as choice; distributions restricted near the line; tests
 - [x] From item 7.5 (Banks Capital D1): a failed bank's book valued at marks and at its own carrying values; the hole is liabilities minus that; test
-- [ ] From item 7.5 (D2): the hierarchy — equity to zero, subordinated rows bailed in by partial redemption, senior and depositors untouched outside liquidation; tests
+- [x] From item 7.5 (D2): the hierarchy — equity to zero, subordinated rows bailed in by partial redemption, senior and depositors untouched outside liquidation; tests
 - [x] From item 7.5 (D3, D6): every other bank bids for the book from its own view; the winner pays or is paid the difference; deposits and rows are assumed by the acquirer over the wire; test: a resolution with no bid falls to the public path
-- [ ] From item 7.5 (D4, D5): deposit insurance per member up to the limit, the insurer as an estate creditor; test with a cell of small and a cell of large depositors
-- [ ] From item 7.5 (E3): the resolution conserves — acquirer paid plus insurer paid plus estate realised plus holders lost equals the hole; audit contribution and test
+- [x] From item 7.5 (D4, D5): deposit insurance per member up to the limit, the insurer as an estate creditor; test with a cell of small and a cell of large depositors
+- [x] From item 7.5 (E3): the resolution conserves — acquirer paid plus insurer paid plus estate realised plus holders lost equals the hole; audit contribution and test
 - [x] **Carried from 10.3**: the four tests a bank failure leaves red go green — `capital.test.ts` (the XI-4 chain), `funds.test.ts` ×2 (the gate, and the year with a redemption wave), `omo.test.ts` (the book running off). None of them is about resolution; each of them ends in one, and none can be looked at until a bank has somewhere to go. Two things fall out with them: the fractional-share request in `households/portfolio.ts:fundOrders` rounded at its cause (Law 8, named at the site in `funds/index.ts`), and the XI-4 finding underneath the capital one — the dear world investing MORE than the cheap one — measured for the first time on a run that survives
 - [ ] From item 7.6 (XI-2, Prime Brokerage C3.b): a bank whose capital falls cuts a borrower's limit below what it has drawn, and the borrower's own module posts the sales that repay it, at whatever the book gives; test: the sale moves the print and the print reaches other holders, and `limit − exposure` is negative with no floor anywhere in the path
 - [ ] Raising: equity issuance (item 9) and subordinated debt (`bank.subordinated` kind) into markets that can refuse; test: a failed raise leaves the bank where it was
@@ -247,24 +247,51 @@ and there is nowhere to put it.
   exist first is a deposit market where a class does not move as one block. The two rungs above are
   the first half of that.
 
-- **The run (137).** Uninsured money moves away from a publicly refused bank, which is half of
-  E1/E2.a. Missing: the self-reinforcing loop shown in a scenario test (D5.b/E3.a — the deposit
-  leaves with the reserves behind it, so the bank is shorter at the next close), and the test
-  that insurance breaks it for retail and not for wholesale (E4).
-- **Interbank contagion (138).** A failed bank's rows must land losses on its lenders by name
-  (E3). Not started; the plan says to test it with item 7's resolution, so it waits on the next.
+- ~~**The run.**~~ **DONE, and it reached further than the step asked.** `test/run.test.ts` runs a
+  foundation seed that does the whole thing on its own: a rival that can pay more takes bank A's
+  funding (E1), the reserves go out of the door in the same instruction as the deposits (E3.a, and
+  settlement generates that leg itself — nothing in the run mechanism asks for it), the session
+  cannot fill the hole (B7), the window cannot either because the paper does not cover it (C4.b),
+  and the bank fails WITH MORE ASSETS THAN LIABILITIES — which is D6's distinction between a
+  funding failure and an insolvency, made by a run rather than stated. E4 is the other test: raise
+  the guarantee past what a member holds and a household cell has nothing that can leave; drop it
+  to nothing and the same cell is the flightiest money in the world.
+
+- **Interbank contagion (138) — the mechanism is built and one half of it is tested.** A failed
+  bank's rows are in the pari passu pool by name and are written down there (`writeDownRow`), and
+  a SECURED lender is now in it only for what its own paper does not cover — it holds the liens,
+  the acquirer takes the book with them, and counting the covered part would take the same
+  collateral twice (Appendix B). What has NOT been reached is a scenario where an UNSECURED
+  interbank row is outstanding at the moment of failure: in this world banks lend to each other
+  against paper, so every row at the failure was a repo and no bank lost anything. The step stays
+  open for that scenario.
+
 - **Bank capital (139).** Requirement against risk weights, leverage backstop, which of them
   binds as a read, the buffer as a choice, distributions restricted near the line. Not started.
   `bank-lending`'s `room()` already has the capital and appetite constraints to hang it on.
-- **BANK RESOLUTION (140–144) — this is the blocker.** A bank can now genuinely fail for
-  liquidity, and when one does the world breaks: its deposits are money issued by a party that
-  has ceased, its paper sits in a dead holder's account, its rows default, and other modules
-  throw `Money E4` addressing it. Every year-long run that reaches a bank failure is red for this
-  reason and no other. Needed: the failed book valued at marks and at its own carrying values,
-  the hole as liabilities minus that, the hierarchy (equity to zero first), the acquirer's bid
-  with deposits and rows assumed over the wire, the public path when nobody bids, deposit
-  insurance per member with the insurer as an estate creditor, and the conservation family
-  (acquirer paid + insurer paid + estate realised + holders lost = the hole).
+- ~~**BANK RESOLUTION.**~~ **DONE.** Built in the last commit and now tested end to end
+  (`test/bank-resolution.test.ts`, ten tests) on a world that is the foundation world plus ONE
+  thing: bank A pays a penalty it cannot afford. Everything after that is mechanisms that were
+  already there — the payment overdraws it, the window lends against its paper while it is still
+  solvent (D3), the loss lands on its equity, and the period after that its liabilities are past
+  its assets. What the tests hold: the trigger says which of C1.a's two fired; the book is valued
+  at marks and the hole is what it owes less that (D1); the window refuses it for CAPITAL and not
+  for collateral (D3.a); every uninsured claim is cut by the same proportion (D2, D2.a); a secured
+  lender is left alone for what its paper covers; the acquirer is PAID to take a book worth less
+  than nothing (D3); every depositor ends up holding the acquirer's money and nothing is left in a
+  dead party's hands (D6, C3.b, and a new `names` family contribution that says so every period);
+  insurance per member decides who is written down and who is not (D4, A1.a, XI-15); and with no
+  premium collected there is no fund, so the same guarantee is met by the treasury instead (D5).
+
+  **Found, and recorded rather than acted on:** in this world a bank ALWAYS fails for liquidity
+  before it fails for solvency, and when it does its hole is negative — it has more assets than
+  liabilities and nobody loses anything. Every seed tried reaches that and none reaches the other,
+  which is why the insolvent path had to be reached by a penalty. It also means D4 and D5 are
+  exercised for real but for small amounts: the uninsured pool is far bigger than the hole, so the
+  haircut covers nearly all of it and the guarantee meets the last few pieces. A world where the
+  guarantee pays for most of a failure needs a bank whose deposits are mostly insured, which needs
+  a household sector bigger than this one relative to its firms.
+
 - **XI-2's funding-line cut (145).** Not started.
 - **Raising (146).** Equity issuance and a `bank.subordinated` kind into markets that can refuse;
   a failed raise leaves the bank where it was. Not started. The bail-in hierarchy in 141 has only

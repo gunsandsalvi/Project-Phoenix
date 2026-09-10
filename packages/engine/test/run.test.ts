@@ -1,0 +1,172 @@
+/**
+ * The run: what a depositor does, what it costs the bank it leaves, and what stops it.
+ *
+ * @spec Banks Funding E1 Banks Funding E2 Banks Funding E2.a Banks Funding E3 Banks Funding E3.a Banks Funding E4 Banks Funding E4.a Banks Funding D6 Banks Funding A1.a Banks Funding C2 Banks Funding C2.a Money Market D5 Money Market D5.a Money Market B7 Banks Capital C1.a XI-15
+ *
+ * E3.a is the clause these are about, and it is a claim about ARITHMETIC rather than about
+ * behaviour: THE DEPOSIT LEAVES WITH THE RESERVES BEHIND IT. A model where a depositor's balance
+ * moves between banks without the reserves following is a model where a run costs the bank nothing,
+ * and then E3's loop cannot close however carefully the rest of it is written.
+ *
+ * The world these read is a foundation world that reaches the whole chain on its own: a bank whose
+ * rival can pay more for money loses its funding to it (E1), is short at the next close because the
+ * reserves went with it (E3.a), cannot borrow the difference at any price (B7), cannot draw the
+ * window because its paper does not cover it (C4.b), and fails — WITH MORE ASSETS THAN LIABILITIES,
+ * which is D6's distinction between a funding failure and an insolvency, made by a run rather than
+ * stated.
+ */
+import { describe, expect, it } from 'vitest';
+import {
+  CB,
+  MM_PARAMS,
+  PHX,
+  assemble,
+  foundationSpec,
+  foundationWorld,
+  moneyInstrumentId,
+  partyId,
+  type Event,
+  type SystemModule,
+  type World,
+} from '../src/index.js';
+import { unexpected } from './expected.js';
+
+const BANK_A = partyId('bank.a');
+const BANK_B = partyId('bank.b');
+/** The period this seed's run happens in, found by running it: nothing here makes it happen. */
+const RUN = 29;
+
+function run(w: World, periods: number): World {
+  for (let i = 0; i < periods; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+  return w;
+}
+
+function events(w: World, kind: string, subject?: string): Event[] {
+  return w.journal
+    .ofKind(kind as never)
+    .filter((e) => subject === undefined || e.subjects.includes(subject));
+}
+
+function num(e: Event | undefined, key: string): number {
+  const v = e?.data[key];
+  return typeof v === 'number' ? v : 0;
+}
+
+describe('a depositor leaving (Banks Funding E1, E3, E3.a)', () => {
+  const w = run(foundationWorld('run-a'), RUN + 2);
+
+  it('takes the reserves behind it, in the same instruction (E3.a)', () => {
+    const moved = events(w, 'deposit.moved').filter((e) => e.period === RUN);
+    // The state this test is about is reached by the world and not by the test.
+    expect(moved.length).toBeGreaterThan(0);
+    let checked = 0;
+    const when = moved[0]?.period;
+    expect(when).toBeDefined();
+    for (const rec of w.ledger.inPeriod(when as never)) {
+      const leg = rec.instruction.legs[0];
+      if (rec.instruction.legs.length !== 1 || leg?.kind !== 'money') continue;
+      // A depositor moving banks is the one instruction with the same holder on both sides and a
+      // different issuer either side: the same money, owed by somebody else.
+      if (leg.from.holder !== leg.to.holder || leg.from.issuer === leg.to.issuer) continue;
+      expect(rec.outcome).toBe('settled');
+      if (rec.outcome !== 'settled') continue;
+      // Money C2.a: settlement generated the interbank leg itself. Nothing in the run mechanism
+      // asked for it, which is why E3.a cannot be forgotten.
+      const out = rec.reserveLegs.find((x) => x.bank === leg.from.issuer);
+      const into = rec.reserveLegs.find((x) => x.bank === leg.to.issuer);
+      expect(out).toBeDefined();
+      expect(out?.amount).toBe(-leg.amount);
+      expect(into?.amount).toBe(leg.amount);
+      checked += 1;
+    }
+    expect(checked).toBe(moved.length);
+  });
+
+  it('leaves that bank shorter at the next close, and that is the loop (E3, D5.b)', () => {
+    const liquidity = (bank: string, period: number): Event | undefined =>
+      events(w, 'bank.liquidity', bank).find((e) => e.period === period);
+    // C2.a: the week the money left is the worst week its account has had, so what it holds against
+    // one rises — and the reserves to hold it with went out of the door with the deposits.
+    const before = liquidity(BANK_A, RUN - 1);
+    const after = liquidity(BANK_A, RUN);
+    expect(num(after, 'move')).toBeLessThan(num(before, 'move'));
+    expect(num(after, 'base')).toBeLessThan(num(before, 'base'));
+    // Its ACCOUNT is not lower, and that is the loop rather than an exception to it: what left had
+    // to be borrowed back the same evening, so the balance is refilled with somebody else's money
+    // at somebody else's price. What a run takes from a bank is not its cash, it is its funding.
+    // B7: and the session could not fill the hole the withdrawal left. The refusal is the public
+    // event the next round of depositors reads (D5.a, E2.a).
+    const refused = events(w, 'moneyMarket.refused', BANK_A).find((e) => e.period === RUN);
+    expect(num(refused, 'short')).toBeGreaterThan(0);
+    // Money B3.b, C4.b: it went to the window with what it had left, and its paper did not cover
+    // it. That refusal is the last rung of the ladder, and under it there is nothing.
+    const door = events(w, 'centralBank.refused', BANK_A).find((e) => e.period === RUN + 1);
+    expect(door).toBeDefined();
+    expect(num(door, 'collateral')).toBeLessThan(num(door, 'short'));
+    // D6, Banks Capital C1.a: AND IT WAS SOLVENT. The window refused it for collateral and not for
+    // capital, and the resolution says which trigger fired — the cash one, on a book whose assets
+    // were worth more than everything it owed. A funding failure is a different death.
+    expect(door?.data['solvent']).toBe(true);
+    const valued = events(w, 'bank.resolution.valued', BANK_A)[0];
+    expect(String(valued?.data['why'])).toMatch(/could not pay/);
+    expect(num(valued, 'hole')).toBeLessThan(0);
+  });
+});
+
+describe('what insurance does to it (Banks Funding A1.a, E4, E4.a)', () => {
+  /** The same world with the guarantee set differently, wherever the number is declared. */
+  function withLimit(seed: string, limit: number): World {
+    const spec = foundationSpec(seed);
+    const modules: SystemModule[] = spec.modules.map((m) => ({
+      ...m,
+      params: m.params.map((p) => (p.id === MM_PARAMS.insuranceLimit ? { ...p, value: limit } : p)),
+    }));
+    return assemble({ ...spec, modules });
+  }
+
+  it('takes retail out of what could leave, and leaves wholesale in it (E4, E4.a)', () => {
+    // A1.a: the cover is per MEMBER of a cell, so what it takes out of a bank's exposure is the
+    // number of people behind the balance and not the balance. Raise it past what a member holds
+    // and a household cell stops being able to run at all; drop it to nothing and the same cell is
+    // the flightiest money in the world. Nothing anywhere says wholesale is flighty (E4.a).
+    const covered = run(withLimit('run-e4', 1000000), 8);
+    const bare = run(withLimit('run-e4', 0), 8);
+    const exposure = (w: World, bank: string): Event | undefined =>
+      events(w, 'bank.liquidity', bank).find((e) => e.period === w.period);
+    for (const bank of [BANK_A, BANK_B]) {
+      const rich = exposure(covered, bank);
+      const poor = exposure(bare, bank);
+      // With nothing insured, everything anybody holds could leave: C2's read is its own deposit
+      // base and nothing else.
+      expect(num(poor, 'couldLeave')).toBe(num(poor, 'base'));
+      // With the guarantee big enough to cover every member, what is left exposed is the money
+      // held by parties that are not members of anything — the funds, the desks, the other banks.
+      expect(num(rich, 'couldLeave')).toBeLessThan(num(rich, 'base'));
+      const retail = (e: Event | undefined): number => {
+        const byClass = e?.data['deposits'] as Record<string, number> | undefined;
+        return byClass?.['retail'] ?? 0;
+      };
+      expect(retail(rich)).toBeGreaterThan(0);
+      expect(num(rich, 'couldLeave')).toBeLessThanOrEqual(num(rich, 'base') - retail(rich));
+    }
+  });
+
+  it('is paid for by the banks that have it, before anybody needs it (Banks Capital D4)', () => {
+    // A guarantee with no fund behind it is one the treasury makes silently every time. The premium
+    // is a real payment out of a bank's own money, every period, on what IT has covered — so a bank
+    // funded by insured households pays for the guarantee it gets and one funded by wholesale money
+    // pays almost nothing.
+    const w = run(foundationWorld('run-fund'), 6);
+    const paid = events(w, 'insurance.premium');
+    expect(paid.length).toBeGreaterThan(0);
+    const insurer = partyId('insurer.north');
+    let collected = 0;
+    for (const e of paid) {
+      expect(e.data['paid']).toBe(true);
+      expect(num(e, 'due')).toBeGreaterThan(0);
+      collected += num(e, 'due');
+    }
+    // Seed E1: it opened with nothing, and what it has is what it has actually been paid.
+    expect(w.register.quantity(insurer, moneyInstrumentId(CB, PHX))).toBe(collected);
+  });
+});

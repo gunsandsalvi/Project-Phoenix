@@ -31,7 +31,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import { borrowingPower, pledgeable, windowAdvances, type Advance } from './collateral.js';
 import { collectPremiums, DEPOSIT_INSURER, INSURER, INSURER_PARAMS, insurerKind } from './insurer.js';
 import { forcedSale } from './funding.js';
-import { failedBanks, resolve } from './resolution.js';
+import { failedBanks, nothingLeftBehind, resolve } from './resolution.js';
 import {
   BOOKS,
   DEPOSIT_CLASSES,
@@ -87,6 +87,8 @@ export * from './collateral.js';
 export * from './deposits.js';
 export * from './session.js';
 export * from './funding.js';
+export { DEPOSIT_INSURER, INSURER, INSURER_PARAMS } from './insurer.js';
+export { valueBook, failedBanks, type Valuation as BookValuation } from './resolution.js';
 
 /** What the module keeps: the deposit book, and how many rows it has written. */
 interface Market {
@@ -834,7 +836,7 @@ export const moneyMarket: SystemModule = {
   creditDecisions: [{ partyKind: CENTRAL_BANK, decide: reserveOverdraft }],
   // C3.b: a bank does not go to an estate. This module takes charge of what happens instead.
   resolves: [BANK],
-  families: [collateralHolds()],
+  families: [collateralHolds(), nothingLeftBehind()],
   seed(ctx: SeedContext): void {
     const banks = ctx.parties.ofKind(BANK).map((b) => b.id);
     const first = banks[0];

@@ -49,11 +49,14 @@ import type { CellSide } from '../../ledger/instruction.js';
 import { cellSide } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import { BANK, TREASURY } from '../../registry/profiles.js';
+import type { Family, Violation } from '../../audit/audit.js';
 import type { MechanismContext } from '../../world/context.js';
 import { failedWhy } from '../../world/failure.js';
 import { MM_PARAMS } from './data.js';
 import { insuredAt, uninsuredAt } from './deposits.js';
 import { INSURER } from './insurer.js';
+import type { Instrument } from '../../register/instruments.js';
+import { isRow } from './rows.js';
 
 /** D1: what the failed bank has, what it owes, and the difference between them. */
 export interface Valuation {
@@ -275,11 +278,19 @@ function allocate(
   }
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
+    // A2.c, Appendix B: A SECURED LENDER IS NOT IN THIS POOL FOR WHAT ITS PAPER COVERS. It has the
+    // collateral in its hand — the acquirer takes the book WITH the liens on it — so what it stands
+    // to lose is the part its own security does not reach, and only that part ranks with an
+    // uninsured depositor. Counting the covered part here would take the same collateral twice: once
+    // as an asset of the book, which is where the hole is measured, and again as a loss to the
+    // lender who is holding it.
+    const secured = coveredBy(ctx, i);
     for (const holder of ctx.register.holdersOf(i.id)) {
       if (holder === bank) continue;
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);
       if (!worth.some || worth.value.value <= 0) continue;
-      const owed = mul(worth.value.value, weightOf(ctx.parties.get(holder)), 'what it is owed');
+      const claim = mul(worth.value.value, weightOf(ctx.parties.get(holder)), 'what it is owed');
+      const owed = sub(claim, secured, 'what its security does not reach');
       if (owed > 0) exposed.push({ holder, owed, row: i.id });
     }
   }
@@ -322,6 +333,21 @@ function allocate(
           `${bank} resolution: the public purse, last`,
         );
   return { holders, insurer, purse, equity };
+}
+
+/**
+ * B3.c, Register D5: what the paper behind a row is worth at the marks in force — the lender's
+ * security, valued the way everything else in the resolution is valued (D1). A row with no
+ * collateral is covered by nothing, which is what makes it unsecured.
+ */
+function coveredBy(ctx: MechanismContext, i: Instrument): number {
+  if (!isRow(i.terms)) return 0;
+  const terms: number[] = [];
+  for (const c of i.terms.collateral) {
+    const mark = ctx.valuation.markPerUnit(c.instrument, ctx.period);
+    terms.push(mul(c.qty, mark, 'what the security is worth'));
+  }
+  return sum(terms).value;
 }
 
 /** A2.c: a depositor's loss, written into the balance it thought it had. */
@@ -666,6 +692,48 @@ export function failedBanks(ctx: MechanismContext): { bank: PartyId; why: string
     if (why !== undefined) out.push({ bank: b.id, why });
   }
   return out;
+}
+
+/**
+ * D6, E3, Law 2: A RESOLUTION LEAVES NOTHING BEHIND. A bank that has ceased holds nothing, owes
+ * nothing that anybody still holds, and nobody banks there — because every one of those would be a
+ * claim on, or a position of, a party that has stopped existing: a residual with no holder, which
+ * Law 2 calls a defect whether or not anything trips over it later.
+ *
+ * It is a family rather than a throw because it is a statement about the WORLD after the fact and
+ * not about one instruction (Audit A1), and because what it would report is a size — how much was
+ * left behind — which is the shape a finding has.
+ */
+export function nothingLeftBehind(): Family {
+  return {
+    name: 'names',
+    contributor: 'money-market',
+    spec: 'Banks Capital D6 Banks Capital E3 Register F2 Law 2',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      const say = (owner: string, size: number, unit: string, message: string): void => {
+        out.push({ family: 'names', spec: 'Banks Capital D6', owner, size, unit, period: view.period, message });
+      };
+      for (const p of view.parties.all()) {
+        if (p.status.alive || view.registry.partyKind(p.kind).moneyIssuer === null) continue;
+        for (const h of view.register.holdingsOf(p.id)) {
+          const qty = view.register.quantity(p.id, h.instrument);
+          if (qty !== 0) say(String(p.id), qty, 'units', `${p.id} has ceased and still holds ${qty} of ${h.instrument}`);
+        }
+        for (const i of view.instruments.all()) {
+          if (!i.status.live || !i.issuer.some || i.issuer.value !== p.id) continue;
+          const held = view.register.heldTotal(i.id).value;
+          if (held !== 0) say(String(i.id), held, 'units', `${i.id} is issued by ${p.id}, which ceased, and ${held} of it is still held`);
+        }
+        for (const q of view.parties.all()) {
+          if (!q.status.alive || q.bank !== p.id) continue;
+          say(String(q.id), 1, 'account', `${q.id} still banks at ${p.id}, which ceased`);
+        }
+      }
+      return out;
+    },
+  };
 }
 
 export type { Bid };
