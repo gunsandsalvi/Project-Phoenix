@@ -82,6 +82,7 @@ export function assemble(spec: AssemblySpec): World {
   for (const m of modules) {
     for (const p of m.phases) world.addPhase(p, m.id);
     for (const p of m.participants) world.addParticipant(p);
+    for (const p of m.venueParticipants ?? []) world.addVenueParticipant(p);
     const outlooks = m.outlooks;
     if (outlooks !== undefined) world.provideOutlooks(m.id, outlooks);
     for (const d of m.creditDecisions ?? []) world.provideCreditDecision(m.id, d.partyKind, d.decide);

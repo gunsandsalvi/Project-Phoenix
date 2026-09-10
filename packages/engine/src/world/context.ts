@@ -205,6 +205,17 @@ export interface MechanismContext extends KernelReads {
    * settle. The book is emptied at the top of every period, so a posting is for this period only.
    */
   post(venue: VenueId, order: Order): void;
+  /**
+   * Clearing B2, Observer A4: ask every party whose module declared a schedule for this venue for
+   * one, and post what comes back. The module that OPENED the venue calls it — it is the one that
+   * clears it — and each schedule is built by the module that owns that party, with that party's
+   * own view. Calling it is how a venue gets the same door a market has; building somebody else's
+   * schedule inside the clearing phase instead is that module deciding for a party it does not own.
+   *
+   * Once per venue per period: the book is emptied at the top of the period and a second call would
+   * post every schedule twice.
+   */
+  gather(venue: VenueId): void;
   /** What every party has posted into a venue this period (the module that clears it reads this). */
   posted(venue: VenueId): readonly Order[];
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */

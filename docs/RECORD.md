@@ -1416,6 +1416,27 @@ the piece is a resolution and this is settled; if changing the piece moves an ag
 changing the seed does, the piece is load-bearing and this world is more sensitive to lumpiness than
 anything here has admitted.
 
+## 11.1 — A venue asks parties for schedules the way a market does
+
+**What.** `VenueParticipantDecl` and `SystemModule.venueParticipants` beside the market's
+`ParticipantDecl`, and `MechanismContext.gather(venue)`: the module that OPENED a venue asks for the
+schedules its parties want to post there, and the kernel evaluates every declared one with that
+party's own `ParticipantView` and posts it. Only the opener may gather — a module filling a book it
+does not strike is a second writer of that book (Law 4) — and a venue is gathered once a period,
+because the book is emptied at the top of one and a second ask would post every schedule twice.
+
+**Why.** A market's orders have always come from the participants, each with its own view (Observer
+A4). A venue's did not: the module that clears it built every party's schedule inside its own phase,
+out of a context that can see every party's private state. So the money market decides what a bank
+lends and borrows and at what rate, and the labour market decides what a firm hires — one module
+deciding for parties it does not own, with a view no participant may have. Clearing is the venue's;
+the schedule is the party's, and this is the door that says so.
+
+**Nothing moved.** The money market and the labour market still build their schedules in their own
+phases and neither calls `gather` yet; every existing world is the same world. The door is what
+11.2 needs before a bank's treasury can post its own session schedule, and it is inserted rather
+than folded in because the kernel changes only by an inserted item.
+
 ## 11 — The money market, the corridor, bank funding and bank capital
 
 **What.** A bank's reserve position is now the residue of everybody else's payments, and there is a

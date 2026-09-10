@@ -73,6 +73,7 @@ import type {
   CreditDecision,
   OutlookProvider,
   ParticipantDecl,
+  VenueParticipantDecl,
   PhaseDecl,
   Valuer,
 } from './module.js';
@@ -137,6 +138,9 @@ export class World {
   private readonly postings = new Map<VenueId, Order[]>();
   private readonly venueList: VenueDecl[] = [];
   private readonly participantDecls: ParticipantDecl[] = [];
+  private readonly venueParticipantDecls: VenueParticipantDecl[] = [];
+  /** Clearing B2: the venues whose schedules have been gathered this period, so they are asked once. */
+  private readonly gathered = new Set<VenueId>();
   /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
   private readonly slots = new Map<string, object>();
   /** Expectations A2: the one module that answers what a party expects. */
@@ -459,6 +463,39 @@ export class World {
     this.participantDecls.push(p);
   }
 
+  /** Clearing B2: a module's venue schedules, evaluated per party of the kind with its own view. */
+  addVenueParticipant(p: VenueParticipantDecl): void {
+    forbid(!this.sealed, 'Law 10', 'participants are declared at assembly');
+    this.registry.partyKind(p.partyKind);
+    this.venueParticipantDecls.push(p);
+  }
+
+  /**
+   * Clearing B2, Observer A4: every declared schedule for this venue, from the module that owns
+   * each party, with that party's own view — the same loop `runOne` runs for a market, posting
+   * instead of clearing, because a venue's module strikes its own matches (Labour C5).
+   *
+   * Only the module that OPENED the venue may ask: it is the one that clears it, and a module that
+   * gathered somebody else's venue would be filling a book it does not strike (Law 4).
+   */
+  gather(venue: VenueId, owner: string): void {
+    const decl = this.venue(venue);
+    forbid(
+      decl.clearedBy === owner,
+      'Law 4',
+      `${owner} would gather ${venue}, which ${decl.clearedBy} clears`,
+    );
+    if (this.gathered.has(venue)) return;
+    this.gathered.add(venue);
+    for (const p of this.venueParticipantDecls) {
+      for (const party of this.parties.ofKind(p.partyKind)) {
+        // Money E4: a ceased party takes no part. What it held is its estate's now (XI-8).
+        if (!party.status.alive) continue;
+        for (const o of p.orders(this.participantView(party.id), decl)) this.post(venue, o);
+      }
+    }
+  }
+
   /** Insert a module's phase at the position its anchor puts it (Law 10, Clearing F1). */
   addPhase(decl: PhaseDecl, owner: string): void {
     forbid(!this.sealed, 'Law 10', 'phases are declared at assembly');
@@ -552,6 +589,7 @@ export class World {
     forbid(this.sealed, 'Seed A2', 'seal the seed before stepping');
     this.offerList.clear();
     this.postings.clear();
+    this.gathered.clear();
     this.currentPeriod = nextPeriod(this.currentPeriod);
     this.currentCycle = this.calendar.cycle(0);
     for (const phase of this.phaseList) {
@@ -674,6 +712,9 @@ export class World {
       },
       post: (venue, order) => {
         this.post(venue, order);
+      },
+      gather: (venue) => {
+        this.gather(venue, owner);
       },
       posted: (venue) => this.posted(venue),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),

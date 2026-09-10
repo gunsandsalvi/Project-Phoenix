@@ -12,6 +12,7 @@
 import type { Family } from '../audit/audit.js';
 import type { Order } from '../clearing/solver.js';
 import type { MarketDecl } from '../clearing/market.js';
+import type { VenueDecl } from '../clearing/venue.js';
 import type { InstrumentKindId, PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type {
@@ -62,6 +63,22 @@ export interface ParticipantDecl {
 }
 
 /**
+ * Clearing B2, Observer A4: THE SAME DOOR, FOR A VENUE. A venue is where something is struck that is
+ * not the transfer of an instrument — a job at a wage, a week of money at a rate — so the module
+ * that opened it clears it itself. That is the CLEARING; the SCHEDULES are still the participants'.
+ *
+ * Without this door a venue's module builds every party's schedule inside its own phase, out of a
+ * `MechanismContext` that can see every party's private state — which is one module deciding for
+ * parties it does not own, with a view no participant may have (A4). With it, a party's schedule
+ * into a venue comes from the module that owns that party, evaluated with that party's own view,
+ * exactly as a market's does; the venue's module asks for them (`gather`) and clears what it gets.
+ */
+export interface VenueParticipantDecl {
+  readonly partyKind: PartyKindId;
+  orders(view: ParticipantView, venue: VenueDecl): readonly Order[];
+}
+
+/**
  * Money B3.a, Banks Lending C3: what a module decides about a customer overdrawn at an issuer of
  * its kind. The kernel calls it through the module's own context — the same way the outlook door
  * works — so the decision is taken with the module's own state and the issuer's own view, which is
@@ -109,6 +126,8 @@ export interface SystemModule {
   readonly params: readonly ParamDecl[];
   readonly phases: readonly PhaseDecl[];
   readonly participants: readonly ParticipantDecl[];
+  /** Clearing B2: the schedules this module's parties post into venues other modules clear. */
+  readonly venueParticipants?: readonly VenueParticipantDecl[];
   /** Contributions to the audit families (a module may build or extend a family). */
   readonly families: readonly Family[];
   /**

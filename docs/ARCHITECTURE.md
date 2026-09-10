@@ -428,6 +428,19 @@ Modules reach the kernel only through three contexts (`world/context.ts`), and n
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
 | `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets                                                                                         | anything after the seal                                                      |
 
+**Schedules come through one door, in a market and in a venue.** A market gathers its orders from
+the `participants` modules declare per party kind, each evaluated with that party's own
+`ParticipantView` (`world.ts` `runOne`). A VENUE — where something is struck that is not the
+transfer of an instrument, a job at a wage or a week of money at a rate — is cleared by the module
+that opened it (Clearing B2, Labour C5), and its schedules come the same way: a module declares
+`venueParticipants`, the module that opened the venue calls `ctx.gather(venue)` at the top of its
+clearing phase, and the kernel evaluates every declared schedule with each party's own view and
+posts it. Only the module that opened a venue may gather it, and a venue is gathered once a period.
+
+The rule that door exists for: **a module that builds another party's schedule inside its own phase
+is deciding for a party it does not own**, with a `MechanismContext` that can see private state no
+participant may have (Observer A4). Clearing is the venue's; the schedule is the party's.
+
 Two rules hold this shape: a module never imports another module or the world container (lint
 `phoenix/no-cross-module-import`), and the register's write methods are reachable only through a
 store the kernel hands to settlement, the seed and the cell events. `World.register` is a

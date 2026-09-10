@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 50.8%** (248 of 488 steps across 32 items).
+**Plan completion: 51.4%** (251 of 488 steps across 32 items).
 **Requirement coverage: 39.6%** (524 MET, 72 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -34,7 +34,7 @@ The plan has two parts:
 | 10 — The cost of capital | 16 | 16 | closed |
 | 10.3 — A quantity is a whole number of indivisible pieces | 15 | 15 | closed |
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
-| [11.1 — A venue asks parties for schedules the way a market does](plan/11.1-venue-participants.md) | 3 | 0 | open |
+| 11.1 — A venue asks parties for schedules the way a market does | 3 | 3 | closed |
 | [11.2 — One bank: one balance sheet, one treasury, one face to every market](plan/11.2-one-bank.md) | 15 | 0 | open |
 | [11.3 — A depositor decides from its own balance, and the count of banks is a resolution](plan/11.3-depositors-and-the-count-of-banks.md) | 6 | 0 | open |
 | [12 — Currencies, benchmarks, ratings](plan/12-currency-benchmarks-ratings.md) | 26 | 0 | open |
