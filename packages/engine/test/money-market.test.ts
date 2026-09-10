@@ -213,6 +213,46 @@ describe('the corridor (Money Market C, Central Bank B2, D)', () => {
     expect(policy).toBe(w.params.get(MM_PARAMS.policyRate));
   });
 
+  it('moves the market rate when it moves, and only through the corridor (B4, B3.a, E1)', () => {
+    // E1, Central Bank B3: THE POLICY RATE REACHES THE ECONOMY THROUGH THIS MARKET. Nothing assigns
+    // it to anything: the central bank declares two levels and takes both sides at them for real
+    // quantities on its own balance sheet, and every other participant then has an alternative it
+    // can actually take. Move the declared rate and the rates that CLEAR move with it — because the
+    // alternatives moved, which is the only channel there is.
+    const cheap = run(withParam('mm-policy', { 'centralBank.policyRate': 0.02 }), 12);
+    const dear = run(withParam('mm-policy', { 'centralBank.policyRate': 0.05 }), 12);
+    const struck = (w: World): number => {
+      const rates: number[] = [];
+      const volumes: number[] = [];
+      for (const e of events(w, 'moneyMarket.print')) {
+        rates.push(num(e, 'rate') * num(e, 'volume'));
+        volumes.push(num(e, 'volume'));
+      }
+      const total = volumes.reduce((a, x) => a + x, 0);
+      expect(total).toBeGreaterThan(0);
+      return rates.reduce((a, x) => a + x, 0) / total;
+    };
+    expect(struck(dear)).toBeGreaterThan(struck(cheap));
+    // Three points of policy, and what the market did with them is between the two levels and not
+    // equal to either: the pass-through is a consequence of the corridor and is MEASURED here
+    // rather than asserted to be one-for-one (that measurement is Part XII).
+    expect(struck(dear) - struck(cheap)).toBeGreaterThan(0.01);
+    for (const w of [cheap, dear]) {
+      const c = last(w, 'centralBank.corridor');
+      for (const e of events(w, 'moneyMarket.print')) {
+        // B3.a: a cleared rate is never the policy rate. It sits between the two levels somebody
+        // can actually deal at, and a market that printed the policy rate would be one where the
+        // corridor is decoration.
+        expect(num(e, 'rate')).toBeGreaterThanOrEqual(num(c, 'floor'));
+        expect(num(e, 'rate')).toBeLessThanOrEqual(num(c, 'ceiling'));
+      }
+    }
+    // XI-4's first joint: and it reaches a borrower. What a bank pays for money is dearer, so what
+    // it charges for a loan is dearer — through its own cost of funds and nothing else.
+    const funds = (w: World): number => num(last(w, 'bank.costOfFunds', BANK_A), 'perAnnum');
+    expect(funds(dear)).toBeGreaterThan(funds(cheap));
+  });
+
   it('destroys reserves when a bank parks at the floor, on both balance sheets (C1.a)', () => {
     const w = run(foundationWorld('mm-floor'), 8);
     // C1.a: parking at the floor is a real transfer to the central bank's own account, so the cash

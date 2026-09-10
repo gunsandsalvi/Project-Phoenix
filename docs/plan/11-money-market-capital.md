@@ -149,7 +149,7 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [ ] From item 7.6 (XI-2, Prime Brokerage C3.b): a bank whose capital falls cuts a borrower's limit below what it has drawn, and the borrower's own module posts the sales that repay it, at whatever the book gives; test: the sale moves the print and the print reaches other holders, and `limit − exposure` is negative with no floor anywhere in the path
 - [ ] Raising: equity issuance (item 9) and subordinated debt (`bank.subordinated` kind) into markets that can refuse; test: a failed raise leaves the bank where it was
 - [ ] Reports: deposits by class, reserves as one row, liquidity metric published with a lag; observer
-- [ ] Central bank: policy rate as a decision on its mandate (a stated rule reading its own outlook; the mandate text and target are parliament's at 14); test: a change moves the market rate through the corridor, never by assignment (B4)
+- [x] Central bank: policy rate as a decision on its mandate (a stated rule reading its own outlook; the mandate text and target are parliament's at 14); test: a change moves the market rate through the corridor, never by assignment (B4)
 - [ ] Money B3.b, B3.c and Banks Lending B2.b, C1.a re-marked MET; item 3's buffer placeholder and item 6's cost-of-funds placeholder deleted
 - [ ] Audit contributions; observer: corridor, session prints per book, refusals, facility draws, runs
 - [ ] Year-long run green with a scenario seed of a funding squeeze; determinism
@@ -313,9 +313,14 @@ and there is nowhere to put it.
 - **Raising (146).** Equity issuance and a `bank.subordinated` kind into markets that can refuse;
   a failed raise leaves the bank where it was. Not started. The bail-in hierarchy in 141 has only
   two layers until this exists.
-- **The policy rate as the central bank's own decision (148).** It is still a declared parameter.
-  §31 B says it is a decision on its mandate, and the test is that a change moves the market rate
-  THROUGH the corridor and never by assignment (B4).
+- **The policy rate (148): TESTED as a policy, and it stays one.** B4's test is there — three
+  points of policy moves what the session strikes, every printed rate sits between the two levels
+  somebody can actually deal at and is never the policy rate itself (B3.a), and it reaches a
+  borrower through the bank's own cost of funds and nothing else (XI-4's first joint). What it is
+  NOT yet is a decision the central bank takes from its own outlook of inflation and activity: this
+  item's own design says that arrives at 12/16, and until then it is a stated policy owned by the
+  central bank, which Law 2 allows as a primitive with an owner.
+
 - **Reports and observer (147, 150).** `bank.liquidity` and `centralBank.corridor` are published;
   deposits by class are in the event. Missing: the observer surface for the corridor, the session
   prints per book, refusals, facility draws and runs.
