@@ -21,6 +21,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
+  currencyUnit,
   instrumentId,
   marketId,
   moneyInstrumentId,
@@ -35,9 +36,10 @@ import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { struckIn } from '../../prices/price-store.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import { isAssetLeg, isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
+import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -579,9 +581,13 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
   let short = 0;
   for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
     if (!p.status.alive || p.representation !== 'cell') continue;
-    const perMember = transfers;
+    // Law 8, XI-15: each member of the cell is paid a whole number of the smallest piece of the
+    // money, so what the mandate actually costs is that times the weight — and the fraction below
+    // a piece is not paid, because it is not money.
+    const share = shareFor(ctx.registry, p, currencyUnit(ccy), transfers);
+    const perMember = share.perMember;
     if (perMember <= 0) continue;
-    const total = totalFor(p, perMember);
+    const total = share.total;
     const leg: Leg = {
       kind: 'money',
       from: { holder: id, issuer: ctx.parties.get(id).bank },
@@ -656,20 +662,25 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   for (const [payer, total] of due) {
     const p = ctx.parties.get(payer);
     if (!p.status.alive || total <= 0) continue;
-    const perMember = p.representation === 'cell' ? div(total, p.weight, 'per member') : total;
+    // Law 8: what a payer can pay is a whole number of the smallest piece of the money, and for a
+    // cell that is a whole number of pieces for each of its members. What the fraction below one
+    // would have been is not collected — it is not money, so it was never owed.
+    const share = shareFor(ctx.registry, p, currencyUnit(ccy), div(total, weightOf(p), 'per member'));
+    const perMember = share.perMember;
+    if (share.total <= 0) continue;
     const leg: Leg = {
       kind: 'money',
       from: { holder: payer, issuer: p.bank },
       to: { holder: id, issuer: ctx.parties.get(id).bank },
       ccy,
-      amount: total,
+      amount: share.total,
       fromCell: p.representation === 'cell' ? some({ perMember, weight: p.weight }) : none(),
       toCell: none(),
     };
     const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `tax due from ${payer}` });
     // A payer that cannot pay its tax has not paid it: nothing advances it (Money E1, D3).
-    if (r.outcome === 'settled') collected = add(collected, total, 'collected');
-    else unpaid = add(unpaid, total, 'unpaid');
+    if (r.outcome === 'settled') collected = add(collected, share.total, 'collected');
+    else unpaid = add(unpaid, share.total, 'unpaid');
   }
   ctx.record(
     'treasury.receipts',

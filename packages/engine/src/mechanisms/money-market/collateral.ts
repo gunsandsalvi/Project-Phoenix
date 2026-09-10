@@ -104,6 +104,8 @@ export interface Advance {
   readonly free: number;
   readonly valuePerUnit: number;
   readonly total: number;
+  /** Law 8: the smallest piece of this paper, which is what a lien can be struck in. */
+  readonly tick: number;
 }
 
 /**
@@ -133,6 +135,7 @@ export function advances(
       free,
       valuePerUnit: value.value,
       total: mul(free, value.value, 'what this parcel would raise'),
+      tick: lender.registry.tick(i.unit),
     });
   }
   return out.sort((a, b) => (a.total === b.total ? (a.instrument < b.instrument ? -1 : 1) : b.total - a.total));
@@ -163,7 +166,13 @@ export function windowAdvances(
     if (free <= 0) continue;
     const per = mul(print.value.price, sub(1, policyHaircut, 'after the haircut'), 'window value');
     if (per <= 0) continue;
-    out.push({ instrument: i.id, free, valuePerUnit: per, total: mul(free, per, 'what it would raise') });
+    out.push({
+      instrument: i.id,
+      free,
+      valuePerUnit: per,
+      total: mul(free, per, 'what it would raise'),
+      tick: cb.registry.tick(i.unit),
+    });
   }
   return out.sort((a, b) => (a.total === b.total ? (a.instrument < b.instrument ? -1 : 1) : b.total - a.total));
 }

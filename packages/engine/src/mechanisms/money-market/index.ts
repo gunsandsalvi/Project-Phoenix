@@ -15,6 +15,7 @@ import { period as asPeriod } from '../../calendar/calendar.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { Order } from '../../clearing/solver.js';
 import {
+  currencyUnit,
   moneyInstrumentId,
   type CurrencyCode,
   type InstrumentId,
@@ -308,7 +309,7 @@ function clearBook(
   on: Civil,
   posted: readonly Order[],
 ): number {
-  const struck = strike(posted, borrower, book);
+  const struck = strike(posted, borrower, book, ctx.registry.tick(currencyUnit(ccy)));
   if (struck.length === 0) return 0;
   const raised: number[] = [];
   for (const s of struck) {
@@ -320,9 +321,10 @@ function clearBook(
     if (book.secured) {
       cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), s.amount);
       // B3.c: what its remaining paper covers is what it gets, at THIS lender's valuation of it.
-      // Less than it asked for is the constraint biting, not a failure of the session.
-      amount = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
-      if (amount > s.amount) amount = s.amount;
+      // Less than it asked for is the constraint biting, not a failure of the session — and what
+      // it gets is a whole number of pieces of money (Law 8), because that is what is lent.
+      const covered = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
+      amount = ctx.registry.payable(ccy, covered > s.amount ? s.amount : covered);
       if (amount <= 0) continue;
       cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), amount);
     }
@@ -401,7 +403,7 @@ function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Position>)
     const ask: Order = { party: bank, side: 'sell', price: c.floor, qty: spare };
     ctx.post(venue, ask);
     for (const o of floorBid(cb, offered(ctx.posted(venue)), c)) ctx.post(venue, o);
-    const struck = strike(ctx.posted(venue), cb, overnight);
+    const struck = strike(ctx.posted(venue), cb, overnight, ctx.registry.tick(currencyUnit(ccy)));
     for (const s of struck) {
       if (s.lender !== bank || !material(s.amount, 2, p.reserves)) continue;
       const n = m.next;

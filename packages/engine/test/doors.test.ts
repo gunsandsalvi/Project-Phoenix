@@ -68,7 +68,7 @@ function goodsModule(profile: InstrumentKindProfile, run: (ctx: MechanismContext
     instrumentKinds: [profile],
     partyKinds: [],
     curveFamilies: [],
-    units: [{ id: TONNES, name: 'tonnes', countable: false }],
+    units: [{ id: TONNES, name: 'tonnes', tickExponent: 10 }],
     params: [],
     phases: [
       {

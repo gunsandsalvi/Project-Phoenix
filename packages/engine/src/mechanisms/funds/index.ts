@@ -33,6 +33,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import {
   instrumentId,
   instrumentKindId,
+  currencyUnit,
   marketId,
   partyKindId,
   venueId,
@@ -42,9 +43,10 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { add, addTo, div, dustOf, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { downTick } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { wasTraded } from '../../prices/price-store.js';
 import { weightOf } from '../../parties/party.js';
@@ -234,7 +236,11 @@ function payFee(ctx: MechanismContext, d: FundDecl, net: number): void {
   const from = ctx.calendar.startOf(ctx.period);
   const to = ctx.calendar.endOf(ctx.period);
   const rate = ctx.params.get(fundParam(d.fund, 'fee'));
-  const amount = mul(net, mul(rate, yearFraction(FEE_DAY_COUNT, from, to), 'this period of a year'), 'the fee');
+  // Law 8: a fee is money, so it is whole pieces of it; below one piece there is nothing to pay.
+  const amount = ctx.registry.payable(
+    ccy,
+    mul(net, mul(rate, yearFraction(FEE_DAY_COUNT, from, to), 'this period of a year'), 'the fee'),
+  );
   if (!material(amount, 2, net) || amount <= 0) return;
   const leg: Leg = {
     kind: 'money',
@@ -270,9 +276,19 @@ function subscribe(
   // for it does not buy. That is a budget, not a bound on the decision.
   const cash = ctx.participant(holder).cash(ccy);
   const wanted = mul(sharesAsked, perShare, 'what it asked to put in');
-  const paid = wanted > cash ? cash : wanted;
-  const shares = div(paid, perShare, 'shares it gets');
-  if (!material(shares, 2, sharesAsked)) return;
+  const budget = wanted > cash ? cash : wanted;
+  // Law 8: SHARES ARE ISSUED IN WHOLE PIECES and paid for in whole pieces of money, per member of a
+  // cell (XI-15). The shares are struck first, because they are the thing being bought, and what
+  // is paid is what they come to at the NAV — the nearest piece, so the fund is not shaved by a
+  // fraction on every subscription it ever takes.
+  const shareTick = ctx.registry.tick(ctx.instruments.get(share.id).unit);
+  let shares = downTick(div(budget, perShare, 'shares it gets'), shareTick);
+  let paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
+  if (paid > cash) {
+    shares = sub(shares, shareTick, 'a piece less');
+    paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
+  }
+  if (shares <= 0 || paid <= 0 || !material(shares, 2, sharesAsked)) return;
   const side = cellSide(party, shares);
   const money = cellSide(party, paid);
   const legs: Leg[] = [
@@ -330,10 +346,17 @@ function redeem(
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
   const owedNow = mul(totalFor(party, asked), perShare, 'what it owes this holder');
   const paying = owedNow > cash ? cash : owedNow;
-  const sharesNow = div(div(paying, perShare, 'shares it can pay for'), weight, 'per member');
+  // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
+  // NAV — the nearest piece of money. What cannot be paid for stays in the queue (C2.b).
+  const shareTick = ctx.registry.tick(share.unit);
+  const sharesNow = downTick(
+    div(div(paying, perShare, 'shares it can pay for'), weight, 'per member'),
+    shareTick,
+  );
   if (material(sharesNow, 2, asked) && sharesNow > 0) {
+    const perMemberCash = ctx.registry.cashFor(ccy, mul(sharesNow, perShare, 'what a member is paid'));
     const side = cellSide(party, sharesNow);
-    const money = cellSide(party, mul(sharesNow, perShare, 'what a member is paid'));
+    const money = cellSide(party, perMemberCash);
     const legs: Leg[] = [
       {
         kind: 'asset',
@@ -351,7 +374,7 @@ function redeem(
         from: { holder: fund.id, issuer: fund.bank },
         to: { holder, issuer: party.bank },
         ccy,
-        amount: mul(totalFor(party, sharesNow), perShare, 'what it is paid'),
+        amount: mul(perMemberCash, weight, 'what it is paid'),
         fromCell: none(),
         toCell: money === undefined ? none() : some(money),
       },
@@ -590,10 +613,12 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
 }
 
 /** F3: the manager's income, paid out of the fund's own account (B3). */
-function payManager(ctx: MechanismContext, d: EtfDecl, amount: number): void {
-  if (!material(amount, 2, amount) || amount <= 0) return;
+function payManager(ctx: MechanismContext, d: EtfDecl, wanted: number): void {
   const fund = ctx.parties.get(d.fund as PartyId);
   const manager = ctx.parties.get(d.manager as PartyId);
+  // Law 8: a fee is paid in whole pieces of money, and a fee smaller than one is not charged.
+  const amount = ctx.registry.payable(ctx.registry.region(fund.region).ccy, wanted);
+  if (!material(amount, 2, wanted) || amount <= 0) return;
   const r = ctx.settle({
     legs: [
       {
@@ -644,9 +669,13 @@ function distribute(ctx: MechanismContext, d: EtfDecl, share: InstrumentId, mone
     const party = ctx.parties.get(holder);
     const perMemberUnits = ctx.register.quantity(holder, share);
     if (perMemberUnits <= 0) continue;
-    const perMemberCash = mul(perMemberUnits, perShare, 'what a member is paid');
-    const total = totalFor(party, perMemberCash);
-    if (!material(total, 2, total)) continue;
+    // Law 8: what reaches a holder is whole pieces of money, per member. A holding whose share of
+    // the pass-through is less than one piece is paid nothing this period, and the cash stays in
+    // the fund for the next one — which is where it was anyway.
+    const share2 = shareFor(ctx.registry, party, currencyUnit(ccy), mul(perMemberUnits, perShare, 'what a member is paid'));
+    const perMemberCash = share2.perMember;
+    const total = share2.total;
+    if (!material(total, 2, total) || total <= 0) continue;
     const side = cellSide(party, perMemberCash);
     const r = ctx.settle({
       legs: [

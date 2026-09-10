@@ -28,10 +28,10 @@
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { moneyInstrumentId } from '../../core/ids.js';
+import { currencyUnit, moneyInstrumentId } from '../../core/ids.js';
 import { add, div, material, mul, sub, sum, zeroIfNone } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -178,19 +178,22 @@ export function payDepositInterest(
     const rate = rateFor(book, bank, cls);
     if (!rate.some || rate.value === 0) continue;
     const balance = ctx.register.quantity(holder, money);
-    const perMember = mul(balance, mul(rate.value, year, 'for the days'), 'interest');
-    // Law 7: interest of a hundredth of a rounding is not a payment. Sending it would be an
-    // instruction whose amount is the dust of the multiplication that produced it.
-    if (!material(perMember, 2, Math.abs(balance))) continue;
-    const paying = perMember > 0;
-    const amount = paying ? perMember : -perMember;
+    // Law 8: interest is paid in whole pieces of the money, per member of a cell — each member is
+    // a real holder with a real account. A rate that comes to less than one piece pays nothing,
+    // which is what a rate that small IS.
+    const wanted = mul(balance, mul(rate.value, year, 'for the days'), 'interest');
+    const paying = wanted > 0;
+    const share = shareFor(ctx.registry, party, currencyUnit(ccy), paying ? wanted : -wanted);
+    const perMember = share.perMember;
+    if (perMember <= 0) continue;
+    const amount = perMember;
     const side = cellSide(party, amount);
     const leg: Leg = {
       kind: 'money',
       from: paying ? { holder: bank, issuer: bank } : { holder, issuer: bank },
       to: paying ? { holder, issuer: bank } : { holder: bank, issuer: bank },
       ccy,
-      amount: totalFor(party, amount),
+      amount: share.total,
       fromCell: paying || side === undefined ? none() : some(side),
       toCell: paying && side !== undefined ? some(side) : none(),
     };

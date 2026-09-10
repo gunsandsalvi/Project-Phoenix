@@ -24,6 +24,7 @@
  */
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { div, material, mul, sub, sum } from '../../core/num.js';
+import { upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -107,8 +108,14 @@ function start(
     },
     ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: `capacity.${capacity.value.binding}` }] : []),
     ...tech.inputs.map((input) => ({
+      // Law 8: it must draw WHOLE pieces of the input, and a recipe met with the piece below is a
+      // recipe not met — so what its stock reaches is a piece short of what dividing would say.
       qty: div(
-        ctx.register.free(firm, input.instrument),
+        sub(
+          ctx.register.free(firm, input.instrument),
+          ctx.registry.tick(ctx.instruments.get(input.instrument).unit),
+          'stock it can commit',
+        ),
         input.qtyPerUnit,
         'what the stock on hand reaches',
       ),
@@ -116,7 +123,9 @@ function start(
     })),
   ];
   const binding = limits.reduce((a, b) => (b.qty < a.qty ? b : a));
-  const batch = binding.qty;
+  const wip = wipId(tech.terms.subUnit, tech.terms.region);
+  // Law 8: what goes on the line is a whole number of the smallest piece of it.
+  const batch = ctx.registry.deliverable(ctx.instruments.get(wip).unit, binding.qty);
   const bound = binding.bound;
   const room = capacity.some ? capacity.value.perPeriod : null;
   if (!material(batch, tech.inputs.length + tech.plant.length + 2, planned)) {
@@ -127,7 +136,10 @@ function start(
   const legs: Leg[] = [];
   const costs: number[] = [wages];
   for (const input of tech.inputs) {
-    const qty = mul(batch, input.qtyPerUnit, 'what the recipe draws');
+    const qty = upTick(
+      mul(batch, input.qtyPerUnit, 'what the recipe draws'),
+      ctx.registry.tick(ctx.instruments.get(input.instrument).unit),
+    );
     costs.push(heldCost(ctx, firm, input.instrument, qty));
     legs.push({
       kind: 'destroy',
@@ -142,7 +154,7 @@ function start(
   legs.push({
     kind: 'create',
     party: firm,
-    instrument: wipId(tech.terms.subUnit, tech.terms.region),
+    instrument: wip,
     qty: batch,
     // B5, B5.b: the inputs it drew plus what the period's labour cost, over the batch it started.
     costPerUnit: div(cost.value, batch, 'what a unit on the line has cost'),
@@ -192,15 +204,22 @@ function yieldBatch(
   const due = dueFromLine(holding.value.lots, startedBy);
   if (!material(due, holding.value.lots.length + 1, due)) return;
   const cost = costOfDraw(holding.value.lots, due);
-  const finished = mul(due, tech.yieldRate, 'what came off the line');
-  if (!material(finished, 2, due)) return;
+  // Law 8, Goods B4: what comes off the line is a whole number of the smallest piece of the good.
+  // The yield takes a batch to a quantity between two pieces more often than not, and what exists
+  // is the piece below — a part-finished unit is scrap, not stock.
+  const good = goodId(tech.terms.subUnit, tech.terms.region);
+  const finished = ctx.registry.deliverable(
+    ctx.instruments.get(good).unit,
+    mul(due, tech.yieldRate, 'what came off the line'),
+  );
+  if (!material(finished, 2, due) || finished <= 0) return;
   const record = ctx.settle({
     legs: [
       { kind: 'destroy', party: firm, instrument: wip, qty: due, why: 'consumed', fromCell: none() },
       {
         kind: 'create',
         party: firm,
-        instrument: goodId(tech.terms.subUnit, tech.terms.region),
+        instrument: good,
         qty: finished,
         // B4: the whole batch's cost over the units that survived it, so a survivor is dearer.
         costPerUnit: div(cost, finished, 'what a finished unit cost'),

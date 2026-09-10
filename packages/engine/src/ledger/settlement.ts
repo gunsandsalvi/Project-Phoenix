@@ -24,13 +24,16 @@ import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid, impossible } from '../core/assert.js';
 import { Forbidden, Mismatch, Missing } from '../core/errors.js';
 import {
+  currencyUnit,
   type CurrencyCode,
   type InstrumentId,
   type LienId,
   moneyInstrumentId,
   type PartyId,
+  type UnitId,
 } from '../core/ids.js';
 import { addTo, dustOf, finite, mul, sum, zeroIfNone } from '../core/num.js';
+import { onTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties, Party } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -256,6 +259,10 @@ export class Settlement {
     for (const acct of [leg.from, leg.to]) this.validateAccount(acct, leg.ccy, ins);
     this.validateCellSide(leg.from.holder, leg.fromCell, leg.amount, ins);
     this.validateCellSide(leg.to.holder, leg.toCell, leg.amount, ins);
+    const unit = currencyUnit(leg.ccy);
+    this.onTheGrid(leg.amount, unit, ins);
+    if (leg.fromCell.some) this.onTheGrid(leg.fromCell.value.perMember, unit, ins);
+    if (leg.toCell.some) this.onTheGrid(leg.toCell.value.perMember, unit, ins);
   }
 
   private validateAccount(acct: AccountRef, ccy: CurrencyCode, ins: Instruction): void {
@@ -305,6 +312,8 @@ export class Settlement {
     this.alive(leg.party, ins);
     const side = leg.kind === 'create' ? leg.toCell : leg.fromCell;
     this.validateCellSide(leg.party, side, leg.qty, ins);
+    this.onTheGrid(leg.qty, inst.unit, ins);
+    if (side.some) this.onTheGrid(side.value.perMember, inst.unit, ins);
     if (leg.kind === 'create') {
       impossible(
         finite(leg.costPerUnit, 'cost per unit') >= 0,
@@ -364,6 +373,8 @@ export class Settlement {
       `instruction ${ins.id}: a lien says what it secures`,
     );
     this.validateCellSide(leg.pledgor, leg.pledgorCell, leg.qty, ins);
+    this.onTheGrid(leg.qty, inst.unit, ins);
+    if (leg.pledgorCell.some) this.onTheGrid(leg.pledgorCell.value.perMember, inst.unit, ins);
   }
 
   private validateAsset(leg: AssetLeg, ins: Instruction): void {
@@ -395,15 +406,27 @@ export class Settlement {
     }
     this.validateCellSide(leg.from, leg.fromCell, leg.qty, ins);
     this.validateCellSide(leg.to, leg.toCell, leg.qty, ins);
-    if (this.d.registry.unit(inst.unit).countable) {
-      const perFrom = leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty;
-      const perTo = leg.toCell.some ? leg.toCell.value.perMember : leg.qty;
-      impossible(
-        Number.isInteger(perFrom) && Number.isInteger(perTo),
-        'Law 6',
-        `${inst.unit} is countable; ${leg.qty} is not a count`,
-      );
-    }
+    this.onTheGrid(leg.qty, inst.unit, ins);
+    if (leg.fromCell.some) this.onTheGrid(leg.fromCell.value.perMember, inst.unit, ins);
+    if (leg.toCell.some) this.onTheGrid(leg.toCell.value.perMember, inst.unit, ins);
+  }
+
+  /**
+   * Law 8, Money A2: A QUANTITY THAT DOES NOT EXIST CANNOT MOVE. Every unit has a smallest piece
+   * (registry: `tickExponent`), so a leg carrying a thousandth of a cent or a millionth of a share
+   * is not a small movement — it is a movement of something that is not there.
+   *
+   * It throws rather than rounding, and that is the point: the kernel rounding somebody's payment
+   * for them would be the kernel deciding what they paid. Whoever builds the leg decides — pay the
+   * tick below or the tick above, and give the odd tick to somebody named (core/tick.ts).
+   */
+  private onTheGrid(qty: number, unit: UnitId, ins: Instruction): void {
+    const tick = this.d.registry.tick(unit);
+    impossible(
+      onTick(qty, tick),
+      'Law 8',
+      `instruction ${ins.id}: ${qty} is not a whole number of ${unit} (${tick} at a time)`,
+    );
   }
 
   /** XI-15: a cell side carries a per-member amount at the current weight; a named side carries none. */
@@ -1029,6 +1052,24 @@ export class Settlement {
 export function cellSide(p: Party, perMember: number): CellSide | undefined {
   if (p.representation !== 'cell') return undefined;
   return { perMember, weight: p.weight };
+}
+
+/**
+ * Law 8, XI-15: what can actually be moved to or from a party, per member and in total.
+ *
+ * A member of a cell is a real holder with a real account, so its share is a whole number of the
+ * unit's smallest piece like anybody else's — and the total is that times the weight, which is
+ * therefore on the grid too. What the fraction below a tick would have been is not moved: it does
+ * not exist, so it stays where it was.
+ */
+export function shareFor(
+  registry: Pick<Registry, 'deliverable'>,
+  party: Party,
+  unit: UnitId,
+  perMemberWanted: number,
+): { readonly perMember: number; readonly total: number } {
+  const perMember = registry.deliverable(unit, perMemberWanted);
+  return { perMember, total: mul(perMember, weightOf(party), `total for ${party.id}`) };
 }
 
 /** Total moved on a party's side: weight x per member for a cell. */

@@ -207,7 +207,9 @@ export const sovereignInstruments: SystemModule = {
   instrumentKinds: [sovereignBond, sovereignBill],
   partyKinds: [],
   curveFamilies: [],
-  units: [{ id: PAR, name: 'units of par', countable: false }],
+  // Bond N2, Law 8: par is money, so its smallest piece is money's — a line is issued, traded and
+  // redeemed in the same grid the coupons on it are paid in.
+  units: [{ id: PAR, name: 'units of par', tickExponent: 20 }],
   params: [],
   phases: [],
   participants: [],

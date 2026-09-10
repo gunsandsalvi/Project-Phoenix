@@ -141,12 +141,16 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
     return;
   }
   const ccy = ctx.registry.region(ctx.parties.get(cb).region).ccy;
+  // Law 8: it remits whole pieces of the money it issues; the piece it cannot divide stays on its
+  // own books and is remitted with next period's income (E3).
+  const paid = ctx.registry.payable(ccy, income);
+  if (paid <= 0) return;
   const leg: Leg = {
     kind: 'money',
     from: { holder: cb, issuer: cb },
     to: { holder: to.id, issuer: ctx.parties.get(to.id).bank },
     ccy,
-    amount: income,
+    amount: paid,
     fromCell: none(),
     toCell: none(),
   };
@@ -154,7 +158,7 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
   ctx.record(
     'centralBank.remittance',
     [cb, to.id],
-    { income, since: previous, settled: r.outcome === 'settled' },
+    { income, paid, since: previous, settled: r.outcome === 'settled' },
     true,
   );
 }

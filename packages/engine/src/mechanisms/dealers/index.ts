@@ -162,15 +162,20 @@ function payRent(ctx: MechanismContext, d: DeskDecl): void {
   if (!ctx.parties.get(desk).status.alive) return;
   const rate = rateFor(ctx, d);
   const base = bookValue(ctx, desk);
-  const amount = mul(base, rate, 'what its inventory costs it this period');
+  const bank = ctx.parties.get(d.bank as PartyId);
+  const ccy = ctx.registry.region(bank.region).ccy;
+  // Law 8: what it can actually pay is a whole number of the smallest piece of the money.
+  const amount = ctx.registry.payable(
+    ccy,
+    mul(base, rate, 'what its inventory costs it this period'),
+  );
   let paid = false;
   if (material(amount, 2, base) && amount > 0) {
-    const bank = ctx.parties.get(d.bank as PartyId);
     const leg: Leg = {
       kind: 'money',
       from: { holder: desk, issuer: bank.id },
       to: { holder: bank.id, issuer: bank.id },
-      ccy: ctx.registry.region(bank.region).ccy,
+      ccy,
       amount,
       fromCell: none(),
       toCell: none(),

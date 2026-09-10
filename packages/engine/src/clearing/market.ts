@@ -18,14 +18,16 @@
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
-import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../core/ids.js';
+import { currencyUnit, type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
 import { add, div, finite, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
+import { commonGrain, downTick, toTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { AccountRef, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
-import type { Parties } from '../parties/party.js';
+import { weightOf, type Parties } from '../parties/party.js';
 import { struckIn, type PriceStore, type StaleReason } from '../prices/price-store.js';
+import type { Registry } from '../registry/registry.js';
 import { clear, type Fill, type Order, type Rationing } from './solver.js';
 
 export interface MarketDecl {
@@ -56,6 +58,8 @@ export type AccountResolver = (party: PartyId, ccy: CurrencyCode) => AccountRef;
 
 export interface MarketRunDeps {
   readonly parties: Parties;
+  /** Law 8: what the smallest piece of anything is, which every quantity here has to land on. */
+  readonly registry: Registry;
   readonly prices: PriceStore;
   readonly settlement: Settlement;
   readonly journal: Journal;
@@ -64,6 +68,8 @@ export interface MarketRunDeps {
   readonly accruedPerUnit: (instrument: InstrumentId, period: Period) => number;
   /** Who promised it, when somebody did: a physical thing has nobody on that side (Goods A1). */
   readonly instrumentIssuer: (instrument: InstrumentId) => Option<PartyId>;
+  /** Register A1.c: what this line is counted in, so its smallest piece can be asked for. */
+  readonly unitOf: (instrument: InstrumentId) => UnitId;
 }
 
 export interface MarketResult {
@@ -130,17 +136,20 @@ export function runMarket(
   const outcome = clear(orders, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
   switch (outcome.kind) {
     case 'cleared': {
-      const trades = pairFills(outcome.fills);
+      const trades = pairFills(outcome.fills, deps.registry.tick(deps.unitOf(m.instrument)), (p) =>
+        weightOf(deps.parties.get(p)),
+      );
       const accrued = deps.accruedPerUnit(m.instrument, period);
       let settledVolume = 0;
       let allotted = 0;
       let failed = 0;
       for (const t of trades) {
-        const record = deps.settlement.settle(
-          tradeInstruction(m, t, outcome.price, accrued, deps),
-          period,
-          cycle,
-        );
+        const draft = tradeInstruction(m, t, outcome.price, accrued, deps);
+        // Law 8: a quantity so small that what it comes to is less than half a piece of money is
+        // not a trade — there is nothing to pay for it. It does not fill, which is a real outcome
+        // of a real book and is what `settledVolume` says against the cleared volume.
+        if (!draft.some) continue;
+        const record = deps.settlement.settle(draft.value, period, cycle);
         if (record.outcome === 'settled') {
           settledVolume = finite(settledVolume + t.qty, 'settled volume');
           if (offer.some && t.seller === offer.value.issuer)
@@ -249,7 +258,11 @@ export function runMarket(
 }
 
 /** Pair buy fills with sell fills, walking both lists; every trade has two named sides (D2). */
-function pairFills(fills: readonly Fill[]): Trade[] {
+function pairFills(
+  fills: readonly Fill[],
+  tick: number,
+  weight: (party: PartyId) => number,
+): Trade[] {
   const buys = fills.filter((f) => f.side === 'buy').map((f) => ({ ...f }));
   const sells = fills.filter((f) => f.side === 'sell').map((f) => ({ ...f }));
   const out: Trade[] = [];
@@ -261,15 +274,22 @@ function pairFills(fills: readonly Fill[]): Trade[] {
     const buyer = buys[b];
     const seller = sells[s];
     if (buyer === undefined || seller === undefined) break;
-    const q = bLeft < sLeft ? bLeft : sLeft;
+    const want = bLeft < sLeft ? bLeft : sLeft;
+    // Law 8, XI-15: what these two can actually exchange. Between named parties that is the unit's
+    // own smallest piece; where one side is a population it is that piece for every member of it,
+    // because each member is a real holder and none of them can hold a fraction of one.
+    const step = commonGrain(tick, weight(buyer.party), weight(seller.party));
+    const q = downTick(want, step);
     if (q > 0) out.push({ buyer: buyer.party, seller: seller.party, qty: q });
     bLeft = finite(bLeft - q, 'buy left');
     sLeft = finite(sLeft - q, 'sell left');
-    if (bLeft <= 0) {
+    // What is left over is smaller than these two can trade: it is not filled, and the side with
+    // less of it steps aside so the other can meet somebody it CAN deal with.
+    if (bLeft < step) {
       b += 1;
       bLeft = zeroIfNone(buys[b]?.qty);
     }
-    if (sLeft <= 0) {
+    if (sLeft < step) {
       s += 1;
       sLeft = zeroIfNone(sells[s]?.qty);
     }
@@ -289,23 +309,26 @@ function tradeInstruction(
   price: number,
   accruedPerUnit: number,
   deps: MarketRunDeps,
-): InstructionDraft {
+): Option<InstructionDraft> {
   const buyer = deps.parties.get(t.buyer);
   const seller = deps.parties.get(t.seller);
-  const cash = mul(t.qty, add(price, accruedPerUnit, 'dirty price'), 'trade cash');
-  const buyerCell = cellSide(buyer, t.qty / (buyer.representation === 'cell' ? buyer.weight : 1));
-  const sellerCell = cellSide(
-    seller,
-    t.qty / (seller.representation === 'cell' ? seller.weight : 1),
+  // Law 8: WHAT IS PAID IS A WHOLE NUMBER OF THE SMALLEST PIECE OF THE MONEY, and where a side is a
+  // population, of that piece for each of its members. The quantity was already struck on a grain
+  // both sides can hold (pairFills); the cash is struck on the same grain in money, at the level
+  // that cleared. So the price a trade REALISES can differ from the print by less than one piece of
+  // money per member — which is what rounding a price to real money has always meant, and is why
+  // `settledVolume` and the print are two numbers rather than one.
+  const cashGrain = commonGrain(
+    deps.registry.tick(currencyUnit(m.ccy)),
+    weightOf(buyer),
+    weightOf(seller),
   );
-  const buyerCashCell = cellSide(
-    buyer,
-    cash / (buyer.representation === 'cell' ? buyer.weight : 1),
-  );
-  const sellerCashCell = cellSide(
-    seller,
-    cash / (seller.representation === 'cell' ? seller.weight : 1),
-  );
+  const cash = toTick(mul(t.qty, add(price, accruedPerUnit, 'dirty price'), 'trade cash'), cashGrain);
+  if (cash <= 0) return none<InstructionDraft>();
+  const buyerCell = cellSide(buyer, t.qty / weightOf(buyer));
+  const sellerCell = cellSide(seller, t.qty / weightOf(seller));
+  const buyerCashCell = cellSide(buyer, cash / weightOf(buyer));
+  const sellerCashCell = cellSide(seller, cash / weightOf(seller));
   const legs: Leg[] = [
     {
       kind: 'asset',
@@ -330,7 +353,7 @@ function tradeInstruction(
   ];
   const issuer = deps.instrumentIssuer(m.instrument);
   const cause = issuer.some && t.seller === issuer.value ? 'issuance' : 'trade';
-  return { legs, cause, reason: `${m.name}: ${t.qty} @ ${price}` };
+  return some({ legs, cause, reason: `${m.name}: ${t.qty} @ ${price}` });
 }
 
 /** Sovereign C4: the cover ratio and the tail are read off the book, not stated. */

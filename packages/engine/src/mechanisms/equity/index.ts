@@ -29,11 +29,11 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import type { InstrumentId, PartyId } from '../../core/ids.js';
+import { currencyUnit, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { combineDust, div, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import { displayName } from '../../registry/naming.js';
@@ -171,9 +171,19 @@ function payDividend(ctx: MechanismContext, row: ListedDecl, line: Instrument, p
     const holder = ctx.parties.get(holderId);
     const perMemberUnits = ctx.register.quantity(holderId, line.id);
     if (perMemberUnits <= 0) continue;
-    const perMemberCash = dividendFor(plan.dividendPerShare, perMemberUnits);
-    const total = totalFor(holder, perMemberCash);
-    if (!material(total, 2, total)) continue;
+    // Law 8: a dividend is paid in whole pieces of the money, and to each member of a cell in
+    // whole pieces — every one of them is a shareholder with an account of their own. A holding so
+    // small that its share comes to less than one piece is paid nothing, which is what a payout
+    // per share that small means.
+    const share = shareFor(
+      ctx.registry,
+      holder,
+      currencyUnit(line.ccy),
+      dividendFor(plan.dividendPerShare, perMemberUnits),
+    );
+    const perMemberCash = share.perMember;
+    const total = share.total;
+    if (!material(total, 2, total) || total <= 0) continue;
     const side = cellSide(holder, perMemberCash);
     const leg: Leg = {
       kind: 'money',

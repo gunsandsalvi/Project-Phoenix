@@ -24,7 +24,8 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
-import { paramId, type PartyId } from '../../core/ids.js';
+import {
+  currencyUnit, paramId, type PartyId } from '../../core/ids.js';
 import { addTo, combineDust, div, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
@@ -164,13 +165,24 @@ function consumptionIsBought(): Family {
           // money, which is the one place absence becomes a number (core/num.ts).
           const money = sum([zeroIfNone(paid.get(cell))]);
           const took = sum([value]);
-          if (withinDust(took.value, money.value, combineDust(took, money))) continue;
+          // Law 8: what it paid is what the goods came to ROUNDED TO REAL MONEY — a whole number of
+          // pieces for each of its members (core/tick.ts). The comparison is therefore entitled to
+          // the arithmetic's dust and to half a piece per member on top, and to nothing else: that
+          // is the granularity of the money itself, derived here rather than allowed as a band.
+          const who = view.parties.get(cell);
+          const ccy = view.registry.region(who.region).ccy;
+          const grain = mul(
+            view.registry.tick(currencyUnit(ccy)),
+            weightOf(who),
+            'what a payment by this cell moves in',
+          );
+          if (withinDust(took.value, money.value, combineDust(took, money) + grain / 2)) continue;
           out.push({
             family: 'flows',
             spec: 'Households C5',
             owner: cell,
             size: sub(took.value, money.value, 'goods against money'),
-            unit: view.registry.region(view.parties.get(cell).region).ccy,
+            unit: ccy,
             period: view.period,
             message: `${cell} took ${took.value} of goods and paid ${money.value} for them`,
           });

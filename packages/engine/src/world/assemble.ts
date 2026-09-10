@@ -45,18 +45,24 @@ export const KERNEL_PARAMS = {
   periodDays: paramId('calendar.periodDays'),
   cyclesPerPeriod: paramId('calendar.cyclesPerPeriod'),
   worstInstances: paramId('audit.worstInstances'),
+  tickShift: paramId('resolution.tickShift'),
 } as const;
 
 export function assemble(spec: AssemblySpec): World {
   const modules = orderModules(spec.modules);
-  const registry = new Registry({
-    ...spec.registry,
-    units: [...spec.registry.units, ...modules.flatMap((m) => m.units)],
-    instrumentKinds: [moneyKind, ...modules.flatMap((m) => m.instrumentKinds)],
-    partyKinds: [...KERNEL_PARTY_KINDS, ...modules.flatMap((m) => m.partyKinds)],
-    curveFamilies: modules.flatMap((m) => m.curveFamilies),
-  });
+  // The parameters first: how fine every unit's grid is, is one of them (Law 8), and the registry
+  // is built on the answer.
   const params = new ParamRegister([...spec.params, ...modules.flatMap((m) => m.params)]);
+  const registry = new Registry(
+    {
+      ...spec.registry,
+      units: [...spec.registry.units, ...modules.flatMap((m) => m.units)],
+      instrumentKinds: [moneyKind, ...modules.flatMap((m) => m.instrumentKinds)],
+      partyKinds: [...KERNEL_PARTY_KINDS, ...modules.flatMap((m) => m.partyKinds)],
+      curveFamilies: modules.flatMap((m) => m.curveFamilies),
+    },
+    params.get(KERNEL_PARAMS.tickShift),
+  );
   const calendar = new Calendar({
     epoch: spec.epoch,
     periodDays: params.get(KERNEL_PARAMS.periodDays),
@@ -131,12 +137,18 @@ function seedContext(w: World): SeedContext {
     openVenue: (decl) => {
       w.addVenue(decl);
     },
+    // Law 8, Seed A3: the opening world holds what EXISTS. A seed states an intent — so much money,
+    // so many tonnes — and what a party can actually hold is the whole pieces of it, per member,
+    // like every movement afterwards. The seed does not get to open the world off the grid that
+    // every later payment has to land on.
     endowMoney: (party: PartyId, ccy: CurrencyCode, perMember: number) => {
       const p = w.parties.get(party);
       const inst = moneyInstrumentId(p.bank, ccy);
       forbid(w.instruments.has(inst), 'Money A1', `${p.bank} issues no money in ${ccy}`);
-      store.moneyDelta(p.id, inst, perMember, w.period, false);
-      w.instruments.adjustIssued(inst, perMember * weightOf(p));
+      const held = w.registry.payable(ccy, perMember);
+      if (held <= 0) return;
+      store.moneyDelta(p.id, inst, held, w.period, false);
+      w.instruments.adjustIssued(inst, held * weightOf(p));
     },
     endowUnits: (
       party: PartyId,
@@ -145,8 +157,10 @@ function seedContext(w: World): SeedContext {
       basisPerUnit: number,
     ) => {
       const p = w.parties.get(party);
-      store.credit(p.id, instrument, perMember, basisPerUnit, w.period);
-      w.instruments.adjustIssued(instrument, perMember * weightOf(p));
+      const held = w.registry.deliverable(w.instruments.get(instrument).unit, perMember);
+      if (held <= 0) return;
+      store.credit(p.id, instrument, held, basisPerUnit, w.period);
+      w.instruments.adjustIssued(instrument, held * weightOf(p));
     },
     market: (id) => w.market(id),
   };

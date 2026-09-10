@@ -87,7 +87,10 @@ function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
 
 /** A1, A4: each kind of capital is counted in its own unit and never added to another's. */
 function unitsOf(rows: readonly CapitalKindDecl[]): UnitDecl[] {
-  return rows.map((d) => ({ id: plantUnitId(d.id), name: d.unit, countable: false }));
+  // A6, Law 8: plant in service has a smallest piece — a two-hundred-and-fifty-sixth of a machine
+  // here, because a firm's stock of them is spread over vintages and a whole-machine grid would
+  // make a third of a firm's plant unrepresentable at the moment it is split between them.
+  return rows.map((d) => ({ id: plantUnitId(d.id), name: d.unit, tickExponent: 8 }));
 }
 
 /**

@@ -514,12 +514,18 @@ export function foundationSpec(seed: string): AssemblySpec {
       currencies: [{ code: PHX, name: 'Phoenix unit', centralBank: CB }],
       regions: [{ id: REGION, name: 'North', ccy: PHX }],
       units: [
-        { id: currencyUnit(PHX), name: 'PHX', countable: false },
+        // Money A2, Law 8: PHX has a smallest piece, like any real money. A millionth of a unit
+        // at this world's scale — a household member holds a tenth of a PHX — so the grid is real
+        // arithmetic rather than a rounding, and fine enough that no decision turns on it.
+        { id: currencyUnit(PHX), name: 'PHX', tickExponent: 20 },
         // Equity A2, Fund Shares A2: a SHARE COUNT, which more than one system counts in and no one
-        // of them owns. It divides: a whole-share rule would leave a residual on every pro-rata
-        // fill, every subscription and every split with nobody to own it (Law 2), and what the unit
-        // is for is that a share of one thing is never added to a share of another.
-        { id: SHARES, name: 'shares', countable: false },
+        // of them owns. Its smallest piece is far below one, and deliberately: a share here costs a
+        // few PHX and a household member holds a tenth of one, so whole shares would put equity out
+        // of a household's reach altogether. What the tick buys is that a pro-rata fill, a
+        // subscription and a split all land on a grid whose last piece has a named holder
+        // (Clearing C3) — which is the residual that dividing for ever was avoiding by never
+        // arriving at one.
+        { id: SHARES, name: 'shares', tickExponent: 16 },
       ],
       cohorts: [
         { id: cohortId('working'), name: 'working age', fromAge: 18 },
@@ -553,6 +559,14 @@ export function foundationSpec(seed: string): AssemblySpec {
         kind: 'resolution',
         owner: 'model',
         why: 'Audit D2: how many worst instances a family reports; a reporting depth, not a behaviour.',
+      },
+      {
+        id: KERNEL_PARAMS.tickShift,
+        value: 0,
+        unit: 'halvings',
+        kind: 'resolution',
+        owner: 'model',
+        why: 'Law 8, Law 2: how many halvings finer or coarser than declared every unit\'s smallest piece is. Each unit states its own grid; this moves them all together, which is what makes the grid a RESOLUTION that can be TESTED — run the same world one shift finer and one coarser and the path must not move by more than the rounding the grid itself imposes.',
       },
     ],
     modules: [

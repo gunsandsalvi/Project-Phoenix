@@ -143,7 +143,9 @@ function unitsOf(rows: readonly GoodDecl[]): UnitDecl[] {
   const byUnit = new Map<string, UnitDecl>();
   for (const d of rows) {
     // A tonne is divisible; a good counted in whole things (a machine, a dwelling) is its own row.
-    byUnit.set(d.unit, { id: goodUnitId(d.unit), name: d.unit, countable: false });
+    // Goods A1, Law 8: a tonne is delivered to about the kilo and a machine to about the part.
+    // Nothing finer exists, so nothing finer is ever produced, sold or held.
+    byUnit.set(d.unit, { id: goodUnitId(d.unit), name: d.unit, tickExponent: 10 });
   }
   return [...byUnit.values()];
 }
@@ -265,12 +267,13 @@ function recipeIdentity(): Family {
         }
         for (const leg of made) {
           const ways = waysToMake(view, leg.instrument, leg.qty);
-          if (ways.length === 0 || ways.some((w) => satisfied(w, used))) continue;
+          if (ways.length === 0 || ways.some((w) => satisfied(view, w, used))) continue;
           const canonical = ways[0];
           if (canonical === undefined) continue;
           for (const [instrument, need] of canonical.needs) {
             const drawn = zeroIfNone(used.get(instrument));
-            if (satisfiedBy(canonical.atLeast, need, drawn)) continue;
+            const tick = view.registry.tick(view.instruments.get(instrument).unit);
+            if (satisfiedBy(canonical.atLeast, need, drawn, tick)) continue;
             out.push({
               family: 'units',
               spec: canonical.spec,
@@ -317,15 +320,26 @@ function waysToMake(view: AuditView, made: InstrumentId, qty: number): Way[] {
  * has nothing to check and is satisfied by anything. That is not a hole in the identity — it is
  * where labour enters the chain, and what it cost is on the batch (B5).
  */
-function satisfied(way: Way, used: ReadonlyMap<InstrumentId, number>): boolean {
+function satisfied(
+  view: AuditView,
+  way: Way,
+  used: ReadonlyMap<InstrumentId, number>,
+): boolean {
   for (const [instrument, need] of way.needs) {
-    if (!satisfiedBy(way.atLeast, need, zeroIfNone(used.get(instrument)))) return false;
+    const tick = view.registry.tick(view.instruments.get(instrument).unit);
+    if (!satisfiedBy(way.atLeast, need, zeroIfNone(used.get(instrument)), tick)) return false;
   }
   return true;
 }
 
-function satisfiedBy(atLeast: boolean, need: number, drawn: number): boolean {
-  const dust = dustOf(2, need + drawn);
+/**
+ * Law 7 and Law 8 together: what a draw is entitled to differ from the recipe by. The arithmetic's
+ * own dust, and one piece of the input — because the input is drawn in WHOLE PIECES of itself
+ * (core/tick.ts) and a recipe met with the piece below is a recipe not met, so a batch draws the
+ * piece above. It is a derived allowance from a real granularity, not a band around a defect.
+ */
+function satisfiedBy(atLeast: boolean, need: number, drawn: number, tick: number): boolean {
+  const dust = dustOf(2, need + drawn) + tick;
   return atLeast ? drawn - need >= -dust : withinDust(drawn, need, dust);
 }
 

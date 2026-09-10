@@ -23,11 +23,12 @@
 import { period as periodOf, type Period } from '../../calendar/calendar.js';
 import { clear, isCleared, type Cleared, type Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
+import { currencyUnit } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
 import { add, div, material, mul, sub } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import { weightOf, type Party } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -399,13 +400,19 @@ function payFrom(
   if (perMember <= 0) return true;
   const from = ctx.parties.get(payer);
   const to = ctx.parties.get(cell);
-  const side = cellSide(to, perMember);
+  const ccy = ctx.registry.region(from.region).ccy;
+  // Law 8, E1: a wage is paid in whole pieces of the money, to each worker separately — the cell is
+  // a count of people and every one of them is paid the same whole number of pieces. What the
+  // fraction below one would have been is not paid, because there is no such coin.
+  const share = shareFor(ctx.registry, to, currencyUnit(ccy), perMember);
+  if (share.total <= 0) return true;
+  const side = cellSide(to, share.perMember);
   const leg: Leg = {
     kind: 'money',
     from: { holder: payer, issuer: from.bank },
     to: { holder: cell, issuer: to.bank },
-    ccy: ctx.registry.region(from.region).ccy,
-    amount: totalFor(to, perMember),
+    ccy,
+    amount: share.total,
     fromCell: none(),
     toCell: side === undefined ? none() : some(side),
   };

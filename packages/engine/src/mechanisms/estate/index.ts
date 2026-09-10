@@ -27,10 +27,12 @@
 import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { paramId, partyId, partyKindId } from '../../core/ids.js';
+import { currencyUnit, paramId, partyId, partyKindId } from '../../core/ids.js';
 import { div, material, mul, sub, sum, withinDust } from '../../core/num.js';
-import { none, some } from '../../core/option.js';
+import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, unpaid, type Leg } from '../../ledger/instruction.js';
+import { shareFor } from '../../ledger/settlement.js';
+import { weightOf } from '../../parties/party.js';
 import { issuerOf } from '../../register/instruments.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -297,13 +299,18 @@ function distributeFrom(
     for (const c of here) {
       const pay = mul(c.units, share, 'what this holder is paid');
       if (!material(pay, 2, c.units)) continue;
-      if (!repay(ctx, estate, c, pay, account, ccy)) continue;
-      cash = sub(cash, pay, 'cash left to distribute');
+      const paid = repay(ctx, estate, c, pay, account, ccy);
+      if (!paid.some) continue;
+      cash = sub(cash, paid.value, 'cash left to distribute');
     }
   }
 }
 
-/** Paying part of a claim: that much of it is redeemed at par, and the rest stays outstanding. */
+/**
+ * Paying part of a claim: that much of it is redeemed at par, and the rest stays outstanding.
+ * Returns what was actually paid — which is what the estate has left to distribute (D2) — or none
+ * when nothing could be.
+ */
 function repay(
   ctx: MechanismContext,
   estate: PartyId,
@@ -311,16 +318,21 @@ function repay(
   amount: number,
   account: InstrumentId,
   ccy: CurrencyCode,
-): boolean {
+): Option<number> {
   const holder = ctx.parties.get(claim.holder);
-  const perMember = holder.representation === 'cell' ? div(amount, holder.weight, 'per member') : amount;
+  // Law 8, XI-15: a claim is redeemed in whole pieces of the money it is denominated in, and for a
+  // cell in whole pieces for each member. What is left below a piece stays outstanding, which is
+  // what a partial repayment is: the rest of the claim is still there (D2).
+  const share = shareFor(ctx.registry, holder, currencyUnit(ccy), div(amount, weightOf(holder), 'per member'));
+  const perMember = share.perMember;
+  if (share.total <= 0) return none<number>();
   const legs: Leg[] = [
     {
       kind: 'asset',
       from: claim.holder,
       to: estate,
       instrument: claim.instrument,
-      qty: amount,
+      qty: share.total,
       pricePerUnit: some(1),
       accruedPerUnit: none(),
       fromCell: holder.representation === 'cell' ? some({ perMember, weight: holder.weight }) : none(),
@@ -331,7 +343,7 @@ function repay(
       from: { holder: estate, issuer: issuerOf(ctx.instruments.get(account)) },
       to: { holder: claim.holder, issuer: holder.bank },
       ccy,
-      amount,
+      amount: share.total,
       fromCell: none(),
       toCell: holder.representation === 'cell' ? some({ perMember, weight: holder.weight }) : none(),
     },
@@ -341,14 +353,14 @@ function repay(
     cause: 'maturity',
     reason: `${estate} pays ${claim.holder} on ${claim.instrument}`,
   });
-  if (r.outcome !== 'settled') return false;
+  if (r.outcome !== 'settled') return none<number>();
   ctx.record(
     'estate.paid',
     [estate, claim.holder, claim.instrument],
-    { estate, holder: claim.holder, instrument: claim.instrument, paid: amount, of: claim.units },
+    { estate, holder: claim.holder, instrument: claim.instrument, paid: share.total, of: claim.units },
     false,
   );
-  return true;
+  return some(share.total);
 }
 
 /**

@@ -15,12 +15,12 @@
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
-import type { CurrencyCode, PartyId } from '../core/ids.js';
+import { currencyUnit, type CurrencyCode, type PartyId } from '../core/ids.js';
 import { mul } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Journal } from '../journal/journal.js';
 import type { CellSide, Failed, InstructionDraft, Leg } from '../ledger/instruction.js';
-import { cellSide, type Settlement, totalFor } from '../ledger/settlement.js';
+import { cellSide, shareFor, type Settlement, totalFor } from '../ledger/settlement.js';
 import type { Parties } from '../parties/party.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Register } from '../register/register.js';
@@ -71,8 +71,14 @@ function payToHolders(
     const holder = d.parties.get(holderId);
     const perMemberUnits = d.register.quantity(holderId, i.id);
     if (perMemberUnits <= 0) continue;
-    const perMemberCash = mul(perMemberUnits, perUnit, 'coupon cash');
-    const total = totalFor(holder, perMemberCash);
+    // Law 8: WHAT IS OWED IS WHAT EXISTS. A coupon is a rate on a holding, so what it comes to is
+    // a fraction of a tick more often than not, and the payment is the tick below it — for each
+    // member of a cell separately, because each of them is a real holder with a real account
+    // (XI-15). What the fraction would have been is not owed, because it is not money.
+    const share = shareFor(d.registry, holder, currencyUnit(i.ccy), mul(perMemberUnits, perUnit, 'coupon cash'));
+    const perMemberCash = share.perMember;
+    const total = share.total;
+    if (total <= 0) continue;
     const leg: Leg = {
       kind: 'money',
       from: d.accountOf(issuerOf(i), i.ccy),
@@ -176,6 +182,8 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
     if (perMemberUnits <= 0) continue;
     const units = totalFor(holder, perMemberUnits);
     const cashPerMember = perMemberUnits; // face: one unit of par pays one unit of currency (N10)
+    // N10: par is money, so the units and the cash are on the same grid by construction; nothing
+    // needs rounding here and rounding it would leave a stub of a line outstanding.
     const legs: Leg[] = [
       {
         kind: 'asset',

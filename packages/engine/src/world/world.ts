@@ -895,6 +895,8 @@ export class World {
     }
     return runMarket(m, orders, this.offer(m.id), this.currentPeriod, this.currentCycle, {
       parties: this.parties,
+      registry: this.registry,
+      unitOf: (instrument) => this.instruments.get(instrument).unit,
       prices: this.prices,
       settlement: this.settlement,
       journal: this.journal,

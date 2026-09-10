@@ -34,6 +34,7 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import { downTick, upTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { BANK } from '../../registry/profiles.js';
@@ -209,13 +210,17 @@ export function strike(
   posted: readonly Order[],
   borrower: PartyId,
   book: BookDecl,
+  tick: number,
 ): readonly Struck[] {
   const outcome = clear(posted, 'proRata', 'sellersCompete');
   if (!isCleared(outcome)) return [];
   const out: Struck[] = [];
   for (const f of outcome.fills) {
-    if (f.side !== 'sell' || f.qty <= 0) continue;
-    out.push({ lender: f.party, borrower, amount: f.qty, rate: outcome.price, book });
+    // Law 8: money is lent in whole pieces of itself. Rationing gives a lender a share of what it
+    // offered, and the share below the piece it could actually hand over is not lent.
+    const amount = downTick(f.qty, tick);
+    if (f.side !== 'sell' || amount <= 0) continue;
+    out.push({ lender: f.party, borrower, amount, rate: outcome.price, book });
   }
   return out;
 }
@@ -225,11 +230,14 @@ export function coverFor(available: readonly Advance[], amount: number): readonl
   const out: Pledged[] = [];
   let left = amount;
   for (const a of available) {
-    // Law 7: a parcel the size of the arithmetic's own dust is not collateral. Binding one would
-    // put a lien on a rounding, and a lien is a real encumbrance on real units.
-    if (!material(left, 2, amount)) break;
-    const units = a.total >= left ? div(left, a.valuePerUnit, 'units to cover') : a.free;
-    if (!material(units, 2, a.free)) continue;
+    // Law 8: a lien binds WHOLE PIECES of the paper. What it takes to cover the rest is rounded up
+    // — collateral a piece short is collateral that does not cover — unless the parcel runs out
+    // first, in which case it binds every whole piece of it there is.
+    if (left <= 0) break;
+    const want = div(left, a.valuePerUnit, 'units to cover');
+    const enough = upTick(want, a.tick);
+    const units = enough > a.free ? downTick(a.free, a.tick) : enough;
+    if (units <= 0) continue;
     out.push({ instrument: a.instrument, qty: units, valuedAt: a.valuePerUnit });
     left = sub(left, mul(units, a.valuePerUnit, 'covered'), 'left to cover');
   }

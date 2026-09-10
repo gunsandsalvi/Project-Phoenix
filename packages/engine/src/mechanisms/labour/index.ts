@@ -279,7 +279,9 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],
-    units: [{ id: HOURS, name: 'hours', countable: false }],
+    // Labour A1, Law 8: time has a smallest piece too. A thousandth of an hour is about four
+    // seconds, which is finer than any contract in this world states and coarse enough to be real.
+    units: [{ id: HOURS, name: 'hours', tickExponent: 10 }],
     params: paramsOf(),
     phases: [
       {

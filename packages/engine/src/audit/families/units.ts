@@ -1,11 +1,12 @@
 /**
- * Units (Part XII): a weight is a positive count; a countable instrument is held in whole units per
+ * Units (Part XII): a weight is a positive count; every holding is a whole number of the smallest
  * member; every represented party sits in exactly one cell. Physical-unit identities (goods,
  * dwellings, plant) join this family with their systems.
  *
  * @spec Part XII Commodities Spot D5 Commodities Spot F1 Goods E4 Appendix A Small-Business Pools E5 XI-15 Law 6
  */
 import { combineDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { onTick } from '../../core/tick.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditMemory } from '../memory.js';
 import type { AuditView } from '../view.js';
@@ -66,17 +67,20 @@ export function unitsFamily(memory: AuditMemory): Family {
       }
       for (const h of view.register.allHoldings()) {
         const inst = view.instruments.get(h.instrument);
-        if (!view.registry.unit(inst.unit).countable) continue;
+        const tick = view.registry.tick(inst.unit);
         for (const lot of h.lots) {
-          if (!Number.isInteger(lot.qty)) {
+          // Law 8: a lot holds a whole number of the smallest piece of its unit. Anything else is a
+          // quantity of something that does not exist, and it can only have got there by arithmetic
+          // rather than by a leg — which is the thing this family is for.
+          if (!onTick(lot.qty, tick)) {
             out.push({
               family: 'units',
-              spec: 'Law 6',
+              spec: 'Law 8',
               owner: h.holder,
               size: lot.qty,
               unit: inst.unit,
               period: view.period,
-              message: `${h.holder} holds a fractional count of ${inst.id}`,
+              message: `${h.holder} holds ${lot.qty} of ${inst.id}, which is not a whole number of ${tick}`,
             });
           }
         }

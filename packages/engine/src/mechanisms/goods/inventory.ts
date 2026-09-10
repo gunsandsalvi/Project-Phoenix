@@ -17,7 +17,7 @@ import { InvalidRegistry } from '../../core/errors.js';
 import type { InstrumentKindId } from '../../core/ids.js';
 import { material, mul, sub, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
-import { cellSide, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor } from '../../ledger/settlement.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { GoodDecl } from './data.js';
@@ -157,11 +157,13 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
     const rate = ctx.params.get(goodTerms(inst).spoilage);
     if (rate === 0) continue;
     const held = sum(h.lots.map((l) => l.qty));
-    const perMember = mul(held.value, rate, `${inst.id} perished`);
-    // Law 7: a fraction of a dust-sized stock is dust, and destroying dust would book a leg for
-    // arithmetic that never happened.
-    if (!material(perMember, h.lots.length + 1, held.value)) continue;
     const party = ctx.parties.get(h.holder);
+    // Law 8, E4: what perishes is whole pieces of the good, and for a cell whole pieces on each
+    // member's own shelf. A fraction of a piece has not spoiled; it is still there, and it spoils
+    // when enough of it has gone the same way.
+    const share = shareFor(ctx.registry, party, inst.unit, mul(held.value, rate, `${inst.id} perished`));
+    const perMember = share.perMember;
+    if (!material(perMember, h.lots.length + 1, held.value) || perMember <= 0) continue;
     const side = cellSide(party, perMember);
     const record = ctx.settle({
       legs: [
@@ -169,7 +171,7 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
           kind: 'destroy',
           party: h.holder,
           instrument: inst.id,
-          qty: totalFor(party, perMember),
+          qty: share.total,
           why: 'perished',
           fromCell: side === undefined ? none() : some(side),
         },

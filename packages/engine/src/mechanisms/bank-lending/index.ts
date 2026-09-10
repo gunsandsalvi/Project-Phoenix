@@ -186,7 +186,7 @@ function write(
   ctx: MechanismContext,
   bank: PartyId,
   borrower: PartyId,
-  principal: number,
+  wanted: number,
   rate: number,
   ccy: CurrencyCode,
   /**
@@ -198,6 +198,10 @@ function write(
   onTheLine = false,
 ): InstrumentId | undefined {
   const b = book(ctx);
+  // Law 8, B1: money is created in whole pieces of itself, so a loan is drawn in whole pieces. What
+  // the arithmetic asked for below one piece is not lent, because it is not money.
+  const principal = ctx.registry.payable(ccy, wanted);
+  if (principal <= 0) return undefined;
   const existing = onTheLine ? lineOf(ctx, bank, borrower) : undefined;
   if (existing !== undefined) return draw(ctx, existing, principal, ccy);
   const id = loanId(bank, borrower, b.next);
