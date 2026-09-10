@@ -91,9 +91,9 @@
   },
   {
     "id": "11.1",
-    "title": "A class of depositors that does not move as one block",
-    "file": "11.1-deposit-market-grain.md",
-    "steps": 5
+    "title": "One bank with lines of business, and a depositor that decides from its own balance",
+    "file": "11.1-one-bank.md",
+    "steps": 14
   },
   {
     "id": "12",

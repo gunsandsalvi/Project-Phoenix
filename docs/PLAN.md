@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 52.9%** (248 of 469 steps across 30 items).
+**Plan completion: 51.9%** (248 of 478 steps across 30 items).
 **Requirement coverage: 39.6%** (524 MET, 72 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -34,7 +34,7 @@ The plan has two parts:
 | 10 — The cost of capital | 16 | 16 | closed |
 | 10.3 — A quantity is a whole number of indivisible pieces | 15 | 15 | closed |
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
-| [11.1 — A class of depositors that does not move as one block](plan/11.1-deposit-market-grain.md) | 5 | 0 | open |
+| [11.1 — One bank with lines of business, and a depositor that decides from its own balance](plan/11.1-one-bank.md) | 14 | 0 | open |
 | [12 — Currencies, benchmarks, ratings](plan/12-currency-benchmarks-ratings.md) | 26 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
