@@ -1682,3 +1682,44 @@ allocating on artefacts, which is Law 11 read forwards rather than backwards.
 **The item is built and it is not closed.** Fourteen of its fifteen steps are done, one is deferred
 above, and twenty-six checks are red for a cause that is not this item's and has an item of its own.
 Closing it would mean either adjusting those checks or calling the tree green when it is not.
+
+
+## 11.3 — an attempt, thrown away, and what it was worth
+
+I tried to finish 11.3 and 11.4 in one pass. 11.3 got two of its four numbers — a bank opened at a
+quarter to an eighth of its own capital instead of three quarters, and its blended cost of funds
+fell from near a tenth to between one and three points — and it is reverted anyway, because of how
+it got them.
+
+**It was fitted.** The splits between the central bank, the three banks and the households, and the
+size of the equity float, were chosen by running the world for a year, reading the capital share off
+it, and going back to change them. Law 2: a result wearing a preference's name. Law 11: Part XII
+work done in the middle of Part XIII. Whatever this item ends up stating has to be ONE declared
+number with a reason, with every endowment derived from it.
+
+**It papered over an explosion with a bound.** With the balance sheets rebuilt, sovereign lines
+walked away — a bill worth one to nothing over a year, and when that was "fixed", to more than
+everything it will ever pay. What I wrote to stop it was a floor under the dealer's offer and a cap
+over its bid at what keeping the paper was worth to it, and I argued in the comment that this was a
+choice between two named alternatives like a lender's floor. It is not. Parking at the central bank
+is a REAL TRANSACTION at a rate with a counterparty; "keeping it" is a valuation with nobody on the
+other side, and taking the better of a quote and a valuation is a cap. Law 6, and the comment I
+wrote to justify it is the tell.
+
+**What it was worth is three findings, now in 11.3's plan.**
+
+1. **A market whose only participants are dealers has no anchor.** Both sides of a dealer's quote
+   come from its own view, its own view follows the last print, so dealers sitting on the same side
+   of their own targets cross each other in one direction every period and walk the line away. The
+   missing party is a holder with a reason of its own — not another dealer's inventory position. In
+   this world the households hold most of the sovereign's debt and never trade it, the money fund
+   buys bills and nothing else, and the central bank buys to a share and stops. This is why every
+   version of the item exploded, and it is NOT the opening balance sheet. It is now 11.3's first
+   step, because nothing downstream can be measured until a book has two reasons in it.
+2. **A bank never distributes**, so whatever share of its assets it opens with as capital, it
+   retains everything it earns and the share ratchets. No opening state survives that alone (13g).
+3. **The treasury's opening buffer cannot be stated independently of the central bank's assets.**
+   It is central-bank money; what the central bank may owe is what it holds; so the buffer is what
+   is left of that once the banks have their reserves. Derived, never stated.
+
+**Nothing of the attempt is in the tree.** 297 of 323 checks pass, as before it.
