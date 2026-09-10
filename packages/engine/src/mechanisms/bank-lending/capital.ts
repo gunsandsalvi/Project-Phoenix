@@ -25,6 +25,7 @@ import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
+import { subordinatedOf } from './subordinated.js';
 
 /** What binds a bank's book: the weighted rule, the backstop, or neither (B1.c). */
 export type Binding = 'weighted' | 'leverage' | 'nothing';
@@ -98,7 +99,15 @@ export function capitalOf(
     held.push(value);
     weighted.push(mul(value, riskWeightOf(ctx, ctx.instruments.get(h.instrument), rules), 'weighted'));
   }
-  const capital = ctx.participant(bank).equity();
+  // A2, A3: CAPITAL IS LAYERED, and both layers are here — the equity that absorbs first and fully
+  // (A2.a) and the subordinated claims that absorb next (A2.b). A requirement met with equity alone
+  // would be a requirement no bank could ever raise its way back over except by earning it, and
+  // C2's "recapitalisation first, if somebody will provide it" would have nothing to provide.
+  const capital = add(
+    ctx.participant(bank).equity(),
+    subordinatedOf(ctx, bank),
+    'what stands in front of its creditors',
+  );
   const assets = sum(held).value;
   const rwa = sum(weighted).value;
   const askedWeighted = add(rules.minWeighted, rules.buffer, 'the line it runs to');

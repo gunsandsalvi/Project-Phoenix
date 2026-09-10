@@ -404,6 +404,9 @@ describe('the period loop', () => {
     // nobody to take either cannot be sealed. Their phases are here, in the order assembly gave.
     expect(w.phases.map((p) => p.name)).toEqual([
       'corporateActions',
+      // Banks Capital C2: recapitalisation FIRST — a bank short of capital asks for it before it
+      // decides what else to put on its book with what is left.
+      'banks.raise',
       'lending.write',
       'moneyMarket.rates',
       'probe',

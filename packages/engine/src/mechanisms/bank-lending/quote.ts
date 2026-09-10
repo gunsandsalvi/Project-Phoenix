@@ -22,7 +22,6 @@ import { add, div, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
-import { isLoan } from './loan.js';
 
 /** C1: the four terms, kept apart so a reader can see which one moved (B2.d, XI-4). */
 export interface Quote {
@@ -233,8 +232,16 @@ export function exposureTo(view: ParticipantView, borrower: PartyId): number {
   let total = 0;
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
-    if (!isLoan(i.terms) || i.terms.borrower !== borrower) continue;
-    total = add(total, view.quantity(h.instrument), 'exposure to one name');
+    // F3: EVERYTHING THAT NAME OWES IT, not everything of one kind. A limit that counted only loans
+    // would be a limit a bank could go round by lending the same name money in another shape — a
+    // week of unsecured money, a claim behind every other claim on it, a balance at it — and the
+    // limit would bind on the one exposure it happened to be written about (Law 15, Law 19).
+    if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+    if (!i.issuer.some || view.parties.resolve(i.issuer.value).id !== borrower) continue;
+    const units = view.quantity(h.instrument);
+    if (units <= 0) continue;
+    const mark = view.mark(h.instrument);
+    total = add(total, mark.some ? mul(units, mark.value, 'at its mark') : units, 'exposure to one name');
   }
   return total;
 }

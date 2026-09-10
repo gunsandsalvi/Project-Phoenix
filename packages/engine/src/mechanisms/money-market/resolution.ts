@@ -269,12 +269,15 @@ function allocate(
   // creditor to this book — neither is secured, neither is subordinated, and nothing in this world
   // ranks between them — so they take the same proportion of the same loss. Pari passu is not a
   // rule applied afterwards: it is what "one pool, one share each" means.
-  const exposed: { holder: PartyId; owed: number; row?: InstrumentId }[] = [];
+  const exposed: { holder: PartyId; owed: number; rank: number; row?: InstrumentId }[] = [];
+  const rankOf = (id: InstrumentId): number =>
+    ctx.registry.instrumentKind(ctx.instruments.get(id).kind).ranking(ctx.instruments.get(id))
+      .seniority;
   for (const holder of ctx.register.holdersOf(own)) {
     if (holder === bank) continue;
     const p = ctx.parties.get(holder);
     const owed = mul(uninsuredAt(ctx, bank, holder, ccy, limit), weightOf(p), 'uninsured');
-    if (owed > 0) exposed.push({ holder, owed });
+    if (owed > 0) exposed.push({ holder, owed, rank: rankOf(own) });
   }
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
@@ -291,36 +294,49 @@ function allocate(
       if (!worth.some || worth.value.value <= 0) continue;
       const claim = mul(worth.value.value, weightOf(ctx.parties.get(holder)), 'what it is owed');
       const owed = sub(claim, secured, 'what its security does not reach');
-      if (owed > 0) exposed.push({ holder, owed, row: i.id });
+      if (owed > 0) exposed.push({ holder, owed, rank: rankOf(i.id), row: i.id });
     }
   }
-  const pool = sum(exposed.map((e) => e.owed)).value;
-  if (pool <= 0) return { holders: 0, insurer: 0, purse: 0, equity };
-  const cut = v.hole > pool ? pool : v.hole;
+  // D2, A2, N13.a: IN RANK ORDER, most junior first, and pari passu WITHIN a rank. The order is
+  // not a list here: it is the number each claim's own kind states about where it stands (Law 15),
+  // so a layer added to this world takes its place in the queue by declaring one. Equity has
+  // already absorbed everything it had (A2.a); what follows is the subordinated layer, whose
+  // holders were paid to be here (A2.b), and only when that is gone does anything reach the senior
+  // creditors and the depositors (A2.c).
+  const ranks = [...new Set(exposed.map((e) => e.rank))].sort((a, b) => b - a);
   let holders = 0;
-  for (const e of exposed) {
-    // Clearing C3: pro rata, in whole pieces, and the odd piece has a named holder.
-    const share = ctx.registry.payable(ccy, mul(div(e.owed, pool, 'its share'), cut, 'its loss'));
-    if (share <= 0) continue;
-    const lost = e.row === undefined
-      ? writeDownDeposit(ctx, bank, e.holder, ccy, share)
-      : writeDownRow(ctx, bank, e.holder, e.row, share, e.owed);
-    holders = add(holders, lost, 'what holders lost');
-    // E2, A2.c: a loss that landed on a name, said out loud. Nobody is written down quietly.
-    ctx.record(
-      'bank.resolution.writtenDown',
-      [bank, e.holder],
-      { failed: bank, holder: e.holder, claim: e.row ?? own, owed: e.owed, lost },
-      true,
-    );
+  let left = v.hole;
+  for (const rank of ranks) {
+    if (left <= 0) break;
+    const layer = exposed.filter((e) => e.rank === rank);
+    const pool = sum(layer.map((e) => e.owed)).value;
+    if (pool <= 0) continue;
+    const cut = left > pool ? pool : left;
+    for (const e of layer) {
+      // Clearing C3: pro rata, in whole pieces, and the odd piece has a named holder.
+      const share = ctx.registry.payable(ccy, mul(div(e.owed, pool, 'its share'), cut, 'its loss'));
+      if (share <= 0) continue;
+      const lost = e.row === undefined
+        ? writeDownDeposit(ctx, bank, e.holder, ccy, share)
+        : writeDownRow(ctx, bank, e.holder, e.row, share, e.owed);
+      holders = add(holders, lost, 'what holders lost');
+      // E2, A2.c: a loss that landed on a name, said out loud. Nobody is written down quietly.
+      ctx.record(
+        'bank.resolution.writtenDown',
+        [bank, e.holder],
+        { failed: bank, holder: e.holder, claim: e.row ?? own, owed: e.owed, lost, rank },
+        true,
+      );
+    }
+    left = sub(v.hole, holders, 'what the hole still is');
   }
   // D4, D5: what is left of the hole is what the guarantee is FOR. The insurer pays what its fund
   // holds and the treasury pays the rest, and both of them pay the acquirer — because the acquirer
   // is the one about to owe the depositors the money nobody took from them.
-  const left = sub(v.hole, holders, 'what the guarantee must meet');
-  if (left <= 0) return { holders, insurer: 0, purse: 0, equity };
-  const insurer = payFrom(ctx, INSURER, acquirer, ccy, left, `${bank} resolution: the guarantee`);
-  const still = sub(left, insurer, 'what the fund could not meet');
+  const unmet = sub(v.hole, holders, 'what the guarantee must meet');
+  if (unmet <= 0) return { holders, insurer: 0, purse: 0, equity };
+  const insurer = payFrom(ctx, INSURER, acquirer, ccy, unmet, `${bank} resolution: the guarantee`);
+  const still = sub(unmet, insurer, 'what the fund could not meet');
   const purse =
     still <= 0
       ? 0

@@ -19,6 +19,7 @@
  * loan and never a silent hole (B3.c).
  */
 import type { Family, Violation } from '../../audit/audit.js';
+import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
 import { period } from '../../calendar/calendar.js';
 import { civil } from '../../calendar/civil.js';
@@ -35,6 +36,12 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { BANKS, bankParam, type BankDecl } from './data.js';
 import { capitalOf, publish, type CapitalRules } from './capital.js';
+import {
+  bidsFor,
+  runRaise,
+  subordinatedKind,
+  SUB_PARAMS,
+} from './subordinated.js';
 import { LOAN, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import {
   holderReservation,
@@ -49,6 +56,7 @@ import {
 export * from './data.js';
 export * from './loan.js';
 export * from './capital.js';
+export * from './subordinated.js';
 export { quote, holderReservation, room, probabilityOfDefault, lossGivenDefault, exposureTo } from './quote.js';
 export type { Quote, Regulation, Room } from './quote.js';
 
@@ -101,6 +109,55 @@ function publishCapital(ctx: MechanismContext): void {
     const ccy = ctx.registry.region(b.region).ccy;
     publish(ctx, capitalOf(ctx, b.id, ccy, rulesFor(ctx, b.id)));
   }
+}
+
+/**
+ * Banks Capital C2, C2.a, C2.b, A3: RECAPITALISATION FIRST, IF SOMEBODY WILL PROVIDE IT.
+ *
+ * A bank that closed the last period below its own line published what it must raise (B3). It comes
+ * here and asks for it: a size and no level, into a venue named after it, against bids from the
+ * other banks — each pricing THIS name the way it prices any unsecured claim on it, and each
+ * bounded by what it will have out to that name (F3) and by the money it actually holds.
+ *
+ * C2.b is the outcome that must be reachable: nobody has to buy. A raise that finds no bid is
+ * recorded as a failure and the bank is exactly where it was, one rung further down the ladder.
+ */
+function runRaises(ctx: MechanismContext): void {
+  const b = book(ctx);
+  for (const p of ctx.parties.ofKind(BANK)) {
+    if (!p.status.alive || declOf(p.id) === undefined) continue;
+    const short = mustRaise(ctx, p.id);
+    if (short <= 0) continue;
+    const ccy = ctx.registry.region(p.region).ccy;
+    const bids: Order[] = [];
+    for (const other of ctx.parties.ofKind(BANK)) {
+      const decl = declOf(other.id);
+      if (decl === undefined || !other.status.alive || other.id === p.id) continue;
+      const view = ctx.participant(other.id);
+      const q = quote(
+        view,
+        decl,
+        p.id,
+        regulationOf(view),
+        costOfFunds(ctx, other.id, ccy).perAnnum,
+        seenDefaults(ctx),
+      );
+      bids.push(...bidsFor(view, p.id, ccy, q.rate, room(view, decl, p.id).most));
+    }
+    const taken = runRaise(ctx, p.id, ccy, short, bids, b.next);
+    b.next += taken.length;
+  }
+}
+
+/** B3: what it published that it must raise to be back above both lines, or nothing (Law 19). */
+function mustRaise(ctx: MechanismContext, bank: PartyId): number {
+  const said = ctx.journal.ofKind('bank.capitalPlan').filter((e) => e.subjects.includes(bank));
+  const last = said[said.length - 1];
+  // Only the plan it published at the LAST close: a plan from a month ago is a fact about a month
+  // that is over, and a bank that has since raised or earned its way back is not raising again.
+  if (last === undefined || last.period + 1 !== ctx.period) return 0;
+  const short = last.data['short'];
+  return typeof short === 'number' && short > 0 ? short : 0;
 }
 
 /** C1.b: every default anybody published — public, so every bank saw them (Expectations A2). */
@@ -484,7 +541,7 @@ export const bankLending: SystemModule = {
   // it as journal events, which are the kernel's — so a world with banks in it can lend whether or
   // not it has firms, and a bank's answer to Money B3.a exists as soon as there is a bank.
   requires: [],
-  instrumentKinds: [loanKind],
+  instrumentKinds: [loanKind, subordinatedKind],
   partyKinds: [],
   curveFamilies: [],
   units: [],
@@ -512,6 +569,14 @@ export const bankLending: SystemModule = {
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Corporate Credit E5.c, Sovereign E5: how much of the capital requirement a unit of the sovereign own paper consumes. Zero under the standard for a claim on the issuer of the money it is promised in, and that is a RULE somebody wrote rather than a fact about the world — it is most of why a bank holds sovereign paper as its liquidity buffer instead of lending the money out, and it is exactly the kind of number a polity can change (worklist 14).',
+    },
+    {
+      id: SUB_PARAMS.periods,
+      value: 52,
+      unit: 'periods',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Banks Capital A2.b, A3: how long a bank borrows the layer between its owners and its creditors for. A year, because capital that runs off next week is not capital — it is funding — and the whole point of the layer is that it is still there when the loss arrives.',
     },
     {
       id: LENDING_PARAMS.leverageRatio,
@@ -577,6 +642,17 @@ export const bankLending: SystemModule = {
       anchor: { after: 'revaluation' },
       run: (ctx: MechanismContext): void => {
         publishCapital(ctx);
+      },
+    },
+    {
+      name: 'banks.raise',
+      spec: 'Banks Capital A3 Banks Capital C2 Banks Capital C2.a Banks Capital C2.b',
+      cycle: 0,
+      // Before it decides anything about lending: a bank short of capital raises what it can first
+      // and then lends what is left of its room (C2: recapitalisation FIRST).
+      anchor: { after: 'corporateActions' },
+      run: (ctx: MechanismContext): void => {
+        runRaises(ctx);
       },
     },
     {

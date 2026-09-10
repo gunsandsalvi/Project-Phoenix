@@ -147,7 +147,8 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [x] From item 7.5 (E3): the resolution conserves — acquirer paid plus insurer paid plus estate realised plus holders lost equals the hole; audit contribution and test
 - [x] **Carried from 10.3**: the four tests a bank failure leaves red go green — `capital.test.ts` (the XI-4 chain), `funds.test.ts` ×2 (the gate, and the year with a redemption wave), `omo.test.ts` (the book running off). None of them is about resolution; each of them ends in one, and none can be looked at until a bank has somewhere to go. Two things fall out with them: the fractional-share request in `households/portfolio.ts:fundOrders` rounded at its cause (Law 8, named at the site in `funds/index.ts`), and the XI-4 finding underneath the capital one — the dear world investing MORE than the cheap one — measured for the first time on a run that survives
 - [ ] From item 7.6 (XI-2, Prime Brokerage C3.b): a bank whose capital falls cuts a borrower's limit below what it has drawn, and the borrower's own module posts the sales that repay it, at whatever the book gives; test: the sale moves the print and the print reaches other holders, and `limit − exposure` is negative with no floor anywhere in the path
-- [ ] Raising: equity issuance (item 9) and subordinated debt (`bank.subordinated` kind) into markets that can refuse; test: a failed raise leaves the bank where it was
+- [x] Raising: subordinated debt (`bank.subordinated` kind) into a market that can refuse; test: a failed raise leaves the bank where it was
+- [ ] **Deferred to 13g, with its reason**: raising EQUITY (item 9's issuance) and B3's restricted distributions. Both need a bank to have a share line and owners, and who owns a bank at the seed is the thing Seed E1/E2 refuse to invent — a party comes to own one by funding its entry (Firm Birth A). Not missing: placed
 - [ ] Reports: deposits by class, reserves as one row, liquidity metric published with a lag; observer
 - [x] Central bank: policy rate as a decision on its mandate (a stated rule reading its own outlook; the mandate text and target are parliament's at 14); test: a change moves the market rate through the corridor, never by assignment (B4)
 - [ ] Money B3.b, B3.c and Banks Lending B2.b, C1.a re-marked MET; item 3's buffer placeholder and item 6's cost-of-funds placeholder deleted
@@ -310,9 +311,32 @@ and there is nowhere to put it.
   a household sector bigger than this one relative to its firms.
 
 - **XI-2's funding-line cut (145).** Not started.
-- **Raising (146).** Equity issuance and a `bank.subordinated` kind into markets that can refuse;
-  a failed raise leaves the bank where it was. Not started. The bail-in hierarchy in 141 has only
-  two layers until this exists.
+- ~~**Raising.**~~ **DONE for the layer that was missing.** `bank.subordinated` is a dated claim
+  whose profile puts it behind every other claim on the bank (N13.a: seniority 2, against money's 0
+  and an unsecured row's 1), and that number is the ONLY thing that makes it subordinated — the
+  resolution and the estate both order by it, so a layer added later takes its place in the queue by
+  declaring one. A bank that published a plan asks for what the plan said: a size and no level into
+  a venue named after it (Clearing C3), against bids from the other banks, each pricing the name the
+  way it prices any unsecured claim on it and each bounded by its own limit for that name. It counts
+  as capital (A2: the layers, not the equity alone), so raising it answers the breach it was raised
+  against. C2.b is reachable and tested: take the lenders' appetite away and the same bank asks for
+  the same money and gets none, and is exactly where it was.
+
+  **The bail-in is now a hierarchy** rather than one pool: the resolution absorbs rank by rank, most
+  junior first, pari passu within a rank (D2, A2.a-c). Equity, then the layer that was paid to be
+  there, then senior creditors and depositors — who in the tested resolution are not reached at all.
+
+  **Found on the way:** a bank's limit for one name counted only LOANS. A limit that counts one kind
+  of claim is a limit a bank can go round by lending the same name money in another shape, and this
+  world did: the first raise took the whole of the other bank's spare cash. `exposureTo` now counts
+  everything that name owes it (F3), which is what stopped it.
+
+  **Still not done: equity issuance, and with it B3's restricted distributions.** A bank here has no
+  share line and no owners, so there is nothing to dilute (C2.a) and nothing to restrict. Giving it
+  one means stating who owns a bank at the seed, which is the thing Seed E1/E2 and the equity
+  module's own data refuse to invent; a party comes to own a bank by funding its entry, which is
+  Firm Birth A and worklist 13g. Recorded there rather than done here.
+
 - **The policy rate (148): TESTED as a policy, and it stays one.** B4's test is there — three
   points of policy moves what the session strikes, every printed rate sits between the two levels
   somebody can actually deal at and is never the policy rate itself (B3.a), and it reaches a
