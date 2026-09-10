@@ -61,3 +61,23 @@ export function paidTheSame(actual: number, expected: number, pieces = 1): void 
     );
   }
 }
+
+/**
+ * Law 8, for something that is not money: two quantities agree when they differ by less than the
+ * smallest piece of the unit they are counted in. A batch started is the capacity rounded DOWN to a
+ * whole piece of the good, so the two are the same answer read on the grid.
+ */
+export function sameQuantity(
+  actual: number,
+  expected: number,
+  tick: number,
+  pieces = 1,
+): void {
+  const slack = pieces * tick;
+  if (Math.abs(actual - expected) > slack) {
+    throw new Error(`expected ${actual} to be ${expected} to the nearest ${tick} (within ${slack})`);
+  }
+}
+
+/** The smallest piece of a good in this world: about a gram of a tonne (see goods/index.ts). */
+export const GOODS_PIECE = Math.pow(2, -20);

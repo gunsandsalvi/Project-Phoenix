@@ -80,10 +80,10 @@ export const DEPOSIT_CLASSES: readonly DepositClassDecl[] = [
   },
   {
     id: 'corporate',
-    partyKinds: [FIRM, partyKindId('estate')],
+    partyKinds: [FIRM],
     insured: false,
     switchingCost: 0.003,
-    why: 'A1.b: fewer, larger, operational. A firm banks where it transacts, so this money moves because the firm is trading, not because a rate moved.',
+    why: 'A1.b: fewer, larger, operational. A firm banks where it transacts, so this money moves because the firm is trading, not because a rate moved. An ESTATE is not here: it is not running a business, it is realising one (XI-8), so its balance is proceeds waiting to be paid out and not funding anybody bids for — and paying it a deposit rate would give a party being wound up an income, and the treasury a tax claim to rank among the creditors, neither of which this world has a mechanism for.',
   },
   {
     id: 'wholesale',

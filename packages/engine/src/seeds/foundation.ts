@@ -520,12 +520,13 @@ export function foundationSpec(seed: string): AssemblySpec {
         { id: currencyUnit(PHX), name: 'PHX', tickExponent: 20 },
         // Equity A2, Fund Shares A2: a SHARE COUNT, which more than one system counts in and no one
         // of them owns. Its smallest piece is far below one, and deliberately: a share here costs a
-        // few PHX and a household member holds a tenth of one, so whole shares would put equity out
-        // of a household's reach altogether. What the tick buys is that a pro-rata fill, a
+        // few PHX and a household member holds a ten-thousandth of one, so whole shares would put
+        // equity out of a household's reach altogether and a coarse grid would round its holding
+        // away. What the tick buys is that a pro-rata fill, a
         // subscription and a split all land on a grid whose last piece has a named holder
         // (Clearing C3) — which is the residual that dividing for ever was avoiding by never
         // arriving at one.
-        { id: SHARES, name: 'shares', tickExponent: 16 },
+        { id: SHARES, name: 'shares', tickExponent: 24 },
       ],
       cohorts: [
         { id: cohortId('working'), name: 'working age', fromAge: 18 },

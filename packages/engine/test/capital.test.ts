@@ -44,7 +44,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { unexpected } from './expected.js';
+import { GOODS_PIECE, sameQuantity, unexpected } from './expected.js';
 
 const FIRM_1 = partyId('firm.1'); // grain, at bank.a
 const FIRM_4 = partyId('firm.4'); // grain, the biggest farm
@@ -354,10 +354,12 @@ describe('what the stock lets it make (Capital Programme A2, D4, Goods B1.a, B1.
     const started = events(w, 'firms.started', FIRM_1).filter((e) => when.has(e.period));
     expect(started.length).toBeGreaterThan(0);
     for (const one of started) {
-      expect(num(one, 'started')).toBeCloseTo(num(one, 'capacity'), 9);
+      // Law 8: what it started is its capacity taken down to a whole piece of the good.
+      sameQuantity(num(one, 'started'), num(one, 'capacity'), GOODS_PIECE);
       // B1.d, D4: utilisation is a READ of the outcome against capacity, taken where the outcome
       // is. Nothing decided anything with it, and at the ceiling it is one.
-      expect(num(one, 'utilisation')).toBeCloseTo(1, 9);
+      // ...and utilisation is that read against the ceiling, so it is one to within the piece.
+      sameQuantity(num(one, 'utilisation'), 1, GOODS_PIECE / num(one, 'capacity'));
     }
     // ...and when its plant is NOT what bound it, utilisation is below one and nothing pretends
     // otherwise: it is the outcome over the capacity, whatever the outcome was.

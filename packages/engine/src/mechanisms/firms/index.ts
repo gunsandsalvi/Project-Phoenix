@@ -23,7 +23,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { PartyId } from '../../core/ids.js';
-import { add, combineDust, dustOf, sub, sum, withinDust } from '../../core/num.js';
+import { add, combineDust, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -76,9 +76,20 @@ function productionCosts(rows: readonly FirmDecl[]): Family {
           list.push(e.delta);
           moved.set(e.party, list);
           const walk = walked.get(e.party) ?? { terms: 0, magnitude: 0 };
+          // Law 7: what the arithmetic passed THROUGH, which is rarely what it came to. A batch off
+          // the line destroys units carried at one value and creates units carried at the same
+          // value, so the equity effect is nearly nothing and the magnitude behind it is the whole
+          // batch — read off the create legs, which say what a unit cost (Goods E1).
+          const carried = sum(
+            r.instruction.legs.map((l) => (isCreateLeg(l) ? Math.abs(mul(l.qty, l.costPerUnit, 'batch value')) : 0)),
+          ).value;
           walked.set(e.party, {
             terms: walk.terms + r.instruction.legs.length + r.deltas.length,
-            magnitude: walk.magnitude + Math.abs(e.delta) + sum(r.deltas.map((d) => Math.abs(d.qty))).value,
+            magnitude:
+              walk.magnitude +
+              Math.abs(e.delta) +
+              carried +
+              sum(r.deltas.map((d) => Math.abs(d.qty))).value,
           });
         }
       }

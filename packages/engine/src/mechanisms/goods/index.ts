@@ -143,9 +143,13 @@ function unitsOf(rows: readonly GoodDecl[]): UnitDecl[] {
   const byUnit = new Map<string, UnitDecl>();
   for (const d of rows) {
     // A tonne is divisible; a good counted in whole things (a machine, a dwelling) is its own row.
-    // Goods A1, Law 8: a tonne is delivered to about the kilo and a machine to about the part.
-    // Nothing finer exists, so nothing finer is ever produced, sold or held.
-    byUnit.set(d.unit, { id: goodUnitId(d.unit), name: d.unit, tickExponent: 10 });
+    // Goods A1, Law 8: the smallest piece of a good that exists. It is a RESOLUTION and it is set
+    // by what the SMALLEST holder deals in, not by what the largest one does: a household member
+    // buys a kilo or two of bread a week, so a grid at the kilo would round a person's whole
+    // week's shopping up or down and the sector's demand with it. A millionth of a tonne is a
+    // gram, nothing in this world is finer than that, and the invariance test says the world's
+    // path does not turn on the choice (test/tick.test.ts).
+    byUnit.set(d.unit, { id: goodUnitId(d.unit), name: d.unit, tickExponent: 20 });
   }
   return [...byUnit.values()];
 }

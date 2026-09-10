@@ -529,6 +529,13 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
   });
 });
 
+/**
+ * Law 8: a test pays real money, so it pays a whole number of the smallest piece of it. A tenth is
+ * not one — a decimal grid is not representable in binary — and the wire refuses it, which is the
+ * rule doing its job on the person writing the test as much as on the engine.
+ */
+const PAYMENT = 1 / 128;
+
 describe('settlement contracts', () => {
   it('refuses a cell side without a per-member amount (XI-15)', () => {
     const w = foundationWorld('seed-M');
@@ -560,7 +567,7 @@ describe('settlement contracts', () => {
         if (ctx.period !== 1) return;
         const cell = ctx.parties.ofKind(HOUSEHOLD).find((c) => c.bank === BANK_B);
         if (cell?.representation !== 'cell') throw new Error('no cell at bank b');
-        const side = cellSide(cell, 0.01);
+        const side = cellSide(cell, PAYMENT);
         const draft: InstructionDraft = {
           legs: [
             {
@@ -568,7 +575,7 @@ describe('settlement contracts', () => {
               from: { holder: partyId('firm.1'), issuer: BANK_A },
               to: { holder: cell.id, issuer: BANK_B },
               ccy: PHX,
-              amount: totalFor(cell, 0.01),
+              amount: totalFor(cell, PAYMENT),
               fromCell: none(),
               toCell: side === undefined ? none() : some(side),
             },
@@ -583,11 +590,11 @@ describe('settlement contracts', () => {
         if (rec.outcome !== 'settled') return;
         expect(rec.reserveLegs).toHaveLength(2);
         expect(ctx.register.quantity(BANK_A, moneyInstrumentId(CB, PHX))).toBeCloseTo(
-          reservesA - totalFor(cell, 0.01),
+          reservesA - totalFor(cell, PAYMENT),
           9,
         );
         expect(ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, PHX))).toBeCloseTo(
-          cellBefore + 0.01,
+          cellBefore + PAYMENT,
           12,
         );
 

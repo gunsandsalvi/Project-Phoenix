@@ -25,7 +25,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { unexpected } from './expected.js';
+import { GOODS_PIECE, sameQuantity, unexpected } from './expected.js';
 
 const BANK_A = partyId('bank.a');
 const BUYER = partyId('buyer.1');
@@ -179,7 +179,8 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
     const finished = Number(made?.data['finished']);
     // B4: not everything started is finished, and the scrap is units, at the point they would
     // have been made — never a rate applied to a value.
-    expect(finished).toBeCloseTo(startedUnits * 0.92, 9);
+    // Law 8: and what came off the line is that, down to a whole piece of the good.
+    sameQuantity(finished, startedUnits * 0.92, GOODS_PIECE);
     expect(Number(made?.data['scrapped'])).toBeGreaterThan(0);
     // B4: what survives carries the whole batch, so a survivor is dearer than a unit started.
     expect(Number(made?.data['costPerUnit'])).toBeGreaterThan(0);

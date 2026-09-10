@@ -87,10 +87,11 @@ function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
 
 /** A1, A4: each kind of capital is counted in its own unit and never added to another's. */
 function unitsOf(rows: readonly CapitalKindDecl[]): UnitDecl[] {
-  // A6, Law 8: plant in service has a smallest piece — a two-hundred-and-fifty-sixth of a machine
-  // here, because a firm's stock of them is spread over vintages and a whole-machine grid would
-  // make a third of a firm's plant unrepresentable at the moment it is split between them.
-  return rows.map((d) => ({ id: plantUnitId(d.id), name: d.unit, tickExponent: 8 }));
+  // A4, Law 8: plant in service is the SAME PHYSICAL THING as the good it was built from, so its
+  // smallest piece is that good's. A coarser grid here would strand a fraction of every machine at
+  // the moment it went into service — a thing that had been bought, paid for and delivered, and
+  // then did not fit into the unit it was about to be counted in.
+  return rows.map((d) => ({ id: plantUnitId(d.id), name: d.unit, tickExponent: 20 }));
 }
 
 /**

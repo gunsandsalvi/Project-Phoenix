@@ -33,7 +33,13 @@
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import { instrumentId, partyKindId, type InstrumentId, type PartyId } from '../../core/ids.js';
+import {
+  currencyUnit,
+  instrumentId,
+  partyKindId,
+  type InstrumentId,
+  type PartyId,
+} from '../../core/ids.js';
 import { div, material, mul, sub, sum } from '../../core/num.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -433,10 +439,14 @@ function inventoryPaysRent(rows: readonly DeskDecl[]): Family {
         const amount = last.data['amount'];
         const rate = last.data['rate'];
         if (typeof book !== 'number' || typeof amount !== 'number' || typeof rate !== 'number') continue;
-        // Law 7: a book worth something at a positive rate owes something, down to the dust of the
-        // one multiplication that produced it. A rate of nothing is a bank that pays nothing for
-        // its money and a desk that needs nothing on its capital, which is a state and not a defect.
-        if (book <= 0 || rate <= 0 || material(amount, 2, book)) continue;
+        // Law 7 and Law 8: a book worth something at a positive rate owes something — down to the
+        // dust of the one multiplication that produced it, and down to the smallest piece of the
+        // money, because a charge below one piece is not a charge that can be paid (core/tick.ts).
+        // A rate of nothing is a bank that pays nothing for its money and a desk that needs
+        // nothing on its capital, which is a state and not a defect.
+        const owed = mul(book, rate, 'what it owes on its book');
+        const piece = view.registry.tick(currencyUnit(view.registry.region(view.parties.get(desk).region).ccy));
+        if (book <= 0 || rate <= 0 || owed < piece || material(amount, 2, book)) continue;
         out.push({
           family: 'flows',
           spec: 'Dealer Desks D3',

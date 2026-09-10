@@ -26,7 +26,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { unexpected } from './expected.js';
+import { paidTheSame, unexpected } from './expected.js';
 
 const BREAD = goodId('bread', REGION);
 const BANK_A = partyId('bank.a');
@@ -83,7 +83,12 @@ function payer(perMember: number, spread: number): SystemModule {
             // Which side of the spread a cell is on is a fact about the cell — its cohort — so a
             // cell that splits when some of its members take a job stays on the same side of it,
             // and the two runs pay the same money to the same people either way.
-            const each = perMember + (cell.key.cohort === 'working' ? spread : -spread);
+            // Law 8: it pays real money, so each member is paid a whole number of the smallest
+            // piece of it — and what the payer hands over is that times the count of them.
+            const each = ctx.registry.payable(
+              PHX,
+              perMember + (cell.key.cohort === 'working' ? spread : -spread),
+            );
             if (each <= 0) return;
             ctx.settle({
               legs: [
@@ -343,11 +348,19 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
     // actually paid — and what was collected is those bases at the rates parliament set, and
     // nothing else.
     const at = (id: string): number => w.params.get(id as never);
-    expect(num(receipts, 'total')).toBeCloseTo(
+    // Law 8: every payer pays in whole pieces of money — a cell in whole pieces for each of its
+    // members — so what was collected is the bases at those rates, less at most one piece from
+    // each person who paid. The count of them is the slack, and it is derived, not chosen.
+    const payers = w.parties
+      .all()
+      .filter((p) => p.status.alive)
+      .reduce((a, p) => a + (p.representation === 'cell' ? p.weight : 1), 0);
+    paidTheSame(
+      num(receipts, 'total'),
       (bases?.['income'] ?? 0) * at('treasury.tax.income') +
         (bases?.['consumption'] ?? 0) * at('treasury.tax.consumption') +
         (bases?.['interest'] ?? 0) * at('treasury.tax.interestIncome'),
-      9,
+      payers,
     );
   });
 
