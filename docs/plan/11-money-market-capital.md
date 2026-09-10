@@ -8,9 +8,12 @@ requirement against risk weights with a buffer it chooses, and it can raise equi
 debt in markets that can refuse. The reserve overdraft that item 1 records unpriced is priced here
 and the placeholder path deleted.
 
-**Read first.** §11 Money Market (all); §24 Banks Funding (all); §25 Banks Capital A, B; §31 Central
-Bank B, D; §22 D3 (the benchmark: 12); XI-4 joint one; Money B3.b, B3.c, C4.b. Code: `ledger/
-settlement.ts` (reserve overdraft path), `registry/profiles.ts` (central bank profile), items 6, 9.
+**Read first.** §11 Money Market (all); §24 Banks Funding (all); §25 Banks Capital A, B, **C, D, E**
+(the resolution carried here from item 7); §31 Central Bank B, D; §22 D3 (the benchmark: 12); XI-4
+joint one; Money B3.b, B3.c, C4.b, E4. Code: `ledger/settlement.ts` (the reserve overdraft path this
+item deletes, and `Settlement.alive`), `registry/profiles.ts` (central bank profile), items 6, 9.
+Also `docs/RECORD.md` **10.3**, which closed underneath this one: it is what made a bank failure
+reachable, and the four tests it left red are a step below.
 
 **Clauses this item meets.** Money Market A1, A1.a, A1.b, A2, A2.a, A2.b, A3, A3.a, B1, B2, B2.a,
 B2.b, B3, B3.a, B3.b, B3.c, B4, B5, B5.a, B6, B6.a, B7, C1, C1.a, C2, C3, C4, C4.a, C4.b, C5, D1,
@@ -142,6 +145,7 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [ ] From item 7.5 (D3, D6): every other bank bids for the book from its own view; the winner pays or is paid the difference; deposits and rows are assumed by the acquirer over the wire; test: a resolution with no bid falls to the public path
 - [ ] From item 7.5 (D4, D5): deposit insurance per member up to the limit, the insurer as an estate creditor; test with a cell of small and a cell of large depositors
 - [ ] From item 7.5 (E3): the resolution conserves — acquirer paid plus insurer paid plus estate realised plus holders lost equals the hole; audit contribution and test
+- [ ] **Carried from 10.3**: the four tests a bank failure leaves red go green — `capital.test.ts` (the XI-4 chain), `funds.test.ts` ×2 (the gate, and the year with a redemption wave), `omo.test.ts` (the book running off). None of them is about resolution; each of them ends in one, and none can be looked at until a bank has somewhere to go. Two things fall out with them: the fractional-share request in `households/portfolio.ts:fundOrders` rounded at its cause (Law 8, named at the site in `funds/index.ts`), and the XI-4 finding underneath the capital one — the dear world investing MORE than the cheap one — measured for the first time on a run that survives
 - [ ] From item 7.6 (XI-2, Prime Brokerage C3.b): a bank whose capital falls cuts a borrower's limit below what it has drawn, and the borrower's own module posts the sales that repay it, at whatever the book gives; test: the sale moves the print and the print reaches other holders, and `limit − exposure` is negative with no floor anywhere in the path
 - [ ] Raising: equity issuance (item 9) and subordinated debt (`bank.subordinated` kind) into markets that can refuse; test: a failed raise leaves the bank where it was
 - [ ] Reports: deposits by class, reserves as one row, liquidity metric published with a lag; observer
@@ -168,9 +172,10 @@ Money Market C5, D6; Banks Funding B1.c, D6.a, B2.b; Central Bank B3.a, D3.a; Ba
 ## HANDOVER — state of play
 
 Written at the point work stopped, from a full run of the suite at the last commit on
-`claude/project-phoenix-task-10-pzeoao`. **Read `docs/plan/10.3-indivisible-pieces.md` first**: a
-change to what a quantity IS landed underneath this item and is not finished, and some of what is
-red here is red for that reason rather than this one.
+`claude/project-review-continuation-bh8ugh`. Item 10.3 — a quantity is a count of indivisible pieces
+— landed underneath this one and has since closed; its record says what it changed and what it
+found. Everything still red in this tree is red for THIS item's reason and no other: a bank fails
+and there is nowhere to put it.
 
 ### What is built and working
 
@@ -272,15 +277,21 @@ red here is red for that reason rather than this one.
   dumps fails at period 22 — so it belongs in the same change as bank resolution below (XI-2).
 - **Re-mark MET**: Money B3.b, B3.c; Banks Lending B2.b, C1.a (COVERAGE.md).
 - **A year green with a funding-squeeze scenario, and determinism** (151). Blocked on resolution.
-- Coverage, record, delete this file and 10.3's, one commit each (152–154).
+- **The four tests 10.3 left red** — `capital.test.ts` (the XI-4 chain), `funds.test.ts` ×2,
+      `omo.test.ts` — and the two things that fall out with them (the fractional-share request, and
+      the XI-4 finding measured on a run that survives). Blocked on resolution; a step above.
+- Coverage, record, delete this file, one commit (152–154).
 
 ### Where the work is
 
-Branch `claude/project-review-continuation-bh8ugh`, pushed. The history is WIP commits: item 11's
-mechanisms and 10.3's conversion are interleaved and want splitting into two commits before either
-is closed — 10.3 first, since 11 sits on it.
+Branch `claude/project-review-continuation-bh8ugh`, pushed. Item 10.3 closed on it; its record is in
+`docs/RECORD.md`. What that leaves this item standing on:
 
-10.3 is now complete but for four tests, and three of the four are the resolution blocker below. The
-grid work found two things that belong here and are recorded above; it also found that the world is
-much more robust than it looked, because the desks had been a hundred times too small since 10.2.
-Every world green over a year, with nothing forgiven, is the state this item starts from.
+- **Every foundation world runs a full year with ZERO violations in every family, with nothing
+  forgiven.** The exemption in `test/expected.ts` is gone: `unexpected()` is every violation the
+  audit reported. That is the state this item starts from, and it is the first time the tree has
+  been in it.
+- **Four tests are red and all four are this item's.** Each ends with a bank that fails and a world
+  with nowhere to put it. Nothing else in the suite is red.
+- **The world is more robust than it looked**, because the desks had been a hundred times too small
+  since 10.2 and are now the size their own data states.

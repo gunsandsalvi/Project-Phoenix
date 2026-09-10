@@ -12,7 +12,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Money A1` | MET | packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money A1.d` | MET | packages/engine/src/audit/families/money.ts |
-| `Money A2` | MET | packages/engine/src/core/money.ts, packages/engine/src/core/tick.ts (money is discrete: every amount is a whole number of the currency's smallest piece), packages/engine/src/registry/grid.ts |
+| `Money A2` | MET | packages/engine/src/core/money.ts, packages/engine/src/core/tick.ts (money is a COUNT of indivisible pieces and the count is an integer: cents, so amounts add exactly and nothing below a cent exists anywhere), packages/engine/src/registry/grid.ts, packages/engine/src/registry/registry.ts (the one boundary between a person's number and the state's) |
 | `Money A2.b` | MET | packages/engine/src/core/money.ts |
 | `Money A3` | MISSING |  |
 | `Money A4` | MISSING |  |
@@ -21,7 +21,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money B2` | MISSING |  |
 | `Money B3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/kinds.ts |
 | `Money B3.c` | PARTIAL | a customer overdrawn at its bank now has a lender and a rate: the bank takes a credit decision, and what it allows is a drawing that becomes a loan row before the period closes (packages/engine/src/mechanisms/bank-lending/index.ts). A refusal is recorded either way. A BANK overdrawn at the central bank still has no lender row: that is B3.b's corridor (worklist 11), and the audit reports every one of them |
-| `Money C1` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/ledger/settlement.ts (a leg carrying a quantity finer than the unit's smallest piece is refused at the site) |
+| `Money C1` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/ledger/settlement.ts (a leg carrying a quantity that is not a whole number of its unit's pieces is refused at the site, including the per-member side of a cell leg) |
 | `Money C2` | MET | packages/engine/src/ledger/settlement.ts |
 | `Money C2.c` | MET | packages/engine/src/audit/families/money.ts, packages/engine/src/ledger/settlement.ts |
 | `Money C3` | MISSING |  |
@@ -884,7 +884,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Dealer Desks A1` | MET | packages/engine/src/mechanisms/dealers/data.ts, packages/engine/src/mechanisms/dealers/index.ts (a named party with its own account inside a bank's, and it pays that bank for what it carries) |
+| `Dealer Desks A1` | MET | packages/engine/src/mechanisms/dealers/data.ts, packages/engine/src/mechanisms/dealers/index.ts (a named party with its own account inside a bank's, and it pays that bank for what it carries), packages/engine/src/registry/kinds.ts (`choosesBank: false` — its account is at its own bank because that is what it IS, so the funding market never moves it to a rival) |
 | `Dealer Desks A2` | MET | packages/engine/src/mechanisms/dealers/quote.ts (a price it will buy at and a price it will sell at, both posted, both real sizes it will do) |
 | `Dealer Desks A3` | MET | packages/engine/src/mechanisms/dealers/index.ts (it holds inventory: it opens with the float of the lines it makes a market in, and what it has bought and not sold is on its own register) |
 | `Dealer Desks A4` | MET | packages/engine/src/mechanisms/dealers/quote.ts, packages/engine/src/world/revalue.ts (it earns the width it quoted and its inventory is marked every period like anybody's, and the two together are its whole result) |
@@ -1536,7 +1536,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Observer D3` | MET | packages/engine/src/observer/observer.ts |
 | `Observer E1` | MET | packages/engine/src/observer/observer.ts |
 | `Observer E2` | MISSING |  |
-| `Observer E3` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/world.ts |
+| `Observer E3` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/world.ts, packages/app/src/ui/render.ts (the snapshot hands over how many pieces one named unit is and the surface divides where it prints; nothing is converted on the way out of the engine) |
 | `Observer F1` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/registry/naming.ts |
 | `Observer F2` | MET | packages/engine/src/observer/observer.ts |
 | `Observer F3` | MISSING |  |

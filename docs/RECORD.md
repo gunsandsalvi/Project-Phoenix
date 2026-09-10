@@ -1285,3 +1285,111 @@ shift and plot the distribution of an aggregate over many seeds. If the spread a
 same order as the spread across seeds, the grid is a resolution and this is settled; if a grid change
 moves the aggregate further than a seed change does, then it is load-bearing and the world's
 mechanisms are more sensitive to lumpiness than anything here has admitted.
+
+## 10.3 — A quantity is a whole number of indivisible pieces
+
+**What.** 10.2 gave every unit a smallest piece and made it a power of two — 2^-20 of a PHX, about a
+ten-millionth. This item replaces it: **a quantity is a COUNT OF PIECES and the count is an
+integer.** Not a fraction of a named unit — the piece IS the number. Money is counted in cents, a
+cargo in grams, a workforce in hours, a register of members in whole shares. `UnitDecl.perUnit` says
+how many pieces one NAMED unit is divided into (`registry/grid.ts`: money 100, a tonne 1,000,000, a
+whole thing 1, an hour 1), and `resolution.pieceShift` multiplies them all so the choice can be
+tested. The world is redenominated ×1000 so that a cent is a sensible piece of it: a weekly wage is
+around 940 PHX where it was 0.65.
+
+**Why.** A decimal cent and a floating-point fraction cannot both be exact — `0.07 + 0.01` is not
+`0.08` in binary — so 10.2 bought exactness and paid for it with a granularity nothing real has.
+Money exists up to the cent; nothing below one can be lent, paid or refused. The proof that the
+difference matters is in item 11's own findings: the money market recorded a bank as refused funding
+for a shortfall of 1.8e-7, that refusal is a public observable, and every uninsured depositor left
+it. Integers add, subtract and compare exactly up to 2^53, so the exactness survives the realism: a
+balance moved a million times is exactly the balance, and the decimal arithmetic everybody actually
+does is exact because it is integer arithmetic on cents, which is what it always was.
+
+**The boundary is the registry and it is the only one.** `pieces(unit, named)` turns a person's
+number into the count the state holds and `named(unit, pieces)` turns it back for a reader;
+`priceOf(ccy, unit, perNamedUnit)` does the same for a price, which is a ratio carrying both
+subdivisions. Nothing between those two ever divides by a subdivision, because everything between
+them is already a count.
+
+**A parameter that is an AMOUNT says so.** `ParamDecl.denominated` with `params.amount(id, unit)`:
+the declaration says what a person means — thirty thousand PHX a period, seven thousand hours, four
+hundred thousand units of a line — and the register hands back the count of pieces. This was the
+design question 10.2 left open and it is answered the expensive way rather than the cheap one,
+because it is the ONLY way a declared amount moves with `pieceShift` instead of being restated
+against it at every site — which is what makes the resolution an invariance rather than a rescaling
+of half the world. WHICH unit is the reader's to name, because one policy is a number for whatever
+money, time or paper the party reading it deals in; a `get` on such a parameter throws rather than
+answering in the wrong number. The register is therefore built twice out of one list of declarations:
+once with no units, which can answer only `resolution.pieceShift`, and once against the registry that
+number built. It also deleted the three `no-magic-numbers` lint errors, which were the symptom that
+pointed at it.
+
+**Found.** Four, and every one of them was a number in the wrong unit hiding behind a plausible
+answer.
+
+- **The desks were a hundred times too small.** `mechanisms/dealers/data.ts` states named PHX
+  (`cash: 400_000`, `limitAggregate: 1_200_000`) and 10.2 had converted them as though they were
+  already pieces, so desk A opened with 4,000 PHX against its bank's 400,000 — a market maker with
+  one per cent of the balance sheet its own data gives it. Fixed at the boundary, which restores
+  exactly the proportion the world had before 10.2. Nothing measured about dealing, spreads or
+  inventory since 10.2 was measured on the desks this world declares.
+- **A desk was a footloose wholesale depositor.** At the right size, desk A WAS bank A's corporate
+  funding — and the funding market moved it to bank B for two basis points, killing the bank. Dealer
+  Desks A1 says a desk is its bank's trading arm and its account is there because that is what it
+  is; an account at a rival would make it a different firm. So a party kind now declares whether it
+  `choosesBank` (Law 15: the profile answers and nothing branches on a kind), and a bank, a treasury,
+  an estate and a desk do not. It also removed a special case: the funding market no longer names
+  banks to skip them.
+- **The named red is gone.** Every foundation world now runs a full year with ZERO violations in
+  every family. Until this change each of them reported one every auction cycle — a bank overdrawn at
+  the central bank with nobody able to lend it the difference overnight (Money B3.b) — and
+  `test/expected.ts` existed to name and hide exactly that. The corridor (item 11) is what a bank
+  goes to instead, so the exemption is deleted rather than widened: `unexpected()` is now every
+  violation the audit reported, and nothing anywhere is forgiven.
+- **A fund can be gated for ever on a fraction of a share.** A household asks to redeem
+  `short / perShare` shares per member, which is not a whole number; the fund pays the whole shares
+  it can and the remainder never leaves its book, so a fund that owes nobody anything reports a gate
+  every period. Named at the site and NOT fixed here: rounding it at the cause takes the money fund's
+  forced sale past what this world can absorb — the bank funded against the bills it dumps fails —
+  and that is item 11's change, not this one's.
+
+**What is exact, and what is not.** The resolution test says both, and the second half is new. Every
+STRUCTURAL invariant holds EXACTLY at the cent, a tenth of a cent and a hundredth of one — money
+conserved, holdings summing to what is issued, no residual anywhere, nothing "within" anything. The
+PATH is not, and honestly so: what a payment or a batch comes to is rounded to a whole piece and this
+world's decisions are thresholds, so a firm on the edge of starting a batch starts it in one run and
+not the other. 10.2's test claimed real output was invariant to within one coarse piece per batch;
+that reasoning was wrong, because the rounding feeds back into the decisions that produce the next
+one. What is asserted instead is that A FACTOR OF TEN FINER IS A FACTOR OF TEN CLOSER, in what the
+world made and in the money it holds — which says the difference is the rounding and nothing else,
+without anybody choosing a band, and which a number that stopped scaling with the grid fails rather
+than passes quietly.
+
+**The surface reads back in named units.** `Snapshot.subdivisions` hands the reader how many pieces
+one named unit is and the app divides by it where it prints. Nothing is converted on the way out of
+the engine: a surface that quietly rewrote the state's numbers would be a surface with arithmetic of
+its own in it (Observer E3).
+
+**Deleted.** `test/expected.ts`'s expected-red exemption and the `overdrafts` helper that measured
+it; the stale `PIECE` and `GOODS_PIECE` constants, which were still `2^-20` and only survived because
+the tests using them happened to pass; the three magic-number literals in the treasury and money
+market; the special case that made the funding market skip banks by name.
+
+**Not closed with it.** Four tests are red and all four end the same way: a bank fails and this world
+has nowhere to put it. That is item 11's stated blocker (Banks Capital D), the tests are folded into
+its list, and this item's own conversion is what made a bank failure reachable — the desks being the
+size their data states is exactly what removed the padding. Two other findings are recorded there and
+not acted on: a yield solve that throws past its own bracket at period 61 of a long run (it will stop
+item 16 dead), and the treasury announcing an auction size that is not a whole number of pieces of
+par — it never reaches the wire off-grid, but an issuer offering 53,308,760.87 units of par is
+announcing a quantity that does not exist.
+
+**Forecast, with its killer.** The claim is that how fine the pieces are is a RESOLUTION: declare the
+same world in tenths of a cent and its path does not turn on it. The test measures convergence at
+three subdivisions over eight periods and the record above says where exactness stops. What would
+kill the claim outright is item 16's measurement: run many seeds at every subdivision and compare the
+spread of an aggregate ACROSS SUBDIVISIONS with its spread ACROSS SEEDS. If they are the same order,
+the piece is a resolution and this is settled; if changing the piece moves an aggregate further than
+changing the seed does, the piece is load-bearing and this world is more sensitive to lumpiness than
+anything here has admitted.
