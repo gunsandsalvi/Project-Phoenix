@@ -139,7 +139,7 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [x] `banks.funding`: sell liquid assets, bid up deposits, stop originating (item 6's B2.b constraint now real), draw the facility, fail; tests for each branch as a state reached
 - [x] The run: wholesale depositors move on public observables; the loop shows in a scenario test (D5.b, E3.a); insurance breaks it for retail (E4); tests
 - [ ] Interbank exposure as contagion: a failed bank's interbank rows land losses on lenders by name (E3); test with item 7's resolution
-- [ ] Capital: requirements against risk weights, leverage backstop, which binds as a read; buffer as choice; distributions restricted near the line; tests
+- [x] Capital: requirements against risk weights, leverage backstop, which binds as a read; buffer as choice; distributions restricted near the line; tests
 - [x] From item 7.5 (Banks Capital D1): a failed bank's book valued at marks and at its own carrying values; the hole is liabilities minus that; test
 - [x] From item 7.5 (D2): the hierarchy — equity to zero, subordinated rows bailed in by partial redemption, senior and depositors untouched outside liquidation; tests
 - [x] From item 7.5 (D3, D6): every other bank bids for the book from its own view; the winner pays or is paid the difference; deposits and rows are assumed by the acquirer over the wire; test: a resolution with no bid falls to the public path
@@ -266,9 +266,26 @@ and there is nowhere to put it.
   against paper, so every row at the failure was a repo and no bank lost anything. The step stays
   open for that scenario.
 
-- **Bank capital (139).** Requirement against risk weights, leverage backstop, which of them
-  binds as a read, the buffer as a choice, distributions restricted near the line. Not started.
-  `bank-lending`'s `room()` already has the capital and appetite constraints to hang it on.
+- ~~**Bank capital.**~~ **DONE, except the distributions half.** `bank-lending/capital.ts` takes a
+  bank's position after the marks are taken and publishes it (`bank.capital`, public — B3.a): its
+  capital as the residual it is (A1), what its book weighs, what it comes to unweighted, both
+  ratios, which rule binds and what it has left. B1.a's weight is asked of what the asset IS — can
+  the party behind this claim fail, in the money it issued? — so it reads the same profile the
+  resolution reads (XI-3) and no mechanism branches on a kind id. The credit decision READS the
+  published headroom rather than recomputing it (Law 4, Law 19), so `room()` has one answer about
+  capital and not two. B3's consequences that exist are there: the breach is public, a plan is
+  demanded with what it must raise to clear BOTH lines, and its own lending has no room in it.
+
+  **Found:** in this world the weighted requirement asks a bank for NOTHING. Its book is reserves
+  and sovereign paper — claims on parties that cannot fail — so it weighs zero, and the only rule
+  with anything to say is the leverage backstop. That is B1.b's case made by a world rather than by
+  an argument, and it is why `bank-capital.test.ts` measures which rule binds by moving the
+  backstop rather than the ratio.
+
+  **Not done: distributions restricted near the line (B3).** A bank in this world has no equity
+  line and pays nothing out, so there is no distribution to restrict. It belongs with raising
+  (below), which is what gives a bank shares in the first place, and the test for both is one test.
+
 - ~~**BANK RESOLUTION.**~~ **DONE.** Built in the last commit and now tested end to end
   (`test/bank-resolution.test.ts`, ten tests) on a world that is the foundation world plus ONE
   thing: bank A pays a penalty it cannot afford. Everything after that is mechanisms that were

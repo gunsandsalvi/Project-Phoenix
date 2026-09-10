@@ -1,0 +1,186 @@
+/**
+ * How much capital a bank must have, how much it has, and which of the two rules is the one biting.
+ *
+ * @spec Banks Capital B1 Banks Capital B1.a Banks Capital B1.b Banks Capital B1.c Banks Capital B2 Banks Capital B3 Banks Capital B3.a Banks Capital A1 Banks Lending B2.a Sovereign E5 XI-3 Law 2 Law 15 Law 19
+ *
+ * B1 is a requirement against RISK-WEIGHTED assets and B1.b is a leverage backstop that uses no
+ * weights at all. Both are rules somebody wrote, both are here, and B1.c is the point of having
+ * two: WHICH ONE BINDS IS AN OUTCOME. A bank stuffed with sovereign paper weighs almost nothing and
+ * is stopped by the backstop; a bank whose book is unsecured lending is stopped by the weighted
+ * rule; and neither of those is stated anywhere — it falls out of what each bank actually holds.
+ *
+ * B1.a: THE WEIGHT IS A PROPERTY OF WHAT THE ASSET IS, and this asks the one question that decides
+ * it: can the party behind this claim fail? A claim on a party whose kind names no way to die, in
+ * the money that party issues, is the zero-weighted asset the standard means (Sovereign E5, XI-3) —
+ * and XI-3's two exceptions are exactly the central bank and a treasury in its own money. Nothing
+ * here branches on a kind id (Law 15); it reads the same profile the resolution reads to decide
+ * whether a party can fail at all, so the two can never disagree about what is safe (Law 4).
+ *
+ * B2's buffer is the BANK'S OWN, declared as its own caution and not as a ratio anybody imposed,
+ * and B3 is what happens when it is breached: the position is published (B3.a), which is what a
+ * depositor, a rival and a lender all read, and the bank's own credit decision has less room in it.
+ */
+import { currencyUnit, moneyInstrumentId, type CurrencyCode, type PartyId } from '../../core/ids.js';
+import { add, div, mul, sub, sum } from '../../core/num.js';
+import { none, some, type Option } from '../../core/option.js';
+import type { Instrument } from '../../register/instruments.js';
+import type { MechanismContext } from '../../world/context.js';
+
+/** What binds a bank's book: the weighted rule, the backstop, or neither (B1.c). */
+export type Binding = 'weighted' | 'leverage' | 'nothing';
+
+export interface CapitalPosition {
+  readonly bank: PartyId;
+  readonly ccy: CurrencyCode;
+  /** A1: capital is the RESIDUAL — its own equity account, not a fund. */
+  readonly capital: number;
+  /** B1: what its book weighs, asset by asset. */
+  readonly weighted: number;
+  /** B1.b: and what it comes to with no weights at all. */
+  readonly assets: number;
+  readonly weightedRatio: Option<number>;
+  readonly leverageRatio: Option<number>;
+  readonly minWeighted: number;
+  readonly minLeverage: number;
+  /** B2: how far above both lines this bank has chosen to run. */
+  readonly buffer: number;
+  /** B1.c: which rule leaves it the least room, in units of the asset it would add. */
+  readonly binds: Binding;
+  /** What it could still put on, at the weight of the asset it is deciding about. */
+  readonly headroom: number;
+  /** B3: below the line it chose for itself, which is where the consequences start. */
+  readonly breach: boolean;
+  /** C1: and below the line the rule itself draws, which is a different and worse thing. */
+  readonly belowRequirement: boolean;
+}
+
+export interface CapitalRules {
+  readonly minWeighted: number;
+  readonly minLeverage: number;
+  readonly buffer: number;
+  /** The weight of the asset the decision is about — a loan, unless the caller says otherwise. */
+  readonly weight: number;
+  readonly sovereignWeight: number;
+}
+
+/**
+ * B1.a, Sovereign E5, XI-3: what one unit of this asset weighs. A claim on a party that cannot
+ * fail, in the money that party issues, is the zero-weighted asset; everything else weighs what the
+ * rule says an ordinary exposure weighs. A holding that is nobody's liability — a good, a share —
+ * is not a claim on anybody at all and weighs the same as an exposure that can go wrong, because it
+ * can.
+ */
+export function riskWeightOf(ctx: MechanismContext, i: Instrument, rules: CapitalRules): number {
+  if (!i.issuer.some) return rules.weight;
+  const issuer = ctx.parties.get(ctx.parties.resolve(i.issuer.value).id);
+  const canFail = ctx.registry.partyKind(issuer.kind).fails ?? [];
+  if (canFail.length > 0) return rules.weight;
+  return ctx.registry.region(issuer.region).ccy === i.ccy ? rules.sovereignWeight : rules.weight;
+}
+
+/**
+ * B1, B1.b, B1.c: the whole position, read off the register at the marks in force (Law 19). What it
+ * is NOT is a stored ratio: every number here is a walk over what the bank holds this instant.
+ */
+export function capitalOf(
+  ctx: MechanismContext,
+  bank: PartyId,
+  ccy: CurrencyCode,
+  rules: CapitalRules,
+): CapitalPosition {
+  const own = moneyInstrumentId(bank, ccy);
+  const held: number[] = [];
+  const weighted: number[] = [];
+  for (const h of ctx.register.holdingsOf(bank)) {
+    if (h.instrument === own) continue;
+    const value = ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period);
+    if (value === 0) continue;
+    held.push(value);
+    weighted.push(mul(value, riskWeightOf(ctx, ctx.instruments.get(h.instrument), rules), 'weighted'));
+  }
+  const capital = ctx.participant(bank).equity();
+  const assets = sum(held).value;
+  const rwa = sum(weighted).value;
+  const askedWeighted = add(rules.minWeighted, rules.buffer, 'the line it runs to');
+  const askedLeverage = add(rules.minLeverage, rules.buffer, 'the backstop it runs to');
+  // What each rule leaves it, in units of the asset it would add: the weighted rule counts that
+  // asset at its weight and the backstop counts it whole, which is why a zero-weighted asset is
+  // free under one and not under the other. That difference IS B1.b's reason to exist.
+  const byWeighted = sub(div(capital, askedWeighted, 'weighted assets it can carry'), rwa, 'weighted room');
+  const byLeverage = sub(div(capital, askedLeverage, 'assets it can carry'), assets, 'leverage room');
+  const inUnits = rules.weight > 0 ? div(byWeighted, rules.weight, 'units it could add') : byWeighted;
+  const binds: Binding =
+    byLeverage < inUnits ? 'leverage' : inUnits < byLeverage ? 'weighted' : 'nothing';
+  return {
+    bank,
+    ccy,
+    capital,
+    weighted: rwa,
+    assets,
+    weightedRatio: rwa > 0 ? some(div(capital, rwa, 'its weighted ratio')) : none<number>(),
+    leverageRatio: assets > 0 ? some(div(capital, assets, 'its leverage ratio')) : none<number>(),
+    minWeighted: rules.minWeighted,
+    minLeverage: rules.minLeverage,
+    buffer: rules.buffer,
+    binds,
+    headroom: byLeverage < inUnits ? byLeverage : inUnits,
+    breach: capital < mul(rwa, askedWeighted, 'what the line asks') ||
+      capital < mul(assets, askedLeverage, 'what the backstop asks'),
+    belowRequirement:
+      capital < mul(rwa, rules.minWeighted, 'the requirement') ||
+      capital < mul(assets, rules.minLeverage, 'the backstop'),
+  };
+}
+
+/** B3.a, Observer A5: the position, said out loud. It is what a depositor and a rival both read. */
+export function publish(ctx: MechanismContext, p: CapitalPosition): void {
+  ctx.record(
+    'bank.capital',
+    [p.bank],
+    {
+      bank: p.bank,
+      ccy: p.ccy,
+      capital: p.capital,
+      weighted: p.weighted,
+      assets: p.assets,
+      weightedRatio: p.weightedRatio.some ? p.weightedRatio.value : null,
+      leverageRatio: p.leverageRatio.some ? p.leverageRatio.value : null,
+      minWeighted: p.minWeighted,
+      minLeverage: p.minLeverage,
+      buffer: p.buffer,
+      binds: p.binds,
+      headroom: p.headroom,
+      breach: p.breach,
+      belowRequirement: p.belowRequirement,
+      unit: currencyUnit(p.ccy),
+    },
+    true,
+  );
+  // B3: BEFORE FAILURE, and each of the three is a real consequence rather than an adjective. The
+  // plan is demanded in public, the supervision that follows is public with it, and the money it
+  // may still put to work is the headroom above — which its own credit decision reads (B2.b).
+  if (!p.breach) return;
+  const shortWeighted = sub(
+    mul(p.weighted, add(p.minWeighted, p.buffer, 'the line'), 'what the weighted rule asks'),
+    p.capital,
+    'short of the weighted line',
+  );
+  const shortLeverage = sub(
+    mul(p.assets, add(p.minLeverage, p.buffer, 'the backstop'), 'what the backstop asks'),
+    p.capital,
+    'short of the backstop',
+  );
+  ctx.record(
+    'bank.capitalPlan',
+    [p.bank],
+    {
+      bank: p.bank,
+      // What it would have to raise to be above BOTH lines, which is the bigger of the two — a
+      // plan that answered only the rule it happened to breach first would leave it in breach.
+      short: shortWeighted > shortLeverage ? shortWeighted : shortLeverage,
+      binds: p.binds,
+      belowRequirement: p.belowRequirement,
+    },
+    true,
+  );
+}

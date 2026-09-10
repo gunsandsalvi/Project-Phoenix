@@ -34,6 +34,7 @@ import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { BANKS, bankParam, type BankDecl } from './data.js';
+import { capitalOf, publish, type CapitalRules } from './capital.js';
 import { LOAN, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import {
   holderReservation,
@@ -47,6 +48,7 @@ import {
 
 export * from './data.js';
 export * from './loan.js';
+export * from './capital.js';
 export { quote, holderReservation, room, probabilityOfDefault, lossGivenDefault, exposureTo } from './quote.js';
 export type { Quote, Regulation, Room } from './quote.js';
 
@@ -54,6 +56,7 @@ export const LENDING_PARAMS = {
   capitalRatio: paramId('regulation.capitalRatio'),
   riskWeight: paramId('regulation.riskWeight.loan'),
   sovereignWeight: paramId('regulation.riskWeight.sovereign'),
+  leverageRatio: paramId('regulation.leverageRatio'),
   operatingCost: paramId('loan.operatingCost'),
 } as const;
 
@@ -74,6 +77,30 @@ function regulationOf(view: ParticipantView): Regulation {
     riskWeight: view.params.get(LENDING_PARAMS.riskWeight),
     operatingCost: view.params.get(LENDING_PARAMS.operatingCost),
   };
+}
+
+/**
+ * Banks Capital B1, B1.b, B2: the two rules and the bank's own caution above them, in one place.
+ * The weight is the one an ordinary exposure carries; what a particular asset weighs is asked of
+ * what that asset IS (`riskWeightOf`).
+ */
+function rulesFor(ctx: MechanismContext, bank: PartyId): CapitalRules {
+  return {
+    minWeighted: ctx.params.get(LENDING_PARAMS.capitalRatio),
+    minLeverage: ctx.params.get(LENDING_PARAMS.leverageRatio),
+    buffer: ctx.params.get(bankParam(bank, 'capitalBuffer')),
+    weight: ctx.params.get(LENDING_PARAMS.riskWeight),
+    sovereignWeight: ctx.params.get(LENDING_PARAMS.sovereignWeight),
+  };
+}
+
+/** B1, B3, B3.a: every bank's position, taken and published before anybody decides anything. */
+function publishCapital(ctx: MechanismContext): void {
+  for (const b of ctx.parties.ofKind(BANK)) {
+    if (!b.status.alive || declOf(b.id) === undefined) continue;
+    const ccy = ctx.registry.region(b.region).ccy;
+    publish(ctx, capitalOf(ctx, b.id, ccy, rulesFor(ctx, b.id)));
+  }
 }
 
 /** C1.b: every default anybody published — public, so every bank saw them (Expectations A2). */
@@ -179,7 +206,7 @@ function shop(ctx: MechanismContext, borrower: PartyId, want: number, ccy: Curre
     if (decl === undefined || !b.status.alive) continue;
     const view = ctx.participant(b.id);
     const reg = regulationOf(view);
-    const r = room(view, decl, borrower, reg);
+    const r = room(view, decl, borrower);
     if (r.most <= 0) {
       ctx.record(
         'credit.declined',
@@ -189,7 +216,7 @@ function shop(ctx: MechanismContext, borrower: PartyId, want: number, ccy: Curre
           borrower,
           asked: want,
           binds: r.binds,
-          capitalRoom: r.capital,
+          capitalRoom: r.capital.some ? r.capital.value : null,
           appetiteRoom: r.appetite,
           fundingRoom: r.funding.some ? r.funding.value : null,
         },
@@ -357,7 +384,7 @@ function overdraft(ctx: MechanismContext, o: OverdraftContext): OverdraftDecisio
   // an estate is being wound up, and a household has no lender in this world at all (Households
   // C1.d). The kind says so and the bank reads it (Law 15); the refusal is the answer, recorded.
   const borrows = ctx.registry.partyKind(ctx.parties.get(o.holder).kind).borrows;
-  const r = room(view, decl, o.holder, regulationOf(view));
+  const r = room(view, decl, o.holder);
   if (!borrows || r.most < o.shortfall) {
     ctx.record(
       'credit.declined',
@@ -487,6 +514,14 @@ export const bankLending: SystemModule = {
       why: 'Corporate Credit E5.c, Sovereign E5: how much of the capital requirement a unit of the sovereign own paper consumes. Zero under the standard for a claim on the issuer of the money it is promised in, and that is a RULE somebody wrote rather than a fact about the world — it is most of why a bank holds sovereign paper as its liquidity buffer instead of lending the money out, and it is exactly the kind of number a polity can change (worklist 14).',
     },
     {
+      id: LENDING_PARAMS.leverageRatio,
+      value: 0.03,
+      unit: 'ratio of assets, unweighted',
+      kind: 'policy',
+      owner: 'standardSetter',
+      why: 'Banks Capital B1.b: the BACKSTOP — capital against everything it holds, with no weights in it at all. It exists because B1 weights, and a rule that weights can be gamed by holding what the rule calls safe: a bank stuffed with zero-weighted paper passes the weighted test at any size. Which of the two binds is an outcome and differs by bank (B1.c), which is the whole reason to have both.',
+    },
+    {
       id: LENDING_PARAMS.operatingCost,
       value: 0.005,
       unit: 'per annum on the principal',
@@ -530,6 +565,20 @@ export const bankLending: SystemModule = {
     ]),
   ],
   phases: [
+    {
+      name: 'banks.capital',
+      spec: 'Banks Capital B1 Banks Capital B1.a Banks Capital B1.b Banks Capital B1.c Banks Capital B2 Banks Capital B3 Banks Capital B3.a',
+      cycle: 'anchor',
+      // AFTER THE MARKS ARE TAKEN, which is the only moment its book has a value: capital is the
+      // residual (A1), and a residual computed against prints that have not happened yet is not one
+      // (Clearing F1.a). So a bank lends this period against the position it closed the last one
+      // with — a lag, and a real one: a bank finds out what its capital allowed after the quarter
+      // it allowed it in, which is exactly why B3's consequences arrive late enough to matter.
+      anchor: { after: 'revaluation' },
+      run: (ctx: MechanismContext): void => {
+        publishCapital(ctx);
+      },
+    },
     {
       name: 'lending.write',
       spec: 'Banks Lending B1 Banks Lending C1 Banks Lending C2 Banks Lending C3',
@@ -665,7 +714,7 @@ function publishQuotes(ctx: MechanismContext): void {
       if (decl === undefined || !b.status.alive || b.id === p.id) continue;
       const view = ctx.participant(b.id);
       const reg = regulationOf(view);
-      const r = room(view, decl, p.id, reg);
+      const r = room(view, decl, p.id);
       if (r.most <= 0) continue;
       const q = quote(view, decl, p.id, reg, costOfFunds(ctx, b.id, ccy).perAnnum, seenDefaults(ctx));
       if (best === undefined || q.rate < best.rate) {

@@ -155,7 +155,8 @@ export function quote(
  * ratio would be a bound (Law 6) standing where a market belongs.
  */
 export interface Room {
-  readonly capital: number;
+  /** What its capital leaves it, as its own module published it. Missing before it has (B1). */
+  readonly capital: Option<number>;
   readonly appetite: number;
   /**
    * Banks Funding D4: what its own funding leaves it able to lend. Missing where no funding market
@@ -188,29 +189,36 @@ export function fundingRoom(view: ParticipantView): Option<number> {
 }
 
 /** Which of the three is the constraint: the smallest of them, named so a refusal says why (C3.a). */
-function bindingOf(capital: number, appetite: number, funding: Option<number>): Room['binds'] {
-  if (funding.some && funding.value <= capital && funding.value <= appetite) return 'funding';
-  return capital < appetite ? 'capital' : 'appetite';
+function bindingOf(
+  capital: Option<number>,
+  appetite: number,
+  funding: Option<number>,
+): Room['binds'] {
+  const cap = capital.some ? capital.value : appetite;
+  if (funding.some && funding.value <= cap && funding.value <= appetite) return 'funding';
+  return capital.some && cap < appetite ? 'capital' : 'appetite';
 }
 
-export function room(
-  view: ParticipantView,
-  decl: BankDecl,
-  borrower: PartyId,
-  reg: Regulation,
-): Room {
+export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): Room {
   const capital = view.equity();
-  const required = add(reg.capitalRatio, view.params.get(bankParam(decl.bank, 'capitalBuffer')), 'what it runs at');
-  // B2.a: risk-weighted assets it may carry at all, less what it already carries.
-  const weighted = riskWeighted(view, reg.riskWeight);
-  const allowed = required > 0 ? div(capital, required, 'assets its capital supports') : 0;
-  const byCapital = reg.riskWeight > 0 ? div(sub(allowed, weighted, 'room left'), reg.riskWeight, 'more it could lend') : 0;
+  // Banks Capital B1, B1.b, B1.c: what its capital leaves it is the position its own module
+  // published this period (`bank.capital`) — the weighted rule and the leverage backstop, whichever
+  // of the two leaves it less, in units of the asset it is deciding about. It is READ and not
+  // recomputed here, because a bank with two answers to how much capital it has would be a bank
+  // that lends against one and reports the other (Law 4, Law 19). A bank that has published no
+  // position has not decided anything about it (Appendix A) and is constrained by the rest.
+  // At the last close (the phase runs after the marks are taken), which is when a bank last knew
+  // what its book was worth.
+  const said = view.lastOwn('bank.capital');
+  const headroom = said.some ? said.value.data['headroom'] : undefined;
+  const byCapital =
+    typeof headroom === 'number' ? some(headroom) : none<number>();
   // F3, B2.c: the most it will have out to one name, whatever its capital would allow.
   const limit = mul(capital, view.params.get(bankParam(decl.bank, 'limitPerBorrower')), 'its limit for one name');
   const byAppetite = sub(limit, exposureTo(view, borrower), 'room under its limit');
   const byFunding = fundingRoom(view);
-  const ofTwo = byCapital < byAppetite ? byCapital : byAppetite;
-  const most = byFunding.some && byFunding.value < ofTwo ? byFunding.value : ofTwo;
+  const least = (a: number, b: Option<number>): number => (b.some && b.value < a ? b.value : a);
+  const most = least(least(byAppetite, byCapital), byFunding);
   return {
     capital: byCapital,
     appetite: byAppetite,
@@ -218,17 +226,6 @@ export function room(
     most,
     binds: most <= 0 ? bindingOf(byCapital, byAppetite, byFunding) : 'nothing',
   };
-}
-
-/** B2.a: what this bank's book weighs, which is what its capital has to support. */
-function riskWeighted(view: ParticipantView, weight: number): number {
-  let total = 0;
-  for (const h of view.holdings()) {
-    const i = view.instruments.get(h.instrument);
-    if (!isLoan(i.terms)) continue;
-    total = add(total, mul(view.quantity(h.instrument), weight, 'weighted'), 'risk-weighted assets');
-  }
-  return total;
 }
 
 /** F3: what it already has out to this name. */

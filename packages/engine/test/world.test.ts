@@ -416,6 +416,9 @@ describe('the period loop', () => {
       // balance sheet in the same period it lands there.
       'moneyMarket.resolve',
       'revaluation',
+      // Banks Capital A1, B1: capital is the residual, so a bank can only know what its own is
+      // once the marks are in — and what it may lend next period is what it closed this one with.
+      'banks.capital',
     ]);
     w.step();
     expect(seen).toEqual(['1:1']);
