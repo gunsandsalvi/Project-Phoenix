@@ -172,10 +172,13 @@ function gcd(a: number, b: number): number {
  * parties can actually exchange (`commonGrain`). Both are counts of pieces, so this is exact.
  */
 export function downToGrain(value: number, grain: number): number {
-  return Math.floor(downTick(value) / whole(grain)) * grain;
+  return Math.floor(finite(value, 'quantity') / whole(grain)) * grain;
 }
 
 /** The same on the nearest grain, for a value that BECOMES a payment rather than a delivery. */
 export function toGrain(value: number, grain: number): number {
-  return Math.round(toTick(value) / whole(grain)) * grain;
+  // Rounded to the grain ONCE. Rounding to a piece first and to the grain after would move the
+  // answer by half a piece more than the grain, and the check that compares the two sides of the
+  // trade would then be reporting the second rounding as a discrepancy (Law 7).
+  return Math.round(finite(value, 'quantity') / whole(grain)) * grain;
 }

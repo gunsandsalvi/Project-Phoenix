@@ -45,7 +45,7 @@ import {
   type World,
 } from '../src/index.js';
 import { GOODS_PIECE, sameQuantity, unexpected } from './expected.js';
-import { perTonne, phx, tonnes } from './units.js';
+import { machinesPerTonne, perTonne, phx, tonnes } from './units.js';
 
 const FIRM_1 = partyId('firm.1'); // grain, at bank.a
 const FIRM_4 = partyId('firm.4'); // grain, the biggest farm
@@ -116,7 +116,7 @@ function tightWorld(seed: string, over: Readonly<Record<string, number>> = {}): 
   return assemble({ ...spec, modules: [...modules, hungryFor(GRAIN, perTonne(600), tonnes(500))] });
 }
 
-const TIGHT = { 'goods.grain.plant.machinery': 4 } as const;
+const TIGHT = { 'goods.grain.plant.machinery': machinesPerTonne(4) } as const;
 
 function events(w: World, kind: EventKind, subject?: string): Event[] {
   return w.journal

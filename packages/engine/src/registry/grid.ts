@@ -30,5 +30,8 @@ export const WHOLE_PIECES = 1;
 /** A share: whole shares, as a register of members holds them. What one is worth is Equity's own resolution. */
 export const SHARE_PIECES = 1;
 
-/** Time: the minute. No contract in this world is written in anything finer. */
-export const TIME_PIECES = 60;
+/**
+ * Time: THE HOUR. Labour is contracted, supplied and paid for by the hour in this world and no wage
+ * in it is struck for part of one, so an hour is the smallest piece of somebody's time there is.
+ */
+export const TIME_PIECES = 1;

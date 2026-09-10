@@ -24,6 +24,7 @@ import {
   type World,
 } from '../src/index.js';
 import { paidTheSame, unexpected } from './expected.js';
+import { minutes, perHour, phx } from './units.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -98,8 +99,9 @@ function rows(w: World, employer: string = FIRM_1): EmploymentRow[] {
   return allRows(w).filter((r) => r.employer === employer);
 }
 
+/** Law 8: the time a number of people sell in a week, as the minutes the state counts it in. */
 function hours(people: number): number {
-  return people * HOURS_PER_MEMBER;
+  return minutes(people * HOURS_PER_MEMBER);
 }
 
 /**
@@ -151,7 +153,7 @@ describe('a hire (Labour A4, XI-10)', () => {
   it('splits the cell it takes people from and records the relationship (A4.b, A4.c)', () => {
     const w = world((ctx) => {
       if (ctx.period === 2) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(3) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(3) });
       }
     });
     w.step();
@@ -167,7 +169,7 @@ describe('a hire (Labour A4, XI-10)', () => {
     // its own bid — being the only bidder is being the marginal one. What a venue with several
     // bidders in it does, where the difference between them is the whole point, is Firm A3's test.
     const struck = row === undefined ? 0 : row.wagePerHour;
-    expect(struck).toBe(0.002);
+    expect(struck).toBe(perHour(30));
     const printed = w.journal.ofKind('labour.print').find((e) => e.subjects.includes(BAKERY));
     expect(printed?.data['wagePerHour']).toBe(struck);
     // A4.c: the three who took the job are their own cell now; the rest are still looking.
@@ -185,7 +187,7 @@ describe('a hire (Labour A4, XI-10)', () => {
   it('pays the wage out of the employer own account, every period (F1, E1)', () => {
     const w = world((ctx) => {
       if (ctx.period === 2) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(3) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(3) });
       }
     });
     w.step();
@@ -223,8 +225,8 @@ describe('the clearing (Labour D1)', () => {
     const w = world((ctx) => {
       if (ctx.period !== 2) return;
       // Between them they want more hours than the town has, so the wage decides who gets them.
-      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(60) });
-      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: 0.0015, qty: hours(20) });
+      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(60) });
+      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(22), qty: hours(20) });
     });
     w.step();
     w.step();
@@ -236,16 +238,16 @@ describe('the clearing (Labour D1)', () => {
     expect(hired.some((r) => r.employer === FIRM_2)).toBe(false);
     // D1: the bid that took the last match is the print, and here that is the only bid filled.
     const print = w.journal.ofKind('labour.print').find((e) => e.subjects.includes(BAKERY));
-    expect(print?.data['wagePerHour']).toBe(0.002);
+    expect(print?.data['wagePerHour']).toBe(perHour(30));
   });
 
   it('publishes the going rate as a read of what is actually paid (D1.c)', () => {
     const w = world((ctx) => {
       if (ctx.period === 2) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(10) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(10) });
       }
       if (ctx.period === 3) {
-        ctx.post(MILL, { party: FIRM_2, side: 'buy', price: 0.004, qty: hours(10) });
+        ctx.post(MILL, { party: FIRM_2, side: 'buy', price: perHour(45), qty: hours(10) });
       }
     });
     w.step();
@@ -263,8 +265,8 @@ describe('the clearing (Labour D1)', () => {
     expect(paid?.[BAKERY]).toBeCloseTo(bakery?.wagePerHour ?? 0, 15);
     expect(paid?.[MILL]).toBeCloseTo(mill?.wagePerHour ?? 0, 15);
     // D1: each venue printed the one bid posted into it, and the going rate is a read of the rows.
-    expect(bakery?.wagePerHour).toBe(0.002);
-    expect(mill?.wagePerHour).toBe(0.004);
+    expect(bakery?.wagePerHour).toBe(perHour(30));
+    expect(mill?.wagePerHour).toBe(perHour(45));
     expect(last?.public).toBe(true);
   });
 });
@@ -274,8 +276,8 @@ describe('the level the venue prints (Labour D1, D1.a)', () => {
     const w = world((ctx) => {
       if (ctx.period !== 2) return;
       // Two employers, two different offers, and far more hours on sale than either wants.
-      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.006, qty: hours(2) });
-      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: 0.003, qty: hours(2) });
+      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(70), qty: hours(2) });
+      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(35), qty: hours(2) });
     });
     w.step();
     w.step();
@@ -283,10 +285,10 @@ describe('the level the venue prints (Labour D1, D1.a)', () => {
     // the crossing, which in a book this slack sits on what some seeker would have accepted, and
     // not the higher bid either.
     const print = w.journal.ofKind('labour.print').filter((e) => e.subjects.includes(BAKERY)).pop();
-    expect(print?.data['wagePerHour']).toBe(0.003);
+    expect(print?.data['wagePerHour']).toBe(perHour(35));
     // D1.a: and the employer that offered twice as much pays the same and keeps the difference.
-    expect(rows(w, FIRM_1)[0]?.wagePerHour).toBe(0.003);
-    expect(rows(w, FIRM_2)[0]?.wagePerHour).toBe(0.003);
+    expect(rows(w, FIRM_1)[0]?.wagePerHour).toBe(perHour(35));
+    expect(rows(w, FIRM_2)[0]?.wagePerHour).toBe(perHour(35));
     expect(rows(w, FIRM_1)[0]?.headcount).toBe(2);
   });
 
@@ -294,8 +296,8 @@ describe('the level the venue prints (Labour D1, D1.a)', () => {
     const w = world((ctx) => {
       if (ctx.period !== 2) return;
       // Between them they want more people than this town has looking for work.
-      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.006, qty: hours(60) });
-      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: 0.003, qty: hours(60) });
+      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(70), qty: hours(60) });
+      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(35), qty: hours(60) });
     });
     w.step();
     w.step();
@@ -308,7 +310,7 @@ describe('the level the venue prints (Labour D1, D1.a)', () => {
 
   it('never prints a level nobody bid: the prices family checks it (Part XII)', () => {
     const w = world((ctx) => {
-      if (ctx.period === 2) ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.006, qty: hours(2) });
+      if (ctx.period === 2) ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(70), qty: hours(2) });
     });
     for (let i = 0; i < 4; i += 1) {
       const r = w.step();
@@ -327,10 +329,10 @@ describe('the contract (Labour D2, C3)', () => {
   it('does not move the wage of a job already struck when the print moves (D2, D2.b)', () => {
     const w = world((ctx) => {
       if (ctx.period === 2) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(10) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(10) });
       }
       if (ctx.period === 3) {
-        ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: 0.006, qty: hours(10) });
+        ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(70), qty: hours(10) });
       }
     });
     w.step();
@@ -349,11 +351,11 @@ describe('the contract (Labour D2, C3)', () => {
   it('costs the employer severance when it sheds hours it no longer wants (C3)', () => {
     const w = world((ctx) => {
       if (ctx.period === 2) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(10) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(10) });
       }
       // It wants half the hours it has: the difference is a separation, and it pays for it.
       if (ctx.period === 4) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(5) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(5) });
       }
     });
     w.step();
@@ -383,7 +385,7 @@ describe('who is in the workforce (Labour B3, B5)', () => {
   it('leaves the cohort that is out of it out, and the identity holds every period', () => {
     const w = world((ctx) => {
       if (ctx.period === 2) {
-        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: 0.002, qty: hours(4) });
+        ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(4) });
       }
     });
     for (let i = 0; i < 6; i += 1) {
