@@ -169,6 +169,12 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   tests, exit criteria, guard) before writing code. Tick the item's steps (`- [x]`) as they close;
   run `npm run plan:progress` to recount the completion figure; delete the item file when the item
   closes. One item, one commit. Write the RECORD entry and re-mark COVERAGE in the same commit.
+- **A bug found mid-item goes in `docs/BUGS.md` and the item carries on.** Never chase it on the
+  spot: write what was measured and where it was seen, and keep to the step you are on (Law 10,
+  Law 11). When the item closes, every finding in that file is POSITIONED — moved into the
+  `docs/plan/<item>.md` of the item that should fix it, or inserted as its own item at its
+  dependency position — and the record says where each landed. A finding leaves that file only by
+  being placed. The file is temporary and goes when it is empty.
 - Update `docs/ARCHITECTURE.md` in the same change as any structural decision.
 - Ask the owner only for decisions the spec explicitly reserves (e.g. §45 A4 inspector vs
   participant surface); everything else is derived from the spec and stated in the record.

@@ -104,6 +104,7 @@ docs/plan/manifest.json      every item with its step count (for the progress fi
 docs/WORKLIST.md             the one ordered list of items and their state
 docs/RECORD.md               outcomes, one entry per closed item
 docs/COVERAGE.md             one row per spec clause: MET / PARTIAL / MISSING / OUT OF SCOPE
+docs/BUGS.md                 findings parked mid-item, positioned when the item closes
 packages/engine/src/         the engine (kernel + modules), pure TypeScript, no DOM
 packages/engine/test/        its tests (Vitest, fast-check)
 packages/app/                the inspector web app (Vite) and the Capacitor Android wrapper
@@ -353,9 +354,15 @@ Do not skip steps; do not reorder them.
 8. **Gates.** `npm run check` green. `npm run coverage:spec` recounted. The browser smoke test green
    if the surface changed.
 9. **Tick the steps** in the item file as you go (`- [x]`); `npm run plan:progress` recounts.
-10. **Close.** Write the record entry (what, why, found, deleted, forecast with its killer); delete
+10. **Park what you find.** A bug found while working the item goes in `docs/BUGS.md` — what was
+    measured, where it was seen, what is ruled out — and the item carries on from the step it was
+    on. Chasing it is how an item stops being one bounded change (Law 14) and how the ordered list
+    stops being ordered (Law 10).
+11. **Close.** Write the record entry (what, why, found, deleted, forecast with its killer); delete
     the item file; leave its manifest row (a missing file counts as done); set the worklist row to
-    done; commit with a message that says what and why.
+    done; **position every finding in `docs/BUGS.md`** — into the item that should fix it, or as an
+    inserted item of its own, with the record saying where each landed; commit with a message that
+    says what and why.
 
 **Definition of done for an item:** steps 3–10 complete; no `TODO` in code (a TODO is a worklist
 item or it is nothing); no PARTIAL row without a named item; no placeholder without a named death;
