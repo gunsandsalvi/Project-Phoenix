@@ -5,12 +5,14 @@
  * @spec Money Market B6 Money Market B6.a Money Market C1 Money Market C2 Banks Funding A1 Banks Funding A1.a Banks Funding A1.b Banks Funding A1.c Banks Funding A1.d Banks Funding B1.a Banks Funding C2.a Central Bank B1 Central Bank D1 Law 2 Law 15
  *
  * Data only (Law 15). A1.d is the clause this file exists for: A MODEL WITH ONE DEPOSIT TYPE CANNOT
- * HAVE A RUN, so who banks where is classified here — by the kind of party the depositor is, in a
- * table, so that nothing anywhere branches on it — and a kind nobody classified has no deposit
- * class and is told so rather than given one.
+ * HAVE A RUN, so the classes are stated here — what each one is insured for and what it costs one
+ * of them to move — while WHICH class a party is in is a fact about the party's kind and is
+ * declared with the kind (`PartyKindProfile.depositClass`). A table here mapping kinds to classes
+ * was the kind branch written out as data: a module added a kind and this file kept a list of it.
  */
-import { paramId, partyKindId, type ParamId, type PartyKindId } from '../../core/ids.js';
-import { BANK, FIRM, HOUSEHOLD, SMALL_BUSINESS } from '../../registry/profiles.js';
+import { Missing } from '../../core/errors.js';
+import { paramId, type ParamId, type PartyKindId } from '../../core/ids.js';
+import type { Registry } from '../../registry/registry.js';
 
 /** B6: the books. A tenor and a security, which together say what a session strikes. */
 export interface BookDecl {
@@ -53,18 +55,28 @@ export const BOOKS: readonly BookDecl[] = [
   },
 ];
 
-/** A1: what kind of depositor a party is, which is a read of what the party IS. */
+/** A1: a class of depositor — what it is insured for and what it costs one of them to leave. */
 export interface DepositClassDecl {
   readonly id: string;
-  readonly partyKinds: readonly PartyKindId[];
   /** A1.a: insured up to the limit, per member where the depositor is a cell (XI-15). */
   readonly insured: boolean;
   /**
-   * A1.d, E1: what it costs a depositor of this class to move its account, per annum. THIS IS
-   * WHERE STICKINESS LIVES, and it is a cost somebody bears rather than a stated stickiness: a
-   * class that will not move for less than half a point is paid half a point less, and it is the
-   * same number that decides whether it runs. A stated "retail is sticky" would be an outcome
-   * written down; this is the reason behind it.
+   * A1.d, E1: what it costs a depositor of this class to move its account — AN AMOUNT OF MONEY,
+   * once, per move. THIS IS WHERE STICKINESS LIVES, and it is a cost somebody bears rather than a
+   * stated stickiness.
+   *
+   * IT IS AN AMOUNT AND NOT A RATE, AND THAT IS THE WHOLE POINT. As a rate it was the same test for
+   * every member of a class — gain more than 0.006 per annum and go — so every retail depositor in
+   * the world faced one comparison and answered it identically, and the class crossed in a single
+   * instant the moment a bank moved its rate past the number. That is a representative agent with a
+   * threshold (App B: no representative agent where decisions are thresholds), and it made a run a
+   * step function rather than a thing that builds.
+   *
+   * As an amount it is weighed against what moving is WORTH, which is the balance times the rate
+   * difference over the period. A depositor with more money in the bank gains more from the same
+   * quarter point, so it goes first; one with little never bothers. Who moves is decided by what
+   * each one holds — which differs across a cell's members and across firms by construction — and
+   * a class drains rather than jumps.
    */
   readonly switchingCost: number;
   readonly why: string;
@@ -73,30 +85,38 @@ export interface DepositClassDecl {
 export const DEPOSIT_CLASSES: readonly DepositClassDecl[] = [
   {
     id: 'retail',
-    partyKinds: [HOUSEHOLD, SMALL_BUSINESS],
     insured: true,
-    switchingCost: 0.006,
+    switchingCost: 40,
     why: 'A1.a: many, small, sticky and insured up to a limit — which is what a cell of members IS (XI-15), and what makes E4 break the loop for them and not for anybody else.',
   },
   {
     id: 'corporate',
-    partyKinds: [FIRM],
     insured: false,
-    switchingCost: 0.003,
+    switchingCost: 250,
     why: 'A1.b: fewer, larger, operational. A firm banks where it transacts, so this money moves because the firm is trading, not because a rate moved. An ESTATE is not here: it is not running a business, it is realising one (XI-8), so its balance is proceeds waiting to be paid out and not funding anybody bids for — and paying it a deposit rate would give a party being wound up an income, and the treasury a tax claim to rank among the creditors, neither of which this world has a mechanism for.',
   },
   {
     id: 'wholesale',
-    partyKinds: [BANK, partyKindId('fund'), partyKindId('fundManager')],
     insured: false,
-    switchingCost: 0.0002,
+    switchingCost: 900,
     why: 'A1.c: few, very large and rate-sensitive. This is the money that leaves first (E4.a), because nothing insures it and its holder is in the market all day anyway.',
   },
 ];
 
-/** The class a party of this kind is in, or none: a kind nobody classified is not a depositor. */
-export function classOf(kind: PartyKindId): DepositClassDecl | undefined {
-  return DEPOSIT_CLASSES.find((c) => c.partyKinds.includes(kind));
+/**
+ * The class a party of this kind is in, or none: a kind whose profile names no class is not
+ * anybody's deposit base. The kind says which class (Law 15); this file says what the class is.
+ */
+export function classOf(registry: Registry, kind: PartyKindId): DepositClassDecl | undefined {
+  const named = registry.partyKind(kind).depositClass;
+  if (named === null) return undefined;
+  const cls = DEPOSIT_CLASSES.find((c) => c.id === named);
+  if (cls === undefined) {
+    // A kind that says it banks as something this market never declared is MISSING, not unbanked:
+    // it would otherwise be silently dropped from every bank's deposit base and from the cover.
+    throw new Missing('Banks Funding A1', `party kind ${kind} banks as "${named}", which no deposit class declares`, { kind, named });
+  }
+  return cls;
 }
 
 /** What each bank is like as a funder: its own numbers, stated one bank at a time (Law 2, Seed B4). */

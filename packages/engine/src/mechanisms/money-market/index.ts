@@ -152,10 +152,16 @@ function payDeposits(ctx: MechanismContext): void {
 }
 
 /**
- * Banks Funding A1.a, E1: the segments, PUBLISHED. How depositors are grouped and what it costs one
- * of them to move are facts about depositors, and every bank prices its board against the same
- * ones — so they are said out loud once, by the market that holds the taxonomy, and read by anybody
- * who needs them (Law 4). A bank keeping its own copy would price against a market only it can see.
+ * Banks Funding A1.a, E1: the segments, PUBLISHED. How depositors are grouped and what the state
+ * insures of each are facts about a taxonomy and a regulation, and every bank prices its board
+ * against the same ones — so they are said out loud once, by the market that holds them, and read
+ * by anybody who needs them (Law 4). A bank keeping its own copy would price against a market only
+ * it can see.
+ *
+ * WHAT IT COSTS ONE OF THEM TO MOVE IS NOT PUBLISHED, because nobody but the depositor faces it: it
+ * is an amount of that depositor's own money (A1.d), weighed against that depositor's own balance,
+ * and a bank that could read it would be reading a private preference (Observer A4). What a bank
+ * does face is the premium, and that is here.
  */
 function publishClasses(ctx: MechanismContext): void {
   ctx.record(
@@ -165,7 +171,11 @@ function publishClasses(ctx: MechanismContext): void {
       classes: DEPOSIT_CLASSES.map((c) => ({
         id: c.id,
         insured: c.insured,
-        switchingCost: ctx.params.get(switchingCost(c.id)),
+        // Banks Capital D4: and what the guarantee COSTS the bank that has it, which is what makes
+        // the same bank pay its classes differently — insured money carries a premium on top of the
+        // rate, so a bank paying the same all-in for both offers the insured class less by exactly
+        // that. It is published with the class because it is the same regulation, said once (Law 4).
+        premium: c.insured ? ctx.params.get(INSURER_PARAMS.premium) : 0,
       })),
     },
     true,
@@ -624,10 +634,11 @@ function paramsOf(): ParamDecl[] {
     ...DEPOSIT_CLASSES.map((c) => ({
       id: switchingCost(c.id),
       value: c.switchingCost,
-      unit: 'per annum',
+      denominated: true as const,
+      unit: 'per move, per member',
       kind: 'preference' as const,
       owner: 'model' as const,
-      why: `Banks Funding A1.d, E1: what it costs a ${c.id} depositor to move its account. ${c.why}`,
+      why: `Banks Funding A1.d, E1: what it costs a ${c.id} depositor to move its account, ONCE, as an amount of the money the account is in. Weighed against what moving is worth — the balance times the rate difference over the period — so a bigger balance moves for a smaller gap and a class drains instead of crossing at once. ${c.why}`,
     })),
   ];
 }
@@ -813,7 +824,7 @@ export const moneyMarket: SystemModule = {
 
 /** What a party of this kind is to a bank that funds itself, for the reads that need it. */
 export function depositClassOf(ctx: MechanismContext, party: PartyId): Option<string> {
-  const cls = classOf(ctx.parties.get(party).kind);
+  const cls = classOf(ctx.registry, ctx.parties.get(party).kind);
   return cls === undefined ? none<string>() : some(cls.id);
 }
 

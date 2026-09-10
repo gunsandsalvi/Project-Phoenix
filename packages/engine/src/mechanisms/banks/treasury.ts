@@ -315,19 +315,17 @@ function refusedLastSession(ctx: MechanismContext, bank: PartyId): Option<number
  * depositors can read it (E1).
  *
  * A bank that only ever priced its deposits off its own funding cost would sit still while somebody
- * across the road bid a point over it, and then lose its entire base in the week the gap crossed
- * what moving costs — every depositor of a class facing the same two numbers and answering them the
- * same way. That is not a deposit market: it is a cliff.
+ * across the road bid a point over it, and lose its base to it week by week as one depositor after
+ * another worked out that the gap had cost it more than moving would (E1). That is not a deposit
+ * market: it is a bank that cannot see a rival's board its own depositors can read.
  */
-export function defended(
-  best: Option<number>,
-  own: number,
-  sticky: number,
-  worth: number,
-): number {
+export function defended(best: Option<number>, own: number, worth: number): number {
   if (!best.some) return own;
-  const hold = sub(best.value, sticky, 'what it takes to keep them');
-  return hold > own && hold < worth ? hold : own;
+  // B1.a, D1: it matches a rival that is paying more, and it stops at what the money is worth to
+  // it — past that it funds itself in the market instead and lets the deposit go, which is the
+  // alternative D1 names and not a cap on anything. What it will not do is guess how far under the
+  // rival it could sit: that is the depositor's arithmetic (E1) and it is done there.
+  return best.value > own && best.value < worth ? best.value : own;
 }
 
 /**
@@ -474,16 +472,21 @@ export function sessionOrders(view: ParticipantView, venue: VenueDecl): readonly
 export interface DepositClassSeen {
   readonly id: string;
   readonly insured: boolean;
-  readonly switchingCost: number;
+  /** Banks Capital D4: what the guarantee on this class costs the bank that funds itself with it. */
+  readonly premium: number;
 }
 
 /**
  * A1.a, E1: the segments a bank prices its board against, READ off what the market published.
  *
- * How depositors are grouped, and what it costs one of them to move, are facts about DEPOSITORS
- * and not about any bank — every bank faces the same segments, which is why a rival's board is
- * something this bank's own depositors can compare with (E2.a). A bank keeping its own copy of the
- * taxonomy would be a bank pricing against a market that only it can see.
+ * How depositors are grouped is a fact about DEPOSITORS and not about any bank — every bank faces
+ * the same segments, which is why a rival's board is something this bank's own depositors can
+ * compare with (E2.a). A bank keeping its own copy of the taxonomy would be a bank pricing against
+ * a market that only it can see.
+ *
+ * WHAT IT COSTS ONE OF THEM TO MOVE IS NOT HERE, and that is the point: it is an amount of money
+ * the depositor pays, weighed against its own balance (A1.d, E1), and a bank does not know it. What
+ * the bank knows is what its own base has done, which is the contested share below.
  */
 export function classesSeen(ctx: MechanismContext): readonly DepositClassSeen[] {
   const said = ctx.journal.ofKind('deposit.classes');
@@ -493,11 +496,10 @@ export function classesSeen(ctx: MechanismContext): readonly DepositClassSeen[] 
   const out: DepositClassSeen[] = [];
   for (const r of rows) {
     if (typeof r !== 'object' || r === null) continue;
-    const { id, insured, switchingCost } = r as Record<string, unknown>;
-    if (typeof id !== 'string' || typeof insured !== 'boolean' || typeof switchingCost !== 'number') {
-      continue;
-    }
-    out.push({ id, insured, switchingCost });
+    const { id, insured, premium } = r as Record<string, unknown>;
+    if (typeof id !== 'string' || typeof insured !== 'boolean') continue;
+    if (typeof premium !== 'number') continue;
+    out.push({ id, insured, premium });
   }
   return out;
 }
@@ -520,10 +522,22 @@ export function setBoard(
   if (!seen.some) return;
   const worth = worthOfMoney(ctx, bank, seen.value, base);
   const margin = ctx.params.get(bankParam(bank, 'depositMargin'));
+  // B1.a, B3: what it will pay is what the money is worth to it, less what it keeps and less what
+  // the money costs it besides the rate. IT DOES NOT SUBTRACT ANYBODY'S STICKINESS: what it costs a
+  // depositor to move is an amount of that depositor's money, weighed against that depositor's
+  // balance (A1.d, E1), and a bank does not know either number. It used to be subtracted here as
+  // though it were a rate, which made the board a function of a cost in a different unit and gave
+  // every bank a per-class discount nobody had bid for and nobody had paid.
+  const net = sub(worth, margin, 'what it keeps');
   const rates: Record<string, number> = {};
+  // A1, Banks Capital D4: AND THE THREE CLASSES ARE NOT ONE RATE, for a cost this bank actually
+  // bears. Insured money carries a premium the bank pays the insurer on top of what it pays the
+  // depositor, so a bank whose all-in cost of funds is the same either way offers the insured class
+  // less by exactly the premium. That is why retail is paid under wholesale, and it is a real
+  // payment out of this bank's account (`insurance.premium`) rather than a stated stickiness.
   for (const cls of classes) {
-    const own = sub(sub(worth, margin, 'what it keeps'), cls.switchingCost, `what it pays ${cls.id}`);
-    rates[cls.id] = defended(bestRival(ctx, bank, cls.id), own, cls.switchingCost, worth);
+    const own = sub(net, cls.premium, `what the guarantee on ${cls.id} costs it`);
+    rates[cls.id] = defended(bestRival(ctx, bank, cls.id), own, worth);
   }
   ctx.record('bank.depositRate', [bank], { bank, ccy, rates }, true);
 }

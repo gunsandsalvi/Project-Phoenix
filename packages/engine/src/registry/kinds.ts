@@ -311,4 +311,16 @@ export interface PartyKindProfile {
    * the kind, so the funding market asks the profile instead of naming kinds (Law 15).
    */
   readonly choosesBank: boolean;
+  /**
+   * Banks Funding A1, A1.d: WHICH KIND OF DEPOSITOR a party of this kind is, or null for one that
+   * is nobody's deposit base. It is a fact about the kind — many and small, fewer and operational,
+   * few and very large — so it is declared with the kind and the funding market asks the profile
+   * (Law 15). A table inside that market mapping kinds to classes was that branch written out: a
+   * module added a kind and the market kept a list of them.
+   *
+   * What the class then MEANS — insured to a limit, what it costs one to move — belongs to the
+   * market that holds the taxonomy, because those are facts about a regulation and a cost and not
+   * about what the party is.
+   */
+  readonly depositClass: string | null;
 }

@@ -102,6 +102,7 @@ export const fundKind: PartyKindProfile = {
   // Money Market A1.c, E1: its cash is somebody's deposit and it is in the market all day — this
   // is the money that leaves first, and it leaves because it chose to.
   choosesBank: true,
+  depositClass: 'wholesale',
 };
 
 /** F3: the manager is a separate party. The fee is its income and the fund's cost. */
@@ -112,6 +113,8 @@ export const fundManagerKind: PartyKindProfile = {
   fails: ['cash', 'solvency'],
   borrows: true,
   choosesBank: true,
+  // A1.c: it runs the money and it banks like the money it runs.
+  depositClass: 'wholesale',
 };
 
 /**

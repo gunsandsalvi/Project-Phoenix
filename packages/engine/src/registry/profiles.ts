@@ -63,6 +63,8 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     // §31 A1.a: it is the other side of everybody's borrowing, and it does not have a bank.
     borrows: false,
     choosesBank: false,
+    // Its own money is what everybody else's deposit is made of; nobody's deposit base holds it.
+    depositClass: null,
     moneyIssuer: {
       // B3.b, Central Bank D3: a bank overdrawn at the central bank is BORROWING FROM IT, and what
       // the central bank does about that is the lender of last resort's decision — freely, against
@@ -93,6 +95,10 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     // Money C2.a: its account is at the central bank because that is what settling in central bank
     // money IS. There is no rival paying more for it.
     choosesBank: false,
+    // Banks Funding A1.c: what a bank holds AT ANOTHER BANK is wholesale money — few, very large,
+    // and in the market all day. Its own account at the central bank is not a deposit anybody bids
+    // for, and `choosesBank: false` is what says so.
+    depositClass: 'wholesale',
     moneyIssuer: {
       // B3.a: a customer overdrawn is BORROWING, and it is a credit decision by its bank — the room
       // its own capital supports, and a refusal past it. A party kind profile cannot take that
@@ -104,14 +110,16 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   // cannot pay does not pay, and that is a real recorded state (Treasury D3) — it does not end it.
   // A default in a money it cannot create is real, and that needs the currency layer (worklist 12).
   // Treasury D3, Central Bank E2: it banks at the central bank, and that is not a choice it revisits.
-  { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true, choosesBank: false },
+  { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true, choosesBank: false, depositClass: null },
   // XI-3, Firm D4: it can fail two ways and they are different — no cash to pay something due, or
   // liabilities exceeding assets. Both, because a firm can be either without the other.
-  { id: FIRM, representation: 'named', moneyIssuer: null, fails: ['cash', 'solvency'], borrows: true, choosesBank: true },
+  // Banks Funding A1.b: fewer, larger, operational — a firm banks where it transacts.
+  { id: FIRM, representation: 'named', moneyIssuer: null, fails: ['cash', 'solvency'], borrows: true, choosesBank: true, depositClass: 'corporate' },
   // XI-3: a household cell dissolves into a NAMED HEIR CELL rather than into an estate (Households
   // F1, F2), and what happens when its members cannot pay is their lender's enforcement. Both are
   // the household life cycle and consumer credit, which is worklist 13d.
   // Households C1.d: nobody lends to a household in this world; consumer credit is 13d.
-  { id: HOUSEHOLD, representation: 'cell', moneyIssuer: null, fails: [], borrows: false, choosesBank: true },
-  { id: SMALL_BUSINESS, representation: 'cell', moneyIssuer: null, fails: [], borrows: false, choosesBank: true },
+  // Banks Funding A1.a: many, small, sticky, insured to a limit — which is what a cell IS (XI-15).
+  { id: HOUSEHOLD, representation: 'cell', moneyIssuer: null, fails: [], borrows: false, choosesBank: true, depositClass: 'retail' },
+  { id: SMALL_BUSINESS, representation: 'cell', moneyIssuer: null, fails: [], borrows: false, choosesBank: true, depositClass: 'retail' },
 ];

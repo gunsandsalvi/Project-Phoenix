@@ -805,7 +805,9 @@ export class World {
       this.currentCycle,
       'deposit.moved',
       [party, from, to],
-      { party, from, to, amount: perMember, ccy },
+      // Law 8: what moved, per member AND in total, because a cell is many real accounts and the
+      // bank it left is short by all of them (E3.a).
+      { party, from, to, amount: perMember, total: totalFor(p, perMember), ccy },
       true,
     );
     return true;

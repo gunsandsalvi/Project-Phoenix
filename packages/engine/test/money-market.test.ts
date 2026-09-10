@@ -20,9 +20,9 @@ import {
   foundationSpec,
   foundationWorld,
   moneyInstrumentId,
+  none,
   partyId,
   snapshot,
-  switchingCost,
   yearFraction,
   type PartyId,
   type Event,
@@ -137,13 +137,11 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
     // D5.a: the board is public, so a bank can read what its rivals pay and its depositors can read
     // both. E1 is then a real answer to a real number — and it is what stops a bank paying less.
     //
-    // What must be true is a shape, not a level: whenever one bank is publishing more for a class
-    // than another, the gap is no wider than what it costs that class to move. Wider than that and
-    // the class has an unanswered reason to go, and a whole deposit base moves in the week the gap
-    // opens; narrower is a bank that decided the money was worth keeping. The exception is a bank
-    // that CANNOT answer, because keeping the money would cost it more than replacing it in the
-    // market (B1.a bounds the rate by its own wholesale cost) — that bank lets the class go, and
-    // the gap it leaves is the run's first cause rather than a defect.
+    // Two shapes, and neither is a level. It ANSWERS: banks facing each other for the same money end
+    // up publishing the same number for it, because the one paying less matches the one paying more.
+    // And it STOPS: what it will not do is pay more than money is worth to it, and what money is
+    // worth to it never exceeds the top of the corridor — past that it takes the window instead and
+    // lets the deposit go, which is the run's first cause rather than a defect.
     const w = run(foundationWorld('mm-rivals'), 12);
     const seen = new Map<string, number[]>();
     for (const e of events(w, 'bank.depositRate')) {
@@ -153,17 +151,15 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
         seen.set(key, [...(seen.get(key) ?? []), rate]);
       }
     }
-    let answered = 0;
-    for (const [key, rates] of seen) {
+    let matched = 0;
+    for (const rates of seen.values()) {
       if (rates.length < 2) continue;
-      const cls = key.split(':')[1] ?? '';
-      const gap = Math.max(...rates) - Math.min(...rates);
-      const cost = w.params.get(switchingCost(cls));
-      if (gap <= cost) answered += 1;
+      if (new Set(rates).size === 1) matched += 1;
     }
-    // It happens, and it is the common case: banks facing each other for the same money end up
-    // within what moving costs of one another.
-    expect(answered).toBeGreaterThan(0);
+    expect(matched).toBeGreaterThan(0);
+    const ceiling =
+      w.params.get(MM_PARAMS.policyRate) + w.params.get(MM_PARAMS.ceilingSpread);
+    for (const rates of seen.values()) for (const r of rates) expect(r).toBeLessThan(ceiling);
   });
 
   it('is what it paid plus what its capital costs, over what funds its book (B2, B2.b)', () => {
@@ -367,38 +363,79 @@ function withoutCollateral(
   const spec = foundationSpec(seed);
   const modules = spec.modules.map((m) => {
     // ...and it takes no more on either. A dealing line that will carry nothing quotes for nothing
-    // and buys nothing, so the paper this seed pledged away is the last paper it ever has.
+    // and buys nothing, and a bank that will lend nobody anything writes no loans.
     if (m.id === 'banks') {
       return {
         ...m,
         params: m.params.map((p) =>
-          p.id === `bank.dealing.limit.aggregate.${encumbered}` ? { ...p, value: 0 } : p,
+          p.id === `bank.dealing.limit.aggregate.${encumbered}` ||
+          p.id === `bank.limitPerBorrower.${encumbered}`
+            ? { ...p, value: 0 }
+            : p,
         ),
       };
     }
-    return m.id === 'seed.foundation'
-      ? {
-          ...m,
-          seed: (ctx: Parameters<NonNullable<typeof m.seed>>[0]) => {
-            m.seed?.(ctx);
-            const bank = partyId(encumbered);
-            const to = encumbered === 'bank.a' ? BANK_B : BANK_A;
-            const on = ctx.calendar.startOf(ctx.period);
-            for (const i of ctx.instruments.all()) {
-              const free = ctx.register.free(bank, i.id);
-              if (free <= 0 || !i.issuer.some) continue;
-              // Everything a lender would take is a dated claim on a name (Money Market B3.a), so
-              // pledging every one of them away is what "nothing left to pledge" means.
-              if (ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar).length === 0) {
-                continue;
-              }
-              ctx.register.pledge(bank, i.id, free, to, 'everything it owns is already somebody\'s', ctx.period);
-            }
-          },
-        }
-      : m;
+    return m;
   });
-  return assemble({ ...spec, modules: [...modules, ...extra] });
+  // The pledge runs FIRST, before anything else in the period can leave the bank short.
+  return assemble({ ...spec, modules: [...modules, everythingPledged(partyId(encumbered)), ...extra] });
+}
+
+/**
+ * Register D5: a bank every piece of whose eligible paper is already standing behind somebody
+ * else's claim, and stays that way. It is not enough to bind what it opens with: it is a primary
+ * dealer, and every auction it takes up, every repo it lends into and every row it writes is a new
+ * dated claim on a name — which is exactly what the window takes (Money Market B3.a). So the pledge
+ * runs every period, ahead of the market that would advance against it.
+ */
+function everythingPledged(bank: PartyId): SystemModule {
+  return {
+    id: 'test.everything-pledged',
+    spec: 'Register D5 Money Market B3.a',
+    requires: [],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [
+      {
+        name: 'test.pledgeAll',
+        spec: 'Register D5',
+        cycle: 0,
+        anchor: { after: 'corporateActions' },
+        run: (ctx): void => {
+          const to = bank === BANK_A ? BANK_B : BANK_A;
+          const on = ctx.calendar.startOf(ctx.period);
+          for (const i of ctx.instruments.all()) {
+            if (!i.status.live || !i.issuer.some) continue;
+            if (ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar).length === 0) {
+              continue;
+            }
+            const free = ctx.register.free(bank, i.id);
+            if (free <= 0) continue;
+            ctx.settle({
+              legs: [
+                {
+                  kind: 'pledge',
+                  pledgor: bank,
+                  beneficiary: to,
+                  instrument: i.id,
+                  qty: free,
+                  secures: `everything ${bank} owns is already somebody's`,
+                  pledgorCell: none(),
+                },
+              ],
+              cause: 'transfer',
+              reason: `${bank} has nothing left of its own`,
+            });
+          }
+        },
+      },
+    ],
+    participants: [],
+    families: [],
+  };
 }
 
 /** A payment out of a bank's own reserves, larger than the reserves it has. */

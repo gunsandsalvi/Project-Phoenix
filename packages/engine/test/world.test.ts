@@ -197,14 +197,24 @@ describe('the seed (Seed A2)', () => {
         .params.placeholders.filter((p) => p.id.includes('fund.fee'))
         .map((p) => `${p.mechanism} at ${p.worklistItem}`),
     ).toEqual(['Fund Shares F3 at 13h', 'Fund Shares F3 at 13h']);
-    // And six shapes, which is what there always were. Five are the levels the world opens at
-    // (Seed C4) — the four goods and the opening yield: a market that has never traded has no
-    // price, so a world that opens with stock in it opens with a level for that stock, and no
-    // worklist item will ever delete that, which is why they are shapes and not placeholders with
-    // a death nobody could keep. The sixth is the width of the one preference whose dispersion is
-    // still stated (§46 B1.a). What is unequal about households is not here: it is what happened
-    // to them.
-    expect(report?.reads.shapes).toBe(6);
+    // And eight shapes. Five are the levels the world opens at (Seed C4) — the four goods and the
+    // opening yield: a market that has never traded has no price, so a world that opens with stock
+    // in it opens with a level for that stock, and no worklist item will ever delete that, which is
+    // why they are shapes and not placeholders with a death nobody could keep. The sixth is the
+    // width of the one preference whose dispersion is still stated (§46 B1.a). What is unequal
+    // about households is not here: it is what happened to them.
+    //
+    // The last two are the opening balance sheet of the central bank — the share of every sovereign
+    // line it opens holding, and the share of the money that buys it that the treasury opens with
+    // rather than the banks. THE COUNT WENT UP AND FEWER NUMBERS ARE STATED, which is the only way
+    // that happens honestly: what stood here before was three reserve figures written into a table
+    // in the seed, declared to nobody and counted by nothing, plus the central bank's own OMO
+    // target read across from another module — so the central bank opened at the holding its own
+    // policy wanted and its first open-market session had nothing to do, which is a seeded outcome
+    // (Seed E1) and an imported equilibrium (Law 2). Two declared shapes now say what those four
+    // numbers said, and everything else on that balance sheet is arithmetic that cannot fail to
+    // add up.
+    expect(report?.reads.shapes).toBe(8);
     // Three banks, two cohorts, a thousand people to a (cohort, bank) key: a key is where a
     // population is REPRESENTED, so a world with a third bank in it has a third more households.
     expect(report?.reads.populations['household']).toBe(6000);

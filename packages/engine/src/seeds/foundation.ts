@@ -40,7 +40,7 @@ import type { DayCount } from '../calendar/daycount.js';
 import { priceAt } from '../prices/curve.js';
 import { forbid } from '../core/assert.js';
 import { weightOf } from '../parties/party.js';
-import { add, div, mul, positiveCount, sub, zeroIfNone } from '../core/num.js';
+import { add, div, mul, positiveCount, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
 import {
@@ -229,10 +229,10 @@ const P = {
   cellsPerKey: paramId('seed.households.cellsPerKey'),
   membersPerKey: paramId('seed.households.membersPerKey'),
   openingYield: paramId('seed.openingYield'),
-  // Declared by other modules and read here by id, because a seed may not import a mechanism
-  // (phoenix/no-cross-module-import). The opening state is derived from the SAME numbers that
-  // govern the running world, so nothing opens where its own rule would immediately move it.
-  omoTargetShare: paramId('centralBank.omo.targetHoldingShare'),
+  cbOpeningShare: paramId('seed.centralBank.openingHoldingShare'),
+  treasuryBufferShare: paramId('seed.treasury.bufferShare'),
+  // Declared by another module and read here by id, because a seed may not import a mechanism
+  // (phoenix/no-cross-module-import).
   leverageRatio: paramId('regulation.leverageRatio'),
 } as const;
 
@@ -273,6 +273,22 @@ export const foundationSeed: SystemModule = {
   curveFamilies: [],
   units: [],
   params: [
+    {
+      id: P.cbOpeningShare,
+      value: 0.2,
+      unit: 'ratio of a line outstanding',
+      kind: 'shape',
+      owner: 'model',
+      why: 'Seed E2, Central Bank C1: what the central bank opens holding of every sovereign line, and therefore how big its balance sheet is — every reserve it has issued was issued to buy this paper (Central Bank A2). It is stated BELOW the OMO\'s own target share so that the central bank opens short of what its policy wants and its first open-market session has something to do: a seed that opened it at its target would be seeding the outcome of the mechanism it is about to run (Seed E1). The mechanism that replaces this number is the open-market session itself, which runs from period one.',
+    },
+    {
+      id: P.treasuryBufferShare,
+      value: 0.4,
+      unit: "ratio of the central bank's balance sheet",
+      kind: 'shape',
+      owner: 'model',
+      why: "Treasury D4.b, Seed E2: how much of the central bank's money the treasury opens holding, with the banks holding the rest as reserves. It is a share and not an amount because the amount is not free: every unit of central-bank money was issued to buy the paper above, so what is stated is how it is divided and never how much of it there is. The mechanism that replaces it is the treasury's own funding programme, which decides its balance from period one.",
+    },
     {
       id: P.cellsPerKey,
       value: 2,
@@ -476,13 +492,16 @@ export const foundationSeed: SystemModule = {
           ctx.endowUnits(cell.id, id, held(ctx, id, line.perMember), par);
         }
       }
-      // Central Bank C1: the central bank opens at THE SHARE ITS OWN POLICY NAMES, so its first
-      // open-market session has nothing to correct. Its holding is therefore not a number in this
-      // table: it is that share of what the line comes to outstanding once everybody else holds
-      // theirs, which is `others × share / (1 − share)` — the same equation the OMO phase solves
-      // every period, solved once here (Law 4: one rule, not a second one for the opening).
+      // Central Bank C1, Seed E2: WHAT THE CENTRAL BANK OPENS HOLDING, as a share of each line. It
+      // is the seed's own endowment and it is deliberately NOT the OMO's target: opening the
+      // central bank at the holding its own policy wants would be seeding an outcome (Seed E1) and
+      // importing an equilibrium (Law 2), and it would mean the first open-market session had
+      // nothing to do — the mechanism would never be seen to run at all.
+      //
+      // Its holding is therefore not a number in this table either: it is that share of what the
+      // line comes to outstanding once everybody else holds theirs, `others × share / (1 − share)`.
       const others = line.bankA + line.bankB + line.bankC + line.perMember * householdMembers;
-      const share = ctx.params.get(P.omoTargetShare);
+      const share = ctx.params.get(P.cbOpeningShare);
       const cbUnits = div(mul(others, share, 'the share it targets'), 1 - share, 'its holding');
       if (cbUnits > 0) {
         ctx.endowUnits(CB, id, held(ctx, id, cbUnits), par);
@@ -491,32 +510,30 @@ export const foundationSeed: SystemModule = {
     }
 
     // Money A1, Central Bank A2: NO CENTRAL-BANK MONEY EXISTS THAT ITS ISSUER BOUGHT NOTHING WITH.
-    // Every reserve here is against the paper endowed above, so the two sides of the central bank
-    // are equal by construction rather than by luck. The seed used to hand out 160,000,000 of
-    // reserves against 53,531,106 of assets and leave the difference — 106,468,894 — as a hole the
-    // central bank then paid the floor rate on for ever.
-    const bankReserves = new Map<PartyId, number>([
-      [BANK_A, 300_000],
-      [BANK_B, 250_000],
-      [BANK_C, 150_000],
-    ]);
-    let issued = 0;
-    for (const [bank, reserve] of bankReserves) {
-      ctx.endowMoney(bank, PHX, cash(ctx, reserve));
-      issued = add(issued, reserve, 'reserves issued');
-    }
+    // Its money is its liability and the paper above is the asset it bought with it, so THE SIZE OF
+    // ITS BALANCE SHEET IS ALREADY DECIDED: what is left to say is who holds that money. The seed
+    // used to hand out 160,000,000 of reserves against 53,531,106 of assets and leave the
+    // difference — 106,468,894 — as a hole the central bank then paid the floor rate on for ever;
+    // then it stated three reserve figures that had to come to less than assets a share decided,
+    // and a world with fewer households did not open. Both were the same defect: a stated number on
+    // the side of an identity that is not free.
+    //
     // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
-    // single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what it can be is what is
-    // left of that balance sheet once the banks have theirs. Derived, never stated (11.3's third
-    // finding). A world whose central bank cannot fund both does not open.
-    const buffer = sub(centralBankAssets, issued, "the treasury's opening buffer");
-    forbid(
-      buffer > 0,
-      'Central Bank A2',
-      `the central bank holds ${centralBankAssets} and owes ${issued} in reserves: there is nothing left for the treasury`,
-      { centralBankAssets, issued },
-    );
+    // single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what is stated about it is
+    // ITS SHARE of that balance sheet. The banks hold the rest, in proportion to the paper each of
+    // them holds: a bigger bank settles bigger payments and carries more against them. Nothing here
+    // can fail to add up, because the last holder gets the residue of a subtraction (Law 2).
+    const buffer = mul(centralBankAssets, ctx.params.get(P.treasuryBufferShare), "the treasury's buffer");
     ctx.endowMoney(TREASURY_NORTH, PHX, cash(ctx, buffer));
+    const reserves = sub(centralBankAssets, buffer, 'what the banks hold in reserve');
+    const allPaper = sum([...bankPaper.values()]).value;
+    const bankReserves = new Map<PartyId, number>(
+      [...bankPaper].map(([bank, paper]) => [
+        bank,
+        div(mul(reserves, paper, "this bank's share of the paper"), allPaper, 'its reserves'),
+      ]),
+    );
+    for (const [bank, reserve] of bankReserves) ctx.endowMoney(bank, PHX, cash(ctx, reserve));
 
     for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, f.cash));
 

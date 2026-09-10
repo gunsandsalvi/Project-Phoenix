@@ -89,6 +89,34 @@ incomplete-model check working as designed.
 
 **Placed at 13h**, whose insurers and pensions are the holders this end of the curve is waiting for.
 
+### 12-5 — A bank fails in period 7 of the foundation world
+
+**Where.** `foundationWorld`, seen after 12's opening-balance-sheet step (`cap-a`, and it is not
+seed-specific).
+
+**Measured.** `bank.b` ceases in period 7 with `bank.a` as its successor. Its equity walked up
+28.7M → 31.2M over periods 1-6 and then went to zero in one step, which is the resolution taking the
+book rather than a loss landing on zero. Ahead of it: `moneyMarket.refused` for `bank.b` at periods
+5, 6 and 7 (short 1, then 45,554,802, then 45,194,801, reserves −23,288,853 at period 6), then
+`centralBank.refused` with `collateral: 0, solvent: true` — refused at the window with nothing left
+to pledge while still solvent. That is Banks Funding D6 firing: a funding failure, distinct from
+insolvency, and the audit is clean through all of it.
+
+**Not chased, on purpose.** It appeared when the opening balance sheet stopped stating three reserve
+figures and started deriving them from the central bank's own balance sheet, so `bank.b` opens with
+thinner reserves than the table used to hand it. Whether that is a bank that should fail — it runs
+its account down for six periods and then cannot fund itself, which is the mechanism working — or a
+seed that funds it wrongly, is a question about the opening sheet and about 12-1: the equity and
+funds modules endow these banks with shares the foundation never funded, so what a bank opens with
+is not what the foundation thinks it opened with.
+
+**Do not read it as a regression.** The change that surfaced it is right on its own terms (Law 13):
+four numbers chosen by reading the answer became two declared shapes, and the central bank no longer
+opens at its own OMO target, which was an imported equilibrium.
+
+**To be positioned at 12's close**, most likely into 12-1's resolution — a bank cannot be funded
+against assets the funder cannot see.
+
 ### 12-4 — An audit violation in the bank-failure scenario
 
 **Where.** `packages/engine/test/bank-resolution.test.ts`, at module scope — the file's own setup

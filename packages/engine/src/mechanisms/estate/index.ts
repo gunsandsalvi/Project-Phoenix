@@ -80,6 +80,10 @@ export const estateKind: PartyKindProfile = {
   // XI-8: it holds the account of the party it succeeded, and it is realising that party rather
   // than running it. Shopping for a deposit rate is not something a liquidation does.
   choosesBank: false,
+  // A1.b: and its balance is not funding either — it is proceeds waiting to be paid out. Paying it
+  // a deposit rate would give a party being wound up an income, and the treasury a tax claim to
+  // rank among the creditors; this world has a mechanism for neither.
+  depositClass: null,
 };
 
 /**
