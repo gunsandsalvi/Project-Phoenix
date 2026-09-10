@@ -62,6 +62,7 @@ import {
   subordinatedKind,
   SUB_PARAMS,
 } from './subordinated.js';
+import { publishLines } from './lines.js';
 import { LOAN, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import {
   holderReservation,
@@ -74,6 +75,7 @@ import {
 } from './quote.js';
 
 export * from './data.js';
+export { DEALING, LENDING, roomFor } from './lines.js';
 export * from './loan.js';
 export * from './capital.js';
 export * from './subordinated.js';
@@ -142,9 +144,15 @@ function rulesFor(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyI
 /** B1, B3, B3.a: every bank's position, taken and published before anybody decides anything. */
 function publishCapital(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const b of ctx.parties.ofKind(BANK)) {
-    if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
+    const decl = declOf(rows, b.id);
+    if (!b.status.alive || decl === undefined) continue;
     const ccy = ctx.registry.region(b.region).ccy;
-    publish(ctx, capitalOf(ctx, b.id, ccy, rulesFor(rows, ctx, b.id)));
+    const p = capitalOf(ctx, b.id, ccy, rulesFor(rows, ctx, b.id));
+    publish(ctx, p);
+    // XI-4, B3: and its treasury allots the room it has left between the lines that spend it, in
+    // the order of what each of them earned on the capital it used. Published with the position
+    // because it is derived from it, and read back by both lines (Law 4).
+    publishLines(ctx, b.id, ccy, decl, p.byLine, p.headroom, p.capital);
   }
 }
 

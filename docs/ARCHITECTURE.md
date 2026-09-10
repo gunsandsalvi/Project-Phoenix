@@ -707,6 +707,20 @@ That is the same door a depositor, a rival bank and the observer read them throu
 makes "a bank near the line behaves differently" a thing the world can see rather than a thing one
 module tells another (Banks Capital B3.a, Banks Funding E2.a).
 
+**Its lines compete for its own capital, and the treasury allots** (XI-4, Dealer Desks F2; item 12).
+Each line used to size itself against the WHOLE bank — the lending line read the capital headroom,
+the dealing line took its own declared share of capital — so two lines drew on one pool with no
+allocation between them, which is two banks sharing an equity account rather than one bank with a
+treasury. Now the capital walk keeps the three answers it was already computing (what the bank LENT,
+what its treasury holds for liquidity, what its dealing line carries above that), the treasury reads
+what each line EARNED on what it used off the wire (Law 19: every settled instruction carries its
+equity effect, and the instruments its legs moved say whose line it was), and it allots the room the
+bank has left to the higher earner first. There is no floor: a line behind the other in a period
+when the room ran out gets nothing and stops adding to its book. What neither line claims is
+published as `unattributed` rather than folded into one of them (Law 2). The allocation is PRIVATE
+(`bank.lines`, Observer A4) — it is exactly what a rival would price against — and its consequence
+is public, because a bank that stops quoting has stopped where everybody can see.
+
 **One face per market is a contract, not a convention.** Exactly one module gives `BANK` a
 participant, in markets and in venues. The kernel refuses a party on both sides of one book at
 crossing prices at the site (`pairFills`, Clearing A2, Register D2) — it used to step past it,

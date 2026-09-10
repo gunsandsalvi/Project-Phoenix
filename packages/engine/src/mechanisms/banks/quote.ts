@@ -22,6 +22,7 @@ import { add, div, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
+import { LENDING, roomFor } from './lines.js';
 
 /** C1: the four terms, kept apart so a reader can see which one moved (B2.d, XI-4). */
 export interface Quote {
@@ -208,10 +209,13 @@ export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): 
   // position has not decided anything about it (Appendix A) and is constrained by the rest.
   // At the last close (the phase runs after the marks are taken), which is when a bank last knew
   // what its book was worth.
-  const said = view.lastOwn('bank.capital');
-  const headroom = said.some ? said.value.data['headroom'] : undefined;
-  const byCapital =
-    typeof headroom === 'number' ? some(headroom) : none<number>();
+  //
+  // XI-4, Dealer Desks F2: and it is the room ITS TREASURY ALLOTTED THIS LINE, not the whole bank's.
+  // Two lines drawing on one pool with no allocation between them is not a bank with a treasury —
+  // it is two banks sharing an equity account — and which of them grows is then nobody's decision.
+  // The treasury allots to what earned (`bank.lines`), and a lending line behind the dealing line
+  // in a period when the room ran out has none, which is what scarce capital means.
+  const byCapital = roomFor(view, LENDING);
   // F3, B2.c: the most it will have out to one name, whatever its capital would allow.
   const limit = mul(capital, view.params.get(bankParam(decl.bank, 'limitPerBorrower')), 'its limit for one name');
   const byAppetite = sub(limit, exposureTo(view, borrower), 'room under its limit');

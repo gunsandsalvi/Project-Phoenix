@@ -18,7 +18,7 @@
  */
 import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
-import { div, material, mul, sub, sum } from '../../core/num.js';
+import { add, div, material, mul, sub, sum } from '../../core/num.js';
 import { upTick } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -32,8 +32,23 @@ import {
   TRADING_BOOK_RISK_WEIGHT,
   type BankDecl,
 } from './data.js';
+import { DEALING, roomFor } from './lines.js';
 import { ccyOf, liquidityPlan, liquidityTargets } from './treasury.js';
 import { periodOfYear, quoteFor, rateOf, type DeskQuote, type DeskState } from './dealing-quote.js';
+
+/**
+ * D1, XI-4: its own appetite, and what its treasury allotted it to GROW BY. A line's limit is what
+ * it is already carrying plus the room it was given — a bank with no room left keeps the book it
+ * has and stops adding to it, which is what scarce capital does to a dealer and is arithmetic
+ * rather than a bound (Law 6: it cannot spend room that does not exist). Before its treasury has
+ * allotted anything it has its own appetite and nothing else to go on.
+ */
+function allotted(view: ParticipantView, appetite: number, carried: number): number {
+  const room = roomFor(view, DEALING);
+  if (!room.some) return appetite;
+  const may = add(carried, room.value, 'what it carries plus the room it was given');
+  return may < appetite ? may : appetite;
+}
 
 /**
  * A3, D5, F2: what this bank's DEALING book is worth at the last marks.
@@ -132,10 +147,20 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
       }
       return want;
     },
-    limitAggregate: mul(
-      capitalOf(view),
-      view.params.get(dealingParam(view.self.id, 'capitalAtRisk')),
-      'what it will put behind its dealing book',
+    // D1, F1, XI-4: what it will put behind its dealing book is its own appetite AND what its
+    // treasury allotted this line out of the room the bank has left — whichever is the smaller,
+    // because a line cannot spend room that does not exist (arithmetic, not a bound). The treasury
+    // allots to what earned (`bank.lines`), so a dealing line that made less than the lending line
+    // in a period when the room ran out stops bidding, and that is what a thin market looks like
+    // when capital is scarce rather than when a number said so.
+    limitAggregate: allotted(
+      view,
+      mul(
+        capitalOf(view),
+        view.params.get(dealingParam(view.self.id, 'capitalAtRisk')),
+        'what it will put behind its dealing book',
+      ),
+      bookValue(view, targets),
     ),
     concentration: view.params.get(dealingParam(view.self.id, 'concentration')),
     ratePerPeriod: rate,

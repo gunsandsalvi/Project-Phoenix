@@ -25,6 +25,7 @@ import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
+import { isLoan } from './loan.js';
 import { subordinatedOf } from './subordinated.js';
 
 /** What binds a bank's book: the weighted rule, the backstop, or neither (B1.c). */
@@ -55,6 +56,20 @@ export interface CapitalPosition {
   readonly belowRequirement: boolean;
   /** Banks Lending F3: the most it will fund for one name, which its names can read (XI-2). */
   readonly limitPerName: number;
+  /**
+   * Dealer Desks F2, Banks Capital B1: WHAT EACH LINE OF THE BANK IS USING, off the same walk that
+   * produced `weighted` — one traversal, so a line's capital and the bank's can never disagree
+   * (Law 4). Three answers, because there are three reasons this bank holds anything: it lent it,
+   * its treasury wants it for liquidity, or its dealing line is carrying it above that.
+   */
+  readonly byLine: LineWeights;
+}
+
+/** What each reason for holding something asks of the bank's capital (Dealer Desks F2). */
+export interface LineWeights {
+  readonly lending: number;
+  readonly liquidity: number;
+  readonly dealing: number;
 }
 
 export interface CapitalRules {
@@ -104,6 +119,7 @@ export function capitalOf(
   const own = moneyInstrumentId(bank, ccy);
   const held: number[] = [];
   const weighted: number[] = [];
+  const byLine = { lending: 0, liquidity: 0, dealing: 0 };
   for (const h of ctx.register.holdingsOf(bank)) {
     if (h.instrument === own) continue;
     const value = ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period);
@@ -123,13 +139,22 @@ export function capitalOf(
     const want = rules.targets.get(h.instrument);
     const banking = want === undefined || value < want ? value : want;
     const trading = sub(value, banking, 'the part it is running as a position');
-    weighted.push(
-      add(
-        mul(banking, riskWeightOf(ctx, ctx.instruments.get(h.instrument), rules), 'weighted'),
-        mul(trading, rules.tradingWeight, 'what a position weighs'),
-        'what this holding asks of its capital',
-      ),
+    const asBanking = mul(
+      banking,
+      riskWeightOf(ctx, ctx.instruments.get(h.instrument), rules),
+      'weighted',
     );
+    const asTrading = mul(trading, rules.tradingWeight, 'what a position weighs');
+    weighted.push(add(asBanking, asTrading, 'what this holding asks of its capital'));
+    // The same three answers the weighting already gives, kept rather than summed away: what it
+    // LENT (a claim it wrote, which no market prices and no target names), what its treasury wants
+    // held for liquidity, and what its dealing line is carrying above that.
+    if (isLoan(ctx.instruments.get(h.instrument).terms)) {
+      byLine.lending = add(byLine.lending, asBanking, 'what its lending uses');
+    } else {
+      byLine.liquidity = add(byLine.liquidity, asBanking, 'what its liquidity uses');
+    }
+    byLine.dealing = add(byLine.dealing, asTrading, 'what its dealing uses');
   }
   // A2, A3: CAPITAL IS LAYERED, and both layers are here — the equity that absorbs first and fully
   // (A2.a) and the subordinated claims that absorb next (A2.b). A requirement met with equity alone
@@ -166,6 +191,7 @@ export function capitalOf(
     binds,
     headroom: byLeverage < inUnits ? byLeverage : inUnits,
     limitPerName: mul(capital, rules.limitPerName, 'the most it will fund for one name'),
+    byLine,
     breach: capital < mul(rwa, askedWeighted, 'what the line asks') ||
       capital < mul(assets, askedLeverage, 'what the backstop asks'),
     belowRequirement:

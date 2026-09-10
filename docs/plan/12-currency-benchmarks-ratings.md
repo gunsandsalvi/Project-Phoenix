@@ -264,7 +264,7 @@ not: a world that opened with more banks ended with fewer, in eight of nine conf
 
 ### A bank's own allocation (was 11.2's deferred step)
 
-- [ ] Per-line return on capital as a private read (`bank.lines`); the treasury gives headroom to the higher-earning line first, no floor. Deferred out of 11.2 because every realised return in that world was an artefact of the opening balance sheets; it is reachable once they add up
+- [x] Per-line return on capital as a private read (`bank.lines`); the treasury gives headroom to the higher-earning line first, no floor. Deferred out of 11.2 because every realised return in that world was an artefact of the opening balance sheets; it is reachable once they add up
 
 ### The currency layer, benchmarks, ratings
 
