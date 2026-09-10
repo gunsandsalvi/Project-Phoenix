@@ -1,7 +1,7 @@
 /**
  * The run: what a depositor does, what it costs the bank it leaves, and what stops it.
  *
- * @spec Banks Funding E1 Banks Funding E2 Banks Funding E2.a Banks Funding E3 Banks Funding E3.a Banks Funding E4 Banks Funding E4.a Banks Funding D6 Banks Funding A1.a Banks Funding C2 Banks Funding C2.a Money Market D5 Money Market D5.a Money Market B7 Banks Capital C1.a XI-15
+ * @spec Banks Funding E1 Banks Funding E2 Banks Funding E2.a Banks Funding E3 Banks Funding E3.a Banks Funding E4 Banks Funding E4.a Banks Funding D6 Banks Funding A1.a Banks Funding C2 Banks Funding C2.a Money Market D5 Money Market D5.a Money Market B7 Banks Capital C1.a Money Market D5.b Money Market D4 Money Market E3 Banks Funding E5 Observer E3 Law 13 XI-15
  *
  * E3.a is the clause these are about, and it is a claim about ARITHMETIC rather than about
  * behaviour: THE DEPOSIT LEAVES WITH THE RESERVES BEHIND IT. A model where a depositor's balance
@@ -25,6 +25,7 @@ import {
   foundationWorld,
   moneyInstrumentId,
   partyId,
+  snapshot,
   type Event,
   type SystemModule,
   type World,
@@ -168,5 +169,28 @@ describe('what insurance does to it (Banks Funding A1.a, E4, E4.a)', () => {
     }
     // Seed E1: it opened with nothing, and what it has is what it has actually been paid.
     expect(w.register.quantity(insurer, moneyInstrumentId(CB, PHX))).toBe(collected);
+  });
+});
+
+describe('a year with a funding squeeze in it (Money Market, Banks Funding, Banks Capital)', () => {
+  it('stays green every period of it, and is the same world twice from the same seed', () => {
+    // The whole of this item in one run: a bank pays up for money, loses its funding anyway, is
+    // refused by the market and by the window, fails for liquidity with more assets than
+    // liabilities, is taken over by the other bank over the wire, and the world goes on. Every
+    // family the audit has built is at zero in every one of the fifty-two periods, with nothing
+    // forgiven — `unexpected()` is every violation the audit reported.
+    const w = run(foundationWorld('run-a'), 52);
+    const squeezed = events(w, 'moneyMarket.refused');
+    expect(squeezed.length).toBeGreaterThan(0);
+    // The ladder was walked, not skipped: it was short, it sold, it was taken over.
+    expect(events(w, 'deposit.moved').length).toBeGreaterThan(0);
+    const failed = events(w, 'bank.resolution.done');
+    expect(failed.length).toBeGreaterThan(0);
+    expect(String(failed[0]?.data['acquirer'])).not.toBe('');
+    // Observer E3, Law 13: the same seed gives the same world. A run this long through a failure
+    // and a takeover is where a stray iteration order or a Date would show, and none does.
+    const again = foundationWorld('run-a');
+    for (let i = 0; i < 52; i += 1) again.step();
+    expect(snapshot(again, { kind: 'inspector' }, 40)).toEqual(snapshot(w, { kind: 'inspector' }, 40));
   });
 });

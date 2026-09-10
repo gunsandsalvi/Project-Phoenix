@@ -87,7 +87,13 @@
     "id": "11",
     "title": "Money market, corridor, bank capital",
     "file": "11-money-market-capital.md",
-    "steps": 31
+    "steps": 32
+  },
+  {
+    "id": "11.1",
+    "title": "A class of depositors that does not move as one block",
+    "file": "11.1-deposit-market-grain.md",
+    "steps": 5
   },
   {
     "id": "12",
@@ -135,13 +141,13 @@
     "id": "13g",
     "title": "Corporate control and firm birth",
     "file": "13g-mna-birth.md",
-    "steps": 12
+    "steps": 13
   },
   {
     "id": "13h",
     "title": "Insurers, hedge funds, private equity",
     "file": "13h-insurers-hedge-pe.md",
-    "steps": 16
+    "steps": 17
   },
   {
     "id": "13i",

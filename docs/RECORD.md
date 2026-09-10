@@ -1415,3 +1415,85 @@ spread of an aggregate ACROSS SUBDIVISIONS with its spread ACROSS SEEDS. If they
 the piece is a resolution and this is settled; if changing the piece moves an aggregate further than
 changing the seed does, the piece is load-bearing and this world is more sensitive to lumpiness than
 anything here has admitted.
+
+## 11 — The money market, the corridor, bank funding and bank capital
+
+**What.** A bank's reserve position is now the residue of everybody else's payments, and there is a
+market where that position meets somebody else's. The session runs after the flows because the need
+is not knowable before them (A3.a); every bank posts a schedule out of its own position and its own
+cost of funds, and who ends up lending is the fill (B1). Unsecured lending prices the NAME from what
+that lender published about it; secured lending prices the paper, at that lender's own required
+yield, with a real lien struck in the same instruction as the row. The central bank takes both sides
+at two administered levels — a floor where parking cash destroys it, and a window that lends against
+unencumbered eligible paper at the ceiling — so the policy rate reaches the economy through this
+market and by no other route (E1, B3.a).
+
+Around it: deposit classes with different stickiness, each bank setting its own board rate and
+answering its rivals'; a blended cost of funds that is a read of what it actually paid; a capital
+requirement with two rules and a read of which one binds; a subordinated layer it can raise into a
+market that can refuse; a funding ladder with every rung a real action; and — when all of them run
+out — a resolution: a valuation at marks, a hole, a hierarchy that absorbs it in rank order, an
+acquirer that takes the book over the wire, a guarantee funded by the banks that have it, and a
+public purse behind that.
+
+**Why it is one item.** Every one of those is the other's precondition. A bank cannot fail for
+liquidity until there is a market that can refuse it; a market cannot refuse it until the window is
+priced and collateralised; a hole cannot be borne in order until there is a layer to bear it; and
+none of it can be looked at until a failed bank has somewhere to go, because a bank that ceases with
+its depositors still holding its money leaves a world that cannot settle a payment.
+
+**What was built underneath it.** Two items were inserted and closed on the way, both because this
+one reached them:
+
+- **10.3**, a quantity is a whole number of indivisible pieces. A refusal made of 1.8e-7 started a
+  real run, and that is what came out of it.
+- **10.4**, what a lot is carried at after the marks are taken. An estate opened after revaluation
+  took a dead dealer's whole book at a stale carrying and the difference sat on it for ever.
+
+**Findings, in the order they arrived.**
+
+1. **The deposit market was a metronome.** A bank valued money at the window whenever a session left
+   it short by any amount, and repriced its ENTIRE deposit base at that — so one refusal moved every
+   depositor in the world. There is one rate per liability (B2.b), so paying up for the next dollar
+   means paying up on every dollar it already has: it does that when what it could not raise is
+   bigger than what it already owes, and not otherwise. The other half was that a board never
+   answered a board; now it holds a class at the rival's rate less what moving costs that class, up
+   to what money is worth to it and no further (B1.a's own bound), and lets the class go past that.
+2. **A limit that counts one kind of claim is not a limit.** A bank's cap on one name counted only
+   LOANS, so the first capital raise took the whole of the other bank's spare cash. It counts
+   everything that name owes it now (F3).
+3. **A secured lender was being bailed in for collateral it was holding.** The pari passu pool took
+   every claim on the failed bank; a repo lender holds the paper and the acquirer takes the book with
+   the liens on it, so it is in the pool only for what its security does not reach.
+4. **In this world a bank always fails for liquidity, never for solvency**, and when it does its hole
+   is NEGATIVE — more assets than liabilities, nobody loses anything. Every seed tried reaches that
+   and none reaches the other, which is why the insolvent path had to be reached by a penalty this
+   item's own test module pays. It also means D4 and D5 are exercised for real but for small
+   amounts: the uninsured pool is far bigger than the hole.
+5. **Two banks both short of capital do not fund each other.** When the RULE is what puts them both
+   under, neither has room to take the other's paper and every raise finds no bid. That is a real
+   thing about a systemic squeeze and it is why the contagion test moves one bank's own buffer.
+6. **The weighted requirement asks a bank here for nothing.** Its book is reserves and sovereign
+   paper — claims on parties that cannot fail — so it weighs zero and the only rule with anything to
+   say is the leverage backstop. B1.b's case, made by a world rather than argued.
+7. **The world is knife-edge, and XI-15 is what caught it.** The last placeholder could not be
+   deleted: both candidate replacements for the bank's paper target tripped the grain invariance,
+   because any change to what banks want of sovereign paper re-rolls which whole cells cross between
+   banks in which week, and a crossing carries a cell's whole account. The finding is recorded and
+   the placeholder stands with it. What has to exist first is a deposit market where a class does not
+   move as one block; findings 1's two rungs are the first half of that.
+8. **XI-2's third door has no client here.** Wiring a bank's published per-name line to the desks
+   made every desk dump its whole inventory every period. The finding is the party, not the number: a
+   desk is its own bank's trading arm, so its funding is internal. The door is built for the party
+   this world does have — a bank refused by the session sells its own paper — and the client version
+   is placed at 13h.
+
+**What it leaves.** A year runs green through a squeeze: a rival takes a bank's funding, the reserves
+leave with the deposits, the session and then the window refuse it, it fails for liquidity with more
+assets than liabilities, the other bank takes it over, and the world goes on — every family at zero
+in every one of the fifty-two periods, and the same world twice from the same seed.
+
+**Two things are placed rather than done**, in the items that give them a party: raising EQUITY and
+restricting distributions (13g, which is where somebody comes to own a bank), and cutting a
+leveraged client's line (13h, which is where the client exists). Neither is missing; both are in
+those plans with the reason.

@@ -616,6 +616,35 @@ programme, an auction's result — is read that way, because how far back a feed
 shrinks every time the world finds more to say, so sifting such an event out of the feed is a read
 that goes quiet as the model grows and never says that it has.
 
+### 4.11b Where a bank's own economics live (Money Market, Banks Funding, Banks Capital)
+
+A bank is three systems in the specification — its lending, its funding and its capital — and they
+land in **two** modules here rather than three, because a fact has one writer and these three share
+their facts.
+
+- **`bank-lending` owns what a bank IS WORTH and what that allows**: its cost of funds, its credit
+  decision, its capital position (`capital.ts`) and the layer it can raise to change that position
+  (`subordinated.ts`). The requirement, the weights and the leverage backstop are declared here
+  because this is the only module that consumes them, and the position is published after the marks
+  are taken — capital is the residual (A1) and a residual measured against prints that have not
+  happened yet is not one.
+- **`money-market` owns what a bank PAYS and what happens when it cannot**: the session, the
+  corridor, the deposit book, the funding ladder and the resolution. A bank does not go to an estate
+  (Banks Capital C3.b), so the module that prices its funding is the one that takes charge when the
+  funding fails, and it says so to the kernel with `resolves: [BANK]`.
+
+Neither imports the other. What crosses between them are **public events**: the capital position and
+the line it will fund for one name (`bank.capital`), what it pays for money (`bank.costOfFunds`),
+what it requires of a name (`bank.reservation`), and what its funding looks like (`bank.liquidity`).
+That is the same door a depositor, a rival bank and the observer read them through — which is what
+makes "a bank near the line behaves differently" a thing the world can see rather than a thing one
+module tells another (Banks Capital B3.a, Banks Funding E2.a).
+
+The **subordinated layer is not a special case anywhere**: it is a claim whose profile declares a
+seniority behind every other claim on the bank, and the resolution and the estate both work through
+the ranks they read off the instruments themselves (Bond N13.a, Law 15). A layer added later takes
+its place in the queue by declaring one.
+
 ### 4.11a A quantity is a whole number of indivisible pieces (Law 1, Law 8)
 
 A unit of anything real has a smallest piece and nothing finer exists: there is no half-cent, no

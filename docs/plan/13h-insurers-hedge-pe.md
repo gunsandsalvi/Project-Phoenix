@@ -180,6 +180,7 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 
 ## Steps
 
+- [ ] **From item 11 (XI-2 door three, Prime Brokerage C3.b)**: a broker cuts a leveraged client's line below what it has drawn, and the client's own module posts the sales that repay it, at whatever the book gives. Item 11 built this door for a BANK (a bank refused by the session sells its own paper) and published the line a bank will fund for one name (Banks Lending F3), but it has no client to cut: this world's only leveraged holder of marketable assets is a desk, and a desk is its own bank's arm. A hedge fund with a prime broker is the party. Test: `limit − exposure` is negative with no floor in the path, the sale moves the print, and the print reaches other holders
 - [ ] `insurer` and `pension` kinds; `policy` and `pensionClaim` liabilities to named beneficiaries valued at the swap curve read each time; no stored or fixed-rate value can exist; tests (A1–A3, B1, B2, B2.a, B2.b, E1, E3)
 - [ ] The cover market: quotes from own experience and capital, sized by surplus; policy to the lower quote; unplaced cover; premiums and claims as instructions; an insurer with no surplus writes nothing; tests (A4, A4.a–A4.c)
 - [ ] Claims as per-member events from declared technology primitives; a catastrophe as one event on many policies; tests (B3, B4)

@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 52.1%** (240 of 461 steps across 29 items).
-**Requirement coverage: 33.3%** (441 MET, 65 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
+**Plan completion: 52.9%** (248 of 469 steps across 30 items).
+**Requirement coverage: 39.6%** (524 MET, 72 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -33,7 +33,8 @@ The plan has two parts:
 | 9 — Equity and dealers | 24 | 24 | closed |
 | 10 — The cost of capital | 16 | 16 | closed |
 | 10.3 — A quantity is a whole number of indivisible pieces | 15 | 15 | closed |
-| [11 — Money market, corridor, bank capital](plan/11-money-market-capital.md) | 31 | 24 | in progress |
+| 11 — Money market, corridor, bank capital | 32 | 32 | closed |
+| [11.1 — A class of depositors that does not move as one block](plan/11.1-deposit-market-grain.md) | 5 | 0 | open |
 | [12 — Currencies, benchmarks, ratings](plan/12-currency-benchmarks-ratings.md) | 26 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
@@ -41,8 +42,8 @@ The plan has two parts:
 | [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 18 | 0 | open |
 | [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 18 | 0 | open |
 | [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 22 | 0 | open |
-| [13g — Corporate control and firm birth](plan/13g-mna-birth.md) | 12 | 0 | open |
-| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 16 | 0 | open |
+| [13g — Corporate control and firm birth](plan/13g-mna-birth.md) | 13 | 0 | open |
+| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 17 | 0 | open |
 | [13i — Cross-border](plan/13i-cross-border.md) | 10 | 0 | open |
 | [14 — The polity](plan/14-polity.md) | 12 | 0 | open |
 | [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |

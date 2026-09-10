@@ -1,7 +1,7 @@
 /**
  * A bank that fails, and what happens to everything it owed.
  *
- * @spec Banks Capital A2 Banks Capital A2.a Banks Capital A2.c Banks Capital C1 Banks Capital C1.a Banks Capital C3 Banks Capital C3.b Banks Capital D1 Banks Capital D2 Banks Capital D2.a Banks Capital D3 Banks Capital D3.b Banks Capital D4 Banks Capital D5 Banks Capital D6 Banks Capital E3 Banks Funding D6 Banks Funding A1.a Central Bank D3.a Money Market B3.c XI-3 XI-15 Law 2
+ * @spec Banks Capital A2 Banks Capital A2.a Banks Capital A2.c Banks Capital C1 Banks Capital C1.a Banks Capital C3 Banks Capital C3.b Banks Capital D1 Banks Capital D2 Banks Capital D2.a Banks Capital D3 Banks Capital D3.b Banks Capital D4 Banks Capital D5 Banks Capital D6 Banks Capital E3 Banks Funding D6 Banks Funding A1.a Central Bank D3.a Money Market B3.c Money Market E3 Banks Capital E1 Banks Capital A4 XI-3 XI-15 Law 2
  *
  * A bank does not go to an estate (C3.b): its deposits are money, and money whose issuer has stopped
  * existing is not money. So it goes somewhere else — a valuation at marks, a hole, a hierarchy that

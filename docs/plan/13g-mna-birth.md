@@ -127,6 +127,8 @@ packages/engine/test/{merge-door,intent,tender,competing-bids,resistance,conside
 
 ## Steps
 
+- [ ] **From item 11 (Banks Capital A3, C2.a, B3)**: a bank raises EQUITY, and breaching its buffer restricts what it distributes. Item 11 built the subordinated layer and the raise that can fail (C2.b), but a bank here has no share line and no owners: who owns a bank at the seed is what Seed E1/E2 refuse to invent, and a party comes to own one by funding its entry — which is this item. Test: an issue dilutes the holders there are, a failed one leaves the bank where it was, and a bank below its own line pays nothing out
+
 - [ ] 13g.1 Kernel: `parties.merge` reseating every row, redeeming the target's shares against settled consideration, terminating the target with a successor; change-of-control terms fire; tests (A2, A4, A5, D4, E2)
 - [ ] Intent from the acquirer's own valuation at its own hurdle against the price with no threshold parameter; the funding decision among cash, loan, bond and shares with the credit market deciding; tests (B1, B3, A3, A3.a, A3.b)
 - [ ] The tender market: a bid with price, consideration and an acceptance condition; every holder tenders or not from its own valuation; the premium clears; a failed bid is an event and the acquirer may return; tests (A1, B2, B2.a, C1, C2, E1)

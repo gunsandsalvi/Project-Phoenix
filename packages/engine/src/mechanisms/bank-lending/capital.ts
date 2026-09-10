@@ -1,7 +1,7 @@
 /**
  * How much capital a bank must have, how much it has, and which of the two rules is the one biting.
  *
- * @spec Banks Capital B1 Banks Capital B1.a Banks Capital B1.b Banks Capital B1.c Banks Capital B2 Banks Capital B3 Banks Capital B3.a Banks Capital A1 Banks Lending B2.a Sovereign E5 XI-3 Law 2 Law 15 Law 19
+ * @spec Banks Capital B1 Banks Capital B1.a Banks Capital B1.b Banks Capital B1.c Banks Capital B2 Banks Capital B3 Banks Capital B3.a Banks Capital A1 Banks Capital A1.a Banks Capital A4 Banks Lending F3 Banks Lending B2.a Sovereign E5 XI-3 Law 2 Law 15 Law 19
  *
  * B1 is a requirement against RISK-WEIGHTED assets and B1.b is a leverage backstop that uses no
  * weights at all. Both are rules somebody wrote, both are here, and B1.c is the point of having

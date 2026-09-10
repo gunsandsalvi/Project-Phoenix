@@ -2,7 +2,7 @@
  * The money market: what a bank pays for money, what that costs whoever borrows from it, and the
  * corridor the central bank makes the policy rate effective through.
  *
- * @spec Money Market A1 Money Market A1.a Money Market A2 Money Market A2.a Money Market A3 Money Market B1 Money Market B1.a Money Market B2 Money Market B2.a Money Market B3 Money Market B5 Money Market B5.a Money Market B6 Money Market C1 Money Market C1.a Money Market C2 Money Market C3 Money Market C4 Money Market C4.b Banks Funding A1 Banks Funding A1.a Banks Funding B1 Banks Funding B1.a Banks Funding B2 Banks Funding B2.b Banks Funding C1 Banks Funding C1.a Banks Funding F1 Banks Funding F4 Central Bank B2 Central Bank D1 Central Bank D3 Central Bank D6 Banks Lending C1.a XI-4
+ * @spec Money Market A1 Money Market A1.a Money Market A2 Money Market A2.a Money Market A3 Money Market B1 Money Market B1.a Money Market B2 Money Market B2.a Money Market B3 Money Market B5 Money Market B5.a Money Market B6 Money Market C1 Money Market C1.a Money Market C2 Money Market C3 Money Market C4 Money Market C4.b Banks Funding A1 Banks Funding A1.a Banks Funding B1 Banks Funding B1.a Banks Funding B2 Banks Funding B2.b Banks Funding C1 Banks Funding C1.a Banks Funding F1 Banks Funding F4 Money Market C5 Money Market E1 Money Market E2 Central Bank B1 Central Bank B2 Central Bank B3 Central Bank B3.a Central Bank B4 Central Bank D1 Central Bank D2 Central Bank D3 Central Bank D4 Central Bank D6 Banks Funding F2 Banks Lending C1.a Observer A5 XI-4
  *
  * XI-4's first joint is what these are about. A bank that funds itself for nothing prices every loan
  * off a policy rate somebody wrote down, and the whole chain from a financial price to a real

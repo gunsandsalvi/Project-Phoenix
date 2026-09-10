@@ -20,7 +20,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money B1.b` | MISSING |  |
 | `Money B2` | MISSING |  |
 | `Money B3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/kinds.ts |
-| `Money B3.c` | PARTIAL | a customer overdrawn at its bank now has a lender and a rate: the bank takes a credit decision, and what it allows is a drawing that becomes a loan row before the period closes (packages/engine/src/mechanisms/bank-lending/index.ts). A refusal is recorded either way. A BANK overdrawn at the central bank still has no lender row: that is B3.b's corridor (worklist 11), and the audit reports every one of them |
+| `Money B3.c` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (a customer overdrawn at its bank has a lender, a rate and a date by the close), packages/engine/src/mechanisms/money-market/index.ts (and so does a BANK overdrawn at the central bank: what it drew is a repo row at the ceiling plus the penalty, and the unpriced path is gone) |
 | `Money C1` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/ledger/settlement.ts (a leg carrying a quantity that is not a whole number of its unit's pieces is refused at the site, including the per-member side of a cell leg) |
 | `Money C2` | MET | packages/engine/src/ledger/settlement.ts |
 | `Money C2.c` | MET | packages/engine/src/audit/families/money.ts, packages/engine/src/ledger/settlement.ts |
@@ -432,34 +432,34 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Money Market A1` | MISSING |  |
-| `Money Market A2` | MISSING |  |
-| `Money Market A2.b` | MISSING |  |
-| `Money Market A3` | MISSING |  |
-| `Money Market B1` | MISSING |  |
-| `Money Market B2` | MISSING |  |
-| `Money Market B2.b` | MISSING |  |
-| `Money Market B3` | MISSING |  |
-| `Money Market B4` | MISSING |  |
-| `Money Market B5` | MISSING |  |
-| `Money Market B6` | MISSING |  |
-| `Money Market B6.a` | MISSING |  |
-| `Money Market B7` | MISSING |  |
-| `Money Market C1` | MISSING |  |
-| `Money Market C2` | MISSING |  |
-| `Money Market C3` | MISSING |  |
-| `Money Market C4` | MISSING |  |
-| `Money Market C5` | MISSING |  |
-| `Money Market D1` | MISSING |  |
-| `Money Market D2` | MISSING |  |
-| `Money Market D3` | MISSING |  |
-| `Money Market D4` | MISSING |  |
-| `Money Market D5` | MISSING |  |
-| `Money Market D5.b` | MISSING |  |
-| `Money Market D6` | MISSING |  |
-| `Money Market E1` | MISSING |  |
-| `Money Market E2` | MISSING |  |
-| `Money Market E3` | MISSING |  |
+| `Money Market A1` | MET | packages/engine/src/mechanisms/money-market/session.ts (a bank position is the sum of the wire own reserve legs for the period: nobody chose it) |
+| `Money Market A2` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`bufferOf`: the worst week this bank own account has had, over the memory it keeps — derived from what it saw, never a ratio) |
+| `Money Market A2.b` | MET | packages/engine/src/mechanisms/money-market/index.ts, packages/engine/src/mechanisms/money-market/funding.ts (missing the buffer costs it what the window charges, or what its paper fetches when it has to sell) |
+| `Money Market A3` | MET | packages/engine/src/mechanisms/money-market/index.ts (the session is anchored after every market and every payment: the need is not knowable before them) |
+| `Money Market B1` | MET | packages/engine/src/mechanisms/money-market/session.ts (every bank posts a schedule out of its own position; who lends and who borrows is the fill) |
+| `Money Market B2` | MET | packages/engine/src/mechanisms/money-market/collateral.ts (`nameCost`: what THIS lender believes an unsecured claim on that name costs it, published by its own module) |
+| `Money Market B2.b` | PARTIAL | the prints are per NAME per book (packages/engine/src/mechanisms/money-market/index.ts), so the spread between the strongest and the weakest is readable; measuring it is Part XII (worklist 16) |
+| `Money Market B3` | MET | packages/engine/src/mechanisms/money-market/collateral.ts, packages/engine/src/mechanisms/money-market/rows.ts (secured lending prices the paper at the lender own required yield, and the lien is real) |
+| `Money Market B4` | MET | packages/engine/src/mechanisms/money-market/session.ts (`strike`: the rate is what cleared, lenders undercutting each other) |
+| `Money Market B5` | MET | packages/engine/src/mechanisms/money-market/index.ts (a money fund with spare cash is in the same session, with the floor as its alternative) |
+| `Money Market B6` | MET | packages/engine/src/mechanisms/money-market/data.ts (overnight and term, secured and unsecured: four books) |
+| `Money Market B6.a` | PARTIAL | both books print, so the gap between them exists to be read; reading it as a measure of expected stress is Part XII (worklist 16) |
+| `Money Market B7` | MET | packages/engine/src/mechanisms/money-market/index.ts (`moneyMarket.refused`, per name, public, with what it was short of) |
+| `Money Market C1` | MET | packages/engine/src/mechanisms/money-market/index.ts (`parkTheRest`: the money leg pays the issuer of the money, so the reserves are destroyed where they land — C1.a) |
+| `Money Market C2` | MET | packages/engine/src/mechanisms/money-market/session.ts (`windowOffer`: the standing facility takes its seat in every session at the ceiling) |
+| `Money Market C3` | MET | packages/engine/test/money-market.test.ts (every rate the session printed sits between the two administered levels, in worlds three points of policy apart) |
+| `Money Market C4` | MET | packages/engine/src/mechanisms/money-market/collateral.ts (`windowAdvances`: the window lends against unencumbered eligible paper at the haircut it declared, and a bank out of it cannot draw) |
+| `Money Market C5` | MET | packages/engine/src/mechanisms/money-market/index.ts (`reserveOverdraft`: collateralised, priced at the ceiling plus a penalty, refused to the insolvent — the FORBID holds because all four conditions are there) |
+| `Money Market D1` | MET | packages/engine/src/mechanisms/money-market/funding.ts (it sells its free eligible paper at whatever the book gives), packages/engine/src/mechanisms/bank-lending/quote.ts (and writes no new business while it has no room) |
+| `Money Market D2` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`setRates`, `worthOfMoney`: it pays up when paying up is the cheaper answer, and its depositors answer the rate) |
+| `Money Market D3` | MET | packages/engine/src/mechanisms/money-market/index.ts (`bookOverdrafts`: what it drew is a row at the window rate plus the penalty by the close) |
+| `Money Market D4` | MET | packages/engine/src/world/failure.ts (two triggers, asked of the kind own profile), packages/engine/src/mechanisms/money-market/resolution.ts (and the resolution says which one fired) |
+| `Money Market D5` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`looksInTrouble`, `moveDeposits`: depositors move on what was published about the bank, and only on that) |
+| `Money Market D5.b` | MET | packages/engine/test/run.test.ts (the deposit leaves with the reserves behind it, in the same instruction, and the bank is shorter at the next close) |
+| `Money Market D6` | MET | packages/engine/src/mechanisms/money-market/index.ts (`reserveOverdraft`: freely, against good collateral, at a penalty, to the solvent) |
+| `Money Market E1` | MET | packages/engine/test/money-market.test.ts (three points of policy moves what the session strikes and what a bank charges a borrower, and no cleared rate is the policy rate) |
+| `Money Market E2` | PARTIAL | the channel is there and tested one step at a time (a squeeze raises what a bank pays for deposits and what it quotes a borrower); the SCALAR-versus-channel measurement across a shock is Part XII (worklist 16) |
+| `Money Market E3` | MET | packages/engine/src/mechanisms/money-market/resolution.ts, packages/engine/test/bank-resolution.test.ts (a failed bank losses land on the banks that funded it, by name, junior money first) |
 
 ## Spot FX
 
@@ -790,7 +790,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Banks Lending A5` | MISSING | covenants need a borrower with accounts to test against; the first are corporate paper's (worklist 13f) |
 | `Banks Lending B1` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (one instruction: the borrower issues the loan and the bank creates its own money into the borrower's account, at the same instant) |
 | `Banks Lending B1.c` | MET | packages/engine/src/mechanisms/bank-lending/index.ts, packages/engine/test/loans.test.ts (there is nowhere a deposit or a reserve is consumed to fund a loan, and the test asserts the instruction carries no interbank leg at all) |
-| `Banks Lending B2` | PARTIAL | packages/engine/src/mechanisms/bank-lending/quote.ts (capital and its own appetite, separately, with which one bound recorded). LIQUIDITY is stated as absent rather than approximated: the deposit it creates may be spent away and it must fund that, and there is no market to fund in until the corridor (worklist 11) — a ratio in its place would be a bound standing where a market belongs (Law 6) |
+| `Banks Lending B2` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (`room`: capital, its own appetite for the name, and now LIQUIDITY too — what its own funding leaves it, read from the position it published (Banks Funding C1) — with which of the three bound recorded on every decline) |
 | `Banks Lending B2.d` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (which constraint binds is computed from the bank's own state and recorded on the decline, so it differs by bank and by period rather than being decided once) |
 | `Banks Lending C1` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (four named terms and their sum: what its funding costs it, what it expects to lose on this borrower, the capital the loan consumes times what it needs on it, and what it costs to run) |
 | `Banks Lending C2` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (every bank quotes from its own state and the borrower takes the keenest that will have it; a bank with no room does not quote) |
@@ -819,65 +819,65 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Banks Funding A1` | MISSING |  |
-| `Banks Funding A1.d` | MISSING |  |
-| `Banks Funding A2` | MISSING |  |
-| `Banks Funding A3` | MISSING |  |
-| `Banks Funding A4` | MISSING |  |
-| `Banks Funding A5` | MISSING |  |
-| `Banks Funding B1` | MISSING |  |
-| `Banks Funding B2` | MISSING |  |
-| `Banks Funding B2.b` | MISSING |  |
-| `Banks Funding B3` | MISSING |  |
-| `Banks Funding C1` | MISSING |  |
-| `Banks Funding C2` | MISSING |  |
-| `Banks Funding C3` | MISSING |  |
-| `Banks Funding C3.a` | MISSING |  |
-| `Banks Funding C4` | MISSING |  |
-| `Banks Funding D1` | MISSING |  |
-| `Banks Funding D2` | MISSING |  |
-| `Banks Funding D3` | MISSING |  |
-| `Banks Funding D4` | MISSING |  |
-| `Banks Funding D5` | MISSING |  |
-| `Banks Funding D6` | MISSING |  |
-| `Banks Funding D6.a` | MISSING |  |
-| `Banks Funding E1` | MISSING |  |
-| `Banks Funding E2` | MISSING |  |
-| `Banks Funding E3` | MISSING |  |
-| `Banks Funding E3.a` | MISSING |  |
-| `Banks Funding E4` | MISSING |  |
-| `Banks Funding E5` | MISSING |  |
-| `Banks Funding F1` | MISSING |  |
-| `Banks Funding F2` | MISSING |  |
+| `Banks Funding A1` | MET | packages/engine/src/mechanisms/money-market/data.ts (retail, corporate and wholesale, as a read of what kind of party the depositor is) |
+| `Banks Funding A1.d` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (stickiness is a COST the depositor bears, per class, and it is what decides both whether it moves for a rate and whether it runs) |
+| `Banks Funding A2` | MET | packages/engine/src/mechanisms/money-market/rows.ts (interbank and repo rows, short and rolling) |
+| `Banks Funding A3` | PARTIAL | packages/engine/src/mechanisms/bank-lending/subordinated.ts (the subordinated layer is real, issued into a market that can refuse). Equity that a bank RAISES needs a bank share line and owners, which is worklist 13g |
+| `Banks Funding A4` | MET | packages/engine/src/mechanisms/money-market/session.ts (the central bank funds it on the corridor terms and no others) |
+| `Banks Funding A5` | MET | packages/engine/src/mechanisms/money-market/index.ts, packages/engine/src/mechanisms/money-market/deposits.ts (each source has a price, the prices differ, and what it takes from each is what cleared) |
+| `Banks Funding B1` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`payDepositInterest`: a real payment to the holder, at the rate the bank set) |
+| `Banks Funding B2` | MET | packages/engine/src/mechanisms/bank-lending/index.ts (`costOfFunds`: a read of what it actually paid on what it owes, blended with what its own capital costs it) |
+| `Banks Funding B2.b` | MET | packages/engine/src/mechanisms/money-market/deposits.ts, packages/engine/src/mechanisms/bank-lending/index.ts (the rate that leaves and the rate the quote is built on are the same number, read once) |
+| `Banks Funding B3` | PARTIAL | both sides of the margin exist as published numbers (what it pays, what it charges) and it can be negative; the margin AS A READ is Part XII (worklist 16) |
+| `Banks Funding C1` | MET | packages/engine/src/mechanisms/money-market/index.ts (`publishFunding`: the account, what comes back tomorrow, and what its unencumbered paper would raise at the declared haircut — C1.a as a number) |
+| `Banks Funding C2` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`couldLeave`: the part of its own base nobody insures, holder by holder — C2.a derived from its liabilities) |
+| `Banks Funding C3` | MET | packages/engine/src/mechanisms/money-market/rows.ts, packages/engine/src/mechanisms/bank-lending/loan.ts (it funds dated assets with overnight and term money, and that is the book) |
+| `Banks Funding C3.a` | PARTIAL | the two sides are dated in the register, so the gap is readable; measuring it is Part XII (worklist 16) |
+| `Banks Funding C4` | MET | packages/engine/src/mechanisms/money-market/session.ts (`positionOf`: the residue of everybody else period, read off the wire) |
+| `Banks Funding D1` | MET | packages/engine/src/mechanisms/money-market/session.ts (it borrows in the market, secured or unsecured) |
+| `Banks Funding D2` | MET | packages/engine/src/mechanisms/money-market/funding.ts (it sells free eligible paper with a size and no level, so what it fetches is what somebody posted) |
+| `Banks Funding D3` | MET | packages/engine/src/mechanisms/money-market/index.ts (`worthOfMoney`: it values money at the window when paying up is the cheaper answer, and pays it) |
+| `Banks Funding D4` | MET | packages/engine/src/mechanisms/bank-lending/quote.ts (`room`: no room, no new business — the credit crunch, read from its own published position) |
+| `Banks Funding D5` | MET | packages/engine/src/mechanisms/money-market/index.ts (the window, collateralised and at a penalty) |
+| `Banks Funding D6` | MET | packages/engine/src/world/failure.ts (a funding failure with its own trigger, distinct from insolvency and named as such) |
+| `Banks Funding D6.a` | MET | packages/engine/src/mechanisms/money-market/index.ts (the only central-bank credit is collateralised, priced and refused to the insolvent, so D6 stays reachable) |
+| `Banks Funding E1` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`moveDeposits`: they leave, and the payment can fail) |
+| `Banks Funding E2` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`looksInTrouble`: only from what was published — a refusal, a draw, a short close) |
+| `Banks Funding E3` | MET | packages/engine/test/run.test.ts (leaving forces the sale and the shrinking, and both produce more of E2.a) |
+| `Banks Funding E3.a` | MET | packages/engine/test/run.test.ts (the reserves leave in the same instruction as the deposits, so the bank is shorter at the next close) |
+| `Banks Funding E4` | MET | packages/engine/src/mechanisms/money-market/deposits.ts, packages/engine/test/run.test.ts (insurance is per member, so raising it past what a member holds takes a household cell out of what can run) |
+| `Banks Funding E5` | PARTIAL | the second half is answered: a bank whose only capital is retained earnings can now raise a layer instead (bank-lending/subordinated.ts). A run at one bank being information about OTHERS is not built — every depositor reads its own bank only |
+| `Banks Funding F1` | MET | packages/engine/src/mechanisms/money-market/index.ts, packages/engine/src/observer/observer.ts (deposit lines by class, published and shown) |
+| `Banks Funding F2` | MET | packages/engine/src/mechanisms/money-market/index.ts (the reserve balance as a read of the one account, never a mirrored copy) |
 | `Banks Funding F3` | MET | packages/engine/src/audit/families/accounts.ts |
-| `Banks Funding F4` | MISSING |  |
+| `Banks Funding F4` | MET | packages/engine/src/mechanisms/money-market/deposits.ts (`liquidityMetric`), packages/engine/src/observer/observer.ts (with how old it is beside it) |
 
 ## Banks Capital
 
 | requirement | status | where / why |
 |---|---|---|
-| `Banks Capital A1` | MISSING |  |
-| `Banks Capital A1.a` | MISSING |  |
-| `Banks Capital A2` | MISSING |  |
-| `Banks Capital A3` | MISSING |  |
-| `Banks Capital A4` | MISSING |  |
-| `Banks Capital B1` | MISSING |  |
-| `Banks Capital B1.c` | MISSING |  |
-| `Banks Capital B2` | MISSING |  |
-| `Banks Capital B3` | MISSING |  |
-| `Banks Capital B3.a` | MISSING |  |
-| `Banks Capital C1` | PARTIAL | packages/engine/src/registry/profiles.ts, packages/engine/src/mechanisms/estate/index.ts (a bank states both failures and is asked them like anything else, and a failed bank resolves through the same estate). C1.a's funding failure is only reachable once the corridor and the money market exist, and the resolution mechanics — bail-in, an acquirer's bid, deposit insurance (D) — are worklist 11 |
-| `Banks Capital C2` | MISSING |  |
-| `Banks Capital C3` | MISSING |  |
-| `Banks Capital D1` | MISSING |  |
-| `Banks Capital D2` | MISSING |  |
-| `Banks Capital D2.a` | MISSING |  |
-| `Banks Capital D3` | MISSING |  |
-| `Banks Capital D4` | MISSING |  |
-| `Banks Capital D5` | MISSING |  |
-| `Banks Capital D6` | MISSING |  |
-| `Banks Capital E1` | MISSING |  |
-| `Banks Capital E2` | MISSING |  |
+| `Banks Capital A1` | MET | packages/engine/src/mechanisms/bank-lending/capital.ts (capital is the equity account plus the layer behind it: a residual, read each period) |
+| `Banks Capital A1.a` | MET | packages/engine/src/mechanisms/bank-lending/capital.ts (nothing is spent from it; it falls when a loss is booked) |
+| `Banks Capital A2` | MET | packages/engine/src/mechanisms/bank-lending/subordinated.ts, packages/engine/src/mechanisms/money-market/resolution.ts (the layers absorb in rank order, most junior first, pari passu within a rank) |
+| `Banks Capital A3` | PARTIAL | packages/engine/src/mechanisms/bank-lending/subordinated.ts (it grows by retained earnings and by ISSUING the subordinated layer). An equity issue needs a bank share line and owners: worklist 13g |
+| `Banks Capital A4` | MET | packages/engine/src/mechanisms/bank-lending/capital.ts, packages/engine/src/mechanisms/money-market/resolution.ts (it falls by losses, and every one of them is an event with a date) |
+| `Banks Capital B1` | MET | packages/engine/src/mechanisms/bank-lending/capital.ts (a requirement against risk-weighted assets, with the weight asked of what the asset IS) |
+| `Banks Capital B1.c` | MET | packages/engine/src/mechanisms/bank-lending/capital.ts, packages/engine/test/bank-capital.test.ts (which of the two rules binds is a read of what the bank holds, and it moves when the rules move) |
+| `Banks Capital B2` | MET | packages/engine/src/mechanisms/bank-lending/data.ts, packages/engine/src/mechanisms/bank-lending/capital.ts (the buffer above the line is each bank own caution) |
+| `Banks Capital B3` | MET | packages/engine/src/mechanisms/bank-lending/capital.ts (a breach demands a plan in public and leaves no room to lend). Distributions restricted needs shares to distribute on: worklist 13g |
+| `Banks Capital B3.a` | MET | packages/engine/test/bank-capital.test.ts (a bank near the line writes no new business and says what it is short of) |
+| `Banks Capital C1` | MET | packages/engine/src/world/failure.ts (both triggers exist and are asked of the kind own profile), packages/engine/src/mechanisms/money-market/resolution.ts (and the resolution names which one fired) |
+| `Banks Capital C2` | PARTIAL | packages/engine/src/mechanisms/bank-lending/subordinated.ts (recapitalisation is tried first and can fail — C2.b is tested). C2.a existing holders diluted needs a bank share line: worklist 13g |
+| `Banks Capital C3` | MET | packages/engine/src/mechanisms/money-market/resolution.ts (the bank stops being a going concern on a trigger somebody applies, and its deposits keep working at the acquirer) |
+| `Banks Capital D1` | MET | packages/engine/src/mechanisms/money-market/resolution.ts (`valueBook`: the book at marks, and the hole is what it owes less that) |
+| `Banks Capital D2` | MET | packages/engine/src/mechanisms/money-market/resolution.ts (rank by rank, most junior first, pari passu within a rank, and a secured lender only for what its paper does not cover) |
+| `Banks Capital D2.a` | MET | packages/engine/test/bank-resolution.test.ts (every claim in a rank takes the same share of the same loss) |
+| `Banks Capital D3` | MET | packages/engine/src/mechanisms/money-market/resolution.ts (every other bank values the book from its own view and bids, and it may decline) |
+| `Banks Capital D4` | MET | packages/engine/src/mechanisms/money-market/insurer.ts (a fund the banks pay into every period, that pays what the hierarchy could not reach, per member) |
+| `Banks Capital D5` | MET | packages/engine/src/mechanisms/money-market/resolution.ts, packages/engine/test/bank-resolution.test.ts (the purse pays last, and with no premium collected there is no fund and it pays instead) |
+| `Banks Capital D6` | MET | packages/engine/src/mechanisms/money-market/resolution.ts (the book and the deposits move to the acquirer over the wire, and a `names` family says nothing was left behind) |
+| `Banks Capital E1` | MET | packages/engine/src/mechanisms/estate/index.ts (an estate is realised over time and creditors are paid from it) |
+| `Banks Capital E2` | PARTIAL | the surviving system IS more concentrated after a resolution (one bank holds both books) and the register says so; measuring the consequence is Part XII (worklist 16) |
 | `Banks Capital E3` | MISSING |  |
 
 ## Dealer Desks
@@ -1038,21 +1038,21 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Central Bank A2.c` | MET | packages/engine/src/audit/families/accounts.ts |
 | `Central Bank A3` | PARTIAL | the mandate exists as a stated objective in the register; parliament owns its text and its target from worklist 14 |
 | `Central Bank A4` | PARTIAL | financially owned by the treasury through remittance; operational independence has no rate to be independent about until the corridor (worklist 11) |
-| `Central Bank B1` | MISSING |  |
-| `Central Bank B2` | MISSING |  |
-| `Central Bank B3` | MISSING |  |
-| `Central Bank B3.a` | MISSING |  |
-| `Central Bank B4` | MISSING |  |
+| `Central Bank B1` | MET | packages/engine/src/mechanisms/money-market/index.ts (`centralBank.policyRate`, declared by the central bank as a POLICY primitive with an owner). The rule it sets it BY — its own outlook of inflation and activity — arrives with the ratings and the measurement (worklist 12, 16) |
+| `Central Bank B2` | MET | packages/engine/src/mechanisms/money-market/index.ts (`publishCorridor`: two administered levels, said out loud to be administered) |
+| `Central Bank B3` | MET | packages/engine/test/money-market.test.ts (it is effective THROUGH the corridor: three points of policy moves what the session strikes and what a borrower is charged) |
+| `Central Bank B3.a` | MET | packages/engine/test/money-market.test.ts (the FORBID holds: every printed rate sits between the two levels and none of them is the policy rate) |
+| `Central Bank B4` | MET | packages/engine/test/money-market.test.ts (the market rate tracks it because of the corridor, and the gap is a read) |
 | `Central Bank C1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts (sovereign paper only: it stands in no other market) |
 | `Central Bank C1.b` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank C2` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank C3` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank C4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
-| `Central Bank D1` | MISSING |  |
-| `Central Bank D2` | MISSING |  |
-| `Central Bank D3` | MISSING |  |
-| `Central Bank D3.a` | MISSING |  |
-| `Central Bank D4` | MISSING |  |
+| `Central Bank D1` | MET | packages/engine/src/mechanisms/money-market/session.ts (`windowOffer`: a seat in the money market own session at the top of the corridor, bounded by unencumbered eligible paper) |
+| `Central Bank D2` | MET | packages/engine/src/mechanisms/money-market/collateral.ts (`windowAdvances`: eligibility and the haircut are the central bank own choice and a policy instrument) |
+| `Central Bank D3` | MET | packages/engine/src/mechanisms/money-market/index.ts (`reserveOverdraft`: freely, against good collateral, at a penalty, to the solvent) |
+| `Central Bank D3.a` | MET | packages/engine/src/mechanisms/money-market/index.ts, packages/engine/test/bank-resolution.test.ts (it refuses an insolvent bank for CAPITAL and not for collateral, and that bank goes to resolution) |
+| `Central Bank D4` | MET | packages/engine/src/mechanisms/money-market/index.ts (`centralBank.refused`: refusal is a real, public outcome with what it was short of and why) |
 | `Central Bank E1` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Central Bank E2` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/profiles.ts |
 | `Central Bank E3` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
