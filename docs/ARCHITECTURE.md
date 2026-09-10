@@ -601,6 +601,45 @@ programme, an auction's result — is read that way, because how far back a feed
 shrinks every time the world finds more to say, so sifting such an event out of the feed is a read
 that goes quiet as the model grows and never says that it has.
 
+### 4.11a Every unit has a smallest piece (Law 1, Law 8)
+
+A unit of anything real has a smallest piece. There is no half-cent, no gram of a cargo measured in
+tonnes: **a quantity is a whole number of ticks and anything finer does not exist**. Each `UnitDecl`
+declares its own grid as `tickExponent` (the tick is `2^-exponent`), the numbers are chosen together
+in `registry/grid.ts`, and `resolution.tickShift` moves them all at once so the choice can be tested.
+
+**Ticks are powers of two**, and that is the whole of why this works. A decimal grid (10⁻²) is not
+representable in binary floating point, so sums of "exact" decimal amounts drift off their own grid
+and the dust comes back with an extra step. On a binary grid every sum and difference of whole ticks
+is **exact**, so a balance moved a million times is exactly the balance — and the checks that compare
+it need no tolerance at all rather than a derived one.
+
+The wire enforces it: `Settlement` throws `Impossible [Law 8]` on any leg carrying a quantity that is
+not a whole number of its unit's tick — money amounts, asset and physical quantities, pledges, and
+the **per-member** side of every cell leg (each member of a cell is a real holder with a real
+account, XI-15). It never rounds for you: the kernel rounding somebody's payment would be the kernel
+deciding what they paid. Whoever builds the leg decides, with `registry.payable` / `deliverable`
+(what somebody CAN pay or deliver: down), `registry.cashFor` (what a value COMES TO: nearest),
+`upTick` (what a requirement NEEDS: up) or `shareFor` (a cell's own share, per member).
+
+**Splitting is where the real mechanism shows.** Ten pieces shared three ways is four, three and
+three: `splitOnTick` gives the odd piece to the largest remainder, ties to the earlier claimant, and
+the parts sum to **exactly** the whole. That makes "no residual with no holder" (Law 2) something the
+arithmetic cannot violate rather than something the audit reports afterwards. Where two parties trade
+and one is a population, the smallest amount they can exchange is `commonGrain` — the tick times the
+least common multiple of their weights — because a cell of five hundred deals in five hundred pieces
+at a time.
+
+What is **not** on a grid: prices, rates and values. A price is a ratio and rounding happens where it
+becomes a payment; a value is an opinion about worth. So Law 7's arithmetic dust survives exactly
+where it belongs — in what things are worth — and has left the places where money moved.
+
+How fine the grid is, is a **RESOLUTION** (Law 2), and `test/tick.test.ts` measures it: every
+structural invariant holds exactly at grids four thousand times coarser and finer, and refining the
+grid makes two runs converge. Beyond about a dozen periods the paths separate anyway — a firm on the
+edge of starting a batch starts it in one run and not the other — which is a property of a world
+whose decisions are thresholds, not of the grid.
+
 ### 4.12 Reproducibility (Seed A5, Audit D3)
 
 The engine takes a seed and a registry; all randomness comes from one injected PRNG (`sfc32`) advanced

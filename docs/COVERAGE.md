@@ -12,7 +12,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Money A1` | MET | packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money A1.d` | MET | packages/engine/src/audit/families/money.ts |
-| `Money A2` | MET | packages/engine/src/core/money.ts |
+| `Money A2` | MET | packages/engine/src/core/money.ts, packages/engine/src/core/tick.ts (money is discrete: every amount is a whole number of the currency's smallest piece), packages/engine/src/registry/grid.ts |
 | `Money A2.b` | MET | packages/engine/src/core/money.ts |
 | `Money A3` | MISSING |  |
 | `Money A4` | MISSING |  |
@@ -21,7 +21,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money B2` | MISSING |  |
 | `Money B3` | MET | packages/engine/src/ledger/settlement.ts, packages/engine/src/registry/kinds.ts |
 | `Money B3.c` | PARTIAL | a customer overdrawn at its bank now has a lender and a rate: the bank takes a credit decision, and what it allows is a drawing that becomes a loan row before the period closes (packages/engine/src/mechanisms/bank-lending/index.ts). A refusal is recorded either way. A BANK overdrawn at the central bank still has no lender row: that is B3.b's corridor (worklist 11), and the audit reports every one of them |
-| `Money C1` | MET | packages/engine/src/ledger/instruction.ts |
+| `Money C1` | MET | packages/engine/src/ledger/instruction.ts, packages/engine/src/ledger/settlement.ts (a leg carrying a quantity finer than the unit's smallest piece is refused at the site) |
 | `Money C2` | MET | packages/engine/src/ledger/settlement.ts |
 | `Money C2.c` | MET | packages/engine/src/audit/families/money.ts, packages/engine/src/ledger/settlement.ts |
 | `Money C3` | MISSING |  |
@@ -93,7 +93,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Clearing B5` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing C1` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing C2` | MET | packages/engine/src/clearing/solver.ts |
-| `Clearing C3` | MET | packages/engine/src/clearing/solver.ts |
+| `Clearing C3` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/core/tick.ts (a pro-rata split is in whole pieces, summing to exactly the whole, with the odd piece to a named claimant), packages/engine/src/clearing/market.ts (two parties exchange at the grain both can hold) |
 | `Clearing C4` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing C4.c` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing C5` | MET | packages/engine/src/clearing/solver.ts |

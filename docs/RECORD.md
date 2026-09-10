@@ -1208,3 +1208,80 @@ missing, which would mean the quantity a firm wants is not a function of the pri
 thing to look at then is the gap: it is currently the capacity it is short of, and a firm that wanted
 LESS capacity because capital got dearer would need a reason to run at a lower rate, which is a
 different mechanism from this one.
+
+## 10.2 — Every unit has a smallest piece
+
+**What.** Money is discrete, and so is everything else that is counted. Each unit declares its own
+grid as an exponent (`UnitDecl.tickExponent`, the tick is `2^-e`), the choices are made together in
+`registry/grid.ts`, and one parameter (`resolution.tickShift`) moves them all so the choice can be
+tested. Every quantity in the state is a whole number of its unit's tick: money and everything
+denominated in it (par, loans, the money-market rows), goods, plant, hours and shares.
+
+**The wire enforces it and never rounds for anybody.** A leg carrying a quantity that does not exist
+throws at the site (`Impossible [Law 8]`), including the per-member side of a cell leg — every
+member of a cell is a real holder with a real account (XI-15). The kernel rounding somebody's
+payment would be the kernel deciding what they paid, so whoever builds the leg decides, with four
+named questions: what somebody CAN pay or deliver (down), what a value COMES TO (nearest), what a
+requirement NEEDS (up), and what a cell's own share is (per member, then times the weight).
+
+**Splitting is the mechanism this makes real.** Ten pieces three ways is four, three and three:
+`splitOnTick` gives the odd piece to the largest remainder, ties to the earlier claimant, and the
+parts sum to exactly the whole. Law 2's "a residual with no holder is a defect" stops being
+something the audit reports and becomes something the arithmetic cannot do. Where a population is on
+one side of a trade, the least the two can exchange is the tick times the least common multiple of
+their weights, because a cell of five hundred deals in five hundred pieces at a time.
+
+**Why powers of two.** A decimal grid is not representable in binary floating point: sums of "exact"
+hundredths drift off their own grid and the dust returns with an extra step. On a binary grid every
+sum and difference of whole ticks is exact, so a balance moved a million times IS the balance. That
+is what buys the change: comparisons that used to need a derived tolerance now need none.
+
+**Why.** Law 1 asks for the real mechanism, and continuous money is not one — real currency has a
+smallest unit, and when ten cents are shared three ways somebody gets four and somebody three. What
+continuous money produced instead was a residue of floating-point dust that every check had to be
+told to forgive, and a residual belonging to nobody. The record already carried one of those as an
+unfixed defect (item 10's dust shortfall in the flows family); it is gone, and so is the class.
+
+**Found.** Four.
+
+- **The grid is set by the SMALLEST holder, not the largest.** The first choice put goods at a
+  thousandth of a tonne — a kilo, which is what a lorry is loaded to. A household member buys a kilo
+  or two of bread a week, so that grid rounded a person's entire weekly shopping up or down, and the
+  sector's demand with it: total production over twenty-six periods came out a tenth lower on a
+  coarse grid than a fine one. The grids are now set by what the smallest holder deals in, and the
+  invariance test is what says so.
+- **The world's path is invariant to the grid, and then it is not.** Every structural invariant —
+  money conserved, holdings summing to what is issued, no residual — holds EXACTLY at grids four
+  thousand times coarser and four thousand times finer. The aggregates converge as the grid refines:
+  two grids eight halvings apart at the fine end agree to a hundredth over eight periods. Beyond
+  about the twelfth period they separate, because a firm on the edge of starting a batch starts it in
+  one run and not in the other. That is Law 2's own warning about deciding at thresholds, arriving
+  from the measurement side, and it is a fact about the world rather than about the grid.
+- **A payment of nothing is not a payment.** Quantisation makes a whole class of tiny flows vanish
+  honestly: a fee below one piece is not charged, a dividend whose per-member share is under a piece
+  is not paid, a trade whose cash comes to less than half a piece does not fill. Each of those was
+  previously a leg for an amount that was mostly arithmetic noise. Three audit families had to learn
+  the same thing — what a payment settles is the value ROUNDED to real money — and their tolerance
+  is now the grid rather than the float's dust, which is a smaller, realer number.
+- **An estate is not a depositor.** Deposit classes (worklist 11) had put an estate with the firms,
+  which gave a party being wound up an interest income and the treasury a tax claim to rank among
+  its creditors — neither of which this world has a mechanism for, and both of which the estate's own
+  flows family caught immediately. An estate realises a business rather than running one; its balance
+  is proceeds waiting to be paid out.
+
+**Changed from the plan.** The item was inserted mid-flight, at the owner's ask, while item 11 was
+being built — because the money market writes a payment every period for every bank, every depositor
+and every row, and each of them would have had to be re-derived on the grid afterwards. Two decisions
+were the owner's: the tick is a parameter and is tested by invariance rather than asserted, and every
+unit gets one rather than currency alone.
+
+**Deleted.** `UnitDecl.countable` — a countable unit is one whose tick is one, so the flag was a
+special case of the grid and is gone with it.
+
+**Forecast, with its killer.** The claim is that the grid is a resolution: change it and the world
+does not change. The test measures convergence over eight periods, and the record above says where it
+stops holding. What would kill the claim outright is a measurement at 16: run the same seed at every
+shift and plot the distribution of an aggregate over many seeds. If the spread across grids is of the
+same order as the spread across seeds, the grid is a resolution and this is settled; if a grid change
+moves the aggregate further than a seed change does, then it is load-bearing and the world's
+mechanisms are more sensitive to lumpiness than anything here has admitted.
