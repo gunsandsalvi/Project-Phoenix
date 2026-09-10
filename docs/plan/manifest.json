@@ -72,10 +72,22 @@
     "steps": 24
   },
   {
+    "id": "10.1",
+    "title": "The kernel asks a kind what a LOT is carried at",
+    "file": "10.1-no-item-file.md",
+    "steps": 0
+  },
+  {
     "id": "10",
     "title": "The cost of capital",
     "file": "10-cost-of-capital.md",
     "steps": 16
+  },
+  {
+    "id": "10.2",
+    "title": "Every unit has a smallest piece",
+    "file": "10.2-no-item-file.md",
+    "steps": 0
   },
   {
     "id": "10.3",
@@ -84,10 +96,22 @@
     "steps": 15
   },
   {
+    "id": "10.4",
+    "title": "What a lot is carried at, after the marks are taken",
+    "file": "10.4-no-item-file.md",
+    "steps": 0
+  },
+  {
     "id": "11",
     "title": "Money market, corridor, bank capital",
     "file": "11-money-market-capital.md",
     "steps": 32
+  },
+  {
+    "id": "pre12",
+    "title": "The guards that keep the documents true",
+    "file": "pre12-true-documents.md",
+    "steps": 16
   },
   {
     "id": "12",

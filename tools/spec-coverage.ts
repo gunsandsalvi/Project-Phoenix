@@ -33,6 +33,40 @@ export function readCoverage(path: string): CoverageRow[] {
   return out;
 }
 
+/**
+ * PLAN §5: "no PARTIAL row without a named item".
+ *
+ * A PARTIAL row is a promise that the rest of a clause is coming. A promise with nobody to keep it
+ * is a MISSING row wearing a better word, and seven of them had accumulated — two of them about the
+ * currency layer, which was the very next item. So a row says which item finishes it, and this
+ * reports the ones that do not. A named item is a worklist id (`worklist 12`, `item 13g`) or the
+ * Part whose programme owns it (`Part XII`); a Part XI mechanism counts too, because the mechanism
+ * names the item that builds it.
+ */
+export function unattributedPartials(rows: readonly CoverageRow[]): CoverageRow[] {
+  return rows.filter((r) => r.status === 'PARTIAL' && !namesAnItem(r.where));
+}
+
+/**
+ * Whether this reason names something that will finish the clause.
+ *
+ * A BARE NUMBER IS NOT ACCEPTED. "12" is a tenor, a count of periods and half the clause ids in the
+ * file, and a rule that took it would pass rows that name nobody — which is the whole defect. What
+ * counts is a form that can only be an item: the word beside it (`worklist 12`, `item 13g`), an id
+ * that carries a letter or a point (`13h`, `4a`, `10.3`, `pre12`), the Part whose programme owns it,
+ * or a Part XI mechanism, which names the item that builds it.
+ */
+function namesAnItem(where: string): boolean {
+  return (
+    /\b(worklist|item)s?\s*[0-9]/i.test(where) ||
+    /\bPart\s+XI{1,2}\b/.test(where) ||
+    /\bXI-[0-9]/.test(where) ||
+    /\b[0-9]{1,2}[a-i]\b/.test(where) ||
+    /\b[0-9]{1,2}\.[0-9]\b/.test(where) ||
+    /\bpre[0-9]/i.test(where)
+  );
+}
+
 export function citedByCode(): Set<string> {
   const cited = new Set<string>();
   for (const f of listTs(resolve(root, 'packages', 'engine', 'src'))) {
@@ -201,5 +235,16 @@ if (
     console.log(
       `${system.padEnd(24)} total ${String(s.total).padStart(3)}  cited ${String(s.cited).padStart(3)}  met ${String(s.met).padStart(3)}`,
     );
+  }
+  const orphans = unattributedPartials(rows);
+  if (orphans.length > 0) {
+    console.log('');
+    for (const r of orphans) {
+      console.log(`PARTIAL with no item: ${r.id} — ${r.where}`);
+    }
+    console.log(
+      `\n${orphans.length} PARTIAL row(s) name no item that finishes them (docs/PLAN.md §5).`,
+    );
+    process.exitCode = 1;
   }
 }

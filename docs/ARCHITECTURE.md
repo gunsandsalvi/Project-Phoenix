@@ -846,7 +846,7 @@ Enforced by ESLint over `packages/engine/src` (rules in `eslint.config.js`, cust
 
 | Rule                                                                                                                       | Law                  |
 | -------------------------------------------------------------------------------------------------------------------------- | -------------------- |
-| `phoenix/no-bounds`: no `Math.min`, `Math.max`, `clamp`, `Math.abs` used as a floor, outside `core/num.ts`                 | Law 6, App B 22      |
+| `phoenix/no-bounds`: no `Math.min`, `Math.max`, or a call to anything named `clamp`/`saturate`/`bound`, outside `core/num.ts` | Law 6, App B 22      |
 | `phoenix/no-numeric-default`: no `?? <number>`, `\|\| <number>`, `= 0` default params for amounts                          | App A Missing values |
 | `phoenix/no-magic-numbers`: literals other than `0, 1, -1, 2` outside `core/`, `registry/`, tests                          | Law 2, XI-14         |
 | `phoenix/no-kind-branch`: no `=== '<kind>'` comparisons on `.kind/.sector/.industry` inside `mechanisms/`                  | Law 15, App B 48     |
@@ -856,8 +856,22 @@ Enforced by ESLint over `packages/engine/src` (rules in `eslint.config.js`, cust
 | `phoenix/no-console`, `no-empty` catch, `no-restricted-syntax` on `try` inside mechanisms                                  | §5                   |
 | `@typescript-eslint/switch-exhaustiveness-check`, `no-explicit-any`, `no-non-null-assertion`, `strict-boolean-expressions` | §5                   |
 
+**What `no-bounds` does not see, and what reads it instead.** A minimum written by hand — `let most
+= room; if (canMake < most) most = canMake` — is invisible to the rule, and so is `Math.abs`. Both
+are deliberate: a rule that fired on `Math.abs` would fire on every dust comparison in `num.ts` and
+every violation size the audit reports, and a guard nobody can leave on is not a guard. So the rule
+catches the shape a bound is usually WRITTEN in, and whether a comparison is arithmetic or a
+decision is read at the site. That reading is not a formality: the bound that got furthest into
+this tree was a floor under a dealer's offer and a cap over its bid, argued from a lender's
+reservation, and what gave it away was the length of the comment justifying it (`RECORD.md`, 11.3).
+A minimum is arithmetic when the smaller number is a thing that does not exist — units nobody
+holds, a lender's money already lent — and a bound when it is a number the model chose not to go
+past.
+
 The parameter register is checked at engine start: a placeholder without a named mechanism and
-worklist item fails construction.
+worklist item fails construction, a non-placeholder that names one fails, and a SHAPE whose reason
+names a worklist item fails — a shape with a scheduled death is a placeholder (Law 2), and writing
+the death in prose is how two of them once stayed out of the count that measures them.
 
 ---
 

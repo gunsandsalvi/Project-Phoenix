@@ -141,14 +141,14 @@ export interface SystemModule {
    * a party that never observed a variable has no outlook of it).
    */
   readonly outlooks?: OutlookProvider;
+  /** XI-6: what a lot of a kind with no market is worth. Exactly one module answers per kind. */
+  readonly marks?: readonly { readonly instrumentKind: InstrumentKindId; readonly value: Valuer }[];
   /**
    * Money B3.a, Banks Lending C3: what this module decides about a customer of a given party kind
    * overdrawn at its issuer. Exactly one module may answer for a kind, and a kind whose profile
    * says its answer is a credit decision must have one — a world where nobody takes it cannot be
    * sealed, because a defaulted-to refusal looks exactly like a bank with a credit standard.
    */
-  /** XI-6: what a lot of a kind with no market is worth. Exactly one module answers per kind. */
-  readonly marks?: readonly { readonly instrumentKind: InstrumentKindId; readonly value: Valuer }[];
   readonly creditDecisions?: readonly {
     readonly partyKind: PartyKindId;
     readonly decide: CreditDecision;

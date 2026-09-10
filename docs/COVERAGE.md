@@ -72,8 +72,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Register E1` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
 | `Register E2` | MET | packages/engine/src/registry/kinds.ts, packages/engine/src/world/actions.ts |
 | `Register E3` | PARTIAL | packages/engine/src/mechanisms/credit-events/index.ts names every holder of a claim that stopped performing and how much of it they are carrying. The loss now LANDS: a firm's estate realises what it holds, pays in rank order and writes off the rest, and the write-off is what each holder was carrying (packages/engine/src/mechanisms/estate/index.ts). A sovereign still has nothing seizable (G3): its loss takes a negotiated exchange (worklist 13f) |
-| `Register E4` | PARTIAL | split, buyback and new issue apply through issuance legs; no corporate-action driver yet |
-| `Register E5` | PARTIAL | every register event so far moves money; no explicit why-not record for the exceptions |
+| `Register E4` | PARTIAL | split, buyback and new issue apply through issuance legs, and the split has its door (item 9). The driver that ISSUES the other two — a board buying its own shares back, a board selling new ones — arrives with corporate control (worklist 13g), which is where item 11 placed raising equity and restricting distributions |
+| `Register E5` | PARTIAL | every register event so far moves money, so the clause holds by having no exceptions to explain. The exceptions arrive with the corporate-action driver (worklist 13g): a split moves quantities and no money, and what it must then record is the why-not. Measuring the VERIFY over a window is Part XII (worklist 16) |
 | `Register F1` | MET | packages/engine/src/register/instruments.ts |
 | `Register F2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/parties/party.ts |
 | `Register F3` | MET | packages/engine/src/audit/families/flows.ts |
@@ -121,7 +121,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Audit B1` | MET | packages/engine/src/audit/families/money.ts |
 | `Audit B2` | MET | packages/engine/src/audit/families/ownership.ts |
 | `Audit B3` | MET | packages/engine/src/audit/families/prices.ts, packages/engine/src/prices/value.ts |
-| `Audit B4` | PARTIAL | family declared and reported as not built |
+| `Audit B4` | PARTIAL | the crossMarket family is declared and reports NOT BUILT, never green. It becomes buildable when one economic thing is reached two ways: a share and the index containing it, at worklist 12 (Indices); a future and its underlying, at worklist 13c; a bond and its derived spread is already the curve's own read |
 | `Audit B5` | MET | packages/engine/src/audit/families/accounts.ts, packages/engine/src/ledger/settlement.ts, packages/engine/src/register/register.ts, packages/engine/src/world/revalue.ts |
 | `Audit B6` | MET | packages/engine/src/audit/families/names.ts |
 | `Audit B7` | MET | packages/engine/src/audit/families/flows.ts |
@@ -173,7 +173,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Currency A2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/registry/registry.ts |
 | `Currency A3` | MET | packages/engine/src/core/money.ts |
 | `Currency A4` | MET | packages/engine/src/core/money.ts |
-| `Currency A5` | PARTIAL | one currency in the foundation registry; several are data |
+| `Currency A5` | PARTIAL | one currency in the foundation registry; several are data. The closed named set, and a party holding any of them, is the currency layer (worklist 12) |
 | `Currency B1` | MISSING |  |
 | `Currency B2` | MISSING |  |
 | `Currency B3` | MISSING |  |
@@ -188,7 +188,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Currency D1` | MISSING |  |
 | `Currency D2` | MISSING |  |
 | `Currency D2.b` | MISSING |  |
-| `Currency D3` | PARTIAL | ordering enforced for marks; foreign positions cannot exist until the currency layer |
+| `Currency D3` | PARTIAL | ordering enforced for marks; foreign positions cannot exist until the currency layer, which is where the FX revaluation is placed before them and the single-currency guard in settlement is deleted (worklist 12) |
 | `Currency D4` | MISSING |  |
 | `Currency E1` | MISSING |  |
 | `Currency E2` | MISSING |  |
@@ -211,7 +211,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Bond N8.a` | MET | packages/engine/src/audit/families/ownership.ts |
 | `Bond N9` | MET | packages/engine/src/clearing/market.ts |
 | `Bond N10` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts, packages/engine/src/world/actions.ts |
-| `Bond N11` | PARTIAL | the sovereign answers none; the corporate regime arrives with Corporate Credit |
+| `Bond N11` | PARTIAL | the sovereign answers none, which is the right answer for it; the corporate regime — covenants, events of default, the trustee — arrives with Corporate Credit (worklist 13f) |
 | `Bond N12` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts (missed payment only: there are no covenants to breach), packages/engine/src/world/actions.ts (the kernel asks the instrument's own profile after a payment it applied did not settle, and journals what it answers, publicly) |
 | `Bond N13` | MET | packages/engine/src/registry/kinds.ts (every kind states what a holder is entitled to on failure — required, because the clause is about stating it even when the answer is nothing), packages/engine/src/mechanisms/sovereign-instruments/index.ts (nothing seizable: a negotiated exchange, and exclusion from the market) |
 | `Bond N14` | MET | packages/engine/src/mechanisms/sovereign-instruments/index.ts, packages/engine/src/register/instruments.ts |
@@ -509,7 +509,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Fund Shares C2` | MET | packages/engine/src/mechanisms/funds/index.ts (shares back and cash out at the NAV struck when it asked; C2.a: from its buffer or by selling; C2.b: what it cannot pay stays on the book and the sale is into the market that thing trades in, at whatever it gives) |
 | `Fund Shares C3` | MET | packages/engine/src/mechanisms/funds/index.ts (shares outstanding move with every subscription and redemption; a fund is not fixed-size) |
 | `Fund Shares C4` | MET | packages/engine/src/mechanisms/funds/index.ts (a queued redeemer is paid at the NAV it struck, and what the sales fetched is what the remaining holders carry through the same read — C4.a: which is why a redemption is a cost to those who stay) |
-| `Fund Shares C5` | PARTIAL | packages/engine/src/mechanisms/funds/index.ts (the flows family checks that everything ever asked for is paid or still on the book, which is the half that breaks in silence). Shares created minus redeemed against outstanding is the kernel's ownership family already; cash in and out against the shares is the two legs of one instruction and is asserted in packages/engine/test/funds.test.ts rather than audited against itself |
+| `Fund Shares C5` | PARTIAL | packages/engine/src/mechanisms/funds/index.ts (the flows family checks that everything ever asked for is paid or still on the book, which is the half that breaks in silence). Shares created minus redeemed against outstanding is the kernel's ownership family already; cash in and out against the shares is the two legs of one instruction and is asserted in packages/engine/test/funds.test.ts rather than audited against itself. BOTH HALVES ARE CHECKED, by two families and a test rather than by one family, so what is open is not a mechanism but whether that counts: the measurement programme (worklist 16) decides whether a clause checked in two places needs a family of its own, and this row closes either way there |
 | `Fund Shares D1` | MET | packages/engine/src/mechanisms/funds/data.ts (a mandate of bills, and a maximum tenor: short, high-quality paper) |
 | `Fund Shares D2` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts (a saver holds it instead of a deposit and asks the money back when it cannot cover what it means to spend; its account falls to what it is about to spend, because a deposit pays it nothing). D2.a is only half a competition until a bank BIDS for a deposit (Banks Funding B1, worklist 11): the fund publishes what it offers, and nothing yet answers |
 | `Fund Shares D3` | MET | packages/engine/src/mechanisms/funds/index.ts (it is a buyer in the bill market, and its size is what determines how much paper it can place: the savers' money reaches the state's paper through it) |
@@ -846,7 +846,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Banks Funding E3` | MET | packages/engine/test/run.test.ts (leaving forces the sale and the shrinking, and both produce more of E2.a) |
 | `Banks Funding E3.a` | MET | packages/engine/test/run.test.ts (the reserves leave in the same instruction as the deposits, so the bank is shorter at the next close) |
 | `Banks Funding E4` | MET | packages/engine/src/mechanisms/money-market/deposits.ts, packages/engine/test/run.test.ts (insurance is per member, so raising it past what a member holds takes a household cell out of what can run) |
-| `Banks Funding E5` | PARTIAL | the second half is answered: a bank whose only capital is retained earnings can now raise a layer instead (bank-lending/subordinated.ts). A run at one bank being information about OTHERS is not built — every depositor reads its own bank only |
+| `Banks Funding E5` | PARTIAL | the second half is answered: a bank whose only capital is retained earnings can now raise a layer instead (bank-lending/subordinated.ts). A run at one bank being information about OTHERS is not built — every depositor reads its own bank only — and it arrives with the depositor that decides from its own balance (worklist 12) |
 | `Banks Funding F1` | MET | packages/engine/src/mechanisms/money-market/index.ts, packages/engine/src/observer/observer.ts (deposit lines by class, published and shown) |
 | `Banks Funding F2` | MET | packages/engine/src/mechanisms/money-market/index.ts (the reserve balance as a read of the one account, never a mirrored copy) |
 | `Banks Funding F3` | MET | packages/engine/src/audit/families/accounts.ts |

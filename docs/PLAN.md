@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 53.6%** (248 of 463 steps across 29 items).
+**Plan completion: 55.1%** (264 of 479 steps across 33 items).
 **Requirement coverage: 39.7%** (525 MET, 71 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -31,9 +31,13 @@ The plan has two parts:
 | 7 — Forced seller, nothing immortal, the estate | 15 | 15 | closed |
 | 8 — Redeemable claims | 12 | 12 | closed |
 | 9 — Equity and dealers | 24 | 24 | closed |
+| 10.1 — The kernel asks a kind what a LOT is carried at | — | — | closed (no item file) |
 | 10 — The cost of capital | 16 | 16 | closed |
+| 10.2 — Every unit has a smallest piece | — | — | closed (no item file) |
 | 10.3 — A quantity is a whole number of indivisible pieces | 15 | 15 | closed |
+| 10.4 — What a lot is carried at, after the marks are taken | — | — | closed (no item file) |
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
+| pre12 — The guards that keep the documents true | 16 | 16 | closed |
 | [12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer](plan/12-currency-benchmarks-ratings.md) | 25 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
@@ -240,10 +244,18 @@ and the cell events only. Tests assert no write is reachable through a context.
 Kinds (instrument kinds, party kinds) are registered at assembly by the module that owns them, each
 with its whole behaviour in one profile (`registry/kinds.ts`):
 
-- `InstrumentKindProfile`: `pricing` (money | cleared | carriedAtCost), `liabilityOfIssuer`,
-  `unit(ccy)`, `validateTerms`, `displayName`, `due(instrument, period, calendar)`.
+- `InstrumentKindProfile`: `pricing` (money | cleared | carriedAtCost | derived — where a price
+  comes from) and `carry` (mark | cost — what a holder carries it at, a different question:
+  ARCHITECTURE §4.5); `liabilityOfIssuer`; `unit(ccy)`; `validateTerms`; `displayName`;
+  `due(instrument, period, calendar)`; `accrued`; `cashFlows`; `ranking`. Optional, each a door a
+  kind opts into: `carriedAt` (what one LOT is carried at now, item 10.1), `derive` (what a unit of
+  a `derived` kind is worth), `fairValueThroughIncome`, `physical`, `defaultOn`, `accelerates`,
+  `splits`.
 - `PartyKindProfile`: `representation` (named | cell), `moneyIssuer` (null, or the overdraft
-  decision).
+  decision), `fails`, `borrows`, `choosesBank`.
+
+The profile is the contract, so it is the thing to read before writing a kind — `registry/kinds.ts`
+is the authority and this list is its summary.
 
 The kernel never looks inside an instrument's terms. A module that needs a term (a coupon, a
 maturity) exports a typed accessor with a type guard from the module that owns the kind. An
@@ -262,11 +274,17 @@ A module is `packages/engine/src/mechanisms/<id>/index.ts` exporting one `System
 | `requires`        | module ids it depends on; assembly orders by these; a cycle or a missing id is a construction error                        |
 | `instrumentKinds` | profiles for kinds this module owns; a kind is owned by exactly one module                                                 |
 | `partyKinds`      | profiles for party kinds it owns (a fund, an insurer, a clearing house)                                                    |
+| `curveFamilies`   | curve families it declares: one owner, one compounding, one day count (Sovereign D3.a)                                     |
 | `units`           | physical units it introduces (tonnes, dwellings, hours)                                                                    |
 | `params`          | every number it reads: id, value, unit, kind, owner, why; for a placeholder, `standsInFor`                                 |
 | `phases`          | what it runs: name, spec, cycle, anchor (`{ before }` or `{ after }` a kernel phase or another module's phase), `run(ctx)` |
 | `participants`    | reasons to be in a market, per party kind: `orders(view, market)`                                                          |
+| `venueParticipants` | the same for a venue, which asks for schedules rather than clearing a book (item 11.1)                                    |
 | `families`        | audit contributions: `{ name, contributor, spec, built, check(view) }`                                                     |
+| `outlooks`        | how a party of its kinds forms its own outlook, if it does (§46, XI-16)                                                    |
+| `marks`           | what a lot of a kind with no market is worth; exactly one module answers per kind (XI-6)                                   |
+| `creditDecisions` | what a customer of a party kind overdrawn at its issuer is told; one module per kind (Money B3.a)                          |
+| `resolves`        | party kinds whose failure this module takes charge of, so the estate opens none for them (XI-3)                            |
 | `seed`            | opening state this module contributes; runs in assembly order before the seal                                              |
 
 **Lifecycle in a run.** Assembly registers kinds, units and params; inserts phases; registers

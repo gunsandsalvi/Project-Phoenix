@@ -1,7 +1,7 @@
 # Project Phoenix — standing rules (always in context)
 
 Phoenix is a simulated closed-circuit economy. The full specification is `docs/spec/PROJECT_PHOENIX.md`
-(5,248 lines; 47 systems, 2 instrument contracts, 17 mechanisms). This file is its digest. When a
+(5,285 lines; 47 systems, 2 instrument contracts, 17 mechanisms). This file is its digest. When a
 question is not settled here, **read the spec section** before deciding; cite it as `System Node`
 (e.g. `Money C2.a`, `XI-15`, `Law 6`). Implementation decisions are in `docs/ARCHITECTURE.md`.
 Work order is `docs/WORKLIST.md`; outcomes go in `docs/RECORD.md`; requirement status in

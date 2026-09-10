@@ -184,21 +184,27 @@ describe('the seed (Seed A2)', () => {
       'crossMarket',
       'zeroSum',
     ]);
-    // XI-14: NO PLACEHOLDER STANDS. The last one was the bank's liquidity buffer — a stated share
-    // of the money it had issued, standing in for a decision nobody had built — and 11.2 built the
-    // decision: what a bank holds liquid is a coverage rule somebody wrote plus its own cushion
-    // over it, against the money its own books say could leave (Banks Funding C2).
-    expect(report?.reads.placeholders).toBe(0);
-    // And eight shapes. Five of them are the levels the world opens at (Seed C4) — the four goods
-    // and the opening yield: a market that has never traded has no price, so a world that opens
-    // with stock in it opens with a level for that stock, and no worklist item will ever delete
-    // that, which is why they are shapes and not placeholders with a death nobody could keep. The
-    // sixth is the width of the one preference whose dispersion is still stated (§46 B1.a). What is
-    // unequal about households is not here: it is what happened to them. The last two are the two
-    // management fees, one per fund: what a manager charges is what competition among managers
-    // settles at (worklist 13h), and until there is any, it is a claim about the answer rather than
-    // a number this world produced.
-    expect(report?.reads.shapes).toBe(8);
+    // XI-14: TWO PLACEHOLDERS STAND, and they are the two management fees. The bank's liquidity
+    // buffer was the last one anybody counted — a stated share of the money it had issued, standing
+    // in for a decision nobody had built — and 11.2 built the decision (Banks Funding C2). The fees
+    // were never counted, because their death was written in prose: both said "worklist 13h" in
+    // their reason and both were declared shapes, so the field guards passed and the honest measure
+    // read zero. A shape with a scheduled death IS a placeholder (Law 2), and the register now
+    // refuses the other way round.
+    expect(report?.reads.placeholders).toBe(2);
+    expect(
+      snapshot(w, { kind: 'inspector' }, 10)
+        .params.placeholders.filter((p) => p.id.includes('fund.fee'))
+        .map((p) => `${p.mechanism} at ${p.worklistItem}`),
+    ).toEqual(['Fund Shares F3 at 13h', 'Fund Shares F3 at 13h']);
+    // And six shapes, which is what there always were. Five are the levels the world opens at
+    // (Seed C4) — the four goods and the opening yield: a market that has never traded has no
+    // price, so a world that opens with stock in it opens with a level for that stock, and no
+    // worklist item will ever delete that, which is why they are shapes and not placeholders with
+    // a death nobody could keep. The sixth is the width of the one preference whose dispersion is
+    // still stated (§46 B1.a). What is unequal about households is not here: it is what happened
+    // to them.
+    expect(report?.reads.shapes).toBe(6);
     // Three banks, two cohorts, a thousand people to a (cohort, bank) key: a key is where a
     // population is REPRESENTED, so a world with a third bank in it has a third more households.
     expect(report?.reads.populations['household']).toBe(6000);

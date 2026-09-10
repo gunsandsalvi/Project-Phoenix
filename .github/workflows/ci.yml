@@ -10,7 +10,7 @@ concurrency:
 
 jobs:
   check:
-    name: Lint, typecheck, test, citations, build
+    name: The gate (npm run check), build, smoke
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -19,10 +19,10 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
-      - run: npm run lint
-      - run: npm run typecheck
-      - run: npm run test
-      - run: npm run check:spec
+      # The gate CLAUDE.md names, run as one thing: lint, typecheck, tests, spec citations, plan
+      # progress. CI used to list five of its six by hand and omit `plan:check`, so a stale progress
+      # block passed here and failed locally. A list in two places is a list that drifts (Law 4).
+      - run: npm run check
       - run: npm run build
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium

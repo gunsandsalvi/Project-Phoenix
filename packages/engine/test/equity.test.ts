@@ -243,9 +243,11 @@ describe('what a share is (Equity A)', () => {
     const w = foundationWorld('eq-kind-d');
     const decl = w.params.decl(OPENING_SHARE);
     expect(decl.kind).toBe('resolution');
-    // Law 2: the shapes this world declares are the four goods' opening prices, the opening yield,
-    // one preference width and the two management fees, and equity added none of them.
-    expect(w.last?.audit.reads.shapes).toBe(8);
+    // Law 2: the shapes this world declares are the four goods' opening prices, the opening yield
+    // and one preference width, and equity added none of them. The two management fees used to be
+    // counted here; they name the item that deletes them, so they are placeholders (pre12).
+    expect(w.last?.audit.reads.shapes).toBe(6);
+    expect(w.last?.audit.reads.placeholders).toBe(2);
   });
 });
 

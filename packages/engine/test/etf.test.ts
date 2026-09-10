@@ -237,24 +237,32 @@ describe('what the manager takes (B3, F3)', () => {
   it('is a real payment out of the fund, and the book is smaller for it', () => {
     const w = saversWorld('etf-fee');
     for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const fees = w.journal
-      .ofKind('fund.fee')
-      .filter((e) => e.data['fund'] === String(FUND) && e.data['paid'] === true);
+    const accrued = w.journal.ofKind('fund.fee').filter((e) => e.data['fund'] === String(FUND));
+    const fees = accrued.filter((e) => e.data['paid'] === true);
     expect(fees.length).toBeGreaterThan(0);
     // F3: the manager is a separate party and the fee is its income, so it has the money.
     expect(w.cash(MANAGER, PHX)).toBeGreaterThan(0);
     // B3, Law 5: what left the fund left it. Every fee is a numbered instruction with two sides,
     // out of the fund's own account and into the manager's — never a subtraction from a number.
-    const total = fees.reduce((t, e) => t + Number(e.data['amount']), 0);
-    const paid = w.ledger
+    const instructions = w.ledger
       .all()
-      .filter((r) => r.instruction.reason === `${FUND} pays its manager`)
+      .filter((r) => r.instruction.reason === `${FUND} pays its manager`);
+    // Appendix B, one payment convention: EVERY accrual goes to the wire, for the whole of what is
+    // owed. A fund short of the money does not pay a smaller fee — the instruction is refused and
+    // the refusal is the record. This fund is short in one period of the six and pays in the other
+    // five, which is a fund that ran out of cash on the day and not a fund that cannot pay at all.
+    expect(instructions.length).toBe(accrued.length);
+    expect(instructions.filter((r) => r.outcome !== 'settled').length).toBe(
+      accrued.length - fees.length,
+    );
+    // And nothing half-settled: what the manager received is the sum of the fees that were paid,
+    // with no part-payment standing in for the one that was not (Money E1, Law 6).
+    const legs = instructions
+      .filter((r) => r.outcome === 'settled')
       .flatMap((r) => r.instruction.legs);
-    expect(paid.length).toBe(fees.length);
-    expect(
-      paid.reduce((t, l) => t + (l.kind === 'money' ? l.amount : 0), 0),
-    ).toBeCloseTo(total, 12);
-    expect(paid.every((l) => l.kind === 'money' && l.from.holder === FUND && l.to.holder === MANAGER)).toBe(true);
+    const total = fees.reduce((t, e) => t + Number(e.data['amount']), 0);
+    expect(legs.reduce((t, l) => t + (l.kind === 'money' ? l.amount : 0), 0)).toBeCloseTo(total, 12);
+    expect(legs.every((l) => l.kind === 'money' && l.from.holder === FUND && l.to.holder === MANAGER)).toBe(true);
   });
 });
 

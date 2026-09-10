@@ -180,9 +180,10 @@ function etfParamsOf(etfs: readonly EtfDecl[]): ParamDecl[] {
     id: fundParam(e.fund, 'fee'),
     value: e.fee,
     unit: 'per annum on net assets',
-    kind: 'shape' as const,
+    kind: 'placeholder' as const,
     owner: 'model' as const,
-    why: `Fund Shares B3, F3: what ${e.managerName} charges for running ${e.name}. It is a SHAPE — a claim about what running an index costs — until managers compete for mandates and the fee is what that competition settles at (worklist 13h).`,
+    why: `Fund Shares B3, F3: what ${e.managerName} charges for running ${e.name}. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be.`,
+    standsInFor: { mechanism: 'Fund Shares F3', worklistItem: '13h' },
   }));
 }
 
@@ -209,9 +210,10 @@ function paramsOf(): ParamDecl[] {
         id: fundParam(f.fund, 'fee'),
         value: f.fee,
         unit: 'per annum on net assets',
-        kind: 'shape',
+        kind: 'placeholder',
         owner: 'model',
-        why: `Fund Shares B3, F3: what ${f.managerName} charges. It is a SHAPE — a claim about what management costs — until managers compete for mandates and the fee is what that competition settles at (worklist 13h).`,
+        why: `Fund Shares B3, F3: what ${f.managerName} charges. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be.`,
+        standsInFor: { mechanism: 'Fund Shares F3', worklistItem: '13h' },
       },
       {
         id: fundParam(f.fund, 'requiredYield'),
@@ -233,25 +235,56 @@ function paramsOf(): ParamDecl[] {
   ];
 }
 
-/** B3: the fee, for the days this period actually has (Law 8: a per annum rate is not a per period one). */
-function payFee(ctx: MechanismContext, d: FundDecl, net: number): void {
+/**
+ * B3, F3: what a fund owes its manager for the days this period actually has.
+ *
+ * ONE ACCRUAL, read by every fund there is (Law 4). It was written twice — once here and once
+ * inline in `runEtf` — and the two copies did not agree about the case that matters, which is what
+ * a second copy of a formula is for.
+ *
+ * Law 8: a per annum rate is not a per period one, and a fee is money, so what comes out is whole
+ * pieces of it. Below one piece there is nothing to pay, and `payable` has already said so.
+ */
+function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): number {
+  const party = ctx.parties.get(fund as PartyId);
+  return ctx.registry.payable(
+    ctx.registry.region(party.region).ccy,
+    mul(
+      mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
+      mul(
+        ctx.params.get(fundParam(fund, 'fee')),
+        yearFraction(
+          FEE_DAY_COUNT,
+          ctx.calendar.startOf(ctx.period),
+          ctx.calendar.endOf(ctx.period),
+        ),
+        'this period of a year',
+      ),
+      'the fee',
+    ),
+  );
+}
+
+/**
+ * F3: the manager's income, paid out of the fund's own account — and ONE CONVENTION for a fund that
+ * cannot cover it (Appendix B: one payment convention).
+ *
+ * What it owes is what it owes. A fund short of the money does not pay a smaller fee: the
+ * instruction goes to the wire for the whole amount and the wire refuses it, which is what happens
+ * to every other payment in this world that a payer cannot make (Money E1). The refusal is a
+ * recorded state with two sides and a manager that can see it; the alternative this replaces —
+ * paying whatever cash was lying there and writing off the rest — was income appearing at one end
+ * with nothing to match it at the other, and a shortfall nobody held (Law 2, Law 5).
+ */
+function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amount: number): void {
+  if (amount <= 0) return;
   const fund = ctx.parties.get(d.fund as PartyId);
   const manager = ctx.parties.get(d.manager as PartyId);
-  const ccy = ctx.registry.region(fund.region).ccy;
-  const from = ctx.calendar.startOf(ctx.period);
-  const to = ctx.calendar.endOf(ctx.period);
-  const rate = ctx.params.get(fundParam(d.fund, 'fee'));
-  // Law 8: a fee is money, so it is whole pieces of it; below one piece there is nothing to pay.
-  const amount = ctx.registry.payable(
-    ccy,
-    mul(net, mul(rate, yearFraction(FEE_DAY_COUNT, from, to), 'this period of a year'), 'the fee'),
-  );
-  if (!material(amount, 2, net) || amount <= 0) return;
   const leg: Leg = {
     kind: 'money',
     from: { holder: fund.id, issuer: fund.bank },
     to: { holder: manager.id, issuer: manager.bank },
-    ccy,
+    ccy: ctx.registry.region(fund.region).ccy,
     amount,
     fromCell: none(),
     toCell: none(),
@@ -414,9 +447,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   const previous = b.previous[d.fund];
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
   // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
-  if (share.issued > 0) {
-    payFee(ctx, d, mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'));
-  }
+  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
   const perShare = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
   b.struck[d.fund] = perShare;
   // B2.a: how old the oldest mark behind it is. A stale mark makes a stale NAV and somebody
@@ -592,23 +623,11 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
   const share = ctx.instruments.get(shareLineOf(d.fund));
   if (!share.status.live) return;
   // B3, F3: the fee is a real payment out of what the fund holds, and it reduces the NAV because
-  // the NAV is a read of the book and the book is smaller once it has left. It is never more than
-  // the fund actually has: a manager cannot be paid out of money that is not there, and what it
-  // could not be paid this period it is not owed later — its income is what the fund earned.
+  // the NAV is a read of the book and the book is smaller once it has left. The same accrual and
+  // the same convention as every other fund (Law 4): what it owes goes to the wire whole, and a
+  // fund without the money has a refused payment rather than a discount nobody granted it.
   const money = moneyOf(ctx, fund, ctx.registry.region(ctx.parties.get(fund).region).ccy);
-  const cash = ctx.register.quantity(fund, money);
-  if (share.issued > 0 && cash > 0) {
-    const owed = mul(
-      mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
-      mul(
-        ctx.params.get(fundParam(d.fund, 'fee')),
-        yearFraction(FEE_DAY_COUNT, ctx.calendar.startOf(ctx.period), ctx.calendar.endOf(ctx.period)),
-        'this period of a year',
-      ),
-      'the fee',
-    );
-    payManager(ctx, d, owed > cash ? cash : owed);
-  }
+  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
   // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
   // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
   for (const o of ctx.posted(etfVenue(d.fund))) {
@@ -658,36 +677,6 @@ function floorRate(ctx: MechanismContext): Option<number> {
   if (last === undefined) return none<number>();
   const floor = last.data['floor'];
   return typeof floor === 'number' ? some(floor) : none<number>();
-}
-
-/** F3: the manager's income, paid out of the fund's own account (B3). */
-function payManager(ctx: MechanismContext, d: EtfDecl, wanted: number): void {
-  const fund = ctx.parties.get(d.fund as PartyId);
-  const manager = ctx.parties.get(d.manager as PartyId);
-  // Law 8: a fee is paid in whole pieces of money, and a fee smaller than one is not charged.
-  const amount = ctx.registry.payable(ctx.registry.region(fund.region).ccy, wanted);
-  if (!material(amount, 2, wanted) || amount <= 0) return;
-  const r = ctx.settle({
-    legs: [
-      {
-        kind: 'money',
-        from: { holder: fund.id, issuer: fund.bank },
-        to: { holder: manager.id, issuer: manager.bank },
-        ccy: ctx.registry.region(fund.region).ccy,
-        amount,
-        fromCell: none(),
-        toCell: none(),
-      },
-    ],
-    cause: 'transfer',
-    reason: `${d.fund} pays its manager`,
-  });
-  ctx.record(
-    'fund.fee',
-    [d.fund, d.manager],
-    { fund: d.fund, manager: d.manager, amount, paid: r.outcome === 'settled' },
-    false,
-  );
 }
 
 /**

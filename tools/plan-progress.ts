@@ -27,10 +27,58 @@ export interface ItemProgress extends ManifestItem {
   readonly present: boolean;
 }
 
+/**
+ * The item ids on the worklist, in the order it works them (Law 10).
+ *
+ * A row is `| <id> | ...`, and the id is the first cell. Read rather than restated: the worklist is
+ * the one ordered list, and a second copy of it here would be the defect this function exists to
+ * catch (Law 19).
+ */
+export function worklistIds(): string[] {
+  const text = readFileSync(resolve(root, 'docs', 'WORKLIST.md'), 'utf8');
+  const out: string[] = [];
+  for (const line of text.split('\n')) {
+    const m = /^\|\s*([A-Za-z0-9][A-Za-z0-9.]*)\s*\|/.exec(line);
+    if (m?.[1] !== undefined && m[1] !== 'item') out.push(m[1]);
+  }
+  return out;
+}
+
+/**
+ * Law 10, Appendix C: the manifest and the worklist name the same items.
+ *
+ * Three items — 10.1, 10.2 and 10.4 — were inserted, worked and closed without ever reaching the
+ * manifest, so the progress figure counted twenty-nine items where the worklist had thirty-two and
+ * `plan:check` could not see it: it validated the step counts of files that still exist and had no
+ * way to know an item existed at all until the manifest named it. A figure that silently omits
+ * closed work is worse than no figure, so the two lists are compared in both directions here, on
+ * the commit that makes them differ.
+ */
+export function crossCheck(manifest: readonly string[], worklist: readonly string[]): void {
+  const onList = new Set(worklist);
+  const inManifest = new Set(manifest);
+  const missing = [...onList].filter((id) => !inManifest.has(id));
+  const extra = [...inManifest].filter((id) => !onList.has(id));
+  if (missing.length > 0) {
+    throw new Error(
+      `docs/WORKLIST.md has items the manifest does not: ${missing.join(', ')}. Add the row in the change that inserts the item (docs/PLAN.md §5)`,
+    );
+  }
+  if (extra.length > 0) {
+    throw new Error(
+      `docs/plan/manifest.json has items the worklist does not: ${extra.join(', ')}. An item exists on the one ordered list or it does not exist (Law 10)`,
+    );
+  }
+}
+
 export function itemProgress(): ItemProgress[] {
   const manifest = JSON.parse(
     readFileSync(resolve(root, 'docs', 'plan', 'manifest.json'), 'utf8'),
   ) as ManifestItem[];
+  crossCheck(
+    manifest.map((m) => m.id),
+    worklistIds(),
+  );
   return manifest.map((m) => {
     const path = resolve(root, 'docs', 'plan', m.file);
     if (!existsSync(path)) return { ...m, done: m.steps, present: false };
@@ -65,15 +113,23 @@ export function render(items: readonly ItemProgress[]): string {
   lines.push('| item | steps | done | state |');
   lines.push('|---|---|---|---|');
   for (const i of items) {
-    const state = !i.present
-      ? 'closed'
-      : i.done === 0
-        ? 'open'
-        : i.done === i.steps
-          ? 'closing'
-          : 'in progress';
+    // An item worked without a plan file has no planned steps, and saying "0 of 0" would read as an
+    // item that was free. It says what happened instead; the steps column is empty because there
+    // were none to count, not because none were done.
+    const unplanned = !i.present && i.steps === 0;
+    const state = unplanned
+      ? 'closed (no item file)'
+      : !i.present
+        ? 'closed'
+        : i.done === 0
+          ? 'open'
+          : i.done === i.steps
+            ? 'closing'
+            : 'in progress';
     const link = i.present ? `[${i.id} — ${i.title}](plan/${i.file})` : `${i.id} — ${i.title}`;
-    lines.push(`| ${link} | ${i.steps} | ${i.done} | ${state} |`);
+    const steps = unplanned ? '—' : String(i.steps);
+    const done = unplanned ? '—' : String(i.done);
+    lines.push(`| ${link} | ${steps} | ${done} | ${state} |`);
   }
   return lines.join('\n');
 }

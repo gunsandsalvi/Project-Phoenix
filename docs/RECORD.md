@@ -1754,3 +1754,132 @@ the contract is refused at the site; capital weighs by intent and the trading bo
 with a family measuring it; the money market decides nothing for a bank; the engine has no
 placeholder; and there are three banks instead of two. 297 of 323 checks pass. The twenty-six that
 do not are the anchor and the balance sheets, which is now the first thing item 12 does.
+
+
+## pre12 — The guards that keep the documents true
+
+**Where it landed and why.** Inserted between 11 and 12, ahead of the anchor, from a review of the
+tree after the 11s were folded in. It touches no mechanism, no price, no balance sheet and no
+participant, so nothing in it can move a number item 12 is about to measure — which is the only
+reason a documents item may go before the item that needs the documents.
+
+**What it did.** Eight things, each with the guard that catches the next one (Law 12).
+
+1. **A shape with a scheduled death is a placeholder, and the register now knows it.** Both fund
+   management fees said "worklist 13h" in their reason and were declared `shape`. Both existing
+   guards check the FIELD `standsInFor`, so both passed, `report().placeholders` was empty and the
+   honest measure (XI-14) read zero while two numbers with a named item sat in the shape count. The
+   register refuses a `shape` whose reason names a worklist item; the two fees are placeholders
+   standing in for `Fund Shares F3` at 13h. Placeholders 0 → 2, shapes 8 → 6. Neither number moved.
+   The guard is narrowed to shapes deliberately: eleven policies and preferences cite a future item
+   for something else — a rate parliament owns from 14 is still that rate at 14 — and a guard that
+   read "worklist" and stopped would have called every one of them a defect.
+2. **One fee, one formula, one convention.** Net assets × rate × year fraction was written twice —
+   once in `payFee`, once inline in `runEtf` — and the copies disagreed about the case that matters:
+   the ETF paid `min(owed, cash)` and wrote off the rest, the money fund settled the whole thing and
+   let the wire refuse it. One `feeAccrued`, read by both. The convention is the wire's: what is owed
+   goes over it whole and a fund without the money has a refused payment, because that is what
+   happens to every other payment a payer cannot make (Money E1), and a part-payment with the
+   remainder forgiven was income at one end with nothing at the other (Law 5) and a bound at the
+   fund's cash balance (Law 6). `payManager` is deleted. The ETF now shows one refused fee in six
+   periods where it used to show six discounted ones.
+3. **`PLAN.md` says what the code is.** §3.2 gave `pricing` as three values; it has four. It listed
+   six fields of `InstrumentKindProfile`; there are eighteen. §4's module table listed eleven fields
+   of `SystemModule`; there are sixteen. All three re-synced, and `module.ts`'s `creditDecisions`
+   doc comment, which sat above `marks`, moved to the field it describes.
+4. **`ARCHITECTURE.md` §9 says what `no-bounds` matches.** It claimed `Math.abs` used as a floor;
+   the rule never sees `Math.abs`, and never sees a minimum written by hand either. Both exclusions
+   are kept and now stated, with what reads them instead — because the bound that got furthest into
+   this tree was caught by reading the comment justifying it, not by a rule (11.3), and that is
+   worth writing down as the mechanism it is.
+5. **The progress figure counts every item.** The worklist had thirty-two rows, the manifest
+   twenty-nine. `itemProgress()` now reads `WORKLIST.md` and refuses a mismatch in either direction.
+6. **A PARTIAL row names the item that finishes it.** Seven named none; `coverage:spec` now reports
+   any that do not and exits non-zero.
+7. **CI runs the gate rather than a copy of it.** `ci.yml` listed five of `npm run check`'s six
+   steps and omitted `plan:check`, so a stale progress block passed CI and failed locally. It runs
+   `npm run check`, then `build` and `e2e`. A list in two places is a list that drifts (Law 4).
+8. **`CLAUDE.md`'s spec size is right**: 5,285 lines, not 5,248. Both files were last written in
+   the same commit.
+
+**Found while working it.**
+
+- **Items 10.1, 10.2 and 10.4 never had plan files at all.** The step said to give them the step
+  counts their item files had; `git log` over `docs/plan/*` shows every file that ever existed and
+  none of them is theirs. So the missing manifest row is the second half of a skipped first step
+  ("open `docs/plan/<item>.md>`"), not a separate slip. They go in at `steps: 0` — an item with no
+  plan file had no planned steps — and `render()` shows them as `closed (no item file)` with `—`
+  rather than as items that were free. A fabricated count would have put a number I invented into
+  the one figure that is supposed to be a recount (Appendix C). The percentage does not move.
+- **The PARTIAL guard immediately found two rows the hand pass missed**, `Bond N11` and `Equity C2`
+  — and its first version was WRONG in both directions: a bare `\b1[0-7]\b` matched the "11" inside
+  the clause id `Bond N11`, and tightening it to require the word "worklist" then rejected
+  `Equity C2`, which names 13g and 13h as bare ids. What the rule takes is a form that can only be
+  an item: the word beside a number, an id carrying a letter or a point (`13h`, `4a`, `10.3`), a
+  Part, or a Part XI mechanism. A bare number is a tenor as often as an item.
+- **Two tests asserted the old shape count**, `world.test.ts` and `equity.test.ts`, and both carried
+  a comment naming the two management fees and their worklist item while asserting the placeholder
+  count was zero. The confusion was written down twice before anybody read it back.
+- **`XI-14` has no coverage row, and neither has any Part XI mechanism.** This item's file said
+  XI-14 would be re-marked, because `spec-coverage.ts` carries a PARTIAL text for it. `COVERAGE.md`
+  has no such row: the spec index makes a row per REASON/VERIFY/FORBID *within a system*, and the
+  seventeen mechanisms are cited by code and named in prose instead. Four keys in that file's
+  initial-generation table — `XI-5`, `XI-6`, `XI-14`, `XI-15` — have therefore never matched
+  anything, and five more name clauses that are no longer rows. Recorded, not fixed: the table feeds
+  `--init` only, and it wants its own bounded change. Nothing was re-marked.
+- **`npm run format:check` fails on 98 files** and nothing runs it — not `npm run check`, not CI.
+  Left alone: formatting 98 files inside this item would bury its diff (Law 14). It is a real drift
+  and it wants its own bounded change.
+
+**The twenty-six red tests, named.** PLAN §5 asks for "the year-long run green **or its expected red
+families named in the record**", and the fold's entry named none of them. They are the same
+twenty-six before and after this item — verified by name, not by count. All of them arrived inside
+11.2: 11.1 closed at 321 of 321 green, `392adc2` (fold the desks into the banks) took it to 11 red,
+`40f596a` (a third bank) to 26, and it has been the same 26 since.
+
+| file | test | waiting on |
+| --- | --- | --- |
+| `bank-resolution` | all ten, from "opens on the trigger that fired" to "lands a failed bank losses on the banks that funded it" | one number: the bank the test resolves has POSITIVE equity at marks (`hole` is −42,121,050), so there is no hole and nothing downstream fires. The opening balance sheet — a bank that is three quarters its own capital cannot be made insolvent by the trigger this test pulls |
+| `run` | "takes the reserves behind it"; "leaves that bank shorter at the next close"; "stays green every period of a funding squeeze" | the depositors and the balance sheets they decide from |
+| `omo` | "buys towards the share policy chose"; both remittance tests | the central bank's opening assets: no central-bank money exists that its issuer bought nothing with, and remittance is a read of what its own instructions earned |
+| `estate` | "shows the estate, its programme and where the dead party went"; "a year with a death in it" | the same balance sheets, through who dies and with what |
+| `capital` | "reads what its EQUITY costs off its own share price"; "a dearer cost of capital means a dearer quote" | the anchor: a cost of equity read off a share price is read off a price that walks |
+| `treasury` | "funds itself over a year when the market is there" | the anchor: twelve payments missed over the year |
+| `credit-events` | "runs a year on a state that spends past what it can fund" | the same |
+| `money-market` | "moves the market rate when it moves, and only through the corridor" | the same |
+| `curve` | "reads a level the holders of the paper put it at" | **the anchor itself**: the curve reads 0.0200 where the keenest holder posted 0.0585. This is XI-13's fixed point in the one market the model funds itself through, and it is item 12's first step |
+
+**And two that are NOT obviously the anchor or the balance sheets.** Naming them separately is the
+point of this half of the item: a reader who takes "the anchor and the balance sheets" at face value
+will not look at them again, and item 12 must not close over either.
+
+- **`tick` — "converges as the piece gets finer, in what it made and in the money it holds".** Law
+  2's resolution invariance for the whole grid, failing by about three per cent (0.00928 against
+  0.00898). If the balance sheets moved it, the record for 12 should say so; if they did not, it is
+  a finding of its own about the grid.
+- **`labour` — "fills the higher offer first when there are not enough hours for both (D1.a)".**
+  Traced. The venue is correct: it prints 7000, allots all 2100 hours to the higher bidder, writes
+  six rows of ten, and the wages settle in full (14,700,000 due, 14,700,000 paid, no failed
+  instruction). Then `firm.1` **ceases inside the same period** — all six rows separate with
+  `cause: "firm.1 ceased"` and unpaid severance — so both sides of the assertion read zero. The test
+  builds an employer with no revenue whose only act is to hire sixty people, and it depended on that
+  employer surviving the period it hired in. Whether what starves it is the opening balance sheet is
+  exactly the question item 12 opens with; whether a test of a matching rule should depend on its
+  employer's solvency is a question about the test. **Neither is answered here** — this item may not
+  fix a red test, because a documents item that turned one green would be the anchor being built by
+  accident.
+
+**Deleted.** `payManager` and the second fee formula; the ETF's `owed > cash ? cash : owed`; the
+`Math.abs` claim in §9; four wrong contract descriptions.
+
+**Forecast, with its killer.** The two guards written here — manifest against worklist, PARTIAL
+against a named item — will not fire again on this repository, because the drift they catch is
+made one item at a time and `npm run check` now runs on the commit that makes it. The killer: if
+either fires in the next three items on work that was done correctly, the guard is reading the wrong
+thing and goes, rather than the items bending to it. The register's third guard has a different
+shape and a different killer: it is a check on PROSE, and prose is where a person writes what they
+mean. If it ever refuses a number that really is a shape — one whose reason mentions an item for
+some other reason — then the reason is the wrong place to look and the death belongs in a field.
+
+**State.** 313 of 339 checks pass, against 297 of 323 before. The sixteen new ones are this item's
+guards; the twenty-six reds are the same twenty-six, by name.

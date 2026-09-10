@@ -67,6 +67,20 @@ export interface ParamDecl {
   readonly standsInFor?: PlaceholderDeath;
 }
 
+/**
+ * Law 2: whether a reason names the worklist item that ends this number.
+ *
+ * Only a SHAPE is asked. The eleven policies and preferences that cite a future item cite it for
+ * something else — a rate parliament owns from 14, a comparison that becomes real at 11 — and they
+ * are still there afterwards; what changes is who sets them. A shape is a claim about the answer,
+ * so an item that produces the answer is that claim's death, and Law 2 has a word for a shape with
+ * a death in it. The check is on the reason because that is where the death was hiding: both
+ * field guards above pass while the prose says 13h.
+ */
+function namesAnItem(why: string): boolean {
+  return /\bworklist\s+[0-9]/i.test(why);
+}
+
 /** What the register needs of the registry to count a declared amount in pieces (Law 8). */
 export interface UnitSource {
   pieces(id: UnitId, named: number): number;
@@ -107,6 +121,13 @@ export class ParamRegister {
         throw new InvalidRegistry(
           'XI-14',
           `${d.id} names a scheduled death but is declared ${d.kind}`,
+        );
+      }
+      if (d.kind === 'shape' && namesAnItem(d.why)) {
+        throw new InvalidRegistry(
+          'Law 2',
+          `shape ${d.id} names a worklist item in its reason: a shape with a scheduled death IS a placeholder. Declare kind 'placeholder' with standsInFor { mechanism, worklistItem }`,
+          { id: d.id },
         );
       }
       map.set(d.id, Object.freeze({ ...d }));
