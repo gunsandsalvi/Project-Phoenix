@@ -37,3 +37,27 @@ export function overdrafts(report: AuditReport | undefined): readonly Violation[
   if (report === undefined) return [];
   return report.families.flatMap((f) => f.violations).filter(isReserveOverdraft);
 }
+
+/**
+ * Law 8: the smallest piece of this world's money, and what it means for a test.
+ *
+ * Money is discrete (core/tick.ts), so what a payment comes to is what the arithmetic says ROUNDED
+ * to a whole number of pieces — for each member of a cell separately. A test that computed the
+ * arithmetic itself is therefore right to within the rounding, and saying so is not widening a
+ * tolerance: it is comparing against the same grid the payment landed on. Where a figure is a sum
+ * of several payments — or over the members of a cell, each rounded on its own — say how many.
+ */
+export const PIECE = Math.pow(2, -20);
+
+export function paidTheSame(actual: number, expected: number, pieces = 1): void {
+  // A payment lands on the piece below what it was struck at (what somebody CAN pay) or on the
+  // nearest one (what a value COMES TO), so one piece covers either. Where a figure is a sum over
+  // several payments — or over the members of a cell, each of whom is paid separately — say how
+  // many pieces of rounding went into it.
+  const slack = pieces * PIECE;
+  if (Math.abs(actual - expected) > slack) {
+    throw new Error(
+      `expected ${actual} to be ${expected} to the nearest piece of money (within ${slack})`,
+    );
+  }
+}

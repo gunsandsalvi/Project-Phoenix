@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  type PartyId,
   FUNDS,
   HOUSEHOLD,
   OCCUPATIONS,
@@ -22,7 +23,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { unexpected } from './expected.js';
+import { paidTheSame, unexpected } from './expected.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -101,6 +102,37 @@ function hours(people: number): number {
   return people * HOURS_PER_MEMBER;
 }
 
+/**
+ * Banks Funding B1: what its bank paid it on its balance while the period ran. A wage test is about
+ * the wage, and the account moved for two reasons; this is how the other one is taken out.
+ */
+/** What this employer actually paid its people in a period, read off the wire (F1, E1). */
+function paidBy(w: World, party: PartyId, period: number): number {
+  let total = 0;
+  for (const r of w.ledger.inPeriod(period as never)) {
+    if (r.outcome !== 'settled') continue;
+    const why = r.instruction.reason;
+    if (!why.includes('wages from') && !why.includes('severance from')) continue;
+    for (const leg of r.instruction.legs) {
+      if (isMoneyLeg(leg) && leg.from.holder === party) total += leg.amount;
+    }
+  }
+  return total;
+}
+
+function interestPaidTo(w: World, party: PartyId, period: number): number {
+  let total = 0;
+  for (const r of w.ledger.inPeriod(period as never)) {
+    if (r.outcome !== 'settled' || r.instruction.cause !== 'coupon') continue;
+    for (const leg of r.instruction.legs) {
+      if (!isMoneyLeg(leg)) continue;
+      if (leg.to.holder === party) total += leg.amount;
+      if (leg.from.holder === party) total -= leg.amount;
+    }
+  }
+  return total;
+}
+
 describe('the venue (Labour A3, D1)', () => {
   it('is one per region and occupation, in hours, in the money of the place', () => {
     const w = world();
@@ -162,7 +194,10 @@ describe('a hire (Labour A4, XI-10)', () => {
     const row = rows(w)[0];
     if (row === undefined) throw new Error('nobody was hired');
     const bill = 3 * hours(1) * row.wagePerHour;
-    expect(w.cash(FIRM_1, PHX)).toBeCloseTo(firmBefore - bill, 9);
+    // What left the account is the wage bill. What ARRIVED in the same period is what its bank pays
+    // it on the balance (Banks Funding B1, worklist 11), so the account is read against both —
+    // the wage is asserted on the wire below, where it happened.
+    paidTheSame(w.cash(FIRM_1, PHX) - interestPaidTo(w, FIRM_1, w.period), firmBefore - bill, 3);
     const paidPerMember = hours(1) * row.wagePerHour;
     const r = w.step();
     expect(r.audit.total).toBe(0);
@@ -176,8 +211,10 @@ describe('a hire (Labour A4, XI-10)', () => {
       .filter((leg) => isMoneyLeg(leg) && leg.from.holder === FIRM_1 && leg.to.holder === row.worker);
     expect(wages).toHaveLength(1);
     const leg = wages[0];
-    expect(leg !== undefined && isMoneyLeg(leg) ? leg.toCell.some && leg.toCell.value.perMember : 0)
-      .toBeCloseTo(paidPerMember, 12);
+    paidTheSame(
+      leg !== undefined && isMoneyLeg(leg) && leg.toCell.some ? leg.toCell.value.perMember : 0,
+      paidPerMember,
+    );
   });
 });
 
@@ -330,10 +367,14 @@ describe('the contract (Labour D2, C3)', () => {
     expect(ev[0]?.data['members']).toBe(5);
     const struck = rows(w)[0]?.wagePerHour ?? 0;
     const severancePerMember = 4 * hours(1) * struck;
-    expect(ev[0]?.data['severancePerMember']).toBeCloseTo(severancePerMember, 12);
-    // The wage bill halved and the severance was paid on top, out of the same account.
+    paidTheSame(Number(ev[0]?.data['severancePerMember']), severancePerMember);
+    // The wage bill halved and the severance was paid on top, out of the same account. It is read
+    // off the wire rather than off the balance, because the balance moves for its own reasons too
+    // — what its bank pays it, what it pays in tax on that — and none of those is this clause.
     const wageBill = 5 * hours(1) * struck;
-    expect(w.cash(FIRM_1, PHX)).toBeCloseTo(before - wageBill - severancePerMember * 5, 9);
+    // Ten roundings: five people paid a wage and five paid severance, each to their own piece.
+    paidTheSame(paidBy(w, FIRM_1, r.period), wageBill + severancePerMember * 5, 10);
+    expect(before).toBeGreaterThan(w.cash(FIRM_1, PHX));
     expect(rows(w)[0]?.headcount).toBe(5);
   });
 });

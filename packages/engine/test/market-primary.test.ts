@@ -29,6 +29,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { paidTheSame } from './expected.js';
 
 /** The one market this test drives, with its optional readings taken. */
 const BILL = instrumentId('gov.north.bill.2027-12-15');
@@ -145,7 +146,7 @@ describe('the primary market (Sovereign C)', () => {
     expect(w.instruments.get(GOV_LINE).issued).toBeCloseTo(before + 60, 9);
     // C6: the proceeds reach the treasury's account — the clean price and the interest that had
     // accrued on the paper it just sold (N9.b).
-    expect(w.cash(TREASURY_NORTH, PHX)).toBeCloseTo(cashBefore + 60 * (0.97 + accrued), 9);
+    paidTheSame(w.cash(TREASURY_NORTH, PHX), cashBefore + 60 * (0.97 + accrued));
     const ev = w.journal.ofKind('auction.result');
     expect(ev).toHaveLength(1);
     expect(ev[0]?.public).toBe(true);

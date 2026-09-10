@@ -24,6 +24,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { paidTheSame } from './expected.js';
 
 const FIRM_1 = partyId('firm.1');
 const QTY = 50;
@@ -136,17 +137,23 @@ describe('a trade in the middle of a coupon period', () => {
     expect(acc).toBeGreaterThan(0);
     expect(report.audit.total).toBe(0);
     // The cash that moved is the dirty amount: clean plus what accrued.
-    expect(buyerCashBefore - w.cash(FIRM_1, PHX)).toBeCloseTo(QTY * (CLEAN + acc), 9);
+    paidTheSame(buyerCashBefore - w.cash(FIRM_1, PHX), QTY * (CLEAN + acc));
     const trades = tradesOf(w, GOV_LINE);
     expect(trades).toHaveLength(1);
     const money = trades[0]?.instruction.legs.filter((l) => l.kind === 'money');
-    expect(money?.[0]?.kind === 'money' && money[0].amount).toBeCloseTo(QTY * (CLEAN + acc), 9);
+    paidTheSame(
+      money?.[0]?.kind === 'money' ? money[0].amount : 0,
+      QTY * (CLEAN + acc),
+    );
     // What the seller earned is two separable things: what the paper did against its mark, and the
     // interest it had earned and is paid for in cash (N9.b).
     const sellerEffect = trades
       .flatMap((r) => (r.outcome === 'settled' ? r.equity : []))
       .filter((e) => e.party === BANK_A);
-    expect(sellerEffect[0]?.delta).toBeCloseTo(QTY * (CLEAN - carrying.value.price) + QTY * acc, 9);
+    paidTheSame(
+      sellerEffect[0]?.delta ?? 0,
+      QTY * (CLEAN - carrying.value.price) + QTY * acc,
+    );
     // The lot the buyer holds carries the clean price, so its mark is the print and not the print
     // plus somebody else's interest.
     const h = w.register.holding(FIRM_1, GOV_LINE);
@@ -170,7 +177,7 @@ describe('a trade in the middle of a coupon period', () => {
       .flatMap((r) => (r.outcome === 'settled' ? r.equity : []))
       .filter((e) => e.party === FIRM_1);
     expect(effectsAtTrade).toHaveLength(1);
-    expect(effectsAtTrade[0]?.delta).toBeCloseTo(-QTY * accruedAtTrade, 9);
+    paidTheSame(effectsAtTrade[0]?.delta ?? 0, -QTY * accruedAtTrade);
     const couponReport = w.step();
     expect(couponReport.audit.total).toBe(0);
     const coupons = w.ledger
@@ -191,10 +198,10 @@ describe('a trade in the middle of a coupon period', () => {
         terms.issueDate,
         w.calendar.advance(terms.issueDate, terms.couponPeriodicity),
       );
-    expect(coupons[0]?.delta).toBeCloseTo(QTY * couponPerUnit, 9);
+    paidTheSame(coupons[0]?.delta ?? 0, QTY * couponPerUnit);
     // What it kept over the two events is the interest of the days it actually owned the paper.
     const kept = QTY * (couponPerUnit - accruedAtTrade);
-    expect((coupons[0]?.delta ?? 0) + (effectsAtTrade[0]?.delta ?? 0)).toBeCloseTo(kept, 9);
+    paidTheSame((coupons[0]?.delta ?? 0) + (effectsAtTrade[0]?.delta ?? 0), kept, 2);
     expect(kept).toBeGreaterThan(0);
     expect(kept).toBeLessThan(QTY * couponPerUnit);
   });
