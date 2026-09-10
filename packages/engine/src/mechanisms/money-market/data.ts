@@ -119,9 +119,9 @@ export interface FunderDecl {
 export const FUNDERS: readonly FunderDecl[] = [
   {
     bank: 'bank.a',
-    depositMargin: 0.008,
+    depositMargin: 0.006,
     bufferMemory: 26,
-    why: 'The cautious one: it holds against half a year of its own worst weeks, and it keeps a wide margin on the money it takes in rather than bidding for deposits it does not need.',
+    why: 'The cautious one: it holds against half a year of its own worst weeks, and it keeps the wider margin on the money it takes in rather than bidding for deposits it does not need. The gap between the two margins is what a depositor decides about, and it is a fifth of a point — which is more than the wholesale money will sit still for and less than the operational money will move for.',
   },
   {
     bank: 'bank.b',
@@ -142,6 +142,9 @@ export const switchingCost = (cls: string): ParamId => paramId(`deposits.switchi
 export const MM_PARAMS = {
   floorSpread: paramId('centralBank.corridor.floorSpread'),
   ceilingSpread: paramId('centralBank.corridor.ceilingSpread'),
+  /** Central Bank D2: what it takes off the market's price of the paper it lends against. */
+  haircut: paramId('centralBank.collateralHaircut'),
+  /** Central Bank D3.b: what it charges ABOVE the window for an account that went below zero. */
   overdraftPenalty: paramId('centralBank.overdraftPenalty'),
   policyRate: paramId('centralBank.policyRate'),
   insuranceLimit: paramId('regulation.depositInsurance.limit'),

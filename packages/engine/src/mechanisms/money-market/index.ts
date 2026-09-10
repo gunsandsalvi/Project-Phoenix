@@ -23,11 +23,12 @@ import {
 } from '../../core/ids.js';
 import { add, div, dustOf, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
+import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
-import { pledgeable, windowAdvances, type Advance } from './collateral.js';
+import { borrowingPower, pledgeable, windowAdvances, type Advance } from './collateral.js';
 import {
   BOOKS,
   DEPOSIT_CLASSES,
@@ -40,6 +41,7 @@ import {
   type BookDecl,
 } from './data.js';
 import {
+  announced,
   bufferOf,
   depositBase,
   rateFor,
@@ -60,6 +62,7 @@ import {
   collateralFor,
   corridorOf,
   coverFor,
+  fallsDueNext,
   floorBid,
   netReserveFlow,
   offered,
@@ -84,10 +87,16 @@ export * from './session.js';
 interface Market {
   readonly deposits: DepositBook;
   next: number;
+  /** Money B3.b: the accounts the central bank let go below zero, waiting to become rows. */
+  overdrawn: { bank: PartyId; ccy: CurrencyCode }[];
 }
 
 function market(ctx: MechanismContext): Market {
-  return ctx.state<Market>('market', () => ({ deposits: emptyDeposits(), next: 1 }));
+  return ctx.state<Market>('market', () => ({
+    deposits: emptyDeposits(),
+    next: 1,
+    overdrawn: [],
+  }));
 }
 
 const ccyOf = (ctx: MechanismContext, party: PartyId): CurrencyCode =>
@@ -160,25 +169,34 @@ function setAndPayDeposits(ctx: MechanismContext): void {
 }
 
 /**
- * B1.a, B5.a: what money is worth to this bank — the dearest rate the market charged it at the last
- * session if it borrowed there, and the floor if it did not. A deposit it keeps is a row it does
- * not have to write, so what it will pay for one is what the row would have cost.
+ * B1.a, B5.a, B2: what money is worth to this bank — what the market has been charging it over the
+ * memory it keeps, weighted by how much it borrowed at each rate, and the floor if it has not
+ * borrowed at all (that is what it can get for the spare).
  *
- * It is read from the session's own prints (Law 19) rather than from the rows, because an overnight
- * row has already been repaid by the time a bank sets its rates: the row is gone and what it cost
- * is not.
+ * It is an AVERAGE OVER ITS OWN MEMORY and not the last session's dearest row, and the difference
+ * is the whole stability of the thing. A deposit rate struck off one night's borrowing swings by
+ * the width of the corridor every time a bank is short for a day, and then every depositor in the
+ * world moves at once — which is not a funding market, it is a metronome. What a bank actually
+ * prices a deposit off is what its funding has been costing it, and that moves slowly because it
+ * is a read over many periods (Banks Funding B2).
  */
 export function worthOfMoney(ctx: MechanismContext, bank: PartyId, c: Corridor): number {
-  if (ctx.period === 0) return c.floor;
-  const last = asPeriod(ctx.period - 1);
-  let dearest: number | undefined;
+  const memory = ctx.params.get(mmParam(bank, 'bufferMemory'));
+  const from = ctx.period > memory ? ctx.period - memory : 0;
+  const weights: number[] = [];
+  const weighted: number[] = [];
   for (const e of ctx.journal.ofKind('moneyMarket.print')) {
-    if (e.period !== last || e.data['borrower'] !== bank) continue;
+    if (e.period < from || e.period >= ctx.period || e.data['borrower'] !== bank) continue;
     const rate = e.data['rate'];
-    if (typeof rate !== 'number') continue;
-    if (dearest === undefined || rate > dearest) dearest = rate;
+    const volume = e.data['volume'];
+    if (typeof rate !== 'number' || typeof volume !== 'number' || volume <= 0) continue;
+    weights.push(volume);
+    weighted.push(mul(volume, rate, 'what that money cost it'));
   }
-  return dearest ?? c.floor;
+  const total = sum(weights).value;
+  if (total <= 0) return c.floor;
+  const paid = div(sum(weighted).value, total, 'what its funding has been costing it');
+  return paid > c.floor ? paid : c.floor;
 }
 
 /** The banks' positions after the flows, and what each one's own week has taught it (A1, C2.a). */
@@ -215,10 +233,13 @@ function runSession(ctx: MechanismContext): void {
 
   for (const borrower of banks) {
     const p = pos.get(borrower);
-    if (p === undefined || p.gap >= 0) continue;
+    if (p === undefined) continue;
+    if (p.gap >= 0 && fallsDueNext(ctx, borrower, ccyOf(ctx, borrower)) <= 0) continue;
     const ccy = ccyOf(ctx, borrower);
     const cb = ctx.registry.centralBankOf(ccy);
-    let need = -p.gap;
+    // A2.a: what it is short of, plus what it has to repay tomorrow. A bank funds its maturity
+    // ladder in today's session, because tomorrow's payment falls due before tomorrow's session.
+    let need = add(-p.gap, fallsDueNext(ctx, borrower, ccy), 'what it has to raise');
     // Every lender's schedule for this name goes into the book before anything clears, so what a
     // borrower chooses between is what was actually posted (Clearing C5) and not what it guessed.
     for (const book of BOOKS) {
@@ -231,7 +252,7 @@ function runSession(ctx: MechanismContext): void {
           ctx.post(venue, o);
         }
       }
-      const haircut = ctx.params.get(MM_PARAMS.overdraftPenalty);
+      const haircut = ctx.params.get(MM_PARAMS.haircut);
       for (const o of windowOffer(
         ctx.participant(cb),
         ctx.participant(borrower),
@@ -300,10 +321,15 @@ function clearBook(
   const struck = strike(posted, borrower, book, ctx.registry.tick(currencyUnit(ccy)));
   if (struck.length === 0) return 0;
   const raised: number[] = [];
-  for (const s of struck) {
+  for (let s of struck) {
     // Law 7: a row for the dust of the clearing is not a row. Writing one would put an instrument
     // in the register, a lien on a rounding and a payment of nothing on the wire.
     if (!material(s.amount, struck.length + 1, sum(struck.map((x) => x.amount)).value)) continue;
+    // B1: A LENDER CANNOT LEND THE SAME MONEY TWICE. Its schedule stands in every name's book, and
+    // what it has already placed in this session comes off what it can still place in the next one.
+    const room = capacityOf(ctx, s.lender, ccy);
+    if (room <= 0) continue;
+    if (s.amount > room) s = { ...s, amount: ctx.registry.payable(ccy, room) };
     let cover: readonly { instrument: InstrumentId; qty: number; valuedAt: number }[] = [];
     let amount = s.amount;
     if (book.secured) {
@@ -408,6 +434,19 @@ function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Position>)
   }
 }
 
+/**
+ * B1, B5: what this lender can still place. For a bank it is what it had above its buffer less what
+ * it has already lent this session; for anybody else it is the money in its account, which is the
+ * only thing it could hand over. The central bank is the one party this does not bind: it issues
+ * the money it lends, and what stops it is the borrower's collateral (C4.b) and nothing else.
+ */
+function capacityOf(ctx: MechanismContext, lender: PartyId, ccy: CurrencyCode): number {
+  const cb = ctx.registry.centralBankOf(ccy);
+  if (lender === cb) return Number.MAX_SAFE_INTEGER;
+  const held = ctx.register.quantity(lender, moneyInstrumentId(ctx.parties.get(lender).bank, ccy));
+  return sub(held, lentThisPeriod(ctx, lender), 'what it has left to place');
+}
+
 /** What this bank has already placed in this period's session, so it does not place it twice. */
 function lentThisPeriod(ctx: MechanismContext, lender: PartyId): number {
   const terms: number[] = [];
@@ -499,12 +538,20 @@ function paramsOf(): ParamDecl[] {
       why: 'Money Market C2, C4: what it charges to lend against paper. Above the policy rate so a bank prefers the market and drawing is information (C4.a), and wider than the floor spread because the window is meant to be the dearer answer.',
     },
     {
-      id: MM_PARAMS.overdraftPenalty,
+      id: MM_PARAMS.haircut,
       value: 0.05,
       unit: 'ratio of the market price',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Central Bank D2, D3: the haircut the window takes on the paper it lends against. Eligibility and haircuts are its choice and a policy instrument in themselves, which is why this is a policy and not a preference of anybody.',
+    },
+    {
+      id: MM_PARAMS.overdraftPenalty,
+      value: 0.02,
+      unit: 'per annum above the window rate',
+      kind: 'policy',
+      owner: 'centralBank',
+      why: 'Central Bank D3, D3.b: AT A PENALTY. An account that went below zero at the central bank borrowed from it without asking, and it is charged above the window it did not use — which is what makes the window the thing a bank goes to first and this the thing it goes to never.',
     },
     {
       id: MM_PARAMS.insuranceLimit,
@@ -629,6 +676,18 @@ export const moneyMarket: SystemModule = {
       },
     },
     {
+      name: 'moneyMarket.book',
+      spec: 'Money B3.b Money B3.c Central Bank D3 Central Bank D3.b',
+      // After the session and after the lending module has booked its own drawings: what is still
+      // below zero at the central bank at the close of the period is an overdraft, and it becomes
+      // a row before anything can die of it or the audit can see it.
+      cycle: 'anchor',
+      anchor: { before: 'revaluation' },
+      run: (ctx: MechanismContext): void => {
+        bookOverdrafts(ctx);
+      },
+    },
+    {
       name: 'moneyMarket.clear',
       spec: 'Money Market A3 Money Market B1 Money Market B4 Money Market C1 Money Market C2',
       // A3.a: THE SESSION IS AFTER THE FLOWS — the markets, the wages that settle, the invoices,
@@ -645,6 +704,7 @@ export const moneyMarket: SystemModule = {
     },
   ],
   participants: [],
+  creditDecisions: [{ partyKind: CENTRAL_BANK, decide: reserveOverdraft }],
   families: [collateralHolds()],
   seed(ctx: SeedContext): void {
     const banks = ctx.parties.ofKind(BANK).map((b) => b.id);
@@ -673,3 +733,101 @@ export function printed(ctx: MechanismContext, borrower: PartyId): Option<number
 }
 
 export { averageRate, CENTRAL_BANK, INTERBANK, REPO, rowTerms };
+
+/**
+ * Money B3.b, Central Bank D3, D3.a, D3.b: WHAT THE CENTRAL BANK DOES WHEN A BANK'S ACCOUNT WOULD
+ * GO BELOW ZERO. It is the lender of last resort, and D6 names all four conditions at once:
+ *
+ *   - FREELY: it does not ration by size. What it will lend is what the paper covers, and that is a
+ *     constraint on the borrower rather than a quota of its own.
+ *   - AGAINST GOOD COLLATERAL: only paper it declared eligible, at the haircut it declared (D2),
+ *     and only what is still unencumbered — so a bank that has pledged everything cannot draw
+ *     (C4.b), and running out of collateral is what stops a solvent bank borrowing (B3.c).
+ *   - AT A PENALTY: the row is written at the top of the corridor plus the penalty (D3.b), which is
+ *     dearer than the window the bank did not use and far dearer than the market it did not reach.
+ *   - TO THE SOLVENT: a bank whose own equity is gone is refused here and goes to resolution
+ *     (D3.a). That refusal is the one that must exist, because a facility that lends to anybody is
+ *     the subsidy C5 forbids and it deletes the whole of Money Market D.
+ *
+ * The decision is taken here and the ROW is written at the close (`bookOverdrafts`), which is the
+ * same shape as a customer's overdraft becoming a loan (Money B3.c): during the period the account
+ * is a negative balance, and by the end of it there is a lender, a rate and a date.
+ */
+function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): OverdraftDecision {
+  const m = market(ctx);
+  // Only a bank settles in reserves; anybody else overdrawn at the central bank is the treasury
+  // asking for an advance, and there is none (Central Bank E2, Treasury D3).
+  if (!o.holderIssuesMoney) return { allow: false };
+  const on = ctx.calendar.startOf(ctx.period);
+  const power = borrowingPower(
+    windowAdvances(
+      ctx.participant(o.issuer),
+      ctx.participant(o.holder),
+      on,
+      ctx.params.get(MM_PARAMS.haircut),
+    ),
+  );
+  const solvent = ctx.participant(o.holder).equity() > 0;
+  const covered = power >= o.shortfall;
+  if (!solvent || !covered) {
+    ctx.record(
+      'centralBank.refused',
+      [o.issuer, o.holder],
+      { bank: o.holder, short: o.shortfall, collateral: power, solvent, ccy: o.ccy },
+      true,
+    );
+    return { allow: false };
+  }
+  m.overdrawn.push({ bank: o.holder, ccy: o.ccy });
+  return { allow: true, recordedAs: 'reserveOverdraft' };
+}
+
+/**
+ * D3.b: an overdrawn reserve account is a real overdraft and it STANDS AS THE NEGATIVE IT IS UNTIL
+ * REPAID — so at the close of the period it becomes a row with a lender, a rate and a date, and the
+ * money that repays it is the money the central bank lends. What was an account below zero during
+ * the period is a priced, collateralised claim by the end of it, and the money family stops having
+ * anything to report.
+ */
+function bookOverdrafts(ctx: MechanismContext): void {
+  const m = market(ctx);
+  const drawn = [...m.overdrawn];
+  m.overdrawn = [];
+  const c = corridor(ctx);
+  const on = ctx.calendar.startOf(ctx.period);
+  const seen = new Set<string>();
+  for (const d of drawn) {
+    if (seen.has(d.bank)) continue;
+    seen.add(d.bank);
+    const ccy = d.ccy;
+    const cb = ctx.registry.centralBankOf(ccy);
+    const short = -ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy));
+    const need = ctx.registry.payable(ccy, short);
+    if (need <= 0) continue;
+    const book = BOOKS.find((b) => b.tenor === 'overnight' && b.secured);
+    if (book === undefined) continue;
+    const rate = add(c.ceiling, ctx.params.get(MM_PARAMS.overdraftPenalty), 'the penalty rate');
+    const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), need);
+    const covered = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
+    const amount = ctx.registry.payable(ccy, covered > need ? need : covered);
+    if (amount <= 0) continue;
+    const n = m.next;
+    m.next += 1;
+    const id = writeRow(
+      ctx,
+      { lender: cb, borrower: d.bank, amount, rate, book },
+      n,
+      ccy,
+      coverFor(advancesFrom(ctx, cb, d.bank, on), amount),
+    );
+    if (!id.some) continue;
+    // C4.a: DRAWING THE FACILITY IS INFORMATION, and this is the dearest way of drawing it. It is
+    // public because that is what makes a depositor's answer to it possible (D5.a, E2.a).
+    ctx.record(
+      'moneyMarket.window',
+      [d.bank, cb],
+      { bank: d.bank, amount, rate, overdraft: true, ccy },
+      true,
+    );
+  }
+}

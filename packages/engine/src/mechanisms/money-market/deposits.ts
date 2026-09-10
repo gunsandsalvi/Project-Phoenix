@@ -10,14 +10,18 @@
  *
  * B1.a: THE RATE IS THE BANK'S OWN DECISION, and it is made of what the money is worth TO IT. A
  * bank that is borrowing in the market is worth the rate the market is charging it — a deposit it
- * keeps is a row it does not have to write — and a bank with more money than it wants is worth what
- * it can get for the spare, which is the floor (Money Market B5.a). Out of that it keeps its own
- * margin, and it pays a class less the harder that class is to move, because a class that will not
- * move for half a point does not have to be paid half a point.
+ * keeps is a row it does not have to write — and one with more money than it wants is worth what it
+ * can get for the spare, which is the floor (Money Market B5.a). Out of that comes its own margin,
+ * and then what it does not have to pay: a class that will not move for half a point does not have
+ * to be paid half a point, which is where A1.d's stickiness does its work and why the same bank
+ * pays its three classes three different rates.
  *
  * Nothing here is capped. What the rate cannot exceed is what the money is worth to the bank, and
- * that is not a bound but the alternative it would take instead (D1 against D3); what stops it
- * falling is that the depositor leaves, which is E1 and happens in the world rather than here.
+ * that is not a bound but the alternative it would take instead (D1 against D3). What stops it
+ * falling is the depositor leaving, and that happens in the world (E1, `moveDeposits`) rather than
+ * in this function — which is why the two banks' margins matter: the gap between them is what a
+ * depositor is deciding about, and only the class whose switching cost is smaller than that gap
+ * moves. That is A1.c and E4.a arriving as an outcome rather than as a stated stickiness.
  *
  * C2.a: THE BUFFER IS A PREFERENCE DERIVED FROM ITS OWN LIABILITIES, and here that is literal: what
  * this bank holds against is the worst week its own account has actually had, over the memory it
@@ -127,10 +131,9 @@ export function setRates(
   const was = at(book.balances, bank);
   const now = depositsByClass(ctx, bank, ccy);
   for (const cls of DEPOSIT_CLASSES) {
-    const sticky = ctx.params.get(switchingCost(cls.id));
     rates[cls.id] = sub(
       sub(worth, margin, 'what it keeps'),
-      sticky,
+      ctx.params.get(switchingCost(cls.id)),
       `what it pays ${cls.id}`,
     );
   }
@@ -262,11 +265,13 @@ export function looksInTrouble(ctx: MechanismContext, bank: PartyId, since: Peri
   return false;
 }
 
-/** B1.a: what a bank has said it pays a class this period, read off its own announcement. */
+/**
+ * B1.a, D5.a: what a bank is offering a class, read off the last thing it announced. It is the
+ * rate on the board — the same fact a rival prices against and a depositor moves for, which is why
+ * it is one public number and not two private ones (Law 4).
+ */
 export function announced(ctx: MechanismContext, bank: PartyId, cls: string): Option<number> {
-  const said = ctx.journal
-    .ofKind('bank.depositRate')
-    .filter((e) => e.subjects.includes(bank) && e.period === ctx.period);
+  const said = ctx.journal.ofKind('bank.depositRate').filter((e) => e.subjects.includes(bank));
   const last = said[said.length - 1];
   if (last === undefined) return none<number>();
   const rates = last.data['rates'];

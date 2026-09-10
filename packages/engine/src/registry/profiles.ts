@@ -6,7 +6,7 @@
  */
 import { InvalidRegistry } from '../core/errors.js';
 import { currencyUnit, instrumentKindId, partyKindId, unitId } from '../core/ids.js';
-import type { InstrumentKindProfile, OverdraftDecision, PartyKindProfile } from './kinds.js';
+import type { InstrumentKindProfile, PartyKindProfile } from './kinds.js';
 import { issuerName } from './naming.js';
 
 export const MONEY_KIND = instrumentKindId('money');
@@ -63,17 +63,19 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     // §31 A1.a: it is the other side of everybody's borrowing, and it does not have a bank.
     borrows: false,
     moneyIssuer: {
-      // B3.b: a bank overdrawn at the central bank is borrowing from it and the corridor prices it.
-      // Until the corridor exists (worklist 11, Central Bank D3.b) the overdraft is allowed and
-      // recorded as a reserve overdraft; the Money audit family reports every one as unpriced.
+      // B3.b, Central Bank D3: a bank overdrawn at the central bank is BORROWING FROM IT, and what
+      // the central bank does about that is the lender of last resort's decision — freely, against
+      // good collateral, at a penalty, to the solvent (D6). A kind profile could not take it: it
+      // weighs the borrower's unencumbered eligible paper against the haircut this central bank
+      // declared and its own capital against zero. So it says the answer is a credit decision and
+      // the module that owns the corridor registers it (worklist 11), exactly as a bank's own
+      // customer overdraft is its bank's decision (B3.a).
       //
-      // Everyone else is REFUSED, and the treasury is the case that matters: an advance whenever
-      // its account is empty converts a fiscal failure into an accounting entry and deletes the
-      // reason a funding programme exists at all (Treasury D3, Central Bank E2, Sovereign A3.b).
-      // A treasury that has not funded itself has failed to fund itself, and the refusal is what
-      // makes that a real event with a consequence (Treasury A3.a, D5).
-      overdraft: (ctx): OverdraftDecision =>
-        ctx.holderIssuesMoney ? { allow: true, recordedAs: 'reserveOverdraft' } : { allow: false },
+      // The treasury is the case that stays refused, and it is refused THERE for the same reason
+      // it was refused here: an advance whenever its account is empty converts a fiscal failure
+      // into an accounting entry and deletes the reason a funding programme exists at all
+      // (Treasury D3, Central Bank E2, Sovereign A3.b).
+      overdraft: 'aCreditDecision',
     },
   },
   {

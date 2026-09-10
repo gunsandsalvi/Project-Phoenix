@@ -41,7 +41,7 @@ import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { advances, borrowingPower, nameCost, windowAdvances, type Advance } from './collateral.js';
 import { BOOKS, type BookDecl } from './data.js';
-import { INTERBANK, REPO, rowId, type Pledged, type RowTerms } from './rows.js';
+import { INTERBANK, isRow, REPO, rowId, type Pledged, type RowTerms } from './rows.js';
 
 /** Clearing B2, C5: one book for one name, declared like a market and public like one. */
 export function sessionVenue(book: BookDecl, borrower: PartyId): VenueId {
@@ -86,6 +86,30 @@ export interface Position {
   readonly buffer: number;
   /** Above zero it has money to place; below zero it has to find some. */
   readonly gap: number;
+}
+
+/**
+ * Banks Funding A2.a: WHOLESALE BORROWING IS SHORT AND IT ROLLS, AND THAT IS WHERE A SQUEEZE BITES.
+ *
+ * A row struck this period falls due at the start of the next one, before any session could fund
+ * it. So what a bank needs in TODAY's session is its position plus everything that falls due
+ * tomorrow: it borrows to repay, which is what rolling is. A bank that cannot raise it here does
+ * not fail today — it fails tomorrow morning, when the payment it could not fund does not happen,
+ * and the session's refusal is the warning that stands in the record before it.
+ */
+export function fallsDueNext(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
+  const next = ctx.period + 1;
+  const terms: number[] = [];
+  for (const i of ctx.instruments.all()) {
+    if (!i.status.live || !isRow(i.terms) || i.terms.borrower !== bank || i.ccy !== ccy) continue;
+    if (ctx.calendar.place(i.terms.maturity) !== next) continue;
+    const held = ctx.register.heldTotal(i.id).value;
+    const profile = ctx.registry.instrumentKind(i.kind);
+    const flows = profile.cashFlows(i, ctx.calendar.startOf(ctx.period), ctx.calendar);
+    const perUnit = sum(flows.map((f) => f.perUnit)).value;
+    terms.push(mul(held, perUnit, 'what falls due tomorrow'));
+  }
+  return sum(terms).value;
 }
 
 /** A1: the net of what this bank's customers paid other banks' customers this period (Law 19). */

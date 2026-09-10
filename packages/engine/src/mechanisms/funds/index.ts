@@ -44,7 +44,7 @@ import {
 } from '../../core/ids.js';
 import { add, addTo, div, dustOf, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
-import { none, some } from '../../core/option.js';
+import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -612,6 +612,47 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
   distribute(ctx, d, share.id, money);
 }
 
+/**
+ * Money Market B5, B5.a, Fund Shares C2.a: the fund places what it is not holding as a buffer.
+ *
+ * It posts into every borrowing name's overnight secured book -- secured, because a money fund
+ * lends against collateral and takes nobody's name unsecured -- at the floor, which is what the
+ * central bank pays for cash it takes in and therefore the least anybody should accept. What it can
+ * actually lend is capped by the session itself (a lender cannot lend the same money twice), and
+ * what nobody takes stays in its account, which is where it was.
+ *
+ * It finds the books by their public key rather than by knowing who runs them (Clearing B2): a
+ * world without a money market has no such venue and the fund places nothing.
+ */
+function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
+  const fund = ctx.parties.get(d.fund as PartyId);
+  if (!fund.status.alive) return;
+  const ccy = ctx.registry.region(fund.region).ccy;
+  const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
+  // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
+  const buffer = mul(cash, ctx.params.get(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
+  const spare = ctx.registry.payable(ccy, sub(cash, buffer, 'what it can place'));
+  if (spare <= 0) return;
+  const floor = floorRate(ctx);
+  if (!floor.some) return;
+  for (const v of ctx.venues) {
+    if (v.key['market'] !== 'money') continue;
+    if (v.key['secured'] !== 'true' || v.key['tenor'] !== 'overnight') continue;
+    const borrower = v.key['borrower'];
+    if (borrower === undefined || borrower === String(fund.id)) continue;
+    ctx.post(v.id, { party: fund.id, side: 'sell', price: floor.value, qty: spare });
+  }
+}
+
+/** B5.a: what the central bank pays for cash it takes in, read off what it declared (C1). */
+function floorRate(ctx: MechanismContext): Option<number> {
+  const said = ctx.journal.ofKind('centralBank.corridor');
+  const last = said[said.length - 1];
+  if (last === undefined) return none<number>();
+  const floor = last.data['floor'];
+  return typeof floor === 'number' ? some(floor) : none<number>();
+}
+
 /** F3: the manager's income, paid out of the fund's own account (B3). */
 function payManager(ctx: MechanismContext, d: EtfDecl, wanted: number): void {
   const fund = ctx.parties.get(d.fund as PartyId);
@@ -1049,6 +1090,21 @@ export function funds(
         run: (ctx: MechanismContext) => {
           const b = book(ctx);
           for (const d of decls) strike(ctx, b, d);
+        },
+      },
+      {
+        name: 'funds.place',
+        spec: 'Fund Shares C2.a Money Market B5 Money Market B5.a',
+        cycle: 0,
+        // Money Market B5: NON-BANK CASH IS IN THE SAME MARKET. A money fund's spare cash is the
+        // largest single pool of it in this world, and a fund that left it sitting as a deposit
+        // would be a money fund that does not use the money market -- which is most of what a money
+        // fund is. It places in the morning, out of what it holds after the day's subscriptions and
+        // redemptions have been struck, and what it will take for it is the floor (B5.a): the
+        // central bank pays that for cash it takes in, and nothing it lends should earn less.
+        anchor: { after: 'funds.strike' },
+        run: (ctx: MechanismContext) => {
+          for (const d of decls) placeSpareCash(ctx, d);
         },
       },
       {
