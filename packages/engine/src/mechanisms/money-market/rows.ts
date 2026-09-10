@@ -69,6 +69,21 @@ export function isRow(t: Terms): t is RowTerms {
   return 'lender' in t && 'borrower' in t && 'collateral' in t;
 }
 
+/**
+ * B3.c, Register D5: WHETHER THIS ROW STILL SECURES ANYTHING — the one test, read by the module
+ * that frees the collateral and by the family that checks nobody's paper stayed bound (Law 4).
+ *
+ * It is two conditions and both of them are the same question asked of different stores: the row
+ * has not ceased, and there is something outstanding on it. A row that was repaid keeps its
+ * instrument — the kernel redeems the claim, it does not delete the line — so `status.live` alone
+ * says a repaid row still holds its collateral, and a bank's paper stays bound for the rest of the
+ * run. The two tests used to live in two places and disagreed about exactly that case, which is
+ * how `bank.b` came to have 613,744 of a sovereign line bound to a row nothing was owed on.
+ */
+export function securesAnything(i: Instrument): boolean {
+  return i.status.live && isRow(i.terms) && i.terms.collateral.length > 0 && i.issued > 0;
+}
+
 export function rowTerms(i: Instrument): RowTerms {
   if (!isRow(i.terms)) throw new InvalidRegistry('Money Market B1', `${i.id} is not a money-market row`);
   return i.terms;

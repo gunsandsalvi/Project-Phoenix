@@ -189,7 +189,8 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
     // A world whose treasury opens with nothing has to fail its very first mandate payment.
     const spec = foundationSpec('tsy-f');
     const drained = spec.modules.map((m) =>
-      m.id === 'seed.foundation'
+      m.id === 'seed.foundation' ||
+      m.id === 'seed.funding'
         ? {
             ...m,
             seed: (ctx: Parameters<NonNullable<typeof m.seed>>[0]) => {

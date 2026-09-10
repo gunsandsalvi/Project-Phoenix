@@ -83,6 +83,7 @@ function world(rows: readonly GoodDecl[], ...extra: SystemModule[]): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
+      m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
@@ -166,6 +167,7 @@ describe('what a good is (Goods A)', () => {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
+      m.id === 'seed.funding' ||
         m.id === 'banks' ||
         m.id === 'money-market',
     ).map(notDealing);
@@ -291,6 +293,7 @@ describe('what perishes (Goods E4)', () => {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
+      m.id === 'seed.funding' ||
         m.id === 'banks' ||
         m.id === 'money-market' ||
         m.id === 'goods',
@@ -424,6 +427,7 @@ describe('the units identity (Part XII)', () => {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
+      m.id === 'seed.funding' ||
         m.id === 'banks' ||
         m.id === 'money-market' ||
         m.id === 'goods',

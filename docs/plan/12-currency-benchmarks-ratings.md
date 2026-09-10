@@ -243,6 +243,25 @@ and the step count does not change.
 - [x] A move costs an AMOUNT, so who moves is decided by the balance they hold rather than by a rate every member of a class faces identically; test: a class does not cross in one instant whatever the grain
 - [x] The count of named institutions measured at 2, 3 and 4 the way the cell grain is (XI-15), and the liquidity target's size settled against both invariances
 
+### INSERTED: the opening sheet is funded against what a bank actually holds (12-1)
+
+Inserted here, before the allocation step, because that step was deferred out of 11.2 with a stated
+precondition — "every realised return in that world was an artefact of the opening balance sheets;
+it is reachable once they add up" — and the measurement the bank-count step took says they still did
+not: a world that opened with more banks ended with fewer, in eight of nine configurations.
+
+- [x] The funding derivation moves out of `seed.foundation` into a second seed module that runs when
+      every module has handed out what it hands out, and reads the bank's assets off the REGISTER
+      rather than off a tally of what it endowed itself. `equity` and `funds` give a bank a float
+      and a fund launch after the foundation has seeded, so the foundation was funding a bank
+      against the assets it could see and against nothing else: `bank.c` opened at exactly its 3.0%
+      leverage rule and `bank.a` at 29.7%, the difference being shares nobody had funded. All three
+      now open at their own line
+- [x] And that line is the requirement PLUS the bank's own buffer, which is what "where its own
+      capital rule puts it" always meant. At the bare regulatory minimum a bank opens in breach of
+      its own caution, with no headroom to lend into, and starts the run shrinking — 5.0%, 3.5% and
+      7.0%, each from its own declared caution and none of them a number this seed chose
+
 ### A bank's own allocation (was 11.2's deferred step)
 
 - [ ] Per-line return on capital as a private read (`bank.lines`); the treasury gives headroom to the higher-earning line first, no floor. Deferred out of 11.2 because every realised return in that world was an artefact of the opening balance sheets; it is reachable once they add up

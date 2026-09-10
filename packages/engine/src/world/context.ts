@@ -274,6 +274,13 @@ export interface SeedContext {
   readonly instruments: Instruments;
   readonly register: Register;
   readonly prices: Pick<PriceStore, 'write' | 'latest'>;
+  /**
+   * XI-6, Law 4: what a party's holding COMES TO at the opening, asked of the kernel's one valuer.
+   * A seed module that needs it — one deriving what stands behind a bank from what the bank turned
+   * out to hold — would otherwise value lots itself, which is a second valuation beside the one
+   * every other reader uses, disagreeing about a kind carried at cost the day one of them changes.
+   */
+  readonly valuation: Pick<Valuation, 'valueOfLots'>;
   openMarket(decl: MarketDecl): void;
   openVenue(decl: VenueDecl): void;
   /** Endow a party with money at its own bank, per member (Seed A4: every deposit is a liability). */

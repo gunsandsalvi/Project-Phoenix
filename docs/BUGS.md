@@ -16,7 +16,7 @@ file only by being placed — never by being decided against without a line in `
 
 ## Found while working item 12
 
-### 12-1 — A bank's opening funding cannot see the assets other modules endow it
+### 12-1 — A bank's opening funding cannot see the assets other modules endow it — **RESOLVED**
 
 **Where.** `packages/engine/src/seeds/foundation.ts`, the opening-balance-sheet block.
 
@@ -31,7 +31,21 @@ they will hand out and funds only the assets it endows itself.
 **Not a slip — an ordering constraint.** `equity` and `funds` need the parties the foundation
 creates, so the foundation cannot simply run last. Either the funding derivation moves somewhere
 that sees the whole opening state (the kernel's seal already computes assets and liabilities per
-party in `stateEquityAsRead`), or each module funds what it hands out. Undecided.
+party in `stateEquityAsRead`), or each module funds what it hands out.
+
+**Fixed by the first option, as a second seed module.** `seed.funding` requires only
+`seed.foundation` and is declared last, so it runs when every module has handed out what it hands
+out; it reads each bank's assets off the REGISTER rather than off a tally (Law 19 — a tally is a
+second copy of the register that goes wrong the moment somebody endows something without adding to
+it, which is exactly how this arrived). It does not name the modules it must follow: naming them
+would mean a world assembled without `equity` or `funds` could not include it at all, and a world
+that opens its banks and does not fund them is not a smaller world but one where nobody has a
+deposit.
+
+**And the number it derives against was wrong too.** It used the bare regulatory minimum, so a bank
+opened in breach of its own buffer with no headroom to lend into. The line a bank runs to is the
+requirement plus its own caution (Banks Capital B2): 5.0%, 3.5% and 7.0%, dispersed by numbers each
+bank had already declared.
 
 ### 12-2 — A bill prints above par: somebody bids a guaranteed loss — **RESOLVED in 12's anchor step**
 
@@ -160,6 +174,15 @@ the path: the count of banks (a resolution) and the currency layer both move it 
 
 **To be positioned at 12's close.**
 
+**Added when the opening sheet was funded against what a bank actually holds** (12-1), which moved
+every bank's capital from 3.0/23.8/29.7 per cent to 5.0/3.5/7.0: `auction` (both), `bank-capital`
+("the buffer above it"), `capital` (four), `equity` ("never sells below its own reservation", "the
+count", "buys its own back"), `funds` ("breaks the buck", "sells into a market it does not price"),
+`labour` ("fills the offer above the going rate"), `money-market` ("what somebody outside can see"),
+`omo` (both), `raise` ("asks for what it published"), `treasury` ("employs people on rows"). Nineteen
+in, ten out. Every one of them runs the world to a state and asserts about it; the audit is green
+over 52 periods on all seven seeds, and no family, contract or door is among them.
+
 **Added when the bank count became a table rather than three names** (same cause, same treatment):
 `auction` ("nobody absorbs the remainder"), `bank-resolution` ("contagion by name"), `capital`
 ("binds production"), `credit-events` ("runs a year on a state that spends past what it can fund"),
@@ -195,6 +218,53 @@ them and is a kernel change of its own (PLAN §4.4: an inserted item with a reco
 this item's, and it moves no number.
 
 **To be positioned at 12's close**, most likely as an inserted kernel item before 12a.
+
+### 12-8 — A bank defends a deposit past what the guarantee on it costs
+
+**Where.** `packages/engine/src/mechanisms/banks/treasury.ts`, `defended()`, read with `setBoard()`.
+
+**Measured.** `money-market.test.ts` ("pays a deposit rate per class, and the classes are not one
+rate"): one bank shows retail 0.0180 and wholesale 0.0130.
+
+**What is wrong.** `setBoard` prices a class at `worth - margin - premium`, so an insured class is
+offered less by exactly what the guarantee costs the bank — correct. `defended` then lets it MATCH a
+rival at anything up to `worth`, and it compares the RATE against `worth` while the bank's cost of
+that money is `rate + premium`. So a bank defending retail against a keen rival pays up to
+`worth + premium` all-in for money worth `worth` — the thing `defended`'s own comment says it will
+not do: "it stops at what the money is worth to it — past that it funds itself in the market
+instead". The stopping point for a class is `worth` less what the guarantee on that class costs.
+
+**It is a cause with one fix** (Law 12): one number, in one place, per class. It is NOT a bound — it
+is the alternative D1 names, measured correctly for the class.
+
+**Not chased, on purpose** (Law 10): it was reachable before the step that surfaced it and it is not
+that step's. **To be positioned at 12's close**, into the step that settles the boards.
+
+### 12-9 — A lien could name a party that had ceased, and then nobody could end it
+
+**Where.** `packages/engine/src/mechanisms/money-market/resolution.ts` (`moveBook`), read with
+`index.ts` (`freeRepaidCollateral`) and the `collateralHolds` family.
+
+**Measured.** After the opening sheet was funded properly, five of seven seeds went red in the
+`ownership` family every period from period 9 on: `bank.b still has 613,744 of
+gov.north.2031-03-15 bound to repo:bank.c:bank.b:25, which is not a live row`. 44 a run.
+
+**Cause, and it is two defects that only bite together.**
+
+1. **Two definitions of "a live row".** The family counted a row finished when it had ceased OR
+   nothing was outstanding on it; the releaser only when the instrument had ceased. A repaid row
+   keeps its instrument — the kernel redeems the claim, it does not delete the line — so the
+   releaser thought a repaid row still held its collateral. One writer now: `securesAnything`.
+2. **A resolution re-seated only some of the liens the failed bank held.** It released liens over
+   the ACQUIRER's paper and left liens over anybody else's naming a party that no longer existed.
+   Survivable until a SECOND bank fails and the chain of successors brings the beneficiary round to
+   the pledgor itself: both ends then resolve to one party, Register D5 refuses a leg whose two
+   sides are the same party, and no release anybody could write would settle. The paper stayed
+   bound for the rest of the run. Now no lien ever names a ceased party.
+
+**Fixed rather than parked, under Law 11's one exception**: not a misbehaving number but an audit
+family red every period in five of seven seeds, and four test files that could not collect — it
+blocked the work. Both fixes remove code rather than add a check.
 
 ### 12-4 — An audit violation in the bank-failure scenario
 

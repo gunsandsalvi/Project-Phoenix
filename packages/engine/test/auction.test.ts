@@ -88,7 +88,8 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
         : m,
     );
     const broke = stepped.map((m) =>
-      m.id === 'seed.foundation'
+      m.id === 'seed.foundation' ||
+      m.id === 'seed.funding'
         ? {
             ...m,
             seed: (ctx: Parameters<NonNullable<typeof m.seed>>[0]) => {

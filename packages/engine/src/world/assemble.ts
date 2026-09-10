@@ -173,6 +173,7 @@ function seedContext(w: World): SeedContext {
     instruments: w.instruments,
     register: store,
     prices: w.prices,
+    valuation: w.valuation,
     openMarket: (decl) => {
       w.addMarket(decl);
     },

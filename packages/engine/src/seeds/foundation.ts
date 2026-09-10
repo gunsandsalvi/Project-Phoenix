@@ -579,26 +579,12 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
     // is left, and its depositors are the parties that hold it: the firms above, and the households
     // for the rest. `bank-capital.test.ts` asserts the opening capital satisfies BOTH rules as the
     // banks module itself computes them, so this derivation cannot drift from that one (Law 4).
-    const leverage = ctx.params.get(P.leverageRatio);
-    for (const [bank, reserve] of bankReserves) {
-      const assets = add(reserve, zeroIfNone(bankPaper.get(bank)), "the bank's opening assets");
-      const funding = mul(assets, 1 - leverage, 'what its own leverage rule leaves it to fund');
-      const fromFirms = SEED_FIRMS.filter(
-        (f) => ctx.parties.get(partyId(f.firm)).bank === bank,
-      ).reduce((t, f) => add(t, f.cash, 'firm deposits'), 0);
-      const fromHouseholds = sub(funding, fromFirms, 'what the households must hold');
-      const cells = [...ctx.parties.ofKind(HOUSEHOLD)].filter((c) => c.bank === bank);
-      const members = cells.reduce((t, c) => t + weightOf(c), 0);
-      forbid(
-        fromHouseholds > 0 && members > 0,
-        'Banks Capital B1.b',
-        `${bank} opens with ${assets} of assets and ${fromFirms} of firm deposits, which leaves nothing for its households to hold`,
-        { bank, assets, fromFirms, funding },
-      );
-      // XI-15: per member, and the cell carries it with its weight.
-      const perMember = div(fromHouseholds, members, 'the deposit one member opens with');
-      for (const cell of cells) ctx.endowMoney(cell.id, PHX, cash(ctx, perMember));
-    }
+    // WHAT STANDS BEHIND A BANK IS NOT DERIVED HERE, and that is the point: this seed cannot see
+    // the shares the equity module hands a bank or the fund it launches, because both of them seed
+    // AFTER it (they need the parties it creates). A bank funded against the assets its funder can
+    // see opens at whatever share of its own capital the assets it CANNOT see happen to come to —
+    // `bank.c` at exactly its 3.0% leverage rule and `bank.a` at 29.7%. It is `seed.funding`, which
+    // runs when every module has handed out what it hands out (docs/BUGS.md 12-1).
 
     const openedGoods = new Set<string>();
     // Goods (Seed A3, C4, D1): every firm opens with stock of what it makes, with the inputs its
@@ -673,6 +659,95 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
     }
 
   },
+  };
+}
+
+/**
+ * Seed A4, C1, C5; Banks Capital B1.b: WHAT STANDS BEHIND A BANK AT THE OPENING, derived when every
+ * module has handed out what it hands out.
+ *
+ * It is a second seed module and not a block of the first, because the question needs the whole
+ * opening state and the first one cannot see it. `equity` gives a bank the float it makes a market
+ * in and `funds` gives it a launch of an exchange-traded fund; both need the parties the foundation
+ * creates, so both seed after it, so the foundation funds a bank against the assets IT endowed and
+ * against nothing else. What that produced is measurable and was measured: `bank.c` opened at
+ * exactly 3.0% equity — its own leverage rule, correctly applied to what the foundation could see —
+ * while `bank.a` opened at 29.7% and `bank.b` at 23.8%, the difference being shares nobody had
+ * funded (docs/BUGS.md 12-1).
+ *
+ * ONE DECLARED NUMBER, and everything derived from it (Law 2). A bank opens where its OWN capital
+ * rule puts it: at the opening its assets are reserves, this issuer's paper and the float, and its
+ * funding is what is left over once its own leverage minimum stands in front of them. Its
+ * depositors are the parties that hold that funding — the firms, which the foundation has already
+ * given their cash, and the households for the rest. Nothing here is chosen by reading an answer.
+ *
+ * Law 19: the assets are READ OFF THE REGISTER rather than tallied as they are handed out. A tally
+ * is a second copy of the register that goes wrong the moment somebody endows something without
+ * adding to it — which is exactly how this defect arrived.
+ */
+export function foundationFundingFor(bankRows: readonly BankDecl[] = BANKS): SystemModule {
+  return {
+    id: 'seed.funding',
+    spec: 'Seed',
+    // Only the seed whose parties it funds. It must run after every module that hands a bank an
+    // asset, and it does that by being declared LAST rather than by naming them: naming them would
+    // mean a world assembled without `equity` or `funds` could not include this module at all, and
+    // a world that opens its banks and then does not fund them is not a smaller world — it is a
+    // world where nobody has a deposit (assembly keeps declaration order for modules that do not
+    // require each other).
+    requires: ['seed.foundation'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [],
+    participants: [],
+    families: [],
+    seed(ctx: SeedContext): void {
+      const minimum = ctx.params.get(P.leverageRatio);
+      for (const row of bankRows) {
+        const bank = partyId(row.bank);
+        if (!ctx.parties.has(bank)) continue;
+        // Banks Capital B1.b, B2: THE LINE A BANK RUNS TO IS THE REQUIREMENT PLUS ITS OWN BUFFER,
+        // and that is what "where its own capital rule puts it" means. Opened at the bare minimum
+        // it is in breach of its own caution on the first morning, has no headroom to lend into,
+        // and starts the run shrinking — which is not an opening condition, it is a bank already
+        // in trouble. The buffer is its own (B2), so no two banks open at the same share and none
+        // of them opens at a number this seed chose.
+        const leverage = add(minimum, row.capitalBuffer, 'the line this bank runs to');
+        const own = moneyInstrumentId(bank, PHX);
+        let assets = 0;
+        for (const h of ctx.register.holdingsOf(bank)) {
+          if (h.instrument === own) continue;
+          assets = add(assets, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), "the bank's opening assets");
+        }
+        const funding = mul(assets, 1 - leverage, 'what its own leverage rule leaves it to fund');
+        // Law 19, Law 15: what is ALREADY deposited at it, read off the register — not "what its
+        // firms hold", which would be this seed asking what kind a depositor is (nothing branches
+        // on a kind: the question is what the account holds, and the answer is the same whoever
+        // opened it). Everything endowed at this bank before now counts, and the households take
+        // what is left of what has to be funded.
+        let already = 0;
+        for (const holder of ctx.register.holdersOf(own)) {
+          if (holder === bank) continue;
+          const held = ctx.register.quantity(holder, own);
+          already = add(already, mul(held, weightOf(ctx.parties.get(holder)), 'in total'), 'deposits');
+        }
+        const fromHouseholds = sub(funding, already, 'what the households must hold');
+        const cells = ctx.parties.ofKind(HOUSEHOLD).filter((c) => c.bank === bank);
+        const members = cells.reduce((t, c) => t + weightOf(c), 0);
+        forbid(
+          fromHouseholds > 0 && members > 0,
+          'Banks Capital B1.b',
+          `${bank} opens with ${assets} of assets and ${already} already deposited at it, which leaves nothing for its households to hold`,
+          { bank, assets, already, funding },
+        );
+        // XI-15: per member, and the cell carries it with its weight.
+        const perMember = div(fromHouseholds, members, 'the deposit one member opens with');
+        for (const cell of cells) ctx.endowMoney(cell.id, PHX, perMember);
+      }
+    },
   };
 }
 
@@ -812,6 +887,7 @@ export function foundationSpec(seed: string, bankRows: readonly BankDecl[] = BAN
       // about it. Both reach it as public events and prints, never as imports (Law 15).
       moneyMarket,
       foundationSeedFor(bankRows),
+      foundationFundingFor(bankRows),
     ],
   };
 }

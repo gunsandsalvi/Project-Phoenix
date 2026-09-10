@@ -47,7 +47,8 @@ function moves(w: World): { period: number; who: PartyId; from: PartyId }[] {
 function at(cellsPerKey: number): World {
   const spec = foundationSpec('deposits');
   const modules = spec.modules.map((m) =>
-    m.id === 'seed.foundation'
+    m.id === 'seed.foundation' ||
+      m.id === 'seed.funding'
       ? {
           ...m,
           params: m.params.map((p) =>

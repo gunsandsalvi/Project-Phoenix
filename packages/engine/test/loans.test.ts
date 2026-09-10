@@ -155,6 +155,7 @@ function world(extra: readonly SystemModule[] = [], limits?: number): World {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
+      m.id === 'seed.funding' ||
         m.id === 'credit-events' ||
         m.id === 'banks' ||
         m.id === 'money-market',
@@ -188,7 +189,8 @@ describe('who answers for an overdraft (Money B3.a)', () => {
   it('refuses to seal a world whose bank says it is a credit decision and nobody takes it', () => {
     const spec = foundationSpec('no-decider');
     const modules = spec.modules.filter(
-      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation',
+      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' ||
+      m.id === 'seed.funding',
     );
     // A bank kind that says an overdraft at it is a credit decision, in a world with no lender to
     // take it, is broken from the start — and a defaulted-to refusal would look exactly like a bank

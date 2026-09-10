@@ -436,7 +436,18 @@ Modules reach the kernel only through three contexts (`world/context.ts`), and n
 | ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; who anybody IS (kind, region, bank, weight); public prints, public instrument terms, public events, its own record; its own random stream | see any other party's private state (Observer A4, Expectations D1)           |
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
-| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets                                                                                         | anything after the seal                                                      |
+| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | anything after the seal                                                      |
+
+**The opening world is TWO seed modules, and the second one is why** (Seed A4, C1; item 12). Who
+exists and what each party is endowed with is one question; **what stands behind a bank** is another,
+and it cannot be answered until every module has handed out what it hands out. `equity` gives a bank
+the float it makes a market in and `funds` gives it a launch of an exchange-traded fund, and both
+need the parties the foundation creates — so both seed after it, and a foundation that funded a bank
+against the assets it had endowed itself funded it against the wrong number. `seed.funding` runs
+last, reads each bank's assets off the register (Law 19), and derives what its depositors hold from
+the line that bank runs to: the regulatory minimum plus its own buffer, which is the only number in
+it and is one each bank had already declared. It requires only `seed.foundation` — naming the
+modules it must follow would make a world assembled without them unable to fund anybody at all.
 
 **Schedules come through one door, in a market and in a venue.** A market gathers its orders from
 the `participants` modules declare per party kind, each evaluated with that party's own

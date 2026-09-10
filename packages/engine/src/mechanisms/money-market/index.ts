@@ -46,7 +46,7 @@ import {
   liquidityMetric,
   payDepositInterest,
 } from './deposits.js';
-import { interbankKind, isRow, repoKind, rowTerms, INTERBANK, REPO } from './rows.js';
+import { interbankKind, isRow, repoKind, rowTerms, securesAnything, INTERBANK, REPO } from './rows.js';
 import {
   averageRate,
   banksOf,
@@ -104,7 +104,7 @@ function corridor(ctx: MechanismContext): Corridor {
  */
 function freeRepaidCollateral(ctx: MechanismContext): void {
   for (const i of ctx.instruments.all()) {
-    if (!isRow(i.terms) || i.terms.collateral.length === 0 || i.status.live) continue;
+    if (!isRow(i.terms) || i.terms.collateral.length === 0 || securesAnything(i)) continue;
     // Register F2, Money E4: the borrower can have CEASED since it pledged — a resolution moves a
     // bank's whole book, collateral and all, to whoever succeeded it — and the lien is on the
     // successor's holding now. A leg addressed to the dead party would be a defect in this module.
@@ -658,10 +658,11 @@ function collateralHolds(): Family {
       const out: Violation[] = [];
       const live = new Set<string>();
       for (const i of view.instruments.all()) {
-        if (!i.status.live || !isRow(i.terms) || i.terms.collateral.length === 0) continue;
-        // A row that was never drawn secures nothing: the money never moved, so the paper it would
-        // have stood behind was never bound (Register D5).
-        if (i.issued <= 0) continue;
+        // The same test the module that frees the collateral applies (Law 4): a row secures
+        // something while it has not ceased and something is outstanding on it. A row that was
+        // never drawn secures nothing either — the money never moved, so the paper it would have
+        // stood behind was never bound (Register D5).
+        if (!isRow(i.terms) || !securesAnything(i)) continue;
         live.add(String(i.id));
         for (const c of i.terms.collateral) {
           // Register F2, Banks Capital D6: the borrower can have CEASED since the row was written —

@@ -73,6 +73,7 @@ function world(at: number): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
+      m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);

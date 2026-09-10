@@ -144,7 +144,8 @@ function spreadWorld(...extra: readonly SystemModule[]): World {
     .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
     .map((m) => (m.id === 'funds' ? funds(FUNDS, []) : m))
     .map((m) =>
-      m.id === 'seed.foundation'
+      m.id === 'seed.foundation' ||
+      m.id === 'seed.funding'
         ? {
             ...m,
             params: m.params.map((p) =>

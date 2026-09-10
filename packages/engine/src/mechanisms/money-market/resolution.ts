@@ -564,7 +564,9 @@ function moveBook(ctx: MechanismContext, bank: PartyId, acquirer: PartyId, ccy: 
           {
             kind: 'release',
             pledgor: bank,
-            beneficiary: lien.beneficiary,
+            // Register F2: whoever this was pledged to may have ceased since — the claim did not
+            // die with them, so the release names their successor like every other reference does.
+            beneficiary: ctx.parties.resolve(lien.beneficiary).id,
             instrument: h.instrument,
             lien: lien.id,
           },
@@ -608,16 +610,23 @@ function moveBook(ctx: MechanismContext, bank: PartyId, acquirer: PartyId, ccy: 
     });
     if (moved.outcome !== 'settled') continue;
     for (const lien of liens) {
+      // Register F2, Money E4: the party this paper was pledged TO may itself have ceased — a
+      // second bank can fail before this one is resolved — and its claim did not die with it, so
+      // the security is given to whoever succeeded it. A leg addressed to the dead party is a
+      // defect in this module and settlement refuses it at the site.
+      const beneficiary = ctx.parties.resolve(lien.beneficiary).id;
       // Register D5: nobody pledges to itself. A lien the ACQUIRER held over this paper is
       // satisfied by owning the paper — it has the collateral, and it has assumed the row that
       // collateral stood behind, so there is nothing left for a lien to secure and it ends here.
-      if (lien.beneficiary === acquirer) continue;
+      // Asked after the resolution, because succeeding the beneficiary is one of the ways the
+      // acquirer comes to hold it.
+      if (beneficiary === acquirer) continue;
       ctx.settle({
         legs: [
           {
             kind: 'pledge',
             pledgor: acquirer,
-            beneficiary: lien.beneficiary,
+            beneficiary,
             instrument: h.instrument,
             qty: lien.qty,
             secures: lien.reason,
@@ -625,29 +634,55 @@ function moveBook(ctx: MechanismContext, bank: PartyId, acquirer: PartyId, ccy: 
           },
         ],
         cause: 'corporateAction',
-        reason: `${acquirer} gives ${lien.beneficiary} the same security ${bank} had`,
+        reason: `${acquirer} gives ${beneficiary} the same security ${bank} had`,
       });
     }
   }
-  // Register D5, D6: and the security the failed bank HELD over other people's paper moves with the
-  // rows it stood behind — the beneficiary resolves to the acquirer like every other reference
-  // (Register F2). Except where the pledgor IS the acquirer: a party does not hold security over
-  // its own paper, so that lien ends here rather than outliving both ends of the row it secured.
-  for (const h of [...ctx.register.holdingsOf(acquirer)]) {
+  // Register D5, D6, F2: and the security the failed bank HELD over ANYBODY's paper moves with the
+  // rows it stood behind — the beneficiary resolves to the acquirer like every other reference.
+  // Except where the pledgor IS the acquirer: a party does not hold security over its own paper, so
+  // that lien ends here rather than outliving both ends of the row it secured.
+  //
+  // OVER ANYBODY'S, and it used to be only over the acquirer's. A lien left naming the dead bank
+  // is a claim held by nobody, and it cannot be ended later: when a SECOND bank fails and the
+  // chain of successors brings the beneficiary round to the pledgor itself, both ends of the row
+  // resolve to one party and there is no release anybody can write — Register D5 refuses a leg
+  // whose two sides are the same party, so the paper stays bound for the rest of the run. That is
+  // how `bank.b` came to hold 613,744 of a sovereign line bound to a row nothing was owed on, and
+  // the fix is that no lien ever names a party that has ceased.
+  for (const h of [...ctx.register.allHoldings()]) {
     for (const lien of [...h.liens]) {
       if (lien.beneficiary !== bank) continue;
-      ctx.settle({
+      const released = ctx.settle({
         legs: [
           {
             kind: 'release',
-            pledgor: acquirer,
+            pledgor: h.holder,
             beneficiary: bank,
             instrument: h.instrument,
             lien: lien.id,
           },
         ],
         cause: 'corporateAction',
-        reason: `${acquirer} cannot hold security over its own paper: ${lien.reason} ends`,
+        reason: `${bank} ceases: ${lien.reason} is released to be given again to ${acquirer}`,
+      });
+      // The acquirer took the row, so it takes the security that stood behind it — unless the
+      // pledgor IS the acquirer, and then owning the paper is what the security was for.
+      if (released.outcome !== 'settled' || h.holder === acquirer) continue;
+      ctx.settle({
+        legs: [
+          {
+            kind: 'pledge',
+            pledgor: h.holder,
+            beneficiary: acquirer,
+            instrument: h.instrument,
+            qty: lien.qty,
+            secures: lien.reason,
+            pledgorCell: none(),
+          },
+        ],
+        cause: 'corporateAction',
+        reason: `${acquirer} succeeds ${bank} as the beneficiary of ${lien.reason}`,
       });
     }
   }
