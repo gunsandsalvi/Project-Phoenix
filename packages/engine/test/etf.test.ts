@@ -39,7 +39,7 @@ const LINE_4 = instrumentId('equity.firm.4');
 /**
  * A world whose households have somewhere to put their savings, which is what puts a third party in
  * the fund's book at all. A cushion of nothing is not a claim about households: it is the smallest
- * world in which the fund's own market has a side that is not a desk (§46 A3).
+ * world in which the fund's own market has a side that is not a bank's dealing line (§46 A3).
  */
 function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
   const spec = foundationSpec(seed);
@@ -56,7 +56,7 @@ function bringsABasket(party: string, side: 'buy' | 'sell', shares: number, at: 
   return {
     id: 'test.creation',
     spec: 'Fund Shares E3 Fund Shares G1.a',
-    requires: ['funds', 'dealers'],
+    requires: ['funds', 'banks'],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],
@@ -122,7 +122,7 @@ describe('two values for one claim (Fund Shares E1, E2)', () => {
 
 describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
   it('takes a slice of its own book and gives shares against it, in one instruction', () => {
-    const w = saversWorld('etf-create', [bringsABasket('desk.a', 'buy', 10, 3)]);
+    const w = saversWorld('etf-create', [bringsABasket('bank.a', 'buy', 10, 3)]);
     const before = w.instruments.get(SHARE).issued;
     const basketBefore = w.register.quantity(FUND, LINE_4) / before;
     for (let i = 0; i < 3; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
@@ -144,7 +144,7 @@ describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
   });
 
   it('gives the slice back and takes the shares, and sells nothing to do it (XI-2)', () => {
-    const w = saversWorld('etf-redeem', [bringsABasket('desk.a', 'sell', 5, 4)]);
+    const w = saversWorld('etf-redeem', [bringsABasket('bank.a', 'sell', 5, 4)]);
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const back = w.journal.ofKind('etf.redeemed').filter((e) => e.period === w.period);
     expect(back.length).toBeGreaterThan(0);
@@ -161,14 +161,14 @@ describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
 });
 
 describe('the gap, and what it takes to close it (E3.a, E4)', () => {
-  it('is closed by a desk when it is worth more than carrying it costs, and only then', () => {
+  it('is closed by a bank when it is worth more than carrying it costs, and only then', () => {
     const w = saversWorld('etf-arb');
-    for (let i = 0; i < 12; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const acted = w.journal.ofKind('dealers.arbitrage');
+    for (let i = 0; i < 26; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    const acted = w.journal.ofKind('bank.arbitrage');
     expect(acted.length).toBeGreaterThan(0);
     for (const e of acted) {
       const gap = Number(e.data['gap']);
-      // E3.a: the reason is the desk's own, and it is arithmetic it can state — the difference
+      // E3.a: the reason is the bank's own, and it is arithmetic it can state — the difference
       // against what a period of carrying the position costs it at its own rate (Dealer Desks D3).
       expect(Math.abs(gap)).toBeGreaterThan(Number(e.data['worth']));
       expect(e.data['side']).toBe(gap > 0 ? 'create' : 'redeem');
@@ -187,30 +187,44 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
       const m = r.markets.find((x) => x.market === MARKET);
       if (m?.outcome === 'cleared') printedIn.add(r.period);
     }
-    // A price carried forward because nobody traded is not a level a desk could sell into: a
+    // A price carried forward because nobody traded is not a level it could sell into: a
     // creation against one would be a derivative on an uncleared price, and the gap it closed
     // would be the carry's own artefact. So every act of arbitrage follows a session that traded.
-    const acted = w.journal.ofKind('dealers.arbitrage');
+    const acted = w.journal.ofKind('bank.arbitrage');
     expect(acted.length).toBeGreaterThan(0);
     for (const e of acted) expect(printedIn.has(e.period - 1)).toBe(true);
   });
 
   it('stays open when nobody will close it, and the read says how big it is (E3.a, E4)', () => {
-    const w = saversWorld('etf-persist');
+    // NOBODY IS AN AUTHORISED PARTICIPANT here. A fund's shares are created and given back by the
+    // banks that make a market in them (G1.a), and this fund has none — a real state, and the only
+    // one in which E4's "the gap can simply persist" is a claim about the model rather than about
+    // how long the test happened to run. Everything else in the world is untouched: the fund still
+    // strikes, the market still trades, and the two numbers still differ.
+    const spec = foundationSpec('etf-persist');
+    const noParticipant = spec.modules.map((m) =>
+      m.id === 'banks' ? { ...m, phases: m.phases.filter((p) => p.name !== 'banks.arbitrage') } : m,
+    );
+    const w = assemble({
+      ...spec,
+      modules: noParticipant.map((m) =>
+        m.id === 'households'
+          ? { ...m, params: m.params.map((p) => (p.id === 'households.buffer.periods' ? { ...p, value: 0 } : p)) }
+          : m,
+      ),
+    });
     for (let i = 0; i < 30; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const struck = w.journal.ofKind('etf.struck');
     const last = struck[struck.length - 1];
     const premium = Number(last?.data['premium']);
-    // The desks sold their inventory and gave their baskets back, so nothing in this world can
-    // turn one value into the other any more. The gap is bigger than what closing it would earn —
-    // which is the module's OWN condition for acting (E3.a: a period of carry) and so is the size
-    // that says the gap is open rather than a number this test chose — and nobody acted on it.
-    const rents = w.journal.ofKind('dealers.rent');
-    const carry = Number(rents[rents.length - 1]?.data['rate']);
+    // The gap is bigger than what closing it would earn — which is the module's OWN condition for
+    // acting (E3.a: a period of carry) and so is the size that says the gap is open rather than a
+    // number this test chose — and nobody acted on it.
+    const books = w.journal.ofKind('bank.dealing');
+    const carry = Number(books[books.length - 1]?.data['ratePerPeriod']);
     expect(carry).toBeGreaterThan(0);
     expect(Math.abs(premium)).toBeGreaterThan(carry);
-    const acted = w.journal.ofKind('dealers.arbitrage').filter((e) => e.period > w.period - 10);
-    expect(acted).toEqual([]);
+    expect(w.journal.ofKind('bank.arbitrage')).toEqual([]);
     // E4, Law 6: it is a finding about liquidity and never a number to adjust. Nothing moved it,
     // and the audit — which is where a finding belongs — did not report it as a violation.
     expect(unexpected(w.step().audit)).toEqual([]);

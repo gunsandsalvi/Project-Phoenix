@@ -200,7 +200,7 @@ export function runRaise(
     ctx.openVenue({
       id: venue,
       name: `${bank} subordinated`,
-      clearedBy: 'bank-lending',
+      clearedBy: 'banks',
       unit: currencyUnit(ccy),
       ccy,
       key: { issuer: String(bank), layer: 'subordinated' },

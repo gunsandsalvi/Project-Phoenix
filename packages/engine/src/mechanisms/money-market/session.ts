@@ -27,7 +27,6 @@ import type { VenueDecl } from '../../clearing/venue.js';
 import { findVenue } from '../../clearing/venue.js';
 import {
   currencyUnit,
-  moneyInstrumentId,
   venueId,
   type CurrencyCode,
   type PartyId,
@@ -39,7 +38,7 @@ import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
-import { advances, borrowingPower, nameCost, windowAdvances, type Advance } from './collateral.js';
+import { advances, borrowingPower, windowAdvances, type Advance } from './collateral.js';
 import { BOOKS, type BookDecl } from './data.js';
 import { INTERBANK, isRow, REPO, rowId, type Pledged, type RowTerms } from './rows.js';
 
@@ -78,40 +77,6 @@ export function findSession(
   return findVenue(venues, { market: 'money', book, borrower });
 }
 
-/** A1, C4: a bank's position at the close of the flows, and what it wants to do about it. */
-export interface Position {
-  readonly bank: PartyId;
-  readonly reserves: number;
-  /** A2.a, C2.a: what it holds against what could leave — its own worst week, not a ratio. */
-  readonly buffer: number;
-  /** Above zero it has money to place; below zero it has to find some. */
-  readonly gap: number;
-}
-
-/**
- * Banks Funding A2.a: WHOLESALE BORROWING IS SHORT AND IT ROLLS, AND THAT IS WHERE A SQUEEZE BITES.
- *
- * A row struck this period falls due at the start of the next one, before any session could fund
- * it. So what a bank needs in TODAY's session is its position plus everything that falls due
- * tomorrow: it borrows to repay, which is what rolling is. A bank that cannot raise it here does
- * not fail today — it fails tomorrow morning, when the payment it could not fund does not happen,
- * and the session's refusal is the warning that stands in the record before it.
- */
-export function fallsDueNext(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
-  const next = ctx.period + 1;
-  const terms: number[] = [];
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !isRow(i.terms) || i.terms.borrower !== bank || i.ccy !== ccy) continue;
-    if (ctx.calendar.place(i.terms.maturity) !== next) continue;
-    const held = ctx.register.heldTotal(i.id).value;
-    const profile = ctx.registry.instrumentKind(i.kind);
-    const flows = profile.cashFlows(i, ctx.calendar.startOf(ctx.period), ctx.calendar);
-    const perUnit = sum(flows.map((f) => f.perUnit)).value;
-    terms.push(mul(held, perUnit, 'what falls due tomorrow'));
-  }
-  return sum(terms).value;
-}
-
 /**
  * C1, B5.a: the same ladder from the LENDER's side — what is owed to this bank at the start of the
  * next period. A bank that parked its spare cash at the floor has not stopped holding it: it holds
@@ -147,43 +112,11 @@ export function netReserveFlow(ctx: MechanismContext, bank: PartyId, ccy: Curren
   return sum(terms).value;
 }
 
-export function positionOf(
-  ctx: MechanismContext,
-  bank: PartyId,
-  ccy: CurrencyCode,
-  buffer: number,
-): Position {
-  const cb = ctx.registry.centralBankOf(ccy);
-  const reserves = ctx.register.quantity(bank, moneyInstrumentId(cb, ccy));
-  return { bank, reserves, buffer, gap: sub(reserves, buffer, `${bank} position`) };
-}
-
 /** The corridor's two levels, which are the policy rate plus what the central bank chose (C3). */
 export interface Corridor {
   readonly policy: number;
   readonly floor: number;
   readonly ceiling: number;
-}
-
-/**
- * B5.a, C1: what a lender will accept. Its alternative is the floor — it can always park there —
- * so it is a decision between two named things it could do, and nothing clamps the answer.
- */
-export function lenderReservation(
-  view: ParticipantView,
-  book: BookDecl,
-  borrower: PartyId,
-  corridor: Corridor,
-): Option<number> {
-  // B3: a secured claim is a claim on the paper. The name costs it nothing it has not already
-  // taken a haircut for, so what it wants is what it could get for the cash anyway: the floor.
-  if (book.secured) return some(corridor.floor);
-  // B2: unsecured prices the NAME. What that name costs this lender is its own published belief,
-  // and it wants that on top of what it could have had for nothing. A lender that has no view of
-  // the name does not bid at all, which is B2.a arriving one step before the rate does.
-  const cost = nameCost(view, borrower);
-  if (!cost.some) return none<number>();
-  return some(add(corridor.floor, cost.value, 'what it wants for this name'));
 }
 
 /** What a lender has to place, and what it will take for it. */
@@ -212,30 +145,6 @@ export function windowOffer(
   const power = borrowingPower(windowAdvances(cbView, borrowerView, on, policyHaircut));
   if (power <= 0) return [];
   return [{ party: cbView.self.id, side: 'sell', price: corridor.ceiling, qty: power }];
-}
-
-/** What one bank posts in one book for one borrowing name: at most one order on each side. */
-export function bankOrders(
-  view: ParticipantView,
-  book: BookDecl,
-  borrower: PartyId,
-  position: Position,
-  need: number,
-  corridor: Corridor,
-  power: number,
-): readonly Order[] {
-  const self = view.self.id;
-  if (self === borrower) {
-    // C4.a: it will pay up to the window, because the window is what it does instead. It never
-    // bids for more than it needs, and in a secured book never for more than its paper covers.
-    if (need <= 0) return [];
-    const size = book.secured ? (power < need ? power : need) : need;
-    return size > 0 ? [{ party: self, side: 'buy', price: corridor.ceiling, qty: size }] : [];
-  }
-  if (position.gap <= 0) return [];
-  const wants = lenderReservation(view, book, borrower, corridor);
-  if (!wants.some) return [];
-  return [{ party: self, side: 'sell', price: wants.value, qty: position.gap }];
 }
 
 /** What cleared in one book for one name (B4), and what it means for the row that gets written. */

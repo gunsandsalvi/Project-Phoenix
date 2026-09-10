@@ -20,7 +20,7 @@
 import type { Civil } from '../../calendar/civil.js';
 import type { DayCount } from '../../calendar/daycount.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import {div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -45,25 +45,6 @@ export function eligible(view: ParticipantView, i: Instrument, on: Civil): boole
  */
 export function requiredOf(view: ParticipantView, issuer: PartyId): Option<number> {
   return published(view, 'required', issuer);
-}
-
-/**
- * Money Market B2, Banks Lending C1.b, C4: what THIS lender believes an unsecured claim on that
- * name costs it — what it expects to lose on the name, and what the capital such a claim consumes
- * costs it. Both are published by the module that owns a bank's credit model, so a bank that has
- * watched a name miss a payment charges it more here without a second belief being wired into the
- * money market (B2.a: and past some point it will not bid at all).
- *
- * What is NOT here is its blended cost of funds, and leaving it out is the point. Placing cash it
- * already has does not fund anything: the alternative to placing it is the floor (B5.a), so what
- * the placement has to beat is the floor plus what the name costs it — which is why an overnight
- * rate sits near the corridor and a year of money to a firm does not.
- */
-export function nameCost(view: ParticipantView, borrower: PartyId): Option<number> {
-  const loss = published(view, 'expectedLoss', borrower);
-  const capital = published(view, 'capitalCost', borrower);
-  if (!loss.some || !capital.some) return none<number>();
-  return some(add(loss.value, capital.value, 'what the name costs it'));
 }
 
 function published(view: ParticipantView, key: string, about: PartyId): Option<number> {
@@ -172,25 +153,6 @@ export function windowAdvances(
     });
   }
   return out.sort((a, b) => (a.total === b.total ? (a.instrument < b.instrument ? -1 : 1) : b.total - a.total));
-}
-
-/**
- * C4.b: what the BORROWER itself reckons it could raise — its own free eligible paper at its own
- * marks. It is a different number from what any particular lender will advance (that is the
- * lender's own view, above), and it is the one the borrower has when it decides how much to ask
- * for: a bank does not know what somebody else's yield will value its paper at until it asks.
- */
-export function pledgeable(borrower: ParticipantView, on: Civil): number {
-  const terms: number[] = [];
-  for (const h of borrower.holdings()) {
-    const i = borrower.instruments.get(h.instrument);
-    if (!eligible(borrower, i, on)) continue;
-    const mark = borrower.mark(i.id);
-    const free = borrower.free(h.instrument);
-    if (!mark.some || mark.value <= 0 || free <= 0) continue;
-    terms.push(mul(free, mark.value, 'what it could put up'));
-  }
-  return sum(terms).value;
 }
 
 /** What the borrower could raise from this lender against everything it has free (C4.b). */

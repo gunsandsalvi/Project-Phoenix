@@ -28,6 +28,7 @@ import {
   type VenueDecl,
   type World,
 } from '../src/index.js';
+import { notDealing } from './no-dealing.js';
 
 const VENUE = venueId('test.venue');
 const OTHER = venueId('test.other');
@@ -136,9 +137,9 @@ function world(...extra: SystemModule[]): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
-      m.id === 'bank-lending' ||
+      m.id === 'banks' ||
       m.id === 'money-market',
-  );
+  ).map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 

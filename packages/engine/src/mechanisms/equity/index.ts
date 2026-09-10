@@ -29,7 +29,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import { currencyUnit, type InstrumentId, type PartyId } from '../../core/ids.js';
+import { currencyUnit, partyId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { combineDust, div, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -42,7 +42,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { LISTED, OPENING_SHARE, equityParam, listedOf, equityLineOf, equityMarketOf, type ListedDecl } from './data.js';
+import { FLOAT, LISTED, OPENING_SHARE, equityParam, listedOf, equityLineOf, equityMarketOf, type ListedDecl } from './data.js';
 import { buybackOrder, decideEquity, dividendFor, type EquityPlan } from './decide.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
 import { SHARE, shareKind, shareTerms, votesOf, type ShareTerms } from './share.js';
@@ -431,17 +431,28 @@ export function equity(rows: readonly ListedDecl[] = LISTED): SystemModule {
           ccy,
           rationing: 'proRata',
         });
-        // Seed C4: the line and the level it opens at. NOTHING is issued here: who opens holding
-        // shares is endowment state and belongs to whoever holds them (Seed A3) — the desks that
-        // open making a market in each line, exactly as the banks open holding sovereign paper.
+        // Seed C4: the line and the level it opens at.
+        const price = ctx.params.get(OPENING_SHARE);
         ctx.prices.write({
           instrument: id,
           market,
           period: ctx.period,
-          price: ctx.params.get(OPENING_SHARE),
+          price,
           ccy,
           provenance: { kind: 'opening' },
         });
+        // Seed A3: and who opens holding it. A share line has no other holder at period zero, so
+        // what somebody opens holding IS the line — the float the rest of the world buys from —
+        // and it is held by the banks whose dealing lines make its market (Dealer Desks A1).
+        for (const [holder, shares] of Object.entries(FLOAT)) {
+          if (shares <= 0 || !ctx.parties.has(partyId(holder))) continue;
+          ctx.endowUnits(
+            partyId(holder),
+            id,
+            ctx.registry.pieces(ctx.instruments.get(id).unit, shares),
+            price,
+          );
+        }
       }
     },
   };

@@ -87,12 +87,13 @@ describe('the requirement (Banks Capital B1, B1.a)', () => {
       expect(num(said, 'weighted')).toBeLessThan(num(said, 'assets'));
       expect(num(said, 'weighted')).toBeGreaterThanOrEqual(0);
     }
-    // In this world that is the whole book: a bank holds reserves and sovereign paper and nothing
-    // else that the rule counts, so the weighted requirement asks it for NOTHING and the only rule
-    // with anything to say is the backstop. That is B1.b's case made by a world rather than by an
-    // argument, and it is why a model with only the weighted rule in it has no capital constraint
-    // on a bank like this at all.
-    expect(num(position(w, BANK_A), 'weighted')).toBe(0);
+    // And it is not nothing: a bank's dealing line carries the float of every share line it makes a
+    // market in, on the bank's own balance sheet (Dealer Desks A1, F2), so the weighted requirement
+    // has something to ask about. Before 11.2 that inventory sat in a separate party and the rule
+    // asked this bank for zero — which is what "no desk exempt from its own bank's capital" means
+    // when it is broken by construction rather than by a mistake.
+    expect(num(position(w, BANK_A), 'weighted')).toBeGreaterThan(0);
+    expect(num(position(w, BANK_A), 'weighted')).toBeLessThan(num(position(w, BANK_A), 'assets'));
     // And the weight is a rule, not a fact: make the sovereign's paper weigh what a loan weighs and
     // the same book weighs its whole size.
     const heavy = run(withParam('cap-a', { 'regulation.riskWeight.sovereign': 1 }), 8);
@@ -106,10 +107,10 @@ describe('which one binds (Banks Capital B1.b, B1.c)', () => {
     // With an ordinary backstop the weighted rule is what a bank runs into: its book is mostly
     // zero-weighted paper, so the backstop is far away.
     const ordinary = run(foundationWorld('cap-b'), 8);
-    // Raise the backstop past what the weighted rule asks of a book like this and the SAME bank,
-    // holding exactly the same assets, is stopped by the other rule instead. Nothing about the bank
-    // changed; the answer to "what stops it" did (B1.c).
-    const backstopped = run(withParam('cap-b', { [String(LENDING_PARAMS.leverageRatio)]: 0.6 }), 8);
+    // Ask a bank to fund every asset it holds out of its own capital — a backstop no bank with a
+    // depositor can meet — and the SAME bank, holding exactly the same assets, is stopped by that
+    // rule instead. Nothing about the bank changed; the answer to "what stops it" did (B1.c).
+    const backstopped = run(withParam('cap-b', { [String(LENDING_PARAMS.leverageRatio)]: 1 }), 8);
     for (const bank of [BANK_A, BANK_B]) {
       expect(num(position(ordinary, bank), 'headroom')).toBeGreaterThan(
         num(position(backstopped, bank), 'headroom'),
@@ -118,7 +119,7 @@ describe('which one binds (Banks Capital B1.b, B1.c)', () => {
     }
     // B1.b: and the backstop uses no weights, so it bites on a book the weighted rule calls empty.
     const said = position(backstopped, BANK_A);
-    expect(num(said, 'leverageRatio')).toBeLessThan(0.6);
+    expect(num(said, 'leverageRatio')).toBeLessThan(1);
     expect(said?.data['breach']).toBe(true);
   });
 
@@ -127,7 +128,7 @@ describe('which one binds (Banks Capital B1.b, B1.c)', () => {
     // published position is what its own credit decision reads (Law 19: read, never recomputed), so
     // a bank with no headroom declines — and the decline is an answer with the binding rule on it
     // (Banks Lending C3.a), not a silent absence.
-    const tight = run(withParam('cap-c', { [String(LENDING_PARAMS.leverageRatio)]: 0.6 }), 10);
+    const tight = run(withParam('cap-c', { [String(LENDING_PARAMS.leverageRatio)]: 1 }), 10);
     const loose = run(foundationWorld('cap-c'), 10);
     for (const bank of [BANK_A, BANK_B]) {
       expect(num(position(tight, bank), 'headroom')).toBeLessThan(0);

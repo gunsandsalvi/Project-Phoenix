@@ -16,6 +16,7 @@ import type { Order } from '../../clearing/solver.js';
 import {
   currencyUnit,
   moneyInstrumentId,
+  partyId,
   type CurrencyCode,
   type InstrumentId,
   type PartyId,
@@ -28,49 +29,36 @@ import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
-import { borrowingPower, pledgeable, windowAdvances, type Advance } from './collateral.js';
+import { borrowingPower, windowAdvances, type Advance } from './collateral.js';
 import { collectPremiums, DEPOSIT_INSURER, INSURER, INSURER_PARAMS, insurerKind } from './insurer.js';
-import { forcedSale } from './funding.js';
 import { failedBanks, nothingLeftBehind, resolve } from './resolution.js';
 import {
   BOOKS,
   DEPOSIT_CLASSES,
-  FUNDERS,
   MM_PARAMS,
   classOf,
-  funderOf,
-  mmParam,
   switchingCost,
   type BookDecl,
 } from './data.js';
 import {
-  bufferOf,
   couldLeave,
   depositBase,
-  rateFor,
   depositsByClass,
-  emptyDeposits,
   liquidityMetric,
   moveDeposits,
   payDepositInterest,
-  rememberReserves,
-  setRates,
-  type DepositBook,
 } from './deposits.js';
 import { interbankKind, isRow, repoKind, rowTerms, INTERBANK, REPO } from './rows.js';
 import {
   averageRate,
   banksOf,
   fallsDueToIt,
-  bankOrders,
   collateralFor,
   corridorOf,
   coverFor,
-  fallsDueNext,
   floorBid,
   netReserveFlow,
   offered,
-  positionOf,
   sessionVenue,
   stillNeeded,
   strike,
@@ -78,7 +66,6 @@ import {
   windowOffer,
   writeRow,
   type Corridor,
-  type Position,
 } from './session.js';
 
 export * from './data.js';
@@ -86,24 +73,18 @@ export * from './rows.js';
 export * from './collateral.js';
 export * from './deposits.js';
 export * from './session.js';
-export * from './funding.js';
 export { DEPOSIT_INSURER, INSURER, INSURER_PARAMS } from './insurer.js';
 export { valueBook, failedBanks, type Valuation as BookValuation } from './resolution.js';
 
 /** What the module keeps: the deposit book, and how many rows it has written. */
 interface Market {
-  readonly deposits: DepositBook;
   next: number;
   /** Money B3.b: the accounts the central bank let go below zero, waiting to become rows. */
   overdrawn: { bank: PartyId; ccy: CurrencyCode }[];
 }
 
 function market(ctx: MechanismContext): Market {
-  return ctx.state<Market>('market', () => ({
-    deposits: emptyDeposits(),
-    next: 1,
-    overdrawn: [],
-  }));
+  return ctx.state<Market>('market', () => ({ next: 1, overdrawn: [] }));
 }
 
 const ccyOf = (ctx: MechanismContext, party: PartyId): CurrencyCode =>
@@ -163,184 +144,167 @@ function freeRepaidCollateral(ctx: MechanismContext): void {
  * — what the market charged IT last time it borrowed — is read off its own rows, so the comparison
  * is against a number somebody actually charged it and never against an assumption.
  */
-function setAndPayDeposits(ctx: MechanismContext): void {
-  const m = market(ctx);
-  const c = corridor(ctx);
+function payDeposits(ctx: MechanismContext): void {
   const banks = banksOf(ctx);
-  for (const bank of banks) {
-    const ccy = ccyOf(ctx, bank);
-    payDepositInterest(ctx, m.deposits, bank, ccy);
-    setRates(ctx, m.deposits, bank, ccy, worthOfMoney(ctx, bank, c), banks);
-    const rates: Record<string, number> = {};
-    for (const cls of DEPOSIT_CLASSES) {
-      const rate = rateFor(m.deposits, bank, cls);
-      if (rate.some) rates[cls.id] = rate.value;
-    }
-    // D5.a, E2.a: A RATE PAID UP IS AN OBSERVABLE. It is public because that is the whole of why it
-    // works: a depositor moves for it, and a rival bank sees it and answers.
-    ctx.record('bank.depositRate', [bank], { bank, ccy, rates }, true);
-  }
+  for (const bank of banks) payDepositInterest(ctx, bank, ccyOf(ctx, bank));
   // E1: and then the depositors answer, which is the only thing that stops a bank paying less.
   moveDeposits(ctx, banks);
 }
 
 /**
- * B1.a, B5.a, B2: what money is worth to this bank — what the market has been charging it over the
- * memory it keeps, weighted by how much it borrowed at each rate, and the floor if it has not
- * borrowed at all (that is what it can get for the spare).
- *
- * It is an AVERAGE OVER ITS OWN MEMORY and not the last session's dearest row, and the difference
- * is the whole stability of the thing. A deposit rate struck off one night's borrowing swings by
- * the width of the corridor every time a bank is short for a day, and then every depositor in the
- * world moves at once — which is not a funding market, it is a metronome. What a bank actually
- * prices a deposit off is what its funding has been costing it, and that moves slowly because it
- * is a read over many periods (Banks Funding B2).
+ * Banks Funding A1.a, E1: the segments, PUBLISHED. How depositors are grouped and what it costs one
+ * of them to move are facts about depositors, and every bank prices its board against the same
+ * ones — so they are said out loud once, by the market that holds the taxonomy, and read by anybody
+ * who needs them (Law 4). A bank keeping its own copy would price against a market only it can see.
  */
-export function worthOfMoney(ctx: MechanismContext, bank: PartyId, c: Corridor): number {
-  // D3, B2.b: AND WHEN THE MARKET WOULD NOT HAVE IT, IT BIDS UP FOR DEPOSITS — IF IT IS WORTH IT.
-  // The dollar it could not raise is worth what its remaining alternative costs, which is the
-  // window at the top of the corridor. But there is ONE RATE PER LIABILITY (B2.b): a bank cannot
-  // pay up for the next dollar without paying up on every dollar it already has, so bidding up
-  // costs it the rise on its whole base and buys it the rise on what it was short of. It does that
-  // when the second is the bigger of the two and not otherwise — a decision between two real costs,
-  // and the same gap multiplies both, so what it comes down to is whether what it could not raise
-  // is bigger than what it already owes.
-  //
-  // Which is why a bank almost never reprices its board for a bad week, and why the rung is
-  // reachable rather than routine. A model that took the ceiling on every refusal would move every
-  // deposit in the world on the week a bank was a penny short (E1), and the deposit market would be
-  // a metronome rather than a market.
-  const short = refusedLastSession(ctx, bank);
-  if (short.some && short.value > depositBase(depositsByClass(ctx, bank, ccyOf(ctx, bank)))) {
-    return c.ceiling;
-  }
-  const memory = ctx.params.get(mmParam(bank, 'bufferMemory'));
-  const from = ctx.period > memory ? ctx.period - memory : 0;
-  const weights: number[] = [];
-  const weighted: number[] = [];
-  for (const e of ctx.journal.ofKind('moneyMarket.print')) {
-    if (e.period < from || e.period >= ctx.period || e.data['borrower'] !== bank) continue;
-    const rate = e.data['rate'];
-    const volume = e.data['volume'];
-    if (typeof rate !== 'number' || typeof volume !== 'number' || volume <= 0) continue;
-    weights.push(volume);
-    weighted.push(mul(volume, rate, 'what that money cost it'));
-  }
-  const total = sum(weights).value;
-  if (total <= 0) return c.floor;
-  const paid = div(sum(weighted).value, total, 'what its funding has been costing it');
-  return paid > c.floor ? paid : c.floor;
+function publishClasses(ctx: MechanismContext): void {
+  ctx.record(
+    'deposit.classes',
+    [],
+    {
+      classes: DEPOSIT_CLASSES.map((c) => ({
+        id: c.id,
+        insured: c.insured,
+        switchingCost: ctx.params.get(switchingCost(c.id)),
+      })),
+    },
+    true,
+  );
 }
 
 /**
- * B7, D3: what the last session left this name short of, if anything. It is the session's own
- * public refusal read back (Law 19), not a second count of it.
+ * Central Bank D2, Money Market C4.b: WHAT THE WINDOW WOULD ADVANCE each bank today, against the
+ * paper it has free. It is the lender's own valuation and therefore the lender's to publish; a bank
+ * that had to guess it would be guessing at somebody else's balance sheet (Observer A4).
  */
-function refusedLastSession(ctx: MechanismContext, bank: PartyId): Option<number> {
-  if (ctx.period === 0) return none<number>();
-  const last = ctx.period - 1;
-  for (const e of ctx.journal.ofKind('moneyMarket.refused')) {
-    if (e.period !== last || !e.subjects.includes(bank)) continue;
-    const short = e.data['short'];
-    if (typeof short === 'number') return some(short);
-  }
-  return none<number>();
-}
-
-/** The banks' positions after the flows, and what each one's own week has taught it (A1, C2.a). */
-function positions(ctx: MechanismContext): Map<PartyId, Position> {
-  const m = market(ctx);
-  const out = new Map<PartyId, Position>();
+function publishCollateral(ctx: MechanismContext): void {
+  const on = ctx.calendar.startOf(ctx.period);
+  const haircut = ctx.params.get(MM_PARAMS.haircut);
   for (const bank of banksOf(ctx)) {
     const ccy = ccyOf(ctx, bank);
-    const decl = funderOf(bank);
-    if (decl === undefined) continue;
-    rememberReserves(
-      m.deposits,
-      bank,
-      netReserveFlow(ctx, bank, ccy),
-      ctx.params.get(mmParam(bank, 'bufferMemory')),
+    const cb = ctx.registry.centralBankOf(ccy);
+    const power = borrowingPower(
+      windowAdvances(ctx.participant(cb), ctx.participant(bank), on, haircut),
     );
-    out.set(bank, positionOf(ctx, bank, ccy, bufferOf(m.deposits, bank)));
+    ctx.record('centralBank.collateral', [bank, cb], { bank, ccy, advance: power }, true);
+  }
+}
+
+/** A1, C2.a: where each bank said it stood after the flows. Its number, published, read here. */
+interface Standing {
+  readonly reserves: number;
+  readonly buffer: number;
+  readonly gap: number;
+}
+
+function standings(ctx: MechanismContext): Map<PartyId, Standing> {
+  const out = new Map<PartyId, Standing>();
+  for (const e of ctx.journal.ofKind('bank.buffer')) {
+    if (e.period !== ctx.period) continue;
+    const { bank, reserves, buffer } = e.data;
+    if (typeof bank !== 'string' || typeof reserves !== 'number' || typeof buffer !== 'number') {
+      continue;
+    }
+    out.set(partyId(bank), { reserves, buffer, gap: sub(reserves, buffer, 'its position') });
   }
   return out;
 }
 
 /**
- * A3, B1, B4: the session itself. Every bank posts into every name's book — what it will lend and
- * what it wants for it — the window takes its seat, and each name's books clear cheapest first,
- * because a treasurer funds where the money is cheapest and stops when it has enough.
+ * A3, B1, B4: the session itself. Every bank's schedule for every name's book comes in through the
+ * kernel's door (Clearing B2) — this market never asks a bank what it wants, it opens the books and
+ * lets the schedules arrive — the window takes its seat, and each name's books clear cheapest
+ * first, because a treasurer funds where the money is cheapest and stops when it has enough.
+ *
+ * WHAT IT IS FILLING IS ONE ORDER. A borrower's bid stands in every book at once, and it is one
+ * bid for one amount: so as each book strikes, what is left of that bid is what goes into the next
+ * one. The market is not deciding how much the bank wants — the bank said — it is filling what was
+ * asked for without filling it four times over (Law 4).
  */
 function runSession(ctx: MechanismContext): void {
   const m = market(ctx);
   const on = ctx.calendar.startOf(ctx.period);
   const c = corridor(ctx);
-  const pos = positions(ctx);
   const banks = banksOf(ctx);
+  const pos = standings(ctx);
   declareVenues(ctx, banks);
-
+  const haircut = ctx.params.get(MM_PARAMS.haircut);
   for (const borrower of banks) {
-    const p = pos.get(borrower);
-    if (p === undefined) continue;
-    if (p.gap >= 0 && fallsDueNext(ctx, borrower, ccyOf(ctx, borrower)) <= 0) continue;
     const ccy = ccyOf(ctx, borrower);
     const cb = ctx.registry.centralBankOf(ccy);
-    // A2.a: what it is short of, plus what it has to repay tomorrow. A bank funds its maturity
-    // ladder in today's session, because tomorrow's payment falls due before tomorrow's session.
-    //
+    for (const book of BOOKS) {
+      const venue = sessionVenue(book, borrower);
+      // Clearing B2: the schedules, from whoever has one. Nothing about a bank is decided here.
+      ctx.gather(venue);
+      for (const o of windowOffer(ctx.participant(cb), ctx.participant(borrower), book, c, on, haircut)) {
+        ctx.post(venue, o);
+      }
+    }
+  }
+  for (const borrower of banks) {
+    const ccy = ccyOf(ctx, borrower);
     // Law 8: IN WHOLE PIECES OF MONEY. It can only borrow pieces and it can only be short of
     // pieces, so what the arithmetic leaves below one is not a shortfall — and a session that
     // recorded it as a refusal would publish a funding squeeze made of rounding, which every
     // uninsured depositor in the world then reads as a reason to leave (B7, D5.a, E1).
-    let need = downTick(add(-p.gap, fallsDueNext(ctx, borrower, ccy), 'what it has to raise'));
-    // Every lender's schedule for this name goes into the book before anything clears, so what a
-    // borrower chooses between is what was actually posted (Clearing C5) and not what it guessed.
-    for (const book of BOOKS) {
-      const venue = sessionVenue(book, borrower);
-      for (const lender of banks) {
-        if (lender === borrower) continue;
-        const lenderPos = pos.get(lender);
-        if (lenderPos === undefined) continue;
-        for (const o of bankOrders(ctx.participant(lender), book, borrower, lenderPos, 0, c, 0)) {
-          ctx.post(venue, o);
-        }
-      }
-      const haircut = ctx.params.get(MM_PARAMS.haircut);
-      for (const o of windowOffer(
-        ctx.participant(cb),
-        ctx.participant(borrower),
-        book,
-        c,
-        on,
-        haircut,
-      )) {
-        ctx.post(venue, o);
-      }
-    }
+    const wanted = downTick(asked(ctx, borrower));
+    let need = wanted;
+    if (need <= 0) continue;
     for (const book of cheapestFirst(ctx, borrower)) {
       if (need <= 0) break;
       const venue = sessionVenue(book, borrower);
-      // C4.b: it asks for what its own paper could cover, because in a secured book that is the
-      // most it could possibly raise — and in an unsecured one this number is not consulted at all.
-      const power = pledgeable(ctx.participant(borrower), on);
-      const bid = bankOrders(ctx.participant(borrower), book, borrower, p, need, c, power);
-      for (const o of bid) ctx.post(venue, o);
-      const raised = clearBook(ctx, m, book, borrower, ccy, on, ctx.posted(venue));
+      const raised = clearBook(ctx, m, book, borrower, ccy, on, upTo(ctx.posted(venue), borrower, need));
       need = downTick(stillNeeded(need, raised));
     }
-    if (need > 0) {
+    // Law 7: what the walk left behind is dust of the clearing, not a shortfall. A session that
+    // published one piece of money as a funding squeeze would have every uninsured depositor in the
+    // world reading a rounding as a reason to leave (B7, D5.a, E1).
+    if (need > 0 && material(need, BOOKS.length + 1, wanted)) {
       // B7, B2.a: the market did not clear for this name. It is an outcome of real schedules — no
       // lender would have it at a rate it would pay, or it had nothing left to pledge — and the
       // consequence lands where it falls due (D4).
+      const p = pos.get(borrower);
       ctx.record(
         'moneyMarket.refused',
         [borrower],
-        { borrower, short: need, ccy, reserves: p.reserves, buffer: p.buffer },
+        {
+          borrower,
+          short: need,
+          ccy,
+          reserves: p === undefined ? 0 : p.reserves,
+          buffer: p === undefined ? 0 : p.buffer,
+        },
         true,
       );
     }
   }
   parkTheRest(ctx, pos);
+}
+
+/** A2.a: what this name asked the session for — the biggest bid it put in any of its own books. */
+function asked(ctx: MechanismContext, borrower: PartyId): number {
+  let most = 0;
+  for (const book of BOOKS) {
+    for (const o of ctx.posted(sessionVenue(book, borrower))) {
+      if (o.side !== 'buy' || o.party !== borrower || o.price === 'market') continue;
+      if (o.qty > most) most = o.qty;
+    }
+  }
+  return most;
+}
+
+/** The book as it stands with the borrower's own bid cut back to what it has still not raised. */
+function upTo(orders: readonly Order[], borrower: PartyId, need: number): readonly Order[] {
+  const out: Order[] = [];
+  for (const o of orders) {
+    if (o.side !== 'buy' || o.party !== borrower) {
+      out.push(o);
+      continue;
+    }
+    const qty = o.qty < need ? o.qty : need;
+    if (qty > 0) out.push({ ...o, qty });
+  }
+  return out;
 }
 
 /** The books this borrower can reach, cheapest posted ask first: the treasurer's own preference. */
@@ -459,7 +423,7 @@ function advancesFrom(
  * where they land (Money C4). The central bank owes it back tomorrow with the floor's interest,
  * which is a row on both balance sheets and not a bookkeeping move.
  */
-function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Position>): void {
+function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Standing>): void {
   const m = market(ctx);
   const c = corridor(ctx);
   const overnight = BOOKS.find((b) => b.tenor === 'overnight' && !b.secured);
@@ -531,7 +495,6 @@ function declareVenues(ctx: MechanismContext, banks: readonly PartyId[]): void {
  * depositor and E2.a's rival bank are watching.
  */
 function publishFunding(ctx: MechanismContext): void {
-  const m = market(ctx);
   const on = ctx.calendar.startOf(ctx.period);
   const haircut = ctx.params.get(MM_PARAMS.haircut);
   for (const bank of banksOf(ctx)) {
@@ -550,7 +513,9 @@ function publishFunding(ctx: MechanismContext): void {
     // C1: and what it lent overnight is liquid too — it comes back into the account tomorrow
     // morning. A bank that parked its spare cash at the floor (C1.a) still holds it, as a claim.
     const overnight = fallsDueToIt(ctx, bank, ccy);
-    const buffer = bufferOf(m.deposits, bank);
+    // C2.a: what it holds against a bad week is the bank's own decision, and the bank says it.
+    const said = standings(ctx).get(bank);
+    const buffer = said === undefined ? 0 : said.buffer;
     const liquid = add(
       add(reserves, overnight, 'cash and what comes back'),
       paper,
@@ -664,24 +629,6 @@ function paramsOf(): ParamDecl[] {
       owner: 'model' as const,
       why: `Banks Funding A1.d, E1: what it costs a ${c.id} depositor to move its account. ${c.why}`,
     })),
-    ...FUNDERS.flatMap((f) => [
-      {
-        id: mmParam(f.bank, 'depositMargin'),
-        value: f.depositMargin,
-        unit: 'per annum',
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Banks Funding B1.a, B3: what ${f.bank} keeps for itself out of what the money it takes in is worth to it. ${f.why}`,
-      },
-      {
-        id: mmParam(f.bank, 'bufferMemory'),
-        value: f.bufferMemory,
-        unit: 'periods',
-        kind: 'preference' as const,
-        owner: 'model' as const,
-        why: `Money Market A2.a, Banks Funding C2.a: how far back ${f.bank} looks at its own account when it decides what to hold against what could leave. The buffer is derived from what it has actually seen, never from a ratio of its deposits.`,
-      },
-    ]),
   ];
 }
 
@@ -757,7 +704,7 @@ export const moneyMarket: SystemModule = {
   // It reads what a bank published about its own economics (its cost of funds, what it requires of
   // a name) and it lends against sovereign paper. Both arrive as public events and prints, so what
   // it needs is that those modules are there — not their code (Law 15).
-  requires: ['bank-lending', 'sovereign-instruments'],
+  requires: ['banks', 'sovereign-instruments'],
   instrumentKinds: [interbankKind, repoKind],
   // Banks Capital D4: the guarantee behind the deposits this module prices is a PARTY, with an
   // account and an income of its own, because a guarantee nobody funded is one the treasury makes
@@ -771,11 +718,15 @@ export const moneyMarket: SystemModule = {
       name: 'moneyMarket.rates',
       spec: 'Banks Funding B1 Banks Funding B1.a Money Market D2',
       cycle: 0,
-      anchor: { after: 'corporateActions' },
+      // AFTER the banks have decided their boards: what this phase does is PAY at the rates they
+      // announced and let the depositors answer them. It decides nothing about any bank.
+      anchor: { after: 'banks.treasury' },
       run: (ctx: MechanismContext): void => {
         freeRepaidCollateral(ctx);
         publishCorridor(ctx);
-        setAndPayDeposits(ctx);
+        publishClasses(ctx);
+        publishCollateral(ctx);
+        payDeposits(ctx);
         collectPremiums(ctx, banksOf(ctx));
       },
     },
@@ -830,9 +781,10 @@ export const moneyMarket: SystemModule = {
       },
     },
   ],
-  // D1: the rung of the ladder that is a MARKET action. A bank the last session refused sells the
-  // paper it has left, at whatever it fetches, in whatever market that paper trades in.
-  participants: [{ partyKind: BANK, orders: forcedSale }],
+  // Money Market A3, B1, Law 4: this market decides nothing for a bank and posts nothing under a
+  // bank's name. Its own seat is the WINDOW's, which is the central bank's offer, and its books are
+  // filled by the schedules the banks post through the kernel's door.
+  participants: [],
   creditDecisions: [{ partyKind: CENTRAL_BANK, decide: reserveOverdraft }],
   // C3.b: a bank does not go to an estate. This module takes charge of what happens instead.
   resolves: [BANK],

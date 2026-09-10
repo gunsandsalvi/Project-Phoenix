@@ -30,6 +30,7 @@ import {
   type World,
 } from '../src/index.js';
 import { paidTheSame } from './expected.js';
+import { notDealing } from './no-dealing.js';
 
 /** The one market this test drives, with its optional readings taken. */
 const BILL = instrumentId('gov.north.bill.2027-12-15');
@@ -117,9 +118,9 @@ function world(...extra: SystemModule[]): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
-      m.id === 'bank-lending' ||
+      m.id === 'banks' ||
       m.id === 'money-market',
-  );
+  ).map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 

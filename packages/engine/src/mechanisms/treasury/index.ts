@@ -79,6 +79,7 @@ export const TREASURY_PARAMS = {
   taxIncome: paramId('treasury.tax.income'),
   taxConsumption: paramId('treasury.tax.consumption'),
   concession: paramId('treasury.walkAway.concession'),
+  dealershipShare: paramId('sovereign.primaryDealers.minBidShare'),
   buybackStale: paramId('treasury.buyback.stalePeriods'),
 } as const;
 
@@ -292,6 +293,16 @@ export const treasury: SystemModule = {
       why: 'Sovereign C5, C7: the issuer walk-away. How much worse than the curve it will still take before it withdraws the paper is its own patience, and it is what makes a failed auction reachable.',
     },
     {
+      id: TREASURY_PARAMS.dealershipShare,
+      value: 0.5,
+      unit: 'ratio of the size offered',
+      kind: 'policy',
+      // The ISSUER's own term, and it is declared in the issuer's module and announced by it. The
+      // owner enum has no treasury in it, and adding one is a kernel change this item may not make.
+      owner: 'model',
+      why: 'Sovereign C3, C3.a: primary dealers bid because they are obliged to, in exchange for privileges, and that obligation is what makes an auction hard to fail. It is a TERM OF THE DEALERSHIP and therefore the ISSUER own number — it announces it with the line, and a dealer reads it off the announcement rather than holding a copy. The issuer states a share such that its dealers between them cover what it brings: with two dealers in this world, half each. It does not make failure impossible, because a dealer bids out of the money it has.',
+    },
+    {
       id: TREASURY_PARAMS.buybackStale,
       value: 12,
       unit: 'periods',
@@ -500,13 +511,27 @@ function announce(
     CURVE_DAY_COUNT,
     'reservation',
   );
+  const units = div(size, reservation, 'units offered');
   ctx.offer({
     market: marketOf(ctx, instrument),
     issuer: id,
-    size: div(size, reservation, 'units offered'),
+    size: units,
     reservation,
     allotment: 'uniformPrice',
   });
+  // C3: the announcement. What is brought, and what the dealership asks of the dealers who carry it
+  // — the issuer's own term, published with the line so a dealer reads its obligation off the offer
+  // rather than keeping a copy of a number that is not its to hold (Law 4).
+  ctx.record(
+    'auction.announced',
+    [id, instrument],
+    {
+      line: instrument,
+      size: units,
+      dealershipShare: ctx.params.get(TREASURY_PARAMS.dealershipShare),
+    },
+    true,
+  );
   return some<InstrumentId>(instrument);
 }
 

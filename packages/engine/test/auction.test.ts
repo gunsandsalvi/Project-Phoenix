@@ -6,7 +6,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
-  DESK,
   FIRM,
   PHX,
   TREASURY_NORTH,
@@ -68,20 +67,22 @@ describe('the obligation (Sovereign C3)', () => {
 
 describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
   it('fails: nobody absorbs the remainder, and the treasury is left lower than the plan assumed', () => {
-    // Banks with no cash cannot bid, however obliged they are — and with no central bank buying in
-    // the market there is nothing to put reserves back into their hands either.
+    // A world with no money in it. The obligation still brings a bid — that is what an obligation
+    // is — but what a dealer bids is its OWN price, and a dealer with nothing, in a market where
+    // nothing has traded and nothing can, does not reach what the issuer will take. With no central
+    // bank buying in the market there is nothing to put money back into anybody's hands either.
     const spec = foundationSpec('auc-c');
     const withoutCentralBank = spec.modules.filter((m) => m.id !== 'central-bank-omo');
     const stepped = withoutCentralBank.map((m) =>
-      m.id === 'dealers'
+      m.id === 'banks'
         ? {
             ...m,
-            // Dealer Desks D1, D4, D4.a: the desks step back because their own limit binds — a
+            // Dealer Desks D1, D4, D4.a: the dealers step back because their own limit binds — a
             // book of nothing is all they will carry — which is the reason D1-D3 give and the one
-            // that makes a failed auction possible. A desk that will not take a position on is a
+            // that makes a failed auction possible. A dealer that will not take a position on is a
             // legitimate, representable state, and this is what it looks like.
             params: m.params.map((p) =>
-              p.id.startsWith('desk.limit.') ? { ...p, value: 0 } : p,
+              p.id.startsWith('bank.dealing.limit.') ? { ...p, value: 0 } : p,
             ),
           }
         : m,
@@ -92,14 +93,12 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
             ...m,
             seed: (ctx: Parameters<NonNullable<typeof m.seed>>[0]) => {
               m.seed?.(ctx);
-              // Nobody has any money and nobody is about to be paid any: the desks and the banks
-              // behind them cannot bid however obliged they are, the treasury cannot spend any
-              // into their hands, and the firms cannot pay a wage that would put some into a
-              // household's. A world with no money in it is the one in which an auction has to
+              // Nobody has any money and nobody is about to be paid any: the banks cannot bid
+              // however obliged they are, the treasury cannot spend any into their hands, and the
+              // firms cannot pay a wage that would put some into a household's. A world with no money in it is the one in which an auction has to
               // fail, and this is that world.
               for (const party of [
                 ...ctx.parties.ofKind(BANK),
-                ...ctx.parties.ofKind(DESK),
                 ...ctx.parties.ofKind(FIRM),
                 ctx.parties.get(TREASURY_NORTH),
               ]) {
@@ -120,7 +119,12 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
       const row = auctions(w).find((a) => a.period === r.period);
       if (row?.allotted === 0) {
         failed = true;
-        expect(row.cover).toBe(0);
+        // C3: the obligation was discharged — the dealers bid, and between them for the whole size.
+        // C7, D5.a: and it still failed. Nothing was struck, nothing was placed, and the remainder
+        // is withdrawn rather than absorbed: there is no buyer of last resort behind this book.
+        expect(row.cover).toBeGreaterThan(0);
+        expect(row.stopOut).toBeNull();
+        expect(row.size - row.allotted).toBeCloseTo(row.size, 9);
         break;
       }
     }

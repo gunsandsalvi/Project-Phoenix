@@ -19,6 +19,7 @@
  * loan and never a silent hole (B3.c).
  */
 import type { Family, Violation } from '../../audit/audit.js';
+import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
 import { period } from '../../calendar/calendar.js';
@@ -33,9 +34,20 @@ import type { Instrument } from '../../register/instruments.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { ParamDecl } from '../../registry/params.js';
 import type { SystemModule } from '../../world/module.js';
-import { BANKS, bankParam, type BankDecl } from './data.js';
+import { BANKS, bankParam, dealingParam, TRADING_BOOK_RISK_WEIGHT, type BankDecl } from './data.js';
 import { capitalOf, publish, type CapitalRules } from './capital.js';
+import { arbitrage, dealingOrders, publishDealing } from './dealing.js';
+import {
+  classesSeen,
+  publishBuffer,
+  P_COVERAGE,
+  ownDeposits,
+  sessionOrders,
+  setBoard,
+  type ReserveMemory,
+} from './treasury.js';
 import {
   bidsFor,
   runRaise,
@@ -57,6 +69,9 @@ export * from './data.js';
 export * from './loan.js';
 export * from './capital.js';
 export * from './subordinated.js';
+export * from './treasury.js';
+export * from './dealing.js';
+export * from './dealing-quote.js';
 export { quote, holderReservation, room, probabilityOfDefault, lossGivenDefault, exposureTo } from './quote.js';
 export type { Quote, Regulation, Room } from './quote.js';
 
@@ -498,7 +513,7 @@ function bookDraws(ctx: MechanismContext): void {
 function bookMoves(): Family {
   return {
     name: 'flows',
-    contributor: 'bank-lending',
+    contributor: 'banks',
     spec: 'Banks Lending F1 Banks Lending F1.a Banks Lending F2',
     built: true,
     check: (view) => {
@@ -536,7 +551,7 @@ function bookMoves(): Family {
 }
 
 export const bankLending: SystemModule = {
-  id: 'bank-lending',
+  id: 'banks',
   spec: 'Banks Lending',
   // It needs nobody. What a borrower is short of and what a borrower has failed to pay both reach
   // it as journal events, which are the kernel's — so a world with banks in it can lend whether or
@@ -571,6 +586,40 @@ export const bankLending: SystemModule = {
       owner: 'standardSetter',
       why: 'Corporate Credit E5.c, Sovereign E5: how much of the capital requirement a unit of the sovereign own paper consumes. Zero under the standard for a claim on the issuer of the money it is promised in, and that is a RULE somebody wrote rather than a fact about the world — it is most of why a bank holds sovereign paper as its liquidity buffer instead of lending the money out, and it is exactly the kind of number a polity can change (worklist 14).',
     },
+    {
+      id: TRADING_BOOK_RISK_WEIGHT,
+      value: 1,
+      unit: 'ratio of the position',
+      kind: 'policy',
+      owner: 'standardSetter',
+      why: 'Dealer Desks D2: how much of a bank capital requirement a unit of a trading position consumes. It is a rule somebody wrote, not a fact about the world, and it is the number that makes carrying inventory cost capital as well as cash. One, because a position taken with a view is the thing the requirement was written about; a weight per kind of position arrives with the derivative layer (worklist 13a).',
+    },
+    {
+      id: P_COVERAGE,
+      value: 1,
+      unit: 'ratio of what could leave',
+      kind: 'policy',
+      owner: 'standardSetter',
+      why: 'Banks Funding C2: the liquid assets a bank must hold against the money that could leave it. ONE, because that is what the rule says in the world this one imports it from — cover the outflow, not a part of it — and Law 2 allows a real-world primitive to be imported where a real-world equilibrium may not. It is a rule somebody wrote and not a fact about the world, which is why it is the kind of number a polity can change (worklist 14) and why a bank holds sovereign paper instead of lending the money out (Sovereign E2.a, E5).',
+    },
+    ...BANKS.flatMap((r): ParamDecl[] => [
+      {
+        id: dealingParam(r.bank, 'capitalAtRisk'),
+        value: r.capitalAtRisk,
+        unit: 'ratio of its own capital',
+        kind: 'preference',
+        owner: 'model',
+        why: `Dealer Desks D1, F1: the most of its own capital ${r.bank} will have standing behind its dealing book — that book being what it holds away from where its own treasury wants it, either way. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything, which is how one line's trouble reaches another. It is a share of CAPITAL and not an amount of money: an amount would have to be restated every time this world changed size, and a number restated to keep a result is a result wearing a preference's name.`,
+      },
+      {
+        id: dealingParam(r.bank, 'concentration'),
+        value: r.concentration,
+        unit: 'ratio of its own dealing book',
+        kind: 'preference',
+        owner: 'model',
+        why: `Dealer Desks D1: the most of its book ${r.bank} will have in ONE line. ${r.why} A dealer without a limit is a synthetic counterparty wearing a dealer's name (Clearing B3.a), and this is the number that makes it one. It is a share rather than a count of pieces because a count would mean something different in a line quoted in shares and a line quoted in par, and would have to be restated every time a price moved.`,
+      },
+    ]),
     {
       id: SUB_PARAMS.periods,
       value: 52,
@@ -621,6 +670,30 @@ export const bankLending: SystemModule = {
         why: `Banks Lending B2.a: how far above the requirement ${b.bank} insists on running. Its own caution, which is why two banks stop lending at different moments.`,
       },
       {
+        id: bankParam(b.bank, 'depositMargin'),
+        value: b.depositMargin,
+        unit: 'per annum',
+        kind: 'preference' as const,
+        owner: 'model' as const,
+        why: `Banks Funding B1.a, B3: what ${b.bank} keeps for itself out of what the money it takes in is worth to it. Two banks that keep the same margin are one bank, and the one that keeps less wins the deposit and earns less on it — which is what a net interest margin IS.`,
+      },
+      {
+        id: bankParam(b.bank, 'bufferMemory'),
+        value: b.bufferMemory,
+        unit: 'periods',
+        kind: 'preference' as const,
+        owner: 'model' as const,
+        why: `Money Market A2.a, Banks Funding C2.a: how far back ${b.bank} looks at its own account when it decides what to hold against what could leave, and how far back it looks at what its funding has been costing it. The buffer is derived from what it has actually seen, never from a ratio of its deposits.`,
+      },
+      {
+        id: bankParam(b.bank, 'liquidityCushion'),
+        value: b.liquidityCushion,
+        unit: 'ratio of what could leave, above the rule',
+        kind: 'preference' as const,
+        owner: 'model' as const,
+        why: `Banks Funding C2, Money Market A2.a: what ${b.bank} holds liquid ABOVE what the rule asks of it. Its own caution, and the reason two banks facing the same depositors carry different portfolios — a bank that runs on the floor is one bad week from the window.`,
+      },
+      {
         id: bankParam(b.bank, 'limitPerBorrower'),
         value: b.limitPerBorrower,
         unit: 'ratio of its own capital',
@@ -667,11 +740,54 @@ export const bankLending: SystemModule = {
       run: (ctx: MechanismContext): void => {
         runRequests(ctx);
         // Clearing F1: everything that prices off a bank's own economics this period reads it here
-        // — a desk paying rent on its inventory, a firm deciding whether a project clears its cost
-        // of capital, a schedule in a bond market. One number, published once, read by all of them.
+        // — its own dealing line pricing what an inventory costs to carry, a firm deciding whether
+        // a project clears its cost of capital, a schedule in a bond market. One number, published
+        // once, read by all of them (Law 4).
         publishCostOfFunds(ctx);
         publishQuotes(ctx);
         publishReservations(ctx);
+      },
+    },
+    {
+      name: 'banks.treasury',
+      spec: 'Banks Funding B1 Banks Funding B1.a Banks Funding B2 Banks Funding B3 Money Market D2',
+      cycle: 0,
+      // After it has published what money costs it: a board is priced off its own funding and its
+      // rivals' boards, and both are reads of what was published (Law 4, Law 19).
+      anchor: { after: 'lending.write' },
+      run: (ctx: MechanismContext): void => {
+        const classes = classesSeen(ctx);
+        if (classes.length === 0) return;
+        for (const b of ctx.parties.ofKind(BANK)) {
+          if (!b.status.alive || declOf(b.id) === undefined) continue;
+          const ccy = ctx.registry.region(b.region).ccy;
+          setBoard(ctx, b.id, ccy, classes, ownDeposits(ctx, b.id, ccy));
+        }
+      },
+    },
+    {
+      name: 'banks.arbitrage',
+      spec: 'Fund Shares E3 Fund Shares E3.a Dealer Desks D1',
+      cycle: 0,
+      // After it has published what money costs it: what carrying a position costs is the number
+      // that decides whether closing a gap is worth doing at all (D3), and it is that publication.
+      anchor: { after: 'lending.write' },
+      run: (ctx: MechanismContext): void => {
+        for (const b of ctx.parties.ofKind(BANK)) {
+          if (b.status.alive) arbitrage(ctx, b.id, BANKS);
+        }
+      },
+    },
+    {
+      name: 'banks.dealing',
+      spec: 'Dealer Desks D5 Dealer Desks E4',
+      cycle: 'anchor',
+      // After the marks are in the books, so what it says the book is worth is what it is worth.
+      anchor: { after: 'revaluation' },
+      run: (ctx: MechanismContext): void => {
+        for (const b of ctx.parties.ofKind(BANK)) {
+          if (b.status.alive) publishDealing(ctx, b.id, BANKS);
+        }
       },
     },
     {
@@ -688,8 +804,35 @@ export const bankLending: SystemModule = {
         publishStandard(ctx);
       },
     },
+    {
+      name: 'banks.buffer',
+      spec: 'Banks Funding C2 Banks Funding C2.a Money Market A2.a',
+      cycle: 'anchor',
+      // AFTER THE FLOWS AND BEFORE THE SESSION. What its account did to it this week is only known
+      // once the week's payments have happened, and what it holds against a bad one is what every
+      // schedule it posts in the session is measured against — so it is taken here, once, and
+      // published, and the session reads it rather than deriving a second one (Law 4).
+      anchor: { before: 'lending.book' },
+      run: (ctx: MechanismContext): void => {
+        const memory = ctx.state<ReserveMemory>('reserves', () => ({ moves: {} }));
+        for (const b of ctx.parties.ofKind(BANK)) {
+          if (!b.status.alive || declOf(b.id) === undefined) continue;
+          publishBuffer(ctx, b.id, ctx.registry.region(b.region).ccy, memory);
+        }
+      },
+    },
   ],
-  participants: [],
+  // Money Market A3, B1: and the same one face in a VENUE. Its schedule for a session reaches the
+  // book through the kernel's door (Clearing B2), so the market that clears it decides nothing.
+  venueParticipants: [{ partyKind: BANK, orders: sessionOrders }],
+  // Law 4, Dealer Desks A1: ONE face. Every order a bank posts into any market comes from here.
+  participants: [
+    {
+      partyKind: BANK,
+      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+        dealingOrders(view, m, BANKS),
+    },
+  ],
   marks: [{ instrumentKind: LOAN, value: worthToItsLender }],
   creditDecisions: [{ partyKind: BANK, decide: overdraft }],
   families: [bookMoves()],
@@ -883,10 +1026,10 @@ function publishReservations(ctx: MechanismContext): void {
  * C1.a, XI-4 joint one: what each bank actually paid for what it owed, published under its own name.
  *
  * A bank's cost of funds is a FACT ABOUT THE BANK with one writer (Law 4), and it is public because
- * something else in this world prices off it: a trading desk inside a bank pays that bank for the
- * money its inventory ties up, every period it holds it (Dealer Desks D3), and a desk that read a
- * different number from the one its bank pays would be two prices for one thing. It is a read of
- * what already left the bank (Observer A5) and it causes nothing by itself.
+ * something else in this world prices off it: the bank's own dealing line carries inventory funded
+ * by the liabilities this number is the cost of (Dealer Desks D3), a firm weighs a project against
+ * what borrowing costs, and a schedule in a bond market is built on it. It is a read of what
+ * already left the bank (Observer A5) and it causes nothing by itself.
  */
 function publishCostOfFunds(ctx: MechanismContext): void {
   for (const b of ctx.parties.ofKind(BANK)) {

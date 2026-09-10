@@ -225,7 +225,7 @@ function failingWorld(...extra: readonly SystemModule[]): World {
       [
         'sovereign-instruments',
         'seed.foundation',
-        'bank-lending',
+        'banks',
         'money-market',
         'credit-events',
         'estate',

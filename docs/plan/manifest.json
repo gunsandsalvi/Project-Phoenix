@@ -103,8 +103,14 @@
   },
   {
     "id": "11.3",
+    "title": "The opening balance sheets",
+    "file": "11.3-the-opening-balance-sheets.md",
+    "steps": 4
+  },
+  {
+    "id": "11.4",
     "title": "A depositor decides from its own balance, and the count of banks is a resolution",
-    "file": "11.3-depositors-and-the-count-of-banks.md",
+    "file": "11.4-depositors-and-the-count-of-banks.md",
     "steps": 6
   },
   {

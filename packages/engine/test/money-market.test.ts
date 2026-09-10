@@ -365,23 +365,39 @@ function withoutCollateral(
   extra: readonly SystemModule[] = [],
 ): World {
   const spec = foundationSpec(seed);
-  const modules = spec.modules.map((m) =>
-    m.id === 'seed.foundation'
+  const modules = spec.modules.map((m) => {
+    // ...and it takes no more on either. A dealing line that will carry nothing quotes for nothing
+    // and buys nothing, so the paper this seed pledged away is the last paper it ever has.
+    if (m.id === 'banks') {
+      return {
+        ...m,
+        params: m.params.map((p) =>
+          p.id === `bank.dealing.limit.aggregate.${encumbered}` ? { ...p, value: 0 } : p,
+        ),
+      };
+    }
+    return m.id === 'seed.foundation'
       ? {
           ...m,
           seed: (ctx: Parameters<NonNullable<typeof m.seed>>[0]) => {
             m.seed?.(ctx);
             const bank = partyId(encumbered);
             const to = encumbered === 'bank.a' ? BANK_B : BANK_A;
+            const on = ctx.calendar.startOf(ctx.period);
             for (const i of ctx.instruments.all()) {
               const free = ctx.register.free(bank, i.id);
-              if (!String(i.id).startsWith('gov.') || free <= 0) continue;
+              if (free <= 0 || !i.issuer.some) continue;
+              // Everything a lender would take is a dated claim on a name (Money Market B3.a), so
+              // pledging every one of them away is what "nothing left to pledge" means.
+              if (ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar).length === 0) {
+                continue;
+              }
               ctx.register.pledge(bank, i.id, free, to, 'everything it owns is already somebody\'s', ctx.period);
             }
           },
         }
-      : m,
-  );
+      : m;
+  });
   return assemble({ ...spec, modules: [...modules, ...extra] });
 }
 
@@ -501,8 +517,15 @@ describe('what somebody outside can see (Banks Funding F1, F2, F4, Observer A5)'
       expect(b.reserves).toBe(num(said, 'reserves'));
       expect(b.couldLeave).toBe(num(said, 'couldLeave'));
       expect(b.metric).toBe(said?.data['metric']);
-      // F1: its deposit lines by class, as reads of who actually banks there.
-      expect(Object.keys(b.deposits).sort()).toEqual(['corporate', 'retail', 'wholesale']);
+      // F1: its deposit lines by class, as reads of WHO ACTUALLY BANKS THERE — so a bank no fund
+      // and no fund manager banks with shows no wholesale line at all, rather than showing a zero.
+      // Every class it does show is one this world declared, and every bank here has the two that
+      // every bank here has: the firms it transacts for, and the households it keeps accounts for.
+      for (const cls of Object.keys(b.deposits)) {
+        expect(['corporate', 'retail', 'wholesale']).toContain(cls);
+      }
+      expect(Object.keys(b.deposits)).toContain('corporate');
+      expect(Object.keys(b.deposits)).toContain('retail');
       // F2: the reserve balance is its one account at the central bank, and the surface says the
       // same number the register does.
       expect(b.reserves).toBe(w.register.quantity(partyId(b.bank), moneyInstrumentId(CB, PHX)));

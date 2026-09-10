@@ -25,6 +25,7 @@ import {
 } from '../src/index.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
+import { notDealing } from './no-dealing.js';
 
 const BORROWER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -104,7 +105,7 @@ function world(extra: readonly SystemModule[] = [], limits?: number): World {
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
         m.id === 'credit-events' ||
-        m.id === 'bank-lending' ||
+        m.id === 'banks' ||
         m.id === 'money-market',
     )
     .map((m) =>
@@ -116,7 +117,7 @@ function world(extra: readonly SystemModule[] = [], limits?: number): World {
               p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: limits } : p,
             ),
           },
-    );
+    ).map(notDealing);
   return assemble({ ...spec, modules: [...modules, ...extra] });
 }
 

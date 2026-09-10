@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 51.4%** (251 of 488 steps across 32 items).
+**Plan completion: 51.0%** (251 of 492 steps across 33 items).
 **Requirement coverage: 39.6%** (524 MET, 72 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -36,7 +36,8 @@ The plan has two parts:
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
 | 11.1 — A venue asks parties for schedules the way a market does | 3 | 3 | closed |
 | [11.2 — One bank: one balance sheet, one treasury, one face to every market](plan/11.2-one-bank.md) | 15 | 0 | open |
-| [11.3 — A depositor decides from its own balance, and the count of banks is a resolution](plan/11.3-depositors-and-the-count-of-banks.md) | 6 | 0 | open |
+| [11.3 — The opening balance sheets](plan/11.3-the-opening-balance-sheets.md) | 4 | 0 | open |
+| [11.4 — A depositor decides from its own balance, and the count of banks is a resolution](plan/11.4-depositors-and-the-count-of-banks.md) | 6 | 0 | open |
 | [12 — Currencies, benchmarks, ratings](plan/12-currency-benchmarks-ratings.md) | 26 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |

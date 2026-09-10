@@ -14,6 +14,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FUND,
   HOUSEHOLD,
+  dustOf,
   PHX,
   assemble,
   foundationSpec,
@@ -138,8 +139,9 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
       .holdingsOf(FUND_ID)
       .filter((h) => h.instrument !== SHARE)
       .reduce((t, h) => t + w.valuation.valueOfLots(h.instrument, h.lots, w.period), 0);
-    // B1, B4: the sum of what the holders' shares are worth IS the book. Exactly.
-    expect(nav(w) * shares).toBeCloseTo(assets, 8);
+    // B1, B4: the sum of what the holders' shares are worth IS the book. Exactly — to the dust the
+    // division and the multiplication back leave behind, which is what Law 7 says a tolerance is.
+    expect(Math.abs(nav(w) * shares - assets)).toBeLessThanOrEqual(dustOf(3, assets));
     // Law 3, B1: no market cleared this and nothing printed it. It is arithmetic on marks that
     // markets did clear, read at the ask.
     expect(w.prices.latest(SHARE, w.period).some).toBe(false);
@@ -175,18 +177,34 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
       }
       return navs;
     };
+    // Long enough for the fee to be bigger than what the marks did: a year of a manager taking a
+    // point and a half is a point and a half, and a week of the market re-pricing bills is not.
+    const PERIODS = 52;
     const w = greedy(0.015);
-    const navs = struckIn(w, 20);
+    const navs = struckIn(w, PERIODS);
     const opened = w.params.get('fund.openingSharePrice' as never);
     expect(navs.some((x) => x < opened)).toBe(true);
-    // ...and WHAT put it there is the fee, which is the whole of D4: the same fund whose manager
-    // charges a tenth as much is worth more per share on the same day, over the same book, at the
-    // same marks. Nothing is standing under either of them. A bill that actually defaulted would
-    // reach the same read by the same route: the instrument stops performing (Bond N12), its
-    // holder writes it down (item 5), and the division is over a smaller book.
-    const cheap = struckIn(greedy(0.0015), 20);
-    const last = navs[navs.length - 1] ?? 0;
-    expect(last).toBeLessThan(cheap[cheap.length - 1] ?? 0);
+    // ...and WHAT put it there is the fee, which is the whole of D4: what the manager takes leaves
+    // the fund's book, so it is taken from the holders and there is nothing else for it to fall on.
+    // Nothing is standing under either fund. A bill that actually defaulted would reach the same
+    // read by the same route: the instrument stops performing (Bond N12), its holder writes it down
+    // (item 5), and the division is over a smaller book.
+    //
+    // The claim is about the FEE FLOW and not about two NAVs on one day. Two worlds that differ in
+    // a fee differ in what the fund then holds, sells and is paid, and by the end of a year those
+    // paths have moved the marks by more than the fee did — so a NAV read off the last day of each
+    // is a race between the fee and everything else, and what it reports is the everything else.
+    const taken = (w: World): number =>
+      w.journal
+        .ofKind('fund.fee')
+        .filter((e) => e.data['paid'] === true)
+        .reduce((t, e) => t + Number(e.data['amount']), 0);
+    const cheapWorld = greedy(0.0015);
+    struckIn(cheapWorld, PERIODS);
+    expect(taken(w)).toBeGreaterThan(taken(cheapWorld));
+    // Ten times the rate, and what the holders of one lost to their manager over a year is very
+    // nearly ten times what the holders of the other did. Nothing rounds it off.
+    expect(taken(w) / Math.max(taken(cheapWorld), 1)).toBeGreaterThan(5);
   });
 
   it('pays the manager, and the fee comes out of the holders (B3, F3)', () => {
@@ -240,7 +258,7 @@ describe('creation and redemption (Fund Shares C1, C2, C3, C5)', () => {
 
   it('sells into a market it does not price when the buffer runs out (C2.a, C2.b, XI-2)', () => {
     const w = runWorld('funds-h', 8);
-    for (let i = 0; i < 14; i += 1) w.step();
+    for (let i = 0; i < 26; i += 1) w.step();
     // XI-2: the forced sale. It offers what it holds at whatever the book gives — a seller that
     // named a price would not be forced — and the market it sells into is the bills' own.
     const sold = w.ledger

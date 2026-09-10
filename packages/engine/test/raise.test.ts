@@ -13,7 +13,6 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  LENDING_PARAMS,
   SUBORDINATED,
   assemble,
   foundationSpec,
@@ -55,8 +54,14 @@ function num(e: Event | undefined, key: string): number {
   return typeof v === 'number' ? v : 0;
 }
 
-/** A backstop no bank in this world meets: what makes the raise happen at all (B3). */
-const TIGHT = { [String(LENDING_PARAMS.leverageRatio)]: 0.6 };
+/**
+ * ONE bank that insists on funding nine tenths of its book out of its own capital — its own line,
+ * not a rule (B2) — so it is below it at any size. That is what makes
+ * a raise happen at all — and what makes it possible for the other one to answer. Two banks both
+ * short of capital do not fund each other: when the RULE is what puts them both under, neither has
+ * the room to take the other's paper and every raise finds no bid (item 11's finding, recorded).
+ */
+const TIGHT: Readonly<Record<string, number>> = { 'bank.capitalBuffer.bank.a': 0.9 };
 
 describe('raising the layer between the owners and the creditors (C2, A2.b, A3)', () => {
   const w = run(withParam('raise-a', TIGHT), 8);
@@ -69,9 +74,10 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     // pays is the level its lenders posted and never one of its own.
     expect(num(first, 'rate')).toBeGreaterThan(0);
     expect(num(first, 'raised')).toBeGreaterThan(0);
-    // C2.a: NEW MONEY PRICED BY WHOEVER PROVIDES IT. What it got is less than what it asked for,
-    // because what a lender will put into one name is bounded by that lender's own limit (F3).
-    expect(num(first, 'raised')).toBeLessThan(num(first, 'wanted'));
+    // C2.a: NEW MONEY PRICED BY WHOEVER PROVIDES IT, and never more than was offered — what a
+    // lender will put into one name is bounded by that lender's own limit (F3), which is what
+    // stops the second raise below.
+    expect(num(first, 'raised')).toBeLessThanOrEqual(num(first, 'wanted'));
     // A3: and it is real money and a real claim — the paper exists, somebody holds it, and the
     // bank has the cash. Nothing here is an entry.
     const paper = w.instruments.all().filter((i) => i.kind === SUBORDINATED);
@@ -93,7 +99,7 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     // answer to a breach at all (C2) rather than a gesture.
     expect(num(late, 'capital')).toBeGreaterThan(w.register.equity(BANK_A));
     expect(num(late, 'capital') - w.register.equity(BANK_A)).toBeCloseTo(
-      num(events(w, 'bank.raise', BANK_A)[0], 'raised'),
+      events(w, 'bank.raise', BANK_A).reduce((a, e) => a + num(e, 'raised'), 0),
       6,
     );
     // ...and it took the raise to get there: the first position it published was taken before any
@@ -111,11 +117,17 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     // is why the raise gets smaller every week rather than repeating at the same size.
     const asked = events(w, 'bank.raise', BANK_A).concat(events(w, 'bank.raise.failed', BANK_A));
     expect(asked.length).toBeGreaterThan(2);
-    // It asked every week it was short and got money once: after that its only possible lender was
-    // already at its limit for this name, so the answer was no — a real refusal by a real lender
-    // with a real reason, and not a rule anywhere saying one raise per bank.
-    expect(events(w, 'bank.raise', BANK_A).length).toBe(1);
-    expect(events(w, 'bank.raise.failed', BANK_A).length).toBeGreaterThan(0);
+    // It asks every week it is short, and what it gets collapses as its only possible lender fills
+    // up its own limit for this name: the ask grows while the answer shrinks to a trickle. Nothing
+    // says how many times a bank may raise; what says no is another bank's own limit.
+    const got = events(w, 'bank.raise', BANK_A);
+    expect(got.length).toBeGreaterThan(2);
+    const first = num(got[0], 'raised');
+    const last = num(got[got.length - 1], 'raised');
+    expect(first).toBeGreaterThan(0);
+    expect(last).toBeLessThan(first / 100);
+    // And it is not that it stopped asking: what it wanted grew every week it went unmet.
+    expect(num(got[got.length - 1], 'wanted')).toBeGreaterThan(num(got[0], 'wanted'));
   });
 });
 

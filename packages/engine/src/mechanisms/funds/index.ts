@@ -1026,7 +1026,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     ccy: region.ccy,
     key: { kind: 'etf', fund: e.fund, share },
   });
-  // Seed A3: only what somebody who EXISTS actually took. A world without the desks that launch it
+  // Seed A3: only what somebody who EXISTS actually took. A world without the banks that launch it
   // has a smaller fund, and its basket has to back the shares that were taken and no more — a
   // basket backing shares nobody holds would be a fund whose NAV was a multiple of what it owed.
   const holders = Object.entries(e.launchedBy).filter(
@@ -1128,7 +1128,7 @@ export function funds(
         name: 'funds.etf',
         spec: 'Fund Shares B3 Fund Shares E3 Fund Shares G1.a',
         cycle: 0,
-        // With the other fund's own strike, and before the session: what a desk brought in this
+        // With the other fund's own strike, and before the session: what a dealing line brought in this
         // morning is shares it can offer this afternoon, and the fee is inside the period so the
         // revaluation that closes it carries the claim at what the book then comes to (A3).
         anchor: { after: 'funds.strike' },

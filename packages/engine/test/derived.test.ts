@@ -120,7 +120,7 @@ function holdsItsOwnClaim(): SystemModule {
 function world(...extra: readonly SystemModule[]): World {
   const spec = foundationSpec('derived');
   const kernel = spec.modules.filter((m) =>
-    ['sovereign-instruments', 'seed.foundation', 'bank-lending', 'money-market'].includes(m.id),
+    ['sovereign-instruments', 'seed.foundation', 'banks', 'money-market'].includes(m.id),
   );
   return assemble({ ...spec, modules: [...kernel, ...extra] });
 }

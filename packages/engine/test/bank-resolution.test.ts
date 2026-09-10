@@ -36,12 +36,20 @@ import { unexpected } from './expected.js';
 
 const BANK_A = partyId('bank.a');
 const BANK_B = partyId('bank.b');
-/** When the penalty is paid, and what it takes to put this bank past its own equity. */
+/**
+ * When the penalty starts, how many weeks of it there are, and how much of the bank's own capital
+ * each week takes. It is a SHARE OF WHAT THE BANK HAS rather than an amount somebody tuned: a bank
+ * can only pay what it holds plus what the window will lend against its paper (D3), so one payment
+ * big enough to put it under is one it cannot make — and four that each take a third of the capital
+ * it started with put it under between them, whatever this world's banks happen to be worth.
+ */
 const AT = 10;
-const PENALTY = 90000000;
+const WEEKS = 4;
+const SHARE = 0.35;
 
 /** XI-1: a loss is an EVENT — here a penalty, paid in money, to a payee with a name. */
-function penalty(at: number, amount: number): SystemModule {
+function penalty(at: number): SystemModule {
+  let each = 0;
   return {
     id: 'test.penalty',
     spec: 'XI-1',
@@ -58,7 +66,17 @@ function penalty(at: number, amount: number): SystemModule {
         cycle: 0,
         anchor: { before: 'corporateActions' },
         run: (ctx: MechanismContext): void => {
-          if (ctx.period !== at) return;
+          if (ctx.period < at || ctx.period >= at + WEEKS) return;
+          // Money E4: a party that has ceased is not a payer. Once the resolution has taken it,
+          // there is nobody to fine.
+          if (!ctx.parties.get(BANK_A).status.alive) return;
+          if (ctx.period === at) {
+            each = ctx.registry.payable(
+              PHX,
+              ctx.participant(BANK_A).equity() * SHARE,
+            );
+          }
+          if (each <= 0) return;
           ctx.settle({
             legs: [
               {
@@ -66,7 +84,7 @@ function penalty(at: number, amount: number): SystemModule {
                 from: { holder: BANK_A, issuer: ctx.parties.get(BANK_A).bank },
                 to: { holder: TREASURY_NORTH, issuer: ctx.parties.get(TREASURY_NORTH).bank },
                 ccy: PHX,
-                amount,
+                amount: each,
                 fromCell: none(),
                 toCell: none(),
               },
@@ -85,7 +103,7 @@ function penalty(at: number, amount: number): SystemModule {
 /** The foundation world, one penalty, and any declared number set differently. */
 function failing(seed: string, over: Readonly<Record<string, number>> = {}): World {
   const spec = foundationSpec(seed);
-  const modules: SystemModule[] = [...spec.modules, penalty(AT, PENALTY)].map((m) => ({
+  const modules: SystemModule[] = [...spec.modules, penalty(AT)].map((m) => ({
     ...m,
     params: m.params.map((p) => {
       const value = over[String(p.id)];
@@ -93,7 +111,7 @@ function failing(seed: string, over: Readonly<Record<string, number>> = {}): Wor
     }),
   }));
   const w = assemble({ ...spec, modules });
-  for (let i = 0; i < AT + 3; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+  for (let i = 0; i < AT + WEEKS + 2; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
   return w;
 }
 
@@ -114,10 +132,17 @@ describe('the valuation and the hole (Banks Capital D1)', () => {
 
   it('opens on the trigger that fired, and says which one it was (C1, C1.a)', () => {
     expect(valued).toBeDefined();
-    // C1.a: solvency, not cash. The penalty was PAID — the central bank lent against its paper while
-    // it was still solvent (D3) — so what killed it is that its liabilities are past its assets, and
-    // the resolution says so in the words of the trigger rather than in a code.
-    expect(String(valued?.data['why'])).toMatch(/liabilities are past its assets/);
+    // C1.a: BOTH triggers exist and the resolution names the one that fired. What this world
+    // reaches is the CASH one — and that is a finding about the world rather than about the
+    // clause. A bank here cannot become insolvent while it is still liquid: the only loss big
+    // enough to eat its capital is a payment, the money for a payment that big comes from the
+    // window against its own paper, and paying it away takes its cash with it. Insolvency while
+    // liquid needs a loss that is NOT a payment — an asset written down — which needs a bank whose
+    // capital is a tenth of its book rather than four fifths of it (recorded, worklist 11.3).
+    expect(String(valued?.data['why'])).toMatch(/could not pay/);
+    // What matters for everything below is that the HOLE is real: it owes more than the book is
+    // worth at marks, so there is something for the hierarchy to work through (D1, D2).
+    expect(num(valued, 'hole')).toBeGreaterThan(0);
   });
 
   it('values the book at marks and takes the hole from what it owes (D1)', () => {
@@ -284,7 +309,7 @@ describe('contagion by name (Banks Capital E3, Banks Funding E5)', () => {
     // own), so one of them is raising and the other has the room to take the paper. Two banks both
     // short of capital do not fund each other, which is its own finding and the reason this world
     // is set up this way rather than by moving the rule.
-    const w = failing('res-e3', { 'bank.capitalBuffer.bank.a': 0.5 });
+    const w = failing('res-e3', { 'bank.capitalBuffer.bank.a': 0.9 });
     const took = events(w, 'bank.raise', BANK_A);
     expect(took.length).toBeGreaterThan(0);
     const down = events(w, 'bank.resolution.writtenDown', BANK_A);

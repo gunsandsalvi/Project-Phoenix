@@ -40,7 +40,7 @@ export const equityParam = (firm: string, what: string): ParamId => paramId(`equ
  * The three firms in this world that have a share line: the largest in each of its three lines.
  *
  * WHO HOLDS THEM AT THE SEED is not stated here, because a holding is endowment state and belongs
- * to whoever opens holding it (Seed A3) — here the desks that open making a market in each line,
+ * to whoever opens holding it (Seed A3) — here the banks whose dealing lines make each market,
  * exactly as the banks open holding the sovereign's paper. What is stated here is which firms have
  * a line at all and how fast each management distributes.
  *
@@ -50,6 +50,20 @@ export const equityParam = (firm: string, what: string): ParamId => paramId(`equ
  * who owns this world before anybody bought anything (Seed E1, E2). Until then the free float is the
  * whole of what is issued, and it says so.
  */
+/**
+ * Seed A3, Dealer Desks A1, A3: WHO OPENS HOLDING THE FLOAT, and how much of every line they hold.
+ *
+ * A share line has no other holder at period zero — nobody has founded anything and nobody has
+ * bought anything (Seed E1) — so what somebody opens holding IS the line: the float the rest of the
+ * world buys from. It is held by the banks, because a bank's dealing line is what makes a market in
+ * a share here (A1: a dealer's balance sheet is inside a bank's), and a bank that opens making a
+ * market with nothing to sell can only ever bid.
+ */
+export const FLOAT: Readonly<Record<string, number>> = {
+  'bank.a': 120_000,
+  'bank.b': 80_000,
+};
+
 export const LISTED: readonly ListedDecl[] = [
   {
     firm: 'firm.4',

@@ -25,6 +25,7 @@ import {
 } from '../src/index.js';
 import { paidTheSame, paidTo } from './expected.js';
 import { par } from './units.js';
+import { notDealing } from './no-dealing.js';
 
 const FIRM_1 = partyId('firm.1');
 /** Five hundred PHX of face, in the pieces the register counts par in (Law 8). */
@@ -72,9 +73,9 @@ function world(at: number): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
-      m.id === 'bank-lending' ||
+      m.id === 'banks' ||
       m.id === 'money-market',
-  );
+  ).map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, oneTrade(at)] });
 }
 

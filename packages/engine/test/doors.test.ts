@@ -31,6 +31,7 @@ import {
   type World,
 } from '../src/index.js';
 import { paidTo } from './expected.js';
+import { notDealing } from './no-dealing.js';
 
 const WHEAT = instrumentKindId('good.wheat');
 const TONNES = unitId('tonnes');
@@ -123,9 +124,9 @@ function world(...extra: SystemModule[]): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
-      m.id === 'bank-lending' ||
+      m.id === 'banks' ||
       m.id === 'money-market',
-  );
+  ).map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 

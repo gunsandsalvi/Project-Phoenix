@@ -35,6 +35,7 @@ import {
 } from '../src/index.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
+import { notDealing } from './no-dealing.js';
 
 const PAYER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
@@ -215,10 +216,10 @@ function world(...extra: SystemModule[]): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
-      m.id === 'bank-lending' ||
+      m.id === 'banks' ||
       m.id === 'money-market' ||
       m.id === 'credit-events',
-  );
+  ).map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 

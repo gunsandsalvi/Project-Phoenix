@@ -34,6 +34,7 @@ import {
   type World,
 } from '../src/index.js';
 import { unexpected } from './expected.js';
+import { notDealing } from './no-dealing.js';
 import { phx } from './units.js';
 
 function violations(w: World): string[] {
@@ -108,17 +109,18 @@ function noLending(seed: string, ...extra: SystemModule[]): World {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
-        m.id === 'bank-lending' ||
+        m.id === 'banks' ||
         m.id === 'money-market',
     )
     .map((m) => ({
-      ...m,
+      ...notDealing(m),
       params: m.params.map((p) =>
         p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: 0 } : p,
       ),
     }));
   return assemble({ ...spec, modules: [...modules, ...extra] });
 }
+
 
 /**
  * The kernel and the opening state, with none of the mechanisms that act on it except the two that
@@ -129,13 +131,15 @@ function noLending(seed: string, ...extra: SystemModule[]): World {
  */
 function bare(seed: string, ...extra: SystemModule[]): World {
   const spec = foundationSpec(seed);
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
-      m.id === 'seed.foundation' ||
-      m.id === 'bank-lending' ||
-      m.id === 'money-market',
-  );
+  const kernelOnly = spec.modules
+    .filter(
+      (m) =>
+        m.id === 'sovereign-instruments' ||
+        m.id === 'seed.foundation' ||
+        m.id === 'banks' ||
+        m.id === 'money-market',
+    )
+    .map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 
@@ -180,11 +184,11 @@ describe('the seed (Seed A2)', () => {
       'crossMarket',
       'zeroSum',
     ]);
-    // XI-14: one placeholder stands, and it names the worklist item that deletes it — the bank's
-    // liquidity buffer (11). The holder's required yield went with the cost of capital (10): what a
-    // bank requires to hold paper is now built from its own cost of funds and the capital the
-    // position consumes, so there is nothing left standing in for it.
-    expect(report?.reads.placeholders).toBe(1);
+    // XI-14: NO PLACEHOLDER STANDS. The last one was the bank's liquidity buffer — a stated share
+    // of the money it had issued, standing in for a decision nobody had built — and 11.2 built the
+    // decision: what a bank holds liquid is a coverage rule somebody wrote plus its own cushion
+    // over it, against the money its own books say could leave (Banks Funding C2).
+    expect(report?.reads.placeholders).toBe(0);
     // And eight shapes. Five of them are the levels the world opens at (Seed C4) — the four goods
     // and the opening yield: a market that has never traded has no price, so a world that opens
     // with stock in it opens with a level for that stock, and no worklist item will ever delete
@@ -408,9 +412,18 @@ describe('the period loop', () => {
       // decides what else to put on its book with what is left.
       'banks.raise',
       'lending.write',
+      // Banks Funding B1.a: its board, priced off what money costs it and off its rivals' boards.
+      'banks.treasury',
+      // ...and then the market PAYS at the rates the banks announced, and the depositors answer.
       'moneyMarket.rates',
+      // Dealer Desks D1, Fund Shares E3: the bank's own dealing line, after it has published what
+      // money costs it — that is the number that says whether closing a gap is worth doing.
+      'banks.arbitrage',
       'probe',
       'markets',
+      // Banks Funding C2.a: what its own account did to it this week, and what it therefore holds
+      // against a bad one — taken after the flows and before the session that is measured against it.
+      'banks.buffer',
       'moneyMarket.clear',
       'lending.book',
       'moneyMarket.book',
@@ -422,6 +435,8 @@ describe('the period loop', () => {
       // Banks Capital A1, B1: capital is the residual, so a bank can only know what its own is
       // once the marks are in — and what it may lend next period is what it closed this one with.
       'banks.capital',
+      // D5, E4: and what its dealing book came to, once the marks are in it.
+      'banks.dealing',
     ]);
     w.step();
     expect(seen).toEqual(['1:1']);

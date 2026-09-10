@@ -67,7 +67,7 @@ export interface EtfDecl {
   /**
    * Seed A3: who holds its shares at launch and how many. A fund is launched by somebody putting a
    * basket in and taking the shares that came out, and in this world that is its sponsor and the
-   * desks that will make its market — an authorised participant with no shares can only ever
+   * banks whose dealing lines will make its market — an authorised participant with no shares can only ever
    * create, and a gap the other way would have nobody able to close it (E3.a).
    */
   readonly launchedBy: Readonly<Record<string, number>>;
@@ -94,11 +94,11 @@ export const ETFS: readonly EtfDecl[] = [
     // share of it is one share of each of the three firms this world listed, and that is the whole
     // of its mandate: it never bids for anything and it never sells anything.
     basket: { 'equity.firm.4': 1, 'equity.firm.5': 1, 'equity.firm.6': 1 },
-    // Law 8: whole shares, and enough of them to be a real fund beside the float the desks make a
+    // Law 8: whole shares, and enough of them to be a real fund beside the float the banks make a
     // market in — a launch of sixty shares against a line of a hundred and twenty thousand is a
     // rounding error with a manager attached, and nothing it did would reach a price.
-    launchedBy: { 'manager.etf.north': 20_000, 'desk.a': 25_000, 'desk.b': 15_000 },
-    needs: ['equity', 'dealers'],
+    launchedBy: { 'manager.etf.north': 20_000, 'bank.a': 25_000, 'bank.b': 15_000 },
+    needs: ['equity', 'banks'],
     fee: 0.001,
     why: 'Fund Shares E1-E4: the vehicle that has TWO values. Its shares trade, so a session prices them; its book is the three listed firms, so a read prices them too; and the gap between the two is what somebody has to want to close for it to close at all (E3.a).',
   },

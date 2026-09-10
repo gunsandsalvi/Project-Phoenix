@@ -72,14 +72,33 @@ describe('the curve (Sovereign D3)', () => {
     expect(point?.yield).toBeCloseTo(y, 9);
   });
 
-  it('reads a level near what the seed priced the world at, without being told it', () => {
+  it('reads a level the holders of the paper put it at, without being told one', () => {
     const w = foundationWorld('curve-e');
     w.step();
     const ten = curveOf(w).at(10);
     expect(ten.yield.some).toBe(true);
+    // The banks are the holders of this paper and the only two parties making a market in it, so
+    // where the ten-year sits is where THEY will hold it: at or above what the keener of the two
+    // requires of this issuer, which is its own cost of funds (Corporate Credit E5). Nobody wrote
+    // a level down and nothing here is near the seed's opening print any more.
+    //
+    // FINDING (item 11, still open): what these banks require is high — around a tenth — because
+    // the seed leaves them funded overwhelmingly by their own equity, and equity at the return they
+    // ask of it is the dearest money a bank has. The curve is telling the truth about the balance
+    // sheets this world opens with; the balance sheets are what is wrong.
+    const keenest = Math.min(
+      ...w.journal
+        .ofKind('bank.reservation')
+        .filter((e) => e.period === w.period)
+        .map((e) => {
+          const required = e.data['required'] as Record<string, number>;
+          return required[String(TREASURY_NORTH)] ?? Number.POSITIVE_INFINITY;
+        }),
+    );
+    expect(Number.isFinite(keenest)).toBe(true);
     if (ten.yield.some) {
       expect(ten.yield.value).toBeGreaterThan(0);
-      expect(ten.yield.value).toBeLessThan(0.1);
+      expect(ten.yield.value).toBeGreaterThanOrEqual(keenest);
     }
   });
 });

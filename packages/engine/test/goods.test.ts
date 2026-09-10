@@ -31,6 +31,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { notDealing } from './no-dealing.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -82,9 +83,9 @@ function world(rows: readonly GoodDecl[], ...extra: SystemModule[]): World {
     (m) =>
       m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
-      m.id === 'bank-lending' ||
+      m.id === 'banks' ||
       m.id === 'money-market',
-  );
+  ).map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, goods(rows), ...extra] });
 }
 
@@ -165,9 +166,9 @@ describe('what a good is (Goods A)', () => {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
-        m.id === 'bank-lending' ||
+        m.id === 'banks' ||
         m.id === 'money-market',
-    );
+    ).map(notDealing);
     const inMoney = goods(KEEPS);
     const doctored: SystemModule = {
       ...inMoney,
@@ -290,10 +291,10 @@ describe('what perishes (Goods E4)', () => {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
-        m.id === 'bank-lending' ||
+        m.id === 'banks' ||
         m.id === 'money-market' ||
         m.id === 'goods',
-    );
+    ).map(notDealing);
     return assemble({
       ...spec,
       modules: [
@@ -423,10 +424,10 @@ describe('the units identity (Part XII)', () => {
       (m) =>
         m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
-        m.id === 'bank-lending' ||
+        m.id === 'banks' ||
         m.id === 'money-market' ||
         m.id === 'goods',
-    );
+    ).map(notDealing);
     const w = assemble({
       ...spec,
       modules: [

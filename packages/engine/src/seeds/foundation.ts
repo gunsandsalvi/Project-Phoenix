@@ -49,7 +49,7 @@ import {
   type SovereignBillTerms,
   type SovereignBondTerms,
 } from '../mechanisms/sovereign-instruments/index.js';
-import { bankLending } from '../mechanisms/bank-lending/index.js';
+import { bankLending } from '../mechanisms/banks/index.js';
 import {
   CAPITAL_KINDS,
   capitalProgramme,
@@ -63,12 +63,10 @@ import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { goodId, goodMarketId, goodTerms, goods, wipId } from '../mechanisms/goods/index.js';
-import { dealers } from '../mechanisms/dealers/index.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { funds } from '../mechanisms/funds/index.js';
 import { households } from '../mechanisms/households/index.js';
 import { labour } from '../mechanisms/labour/index.js';
-import { sovereignAuction } from '../mechanisms/sovereign-auction/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -391,6 +389,11 @@ export const foundationSeed: SystemModule = {
     // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
     // single auction clearing. The programme manages it from here.
     ctx.endowMoney(TREASURY_NORTH, PHX, cash(ctx, 900_000));
+    // Dealer Desks A1, F2: UNCHANGED BY THE DESKS GOING. What a desk held was a DEPOSIT at its own
+    // bank — that bank's liability, not the central bank's — so when the desk stops existing the
+    // deposit stops existing with it and the bank is left owing less, not holding more. Reserves
+    // handed to a bank here are central-bank money issued against nothing, and every one of them is
+    // a hole in the central bank's own balance sheet that it then pays the floor rate on for ever.
     ctx.endowMoney(BANK_A, PHX, cash(ctx, 400_000));
     ctx.endowMoney(BANK_B, PHX, cash(ctx, 300_000));
     for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, f.cash));
@@ -625,11 +628,9 @@ export function foundationSpec(seed: string): AssemblySpec {
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
       equity(),
-      dealers(),
       funds(),
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
-      sovereignAuction,
       treasury,
       centralBankOmo,
       // The money market after the treasury and the curve: a bank funds itself against the paper

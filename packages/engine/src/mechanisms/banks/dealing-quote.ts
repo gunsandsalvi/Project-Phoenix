@@ -48,6 +48,7 @@ import type { InstrumentId } from '../../core/ids.js';
 import { add, div, material, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
+import { priceAtYield, requiredYieldOf } from './treasury.js';
 
 /** Law 8: a rate is per annum or it is not a rate; this is the convention these reads use. */
 const DAY_COUNT = 'ACT/365F' as const;
@@ -67,19 +68,24 @@ export interface DeskQuote {
   readonly bidSize: number;
   readonly offerSize: number;
   /** D4, D5: which of its limits shrank the bid, so a desk stepping back says which one did it. */
-  readonly binds: Binding;
+  readonly binds: QuoteBinding;
 }
 
 /** The desk's own numbers, read from its own view before it prices anything. */
 export interface DeskState {
   /**
-   * D1, Law 8: the most it will be long of ONE line, in the pieces that line is counted in. A limit
-   * of four hundred thousand units is four hundred thousand shares of one line and forty million
-   * cents of face of another, so it is read against the instrument and not once for the desk.
+   * C2.a: where its own treasury wants this line held, in the bank's own money. Zero for a line
+   * nobody holds for liquidity, which is the ordinary case and is what "flat" used to mean.
    */
-  limitIn(instrument: InstrumentId): number;
+  targetIn(instrument: InstrumentId): number;
   /** D1: the most its whole book may be worth. */
   readonly limitAggregate: number;
+  /**
+   * D1: the most of that book it will have in ONE line, as a share of the whole. Law 8: the units
+   * a limit binds in are the line's own, and they fall out of this share and its own view of the
+   * line rather than being restated per line in pieces that mean something different in each.
+   */
+  readonly concentration: number;
   /** D3, D2: what a unit of value costs it to carry for one period — funding plus capital charge. */
   readonly ratePerPeriod: number;
   /** What its whole book is worth at the last marks, so the aggregate limit is a real constraint. */
@@ -91,7 +97,7 @@ export interface DeskState {
 }
 
 /** Which of a desk's three real constraints bound its bid (D4: it shrinks, and this says why). */
-export type Binding = 'position' | 'book' | 'money' | 'none';
+export type QuoteBinding = 'position' | 'book' | 'money' | 'none';
 
 /** The smaller of two quantities: arithmetic, and the smaller one is the constraint that binds. */
 const least = (a: number, b: number): number => (a < b ? a : b);
@@ -105,12 +111,27 @@ const least = (a: number, b: number): number => (a < b ? a : b);
  * almost everything the carrying value is the last print, so this is the last print; for a claim on
  * a book it is what the book comes to (Fund Shares B1), which is what a market maker in one quotes
  * around and is not derived from the price this session is about to discover (XI-13, Clearing A4).
+ *
+ * AND FOR A LINE NOBODY HAS EVER PRICED there is neither. For a share that is the end of it — a
+ * desk that does not know what a thing is worth does not make a market in it (D4). But a DATED
+ * CLAIM ON A NAME is worth what its own payments are worth to whoever is asked, and this bank has
+ * already published what it requires of that name (Corporate Credit E5): its own cash flows at its
+ * own reservation yield. That is not a price it read anywhere — it is the answer it gives when a
+ * new line is brought and somebody asks what it will pay for a thing that has never traded
+ * (Sovereign C3.b). It is the LAST resort and not the first, because a reservation is what a holder
+ * would need to buy and keep, and a market maker quotes around where the market is.
  */
 function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number> {
   const own = view.outlook(`price.${instrument}`);
   if (own.some && own.value.expected > 0) return some(own.value.expected);
   const carried = view.mark(instrument);
-  return carried.some && carried.value > 0 ? some(carried.value) : none();
+  if (carried.some && carried.value > 0) return some(carried.value);
+  const issuer = view.instruments.get(instrument).issuer;
+  if (!issuer.some) return none();
+  const required = requiredYieldOf(view, issuer.value);
+  if (!required.some) return none();
+  const worth = priceAtYield(view, instrument, required.value);
+  return worth.some && worth.value > 0 ? worth : none();
 }
 
 /**
@@ -153,8 +174,14 @@ export function quoteFor(
   const value = viewOf(view, instrument);
   if (!value.some) return none();
   const mine = value.value;
-  const limitPerInstrument = state.limitIn(instrument);
+  const limitPerInstrument = div(
+    mul(state.limitAggregate, state.concentration, 'the most of the book in one line'),
+    mine,
+    'units of this line that comes to',
+  );
   const inventory = view.free(instrument);
+  // C2.a: where its own treasury wants the line, in the same pieces the inventory is counted in.
+  const target = div(state.targetIn(instrument), mine, 'units its treasury wants held');
   const risk = riskOf(view, instrument);
   const adverse = adverseOf(view, instrument, risk);
   // D3, D2: what carrying one more unit costs it for the period it is quoting in — the money it
@@ -163,14 +190,19 @@ export function quoteFor(
   // and the skew below is what a position it has not shed does to what it will pay for the next.
   const carry = mul(mine, state.ratePerPeriod, 'what a unit costs it for a period');
   const edge = add(add(carry, risk, 'what it must earn on a unit'), adverse, 'and for who it faces');
-  // C2: how full it already is. Past its limit it is not a buyer at any price (D4).
+  // C2, C2.a: how far the book is from where it should be, as a share of the room it has. ABOVE
+  // the target it bids lower AND offers lower, because it wants to sell; BELOW it, both sides go
+  // up, because it wants to buy. That is how a book mean-reverts with nobody telling it to, and
+  // with a treasury target on a liquidity line it is also how the treasury sells its portfolio:
+  // it moves the target, and its own desk's quote is what the market sees.
+  const away = sub(inventory, target, 'how far the book is from where it should be');
   const used = limitPerInstrument > 0
-    ? div(inventory, limitPerInstrument, 'how much of its room it has used')
+    ? div(away, limitPerInstrument, 'how much of its room that uses')
     : 1;
   const skew = mul(used, edge, 'what its own position does to both sides');
   const bid = sub(sub(mine, edge, 'what it will pay'), skew, 'less what it is already carrying');
   const offer = sub(add(mine, edge, 'what it wants for one'), skew, 'less what it wants to shed');
-  const room = sub(limitPerInstrument, inventory, 'units of room left');
+  const room = sub(limitPerInstrument, away, 'units of room left');
   // D1, D4, F1: three real constraints and the binding one decides, which is what "it shrinks its
   // size" means. A position limit it set itself; the room left in its whole book, so a desk full of
   // one thing stops bidding for everything; and the money it actually has, spread over the lines it
@@ -182,8 +214,10 @@ export function quoteFor(
     ? div(div(state.cash, state.linesQuoted, 'its money over the lines it quotes'), mine, 'units')
     : 0;
   const size = least(least(room, inBook), inMoney);
-  const binds: Binding =
-    size <= 0 ? (room <= 0 ? 'position' : inBook <= 0 ? 'book' : 'money')
+  // D4, D5: the WHOLE BOOK is asked first, because a book with no room in it is why the desk has
+  // stopped in every line at once and a per-line limit only ever binds inside a book that has room.
+  const binds: QuoteBinding =
+    size <= 0 ? (inBook <= 0 ? 'book' : room <= 0 ? 'position' : 'money')
       : size === room ? 'position'
         : size === inBook ? 'book'
           : 'money';

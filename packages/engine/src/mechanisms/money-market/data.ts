@@ -87,7 +87,7 @@ export const DEPOSIT_CLASSES: readonly DepositClassDecl[] = [
   },
   {
     id: 'wholesale',
-    partyKinds: [BANK, partyKindId('fund'), partyKindId('fundManager'), partyKindId('desk')],
+    partyKinds: [BANK, partyKindId('fund'), partyKindId('fundManager')],
     insured: false,
     switchingCost: 0.0002,
     why: 'A1.c: few, very large and rate-sensitive. This is the money that leaves first (E4.a), because nothing insures it and its holder is in the market all day anyway.',

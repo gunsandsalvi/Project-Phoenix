@@ -41,38 +41,14 @@ import type { MechanismContext } from '../../world/context.js';
 import { none, some, type Option } from '../../core/option.js';
 import {
   classOf,
-  DEPOSIT_CLASSES,
-  funderOf,
   MM_PARAMS,
-  mmParam,
   switchingCost,
-  type DepositClassDecl,
 } from './data.js';
 
 /** One day count for what a bank pays on money, stated once (Law 8: a rate has a period). */
 const DEPOSIT_DAY_COUNT = 'ACT/365F';
 
-/** What this module keeps: what each bank pays each class, and what each class left there. */
-export interface DepositBook {
-  /** B1.a: bank -> class -> per annum, as that bank decided it this period. */
-  readonly rates: Record<string, Record<string, number>>;
-  /** F1: bank -> class -> what that class held at the last close (a read, kept for the report). */
-  readonly balances: Record<string, Record<string, number>>;
-  /** C2.a: bank -> the net moves its reserve account has taken, most recent last. */
-  readonly reserveMoves: Record<string, number[]>;
-}
 
-export function emptyDeposits(): DepositBook {
-  return { rates: {}, balances: {}, reserveMoves: {} };
-}
-
-const at = (book: Record<string, Record<string, number>>, bank: string): Record<string, number> => {
-  const row = book[bank];
-  if (row !== undefined) return row;
-  const made: Record<string, number> = {};
-  book[bank] = made;
-  return made;
-};
 
 /** F1: the bank's deposit lines by class — a read of who actually banks there (never a stored total). */
 export function depositsByClass(
@@ -162,88 +138,12 @@ export function couldLeave(
 }
 
 /**
- * B1.a, A5, D3: what each bank decides to pay each class, from what the money is worth to it.
- *
- * `worth` is the alternative it is actually holding: the dearest rate it is paying in the market
- * right now if it is borrowing there, and the floor if it is not (B5.a). Two banks facing the same
- * corridor pay different rates because they keep different margins and because one of them is
- * short; the same bank pays its classes differently because they are differently hard to keep.
- */
-export function setRates(
-  ctx: MechanismContext,
-  book: DepositBook,
-  bank: PartyId,
-  ccy: CurrencyCode,
-  worth: number,
-  rivals: readonly PartyId[],
-): void {
-  if (funderOf(bank) === undefined) return;
-  const margin = ctx.params.get(mmParam(bank, 'depositMargin'));
-  const rates = at(book.rates, bank);
-  const was = at(book.balances, bank);
-  const now = depositsByClass(ctx, bank, ccy);
-  for (const cls of DEPOSIT_CLASSES) {
-    const sticky = ctx.params.get(switchingCost(cls.id));
-    const own = sub(sub(worth, margin, 'what it keeps'), sticky, `what it pays ${cls.id}`);
-    rates[cls.id] = defended(ctx, bank, cls, rivals, own, sticky, worth);
-  }
-  for (const [cls, balance] of now) was[cls] = balance;
-}
-
-/**
- * B1.a, E2.a, D5.a: AND IT ANSWERS ITS RIVALS, because they are paying in public and its own
- * depositors can read it (E1).
- *
- * A bank that only ever priced its deposits off its own funding cost would sit still while somebody
- * across the road bid a point over it, and then lose its entire base in the week the gap crossed
- * what moving costs — every depositor of a class facing the same two numbers and answering them the
- * same way. That is not a deposit market: it is a cliff, and a world with one in it makes the
- * grouping of a population load-bearing (XI-15).
- *
- * So it defends: the level that holds a class is what the rival is paying LESS what moving costs
- * that class, since at that level the depositor gains nothing by going. What stops it defending is
- * its own economics and not a limit — B1.a's own bound: money it loses here it has to replace in
- * the market at `worth`, so it will pay up to that to keep it and no more. Past that it lets the
- * class go and funds itself where funding is cheaper, which is the same decision the other way up.
- */
-function defended(
-  ctx: MechanismContext,
-  bank: PartyId,
-  cls: DepositClassDecl,
-  rivals: readonly PartyId[],
-  own: number,
-  sticky: number,
-  worth: number,
-): number {
-  let best: number | undefined;
-  for (const r of rivals) {
-    if (r === bank) continue;
-    const said = announced(ctx, r, cls.id);
-    if (!said.some) continue;
-    if (best === undefined || said.value > best) best = said.value;
-  }
-  if (best === undefined) return own;
-  const hold = sub(best, sticky, `what it takes to keep ${cls.id}`);
-  return hold > own && hold < worth ? hold : own;
-}
-
-/**
- * What this bank pays a class, per annum. A bank that has never decided has not decided (Appendix
- * A): the payment below asks, gets none, and pays nothing rather than paying a default.
- */
-export function rateFor(book: DepositBook, bank: PartyId, cls: DepositClassDecl): Option<number> {
-  const rate = at(book.rates, bank)[cls.id];
-  return rate === undefined ? none<number>() : some(rate);
-}
-
-/**
  * B1: the payment itself, holder by holder, for the days the period was. A negative rate is a real
  * rate and the payment simply goes the other way — the depositor pays the bank for holding it —
  * because a money leg has a payer and a payee and the sign says which is which (Money C1).
  */
 export function payDepositInterest(
   ctx: MechanismContext,
-  book: DepositBook,
   bank: PartyId,
   ccy: CurrencyCode,
 ): void {
@@ -265,7 +165,7 @@ export function payDepositInterest(
     if (!party.status.alive) continue;
     const cls = classOf(party.kind);
     if (cls === undefined) continue;
-    const rate = rateFor(book, bank, cls);
+    const rate = announced(ctx, bank, cls.id);
     if (!rate.some || rate.value === 0) continue;
     const balance = ctx.register.quantity(holder, money);
     // Law 8: interest is paid in whole pieces of the money, per member of a cell — each member is
@@ -295,31 +195,6 @@ export function payDepositInterest(
       reason: `${bank} pays ${cls.id} interest to ${holder}`,
     });
   }
-}
-
-/** C2.a: what this bank's account has actually done to it, over the memory it keeps. */
-export function rememberReserves(
-  book: DepositBook,
-  bank: PartyId,
-  move: number,
-  memory: number,
-): void {
-  const moves = book.reserveMoves[bank] ?? [];
-  moves.push(move);
-  while (moves.length > memory) moves.shift();
-  book.reserveMoves[bank] = moves;
-}
-
-/**
- * A2.a, C2, C2.a: the buffer this bank holds against what could leave — the worst week its own
- * account has had, over its own memory. A bank that has never had a bad week holds nothing against
- * one, which is a real (and dangerous) position and not a missing number.
- */
-export function bufferOf(book: DepositBook, bank: PartyId): number {
-  const moves = book.reserveMoves[bank] ?? [];
-  let worst = 0;
-  for (const m of moves) if (m < worst) worst = m;
-  return -worst;
 }
 
 /** What the bank's whole deposit base comes to, for the reads that need one number (F1). */

@@ -1518,3 +1518,73 @@ in every one of the fifty-two periods, and the same world twice from the same se
 restricting distributions (13g, which is where somebody comes to own a bank), and cutting a
 leveraged client's line (13h, which is where the client exists). Neither is missing; both are in
 those plans with the reason.
+
+
+## 11.2 — one bank, in progress
+
+**Not closed.** This is the fold, not the finish. What follows is what has moved, what it found, and
+what is red because of it. The item's own plan file lists the steps that remain.
+
+**There is no desk.** `mechanisms/dealers/` is deleted, both desk parties with it, and so is the rent
+a desk paid the bank it lived inside — a transfer price between two parties that were economically
+one. A bank quotes out of its own inventory, funded at its own blended cost of funds and against its
+own capital, and what a line of business is, is data about the bank. Dealer Desks A1's "its own
+balance sheet INSIDE a bank's" is a sub-ledger now, and F2's "no desk exempt from its own bank's
+capital and funding" is true by construction rather than by a check.
+
+**One face.** Exactly one module gives `BANK` a participant, in markets (`banks`) and in venues
+(`banks`, through 11.1's door). `sovereign-curve` no longer decides anything for anybody: its bank
+participant, its buffer target, its two-step demand schedule and its surplus premium are gone, and it
+is a curve family and a check that its points are prints. `sovereign-auction` is deleted entirely —
+the primary bid is the dealing line's, at its own price, for the obligation the ISSUER announces with
+the line. `money-market/funding.ts` is deleted: a forced sale is the dealing line quoting with
+urgency, not a second participant under the same bank's name. The money market keeps the venues, the
+corridor, the window's own offer, `strike`, the rows, the insurer and the resolution, and reads no
+bank's preference anywhere.
+
+**The last placeholder is gone.** `bank.liquidityBuffer.perDeposit` stood in for a decision nobody
+had built; the treasury now makes it — a coverage rule somebody wrote plus the bank's own cushion
+over it, against the money its own books say could leave (Banks Funding C2). The engine declares 144
+numbers and none of them is a placeholder.
+
+**Findings, and they are one cause.** With the desks gone the banks are the only market makers in
+sovereign paper, and that puts a number nobody had looked at on the front of every price in this
+world: **a bank here is funded roughly three quarters by its own capital**, so its blended cost of
+funds — a read across its whole mix including capital (§24 B2, XI-4 joint one) — is near a tenth. It
+cannot hold the paper the liquidity rule makes it hold, it cannot win the auction it is obliged to
+bid at, the auction and the secondary market print two prices for one line, and in the `tsy-g` world
+the treasury misses eight of its own coupons. Under that: **every reserve the seed hands a bank is
+central-bank money issued against no asset** (`endowMoney` issues the money of the party's own bank,
+and a bank's bank is the central bank), so the central bank pays the floor rate for ever on a balance
+it never bought anything with and books a loss instead of a remittance in every run; and both banks
+are so long of cash that **the interbank session never opens** — no print, no refusal, no bank in
+trouble, so the run, the contagion and the corridor's pass-through are unreachable. All of it is
+**11.3**, inserted ahead of the depositors' item for that reason.
+
+**Twelve checks are red and every one of them ends at that cause.** They are listed in 11.3's plan
+with what each asks. None has been adjusted to pass and none has been deleted.
+
+**A number that was mine and was wrong.** The fold briefly raised the banks' opening reserves from
+70M to 135M "to absorb the desks' cash". A desk held a DEPOSIT at its own bank — that bank's
+liability — so when the desk stops existing the deposit stops existing with it and the bank is left
+owing less, not holding more. The extra 65M was central-bank money issued against nothing, and it
+doubled the hole above. It is deleted; the seed states what it stated before.
+
+**Numbers that were mine and were tuned.** The dealing line's limits were first stated as amounts of
+money read off the book value a probe printed — which is a result wearing a preference's name (Law
+2), and which the repository's own lint catches the moment such a literal sits outside a `data.ts`.
+They are gone. What a bank will have standing behind its dealing book is a share of ITS OWN CAPITAL,
+and how much of that book may be in one line is a share of the book, so neither has to be restated
+when the world changes size. The liquidity coverage rule is 1 — the real-world primitive, imported,
+which Law 2 allows where a real-world equilibrium would not be — and each bank's cushion over it is
+stated in the same proportion as its capital buffer, from its own character rather than from an
+outcome. `lines.ts` is deleted and every one of these lives in `banks/data.ts`, ONE ROW PER BANK:
+what it is like as a lender, a funder, a treasury and a dealer are four sides of one disposition, and
+holding them in four tables was what let one bank hold four opinions of itself.
+
+**Deleted.** `mechanisms/dealers/`, `mechanisms/sovereign-auction/`, `money-market/funding.ts`,
+`banks/lines.ts`; `sovereign-curve`'s participant, `bufferTarget`, `demandSteps`, `priceAtYield`,
+`requiredYieldOf`, `sovereignValue`, `tenorOf`, `P_BUFFER` and `P_SURPLUS_PREMIUM`;
+`money-market`'s `DepositBook`, `setRates`, `defended`, `rateFor`, `rememberReserves`, `bufferOf`,
+`positionOf`, `lenderReservation`, `bankOrders`, `worthOfMoney`, `pledgeable`, `nameCost`, `FUNDERS`
+and the `desk` entry in the wholesale deposit class. Every deletion names the read that replaced it.

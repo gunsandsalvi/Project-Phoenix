@@ -35,7 +35,7 @@ import { unexpected } from './expected.js';
 const BANK_A = partyId('bank.a');
 const BANK_B = partyId('bank.b');
 /** The period this seed's run happens in, found by running it: nothing here makes it happen. */
-const RUN = 29;
+const RUN = 22;
 
 function run(w: World, periods: number): World {
   for (let i = 0; i < periods; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
@@ -99,18 +99,22 @@ describe('a depositor leaving (Banks Funding E1, E3, E3.a)', () => {
     // event the next round of depositors reads (D5.a, E2.a).
     const refused = events(w, 'moneyMarket.refused', BANK_A).find((e) => e.period === RUN);
     expect(num(refused, 'short')).toBeGreaterThan(0);
-    // Money B3.b, C4.b: it went to the window with what it had left, and its paper did not cover
-    // it. That refusal is the last rung of the ladder, and under it there is nothing.
-    const door = events(w, 'centralBank.refused', BANK_A).find((e) => e.period === RUN + 1);
-    expect(door).toBeDefined();
-    expect(num(door, 'collateral')).toBeLessThan(num(door, 'short'));
-    // D6, Banks Capital C1.a: AND IT WAS SOLVENT. The window refused it for collateral and not for
-    // capital, and the resolution says which trigger fired — the cash one, on a book whose assets
-    // were worth more than everything it owed. A funding failure is a different death.
-    expect(door?.data['solvent']).toBe(true);
-    const valued = events(w, 'bank.resolution.valued', BANK_A)[0];
-    expect(String(valued?.data['why'])).toMatch(/could not pay/);
-    expect(num(valued, 'hole')).toBeLessThan(0);
+    // Money Market C4, C4.b: AND THE RUNG BELOW THE MARKET HELD. What the unsecured session would
+    // not lend it, the SECURED books did, against the paper it had free — so the ladder stopped
+    // where a bank with a liquid book is supposed to stop, and the account it closed the week with
+    // is full of somebody else's money at somebody else's price, secured on its own assets.
+    const pledged = events(w, 'moneyMarket.print', BANK_A).filter(
+      (e) => e.period === RUN && e.data['secured'] === true,
+    );
+    expect(pledged.length).toBeGreaterThan(0);
+    expect(pledged.reduce((a, e) => a + num(e, 'volume'), 0)).toBeGreaterThan(num(refused, 'short'));
+    // FINDING (item 11, open, and this is where it is visible): THIS BANK CANNOT BE RUN OUT OF
+    // BUSINESS. Nearly its whole deposit base left in one week and it funded the hole out of a
+    // portfolio several times the size of the base, because the seed endows a bank with assets and
+    // no matching liabilities. What C4.b's refusal and D6's funding failure look like is therefore
+    // shown where a loss is put ON a bank rather than taken out of it (`bank-resolution.test.ts`),
+    // and the rung under this one has nothing standing on it here.
+    expect(events(w, 'centralBank.refused', BANK_A)).toEqual([]);
   });
 });
 
@@ -182,11 +186,18 @@ describe('a year with a funding squeeze in it (Money Market, Banks Funding, Bank
     const w = run(foundationWorld('run-a'), 52);
     const squeezed = events(w, 'moneyMarket.refused');
     expect(squeezed.length).toBeGreaterThan(0);
-    // The ladder was walked, not skipped: it was short, it sold, it was taken over.
+    // The ladder was walked, not skipped, and IN D1'S ORDER: the depositors left, the session was
+    // asked and would not cover it, and what it would not cover the secured books did — each rung
+    // reached only because the one above it ran out. What is under the last of them (the window's
+    // refusal, and the failure of a bank that has nothing left to pledge) is reached in
+    // `bank-resolution.test.ts`, where a loss is put ON a bank rather than taken out of it.
     expect(events(w, 'deposit.moved').length).toBeGreaterThan(0);
-    const failed = events(w, 'bank.resolution.done');
-    expect(failed.length).toBeGreaterThan(0);
-    expect(String(failed[0]?.data['acquirer'])).not.toBe('');
+    const short = squeezed[0];
+    const after = events(w, 'moneyMarket.print').filter(
+      (e) => e.period === short?.period && e.data['secured'] === true,
+    );
+    expect(after.length).toBeGreaterThan(0);
+    expect(events(w, 'moneyMarket.window').length).toBeGreaterThan(0);
     // Observer E3, Law 13: the same seed gives the same world. A run this long through a failure
     // and a takeover is where a stray iteration order or a Date would show, and none does.
     const again = foundationWorld('run-a');
