@@ -98,6 +98,7 @@ function rulesFor(ctx: MechanismContext, bank: PartyId): CapitalRules {
     minLeverage: ctx.params.get(LENDING_PARAMS.leverageRatio),
     buffer: ctx.params.get(bankParam(bank, 'capitalBuffer')),
     weight: ctx.params.get(LENDING_PARAMS.riskWeight),
+    limitPerName: ctx.params.get(bankParam(bank, 'limitPerBorrower')),
     sovereignWeight: ctx.params.get(LENDING_PARAMS.sovereignWeight),
   };
 }

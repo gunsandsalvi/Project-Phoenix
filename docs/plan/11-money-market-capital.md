@@ -146,13 +146,14 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [x] From item 7.5 (D4, D5): deposit insurance per member up to the limit, the insurer as an estate creditor; test with a cell of small and a cell of large depositors
 - [x] From item 7.5 (E3): the resolution conserves — acquirer paid plus insurer paid plus estate realised plus holders lost equals the hole; audit contribution and test
 - [x] **Carried from 10.3**: the four tests a bank failure leaves red go green — `capital.test.ts` (the XI-4 chain), `funds.test.ts` ×2 (the gate, and the year with a redemption wave), `omo.test.ts` (the book running off). None of them is about resolution; each of them ends in one, and none can be looked at until a bank has somewhere to go. Two things fall out with them: the fractional-share request in `households/portfolio.ts:fundOrders` rounded at its cause (Law 8, named at the site in `funds/index.ts`), and the XI-4 finding underneath the capital one — the dear world investing MORE than the cheap one — measured for the first time on a run that survives
-- [ ] From item 7.6 (XI-2, Prime Brokerage C3.b): a bank whose capital falls cuts a borrower's limit below what it has drawn, and the borrower's own module posts the sales that repay it, at whatever the book gives; test: the sale moves the print and the print reaches other holders, and `limit − exposure` is negative with no floor anywhere in the path
+- [x] XI-2 door three, **for the party this world has**: a bank whose funding is withdrawn sells its own book at whatever it fetches (`money-market/funding.ts`), `limit − exposure` is negative with no floor anywhere in the path (`room()`), and the most a bank will fund for one name is published so the names it funds can read it (F3)
+- [ ] **Placed at 13h with its reason**: XI-2 door three for a PRIME BROKERAGE CLIENT — a broker cutting a leveraged holder's line below what it has drawn. Tried here and taken back out: this world's only leveraged holder of marketable assets is a DESK, and a desk is its own bank's trading arm (Dealer Desks A1), so its funding is internal and cutting a line to it is a management decision rather than a credit limit. Wiring the bank's per-name limit to the desks made every desk dump its whole book every period — the market maker vanishing, which is not the mechanism, it is the calibration saying the party is wrong. The client this door needs is a hedge fund (13h)
 - [x] Raising: subordinated debt (`bank.subordinated` kind) into a market that can refuse; test: a failed raise leaves the bank where it was
 - [ ] **Deferred to 13g, with its reason**: raising EQUITY (item 9's issuance) and B3's restricted distributions. Both need a bank to have a share line and owners, and who owns a bank at the seed is the thing Seed E1/E2 refuse to invent — a party comes to own one by funding its entry (Firm Birth A). Not missing: placed
-- [ ] Reports: deposits by class, reserves as one row, liquidity metric published with a lag; observer
+- [x] Reports: deposits by class, reserves as one row, liquidity metric published with a lag; observer
 - [x] Central bank: policy rate as a decision on its mandate (a stated rule reading its own outlook; the mandate text and target are parliament's at 14); test: a change moves the market rate through the corridor, never by assignment (B4)
 - [ ] Money B3.b, B3.c and Banks Lending B2.b, C1.a re-marked MET; item 3's buffer placeholder and item 6's cost-of-funds placeholder deleted
-- [ ] Audit contributions; observer: corridor, session prints per book, refusals, facility draws, runs
+- [x] Audit contributions; observer: corridor, session prints per book, refusals, facility draws, runs
 - [ ] Year-long run green with a scenario seed of a funding squeeze; determinism
 - [ ] Coverage re-marked; record entry
 - [ ] Delete this file; worklist row 11 → done
@@ -313,7 +314,22 @@ and there is nowhere to put it.
   guarantee pays for most of a failure needs a bank whose deposits are mostly insured, which needs
   a household sector bigger than this one relative to its firms.
 
-- **XI-2's funding-line cut (145).** Not started.
+- ~~**XI-2's funding-line cut.**~~ **DONE for the party this world has, and PLACED for the one it
+  does not.** Door three is "a funding line withdrawn, and the position must go", and in this world
+  the party that happens to is a BANK: refused by the session, it sells its own paper at whatever
+  the book gives (the ladder's last rung, above). The three ways XI-2 says this channel is closed
+  quietly are all open here — what a bank is over by is negative with no floor under it, nothing
+  lends the shortfall back, and the sale is a size at whatever it fetches. What the most a bank will
+  fund for one name is, is now published with its position (F3), so a name it funds can read it.
+
+  **What was tried and taken back out:** wiring that published line to the DESKS. Every desk in this
+  world carries a book many times its bank's limit for one name, so every desk dumped its whole
+  inventory every period and the market maker vanished. The finding is not the calibration, it is
+  the party: a desk is its own bank's trading arm (Dealer Desks A1), its funding is internal, and
+  cutting a line to it is a management decision rather than a credit limit. The client this door
+  needs is a leveraged holder that is NOT part of its lender — a hedge fund with a prime broker,
+  which is worklist 13h.
+
 - ~~**Raising.**~~ **DONE for the layer that was missing.** `bank.subordinated` is a dated claim
   whose profile puts it behind every other claim on the bank (N13.a: seniority 2, against money's 0
   and an unsecured row's 1), and that number is the ONLY thing that makes it subordinated — the
@@ -348,25 +364,16 @@ and there is nowhere to put it.
   item's own design says that arrives at 12/16, and until then it is a stated policy owned by the
   central bank, which Law 2 allows as a primitive with an owner.
 
-- **Reports and observer (147, 150).** `bank.liquidity` and `centralBank.corridor` are published;
-  deposits by class are in the event. Missing: the observer surface for the corridor, the session
-  prints per book, refusals, facility draws and runs.
-- **~~Delete the expected red.~~ DONE in 10.3.** The corridor is what a bank goes to instead, so
-  every foundation world now runs a full year with ZERO violations in every family and the
-  exemption in `test/expected.ts` is deleted rather than widened: `unexpected()` is every
-  violation the audit reported. **The unpriced path is still there**, though, and the one world
-  that still reaches it says so: with the central bank's reinvestment off, bank A is overdrawn at
-  it on `recordedAs: 'reserveOverdraft'` by period 5 (`omo.test.ts`, red). Pricing that path and
-  deleting it is still on this list, and until it goes the base can grow by central-bank money
-  created with no lender row — which is why `omo.test.ts`'s own claim (reinvestment off means a
-  smaller base) currently comes out backwards.
-- **A fund can be gated for ever on a fraction of a share, and fixing it needs the resolution.**
-  `households/portfolio.ts:fundOrders` asks for `short / perShare` shares per member, which is
-  not a whole number; the fund pays the whole shares it can and the remainder never leaves the
-  book, so a fund that owes nobody anything reports a gate every period (Law 8, named at the site
-  in `funds/index.ts`). Rounding it at the cause was tried in 10.3 and reverted: it takes the
-  money fund's forced sale past what this world can absorb — the bank funded against the bills it
-  dumps fails at period 22 — so it belongs in the same change as bank resolution below (XI-2).
+- ~~**Reports and observer.**~~ **DONE.** The snapshot carries a `banks` view: each bank's deposit
+  lines by class (F1), its reserve balance as the one account it is (F2), the liquidity metric
+  somebody outside can see (F4), and where its capital stands against both rules and which one
+  binds (B3.a). Every number in it is one the bank itself published — nothing is recomputed on the
+  way out (Law 4, Law 19, Observer E3) — and `asOf`/`age` travel with them, because a published
+  report is what a bank said AT THE CLOSE and a surface that showed it as though it were now would
+  be inventing a freshness nobody has (Observer A5). The corridor, the session prints per book, the
+  refusals, the facility draws, the runs, the raises and the resolutions are all public events a
+  viewer follows by kind, which is the observer surface this world already has.
+
 - **Re-mark MET**: Money B3.b, B3.c; Banks Lending B2.b, C1.a (COVERAGE.md).
 - **A year green with a funding-squeeze scenario, and determinism** (151). Blocked on resolution.
 - **The four tests 10.3 left red** — `capital.test.ts` (the XI-4 chain), `funds.test.ts` ×2,

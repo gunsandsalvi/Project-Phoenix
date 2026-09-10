@@ -21,6 +21,7 @@ import {
   foundationWorld,
   moneyInstrumentId,
   partyId,
+  snapshot,
   switchingCost,
   yearFraction,
   type PartyId,
@@ -484,5 +485,35 @@ describe('the window (Central Bank D1, D3, D6, C4.b)', () => {
     // D6: LOLR is to the SOLVENT, so the decider refuses a bank whose capital is gone — and a
     // refusal is a public event with a size, not a silence.
     for (const r of events(w, 'moneyMarket.refused')) expect(num(r, 'short')).toBeGreaterThan(0);
+  });
+});
+
+describe('what somebody outside can see (Banks Funding F1, F2, F4, Observer A5)', () => {
+  it('shows each bank what it published about itself, and how old it is', () => {
+    const w = run(foundationWorld('mm-observer'), 8);
+    const seen = snapshot(w, { kind: 'inspector' }, 20);
+    const banks = seen.banks.filter((b) => b.bank === String(BANK_A) || b.bank === String(BANK_B));
+    expect(banks.length).toBe(2);
+    for (const b of banks) {
+      const said = last(w, 'bank.liquidity', partyId(b.bank));
+      // Law 4, Law 19, Observer E3: NOTHING IS RECOMPUTED ON THE WAY OUT. Every number here is the
+      // one the bank itself published, carried through unchanged.
+      expect(b.reserves).toBe(num(said, 'reserves'));
+      expect(b.couldLeave).toBe(num(said, 'couldLeave'));
+      expect(b.metric).toBe(said?.data['metric']);
+      // F1: its deposit lines by class, as reads of who actually banks there.
+      expect(Object.keys(b.deposits).sort()).toEqual(['corporate', 'retail', 'wholesale']);
+      // F2: the reserve balance is its one account at the central bank, and the surface says the
+      // same number the register does.
+      expect(b.reserves).toBe(w.register.quantity(partyId(b.bank), moneyInstrumentId(CB, PHX)));
+      // B3.a: where its capital stands, and which of the two rules is the one biting.
+      expect(b.capital).toBeGreaterThan(0);
+      expect(b.binds).not.toBeNull();
+      // A5: AND HOW OLD IT IS. A published report is what it said at the close, and a surface that
+      // showed it as though it were now would be inventing a freshness nobody has.
+      expect(b.age).not.toBeNull();
+      expect(b.age).toBeGreaterThanOrEqual(0);
+      expect(b.asOf).toBe(said?.period);
+    }
   });
 });

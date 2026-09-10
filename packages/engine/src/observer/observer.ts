@@ -108,6 +108,38 @@ export interface PartyView {
   readonly ccy: string;
 }
 
+/**
+ * Banks Funding F1, F2, F4, Banks Capital B3.a, Observer A5: WHAT A BANK LOOKS LIKE FROM OUTSIDE.
+ *
+ * Every number here is one the bank itself published about itself and nothing is recomputed on the
+ * way out (Law 4, Law 19, Observer E3) — its deposit lines by class (F1), its reserve balance as a
+ * read of its one account (F2), the liquidity metric somebody outside can see (F4), and where its
+ * capital stands against the two rules (B3.a). A5 is why `asOf` and `age` travel with them: a
+ * published report is what the bank said AT THE CLOSE, and a surface that showed it as though it
+ * were now would be inventing a freshness nobody has.
+ */
+export interface BankView {
+  readonly bank: string;
+  readonly ccy: string;
+  readonly reserves: number;
+  readonly liquid: number;
+  readonly couldLeave: number;
+  readonly metric: number | null;
+  readonly deposits: Readonly<Record<string, number>>;
+  readonly base: number;
+  readonly capital: number;
+  readonly weighted: number;
+  readonly assets: number;
+  readonly weightedRatio: number | null;
+  readonly leverageRatio: number | null;
+  readonly binds: string | null;
+  readonly breach: boolean;
+  readonly limitPerName: number | null;
+  /** The period each of those was published in, and how many periods ago that was (A5). */
+  readonly asOf: number | null;
+  readonly age: number | null;
+}
+
 export interface Snapshot {
   readonly seed: string;
   readonly period: number;
@@ -130,6 +162,8 @@ export interface Snapshot {
   readonly curves: readonly CurveView[];
   readonly yields: readonly YieldView[];
   readonly positions: readonly PositionView[];
+  /** F1, F2, F4, B3.a: what each bank last published about its funding and its capital. */
+  readonly banks: readonly BankView[];
   readonly audit: AuditReport | null;
   readonly params: ParamReport;
   readonly moneyStock: Readonly<Record<string, number>>;
@@ -247,6 +281,45 @@ export function snapshot(
       ccy: i.ccy,
     });
   }
+  const banks: BankView[] = [];
+  for (const p of w.parties.all()) {
+    const liquidity = w.journal.lastOf('bank.liquidity', p.id);
+    const capital = w.journal.lastOf('bank.capital', p.id);
+    if (liquidity === undefined && capital === undefined) continue;
+    const numOf = (e: Event | undefined, key: string): number => {
+      const v = e?.data[key];
+      return typeof v === 'number' ? v : 0;
+    };
+    const textOf = (e: Event | undefined, key: string): string | undefined => {
+      const v = e?.data[key];
+      return typeof v === 'string' ? v : undefined;
+    };
+    const orNull = (e: Event | undefined, key: string): number | null => {
+      const v = e?.data[key];
+      return typeof v === 'number' ? v : null;
+    };
+    const said = liquidity?.period ?? capital?.period ?? null;
+    banks.push({
+      bank: String(p.id),
+      ccy: textOf(liquidity, 'ccy') ?? textOf(capital, 'ccy') ?? '',
+      reserves: numOf(liquidity, 'reserves'),
+      liquid: numOf(liquidity, 'liquid'),
+      couldLeave: numOf(liquidity, 'couldLeave'),
+      metric: orNull(liquidity, 'metric'),
+      deposits: (liquidity?.data['deposits'] ?? {}) as Readonly<Record<string, number>>,
+      base: numOf(liquidity, 'base'),
+      capital: numOf(capital, 'capital'),
+      weighted: numOf(capital, 'weighted'),
+      assets: numOf(capital, 'assets'),
+      weightedRatio: orNull(capital, 'weightedRatio'),
+      leverageRatio: orNull(capital, 'leverageRatio'),
+      binds: typeof capital?.data['binds'] === 'string' ? capital.data['binds'] : null,
+      breach: capital?.data['breach'] === true,
+      limitPerName: orNull(capital, 'limitPerName'),
+      asOf: said,
+      age: said === null ? null : w.period - said,
+    });
+  }
   const outlooks: OutlookView[] = [];
   for (const p of w.parties.all()) {
     if (!visible(p.id)) continue;
@@ -299,6 +372,7 @@ export function snapshot(
     curves,
     yields,
     positions,
+    banks,
     audit: w.last?.audit ?? null,
     params: w.params.report(),
     moneyStock: w.moneyStock(),

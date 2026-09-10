@@ -53,9 +53,13 @@ export interface CapitalPosition {
   readonly breach: boolean;
   /** C1: and below the line the rule itself draws, which is a different and worse thing. */
   readonly belowRequirement: boolean;
+  /** Banks Lending F3: the most it will fund for one name, which its names can read (XI-2). */
+  readonly limitPerName: number;
 }
 
 export interface CapitalRules {
+  /** F3: the share of its own capital it will have out to any one name. */
+  readonly limitPerName: number;
   readonly minWeighted: number;
   readonly minLeverage: number;
   readonly buffer: number;
@@ -133,6 +137,7 @@ export function capitalOf(
     buffer: rules.buffer,
     binds,
     headroom: byLeverage < inUnits ? byLeverage : inUnits,
+    limitPerName: mul(capital, rules.limitPerName, 'the most it will fund for one name'),
     breach: capital < mul(rwa, askedWeighted, 'what the line asks') ||
       capital < mul(assets, askedLeverage, 'what the backstop asks'),
     belowRequirement:
@@ -161,6 +166,11 @@ export function publish(ctx: MechanismContext, p: CapitalPosition): void {
       headroom: p.headroom,
       breach: p.breach,
       belowRequirement: p.belowRequirement,
+      // F3, XI-2: THE MOST IT WILL FUND FOR ANY ONE NAME, published because the names it funds have
+      // to be able to see it. It is its own capital times its own limit, so when its capital falls
+      // the line falls with it — and a party carrying more than the line is carrying more than its
+      // funder will stand behind, which is the third of XI-2's four doors.
+      limitPerName: p.limitPerName,
       unit: currencyUnit(p.ccy),
     },
     true,
