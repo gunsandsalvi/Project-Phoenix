@@ -120,6 +120,12 @@
     "steps": 25
   },
   {
+    "id": "12a",
+    "title": "Reporting and estimates",
+    "file": "12a-reporting-and-estimates.md",
+    "steps": 25
+  },
+  {
     "id": "13a",
     "title": "The derivative layer",
     "file": "13a-derivative-layer.md",

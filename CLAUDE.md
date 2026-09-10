@@ -1,7 +1,7 @@
 # Project Phoenix — standing rules (always in context)
 
 Phoenix is a simulated closed-circuit economy. The full specification is `docs/spec/PROJECT_PHOENIX.md`
-(5,285 lines; 47 systems, 2 instrument contracts, 17 mechanisms). This file is its digest. When a
+(5,428 lines; 48 systems, 2 instrument contracts, 17 mechanisms). This file is its digest. When a
 question is not settled here, **read the spec section** before deciding; cite it as `System Node`
 (e.g. `Money C2.a`, `XI-15`, `Law 6`). Implementation decisions are in `docs/ARCHITECTURE.md`.
 Work order is `docs/WORKLIST.md`; outcomes go in `docs/RECORD.md`; requirement status in
@@ -154,7 +154,7 @@ Method: the audit never repairs; no forecast without its killer; no clause delet
 register XI-14) → 3 sovereign funding constraint XI-9 → 4 firm cost base + households + labour +
 outlooks XI-16 → 5 loss is an event XI-1 → 6 loans are rows → 7 forced seller XI-2 + nothing immortal
 XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory → 10 cost of capital XI-4
-→ 11 bank capital raisable → 12 currency layer XI-12 + benchmarks XI-7 + second opinion XI-13 →
+→ 11 bank capital raisable → 12 currency layer XI-12 + benchmarks XI-7 + second opinion XI-13 → 12a reporting and estimates §48 →
 13 employment XI-10, housing, securitisation XI-11, corporate control → 14 polity XI-17 →
 15 the recipe → then, and only then, measure (Part XII).
 

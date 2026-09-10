@@ -1511,6 +1511,49 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Ratings E3` | MISSING |  |
 | `Ratings E4` | MISSING |  |
 
+## Reporting
+
+| requirement | status | where / why |
+|---|---|---|
+| `Reporting A1` | MISSING |  |
+| `Reporting A2` | MISSING |  |
+| `Reporting A2.a` | MISSING |  |
+| `Reporting A3` | MISSING |  |
+| `Reporting A4` | MISSING |  |
+| `Reporting A5` | MISSING |  |
+| `Reporting B1` | PARTIAL | the management already publishes its own outlook of its own earnings and the surprise against it is a recorded event (Firm E7, packages/engine/src/mechanisms/firms/produce.ts). What is missing is the fiscal calendar it publishes on, the report lines it guides to, and the report that settles it (worklist 12a) |
+| `Reporting B2` | MISSING |  |
+| `Reporting B3` | PARTIAL | the outlook is the management's own and can be wrong (Firm E7, packages/engine/src/mechanisms/expectations/index.ts). Nobody yet weighs a management's record of being wrong, because nothing else reads the guidance (worklist 12a) |
+| `Reporting B4` | MISSING |  |
+| `Reporting C1` | MISSING |  |
+| `Reporting C2` | MISSING |  |
+| `Reporting C3` | MISSING |  |
+| `Reporting C4` | MISSING |  |
+| `Reporting C5` | MISSING |  |
+| `Reporting C6` | MISSING |  |
+| `Reporting D1` | MISSING |  |
+| `Reporting D2` | MISSING |  |
+| `Reporting D3` | MISSING |  |
+| `Reporting D3.a` | MISSING |  |
+| `Reporting E1` | MISSING |  |
+| `Reporting E2` | MISSING |  |
+| `Reporting E3` | MISSING |  |
+| `Reporting F1` | PARTIAL | the surprise against the firm's own outlook is recorded per party per variable (Expectations B2, packages/engine/src/mechanisms/expectations/index.ts). Settling a report against a BANK's estimate needs the estimate, which is worklist 12a |
+| `Reporting F2` | MISSING |  |
+| `Reporting F2.a` | MISSING |  |
+| `Reporting F3` | MISSING |  |
+| `Reporting F4` | MISSING |  |
+| `Reporting G1` | MISSING |  |
+| `Reporting G2` | MISSING |  |
+| `Reporting G3` | MISSING |  |
+| `Reporting G4` | MISSING |  |
+| `Reporting G5` | MISSING |  |
+| `Reporting G6` | MISSING |  |
+| `Reporting H1` | MISSING |  |
+| `Reporting H2` | MISSING |  |
+| `Reporting H3` | MISSING |  |
+| `Reporting H4` | MISSING |  |
+
 ## Observer
 
 | requirement | status | where / why |

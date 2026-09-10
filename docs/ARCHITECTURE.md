@@ -402,6 +402,16 @@ These fell out of building items 1 and 2 and are recorded here because they are 
 - **The audit remembers** the previous period's issued amounts and per-member holdings so that the
   flows and money families compare the ledger's deltas with the register's change: two independent
   records (Audit A1.a). Both skip when asked twice in one period.
+- **What this does not record, and what will.** `moveEquity` takes a `cause` for every move and keeps
+  only the running balance, so comprehensive income is recoverable exactly — Δequity decomposes into
+  revaluation plus the instructions' `EquityEffect`s — and nothing above the bottom line is. That is
+  deliberate here: an accounting classification chosen by whoever wrote the leg would be the "nature
+  flag" this section refuses. What is missing is not a classification but a **record**: the causes are
+  written and discarded. Worklist 12a adds the **equity ledger** — the moves kept as append-only
+  entries with the cause their writer already passes — so an income statement is a read of recorded
+  events (§48 A2) rather than something recovered by parsing `reason` strings (Law 19). The entries
+  are the itemisation, never the balance: `equityWalk` stays authoritative and the accounts family
+  compares the two as independent records.
 
 ### 4.9b Kernel and modules (Law 15, Granularity)
 

@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 55.1%** (264 of 479 steps across 33 items).
-**Requirement coverage: 39.7%** (525 MET, 71 PARTIAL, 0 OUT OF SCOPE of 1323 REASON/VERIFY/FORBID clauses).
+**Plan completion: 52.4%** (264 of 504 steps across 34 items).
+**Requirement coverage: 38.6%** (525 MET, 74 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -39,6 +39,7 @@ The plan has two parts:
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
 | pre12 — The guards that keep the documents true | 16 | 16 | closed |
 | [12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer](plan/12-currency-benchmarks-ratings.md) | 25 | 0 | open |
+| [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 25 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
 | [13c — Commodities and freight](plan/13c-commodities-freight.md) | 14 | 0 | open |
@@ -62,7 +63,7 @@ Phoenix is a simulated economy in which nothing is invented: every unit of money
 has a named counterparty at every instant; every asset that has a price has a **cleared** one, from
 real supply meeting real demand; nothing is capped, floored, plugged or assigned; and the instrument
 that checks all this (the audit) is itself true. The specification, `docs/spec/PROJECT_PHOENIX.md`,
-describes the world in 47 systems (money, the register, clearing, the audit, the seed, currency;
+describes the world in 48 systems (money, the register, clearing, the audit, the seed, currency;
 sixteen markets; seven kinds of financial institution; the treasury, the central bank and the
 polity; firms; the real economy; and cross-cutting systems), two instrument contracts (what any
 bond and any derivative must have), and seventeen mechanisms that run across systems (a loss is an

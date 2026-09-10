@@ -25,7 +25,7 @@ The document is organised in the order a reader needs it:
   not negotiable per-system. Read all of them before anything else.
 - **Part II — The method.** How a requirement is written here, why the three node types exist, and
   why a specification is the only instrument that can find something missing.
-- **Parts III–X — The forty-seven systems.** One section per system, each a tree of numbered
+- **Parts III–X — The forty-eight systems.** One section per system, each a tree of numbered
   requirements. The numbering is stable and is the citation grammar for the whole document: `Goods
   B1.b` is one requirement, referenceable from anywhere.
 - **Part XI — Mechanisms in depth.** Seventeen cross-cutting mechanisms that no single system owns,
@@ -350,7 +350,7 @@ could be wholly absent.** That is why banks are three systems and derivatives ar
 lending, its funding and its capital can each be absent independently, and so can each derivative
 class.
 
-There are forty-seven, plus two **instrument contracts** — the characteristics any bond must have, and
+There are forty-eight, plus two **instrument contracts** — the characteristics any bond must have, and
 any derivative must have — which a system cites rather than restating. A sovereign bond and a
 corporate bond are different **types**, not one type with fields unused, and the difference between
 "this type answers that question differently" and "nobody ever answered that question" is the whole
@@ -3124,6 +3124,9 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 - **E7** REASON — the management **publishes an expectation** — what it expects to deliver — and is then
   judged against it. The expectation is its own adaptive read of its own earnings (§46 C2), and the surprise
   against it is a real event. It is never a choice among written phrases.
+  - **E7.a** for a firm whose shares trade, §48 is where this happens: the calendar it publishes on, the
+    report that settles it, and the banks that publish estimates of the same lines. A firm that is not
+    public still forms the expectation and still takes the surprise; what it does not do is publish.
 
 ### F. What must not happen
 - **F1** FORBID — **no revenue without a buyer** and no cost without a payee.
@@ -4043,6 +4046,124 @@ sector's third institution — the one that owns the other two's POLICY primitiv
 
 ---
 
+## 48. REPORTING AND ESTIMATES
+
+*Numbered 48 and placed here: it is cross-cutting and it is §44's sibling — an opinion published by a
+named party with its own incentives, which rules then refer to. §32 E7 owns management's expectation and
+§46 owns how any outlook is formed; this system owns the calendar, the report that settles them, and what
+the settling causes.*
+
+### A. What a report is
+- **A1** REASON — a **public company** — a firm whose shares are held by parties other than its founders
+  and trade in a book (§10) — publishes, on a stated calendar, **what its own books produced**: the fiscal
+  period's income, the balance sheet at its close, and the cash that moved.
+  - **A1.a** being public is a **state read from the register**, never a label: a firm becomes public when
+    its shares are listed and held by outsiders, and stops when they cease. A firm whose shares do not
+    trade publishes nothing, and there is no kind of firm that reports.
+- **A2** REASON — the report is a **read of the ledger and the register**, not a statement management
+  composes. Every figure in it is reachable from instructions that settled and marks that were taken.
+  - **A2.a** FORBID — **no reported number the books do not produce.** A figure that cannot be traced to
+    settled instructions is a second set of accounts (law 4), and the accounts family (§4 B5) is what
+    proves the two agree.
+- **A3** REASON — it covers a **fiscal period**: a quarter placed by date on the one calendar (§1 G3.a),
+  which is a whole number of periods only by accident.
+- **A4** REASON — it is published **after a lag** — the books close, then the report comes out — and in
+  between the firm knows its result and nobody else does.
+  - **A4.a** that gap is **real information asymmetry**, and it is the only kind this world has: everything
+    else is public when it happens. What management may do while holding it is §35's business.
+- **A5** REASON — a figure can be **restated**: republished with a correction, dated, with the original
+  standing (§2 E2.a: a correction is a new entry, never an erasure). A restatement is information about the
+  management.
+
+### B. Guidance
+- **B1** REASON — management publishes an **expectation of the coming fiscal period** — §32 E7's
+  expectation, on this system's calendar and in the report's own lines.
+- **B2** REASON — it carries a **horizon and a unit** (§46 A5), and it can be **revised between reports**
+  or **withdrawn**; both are events with a date.
+- **B3** REASON — it is management's **own outlook** (§46 A2), so it can be wrong, and a management that is
+  persistently wrong is one whose guidance others weigh less.
+- **B4** FORBID — **no guidance that is a second number.** The published figure is the one the firm's own
+  decisions read (§46 C2), never one composed for the audience. A management that guides to a number it is
+  not itself acting on has had its decisions made somewhere else.
+
+### C. The estimate
+- **C1** REASON — a **bank publishes its own estimate** of a covered company's coming report, in the lines
+  that report will carry, formed as any outlook is (§46 A2, B1) from what it has observed of that company.
+- **C2** REASON — it is **named and dated**: the estimate belongs to a bank and is visible to everyone.
+- **C3** REASON — estimates **disagree**, and the disagreement is load-bearing (§46 A3): banks with
+  different histories of a name estimate differently, and that is one of the reasons a share book has two
+  sides.
+- **C4** REASON — an estimate is **revised on information** — the company's report, its guidance, what the
+  bank observes of the company's own markets — and a revision is an event with a date and a size.
+- **C5** FORBID — **no estimate that is the model's own forecast** (§46 A4). A bank handed the answer
+  deletes both C3's disagreement and F's surprise.
+- **C6** FORBID — **no estimate derived from the share price.** §44 A2.a's defect in this system: an
+  estimate that reads the price is a restatement of the market, cannot disagree with it, and makes F2 a
+  tautology.
+
+### D. Coverage — why a bank does it
+- **D1** REASON — a bank covers a name because **its own book needs the view**: it makes a market in the
+  share (§26), lends to the issuer (§23), or holds it — so it already forms the outlook (§46 C4).
+  Publishing is a decision to disclose one it has, taken for what disclosure brings it.
+- **D2** REASON — coverage **costs**: the analysts are employed (§39) and the cost has a named payee. A
+  bank initiates on a name it wants flow in and drops one it cannot justify, and both are decisions.
+- **D3** REASON — **coverage is uneven**: a large, widely held name carries many estimates and a small one
+  none or one. How many cover a name is an OUTCOME of D1 and D2.
+  - **D3.a** FORBID — **no universal coverage.** Every company covered by every bank makes the count of
+    estimates a constant rather than a read, and deletes D3.
+
+### E. Consensus
+- **E1** REASON — the **consensus is a read**: the aggregate of the estimates that exist, computed when
+  somebody looks, published with the lag and revision any statistic has (§45 A5).
+- **E2** FORBID — **no consensus a decision consults.** §46 A2.b: there is no variable in this world called
+  the market's expectation. A party may observe the consensus as one more published statistic (§46 A2.a)
+  and weigh it in forming its own outlook; nothing may read it *as* its outlook.
+- **E3** FORBID — **no stored consensus.** It is computed from the estimates at the moment of reading, like
+  an index from its constituents (§22 A2), or it is a second number that can disagree with the estimates it
+  is made of.
+
+### F. The surprise, and what it causes
+- **F1** REASON — the report **settles** every expectation standing against it — management's guidance and
+  each bank's estimate. Observed minus expected, per holder of a view, is §46 B2's surprise with a name on
+  it, and it is recorded.
+- **F2** REASON — what a surprise causes is **participants revising their own outlooks**, and therefore
+  their reservations in the share book (§46 C3): the price moves because the schedules moved.
+  - **F2.a** FORBID — **no price reaction rule.** A stated move per unit of surprise is a written price
+    path (law 3) and it deletes F2 — the move must be what the changed schedules cleared at, or nothing.
+- **F3** REASON — a bank's **record is a read**: how wide its own past errors on a name have been, visible
+  to everyone. It is what makes one bank's estimate weigh differently from another's in a holder's own
+  outlook — §46 B3's confidence, applied to somebody else's forecast.
+- **F4** REASON — guidance missed is **information about the management**, and it reaches the cost of
+  capital through the ordinary channels: holders' outlooks, the lender's view of the name (§46 C4), the
+  assessor's state-based judgement (§44 A2). It is never a charge applied to the firm.
+
+### G. What must not happen
+- **G1** FORBID — **no report with no consequence** (§44 E1 in this system). If nothing reads the report,
+  the calendar is decoration and the surprise is a number nobody acts on.
+- **G2** FORBID — **no earnings that were not earned.** Reported income is the equity account's movement
+  over the fiscal period, decomposed into what the instructions and the marks did — never a figure
+  management chose, and never smoothed.
+- **G3** FORBID — **no analyst always right, and none always wrong by a fixed amount.** Either is the
+  answer with an offset, which is the answer.
+- **G4** FORBID — **no estimate of a company that does not report**, and no report from a company whose
+  shares nobody outside holds.
+- **G5** FORBID — **no per-share figure that is a primitive.** Earnings per share is income divided by
+  shares outstanding, both of them reads; a stated one is an outcome written down (law 2).
+- **G6** FORBID — **no reporting calendar finer than a period** (§1 G3.b), and none placed by a count of
+  periods rather than by a date.
+
+### H. Measurement
+- **H1** VERIFY — the **dispersion of estimates** on a name widens after its results have been volatile and
+  narrows when they have not — a read of the estimates, never a target.
+- **H2** VERIFY — the **share price moves more** on a large surprise than a small one, and the relationship
+  is emergent from F2 and never stated.
+- **H3** VERIFY — a company that has missed guidance repeatedly is **covered differently**: the count of
+  estimates and their dispersion respond to its record.
+- **H4** VERIFY — the consensus **lags** the information that produced it (§46 E2), and never moves in the
+  period a surprise lands.
+
+---
+
 ## 45. THE OBSERVER SURFACE AND THE NEWS
 
 ### A. What an observer can see
@@ -4050,7 +4171,8 @@ sector's third institution — the one that owns the other two's POLICY primitiv
   - **A1.a** and a **stale mark must be visibly stale**: a screen that shows a price without saying when it
     traded is misinformation.
 - **A2** REASON — **its own positions and balances**, exactly as the register and the accounts hold them.
-- **A3** REASON — **public state**: what an issuer has published, what a central bank has decided, what an
+- **A3** REASON — **public state**: what an issuer has published — including a public company's report,
+  its guidance and every bank's estimate of it (§48) — what a central bank has decided, what an
   assessor has said.
 - **A4** FORBID — **no observer sees another party's private state.** Positions, intentions and limits are
   private, and a surface that exposes them makes the market a solved game. *Whether the surface is an
@@ -4170,6 +4292,9 @@ so it sits with the other cross-cutting systems, and XI-16 carries the mechanism
 - **C2** REASON — a **firm's** output, hiring and investment read its own expectation of demand for what
   it sells — §32 E7's published expectation is this outlook, made public, and the surprise against it is
   the event E7 names.
+  - **C2.a** an outlook may be **about another party**: a bank's estimate of a company's coming report
+    (§48 C1) is formed the same way, from what that bank observed of that company, and is one more
+    published thing others may weigh (A2.a) rather than an outlook anybody inherits.
 - **C3** REASON — a **participant's view** in any book is its expectation of the price, and the drift of a
   view between periods is the surprise it took. This is the mechanism that XI-13 asks for: a reservation
   formed from something other than the quantity the clearing reveals — and it is the party's own past.
@@ -5071,6 +5196,12 @@ reason in each case.
 10. **The cost of capital** (XI-4), which is what makes every cleared price above actually do something.
 11. **Bank capital that can be raised**, which needs a price for the raise, which is (9) and (10).
 12. **The currency layer** (XI-12), the **benchmarks** (XI-7), and the **second opinion** (XI-13).
+12a. **Reporting and estimates** (§48). It goes here and not earlier because the surprise it exists to
+    produce is only observable against a share price that is not walking — which is (12)'s anchor — and
+    because a bank publishes an estimate as §44's sibling, on the surface (12) builds for a named
+    assessor's opinion. It goes here and not later because a tender offer (13) is priced off a target's
+    reported earnings and the acquirer's own view of them, and because the income statement it reads is a
+    thing every system after it wants.
 13. **Employment's other half** (XI-10), housing's other half, **securitisation** (XI-11), and the
     corporate-control market.
 14. **The polity** (XI-17). A vote reads a cell's employment state (13), its outlook (4), the prices it
@@ -5251,10 +5382,22 @@ that holds is as valuable as a mechanism that works, and it is the easiest thing
     mandate and by nothing else. No exogenous election result.
 58. The parliament never sets a price, a quantity or an outcome, and never the central bank's rate.
 
+**Reporting and estimates**
+59. No reported number the books do not produce; no earnings that were not earned; no smoothing. Reported
+    income is the equity account's movement over the fiscal period, decomposed into what the instructions
+    and the marks did.
+60. No consensus a decision consults; no stored consensus. An aggregate of estimates is a read, published
+    with a lag, and it causes nothing.
+61. No estimate derived from the share price; no estimate that is the model's own forecast; no analyst
+    always right or always wrong by a fixed amount.
+62. No price reaction rule — a stated move per unit of surprise is a written price path.
+63. No universal coverage; no report with no consequence; no per-share figure that is a primitive.
+64. No reporting calendar finer than a period, and none placed by a count of periods rather than a date.
+
 **The method itself**
-59. The audit never repairs.
-60. No forecast without the measurement that would kill it.
-61. No clause deleted from this document to make a comparison look better.
+65. The audit never repairs.
+66. No forecast without the measurement that would kill it.
+67. No clause deleted from this document to make a comparison look better.
 
 ---
 

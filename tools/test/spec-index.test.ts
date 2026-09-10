@@ -5,8 +5,8 @@ import { parseCitations, resolves, run } from '../check-citations.js';
 describe('spec index', () => {
   const idx = buildSpecIndex();
 
-  it('finds the forty-seven systems and the two contracts', () => {
-    expect(idx.systems).toHaveLength(49);
+  it('finds the forty-eight systems and the two contracts', () => {
+    expect(idx.systems).toHaveLength(50);
     expect(idx.systems).toContain('Money');
     expect(idx.systems).toContain('Polity');
     expect(idx.systems).toContain('Bond');
