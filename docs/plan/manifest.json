@@ -90,34 +90,10 @@
     "steps": 32
   },
   {
-    "id": "11.1",
-    "title": "A venue asks parties for schedules the way a market does",
-    "file": "11.1-venue-participants.md",
-    "steps": 3
-  },
-  {
-    "id": "11.2",
-    "title": "One bank: one balance sheet, one treasury, one face to every market",
-    "file": "11.2-one-bank.md",
-    "steps": 15
-  },
-  {
-    "id": "11.3",
-    "title": "The opening balance sheets",
-    "file": "11.3-the-opening-balance-sheets.md",
-    "steps": 5
-  },
-  {
-    "id": "11.4",
-    "title": "A depositor decides from its own balance, and the count of banks is a resolution",
-    "file": "11.4-depositors-and-the-count-of-banks.md",
-    "steps": 6
-  },
-  {
     "id": "12",
-    "title": "Currencies, benchmarks, ratings",
+    "title": "An anchored market: the second opinion, the balance sheets under it, and the currency layer",
     "file": "12-currency-benchmarks-ratings.md",
-    "steps": 26
+    "steps": 25
   },
   {
     "id": "13a",

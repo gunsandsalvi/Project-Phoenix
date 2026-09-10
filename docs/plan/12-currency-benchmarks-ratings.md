@@ -1,6 +1,29 @@
-# Item 12 — The currency layer, benchmarks, ratings, the second opinion
+# Item 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer
 
-**Objective.** More than one currency, each a named central bank's liability; every pair clearing on
+**Read this part first — it is why the item begins where it does.** Items 11.3 and 11.4 are folded
+in here, ahead of the currency layer, because what they are about and what this item is about turn
+out to be one thing. XI-13 asks for a SECOND OPINION so that no price is one party's own view read
+back to itself; §22 asks for an index that is not its own input; §44 asks for an assessment made
+from state rather than from a price. What 11.2 exposed is that this world's sovereign market has
+neither: **its only participants are dealers, both sides of a dealer's quote come from its own view,
+and its own view follows the last print.** Dealers sitting on the same side of their own targets
+cross each other in one direction every period and walk the line away — a bill worth one to nothing,
+or to more than everything it will ever pay, and then the curve is asked for a yield that does not
+exist. That is XI-13's fixed point arriving in the one market the whole model funds itself through,
+and no second currency can be laid on top of it.
+
+So this item builds the anchor first, then the balance sheets that stand on it, then the currency
+layer that needs both. **No bound is to be written anywhere in it.** An attempt at 11.3 stopped the
+walk-away with a floor under the dealer's offer and a cap over its bid, argued from a lender's
+reservation, and it was thrown away: parking at a central bank is a real transaction at a rate with
+a counterparty, and keeping something is a valuation with nobody on the other side (Law 6; the
+record's `11.3` entry has the whole of it).
+
+**Objective.** A market with two reasons in it. Then: an opening balance sheet that adds up on every
+side, so a bank is not three quarters its own capital and no central-bank money exists that its
+issuer bought nothing with. Then: a depositor that decides from its own balance, with the deposit
+class on the party kind's profile, and the count of banks measured as a resolution. Then: more than
+one currency, each a named central bank's liability; every pair clearing on
 its own flow with triangular consistency an outcome bounded arbitrageurs enforce; forwards that
 carry the interest differential (13b builds the derivative; here the spot market and revaluation);
 one index system read from constituents; a transacted overnight benchmark; ratings as named
@@ -8,7 +31,8 @@ opinions from state that rules refer to; the second opinion guaranteed in every 
 single-currency guard in settlement is deleted here, in the same change as the FX revaluation that
 replaces it.
 
-**Read first.** §6 Currency (all); §12 Spot FX (all); §22 Indices (all); §44 Ratings (all); XI-7,
+**Read first.** For the folded part: XI-13, XI-15; §24 A1.a, A1.d, B1.a, C2, E1; §26 B4, C1, C2.a;
+§8 D, E; Seed A3, C1, C3, E; Money A1; the record entries for `11.2` and `11.3`. Then §6 Currency (all); §12 Spot FX (all); §22 Indices (all); §44 Ratings (all); XI-7,
 XI-12, XI-13; §43 Cross-Border A (13i builds the rest); §31 F; Money A2.b, C3; Bond N3. Code:
 `ledger/settlement.ts` (`checkHomeCurrency`), `world/revalue.ts`, `audit/families/accounts.ts`
 (the `inst.ccy !== home` skip), item 9's dealers.
@@ -169,17 +193,30 @@ packages/engine/test/{fx-revaluation,spot-fx,triangular,convention,indices,bench
 
 ## Steps
 
-- [ ] 12.1 FX revaluation into equity and the central bank's revaluation account; one rate in force per period; valuation converts at it; tests: an unrevalued foreign position is unreachable (D2.b)
-- [ ] 12.1 Delete `checkHomeCurrency` and the accounts family's foreign skip in the same commit; the accounts family holds with foreign positions; test
-- [ ] 12.1 Audit: Currency D4 contribution; test
-- [ ] 12.2 Kernel: `fx` markets whose trade is two money legs at a rate; market declaration order within the `markets` phase; tests
-- [ ] 12.2 Seed: a second region and currency with its central bank, a bank, firms, cells, a sovereign line; cross holdings; the world still passes the seed audit
-- [ ] `spot-fx`: participants with reasons (owes a currency, holds one it does not want, central bank bounded by reserves); dealers' schedules per pair from inventory of each currency; tests: no conversion without a counterparty (E1), no formula rate (E2: the lint's no-magic-numbers plus a test that the print is a posted price)
-- [ ] `spot-fx`: cross-consistency as an outcome: desks arbitrage across triples with a limit; a persistent gap is measurable; tests (E3, C3.b: no vehicle)
-- [ ] `spot-fx`: the seller's-money convention owned once; a buyer short of it posts an FX order before the goods market (F1, F1.a, F1.b); tests
-- [ ] Central bank: reserves in foreign money, intervention bounded by them, revaluation account, claims on other central banks sum to zero; tests (Central Bank F1–F4)
-- [ ] 12.3 Kernel: `view.index(id)` read; `withoutPrints` views; `upcomingPayments`; tests
-- [ ] `indices`: equity index per region chained across rebalances, free-float weights, corporate actions; test: a split does not move the level (B3); a rebalance does not jump (B2.a)
+### The anchor (was 11.3's first cause, and it comes before everything)
+
+- [ ] A party with a reason to hold a dated claim on its own terms and to trade it, so that a book whose dealers are all on one side has somebody on the other. The households already hold most of the sovereign's debt and never trade it; the money fund buys bills and nothing else; the central bank buys to a share and stops. Which of those grows a reason, or whether a party nobody has built yet is needed, is the first question — and the test is that a sovereign line's print over a year stays inside what its own cash flows are worth at yields anybody in the world would name, with NO bound anywhere in the quote
+- [ ] XI-13 in the one market that funds the model: no schedule in a sovereign line is a function of that line's own last print alone; test: a world of dealers only is the failing case, and it says so
+
+### The balance sheets (was 11.3)
+
+- [ ] ONE declared number for what stands behind a bank at the opening — a share of what it holds, stated once with a reason — and every endowment derived from it: the reserves, the liquidity portfolio, the equity float. Not four numbers tuned until the answer looks right, which is what the thrown-away attempt did
+- [ ] The central bank's side: no reserve exists that it did not issue against something. `endowMoney` to a party whose bank is a central bank either takes the asset with it or goes; the treasury's buffer is what is left of that balance sheet once the banks have their reserves, derived and never stated; test: the world refuses to open otherwise
+- [ ] What a bank does with what it earns, so that a capital share is not something that only ratchets up: it retains everything today because there are no owners to pay (13g). Either the opening share is stated knowing it drifts and the drift is measured, or the distribution arrives here; say which and why
+- [ ] One price per line: the auction and the secondary market are the same market again, and the curve describes it; test: the ten-year point sits between what the two sides of the book will do, and an auction places what the issuer brings
+
+### The depositors and the count of banks (was 11.4)
+
+- [ ] The deposit class moves from the money market's table onto the party kind's PROFILE, and `moveDeposits` leaves the market module for the modules that own the depositors — households, firms, funds — each deciding from its own balance with its own view (Observer A4)
+- [ ] A move costs an AMOUNT, so who moves is decided by the balance they hold rather than by a rate every member of a class faces identically; test: a class does not cross in one instant whatever the grain
+- [ ] The count of named institutions measured at 2, 3 and 4 the way the cell grain is (XI-15), and the liquidity target's size settled against both invariances
+
+### A bank's own allocation (was 11.2's deferred step)
+
+- [ ] Per-line return on capital as a private read (`bank.lines`); the treasury gives headroom to the higher-earning line first, no floor. Deferred out of 11.2 because every realised return in that world was an artefact of the opening balance sheets; it is reachable once they add up
+
+### The currency layer, benchmarks, ratings
+
 - [ ] `indices`: the rate benchmark as the overnight money-market print; a policy rate is not a benchmark; test
 - [ ] `indices`: producer and consumer price indices from the ledger's trades with different baskets and weights; test: they diverge when a distribution wedge exists (G1.c: partial until 13c)
 - [ ] `indices`: no stored level (E2), no history before the first print (D5.a); test: a beta over a window with fewer prints than the window is Missing
@@ -198,10 +235,18 @@ packages/engine/test/{fx-revaluation,spot-fx,triangular,convention,indices,bench
 
 ## Exit criteria
 
-Two currencies; every conversion a trade; revaluation exact; the single-currency guard gone; one
-index system; a transacted benchmark; ratings from state; every credit market has a view.
+A sovereign line's price over a year stays where its own cash flows put it, with no bound anywhere
+in any quote; a bank's opening balance sheet adds up on every side and no central-bank money exists
+its issuer bought nothing with; a depositor decides from its own balance and a class does not cross
+in one instant; the count of banks is a resolution. Then: two currencies; every conversion a trade;
+revaluation exact; the single-currency guard gone; one index system; a transacted benchmark; ratings
+from state; every credit market has a view.
 
 ## Guard
 
-Currency A4, B3, C3.b, C4.a, D2.b, E3; Spot FX E1, E2, E3, F1.a, F1.b; Indices A3, D3.b, E1, E2;
-Ratings A2.a, E1, E2, E3; XI-13.
+Law 6 above all, in the folded part: the walk-away of a dealers-only market is a MISSING MECHANISM
+and never a floor, a cap or a band, and the tell that one is being written is the length of the
+comment justifying it. Law 2: one declared number for an opening balance sheet, with everything else
+derived — never four chosen by reading the answer. Law 11: no measuring the world to decide what to
+build. Seed A3, C1, E; Money A1; Observer A4; XI-15. Then: Currency A4, B3, C3.b, C4.a, D2.b, E3;
+Spot FX E1, E2, E3, F1.a, F1.b; Indices A3, D3.b, E1, E2; Ratings A2.a, E1, E2, E3; XI-13.

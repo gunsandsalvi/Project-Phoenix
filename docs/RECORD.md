@@ -1723,3 +1723,34 @@ wrote to justify it is the tell.
    is left of that once the banks have their reserves. Derived, never stated.
 
 **Nothing of the attempt is in the tree.** 297 of 323 checks pass, as before it.
+
+
+## The 11s are folded into 12
+
+**One item, not five.** 11.1 is closed and 11.2 is built; what was left of the eleven-family — 11.2's
+deferred allocation, the whole of 11.3, the whole of 11.4 — is absorbed into item 12 and the sub-item
+rows are gone from the worklist. Their plan files are deleted; item 12's carries their steps.
+
+**They belong there and it is not tidiness.** XI-13 asks for a SECOND OPINION so that no price is one
+party's own view read back to itself; §22 asks for an index that is not its own input; §44 asks for
+an assessment made from state rather than from a price. What 11.2 exposed is that this world's
+sovereign market has none of that: **its only participants are dealers, both sides of a dealer's
+quote come from its own view, and its own view follows the last print.** Dealers on the same side of
+their own targets cross each other in one direction every period and walk the line away. That is
+XI-13's fixed point arriving in the one market the whole model funds itself through, and every other
+piece of the eleven-family sits on top of it — an opening balance sheet cannot be measured in a
+world whose prices walk, a depositor's decision cannot be measured against a bank whose funding cost
+is an artefact, and a second currency cannot be laid over either.
+
+So item 12 runs in that order: the anchor, then the balance sheets, then the depositors and the
+count of banks, then a bank's own allocation across its lines, then the currency layer, the
+benchmarks and the ratings. Its guard leads with Law 6, because the thrown-away attempt at 11.3
+answered the walk-away with a floor and a cap, and the length of the comment justifying them was the
+tell.
+
+**What stands, and it is not small.** There is no desk; a bank is one party with one balance sheet
+and one face to every market, in markets and in venues; the solver's self-cross patch is deleted and
+the contract is refused at the site; capital weighs by intent and the trading book is capitalised
+with a family measuring it; the money market decides nothing for a bank; the engine has no
+placeholder; and there are three banks instead of two. 297 of 323 checks pass. The twenty-six that
+do not are the anchor and the balance sheets, which is now the first thing item 12 does.
