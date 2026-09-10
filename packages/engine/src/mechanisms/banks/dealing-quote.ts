@@ -122,16 +122,38 @@ const least = (a: number, b: number): number => (a < b ? a : b);
  * would need to buy and keep, and a market maker quotes around where the market is.
  */
 function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number> {
+  // XI-13, AND IT IS THE WHOLE OF WHY THIS ORDER IS WHAT IT IS. A DATED CLAIM is worth what its own
+  // payments are worth at what this bank requires of the name (Corporate Credit E5), and that is
+  // asked FIRST — because it is the one input to this quote that does not read the print.
+  //
+  // It used to be the last resort, reached only when the desk had no outlook and no mark, and what
+  // stood in front of it was `outlook('price.<instrument>')`: the desk's own adaptive expectation
+  // OF THE PRICE, formed from the prints. That is XI-13's fixed point written out — the print moves
+  // the outlook, the outlook moves the view, the view moves the quote, the quote moves the print —
+  // and in the one market this model funds itself through it walked a bill that pays 1.00 in seven
+  // days to a print of 3.3337, at which no representable yield discounts its own payments to what
+  // somebody paid, so the curve threw and the world stopped. The comment at the top of this file
+  // records the same symptom from an earlier build and a different cause; this is the cause that
+  // survived it.
+  //
+  // A reservation is still not a price and this is still not a mid: it is one of the two inputs the
+  // quote is built from, and the position skew below is what moves the two sides with flow. What is
+  // gone is a desk whose only anchor was where the market last was.
+  const issuer = view.instruments.get(instrument).issuer;
+  if (issuer.some) {
+    const required = requiredYieldOf(view, issuer.value);
+    if (required.some) {
+      const worth = priceAtYield(view, instrument, required.value);
+      if (worth.some && worth.value > 0) return worth;
+    }
+  }
+  // A CLAIM THAT PROMISES NOTHING has no such anchor — there are no payments to discount (Equity
+  // A4) — so for a share the desk's own outlook, and then what it carries one at, is all there is.
+  // `priceAtYield` answers none for it, which is what brings the flow here.
   const own = view.outlook(`price.${instrument}`);
   if (own.some && own.value.expected > 0) return some(own.value.expected);
   const carried = view.mark(instrument);
-  if (carried.some && carried.value > 0) return some(carried.value);
-  const issuer = view.instruments.get(instrument).issuer;
-  if (!issuer.some) return none();
-  const required = requiredYieldOf(view, issuer.value);
-  if (!required.some) return none();
-  const worth = priceAtYield(view, instrument, required.value);
-  return worth.some && worth.value > 0 ? worth : none();
+  return carried.some && carried.value > 0 ? carried : none();
 }
 
 /**

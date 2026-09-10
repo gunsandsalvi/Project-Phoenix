@@ -33,7 +33,7 @@ creates, so the foundation cannot simply run last. Either the funding derivation
 that sees the whole opening state (the kernel's seal already computes assets and liabilities per
 party in `stateEquityAsRead`), or each module funds what it hands out. Undecided.
 
-### 12-2 — A bill prints above par: somebody bids a guaranteed loss
+### 12-2 — A bill prints above par: somebody bids a guaranteed loss — **RESOLVED in 12's anchor step**
 
 **Where.** The sovereign secondary market, seen after 12's opening-balance-sheet change.
 
@@ -47,10 +47,58 @@ so any price above par is a certain loss to whoever paid it.
 positive yield. The bidder is unidentified — the bank dealing quote and the money fund are the
 candidates.
 
-**Why it matters here.** This is XI-13's defect in the one market the model funds itself through,
-and item 12's own exit criterion is that a line's price stays where its own cash flows put it. In
-scope for 12's anchor step rather than for this file — listed so it is not lost if the anchor step
-closes without reaching it.
+**It was worse than 1.1651 and it stopped the world.** On seed `review` the same bill printed
+**3.3337** in period 22 — 3.33 paid for 1.00 due in seven days. No representable yield discounts
+those flows to that price, so `yieldOf` drove `invertDecreasing`'s bracket to a discount base of
+zero and the curve threw `NonFinite`. Two of seven seeds crashed mid-year.
+
+**Cause, found and fixed.** `viewOf` in `banks/dealing-quote.ts` asked
+`outlook('price.<instrument>')` FIRST — the desk's own adaptive expectation _of the price_, formed
+from the prints — and fell back to the cash-flow reservation only when it had neither outlook nor
+mark. That is XI-13's fixed point written out: print moves outlook moves view moves quote moves
+print. For a dated claim the reservation valuation is now asked first, and the outlook is what a
+share falls back to, because a share has no payments to discount. All seven seeds run; the audit is
+green over a year; no line prints away.
+
+**Placed at 12's close**, in the record, as the anchor step's outcome.
+
+### 12-3 — A bank expects to lose a third to a half of what it lends the sovereign
+
+**Where.** `bank.reservation` journal events; the expected-loss term behind
+`requiredYieldOf` (`packages/engine/src/mechanisms/banks/`).
+
+**Measured**, period 12, after 12's balance-sheet change:
+
+```
+bank.a  expectedLoss on treasury.north = 0.3333   required 0.0490
+bank.b  expectedLoss on treasury.north = 0.5000   required 0.0352
+```
+
+A third to a half of the principal, expected to be lost, on **the issuer of the money the loan is
+denominated in**. Against the same banks' expected loss on each other — 0.0833 and 0.125 — and on
+the funds, zero.
+
+**Why it matters.** This term is most of what holds the banks' required yield near 5% while sovereign
+paper yields 2%, so it is most of why the sovereign book has demand in 25 of 312 sessions rather than
+in most of them. The anchor step removed the runaway; this is what is left holding the two sides
+apart.
+
+**Suspected.** The PD read counts something that is not a default of the sovereign — the treasury
+misses payments in this world (`treasury.test.ts` reports twelve over a year) and a model that reads
+a missed instruction as a default event would produce exactly this. Not confirmed.
+
+### 12-4 — An audit violation in the bank-failure scenario
+
+**Where.** `packages/engine/test/bank-resolution.test.ts`, at module scope — the file's own setup
+builds a world in which a bank fails and asserts the audit is clean before any test runs.
+
+**Measured.** After 12's balance-sheet and anchor changes the whole file fails to collect:
+`AssertionError: expected [ Array(1) ] to deeply equal []` — one unexpected audit violation. Eleven
+tests do not run at all, which is why the suite total moved from 339 to 328.
+
+**Not reached by the ordinary run.** `foundationWorld` is green in every built family over 52
+periods on seven seeds; this is a scenario the foundation does not enter. The violation's family,
+owner and size are not yet read — the assertion reports the array, not its contents.
 
 ---
 
