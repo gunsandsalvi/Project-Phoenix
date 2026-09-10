@@ -23,6 +23,7 @@ import {
 } from '../../core/ids.js';
 import { addTo, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
+import { TIME_GRID } from '../../registry/grid.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
@@ -281,7 +282,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
     curveFamilies: [],
     // Labour A1, Law 8: time has a smallest piece too. A thousandth of an hour is about four
     // seconds, which is finer than any contract in this world states and coarse enough to be real.
-    units: [{ id: HOURS, name: 'hours', tickExponent: 10 }],
+    units: [{ id: HOURS, name: 'hours', tickExponent: TIME_GRID }],
     params: paramsOf(),
     phases: [
       {

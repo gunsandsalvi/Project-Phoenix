@@ -33,7 +33,7 @@ import { currencyUnit, type InstrumentId, type PartyId } from '../../core/ids.js
 import { combineDust, div, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import { displayName } from '../../registry/naming.js';

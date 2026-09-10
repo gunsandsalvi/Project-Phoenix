@@ -97,7 +97,8 @@ export class Registry {
 
   private readonly ticks = new Map<UnitId, number>();
 
-  constructor(data: RegistryData, tickShift = 0) {
+  /** `tickShift`: Law 2's resolution knob — how many halvings finer every unit's grid is. */
+  constructor(data: RegistryData, tickShift: number) {
     this.tickShift = tickShift;
     this.currencies = unique(data.currencies, (c) => c.code, 'currency');
     this.regions = unique(data.regions, (r) => r.id, 'region');

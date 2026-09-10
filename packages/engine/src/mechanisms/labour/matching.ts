@@ -28,7 +28,7 @@ import type { PartyId, RegionId } from '../../core/ids.js';
 import { add, div, material, mul, sub } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf, type Party } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';

@@ -129,8 +129,9 @@ export function splitOnTick(
   remainders.sort((a, b) => (a.rest === b.rest ? a.at - b.at : b.rest - a.rest));
   for (let i = 0; given < whole; i += 1) {
     const next = remainders[i % remainders.length];
-    if (next === undefined) break;
-    parts[next.at] = (parts[next.at] ?? 0) + 1;
+    const has = next === undefined ? undefined : parts[next.at];
+    if (next === undefined || has === undefined) break;
+    parts[next.at] = has + 1;
     given += 1;
   }
   return parts.map((n) => (negative ? -n : n) * tick);

@@ -29,7 +29,7 @@ import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId } from '../../core/ids.js';
-import { add, div, material, mul, sub, sum, zeroIfNone } from '../../core/num.js';
+import { add, div, mul, sub, sum, zeroIfNone } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
@@ -97,7 +97,7 @@ export function insuredAt(
   limit: number,
 ): number {
   const cls = classOf(ctx.parties.get(holder).kind);
-  if (cls === undefined || !cls.insured) return 0;
+  if (cls?.insured !== true) return 0;
   const perMember = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
   // A1.a: the limit applies PER MEMBER, and the cell is homogeneous, so `weight x min(balance,
   // limit)` is exact. That is what makes E4's break in the loop real rather than notional: a large

@@ -36,7 +36,7 @@ import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { struckIn } from '../../prices/price-store.js';
-import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
+import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { isAssetLeg, isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
 import { weightOf } from '../../parties/party.js';

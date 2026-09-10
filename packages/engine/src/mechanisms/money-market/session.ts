@@ -33,7 +33,7 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import { add, div, mul, sub, sum } from '../../core/num.js';
 import { downTick, upTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';

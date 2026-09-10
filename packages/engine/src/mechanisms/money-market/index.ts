@@ -24,7 +24,7 @@ import {
 import { add, div, dustOf, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
-import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
+import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { pledgeable, windowAdvances, type Advance } from './collateral.js';
@@ -178,7 +178,7 @@ export function worthOfMoney(ctx: MechanismContext, bank: PartyId, c: Corridor):
     if (typeof rate !== 'number') continue;
     if (dearest === undefined || rate > dearest) dearest = rate;
   }
-  return dearest === undefined ? c.floor : dearest;
+  return dearest ?? c.floor;
 }
 
 /** The banks' positions after the flows, and what each one's own week has taught it (A1, C2.a). */
@@ -198,18 +198,6 @@ function positions(ctx: MechanismContext): Map<PartyId, Position> {
     out.set(bank, positionOf(ctx, bank, ccy, bufferOf(m.deposits, bank)));
   }
   return out;
-}
-
-/** C4.b: what the window would advance this bank, at the haircut the central bank has declared. */
-function windowPower(ctx: MechanismContext, borrower: PartyId, on: Civil): readonly Advance[] {
-  const ccy = ccyOf(ctx, borrower);
-  const cb = ctx.registry.centralBankOf(ccy);
-  return windowAdvances(
-    ctx.participant(cb),
-    ctx.participant(borrower),
-    on,
-    ctx.params.get(MM_PARAMS.overdraftPenalty),
-  );
 }
 
 /**
@@ -643,13 +631,12 @@ export const moneyMarket: SystemModule = {
     {
       name: 'moneyMarket.clear',
       spec: 'Money Market A3 Money Market B1 Money Market B4 Money Market C1 Money Market C2',
-      // A3.a: after every flow in the period — the wages, the invoices, the markets and the funds
-      // — because the need is not knowable until they have happened.
-      cycle: 3,
-      // A3.a: after every flow of the period — the markets, the wages that settle, the invoices,
-      // the fund subscriptions that move money between banks — and before anything that books what
-      // the period came to. That is the seam just ahead of the lending module's own booking phase,
-      // which is a phase this module already depends on being there (`requires`).
+      // A3.a: THE SESSION IS AFTER THE FLOWS — the markets, the wages that settle, the invoices,
+      // the fund subscriptions that move money between banks — because the need is not knowable
+      // until they have happened. It sits in the last cycle of the period, at the seam just ahead
+      // of the lending module's own booking phase, which is a phase this module already depends on
+      // being there (`requires`).
+      cycle: 'anchor',
       anchor: { before: 'lending.book' },
       run: (ctx: MechanismContext): void => {
         runSession(ctx);

@@ -29,6 +29,7 @@ import { none, some } from '../../core/option.js';
 import { isCreateLeg, isDestroyLeg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
 import type { ParamDecl } from '../../registry/params.js';
+import { GOODS_GRID } from '../../registry/grid.js';
 import type { UnitDecl } from '../../registry/registry.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -149,7 +150,7 @@ function unitsOf(rows: readonly GoodDecl[]): UnitDecl[] {
     // week's shopping up or down and the sector's demand with it. A millionth of a tonne is a
     // gram, nothing in this world is finer than that, and the invariance test says the world's
     // path does not turn on the choice (test/tick.test.ts).
-    byUnit.set(d.unit, { id: goodUnitId(d.unit), name: d.unit, tickExponent: 20 });
+    byUnit.set(d.unit, { id: goodUnitId(d.unit), name: d.unit, tickExponent: GOODS_GRID });
   }
   return [...byUnit.values()];
 }

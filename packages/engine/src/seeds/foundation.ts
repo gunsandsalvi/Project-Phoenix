@@ -72,6 +72,7 @@ import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
 import { displayName } from '../registry/naming.js';
+import { MONEY_GRID, SHARE_GRID } from '../registry/grid.js';
 import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, SHARES, TREASURY } from '../registry/profiles.js';
 import type { ParamDecl } from '../registry/params.js';
 import type { AssemblySpec } from '../world/assemble.js';
@@ -517,7 +518,7 @@ export function foundationSpec(seed: string): AssemblySpec {
         // Money A2, Law 8: PHX has a smallest piece, like any real money. A millionth of a unit
         // at this world's scale — a household member holds a tenth of a PHX — so the grid is real
         // arithmetic rather than a rounding, and fine enough that no decision turns on it.
-        { id: currencyUnit(PHX), name: 'PHX', tickExponent: 20 },
+        { id: currencyUnit(PHX), name: 'PHX', tickExponent: MONEY_GRID },
         // Equity A2, Fund Shares A2: a SHARE COUNT, which more than one system counts in and no one
         // of them owns. Its smallest piece is far below one, and deliberately: a share here costs a
         // few PHX and a household member holds a ten-thousandth of one, so whole shares would put
@@ -526,7 +527,7 @@ export function foundationSpec(seed: string): AssemblySpec {
         // subscription and a split all land on a grid whose last piece has a named holder
         // (Clearing C3) — which is the residual that dividing for ever was avoiding by never
         // arriving at one.
-        { id: SHARES, name: 'shares', tickExponent: 24 },
+        { id: SHARES, name: 'shares', tickExponent: SHARE_GRID },
       ],
       cohorts: [
         { id: cohortId('working'), name: 'working age', fromAge: 18 },

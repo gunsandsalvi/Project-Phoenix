@@ -13,7 +13,7 @@
  * B6: the tenor is in the terms, because overnight and term are the same instrument for a different
  * number of days, and A2.a's roll is what happens when the day arrives and the row is not renewed.
  */
-import { period as asPeriod, type Period } from '../../calendar/calendar.js';
+import type { Period } from '../../calendar/calendar.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -23,6 +23,7 @@ import {
   instrumentId,
   instrumentKindId,
   type InstrumentId,
+  type InstrumentKindId,
   type PartyId,
 } from '../../core/ids.js';
 import { add, mul } from '../../core/num.js';
@@ -32,9 +33,6 @@ import type { Namer } from '../../registry/naming.js';
 
 export const INTERBANK = instrumentKindId('interbank');
 export const REPO = instrumentKindId('repo');
-
-/** The period after this one; the calendar counts, this only names the next index (Money G3.a). */
-const next = (p: Period): Period => asPeriod(p + 1);
 
 /** What one unit of collateral stands behind, and how much of it (Register D5.b). */
 export interface Pledged {
@@ -54,7 +52,7 @@ export interface Pledged {
  * them (Law 4).
  */
 export interface RowTerms extends Terms {
-  readonly kind: typeof INTERBANK | typeof REPO;
+  readonly kind: InstrumentKindId;
   readonly lender: PartyId;
   readonly borrower: PartyId;
   /** B4: what cleared in the session that struck it, per annum. */
@@ -122,7 +120,11 @@ function flows(i: Instrument, after: Civil): readonly CashFlow[] {
   return [{ date: t.maturity, perUnit: add(1, interestTo(t, t.drawn, t.maturity), 'at maturity') }];
 }
 
-function shared(id: typeof INTERBANK | typeof REPO): Omit<InstrumentKindProfile, 'ranking' | 'displayName'> {
+function shared(
+  id: InstrumentKindId,
+  /** What this kind is secured on: a repo says every row has some, an unsecured row says none. */
+  secured: boolean,
+): Omit<InstrumentKindProfile, 'ranking' | 'displayName'> {
   return {
     id,
     // A1.a's reasoning, applied here: these rows have no market, so they have no market price. They
@@ -139,10 +141,13 @@ function shared(id: typeof INTERBANK | typeof REPO): Omit<InstrumentKindProfile,
       if (t.lender === t.borrower) {
         throw new InvalidRegistry('Money Market B1', 'a row has two parties, and they differ');
       }
-      if ((t.kind === REPO) !== t.collateral.length > 0) {
+      // Law 15: each kind says what IT requires, so nothing here asks which kind it is.
+      if (secured !== t.collateral.length > 0) {
         throw new InvalidRegistry(
           'Money Market B3',
-          'a repo is secured on something and an unsecured row is secured on nothing',
+          secured
+            ? 'a repo is secured on something'
+            : 'an unsecured row is secured on nothing',
         );
       }
     },
@@ -163,7 +168,7 @@ function shared(id: typeof INTERBANK | typeof REPO): Omit<InstrumentKindProfile,
 
 /** B2: an unsecured claim on the name. If the name fails, the lender queues with the others. */
 export const interbankKind: InstrumentKindProfile = {
-  ...shared(INTERBANK),
+  ...shared(INTERBANK, false),
   displayName: (i: Instrument, namer: Namer) => {
     if (!isRow(i.terms)) return String(i.id);
     const who = namer.issuer.some ? namer.issuer.value : String(i.terms.borrower);
@@ -178,7 +183,7 @@ export const interbankKind: InstrumentKindProfile = {
 
 /** B3: a claim secured on named paper. If the name fails, the lender has the paper (B3.c). */
 export const repoKind: InstrumentKindProfile = {
-  ...shared(REPO),
+  ...shared(REPO, true),
   displayName: (i: Instrument, namer: Namer) => {
     if (!isRow(i.terms)) return String(i.id);
     const who = namer.issuer.some ? namer.issuer.value : String(i.terms.borrower);

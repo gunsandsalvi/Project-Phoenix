@@ -700,7 +700,7 @@ function publishReservations(ctx: MechanismContext): void {
       // pricing a different claim on the same name (a week of money, say: Money Market B2) needs
       // these two and not a rate assembled for a year-long loan, so both are said plainly here and
       // the composing is done by whoever is asking the question.
-      const unsecured = quote(view, decl, obligor as PartyId, regulationOf(view), funds, seenDefaults(ctx));
+      const unsecured = quote(view, decl, obligor, regulationOf(view), funds, seenDefaults(ctx));
       expectedLoss[obligor] = unsecured.expectedLoss;
       capitalCost[obligor] = unsecured.capitalCharge;
       terms[obligor] = {
