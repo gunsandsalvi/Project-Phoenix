@@ -30,6 +30,7 @@ import type { SystemModule } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { borrowingPower, pledgeable, windowAdvances, type Advance } from './collateral.js';
 import { collectPremiums, DEPOSIT_INSURER, INSURER, INSURER_PARAMS, insurerKind } from './insurer.js';
+import { forcedSale } from './funding.js';
 import { failedBanks, resolve } from './resolution.js';
 import {
   BOOKS,
@@ -85,6 +86,7 @@ export * from './rows.js';
 export * from './collateral.js';
 export * from './deposits.js';
 export * from './session.js';
+export * from './funding.js';
 
 /** What the module keeps: the deposit book, and how many rows it has written. */
 interface Market {
@@ -166,7 +168,7 @@ function setAndPayDeposits(ctx: MechanismContext): void {
   for (const bank of banks) {
     const ccy = ccyOf(ctx, bank);
     payDepositInterest(ctx, m.deposits, bank, ccy);
-    setRates(ctx, m.deposits, bank, ccy, worthOfMoney(ctx, bank, c));
+    setRates(ctx, m.deposits, bank, ccy, worthOfMoney(ctx, bank, c), banks);
     const rates: Record<string, number> = {};
     for (const cls of DEPOSIT_CLASSES) {
       const rate = rateFor(m.deposits, bank, cls);
@@ -193,12 +195,23 @@ function setAndPayDeposits(ctx: MechanismContext): void {
  * is a read over many periods (Banks Funding B2).
  */
 export function worthOfMoney(ctx: MechanismContext, bank: PartyId, c: Corridor): number {
-  // D3: AND WHEN THE MARKET WOULD NOT HAVE IT, IT BIDS UP FOR DEPOSITS. A bank the last session
-  // left short is not funded at its own average any more: the dollar it could not raise is worth
-  // what its remaining alternative costs, and that is the window at the top of the corridor. So it
-  // offers a depositor that rather than go without, which is the rung itself — the rate is public
-  // (D5.a), the depositors answer it (E1), and the money it keeps is money it did not have to draw.
-  if (refusedLastSession(ctx, bank)) return c.ceiling;
+  // D3, B2.b: AND WHEN THE MARKET WOULD NOT HAVE IT, IT BIDS UP FOR DEPOSITS — IF IT IS WORTH IT.
+  // The dollar it could not raise is worth what its remaining alternative costs, which is the
+  // window at the top of the corridor. But there is ONE RATE PER LIABILITY (B2.b): a bank cannot
+  // pay up for the next dollar without paying up on every dollar it already has, so bidding up
+  // costs it the rise on its whole base and buys it the rise on what it was short of. It does that
+  // when the second is the bigger of the two and not otherwise — a decision between two real costs,
+  // and the same gap multiplies both, so what it comes down to is whether what it could not raise
+  // is bigger than what it already owes.
+  //
+  // Which is why a bank almost never reprices its board for a bad week, and why the rung is
+  // reachable rather than routine. A model that took the ceiling on every refusal would move every
+  // deposit in the world on the week a bank was a penny short (E1), and the deposit market would be
+  // a metronome rather than a market.
+  const short = refusedLastSession(ctx, bank);
+  if (short.some && short.value > depositBase(depositsByClass(ctx, bank, ccyOf(ctx, bank)))) {
+    return c.ceiling;
+  }
   const memory = ctx.params.get(mmParam(bank, 'bufferMemory'));
   const from = ctx.period > memory ? ctx.period - memory : 0;
   const weights: number[] = [];
@@ -218,15 +231,18 @@ export function worthOfMoney(ctx: MechanismContext, bank: PartyId, c: Corridor):
 }
 
 /**
- * B7, D3: whether the last session ended with this name still short. It is the session's own public
- * refusal read back (Law 19), not a second count of it.
+ * B7, D3: what the last session left this name short of, if anything. It is the session's own
+ * public refusal read back (Law 19), not a second count of it.
  */
-function refusedLastSession(ctx: MechanismContext, bank: PartyId): boolean {
-  if (ctx.period === 0) return false;
+function refusedLastSession(ctx: MechanismContext, bank: PartyId): Option<number> {
+  if (ctx.period === 0) return none<number>();
   const last = ctx.period - 1;
-  return ctx.journal
-    .ofKind('moneyMarket.refused')
-    .some((e) => e.period === last && e.subjects.includes(bank));
+  for (const e of ctx.journal.ofKind('moneyMarket.refused')) {
+    if (e.period !== last || !e.subjects.includes(bank)) continue;
+    const short = e.data['short'];
+    if (typeof short === 'number') return some(short);
+  }
+  return none<number>();
 }
 
 /** The banks' positions after the flows, and what each one's own week has taught it (A1, C2.a). */
@@ -539,6 +555,10 @@ function publishFunding(ctx: MechanismContext): void {
       'liquid assets',
     );
     const exposed = couldLeave(ctx, bank, ccy, limit);
+    // C2.a: what its account actually did to it this period — the reserve legs of the wire, summed.
+    // It is public because the balance either side of it is (F2), and it is here because the buffer
+    // above is derived from a run of these and from nothing else.
+    const move = netReserveFlow(ctx, bank, ccy);
     const metric = liquidityMetric(liquid, exposed);
     ctx.record(
       'bank.liquidity',
@@ -551,6 +571,7 @@ function publishFunding(ctx: MechanismContext): void {
         paper,
         liquid,
         buffer,
+        move,
         couldLeave: exposed,
         deposits: Object.fromEntries(byClass),
         base: depositBase(byClass),
@@ -807,7 +828,9 @@ export const moneyMarket: SystemModule = {
       },
     },
   ],
-  participants: [],
+  // D1: the rung of the ladder that is a MARKET action. A bank the last session refused sells the
+  // paper it has left, at whatever it fetches, in whatever market that paper trades in.
+  participants: [{ partyKind: BANK, orders: forcedSale }],
   creditDecisions: [{ partyKind: CENTRAL_BANK, decide: reserveOverdraft }],
   // C3.b: a bank does not go to an estate. This module takes charge of what happens instead.
   resolves: [BANK],

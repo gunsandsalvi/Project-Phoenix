@@ -136,7 +136,7 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [x] The corridor: floor as parking that destroys reserves, ceiling as a collateralised repo bounded by unencumbered eligible paper; the policy rate never a cleared rate; tests
 - [x] The reserve overdraft priced and collateralised through the decider; the kernel's recorded-unpriced path deleted; the money family updated; tests: a bank with no collateral cannot draw (C4.b) and fails for liquidity (D4)
 - [x] LOLR's four conditions (D6): freely, good collateral, penalty, solvent: the decider refuses an insolvent bank; test
-- [ ] `banks.funding`: sell liquid assets, bid up deposits, stop originating (item 6's B2.b constraint now real), draw the facility, fail; tests for each branch as a state reached
+- [x] `banks.funding`: sell liquid assets, bid up deposits, stop originating (item 6's B2.b constraint now real), draw the facility, fail; tests for each branch as a state reached
 - [ ] The run: wholesale depositors move on public observables; the loop shows in a scenario test (D5.b, E3.a); insurance breaks it for retail (E4); tests
 - [ ] Interbank exposure as contagion: a failed bank's interbank rows land losses on lenders by name (E3); test with item 7's resolution
 - [ ] Capital: requirements against risk weights, leverage backstop, which binds as a read; buffer as choice; distributions restricted near the line; tests
@@ -222,15 +222,31 @@ and there is nowhere to put it.
 
 ### Open — in the order the plan wants them
 
-- **D1/D2, the rest of the ladder: it sells or pledges liquid assets, at whatever they fetch, in
-  a real book.** A bank that closes short still cannot post a sale. `sovereign-curve` already
-  makes a bank a seller above its buffer target, so the hook exists; what is missing is the link
-  from a published shortfall to an order, and the target itself is still item 3's placeholder.
-- **Item 3's placeholder `bank.liquidityBuffer.perDeposit` is still there** (`sovereign-curve/
-    index.ts`, `kind: 'placeholder'`, `standsInFor` Money Market A2.a, worklist 11). It is the only
-  placeholder left in the engine. C2.a says the buffer is derived from its own liabilities, and
-  `couldLeave` (the uninsured part of the deposit base) is now published for exactly this: the
-  paper target should read it.
+- ~~**D1/D2, the rest of the ladder.**~~ **DONE.** A bank the last session refused sells its free
+  eligible paper into the next one, at a size and no level (Clearing C3), so what it fetches is
+  what somebody posted and never a reserve of its own (`money-market/funding.ts`). What it sells
+  for is the refusal LESS the buffer inside it: a buffer is the thing you run down when the market
+  says no (A2.b), and selling the book to top up a cushion is not D1. Two other rungs moved with
+  it, both because leaving them as they were made the deposit market a metronome:
+  - **B2.b, bidding up is expensive.** A bank cannot pay up for the next dollar without paying up
+    on every dollar it already has, so it values money at the window only when what it could not
+    raise is bigger than what it already owes. Before this, one refusal of any size repriced a
+    whole base at the ceiling.
+  - **B1.a, E2.a, a board answers a board.** A bank reads what its rivals are publicly paying and
+    holds a class at the rival's rate less what moving costs that class — up to what money is
+    worth to it and no further, which is B1.a's own bound and the point at which it lets the class
+    go instead. Without it a bank sat still while the bank across the road bid a point over it and
+    lost its entire base in the week the gap crossed the switching cost.
+
+- **The buffer placeholder is still there, and now there is a reason.** `bank.liquidityBuffer.
+    perDeposit` was to be replaced by a target read off the bank's own published position. Both
+  candidate reads were built and BOTH tripped XI-15's grain invariance: the world is knife-edge —
+  any change to what banks demand of sovereign paper re-rolls which whole cells cross between banks
+  in which week, and a crossing carries a cell's entire account. The change was undone (it was not
+  wrong on its own terms; it was not shown to be right either) and the finding stands: what has to
+  exist first is a deposit market where a class does not move as one block. The two rungs above are
+  the first half of that.
+
 - **The run (137).** Uninsured money moves away from a publicly refused bank, which is half of
   E1/E2.a. Missing: the self-reinforcing loop shown in a scenario test (D5.b/E3.a — the deposit
   leaves with the reserves behind it, so the bank is shorter at the next close), and the test

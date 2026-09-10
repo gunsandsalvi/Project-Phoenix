@@ -235,6 +235,9 @@ export class World {
             valuation: w.valuation,
             journal: w.journal,
           });
+          // From here to the end of the period, what a lot is carried at is THIS period's mark: the
+          // resolution slot moves a dead party's whole book, and it moves it at what the book says.
+          w.valuation.remarked(w.period);
         },
       },
     ];

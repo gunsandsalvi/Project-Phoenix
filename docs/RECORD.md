@@ -1036,6 +1036,28 @@ have a market print, because the kernel skipped the whole holding when there was
 wears out on a schedule of its own has no print and does not want one. `carriedAt` is handed the
 mark as an `Option` and may ignore it, which is what plant does and what a good never does.
 
+## 10.4 — What a lot is carried at, after the marks are taken
+
+**What.** `Valuation.carryingPerUnit` asks one more question of a lot carried at the mark: has THIS
+period's revaluation run? Before it, a lot held since last period carries last period's print, as
+before; after it, this period's, because that is what the equity account now says. The kernel says
+so once, where the marks are taken (`world.ts`, the `revaluation` phase, `valuation.remarked`).
+
+**Why.** Carrying value is defined as *what the equity account has already recognised* and is
+derived, never stored (Law 19) — but the derivation ignored the one event in the period that changes
+the answer. Nothing settled after revaluation, so nothing saw it, until item 11's funding ladder made
+a dealer fail: an estate opens in the resolution slot AFTER the marks are taken (XI-8, and it must,
+because Firm D4 asks whether liabilities exceed assets AT MARKS), and it took the whole book over at
+a carrying that was one revaluation stale. The estate's assets then exceeded its equity account for
+ever by that difference — 173,162 on `estate.desk.b`, reported by the accounts family every period —
+and the dead party walked off with the same amount as a residual nobody held, which Law 2 calls a
+defect whether or not a check catches it.
+
+**Found.** The gap was CONSTANT while both sides moved, which is what said it was a one-off booking
+and not a revaluation that had stopped working. Transferring at the mark instead would have double
+counted: the debit books the deceased out at its carrying, so with a stale carrying and an explicit
+price the same re-marking is booked twice. One read, correct at both instants, fixes both ends.
+
 ## 10 — The cost of capital
 
 **What.** XI-4's second joint, and the stock it acts on.

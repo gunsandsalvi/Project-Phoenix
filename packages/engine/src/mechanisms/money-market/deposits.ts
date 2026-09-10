@@ -175,6 +175,7 @@ export function setRates(
   bank: PartyId,
   ccy: CurrencyCode,
   worth: number,
+  rivals: readonly PartyId[],
 ): void {
   if (funderOf(bank) === undefined) return;
   const margin = ctx.params.get(mmParam(bank, 'depositMargin'));
@@ -182,13 +183,48 @@ export function setRates(
   const was = at(book.balances, bank);
   const now = depositsByClass(ctx, bank, ccy);
   for (const cls of DEPOSIT_CLASSES) {
-    rates[cls.id] = sub(
-      sub(worth, margin, 'what it keeps'),
-      ctx.params.get(switchingCost(cls.id)),
-      `what it pays ${cls.id}`,
-    );
+    const sticky = ctx.params.get(switchingCost(cls.id));
+    const own = sub(sub(worth, margin, 'what it keeps'), sticky, `what it pays ${cls.id}`);
+    rates[cls.id] = defended(ctx, bank, cls, rivals, own, sticky, worth);
   }
   for (const [cls, balance] of now) was[cls] = balance;
+}
+
+/**
+ * B1.a, E2.a, D5.a: AND IT ANSWERS ITS RIVALS, because they are paying in public and its own
+ * depositors can read it (E1).
+ *
+ * A bank that only ever priced its deposits off its own funding cost would sit still while somebody
+ * across the road bid a point over it, and then lose its entire base in the week the gap crossed
+ * what moving costs — every depositor of a class facing the same two numbers and answering them the
+ * same way. That is not a deposit market: it is a cliff, and a world with one in it makes the
+ * grouping of a population load-bearing (XI-15).
+ *
+ * So it defends: the level that holds a class is what the rival is paying LESS what moving costs
+ * that class, since at that level the depositor gains nothing by going. What stops it defending is
+ * its own economics and not a limit — B1.a's own bound: money it loses here it has to replace in
+ * the market at `worth`, so it will pay up to that to keep it and no more. Past that it lets the
+ * class go and funds itself where funding is cheaper, which is the same decision the other way up.
+ */
+function defended(
+  ctx: MechanismContext,
+  bank: PartyId,
+  cls: DepositClassDecl,
+  rivals: readonly PartyId[],
+  own: number,
+  sticky: number,
+  worth: number,
+): number {
+  let best: number | undefined;
+  for (const r of rivals) {
+    if (r === bank) continue;
+    const said = announced(ctx, r, cls.id);
+    if (!said.some) continue;
+    if (best === undefined || said.value > best) best = said.value;
+  }
+  if (best === undefined) return own;
+  const hold = sub(best, sticky, `what it takes to keep ${cls.id}`);
+  return hold > own && hold < worth ? hold : own;
 }
 
 /**

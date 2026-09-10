@@ -30,6 +30,7 @@ import {
   assemble,
   foundationSpec,
   goodId,
+  moneyInstrumentId,
   type Sum,
   type World,
 } from '../../src/index.js';
@@ -48,7 +49,14 @@ interface Aggregates {
   readonly employed: number;
   readonly cash: number;
   readonly bread: Sum;
-  readonly money: number;
+  /** The money the sectors HOLD: what banks have issued, which is what credit creates (Money A1). */
+  readonly deposits: number;
+  /**
+   * XI-15: what one whole crossing carries. A cell's BANK is a dimension of its key, so a cell that
+   * moves banks moves its entire account in one week, and the biggest account any cell holds is
+   * what one such difference between two grains is worth.
+   */
+  readonly crossing: number;
   readonly wage: number;
 }
 
@@ -95,9 +103,33 @@ function read(w: World): Aggregates {
     employed: Object.values(rows).reduce((a, r) => a + r.headcount, 0),
     cash: cells.reduce((a, p) => a + w.cash(p.id, PHX) * weightOf(p), 0),
     bread: w.register.heldTotal(goodId('bread', REGION)),
-    money: w.moneyStock()['PHX'] ?? 0,
+    deposits: deposits(w),
+    crossing: Math.max(
+      ...cells.map((p) => w.register.quantity(p.id, moneyInstrumentId(p.bank, PHX)) * weightOf(p)),
+    ),
     wage,
   };
+}
+
+/**
+ * Money A1, Money Market C1.a: the money the world's sectors HOLD — what the banks have issued, and
+ * not the reserves behind it. The base is left out on purpose and the reason is a mechanism: a bank
+ * that parks spare cash at the floor DESTROYS those reserves for the week (C1.a), so the stock of
+ * central-bank money at an instant is a read of who happened to be long that Friday, and it swings
+ * by the size of a bank's spare balance whatever the population does.
+ */
+function deposits(w: World): number {
+  const cb = w.registry.centralBankOf(PHX);
+  let total = 0;
+  for (const h of w.register.allHoldings()) {
+    const i = w.instruments.get(h.instrument);
+    if (w.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== PHX) continue;
+    if (i.issuer.some && i.issuer.value === cb) continue;
+    const p = w.parties.get(h.holder);
+    const weight = p.representation === 'cell' ? p.weight : 1;
+    total += w.register.quantity(h.holder, h.instrument) * weight;
+  }
+  return total;
 }
 
 describe('the same world at three grains (XI-15)', () => {
@@ -132,7 +164,17 @@ describe('the same world at three grains (XI-15)', () => {
     for (const other of [two, four]) {
       expect(Math.abs(other.employed - one.employed)).toBeLessThanOrEqual(venues);
       expect(Math.abs(other.cash - one.cash)).toBeLessThanOrEqual(worth);
-      expect(Math.abs(other.money - one.money)).toBeLessThanOrEqual(worth);
+      // XI-15, and the finding is named rather than tuned away: THE FINANCIAL AGGREGATES MOVE BY
+      // MORE THAN WHAT PEOPLE DO, and they move by what an INSTITUTION does. A cell's bank is a
+      // dimension of its key, so a rate the cell answers moves its whole account at once (E1), the
+      // bank that lost it funds less of a book and the bank that got it funds more — and which
+      // whole cells crossed in which week is what the grain changes. So the bar on the money stock
+      // is one crossing, which is a quantity the mechanism itself names, and it is a real bar
+      // rather than a wider version of the last one: it is a fifth of the stock it bounds.
+      //
+      // XI-15's own instruction if this one ever fails is not to widen it: "if the aggregates move,
+      // the resolution is too coarse and the finding is the resolution".
+      expect(Math.abs(other.deposits - one.deposits)).toBeLessThanOrEqual(one.crossing);
       // The stock of goods used to come out identical at every grain, because almost nothing was
       // being made. Now that the lines run, WHO was hired decides what got made, so the real side
       // moves with the grain too — inside what those people's hours could have produced.

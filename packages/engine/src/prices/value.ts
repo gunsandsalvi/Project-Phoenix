@@ -28,6 +28,16 @@ export class Valuation {
    */
   private readonly deriving = new Set<InstrumentId>();
 
+  /**
+   * Clearing D4: the last period whose marks the equity accounts have RECOGNISED. Carrying value is
+   * "what the equity account has already recognised", and revaluation is the moment that answer
+   * changes — before it, a lot held since last period carries last period's print; after it, this
+   * period's, because that is what the account now says. Nothing in a period settles between those
+   * two answers except what happens in the resolution slot after the marks are taken (XI-8), and
+   * that is exactly where a book valued at the wrong one of them would leave a residual (Law 2).
+   */
+  private recognisedThrough = -1;
+
   constructor(
     private readonly registry: Registry,
     private readonly instruments: Instruments,
@@ -121,6 +131,11 @@ export class Valuation {
   }
 
   /** The mark per unit in force for `at` (throws NotYetProduced before the market has printed). */
+  /** Clearing D4: revaluation has run for this period; its marks are in the equity accounts now. */
+  remarked(at: Period): void {
+    this.recognisedThrough = at;
+  }
+
   markPerUnit(instrument: InstrumentId, at: Period): number {
     const i = this.instruments.get(instrument);
     const pricing = this.registry.instrumentKind(i.kind).pricing;
@@ -163,8 +178,10 @@ export class Valuation {
         return lot.basisPerUnit;
       case 'cleared':
         // Goods E1: a lot carried at cost stays at cost until something writes it down; a lot
-        // carried at the mark has already recognised last period's print.
+        // carried at the mark has already recognised last period's print — or THIS period's, once
+        // revaluation has put it in the account (above).
         if (this.registry.instrumentKind(i.kind).carry === 'cost') return lot.basisPerUnit;
+        if (this.recognisedThrough >= now) return this.markPerUnit(instrument, now);
         return lot.acquired < now
           ? this.prices.printOrThrow(instrument, period(now - 1)).price
           : lot.basisPerUnit;

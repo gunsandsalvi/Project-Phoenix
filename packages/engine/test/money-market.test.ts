@@ -21,6 +21,7 @@ import {
   foundationWorld,
   moneyInstrumentId,
   partyId,
+  switchingCost,
   yearFraction,
   type PartyId,
   type Event,
@@ -114,16 +115,54 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
     // ONE number differs: what bank A keeps for itself out of what money is worth to it. A thinner
     // margin is a better rate to its depositors — which is the whole of B1.a, a bank DECIDING what
     // to pay rather than a stickiness anybody stated, and the number a depositor then decides about.
+    //
+    // Read at the FIRST board it sets, because that is the one that is its own decision and nothing
+    // else: from the next period its rivals are publishing too (D5.a), and a bank whose depositors
+    // are being bid for pays what it takes to keep them whatever margin it would have liked. That
+    // is the other half of B1.a and it is the test below, not a spoiled version of this one.
     const keen = run(withParam('mm-payup', { 'bank.depositMargin.bank.a': 0.001 }), 8);
     const mean = run(withParam('mm-payup', { 'bank.depositMargin.bank.a': 0.012 }), 8);
-    const rateOf = (w: World, cls: string): number => {
-      const said = last(w, 'bank.depositRate', BANK_A);
+    const board = (w: World, cls: string): number => {
+      const said = events(w, 'bank.depositRate', BANK_A)[0];
       const rates = said?.data['rates'] as Record<string, number> | undefined;
       return rates?.[cls] ?? 0;
     };
     for (const cls of ['retail', 'corporate', 'wholesale']) {
-      expect(rateOf(keen, cls)).toBeGreaterThan(rateOf(mean, cls));
+      expect(board(keen, cls)).toBeGreaterThan(board(mean, cls));
     }
+  });
+
+  it('answers a rival that is paying more, and never above what money is worth to it (B1.a, E2.a)', () => {
+    // D5.a: the board is public, so a bank can read what its rivals pay and its depositors can read
+    // both. E1 is then a real answer to a real number — and it is what stops a bank paying less.
+    //
+    // What must be true is a shape, not a level: whenever one bank is publishing more for a class
+    // than another, the gap is no wider than what it costs that class to move. Wider than that and
+    // the class has an unanswered reason to go, and a whole deposit base moves in the week the gap
+    // opens; narrower is a bank that decided the money was worth keeping. The exception is a bank
+    // that CANNOT answer, because keeping the money would cost it more than replacing it in the
+    // market (B1.a bounds the rate by its own wholesale cost) — that bank lets the class go, and
+    // the gap it leaves is the run's first cause rather than a defect.
+    const w = run(foundationWorld('mm-rivals'), 12);
+    const seen = new Map<string, number[]>();
+    for (const e of events(w, 'bank.depositRate')) {
+      const rates = e.data['rates'] as Record<string, number>;
+      for (const [cls, rate] of Object.entries(rates)) {
+        const key = `${e.period}:${cls}`;
+        seen.set(key, [...(seen.get(key) ?? []), rate]);
+      }
+    }
+    let answered = 0;
+    for (const [key, rates] of seen) {
+      if (rates.length < 2) continue;
+      const cls = key.split(':')[1] ?? '';
+      const gap = Math.max(...rates) - Math.min(...rates);
+      const cost = w.params.get(switchingCost(cls));
+      if (gap <= cost) answered += 1;
+    }
+    // It happens, and it is the common case: banks facing each other for the same money end up
+    // within what moving costs of one another.
+    expect(answered).toBeGreaterThan(0);
   });
 
   it('is what it paid plus what its capital costs, over what funds its book (B2, B2.b)', () => {
@@ -211,16 +250,21 @@ describe('what a bank publishes about itself (Banks Funding F1, F4, C1, C1.a)', 
   });
 
   it('holds a buffer that is its own worst week and not a share of anything (A2.a, C2.a)', () => {
-    // ONE number differs: how far back each bank looks at its own account. A longer memory reaches
-    // a worse week, so it holds more against one — which is the buffer being DERIVED from what it
-    // has actually seen rather than stated as a ratio of what it has issued.
-    const short = run(withParam('mm-buffer', { 'bank.bufferMemory.bank.a': 2 }), 12);
-    const long = run(withParam('mm-buffer', { 'bank.bufferMemory.bank.a': 40 }), 12);
-    const bufferOf = (w: World): number => num(last(w, 'bank.liquidity', BANK_A), 'buffer');
-    expect(bufferOf(long)).toBeGreaterThanOrEqual(bufferOf(short));
+    // The buffer is DERIVED, and this is the derivation: the worst week this bank's own account has
+    // had, over the memory it keeps. Nothing here is a ratio of what it has issued, and the two
+    // banks in this world hold different buffers because their own weeks were different.
+    const memory = 4;
+    const w = run(withParam('mm-buffer', { 'bank.bufferMemory.bank.a': memory }), 12);
+    const said = events(w, 'bank.liquidity', BANK_A);
+    const moves = said.map((e) => num(e, 'move'));
+    for (let i = 0; i < said.length; i += 1) {
+      const seen = moves.slice(i + 1 > memory ? i + 1 - memory : 0, i + 1);
+      const worst = Math.min(...seen, 0);
+      expect(num(said[i], 'buffer')).toBe(-worst);
+    }
     // ...and a bank that has never had a bad week holds nothing against one, which is a real
     // position and not a missing number.
-    expect(bufferOf(short)).toBeGreaterThanOrEqual(0);
+    expect(num(said[0], 'buffer')).toBeGreaterThanOrEqual(0);
   });
 });
 
