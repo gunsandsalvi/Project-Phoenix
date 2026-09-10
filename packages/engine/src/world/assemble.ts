@@ -91,12 +91,45 @@ export function assemble(spec: AssemblySpec): World {
     }
     for (const k of m.resolves ?? []) world.provideResolution(m.id, k);
     for (const v of m.marks ?? []) world.provideMark(m.id, v.instrumentKind, v.value);
+    requireBankChoices(m);
   }
   const ctx = seedContext(world);
   for (const m of modules) m.seed?.(ctx);
   stateEquityAsRead(world);
   world.seal();
   return world;
+}
+
+/**
+ * Banks Funding A1.d, E1: A MODULE THAT DECLARES A DEPOSITOR MUST SAY HOW IT LEAVES.
+ *
+ * A party kind with a `depositClass` is somebody's deposit base — it is what a bank prices its
+ * board against and pays a premium for. If nothing ever asks it where it wants to bank then it can
+ * never leave, and that is A1.d's stickiness arriving as an omission instead of as a cost somebody
+ * bears: the bank it funds can pay it less for ever and no run reaches it. So the module that
+ * declares the kind declares the reason too, or the world does not open.
+ *
+ * It asks each MODULE about its OWN declaration rather than asking the registry about every kind,
+ * and that is what makes it a check rather than a nuisance: a world assembled from four modules to
+ * exercise one kernel door has the kernel's party kinds in it and no `firms` to speak for them, and
+ * a guard that fired there would be refusing a legitimate world for a defect that is not in it.
+ *
+ * WHAT IT DOES NOT COVER, and the gap is real: `FIRM` and `HOUSEHOLD` are declared in
+ * `KERNEL_PARTY_KINDS`, so no module's declaration carries them and this says nothing about them.
+ * A kind the kernel declares and a module owns the behaviour of is the ownership defect
+ * ARCHITECTURE 4.9b names ("a kind is owned by exactly one module"); it is recorded in docs/BUGS.md
+ * rather than fixed here, because moving those two kinds into their modules is a kernel change of
+ * its own and this item is not it.
+ */
+function requireBankChoices(m: SystemModule): void {
+  const answered = new Set((m.bankChoices ?? []).map((d) => String(d.partyKind)));
+  for (const kind of m.partyKinds) {
+    if (kind.depositClass === null || answered.has(String(kind.id))) continue;
+    throw new InvalidRegistry(
+      'Banks Funding E1',
+      `${m.id} declares ${kind.id} as a "${kind.depositClass}" depositor and never says where it banks`,
+    );
+  }
 }
 
 /** Modules in an order that satisfies `requires` (Part XIII), stable for equal rank. */

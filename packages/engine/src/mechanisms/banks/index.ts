@@ -36,7 +36,13 @@ import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { SystemModule } from '../../world/module.js';
-import { BANKS, bankParam, dealingParam, TRADING_BOOK_RISK_WEIGHT, type BankDecl } from './data.js';
+import {
+  BANKS,
+  bankParam,
+  dealingParam,
+  TRADING_BOOK_RISK_WEIGHT,
+  type BankDecl,
+} from './data.js';
 import { capitalOf, publish, type CapitalRules } from './capital.js';
 import { arbitrage, dealingOrders, publishDealing } from './dealing.js';
 import {
@@ -109,9 +115,9 @@ function regulationOf(view: ParticipantView): Regulation {
  * The weight is the one an ordinary exposure carries; what a particular asset weighs is asked of
  * what that asset IS (`riskWeightOf`).
  */
-function rulesFor(ctx: MechanismContext, bank: PartyId): CapitalRules {
+function rulesFor(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyId): CapitalRules {
   const view = ctx.participant(bank);
-  const decl = declOf(bank);
+  const decl = declOf(rows, bank);
   return {
     minWeighted: ctx.params.get(LENDING_PARAMS.capitalRatio),
     minLeverage: ctx.params.get(LENDING_PARAMS.leverageRatio),
@@ -134,11 +140,11 @@ function rulesFor(ctx: MechanismContext, bank: PartyId): CapitalRules {
 }
 
 /** B1, B3, B3.a: every bank's position, taken and published before anybody decides anything. */
-function publishCapital(ctx: MechanismContext): void {
+function publishCapital(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const b of ctx.parties.ofKind(BANK)) {
-    if (!b.status.alive || declOf(b.id) === undefined) continue;
+    if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
     const ccy = ctx.registry.region(b.region).ccy;
-    publish(ctx, capitalOf(ctx, b.id, ccy, rulesFor(ctx, b.id)));
+    publish(ctx, capitalOf(ctx, b.id, ccy, rulesFor(rows, ctx, b.id)));
   }
 }
 
@@ -153,16 +159,16 @@ function publishCapital(ctx: MechanismContext): void {
  * C2.b is the outcome that must be reachable: nobody has to buy. A raise that finds no bid is
  * recorded as a failure and the bank is exactly where it was, one rung further down the ladder.
  */
-function runRaises(ctx: MechanismContext): void {
+function runRaises(rows: readonly BankDecl[], ctx: MechanismContext): void {
   const b = book(ctx);
   for (const p of ctx.parties.ofKind(BANK)) {
-    if (!p.status.alive || declOf(p.id) === undefined) continue;
-    const short = mustRaise(ctx, p.id);
+    if (!p.status.alive || declOf(rows, p.id) === undefined) continue;
+    const short = mustRaise(rows, ctx, p.id);
     if (short <= 0) continue;
     const ccy = ctx.registry.region(p.region).ccy;
     const bids: Order[] = [];
     for (const other of ctx.parties.ofKind(BANK)) {
-      const decl = declOf(other.id);
+      const decl = declOf(rows, other.id);
       if (decl === undefined || !other.status.alive || other.id === p.id) continue;
       const view = ctx.participant(other.id);
       const q = quote(
@@ -181,7 +187,7 @@ function runRaises(ctx: MechanismContext): void {
 }
 
 /** B3: what it published that it must raise to be back above both lines, or nothing (Law 19). */
-function mustRaise(ctx: MechanismContext, bank: PartyId): number {
+function mustRaise(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyId): number {
   const said = ctx.journal.ofKind('bank.capitalPlan').filter((e) => e.subjects.includes(bank));
   const last = said[said.length - 1];
   // Only the plan it published at the LAST close: a plan from a month ago is a fact about a month
@@ -196,8 +202,8 @@ function seenDefaults(ctx: MechanismContext): readonly Event[] {
   return ctx.journal.ofKind('credit.default');
 }
 
-function declOf(bank: PartyId): BankDecl | undefined {
-  return BANKS.find((b) => b.bank === bank);
+function declOf(rows: readonly BankDecl[], bank: PartyId): BankDecl | undefined {
+  return rows.find((b) => b.bank === bank);
 }
 
 /**
@@ -283,14 +289,14 @@ function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number
  * it. A bank with no room does not quote — declining IS the credit decision (C3) — and what it
  * declined is recorded, because a bank that never says no has no credit standard (C3.a).
  */
-function shop(ctx: MechanismContext, borrower: PartyId, want: number, ccy: CurrencyCode): {
+function shop(rows: readonly BankDecl[], ctx: MechanismContext, borrower: PartyId, want: number, ccy: CurrencyCode): {
   readonly best: Quote | undefined;
   readonly lend: number;
 } {
   let best: Quote | undefined;
   let lend = 0;
   for (const b of ctx.parties.ofKind(BANK)) {
-    const decl = declOf(b.id);
+    const decl = declOf(rows, b.id);
     if (decl === undefined || !b.status.alive) continue;
     const view = ctx.participant(b.id);
     const reg = regulationOf(view);
@@ -473,8 +479,8 @@ function draw(
  * a DRAWING, which becomes a row before the period closes. A bank with no room refuses, and the
  * payment fails: that is the refusal B3.c requires and it is recorded by settlement.
  */
-function overdraft(ctx: MechanismContext, o: OverdraftContext): OverdraftDecision {
-  const decl = declOf(o.issuer);
+function overdraft(rows: readonly BankDecl[], ctx: MechanismContext, o: OverdraftContext): OverdraftDecision {
+  const decl = declOf(rows, o.issuer);
   if (decl === undefined) return { allow: false };
   const view = ctx.participant(o.issuer);
   // A1, XI-8: a loan is a contract with somebody, and some parties are nobody to contract with —
@@ -506,13 +512,13 @@ function overdraft(ctx: MechanismContext, o: OverdraftContext): OverdraftDecisio
  * loan creates a deposit, which is what brings the account back from below zero — so what looked
  * like an overdraft during the period is a loan by the end of it, with a rate and a lender.
  */
-function bookDraws(ctx: MechanismContext): void {
+function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
   const b = book(ctx);
   const draws = [...b.draws];
   b.draws = [];
   for (const d of draws) {
     const bank = d.issuer as PartyId;
-    const decl = declOf(bank);
+    const decl = declOf(rows, bank);
     if (decl === undefined) continue;
     const view = ctx.participant(bank);
     const q = quote(
@@ -637,7 +643,13 @@ function tradingBookIsCapitalised(): Family {
   };
 }
 
-export const bankLending: SystemModule = {
+/**
+ * The module, built from the banks this world has (Law 4: `BANKS` is that list and there is no
+ * second one). A world with two of them or with four is this world with a different table and no
+ * number in it restated, which is what lets the count be measured (XI-15).
+ */
+export function banks(rows: readonly BankDecl[] = BANKS): SystemModule {
+  return {
   id: 'banks',
   spec: 'Banks Lending',
   // It needs nobody. What a borrower is short of and what a borrower has failed to pay both reach
@@ -689,7 +701,7 @@ export const bankLending: SystemModule = {
       owner: 'standardSetter',
       why: 'Banks Funding C2: the liquid assets a bank must hold against the money that could leave it. ONE, because that is what the rule says in the world this one imports it from — cover the outflow, not a part of it — and Law 2 allows a real-world primitive to be imported where a real-world equilibrium may not. It is a rule somebody wrote and not a fact about the world, which is why it is the kind of number a polity can change (worklist 14) and why a bank holds sovereign paper instead of lending the money out (Sovereign E2.a, E5).',
     },
-    ...BANKS.flatMap((r): ParamDecl[] => [
+    ...rows.flatMap((r): ParamDecl[] => [
       {
         id: dealingParam(r.bank, 'capitalAtRisk'),
         value: r.capitalAtRisk,
@@ -731,7 +743,7 @@ export const bankLending: SystemModule = {
       owner: 'model',
       why: 'Banks Lending C1.d: what it costs a bank to make and keep a loan — the people, the assessment, the collecting. It is a real cost of doing the thing, which is what technology means.',
     },
-    ...BANKS.flatMap((b) => [
+    ...rows.flatMap((b) => [
       {
         id: bankParam(b.bank, 'credit.memory'),
         value: b.memoryPeriods,
@@ -802,7 +814,7 @@ export const bankLending: SystemModule = {
       // it allowed it in, which is exactly why B3's consequences arrive late enough to matter.
       anchor: { after: 'revaluation' },
       run: (ctx: MechanismContext): void => {
-        publishCapital(ctx);
+        publishCapital(rows, ctx);
       },
     },
     {
@@ -813,7 +825,7 @@ export const bankLending: SystemModule = {
       // and then lends what is left of its room (C2: recapitalisation FIRST).
       anchor: { after: 'corporateActions' },
       run: (ctx: MechanismContext): void => {
-        runRaises(ctx);
+        runRaises(rows, ctx);
       },
     },
     {
@@ -825,14 +837,14 @@ export const bankLending: SystemModule = {
       // and is stated as one, because arranging a loan takes longer than noticing you need it.
       anchor: { after: 'corporateActions' },
       run: (ctx: MechanismContext): void => {
-        runRequests(ctx);
+        runRequests(rows, ctx);
         // Clearing F1: everything that prices off a bank's own economics this period reads it here
         // — its own dealing line pricing what an inventory costs to carry, a firm deciding whether
         // a project clears its cost of capital, a schedule in a bond market. One number, published
         // once, read by all of them (Law 4).
-        publishCostOfFunds(ctx);
-        publishQuotes(ctx);
-        publishReservations(ctx);
+        publishCostOfFunds(rows, ctx);
+        publishQuotes(rows, ctx);
+        publishReservations(rows, ctx);
       },
     },
     {
@@ -846,7 +858,7 @@ export const bankLending: SystemModule = {
         const classes = classesSeen(ctx);
         if (classes.length === 0) return;
         for (const b of ctx.parties.ofKind(BANK)) {
-          if (!b.status.alive || declOf(b.id) === undefined) continue;
+          if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
           const ccy = ctx.registry.region(b.region).ccy;
           setBoard(ctx, b.id, ccy, classes, ownDeposits(ctx, b.id, ccy));
         }
@@ -861,7 +873,7 @@ export const bankLending: SystemModule = {
       anchor: { after: 'lending.write' },
       run: (ctx: MechanismContext): void => {
         for (const b of ctx.parties.ofKind(BANK)) {
-          if (b.status.alive) arbitrage(ctx, b.id, BANKS);
+          if (b.status.alive) arbitrage(ctx, b.id, rows);
         }
       },
     },
@@ -873,7 +885,7 @@ export const bankLending: SystemModule = {
       anchor: { after: 'revaluation' },
       run: (ctx: MechanismContext): void => {
         for (const b of ctx.parties.ofKind(BANK)) {
-          if (b.status.alive) publishDealing(ctx, b.id, BANKS);
+          if (b.status.alive) publishDealing(ctx, b.id, rows);
         }
       },
     },
@@ -887,7 +899,7 @@ export const bankLending: SystemModule = {
       // estate nothing to assume — so this runs first and what is left is always a loan.
       anchor: { before: 'revaluation' },
       run: (ctx: MechanismContext): void => {
-        bookDraws(ctx);
+        bookDraws(rows, ctx);
         publishStandard(ctx);
       },
     },
@@ -903,7 +915,7 @@ export const bankLending: SystemModule = {
       run: (ctx: MechanismContext): void => {
         const memory = ctx.state<ReserveMemory>('reserves', () => ({ moves: {} }));
         for (const b of ctx.parties.ofKind(BANK)) {
-          if (!b.status.alive || declOf(b.id) === undefined) continue;
+          if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
           publishBuffer(ctx, b.id, ctx.registry.region(b.region).ccy, memory);
         }
       },
@@ -917,13 +929,16 @@ export const bankLending: SystemModule = {
     {
       partyKind: BANK,
       orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
-        dealingOrders(view, m, BANKS),
+        dealingOrders(view, m, rows),
     },
   ],
-  marks: [{ instrumentKind: LOAN, value: worthToItsLender }],
-  creditDecisions: [{ partyKind: BANK, decide: overdraft }],
+  marks: [
+    { instrumentKind: LOAN, value: (ctx, i) => worthToItsLender(rows, ctx, i) },
+  ],
+  creditDecisions: [{ partyKind: BANK, decide: (ctx, o) => overdraft(rows, ctx, o) }],
   families: [bookMoves(), tradingBookIsCapitalised()],
-};
+  };
+}
 
 /**
  * D1, D2: what a unit of this loan is worth to the bank that holds it. Amortised cost less what
@@ -936,9 +951,9 @@ export const bankLending: SystemModule = {
  * A bank that has seen this borrower fail half the time carries the loan at half. That is the whole
  * of it: no coverage ratio, no stage, no through-the-cycle anything.
  */
-function worthToItsLender(ctx: MechanismContext, i: Instrument): Option<number> {
+function worthToItsLender(rows: readonly BankDecl[], ctx: MechanismContext, i: Instrument): Option<number> {
   if (!isLoan(i.terms)) return none<number>();
-  const decl = declOf(i.terms.lender);
+  const decl = declOf(rows, i.terms.lender);
   if (decl === undefined) return none<number>();
   const view = ctx.participant(i.terms.lender);
   const pd = probabilityOfDefault(view, decl, i.terms.borrower, seenDefaults(ctx));
@@ -947,7 +962,7 @@ function worthToItsLender(ctx: MechanismContext, i: Instrument): Option<number> 
 }
 
 /** C2: a borrower that said what it is short of gets quotes, and takes the keenest that will have it. */
-function runRequests(ctx: MechanismContext): void {
+function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
   if (ctx.period === 0) return;
   const said = period(ctx.period - 1);
   for (const e of ctx.journal.ofKind('firms.funding')) {
@@ -961,7 +976,7 @@ function runRequests(ctx: MechanismContext): void {
     // sign, so the request dies with the borrower.
     if (!party.status.alive) continue;
     const ccy = ctx.registry.region(party.region).ccy;
-    const { best, lend } = shop(ctx, borrower as PartyId, want, ccy);
+    const { best, lend } = shop(rows, ctx, borrower as PartyId, want, ccy);
     if (best === undefined || lend <= 0) continue;
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
     // drawing on what it already has there, not taking a new loan every week — and the margin it
@@ -1010,14 +1025,14 @@ function publishStandard(ctx: MechanismContext): void {
  * which is B2.a doing its work one step earlier than the loan: a firm with a good project and no
  * lender does not invest.
  */
-function publishQuotes(ctx: MechanismContext): void {
+function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const p of ctx.parties.all()) {
     if (!p.status.alive || !ctx.registry.partyKind(p.kind).borrows) continue;
     const ccy = ctx.registry.region(p.region).ccy;
     let best: Quote | undefined;
     let most = 0;
     for (const b of ctx.parties.ofKind(BANK)) {
-      const decl = declOf(b.id);
+      const decl = declOf(rows, b.id);
       if (decl === undefined || !b.status.alive || b.id === p.id) continue;
       const view = ctx.participant(b.id);
       const reg = regulationOf(view);
@@ -1058,7 +1073,7 @@ function publishQuotes(ctx: MechanismContext): void {
  * the market then does with it: the level a book clears at is where the marginal holder's
  * reservation sits, and a spread below every reservation means demand is genuinely zero.
  */
-function publishReservations(ctx: MechanismContext): void {
+function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): void {
   const obligors = new Set<PartyId>();
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !i.issuer.some) continue;
@@ -1071,7 +1086,7 @@ function publishReservations(ctx: MechanismContext): void {
   // row exists (Money Market B2). So every live bank is an obligor here, always.
   for (const b of ctx.parties.ofKind(BANK)) if (b.status.alive) obligors.add(b.id);
   for (const b of ctx.parties.ofKind(BANK)) {
-    const decl = declOf(b.id);
+    const decl = declOf(rows, b.id);
     if (decl === undefined || !b.status.alive) continue;
     const view = ctx.participant(b.id);
     const ccy = ctx.registry.region(b.region).ccy;
@@ -1118,9 +1133,9 @@ function publishReservations(ctx: MechanismContext): void {
  * what borrowing costs, and a schedule in a bond market is built on it. It is a read of what
  * already left the bank (Observer A5) and it causes nothing by itself.
  */
-function publishCostOfFunds(ctx: MechanismContext): void {
+function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const b of ctx.parties.ofKind(BANK)) {
-    if (declOf(b.id) === undefined || !b.status.alive) continue;
+    if (declOf(rows, b.id) === undefined || !b.status.alive) continue;
     const ccy = ctx.registry.region(b.region).ccy;
     ctx.record(
       'bank.costOfFunds',

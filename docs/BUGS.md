@@ -117,6 +117,24 @@ opens at its own OMO target, which was an imported equilibrium.
 **To be positioned at 12's close**, most likely into 12-1's resolution — a bank cannot be funded
 against assets the funder cannot see.
 
+**And the measurement the count-of-banks step asked for says it is not one seed's accident.** Nine
+worlds — two banks, three and four, each at one, two and four cells per key — run 26 periods with
+every audit family at zero, and the population is EXACTLY 6,000 in all nine, which is the invariance
+that step wanted. What is not invariant is how many banks are left:
+
+| banks opened with | grain 1 | grain 2 | grain 4 |
+| --- | --- | --- | --- |
+| 2 | 2 alive | 2 | 2 |
+| 3 | 1 | 2 | 1 |
+| 4 | 2 | 1 | 1 |
+
+and what the survivors hold liquid against what could leave them swings from 181M/109M to 459M/400M
+across the nine. A world that opens with more banks ends with fewer. That is 12-1 and 12-5 read at
+nine points instead of one: the foundation funds a bank against the assets it can see, the equity
+and funds modules hand it more afterwards, and the more banks there are the thinner each one's
+reserves are when it opens. **Nothing here is tuned and nothing is judged** — whether the swing is
+material is Part XII's question at worklist 16 (Law 11), and the mechanism it names is 12-1's.
+
 ### 12-6 — Five tests that hunt for a period the world no longer reaches there
 
 **Where.** `bank-resolution` ("makes the insured whole"), `estate` ("shows the estate, its
@@ -141,6 +159,42 @@ whenever the world moves, and doing that inside this step would be tuning the te
 the path: the count of banks (a resolution) and the currency layer both move it again.
 
 **To be positioned at 12's close.**
+
+**Added when the bank count became a table rather than three names** (same cause, same treatment):
+`auction` ("nobody absorbs the remainder"), `bank-resolution` ("contagion by name"), `capital`
+("binds production"), `credit-events` ("runs a year on a state that spends past what it can fund"),
+`funds` ("sells into a market it does not price"), `labour` ("fills the offer above the going rate"),
+`omo` ("hands over what its own instructions earned"), `raise` ("asks for what it published"),
+`tick` ("converges as the piece gets finer"). Each moved because the seed now spreads the firms
+across whatever banks exist and splits the paper by each bank's stated size, so who banks where and
+who holds what is different — and every one of them reaches the state it asserts about by running
+the world to a period it found by running the world.
+
+### 12-7 — The kernel declares two kinds whose behaviour a module owns
+
+**Where.** `packages/engine/src/registry/profiles.ts`, `KERNEL_PARTY_KINDS`: `FIRM` and `HOUSEHOLD`.
+
+**How it was found.** Building the `bankChoices` door. The guard that belongs with it — a module
+that declares a depositor must say how it leaves (Banks Funding A1.d) — can only ask a module about
+its OWN declaration, because a world assembled from four modules to exercise a kernel door has the
+kernel's party kinds in it and no `firms` to speak for them. So the guard covers `FUND` and
+`FUND_MANAGER`, which the `funds` module declares, and says nothing about `FIRM` and `HOUSEHOLD`,
+whose reasons live in `firms` and `households` while their kinds live in the kernel.
+
+**Why it is a defect and not a preference.** ARCHITECTURE 4.9b: the kernel "owns the money
+instrument kind and the party kinds money needs", and a kind is owned by exactly one module. Money
+needs the central bank, the treasury and the bank — it does not need a firm or a household. The
+first attempt at the guard checked every registered kind and refused six legitimate reduced worlds,
+which is the same defect read from the other end.
+
+**One thing was fixed on the way and is worth naming**: `SMALL_BUSINESS` was a third such kind, and
+nothing anywhere ever instantiated it — 13e declares its own `smallFirm`. It is deleted.
+
+**Not chased, on purpose.** Moving two kinds out of the kernel touches every module that imports
+them and is a kernel change of its own (PLAN §4.4: an inserted item with a record entry). It is not
+this item's, and it moves no number.
+
+**To be positioned at 12's close**, most likely as an inserted kernel item before 12a.
 
 ### 12-4 — An audit violation in the bank-failure scenario
 

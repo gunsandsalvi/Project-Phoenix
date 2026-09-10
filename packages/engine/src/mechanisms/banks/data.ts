@@ -11,6 +11,16 @@
  * of it is a shape: each number is one bank's own preference, and stating a distribution's width
  * instead is what would be.
  *
+ * THIS TABLE IS THE BANKS OF THIS WORLD, and there is no second list of them anywhere. HOW MANY
+ * there are is what it has rows, because a count held beside it would be two representations of one
+ * thing (Law 4) and every reader that walked the table would be reading the wrong one. The module
+ * and the seed are both built from whatever rows they are given, so a world with two banks or with
+ * four is this world with a different table and no number in it restated — which is what lets the
+ * count be MEASURED the way the cell grain is (XI-15, `test/resolution/banks.test.ts`), because it
+ * is load-bearing in a way no mechanism states: with two, every depositor that answers a rate is
+ * the whole of one side of the deposit market, every interbank session is one name facing one name,
+ * and a bank in trouble has exactly one place to go.
+ *
  * NOTHING HERE IS AN AMOUNT OF MONEY. Every limit is a share of something the bank itself publishes
  * — its capital, its own book, what could leave it — because a limit stated in money is a limit that
  * has to be restated every time the world changes size, and a number restated to keep a result is a
@@ -20,6 +30,18 @@ import { paramId, type ParamId } from '../../core/ids.js';
 
 export interface BankDecl {
   readonly bank: string;
+  /**
+   * Seed B4: HOW BIG IT IS, relative to the other banks in the world it opens in. It is a weight
+   * and not a share, so the same table describes a world of two banks and a world of four without
+   * any number in it being restated: what each one holds is its weight over the weights of the
+   * banks that exist.
+   *
+   * A sector of equals never produces a market (B4), and the seed used to state one line at a time
+   * how much of it each bank held — eighteen numbers whose spread came to a few per cent, so three
+   * banks of nearly the same size held nearly the same book. One number each, dispersed, says the
+   * thing the eighteen were trying to say.
+   */
+  readonly size: number;
   /**
    * C1.b: how far back it looks when it judges a borrower. A bank with a long memory prices a
    * borrower's old failure into today's loan; one with a short memory has forgotten it.
@@ -91,6 +113,7 @@ export function bankOf(rows: readonly BankDecl[], bank: string): BankDecl | unde
 export const BANKS: readonly BankDecl[] = [
   {
     bank: 'bank.a',
+    size: 4,
     memoryPeriods: 26,
     returnOnCapital: 0.1,
     capitalBuffer: 0.02,
@@ -109,6 +132,7 @@ export const BANKS: readonly BankDecl[] = [
   },
   {
     bank: 'bank.b',
+    size: 3,
     memoryPeriods: 8,
     returnOnCapital: 0.14,
     capitalBuffer: 0.005,
@@ -123,6 +147,7 @@ export const BANKS: readonly BankDecl[] = [
   },
   {
     bank: 'bank.c',
+    size: 2,
     memoryPeriods: 52,
     returnOnCapital: 0.07,
     capitalBuffer: 0.04,

@@ -16,6 +16,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   FIRM,
+  InvalidRegistry,
   FUND,
   FUND_MANAGER,
   HOUSEHOLD,
@@ -78,6 +79,19 @@ describe('whose decision it is (Observer A4, Law 4)', () => {
     expect(owners.get(String(FIRM))).toBe('firms');
     expect(owners.get(String(FUND))).toBe('funds');
     expect(owners.get(String(FUND_MANAGER))).toBe('funds');
+  });
+
+  it('refuses to open a world whose module declares a depositor and never says how it leaves', () => {
+    // A1.d: a kind with a deposit class is somebody's deposit base. If nothing ever asks it where
+    // it wants to bank it can never leave, its bank can pay it less for ever, and no run reaches
+    // it — stickiness as an omission rather than as a cost somebody bears. The guard is on the
+    // MODULE's own declaration, so a world assembled from four modules to exercise a kernel door
+    // does not trip it while a module that forgot its depositor does.
+    const spec = foundationSpec('deposits-guard');
+    const modules = spec.modules.map((m) =>
+      m.id === 'funds' ? { ...m, bankChoices: [] } : m,
+    );
+    expect(() => assemble({ ...spec, modules })).toThrow(InvalidRegistry);
   });
 
   it('gives each kind a reason of its own, and all three of them fire', () => {

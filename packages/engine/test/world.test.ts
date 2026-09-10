@@ -14,7 +14,7 @@ import {
   TREASURY_NORTH,
   assemble,
   cellSide,
-  foundationSeed,
+  foundationSeedFor,
   foundationSpec,
   foundationWorld,
   moneyInstrumentId,
@@ -145,9 +145,9 @@ function bare(seed: string, ...extra: SystemModule[]): World {
 
 describe('assembly (Law 15, Part XIII)', () => {
   it('orders modules by their requirements and refuses a cycle or a missing dependency', () => {
-    const ordered = orderModules([foundationSeed, sovereignInstruments]);
+    const ordered = orderModules([foundationSeedFor(), sovereignInstruments]);
     expect(ordered.map((m) => m.id)).toEqual(['sovereign-instruments', 'seed.foundation']);
-    const orphan: SystemModule = { ...foundationSeed, id: 'x', requires: ['nope'] };
+    const orphan: SystemModule = { ...foundationSeedFor(), id: 'x', requires: ['nope'] };
     expect(() => orderModules([orphan])).toThrow(InvalidRegistry);
   });
 
@@ -655,12 +655,19 @@ describe('settlement contracts', () => {
         if (ctx.period !== 1) return;
         const cell = ctx.parties.ofKind(HOUSEHOLD).find((c) => c.bank === BANK_B);
         if (cell?.representation !== 'cell') throw new Error('no cell at bank b');
+        // Money C2.b's half asks about two accounts at ONE issuer, so the pair is read out of the
+        // world rather than assumed of the seed: WHICH firm banks where is the seed's business (it
+        // spreads them across whatever banks the world has) and this is a test of settlement.
+        const atA = ctx.parties.ofKind(FIRM).filter((f) => f.bank === BANK_A);
+        const payer = atA[0]?.id;
+        const payee = atA[1]?.id;
+        if (payer === undefined || payee === undefined) throw new Error('no two firms at bank a');
         const side = cellSide(cell, PAYMENT);
         const draft: InstructionDraft = {
           legs: [
             {
               kind: 'money',
-              from: { holder: partyId('firm.1'), issuer: BANK_A },
+              from: { holder: payer, issuer: BANK_A },
               to: { holder: cell.id, issuer: BANK_B },
               ccy: PHX,
               amount: totalFor(cell, PAYMENT),
@@ -689,8 +696,8 @@ describe('settlement contracts', () => {
           legs: [
             {
               kind: 'money',
-              from: { holder: partyId('firm.1'), issuer: BANK_A },
-              to: { holder: partyId('firm.2'), issuer: BANK_A },
+              from: { holder: payer, issuer: BANK_A },
+              to: { holder: payee, issuer: BANK_A },
               ccy: PHX,
               amount: 5,
               fromCell: none(),
