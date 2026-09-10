@@ -43,15 +43,15 @@ export const DESKS: readonly DeskDecl[] = [
     name: 'Bank A trading',
     bank: 'bank.a',
     makes: ['equity.share', 'sovereign.bond', 'sovereign.bill', 'fund.share'],
-    cash: 400,
+    cash: 400_000,
     // Seed A3: it opens holding shares and no paper. A share line has no other holder at period
     // zero — nobody has founded anything and nobody has bought anything (Seed E1) — so what a desk
     // opens holding IS the line, and it is the float the rest of the world buys from. Sovereign
     // paper already has holders the seed states, and a desk that opened holding more of it would
     // be a seed deciding how much the sovereign owes: it builds that book by trading, from nothing.
-    opens: { 'equity.share': 120 },
-    limitPerInstrument: 400,
-    limitAggregate: 1200,
+    opens: { 'equity.share': 120_000 },
+    limitPerInstrument: 400_000,
+    limitAggregate: 1_200_000,
     requiredReturnOnCapital: 0.1,
     why: 'The larger book: it will carry more of a line and wants a tenth on the capital that ties up. It quotes the tighter of the two out of the same view, and it is the one that is still there when the other has filled up.',
   },
@@ -60,10 +60,10 @@ export const DESKS: readonly DeskDecl[] = [
     name: 'Bank B trading',
     bank: 'bank.b',
     makes: ['equity.share', 'sovereign.bond', 'sovereign.bill', 'fund.share'],
-    cash: 250,
-    opens: { 'equity.share': 80 },
-    limitPerInstrument: 220,
-    limitAggregate: 700,
+    cash: 250_000,
+    opens: { 'equity.share': 80_000 },
+    limitPerInstrument: 220_000,
+    limitAggregate: 700_000,
     requiredReturnOnCapital: 0.15,
     why: 'The smaller and dearer book: half the room and half again the required return, so it skews harder as it fills and steps back sooner. It is the desk whose stopping is what a thin market looks like.',
   },

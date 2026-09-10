@@ -38,6 +38,7 @@ import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { struckIn } from '../../prices/price-store.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { isAssetLeg, isMoneyLeg, type Leg } from '../../ledger/instruction.js';
+import { MONEY_PIECES } from '../../registry/grid.js';
 import { displayName } from '../../registry/naming.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
@@ -230,8 +231,8 @@ export const treasury: SystemModule = {
     },
     {
       id: TREASURY_PARAMS.transfers,
-      value: 0.012,
-      unit: 'PHX per member per period',
+      value: 12 * MONEY_PIECES,
+      unit: 'pieces of money per member per period (twelve PHX)',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1, B3: transfers to households. Until the polity exists this is the standing mandate declared at the seed, and the register prints parliament as its owner (Polity D5, XI-17).',
@@ -246,8 +247,8 @@ export const treasury: SystemModule = {
     },
     {
       id: TREASURY_PARAMS.purchases,
-      value: 30,
-      unit: 'PHX per period',
+      value: 30_000 * MONEY_PIECES,
+      unit: 'pieces of money per period (thirty thousand PHX)',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1: what the state puts aside to buy real things with. It is a budget and not a quantity: how much that buys is the market\'s business, and the state is rationed in it like any other buyer (Goods C4).',

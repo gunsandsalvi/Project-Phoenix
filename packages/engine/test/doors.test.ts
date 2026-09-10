@@ -4,6 +4,7 @@
  *
  * @spec Expectations A1 Expectations A2 Expectations A2.b Goods A1 Commodities Spot D5 Goods E1 Goods E2 Goods E2.c Goods E4 Commodities Spot F1 Law 4 Observer E3
  */
+import { TONNE_PIECES } from '../src/registry/grid.js';
 import { describe, expect, it } from 'vitest';
 import {
   ANNUAL,
@@ -68,7 +69,7 @@ function goodsModule(profile: InstrumentKindProfile, run: (ctx: MechanismContext
     instrumentKinds: [profile],
     partyKinds: [],
     curveFamilies: [],
-    units: [{ id: TONNES, name: 'tonnes', tickExponent: 10 }],
+    units: [{ id: TONNES, name: 'tonnes', perUnit: TONNE_PIECES }],
     params: [],
     phases: [
       {

@@ -23,7 +23,7 @@ import {
 } from '../../core/ids.js';
 import { addTo, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
-import { TIME_GRID } from '../../registry/grid.js';
+import { TIME_PIECES } from '../../registry/grid.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
@@ -61,8 +61,8 @@ function paramsOf(): ParamDecl[] {
   return [
     {
       id: LABOUR_PARAMS.hoursPerMember,
-      value: LABOUR_NUMBERS.hoursPerMember,
-      unit: 'hours per person per period',
+      value: LABOUR_NUMBERS.hoursPerMember * TIME_PIECES,
+      unit: 'minutes per person per period (thirty-five hours)',
       kind: 'technology',
       owner: 'model',
       why: 'Labour A1, B2: what one person has to sell in a week. The workforce is people and this is their time, so a headcount and an hour count are the same fact read two ways (F2).',
@@ -282,7 +282,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
     curveFamilies: [],
     // Labour A1, Law 8: time has a smallest piece too. A thousandth of an hour is about four
     // seconds, which is finer than any contract in this world states and coarse enough to be real.
-    units: [{ id: HOURS, name: 'hours', tickExponent: TIME_GRID }],
+    units: [{ id: HOURS, name: 'hours', perUnit: TIME_PIECES }],
     params: paramsOf(),
     phases: [
       {

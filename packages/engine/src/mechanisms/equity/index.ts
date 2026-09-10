@@ -36,6 +36,7 @@ import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
+import { MONEY_PIECES } from '../../registry/grid.js';
 import { displayName } from '../../registry/naming.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { FIRM } from '../../registry/profiles.js';
@@ -76,8 +77,8 @@ function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
   return [
     {
       id: OPENING_SHARE,
-      value: 1,
-      unit: 'currency per share at the seed',
+      value: MONEY_PIECES,
+      unit: 'pieces of money per share at the seed (one PHX)',
       kind: 'resolution',
       owner: 'model',
       why: 'Seed C4, Law 2: a market that has never traded has no price (XI-6) and a world that opens with shares outstanding has to say what one is. It is a RESOLUTION: double it and halve every share count the seed states and no value, flow or decision moves — which is exactly what a split does (D4), so the invariance is a mechanism in this world and a test of it, not a claim about one.',

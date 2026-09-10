@@ -24,6 +24,7 @@ import {
 import { add, div, dustOf, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { downTick } from '../../core/tick.js';
+import { MONEY_PIECES } from '../../registry/grid.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
@@ -265,11 +266,7 @@ function runSession(ctx: MechanismContext): void {
     // pieces, so what the arithmetic leaves below one is not a shortfall — and a session that
     // recorded it as a refusal would publish a funding squeeze made of rounding, which every
     // uninsured depositor in the world then reads as a reason to leave (B7, D5.a, E1).
-    const piece = ctx.registry.tick(currencyUnit(ccy));
-    let need = downTick(
-      add(-p.gap, fallsDueNext(ctx, borrower, ccy), 'what it has to raise'),
-      piece,
-    );
+    let need = downTick(add(-p.gap, fallsDueNext(ctx, borrower, ccy), 'what it has to raise'));
     // Every lender's schedule for this name goes into the book before anything clears, so what a
     // borrower chooses between is what was actually posted (Clearing C5) and not what it guessed.
     for (const book of BOOKS) {
@@ -303,7 +300,7 @@ function runSession(ctx: MechanismContext): void {
       const bid = bankOrders(ctx.participant(borrower), book, borrower, p, need, c, power);
       for (const o of bid) ctx.post(venue, o);
       const raised = clearBook(ctx, m, book, borrower, ccy, on, ctx.posted(venue));
-      need = downTick(stillNeeded(need, raised), piece);
+      need = downTick(stillNeeded(need, raised));
     }
     if (need > 0) {
       // B7, B2.a: the market did not clear for this name. It is an outcome of real schedules — no
@@ -351,7 +348,7 @@ function clearBook(
   on: Civil,
   posted: readonly Order[],
 ): number {
-  const struck = strike(posted, borrower, book, ctx.registry.tick(currencyUnit(ccy)));
+  const struck = strike(posted, borrower, book);
   if (struck.length === 0) return 0;
   const raised: number[] = [];
   for (let s of struck) {
@@ -450,7 +447,7 @@ function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Position>)
     const ask: Order = { party: bank, side: 'sell', price: c.floor, qty: spare };
     ctx.post(venue, ask);
     for (const o of floorBid(cb, offered(ctx.posted(venue)), c)) ctx.post(venue, o);
-    const struck = strike(ctx.posted(venue), cb, overnight, ctx.registry.tick(currencyUnit(ccy)));
+    const struck = strike(ctx.posted(venue), cb, overnight);
     for (const s of struck) {
       if (s.lender !== bank || !material(s.amount, 2, p.reserves)) continue;
       const n = m.next;
@@ -613,8 +610,8 @@ function paramsOf(): ParamDecl[] {
     },
     {
       id: MM_PARAMS.insuranceLimit,
-      value: 0.1,
-      unit: 'PHX per member',
+      value: 100 * MONEY_PIECES,
+      unit: 'pieces of money per member (a hundred PHX)',
       kind: 'policy',
       owner: 'parliament',
       why: 'Banks Funding A1.a, Banks Capital D4: what is insured, PER MEMBER of a cell (XI-15). It is what makes E4 break the run loop for retail money and not for wholesale, and it is a rule somebody wrote — parliament owns it from worklist 14.',

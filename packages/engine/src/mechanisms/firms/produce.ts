@@ -111,11 +111,7 @@ function start(
       // Law 8: it must draw WHOLE pieces of the input, and a recipe met with the piece below is a
       // recipe not met — so what its stock reaches is a piece short of what dividing would say.
       qty: div(
-        sub(
-          ctx.register.free(firm, input.instrument),
-          ctx.registry.tick(ctx.instruments.get(input.instrument).unit),
-          'stock it can commit',
-        ),
+        sub(ctx.register.free(firm, input.instrument), 1, 'stock it can commit'),
         input.qtyPerUnit,
         'what the stock on hand reaches',
       ),
@@ -136,10 +132,7 @@ function start(
   const legs: Leg[] = [];
   const costs: number[] = [wages];
   for (const input of tech.inputs) {
-    const qty = upTick(
-      mul(batch, input.qtyPerUnit, 'what the recipe draws'),
-      ctx.registry.tick(ctx.instruments.get(input.instrument).unit),
-    );
+    const qty = upTick(mul(batch, input.qtyPerUnit, 'what the recipe draws'));
     costs.push(heldCost(ctx, firm, input.instrument, qty));
     legs.push({
       kind: 'destroy',

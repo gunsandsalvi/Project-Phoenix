@@ -256,7 +256,6 @@ export function strike(
   posted: readonly Order[],
   borrower: PartyId,
   book: BookDecl,
-  tick: number,
 ): readonly Struck[] {
   const outcome = clear(posted, 'proRata', 'sellersCompete');
   if (!isCleared(outcome)) return [];
@@ -264,7 +263,7 @@ export function strike(
   for (const f of outcome.fills) {
     // Law 8: money is lent in whole pieces of itself. Rationing gives a lender a share of what it
     // offered, and the share below the piece it could actually hand over is not lent.
-    const amount = downTick(f.qty, tick);
+    const amount = downTick(f.qty);
     if (f.side !== 'sell' || amount <= 0) continue;
     out.push({ lender: f.party, borrower, amount, rate: outcome.price, book });
   }
@@ -281,8 +280,8 @@ export function coverFor(available: readonly Advance[], amount: number): readonl
     // first, in which case it binds every whole piece of it there is.
     if (left <= 0) break;
     const want = div(left, a.valuePerUnit, 'units to cover');
-    const enough = upTick(want, a.tick);
-    const units = enough > a.free ? downTick(a.free, a.tick) : enough;
+    const enough = upTick(want);
+    const units = enough > a.free ? downTick(a.free) : enough;
     if (units <= 0) continue;
     out.push({ instrument: a.instrument, qty: units, valuedAt: a.valuePerUnit });
     left = sub(left, mul(units, a.valuePerUnit, 'covered'), 'left to cover');

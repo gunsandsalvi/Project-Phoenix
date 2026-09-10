@@ -33,7 +33,7 @@ import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
 import { displayName } from '../../registry/naming.js';
-import { GOODS_GRID } from '../../registry/grid.js';
+import { WHOLE_PIECES } from '../../registry/grid.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { UnitDecl } from '../../registry/registry.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
@@ -92,7 +92,9 @@ function unitsOf(rows: readonly CapitalKindDecl[]): UnitDecl[] {
   // smallest piece is that good's. A coarser grid here would strand a fraction of every machine at
   // the moment it went into service — a thing that had been bought, paid for and delivered, and
   // then did not fit into the unit it was about to be counted in.
-  return rows.map((d) => ({ id: plantUnitId(d.id), name: d.unit, tickExponent: GOODS_GRID }));
+  // Law 8: plant is counted in whole machines. A machine does not wear away into two thirds of
+  // one: it wears in VALUE (A3, the depreciation schedule) and leaves in whole units when it goes.
+  return rows.map((d) => ({ id: plantUnitId(d.id), name: d.unit, perUnit: WHOLE_PIECES }));
 }
 
 /**

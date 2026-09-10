@@ -1,6 +1,6 @@
 /**
- * The smallest piece of a unit: what it is, what it does to arithmetic, and that the world's path
- * does not turn on how fine it is.
+ * The indivisible piece of a unit: what it is, that the arithmetic on it is exact, and that the
+ * world's path does not turn on how fine it is.
  *
  * @spec Law 1 Law 2 Law 7 Law 8 Money A2 Money C1 Register A1.c Clearing C3 XI-15
  */
@@ -11,17 +11,16 @@ import {
   PHX,
   assemble,
   commonGrain,
+  currencyUnit,
   downTick,
   foundationSpec,
   foundationWorld,
-  isTick,
   none,
   onTick,
   partyId,
   splitOnTick,
-  tickFromExponent,
-  ticks,
   toTick,
+  unitId,
   upTick,
   type Leg,
   type MechanismContext,
@@ -30,74 +29,73 @@ import {
 } from '../src/index.js';
 import { unexpected } from './expected.js';
 
-const PIECE = tickFromExponent(20);
-
-describe('what a tick is (Law 8)', () => {
-  it('is a power of two, because only then do whole pieces add exactly (Law 7)', () => {
-    expect(isTick(1)).toBe(true);
-    expect(isTick(0.5)).toBe(true);
-    expect(isTick(PIECE)).toBe(true);
-    // The decimal grid everybody reaches for first: 0.01 is not representable in binary, so a
-    // hundred of them do not make one and the dust is back with an extra step.
-    expect(isTick(0.01)).toBe(false);
-    expect(isTick(0.1)).toBe(false);
+describe('what a piece is (Law 8)', () => {
+  it('is a whole number, so pieces add exactly and there is no dust to forgive (Law 7)', () => {
+    expect(onTick(1)).toBe(true);
+    expect(onTick(1000000)).toBe(true);
+    // The two things that are NOT quantities: a fraction of a piece, and a count so large the
+    // machine can no longer add one to it exactly.
+    expect(onTick(0.5)).toBe(false);
+    expect(onTick(0.01)).toBe(false);
+    expect(onTick(Math.pow(2, 53) + 2)).toBe(false);
+    // This is the whole reason a quantity is a COUNT and not a fraction of a named unit: a
+    // hundredth cannot be held exactly in binary, so a hundred of them are not one...
     expect(0.1 + 0.2 === 0.3).toBe(false);
-    // On the grid, a million pieces added one at a time is exactly a million pieces.
+    // ...while a million cents added one at a time are exactly a million cents.
     let running = 0;
-    for (let i = 0; i < 100000; i += 1) running += PIECE;
-    expect(running).toBe(100000 * PIECE);
-    expect(onTick(running, PIECE)).toBe(true);
+    for (let i = 0; i < 1000000; i += 1) running += 1;
+    expect(running).toBe(1000000);
+    expect(onTick(running)).toBe(true);
   });
 
   it('rounds three ways, and each is a different question', () => {
-    const value = 1.4999 * PIECE;
     // What exists nearest: the answer for a value that BECOMES a payment.
-    expect(ticks(toTick(value, PIECE), PIECE)).toBe(1);
+    expect(toTick(1.4999)).toBe(1);
+    expect(toTick(1.5)).toBe(2);
     // What somebody CAN pay or deliver: never up, because the piece above is not theirs.
-    expect(ticks(downTick(value, PIECE), PIECE)).toBe(1);
-    expect(ticks(downTick(2.9 * PIECE, PIECE), PIECE)).toBe(2);
+    expect(downTick(1.4999)).toBe(1);
+    expect(downTick(2.9)).toBe(2);
     // What a requirement NEEDS: never down, because a recipe met with the piece below is not met.
-    expect(ticks(upTick(2.1 * PIECE, PIECE), PIECE)).toBe(3);
+    expect(upTick(2.1)).toBe(3);
     // ...and it works the same on both sides of zero.
-    expect(downTick(-2.9 * PIECE, PIECE)).toBe(-2 * PIECE);
-    expect(upTick(-2.1 * PIECE, PIECE)).toBe(-3 * PIECE);
+    expect(downTick(-2.9)).toBe(-2);
+    expect(upTick(-2.1)).toBe(-3);
   });
 });
 
 describe('splitting a piece (Clearing C3, Law 2)', () => {
   it('gives the parts to named claimants and never leaves a residual', () => {
-    // Ten pieces, three claimants: four, three and three — and the odd piece has a holder.
-    const parts = splitOnTick(10 * PIECE, [1, 1, 1], PIECE).map((p) => ticks(p, PIECE));
+    // Ten cents shared three ways: four, three and three — and the odd cent has a holder.
+    const parts = splitOnTick(10, [1, 1, 1]);
     expect(parts).toEqual([4, 3, 3]);
     expect(parts.reduce((a, b) => a + b, 0)).toBe(10);
   });
 
   it('gives the odd pieces to the largest remainders, ties to the earlier claimant', () => {
-    const parts = splitOnTick(7 * PIECE, [3, 3, 1], PIECE).map((p) => ticks(p, PIECE));
+    const parts = splitOnTick(7, [3, 3, 1]);
     expect(parts.reduce((a, b) => a + b, 0)).toBe(7);
     expect(parts[0]).toBeGreaterThanOrEqual(parts[2] ?? 0);
     // The same claimants in the same order always get it: nothing here is a coin toss.
-    expect(splitOnTick(7 * PIECE, [3, 3, 1], PIECE)).toEqual(splitOnTick(7 * PIECE, [3, 3, 1], PIECE));
+    expect(splitOnTick(7, [3, 3, 1])).toEqual(splitOnTick(7, [3, 3, 1]));
   });
 
   it('sums to exactly the whole, at any weights and either sign', () => {
     for (const weights of [[1, 2, 3, 5, 8], [1], [7, 7, 7, 7], [1, 1000000]]) {
       for (const total of [1, 13, 9999]) {
-        const parts = splitOnTick(total * PIECE, weights, PIECE);
-        expect(parts.reduce((a, b) => a + b, 0)).toBe(total * PIECE);
-        expect(parts.every((p) => onTick(p, PIECE))).toBe(true);
+        const parts = splitOnTick(total, weights);
+        expect(parts.reduce((a, b) => a + b, 0)).toBe(total);
+        expect(parts.every((p) => onTick(p))).toBe(true);
       }
     }
-    const negative = splitOnTick(-10 * PIECE, [1, 1, 1], PIECE);
-    expect(negative.reduce((a, b) => a + b, 0)).toBe(-10 * PIECE);
+    expect(splitOnTick(-10, [1, 1, 1]).reduce((a, b) => a + b, 0)).toBe(-10);
   });
 
   it('deals with a population in whole pieces per member (XI-15)', () => {
     // Two cells of five hundred and three hundred can exchange fifteen hundred pieces at a time:
     // five each for one of them and three each for the other, and nothing finer than that.
-    expect(commonGrain(PIECE, 500, 300)).toBe(1500 * PIECE);
-    expect(commonGrain(PIECE, 1, 1)).toBe(PIECE);
-    expect(commonGrain(PIECE, 1, 500)).toBe(500 * PIECE);
+    expect(commonGrain(500, 300)).toBe(1500);
+    expect(commonGrain(1, 1)).toBe(1);
+    expect(commonGrain(1, 500)).toBe(500);
   });
 });
 
@@ -139,68 +137,87 @@ function payer(amount: number): SystemModule {
 }
 
 describe('the wire refuses what does not exist (Law 8, Money C1)', () => {
-  it('throws on an amount that is not a whole number of pieces, and settles one that is', () => {
+  it('throws on half a cent, and settles a whole one', () => {
     const spec = foundationSpec('offgrid');
-    const bad = assemble({ ...spec, modules: [...spec.modules, payer(0.01)] });
-    expect(() => bad.step()).toThrow(/not a whole number of ccy:PHX/);
-    const good = assemble({ ...spec, modules: [...spec.modules, payer(1 / 64)] });
+    const bad = assemble({ ...spec, modules: [...spec.modules, payer(0.5)] });
+    expect(() => bad.step()).toThrow(/not a whole number of pieces/);
+    const good = assemble({ ...spec, modules: [...spec.modules, payer(1)] });
     expect(() => good.step()).not.toThrow();
   });
 });
 
-/** The same world, on a grid `shift` halvings finer (positive) or coarser (negative). */
-function atShift(shift: number, periods: number): { produced: number; money: number; reds: number } {
-  const spec = foundationSpec('tick-invariance');
+/** The same world, declared in pieces `shift` times finer than the units state. */
+function atShift(
+  shift: number,
+  periods: number,
+): { produced: number; money: number; batches: number; piece: number; reds: number } {
+  const spec = foundationSpec('piece-invariance');
   const params = spec.params.map((p) =>
-    p.id === KERNEL_PARAMS.tickShift ? { ...p, value: shift } : p,
+    p.id === KERNEL_PARAMS.pieceShift ? { ...p, value: shift } : p,
   );
   const w: World = assemble({ ...spec, params });
+  const perPHX = w.registry.subdivision(currencyUnit(PHX));
+  const perTonne = w.registry.subdivision(unitId('tonnes'));
   let produced = 0;
+  let batches = 0;
   let reds = 0;
   for (let i = 0; i < periods; i += 1) {
     const r = w.step();
     reds += unexpected(r.audit).length;
     for (const e of w.journal.ofKind('firms.produced')) {
-      if (e.period === w.period) produced += Number(e.data['finished']);
+      if (e.period !== w.period) continue;
+      produced += Number(e.data['finished']);
+      batches += 1;
     }
   }
-  return { produced, money: w.moneyStock()['PHX'] ?? 0, reds };
+  // Read back in NAMED units, because that is what two worlds declared at different subdivisions
+  // have in common: one holds cents and the other tenths of a cent, and both hold the same PHX.
+  return {
+    produced: produced / perTonne,
+    money: (w.moneyStock()['PHX'] ?? 0) / perPHX,
+    batches,
+    piece: 1 / perTonne,
+    reds,
+  };
 }
 
-describe('how fine the grid is, is a RESOLUTION (Law 2)', () => {
-  it('holds every structural invariant exactly, at every grid', () => {
+describe('how fine the pieces are, is a RESOLUTION (Law 2)', () => {
+  it('holds every structural invariant exactly, at every subdivision', () => {
     // This is the invariance that must be EXACT, and it is: money is conserved, holdings sum to
-    // what is issued, no residual is left anywhere — at a grid four thousand times coarser and
-    // four thousand times finer than the declared one. Nothing here is within anything.
-    for (const shift of [-6, -3, 0, 3, 6]) expect(atShift(shift, 8).reds).toBe(0);
+    // what is issued, no residual is left anywhere — with the piece a cent, a tenth of a cent and
+    // a hundredth of one. Nothing here is within anything.
+    for (const shift of [1, 10, 100]) expect(atShift(shift, 8).reds).toBe(0);
   });
 
-  it('converges: refine the grid and the answer stops moving', () => {
+  it('produces exactly the same real output, and its money converges', () => {
     const periods = 8;
-    const coarse = [atShift(-6, periods), atShift(-3, periods)];
-    const fine = [atShift(3, periods), atShift(6, periods)];
-    const gap = (a: { produced: number; money: number }, b: typeof a): number =>
-      Math.abs(a.produced - b.produced) + Math.abs(a.money - b.money);
-    // Law 2: a resolution is tested by invariance, and here that is convergence — two grids eight
-    // halvings apart at the fine end give the same world to within a hundredth, and two at the
-    // coarse end do not. Nothing in this is a tolerance somebody chose: it is one measurement
-    // against another.
-    expect(gap(fine[0] as never, fine[1] as never)).toBeLessThan(
-      gap(coarse[0] as never, coarse[1] as never),
-    );
-    expect(gap(fine[0] as never, fine[1] as never)).toBeLessThan(1);
+    const coarse = atShift(1, periods);
+    const finer = atShift(10, periods);
+    const finest = atShift(100, periods);
+    // WHAT THE WORLD MADE IS THE SAME, in tonnes, at all three. Not to the last bit: a batch is
+    // started in whole pieces of the good, so a coarser piece rounds each batch harder. The gap is
+    // therefore at most one coarse piece for every batch either world started — which is a bound
+    // derived from the arithmetic, in the sense Law 7 means, and not a band anybody chose.
+    const rounding = coarse.batches * coarse.piece;
+    expect(Math.abs(finer.produced - coarse.produced)).toBeLessThanOrEqual(rounding);
+    expect(Math.abs(finest.produced - coarse.produced)).toBeLessThanOrEqual(rounding);
+    // Its MONEY is a different matter, and honestly so: what a payment comes to is rounded to a
+    // piece, so a coarser piece rounds harder, and the rounding feeds decisions that are
+    // thresholds. Two worlds a factor of ten apart at the fine end therefore agree far more closely
+    // than two at the coarse end — which is convergence, measured, not a tolerance anybody chose.
+    const gap = (a: number, b: number): number => Math.abs(a - b) / Math.abs(a);
+    expect(gap(finer.money, finest.money)).toBeLessThan(gap(coarse.money, finer.money));
     // BEYOND THIS HORIZON THE PATHS SEPARATE, and that is a fact about the world rather than about
-    // the grid: its decisions are thresholds (Law 2 forbids deciding at an average), so somewhere
-    // around the twelfth period a firm on the edge of starting a batch starts it in one run and
-    // not in the other, and the two histories are different from then on. The same happens for any
-    // perturbation at all. What must not move is what the test above asserts.
+    // the pieces: its decisions are thresholds (Law 2 forbids deciding at an average), so a firm on
+    // the edge of starting a batch starts it in one run and not in the other, and the two histories
+    // differ from then on. The same happens for any perturbation at all. What must not move is what
+    // the test above asserts.
   });
 
-  it('conserves money exactly at every grid, which is what the pieces buy', () => {
-    const w = foundationWorld('tick-conserve');
+  it('conserves money exactly, which is what whole pieces buy', () => {
+    const w = foundationWorld('piece-conserve');
     for (let i = 0; i < 8; i += 1) w.step();
-    const report = w.last?.audit;
-    const money = report?.families.find((f) => f.family === 'money');
+    const money = w.last?.audit.families.find((f) => f.family === 'money');
     // Every violation this family has left is the one this world is known to report (test/
     // expected.ts); what it does NOT report any more is a balance that drifted off its own grid.
     expect(money?.violations.every((v) => v.message.includes('no lender row'))).toBe(true);

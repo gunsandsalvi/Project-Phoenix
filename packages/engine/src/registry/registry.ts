@@ -9,7 +9,7 @@
  * world is built, because parties are state, not data.
  */
 import { InvalidRegistry, Missing } from '../core/errors.js';
-import { downTick, isTick, tickFromExponent, toTick } from '../core/tick.js';
+import { downTick, piecesPerUnit, toTick } from '../core/tick.js';
 import { currencyUnit } from '../core/ids.js';
 import type {
   CohortId,
@@ -42,18 +42,21 @@ export interface UnitDecl {
   readonly id: UnitId;
   readonly name: string;
   /**
-   * Law 1, Law 8: THE SMALLEST PIECE OF THIS UNIT THAT EXISTS, as the exponent of a halving — the
-   * tick is 2^-exponent, so 0 is whole units (a contract, a dwelling) and 20 is about a millionth.
+   * Law 1, Law 8: HOW MANY INDIVISIBLE PIECES ONE OF THESE IS DIVIDED INTO — a hundred cents to the
+   * PHX, a thousand kilos to the tonne, one machine to a machine.
    *
-   * Every quantity of the unit is a whole number of ticks: there is no half-cent and no thousandth
-   * of a share. It is a power of two because only then do whole ticks add EXACTLY in binary
-   * floating point, which is what lets a balance moved a million times be compared with no
-   * tolerance at all (Law 7) instead of with a derived band.
+   * A QUANTITY OF THIS UNIT IS A COUNT OF THOSE PIECES and is always a whole number: the state
+   * holds 18849 cents, never 188.49 of anything. That is the only way the arithmetic is exact —
+   * integers add and compare exactly in binary — so no balance drifts, no check needs a tolerance,
+   * and nothing finer than a piece can be paid, lent, refused or left over anywhere in the world.
    *
-   * How fine it is, is a RESOLUTION (Law 2): change it and the world's path must not move. The
-   * shift below moves every unit's grid together so that invariance can be run and measured.
+   * The NAME is what a person reads (PHX, tonnes); this is how the number relates to it, and it is
+   * used at the two boundaries where the two meet: a seed declaring an amount and a report showing
+   * one. How fine it is, is a RESOLUTION (Law 2): the same world declared in tenths of a cent must
+   * follow the same path, and the registry's shift moves every unit's subdivision together so that
+   * invariance can be run and measured.
    */
-  readonly tickExponent: number;
+  readonly perUnit: number;
 }
 
 /** A cohort is a life stage; ageing is a split at the boundary by date (Households F1.a). */
@@ -84,8 +87,8 @@ export interface RegistryData {
 
 export class Registry {
   readonly currencies: ReadonlyMap<CurrencyCode, CurrencyDecl>;
-  /** Law 2: how many halvings every unit's grid is shifted by, for the invariance test. */
-  readonly tickShift: number;
+  /** Law 2: what every unit's subdivision is multiplied by, for the invariance test. */
+  readonly pieceShift: number;
   readonly regions: ReadonlyMap<RegionId, RegionDecl>;
   readonly units: ReadonlyMap<UnitId, UnitDecl>;
   readonly cohorts: readonly CohortDecl[];
@@ -95,11 +98,11 @@ export class Registry {
   readonly instrumentKinds: ReadonlyMap<InstrumentKindId, InstrumentKindProfile>;
   readonly partyKinds: ReadonlyMap<PartyKindId, PartyKindProfile>;
 
-  private readonly ticks = new Map<UnitId, number>();
+  private readonly subdivisions = new Map<UnitId, number>();
 
-  /** `tickShift`: Law 2's resolution knob — how many halvings finer every unit's grid is. */
-  constructor(data: RegistryData, tickShift: number) {
-    this.tickShift = tickShift;
+  /** `pieceShift`: Law 2's resolution knob — how many times finer every unit's pieces are. */
+  constructor(data: RegistryData, pieceShift: number) {
+    this.pieceShift = pieceShift;
     this.currencies = unique(data.currencies, (c) => c.code, 'currency');
     this.regions = unique(data.regions, (r) => r.id, 'region');
     this.units = unique(data.units, (u) => u.id, 'unit');
@@ -124,14 +127,9 @@ export class Registry {
         throw new InvalidRegistry('Appendix A', `currency ${c.code} has no unit ${unit} declared`);
       }
     }
-    for (const u of this.units.values()) {
-      // Law 7: a grid that is not a power of two drifts off itself, and then the exactness this
-      // whole idea buys is gone. It is refused at assembly rather than discovered in a balance.
-      const tick = tickFromExponent(u.tickExponent + tickShift);
-      if (!isTick(tick)) {
-        throw new InvalidRegistry('Law 8', `unit ${u.id} has a tick of ${tick}, which is not a power of two`);
-      }
-    }
+    // Law 8: a subdivision that is not a whole number of pieces is refused at assembly rather
+    // than discovered later in a balance that will not add up.
+    for (const u of this.units.values()) piecesPerUnit(u.perUnit, pieceShift);
     if (this.cohorts.length === 0) {
       throw new InvalidRegistry('XI-15', 'at least one cohort is needed');
     }
@@ -173,16 +171,38 @@ export class Registry {
     }
   }
 
-  /**
-   * Law 8: the smallest amount of this unit that exists. Every quantity in the state is a whole
-   * number of it, and the wire refuses one that is not (Money C1).
+/**
+   * Law 8: how many indivisible pieces one NAMED unit of this is — a hundred cents to the PHX. It
+   * is asked at the two boundaries where a person's number meets the state's: `pieces` converts a
+   * declared amount into the count the state holds, and `named` converts it back for a report.
+   * Nothing in between ever divides by it: every quantity in the engine is already a count.
    */
-  tick(id: UnitId): number {
-    const known = this.ticks.get(id);
+  subdivision(id: UnitId): number {
+    const known = this.subdivisions.get(id);
     if (known !== undefined) return known;
-    const made = tickFromExponent(this.unit(id).tickExponent + this.tickShift);
-    this.ticks.set(id, made);
+    const made = piecesPerUnit(this.unit(id).perUnit, this.pieceShift);
+    this.subdivisions.set(id, made);
     return made;
+  }
+
+  /** What a declared amount of this unit IS, as a count of pieces: 188.49 PHX is 18849 cents. */
+  pieces(id: UnitId, named: number): number {
+    return toTick(named * this.subdivision(id));
+  }
+
+  /**
+   * Law 8: a PRICE declared as money per named unit, as the state holds one — money pieces per
+   * piece of the thing. Prices are ratios and the state's two subdivisions are both in them, so a
+   * price of 400 PHX the tonne is four hundredths of a cent the gram, and value = units x price
+   * comes out in cents without anybody converting anything downstream.
+   */
+  priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: number): number {
+    return (perNamedUnit * this.subdivision(currencyUnit(ccy))) / this.subdivision(unit);
+  }
+
+  /** The other way, for a reader: 18849 cents is 188.49 PHX. Never used to decide anything. */
+  named(id: UnitId, pieces: number): number {
+    return pieces / this.subdivision(id);
   }
 
   /**
@@ -191,8 +211,8 @@ export class Registry {
    * between several payees uses `splitOnTick` instead, so that the parts sum to exactly the whole
    * and the odd tick has a named holder.
    */
-  payable(ccy: CurrencyCode, amount: number): number {
-    return downTick(amount, this.tick(currencyUnit(ccy)));
+  payable(_ccy: CurrencyCode, amount: number): number {
+    return downTick(amount);
   }
 
   /**
@@ -200,13 +220,13 @@ export class Registry {
    * where a quantity meets a price and the answer is what somebody owes: rounding it always down
    * would hand the payer a fraction of a piece on every trade it ever did.
    */
-  cashFor(ccy: CurrencyCode, value: number): number {
-    return toTick(value, this.tick(currencyUnit(ccy)));
+  cashFor(_ccy: CurrencyCode, value: number): number {
+    return toTick(value);
   }
 
   /** Register A1.c: the same question for units of anything else — the most that can be delivered. */
-  deliverable(unit: UnitId, qty: number): number {
-    return downTick(qty, this.tick(unit));
+  deliverable(_unit: UnitId, qty: number): number {
+    return downTick(qty);
   }
 
   /** Sovereign D3.a: the family, or nothing — a curve nobody declared is not a curve. */

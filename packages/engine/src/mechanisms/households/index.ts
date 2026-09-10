@@ -170,19 +170,14 @@ function consumptionIsBought(): Family {
           // the arithmetic's dust and to half a piece per member on top, and to nothing else: that
           // is the granularity of the money itself, derived here rather than allowed as a band.
           const who = view.parties.get(cell);
-          const ccy = view.registry.region(who.region).ccy;
-          const grain = mul(
-            view.registry.tick(currencyUnit(ccy)),
-            weightOf(who),
-            'what a payment by this cell moves in',
-          );
+          const grain = weightOf(who);
           if (withinDust(took.value, money.value, combineDust(took, money) + grain / 2)) continue;
           out.push({
             family: 'flows',
             spec: 'Households C5',
             owner: cell,
             size: sub(took.value, money.value, 'goods against money'),
-            unit: ccy,
+            unit: view.registry.region(who.region).ccy,
             period: view.period,
             message: `${cell} took ${took.value} of goods and paid ${money.value} for them`,
           });

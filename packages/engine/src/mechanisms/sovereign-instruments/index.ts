@@ -8,7 +8,7 @@
  * the treasury's programme are separate modules (worklist 3); this one is only the paper.
  */
 import type { Calendar } from '../../calendar/calendar.js';
-import { MONEY_GRID } from '../../registry/grid.js';
+import { MONEY_PIECES } from '../../registry/grid.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -210,7 +210,7 @@ export const sovereignInstruments: SystemModule = {
   curveFamilies: [],
   // Bond N2, Law 8: par is money, so its smallest piece is money's — a line is issued, traded and
   // redeemed in the same grid the coupons on it are paid in.
-  units: [{ id: PAR, name: 'units of par', tickExponent: MONEY_GRID }],
+  units: [{ id: PAR, name: 'units of par', perUnit: MONEY_PIECES }],
   params: [],
   phases: [],
   participants: [],

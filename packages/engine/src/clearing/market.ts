@@ -21,7 +21,7 @@ import { assertNever, forbid } from '../core/assert.js';
 import { currencyUnit, type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
 import { add, div, finite, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
-import { commonGrain, downTick, toTick } from '../core/tick.js';
+import { commonGrain, downToGrain, toGrain } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { AccountRef, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
@@ -136,9 +136,7 @@ export function runMarket(
   const outcome = clear(orders, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
   switch (outcome.kind) {
     case 'cleared': {
-      const trades = pairFills(outcome.fills, deps.registry.tick(deps.unitOf(m.instrument)), (p) =>
-        weightOf(deps.parties.get(p)),
-      );
+      const trades = pairFills(outcome.fills, (p) => weightOf(deps.parties.get(p)));
       const accrued = deps.accruedPerUnit(m.instrument, period);
       let settledVolume = 0;
       let allotted = 0;
@@ -258,11 +256,7 @@ export function runMarket(
 }
 
 /** Pair buy fills with sell fills, walking both lists; every trade has two named sides (D2). */
-function pairFills(
-  fills: readonly Fill[],
-  tick: number,
-  weight: (party: PartyId) => number,
-): Trade[] {
+function pairFills(fills: readonly Fill[], weight: (party: PartyId) => number): Trade[] {
   const buys = fills.filter((f) => f.side === 'buy').map((f) => ({ ...f }));
   const sells = fills.filter((f) => f.side === 'sell').map((f) => ({ ...f }));
   const out: Trade[] = [];
@@ -278,8 +272,8 @@ function pairFills(
     // Law 8, XI-15: what these two can actually exchange. Between named parties that is the unit's
     // own smallest piece; where one side is a population it is that piece for every member of it,
     // because each member is a real holder and none of them can hold a fraction of one.
-    const step = commonGrain(tick, weight(buyer.party), weight(seller.party));
-    const q = downTick(want, step);
+    const step = commonGrain(weight(buyer.party), weight(seller.party));
+    const q = downToGrain(want, step);
     if (q > 0) out.push({ buyer: buyer.party, seller: seller.party, qty: q });
     bLeft = finite(bLeft - q, 'buy left');
     sLeft = finite(sLeft - q, 'sell left');
@@ -318,12 +312,8 @@ function tradeInstruction(
   // that cleared. So the price a trade REALISES can differ from the print by less than one piece of
   // money per member — which is what rounding a price to real money has always meant, and is why
   // `settledVolume` and the print are two numbers rather than one.
-  const cashGrain = commonGrain(
-    deps.registry.tick(currencyUnit(m.ccy)),
-    weightOf(buyer),
-    weightOf(seller),
-  );
-  const cash = toTick(mul(t.qty, add(price, accruedPerUnit, 'dirty price'), 'trade cash'), cashGrain);
+  const cashGrain = commonGrain(weightOf(buyer), weightOf(seller));
+  const cash = toGrain(mul(t.qty, add(price, accruedPerUnit, 'dirty price'), 'trade cash'), cashGrain);
   if (cash <= 0) return none<InstructionDraft>();
   const buyerCell = cellSide(buyer, t.qty / weightOf(buyer));
   const sellerCell = cellSide(seller, t.qty / weightOf(seller));

@@ -445,8 +445,7 @@ function inventoryPaysRent(rows: readonly DeskDecl[]): Family {
         // A rate of nothing is a bank that pays nothing for its money and a desk that needs
         // nothing on its capital, which is a state and not a defect.
         const owed = mul(book, rate, 'what it owes on its book');
-        const piece = view.registry.tick(currencyUnit(view.registry.region(view.parties.get(desk).region).ccy));
-        if (book <= 0 || rate <= 0 || owed < piece || material(amount, 2, book)) continue;
+        if (book <= 0 || rate <= 0 || owed < 1 || material(amount, 2, book)) continue;
         out.push({
           family: 'flows',
           spec: 'Dealer Desks D3',

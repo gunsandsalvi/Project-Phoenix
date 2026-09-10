@@ -421,11 +421,10 @@ export class Settlement {
    * tick below or the tick above, and give the odd tick to somebody named (core/tick.ts).
    */
   private onTheGrid(qty: number, unit: UnitId, ins: Instruction): void {
-    const tick = this.d.registry.tick(unit);
     impossible(
-      onTick(qty, tick),
+      onTick(qty),
       'Law 8',
-      `instruction ${ins.id}: ${qty} is not a whole number of ${unit} (${tick} at a time)`,
+      `instruction ${ins.id}: ${qty} is not a whole number of pieces of ${unit}`,
     );
   }
 

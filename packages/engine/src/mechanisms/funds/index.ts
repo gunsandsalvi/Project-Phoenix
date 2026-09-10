@@ -51,6 +51,7 @@ import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { wasTraded } from '../../prices/price-store.js';
 import { weightOf } from '../../parties/party.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
+import { MONEY_PIECES } from '../../registry/grid.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
 import { SHARES } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -185,8 +186,8 @@ function paramsOf(): ParamDecl[] {
   return [
     {
       id: FUND_PARAMS.openingShare,
-      value: 1,
-      unit: 'currency per share at the first subscription',
+      value: MONEY_PIECES,
+      unit: 'pieces of money per share at the first subscription (one PHX)',
       kind: 'resolution',
       owner: 'model',
       why: 'Fund Shares B1: a fund with no shares has nothing to divide by, so the first subscription fixes the unit its shares are counted in. Double it and every share count halves and no value, flow or decision moves — which is what makes it a resolution and not a price (Law 2).',
@@ -281,11 +282,10 @@ function subscribe(
   // cell (XI-15). The shares are struck first, because they are the thing being bought, and what
   // is paid is what they come to at the NAV — the nearest piece, so the fund is not shaved by a
   // fraction on every subscription it ever takes.
-  const shareTick = ctx.registry.tick(ctx.instruments.get(share.id).unit);
-  let shares = downTick(div(budget, perShare, 'shares it gets'), shareTick);
+  let shares = downTick(div(budget, perShare, 'shares it gets'));
   let paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
   if (paid > cash) {
-    shares = sub(shares, shareTick, 'a piece less');
+    shares = sub(shares, 1, 'a piece less');
     paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
   }
   if (shares <= 0 || paid <= 0 || !material(shares, 2, sharesAsked)) return;
@@ -348,11 +348,7 @@ function redeem(
   const paying = owedNow > cash ? cash : owedNow;
   // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
   // NAV — the nearest piece of money. What cannot be paid for stays in the queue (C2.b).
-  const shareTick = ctx.registry.tick(share.unit);
-  const sharesNow = downTick(
-    div(div(paying, perShare, 'shares it can pay for'), weight, 'per member'),
-    shareTick,
-  );
+  const sharesNow = downTick(div(div(paying, perShare, 'shares it can pay for'), weight, 'per member'));
   if (material(sharesNow, 2, asked) && sharesNow > 0) {
     const perMemberCash = ctx.registry.cashFor(ccy, mul(sharesNow, perShare, 'what a member is paid'));
     const side = cellSide(party, sharesNow);

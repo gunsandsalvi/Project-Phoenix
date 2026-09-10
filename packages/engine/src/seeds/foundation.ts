@@ -24,6 +24,7 @@ import {
   cohortId,
   currencyCode,
   currencyUnit,
+  type InstrumentId,
   curveFamilyId,
   instrumentId,
   marketId,
@@ -37,7 +38,7 @@ import {
 import { Missing } from '../core/errors.js';
 import type { DayCount } from '../calendar/daycount.js';
 import { priceAt } from '../prices/curve.js';
-import { positiveCount } from '../core/num.js';
+import { positiveCount, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
 import {
@@ -71,8 +72,9 @@ import { sovereignAuction } from '../mechanisms/sovereign-auction/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
+import { splitOnTick } from '../core/tick.js';
 import { displayName } from '../registry/naming.js';
-import { MONEY_GRID, SHARE_GRID } from '../registry/grid.js';
+import { MONEY_PIECES, SHARE_PIECES } from '../registry/grid.js';
 import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, SHARES, TREASURY } from '../registry/profiles.js';
 import type { ParamDecl } from '../registry/params.js';
 import type { AssemblySpec } from '../world/assemble.js';
@@ -112,12 +114,12 @@ interface SeedLine {
 }
 
 const SEED_LINES: readonly SeedLine[] = [
-  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, cb: 0, bankA: 300, bankB: 200, perMember: 0 },
-  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, cb: 0, bankA: 200, bankB: 300, perMember: 0 },
-  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, cb: 0, bankA: 250, bankB: 250, perMember: 0.02 },
-  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 150, bankA: 200, bankB: 100, perMember: 0.04 },
-  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 180, bankA: 150, bankB: 150, perMember: 0.06 },
-  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 205, bankA: 150, bankB: 150, perMember: 0.08 },
+  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, cb: 0, bankA: 300000, bankB: 200000, perMember: 0 },
+  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, cb: 0, bankA: 200000, bankB: 300000, perMember: 0 },
+  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, cb: 0, bankA: 250000, bankB: 250000, perMember: 20 },
+  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, cb: 150000, bankA: 200000, bankB: 100000, perMember: 40 },
+  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, cb: 180000, bankA: 150000, bankB: 150000, perMember: 60 },
+  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, cb: 205000, bankA: 150000, bankB: 150000, perMember: 80 },
 ];
 
 /** One day count for the seeded paper, so an opening price and its yield use one convention. */
@@ -170,47 +172,47 @@ interface SeedFirm {
  */
 const SEED_FIRMS: readonly SeedFirm[] = [
   // Grain — 200 of cash, 90 finished and 90 on the line, as the one farm held.
-  { firm: 'firm.4', name: 'Broadacre Farm', bank: BANK_B, cash: 100, subUnit: 'grain', finished: 45, onTheLine: 45, inputs: 0, plant: 68,
+  { firm: 'firm.4', name: 'Broadacre Farm', bank: BANK_B, cash: 100000, subUnit: 'grain', finished: 45, onTheLine: 45, inputs: 0, plant: 68,
     why: 'The largest farm in the region and the one that works the best ground.' },
-  { firm: 'firm.1', name: 'Middlefield Farm', bank: BANK_A, cash: 65, subUnit: 'grain', finished: 30, onTheLine: 30, inputs: 0, plant: 45,
+  { firm: 'firm.1', name: 'Middlefield Farm', bank: BANK_A, cash: 65000, subUnit: 'grain', finished: 30, onTheLine: 30, inputs: 0, plant: 45,
     why: 'An ordinary farm of ordinary size.' },
-  { firm: 'firm.7', name: 'Hollow Farm', bank: BANK_B, cash: 35, subUnit: 'grain', finished: 15, onTheLine: 15, inputs: 0, plant: 23,
+  { firm: 'firm.7', name: 'Hollow Farm', bank: BANK_B, cash: 35000, subUnit: 'grain', finished: 15, onTheLine: 15, inputs: 0, plant: 23,
     why: 'The smallest, on the poorest ground, with the least cash to carry a bad season.' },
   // Flour — 150 of cash, 75 milled and 110 tonnes of grain to mill, as the one mill held.
-  { firm: 'firm.5', name: 'Riverside Mill', bank: BANK_A, cash: 75, subUnit: 'flour', finished: 38, onTheLine: 0, inputs: 55, plant: 46,
+  { firm: 'firm.5', name: 'Riverside Mill', bank: BANK_A, cash: 75000, subUnit: 'flour', finished: 38, onTheLine: 0, inputs: 55, plant: 46,
     why: 'The big mill, and the one that has already bought most of the grain it will grind.' },
-  { firm: 'firm.2', name: 'Town Mill', bank: BANK_B, cash: 50, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37, plant: 30,
+  { firm: 'firm.2', name: 'Town Mill', bank: BANK_B, cash: 50000, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37, plant: 30,
     why: 'An ordinary mill.' },
-  { firm: 'firm.8', name: 'Old Mill', bank: BANK_A, cash: 25, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18, plant: 14,
+  { firm: 'firm.8', name: 'Old Mill', bank: BANK_A, cash: 25000, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18, plant: 14,
     why: 'The smallest and the oldest.' },
   // Bread — 250 of cash, 105 baked and 75 tonnes of flour, as the one bakery held.
-  { firm: 'firm.6', name: 'City Bakery', bank: BANK_A, cash: 125, subUnit: 'bread', finished: 52, onTheLine: 0, inputs: 38, plant: 39,
+  { firm: 'firm.6', name: 'City Bakery', bank: BANK_A, cash: 125000, subUnit: 'bread', finished: 52, onTheLine: 0, inputs: 38, plant: 39,
     why: 'A plant bakery: the biggest oven and the biggest week of bread in the shop.' },
-  { firm: 'firm.3', name: 'High Street Bakery', bank: BANK_B, cash: 80, subUnit: 'bread', finished: 35, onTheLine: 0, inputs: 25, plant: 26,
+  { firm: 'firm.3', name: 'High Street Bakery', bank: BANK_B, cash: 80000, subUnit: 'bread', finished: 35, onTheLine: 0, inputs: 25, plant: 26,
     why: 'An ordinary bakery.' },
-  { firm: 'firm.9', name: 'Corner Bakery', bank: BANK_A, cash: 45, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12, plant: 14,
+  { firm: 'firm.9', name: 'Corner Bakery', bank: BANK_A, cash: 45000, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12, plant: 14,
     why: 'The smallest, and the one holding the least flour against a week it cannot predict.' },
   // Capital Programme C1, E2: the line that BUILDS the capital. Its output is somebody else's
   // plant, its revenue is somebody else's investment, and the people it employs are employed by
   // the decision to expand. It needs no plant of its own: a workshop is people and a bench, and
   // saying so is a statement about this world's technology rather than a missing constraint.
-  { firm: 'firm.10', name: 'North Engineering', bank: BANK_B, cash: 60, subUnit: 'machine', finished: 4, onTheLine: 3, inputs: 0, plant: 0,
+  { firm: 'firm.10', name: 'North Engineering', bank: BANK_B, cash: 60000, subUnit: 'machine', finished: 4, onTheLine: 3, inputs: 0, plant: 0,
     why: 'The best-equipped workshop in the region and the one with machines already on the bench.' },
-  { firm: 'firm.11', name: 'Town Works', bank: BANK_A, cash: 40, subUnit: 'machine', finished: 3, onTheLine: 2, inputs: 0, plant: 0,
+  { firm: 'firm.11', name: 'Town Works', bank: BANK_A, cash: 40000, subUnit: 'machine', finished: 3, onTheLine: 2, inputs: 0, plant: 0,
     why: 'An ordinary workshop.' },
-  { firm: 'firm.12', name: 'Lane Workshop', bank: BANK_B, cash: 25, subUnit: 'machine', finished: 2, onTheLine: 1, inputs: 0, plant: 0,
+  { firm: 'firm.12', name: 'Lane Workshop', bank: BANK_B, cash: 25000, subUnit: 'machine', finished: 2, onTheLine: 1, inputs: 0, plant: 0,
     why: 'The smallest, and the one that will be priced out of engineering labour first.' },
 ];
 
 /** Seed C4: the level each market opens at, which is the good's and not any one firm's. */
 const SEED_MARKETS: readonly { readonly subUnit: string; readonly opensAt: number; readonly why: string }[] = [
-  { subUnit: 'grain', opensAt: 0.4,
+  { subUnit: 'grain', opensAt: 400,
     why: 'Grain takes two periods to grow, so a world that opens with an empty field produces nothing for two of them and the mill has nothing to buy. One crop in the barn and one in the ground is what a going concern looks like.' },
-  { subUnit: 'flour', opensAt: 0.6,
+  { subUnit: 'flour', opensAt: 600,
     why: 'Milling is inside the period, so there is nothing on the line; what a mill opens with is what it has already milled.' },
-  { subUnit: 'bread', opensAt: 1.2,
+  { subUnit: 'bread', opensAt: 1200,
     why: 'A week of bread in the shop. It goes stale at a quarter a period, so what is not sold is a real loss from the first period on.' },
-  { subUnit: 'machine', opensAt: 2.5,
+  { subUnit: 'machine', opensAt: 2500,
     why: 'A machine is sixty hours of engineering, and this is what sixty hours of it is worth at the level the rest of this world opens at — so a workshop bids for an hour somewhere between what a mill will pay and what a farm will, and the capital-goods line is neither the best nor the worst employer on the first morning.' },
 ];
 
@@ -379,7 +381,7 @@ export const foundationSeed: SystemModule = {
         instrument: id,
         market,
         period: ctx.period,
-        price,
+        price: priced(ctx, id, price),
         ccy: PHX,
         provenance: { kind: 'opening' },
       });
@@ -388,16 +390,17 @@ export const foundationSeed: SystemModule = {
     // Institutions and firms: endowments as state (Seed A3).
     // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
     // single auction clearing. The programme manages it from here.
-    ctx.endowMoney(TREASURY_NORTH, PHX, 900);
-    ctx.endowMoney(BANK_A, PHX, 400);
-    ctx.endowMoney(BANK_B, PHX, 300);
-    for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, f.cash);
+    ctx.endowMoney(TREASURY_NORTH, PHX, cash(ctx, 900_000));
+    ctx.endowMoney(BANK_A, PHX, cash(ctx, 400_000));
+    ctx.endowMoney(BANK_B, PHX, cash(ctx, 300_000));
+    for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, f.cash));
     for (const line of SEED_LINES) {
       const id = instrumentId(line.id);
       const price = openingOf(opening, line.id);
-      if (line.cb > 0) ctx.endowUnits(CB, id, line.cb, price);
-      if (line.bankA > 0) ctx.endowUnits(BANK_A, id, line.bankA, price);
-      if (line.bankB > 0) ctx.endowUnits(BANK_B, id, line.bankB, price);
+      const par = priced(ctx, id, price);
+      if (line.cb > 0) ctx.endowUnits(CB, id, held(ctx, id, line.cb), par);
+      if (line.bankA > 0) ctx.endowUnits(BANK_A, id, held(ctx, id, line.bankA), par);
+      if (line.bankB > 0) ctx.endowUnits(BANK_B, id, held(ctx, id, line.bankB), par);
     }
 
     const openedGoods = new Set<string>();
@@ -413,7 +416,7 @@ export const foundationSeed: SystemModule = {
         instrument: goodId(row.subUnit, REGION),
         market: goodMarketId(row.subUnit, REGION),
         period: ctx.period,
-        price: ctx.params.get(openingPrice(row.subUnit)),
+        price: priced(ctx, goodId(row.subUnit, REGION), ctx.params.get(openingPrice(row.subUnit))),
         ccy: PHX,
         provenance: { kind: 'opening' },
       });
@@ -427,17 +430,20 @@ export const foundationSeed: SystemModule = {
       const price = ctx.params.get(openingPrice(row.subUnit));
       // Seed C4: what it cost whoever holds it is the seed's, and it is below what the market
       // opens at — a firm holding stock it could only sell at a loss would never have made it.
-      const basis = price * SEED_STOCK_BASIS;
-      if (row.finished > 0) ctx.endowUnits(firm, goodId(row.subUnit, REGION), row.finished, basis);
+      const good = goodId(row.subUnit, REGION);
+      const basis = priced(ctx, good, price * SEED_STOCK_BASIS);
+      if (row.finished > 0) ctx.endowUnits(firm, good, held(ctx, good, row.finished), basis);
       if (row.onTheLine > 0) {
-        ctx.endowUnits(firm, wipId(row.subUnit, REGION), row.onTheLine, basis);
+        const wip = wipId(row.subUnit, REGION);
+        ctx.endowUnits(firm, wip, held(ctx, wip, row.onTheLine), priced(ctx, wip, price * SEED_STOCK_BASIS));
       }
       // Seed D1: what its recipe draws, so its first batch is not waiting on a market session.
       // Law 19: WHAT it draws is read from the good's own terms, never listed a second time here.
       for (const input of goodTerms(ctx.instruments.get(goodId(row.subUnit, REGION))).recipe.inputs) {
         if (row.inputs <= 0 || !ctx.instruments.has(goodId(input.subUnit, REGION))) continue;
+        const line = goodId(input.subUnit, REGION);
         const paid = ctx.params.get(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
-        ctx.endowUnits(firm, goodId(input.subUnit, REGION), row.inputs, paid);
+        ctx.endowUnits(firm, line, held(ctx, line, row.inputs), priced(ctx, line, paid));
       }
       // Capital Programme A2, A6, Seed D1: the plant its line runs on, spread over three vintages
       // of different ages, each carried at what is left of what a new one costs. WHICH kind of
@@ -451,13 +457,21 @@ export const foundationSeed: SystemModule = {
         if (!ctx.registry.instrumentKinds.has(plantKindId(kind.id))) continue;
         const newPrice = ctx.params.get(openingPrice(kind.madeFrom));
         const life = ctx.params.get(paramId(`plant.usefulLife.${kind.id}`));
-        for (const age of SEED_PLANT_AGES) {
+        // Law 8: whole machines, and the odd one has a named vintage rather than being lost to a
+        // division that does not come out (core/tick.ts).
+        const perVintage = splitOnTick(row.plant, SEED_PLANT_AGES.map(() => 1));
+        SEED_PLANT_AGES.forEach((age, at) => {
           const serviceDate = addDays(ctx.calendar.epoch, -age * ctx.calendar.periodDays);
           const id = seedVintage(ctx, kind, REGION, serviceDate);
           // A3, A6: what a vintage that has already run for `age` periods is carried at — the
           // straight line it has been on since it went into service, and nothing else.
-          ctx.endowUnits(ctx.parties.get(firm).id, id, row.plant / SEED_PLANT_AGES.length, (newPrice * (life - age)) / life);
-        }
+          ctx.endowUnits(
+            ctx.parties.get(firm).id,
+            id,
+            held(ctx, id, zeroIfNone(perVintage[at])),
+            priced(ctx, id, (newPrice * (life - age)) / life),
+          );
+        });
       }
     }
 
@@ -491,6 +505,27 @@ export const foundationSeed: SystemModule = {
   },
 };
 
+/**
+ * Law 8: THE SEED SPEAKS IN NAMED UNITS AND THE STATE HOLDS PIECES, and this is the one boundary
+ * between them. A number here is what a person would say — 100,000 PHX, 45 tonnes, 400 PHX the
+ * tonne — and what goes into the register is the count of indivisible pieces that comes to: cents,
+ * grams, whole machines. Nothing downstream converts anything, because everything downstream is
+ * already a count.
+ */
+function cash(ctx: SeedContext, phx: number): number {
+  return ctx.registry.pieces(currencyUnit(PHX), phx);
+}
+
+/** The same for units of an instrument, in whatever its own unit is named in. */
+function held(ctx: SeedContext, instrument: InstrumentId, named: number): number {
+  return ctx.registry.pieces(ctx.instruments.get(instrument).unit, named);
+}
+
+/** And for a price: money for one NAMED unit becomes money pieces for one piece. */
+function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: number): number {
+  return ctx.registry.priceOf(PHX, ctx.instruments.get(instrument).unit, perNamedUnit);
+}
+
 /** The opening price the seed computed for a line; a line with none is a defect, never a default. */
 function openingOf(opening: ReadonlyMap<string, number>, id: string): number {
   const p = opening.get(id);
@@ -515,19 +550,17 @@ export function foundationSpec(seed: string): AssemblySpec {
       currencies: [{ code: PHX, name: 'Phoenix unit', centralBank: CB }],
       regions: [{ id: REGION, name: 'North', ccy: PHX }],
       units: [
-        // Money A2, Law 8: PHX has a smallest piece, like any real money. A millionth of a unit
-        // at this world's scale — a household member holds a tenth of a PHX — so the grid is real
-        // arithmetic rather than a rounding, and fine enough that no decision turns on it.
-        { id: currencyUnit(PHX), name: 'PHX', tickExponent: MONEY_GRID },
-        // Equity A2, Fund Shares A2: a SHARE COUNT, which more than one system counts in and no one
-        // of them owns. Its smallest piece is far below one, and deliberately: a share here costs a
-        // few PHX and a household member holds a ten-thousandth of one, so whole shares would put
-        // equity out of a household's reach altogether and a coarse grid would round its holding
-        // away. What the tick buys is that a pro-rata fill, a
-        // subscription and a split all land on a grid whose last piece has a named holder
-        // (Clearing C3) — which is the residual that dividing for ever was avoiding by never
-        // arriving at one.
-        { id: SHARES, name: 'shares', tickExponent: SHARE_GRID },
+        // Money A2, Law 8: a PHX is a hundred cents, like any real money, and the cent is the
+        // smallest amount of it that exists. Every balance in this world is a whole number of them,
+        // so nothing below a cent can be paid, lent, owed or left over anywhere.
+        { id: currencyUnit(PHX), name: 'PHX', perUnit: MONEY_PIECES },
+        // Equity A2, Fund Shares A2: a SHARE COUNT, which more than one system counts in and no
+        // one of them owns. A share is INDIVISIBLE, as a register of members holds it: what one is
+        // worth is the seed's own resolution (Equity's opening level), set low enough that a
+        // household member holds tens of them rather than a fraction of one. A pro-rata fill, a
+        // subscription and a split therefore all land on whole shares whose last one has a named
+        // holder (Clearing C3) — which is the residual that dividing for ever never arrived at.
+        { id: SHARES, name: 'shares', perUnit: SHARE_PIECES },
       ],
       cohorts: [
         { id: cohortId('working'), name: 'working age', fromAge: 18 },
@@ -563,12 +596,12 @@ export function foundationSpec(seed: string): AssemblySpec {
         why: 'Audit D2: how many worst instances a family reports; a reporting depth, not a behaviour.',
       },
       {
-        id: KERNEL_PARAMS.tickShift,
-        value: 0,
-        unit: 'halvings',
+        id: KERNEL_PARAMS.pieceShift,
+        value: 1,
+        unit: 'multiple of every unit\'s declared subdivision',
         kind: 'resolution',
         owner: 'model',
-        why: 'Law 8, Law 2: how many halvings finer or coarser than declared every unit\'s smallest piece is. Each unit states its own grid; this moves them all together, which is what makes the grid a RESOLUTION that can be TESTED — run the same world one shift finer and one coarser and the path must not move by more than the rounding the grid itself imposes.',
+        why: 'Law 8, Law 2: how many times finer than declared every unit is divided — 10 makes the piece a tenth of a cent, a tenth of a gram and a tenth of a share. Each unit states its own subdivision; this moves them all together, which is what makes the subdivision a RESOLUTION that can be TESTED: declare the same world in finer pieces and every structural invariant must hold exactly and the path must not move.',
       },
     ],
     modules: [

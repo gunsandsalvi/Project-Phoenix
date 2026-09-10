@@ -29,7 +29,7 @@ import { none, some } from '../../core/option.js';
 import { isCreateLeg, isDestroyLeg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
 import type { ParamDecl } from '../../registry/params.js';
-import { GOODS_GRID } from '../../registry/grid.js';
+import { TONNE_PIECES, WHOLE_PIECES } from '../../registry/grid.js';
 import type { UnitDecl } from '../../registry/registry.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -143,14 +143,17 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
 function unitsOf(rows: readonly GoodDecl[]): UnitDecl[] {
   const byUnit = new Map<string, UnitDecl>();
   for (const d of rows) {
-    // A tonne is divisible; a good counted in whole things (a machine, a dwelling) is its own row.
-    // Goods A1, Law 8: the smallest piece of a good that exists. It is a RESOLUTION and it is set
-    // by what the SMALLEST holder deals in, not by what the largest one does: a household member
-    // buys a kilo or two of bread a week, so a grid at the kilo would round a person's whole
-    // week's shopping up or down and the sector's demand with it. A millionth of a tonne is a
-    // gram, nothing in this world is finer than that, and the invariance test says the world's
+    // Goods A1, Law 8: the smallest piece of this good that exists, and it is set by what the
+    // SMALLEST holder deals in rather than the largest: a household member buys a kilo or two of
+    // bread a week, so a piece at the kilo would round a person's whole week's shopping up or down
+    // and the sector's demand with it — a gram does not. A good counted in whole things (a machine,
+    // a dwelling) has no piece below one of itself at all. The invariance test says the world's
     // path does not turn on the choice (test/tick.test.ts).
-    byUnit.set(d.unit, { id: goodUnitId(d.unit), name: d.unit, tickExponent: GOODS_GRID });
+    byUnit.set(d.unit, {
+      id: goodUnitId(d.unit),
+      name: d.unit,
+      perUnit: d.unit === 'tonnes' ? TONNE_PIECES : WHOLE_PIECES,
+    });
   }
   return [...byUnit.values()];
 }
@@ -277,8 +280,7 @@ function recipeIdentity(): Family {
           if (canonical === undefined) continue;
           for (const [instrument, need] of canonical.needs) {
             const drawn = zeroIfNone(used.get(instrument));
-            const tick = view.registry.tick(view.instruments.get(instrument).unit);
-            if (satisfiedBy(canonical.atLeast, need, drawn, tick)) continue;
+            if (satisfiedBy(canonical.atLeast, need, drawn)) continue;
             out.push({
               family: 'units',
               spec: canonical.spec,
@@ -331,8 +333,7 @@ function satisfied(
   used: ReadonlyMap<InstrumentId, number>,
 ): boolean {
   for (const [instrument, need] of way.needs) {
-    const tick = view.registry.tick(view.instruments.get(instrument).unit);
-    if (!satisfiedBy(way.atLeast, need, zeroIfNone(used.get(instrument)), tick)) return false;
+    if (!satisfiedBy(way.atLeast, need, zeroIfNone(used.get(instrument)))) return false;
   }
   return true;
 }
@@ -343,8 +344,9 @@ function satisfied(
  * (core/tick.ts) and a recipe met with the piece below is a recipe not met, so a batch draws the
  * piece above. It is a derived allowance from a real granularity, not a band around a defect.
  */
-function satisfiedBy(atLeast: boolean, need: number, drawn: number, tick: number): boolean {
-  const dust = dustOf(2, need + drawn) + tick;
+function satisfiedBy(atLeast: boolean, need: number, drawn: number): boolean {
+  // Law 7, Law 8: the arithmetic's own dust, plus the one piece the draw was rounded up by.
+  const dust = dustOf(2, need + drawn) + 1;
   return atLeast ? drawn - need >= -dust : withinDust(drawn, need, dust);
 }
 

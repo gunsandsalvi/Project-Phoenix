@@ -67,12 +67,11 @@ export function unitsFamily(memory: AuditMemory): Family {
       }
       for (const h of view.register.allHoldings()) {
         const inst = view.instruments.get(h.instrument);
-        const tick = view.registry.tick(inst.unit);
         for (const lot of h.lots) {
           // Law 8: a lot holds a whole number of the smallest piece of its unit. Anything else is a
           // quantity of something that does not exist, and it can only have got there by arithmetic
           // rather than by a leg — which is the thing this family is for.
-          if (!onTick(lot.qty, tick)) {
+          if (!onTick(lot.qty)) {
             out.push({
               family: 'units',
               spec: 'Law 8',
@@ -80,7 +79,7 @@ export function unitsFamily(memory: AuditMemory): Family {
               size: lot.qty,
               unit: inst.unit,
               period: view.period,
-              message: `${h.holder} holds ${lot.qty} of ${inst.id}, which is not a whole number of ${tick}`,
+              message: `${h.holder} holds ${lot.qty} of ${inst.id}, which is not a whole number of pieces`,
             });
           }
         }

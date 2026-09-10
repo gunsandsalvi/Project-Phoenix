@@ -74,7 +74,7 @@ function aBookAndItsClaims(claims: number, countsItsOwn = false): SystemModule {
     instrumentKinds: [claimKind(countsItsOwn)],
     partyKinds: [],
     curveFamilies: [],
-    units: [{ id: CLAIMS, name: 'claims', tickExponent: 0 }],
+    units: [{ id: CLAIMS, name: 'claims', perUnit: 1 }],
     params: [],
     phases: [],
     participants: [],
