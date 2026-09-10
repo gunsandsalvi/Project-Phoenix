@@ -62,30 +62,32 @@ green over a year; no line prints away.
 
 **Placed at 12's close**, in the record, as the anchor step's outcome.
 
-### 12-3 — A bank expects to lose a third to a half of what it lends the sovereign
+### 12-3 — The long end has no holder — **INCOMPLETE MODEL, not a bug. Waits on 13h.**
 
-**Where.** `bank.reservation` journal events; the expected-loss term behind
-`requiredYieldOf` (`packages/engine/src/mechanisms/banks/`).
+**Twice mis-filed before it was read correctly.** First as "a bank expects to lose a third to a half
+of what it lends the sovereign", then as "the treasury cannot place its paper". Both are Law 11:
+_a misbehaving number is not a work item; the missing mechanism is._ Neither number is wrong.
 
-**Measured**, period 12, after 12's balance-sheet change:
+**What is actually true.** Households will not tie money up past their own horizon — 52 periods,
+`households.horizon.periods`, a PREFERENCE with a reason (Households D5). The treasury issues at two,
+five and ten years. **Nothing in this world holds a long-dated claim**, because the parties that do
+— insurers and pension funds — are worklist **13h**. So the only bidders at a long auction are the
+primary dealers meeting their obligation, cover comes in at exactly `dealershipShare` (0.34), and the
+issuer withdraws at its stated patience of 40bp over the curve (`treasury.concession`).
 
-```
-bank.a  expectedLoss on treasury.north = 0.3333   required 0.0490
-bank.b  expectedLoss on treasury.north = 0.5000   required 0.0352
-```
+Everything downstream of that is the model working:
 
-A third to a half of the principal, expected to be lost, on **the issuer of the money the loan is
-denominated in**. Against the same banks' expected loss on each other — 0.0833 and 0.125 — and on
-the funds, zero.
+- the treasury funds nothing at the long end and misses payments — XI-9's constraint biting;
+- the banks then require 0.0490 and 0.0352 of it, against 0.0833 and 0.125 on each other — a lender
+  that has watched an issuer miss payment after payment asking more is the credit model doing its job;
+- 748 `overdraftRefused` at the central bank — correct, and Appendix B forbids the alternative.
 
-**Why it matters.** This term is most of what holds the banks' required yield near 5% while sovereign
-paper yields 2%, so it is most of why the sovereign book has demand in 25 of 312 sessions rather than
-in most of them. The anchor step removed the runaway; this is what is left holding the two sides
-apart.
+**Do not "fix" any of it.** An attempt was made and reverted: making the issuer read its own auction
+history and stop bringing a tenor the market refused. It is a symptom patch (Law 12) and worse — it
+would have deleted the one signal that says 13h is missing. The deliberately-failing auction is the
+incomplete-model check working as designed.
 
-**Suspected.** The PD read counts something that is not a default of the sovereign — the treasury
-misses payments in this world (`treasury.test.ts` reports twelve over a year) and a model that reads
-a missed instruction as a default event would produce exactly this. Not confirmed.
+**Placed at 13h**, whose insurers and pensions are the holders this end of the curve is waiting for.
 
 ### 12-4 — An audit violation in the bank-failure scenario
 
