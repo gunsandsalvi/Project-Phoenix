@@ -70,6 +70,7 @@ import type {
 } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
 import type {
+  BankChoice,
   CreditDecision,
   OutlookProvider,
   ParticipantDecl,
@@ -146,6 +147,13 @@ export class World {
   /** Expectations A2: the one module that answers what a party expects. */
   private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
   private readonly creditDeciders = new Map<PartyKindId, { owner: string; decide: CreditDecision }>();
+  /** Banks Funding E1: the one module that answers where a depositor of a kind wants to bank. */
+  private readonly bankChoosers = new Map<
+    PartyKindId,
+    { owner: string; chooses: (view: ParticipantView) => Option<BankChoice> }
+  >();
+  /** Banks Funding E1: whether the depositors have been asked this period, so they are asked once. */
+  private choseBanks = false;
   /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
   private readonly resolvers = new Map<PartyKindId, string>();
   private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
@@ -384,6 +392,26 @@ export class World {
     this.creditDeciders.set(kind, { owner, decide });
   }
 
+  /**
+   * Banks Funding E1, Observer A4: exactly one module answers where a depositor of a kind banks
+   * (Law 4). A second would be two reasons for one party, and the party could act on both.
+   */
+  provideBankChoice(
+    owner: string,
+    kind: PartyKindId,
+    chooses: (view: ParticipantView) => Option<BankChoice>,
+  ): void {
+    forbid(!this.sealed, 'Law 10', 'a bank choice is declared at assembly');
+    const held = this.bankChoosers.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Banks Funding E1',
+        `${owner} would be a second decider of where a ${kind} banks, after ${held.owner}`,
+      );
+    }
+    this.bankChoosers.set(kind, { owner, chooses });
+  }
+
   private creditDecisionOf(kind: PartyKindId): (o: OverdraftContext) => OverdraftDecision {
     const held = this.creditDeciders.get(kind);
     if (held === undefined) {
@@ -564,6 +592,23 @@ export class World {
     }
   }
 
+  /**
+   * Banks Funding E1, Observer A4: ask each depositor, through the module that owns its kind, with
+   * that party's own view — and move the ones that answered. The order is the parties' own, so a
+   * run is the same run twice from one seed (Audit D3).
+   */
+  chooseBanks(): void {
+    if (this.choseBanks) return;
+    this.choseBanks = true;
+    for (const [kind, chooser] of [...this.bankChoosers].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+      for (const party of this.parties.ofKind(kind)) {
+        if (!party.status.alive) continue;
+        const going = chooser.chooses(this.participantView(party.id));
+        if (going.some) this.moveBank(party.id, going.value.to, going.value.reason);
+      }
+    }
+  }
+
   seal(): AuditReport {
     forbid(!this.sealed, 'Seed A2', 'the world is already sealed');
     this.requireCreditDeciders();
@@ -590,6 +635,7 @@ export class World {
     this.offerList.clear();
     this.postings.clear();
     this.gathered.clear();
+    this.choseBanks = false;
     this.currentPeriod = nextPeriod(this.currentPeriod);
     this.currentCycle = this.calendar.cycle(0);
     for (const phase of this.phaseList) {
@@ -741,6 +787,9 @@ export class World {
         this.splitInstrument(instrument, ratio);
       },
       moveBank: (party, to, reason) => this.moveBank(party, to, reason),
+      chooseBanks: () => {
+        this.chooseBanks();
+      },
       cease: (party, successor) => {
         this.parties.cease(party, this.currentPeriod, successor);
         this.journal.record(

@@ -37,7 +37,6 @@ import {
   DEPOSIT_CLASSES,
   MM_PARAMS,
   classOf,
-  switchingCost,
   type BookDecl,
 } from './data.js';
 import {
@@ -45,7 +44,6 @@ import {
   depositBase,
   depositsByClass,
   liquidityMetric,
-  moveDeposits,
   payDepositInterest,
 } from './deposits.js';
 import { interbankKind, isRow, repoKind, rowTerms, INTERBANK, REPO } from './rows.js';
@@ -145,10 +143,11 @@ function freeRepaidCollateral(ctx: MechanismContext): void {
  * is against a number somebody actually charged it and never against an assumption.
  */
 function payDeposits(ctx: MechanismContext): void {
-  const banks = banksOf(ctx);
-  for (const bank of banks) payDepositInterest(ctx, bank, ccyOf(ctx, bank));
+  for (const bank of banksOf(ctx)) payDepositInterest(ctx, bank, ccyOf(ctx, bank));
   // E1: and then the depositors answer, which is the only thing that stops a bank paying less.
-  moveDeposits(ctx, banks);
+  // Each of them answers through the module that owns it, with its own view (Observer A4): this
+  // market publishes the boards and asks, and it is told nothing about why anybody moved.
+  ctx.chooseBanks();
 }
 
 /**
@@ -168,6 +167,16 @@ function publishClasses(ctx: MechanismContext): void {
     'deposit.classes',
     [],
     {
+      // A1.a, Law 8: and what it insures them UP TO, in each money it could be held in, which is
+      // the same regulation said in the same breath. A depositor works out what of its own balance
+      // nobody covers by reading this; one that had to know the parameter's name to ask would be
+      // reading this market's table instead of its board (Law 4).
+      limits: Object.fromEntries(
+        [...ctx.registry.currencies.keys()].map((code) => [
+          code,
+          ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(code)),
+        ]),
+      ),
       classes: DEPOSIT_CLASSES.map((c) => ({
         id: c.id,
         insured: c.insured,
@@ -631,15 +640,6 @@ function paramsOf(): ParamDecl[] {
       owner: 'parliament',
       why: 'Banks Capital D4: what the guarantee costs the banks that have it. It is a rule somebody wrote and parliament owns it from worklist 14, and it is what makes deposit insurance a price a bank pays for taking retail money rather than a free option written by the state.',
     },
-    ...DEPOSIT_CLASSES.map((c) => ({
-      id: switchingCost(c.id),
-      value: c.switchingCost,
-      denominated: true as const,
-      unit: 'per move, per member',
-      kind: 'preference' as const,
-      owner: 'model' as const,
-      why: `Banks Funding A1.d, E1: what it costs a ${c.id} depositor to move its account, ONCE, as an amount of the money the account is in. Weighed against what moving is worth — the balance times the rate difference over the period — so a bigger balance moves for a smaller gap and a class drains instead of crossing at once. ${c.why}`,
-    })),
   ];
 }
 

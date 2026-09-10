@@ -28,11 +28,13 @@ import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { FIRMS, firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
 
 export * from './data.js';
+export { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 export { plan, technologyOf, expectedPrice } from './decide.js';
 export type { Offering, Plan, Planned, PlannedOrder } from './decide.js';
 
@@ -144,7 +146,17 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
     // hour costs is what the market charged it; and there is no target margin, no buffer and no
     // adjustment speed anywhere in it. What is declared here is Firm A3's dispersion: how many hours
     // a tonne takes THIS firm, against the hours the trade takes.
-    params: rows.flatMap((r) => [
+    params: [
+      {
+        id: FIRM_SWITCHING_COST,
+        value: 250,
+        denominated: true as const,
+        unit: 'of the money the account is in, per move',
+        kind: 'preference' as const,
+        owner: 'model' as const,
+        why: 'Banks Funding A1.b, A1.d, E1: what it costs a firm to move the account it transacts through — the payments to redirect, the counterparties to tell. It is weighed against the money it would lose if its bank failed, which for an uninsured corporate balance is the whole of it, so a firm with its float at a bank that drew the window goes and one with little there stays. It is larger than a household\'s because an operational account is entangled with everything the firm does, and smaller than a fund\'s because a fund moves far more money at once.',
+      },
+      ...rows.flatMap((r) => [
       {
         id: labourScaleId(r.firm),
         value: r.labourScale,
@@ -169,7 +181,8 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
         owner: 'model' as const,
         why: `Capital Programme B1.d: how far ahead ${r.firm}'s management looks. It is its patience, and a short one values a machine at what the years it will look at are worth rather than at what the machine will give.`,
       },
-    ]),
+      ]),
+    ],
     phases: [
       {
         name: 'firms.decide',
@@ -217,6 +230,7 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
       },
     ],
     families: [productionCosts(rows)],
+    bankChoices: [{ partyKind: FIRM, chooses: firmChoosesBank }],
   };
 }
 

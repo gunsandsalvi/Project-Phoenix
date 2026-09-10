@@ -117,6 +117,31 @@ opens at its own OMO target, which was an imported equilibrium.
 **To be positioned at 12's close**, most likely into 12-1's resolution — a bank cannot be funded
 against assets the funder cannot see.
 
+### 12-6 — Five tests that hunt for a period the world no longer reaches there
+
+**Where.** `bank-resolution` ("makes the insured whole"), `estate` ("shows the estate, its
+programme and where the dead party went"), `households` ("spends what it expects to earn"), `omo`
+("lets the book run off"; "remits income and not revaluation").
+
+**Measured.** Reds stayed at 42 across the depositor change (four new tests were added and four
+others went green: `auction`'s stepped-back dealers, `bank-capital`'s published position, `equity`'s
+two cells wanting different prices, `treasury`'s wage bill). What changed in each of the five is
+WHEN: they run the foundation world to a period found by running it — `RUN = 22`, "the period this
+seed's death happens in" — and then assert about that period.
+
+**Why.** Depositors now move for three different reasons at three different signals, so who banks
+where in week 22 is not what it was. Every one of these is Law 13's moved number rather than a
+mechanism that stopped working: the audit is green over 52 periods on all seven seeds, and the
+things they assert still happen — a bank still fails, an estate still opens, the central bank still
+remits — at different periods.
+
+**Not chased, on purpose.** A test that finds its period by running the world has to find it again
+whenever the world moves, and doing that inside this step would be tuning the tests to the run
+(Law 11). It is one bounded change of its own once the item's remaining steps have stopped moving
+the path: the count of banks (a resolution) and the currency layer both move it again.
+
+**To be positioned at 12's close.**
+
 ### 12-4 — An audit violation in the bank-failure scenario
 
 **Where.** `packages/engine/test/bank-resolution.test.ts`, at module scope — the file's own setup

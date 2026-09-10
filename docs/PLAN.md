@@ -254,7 +254,9 @@ with its whole behaviour in one profile (`registry/kinds.ts`):
   a `derived` kind is worth), `fairValueThroughIncome`, `physical`, `defaultOn`, `accelerates`,
   `splits`.
 - `PartyKindProfile`: `representation` (named | cell), `moneyIssuer` (null, or the overdraft
-  decision), `fails`, `borrows`, `choosesBank`.
+  decision), `fails`, `terminal`, `borrows`, `depositClass`. Where a party of the kind BANKS is not
+  a field: it is whether the module that owns the kind declared a `bankChoices` reason for it, which
+  is the same fact and its answer in one place (Law 4).
 
 The profile is the contract, so it is the thing to read before writing a kind — `registry/kinds.ts`
 is the authority and this list is its summary.
@@ -286,6 +288,7 @@ A module is `packages/engine/src/mechanisms/<id>/index.ts` exporting one `System
 | `outlooks`        | how a party of its kinds forms its own outlook, if it does (§46, XI-16)                                                    |
 | `marks`           | what a lot of a kind with no market is worth; exactly one module answers per kind (XI-6)                                   |
 | `creditDecisions` | what a customer of a party kind overdrawn at its issuer is told; one module per kind (Money B3.a)                          |
+| `bankChoices`     | where a depositor of a party kind banks and why it would move; one module per kind (Banks Funding E1)                     |
 | `resolves`        | party kinds whose failure this module takes charge of, so the estate opens none for them (XI-3)                            |
 | `seed`            | opening state this module contributes; runs in assembly order before the seal                                              |
 

@@ -57,11 +57,13 @@ import { SHARES } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
 import { ETFS, FUNDS, FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
 import { navOf } from './nav.js';
 
 export * from './data.js';
+export { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
 export * from './etf.js';
 export { navOf } from './nav.js';
 export type { NavRead } from './nav.js';
@@ -100,8 +102,7 @@ export const fundKind: PartyKindProfile = {
   fails: ['solvency'],
   borrows: false,
   // Money Market A1.c, E1: its cash is somebody's deposit and it is in the market all day — this
-  // is the money that leaves first, and it leaves because it chose to.
-  choosesBank: true,
+  // is the money that leaves first, and it leaves because it chose to (`bankChoices`, bank.ts).
   depositClass: 'wholesale',
 };
 
@@ -112,7 +113,6 @@ export const fundManagerKind: PartyKindProfile = {
   moneyIssuer: null,
   fails: ['cash', 'solvency'],
   borrows: true,
-  choosesBank: true,
   // A1.c: it runs the money and it banks like the money it runs.
   depositClass: 'wholesale',
 };
@@ -192,6 +192,15 @@ function etfParamsOf(etfs: readonly EtfDecl[]): ParamDecl[] {
 
 function paramsOf(): ParamDecl[] {
   return [
+    {
+      id: FUND_SWITCHING_COST,
+      value: 900,
+      denominated: true,
+      unit: 'of the money the account is in, per move',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Banks Funding A1.c, A1.d, E1: what it costs a fund to move its account, ONCE, as an amount of its own money. It is the largest of the three because a fund moves the most money at once and has the most to redirect — and it holds it back the least, because the balance it is weighed against is larger still. That is what "rate-sensitive" IS when the test is an amount against an amount: what a quarter point has already cost this depositor passes the cost in a week, where a household waits a year and never gets there.',
+    },
     {
       id: FUND_PARAMS.openingShare,
       value: MONEY_PIECES,
@@ -1147,6 +1156,12 @@ export function funds(
       },
     ],
     families: [equityIsZero(), noRequestVanishes(state)],
+    // A1.c: both kinds are wholesale money and both leave for the same reasons (the manager runs
+    // the money and banks like the money it runs), so one reason answers for both.
+    bankChoices: [
+      { partyKind: FUND, chooses: fundChoosesBank },
+      { partyKind: FUND_MANAGER, chooses: fundChoosesBank },
+    ],
     seed(ctx: SeedContext): void {
       for (const d of decls) {
         for (const [id, kind, name] of [

@@ -242,6 +242,17 @@ export interface MechanismContext extends KernelReads {
    * does not, the failure is recorded (Money E1.b), and the depositor stays where it was.
    */
   moveBank(party: PartyId, to: PartyId, reason: string): boolean;
+  /**
+   * Banks Funding E1, Observer A4: ask every depositor whose module declared a choice where it
+   * wants to bank, and move the ones that answered. The same door `gather` is, for the same reason
+   * — the module that runs the deposit market publishes the boards and asks; each depositor's own
+   * module answers with that party's own view, because a household's reason to move is not a fund's
+   * (A1.a against A1.c) and neither of them is the market's to take.
+   *
+   * Once a period: the boards are announced once and a second ask would move a depositor twice on
+   * one announcement.
+   */
+  chooseBanks(): void;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   record(

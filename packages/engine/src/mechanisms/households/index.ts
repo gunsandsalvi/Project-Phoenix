@@ -32,6 +32,7 @@ import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { householdChoosesBank, HOUSEHOLD_SWITCHING_COST } from './bank.js';
 import { CONSUMPTION, type ConsumptionDecl } from './data.js';
 import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
 import {
@@ -47,6 +48,7 @@ import {
 } from './portfolio.js';
 
 export * from './data.js';
+export { householdChoosesBank, HOUSEHOLD_SWITCHING_COST } from './bank.js';
 export { demandOf, spendPerMember } from './consume.js';
 export { levelsBelow, rungsOver } from './demand.js';
 export type { Rung } from './demand.js';
@@ -108,6 +110,15 @@ function paramsOf(): ParamDecl[] {
       kind: 'preference',
       owner: 'model',
       why: 'Households D5: how long a household will tie its money up. Paper that comes back inside it is a substitute for its deposit; anything longer it would have to sell at a price nobody can tell it, which is D5 other two reasons — yield against risk — and it cannot weigh those until something in this world prices risk (worklist 9).',
+    },
+    {
+      id: HOUSEHOLD_SWITCHING_COST,
+      value: 40,
+      denominated: true,
+      unit: 'of the money the account is in, per move, per member',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Banks Funding A1.d, E1: what it costs one household to move its account, ONCE, as an amount of its own money. It is weighed against what staying has already cost it — its own balance times the gap between the boards over as long as it has stayed — so a bigger balance moves for a smaller gap and the class drains instead of crossing at one instant. Retail money is the stickiest because the amount is large beside what a household holds, and that is A1.a arriving as a cost somebody bears rather than as a stated stickiness.',
     },
     {
       id: HOUSEHOLD_PARAMS.steps,
@@ -253,6 +264,7 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
       },
     ],
     families: [consumptionIsBought()],
+    bankChoices: [{ partyKind: HOUSEHOLD, chooses: householdChoosesBank }],
   };
 }
 

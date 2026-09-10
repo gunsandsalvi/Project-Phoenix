@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FIRMS,
   FIRM,
+  FIRM_SWITCHING_COST,
   PHX,
   REGION,
   assemble,
@@ -347,16 +348,22 @@ describe('who is in the goods market, and who is not', () => {
 describe('what varies between firms is data (Firm F4, Law 2, Law 15)', () => {
   it('declares what varies between firms and nothing else: its cost and its management', () => {
     const declared = firms().params;
+    // Banks Funding A1.b: the one number that is every firm's alike — what it costs a firm to move
+    // the account it transacts through. It does not vary between firms and it is not meant to: what
+    // differs is the balance each of them weighs it against.
+    const everyFirms = declared.filter((p) => p.id === FIRM_SWITCHING_COST);
+    expect(everyFirms).toHaveLength(1);
     // Firm A3 and Capital Programme B1.d, and nothing else this module owns. What a thing is made
     // of, how long it takes and what survives the line are the GOOD's technology; what an hour
     // costs is what the market charged it; and there is no margin, buffer or speed anywhere in it.
     // The three per firm are: how many hours a tonne takes IT, the margin over its cost of capital
     // its management insists on, and how far ahead that management looks.
-    expect(declared).toHaveLength(FIRMS.length * 3);
-    expect(declared.filter((p) => p.kind === 'technology')).toHaveLength(FIRMS.length);
+    const perFirm = declared.filter((p) => p.id !== FIRM_SWITCHING_COST);
+    expect(perFirm).toHaveLength(FIRMS.length * 3);
+    expect(perFirm.filter((p) => p.kind === 'technology')).toHaveLength(FIRMS.length);
     // B1.d: a hurdle and a horizon are the management's own, which makes them preferences.
-    expect(declared.filter((p) => p.kind === 'preference')).toHaveLength(FIRMS.length * 2);
-    expect(new Set(declared.map((p) => p.unit)).size).toBe(3);
+    expect(perFirm.filter((p) => p.kind === 'preference')).toHaveLength(FIRMS.length * 2);
+    expect(new Set(perFirm.map((p) => p.unit)).size).toBe(3);
     // No two firms in a line are alike, which is what gives the venue more than one bid (Seed B4).
     const bakers = FIRMS.filter((f) => f.subUnit === 'bread').map((f) => f.labourScale);
     expect(new Set(bakers).size).toBe(bakers.length);

@@ -18,10 +18,11 @@
  *
  * Nothing here is capped. What the rate cannot exceed is what the money is worth to the bank, and
  * that is not a bound but the alternative it would take instead (D1 against D3). What stops it
- * falling is the depositor leaving, and that happens in the world (E1, `moveDeposits`) rather than
- * in this function — which is why the two banks' margins matter: the gap between them is what a
- * depositor is deciding about, and only the class whose switching cost is smaller than that gap
- * moves. That is A1.c and E4.a arriving as an outcome rather than as a stated stickiness.
+ * falling is the depositor leaving, and that decision is not in this module at all: it belongs to
+ * the module that owns the depositor (`SystemModule.bankChoices`), because a household's reason to
+ * move is not a fund's. What the bank sees of it is the gap between the boards — which is why the
+ * banks' margins matter, and why A1.c and E4.a arrive as an outcome rather than as a stated
+ * stickiness.
  *
  * C2.a: THE BUFFER IS A PREFERENCE DERIVED FROM ITS OWN LIABILITIES, and here that is literal: what
  * this bank holds against is the worst week its own account has actually had, over the memory it
@@ -29,7 +30,7 @@
  * not, so the buffer differs between two banks with the same balance sheet size, which is what A2.a
  * asks for and what a stated ratio of deposits could never give.
  */
-import { period as asPeriod, type Period } from '../../calendar/calendar.js';
+import { period as asPeriod } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId } from '../../core/ids.js';
@@ -37,19 +38,12 @@ import { add, div, mul, sub, sum, zeroIfNone } from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { MechanismContext } from '../../world/context.js';
 import { none, some, type Option } from '../../core/option.js';
-import {
-  classOf,
-  MM_PARAMS,
-  switchingCost,
-  type DepositClassDecl,
-} from './data.js';
+import { classOf, type DepositClassDecl } from './data.js';
 
 /** One day count for what a bank pays on money, stated once (Law 8: a rate has a period). */
 const DEPOSIT_DAY_COUNT = 'ACT/365F';
-
-
 
 /** F1: the bank's deposit lines by class — a read of who actually banks there (never a stored total). */
 export function depositsByClass(
@@ -217,23 +211,6 @@ export function liquidityMetric(liquid: number, couldLeave: number): Option<numb
 }
 
 /**
- * E2, E2.a, Money Market D5.a: whether this bank LOOKS in trouble, to somebody outside it.
- *
- * Only from what is published: it was refused in the market, it drew the window, or it closed the
- * period below zero at the central bank. All three are public events about a real thing that
- * happened to it, which is E2.a's whole requirement — a depositor cannot see a capital ratio nobody
- * published, and it does not need to.
- */
-export function looksInTrouble(ctx: MechanismContext, bank: PartyId, since: Period): boolean {
-  for (const kind of ['moneyMarket.refused', 'moneyMarket.window', 'bank.short'] as const) {
-    for (const e of ctx.journal.ofKind(kind)) {
-      if (e.period >= since && e.subjects.includes(bank)) return true;
-    }
-  }
-  return false;
-}
-
-/**
  * B1.a, D5.a: what a bank is offering a class, read off the last thing it announced. It is the
  * rate on the board — the same fact a rival prices against and a depositor moves for, which is why
  * it is one public number and not two private ones (Law 4).
@@ -243,114 +220,6 @@ export function announced(ctx: MechanismContext, bank: PartyId, cls: string): Op
   const last = said[said.length - 1];
   if (last === undefined) return none<number>();
   const rates = last.data['rates'];
-  if (typeof rates !== 'object' || rates === null) return none<number>();
-  const rate = (rates as Record<string, unknown>)[cls];
-  return typeof rate === 'number' ? some(rate) : none<number>();
-}
-
-/**
- * E1, E2, E3.a, E4: every depositor's own answer to what its bank is paying and what it looks like.
- *
- * EACH ONE DECIDES IN ITS OWN VIEW (Observer A4). The taxonomy is this market's — it is a fact
- * about a regulation and a cost, published once and read by everybody (Law 4) — but the decision is
- * the depositor's, so it is taken through `ctx.participant`, off what that party may see: the
- * boards, which are public, and its own balance, which is nobody else's business. The market never
- * reads a depositor's account to decide for it.
- *
- * Two reasons to move, and they are different reasons. It moves for the RATE when what staying has
- * already cost it is more than moving costs — and that is an AMOUNT against an AMOUNT, which is the
- * whole of why a class drains instead of crossing. As a rate the switching cost was one comparison
- * every member of a class answered identically, so the moment a bank moved its board past the
- * number, all of them went at once: a representative agent with a threshold (App B). As an amount
- * it is weighed against the money the gap has actually cost this depositor — its own balance times
- * the gap, over as long as it has been where it is — so the big account goes first and the small one
- * may never go at all. Nothing is forecast: it is what has already happened to it (Law 17).
- *
- * And it moves for SAFETY when its own bank looks in trouble and it has money there that nobody
- * insures: that is E4 exactly, and it is why a run is a wholesale phenomenon first (E4.a), without
- * anything anywhere saying that wholesale money is flighty.
- *
- * The move is the kernel's door and it can FAIL: a bank that cannot pay the withdrawal does not,
- * and the depositor is still there when the next period opens (Money E1.b).
- */
-export function moveDeposits(ctx: MechanismContext, banks: readonly PartyId[]): void {
-  const since = ctx.period > 0 ? asPeriod(ctx.period - 1) : asPeriod(0);
-  const shaky = new Set(banks.filter((b) => looksInTrouble(ctx, b, since)));
-  for (const p of ctx.parties.all()) {
-    // E1: only a depositor that chooses where it banks answers a rate. A bank settles at the
-    // central bank and a desk is its own bank's arm (Law 15: the profile says, nothing branches).
-    if (!p.status.alive || !ctx.registry.partyKind(p.kind).choosesBank) continue;
-    const cls = classOf(ctx.registry, p.kind);
-    if (cls === undefined || !banks.includes(p.bank)) continue;
-    const view = ctx.participant(p.id);
-    const ccy = ctx.registry.region(p.region).ccy;
-    const going = wouldMove(view, cls, banks, shaky, ccy);
-    if (!going.some) continue;
-    ctx.moveBank(p.id, going.value.to, going.value.reason);
-  }
-}
-
-/** Where a depositor would rather bank, decided in its own view and out of what it can see. */
-function wouldMove(
-  view: ParticipantView,
-  cls: DepositClassDecl,
-  banks: readonly PartyId[],
-  shaky: ReadonlySet<PartyId>,
-  ccy: CurrencyCode,
-): Option<{ to: PartyId; reason: string }> {
-  const self = view.self;
-  const own = board(view, self.bank, cls.id);
-  let best: { bank: PartyId; rate: number } | undefined;
-  for (const b of banks) {
-    if (b === self.bank || shaky.has(b)) continue;
-    const rate = board(view, b, cls.id);
-    if (!rate.some) continue;
-    if (best === undefined || rate.value > best.rate) best = { bank: b, rate: rate.value };
-  }
-  if (best === undefined) return none();
-  const balance = view.quantity(moneyInstrumentId(self.bank, ccy));
-  if (balance <= 0) return none();
-  // A2, XI-15: what is insured is a stated amount of the money the deposit is IN, per member.
-  const limit = view.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
-  const uninsured = sub(balance, covered(cls, balance, limit), 'what nobody insures');
-  if (shaky.has(self.bank) && uninsured > 0) {
-    return some({ to: best.bank, reason: `${self.id} moves what nobody insures away from ${self.bank}` });
-  }
-  if (!own.some) return none();
-  const gap = sub(best.rate, own.value, 'what it would gain');
-  if (gap <= 0) return none();
-  const cost = view.params.amount(switchingCost(cls.id), currencyUnit(ccy));
-  const foregone = mul(balance, mul(gap, stayed(view), 'over the time it has stayed'), 'what staying cost it');
-  return foregone > cost
-    ? some({ to: best.bank, reason: `${self.id} moves to ${best.bank}, which pays more for ${cls.id} money` })
-    : none();
-}
-
-/**
- * E1: how long this depositor has banked where it banks, in years — since it last moved, or since
- * the world opened if it never has. Its own move is its own event (`deposit.moved`, A4), so the
- * clock is a read and not a stored counter, and it resets when the depositor moves: one that has
- * just gone somewhere does not go again the next week on the same gap.
- */
-function stayed(view: ParticipantView): number {
-  const last = view.lastOwn('deposit.moved');
-  const from = last.some ? last.value.period : asPeriod(0);
-  return yearFraction(
-    DEPOSIT_DAY_COUNT,
-    view.calendar.startOf(from),
-    view.calendar.startOf(view.period),
-  );
-}
-
-/**
- * B1.a, D5.a: what a bank is offering a class, as this depositor sees it — the rate on the board,
- * which is public because that is the whole of why it works (E2.a). It is the same fact
- * `announced` reads for the bank's own side, through the view a participant has (Law 4).
- */
-function board(view: ParticipantView, bank: PartyId, cls: string): Option<number> {
-  const said = view.lastPublicAbout('bank.depositRate', String(bank));
-  if (!said.some) return none<number>();
-  const rates = said.value.data['rates'];
   if (typeof rates !== 'object' || rates === null) return none<number>();
   const rate = (rates as Record<string, unknown>)[cls];
   return typeof rate === 'number' ? some(rate) : none<number>();

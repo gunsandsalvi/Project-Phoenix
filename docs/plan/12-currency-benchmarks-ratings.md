@@ -239,8 +239,8 @@ and the step count does not change.
 
 ### The depositors and the count of banks (was 11.4)
 
-- [ ] The deposit class moves from the money market's table onto the party kind's PROFILE, and `moveDeposits` leaves the market module for the modules that own the depositors — households, firms, funds — each deciding from its own balance with its own view (Observer A4)
-- [ ] A move costs an AMOUNT, so who moves is decided by the balance they hold rather than by a rate every member of a class faces identically; test: a class does not cross in one instant whatever the grain
+- [x] The deposit class moves from the money market's table onto the party kind's PROFILE, and `moveDeposits` leaves the market module for the modules that own the depositors — households, firms, funds — each deciding from its own balance with its own view (Observer A4)
+- [x] A move costs an AMOUNT, so who moves is decided by the balance they hold rather than by a rate every member of a class faces identically; test: a class does not cross in one instant whatever the grain
 - [ ] The count of named institutions measured at 2, 3 and 4 the way the cell grain is (XI-15), and the liquidity target's size settled against both invariances
 
 ### A bank's own allocation (was 11.2's deferred step)

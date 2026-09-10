@@ -48,7 +48,6 @@ export const insurerKind: PartyKindProfile = {
   borrows: false,
   // Its account is at the central bank, like the treasury's: the guarantee behind a banking system
   // does not sit inside one of the banks it guarantees.
-  choosesBank: false,
   depositClass: null,
 };
 

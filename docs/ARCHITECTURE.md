@@ -473,6 +473,19 @@ period, what its own wage bill came to. A decision taken in a phase and an order
 market are one decision (Law 4), and this is how the second reads the first instead of taking it
 again.
 
+**Where a depositor banks is the depositor's decision, and it comes through the same door**
+(Banks Funding E1, Observer A4, item 12). A module declares `bankChoices` per party kind it owns —
+`chooses(view)` answering where that party would rather bank and why — and the module that runs the
+deposit market calls `ctx.chooseBanks()` once a period after it has published the boards. It is the
+venue door (§4.9b, item 11.1) pointed at a decision rather than a schedule, and for the same reason:
+the money market used to walk every party in the world and decide for each of them out of a context
+that can see private state no depositor may have. The reasons are not one reason under three names —
+A1.a's retail money is insured and moves for the rate it is not being paid, A1.b's corporate money
+banks where it transacts and moves off a bank that drew the window, A1.c's wholesale money is in the
+market all day and leaves the one its own session refused — so each is written where its kind lives,
+and E4.a (a run is a wholesale phenomenon first) falls out of who sees what, rather than being
+stated.
+
 **Two more reads, and why they are reads and not imports.** `ParticipantView.mark(instrument)`
 answers what a unit of a line is carried at — the print, or, for a claim on a book, what that book
 comes to (§4.5). `ParticipantView.lastPublicAbout(kind, subject)` answers the question a participant
@@ -584,12 +597,17 @@ cure, its liabilities past its assets, or both — and a kind that names neither
 how XI-3's two exceptions (the central bank, and a treasury in its own money) are named consequences
 rather than omissions. `terminal` says whether it may end the chain of successors, which only an
 estate that has paid everything away may. `borrows` says whether anybody lends to it at all: a going
-concern yes, an estate and a household no (Banks Lending A1, Households C1.d). `choosesBank` says
-whether it picks where it banks and leaves when somebody pays it more (Money Market E1) — a household
-and a firm do; a bank and a treasury settle at the central bank because that is what settling in
-central bank money means; a trading desk IS its bank's own arm and an account at a rival would make
-it a different firm (Dealer Desks A1); an estate holds the account of the party it succeeded and is
-realising it, not running it. All four are read by mechanisms and never branched on by kind id.
+concern yes, an estate and a household no (Banks Lending A1, Households C1.d). `depositClass` says
+which kind of depositor it is — many and small, fewer and operational, few and very large (Banks
+Funding A1) — or that it is nobody's deposit base. All of them are read by mechanisms and never
+branched on by kind id.
+
+**Where a party of a kind BANKS is not one of them, and that is the point** (item 12). It used to be
+a `choosesBank` flag beside them, and the flag was a claim sitting apart from the mechanism that
+implements it: a kind could say it chose and have nobody who said how, and then it was a depositor
+nobody ever asked — stickiness that cost nobody anything, which is the defect A1.d names arriving as
+an omission. A kind chooses its bank if and only if the module that owns it declared a `bankChoices`
+reason for it (§4.9b), which is the fact and its answer in one place (Law 4).
 
 Every number that shapes behaviour is declared in the **parameter register** with value, unit, owner,
 and provenance kind: `technology | preference | policy | resolution | shape | placeholder`. A

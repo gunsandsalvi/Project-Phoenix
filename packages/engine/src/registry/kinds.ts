@@ -299,28 +299,17 @@ export interface PartyKindProfile {
    */
   readonly borrows: boolean;
   /**
-   * Money A1, Money Market E1, Dealer Desks A1: whether a party of this kind CHOOSES where it
-   * banks. Almost everybody does — a household or a firm banks where it likes and leaves when
-   * somebody pays it more, which is the whole of what stops a bank paying less (E1).
-   *
-   * Some do not, and for them the account is part of what the party IS rather than a decision it
-   * takes: a trading desk is its bank's own arm and an account at a rival would make it a different
-   * firm (A1); a bank and the treasury settle at the central bank because that is what settling in
-   * central bank money means (Money C2.a, Treasury D3); an estate holds the account of the party it
-   * succeeded and is realising it, not running it (XI-8). Declared here because it is a fact about
-   * the kind, so the funding market asks the profile instead of naming kinds (Law 15).
-   */
-  readonly choosesBank: boolean;
-  /**
    * Banks Funding A1, A1.d: WHICH KIND OF DEPOSITOR a party of this kind is, or null for one that
    * is nobody's deposit base. It is a fact about the kind — many and small, fewer and operational,
    * few and very large — so it is declared with the kind and the funding market asks the profile
    * (Law 15). A table inside that market mapping kinds to classes was that branch written out: a
    * module added a kind and the market kept a list of them.
    *
-   * What the class then MEANS — insured to a limit, what it costs one to move — belongs to the
-   * market that holds the taxonomy, because those are facts about a regulation and a cost and not
-   * about what the party is.
+   * What the class then MEANS TO A BANK — insured to a limit — belongs to the market that holds the
+   * taxonomy, because that is a fact about a regulation and not about what the party is. WHETHER a
+   * party of this kind moves, and what it costs it, is not here either and is not a flag: it is
+   * whether the module that owns the kind declared a `bankChoices` reason for it, which is the same
+   * fact and its answer in one place (Law 4).
    */
   readonly depositClass: string | null;
 }

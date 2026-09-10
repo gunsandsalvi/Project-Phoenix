@@ -5,10 +5,12 @@
  * @spec Money Market B6 Money Market B6.a Money Market C1 Money Market C2 Banks Funding A1 Banks Funding A1.a Banks Funding A1.b Banks Funding A1.c Banks Funding A1.d Banks Funding B1.a Banks Funding C2.a Central Bank B1 Central Bank D1 Law 2 Law 15
  *
  * Data only (Law 15). A1.d is the clause this file exists for: A MODEL WITH ONE DEPOSIT TYPE CANNOT
- * HAVE A RUN, so the classes are stated here — what each one is insured for and what it costs one
- * of them to move — while WHICH class a party is in is a fact about the party's kind and is
- * declared with the kind (`PartyKindProfile.depositClass`). A table here mapping kinds to classes
- * was the kind branch written out as data: a module added a kind and this file kept a list of it.
+ * HAVE A RUN, so the classes are stated here — and only what a BANK faces about one, which is
+ * whether the state insures it. WHICH class a party is in is a fact about the party's kind and is
+ * declared with the kind (`PartyKindProfile.depositClass`); WHAT IT COSTS one of them to move is a
+ * fact about the depositor and is declared by the module that owns it. A table here mapping kinds
+ * to classes was the kind branch written out as data: a module added a kind and this file kept a
+ * list of it.
  */
 import { Missing } from '../../core/errors.js';
 import { paramId, type ParamId, type PartyKindId } from '../../core/ids.js';
@@ -55,30 +57,20 @@ export const BOOKS: readonly BookDecl[] = [
   },
 ];
 
-/** A1: a class of depositor — what it is insured for and what it costs one of them to leave. */
+/**
+ * A1: a class of depositor. WHAT IS HERE IS THE REGULATION AND NOTHING ELSE — whether the state
+ * insures this class — because that is the only part of a depositor a BANK faces: it is what its
+ * board is priced against and what it pays a premium for (Banks Capital D4).
+ *
+ * What it costs one of them to MOVE is not here, and that is deliberate. It is an amount of that
+ * depositor's own money weighed against that depositor's own balance (A1.d, E1), so it belongs with
+ * the module that owns the depositor — a household's is `households`', a fund's is `funds`' — and a
+ * bank that could read it would be reading a private preference (Observer A4).
+ */
 export interface DepositClassDecl {
   readonly id: string;
   /** A1.a: insured up to the limit, per member where the depositor is a cell (XI-15). */
   readonly insured: boolean;
-  /**
-   * A1.d, E1: what it costs a depositor of this class to move its account — AN AMOUNT OF MONEY,
-   * once, per move. THIS IS WHERE STICKINESS LIVES, and it is a cost somebody bears rather than a
-   * stated stickiness.
-   *
-   * IT IS AN AMOUNT AND NOT A RATE, AND THAT IS THE WHOLE POINT. As a rate it was the same test for
-   * every member of a class — gain more than 0.006 per annum and go — so every retail depositor in
-   * the world faced one comparison and answered it identically, and the class crossed in a single
-   * instant the moment a bank moved its rate past the number. That is a representative agent with a
-   * threshold (App B: no representative agent where decisions are thresholds), and it made a run a
-   * step function rather than a thing that builds.
-   *
-   * As an amount it is weighed against what moving is WORTH, which is the balance times the rate
-   * difference over the period. A depositor with more money in the bank gains more from the same
-   * quarter point, so it goes first; one with little never bothers. Who moves is decided by what
-   * each one holds — which differs across a cell's members and across firms by construction — and
-   * a class drains rather than jumps.
-   */
-  readonly switchingCost: number;
   readonly why: string;
 }
 
@@ -86,19 +78,16 @@ export const DEPOSIT_CLASSES: readonly DepositClassDecl[] = [
   {
     id: 'retail',
     insured: true,
-    switchingCost: 40,
     why: 'A1.a: many, small, sticky and insured up to a limit — which is what a cell of members IS (XI-15), and what makes E4 break the loop for them and not for anybody else.',
   },
   {
     id: 'corporate',
     insured: false,
-    switchingCost: 250,
     why: 'A1.b: fewer, larger, operational. A firm banks where it transacts, so this money moves because the firm is trading, not because a rate moved. An ESTATE is not here: it is not running a business, it is realising one (XI-8), so its balance is proceeds waiting to be paid out and not funding anybody bids for — and paying it a deposit rate would give a party being wound up an income, and the treasury a tax claim to rank among the creditors, neither of which this world has a mechanism for.',
   },
   {
     id: 'wholesale',
     insured: false,
-    switchingCost: 900,
     why: 'A1.c: few, very large and rate-sensitive. This is the money that leaves first (E4.a), because nothing insures it and its holder is in the market all day anyway.',
   },
 ];
@@ -156,8 +145,6 @@ export function funderOf(bank: string): FunderDecl | undefined {
 }
 
 export const mmParam = (bank: string, what: string): ParamId => paramId(`bank.${what}.${bank}`);
-
-export const switchingCost = (cls: string): ParamId => paramId(`deposits.switchingCost.${cls}`);
 
 export const MM_PARAMS = {
   floorSpread: paramId('centralBank.corridor.floorSpread'),

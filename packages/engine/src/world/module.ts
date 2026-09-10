@@ -90,6 +90,31 @@ export type CreditDecision = (
 ) => OverdraftDecision;
 
 /**
+ * Banks Funding A1, E1, Observer A4: WHERE A DEPOSITOR BANKS IS THE DEPOSITOR'S DECISION, and the
+ * module that owns its kind is the one that takes it, with that party's own view.
+ *
+ * It is the same door a market's `participants` and a venue's `venueParticipants` are, for the same
+ * reason (Clearing B2): the module that runs the deposit market used to walk every party in the
+ * world and decide for each of them out of a `MechanismContext` that can see private state no
+ * depositor may have. And the reasons are not one reason wearing three names — A1.a's retail money
+ * is insured and sticky, A1.b's corporate money banks where it transacts, A1.c's wholesale money is
+ * in the market all day and leaves first — so each kind's is written where that kind lives.
+ *
+ * `none` is staying where it is. A kind whose profile says it chooses its bank must have exactly
+ * one module answering, or the world cannot be sealed: a depositor nobody asks is a depositor that
+ * can never leave, which is A1.d's stickiness made invisible instead of paid for.
+ */
+export interface BankChoice {
+  readonly to: PartyId;
+  readonly reason: string;
+}
+
+export interface BankChoiceDecl {
+  readonly partyKind: PartyKindId;
+  chooses(view: ParticipantView): Option<BankChoice>;
+}
+
+/**
  * XI-6, Banks Lending D1, D2: what a lot of a kind that has NO MARKET is worth to whoever holds it.
  *
  * Almost everything is worth what a market said (XI-6), and the kernel reads that from the price
@@ -153,6 +178,12 @@ export interface SystemModule {
     readonly partyKind: PartyKindId;
     readonly decide: CreditDecision;
   }[];
+  /**
+   * Banks Funding E1, Observer A4: where a depositor of a kind this module owns banks, and why it
+   * would move. Exactly one module may answer for a kind, and a kind whose profile says it chooses
+   * its bank must have one.
+   */
+  readonly bankChoices?: readonly BankChoiceDecl[];
   /**
    * XI-3, Banks Capital C3.b: party kinds whose FAILURE this module takes charge of itself, so the
    * estate does not open one for them. A bank is the case: its liabilities are the money everybody
