@@ -124,15 +124,15 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 
 ## Steps
 
-- [ ] `interbank.loan` and `repo` kinds; repo collateral through liens; eligibility as data; haircut from the lender's own PD of the issuer (B3.b); tests
-- [ ] Deposit classes as a read of the holder; per-member insurance read; tests
-- [ ] The deposit rate as each bank's decision reading its need and its depositors' alternatives; interest paid by instruction; test: no `min` exists and the rate still never exceeds the cheaper alternative on the contested share in a year of runs (a VERIFY-style assertion, recorded as a finding if it fails, not a clamp)
+- [x] `interbank.loan` and `repo` kinds; repo collateral through liens; eligibility as data; haircut from the lender's own PD of the issuer (B3.b); tests
+- [x] Deposit classes as a read of the holder; per-member insurance read; tests
+- [x] The deposit rate as each bank's decision reading its need and its depositors' alternatives; interest paid by instruction; test: no `min` exists and the rate still never exceeds the cheaper alternative on the contested share in a year of runs (a VERIFY-style assertion, recorded as a finding if it fails, not a clamp)
 - [ ] Blended cost of funds as a read; item 6's placeholder deleted; test: two banks with different mixes quote loans differently
-- [ ] The session after the flows: schedules from position, buffer (derived from observed outflow variance), cost of funds; unsecured prices the name; two books; refusal per name; tests
-- [ ] Non-bank cash in the same session with the floor as its alternative (B5); test
-- [ ] The corridor: floor as parking that destroys reserves, ceiling as a collateralised repo bounded by unencumbered eligible paper; the policy rate never a cleared rate; tests
+- [x] The session after the flows: schedules from position, buffer (derived from observed outflow variance), cost of funds; unsecured prices the name; two books; refusal per name; tests
+- [x] Non-bank cash in the same session with the floor as its alternative (B5); test
+- [x] The corridor: floor as parking that destroys reserves, ceiling as a collateralised repo bounded by unencumbered eligible paper; the policy rate never a cleared rate; tests
 - [ ] The reserve overdraft priced and collateralised through the decider; the kernel's recorded-unpriced path deleted; the money family updated; tests: a bank with no collateral cannot draw (C4.b) and fails for liquidity (D4)
-- [ ] LOLR's four conditions (D6): freely, good collateral, penalty, solvent: the decider refuses an insolvent bank; test
+- [x] LOLR's four conditions (D6): freely, good collateral, penalty, solvent: the decider refuses an insolvent bank; test
 - [ ] `banks.funding`: sell liquid assets, bid up deposits, stop originating (item 6's B2.b constraint now real), draw the facility, fail; tests for each branch as a state reached
 - [ ] The run: wholesale depositors move on public observables; the loop shows in a scenario test (D5.b, E3.a); insurance breaks it for retail (E4); tests
 - [ ] Interbank exposure as contagion: a failed bank's interbank rows land losses on lenders by name (E3); test with item 7's resolution
@@ -162,3 +162,109 @@ deleted; a year green.
 ## Guard
 
 Money Market C5, D6; Banks Funding B1.c, D6.a, B2.b; Central Bank B3.a, D3.a; Banks Capital A1.a.
+
+---
+
+## HANDOVER — state of play
+
+Written at the point work stopped, from a full run of the suite at the last commit on
+`claude/project-phoenix-task-10-pzeoao`. **Read `docs/plan/10.3-indivisible-pieces.md` first**: a
+change to what a quantity IS landed underneath this item and is not finished, and some of what is
+red here is red for that reason rather than this one.
+
+### What is built and working
+
+- **The instruments.** `interbank.loan` and `repo` kinds; collateral pledged through real liens in
+  the same instruction as the row (B3.c); eligibility as registry data; the haircut declared by the
+  central bank for its own window and the lender's own required yield for a market repo.
+- **Deposit classes** (retail / corporate / wholesale) as a read of the holder's kind, with the
+  insured/uninsured split taken in one place (`coveredPerMember`) and read from both sides.
+- **The deposit rate** as each bank's decision — what money is worth to it, less its own margin, less
+  what it takes to move that class — paid by instruction, published as a public event (D5.a).
+- **Blended cost of funds** as a read of what the bank actually paid last period (`costOfFunds` in
+  `bank-lending`), so item 6's placeholder is gone and two banks with different mixes quote
+  differently. The claim in the last bullet has no test yet.
+- **The session after the flows**: positions read off the wire's own reserve legs (nobody chose
+  them), a book per borrowing name per tenor so an unsecured rate prices the NAME, refusals recorded,
+  the window taking its seat at the ceiling against unencumbered eligible paper only.
+- **Non-bank cash** in the same session (B5): the money fund places its spare cash rather than
+  hoarding it as a deposit.
+- **The corridor**: floor as parking that destroys reserves (C1.a), ceiling as a collateralised repo,
+  both administered and published; the policy rate never a cleared rate.
+- **The priced reserve overdraft** through the credit-decision door, with LOLR's four conditions all
+  present and the refusal of an insolvent bank being the one that must exist (D6).
+- **Depositor mobility**: `world.moveBank` moves a depositor's balance and its bank, and uninsured
+  money leaves a bank the market has publicly refused.
+- **Two rungs of the ladder**: D3 (a bank the session left short values money at the window and bids
+  up for deposits) and D4 (a bank short of liquid assets against what could leave it writes no new
+  loans — the credit crunch, read from its own published `bank.liquidity`).
+
+### Findings recorded on the way
+
+1. **A refusal made of rounding started a real run.** The session recorded `moneyMarket.refused` for
+   a shortfall of 1.8e-7; that event is a public observable, so every uninsured depositor left the
+   bank and it died two periods later. Fixed at the cause — a bank borrows whole pieces of money and
+   can only be short of whole pieces — and that finding is what 10.3 came out of.
+2. **The reduced test worlds now carry the corridor.** Making the central bank's overdraft a credit
+   decision means every world with a central bank needs the module that answers it, exactly as every
+   world with a bank already carried `bank-lending`. Ten test files were changed to say so.
+3. **Deposit interest reaches every balance.** A bank pays its depositors every period, so any test
+   that asserted an exact cash or equity level now measures that too. The fix is `paidTo(w, party,
+   'coupon')` in `test/expected.ts`: read the payment, not the balance.
+4. **`toGrain` rounded twice.** Rounding to a piece and then to the two parties' common grain moved a
+   trade's cash by half a piece more than the grain, and the households flows family reported the
+   second rounding as a discrepancy. It rounds once now.
+
+### Open — in the order the plan wants them
+
+- **D1/D2, the rest of the ladder: it sells or pledges liquid assets, at whatever they fetch, in
+      a real book.** A bank that closes short still cannot post a sale. `sovereign-curve` already
+      makes a bank a seller above its buffer target, so the hook exists; what is missing is the link
+      from a published shortfall to an order, and the target itself is still item 3's placeholder.
+- **Item 3's placeholder `bank.liquidityBuffer.perDeposit` is still there** (`sovereign-curve/
+      index.ts`, `kind: 'placeholder'`, `standsInFor` Money Market A2.a, worklist 11). It is the only
+      placeholder left in the engine. C2.a says the buffer is derived from its own liabilities, and
+      `couldLeave` (the uninsured part of the deposit base) is now published for exactly this: the
+      paper target should read it.
+- **The run (137).** Uninsured money moves away from a publicly refused bank, which is half of
+      E1/E2.a. Missing: the self-reinforcing loop shown in a scenario test (D5.b/E3.a — the deposit
+      leaves with the reserves behind it, so the bank is shorter at the next close), and the test
+      that insurance breaks it for retail and not for wholesale (E4).
+- **Interbank contagion (138).** A failed bank's rows must land losses on its lenders by name
+      (E3). Not started; the plan says to test it with item 7's resolution, so it waits on the next.
+- **Bank capital (139).** Requirement against risk weights, leverage backstop, which of them
+      binds as a read, the buffer as a choice, distributions restricted near the line. Not started.
+      `bank-lending`'s `room()` already has the capital and appetite constraints to hang it on.
+- **BANK RESOLUTION (140–144) — this is the blocker.** A bank can now genuinely fail for
+      liquidity, and when one does the world breaks: its deposits are money issued by a party that
+      has ceased, its paper sits in a dead holder's account, its rows default, and other modules
+      throw `Money E4` addressing it. Every year-long run that reaches a bank failure is red for this
+      reason and no other. Needed: the failed book valued at marks and at its own carrying values,
+      the hole as liabilities minus that, the hierarchy (equity to zero first), the acquirer's bid
+      with deposits and rows assumed over the wire, the public path when nobody bids, deposit
+      insurance per member with the insurer as an estate creditor, and the conservation family
+      (acquirer paid + insurer paid + estate realised + holders lost = the hole).
+- **XI-2's funding-line cut (145).** Not started.
+- **Raising (146).** Equity issuance and a `bank.subordinated` kind into markets that can refuse;
+      a failed raise leaves the bank where it was. Not started. The bail-in hierarchy in 141 has only
+      two layers until this exists.
+- **The policy rate as the central bank's own decision (148).** It is still a declared parameter.
+      §31 B says it is a decision on its mandate, and the test is that a change moves the market rate
+      THROUGH the corridor and never by assignment (B4).
+- **Reports and observer (147, 150).** `bank.liquidity` and `centralBank.corridor` are published;
+      deposits by class are in the event. Missing: the observer surface for the corridor, the session
+      prints per book, refusals, facility draws and runs.
+- **Delete the expected red.** `test/expected.ts: unexpected()` still hides one violation —
+      `Money B3.c … no lender row (corridor not built)` in `audit/families/money.ts`. The corridor IS
+      built now and `bookOverdrafts` writes a row for every overdraft at the close, so both the
+      hidden red and the helper that hides it should go, and the message in the family with them.
+      Until they do, every year-long test is quietly forgiving one thing.
+- **Re-mark MET**: Money B3.b, B3.c; Banks Lending B2.b, C1.a (COVERAGE.md).
+- **A year green with a funding-squeeze scenario, and determinism** (151). Blocked on resolution.
+- Coverage, record, delete this file and 10.3's, one commit each (152–154).
+
+### Where the work is
+
+Branch `claude/project-phoenix-task-10-pzeoao`, pushed. The history is WIP commits: item 11's
+mechanisms and 10.3's conversion are interleaved and want splitting into two commits before either
+is closed — 10.3 first, since 11 sits on it.

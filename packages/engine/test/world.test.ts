@@ -34,6 +34,7 @@ import {
   type World,
 } from '../src/index.js';
 import { overdrafts, unexpected } from './expected.js';
+import { phx } from './units.js';
 
 function violations(w: World): string[] {
   const r = w.last?.audit;
@@ -434,9 +435,9 @@ describe('a market with reasons on both sides', () => {
         // Sized to the cash the buyer holds: what this tests is delivery against payment, not a
         // buyer that cannot pay — that is the next test.
         if (party === 'firm.1')
-          return [{ party: partyId(party), side: 'buy', price: 0.99, qty: 60 }];
+          return [{ party: partyId(party), side: 'buy', price: 0.99, qty: phx(60_000) }];
         if (party === 'bank.b')
-          return [{ party: partyId(party), side: 'sell', price: 0.97, qty: 60 }];
+          return [{ party: partyId(party), side: 'sell', price: 0.97, qty: phx(60_000) }];
         return [];
       }),
     );
@@ -444,9 +445,9 @@ describe('a market with reasons on both sides', () => {
     expect(violations(w)).toEqual([]);
     const gov = r.markets.find((m) => m.market === GOV_MARKET);
     expect(gov?.outcome).toBe('cleared');
-    expect(gov?.settledVolume).toBe(60);
-    expect(w.register.quantity(partyId('firm.1'), GOV_LINE)).toBe(60);
-    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(90);
+    expect(gov?.settledVolume).toBe(phx(60_000));
+    expect(w.register.quantity(partyId('firm.1'), GOV_LINE)).toBe(phx(60_000));
+    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(phx(90_000));
     const print = w.prices.printOrThrow(GOV_LINE, w.period);
     expect(print.provenance.kind).toBe('traded');
     expect([0.97, 0.99]).toContain(print.price);
@@ -460,9 +461,9 @@ describe('a market with reasons on both sides', () => {
       traders((instrument, party) => {
         if (instrument !== GOV_LINE) return [];
         if (party === 'firm.2')
-          return [{ party: partyId(party), side: 'buy', price: 1.2, qty: 140 }];
+          return [{ party: partyId(party), side: 'buy', price: 1.2, qty: phx(140_000) }];
         if (party === 'bank.a')
-          return [{ party: partyId(party), side: 'sell', price: 1.2, qty: 140 }];
+          return [{ party: partyId(party), side: 'sell', price: 1.2, qty: phx(140_000) }];
         return [];
       }),
     );
@@ -471,7 +472,7 @@ describe('a market with reasons on both sides', () => {
     expect(gov?.failedTrades).toBe(1);
     expect(gov?.settledVolume).toBe(0);
     expect(w.register.quantity(partyId('firm.2'), GOV_LINE)).toBe(0);
-    expect(w.cash(partyId('firm.2'), PHX)).toBe(50);
+    expect(w.cash(partyId('firm.2'), PHX)).toBe(phx(50_000));
     const failed = w.ledger.all().filter((x) => x.outcome === 'failed');
     expect(failed).toHaveLength(1);
     expect(failed[0]?.outcome === 'failed' && failed[0].reason.kind).toBe('overdraftRefused');
@@ -485,7 +486,7 @@ describe('participant views (Observer A4, Expectations D1)', () => {
     w.step();
     const view = w.participantView(partyId('firm.1'));
     expect(view.self.id).toBe('firm.1');
-    expect(view.cash(PHX)).toBe(65);
+    expect(view.cash(PHX)).toBe(phx(65_000));
     expect(view.holdings().every((h) => h.holder === 'firm.1')).toBe(true);
     expect(view.print(GOV_LINE).some).toBe(true);
     const keys = Object.keys(view);
