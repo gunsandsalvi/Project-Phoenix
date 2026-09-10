@@ -26,7 +26,7 @@ import { period } from '../../calendar/calendar.js';
 import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { paramId } from '../../core/ids.js';
+import { currencyUnit, paramId, partyId } from '../../core/ids.js';
 import { add, div, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -41,6 +41,8 @@ import { capitalOf, publish, type CapitalRules } from './capital.js';
 import { arbitrage, dealingOrders, publishDealing } from './dealing.js';
 import {
   classesSeen,
+  liquidityPlan,
+  liquidityTargets,
   publishBuffer,
   P_COVERAGE,
   ownDeposits,
@@ -108,6 +110,8 @@ function regulationOf(view: ParticipantView): Regulation {
  * what that asset IS (`riskWeightOf`).
  */
 function rulesFor(ctx: MechanismContext, bank: PartyId): CapitalRules {
+  const view = ctx.participant(bank);
+  const decl = declOf(bank);
   return {
     minWeighted: ctx.params.get(LENDING_PARAMS.capitalRatio),
     minLeverage: ctx.params.get(LENDING_PARAMS.leverageRatio),
@@ -115,6 +119,17 @@ function rulesFor(ctx: MechanismContext, bank: PartyId): CapitalRules {
     weight: ctx.params.get(LENDING_PARAMS.riskWeight),
     limitPerName: ctx.params.get(bankParam(bank, 'limitPerBorrower')),
     sovereignWeight: ctx.params.get(LENDING_PARAMS.sovereignWeight),
+    tradingWeight: ctx.params.get(TRADING_BOOK_RISK_WEIGHT),
+    // Dealer Desks F2: the same target the dealing line quotes around, read once and used for both
+    // — what a holding weighs and what the book may be worth are one line drawn in one place.
+    targets:
+      decl === undefined
+        ? new Map<InstrumentId, number>()
+        : liquidityTargets(
+            view,
+            decl,
+            liquidityPlan(view, ctx.params.get(bankParam(bank, 'liquidityCushion'))),
+          ),
   };
 }
 
@@ -559,6 +574,69 @@ function bookMoves(): Family {
   };
 }
 
+/**
+ * Dealer Desks F2, Banks Capital B1.a: THE TRADING BOOK IS CAPITALISED, and this measures it.
+ *
+ * F2 says no desk is exempt from its own bank's capital, and 11.2 made that structurally true by
+ * deleting the desk. What is left to check is arithmetic: whatever a bank is holding ABOVE where
+ * its own treasury wants a line, at the marks in force, at the weight a trading position carries,
+ * is inside the risk-weighted assets it published. A bank whose published requirement did not move
+ * when it ran a position up would be a bank whose dealing was free, which is the thing F2 forbids.
+ *
+ * It is a MEASUREMENT and never a rule: what it finds is reported with an owner and a size, and
+ * nothing here adjusts a weight or a position (the audit never repairs).
+ */
+function tradingBookIsCapitalised(): Family {
+  return {
+    name: 'accounts',
+    contributor: 'banks',
+    spec: 'Dealer Desks F2 Banks Capital B1 Banks Capital B1.a',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      const weight = view.params.get(TRADING_BOOK_RISK_WEIGHT);
+      for (const e of view.journal.ofKind('bank.capital')) {
+        if (e.period !== view.period) continue;
+        const bank = e.subjects[0];
+        const rwa = e.data['weighted'];
+        if (bank === undefined || typeof rwa !== 'number') continue;
+        const self = partyId(bank);
+        if (!view.parties.has(self) || !view.parties.get(self).status.alive) continue;
+        // Law 19: the targets are the ones the BANK published with its book this period, not a
+        // second copy of the treasury's arithmetic. A check that rebuilt them would be checking
+        // one derivation against another and would pass whatever either of them did.
+        const said = view.journal
+          .ofKind('bank.dealing')
+          .filter((x) => x.period === view.period && x.subjects.includes(self));
+        const lines = said[said.length - 1]?.data['lines'];
+        if (typeof lines !== 'object' || lines === null) continue;
+        const terms: number[] = [];
+        for (const [id, row] of Object.entries(lines as Record<string, unknown>)) {
+          if (typeof row !== 'object' || row === null) continue;
+          const want = (row as Record<string, unknown>)['target'];
+          const value = (row as Record<string, unknown>)['worth'];
+          if (typeof want !== 'number' || typeof value !== 'number' || value <= want) continue;
+          terms.push(mul(sub(value, want, `${id} above its target`), weight, 'weighted'));
+        }
+        const asked = sum(terms).value;
+        // Law 7: both sides are walks over the same holdings at the same marks, so what separates
+        // them is the dust of adding them up and nothing else.
+        if (rwa + dustOf(terms.length + 2, Math.abs(rwa) + Math.abs(asked)) >= asked) continue;
+        out.push({
+          family: 'accounts',
+          spec: 'Dealer Desks F2',
+          owner: bank,
+          size: sub(asked, rwa, 'weighted assets its dealing book asked for and did not get'),
+          unit: currencyUnit(view.registry.region(view.parties.get(self).region).ccy),
+          period: view.period,
+          message: `${bank}: its dealing book weighs ${asked} and it published ${rwa} of risk-weighted assets in total`,
+        });
+      }
+      return out;
+    },
+  };
+}
+
 export const bankLending: SystemModule = {
   id: 'banks',
   spec: 'Banks Lending',
@@ -844,7 +922,7 @@ export const bankLending: SystemModule = {
   ],
   marks: [{ instrumentKind: LOAN, value: worthToItsLender }],
   creditDecisions: [{ partyKind: BANK, decide: overdraft }],
-  families: [bookMoves()],
+  families: [bookMoves(), tradingBookIsCapitalised()],
 };
 
 /**

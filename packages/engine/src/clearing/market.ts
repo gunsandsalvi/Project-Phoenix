@@ -136,7 +136,7 @@ export function runMarket(
   const outcome = clear(orders, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
   switch (outcome.kind) {
     case 'cleared': {
-      const trades = pairFills(outcome.fills, (p) => weightOf(deps.parties.get(p)));
+      const trades = pairFills(m, outcome.fills, (p) => weightOf(deps.parties.get(p)));
       const accrued = deps.accruedPerUnit(m.instrument, period);
       let settledVolume = 0;
       let allotted = 0;
@@ -256,7 +256,11 @@ export function runMarket(
 }
 
 /** Pair buy fills with sell fills, walking both lists; every trade has two named sides (D2). */
-function pairFills(fills: readonly Fill[], weight: (party: PartyId) => number): Trade[] {
+function pairFills(
+  m: MarketDecl,
+  fills: readonly Fill[],
+  weight: (party: PartyId) => number,
+): Trade[] {
   const buys = fills.filter((f) => f.side === 'buy').map((f) => ({ ...f }));
   const sells = fills.filter((f) => f.side === 'sell').map((f) => ({ ...f }));
   const out: Trade[] = [];
@@ -268,21 +272,20 @@ function pairFills(fills: readonly Fill[], weight: (party: PartyId) => number): 
     const buyer = buys[b];
     const seller = sells[s];
     if (buyer === undefined || seller === undefined) break;
-    // D2, Clearing A2: NOBODY TRADES WITH ITSELF. A party can be on both sides of one book — it
-    // wants more of a line at one level and is willing to let some go at another, and a desk quotes
-    // exactly that (Dealer Desks A2) — but a fill between its own two orders would be an
-    // instruction with one named side, which is not a trade and which the wire refuses. It steps
-    // past whichever of its own two has less left, and the other meets somebody it can deal with.
-    if (buyer.party === seller.party) {
-      if (bLeft <= sLeft) {
-        b += 1;
-        bLeft = zeroIfNone(buys[b]?.qty);
-      } else {
-        s += 1;
-        sLeft = zeroIfNone(sells[s]?.qty);
-      }
-      continue;
-    }
+    // D2, Clearing A2: NOBODY TRADES WITH ITSELF, AND IT IS A CONTRACT.
+    //
+    // A party is welcome on both sides of one book — it wants more of a line at one level and will
+    // let some go at another, which is what a quote IS (Dealer Desks A2) — but its two orders
+    // cannot CROSS, because a schedule whose bid is at or above its own offer is a party paying
+    // itself. So a fill between one party's own two orders means the party that posted them is
+    // broken, and this refuses it at the site rather than stepping past it: a solver that walked
+    // around it would hide the next module that puts two deciders behind one name (Law 12).
+    forbid(
+      buyer.party !== seller.party,
+      'Clearing A2',
+      `${buyer.party} is on both sides of ${m.id} at crossing prices`,
+      { party: buyer.party, market: m.id },
+    );
     const want = bLeft < sLeft ? bLeft : sLeft;
     // Law 8, XI-15: what these two can actually exchange. Between named parties that is the unit's
     // own smallest piece; where one side is a population it is that piece for every member of it,

@@ -82,6 +82,43 @@ describe('what a dealer is here (Dealer Desks A1, F2)', () => {
   });
 });
 
+describe('one face (Dealer Desks A1, Clearing A2, Law 4)', () => {
+  it('is the only thing that decides for a bank, in a market and in a venue', () => {
+    const spec = foundationSpec('dl-face');
+    // Law 4: one decider, one face. This is the assembly fact the kernel's self-cross refusal is
+    // the run-time half of — a bank cannot show two schedules to one book if only one module has
+    // anything to say for it.
+    const inMarkets = spec.modules.filter((m) =>
+      m.participants.some((x) => x.partyKind === BANK),
+    );
+    const inVenues = spec.modules.filter((m) =>
+      (m.venueParticipants ?? []).some((x) => x.partyKind === BANK),
+    );
+    expect(inMarkets.map((m) => m.id)).toEqual(['banks']);
+    expect(inVenues.map((m) => m.id)).toEqual(['banks']);
+  });
+
+  it('capitalises what it is holding above its treasury\'s target, and nothing below it (F2, B1.a)', () => {
+    const w = foundationWorld('dl-rwa');
+    for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    const capital = w.journal.ofKind('bank.capital').filter((e) => e.period === w.period);
+    expect(capital.length).toBeGreaterThan(0);
+    for (const e of capital) {
+      // B1.a: RISK WEIGHTS DIFFER BY ASSET, and a bank that ran a position up has something to
+      // hold capital against. Sovereign paper inside the treasury's target weighs nothing (a claim
+      // on a party that cannot fail in the money it issues); the same paper above the target is a
+      // position somebody took with a view, and a view can be wrong whoever it is about.
+      expect(Number(e.data['weighted'])).toBeGreaterThan(0);
+      expect(Number(e.data['weighted'])).toBeLessThan(Number(e.data['assets']));
+      expect(['weighted', 'leverage', 'nothing']).toContain(String(e.data['binds']));
+    }
+    // F2: and the `accounts` family measured it — the published requirement covers the book.
+    const accounts = w.last?.audit.families.filter((f) => f.family === 'accounts') ?? [];
+    expect(accounts.some((f) => f.contributions.includes('banks'))).toBe(true);
+    expect(accounts.flatMap((f) => f.violations)).toEqual([]);
+  });
+});
+
 describe('what the book costs it (Dealer Desks D2, D3, XI-4 joint three)', () => {
   it('is what the bank actually pays for the money that funds it, every period (D3)', () => {
     const w = foundationWorld('dl-rent');

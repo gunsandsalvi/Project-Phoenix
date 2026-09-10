@@ -382,8 +382,13 @@ export function publishDealing(
     const quoted = quoteFor(view, i.id, state);
     if (!quoted.some) continue;
     const q: DeskQuote = quoted.value;
+    const mark = view.mark(i.id);
     lines[i.id] = {
       inventory: view.quantity(i.id),
+      // C2.a, F2: where its own treasury wants this line, and what it is actually holding of it at
+      // the marks — the two numbers that say which part of the holding is a position it took.
+      target: state.targetIn(i.id),
+      worth: mark.some ? mul(view.quantity(i.id), mark.value, 'what it holds of this line') : 0,
       bid: q.bid,
       offer: q.offer,
       spread: sub(q.offer, q.bid, 'the width it quoted'),

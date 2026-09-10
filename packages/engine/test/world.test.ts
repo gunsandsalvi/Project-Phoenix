@@ -472,6 +472,24 @@ describe('a market with reasons on both sides', () => {
     expect([0.97, 0.99]).toContain(print.price);
   });
 
+  it('refuses a party on both sides of one book at crossing prices (Clearing A2, Register D2)', () => {
+    // A2: NOBODY TRADES WITH ITSELF. A party is welcome on both sides — that is what a quote is —
+    // but a bid at or above its own offer is a party paying itself, and the fill between them
+    // would be an instruction with one named side. It is a CONTRACT and it throws at the site: a
+    // solver that stepped around it would hide the module that put two deciders behind one name.
+    const w = bareWith(
+      'seed-selfcross',
+      traders((instrument, party) => {
+        if (instrument !== GOV_LINE || party !== 'bank.a') return [];
+        return [
+          { party: BANK_A, side: 'buy', price: 1.2, qty: phx(10_000) },
+          { party: BANK_A, side: 'sell', price: 0.8, qty: phx(10_000) },
+        ];
+      }),
+    );
+    expect(() => w.step()).toThrow(/both sides/);
+  });
+
   it('a buyer without the cash fails the whole trade, not half of it (Register C3.b)', () => {
     // Its bank will lend it nothing, so the shortfall is a refusal and not an overdraft (B3.a).
     // A bank with no appetite for a name is a real bank, and it is what makes a fail a fail.

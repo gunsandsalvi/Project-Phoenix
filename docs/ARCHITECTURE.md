@@ -629,29 +629,50 @@ programme, an auction's result — is read that way, because how far back a feed
 shrinks every time the world finds more to say, so sifting such an event out of the feed is a read
 that goes quiet as the model grows and never says that it has.
 
-### 4.11b Where a bank's own economics live (Money Market, Banks Funding, Banks Capital)
+### 4.11b Where a bank's own economics live (Banks Lending, Banks Funding, Banks Capital, Dealer Desks)
 
-A bank is three systems in the specification — its lending, its funding and its capital — and they
-land in **two** modules here rather than three, because a fact has one writer and these three share
-their facts.
+**Modules are cut along DECIDERS and VENUES, not along spec systems.** A spec system is a
+requirement; a decider is a party that has to live with what it chose. §23, §24, §25, §26 and §8.E
+all describe ONE bank from different sides, and mapping each to a module turned one bank into a
+committee that never met: a treasury that made markets, a forced seller that could cross its own
+buyer, an auction bidder that stood down by hand, and a desk that was a separate party. Every one of
+those was a bug before it was a principle.
 
-- **`bank-lending` owns what a bank IS WORTH and what that allows**: its cost of funds, its credit
-  decision, its capital position (`capital.ts`) and the layer it can raise to change that position
-  (`subordinated.ts`). The requirement, the weights and the leverage backstop are declared here
-  because this is the only module that consumes them, and the position is published after the marks
-  are taken — capital is the residual (A1) and a residual measured against prints that have not
-  happened yet is not one.
-- **`money-market` owns what a bank PAYS and what happens when it cannot**: the session, the
-  corridor, the deposit book, the funding ladder and the resolution. A bank does not go to an estate
-  (Banks Capital C3.b), so the module that prices its funding is the one that takes charge when the
-  funding fails, and it says so to the kernel with `resolves: [BANK]`.
+- **`banks` decides everything a bank decides.** One row per bank (`data.ts`) carries what it is like
+  as a lender, a funder, a treasury and a dealer, because those are four sides of one disposition.
+  Its TREASURY (`treasury.ts`) owns the balance sheet — what it holds liquid and in what form, what
+  it pays each class of depositor, what it will lend a rival and at what, what it is short of — and
+  it POSTS NOTHING. Its DEALING line (`dealing.ts`) is the bank's only face to any market: it quotes
+  around the treasury's target, it bids at the auction for the obligation the issuer announces, it
+  sells with urgency when the last session refused the bank, and it creates and redeems a fund's
+  shares. Its LENDING line prices credit and answers the overdraft door. Its CAPITAL (`capital.ts`)
+  is one position over one balance sheet, weighted BY INTENT: what it holds up to the treasury's
+  target weighs what a claim on that issuer weighs, and what it holds above that weighs what a
+  trading position weighs (Dealer Desks F2, with nothing exempt because there is nothing to exempt).
+- **`money-market` is a VENUE and decides nothing.** It declares the books, calls `gather` so the
+  banks' own schedules arrive through the kernel's door, seats the window (the central bank's own
+  offer), clears what was posted, writes the rows, publishes the refusal, and takes charge when a
+  bank fails — because a bank does not go to an estate (Banks Capital C3.b) and it says so to the
+  kernel with `resolves: [BANK]`. No function in it reads a bank's preference.
+- **`sovereign-curve` is a curve family and a check**, and `sovereign-auction` does not exist: the
+  primary bid is the dealing line's, at the dealer's own price.
 
-Neither imports the other. What crosses between them are **public events**: the capital position and
-the line it will fund for one name (`bank.capital`), what it pays for money (`bank.costOfFunds`),
-what it requires of a name (`bank.reservation`), and what its funding looks like (`bank.liquidity`).
+Neither module imports the other. What crosses between them are **public events**: the capital
+position and the line it will fund for one name (`bank.capital`), what it pays for money
+(`bank.costOfFunds`), what it requires of a name (`bank.reservation`), what its funding looks like
+(`bank.liquidity`), what its own account did to it and what it holds against a bad week
+(`bank.buffer`), the board it is showing (`bank.depositRate`), and what its dealing book is carrying
+(`bank.dealing`). The market's own facts go the other way: the segments depositors are grouped into
+(`deposit.classes`) and what the window would advance each bank today (`centralBank.collateral`).
 That is the same door a depositor, a rival bank and the observer read them through — which is what
 makes "a bank near the line behaves differently" a thing the world can see rather than a thing one
 module tells another (Banks Capital B3.a, Banks Funding E2.a).
+
+**One face per market is a contract, not a convention.** Exactly one module gives `BANK` a
+participant, in markets and in venues. The kernel refuses a party on both sides of one book at
+crossing prices at the site (`pairFills`, Clearing A2, Register D2) — it used to step past it,
+because a bank really could post both sides, and stepping past it was a patch in the kernel for a
+defect in the bank.
 
 The **subordinated layer is not a special case anywhere**: it is a claim whose profile declares a
 seniority behind every other claim on the bank, and the resolution and the estate both work through

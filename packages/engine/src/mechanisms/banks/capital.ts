@@ -20,7 +20,7 @@
  * and B3 is what happens when it is breached: the position is published (B3.a), which is what a
  * depositor, a rival and a lender all read, and the bank's own credit decision has less room in it.
  */
-import { currencyUnit, moneyInstrumentId, type CurrencyCode, type PartyId } from '../../core/ids.js';
+import { currencyUnit, moneyInstrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -66,6 +66,14 @@ export interface CapitalRules {
   /** The weight of the asset the decision is about — a loan, unless the caller says otherwise. */
   readonly weight: number;
   readonly sovereignWeight: number;
+  /** Dealer Desks D2, F2: what a unit of a TRADING position consumes, whatever it is a claim on. */
+  readonly tradingWeight: number;
+  /**
+   * Dealer Desks C2.a, F2, Banks Funding C2: where this bank's own treasury wants each line held,
+   * in its own money. It is what tells a holding it is there because the treasury decided so from
+   * a holding it is running as a POSITION, and the two do not weigh the same.
+   */
+  readonly targets: ReadonlyMap<InstrumentId, number>;
 }
 
 /**
@@ -101,7 +109,27 @@ export function capitalOf(
     const value = ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period);
     if (value === 0) continue;
     held.push(value);
-    weighted.push(mul(value, riskWeightOf(ctx, ctx.instruments.get(h.instrument), rules), 'weighted'));
+    // B1.a, Dealer Desks D2, F2: WHAT AN ASSET WEIGHS DEPENDS ON WHY IT IS HELD. A holding up to
+    // where its own treasury wants the line is there because the treasury decided so, and it
+    // weighs what a claim on that issuer weighs — nothing, for a party that cannot fail in the
+    // money it issues. What is held ABOVE that is a position somebody took with a view, and a view
+    // can be wrong whoever it is about, so it weighs what a trading position weighs. That is F2
+    // with nothing exempt: the dealing book consumes its own bank's capital because it IS the
+    // bank's, and B1.a's "risk weights differ by asset, and that is why a bank prefers some assets
+    // to others" now has something to bite on.
+    //
+    // Only the part ABOVE. A line it is SHORT of its target is a position too — it will have to
+    // buy — but it is not an asset it holds, and capital stands against what a bank owns.
+    const want = rules.targets.get(h.instrument);
+    const banking = want === undefined || value < want ? value : want;
+    const trading = sub(value, banking, 'the part it is running as a position');
+    weighted.push(
+      add(
+        mul(banking, riskWeightOf(ctx, ctx.instruments.get(h.instrument), rules), 'weighted'),
+        mul(trading, rules.tradingWeight, 'what a position weighs'),
+        'what this holding asks of its capital',
+      ),
+    );
   }
   // A2, A3: CAPITAL IS LAYERED, and both layers are here — the equity that absorbs first and fully
   // (A2.a) and the subordinated claims that absorb next (A2.b). A requirement met with equity alone

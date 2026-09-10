@@ -135,6 +135,14 @@ export interface BankView {
   readonly binds: string | null;
   readonly breach: boolean;
   readonly limitPerName: number | null;
+  /**
+   * Dealer Desks A1, D5, E4: what its DEALING LINE is carrying and what room it has left. A bank's
+   * dealing book is a sub-ledger of the balance sheet above, not a second party's, so it belongs on
+   * the bank's own card rather than on one of its own — which is what a surface showing a "desk"
+   * used to say and what it no longer can.
+   */
+  readonly dealingBook: number | null;
+  readonly dealingRoom: number | null;
   /** The period each of those was published in, and how many periods ago that was (A5). */
   readonly asOf: number | null;
   readonly age: number | null;
@@ -285,6 +293,7 @@ export function snapshot(
   for (const p of w.parties.all()) {
     const liquidity = w.journal.lastOf('bank.liquidity', p.id);
     const capital = w.journal.lastOf('bank.capital', p.id);
+    const dealing = w.journal.lastOf('bank.dealing', p.id);
     if (liquidity === undefined && capital === undefined) continue;
     const numOf = (e: Event | undefined, key: string): number => {
       const v = e?.data[key];
@@ -316,6 +325,8 @@ export function snapshot(
       binds: typeof capital?.data['binds'] === 'string' ? capital.data['binds'] : null,
       breach: capital?.data['breach'] === true,
       limitPerName: orNull(capital, 'limitPerName'),
+      dealingBook: orNull(dealing, 'book'),
+      dealingRoom: orNull(dealing, 'roomLeft'),
       asOf: said,
       age: said === null ? null : w.period - said,
     });

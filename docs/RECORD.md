@@ -1637,3 +1637,48 @@ convergence, which is a RESOLUTION and now measured on a bigger world), `labour.
 that prints the higher of two bids and fills nothing — the employer cannot pay what the print asks,
 and whether that is the venue's rationing or the employer's cash is not yet known), and one more of
 `omo.test.ts` (the base grows when it buys). None has been adjusted to pass and none deleted.
+
+
+## 11.2 — the rest of the item: a contract, capital by intent, and one surface
+
+**A self-cross is a contract now, and it is a deletion.** `pairFills` used to step past a fill
+between one party's own two orders, because a bank really could post both sides — a treasury buying
+in one module and a forced seller selling in another. It was a patch in the KERNEL for a defect in
+the bank (Law 12). With one face per bank the case is unreachable and the patch is gone: a party on
+both sides of one book at crossing prices is refused at the site with a citation. It fires in a test
+that posts exactly that and in nothing else — three banks, thirty-five suites, three hundred and
+twenty-three checks, and no world in any of them trips it, which is the fold measured rather than
+asserted.
+
+**Capital is weighted by INTENT.** A holding up to where the bank's own treasury wants the line is
+there because the treasury decided so, and it weighs what a claim on that issuer weighs — nothing,
+for a party that cannot fail in the money it issues. What is held ABOVE that is a position somebody
+took with a view, and a view can be wrong whoever it is about, so it weighs what a trading position
+weighs (`regulation.riskWeight.tradingBook`, declared by item 9 and read here for the first time).
+Only the part above: a line the bank is SHORT of its target is a position too, but it is not an
+asset it holds, and capital stands against what a bank owns. That is Dealer Desks F2 with nothing
+left to exempt, and Banks Capital B1.a's "risk weights differ by asset, and that is why a bank
+prefers some assets to others" now has something to bite on — every bank in this world publishes
+risk-weighted assets above zero and below its assets, and which of the two rules binds is an outcome.
+
+**The `accounts` family measures it**, reading what the bank published about its own book — the
+target and what it holds at marks, line by line — rather than rebuilding the treasury's arithmetic,
+because a check that compared one derivation with another would pass whatever either of them did.
+
+**One face is checked where it can be.** The audit sees the close of a period and a book's orders
+are gone by then, so the `flows` family the plan asked for cannot be written: what it would measure
+is checked instead as the ASSEMBLY fact it really is — exactly one module gives `BANK` a
+participant, in markets and in venues — with the kernel's refusal as the run-time half.
+
+**The observer shows a bank's dealing book on the bank's own card**, because that is whose it is.
+There is no desk to show.
+
+**Allocation is deferred to 11.3, with the reason.** The dealing limit is already a share of the
+bank's OWN CAPITAL and moves with it; what is deferred is making that share an outcome of the lines
+competing for headroom on their realised returns. Every realised return in this world is an artefact
+of the opening balance sheets — that is what 11.3 is for — so an allocation driven by them would be
+allocating on artefacts, which is Law 11 read forwards rather than backwards.
+
+**The item is built and it is not closed.** Fourteen of its fifteen steps are done, one is deferred
+above, and twenty-six checks are red for a cause that is not this item's and has an item of its own.
+Closing it would mean either adjusting those checks or calling the tree green when it is not.
