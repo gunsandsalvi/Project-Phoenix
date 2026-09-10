@@ -8,7 +8,7 @@
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
-import type { CurrencyCode, InstructionId, InstrumentId, PartyId } from '../core/ids.js';
+import type { CurrencyCode, InstructionId, InstrumentId, LienId, PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
 
 /** Money B1: an account is (holder, issuer, currency). The currency is on the amount. */
@@ -99,7 +99,47 @@ export interface AssumeLeg {
   readonly instrument: InstrumentId;
 }
 
-export type Leg = MoneyLeg | AssetLeg | CreateLeg | DestroyLeg | AssumeLeg;
+/**
+ * Money Market B3.c, Register D5: units BOUND to a named beneficiary, and freed again.
+ *
+ * Nothing changes hands: the pledgor still holds the paper, still carries it, still collects what
+ * it pays. What changes is that the units are no longer free, so they can neither be sold nor
+ * pledged a second time — which is the whole of B3.c, and the reason a solvent bank can run out of
+ * the ability to borrow. It is a leg rather than a door because it names two parties and belongs to
+ * the same numbered instruction as the money it secures: collateral that could be bound in one pass
+ * and lent against in another is collateral that was briefly nobody's.
+ *
+ * `secures` is Register D5.b's traceable chain, in the words of whoever bound it — the row this
+ * collateral stands behind — and it is how the release finds the lien it is freeing.
+ */
+export interface PledgeLeg {
+  readonly kind: 'pledge';
+  readonly pledgor: PartyId;
+  readonly beneficiary: PartyId;
+  readonly instrument: InstrumentId;
+  /** Total units bound, in the instrument's unit. */
+  readonly qty: number;
+  readonly secures: string;
+  readonly pledgorCell: Option<CellSide>;
+}
+
+/** The other half of a pledge: the named lien ends and the units are free again (Register D5). */
+export interface ReleaseLeg {
+  readonly kind: 'release';
+  readonly pledgor: PartyId;
+  readonly beneficiary: PartyId;
+  readonly instrument: InstrumentId;
+  readonly lien: LienId;
+}
+
+export type Leg =
+  | MoneyLeg
+  | AssetLeg
+  | CreateLeg
+  | DestroyLeg
+  | AssumeLeg
+  | PledgeLeg
+  | ReleaseLeg;
 
 /** Which side of the wire a leg is, for readers that must tell them apart (Law 15's dispatch). */
 export const isMoneyLeg = (leg: Leg): leg is MoneyLeg => leg.kind === 'money';
@@ -107,6 +147,8 @@ export const isAssetLeg = (leg: Leg): leg is AssetLeg => leg.kind === 'asset';
 export const isCreateLeg = (leg: Leg): leg is CreateLeg => leg.kind === 'create';
 export const isDestroyLeg = (leg: Leg): leg is DestroyLeg => leg.kind === 'destroy';
 export const isAssumeLeg = (leg: Leg): leg is AssumeLeg => leg.kind === 'assume';
+export const isPledgeLeg = (leg: Leg): leg is PledgeLeg => leg.kind === 'pledge';
+export const isReleaseLeg = (leg: Leg): leg is ReleaseLeg => leg.kind === 'release';
 
 /** C1.b / Register C2: why the units moved. */
 export type Cause =
@@ -162,6 +204,17 @@ export type FailReason =
       readonly party: PartyId;
       readonly issuer: PartyId;
       readonly ccy: CurrencyCode;
+      readonly short: number;
+    }
+  /**
+   * Money Market B3.c, C4.b: the pledgor does not have the free units to bind. A bank out of
+   * unencumbered eligible paper cannot borrow against it, and that is an outcome of the borrowing,
+   * not a violation of anything: the instruction fails and the row is never written.
+   */
+  | {
+      readonly kind: 'insufficientCollateral';
+      readonly party: PartyId;
+      readonly instrument: InstrumentId;
       readonly short: number;
     };
 
@@ -235,6 +288,10 @@ export function subjectsOf(ins: Instruction): string[] {
     } else if (isAssetLeg(leg) || isAssumeLeg(leg)) {
       s.add(leg.from);
       s.add(leg.to);
+      s.add(leg.instrument);
+    } else if (isPledgeLeg(leg) || isReleaseLeg(leg)) {
+      s.add(leg.pledgor);
+      s.add(leg.beneficiary);
       s.add(leg.instrument);
     } else {
       s.add(leg.party);

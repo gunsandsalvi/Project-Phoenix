@@ -26,6 +26,7 @@ import { Forbidden, Mismatch, Missing } from '../core/errors.js';
 import {
   type CurrencyCode,
   type InstrumentId,
+  type LienId,
   moneyInstrumentId,
   type PartyId,
 } from '../core/ids.js';
@@ -52,7 +53,9 @@ import type {
   Instruction,
   InstructionDraft,
   MoneyLeg,
+  PledgeLeg,
   RegisterDelta,
+  ReleaseLeg,
   ReserveLeg,
   SettlementRecord,
 } from './instruction.js';
@@ -128,6 +131,21 @@ type Op =
       readonly from: PartyId;
       readonly to: PartyId;
       readonly instrument: InstrumentId;
+    }
+  /** Register D5: units bound to a beneficiary, and freed. Nothing changes hands either way. */
+  | {
+      readonly op: 'bind';
+      readonly pledgor: PartyId;
+      readonly beneficiary: PartyId;
+      readonly instrument: InstrumentId;
+      readonly qty: number;
+      readonly secures: string;
+    }
+  | {
+      readonly op: 'free';
+      readonly pledgor: PartyId;
+      readonly instrument: InstrumentId;
+      readonly lien: LienId;
     };
 
 export class Settlement {
@@ -212,6 +230,10 @@ export class Settlement {
           break;
         case 'assume':
           this.validateAssume(leg, ins);
+          break;
+        case 'pledge':
+        case 'release':
+          this.validateLien(leg, ins);
           break;
         default:
           assertNever(leg, 'Leg');
@@ -313,6 +335,35 @@ export class Settlement {
     forbid(leg.from !== leg.to, 'Register F2', `instruction ${ins.id}: ${leg.from} assumes its own paper`);
     this.alive(leg.from, ins);
     this.alive(leg.to, ins);
+  }
+
+  /**
+   * Register D5, D5.b: an encumbrance names the holder whose units are bound and the party they are
+   * bound TO, and both are somebody. A party binding units to itself is not securing anything; a
+   * lien on a line that has ceased is a claim on nothing.
+   */
+  private validateLien(leg: PledgeLeg | ReleaseLeg, ins: Instruction): void {
+    const inst = this.d.instruments.get(leg.instrument);
+    forbid(inst.status.live, 'Register B4', `instruction ${ins.id}: ${inst.id} has ceased`);
+    forbid(
+      leg.pledgor !== leg.beneficiary,
+      'Register D5',
+      `instruction ${ins.id}: ${leg.pledgor} would pledge to itself`,
+    );
+    this.alive(leg.pledgor, ins);
+    this.alive(leg.beneficiary, ins);
+    if (leg.kind !== 'pledge') return;
+    impossible(
+      finite(leg.qty, 'pledge leg qty') > 0,
+      'Register D5',
+      `a lien binds a positive quantity, got ${leg.qty}`,
+    );
+    forbid(
+      leg.secures.length > 0,
+      'Register D5.b',
+      `instruction ${ins.id}: a lien says what it secures`,
+    );
+    this.validateCellSide(leg.pledgor, leg.pledgorCell, leg.qty, ins);
   }
 
   private validateAsset(leg: AssetLeg, ins: Instruction): void {
@@ -449,6 +500,24 @@ export class Settlement {
             from: leg.from,
             to: leg.to,
             instrument: leg.instrument,
+          });
+          break;
+        case 'pledge':
+          ops.push({
+            op: 'bind',
+            pledgor: leg.pledgor,
+            beneficiary: leg.beneficiary,
+            instrument: leg.instrument,
+            qty: leg.pledgorCell.some ? leg.pledgorCell.value.perMember : leg.qty,
+            secures: leg.secures,
+          });
+          break;
+        case 'release':
+          ops.push({
+            op: 'free',
+            pledgor: leg.pledgor,
+            instrument: leg.instrument,
+            lien: leg.lien,
           });
           break;
         default:
@@ -620,6 +689,28 @@ export class Settlement {
       };
       cur.delta = finite(cur.delta + (op.op === 'debit' ? -op.qty : op.qty), 'net delta');
       net.set(key, cur);
+    }
+    // Money Market B3.c: what is already bound cannot be bound again, and what this instruction is
+    // about to move cannot be bound either. Free units are the register's answer less whatever this
+    // same instruction takes out of the holding — one question asked once, before anything moves.
+    for (const leg of ins.legs) {
+      if (leg.kind !== 'pledge') continue;
+      const per = leg.pledgorCell.some ? leg.pledgorCell.value.perMember : leg.qty;
+      const moving = zeroIfNone(net.get(`${leg.pledgor}|${leg.instrument}`)?.delta);
+      const free = finite(
+        this.d.register.free(leg.pledgor, leg.instrument) + (moving < 0 ? moving : 0),
+        'free to pledge',
+      );
+      // The comparison is EXACT and against the register's own read, because the register asks it
+      // again when it binds (Law 4: one question, one answer). A band here would let an
+      // instruction pass this check and throw inside the walk that applies it.
+      if (per <= free) continue;
+      return {
+        kind: 'insufficientCollateral',
+        party: leg.pledgor,
+        instrument: leg.instrument,
+        short: finite(per - free, 'collateral short'),
+      };
     }
     for (const n of net.values()) {
       if (n.delta >= 0) continue;
@@ -837,6 +928,23 @@ export class Settlement {
           }
           break;
         }
+        case 'bind': {
+          // Register D5: the units stay where they are and stay on the same book — an encumbrance
+          // moves nothing, so no equity account is touched and no delta is a movement of value.
+          this.d.register.pledge(
+            op.pledgor,
+            op.instrument,
+            op.qty,
+            op.beneficiary,
+            op.secures,
+            ins.period,
+          );
+          break;
+        }
+        case 'free': {
+          this.d.register.release(op.pledgor, op.instrument, op.lien);
+          break;
+        }
         case 'reseat': {
           const inst = this.d.instruments.get(op.instrument);
           const liability = this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer;
@@ -898,7 +1006,9 @@ export class Settlement {
             leg.to.issuer === party
           : leg.kind === 'asset' || leg.kind === 'assume'
             ? leg.from === party || leg.to === party
-            : leg.party === party;
+            : leg.kind === 'pledge' || leg.kind === 'release'
+              ? leg.pledgor === party || leg.beneficiary === party
+              : leg.party === party;
       if (touches && ccy !== home) {
         throw new Mismatch(
           'Money A2.b',

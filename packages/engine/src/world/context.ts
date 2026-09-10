@@ -216,6 +216,13 @@ export interface MechanismContext extends KernelReads {
    * which is what the event says out loud. Only a kind whose profile says it splits may.
    */
   split(instrument: InstrumentId, ratio: number): void;
+  /**
+   * Banks Funding E1, E3.a: a depositor moves its account to another bank, and its balance goes
+   * with it — the deposit leaves with the reserves behind it, because the transfer is an ordinary
+   * money leg between two issuers. Returns whether it moved: a bank that cannot pay the withdrawal
+   * does not, the failure is recorded (Money E1.b), and the depositor stays where it was.
+   */
+  moveBank(party: PartyId, to: PartyId, reason: string): boolean;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   record(

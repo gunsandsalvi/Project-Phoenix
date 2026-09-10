@@ -56,6 +56,7 @@ import {
   seedVintage,
 } from '../mechanisms/capital-programme/index.js';
 import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
+import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
@@ -582,6 +583,10 @@ export function foundationSpec(seed: string): AssemblySpec {
       sovereignAuction,
       treasury,
       centralBankOmo,
+      // The money market after the treasury and the curve: a bank funds itself against the paper
+      // those two put into the world, and it prices a name off what the lending module published
+      // about it. Both reach it as public events and prints, never as imports (Law 15).
+      moneyMarket,
       foundationSeed,
     ],
   };

@@ -50,7 +50,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import { Journal } from '../journal/journal.js';
 import { subjectsOf, type Failed } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
-import { Settlement } from '../ledger/settlement.js';
+import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf } from '../parties/party.js';
 import { type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore } from '../prices/price-store.js';
@@ -674,6 +674,7 @@ export class World {
       split: (instrument, ratio) => {
         this.splitInstrument(instrument, ratio);
       },
+      moveBank: (party, to, reason) => this.moveBank(party, to, reason),
       cease: (party, successor) => {
         this.parties.cease(party, this.currentPeriod, successor);
         this.journal.record(
@@ -688,6 +689,60 @@ export class World {
       record: (kind, subjects, data, isPublic) =>
         this.journal.record(this.currentPeriod, this.currentCycle, kind, subjects, data, isPublic),
     };
+  }
+
+  /**
+   * Banks Funding E1, E2, E3.a: a depositor moves its account, and THE DEPOSIT LEAVES WITH THE
+   * RESERVES BEHIND IT. That is the whole of E3.a and it is not stated anywhere here: the balance
+   * moves by an ordinary money leg between two issuers, and settlement generates the interbank
+   * reserve leg itself (Money C2.a), so the bank being left is shorter at the next close because of
+   * arithmetic and not because anything said it should be.
+   *
+   * It can FAIL, and the failure is the point: a bank whose reserve account cannot stand the
+   * withdrawal does not honour it (Money B3), the payment is a recorded failed state (E1.b) and the
+   * depositor stays where it is. A run that could never fail to be paid is a run with no bank in it.
+   */
+  private moveBank(party: PartyId, to: PartyId, reason: string): boolean {
+    const p = this.parties.get(party);
+    if (p.bank === to) return false;
+    const ccy = this.registry.region(p.region).ccy;
+    const perMember = this.register.quantity(party, moneyInstrumentId(p.bank, ccy));
+    if (perMember > 0) {
+      const side = cellSide(p, perMember);
+      const r = this.settlement.settle(
+        {
+          legs: [
+            {
+              kind: 'money',
+              from: { holder: party, issuer: p.bank },
+              to: { holder: party, issuer: to },
+              ccy,
+              amount: totalFor(p, perMember),
+              fromCell: side === undefined ? none() : some(side),
+              toCell: side === undefined ? none() : some(side),
+            },
+          ],
+          cause: 'transfer',
+          reason,
+        },
+        this.currentPeriod,
+        this.currentCycle,
+      );
+      if (r.outcome !== 'settled') return false;
+    }
+    const from = p.bank;
+    this.parties.rebank(party, to);
+    // E2.a: that a depositor moved is observable — it is what the bank it left will see in its own
+    // deposit lines next period (F1), and what the one it arrived at will see too.
+    this.journal.record(
+      this.currentPeriod,
+      this.currentCycle,
+      'deposit.moved',
+      [party, from, to],
+      { party, from, to, amount: perMember, ccy },
+      true,
+    );
+    return true;
   }
 
   /**

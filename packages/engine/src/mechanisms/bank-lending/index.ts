@@ -671,6 +671,10 @@ function publishReservations(ctx: MechanismContext): void {
     if (!profile.liabilityOfIssuer || profile.pricing === 'money') continue;
     obligors.add(i.issuer.value);
   }
+  // A bank is a name anybody may lend to whether or not it has paper outstanding right now, and
+  // somebody deciding overnight whether to place cash with it needs the answer before the first
+  // row exists (Money Market B2). So every live bank is an obligor here, always.
+  for (const b of ctx.parties.ofKind(BANK)) if (b.status.alive) obligors.add(b.id);
   for (const b of ctx.parties.ofKind(BANK)) {
     const decl = declOf(b.id);
     if (decl === undefined || !b.status.alive) continue;
@@ -679,17 +683,34 @@ function publishReservations(ctx: MechanismContext): void {
     const funds = costOfFunds(ctx, b.id, ccy);
     const reg = { ...regulationOf(view), riskWeight: view.params.get(LENDING_PARAMS.sovereignWeight) };
     const required: Record<string, number> = {};
+    const expectedLoss: Record<string, number> = {};
+    const capitalCost: Record<string, number> = {};
     const terms: Record<string, unknown> = {};
     for (const obligor of obligors) {
       const r = holderReservation(view, decl, reg, funds);
       required[obligor] = r.rate;
+      // C1.b, C4: THE TWO BELIEFS, published separately from any one price built out of them.
+      // What this bank expects to lose on an unsecured claim on that name is its own model — the
+      // one its loan book is priced and provisioned with, used once (Law 4) — and what the capital
+      // such a claim consumes costs it is its own required return on that capital. Somebody
+      // pricing a different claim on the same name (a week of money, say: Money Market B2) needs
+      // these two and not a rate assembled for a year-long loan, so both are said plainly here and
+      // the composing is done by whoever is asking the question.
+      const unsecured = quote(view, decl, obligor as PartyId, regulationOf(view), funds, seenDefaults(ctx));
+      expectedLoss[obligor] = unsecured.expectedLoss;
+      capitalCost[obligor] = unsecured.capitalCharge;
       terms[obligor] = {
         costOfFunds: r.costOfFunds,
         expectedLoss: r.expectedLoss,
         capitalCharge: r.capitalCharge,
       };
     }
-    ctx.record('bank.reservation', [b.id], { bank: b.id, ccy, required, terms }, false);
+    ctx.record(
+      'bank.reservation',
+      [b.id],
+      { bank: b.id, ccy, required, expectedLoss, capitalCost, terms },
+      false,
+    );
   }
 }
 

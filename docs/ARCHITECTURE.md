@@ -112,6 +112,7 @@ Leg = MoneyLeg { fromAccount, toAccount, amount: Money }
     | AssetLeg { from, to, instrument, qty: Qty, lots? }
     | CreateLeg / DestroyLeg { party, instrument, qty }   // Goods B, E4: units entering or leaving
     | AssumeLeg { from, to, instrument }                  // XI-8: who OWES a line changes
+    | PledgeLeg / ReleaseLeg { pledgor, beneficiary, instrument }  // B3.c: units bound and freed
 ```
 
 `AssumeLeg` is the odd one and it is here for a reason (item 7). When an issuer dies its paper does
@@ -121,6 +122,17 @@ between two balance sheets, and a change of balance sheet that does not go over 
 what D1 exists to prevent. So it is a leg, valued at what the holders carry it at (Register B3: a
 liability is the same number read from the other side), and both equity effects land in the one
 instruction.
+
+`PledgeLeg` and `ReleaseLeg` are the same kind of oddity, and they arrived with the money market
+(item 11). Secured borrowing prices the collateral (Money Market B3), and pledged collateral is
+**encumbered**: it cannot be sold and it cannot be pledged twice, which is how a solvent bank runs
+out of the ability to borrow (B3.c). Nothing changes hands — the pledgor holds the paper, carries it
+and collects on it — so neither leg has an equity effect; what moves is what is FREE. They are legs
+because an encumbrance names two parties and belongs in the same numbered instruction as the money
+it secures: collateral bound in one pass and lent against in another was briefly nobody's. A pledge
+says what it `secures` (Register D5.b), which is how the release finds its lien; a pledge of more
+than is free is an economic outcome (`insufficientCollateral`) and not a violation, so the
+instruction fails and the row is never written.
 
 **Settlement** applies an instruction with one rule (C2): payer minus, payee plus. For a money leg
 between accounts at different issuers it generates the **interbank reserve leg** itself (C2.a); a

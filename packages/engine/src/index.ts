@@ -51,6 +51,7 @@ export * from './mechanisms/estate/index.js';
 export * from './mechanisms/funds/index.js';
 export * from './mechanisms/goods/index.js';
 export * from './mechanisms/capital-programme/index.js';
+export * from './mechanisms/money-market/index.js';
 export * from './mechanisms/labour/index.js';
 export * from './mechanisms/firms/index.js';
 export * from './mechanisms/households/index.js';

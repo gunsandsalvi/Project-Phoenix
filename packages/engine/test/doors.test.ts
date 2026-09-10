@@ -8,6 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ANNUAL,
   BANK_A,
+  BANK_B,
   FIRM,
   InvalidRegistry,
   PHX,
@@ -16,11 +17,13 @@ import {
   instrumentId,
   instrumentKindId,
   marketId,
+  moneyInstrumentId,
   none,
   partyId,
   some,
   unitId,
   type InstrumentKindProfile,
+  type Leg,
   type MechanismContext,
   type Outlook,
   type SystemModule,
@@ -383,5 +386,181 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
     const up = build(wheatMarkedUp, 5);
     up.step();
     expect(() => up.step()).toThrow();
+  });
+});
+
+/**
+ * Money Market B3.c, Register D5: collateral is bound and freed by the wire, and what is bound is
+ * neither sellable nor pledgeable a second time.
+ */
+const GOV = instrumentId('gov.north.2036-03-15');
+
+function pledgeModule(run: (ctx: MechanismContext) => void): SystemModule {
+  return {
+    id: 'test.pledge',
+    spec: 'Register D5',
+    requires: ['seed.foundation'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [
+      { name: 'test.pledge', spec: 'Register D5', cycle: 0, anchor: { after: 'corporateActions' }, run },
+    ],
+    participants: [],
+    families: [],
+  };
+}
+
+/** What a bank pledging `qty` of its own sovereign paper to the other bank posts on the wire. */
+function pledgeLeg(qty: number, secures: string): Leg {
+  return {
+    kind: 'pledge',
+    pledgor: BANK_A,
+    beneficiary: BANK_B,
+    instrument: GOV,
+    qty,
+    secures,
+    pledgorCell: none(),
+  };
+}
+
+describe('collateral is bound and freed by the wire (Register D5, Money Market B3.c)', () => {
+  it('binds units to a named beneficiary without moving them or anything else', () => {
+    const w = world(
+      pledgeModule((ctx) => {
+        if (ctx.period !== 1) return;
+        ctx.settle({
+          legs: [pledgeLeg(100, 'repo.test.1')],
+          cause: 'transfer',
+          reason: 'bank.a pledges paper to bank.b',
+        });
+      }),
+    );
+    const held = w.register.quantity(BANK_A, GOV);
+    const equity = w.register.equity(BANK_A);
+    w.step();
+    // The units are still held, still on the same book, and worth what they were: an encumbrance
+    // moves nothing (Register D5). What changed is that a hundred of them are no longer free.
+    expect(w.register.quantity(BANK_A, GOV)).toBeCloseTo(held, 9);
+    expect(w.register.equity(BANK_A)).toBeCloseTo(equity, 9);
+    expect(w.register.encumbered(BANK_A, GOV)).toBeCloseTo(100, 9);
+    expect(w.register.free(BANK_A, GOV)).toBeCloseTo(held - 100, 9);
+    const lien = w.register.holding(BANK_A, GOV);
+    expect(lien.some && lien.value.liens[0]?.beneficiary).toBe(BANK_B);
+    // D5.b: the chain says what it stands behind, in the words of whoever bound it.
+    expect(lien.some && lien.value.liens[0]?.reason).toBe('repo.test.1');
+  });
+
+  it('refuses to bind what is not free, and the instruction it was part of does not settle', () => {
+    let outcome = '';
+    let paid = 0;
+    const w = world(
+      pledgeModule((ctx) => {
+        if (ctx.period !== 1) return;
+        const free = ctx.register.free(BANK_A, GOV);
+        const r = ctx.settle({
+          legs: [
+            pledgeLeg(free + 1, 'repo.test.2'),
+            {
+              kind: 'money',
+              from: { holder: BANK_B, issuer: BANK_B },
+              to: { holder: BANK_A, issuer: BANK_B },
+              ccy: PHX,
+              amount: 10,
+              fromCell: none(),
+              toCell: none(),
+            },
+          ],
+          cause: 'issuance',
+          reason: 'bank.b lends against paper bank.a does not have free',
+        });
+        outcome = r.outcome === 'failed' ? r.reason.kind : 'settled';
+        paid = ctx.register.quantity(BANK_A, moneyInstrumentId(BANK_B, PHX));
+      }),
+    );
+    w.step();
+    // C4.b: running out of unencumbered paper is how a solvent bank stops being able to borrow —
+    // an outcome of the borrowing, not a violation, so it fails and the money never moves.
+    expect(outcome).toBe('insufficientCollateral');
+    expect(paid).toBe(0);
+    expect(w.register.encumbered(BANK_A, GOV)).toBe(0);
+  });
+
+  it('will not let the same units stand behind two rows', () => {
+    const outcomes: string[] = [];
+    const w = world(
+      pledgeModule((ctx) => {
+        if (ctx.period !== 1) return;
+        const free = ctx.register.free(BANK_A, GOV);
+        for (const n of [1, 2]) {
+          const r = ctx.settle({
+            legs: [pledgeLeg(free, `repo.test.twice.${n}`)],
+            cause: 'transfer',
+            reason: `bank.a pledges everything it has free, attempt ${n}`,
+          });
+          outcomes.push(r.outcome === 'failed' ? r.reason.kind : 'settled');
+        }
+      }),
+    );
+    w.step();
+    expect(outcomes).toEqual(['settled', 'insufficientCollateral']);
+  });
+
+  it('frees the named lien again, and the paper is sellable once it is', () => {
+    let freeAfter = 0;
+    const w = world(
+      pledgeModule((ctx) => {
+        if (ctx.period === 1) {
+          ctx.settle({
+            legs: [pledgeLeg(100, 'repo.test.3')],
+            cause: 'transfer',
+            reason: 'bank.a pledges paper to bank.b',
+          });
+          return;
+        }
+        if (ctx.period !== 2) return;
+        const holding = ctx.register.holding(BANK_A, GOV);
+        const lien = holding.some
+          ? holding.value.liens.find((l) => l.reason === 'repo.test.3')
+          : undefined;
+        if (lien === undefined) return;
+        ctx.settle({
+          legs: [
+            {
+              kind: 'release',
+              pledgor: BANK_A,
+              beneficiary: BANK_B,
+              instrument: GOV,
+              lien: lien.id,
+            },
+          ],
+          cause: 'transfer',
+          reason: 'the row is repaid and the paper is bank.a own again',
+        });
+        freeAfter = ctx.register.free(BANK_A, GOV);
+      }),
+    );
+    w.step();
+    const held = w.register.quantity(BANK_A, GOV);
+    expect(w.register.free(BANK_A, GOV)).toBeCloseTo(held - 100, 9);
+    w.step();
+    expect(w.register.encumbered(BANK_A, GOV)).toBe(0);
+    expect(freeAfter).toBeCloseTo(w.register.quantity(BANK_A, GOV), 9);
+  });
+
+  it('refuses a party that would pledge to itself (Register D5)', () => {
+    const w = world(
+      pledgeModule((ctx) => {
+        if (ctx.period !== 1) return;
+        ctx.settle({
+          legs: [{ ...pledgeLeg(1, 'repo.test.self'), beneficiary: BANK_A } as Leg],
+          cause: 'transfer',
+          reason: 'bank.a pledges to itself',
+        });
+      }),
+    );
+    expect(() => w.step()).toThrow(/pledge to itself/);
   });
 });

@@ -168,6 +168,40 @@ export class Parties {
     );
   }
 
+  /**
+   * Banks Funding E1, E3.a: a depositor moves its account to another bank.
+   *
+   * Where a party banks is one fact with one writer (Law 4), and it is the account every payment TO
+   * that party lands in (Money B1), so a party that left its money behind would be a party whose
+   * own decisions could not see it. The balance therefore moves with the account, in the
+   * instruction the caller settles first: this only records where the party banks from now on, and
+   * it is called only after that money has actually arrived.
+   *
+   * A cell's key names its bank (XI-15), so the key moves with it. Every member of a cell is
+   * identical, so a cell either moves or it does not — half a cell moving is a SPLIT, and then the
+   * new cell moves, which is the five weight events doing exactly what they are for.
+   */
+  rebank(id: PartyId, to: PartyId): void {
+    const p = this.get(id);
+    forbid(p.status.alive, 'Banks Funding E1', `${id} has ceased and banks nowhere`);
+    const bank = this.get(to);
+    forbid(bank.status.alive, 'Banks Funding E1', `${id} cannot bank at ${to}, which has ceased`);
+    forbid(
+      this.registry.issuesMoney(bank.kind),
+      'Money A1.d',
+      `${id} cannot bank at ${to}, which issues no money`,
+    );
+    forbid(p.bank !== to, 'Banks Funding E1', `${id} already banks at ${to}`);
+    this.map.set(
+      id,
+      Object.freeze(
+        p.representation === 'cell'
+          ? { ...p, bank: to, key: { ...p.key, bank: to } }
+          : { ...p, bank: to },
+      ),
+    );
+  }
+
   /** Resolve a reference through successors (Audit B6: every issuer exists or has a successor). */
   resolve(id: PartyId): Party {
     let p = this.get(id);
