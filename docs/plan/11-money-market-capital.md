@@ -138,7 +138,7 @@ packages/engine/test/{money-market,corridor,repo,deposit-classes,run,capital,rai
 - [x] LOLR's four conditions (D6): freely, good collateral, penalty, solvent: the decider refuses an insolvent bank; test
 - [x] `banks.funding`: sell liquid assets, bid up deposits, stop originating (item 6's B2.b constraint now real), draw the facility, fail; tests for each branch as a state reached
 - [x] The run: wholesale depositors move on public observables; the loop shows in a scenario test (D5.b, E3.a); insurance breaks it for retail (E4); tests
-- [ ] Interbank exposure as contagion: a failed bank's interbank rows land losses on lenders by name (E3); test with item 7's resolution
+- [x] Interbank exposure as contagion: a failed bank's interbank rows land losses on lenders by name (E3); test with item 7's resolution
 - [x] Capital: requirements against risk weights, leverage backstop, which binds as a read; buffer as choice; distributions restricted near the line; tests
 - [x] From item 7.5 (Banks Capital D1): a failed bank's book valued at marks and at its own carrying values; the hole is liabilities minus that; test
 - [x] From item 7.5 (D2): the hierarchy — equity to zero, subordinated rows bailed in by partial redemption, senior and depositors untouched outside liquidation; tests
@@ -258,14 +258,17 @@ and there is nowhere to put it.
   the guarantee past what a member holds and a household cell has nothing that can leave; drop it
   to nothing and the same cell is the flightiest money in the world.
 
-- **Interbank contagion (138) — the mechanism is built and one half of it is tested.** A failed
-  bank's rows are in the pari passu pool by name and are written down there (`writeDownRow`), and
-  a SECURED lender is now in it only for what its own paper does not cover — it holds the liens,
-  the acquirer takes the book with them, and counting the covered part would take the same
-  collateral twice (Appendix B). What has NOT been reached is a scenario where an UNSECURED
-  interbank row is outstanding at the moment of failure: in this world banks lend to each other
-  against paper, so every row at the failure was a repo and no bank lost anything. The step stays
-  open for that scenario.
+- ~~**Interbank contagion.**~~ **DONE.** With the subordinated layer there is a scenario for it:
+  one bank runs far above its own line and the other does not, so one is raising and the other has
+  the room to take the paper — and when the first fails, the second's holding is written down
+  first, by name, in the same period. What the test holds is the queue: the junior claim takes the
+  hole, the senior claims and the depositors are not reached except for the one piece the
+  arithmetic could not put anywhere else (Law 8), and a rank takes the hole and no more than it.
+
+  **Found:** TWO BANKS BOTH SHORT OF CAPITAL DO NOT FUND EACH OTHER. When the rule is what puts
+  them both under, neither has the room to take the other's paper and every raise finds no bid —
+  which is a real thing about a systemic squeeze and is why the test moves one bank's own buffer
+  (B2) rather than the rule.
 
 - ~~**Bank capital.**~~ **DONE, except the distributions half.** `bank-lending/capital.ts` takes a
   bank's position after the marks are taken and publishes it (`bank.capital`, public — B3.a): its

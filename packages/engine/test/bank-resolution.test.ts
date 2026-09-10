@@ -272,3 +272,37 @@ describe('the guarantee (Banks Funding A1.a, Banks Capital D4, D5)', () => {
     expect(num(then, 'pursePaid')).toBeGreaterThan(0);
   });
 });
+
+describe('contagion by name (Banks Capital E3, Banks Funding E5)', () => {
+  it('lands a failed bank losses on the banks that funded it, junior money first', () => {
+    // E3: a bank's creditors are other banks, so a failure is not contained in the bank it happens
+    // to. Here bank B holds two claims on bank A — the paper it took when A was raising capital
+    // (A2.b) and the money it lends A in the session — and they are in different places in the
+    // queue. When A fails, the junior one is wiped before the senior one is touched at all, and
+    // both losses land on a named lender's balance sheet in the same period.
+    // ONE bank runs far above its own line and the other does not (B2: the buffer is each bank's
+    // own), so one of them is raising and the other has the room to take the paper. Two banks both
+    // short of capital do not fund each other, which is its own finding and the reason this world
+    // is set up this way rather than by moving the rule.
+    const w = failing('res-e3', { 'bank.capitalBuffer.bank.a': 0.5 });
+    const took = events(w, 'bank.raise', BANK_A);
+    expect(took.length).toBeGreaterThan(0);
+    const down = events(w, 'bank.resolution.writtenDown', BANK_A);
+    const junior = down.filter((e) => e.data['holder'] === BANK_B && num(e, 'rank') === 2);
+    expect(junior.length).toBeGreaterThan(0);
+    for (const e of junior) expect(num(e, 'lost')).toBeGreaterThan(0);
+    // A2.b, A2.c: AND NOTHING ELSE WAS TOUCHED. The layer that was paid to be there was big enough
+    // for this hole, so the senior claims and the depositors — everything at a lower rank — are
+    // not in the list at all. That is what the middle rung is for, and without it every one of
+    // them would have taken a share of this (the resolution above, where there was no layer).
+    // Law 8: what does reach them is the piece the arithmetic could not put anywhere else. A hole
+    // is a real number and a payment is a whole number of pieces, so the junior rank absorbs it to
+    // within a piece and the remainder falls to the next rank — one piece each, not a share.
+    for (const e of down) {
+      if (num(e, 'rank') >= 2) continue;
+      expect(num(e, 'lost')).toBeLessThanOrEqual(1);
+    }
+    // It is not wiped either: a rank takes the hole and no more than the hole, pro rata within it.
+    for (const e of junior) expect(num(e, 'lost')).toBeLessThanOrEqual(num(e, 'owed'));
+  });
+});
