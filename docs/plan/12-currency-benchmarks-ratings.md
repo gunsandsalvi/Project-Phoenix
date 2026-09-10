@@ -193,10 +193,37 @@ packages/engine/test/{fx-revaluation,spot-fx,triangular,convention,indices,bench
 
 ## Steps
 
-### The anchor (was 11.3's first cause, and it comes before everything)
+### CORRECTED WHILE WORKING IT (PLAN §5.2): the balance sheets come first
 
-- [ ] A party with a reason to hold a dated claim on its own terms and to trade it, so that a book whose dealers are all on one side has somebody on the other. The households already hold most of the sovereign's debt and never trade it; the money fund buys bills and nothing else; the central bank buys to a share and stops. Which of those grows a reason, or whether a party nobody has built yet is needed, is the first question — and the test is that a sovereign line's print over a year stays inside what its own cash flows are worth at yields anybody in the world would name, with NO bound anywhere in the quote
-- [ ] XI-13 in the one market that funds the model: no schedule in a sovereign line is a function of that line's own last print alone; test: a world of dealers only is the failing case, and it says so
+This item was planned from 11.2's world and said the anchor came before everything, and that the
+walk-away "is NOT the opening balance sheet". The tree that has arrived says otherwise, and the
+measurements are these, taken before a line was written:
+
+- **A sovereign line's price does not walk.** Over a year the six lines print between 0.975 and
+  1.001, and the bills converge to par as they mature. There is nothing to bound and nothing
+  exploding.
+- **The books are empty instead.** 28 cleared sessions out of 312 (six markets, 52 periods):
+  187 `noDemand`, 74 `noSupply`, 23 `noOverlap`. `noDemand` is not a dealer crossing itself — it is
+  nobody bidding at all.
+- **Why nobody bids.** Every bank requires 5.7%–8.9% per annum of every issuer, and paper priced
+  near par yields 2%, so no bid is posted. The required return is high because the banks are
+  **63%–84% funded by their own equity**, and equity at the return it asks is the dearest money a
+  bank has. `curve.test.ts` already says exactly this in a comment, as a finding left open by item 11.
+- **The opening sheet, measured at period zero.** The central bank has issued 160,000,000 of
+  reserves against 53,531,106 of assets, so **106,468,894 of central-bank money exists that its
+  issuer bought nothing with** — the defect this item's own objective names. Banks open with assets
+  and almost no funding: the only liabilities they have are a handful of firm deposits. And the
+  **households hold nothing at all** — twelve cells, zero assets — so the parties that fund a bank
+  in every real economy fund nothing here, and the holder with a reason of its own that the anchor
+  needs does not have the money to be one.
+
+So the anchor's missing party and the balance sheets are not two problems in an order. They are one
+problem: **there is no saver.** A household with no deposit cannot fund a bank, cannot buy a bill,
+and cannot be the second reason a book needs. Build the opening sheet and the anchor's holder exists;
+build the anchor's holder first and it has nothing to buy with.
+
+The two anchor steps below stand unchanged in what they ask for; they move after the balance sheets,
+and the step count does not change.
 
 ### The balance sheets (was 11.3)
 
@@ -204,6 +231,11 @@ packages/engine/test/{fx-revaluation,spot-fx,triangular,convention,indices,bench
 - [ ] The central bank's side: no reserve exists that it did not issue against something. `endowMoney` to a party whose bank is a central bank either takes the asset with it or goes; the treasury's buffer is what is left of that balance sheet once the banks have their reserves, derived and never stated; test: the world refuses to open otherwise
 - [ ] What a bank does with what it earns, so that a capital share is not something that only ratchets up: it retains everything today because there are no owners to pay (13g). Either the opening share is stated knowing it drifts and the drift is measured, or the distribution arrives here; say which and why
 - [ ] One price per line: the auction and the secondary market are the same market again, and the curve describes it; test: the ten-year point sits between what the two sides of the book will do, and an auction places what the issuer brings
+
+### The anchor (after the balance sheets, for the reason above)
+
+- [ ] A party with a reason to hold a dated claim on its own terms and to trade it, so that a book whose dealers are all on one side has somebody on the other. The households already hold most of the sovereign's debt and never trade it; the money fund buys bills and nothing else; the central bank buys to a share and stops. Which of those grows a reason, or whether a party nobody has built yet is needed, is the first question — and the test is that a sovereign line's print over a year stays inside what its own cash flows are worth at yields anybody in the world would name, with NO bound anywhere in the quote
+- [ ] XI-13 in the one market that funds the model: no schedule in a sovereign line is a function of that line's own last print alone; test: a world of dealers only is the failing case, and it says so
 
 ### The depositors and the count of banks (was 11.4)
 
