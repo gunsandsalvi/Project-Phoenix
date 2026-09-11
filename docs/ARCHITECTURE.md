@@ -440,10 +440,18 @@ Modules reach the kernel only through three contexts (`world/context.ts`), and n
 
 **The opening world is TWO seed modules, and the second one is why** (Seed A4, C1; item 12). Who
 exists and what each party is endowed with is one question; **what stands behind a bank** is another,
-and it cannot be answered until every module has handed out what it hands out. `equity` gives a bank
-the float it makes a market in and `funds` gives it a launch of an exchange-traded fund, and both
-need the parties the foundation creates — so both seed after it, and a foundation that funded a bank
-against the assets it had endowed itself funded it against the wrong number. `seed.funding` runs
+and it cannot be answered until every module has handed out what it hands out. `equity` opens every
+listed line and `funds` gives a bank a launch of an exchange-traded fund, and both need the parties
+the foundation creates — so both seed after it, and a foundation that funded a bank against the
+assets it had endowed itself funded it against the wrong number.
+
+**And who opens holding a listed line is the SAVERS** (item 11.5; Equity A1, B3; Seed E1). `equity`
+used to give it to the banks whose desks make its market, and that was a seeded outcome: a share is
+a claim on the residual and a dealer's inventory is a position it takes by TRADING, so ownership of
+the float was being assigned in advance to the one party whose holding of it is supposed to be a
+market's result. It also put an asset the central bank's window will not take — four times a bank's
+own capital of it — on the balance sheet whose whole liquidity is what its assets raise there, which
+is what kept the banking system from lending at all. `seed.funding` runs
 last, reads each bank's assets off the register (Law 19), and derives what its depositors hold from
 the line that bank runs to: the regulatory minimum plus its own buffer, which is the only number in
 it and is one each bank had already declared. It requires only `seed.foundation` — naming the
