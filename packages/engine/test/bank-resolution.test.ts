@@ -45,10 +45,28 @@ const BANK_B = partyId('bank.b');
  */
 const AT = 10;
 const WEEKS = 4;
-const SHARE = 0.35;
+/**
+ * XI-1, Banks Capital C1: HOW BIG THE LOSS IS, as a multiple of the bank's OWN CAPITAL, a week, for
+ * a month. THERE ARE TWO OF THEM AND THAT IS THE POINT — a bank losing a third of its capital a
+ * week and a bank losing all of it are different worlds, and the clauses in this file are about
+ * different halves of what happens in them:
+ *
+ * - A THIRD is a bank that LIMPS. It runs short of cash before its capital is gone, asks the window,
+ *   and is refused for being insolvent — which is D3.a, the one refusal a lender of last resort must
+ *   make, and it can only be observed in a bank that gets as far as asking.
+ * - ALL OF IT is a bank whose hole runs the hierarchy the whole way down. At a third the loss is
+ *   absorbed entirely by the bank's own creditors and never reaches a depositor, so the guarantee
+ *   never pays and D4 and D5 have nothing to show; at its whole capital, households are written
+ *   down, the insurer pays, and raising the cover protects them.
+ *
+ * One number cannot be both, and picking whichever one makes the most tests pass is how a fixture
+ * stops being about anything. Each `describe` asks for the world its own clause needs.
+ */
+const LIMPS = 0.35;
+const RUNS_THE_HIERARCHY_DOWN = 1;
 
 /** XI-1: a loss is an EVENT — here a penalty, paid in money, to a payee with a name. */
-function penalty(at: number): SystemModule {
+function penalty(at: number, share: number): SystemModule {
   let each = 0;
   return {
     id: 'test.penalty',
@@ -71,10 +89,7 @@ function penalty(at: number): SystemModule {
           // there is nobody to fine.
           if (!ctx.parties.get(BANK_A).status.alive) return;
           if (ctx.period === at) {
-            each = ctx.registry.payable(
-              USD,
-              ctx.participant(BANK_A).equity() * SHARE,
-            );
+            each = ctx.registry.payable(USD, ctx.participant(BANK_A).equity() * share);
           }
           if (each <= 0) return;
           ctx.settle({
@@ -101,9 +116,13 @@ function penalty(at: number): SystemModule {
 }
 
 /** The foundation world, one penalty, and any declared number set differently. */
-function failing(seed: string, over: Readonly<Record<string, number>> = {}): World {
+function failing(
+  seed: string,
+  over: Readonly<Record<string, number>> = {},
+  share: number = LIMPS,
+): World {
   const spec = rigSpec(seed);
-  const modules: SystemModule[] = [...spec.modules, penalty(AT)].map((m) => ({
+  const modules: SystemModule[] = [...spec.modules, penalty(AT, share)].map((m) => ({
     ...m,
     params: m.params.map((p) => {
       const value = over[String(p.id)];
@@ -239,10 +258,22 @@ describe('who bears it (Banks Capital A2, D2, D2.a, E3)', () => {
 
 describe('the acquirer (Banks Capital D3, D6, C3.b)', () => {
   const w = failing('res-d3');
-  const bid = events(w, 'bank.resolution.bid', BANK_A)[0];
+  // PLAN §7, D3: EVERY BANK BIDS FROM ITS OWN VIEW, so some of them decline — a book that would
+  // leave the bidder's own equity underwater is a book it says no to, and that is the mechanism
+  // working rather than a world without an acquirer. This read the FIRST bid and asserted it was
+  // accepted, which is asserting that the bank that happens to bid first is the one with the
+  // balance sheet for it. Which bank takes it is the outcome; that one does is the clause.
+  const bids = events(w, 'bank.resolution.bid', BANK_A);
+  const bid = bids.find((e) => e.data['declined'] === false);
 
   it('bids from its own view, and is paid to take a book with a hole in it (D3)', () => {
+    expect(bids.length, 'nobody bid at all').toBeGreaterThan(0);
+    expect(bid, 'every bidder declined, so there is no acquirer').toBeDefined();
     expect(bid?.data['declined']).toBe(false);
+    // D3: and the ones that said no said why, in their own terms.
+    for (const no of bids.filter((e) => e.data['declined'] === true)) {
+      expect(String(no.data['why'])).not.toBe('');
+    }
     // D3: what it will pay is what the book is worth to IT. A book whose liabilities exceed its
     // assets is worth less than nothing, so the bid is negative: the acquirer is PAID to take it,
     // out of the estate and then the guarantee, and that payment is the hole made visible.
@@ -276,8 +307,12 @@ describe('the guarantee (Banks Funding A1.a, Banks Capital D4, D5)', () => {
     // amount. Raise it past what a member of a household cell holds and no household is written
     // down at all, while the firms, the desks and the funds — which are nobody's members — take
     // exactly the loss they took before. That is E4's break in the loop, seen from the other side.
-    const covered = failing('res-d4', { 'regulation.depositInsurance.limit': 100000000 });
-    const bare = failing('res-d4', { 'regulation.depositInsurance.limit': 0 });
+    const covered = failing(
+      'res-d4',
+      { 'regulation.depositInsurance.limit': 100000000 },
+      RUNS_THE_HIERARCHY_DOWN,
+    );
+    const bare = failing('res-d4', { 'regulation.depositInsurance.limit': 0 }, RUNS_THE_HIERARCHY_DOWN);
     const households = (w: World): string[] =>
       events(w, 'bank.resolution.writtenDown', BANK_A)
         .map((e) => String(e.data['holder']))
@@ -295,7 +330,7 @@ describe('the guarantee (Banks Funding A1.a, Banks Capital D4, D5)', () => {
   it('pays out of the fund the banks paid into, and the purse only after it (D4, D5)', () => {
     // D4: the insurer pays what the hierarchy could not reach, and it pays the ACQUIRER — because
     // the acquirer is the one about to owe the depositors the money nobody took from them.
-    const w = failing('res-d5');
+    const w = failing('res-d5', {}, RUNS_THE_HIERARCHY_DOWN);
     const done = events(w, 'bank.resolution.done', BANK_A)[0];
     expect(num(done, 'insurerPaid')).toBeGreaterThan(0);
     const paid = w.ledger
