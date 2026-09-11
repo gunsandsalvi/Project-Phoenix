@@ -1976,3 +1976,83 @@ follow the same rule is not a price, and that saying so (`market.noView`) is bet
 it. The killer: if the four goods markets it names stay the only ones for the next three items while
 the equity book goes on walking away (12-15), then the observation is not reaching the thing it is
 about and it wants a participant rather than a note.
+
+## After 12 — the holding pen emptied
+
+**What this is.** Not an item: the close of `docs/BUGS.md`. Item 12's own entry above says six
+findings were positioned; the file held twenty-seven, in two numbering series that had collided —
+`12-13` to `12-18` named two different findings each — plus a list of the reds the item closed with.
+Every one is now either RESOLVED or POSITIONED into the plan file of the item that owns it, which is
+the only way a finding may leave that file. **The file is empty, so it is deleted** — the same
+treatment a closed item's own file gets. It comes back the next time a session parks a finding.
+
+**Two new items were inserted**, both of them asked for by findings that said so themselves:
+
+- **11.6 — the module contract** (after 11.5, before 12a). 12-7 (the kernel declares `FIRM` and
+  `HOUSEHOLD` while `firms` and `households` own their behaviour, so the depositor guard cannot cover
+  them) and 12-12 (a session asks every party of a kind whether it has an order — 827,000 questions
+  a period at full scale, four fifths of what a period still costs, and the kernel cannot guess the
+  answer, so a participant must declare which markets it is in). Taken together because both are what
+  a `SystemModule` DECLARES and neither moves a number; item 2a is the precedent for settling the
+  contract in one item. It sits between 11.5 and 12a because every neighbouring item moves numbers
+  and this one cannot.
+- **12d — the tests catch up with the world** (after 12c, before 13a). The reds item 12 closed with,
+  refreshed against a full run: **283 passed, 90 failed of 373**. 85 are assertions about a world
+  that moved; **3 are contract violations and are listed apart**, because a violation names a
+  mechanism (ARCHITECTURE §5) and the danger of an item like this is that one gets migrated away.
+  Not earlier, because 11.5, 12a, 12b and 12c each move the numbers these tests read; not later,
+  because a suite that cannot guard is worth less with every system added to it.
+
+**Where each finding went.**
+
+| finding | what it was | where |
+| --- | --- | --- |
+| 12-1 | a bank's opening funding could not see the assets other modules endow it | RESOLVED in 12 |
+| 12-2 | a bill printed above par | RESOLVED in 12's anchor step |
+| 12-3 | the long end has no holder (not a bug — an incomplete model) | 13h |
+| 12-4 | an audit violation in the bank-failure scenario, taking the whole file's collection with it | RESOLVED as written — `bank-resolution.test.ts` collects again (11 tests run, 4 pass). An unexpected violation is still asserted inside one of them, and that red is named in 12d with the other six |
+| 12-5 | a bank fails in period 7, and a world that opens with more banks ends with fewer | 11.5 |
+| 12-6 | tests that find their period by running the world | 12d |
+| 12-7 | the kernel declares two kinds whose behaviour a module owns | 11.6 |
+| 12-8 | a bank defends a deposit past what the guarantee on it costs | 11.5 |
+| 12-9 | a lien could name a party that had ceased | RESOLVED in 12 (it blocked the work) |
+| 12-10 | a ceased bank keeps its reserve overdraft and nobody is owed it | 11.5 |
+| 12-11 | the journal and ledger walked end to end on every read | RESOLVED in 12; the event growth underneath it is named in 11.6 and measured at 16 |
+| 12-12 | what a period costs at the real scale | 11.6 |
+| 12-13 (first series) | a quantity was a `number`, so a fraction of a cent could be anything | RESOLVED in 12 (`Qty` became a branded type with five doors, and the clearing solver's runtime check was deleted) |
+| 12-14 (first series) | every dealer opens above its own limit, because the float is the firm's whole book | 12c |
+| 12-15 (first series) | the world produces a hundred and fiftieth of the scale its seed states | 16 |
+| 12-16 (first series) | the ETF's price collapses and the demand curve walls past 2^53 | RESOLVED in 12 — the wall by `line.instrument.issued` (a bid is never for more of a line than exists), the collapse by the print fix below; what the ETF still fails is named in 12d |
+| 12-17 (first series) | the suite after the scale change, 144 red of 338 | SUPERSEDED by 12d's refreshed list |
+| 12-18 (first series) | the test rig is not the world (a decision, not a bug) | `docs/PLAN.md` §7 |
+| 12-13 | the banks sell the seed's cross holdings in week one | 13h |
+| 12-14 | the dollar drifts one way because only one side of the world trades | 13i |
+| 12-15 | an equity line walks away | 12c (the item it created) |
+| 12-16 | a cleared session that settles nothing used to print its level | RESOLVED in 12 |
+| 12-17 | every sovereign is rated `c`, and every firm downgrades in one session | 12a |
+| 12-18 | a bank's balance sheet takes one step out of true | 12b (the item it created) |
+| 12-19 | the banking system opens below its own liquidity standard, and nobody lends | 11.5 (the item it created) |
+| pre12-1 | the resolution invariance does not converge | 11.5 |
+| pre12-2 | a matching-rule test depends on its employer's solvency | 12d |
+| the reds | named test by test | 12d, refreshed against a full run |
+
+**And pre12-1 is no longer the finding it was written as.** It was measured as a three per cent miss
+(0.00928 against 0.00898). At item 12's close both tests in `tick.test.ts` stop earlier than that,
+with `Impossible: [Law 8] what moves on treasury.us's money:fed:USD is 711624048078206100, which is
+not a whole number of pieces` — at a finer grain some site divides and does not land on the grid, so
+the convergence is not reached to be measured at all. 11.5 owns both halves, because it re-derives
+the opening balance sheet they run against; if the opening is not the cause, the record there says so
+and it becomes an item of its own with both measurements as its starting numbers.
+
+**Two things were kept rather than tidied.** Every measurement moved into a plan file is repeated
+VERBATIM, including strings printed before item 12 renamed the countries (`cb.north`, `PHX`), with a
+line saying so — a measurement is what it said, and a re-typed one is a claim. And each finding's
+number survives as its handle: the plan files name it, this table maps it, and no plan file links to
+a path that is gone.
+
+**Documents touched.** `docs/plan/11.5`, `12a`, `12b`, `12c`, `13h`, `13i`, `16` each gained the
+findings positioned into them and the steps that close them; `11.6` and `12d` are new; the manifest
+gained two rows and five step recounts; `docs/PLAN.md` gained the rig decision (§7) and says the
+holding pen is deleted when empty; `docs/WORKLIST.md` gained two rows. Eight comments in the engine
+and the tests cited the deleted file by finding number and now cite the worklist item that owns each
+one — a stale comment is a defect (Law 16), and a path that does not exist is the stalest kind.

@@ -118,9 +118,9 @@ export function assemble(spec: AssemblySpec): World {
  * WHAT IT DOES NOT COVER, and the gap is real: `FIRM` and `HOUSEHOLD` are declared in
  * `KERNEL_PARTY_KINDS`, so no module's declaration carries them and this says nothing about them.
  * A kind the kernel declares and a module owns the behaviour of is the ownership defect
- * ARCHITECTURE 4.9b names ("a kind is owned by exactly one module"); it is recorded in docs/BUGS.md
- * rather than fixed here, because moving those two kinds into their modules is a kernel change of
- * its own and this item is not it.
+ * ARCHITECTURE 4.9b names ("a kind is owned by exactly one module"); it is worklist 11.6 rather
+ * than fixed here, because moving those two kinds into their modules is a kernel change of its own
+ * and this item is not it.
  */
 function requireBankChoices(m: SystemModule): void {
   const answered = new Set((m.bankChoices ?? []).map((d) => String(d.partyKind)));

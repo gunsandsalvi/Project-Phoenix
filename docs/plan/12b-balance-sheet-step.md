@@ -2,8 +2,7 @@
 
 **Read this part first — it is why the item exists and what has already been ruled out.** Item 12
 found it and did not chase it (Law 11), but it measured it far enough to be placed rather than
-guessed at. The whole of what is known is in `docs/BUGS.md` **12-18** and is repeated here so this
-file stands on its own.
+guessed at. The whole of what is known is repeated here, so this file stands on its own.
 
 **The finding.** Reproduced with `foundationSpec('year', drawBanks(4, 'year'), drawFirms(40, 'year'))`.
 Every period to 12 the `accounts` family is green. At period 13 all four banks report at once, and
@@ -56,5 +55,5 @@ B3, C3.b, E1, E2; Law 5, Law 7, Law 12, Law 19. Code: `audit/families/accounts.t
       with a band is reporting this defect a second time
 - [ ] Test: the identity holds for every party over a year in four currencies, including the period
       it used to break in
-- [ ] `docs/BUGS.md` 12-18 removed by being FIXED rather than by being re-positioned
+- [ ] The step is NAMED — the one event whose read side and equity side differ — and fixed at that event, not re-positioned into a later item
 - [ ] Coverage re-marked; record entry; delete this file; worklist row 12b → done

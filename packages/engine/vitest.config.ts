@@ -6,7 +6,7 @@ export default defineConfig({
     include: ['test/**/*.test.ts'],
     // A year of this world is 52 periods of every market, every participant and the whole audit,
     // and it grows every time a system is added — and the world is now a country: thirty million
-    // people, three thousand named firms, thirty banks (docs/BUGS.md 12-12). The tests build SCALE
+    // people, three thousand named firms, thirty banks (worklist 11.6). The tests build SCALE
     // MODELS of it (test/rig.ts), but a rig with enough firms in it to have listed two of them is
     // still fifty firms and half a million people, and a year of that is a minute.
     //

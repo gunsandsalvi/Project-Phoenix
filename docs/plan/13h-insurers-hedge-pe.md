@@ -27,6 +27,53 @@ fully).
 
 ---
 
+## Findings this item carries
+
+Both are one absence: **nothing in this world holds a claim because of what it expects of it.** A
+portfolio decision — a holder that takes a POSITION, for its own reasons, at its own horizon — is
+what this item brings, and until it exists a long-dated or foreign claim has no holder with a reason.
+
+### The long end has no holder (item 12's finding **12-3**; `docs/RECORD.md`)
+
+**Twice mis-filed before it was read correctly** — first as "a bank expects to lose a third to a half
+of what it lends the sovereign", then as "the treasury cannot place its paper". Both are Law 11: a
+misbehaving number is not a work item; the missing mechanism is. Neither number is wrong.
+
+**What is true.** Households will not tie money up past their own horizon (52 periods,
+`households.horizon.periods`, a PREFERENCE with a reason — Households D5). The treasury issues at
+two, five and ten years. So the only bidders at a long auction are the primary dealers meeting their
+obligation: cover comes in at exactly `dealershipShare` (0.34) and the issuer withdraws at its stated
+patience of 40bp over the curve (`treasury.concession`). Everything downstream is the model working —
+the treasury funds nothing at the long end and misses payments (XI-9 biting); the banks then require
+0.0490 and 0.0352 of it against 0.0833 and 0.125 of each other (a lender that has watched an issuer
+miss payment after payment asking more); 748 `overdraftRefused` at the central bank.
+
+**Do not "fix" any of it.** An attempt was made and reverted: making the issuer read its own auction
+history and stop bringing a tenor the market refused. It is a symptom patch (Law 12), and worse — it
+would delete the one signal that says this item is missing. The deliberately-failing auction is an
+incomplete-model check working as designed.
+
+**What closes it here.** An insurer or pension owes a scheduled liability whose present value is read
+from the curve, so it is the structural holder of duration: it wants the long end because of what it
+owes, not because of what the last auction printed. When that holder exists the long auction covers,
+or it does not and the reason is a price.
+
+### The banks sell the seed's cross holdings in week one (item 12's finding **12-13**; `docs/RECORD.md`)
+
+**Measured** with `foundationSpec('probe', drawBanks(3), drawFirms(24))` at period 1, before item 12
+moved the cross holdings onto the central banks: every bank's holding of `bund`/`gilt`/`jgb` went out
+in the first session — three `trade` instructions, 426,231,562,134 pieces of each foreign money paid
+by the issuing central bank to `bank.a` — and the seed's cross holding was gone by period 2.
+
+**Why it is here.** A bank's LIQUIDITY portfolio is correctly its own money only: a foreign bond
+raises nothing at its own central bank's window (item 12 fixed that half, and then moved the cross
+holdings to the central banks, for whom foreign paper is what reserves ARE — Central Bank F4). What
+is still missing is the other reason to hold paper abroad, a POSITION taken because of what the
+holder expects of the rate and the yield. `seed.crossHoldingShare` is a PLACEHOLDER whose named death
+is this item (Law 2), and the portfolio decision is what kills it.
+
+---
+
 ## Design
 
 ### Module `insurers`
@@ -185,6 +232,8 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 - [ ] The cover market: quotes from own experience and capital, sized by surplus; policy to the lower quote; unplaced cover; premiums and claims as instructions; an insurer with no surplus writes nothing; tests (A4, A4.a–A4.c)
 - [ ] Claims as per-member events from declared technology primitives; a catastrophe as one event on many policies; tests (B3, B4)
 - [ ] Matching: bond and swap demand built from the liability schedule by tenor (IRS B2 → MET); LP in PE; securities lending; downgrade-forced sales; tests (C1–C5)
+- [ ] **The long end has a holder** (the finding above): the two-, five- and ten-year auctions are bid by a party that wants the tenor because of what it owes at it, not by dealers meeting an obligation. Test: cover at a long auction exceeds `dealershipShare`, or it does not and the issuer's withdrawal is priced rather than structural
+- [ ] **A position is held for a reason** (the finding above): a holder decides what foreign and long-dated paper to carry from its own outlook on the rate and the yield, so `seed.crossHoldingShare` dies as a PLACEHOLDER (Law 2) and a cross holding survives period 1 when its holder still wants it
 - [ ] The gap: duration and cash-flow reads; equity moving opposite to a bank's; shortfall actions by the sponsor, the fund or the schedule; swap hedges that call margin; tests (D1–D4, D4.a)
 - [ ] Failure: negative equity resolves to a successor's tender or the estate with beneficiaries ranking; tests (A3, XI-3)
 - [ ] Pension contributions from wages accrue the schedule; drawdown at retirement is the retired cell's income (Households F3 → MET); tests
@@ -196,7 +245,7 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 - [ ] The buyout: a conditional tender funded by target debt that lenders clear and an equity cheque from calls; the target's balance sheet transformed; sources = uses contribution; tests (B1–B5, E1)
 - [ ] The hold and the exit: owner influence through preferences, recapitalisation lenders can refuse, failure wiping the equity only, the `marked` provenance shown as such, exit by tender or IPO as the first cleared price, a closed market extending the hold, distributions in cash, returns as a read; tests (C1–C5, D1–D5, E3)
 - [ ] Fund fee competition: managers quote, investors compare on their own outlook; item 8's fee shape deleted; Currency E2 complete; observer: liabilities and gaps, cover books, hedge-fund reads, PE deals with marks flagged; year-long run green with a rate-move scenario; determinism
-- [ ] Coverage re-marked; record entry with the shape's death; delete this file; worklist row 13h → done; commit and push
+- [ ] Coverage re-marked; record entry with both shapes' deaths (`funds.managementFee` and `seed.crossHoldingShare`); delete this file; worklist row 13h → done; commit and push
 
 ## Exit criteria
 

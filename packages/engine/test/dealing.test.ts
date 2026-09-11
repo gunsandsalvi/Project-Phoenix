@@ -318,7 +318,7 @@ describe('what it publishes (Dealer Desks D5)', () => {
     expect(Number(book?.data['book'])).toBeGreaterThan(0);
     // D5: the room it has LEFT, which is a number and can be negative — a desk carrying more than
     // its own limit allows has less than none, and what it does about that is sell. This world
-    // opens its desks holding the whole float of every line they make (docs/BUGS.md 12-14), so
+    // opens its desks holding the whole float of every line they make (worklist 12c), so
     // what this reads is a desk working its book down rather than one with room to grow.
     expect(typeof book?.data['roomLeft']).toBe('number');
     const lines = book?.data['lines'] as Record<string, Record<string, number>> | undefined;

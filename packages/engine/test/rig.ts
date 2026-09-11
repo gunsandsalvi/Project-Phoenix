@@ -5,7 +5,7 @@
  *
  * `foundationWorld` is THE WORLD: thirty million people, three thousand named firms, thirty banks.
  * It is what the mechanisms are for and what a run measures, and one period of it is about ten
- * seconds and seventy thousand events (docs/BUGS.md 12-12). A file of forty tests cannot build it
+ * seconds and seventy thousand events (worklist 11.6). A file of forty tests cannot build it
  * forty times, and it should not want to: a test of a matching rule wants the fewest parties that
  * can show the rule, not the most.
  *

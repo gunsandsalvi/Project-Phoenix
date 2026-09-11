@@ -232,7 +232,7 @@ export function shareOrders(
     // than it holds" — the arithmetic of what there is to deliver, not a limit on what anybody
     // wants — and without it a line whose price has collapsed has every saver bidding for many
     // times the whole company, and the demand at a level stops being an exact count at all
-    // (`asQty` threw at 1.5e16 in a year-long run; docs/BUGS.md 12-15 is why the price collapsed).
+    // (`asQty` threw at 1.5e16 in a year-long run; worklist 12c is why the price collapsed).
     const exist = line.instrument.issued;
     for (const rung of rungsOver(levelsBelow(line.price, steps), perLine)) {
       const wanted = mul(rung.qty, weight, 'what the cell puts in');

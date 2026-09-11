@@ -19,6 +19,47 @@ standing observations and run ladder; Observer D3, E1.
 
 ---
 
+## The starting number this item inherits
+
+Item 12 measured a LEVEL and did not chase it (Law 11: measuring is what comes after the recipe —
+Part XIII 15 — and this is the item that measures). It is here so the first measurement has a number
+to start from rather than a fresh look at an economy nobody has read yet.
+
+### The world produces a hundred and fiftieth of the scale its seed states (item 12's finding **12-15**; `docs/RECORD.md`)
+
+**Measured** in a rig world, seed `capital`, 120,000 people, 12 firms, period 40, from `firms.plan`:
+
+```
+firm.1  batch 1,322,910   runRate 2,417,363    capacity 376,000,000   bound: demand
+firm.2  batch 34,823,497  runRate 63,646,945   capacity 324,000,000   bound: demand
+firm.3  batch 3,023,152   runRate 5,447,483    capacity 388,000,000   bound: demand
+```
+
+A firm's plant lets it start 376 tonnes a period and it starts 1.3. The seed sized that plant from
+what the population takes off the end of the chain — 0.0175 units a member a period, walked up
+through each recipe — so the seed and the mechanisms disagree about the size of this economy by two
+orders of magnitude, and what they disagree about is DEMAND: every firm is bound by what it expects
+to sell, at a hundred and fiftieth of what the seed assumed it would.
+
+**What it is not.** Not a Law 8 defect (every quantity in it is a whole count), not an audit finding
+(green in every family), and not arithmetic: capacity comes to `starts × plantHeadroom` exactly, as
+intended.
+
+**What it cost when it was written.** Investment never happened: capacity is 150× the run rate, so no
+firm ever had a gap, so `firms.invest` and `capital.commissioned` were empty in every seed over forty
+periods. Part of that has since been placed elsewhere — worklist **11.5** found that no bank had
+funding room, so no firm had a quoted rate, so `costOfCapital` was Missing and `project()` was never
+reached at all. How much of the gap 11.5 closes is unknown until it is worked, and that is the first
+thing to re-measure here.
+
+**Where to look, if it survives 11.5.** The circuit, not the seed: what households are paid, what
+they spend, and what that buys at the cleared price. A world whose people earn a hundred and
+fiftieth of what its firms are equipped to sell them is short of wages or short of employment, and
+the audit cannot see it because every flow in it has two sides and balances. It is a LEVEL, and a
+level is this item's business.
+
+---
+
 ## Design
 
 - **The families** (Part XII): all nine built by now (money, ownership, prices, cross-market,
@@ -82,6 +123,7 @@ docs/measure/<run>/
 - [ ] The run ladder: profile, season, long with shocks, fixed point; all four deterministic with reads snapshotted under `docs/measure/`
 - [ ] Findings inserted as worklist items at their dependency positions with their plan files and manifest rows
 - [ ] The measurement surface: families, VERIFY groups, chains, observations, each with its derivation and no display-only number (Observer D3, E1)
+- [ ] The level above re-measured against the world 11.5 leaves: what a member earns, what it spends and what that buys at the cleared price, party by party, with the finding it names inserted as an item rather than adjusted
 - [ ] Coverage final pass: every VERIFY row carries its measured status; record entry
 - [ ] Delete this file; worklist row 16 → done; commit and push
 

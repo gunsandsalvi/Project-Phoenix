@@ -117,7 +117,7 @@
     "id": "11.5",
     "title": "The banking system opens meeting its own liquidity standard",
     "file": "11.5-bank-liquidity-opening.md",
-    "steps": 7
+    "steps": 9
   },
   {
     "id": "12",
@@ -126,10 +126,16 @@
     "steps": 32
   },
   {
+    "id": "11.6",
+    "title": "The module contract: kinds where their behaviour is, markets a participant is in",
+    "file": "11.6-module-contract.md",
+    "steps": 7
+  },
+  {
     "id": "12a",
     "title": "Reporting and estimates",
     "file": "12a-reporting-and-estimates.md",
-    "steps": 25
+    "steps": 26
   },
   {
     "id": "12b",
@@ -142,6 +148,12 @@
     "title": "The equity book walks away",
     "file": "12c-equity-anchor.md",
     "steps": 6
+  },
+  {
+    "id": "12d",
+    "title": "The tests catch up with the world",
+    "file": "12d-tests-catch-up.md",
+    "steps": 8
   },
   {
     "id": "13a",
@@ -189,13 +201,13 @@
     "id": "13h",
     "title": "Insurers, hedge funds, private equity",
     "file": "13h-insurers-hedge-pe.md",
-    "steps": 17
+    "steps": 19
   },
   {
     "id": "13i",
     "title": "Cross-border",
     "file": "13i-cross-border.md",
-    "steps": 10
+    "steps": 11
   },
   {
     "id": "14",
@@ -213,7 +225,7 @@
     "id": "16",
     "title": "Measure",
     "file": "16-measure.md",
-    "steps": 12
+    "steps": 13
   },
   {
     "id": "17",

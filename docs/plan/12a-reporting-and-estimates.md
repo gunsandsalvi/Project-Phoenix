@@ -59,6 +59,31 @@ measurements and are marked so with worklist 16 — the reads exist here, the me
 
 ---
 
+## The finding this item carries
+
+### Every sovereign is rated `c`, and every firm downgrades in one session (item 12's finding **12-17**; `docs/RECORD.md`)
+
+**Measured** at item 12's close, in `mechanisms/ratings/assess.ts`: at period 1 all four treasuries
+are graded `c` by all three assessors; at period 4 every firm goes `aaa` to `c` at once for two of
+the three.
+
+**Why.** The one measure an assessor can make honestly today is what falls due against what the
+issuer is WORTH — `owedIn` against `equity`, both reads of the issuer's own account through a view
+with the prices closed. A treasury's book equity is deeply negative by construction: it owes its whole
+debt and owns nothing. That is not a signal, it is what a state's balance sheet looks like, and a
+state's capacity to pay is its TAX BASE, of which this world has no read. The firms move together
+because the same common cost crosses them all in the same week.
+
+**What this item gives it.** A published income statement per issuer — what it took in and what it
+paid out, stated by the issuer itself (§48). With that read the measure becomes what falls due
+against what it TAKES IN, which is a coverage ratio and is the measure an assessor actually uses. For
+a treasury the same read is its receipts, which is its tax base stated by the party that collects it.
+
+**Step this item owes it.** `ratings` reads the published report rather than the equity account, and
+the grade distribution across issuers stops being one grade — tested as a spread, never as a target.
+
+---
+
 ## Design
 
 ### Sub-item 12a.1 Kernel: the equity ledger (Law 4, Law 19, Reporting A2, G2)
@@ -270,6 +295,9 @@ read (§46 C2). Two numbers here would be Law 4's defect wearing a business suit
       its guidance, its estimates and the consensus.
 - [ ] 25. A year-long run: reports land on their own calendars, estimates disagree, surprises are
       recorded, and the audit is green every period.
+- [ ] 26. `ratings` reads the published report rather than the equity account (the finding above):
+      what falls due against what the issuer TAKES IN, which for a treasury is its receipts. Test:
+      the grades across issuers are a spread and not one grade — measured, never targeted.
 
 ---
 

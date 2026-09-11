@@ -108,7 +108,7 @@ describe('the same world with two banks, three and four (Seed B1, XI-15)', () =>
     expect(four.banks).toBe(4);
     // XI-3, Banks Funding D6: and a bank can be gone by the end of the run, which is the mechanism
     // and not the measurement — the count is what the world OPENED with, and what happens to them
-    // afterwards is what the world does with them (docs/BUGS.md 12-5).
+    // afterwards is what the world does with them (worklist 11.5).
     for (const a of [two, three, four]) expect(a.alive).toBeGreaterThan(0);
   });
 

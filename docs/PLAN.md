@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 55.8%** (296 of 530 steps across 37 items).
+**Plan completion: 53.6%** (296 of 552 steps across 39 items).
 **Requirement coverage: 44.8%** (610 MET, 81 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -38,11 +38,13 @@ The plan has two parts:
 | 10.4 — What a lot is carried at, after the marks are taken | — | — | closed (no item file) |
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
 | pre12 — The guards that keep the documents true | 16 | 16 | closed |
-| [11.5 — The banking system opens meeting its own liquidity standard](plan/11.5-bank-liquidity-opening.md) | 7 | 0 | open |
+| [11.5 — The banking system opens meeting its own liquidity standard](plan/11.5-bank-liquidity-opening.md) | 9 | 0 | open |
 | 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer | 32 | 32 | closed |
-| [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 25 | 0 | open |
+| [11.6 — The module contract: kinds where their behaviour is, markets a participant is in](plan/11.6-module-contract.md) | 7 | 0 | open |
+| [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 26 | 0 | open |
 | [12b — The balance sheet that takes one step out of true](plan/12b-balance-sheet-step.md) | 6 | 0 | open |
 | [12c — The equity book walks away](plan/12c-equity-anchor.md) | 6 | 0 | open |
+| [12d — The tests catch up with the world](plan/12d-tests-catch-up.md) | 8 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
 | [13c — Commodities and freight](plan/13c-commodities-freight.md) | 14 | 0 | open |
@@ -50,11 +52,11 @@ The plan has two parts:
 | [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 18 | 0 | open |
 | [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 22 | 0 | open |
 | [13g — Corporate control and firm birth](plan/13g-mna-birth.md) | 13 | 0 | open |
-| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 17 | 0 | open |
-| [13i — Cross-border](plan/13i-cross-border.md) | 10 | 0 | open |
+| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 19 | 0 | open |
+| [13i — Cross-border](plan/13i-cross-border.md) | 11 | 0 | open |
 | [14 — The polity](plan/14-polity.md) | 12 | 0 | open |
 | [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |
-| [16 — Measure](plan/16-measure.md) | 12 | 0 | open |
+| [16 — Measure](plan/16-measure.md) | 13 | 0 | open |
 | [17 — The app and the APK](plan/17-app-apk.md) | 12 | 0 | open |
 <!-- progress:end -->
 
@@ -107,7 +109,7 @@ docs/plan/manifest.json      every item with its step count (for the progress fi
 docs/WORKLIST.md             the one ordered list of items and their state
 docs/RECORD.md               outcomes, one entry per closed item
 docs/COVERAGE.md             one row per spec clause: MET / PARTIAL / MISSING / OUT OF SCOPE
-docs/BUGS.md                 findings parked mid-item, positioned when the item closes
+docs/BUGS.md                 findings parked mid-item (exists only while some are; deleted when empty)
 packages/engine/src/         the engine (kernel + modules), pure TypeScript, no DOM
 packages/engine/test/        its tests (Vitest, fast-check)
 packages/app/                the inspector web app (Vite) and the Capacitor Android wrapper
@@ -494,7 +496,19 @@ maturity; a bill issuer + tenor; a share its issuer; a good its sub-unit; a mark
 a world that is half-built and reporting the half that is missing (Law 11), and a session that
 answers it spends itself on tests instead of on the thing the tests are for. Write them as the item
 goes; run them when the module closes; put everything the run says in `docs/BUGS.md` before changing
-anything in response.
+anything in response. That file is a holding pen and nothing else: when its last finding has been
+positioned into the item that should fix it, the file is empty and it goes, the same way a closed
+item's own file does.
+
+**THE RIG IS NOT THE WORLD.** `foundationWorld` is THE WORLD — thirty million people, three thousand
+named firms, thirty banks, 261 markets, and seconds a period. A file of forty tests cannot build it
+forty times and should not want to. `packages/engine/test/rig.ts` builds SCALE MODELS through the
+same door the real one uses — `foundationSpec(seed, banks, firms)` with a smaller draw — and keeps
+the world's own ratios, ten thousand people to a named firm, so the population scales with the firm
+count and a cell's order never runs past exact arithmetic. It grows whichever count a test's need
+lives in: BANKS for a dealer (three thousand firms will not produce a second dealer in a world with
+three banks), FIRMS for a listing or a fund. Same modules, same laws, fewer of each — and visibly a
+rig, so nothing measured on one is ever reported as what this economy does.
 
 A test never widens a tolerance; a test that needs a bound to pass is a finding; a failing audit
 family is asserted by name in the test and named in the record; every test that draws randomness

@@ -21,6 +21,30 @@ Currency E1–E4 (fully); Spot FX F1–F1.b (fully, the goods leg).
 
 ---
 
+## The finding this item carries
+
+### The dollar drifts one way because only one side of the world trades (item 12's finding **12-14**; `docs/RECORD.md`)
+
+**Measured** at item 12's close: USD/EUR, USD/GBP and USD/JPY all go 1.000000 → 1.018545 over nine
+periods, monotonically and almost identically; the three crosses never trade at all and stay at 1.
+
+**Why.** The three countries abroad are stubs — a central bank, a treasury and one benchmark line,
+with no firms, no households and no imports. So every pair has US parties on one side with a foreign
+balance they have no use for and nobody on the other with a reason to want it, and a one-sided book
+moves the only way it can. The crosses have no participant at all because no party's own money is in
+them, which is correct for that world and is why the triangular gap stays at zero.
+
+**It is not a defect of the currency layer.** It is this item: trade invoiced in another country's
+money is what puts parties on BOTH sides of a pair, and a reason to hold a foreign balance is 13h's
+portfolio decision. When both exist, a rate that drifts one way is a finding about the mechanism;
+until they do, it is a book with one side in it.
+
+**Test this item owes it.** Over a run with cross-border invoicing live, a pair has parties of both
+countries posting in it, and the drift is no longer monotone — or if it still is, the reason is a
+flow that is measured, not an absence.
+
+---
+
 ## Design
 
 ### Module `cross-border`
@@ -105,6 +129,7 @@ packages/engine/test/{cross-sourcing,invoice-currency,hedge-or-carry,exports-imp
 - [ ] Current and financial accounts as reads of the period's settled instructions; D3 contribution per region naming any lost leg; tests (D1–D3, D3.a)
 - [ ] Financing as the named buyers of a region's claims at cleared prices, which can stop; bank cross-currency positions as the trace of a one-way flow; stocks revaluing; the world summing to zero; tests (D4, D4.a, D5, D6)
 - [ ] Every market open to foreign money (a test posts a foreign bid in each market kind); the central bank's reach through the corridor, the carry and the currency as a scenario; terms of trade as a read; tests (E1, E4, F1–F3, Commodities E3)
+- [ ] **Both sides of a pair** (the finding above): over a run with invoicing live, each pair has parties of both countries posting in it, and the one-way drift item 12 measured is either gone or is a flow that can be named
 - [ ] Observer: balances per region from derivations, positions by party, terms of trade; year-long run green with a terms-of-trade shock; determinism; coverage re-marked; record entry
 - [ ] Delete this file; worklist row 13i → done; commit and push
 

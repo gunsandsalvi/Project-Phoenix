@@ -430,7 +430,7 @@ export function foundationSeedFor(
       unit: 'ratio of a line outstanding',
       kind: 'placeholder',
       owner: 'model',
-      why: "Seed E2, Central Bank C1: what the central bank opens holding of every sovereign line, and therefore how big its balance sheet is — every reserve it has issued was issued to buy this paper (Central Bank A2). It is stated BELOW the OMO's own target share so that the central bank opens short of what its policy wants and its first open-market session has something to do: a seed that opened it at its target would be seeding the outcome of the mechanism it is about to run (Seed E1). It is a PLACEHOLDER and not a shape, because this number decides the banks' reserve-to-paper mix and therefore whether the banking system opens meeting the liquidity standard it is measured against — and it does not (docs/BUGS.md 12-19: every bank opens with negative funding room and nobody lends). What replaces it is a derivation from that standard, which is item 11.5.",
+      why: "Seed E2, Central Bank C1: what the central bank opens holding of every sovereign line, and therefore how big its balance sheet is — every reserve it has issued was issued to buy this paper (Central Bank A2). It is stated BELOW the OMO's own target share so that the central bank opens short of what its policy wants and its first open-market session has something to do: a seed that opened it at its target would be seeding the outcome of the mechanism it is about to run (Seed E1). It is a PLACEHOLDER and not a shape, because this number decides the banks' reserve-to-paper mix and therefore whether the banking system opens meeting the liquidity standard it is measured against — and it does not (worklist 11.5: every bank opens with negative funding room and nobody lends). What replaces it is a derivation from that standard, which is item 11.5.",
       standsInFor: {
         mechanism: 'Banks Funding C1',
         worklistItem: '11.5',
@@ -719,7 +719,8 @@ export function foundationSeedFor(
     // and the number was two orders of magnitude below what the population could produce: it asked
     // 0.4 hours a week of a member who offers 35, so 97% of this world's time had nowhere to go,
     // the wage bill was a fortieth of what its people could earn, and every firm was bound by a
-    // demand that could never have paid for what its plant was sized to make (docs/BUGS.md 12-15).
+    // demand that could never have paid for what its plant was sized to make (item 12's finding
+    // 12-15, now worklist 16's starting number).
     // The seed was not sizing an economy; it was starving one.
     //
     // ONE PASS AT UNIT SCALE and then a multiplication, because the chain is linear in its output:
@@ -1020,7 +1021,7 @@ export function foundationSeedFor(
     // on this side of the sheet with the domestic paper and for the same reason: it is an asset the
     // central bank bought with money it issued, so it is part of what decides how big its balance
     // sheet is. Holding it anywhere else was the first version of this seed and it is what took the
-    // banking system's liquidity abroad (docs/BUGS.md 12-19): a foreign bond raises nothing at a
+    // banking system's liquidity abroad (worklist 11.5): a foreign bond raises nothing at a
     // window that is its own system's, so a commercial bank holding one holds an illiquid asset.
     for (const c of ABROAD) {
       const line = instrumentId(String(abroadLine.get(String(c.region))));
@@ -1191,7 +1192,8 @@ export function foundationSeedFor(
     // AFTER it (they need the parties it creates). A bank funded against the assets its funder can
     // see opens at whatever share of its own capital the assets it CANNOT see happen to come to —
     // `bank.c` at exactly its 3.0% leverage rule and `bank.a` at 29.7%. It is `seed.funding`, which
-    // runs when every module has handed out what it hands out (docs/BUGS.md 12-1).
+    // runs when every module has handed out what it hands out (item 12's finding 12-1,
+    // docs/RECORD.md).
 
     const openedGoods = new Set<string>();
     // Goods (Seed A3, C4, D1): every firm opens with stock of what it makes, with the inputs its
@@ -1292,7 +1294,7 @@ export function foundationSeedFor(
  * against nothing else. What that produced is measurable and was measured: `bank.c` opened at
  * exactly 3.0% equity — its own leverage rule, correctly applied to what the foundation could see —
  * while `bank.a` opened at 29.7% and `bank.b` at 23.8%, the difference being shares nobody had
- * funded (docs/BUGS.md 12-1).
+ * funded (item 12's finding 12-1, docs/RECORD.md).
  *
  * ONE DECLARED NUMBER, and everything derived from it (Law 2). A bank opens where its OWN capital
  * rule puts it: at the opening its assets are reserves, this issuer's paper and the float, and its
