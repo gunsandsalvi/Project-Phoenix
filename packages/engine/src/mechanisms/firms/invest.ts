@@ -43,6 +43,7 @@ import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../capital-programme/index.js';
 import type { PlannedOrder } from './decide.js';
+import { downTick, upTick } from '../../core/tick.js';
 
 /** B1.b: what money costs this firm at the margin, now, and what it is made of. */
 export interface CostOfCapital {
@@ -289,7 +290,9 @@ export function project(
     // B1: it invests when the return exceeds its cost of capital, which is exactly the statement
     // that a unit of this plant is worth more to it than what the market is asking for one.
     if (bid <= 0 || bid <= o.price) continue;
-    const qty = mul(gap, o.unitsPerUnitPerPeriod, 'units of plant the gap needs');
+    // Law 8: a machine is a whole machine, and plant that is a fraction short of what the gap
+    // needs does not close it — so what it bids for is the whole ones that do.
+    const qty = upTick(mul(gap, o.unitsPerUnitPerPeriod, 'units of plant the gap needs'));
     wanted.push({
       order: { market: o.market, side: 'buy', price: bid, qty },
       outlay: mul(qty, o.price, 'what it expects to pay for them'),
@@ -314,9 +317,11 @@ export function project(
     const purse = mul(spendable <= 0 ? 0 : spendable, div(x.outlay, spend, 'this line\u2019s share'), 'what it can put here');
     // How many it can pay for is a question about the PRICE IT EXPECTS TO PAY, not about the most
     // it would pay: a firm that values a machine highly does not thereby buy fewer of them.
-    const canPay = div(purse, x.asking, 'units it can pay for');
+    // Law 8: a machine is a whole machine, and this is what its money REACHES — down, because a
+    // firm that can pay for four and two thirds of one can pay for four.
+    const canPay = downTick(div(purse, x.asking, 'units it can pay for'));
     const qty = canPay < x.order.qty ? canPay : x.order.qty;
-    if (!material(qty, wanted.length + 1, x.order.qty)) continue;
+    if (qty <= 0 || !material(qty, wanted.length + 1, x.order.qty)) continue;
     orders.push({ ...x.order, qty });
     funded.push(mul(qty, x.asking, 'what it expects to pay for them'));
   }

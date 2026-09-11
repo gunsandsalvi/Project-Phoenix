@@ -18,7 +18,6 @@ import {
   REGION,
   assemble,
   currencyUnit,
-  foundationSpec,
   goodId,
   instrumentId,
   instrumentKindId,
@@ -35,6 +34,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 
@@ -219,7 +219,7 @@ function paysAStranger(): SystemModule {
 
 /** The kernel, the two modules a death needs — what fails, and where it goes — and the two lenders. */
 function failingWorld(...extra: readonly SystemModule[]): World {
-  const spec = foundationSpec('estate');
+  const spec = rigSpec('estate');
   const kernel = spec.modules
     .filter((m) =>
       [
@@ -289,7 +289,7 @@ function hungryBuyer(): SystemModule {
 
 /** The world the seed opens, with somebody hungry enough in it to kill a mill. */
 function worldWithADeathInIt(seed = 'estate'): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   return assemble({ ...spec, modules: [...spec.modules, hungryBuyer()] });
 }
 

@@ -7,13 +7,13 @@
 import { describe, expect, it } from 'vitest';
 import {
   moneyInstrumentId,
-  BANKS,
+  BANK_COUNT,
+  drawBanks,
   InvalidRegistry,
   LOAN,
   PHX,
   TREASURY_NORTH,
   assemble,
-  foundationSpec,
   isLoan,
   loanKind,
   none,
@@ -24,6 +24,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
 import { notDealing } from './no-dealing.js';
@@ -149,7 +150,7 @@ function overspends(amount: number, at = 2): SystemModule {
 }
 
 function world(extra: readonly SystemModule[] = [], limits?: number): World {
-  const spec = foundationSpec('loans');
+  const spec = rigSpec('loans');
   const modules = spec.modules
     .filter(
       (m) =>
@@ -187,7 +188,7 @@ function loans(w: World): { id: string; issued: number; lender: string; rate: nu
 
 describe('who answers for an overdraft (Money B3.a)', () => {
   it('refuses to seal a world whose bank says it is a credit decision and nobody takes it', () => {
-    const spec = foundationSpec('no-decider');
+    const spec = rigSpec('no-decider');
     const modules = spec.modules.filter(
       (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' ||
       m.id === 'seed.funding',
@@ -266,12 +267,15 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     // C1: cost of funds plus expected loss plus the capital charge plus what it costs to run it.
     // Nothing it owes pays interest yet, so the first term is a true zero and the rest are real.
     // No two of them ask the same on their own capital, so no two of them quote the same.
-    const asked = BANKS.map((x) => x.returnOnCapital);
-    expect(new Set(asked).size).toBe(BANKS.length);
+    // Seed B4: the banks of this world are DRAWN from its own seed value, so the test asks for
+    // that world's rows rather than importing a table (there is no table).
+    const rows = drawBanks(BANK_COUNT, 'loans');
+    const asked = rows.map((x) => x.returnOnCapital);
+    expect(new Set(asked).size).toBe(rows.length);
     // C2: the borrower took the KEENEST, and which bank that is falls out of the data rather than
     // being named here — the one that wants least on its capital quotes the tighter loan and wins
     // the business, and a wide quote loses volume (C2.a).
-    const keenest = [...BANKS].sort((x, y) => x.returnOnCapital - y.returnOnCapital)[0];
+    const keenest = [...rows].sort((x, y) => x.returnOnCapital - y.returnOnCapital)[0];
     expect(written?.data['bank']).toBe(keenest?.bank);
     expect(rate).toBeGreaterThan(0);
   });
@@ -395,7 +399,7 @@ describe('carrying it (Banks Lending D3, E1)', () => {
 
 describe('the world it lives in', () => {
   it('runs a year with lending in it and stays consistent', () => {
-    const spec = foundationSpec('loans-year');
+    const spec = rigSpec('loans-year');
     const w = assemble(spec);
     expect(w.phases.map((p) => p.name)).toContain('lending.write');
     for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);

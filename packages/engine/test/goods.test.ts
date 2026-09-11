@@ -13,7 +13,6 @@ import {
   REGION,
   assemble,
   displayName,
-  foundationSpec,
   goodId,
   goodKindId,
   goodMarketId,
@@ -31,7 +30,10 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { notDealing } from './no-dealing.js';
+import { asQty } from '../src/core/tick.js';
+import { negQty } from '../src/core/tick.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -78,7 +80,7 @@ const BREAD_ID = goodId('bread', REGION);
 
 /** The kernel, the foundation's parties, and one goods registry under test. */
 function world(rows: readonly GoodDecl[], ...extra: SystemModule[]): World {
-  const spec = foundationSpec('goods');
+  const spec = rigSpec('goods');
   const kernelOnly = spec.modules.filter(
     (m) =>
       m.id === 'sovereign-instruments' ||
@@ -162,7 +164,7 @@ describe('what a good is (Goods A)', () => {
   });
 
   it('refuses a recipe denominated in money: that is a substitution nobody declared (A2.b)', () => {
-    const spec = foundationSpec('goods');
+    const spec = rigSpec('goods');
     const kernelOnly = spec.modules.filter(
       (m) =>
         m.id === 'sovereign-instruments' ||
@@ -288,7 +290,7 @@ describe('inventory (Goods E)', () => {
 
 describe('what perishes (Goods E4)', () => {
   const bread = (): World => {
-    const spec = foundationSpec('goods.perish');
+    const spec = rigSpec('goods.perish');
     const modules = spec.modules.filter(
       (m) =>
         m.id === 'sovereign-instruments' ||
@@ -342,7 +344,7 @@ describe('what perishes (Goods E4)', () => {
       .filter((e) => e.subjects.includes(FIRM_1) && e.subjects.includes(BREAD_ID));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.data['unitsPerMember']).toBe(tonnes(2.5));
-    expect(ev[0]?.data['chargePerMember']).toBe(-phx(2.5 * 2));
+    expect(ev[0]?.data['chargePerMember']).toBe(negQty(phx(2.5 * 2)));
     expect(ev[0]?.public).toBe(false);
   });
 
@@ -422,7 +424,7 @@ describe('the market (Goods C)', () => {
 
 describe('the units identity (Part XII)', () => {
   it('is a contribution of its own and holds across making, selling and perishing', () => {
-    const spec = foundationSpec('goods.units');
+    const spec = rigSpec('goods.units');
     const modules = spec.modules.filter(
       (m) =>
         m.id === 'sovereign-instruments' ||
@@ -461,8 +463,8 @@ describe('the units identity (Part XII)', () => {
               partyKind: FIRM,
               orders: (view, m): readonly Order[] => {
                 if (m.instrument !== BREAD_ID || view.period !== 2) return [];
-                if (view.self.id === FIRM_1) return [{ party: FIRM_1, side: 'sell', price: 2, qty: 2 }];
-                if (view.self.id === FIRM_2) return [{ party: FIRM_2, side: 'buy', price: 2, qty: 2 }];
+                if (view.self.id === FIRM_1) return [{ party: FIRM_1, side: 'sell', price: 2, qty: asQty(2) }];
+                if (view.self.id === FIRM_2) return [{ party: FIRM_2, side: 'buy', price: 2, qty: asQty(2) }];
                 return [];
               },
             },

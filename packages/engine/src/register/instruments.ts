@@ -6,7 +6,7 @@
  * @spec Register A1.b Register A4 Register B1 Register B4 Register E4 Register F1 Register F1.a Fund Shares E1 Fund Shares E2 Bond N1 Bond N2 Bond N3 Bond N14 Equity A2.a Equity D4 Money D2 Law 15
  */
 import type { Period } from '../calendar/calendar.js';
-import { forbid } from '../core/assert.js';
+import { forbid, impossible } from '../core/assert.js';
 import { Forbidden, Missing } from '../core/errors.js';
 import type {
   CurrencyCode,
@@ -17,6 +17,7 @@ import type {
   UnitId,
 } from '../core/ids.js';
 import { finite, moveDust } from '../core/num.js';
+import { onTick } from '../core/tick.js';
 import { some, type Option } from '../core/option.js';
 import type { Registry } from '../registry/registry.js';
 
@@ -85,6 +86,15 @@ export function issuedBy(i: Instrument, party: PartyId): boolean {
 
 export class Instruments {
   private readonly map = new Map<InstrumentId, Instrument>();
+  /**
+   * Law 18: the same instruments under two more arrangements. A bank asks what it has out every
+   * time somebody shops it, and walking every instrument in the world for one issuer's own is a
+   * scan that grows with the world rather than with the answer — a region with a share line per
+   * listed firm has hundreds of them. Ids, not records: a record is replaced when something is
+   * issued or redeemed, and an index of stale copies is a second register (Law 4).
+   */
+  private readonly byIssuer = new Map<PartyId, InstrumentId[]>();
+  private everything: readonly Instrument[] | undefined;
 
   constructor(private readonly registry: Registry) {}
 
@@ -122,6 +132,12 @@ export class Instruments {
     const status: InstrumentStatus = { live: true, performing: true };
     const i: Instrument = Object.freeze({ ...decl, unit, issued: 0, issuedDust: 0, status });
     this.map.set(i.id, i);
+    this.everything = undefined;
+    if (i.issuer.some) {
+      const list = this.byIssuer.get(i.issuer.value);
+      if (list === undefined) this.byIssuer.set(i.issuer.value, [i.id]);
+      else list.push(i.id);
+    }
     return i;
   }
 
@@ -138,7 +154,15 @@ export class Instruments {
   }
 
   all(): readonly Instrument[] {
-    return [...this.map.values()];
+    this.everything ??= [...this.map.values()];
+    return this.everything;
+  }
+
+  /** Register B3: what one party has promised — the instruments whose issuer it is, by name. */
+  issuedBy(party: PartyId): readonly Instrument[] {
+    const ids = this.byIssuer.get(party);
+    if (ids === undefined) return [];
+    return ids.map((id) => this.get(id));
   }
 
   /** Only settlement calls this, when an issuance or redemption leg applies (B1). */
@@ -153,13 +177,14 @@ export class Instruments {
       id,
       Object.freeze({
         ...i,
-        issued: finite(i.issued + delta, `issued of ${id}`),
+        issued: onTheGrid(finite(i.issued + delta, `issued of ${id}`), `what is issued of ${id}`),
         issuedDust: finite(
           i.issuedDust + moveDust(i.issued, delta),
           `issued dust of ${id}`,
         ),
       }),
     );
+    this.everything = undefined;
   }
 
   /**
@@ -176,6 +201,7 @@ export class Instruments {
     if (!i.status.performing) return;
     const status: InstrumentStatus = { live: true, performing: false };
     this.map.set(id, Object.freeze({ ...i, status }));
+    this.everything = undefined;
   }
 
   /**
@@ -191,6 +217,13 @@ export class Instruments {
     forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; nobody owes it`);
     forbid(i.issuer.some, 'Register B3', `${id} was promised by nobody, so nobody can succeed to it`);
     this.map.set(id, Object.freeze({ ...i, issuer: some(issuer) }));
+    this.everything = undefined;
+    // B3 guarantees an issuer above, so the old one is there to move the line off.
+    const was = this.byIssuer.get(i.issuer.value);
+    if (was !== undefined) this.byIssuer.set(i.issuer.value, was.filter((x) => x !== id));
+    const now = this.byIssuer.get(issuer);
+    if (now === undefined) this.byIssuer.set(issuer, [id]);
+    else now.push(id);
   }
 
   /**
@@ -202,7 +235,10 @@ export class Instruments {
   restate(id: InstrumentId, ratio: number): void {
     const i = this.get(id);
     forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; its count cannot change`);
-    const issued = finite(i.issued * ratio, `issued of ${id}`);
+    const issued = onTheGrid(
+      finite(i.issued * ratio, `issued of ${id}`),
+      `what is issued of ${id} after a ${ratio}-for-one split`,
+    );
     this.map.set(
       id,
       Object.freeze({
@@ -227,8 +263,21 @@ export class Instruments {
     }
     const ceased: InstrumentStatus = { live: false, ceasedIn: period };
     this.map.set(id, Object.freeze({ ...i, status: ceased }));
+    this.everything = undefined;
   }
 }
 
 /** The read-only face of the instruments store, for mechanisms and participants. */
-export type InstrumentsReads = Pick<Instruments, 'has' | 'get' | 'all'>;
+export type InstrumentsReads = Pick<Instruments, 'has' | 'get' | 'all' | 'issuedBy'>;
+
+/**
+ * Law 8, Register A1.c: WHAT IS OUTSTANDING IS A WHOLE NUMBER OF PIECES, like every holding of it.
+ *
+ * Holdings sum to issued (the ownership audit family), so a fractional issued count is a fractional
+ * holding somewhere or an identity that cannot close. Both doors that move it are guarded here
+ * rather than at their callers, so a new one cannot forget (Law 4).
+ */
+function onTheGrid(qty: number, what: string): number {
+  impossible(onTick(qty), 'Law 8', `${what} is ${qty}, which is not a whole number of pieces`);
+  return qty;
+}

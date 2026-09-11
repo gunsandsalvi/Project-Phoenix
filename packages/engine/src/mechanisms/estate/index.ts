@@ -40,6 +40,9 @@ import { failedWhy } from '../../world/failure.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
+import { subQty } from '../../core/tick.js';
+import { asQty } from '../../core/tick.js';
+import { negQty } from '../../core/tick.js';
 
 export const ESTATE = partyKindId('estate');
 
@@ -129,7 +132,7 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
       // Money B3.c: a raw negative balance is a claim with no instrument behind it, and it should
       // not survive to here — a drawing becomes a loan row before anything can die of it. If one
       // ever does, it is named rather than carried away silently or left on a dead party.
-      ctx.record('estate.overdrawn', [id, dead], { estate: id, dead, instrument: h.instrument, short: -units }, true);
+      ctx.record('estate.overdrawn', [id, dead], { estate: id, dead, instrument: h.instrument, short: negQty(units) }, true);
       continue;
     }
     if (units === 0) continue;
@@ -268,7 +271,7 @@ function distributeFrom(
       if (!material(pay, 2, c.units)) continue;
       const paid = repay(ctx, estate, c, pay, account, ccy);
       if (!paid.some) continue;
-      cash = sub(cash, paid.value, 'cash left to distribute');
+      cash = subQty(cash, asQty(paid.value, 'what the repayment paid'), 'cash left to distribute');
     }
   }
 }

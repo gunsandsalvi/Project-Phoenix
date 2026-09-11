@@ -42,10 +42,13 @@ import {
   type EmploymentBook,
   type EmploymentRow,
 } from './register.js';
+import { asQty, scaleQty } from '../../core/tick.js';
+import type { Qty } from '../../core/tick.js';
 
 /** The numbers the matching reads, all declared by the module (Law 2). */
 export interface LabourParams {
-  readonly hoursPerMember: number;
+  /** Law 8: whole hours, as the venue counts somebody's time. A wage is never struck for part of one. */
+  readonly hoursPerMember: Qty;
   readonly retirementAge: number;
   readonly hiringLagPeriods: number;
   readonly severancePeriods: number;
@@ -83,7 +86,9 @@ function supply(ctx: MechanismContext, book: EmploymentBook, v: VenueDecl, p: La
     // A3: a job in one occupation is not a job in another. Somebody who has worked looks for the
     // trade they have; somebody who never has can start anywhere.
     if (skill !== undefined && skill !== occupation) continue;
-    const hours = mul(weightOf(cell), p.hoursPerMember, 'hours offered');
+    // XI-15, Law 8: whole hours for every member the cell stands for. `hoursPerMember` is
+    // declared as an amount in the venue's own unit (`params.amount`), so it is already a count.
+    const hours = scaleQty(p.hoursPerMember, weightOf(cell), 'hours offered');
     const wage = reservation(ctx, cell.id, p.hoursPerMember);
     if (wage === undefined || hours <= 0) continue;
     out.push({ party: cell.id, side: 'sell', price: wage, qty: hours });
@@ -110,7 +115,9 @@ export function runVenue(
     const held = hoursAt(book, posting.party, occupation, region as RegionId);
     const gap = sub(posting.qty, held, 'employment gap');
     if (!material(gap, 2, add(posting.qty, held, 'employment'))) continue;
-    if (gap > 0) bids.push({ party: posting.party, side: 'buy', price: posting.price, qty: gap });
+    // Both sides of this subtraction are counts of hours — what it posted and what it employs —
+    // so the gap is one too, and nothing was rounded to get it.
+    if (gap > 0) bids.push({ party: posting.party, side: 'buy', price: posting.price, qty: asQty(gap, 'the hours it is short') });
     // C3, C4: the employer wants fewer hours than it has under contract, so it separates the
     // difference and pays for doing it. It is the employer's decision; this is the mechanism.
     else shed(ctx, book, posting.party, occupation, region as RegionId, -gap, p);

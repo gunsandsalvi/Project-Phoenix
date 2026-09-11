@@ -49,6 +49,8 @@ import { add, div, material, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { priceAtYield, requiredYieldOf } from './treasury.js';
+import { downTick } from '../../core/tick.js';
+import { NO_QTY, type Qty } from '../../core/tick.js';
 
 /** Law 8: a rate is per annum or it is not a rate; this is the convention these reads use. */
 const DAY_COUNT = 'ACT/365F' as const;
@@ -65,8 +67,10 @@ export interface DeskQuote {
   readonly bid: number;
   readonly offer: number;
   /** D1: what room it has left, and what it holds. Either can be nothing (D4: it stops). */
-  readonly bidSize: number;
-  readonly offerSize: number;
+  /** Law 8: WHOLE PIECES of the line, on both sides. A quote for four tenths of a share is a
+   * quote nobody can hit, and it used to be possible because a size is money over a price. */
+  readonly bidSize: Qty;
+  readonly offerSize: Qty;
   /** D4, D5: which of its limits shrank the bid, so a desk stepping back says which one did it. */
   readonly binds: QuoteBinding;
 }
@@ -235,7 +239,11 @@ export function quoteFor(
   const inMoney = state.linesQuoted > 0
     ? div(div(state.cash, state.linesQuoted, 'its money over the lines it quotes'), mine, 'units')
     : 0;
-  const size = least(least(room, inBook), inMoney);
+  // Law 8: AND IT IS A WHOLE NUMBER OF PIECES. Every one of the three above is money divided by a
+  // price, so every one of them is a fraction of a piece of the line — and a quote for four tenths
+  // of a share is a quote nobody can hit. It rounds DOWN because each of the three is what this
+  // desk CAN take on, and rounding what somebody can do upwards invents a piece it has not got.
+  const size = downTick(least(least(room, inBook), inMoney));
   // D4, D5: the WHOLE BOOK is asked first, because a book with no room in it is why the desk has
   // stopped in every line at once and a per-line limit only ever binds inside a book that has room.
   const binds: QuoteBinding =
@@ -251,8 +259,9 @@ export function quoteFor(
     skew,
     bid,
     offer,
-    bidSize: canBid ? size : 0,
-    offerSize: material(inventory, 2, inventory) ? inventory : 0,
+    bidSize: canBid ? size : NO_QTY,
+    // What it will let go is what it HOLDS, which the register already counts in whole pieces.
+    offerSize: material(inventory, 2, inventory) ? inventory : NO_QTY,
     binds: canBid ? 'none' : binds,
   });
 }

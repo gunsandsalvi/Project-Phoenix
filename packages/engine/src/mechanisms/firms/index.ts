@@ -29,18 +29,31 @@ import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
-import { FIRMS, firmParam, labourScaleId, type FirmDecl } from './data.js';
+import { firmParam, labourScaleId, type FirmDecl } from './data.js';
 import { ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
+import { NO_QTY } from '../../core/tick.js';
 
 export * from './data.js';
 export { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 export { plan, technologyOf, expectedPrice } from './decide.js';
 export type { Offering, Plan, Planned, PlannedOrder } from './decide.js';
 
-/** The line a named firm is in, if this world put it in one (Law 15: the data says). */
-function lineOf(rows: readonly FirmDecl[], firm: PartyId): FirmDecl | undefined {
-  return rows.find((r) => r.firm === firm);
+/**
+ * The line a named firm is in, if this world put it in one (Law 15: the data says).
+ *
+ * Law 18: BY NAME, not by walking the list. Every market asks every firm whether it has an order in
+ * it, so this is asked once per firm per market — three thousand firms and two hundred and sixty
+ * markets is three quarters of a million times a period, and a scan of the rows made it two
+ * billion comparisons. The index is the same rows under a different arrangement, built once with
+ * the module, so there is nothing to go stale (Law 4).
+ */
+function indexOf(rows: readonly FirmDecl[]): ReadonlyMap<string, FirmDecl> {
+  return new Map(rows.map((r) => [r.firm, r]));
+}
+
+function lineOf(rows: ReadonlyMap<string, FirmDecl>, firm: PartyId): FirmDecl | undefined {
+  return rows.get(String(firm));
 }
 
 /**
@@ -56,7 +69,7 @@ function lineOf(rows: readonly FirmDecl[], firm: PartyId): FirmDecl | undefined 
  * and it is the check F5.b asks for: a cost capitalised into a batch AND expensed in the period is
  * counted twice, and it would show up here as an equity move nothing paid for.
  */
-function productionCosts(rows: readonly FirmDecl[]): Family {
+function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
   return {
     name: 'flows',
     contributor: 'firms',
@@ -73,7 +86,7 @@ function productionCosts(rows: readonly FirmDecl[]): Family {
         if (r.outcome !== 'settled' || r.instruction.cause !== 'production') continue;
         if (!r.instruction.legs.some(isCreateLeg)) continue;
         for (const e of r.equity) {
-          if (lineOf(rows, e.party) === undefined) continue;
+          if (lineOf(byName, e.party) === undefined) continue;
           const list = moved.get(e.party) ?? [];
           list.push(e.delta);
           moved.set(e.party, list);
@@ -128,7 +141,8 @@ function productionCosts(rows: readonly FirmDecl[]): Family {
  * does not name is a firm in no line, which is a real state and not a defect — it holds what it
  * holds and decides nothing, because deciding to enter a line is birth (worklist 13g).
  */
-export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
+export function firms(rows: readonly FirmDecl[]): SystemModule {
+  const byName = indexOf(rows);
   return {
     id: 'firms',
     spec: 'Firm, Goods B, Goods F',
@@ -193,7 +207,7 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
         anchor: { before: 'labour.match' },
         run: (ctx: MechanismContext) => {
           for (const p of ctx.parties.ofKind(FIRM)) {
-            const line = lineOf(rows, p.id);
+            const line = lineOf(byName, p.id);
             if (line === undefined || !p.status.alive) continue;
             decide(ctx, line);
             publishExpectation(ctx, p.id);
@@ -209,7 +223,7 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
         anchor: { after: 'labour.pay' },
         run: (ctx: MechanismContext) => {
           for (const p of ctx.parties.ofKind(FIRM)) {
-            const line = lineOf(rows, p.id);
+            const line = lineOf(byName, p.id);
             if (line === undefined || !p.status.alive) continue;
             runLine(ctx, line);
           }
@@ -220,7 +234,7 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
       {
         partyKind: FIRM,
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          if (lineOf(rows, view.self.id) === undefined) return [];
+          if (lineOf(byName, view.self.id) === undefined) return [];
           const own = view.lastOwn('firms.plan');
           // Clearing F1: an order is the decision it took this period, read back rather than taken
           // again. A firm that decided nothing this period posts nothing.
@@ -229,7 +243,7 @@ export function firms(rows: readonly FirmDecl[] = FIRMS): SystemModule {
         },
       },
     ],
-    families: [productionCosts(rows)],
+    families: [productionCosts(byName)],
     bankChoices: [{ partyKind: FIRM, chooses: firmChoosesBank }],
   };
 }
@@ -261,7 +275,7 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
       party: firm,
       side: 'buy',
       price: wantsNobody ? 0 : p.wageBid,
-      qty: wantsNobody ? 0 : p.hours,
+      qty: wantsNobody ? NO_QTY : p.hours,
     });
   }
   publishFunding(ctx, view, p);

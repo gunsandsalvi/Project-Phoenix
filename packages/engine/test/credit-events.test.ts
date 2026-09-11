@@ -16,7 +16,6 @@ import {
   assemble,
   creditEvents,
   currencyUnit,
-  foundationSpec,
   instrumentId,
   instrumentKindId,
   none,
@@ -33,6 +32,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
 import { notDealing } from './no-dealing.js';
@@ -211,7 +211,7 @@ function cellCannotPay(): SystemModule {
 }
 
 function world(...extra: SystemModule[]): World {
-  const spec = foundationSpec('credit-events');
+  const spec = rigSpec('credit-events');
   const kernelOnly = spec.modules.filter(
     (m) =>
       m.id === 'sovereign-instruments' ||
@@ -420,7 +420,7 @@ describe('the world it lives in', () => {
   it('runs a year on a state that spends past what it can fund, and it defaults (XI-9, XI-1)', () => {
     // Parliament states the mandate (Treasury B1), and a mandate bigger than what the state can
     // raise is a real policy, not a rigged test: XI-9's whole point is that the constraint bites.
-    const spec = foundationSpec('shortfall');
+    const spec = rigSpec('shortfall');
     const modules = spec.modules.map((m) => ({
       ...m,
       params: m.params.map((p) =>
@@ -456,7 +456,7 @@ describe('the world it lives in', () => {
   });
 
   it('assembles into the foundation and a year stays consistent', () => {
-    const spec = foundationSpec('credit-year');
+    const spec = rigSpec('credit-year');
     const w = assemble(spec);
     expect(w.phases.map((p) => p.name)).toContain('credit.events');
     for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);

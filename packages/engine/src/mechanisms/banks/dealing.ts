@@ -35,6 +35,9 @@ import {
 import { DEALING, roomFor } from './lines.js';
 import { ccyOf, liquidityPlan, liquidityTargets } from './treasury.js';
 import { periodOfYear, quoteFor, rateOf, type DeskQuote, type DeskState } from './dealing-quote.js';
+import { downTick, subQty } from '../../core/tick.js';
+import type { Qty } from '../../core/tick.js';
+import { NO_QTY } from '../../core/tick.js';
 
 /**
  * D1, XI-4: its own appetite, and what its treasury allotted it to GROW BY. A line's limit is what
@@ -233,14 +236,14 @@ export function dealingOrders(
  * 8: it delivers whole pieces and rounds UP, because the point is to cover the shortfall — bounded
  * by what it actually holds, which is not a clamp but the arithmetic of a delivery (Law 6).
  */
-function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): number {
+function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty {
   const said = view.lastOwn('moneyMarket.refused');
-  if (!said.some || said.value.period + 1 !== view.period) return 0;
+  if (!said.some || said.value.period + 1 !== view.period) return NO_QTY;
   const short = said.value.data['short'];
   const buffer = said.value.data['buffer'];
-  if (typeof short !== 'number' || typeof buffer !== 'number') return 0;
+  if (typeof short !== 'number' || typeof buffer !== 'number') return NO_QTY;
   const owed = sub(short, buffer, 'what it cannot pay, once the cushion is gone');
-  if (owed <= 0) return 0;
+  if (owed <= 0) return NO_QTY;
   let total = 0;
   let mine = 0;
   for (const m of view.markets) {
@@ -253,9 +256,9 @@ function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): num
     total += worth;
     if (i.id === line) mine = worth;
   }
-  if (total <= 0 || mine <= 0) return 0;
+  if (total <= 0 || mine <= 0) return NO_QTY;
   const mark = view.mark(line);
-  if (!mark.some || mark.value <= 0) return 0;
+  if (!mark.some || mark.value <= 0) return NO_QTY;
   const share = mul(owed, div(mine, total, 'what this line carries'), 'raised here');
   const want = upTick(div(share, mark.value, 'units to sell'));
   const free = view.free(line);
@@ -298,7 +301,9 @@ function primaryBid(
   // C3.a: it bids out of the money it has. A bank with none bids nothing, and that is how an
   // auction fails: not because a rule allowed it to, but because nobody could pay.
   const affordable = div(state.cash, q.bid, 'what it could pay for');
-  const qty = wanted < affordable ? wanted : affordable;
+  // Law 8: both of those are money over a price, so both are fractions of a unit of the paper. It
+  // bids for whole ones, and down, because a bid it cannot pay for is not a bid (C3.a).
+  const qty = downTick(wanted < affordable ? wanted : affordable);
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: q.bid, qty }];
 }
@@ -330,25 +335,33 @@ export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly B
     // because nobody traded is not a level it could sell into, and a bank that delivered a basket
     // against one would be trading on its own carried number.
     if (!wasTraded(print.value)) continue;
-    const gap = sub(print.value.price, nav, 'what the market pays over the book');
+    // Law 8, Law 16: it is a PRICE over a price — what one share trades at less what one share of
+    // the book is worth — and it is named for that. Called `gap` it read like a quantity, which is
+    // the one thing it is not: nothing in this world holds 2,308.77 of anything.
+    const premium = sub(print.value.price, nav, 'what the market pays over the book');
     const worth = mul(nav, state.ratePerPeriod, 'what a share costs it to carry for a period');
-    if (Math.abs(gap) <= worth) continue;
+    if (Math.abs(premium) <= worth) continue;
     const held = view.quantity(share);
-    const room = div(
-      mul(state.limitAggregate, state.concentration, 'the most of the book in one line'),
-      nav,
-      'creation units that comes to',
+    // Law 8, D1: what its own limit leaves it room for, in WHOLE creation units — the limit is
+    // money and a unit has a price, so the division lands between two of them and the one below is
+    // what it has room for.
+    const room = downTick(
+      div(
+        mul(state.limitAggregate, state.concentration, 'the most of the book in one line'),
+        nav,
+        'creation units that comes to',
+      ),
     );
-    const shares =
-      gap > 0
+    const shares: Qty =
+      premium > 0
         ? deliverable(
             view,
             struck.some ? struck.value.data['basket'] : undefined,
-            sub(room, held, 'room it has for more of this line'),
+            subQty(room, held, 'room it has for more of this line'),
           )
         : held;
     if (shares <= 0 || !material(shares, 2, room)) continue;
-    ctx.post(v.id, { party: bank, side: gap > 0 ? 'buy' : 'sell', price: 'market', qty: shares });
+    ctx.post(v.id, { party: bank, side: premium > 0 ? 'buy' : 'sell', price: 'market', qty: shares });
     ctx.record(
       'bank.arbitrage',
       [bank, fund, share],
@@ -358,10 +371,10 @@ export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly B
         share,
         nav,
         price: print.value.price,
-        gap,
+        premium,
         worth,
         shares,
-        side: gap > 0 ? 'create' : 'redeem',
+        side: premium > 0 ? 'create' : 'redeem',
       },
       false,
     );
@@ -372,17 +385,19 @@ export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly B
  * E3: how many creation units it could actually deliver, out of what it is holding and the room it
  * has left. A basket it cannot make up is a creation it cannot do (Clearing A3).
  */
-function deliverable(view: ParticipantView, basket: unknown, room: number): number {
-  if (typeof basket !== 'object' || basket === null || room <= 0) return 0;
+function deliverable(view: ParticipantView, basket: unknown, room: Qty): Qty {
+  if (typeof basket !== 'object' || basket === null || room <= 0) return NO_QTY;
   let most = room;
   let lines = 0;
   for (const [line, perShare] of Object.entries(basket as Record<string, unknown>)) {
     if (typeof perShare !== 'number' || perShare <= 0) continue;
     lines += 1;
-    const canMake = div(view.free(instrumentId(line)), perShare, 'creation units this line backs');
+    // Law 8: E3 — a creation unit is a WHOLE unit or it is not one. What this line backs is what it
+    // holds over what a unit draws of it, and the fraction above that is a unit it cannot deliver.
+    const canMake = downTick(div(view.free(instrumentId(line)), perShare, 'creation units this line backs'));
     if (canMake < most) most = canMake;
   }
-  return lines > 0 ? most : 0;
+  return lines > 0 ? most : NO_QTY;
 }
 
 /**

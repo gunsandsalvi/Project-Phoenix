@@ -20,8 +20,6 @@ import {
   assemble,
   equityLineOf,
   equityMarketOf,
-  foundationSpec,
-  foundationWorld,
   goodId,
   instrumentId,
   isShare,
@@ -37,13 +35,26 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { listedIn, rigFor, rigSpec, rigWorld } from './rig.js';
 import { unexpected } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 
-const FIRM_6 = partyId('firm.6');
-const LINE_4 = equityLineOf('firm.4');
-const LINE_6 = equityLineOf('firm.6');
+/**
+ * Seed B1.a, B4: WHICH FIRMS THIS WORLD LISTED IS DRAWN. A listing is what a firm large enough to
+ * outlive its owner gets (`equity.LISTING_SIZE`), so the test asks for a world with two of them and
+ * then asks which two they are — it never writes `firm.4` down, because a world of three thousand
+ * firms lists two hundred and a world of twelve may list none.
+ */
+const DREW = rigFor('equity', { listed: 2 });
+const RIG = { banks: 3, firms: DREW.firms };
+const BIG = listedIn(DREW.draw, 0);
+const SMALL = listedIn(DREW.draw, 1);
+const FIRM_6 = partyId(SMALL);
+const LINE_4 = equityLineOf(BIG);
+const LINE_6 = equityLineOf(SMALL);
 const BANK_A = partyId('bank.a');
+/** A firm this world did NOT list: a firm nobody has bought a share of is a real state. */
+const UNLISTED = DREW.draw.firms.find((f) => !DREW.draw.listed.some((l) => l.firm === f.firm))?.firm ?? 'firm.1';
 
 /** A test-only paymaster: a bank creates money into named cells, so a saver has something to save. */
 function pays(
@@ -115,7 +126,22 @@ function splits(line: string, ratio: number, at: number): SystemModule {
         anchor: { after: 'equity.decide' },
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
-          ctx.split(instrumentId(line), ratio);
+          // Register E5, D4: the invariance is about the SPLIT, so it is measured ACROSS the split
+          // and not across the week the split was in. A week has other named events in it — the
+          // issuer buys some of itself back, the session prints a new level — and a measurement
+          // that spans them is measuring those instead (Law 19: read it where it happens).
+          const id = instrumentId(line);
+          const worth = (): Record<string, number> => {
+            const out: Record<string, number> = {};
+            for (const h of ctx.register.holdersOf(id)) {
+              const v = ctx.valuation.worthOf(h, id, ctx.period);
+              out[String(h)] = v.some ? v.value.value : 0;
+            }
+            return out;
+          };
+          const was = worth();
+          ctx.split(id, ratio);
+          ctx.record('test.split.across', [id], { was, now: worth() }, false);
         },
       },
     ],
@@ -170,7 +196,7 @@ function hungryFor(subUnit: string): SystemModule {
 }
 
 function worldWith(seed: string, extra: readonly SystemModule[]): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed, RIG.banks, RIG.firms);
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
 }
 
@@ -182,7 +208,7 @@ function worldWith(seed: string, extra: readonly SystemModule[]): World {
  * tests run for.
  */
 function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed, RIG.banks, RIG.firms);
   const modules = spec.modules.map((m) =>
     m.id === 'households'
       ? {
@@ -198,7 +224,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
 
 describe('what a share is (Equity A)', () => {
   it('is a residual claim and not a liability of the firm that issued it (A1, A1.a)', () => {
-    const w = foundationWorld('eq-kind');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     const kind = w.registry.instrumentKind(SHARE);
     expect(kind.liabilityOfIssuer).toBe(false);
     // A1.a: it ranks below everything the issuer owes. Money is 0, an unsecured loan is 1.
@@ -211,7 +237,7 @@ describe('what a share is (Equity A)', () => {
   });
 
   it('is perpetual and promises nothing dated, so nothing can discount it (A4, B3)', () => {
-    const w = foundationWorld('eq-kind-b');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     const kind = w.registry.instrumentKind(SHARE);
     const line = w.instruments.get(LINE_4);
     expect(kind.due(line, w.period, w.calendar)).toHaveLength(0);
@@ -222,7 +248,7 @@ describe('what a share is (Equity A)', () => {
   });
 
   it('is named by its issuer and carries a vote per share (A5, A6, F3, XI-15)', () => {
-    const w = foundationWorld('eq-kind-c');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     const line = w.instruments.get(LINE_4);
     expect(isShare(line.terms)).toBe(true);
     const terms = shareTerms(line);
@@ -240,7 +266,7 @@ describe('what a share is (Equity A)', () => {
   });
 
   it('opens at a level that is a resolution and not a shape (Seed C4, Law 2)', () => {
-    const w = foundationWorld('eq-kind-d');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     const decl = w.params.decl(OPENING_SHARE);
     expect(decl.kind).toBe('resolution');
     // Law 2: the shapes this world declares are the four goods' opening prices, the opening yield
@@ -253,36 +279,65 @@ describe('what a share is (Equity A)', () => {
 
 describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
   it('changes only by a named event, and a split moves no value at all', () => {
-    const w = worldWith('eq-split', [splits(String(LINE_4), 2, 4)]);
+    const w = worldWith('equity', [splits(String(LINE_4), 2, 4)]);
     for (let i = 0; i < 3; i += 1) w.step();
-    const before = w.instruments.get(LINE_4);
     const holders = w.register.holdersOf(LINE_4);
     const heldBefore = holders.map((h) => w.register.totalQuantity(h, LINE_4));
-    const worthBefore = holders.map((h) => {
-      const worth = w.valuation.worthOf(h, LINE_4, w.period);
-      return worth.some ? worth.value.value : 0;
-    });
     const printBefore = w.prices.latest(LINE_4, w.period);
 
     const r = w.step();
     expect(unexpected(r.audit)).toEqual([]);
-    const after = w.instruments.get(LINE_4);
-    // D4: the count doubles.
-    expect(after.issued).toBeCloseTo(before.issued * 2, 8);
+    // D4: the count doubles — READ OFF THE SPLIT'S OWN EVENT (Law 19), which says what the line was
+    // and what it became at the moment it happened. Inferring it from the period's opening and
+    // closing counts would be asking a question the period cannot answer: a split is one named
+    // event among the several a listed firm has in a week, and a firm that also bought some of
+    // itself back that week closes on a count that is not twice anything.
+    const split = w.journal
+      .ofKind('instrument.split')
+      .filter((e) => e.subjects.includes(String(LINE_4)))
+      .pop();
+    expect(split).toBeDefined();
+    expect(Number(split?.data['issued'])).toBe(Number(split?.data['issuedBefore']) * 2);
+    /** Law 19: the units this holder moved in the line this period, read off the wire. */
+    const traded = (holder: string): number =>
+      w.ledger
+        .inPeriod(w.period)
+        .filter((x) => x.outcome === 'settled')
+        .flatMap((x) => x.instruction.legs)
+        .reduce((t, leg) => {
+          if (leg.kind !== 'asset' || leg.instrument !== LINE_4) return t;
+          if (leg.to === holder) return t + leg.qty;
+          if (leg.from === holder) return t - leg.qty;
+          return t;
+        }, 0);
     holders.forEach((h, i) => {
-      expect(w.register.totalQuantity(h, LINE_4)).toBeCloseTo((heldBefore[i] ?? 0) * 2, 8);
+      // A2.a: THE COUNT CHANGES ONLY BY A NAMED EVENT, and there are two of them in this week. The
+      // split doubled what each holder held; anything else it holds, it traded for, and the trade
+      // is on the wire under its own name. So what a holder ends the week with is exactly twice
+      // what it started it with plus what it bought less what it sold, and nothing else.
+      const now = w.register.totalQuantity(h, LINE_4);
+      expect(now).toBeCloseTo((heldBefore[i] ?? 0) * 2 + traded(String(h)), 6);
     });
     // D4: and NOTHING else changes. What each holder's position is worth is what it was, and the
-    // equity account did not move, because a split is not a payment (Register E5).
-    holders.forEach((h, i) => {
-      const worth = w.valuation.worthOf(h, LINE_4, w.period);
-      expect(worth.some ? worth.value.value : 0).toBeCloseTo(worthBefore[i] ?? 0, 6);
-    });
+    // equity account did not move, because a split is not a payment (Register E5). It is measured
+    // across the split itself: what the week's other named events did to a holder is theirs.
+    const acrossAll = w.journal.ofKind('test.split.across');
+    const across = acrossAll[acrossAll.length - 1];
+    const was = across?.data['was'] as Record<string, number> | undefined;
+    const now = across?.data['now'] as Record<string, number> | undefined;
+    expect(was).toBeDefined();
+    expect(now).toBeDefined();
+    for (const [holder, value] of Object.entries(was ?? {})) {
+      expect(now?.[holder]).toBeCloseTo(value, 6);
+    }
     // ...and no instruction carried it: there was no second side for the wire to name (Money D1).
+    // ...and it is the SPLIT that carried none. A dividend on the same line in the same week is a
+    // different corporate action, it moves money, and it has both sides on the wire like anything
+    // else — so what this asks is that nothing on the wire is a split.
     expect(
       w.ledger
         .inPeriod(w.period)
-        .filter((x) => x.instruction.reason.includes(String(LINE_4)) && x.instruction.cause === 'corporateAction'),
+        .filter((x) => x.instruction.reason.toLowerCase().includes('split')),
     ).toHaveLength(0);
     // The price is per NEW share from now on, and the history is restated with it.
     const printAfter = w.prices.latest(LINE_4, w.period);
@@ -298,7 +353,7 @@ describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
   });
 
   it('refuses to restate a line whose kind does not split (Law 15)', () => {
-    const w = worldWith('eq-split-b', [splits('gov.north.2036-03-15', 2, 2)]);
+    const w = worldWith('equity', [splits('gov.north.2036-03-15', 2, 2)]);
     w.step();
     expect(() => w.step()).toThrow(/not a kind whose count a split may change/);
   });
@@ -306,7 +361,7 @@ describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
 
 describe('what the firm does with it (Equity D)', () => {
   it('declares a dividend publicly and it reaches the accounts of whoever holds it (D3, D3.a)', () => {
-    const w = foundationWorld('eq-div');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const declared = w.journal.ofKind('payout.declared');
     expect(declared.length).toBeGreaterThan(0);
@@ -320,9 +375,9 @@ describe('what the firm does with it (Equity D)', () => {
   });
 
   it('sells new shares when it is short and the market is dear, and the count rises (D1, D1.a)', () => {
-    const w = foundationWorld('eq-issue');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     const issued = new Map<string, number>();
-    for (const row of ['firm.4', 'firm.5', 'firm.6']) {
+    for (const row of DREW.draw.listed.map((l) => l.firm)) {
       issued.set(row, w.instruments.get(equityLineOf(row)).issued);
     }
     let sold = false;
@@ -342,7 +397,7 @@ describe('what the firm does with it (Equity D)', () => {
   });
 
   it('never sells below its own reservation: a failed issue is a real outcome (D1.c, Clearing C4.a)', () => {
-    const w = foundationWorld('eq-fail');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 30; i += 1) w.step();
     const auctions = w.journal
       .ofKind('auction.result')
@@ -361,7 +416,7 @@ describe('what the firm does with it (Equity D)', () => {
   });
 
   it('buys its own back only when the market is below its own book, and the cash is gone (D2, D2.b)', () => {
-    const w = foundationWorld('eq-buyback');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 40; i += 1) w.step();
     for (const e of w.journal.ofKind('equity.plan')) {
       const buyback = Number(e.data['buyback']);
@@ -377,14 +432,14 @@ describe('what the firm does with it (Equity D)', () => {
 
 describe('what the holder gets (Equity F)', () => {
   it('gets no income from earnings that were not distributed (F4)', () => {
-    const w = foundationWorld('eq-f4');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 8; i += 1) w.step();
     // F4: retained earnings reach a holder through the PRICE and never as income credited to it.
     // What reaches a holder's account is a settled money leg, so a period in which a firm retained
     // and paid nothing is a period in which nothing reached anybody on account of holding it.
     const dividends = w.journal.ofKind('payout.declared').filter((e) => e.period === w.period);
     const lines = new Set(dividends.map((e) => String(e.data['line'])));
-    for (const row of ['firm.4', 'firm.5', 'firm.6']) {
+    for (const row of DREW.draw.listed.map((l) => l.firm)) {
       const line = equityLineOf(row);
       if (lines.has(String(line))) continue;
       // It retained: nothing left it this period on account of that line at all.
@@ -402,12 +457,12 @@ describe('what the holder gets (Equity F)', () => {
     // so the bakeries bid the flour price up against each other until one of them is paying more
     // for the flour than the bread fetches. That is a firm dying of its own decisions in a world
     // otherwise running normally, and the run is long enough for the winding-up to close as well.
-    const w = worldWith('eq-e4', [hungryFor('bread')]);
+    const w = worldWith('equity', [hungryFor('bread')]);
     for (let i = 0; i < 40; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const died = w.journal.ofKind('estate.opened').find((e) => e.data['dead'] === FIRM_6);
     expect(died).toBeDefined();
     // The module stopped pricing the line and said why, publicly.
-    const said = w.journal.ofKind('equity.succeeded').filter((e) => e.subjects.includes('firm.6'));
+    const said = w.journal.ofKind('equity.succeeded').filter((e) => e.subjects.includes(SMALL));
     expect(said).toHaveLength(1);
     expect(said[0]?.public).toBe(true);
     // E4: the register went to zero rather than to a recovery. It got there by ranking last: the
@@ -420,9 +475,9 @@ describe('what the holder gets (Equity F)', () => {
 
 describe('the reads (Equity B4, B4.a, C1.b, G3)', () => {
   it('publishes the count, the float, the votes and what the market says it is all worth', () => {
-    const w = foundationWorld('eq-reads');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 4; i += 1) w.step();
-    const read = w.journal.ofKind('equity.reads').filter((e) => e.subjects.includes('firm.4')).pop();
+    const read = w.journal.ofKind('equity.reads').filter((e) => e.subjects.includes(BIG)).pop();
     expect(read).toBeDefined();
     expect(read?.public).toBe(true);
     const line = w.instruments.get(LINE_4);
@@ -446,7 +501,7 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
     // so it wants to pay less for it — and the disagreement is what gives the book two sides.
     const steady = 'hh.working.bank.a.0';
     const jolted = 'hh.working.bank.a.1';
-    const w = saversWorld('eq-opinion', [
+    const w = saversWorld('equity', [
       // The second cell is paid something it was not expecting, and it remembers being surprised.
       // Law 8: a real payment, so a whole number of cents to every member of the cell.
       pays([{ to: jolted, amount: phx(500) }], 6),
@@ -483,7 +538,7 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
   });
 
   it('posts a schedule, not a point, and never trades with itself (B1, B6, Clearing A2)', () => {
-    const w = saversWorld('eq-schedule');
+    const w = saversWorld('equity');
     for (let i = 0; i < 12; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     let ladders = 0;
     let books = 0;
@@ -512,10 +567,10 @@ describe('what a share is worth to one holder (Equity B1, B3, XI-13, §46 A3)', 
 
 describe('the ownership identity (Equity C1.a)', () => {
   it('holds exactly what is outstanding, every period of a year', () => {
-    const w = foundationWorld('eq-year');
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 52; i += 1) {
       expect(unexpected(w.step().audit)).toEqual([]);
-      for (const row of ['firm.4', 'firm.5', 'firm.6']) {
+      for (const row of DREW.draw.listed.map((l) => l.firm)) {
         const line = w.instruments.get(equityLineOf(row));
         if (!line.status.live) continue;
         const held = w.register.heldTotal(line.id);
@@ -525,8 +580,8 @@ describe('the ownership identity (Equity C1.a)', () => {
   });
 
   it('gives the same world twice from the same seed (Seed A5, Observer E3)', () => {
-    const a = foundationWorld('eq-det');
-    const b = foundationWorld('eq-det');
+    const a = rigWorld('equity', RIG.banks, RIG.firms);
+    const b = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 12; i += 1) {
       a.step();
       b.step();
@@ -537,9 +592,9 @@ describe('the ownership identity (Equity C1.a)', () => {
 
 describe('the firm that has no shares (Law 15)', () => {
   it('is a real state: a firm this world did not list has no line and no market', () => {
-    const w = foundationWorld('eq-unlisted');
-    expect(w.instruments.has(equityLineOf('firm.1'))).toBe(false);
-    expect(w.markets.some((m) => m.id === equityMarketOf('firm.1'))).toBe(false);
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    expect(w.instruments.has(equityLineOf(UNLISTED))).toBe(false);
+    expect(w.markets.some((m) => m.id === equityMarketOf(UNLISTED))).toBe(false);
     expect(w.parties.ofKind(FIRM).length).toBeGreaterThan(3);
   });
 });

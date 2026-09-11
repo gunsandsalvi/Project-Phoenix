@@ -4,7 +4,6 @@ export * from './core/ids.js';
 export * from './core/num.js';
 export * from './core/tick.js';
 export * from './core/option.js';
-export * from './core/money.js';
 export * from './core/rate.js';
 export * from './core/assert.js';
 export * from './core/format.js';

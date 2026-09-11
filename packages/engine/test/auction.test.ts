@@ -10,11 +10,11 @@ import {
   PHX,
   TREASURY_NORTH,
   assemble,
-  foundationSpec,
-  foundationWorld,
   moneyInstrumentId,
   type World,
 } from '../src/index.js';
+import { rigWorld, rigSpec } from './rig.js';
+import { negQty } from '../src/core/tick.js';
 
 interface AuctionRow {
   readonly period: number;
@@ -38,7 +38,7 @@ function auctions(w: World): AuctionRow[] {
 
 describe('the obligation (Sovereign C3)', () => {
   it('brings dealers to every auction, so the paper is placed and the cash reaches the issuer', () => {
-    const w = foundationWorld('auc-a');
+    const w = rigWorld('auc-a');
     let cashBefore = w.cash(TREASURY_NORTH, PHX);
     for (let i = 0; i < 12; i += 1) {
       const before = cashBefore;
@@ -56,7 +56,7 @@ describe('the obligation (Sovereign C3)', () => {
   });
 
   it('re-opens the line the tenor lands on rather than making a new one beside it (B3.a)', () => {
-    const w = foundationWorld('auc-b');
+    const w = rigWorld('auc-b');
     for (let i = 0; i < 30; i += 1) w.step();
     const byLine = new Map<string, number>();
     for (const a of auctions(w)) byLine.set(a.line, (byLine.get(a.line) ?? 0) + 1);
@@ -71,7 +71,7 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
     // is — but what a dealer bids is its OWN price, and a dealer with nothing, in a market where
     // nothing has traded and nothing can, does not reach what the issuer will take. With no central
     // bank buying in the market there is nothing to put money back into anybody's hands either.
-    const spec = foundationSpec('auc-c');
+    const spec = rigSpec('auc-c');
     const withoutCentralBank = spec.modules.filter((m) => m.id !== 'central-bank-omo');
     const stepped = withoutCentralBank.map((m) =>
       m.id === 'banks'
@@ -106,8 +106,8 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
                 const account = moneyInstrumentId(party.bank, PHX);
                 const held = ctx.register.quantity(party.id, account);
                 if (held <= 0) continue;
-                ctx.register.moneyDelta(party.id, account, -held, ctx.period, false);
-                ctx.instruments.adjustIssued(account, -held);
+                ctx.register.moneyDelta(party.id, account, negQty(held), ctx.period, false);
+                ctx.instruments.adjustIssued(account, negQty(held));
               }
             },
           }
@@ -136,7 +136,7 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
 
 describe('what the market reads out of it (C4)', () => {
   it('reports the cover and the tail, and the tail is what the winners bid over the stop-out', () => {
-    const w = foundationWorld('auc-d');
+    const w = rigWorld('auc-d');
     for (let i = 0; i < 12; i += 1) w.step();
     const rows = w.journal.ofKind('auction.result');
     expect(rows.length).toBeGreaterThan(0);

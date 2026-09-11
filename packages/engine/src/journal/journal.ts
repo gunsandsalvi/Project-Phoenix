@@ -38,6 +38,22 @@ export interface Event {
 export class Journal {
   private readonly events: Event[] = [];
   private next = 1;
+  /**
+   * Law 18: HOW THE LEDGER IS TRAVERSED IS FREE, and nothing below changes what any read returns.
+   *
+   * Every read here used to walk the whole journal: `ofKind` filtered it, `lastOf` scanned backwards
+   * to the beginning whenever a party had never said that thing. A world says more each period than
+   * the last one, and every party asks what it last said — so the cost of a period was the cost of
+   * every period before it, times how many parties there are. Three hundred firms and six periods
+   * spent four fifths of the run walking events nobody wanted.
+   *
+   * These are the same events under a different arrangement: a list per kind, a list per period, and
+   * the latest one per (kind, subject) which is what `lastOf` answers. They are written where the
+   * event is written, so there is one writer of each and no copy to go stale (Law 4).
+   */
+  private readonly byKind = new Map<EventKind, Event[]>();
+  private readonly byPeriod = new Map<Period, Event[]>();
+  private readonly lastBySubject = new Map<string, Event>();
 
   record(
     period: Period,
@@ -58,6 +74,9 @@ export class Journal {
     });
     this.next += 1;
     this.events.push(ev);
+    push(this.byKind, kind, ev);
+    push(this.byPeriod, period, ev);
+    for (const s of ev.subjects) this.lastBySubject.set(`${kind}\u0000${s}`, ev);
     return ev;
   }
 
@@ -66,11 +85,11 @@ export class Journal {
   }
 
   inPeriod(period: Period): readonly Event[] {
-    return this.events.filter((e) => e.period === period);
+    return this.byPeriod.get(period) ?? EMPTY;
   }
 
   ofKind(kind: EventKind): readonly Event[] {
-    return this.events.filter((e) => e.kind === kind);
+    return this.byKind.get(kind) ?? EMPTY;
   }
 
   tail(n: number): readonly Event[] {
@@ -84,10 +103,11 @@ export class Journal {
    * does.
    */
   recentOfKind(kind: EventKind, n: number, sees: (e: Event) => boolean): readonly Event[] {
+    const of = this.byKind.get(kind) ?? EMPTY;
     const out: Event[] = [];
-    for (let i = this.events.length - 1; i >= 0 && out.length < n; i -= 1) {
-      const e = this.events[i];
-      if (e?.kind === kind && sees(e)) out.push(e);
+    for (let i = of.length - 1; i >= 0 && out.length < n; i -= 1) {
+      const e = of[i];
+      if (e !== undefined && sees(e)) out.push(e);
     }
     return out.reverse();
   }
@@ -108,11 +128,7 @@ export class Journal {
    * a private event of somebody else is never reachable through here.
    */
   lastOf(kind: EventKind, subject: string): Event | undefined {
-    for (let i = this.events.length - 1; i >= 0; i -= 1) {
-      const e = this.events[i];
-      if (e?.kind === kind && e.subjects.includes(subject)) return e;
-    }
-    return undefined;
+    return this.lastBySubject.get(`${kind}\u0000${subject}`);
   }
 
   publicTail(last: number): readonly Event[] {
@@ -123,4 +139,13 @@ export class Journal {
     }
     return out.reverse();
   }
+}
+
+const EMPTY: readonly Event[] = Object.freeze([]);
+
+/** One arrangement of the same events; the list is created the first time something lands in it. */
+function push<K>(into: Map<K, Event[]>, key: K, e: Event): void {
+  const list = into.get(key);
+  if (list === undefined) into.set(key, [e]);
+  else list.push(e);
 }

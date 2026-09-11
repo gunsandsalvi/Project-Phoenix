@@ -23,6 +23,7 @@ import type {
 } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type { InstrumentKindProfile, LotFlow, PartyKindProfile } from './kinds.js';
+import type { Qty } from '../core/tick.js';
 
 export interface CurrencyDecl {
   readonly code: CurrencyCode;
@@ -186,7 +187,7 @@ export class Registry {
   }
 
   /** What a declared amount of this unit IS, as a count of pieces: 188.49 PHX is 18849 cents. */
-  pieces(id: UnitId, named: number): number {
+  pieces(id: UnitId, named: number): Qty {
     return toTick(named * this.subdivision(id));
   }
 
@@ -211,7 +212,7 @@ export class Registry {
    * between several payees uses `splitOnTick` instead, so that the parts sum to exactly the whole
    * and the odd tick has a named holder.
    */
-  payable(_ccy: CurrencyCode, amount: number): number {
+  payable(_ccy: CurrencyCode, amount: number): Qty {
     return downTick(amount);
   }
 
@@ -220,12 +221,12 @@ export class Registry {
    * where a quantity meets a price and the answer is what somebody owes: rounding it always down
    * would hand the payer a fraction of a piece on every trade it ever did.
    */
-  cashFor(_ccy: CurrencyCode, value: number): number {
+  cashFor(_ccy: CurrencyCode, value: number): Qty {
     return toTick(value);
   }
 
   /** Register A1.c: the same question for units of anything else — the most that can be delivered. */
-  deliverable(_unit: UnitId, qty: number): number {
+  deliverable(_unit: UnitId, qty: number): Qty {
     return downTick(qty);
   }
 

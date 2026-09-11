@@ -29,7 +29,73 @@
  * something the arithmetic cannot violate instead of something the audit reports afterwards.
  */
 import { Impossible } from './errors.js';
+import type { Brand } from './ids.js';
 import { finite } from './num.js';
+
+/**
+ * Law 8: A QUANTITY IS A COUNT OF PIECES, AND THE TYPE SAYS SO.
+ *
+ * Every number in this engine is a `number`, and that is exactly why a fraction of a cent kept
+ * arriving: nothing distinguishes a COUNT OF PIECES from a price, a rate or a value, so every
+ * author had to remember, and the ones who divided money by a price to get units did not. What was
+ * caught was caught by runtime guards at the far end — settlement, the register, the order book —
+ * long after the site that made it, and a published decision that never reached any of them (a
+ * quote's size, a plan's batch, an allotment of room) was never caught at all.
+ *
+ * So a quantity has its own TYPE. It is produced by exactly four doors — `toTick`, `downTick`,
+ * `upTick` and `splitOnTick` — plus `asQty` for a number that is already a count because it was
+ * read out of the register or declared as one, and `asQty` throws if it is not. Everything that
+ * CARRIES a quantity asks for this type: an order's size, a leg's amount, a lot, what is issued,
+ * what a seed endows. A module that divides money by a price now gets a `number` and cannot put it
+ * anywhere a quantity goes without saying WHICH WAY it rounds — which is the decision it was
+ * skipping, and it is its own to make, never the kernel's.
+ *
+ * That is the difference between a rule and a habit: this one is checked by the compiler at every
+ * site at once, and a new writer cannot forget it.
+ */
+export type Qty = Brand<number, 'Qty'>;
+
+/**
+ * A number that is ALREADY a count of pieces, said out loud. It throws if it is not — so the only
+ * way past this door is a number that really is on the grid, and a caller that is wrong finds out
+ * where it is wrong rather than three phases later.
+ *
+ * Use it for a number read out of the register, declared as a count in the parameter register, or
+ * arrived at by adding and subtracting quantities. NOT for one that came out of a division: that
+ * one has a rounding decision in it, and the decision belongs to whoever is making it.
+ */
+export function asQty(value: number, what = 'quantity'): Qty {
+  const n = finite(value, what);
+  if (!Number.isSafeInteger(n)) {
+    throw new Impossible(
+      'Law 8',
+      `${what} is ${n}, which is not a whole number of the unit's pieces`,
+    );
+  }
+  return n as Qty;
+}
+
+/** Adding and subtracting counts of pieces gives a count of pieces: no rounding is involved. */
+export function addQty(a: Qty, b: Qty, what = 'quantity'): Qty {
+  return asQty(finite(a + b, what), what);
+}
+
+export function subQty(a: Qty, b: Qty, what = 'quantity'): Qty {
+  return asQty(finite(a - b, what), what);
+}
+
+/** So is multiplying a count by a whole number of them — a cell's per-member amount by its weight. */
+export function scaleQty(a: Qty, times: number, what = 'quantity'): Qty {
+  return asQty(finite(a * times, what), what);
+}
+
+/** The other side of a count: what is owed rather than held. A direction, and no rounding in it. */
+export function negQty(a: Qty, what = 'quantity'): Qty {
+  return asQty(NO_QTY - a, what);
+}
+
+/** Nothing, as a quantity. The one literal a count can have without a decision behind it. */
+export const NO_QTY = 0 as Qty;
 
 /**
  * How many pieces one named unit is divided into, at this world's resolution. A subdivision is a
@@ -63,18 +129,18 @@ export function onTick(value: number): boolean {
  * The nearest quantity that exists, ties away from zero. Used where a computed amount BECOMES a
  * payment or a delivery: what leaves an account is what the account can hold.
  */
-export function toTick(value: number): number {
+export function toTick(value: number): Qty {
   const n = finite(value, 'quantity');
-  return n < 0 ? -Math.round(-n) : Math.round(n);
+  return (n < 0 ? -Math.round(-n) : Math.round(n)) as Qty;
 }
 
 /**
  * The nearest quantity that exists, toward zero. Used where the number is what somebody CAN do —
  * deliver, pay, pledge — because rounding that up invents a piece nobody has.
  */
-export function downTick(value: number): number {
+export function downTick(value: number): Qty {
   const n = finite(value, 'quantity');
-  return n < 0 ? -Math.floor(-n) : Math.floor(n);
+  return (n < 0 ? -Math.floor(-n) : Math.floor(n)) as Qty;
 }
 
 /**
@@ -82,9 +148,9 @@ export function downTick(value: number): number {
  * put up — the input a recipe draws, the collateral a claim needs — because a requirement met with
  * the piece below is a requirement not met.
  */
-export function upTick(value: number): number {
+export function upTick(value: number): Qty {
   const n = finite(value, 'quantity');
-  return n < 0 ? -Math.ceil(-n) : Math.ceil(n);
+  return (n < 0 ? -Math.ceil(-n) : Math.ceil(n)) as Qty;
 }
 
 /**
@@ -95,7 +161,7 @@ export function upTick(value: number): number {
  *
  * The total must already exist (be a whole number of pieces); the weights need not.
  */
-export function splitOnTick(total: number, weights: readonly number[]): readonly number[] {
+export function splitOnTick(total: number, weights: readonly number[]): readonly Qty[] {
   if (weights.length === 0) return [];
   if (!onTick(total)) {
     throw new Impossible('Law 8', `${total} is not a whole number of pieces to split`);
@@ -110,7 +176,7 @@ export function splitOnTick(total: number, weights: readonly number[]): readonly
     }
     weight += w;
   }
-  if (weight <= 0) return weights.map(() => 0);
+  if (weight <= 0) return weights.map(() => NO_QTY);
   const parts: number[] = [];
   const remainders: { at: number; rest: number }[] = [];
   let given = 0;
@@ -129,7 +195,7 @@ export function splitOnTick(total: number, weights: readonly number[]): readonly
     parts[next.at] = has + 1;
     given += 1;
   }
-  return parts.map((n) => (negative ? -n : n));
+  return parts.map((n) => (negative ? -n : n) as Qty);
 }
 
 /**

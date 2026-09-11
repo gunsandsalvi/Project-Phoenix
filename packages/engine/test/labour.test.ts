@@ -7,7 +7,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   type PartyId,
-  FUNDS,
   HOUSEHOLD,
   OCCUPATIONS,
   funds,
@@ -15,7 +14,6 @@ import {
   PHX,
   REGION,
   assemble,
-  foundationSpec,
   labourVenue,
   partyId,
   type EmploymentRow,
@@ -23,8 +21,10 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec , rigDraw } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { minutes, perHour } from './units.js';
+import type { Qty } from '../src/core/tick.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -67,13 +67,13 @@ function employer(post: (ctx: MechanismContext) => void): SystemModule {
  * their decisions instead. What the venue does with several real bidders is its own test (Firm A3).
  */
 function world(post: (ctx: MechanismContext) => void = () => undefined): World {
-  const spec = foundationSpec('labour');
+  const spec = rigSpec('labour');
   const modules = spec.modules
     // Equity goes with it: a share is a claim on a firm, so a world with no firms has none —
     // and the desks go with the equity, because they open holding the lines they make a market in.
     // The money fund stays; the exchange-traded one does not, because its basket was those shares.
     .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
-    .map((m) => (m.id === 'funds' ? funds(FUNDS, []) : m))
+    .map((m) => (m.id === 'funds' ? funds(rigDraw('labour').funds, []) : m))
     .map((m) =>
     m.id === 'seed.foundation' ||
       m.id === 'seed.funding'
@@ -100,8 +100,8 @@ function rows(w: World, employer: string = FIRM_1): EmploymentRow[] {
   return allRows(w).filter((r) => r.employer === employer);
 }
 
-/** Law 8: the time a number of people sell in a week, as the minutes the state counts it in. */
-function hours(people: number): number {
+/** Law 8: the time a number of people sell in a week, as the pieces the state counts it in. */
+function hours(people: number): Qty {
   return minutes(people * HOURS_PER_MEMBER);
 }
 

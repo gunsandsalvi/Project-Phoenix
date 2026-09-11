@@ -13,7 +13,6 @@ import {
   MONTHLY,
   assemble,
   civil,
-  foundationSpec,
   partyId,
   sovereignBill,
   sovereignBond,
@@ -23,6 +22,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { paidTheSame, paidTo } from './expected.js';
 import { par } from './units.js';
 import { notDealing } from './no-dealing.js';
@@ -68,7 +68,7 @@ function oneTrade(at: number): SystemModule {
  * does is a property of the wire, so the test drives the wire and no mechanism drives the test.
  */
 function world(at: number): World {
-  const spec = foundationSpec('seed-accrued');
+  const spec = rigSpec('seed-accrued');
   const kernelOnly = spec.modules.filter(
     (m) =>
       m.id === 'sovereign-instruments' ||
@@ -185,7 +185,7 @@ describe('a trade in the middle of a coupon period', () => {
       .flatMap((r) => (r.outcome === 'settled' ? r.equity : []))
       .filter((e) => e.party === FIRM_1);
     expect(effectsAtTrade).toHaveLength(1);
-    paidTheSame(effectsAtTrade[0]?.delta ?? 0, -QTY * accruedAtTrade);
+    paidTheSame(effectsAtTrade[0]?.delta ?? 0, -(QTY * accruedAtTrade));
     const couponReport = w.step();
     expect(couponReport.audit.total).toBe(0);
     const coupons = w.ledger

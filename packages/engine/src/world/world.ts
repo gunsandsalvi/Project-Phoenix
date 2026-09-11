@@ -79,6 +79,7 @@ import type {
   Valuer,
 } from './module.js';
 import { revalue } from './revalue.js';
+import type { Qty } from '../core/tick.js';
 
 
 
@@ -154,6 +155,9 @@ export class World {
   >();
   /** Banks Funding E1: whether the depositors have been asked this period, so they are asked once. */
   private choseBanks = false;
+  /** Law 18: one participant view per party per cycle. Layout only; every read reaches live state. */
+  private readonly views = new Map<PartyId, ParticipantView>();
+  private viewsAt = '';
   /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
   private readonly resolvers = new Map<PartyKindId, string>();
   private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
@@ -660,9 +664,32 @@ export class World {
   // ---- contexts (the only doors for modules) ---------------------------------------------------
 
   /** Observer A1-A4: a party's own state and the public state. */
+  /**
+   * Law 18: ONE VIEW PER PARTY PER CYCLE, and it is the same view — every read below reaches the
+   * kernel's own stores live, so what it answers does not depend on when it was built.
+   *
+   * It used to be built afresh for every (party, market) pair. A market asks every party of a kind
+   * whether it has an order in it, so three thousand firms and two hundred and sixty markets meant
+   * eight hundred thousand of these a period, each allocating thirty closures AND deriving a
+   * seeded generator (twelve discarded outputs apiece). `self` is a getter rather than a snapshot
+   * for exactly this reason: a party that ceases mid-phase must be seen to have ceased, which is
+   * what building it afresh each time was quietly providing.
+   */
   participantView(party: PartyId): ParticipantView {
-    const self = this.parties.get(party);
-    return {
+    const stamp = `${this.currentPeriod}:${this.currentCycle}`;
+    if (this.viewsAt !== stamp) {
+      this.views.clear();
+      this.viewsAt = stamp;
+    }
+    const held = this.views.get(party);
+    if (held !== undefined) return held;
+    const made = this.buildParticipantView(party);
+    this.views.set(party, made);
+    return made;
+  }
+
+  private buildParticipantView(party: PartyId): ParticipantView {
+    const view = {
       period: this.currentPeriod,
       cycle: this.currentCycle,
       calendar: this.calendar,
@@ -672,7 +699,6 @@ export class World {
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
-      self,
       parties: this.partyReads,
       holdings: () => this.store.holdingsOf(party),
       quantity: (instrument) => this.store.quantity(party, instrument),
@@ -711,7 +737,14 @@ export class World {
         return e === undefined ? none() : some(e);
       },
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
-    };
+    } as Omit<ParticipantView, 'self'>;
+    // The party record itself is replaced when it ceases, changes weight or moves its bank, so it
+    // is read where it is asked for and never held.
+    Object.defineProperty(view, 'self', {
+      get: () => this.parties.get(party),
+      enumerable: true,
+    });
+    return view as ParticipantView;
   }
 
   mechanismContext(owner: string): MechanismContext {
@@ -932,7 +965,7 @@ export class World {
   }
 
   /** A party's balance at its own bank in a currency, per member (Money B1). */
-  cash(party: PartyId, ccy: CurrencyCode): number {
+  cash(party: PartyId, ccy: CurrencyCode): Qty {
     const p = this.parties.get(party);
     return this.register.quantity(p.id, moneyInstrumentId(p.bank, ccy));
   }

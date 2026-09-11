@@ -15,11 +15,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
-  foundationWorld,
   snapshot,
   type Event,
   type World,
 } from '../src/index.js';
+import { rigWorld } from './rig.js';
 import { unexpected } from './expected.js';
 
 const PERIODS = 26;
@@ -33,7 +33,7 @@ interface Row {
 }
 
 function run(seed: string): World {
-  const w = foundationWorld(seed);
+  const w = rigWorld(seed);
   for (let i = 0; i < PERIODS; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
   return w;
 }

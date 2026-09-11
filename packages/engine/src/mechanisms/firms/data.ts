@@ -26,6 +26,10 @@
  * about an answer: firms really do differ in how many hours a tonne takes them.
  */
 import { paramId, type ParamId } from '../../core/ids.js';
+import { prng } from '../../rng/prng.js';
+import { between, betweenWhole, drawSize, type Spread, type Tail } from '../../rng/spread.js';
+import { asQty, splitOnTick } from '../../core/tick.js';
+import { zeroIfNone } from '../../core/num.js';
 
 export interface FirmDecl {
   /** The named party (Firm A1). It banks somewhere, and the wage and the invoices leave that account. */
@@ -53,6 +57,15 @@ export interface FirmDecl {
    * not look past two years values a machine at what two years of it are worth.
    */
   readonly horizonPeriods: number;
+  /** Law 9: the name a market would use for it. */
+  readonly name: string;
+  /**
+   * Seed B4: how big it is beside the others in its own line. A weight and not a share, so the same
+   * spread describes a line of three firms and one of three hundred; what it opens holding, what it
+   * can make and what it employs all follow from it and from the good's own recipe, so no endowment
+   * is stated one firm at a time.
+   */
+  readonly size: number;
   readonly why: string;
 }
 
@@ -62,115 +75,150 @@ export const labourScaleId = (firm: string): ParamId => paramId(`firms.labourSca
 /** A management's own numbers, one per firm (XI-14: declared, never a literal). */
 export const firmParam = (firm: string, what: string): ParamId => paramId(`firm.${what}.${firm}`);
 
-export const FIRMS: readonly FirmDecl[] = [
-  {
-    firm: 'firm.4',
-    subUnit: 'grain',
-    occupation: 'field',
-    labourScale: 0.9,
-    hurdle: 0.03,
-    horizonPeriods: 156,
-    why: 'The best land in the region and the machinery to work it: fewer hours to the tonne than the trade takes on average.',
+/**
+ * Firm A3, Seed B1, B1.a, B4: A FIRM'S OWN NUMBERS ARE DRAWN, ONCE, AT THE SEED.
+ *
+ * It used to be a table of twelve, three to a line, written out one firm at a time. Twelve is not a
+ * sector and a table is not a distribution: Seed B1 wants enough of a type that it IS a
+ * distribution, B1.a wants the count to be a property of the world rather than of the file, and
+ * Law 2 wants the fewest primitives — so what a firm varies over is stated once, with a reason, and
+ * how many of them there are is a count. Ask for three thousand and there are three thousand, each
+ * with its own productivity and its own management, and no row is written anywhere.
+ *
+ * Every drawn value is declared in the parameter register under that firm's own name
+ * (`firms/index.ts`), so the register prints what each one is like and a reader can see why it did
+ * what it did. What is stated here is the WIDTH, which is what a dispersion is.
+ */
+export interface FirmDispersion {
+  readonly labourScale: Spread;
+  readonly hurdle: Spread;
+  readonly horizonPeriods: Spread;
+  /** Seed B4: how unequal a line is. A few large firms in it and a long tail of small ones. */
+  readonly size: Tail;
+}
+
+export const FIRM_SPREAD: FirmDispersion = {
+  labourScale: {
+    low: 0.8,
+    high: 1.25,
+    why: 'Firm A3: the hours a tonne takes THIS firm, as a ratio of the hours the recipe names. Below one does more with an hour; above one does less. It is the whole of the cost dispersion, deliberately (Law 2): what makes one firm\'s wage bid differ from its neighbour\'s is what a venue needs two of, and a second dispersion over the inputs would be doing the same work twice. It is technology and not a claim about an answer — firms really do differ in how many hours a tonne takes them.',
   },
-  {
-    firm: 'firm.1',
-    subUnit: 'grain',
-    occupation: 'field',
-    labourScale: 1,
-    hurdle: 0.04,
-    horizonPeriods: 104,
-    why: 'An ordinary farm. It is the trade average by construction, which is what the recipe states.',
+  hurdle: {
+    low: 0.02,
+    high: 0.06,
+    why: 'Capital Programme B1.d: the margin over its cost of capital this management insists on before it commits money it cannot get back. Two managements facing the same price do not take the same project, which is what makes the line-up of who expands an outcome rather than a rule.',
   },
-  {
-    firm: 'firm.7',
-    subUnit: 'grain',
-    occupation: 'field',
-    labourScale: 1.15,
-    hurdle: 0.06,
-    horizonPeriods: 52,
-    why: 'Poorer ground and older equipment: the same tonne takes it longer, so it is the one that stops first when the wage rises.',
+  horizonPeriods: {
+    low: 52,
+    high: 156,
+    why: 'Capital Programme B1.d: how many periods of service this management counts. Its patience — one that will not look past a year values a machine at what a year of it is worth, and a growth-against-margin orientation is that and nothing else.',
   },
-  {
-    firm: 'firm.5',
-    subUnit: 'flour',
-    occupation: 'mill',
-    labourScale: 0.92,
-    hurdle: 0.03,
-    horizonPeriods: 130,
-    why: 'A modern mill: more of the grinding is done by the machine and less by the miller.',
+  size: {
+    concentration: 1.2,
+    why: 'Firm A3, Seed B4: how big it is beside the others in its own line. A line is not a set of firms of similar size — it is a few that supply most of it and a long tail that supply almost none — so the weight is drawn from a distribution with a tail and never from a width. It is a SHAPE with a scheduled death: what a firm is worth is an OUTCOME of entry, investment and failure, and this world has the last two; firm birth (worklist 13g) adds the first and the full recipe (worklist 15) decides what a line can support, and after both the size distribution is what the mechanisms produced.',
   },
-  {
-    firm: 'firm.2',
-    subUnit: 'flour',
-    occupation: 'mill',
-    labourScale: 1,
-    hurdle: 0.04,
-    horizonPeriods: 104,
-    why: 'An ordinary mill.',
-  },
-  {
-    firm: 'firm.8',
-    subUnit: 'flour',
-    occupation: 'mill',
-    labourScale: 1.12,
-    hurdle: 0.055,
-    horizonPeriods: 52,
-    why: 'An old mill kept running: it works, and it takes more hands to do it.',
-  },
-  {
-    firm: 'firm.6',
-    subUnit: 'bread',
-    occupation: 'bakery',
-    labourScale: 0.88,
-    hurdle: 0.025,
-    horizonPeriods: 156,
-    why: 'A plant bakery. Baking is the labour-intensive step, so this is where doing it better is worth the most.',
-  },
-  {
-    firm: 'firm.3',
-    subUnit: 'bread',
-    occupation: 'bakery',
-    labourScale: 1,
-    hurdle: 0.04,
-    horizonPeriods: 104,
-    why: 'An ordinary bakery.',
-  },
-  {
-    firm: 'firm.9',
-    subUnit: 'bread',
-    occupation: 'bakery',
-    labourScale: 1.18,
-    hurdle: 0.06,
-    horizonPeriods: 52,
-    why: 'A craft bakery: the most hours to the tonne of anybody in this world, and the first to be priced out of the labour it needs.',
-  },
-  // Capital Programme C1: investment is a purchase from a NAMED capital-goods producer, and it is
-  // that seller's revenue. Three of them, for the same reason every other line has three (Seed B4).
-  {
-    firm: 'firm.10',
-    subUnit: 'machine',
-    occupation: 'works',
-    labourScale: 0.9,
-    hurdle: 0.035,
-    horizonPeriods: 130,
-    why: 'The best-equipped workshop: fewer hours to a machine than the trade takes.',
-  },
-  {
-    firm: 'firm.11',
-    subUnit: 'machine',
-    occupation: 'works',
-    labourScale: 1,
-    hurdle: 0.045,
-    horizonPeriods: 104,
-    why: 'An ordinary workshop.',
-  },
-  {
-    firm: 'firm.12',
-    subUnit: 'machine',
-    occupation: 'works',
-    labourScale: 1.14,
-    hurdle: 0.06,
-    horizonPeriods: 52,
-    why: 'The smallest workshop, and the one whose machines cost the most hours to build.',
-  },
+};
+
+/**
+ * Seed B1, B1.a: HOW MANY NAMED FIRMS THIS WORLD HAS. A few thousand, because that is what a real
+ * economy's named tier is: the firms big enough to have a name in a market, above the small-business
+ * tier that is represented as cells (XI-15, worklist 13e). It is a count and nothing follows from
+ * changing it but the world having that many.
+ */
+export const FIRM_COUNT = 3000;
+
+/**
+ * A2, Labour A3: which trade each line employs, which is the venue its firms post their openings
+ * in. One row per good this world makes, and nothing branches on which (Law 15).
+ */
+export const OCCUPATION_OF: Readonly<Record<string, string>> = {
+  grain: 'field',
+  flour: 'mill',
+  bread: 'bakery',
+  machine: 'works',
+};
+
+/**
+ * Law 9: the name a market would use. A generated world has generated names, and they are built the
+ * way a market builds them — what the firm does and where, numbered so no two are the same party.
+ */
+const STEMS: Readonly<Record<string, readonly string[]>> = {
+  grain: ['Broadacre', 'Middlefield', 'Hollow', 'Longmeadow', 'Stonebridge', 'Fairview'],
+  flour: ['Riverside', 'Town', 'Old', 'Kingsmill', 'Waterwheel', 'Northgate'],
+  bread: ['City', 'High Street', 'Corner', 'Market', 'Bridgeside', 'Crown'],
+  machine: ['North', 'Town', 'Lane', 'Foundry', 'Ironside', 'Anvil'],
+};
+
+const TRADE: Readonly<Record<string, string>> = {
+  grain: 'Farm',
+  flour: 'Mill',
+  bread: 'Bakery',
+  machine: 'Works',
+};
+
+/** Where it is. A market says the trade and the place, and so does this. */
+const PLACES: readonly string[] = [
+  'Ashby', 'Barrow', 'Calder', 'Denby', 'Elswick', 'Fenton', 'Garsdale', 'Halstead',
+  'Ingleton', 'Jarrow', 'Kelsall', 'Linton', 'Marsden', 'Netherby', 'Oakworth', 'Penrith',
+  'Quarrend', 'Ravensby', 'Sandwith', 'Thornby', 'Ulverton', 'Ventnor', 'Wenlock', 'Yarrow',
 ];
+
+/**
+ * Seed B1.a, B4: the firms of a world, drawn from the spreads above and deterministic in the
+ * world's own seed value (Seed A5, Audit D3). How many of them are in each line is stated as a
+ * share of the count, because a world has more bakeries than machine works — bread is made near
+ * where it is eaten and a machine is not.
+ */
+export const LINE_SHARE: Readonly<Record<string, number>> = {
+  grain: 0.3,
+  flour: 0.15,
+  bread: 0.45,
+  machine: 0.1,
+};
+
+/** A2: how much of the count this line gets. A line this world does not make gets none of it. */
+function shareOfLine(subUnit: string): number {
+  return zeroIfNone(LINE_SHARE[subUnit]);
+}
+
+export function drawFirms(count: number, seed: string): readonly FirmDecl[] {
+  const rng = prng(seed, 'firms');
+  const out: FirmDecl[] = [];
+  const lines = Object.keys(LINE_SHARE).sort();
+  // Law 8, Clearing C3: a firm is a whole firm, so the count is split into whole parts that sum to
+  // exactly what was asked for, the odd one going to the largest remainder. That rule has ONE
+  // writer (`splitOnTick`) and this used to be a second copy of it — the same sort, the same
+  // floors, the same tie-break, written out again because a count of parties is not money. It is
+  // not money and it does not need to be: what the rule is about is indivisible things.
+  const perLine = splitOnTick(asQty(count), lines.map((l) => shareOfLine(l)));
+  let n = 0;
+  lines.forEach((subUnit, at) => {
+    const stems = STEMS[subUnit] ?? [subUnit];
+    const trade = TRADE[subUnit] ?? 'Works';
+    const occupation = OCCUPATION_OF[subUnit];
+    if (occupation === undefined) return;
+    const inLine = perLine[at];
+    if (inLine === undefined) return;
+    for (let k = 0; k < inLine; k += 1) {
+      n += 1;
+      const place = PLACES[Math.floor(k / stems.length) % PLACES.length] ?? subUnit;
+      const round = Math.floor(k / (stems.length * PLACES.length));
+      const stem = stems[k % stems.length] ?? subUnit;
+      out.push({
+        firm: `firm.${n}`,
+        name: round === 0 ? `${stem} ${trade}, ${place}` : `${stem} ${trade}, ${place} ${round + 1}`,
+        subUnit,
+        occupation,
+        labourScale: between(rng, FIRM_SPREAD.labourScale),
+        hurdle: between(rng, FIRM_SPREAD.hurdle),
+        horizonPeriods: betweenWhole(rng, FIRM_SPREAD.horizonPeriods),
+        // Seed B4: how big it is beside the others in its line. A sector of equals never produces
+        // a market, and a sector of equals is what a uniform draw would give.
+        size: drawSize(rng, FIRM_SPREAD.size),
+        why: `Seed B4: drawn at the seed from the stated spreads, like every other firm in this world. Nothing about it is stated one firm at a time.`,
+      });
+    }
+  });
+  return out;
+}
+

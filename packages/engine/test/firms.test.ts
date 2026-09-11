@@ -6,14 +6,12 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  FIRMS,
   FIRM,
   FIRM_SWITCHING_COST,
   PHX,
   REGION,
   assemble,
   firms,
-  foundationSpec,
   goodId,
   none,
   partyId,
@@ -27,8 +25,13 @@ import {
   type World,
   labourParam,
 } from '../src/index.js';
+import { firmsIn, rigDraw, rigSpec } from './rig.js';
+
+/** Seed B1.a: this world's firms are DRAWN. Which party is a mill is a question asked of the draw. */
+const DREW = rigDraw('firms');
 import { sameQuantity, unexpected } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
+import type { Qty } from '../src/core/tick.js';
 
 const BANK_A = partyId('bank.a');
 const BUYER = partyId('buyer.1');
@@ -46,7 +49,7 @@ const WIP_GRAIN = wipId('grain', REGION);
  * somewhere else — a household that eats bread, a firm that mills grain — so that a test of what a
  * SELLER does has a second side that cannot run out of cash halfway through and change the subject.
  */
-function buyer(subUnit: string, price: number, qty: number): SystemModule {
+function buyer(subUnit: string, price: number, qty: Qty): SystemModule {
   const instrument = goodId(subUnit, REGION);
   return {
     id: 'test.buyer',
@@ -85,7 +88,7 @@ function buyer(subUnit: string, price: number, qty: number): SystemModule {
 }
 
 function world(...extra: readonly SystemModule[]): World {
-  const spec = foundationSpec('firms');
+  const spec = rigSpec('firms');
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
 }
 
@@ -240,7 +243,7 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
     // WHICH mill the grain runs out under is an outcome, not something to name (Law 2): there are
     // three on the line and they differ, so the one that is squeezed is the one whose own cost and
     // own bid left it last in the queue for the crop.
-    const mills = FIRMS.filter((f) => f.subUnit === 'flour').map((f) => partyId(f.firm));
+    const mills = firmsIn(DREW, 'flour').map((f) => partyId(f.firm));
     const throttled = mills
       .flatMap((mill) => [...events(w, 'firms.started', mill), ...events(w, 'firms.idle', mill)])
       .find((e) => e.data['bound'] === GRAIN && Number(e.data['started'] ?? 0) > 0);
@@ -347,7 +350,7 @@ describe('who is in the goods market, and who is not', () => {
 
 describe('what varies between firms is data (Firm F4, Law 2, Law 15)', () => {
   it('declares what varies between firms and nothing else: its cost and its management', () => {
-    const declared = firms().params;
+    const declared = firms(DREW.firms).params;
     // Banks Funding A1.b: the one number that is every firm's alike — what it costs a firm to move
     // the account it transacts through. It does not vary between firms and it is not meant to: what
     // differs is the balance each of them weighs it against.
@@ -359,13 +362,13 @@ describe('what varies between firms is data (Firm F4, Law 2, Law 15)', () => {
     // The three per firm are: how many hours a tonne takes IT, the margin over its cost of capital
     // its management insists on, and how far ahead that management looks.
     const perFirm = declared.filter((p) => p.id !== FIRM_SWITCHING_COST);
-    expect(perFirm).toHaveLength(FIRMS.length * 3);
-    expect(perFirm.filter((p) => p.kind === 'technology')).toHaveLength(FIRMS.length);
+    expect(perFirm).toHaveLength(DREW.firms.length * 3);
+    expect(perFirm.filter((p) => p.kind === 'technology')).toHaveLength(DREW.firms.length);
     // B1.d: a hurdle and a horizon are the management's own, which makes them preferences.
-    expect(perFirm.filter((p) => p.kind === 'preference')).toHaveLength(FIRMS.length * 2);
+    expect(perFirm.filter((p) => p.kind === 'preference')).toHaveLength(DREW.firms.length * 2);
     expect(new Set(perFirm.map((p) => p.unit)).size).toBe(3);
     // No two firms in a line are alike, which is what gives the venue more than one bid (Seed B4).
-    const bakers = FIRMS.filter((f) => f.subUnit === 'bread').map((f) => f.labourScale);
+    const bakers = firmsIn(DREW, 'bread').map((f) => f.labourScale);
     expect(new Set(bakers).size).toBe(bakers.length);
   });
 
@@ -375,10 +378,10 @@ describe('what varies between firms is data (Firm F4, Law 2, Law 15)', () => {
     // Seed B1: a line is a distribution and not a single instance. Seed B4: and they are not equal,
     // because a sector of equals never produces a market — which in a labour venue means one bid.
     for (const subUnit of ['grain', 'flour', 'bread']) {
-      expect(FIRMS.filter((f) => f.subUnit === subUnit).length).toBeGreaterThan(1);
+      expect(firmsIn(DREW, subUnit).length).toBeGreaterThan(1);
     }
     // A3: the dispersion is in COST, and it comes out in what each of them will pay for an hour.
-    const bakers = FIRMS.filter((f) => f.subUnit === 'bread');
+    const bakers = firmsIn(DREW, 'bread');
     const bids = new Map<string, number>();
     for (const f of bakers) {
       const plan = last(w, 'firms.plan', partyId(f.firm));

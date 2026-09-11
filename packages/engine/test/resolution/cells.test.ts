@@ -22,25 +22,28 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  FIRMS,
   HOUSEHOLD,
   LABOUR_NUMBERS,
   PHX,
   REGION,
   assemble,
-  foundationSpec,
   goodId,
   moneyInstrumentId,
   type Sum,
   type World,
 } from '../../src/index.js';
+import { firmsIn, rigDraw, rigSpec } from '../rig.js';
 import { unexpected } from '../expected.js';
 import { TONNE_PIECES } from '../../src/registry/grid.js';
 
 const PERIODS = 26;
 /** Goods A2: the hours the recipe names for the finished good, and Firm A3's leanest firm at it. */
 const GOODS_HOURS_PER_TONNE = 14;
-const LEANEST_FIRM = Math.min(...FIRMS.filter((f) => f.subUnit === 'bread').map((f) => f.labourScale));
+// Seed B1.a: this world's firms are DRAWN, so which of them is the leanest baker is a question
+// asked of the draw and never a name written down here.
+const LEANEST_FIRM = Math.min(
+  ...firmsIn(rigDraw('cells'), 'bread').map((f) => f.labourScale),
+);
 
 interface Aggregates {
   readonly people: number;
@@ -62,7 +65,7 @@ interface Aggregates {
 
 /** The foundation world at a stated grain, stepped a half-year, audited every period. */
 function at(cellsPerKey: number): Aggregates {
-  const spec = foundationSpec('resolution');
+  const spec = rigSpec('resolution');
   const modules = spec.modules.map((m) =>
     m.id === 'seed.foundation'
       ? {

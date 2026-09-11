@@ -13,6 +13,7 @@
 import { impossible } from '../core/assert.js';
 import type { PartyId } from '../core/ids.js';
 import { finite, sum, zeroIfNone } from '../core/num.js';
+import { asQty, splitOnTick, type Qty } from '../core/tick.js';
 
 export type Side = 'buy' | 'sell';
 
@@ -30,8 +31,13 @@ export interface Order {
   readonly side: Side;
   /** A buy: the most it will pay per unit. A sell: the least it will accept. */
   readonly price: OrderPrice;
-  /** Total units (a cell's per-member size times its weight). */
-  readonly qty: number;
+  /**
+   * Law 8: TOTAL PIECES — a cell's per-member count times its weight. It is a `Qty` and not a
+   * number, so a schedule built by dividing money by a price cannot reach a book without its author
+   * saying which way it rounds (core/tick.ts). That decision is the author's: what a party CAN do
+   * rounds down, what it MUST do rounds up, and the kernel never picks for it.
+   */
+  readonly qty: Qty;
 }
 
 /** An order with its level fixed: what the solver works on. */
@@ -42,7 +48,7 @@ export interface LimitOrder extends Order {
 export interface Fill {
   readonly party: PartyId;
   readonly side: Side;
-  readonly qty: number;
+  readonly qty: Qty;
   /** The level this order posted, which is what a tail is measured against (Sovereign C4). */
   readonly at: number;
 }
@@ -123,11 +129,14 @@ function validate(orders: readonly LimitOrder[]): void {
       'Clearing A2',
       `an order has a positive size, got ${o.qty}`,
     );
+    // Law 8 is not checked here, and that is the point: `Order.qty` is a `Qty`, so a size that is
+    // not a whole number of the unit's pieces cannot be built at all (core/tick.ts). A check in
+    // this solver would be the same rule written a second time, and the one that fires last.
   }
 }
 
 /** The executable volume at a price is bounded by whichever side posted less: arithmetic, not a decision. */
-function executable(demand: number, supply: number): number {
+function executable(demand: Qty, supply: Qty): Qty {
   return demand < supply ? demand : supply;
 }
 
@@ -145,10 +154,12 @@ export function clear(
   if (sells.length === 0) return { kind: 'noSupply' };
 
   const candidates = [...new Set(orders.map((o) => o.price))].sort((a, b) => a - b);
-  let best: { price: number; volume: number; imbalance: number; d: number; s: number } | undefined;
+  let best: { price: number; volume: Qty; imbalance: number; d: Qty; s: Qty } | undefined;
   for (const p of candidates) {
-    const d = sum(buys.filter((o) => o.price >= p).map((o) => o.qty)).value;
-    const s = sum(sells.filter((o) => o.price <= p).map((o) => o.qty)).value;
+    // Law 8: adding counts of pieces gives a count of pieces — no rounding is involved, so the
+    // sum is still a quantity and says so.
+    const d = asQty(sum(buys.filter((o) => o.price >= p).map((o) => o.qty)).value, 'demand at a level');
+    const s = asQty(sum(sells.filter((o) => o.price <= p).map((o) => o.qty)).value, 'supply at a level');
     const v = executable(d, s);
     const imbalance = Math.abs(d - s);
     const tie = v === best?.volume && imbalance === best.imbalance;
@@ -229,15 +240,18 @@ function proRata(
       for (const g of group) fills.push({ party: g.o.party, side, qty: g.o.qty, at: g.o.price });
       remaining = finite(remaining - groupQty, 'remaining');
     } else {
-      // The marginal level: pro rata.
-      const share = remaining / groupQty;
-      for (const g of group)
-        fills.push({
-          party: g.o.party,
-          side,
-          qty: finite(g.o.qty * share, 'pro rata fill'),
-          at: g.o.price,
-        });
+      // C3, Law 8: the marginal level, pro rata — and pro rata over a quantity that has a smallest
+      // piece is the largest-remainder split, not a multiplication by a share. Ten shares between
+      // three bidders is four, three and three: the parts sum to exactly what there was, and WHO
+      // gets the odd piece is the stated rule (`splitOnTick`, ties to the earlier claimant) rather
+      // than a rounding that happens later somewhere else. Multiplying by `remaining / groupQty`
+      // gave every one of them a fraction of a piece and left the residual with no holder (Law 2).
+      const each = splitOnTick(remaining, group.map((g) => g.o.qty));
+      group.forEach((g, at) => {
+        const mine = each[at];
+        if (mine === undefined || mine <= 0) return;
+        fills.push({ party: g.o.party, side, qty: mine, at: g.o.price });
+      });
       remaining = 0;
     }
   }

@@ -17,8 +17,6 @@ import {
   MM_PARAMS,
   PHX,
   assemble,
-  foundationSpec,
-  foundationWorld,
   moneyInstrumentId,
   none,
   partyId,
@@ -29,6 +27,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigWorld, rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -37,7 +36,7 @@ const BANK_B = partyId('bank.b');
 
 /** The same world with one declared number set differently, wherever it was declared. */
 function withParam(seed: string, over: Readonly<Record<string, number>>): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules: SystemModule[] = spec.modules.map((m) => ({
     ...m,
     params: m.params.map((p) => {
@@ -71,7 +70,7 @@ function run(w: World, periods: number): World {
 
 describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)', () => {
   it('is what it actually paid, to named holders, and not a rate anybody stated', () => {
-    const w = run(foundationWorld('mm-cost'), 6);
+    const w = run(rigWorld('mm-cost'), 6);
     for (const bank of [BANK_A, BANK_B]) {
       const said = last(w, 'bank.costOfFunds', bank);
       expect(said).toBeDefined();
@@ -90,7 +89,7 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
   });
 
   it('differs between two banks with different mixes, and the difference reaches the quote', () => {
-    const w = run(foundationWorld('mm-mix'), 8);
+    const w = run(rigWorld('mm-mix'), 8);
     const a = last(w, 'bank.costOfFunds', BANK_A);
     const b = last(w, 'bank.costOfFunds', BANK_B);
     // B1.a, A1: the two banks pay their depositors differently and owe different mixes of money, so
@@ -142,7 +141,7 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
     // And it STOPS: what it will not do is pay more than money is worth to it, and what money is
     // worth to it never exceeds the top of the corridor — past that it takes the window instead and
     // lets the deposit go, which is the run's first cause rather than a defect.
-    const w = run(foundationWorld('mm-rivals'), 12);
+    const w = run(rigWorld('mm-rivals'), 12);
     const seen = new Map<string, number[]>();
     for (const e of events(w, 'bank.depositRate')) {
       const rates = e.data['rates'] as Record<string, number>;
@@ -163,7 +162,7 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
   });
 
   it('is what it paid plus what its capital costs, over what funds its book (B2, B2.b)', () => {
-    const w = run(foundationWorld('mm-parts'), 6);
+    const w = run(rigWorld('mm-parts'), 6);
     const previous = w.period - 1;
     for (const bank of [BANK_A, BANK_B]) {
       const said = last(w, 'bank.costOfFunds', bank);
@@ -197,7 +196,7 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
 
 describe('the corridor (Money Market C, Central Bank B2, D)', () => {
   it('publishes two administered levels and never a cleared one (B3.a, C2)', () => {
-    const w = run(foundationWorld('mm-corridor'), 4);
+    const w = run(rigWorld('mm-corridor'), 4);
     const c = last(w, 'centralBank.corridor');
     expect(c?.public).toBe(true);
     const floor = num(c, 'floor');
@@ -251,7 +250,7 @@ describe('the corridor (Money Market C, Central Bank B2, D)', () => {
   });
 
   it('destroys reserves when a bank parks at the floor, on both balance sheets (C1.a)', () => {
-    const w = run(foundationWorld('mm-floor'), 8);
+    const w = run(rigWorld('mm-floor'), 8);
     // C1.a: parking at the floor is a real transfer to the central bank's own account, so the cash
     // LEAVES the banking system. Every leg of it has two named sides like any other payment.
     const parked = w.ledger
@@ -265,7 +264,7 @@ describe('the corridor (Money Market C, Central Bank B2, D)', () => {
 
 describe('what a bank publishes about itself (Banks Funding F1, F4, C1, C1.a)', () => {
   it('reads its own two sides and never a ratio anybody stated', () => {
-    const w = run(foundationWorld('mm-publish'), 6);
+    const w = run(rigWorld('mm-publish'), 6);
     for (const bank of [BANK_A, BANK_B]) {
       const said = last(w, 'bank.liquidity', bank);
       expect(said?.public).toBe(true);
@@ -307,7 +306,7 @@ describe('what a bank publishes about itself (Banks Funding F1, F4, C1, C1.a)', 
 
 describe('the session (Money Market A3, B2, B5, B6)', () => {
   it('writes a dated row between two named parties, and it comes back (A1, B6)', () => {
-    const w = run(foundationWorld('mm-session'), 10);
+    const w = run(rigWorld('mm-session'), 10);
     const rows = w.instruments.all().filter((i) => i.kind === 'interbank' || i.kind === 'repo');
     // A1: money-market money is a ROW — a dated claim of a named lender on a named borrower — and
     // never a balance that moved with nothing behind it.
@@ -330,7 +329,7 @@ describe('the session (Money Market A3, B2, B5, B6)', () => {
   });
 
   it('pays a deposit rate per class, and the classes are not one rate (A1, B1.a)', () => {
-    const w = run(foundationWorld('mm-classes'), 6);
+    const w = run(rigWorld('mm-classes'), 6);
     for (const bank of [BANK_A, BANK_B]) {
       const said = last(w, 'bank.depositRate', bank);
       expect(said?.public).toBe(true);
@@ -360,7 +359,7 @@ function withoutCollateral(
   encumbered: string,
   extra: readonly SystemModule[] = [],
 ): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules = spec.modules.map((m) => {
     // ...and it takes no more on either. A dealing line that will carry nothing quotes for nothing
     // and buys nothing, and a bank that will lend nobody anything writes no loans.
@@ -508,7 +507,7 @@ describe('the window (Central Bank D1, D3, D6, C4.b)', () => {
   });
 
   it('leaves no account below zero without a lender behind it (Money B3.c)', () => {
-    const w = run(foundationWorld('mm-rows'), 12);
+    const w = run(rigWorld('mm-rows'), 12);
     // B3.c, D3.b: what the corridor ALLOWED is a row by the close — a lender, a rate and a date —
     // so the money family has nothing to report and needs no exemption to say so.
     const money = w.last?.audit.families.find((f) => f.family === 'money');
@@ -523,7 +522,7 @@ describe('the window (Central Bank D1, D3, D6, C4.b)', () => {
   });
 
   it('lends against collateral and no further than the paper the borrower has (C4.b)', () => {
-    const w = run(foundationWorld('mm-window'), 12);
+    const w = run(rigWorld('mm-window'), 12);
     const draws = w.instruments
       .all()
       .filter((i) => String(i.id).startsWith('repo:') && String(i.id).includes(CB));
@@ -543,7 +542,7 @@ describe('the window (Central Bank D1, D3, D6, C4.b)', () => {
 
 describe('what somebody outside can see (Banks Funding F1, F2, F4, Observer A5)', () => {
   it('shows each bank what it published about itself, and how old it is', () => {
-    const w = run(foundationWorld('mm-observer'), 8);
+    const w = run(rigWorld('mm-observer'), 8);
     const seen = snapshot(w, { kind: 'inspector' }, 20);
     const banks = seen.banks.filter((b) => b.bank === String(BANK_A) || b.bank === String(BANK_B));
     expect(banks.length).toBe(2);

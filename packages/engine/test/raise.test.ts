@@ -13,15 +13,16 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  BANKS,
+  BANK_COUNT,
+  drawBanks,
   SUBORDINATED,
   assemble,
-  foundationSpec,
   partyId,
   type Event,
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 
 const BANK_A = partyId('bank.a');
@@ -33,7 +34,7 @@ function run(w: World, periods: number): World {
 
 /** The same world with one declared number set differently, wherever it was declared. */
 function withParam(seed: string, over: Readonly<Record<string, number>>): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules: SystemModule[] = spec.modules.map((m) => ({
     ...m,
     params: m.params.map((p) => {
@@ -142,7 +143,8 @@ describe('when nobody will (C2.b)', () => {
     // Every OTHER bank's appetite, not one of them: with three banks in the world, taking one
     // lender's limit away leaves two, and "nobody will" has to mean nobody.
     const noAppetite: Record<string, number> = { ...TIGHT };
-    for (const b of BANKS) {
+    // Seed B4: this world's banks are drawn from its own seed value, so the test asks it.
+    for (const b of drawBanks(BANK_COUNT, 'raise-b')) {
       if (b.bank !== String(BANK_A)) noAppetite[`bank.limitPerBorrower.${b.bank}`] = 0;
     }
     const w = run(withParam('raise-b', noAppetite), 8);
@@ -166,7 +168,7 @@ describe('and when the bank fails anyway (D2, A2.a, A2.b, A2.c)', () => {
     // there; and only then the senior creditors and depositors — who in this resolution are not
     // touched at all, because the layer above them was big enough. That is A2.b's whole point, and
     // it is the difference between a ladder with three rungs and one with two.
-    const spec = foundationSpec('raise-c');
+    const spec = rigSpec('raise-c');
     const modules: SystemModule[] = spec.modules.map((m) => ({
       ...m,
       params: m.params.map((p) => {

@@ -14,13 +14,13 @@ import {
   TREASURY_PARAMS,
   assemble,
   currencyUnit,
-  foundationSpec,
-  foundationWorld,
   goodId,
   moneyInstrumentId,
   type EmploymentRow,
   type World,
 } from '../src/index.js';
+import { rigWorld, rigSpec } from './rig.js';
+import { negQty } from '../src/core/tick.js';
 
 function programme(w: World): Record<string, unknown> {
   const events = w.journal.ofKind('treasury.programme');
@@ -31,7 +31,7 @@ function programme(w: World): Record<string, unknown> {
 
 describe('the programme (Treasury D4, Sovereign A2)', () => {
   it('is published every period, with the need it computed and what went into it (C1.a)', () => {
-    const w = foundationWorld('tsy-a');
+    const w = rigWorld('tsy-a');
     w.step();
     const p = programme(w);
     expect(typeof p['need']).toBe('number');
@@ -43,7 +43,7 @@ describe('the programme (Treasury D4, Sovereign A2)', () => {
   });
 
   it('announces on its own calendar and not otherwise (Sovereign C1)', () => {
-    const w = foundationWorld('tsy-b');
+    const w = rigWorld('tsy-b');
     const every = w.params.get(TREASURY_PARAMS.auctionEvery);
     const announced: number[] = [];
     for (let i = 0; i < 3 * every; i += 1) {
@@ -57,7 +57,7 @@ describe('the programme (Treasury D4, Sovereign A2)', () => {
   });
 
   it('raises more when more falls due: the programme reads its own maturity profile (D4.a)', () => {
-    const w = foundationWorld('tsy-c');
+    const w = rigWorld('tsy-c');
     const sizes: number[] = [];
     for (let i = 0; i < 30; i += 1) {
       const r = w.step();
@@ -72,7 +72,7 @@ describe('the programme (Treasury D4, Sovereign A2)', () => {
 
 describe('outlays and receipts (Treasury B1, C1)', () => {
   it('pays every household cell by name, per member, and the money arrives', () => {
-    const w = foundationWorld('tsy-d');
+    const w = rigWorld('tsy-d');
     const cells = w.parties.ofKind(HOUSEHOLD);
     const before = cells.map((c) => w.cash(c.id, PHX));
     w.step();
@@ -85,7 +85,7 @@ describe('outlays and receipts (Treasury B1, C1)', () => {
   });
 
   it('collects tax on the interest each payer was actually paid (C1.a, C3)', () => {
-    const w = foundationWorld('tsy-e');
+    const w = rigWorld('tsy-e');
     const rate = w.params.get(TREASURY_PARAMS.taxInterest);
     let checked = false;
     for (let i = 0; i < 30; i += 1) {
@@ -117,7 +117,7 @@ describe('outlays and receipts (Treasury B1, C1)', () => {
 
 describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => {
   it('employs people on rows like any employer, and the wage leaves its own account', () => {
-    const w = foundationWorld('tsy-f');
+    const w = rigWorld('tsy-f');
     for (let i = 0; i < 12; i += 1) w.step();
     const rows = Object.values(
       (w.stateSlots()['labour/employment'] as { rows: Record<string, EmploymentRow> }).rows,
@@ -147,7 +147,7 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
   });
 
   it('buys real things in the market a household buys them in, and is rationed there like anybody', () => {
-    const w = foundationWorld('tsy-g');
+    const w = rigWorld('tsy-g');
     const bread = goodId('bread', REGION);
     let bought = 0;
     for (let i = 0; i < 12; i += 1) {
@@ -172,7 +172,7 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
   });
 
   it('collects on what households were paid and on what they bought (C1, C1.a)', () => {
-    const w = foundationWorld('tsy-h');
+    const w = rigWorld('tsy-h');
     for (let i = 0; i < 12; i += 1) w.step();
     const events = w.journal.ofKind('treasury.receipts');
     const last = events[events.length - 1];
@@ -187,7 +187,7 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
 describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
   it('has no overdraft at the central bank: an outlay it cannot meet fails and is reported', () => {
     // A world whose treasury opens with nothing has to fail its very first mandate payment.
-    const spec = foundationSpec('tsy-f');
+    const spec = rigSpec('tsy-f');
     const drained = spec.modules.map((m) =>
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding'
@@ -198,8 +198,8 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
               // Take the buffer away: the account is empty when the first outlay falls due.
               const account = moneyInstrumentId(CB, PHX);
               const held = ctx.register.quantity(TREASURY_NORTH, account);
-              ctx.register.moneyDelta(TREASURY_NORTH, account, -held, ctx.period, false);
-              ctx.instruments.adjustIssued(account, -held);
+              ctx.register.moneyDelta(TREASURY_NORTH, account, negQty(held), ctx.period, false);
+              ctx.instruments.adjustIssued(account, negQty(held));
             },
           }
         : m,
@@ -220,7 +220,7 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
   });
 
   it('funds itself over a year when the market is there: the debt is serviced and the buffer survives', () => {
-    const w = foundationWorld('tsy-g');
+    const w = rigWorld('tsy-g');
     for (let i = 0; i < 52; i += 1) w.step();
     // A3.b, D3: what "it funds itself" means is that it never misses what IT promised. A coupon of
     // its own that did not arrive is a sovereign default (Bond N12) and there is none: every one

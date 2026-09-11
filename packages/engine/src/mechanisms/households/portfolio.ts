@@ -33,6 +33,7 @@ import type { Instrument } from '../../register/instruments.js';
 import { TREASURY } from '../../registry/profiles.js';
 import type { ParticipantView } from '../../world/context.js';
 import { levelsBelow, rungsOver } from './demand.js';
+import type { Qty } from '../../core/tick.js';
 
 /** A bid for paper: a size at the level this cell's own requirement puts on it. */
 export interface PaperBid {
@@ -126,19 +127,26 @@ export function savingLines(
 export function paperBids(
   view: ParticipantView,
   eligible: readonly SavingLine[],
+  /** XI-15: what ONE MEMBER puts into one line. The cell's order is that, times how many there are. */
   perLine: number,
   lines: number,
+  weight: number,
 ): PaperBid[] {
   if (perLine <= 0) return [];
   const out: PaperBid[] = [];
   for (const e of eligible) {
     // Bond N9.b: what it must find is the clean price plus what has accrued and travels with it.
     const dirty = add(e.price, view.accrued(e.instrument.id), 'what a unit costs it');
-    const qty = div(perLine, dirty, 'units it bids for');
+    // Law 8, XI-15: EVERY MEMBER holds whole units, so what one of them bids for is a whole number
+    // of them and the cell posts that many for each of the members it stands for. A cell bidding
+    // for 108,739,763,087.57 units is one bidding for a fraction of a unit apiece, which is not a
+    // unit and not a bid.
+    const perMember = downTick(div(perLine, dirty, 'units one member bids for'));
+    const qty = mul(perMember, weight, 'what the cell bids for');
     // Law 7: this line's share against what the whole budget would have bought — a share that
     // small is the rounding of the split, not a bid.
     const whole = div(mul(perLine, lines, 'the whole of it'), dirty, 'what it would buy');
-    if (!material(qty, lines + 1, whole) || !e.instrument.market.some) continue;
+    if (perMember <= 0 || !material(qty, lines + 1, mul(whole, weight, 'the cell')) || !e.instrument.market.some) continue;
     out.push({ market: e.instrument.market.value, instrument: e.instrument.id, price: e.price, qty });
   }
   return out;
@@ -216,11 +224,11 @@ export function shareOrders(
       out.push({ market, instrument: id, side: 'sell', price, qty: units });
       continue;
     }
-    for (const rung of rungsOver(
-      levelsBelow(line.price, steps),
-      mul(perLine, weight, 'what the cell puts in'),
-    )) {
-      out.push({ market, instrument: id, side: 'buy', price: rung.price, qty: rung.qty });
+    // XI-15: the rungs are ONE MEMBER's, in whole shares, and the cell posts that many apiece.
+    for (const rung of rungsOver(levelsBelow(line.price, steps), perLine)) {
+      const qty = mul(rung.qty, weight, 'what the cell puts in');
+      if (qty <= 0) continue;
+      out.push({ market, instrument: id, side: 'buy', price: rung.price, qty });
     }
   }
   return out;
@@ -240,7 +248,8 @@ export interface FundOrder {
   readonly venue: VenueId;
   readonly side: 'buy' | 'sell';
   /** Per member of the cell (XI-15); the posting carries the cell's weight. */
-  readonly sharesPerMember: number;
+  /** XI-15, Law 8: whole shares for each member of the cell. A member cannot hold part of one. */
+  readonly sharesPerMember: Qty;
 }
 
 /** What a cell holds in one fund, and what the fund last said a share of it is worth. */
@@ -251,7 +260,8 @@ export interface FundPosition {
   readonly perShare: number;
   /** D2.a: what it offers a saver, after its manager. This is what competes with a deposit. */
   readonly offered: number;
-  readonly sharesPerMember: number;
+  /** XI-15, Law 8: whole shares for each member. A member cannot redeem part of one. */
+  readonly sharesPerMember: Qty;
   readonly worthPerMember: number;
 }
 

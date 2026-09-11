@@ -18,6 +18,7 @@
  * levels come from each of those separately. What they share is this, and it lives in one place.
  */
 import { div, material, mul, sub } from '../../core/num.js';
+import { downTick } from '../../core/tick.js';
 
 /** One limit order of a curve: a level, and the extra this level adds to what the cell wants. */
 export interface Rung {
@@ -35,7 +36,11 @@ export function rungsOver(levels: readonly number[], budget: number): Rung[] {
   let taken = 0;
   for (const price of [...levels].sort((a, b) => b - a)) {
     if (price <= 0) continue;
-    const wants = div(budget, price, 'units it would take at that price');
+    // Law 8, XI-15: a piece is the smallest thing there is, and what a CELL posts has to be whole
+    // pieces for every member of it — so the budget here is one member's and the count it reaches
+    // is whole. Down: what somebody CAN buy never rounds up, or the last rung is a piece it has
+    // not got the money for.
+    const wants = downTick(div(budget, price, 'units it would take at that price'));
     const extra = sub(wants, taken, 'the extra this level adds');
     taken = wants;
     // Law 7: an increment that is the rounding of the subtraction is not a size it asked for.

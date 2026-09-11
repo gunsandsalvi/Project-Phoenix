@@ -30,7 +30,8 @@ import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { currencyUnit, partyId, type InstrumentId, type PartyId } from '../../core/ids.js';
-import { combineDust, div, material, mul, sub, sum, withinDust } from '../../core/num.js';
+import { add, combineDust, div, material, mul, sub, sum, withinDust } from '../../core/num.js';
+import { splitOnTick } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
@@ -42,10 +43,11 @@ import type { ParamDecl } from '../../registry/params.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { FLOAT, LISTED, OPENING_SHARE, equityParam, listedOf, equityLineOf, equityMarketOf, type ListedDecl } from './data.js';
+import { OPENING_SHARE, equityParam, equityLineOf, equityMarketOf, type ListedDecl } from './data.js';
 import { buybackOrder, decideEquity, dividendFor, type EquityPlan } from './decide.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
 import { SHARE, shareKind, shareTerms, votesOf, type ShareTerms } from './share.js';
+import { asQty } from '../../core/tick.js';
 
 export * from './data.js';
 export * from './share.js';
@@ -349,7 +351,7 @@ function publishReads(ctx: MechanismContext, rows: readonly ListedDecl[]): void 
  * The module. `rows` is which firms this world listed (Law 15: the data says). A firm that is not
  * in it has no shares at all, which is a real state and not an omission.
  */
-export function equity(rows: readonly ListedDecl[] = LISTED): SystemModule {
+export function equity(rows: readonly ListedDecl[]): SystemModule {
   return {
     id: 'equity',
     spec: 'Equity',
@@ -401,7 +403,9 @@ export function equity(rows: readonly ListedDecl[] = LISTED): SystemModule {
           const buyback = own.value.data['buyback'];
           const bookPerShare = own.value.data['bookPerShare'];
           if (typeof buyback !== 'number' || typeof bookPerShare !== 'number') return [];
-          return buybackOrder(view.self.id, buyback, bookPerShare);
+          // Law 19: read back from the firm's own published plan, through the one door that says a
+          // size is a count of pieces — and that throws if what it published was not.
+          return buybackOrder(view.self.id, asQty(buyback, 'the shares it bids for'), bookPerShare);
         },
       },
     ],
@@ -441,25 +445,43 @@ export function equity(rows: readonly ListedDecl[] = LISTED): SystemModule {
           ccy,
           provenance: { kind: 'opening' },
         });
-        // Seed A3: and who opens holding it. A share line has no other holder at period zero, so
-        // what somebody opens holding IS the line — the float the rest of the world buys from —
-        // and it is held by the banks whose dealing lines make its market (Dealer Desks A1).
-        for (const [holder, shares] of Object.entries(FLOAT)) {
-          if (shares <= 0 || !ctx.parties.has(partyId(holder))) continue;
+        // Seed A3, Law 19: and who opens holding it, and HOW MUCH OF IT THERE IS.
+        //
+        // A share line has no other holder at period zero — nobody has founded anything and nobody
+        // has bought anything (Seed E1) — so what somebody opens holding IS the line: the float the
+        // rest of the world buys from. It is held by the banks whose dealing lines make its market
+        // (Dealer Desks A1), because a bank that opens making a market with nothing to sell can
+        // only ever bid.
+        //
+        // WHAT THE LINE COMES TO IS READ OFF THE FIRM (Law 19) and never stated. A share is a claim
+        // on the residual (A1), and at period zero a firm's residual is everything it holds:
+        // nobody has lent it anything and it owes nobody. So the line is its own opening book, in
+        // shares of whatever a share opens at — which is why a larger firm has a larger line
+        // without one number being written down beside its name, and why doubling the opening share
+        // price halves every count here and moves nothing (D4).
+        let book = 0;
+        for (const h of ctx.register.holdingsOf(firm.id)) {
+          book = add(book, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), 'its book');
+        }
+        const shares = Math.round(div(book, price, 'the shares its book comes to'));
+        // Law 8: whole shares, split so they sum to exactly the line — the odd one has a named
+        // holder rather than being lost to a division that does not come out (core/tick.ts).
+        const holders = row.makers.filter((m) => ctx.parties.has(partyId(m)));
+        const each = splitOnTick(shares, holders.map(() => 1));
+        holders.forEach((holder, at) => {
+          const mine = each[at];
+          if (mine === undefined || mine <= 0) return;
           ctx.endowUnits(
             partyId(holder),
             id,
-            ctx.registry.pieces(ctx.instruments.get(id).unit, shares),
+            ctx.registry.pieces(ctx.instruments.get(id).unit, mine),
             price,
           );
-        }
+        });
       }
     },
   };
 }
-
-/** The listed row a firm is in, for the observer and the tests (Law 15). */
-export const listed = (firm: string): ListedDecl | undefined => listedOf(LISTED, firm);
 
 /** C1.b: how much of a line is bound and therefore not float — a read of the register (D5.a). */
 export function strategicOf(ctx: MechanismContext, firm: string): number {

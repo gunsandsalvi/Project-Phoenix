@@ -15,6 +15,7 @@ import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import type { InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
 import { dustOf, finite, moved, opened, sum, type Running, type Sum } from '../core/num.js';
+import { NO_QTY, asQty, onTick, scaleQty, subQty, type Qty } from '../core/tick.js';
 import { type Option, none, some } from '../core/option.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -101,25 +102,38 @@ export class Register {
     return h === undefined ? none() : some(snapshot(h));
   }
 
-  /** Units held per member (a party that holds none holds zero: that is a quantity, not a missing value). */
-  quantity(holder: PartyId, instrument: InstrumentId): number {
+  /**
+   * Units held per member (a party that holds none holds zero: that is a quantity, not a missing
+   * value). Law 8: what the register holds is whole pieces — every door that writes one says so —
+   * so what it reads back is a quantity and carries the type that says so. Everything computed FROM
+   * it that involves a division is not, and has to say which way it rounds (core/tick.ts).
+   */
+  quantity(holder: PartyId, instrument: InstrumentId): Qty {
     const h = this.byHolder.get(holder)?.get(instrument);
-    return h === undefined ? 0 : sum(h.lots.map((l) => l.qty)).value;
+    return h === undefined ? NO_QTY : asQty(sum(h.lots.map((l) => l.qty)).value, 'units held');
   }
 
-  /** Units held by the whole party: weight x member (XI-15). */
-  totalQuantity(holder: PartyId, instrument: InstrumentId): number {
-    return this.quantity(holder, instrument) * weightOf(this.parties.get(holder));
+  /** Units held by the whole party: weight x member (XI-15). A weight is a count of people. */
+  totalQuantity(holder: PartyId, instrument: InstrumentId): Qty {
+    return scaleQty(
+      this.quantity(holder, instrument),
+      weightOf(this.parties.get(holder)),
+      'units the whole party holds',
+    );
   }
 
-  encumbered(holder: PartyId, instrument: InstrumentId): number {
+  encumbered(holder: PartyId, instrument: InstrumentId): Qty {
     const h = this.byHolder.get(holder)?.get(instrument);
-    return h === undefined ? 0 : sum(h.liens.map((l) => l.qty)).value;
+    return h === undefined ? NO_QTY : asQty(sum(h.liens.map((l) => l.qty)).value, 'units bound');
   }
 
   /** D5.a: free units are held minus encumbered, and only free units can move. */
-  free(holder: PartyId, instrument: InstrumentId): number {
-    return this.quantity(holder, instrument) - this.encumbered(holder, instrument);
+  free(holder: PartyId, instrument: InstrumentId): Qty {
+    return subQty(
+      this.quantity(holder, instrument),
+      this.encumbered(holder, instrument),
+      'free units',
+    );
   }
 
   /** D1: what does this party hold? */
@@ -196,6 +210,30 @@ export class Register {
     );
   }
 
+
+  /**
+   * Law 8, Register A1.c: A QUANTITY IN THE REGISTER IS A WHOLE NUMBER OF PIECES, and this is the
+   * one place that says so.
+   *
+   * Every quantity in this world is a COUNT of the unit's own smallest piece (core/tick.ts): cents,
+   * grams, whole shares, whole machines. A holding of 117.62 shares is not a small holding — it is a
+   * holding of something that does not exist, and once one is in the register everything computed
+   * from it is fractional too and the defect surfaces somewhere with no connection to its cause.
+   *
+   * Settlement checks its own legs (`onTheGrid`) and the seed checks its endowments, but the
+   * register is what they all write to, and it had two doors nobody was watching: a split, which
+   * multiplies every lot by a ratio, and a lien. Guarding the STORE rather than each writer is what
+   * makes this a rule instead of a habit — a new writer cannot forget it.
+   *
+   * It throws rather than rounding: which way a quantity goes onto the grid is the decision of
+   * whoever computed it (`registry.deliverable`, `registry.payable`, `core/tick.ts`), and a store
+   * that rounded for them would be deciding what they held.
+   */
+  private onTheGrid(qty: number, what: string): number {
+    impossible(onTick(qty), 'Law 8', `${what} is ${qty}, which is not a whole number of pieces`);
+    return qty;
+  }
+
   credit(
     holder: PartyId,
     instrument: InstrumentId,
@@ -207,6 +245,7 @@ export class Register {
       holder,
       instrument,
     });
+    this.onTheGrid(qty, `what ${holder} is credited of ${instrument}`);
     finite(basisPerUnit, 'basis');
     this.parties.get(holder);
     const h = this.mutable(holder, instrument);
@@ -270,6 +309,7 @@ export class Register {
       holder,
       instrument,
     });
+    this.onTheGrid(qty, `what ${holder} delivers of ${instrument}`);
     const freeNow = this.free(holder, instrument);
     const h = this.mutable(holder, instrument);
     // Law 7: one dust for the whole walk, derived from the arithmetic that produces it — a quantity
@@ -334,6 +374,7 @@ export class Register {
     allowNegative: boolean,
   ): number {
     finite(delta, `money delta on ${holder}`);
+    this.onTheGrid(delta, `what moves on ${holder}'s ${instrument}`);
     this.parties.get(holder);
     const h = this.mutable(holder, instrument);
     forbid(
@@ -385,6 +426,7 @@ export class Register {
     period: Period,
   ): Lien {
     impossible(qty > 0, 'Register D5', `a lien binds a positive quantity, got ${qty}`);
+    this.onTheGrid(qty, `the units of ${instrument} ${holder} pledges`);
     this.parties.get(beneficiary);
     const freeNow = this.free(holder, instrument);
     forbid(
@@ -440,12 +482,21 @@ export class Register {
       h.lots = h.lots.map((l) =>
         Object.freeze({
           ...l,
-          qty: finite(l.qty * ratio, `${holder}'s units of ${instrument}`),
+          qty: this.onTheGrid(
+            finite(l.qty * ratio, `${holder}'s units of ${instrument}`),
+            `${holder}'s units of ${instrument} after a ${ratio}-for-one split`,
+          ),
           basisPerUnit: finite(l.basisPerUnit / ratio, `what a unit of ${instrument} cost`),
         }),
       );
       h.liens = h.liens.map((l) =>
-        Object.freeze({ ...l, qty: finite(l.qty * ratio, `units of ${instrument} bound`) }),
+        Object.freeze({
+          ...l,
+          qty: this.onTheGrid(
+            finite(l.qty * ratio, `units of ${instrument} bound`),
+            `the units of ${instrument} bound after a ${ratio}-for-one split`,
+          ),
+        }),
       );
     }
   }

@@ -65,6 +65,8 @@ import {
   writeRow,
   type Corridor,
 } from './session.js';
+import { asQty, type Qty } from '../../core/tick.js';
+import { negQty } from '../../core/tick.js';
 
 export * from './data.js';
 export * from './rows.js';
@@ -313,13 +315,15 @@ function asked(ctx: MechanismContext, borrower: PartyId): number {
 }
 
 /** The book as it stands with the borrower's own bid cut back to what it has still not raised. */
-function upTo(orders: readonly Order[], borrower: PartyId, need: number): readonly Order[] {
+function upTo(orders: readonly Order[], borrower: PartyId, need: Qty): readonly Order[] {
   const out: Order[] = [];
   for (const o of orders) {
     if (o.side !== 'buy' || o.party !== borrower) {
       out.push(o);
       continue;
     }
+    // Both are counts of money pieces — what it bid and what it still needs — so the smaller of
+    // them is one too, and nothing was rounded to get it.
     const qty = o.qty < need ? o.qty : need;
     if (qty > 0) out.push({ ...o, qty });
   }
@@ -450,12 +454,14 @@ function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Standing>)
   for (const [bank, p] of pos) {
     const ccy = ccyOf(ctx, bank);
     const cb = ctx.registry.centralBankOf(ccy);
-    const spare = sub(p.reserves, add(p.buffer, lentThisPeriod(ctx, bank), 'placed'), 'spare');
+    // Law 8: its buffer is a share of what could leave, so what is left over is a fraction of a
+    // cent. It places whole ones, and down, because it is what it HAS above the cushion.
+    const spare = downTick(sub(p.reserves, add(p.buffer, lentThisPeriod(ctx, bank), 'placed'), 'spare'));
     if (spare <= 0) continue;
     const venue = sessionVenue(overnight, cb);
     const ask: Order = { party: bank, side: 'sell', price: c.floor, qty: spare };
     ctx.post(venue, ask);
-    for (const o of floorBid(cb, offered(ctx.posted(venue)), c)) ctx.post(venue, o);
+    for (const o of floorBid(cb, asQty(offered(ctx.posted(venue)), 'what the session offers'), c)) ctx.post(venue, o);
     const struck = strike(ctx.posted(venue), cb, overnight);
     for (const s of struck) {
       if (s.lender !== bank || !material(s.amount, 2, p.reserves)) continue;
@@ -907,7 +913,7 @@ function bookOverdrafts(ctx: MechanismContext): void {
     seen.add(d.bank);
     const ccy = d.ccy;
     const cb = ctx.registry.centralBankOf(ccy);
-    const short = -ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy));
+    const short = negQty(ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy)), 'its overdraft');
     const need = ctx.registry.payable(ccy, short);
     if (need <= 0) continue;
     const book = BOOKS.find((b) => b.tenor === 'overnight' && b.secured);

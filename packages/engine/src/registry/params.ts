@@ -13,6 +13,7 @@
 import { InvalidRegistry, Missing } from '../core/errors.js';
 import type { ParamId, UnitId } from '../core/ids.js';
 import { finite } from '../core/num.js';
+import type { Qty } from '../core/tick.js';
 
 export type ParamKind =
   'technology' | 'preference' | 'policy' | 'resolution' | 'shape' | 'placeholder';
@@ -83,7 +84,7 @@ function namesAnItem(why: string): boolean {
 
 /** What the register needs of the registry to count a declared amount in pieces (Law 8). */
 export interface UnitSource {
-  pieces(id: UnitId, named: number): number;
+  pieces(id: UnitId, named: number): Qty;
 }
 
 export interface ParamReport {
@@ -152,7 +153,7 @@ export class ParamRegister {
    * this world's resolution. The reader names the unit because the declaration is about an amount
    * and not about whose money or paper it is.
    */
-  amount(id: ParamId, unit: UnitId): number {
+  amount(id: ParamId, unit: UnitId): Qty {
     const d = this.decl(id);
     if (d.denominated !== true) {
       throw new InvalidRegistry(

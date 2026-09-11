@@ -4,7 +4,12 @@
  * @spec Law 2 XI-14 Appendix A
  */
 import { describe, expect, it } from 'vitest';
-import { ParamRegister, foundationWorld, paramId, type ParamDecl } from '../src/index.js';
+import {
+  ParamRegister,
+  paramId,
+  type ParamDecl,
+} from '../src/index.js';
+import { rigWorld } from './rig.js';
 
 function decl(over: Partial<ParamDecl>): ParamDecl {
   return {
@@ -82,7 +87,7 @@ describe('a shape with a scheduled death is a placeholder (Law 2)', () => {
 
 describe('what the foundation world declares (XI-14)', () => {
   it('counts the two management fees as the placeholders they are, and names their item', () => {
-    const report = foundationWorld('params').params.report();
+    const report = rigWorld('params').params.report();
     expect(report.counts.placeholder).toBe(2);
     expect(
       report.placeholders.map((p) => `${p.id} -> ${p.mechanism} at ${p.worklistItem}`),

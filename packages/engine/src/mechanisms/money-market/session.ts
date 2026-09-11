@@ -41,6 +41,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { advances, borrowingPower, windowAdvances, type Advance } from './collateral.js';
 import { BOOKS, type BookDecl } from './data.js';
 import { INTERBANK, isRow, REPO, rowId, type Pledged, type RowTerms } from './rows.js';
+import type { Qty } from '../../core/tick.js';
 
 /** Clearing B2, C5: one book for one name, declared like a market and public like one. */
 export function sessionVenue(book: BookDecl, borrower: PartyId): VenueId {
@@ -142,7 +143,10 @@ export function windowOffer(
   // C4: only against paper. The window has no unsecured seat at all, which is C5 in the one place
   // it would otherwise be quietly broken.
   if (!book.secured) return [];
-  const power = borrowingPower(windowAdvances(cbView, borrowerView, on, policyHaircut));
+  // Law 8: what the collateral is worth after its haircut is a valuation, and what the window
+  // lends is money — whole cents of it, and down, because lending the cent above what the paper
+  // covers is lending unsecured (C4).
+  const power = downTick(borrowingPower(windowAdvances(cbView, borrowerView, on, policyHaircut)));
   if (power <= 0) return [];
   return [{ party: cbView.self.id, side: 'sell', price: corridor.ceiling, qty: power }];
 }
@@ -319,7 +323,7 @@ export function bidFor(orders: readonly Order[]): number {
 }
 
 /** Money Market C1: the standing bid at the floor, for whatever the session offers it. */
-export function floorBid(cb: PartyId, amount: number, corridor: Corridor): readonly Order[] {
+export function floorBid(cb: PartyId, amount: Qty, corridor: Corridor): readonly Order[] {
   return amount > 0 ? [{ party: cb, side: 'buy', price: corridor.floor, qty: amount }] : [];
 }
 

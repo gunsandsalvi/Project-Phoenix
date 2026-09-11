@@ -63,6 +63,7 @@ export {
   shortForSpending,
   sparePerMember,
 } from './portfolio.js';
+import { asQty, scaleQty } from '../../core/tick.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
@@ -307,7 +308,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // nobody stated from preferring one class of thing to another.
   const lines = paper.length + shares.length;
   const perLine = lines > 0 ? div(spare, lines, 'what it puts into one line') : 0;
-  const paperOrders = paperBids(view, paper, mul(perLine, weightOf(self), 'the cell own share'), lines);
+  const paperOrders = paperBids(view, paper, perLine, lines, weightOf(self));
   // D2, D5: the third thing it can do with its money, and the reason it asks for it back. What the
   // fund published is public (Clearing F1: it acts on what it has already been told), and what it
   // offers is compared against the same requirement a bill is.
@@ -321,7 +322,9 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       // C1, C2: nobody names a price here. Everybody who asks transacts at the NAV the fund strikes.
       price: 'market',
       // A posting is a total, like every other posting; what the cell decided was per member.
-      qty: mul(o.sharesPerMember, weightOf(self), 'shares the cell asks about'),
+      // XI-15, Law 8: a cell posts a whole number of shares for EVERY member it stands for, so
+      // the total is that count times a count of people and no rounding is involved.
+      qty: scaleQty(o.sharesPerMember, weightOf(self), 'shares the cell asks about'),
     });
   }
   ctx.record(
@@ -375,7 +378,9 @@ function ordersFrom(rows: unknown, market: string, self: PartyId): Order[] {
     // a level of its own, and a level is a number.
     if (price !== 'market' && typeof price !== 'number') continue;
     if (typeof qty !== 'number' || qty <= 0) continue;
-    out.push({ party: self, side, price, qty });
+    // Law 19: read back from what this cell published, through the one door that says a size is a
+    // count of pieces — and that throws if what it published was not (core/tick.ts).
+    out.push({ party: self, side, price, qty: asQty(qty, `${self}'s posted size`) });
   }
   return out;
 }

@@ -19,7 +19,6 @@ import {
   PHX,
   assemble,
   currencyUnit,
-  foundationSpec,
   venueId,
   type MechanismContext,
   type Order,
@@ -28,7 +27,9 @@ import {
   type VenueDecl,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { notDealing } from './no-dealing.js';
+import { asQty } from '../src/core/tick.js';
 
 const VENUE = venueId('test.venue');
 const OTHER = venueId('test.other');
@@ -89,7 +90,7 @@ function schedules(kind = HOUSEHOLD): SystemModule {
       {
         partyKind: kind,
         orders: (view: ParticipantView, venue: VenueDecl): readonly Order[] =>
-          venue.id === VENUE ? [{ party: view.self.id, side: 'buy', price: 1, qty: 1 }] : [],
+          venue.id === VENUE ? [{ party: view.self.id, side: 'buy', price: 1, qty: asQty(1) }] : [],
       },
     ],
     families: [],
@@ -132,7 +133,7 @@ function anotherVenue(): SystemModule {
 }
 
 function world(...extra: SystemModule[]): World {
-  const spec = foundationSpec('venue');
+  const spec = rigSpec('venue');
   const kernelOnly = spec.modules.filter(
     (m) =>
       m.id === 'sovereign-instruments' ||

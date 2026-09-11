@@ -13,13 +13,12 @@ import { describe, expect, it } from 'vitest';
 import {
   LENDING_PARAMS,
   assemble,
-  foundationSpec,
-  foundationWorld,
   partyId,
   type Event,
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigDraw, rigSpec, rigWorld } from './rig.js';
 import { unexpected } from './expected.js';
 
 const BANK_A = partyId('bank.a');
@@ -32,7 +31,7 @@ function run(w: World, periods: number): World {
 
 /** The same world with one declared number set differently, wherever it was declared. */
 function withParam(seed: string, over: Readonly<Record<string, number>>): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules: SystemModule[] = spec.modules.map((m) => ({
     ...m,
     params: m.params.map((p) => {
@@ -54,7 +53,7 @@ function num(e: Event | undefined, key: string): number {
 }
 
 describe('the requirement (Banks Capital B1, B1.a)', () => {
-  const w = run(foundationWorld('cap-a'), 8);
+  const w = run(rigWorld('cap-a'), 8);
 
   it('publishes a position that is a read of the register, and says so (B3.a, A1)', () => {
     for (const bank of [BANK_A, BANK_B]) {
@@ -106,11 +105,20 @@ describe('which one binds (Banks Capital B1.b, B1.c)', () => {
   it('is an outcome of what the bank holds, and moves when the rules move (B1.c)', () => {
     // With an ordinary backstop the weighted rule is what a bank runs into: its book is mostly
     // zero-weighted paper, so the backstop is far away.
-    const ordinary = run(foundationWorld('cap-b'), 8);
-    // Ask a bank to fund every asset it holds out of its own capital — a backstop no bank with a
-    // depositor can meet — and the SAME bank, holding exactly the same assets, is stopped by that
-    // rule instead. Nothing about the bank changed; the answer to "what stops it" did (B1.c).
-    const backstopped = run(withParam('cap-b', { [String(LENDING_PARAMS.leverageRatio)]: 1 }), 8);
+    const ordinary = run(rigWorld('cap-b'), 8);
+    // Ask a bank to fund nine tenths of every asset it holds out of its own capital — a backstop
+    // no bank with depositors can meet — and the SAME bank, holding exactly the same assets, is
+    // stopped by that rule instead. Nothing about the bank changed; the answer to "what stops it"
+    // did (B1.c).
+    //
+    // HALF AND NOT ALL OF IT, and the difference is not a tuning. What a bank funds out of capital
+    // is what it does NOT fund out of deposits, so a backstop of one says it has no depositors —
+    // and this world opens firms with accounts at it. The seed refuses that world by name rather
+    // than inventing a balance sheet for it (Seed D1), and it refuses nine tenths too, because the
+    // money this world has is not enough to carry its firms' accounts at that ratio. Half binds
+    // hard — the weighted rule asks nothing of a book of sovereign paper — and leaves a bank able
+    // to be a bank.
+    const backstopped = run(withParam('cap-b', { [String(LENDING_PARAMS.leverageRatio)]: 0.5 }), 8);
     for (const bank of [BANK_A, BANK_B]) {
       expect(num(position(ordinary, bank), 'headroom')).toBeGreaterThan(
         num(position(backstopped, bank), 'headroom'),
@@ -128,8 +136,21 @@ describe('which one binds (Banks Capital B1.b, B1.c)', () => {
     // published position is what its own credit decision reads (Law 19: read, never recomputed), so
     // a bank with no headroom declines — and the decline is an answer with the binding rule on it
     // (Banks Lending C3.a), not a silent absence.
-    const tight = run(withParam('cap-c', { [String(LENDING_PARAMS.leverageRatio)]: 1 }), 10);
-    const loose = run(foundationWorld('cap-c'), 10);
+    // THE RULE THAT THE SEED DID NOT FUND IT AGAINST, and that is the whole of why this test has
+    // to reach for the weighted one. A bank opens where its OWN capital rule puts it (Seed A4,
+    // B1.b): raise the backstop and the seed opens it with that much more capital, so a backstop
+    // alone can never leave it short on the first morning. The WEIGHTED rule is different — the
+    // seed's banks hold sovereign paper, which the weights put at zero, so the seed funds nothing
+    // against it. Give that paper a loan's weight and ask for half of it in capital, and the same
+    // bank holding the same assets has no room at all.
+    const tight = run(
+      withParam('cap-c', {
+        [String(LENDING_PARAMS.sovereignWeight)]: 1,
+        [String(LENDING_PARAMS.capitalRatio)]: 0.5,
+      }),
+      10,
+    );
+    const loose = run(rigWorld('cap-c'), 10);
     for (const bank of [BANK_A, BANK_B]) {
       expect(num(position(tight, bank), 'headroom')).toBeLessThan(0);
       expect(num(position(loose, bank), 'headroom')).toBeGreaterThan(0);
@@ -151,13 +172,30 @@ describe('which one binds (Banks Capital B1.b, B1.c)', () => {
 describe('the buffer above it (Banks Capital B2)', () => {
   it('is the bank own choice, and a cautious bank has less room at the same rules (B2)', () => {
     // B2: the buffer is not a stated ratio — it is what THIS bank insists on running above the
-    // line, and the two banks in this world differ in it because they are different banks.
-    const w = run(foundationWorld('cap-d'), 8);
-    expect(num(position(w, BANK_A), 'buffer')).toBeGreaterThan(num(position(w, BANK_B), 'buffer'));
-    // Give bank A the same caution as bank B and its room grows, with everything else identical.
-    const bolder = run(withParam('cap-d', { 'bank.capitalBuffer.bank.a': 0.005 }), 8);
-    expect(num(position(bolder, BANK_A), 'headroom')).toBeGreaterThan(
-      num(position(w, BANK_A), 'headroom'),
+    // line, and the banks in this world differ in it because they are different banks.
+    //
+    // Seed B4: WHICH of them is the cautious one is drawn, so the test asks rather than names one.
+    // It used to say "bank.a is more careful than bank.b", which was true of a table of three
+    // written out by hand and means nothing about a world that draws its banks.
+    const drew = rigDraw('cap-d');
+    const byCaution = [...drew.banks].sort((a, b) => b.capitalBuffer - a.capitalBuffer);
+    const cautious = byCaution[0];
+    const bold = byCaution[byCaution.length - 1];
+    expect(cautious).toBeDefined();
+    expect(bold).toBeDefined();
+    if (cautious === undefined || bold === undefined) return;
+    expect(cautious.capitalBuffer).toBeGreaterThan(bold.capitalBuffer);
+    const w = run(rigWorld('cap-d'), 8);
+    expect(num(position(w, partyId(cautious.bank)), 'buffer')).toBeGreaterThan(
+      num(position(w, partyId(bold.bank)), 'buffer'),
+    );
+    // Give the cautious one the bold one's caution and its room grows, everything else identical.
+    const bolder = run(
+      withParam('cap-d', { [`bank.capitalBuffer.${cautious.bank}`]: bold.capitalBuffer }),
+      8,
+    );
+    expect(num(position(bolder, partyId(cautious.bank)), 'headroom')).toBeGreaterThan(
+      num(position(w, partyId(cautious.bank)), 'headroom'),
     );
   });
 });

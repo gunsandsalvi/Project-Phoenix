@@ -10,10 +10,10 @@ import {
   EXPECTATION_PARAMS,
   HOUSEHOLD,
   TREASURY_NORTH,
-  foundationWorld,
   partyId,
   type World,
 } from '../src/index.js';
+import { rigWorld } from './rig.js';
 
 function expected(w: World, party: string, variable: string): number | null {
   const o = w.participantView(partyId(party)).outlook(variable);
@@ -27,7 +27,7 @@ function confidence(w: World, party: string, variable: string): number | null {
 
 describe('an outlook is personal (Expectations A2)', () => {
   it('exists only for a party that observed the variable, and says nothing otherwise', () => {
-    const w = foundationWorld('exp-a');
+    const w = rigWorld('exp-a');
     for (let i = 0; i < 6; i += 1) w.step();
     // The treasury pays; the cells are paid. Both saw money arrive, so both have an income outlook.
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
@@ -38,7 +38,7 @@ describe('an outlook is personal (Expectations A2)', () => {
   });
 
   it('is nobody else s: one party s outlook is not reachable from another s view (A2, D1)', () => {
-    const w = foundationWorld('exp-b');
+    const w = rigWorld('exp-b');
     for (let i = 0; i < 6; i += 1) w.step();
     const view = w.participantView(BANK_A);
     // WHO somebody is, is public: a market knows whose paper it trades (Observer A3). What that
@@ -56,7 +56,7 @@ describe('an outlook is personal (Expectations A2)', () => {
 
 describe('how an outlook moves (B1, B2, B4)', () => {
   it('is corrected towards what happened, at the party own speed, and never faster', () => {
-    const w = foundationWorld('exp-c');
+    const w = rigWorld('exp-c');
     // The treasury pays every cell the same mandate every period, so what a cell observes is
     // steady: its outlook walks towards that number and arrives at it, never past it.
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
@@ -73,7 +73,7 @@ describe('how an outlook moves (B1, B2, B4)', () => {
   });
 
   it('lags a step change by the party own memory (B1, B5)', () => {
-    const w = foundationWorld('exp-d');
+    const w = rigWorld('exp-d');
     for (let i = 0; i < 20; i += 1) w.step();
     // The treasury's own income is what it collects, which is nothing in most periods and a lump
     // when the coupons it taxes fall due: a step it did not see coming.
@@ -97,7 +97,7 @@ describe('how an outlook moves (B1, B2, B4)', () => {
   });
 
   it('records the surprise as an event, and it is the party own (B2)', () => {
-    const w = foundationWorld('exp-e');
+    const w = rigWorld('exp-e');
     for (let i = 0; i < 8; i += 1) w.step();
     const events = w.journal.ofKind('expectations.surprise');
     expect(events.length).toBeGreaterThan(0);
@@ -110,7 +110,7 @@ describe('how an outlook moves (B1, B2, B4)', () => {
   });
 
   it('makes confidence a read of how wide the recent surprises were (B3)', () => {
-    const w = foundationWorld('exp-f');
+    const w = rigWorld('exp-f');
     for (let i = 0; i < 20; i += 1) w.step();
     const steady = confidence(w, BANK_B, 'income');
     expect(steady).not.toBeNull();
@@ -120,7 +120,7 @@ describe('how an outlook moves (B1, B2, B4)', () => {
 
 describe('memories differ across parties (A3, B1.a)', () => {
   it('are drawn once and kept, so two parties do not move as one', () => {
-    const a = foundationWorld('exp-g');
+    const a = rigWorld('exp-g');
     for (let i = 0; i < 12; i += 1) a.step();
     const slots = a.stateSlots()['expectations/outlooks'] as Record<
       string,
@@ -135,7 +135,7 @@ describe('memories differ across parties (A3, B1.a)', () => {
 
 describe('the aggregate is a statistic (D4, E2, Observer A5)', () => {
   it('is published about the period that closed, and causes nothing', () => {
-    const w = foundationWorld('exp-h');
+    const w = rigWorld('exp-h');
     for (let i = 0; i < 10; i += 1) w.step();
     const published = w.journal.ofKind('expectations.dispersion');
     expect(published.length).toBeGreaterThan(0);

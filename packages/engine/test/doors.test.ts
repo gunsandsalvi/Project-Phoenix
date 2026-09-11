@@ -14,7 +14,6 @@ import {
   InvalidRegistry,
   PHX,
   assemble,
-  foundationSpec,
   instrumentId,
   instrumentKindId,
   marketId,
@@ -30,8 +29,10 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { paidTo } from './expected.js';
 import { notDealing } from './no-dealing.js';
+import { asQty } from '../src/core/tick.js';
 
 const WHEAT = instrumentKindId('good.wheat');
 const TONNES = unitId('tonnes');
@@ -107,9 +108,9 @@ function trader(price: number): SystemModule {
         orders: (view, m) => {
           if (m.instrument !== WHEAT_ID || view.period < 2) return [];
           if (view.self.id === FIRM_1)
-            return [{ party: FIRM_1, side: 'sell' as const, price, qty: 1 }];
+            return [{ party: FIRM_1, side: 'sell' as const, price, qty: asQty(1) }];
           if (view.self.id === partyId('firm.2'))
-            return [{ party: partyId('firm.2'), side: 'buy' as const, price, qty: 1 }];
+            return [{ party: partyId('firm.2'), side: 'buy' as const, price, qty: asQty(1) }];
           return [];
         },
       },
@@ -119,7 +120,7 @@ function trader(price: number): SystemModule {
 }
 
 function world(...extra: SystemModule[]): World {
-  const spec = foundationSpec('doors');
+  const spec = rigSpec('doors');
   const kernelOnly = spec.modules.filter(
     (m) =>
       m.id === 'sovereign-instruments' ||

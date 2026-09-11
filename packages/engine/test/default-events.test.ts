@@ -14,7 +14,6 @@ import {
   PHX,
   TREASURY_NORTH,
   assemble,
-  foundationSpec,
   moneyInstrumentId,
   partyId,
   sovereignBond,
@@ -24,6 +23,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { notDealing } from './no-dealing.js';
 
 const SINK = partyId('firm.1');
@@ -69,7 +69,7 @@ function drain(): SystemModule {
 
 /** The kernel and the opening state: no treasury programme to refill what the test took. */
 function world(...extra: SystemModule[]): World {
-  const spec = foundationSpec('default-events');
+  const spec = rigSpec('default-events');
   const kernelOnly = spec.modules.filter(
     (m) =>
       m.id === 'sovereign-instruments' ||

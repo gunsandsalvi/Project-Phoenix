@@ -1,19 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
 import { clear, partyId, sum, type Order } from '../src/index.js';
+import { asQty } from '../src/core/tick.js';
+
+/** Law 8: a size in this test is a count of the unit's own pieces, like every size anywhere. */
+const q = asQty;
 
 const P = (s: string) => partyId(s);
 
 describe('clearing solver (Clearing C1-C5)', () => {
   it('reports the non-clearing outcomes distinctly (C4.b)', () => {
     expect(clear([], 'proRata').kind).toBe('noDemand');
-    expect(clear([{ party: P('a'), side: 'buy', price: 1, qty: 1 }], 'proRata').kind).toBe(
+    expect(clear([{ party: P('a'), side: 'buy', price: 1, qty: q(1) }], 'proRata').kind).toBe(
       'noSupply',
     );
     const r = clear(
       [
-        { party: P('a'), side: 'buy', price: 0.9, qty: 10 },
-        { party: P('b'), side: 'sell', price: 1.0, qty: 10 },
+        { party: P('a'), side: 'buy', price: 0.9, qty: q(10) },
+        { party: P('b'), side: 'sell', price: 1.0, qty: q(10) },
       ],
       'proRata',
     );
@@ -23,10 +27,10 @@ describe('clearing solver (Clearing C1-C5)', () => {
   it('clears at a posted price, never a bracket (C4.c), and rations pro rata (C3)', () => {
     const r = clear(
       [
-        { party: P('b1'), side: 'buy', price: 1.0, qty: 60 },
-        { party: P('b2'), side: 'buy', price: 1.0, qty: 40 },
-        { party: P('b3'), side: 'buy', price: 0.95, qty: 100 },
-        { party: P('s1'), side: 'sell', price: 0.97, qty: 50 },
+        { party: P('b1'), side: 'buy', price: 1.0, qty: q(60) },
+        { party: P('b2'), side: 'buy', price: 1.0, qty: q(40) },
+        { party: P('b3'), side: 'buy', price: 0.95, qty: q(100) },
+        { party: P('s1'), side: 'sell', price: 0.97, qty: q(50) },
       ],
       'proRata',
     );
@@ -45,7 +49,7 @@ describe('clearing solver (Clearing C1-C5)', () => {
     party: fc.integer({ min: 0, max: 9 }).map((n) => P(`p${n}`)),
     side: fc.constantFrom<'buy' | 'sell'>('buy', 'sell'),
     price: fc.integer({ min: 80, max: 120 }).map((n) => n / 100),
-    qty: fc.integer({ min: 1, max: 1000 }),
+    qty: fc.integer({ min: 1, max: 1000 }).map(q),
   });
 
   it('is a pure function of the schedules (C5) and bought equals sold (D5)', () => {

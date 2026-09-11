@@ -22,7 +22,6 @@ import {
   PHX,
   TREASURY_NORTH,
   assemble,
-  foundationSpec,
   moneyInstrumentId,
   none,
   partyId,
@@ -32,6 +31,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 
 const BANK_A = partyId('bank.a');
@@ -102,7 +102,7 @@ function penalty(at: number): SystemModule {
 
 /** The foundation world, one penalty, and any declared number set differently. */
 function failing(seed: string, over: Readonly<Record<string, number>> = {}): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules: SystemModule[] = [...spec.modules, penalty(AT)].map((m) => ({
     ...m,
     params: m.params.map((p) => {

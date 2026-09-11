@@ -21,8 +21,6 @@ import {
   FUND_MANAGER,
   HOUSEHOLD,
   assemble,
-  foundationSpec,
-  foundationWorld,
   households,
   firms,
   funds,
@@ -30,6 +28,9 @@ import {
   type PartyId,
   type World,
 } from '../src/index.js';
+import { rigDraw } from './rig.js';
+const drew = rigDraw('deposits-doors');
+import { rigWorld, rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 
 const PERIODS = 52;
@@ -45,7 +46,7 @@ function moves(w: World): { period: number; who: PartyId; from: PartyId }[] {
 
 /** The foundation world at a stated cell grain, stepped a year, audited every period. */
 function at(cellsPerKey: number): World {
-  const spec = foundationSpec('deposits');
+  const spec = rigSpec('deposits');
   const modules = spec.modules.map((m) =>
     m.id === 'seed.foundation' ||
       m.id === 'seed.funding'
@@ -69,7 +70,7 @@ describe('whose decision it is (Observer A4, Law 4)', () => {
     // depositor may have, which is the defect the venue door (11.1) fixed for a schedule.
     expect(moneyMarket.bankChoices ?? []).toEqual([]);
     const owners = new Map<string, string>();
-    for (const m of [households(), firms(), funds()]) {
+    for (const m of [households(), firms(drew.firms), funds(drew.funds, drew.etfs)]) {
       for (const d of m.bankChoices ?? []) {
         // Law 4: exactly one module answers for a kind. Two would be two reasons for one party.
         expect(owners.has(String(d.partyKind))).toBe(false);
@@ -88,7 +89,7 @@ describe('whose decision it is (Observer A4, Law 4)', () => {
     // it — stickiness as an omission rather than as a cost somebody bears. The guard is on the
     // MODULE's own declaration, so a world assembled from four modules to exercise a kernel door
     // does not trip it while a module that forgot its depositor does.
-    const spec = foundationSpec('deposits-guard');
+    const spec = rigSpec('deposits-guard');
     const modules = spec.modules.map((m) =>
       m.id === 'funds' ? { ...m, bankChoices: [] } : m,
     );
@@ -96,7 +97,7 @@ describe('whose decision it is (Observer A4, Law 4)', () => {
   });
 
   it('gives each kind a reason of its own, and all three of them fire', () => {
-    const w = foundationWorld('deposits-why');
+    const w = rigWorld('deposits-why');
     for (let i = 0; i < PERIODS; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const kinds = new Set(moves(w).map((m) => String(w.parties.get(m.who).kind)));
     // A1.a's household moves for the rate it is not being paid; A1.b's firm moves off a bank that

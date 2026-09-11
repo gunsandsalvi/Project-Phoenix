@@ -459,13 +459,18 @@ export function sessionOrders(view: ParticipantView, venue: VenueDecl): readonly
     const need = downTick(add(-p.gap, fallsDueNext(view, ccy), 'what it has to raise'));
     if (need <= 0) return [];
     const power = secured ? pledgeable(view) : need;
-    const size = power < need ? power : need;
+    // Law 8: what it can pledge is a valuation and the money it wants is a count of cents, so the
+    // smaller of them is brought back onto the grid. Down, because it is what this bank CAN raise.
+    const size = downTick(power < need ? power : need);
     return size > 0 ? [{ party: self, side: 'buy', price: c.ceiling, qty: size }] : [];
   }
   if (p.gap <= 0) return [];
   const wants = lenderReservation(view, secured, partyId(borrower), c);
   if (!wants.some) return [];
-  return [{ party: self, side: 'sell', price: wants.value, qty: p.gap }];
+  // Law 8: what it has spare is a whole number of pieces of the money it is lending.
+  const spare = downTick(p.gap);
+  if (spare <= 0) return [];
+  return [{ party: self, side: 'sell', price: wants.value, qty: spare }];
 }
 
 /** The classes of depositor this world has, as the market publishes them (Banks Funding A1.a). */

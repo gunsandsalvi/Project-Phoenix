@@ -4,19 +4,15 @@ import {
   ANNUAL,
   Calendar,
   Impossible,
-  Mismatch,
   NonFinite,
   SEMI_ANNUAL,
-  addMoney,
   addMonths,
   civil,
   count,
-  currencyCode,
   dayNumber,
   finite,
   formatCivil,
   fromDayNumber,
-  money,
   period,
   prng,
   rate,
@@ -60,14 +56,12 @@ describe('num (Law 7)', () => {
   });
 });
 
-describe('money (Money A2.b)', () => {
-  it('never adds two currencies', () => {
-    const a = money(1, currencyCode('AAA'));
-    const b = money(1, currencyCode('BBB'));
-    expect(() => addMoney(a, b)).toThrow(Mismatch);
-    expect(addMoney(a, money(2, currencyCode('AAA'))).amount).toBe(3);
-  });
-});
+// Money A2.b — "two currencies are never added" — was tested here against a value object in
+// `core/money.ts` that NOTHING in the engine ever used: a second representation of money and of a
+// quantity, standing beside the real ones and enforcing nothing about them (Law 4). It is deleted,
+// and what replaces the read is the wire: `ledger/settlement.ts` refuses any leg in a currency the
+// party it touches does not book in, and `test/world.test.ts` asserts that. A guard on the one path
+// every movement takes is the rule; a guard on a type nobody holds is a comfort.
 
 describe('civil dates', () => {
   it('round-trips through day numbers', () => {

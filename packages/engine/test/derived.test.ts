@@ -12,7 +12,6 @@ import { describe, expect, it } from 'vitest';
 import {
   PHX,
   assemble,
-  foundationSpec,
   instrumentId,
   instrumentKindId,
   none,
@@ -23,6 +22,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 
 const BOOK = partyId('firm.1');
@@ -118,7 +118,7 @@ function holdsItsOwnClaim(): SystemModule {
 }
 
 function world(...extra: readonly SystemModule[]): World {
-  const spec = foundationSpec('derived');
+  const spec = rigSpec('derived');
   const kernel = spec.modules.filter((m) =>
     ['sovereign-instruments', 'seed.foundation', 'banks', 'money-market'].includes(m.id),
   );

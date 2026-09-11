@@ -54,6 +54,8 @@ import {
   type PlantOffer,
   type Project,
 } from './invest.js';
+import { downTick, upTick } from '../../core/tick.js';
+import { NO_QTY, asQty, type Qty } from '../../core/tick.js';
 
 /** An order the firm has decided to post, in the form the market takes it (Clearing A2). */
 export interface PlannedOrder {
@@ -91,7 +93,8 @@ export interface Planned {
   /** B5: inputs plus wages, per unit FINISHED — so the yield is in it (Goods B4). Unknown until it has paid a wage. */
   readonly unitCost: Option<number>;
   /** Goods B1: the units it will start this period. The outcome, not a target. */
-  readonly batch: number;
+  /** Law 8: whole pieces it will START. What it plans is what it can do. */
+  readonly batch: Qty;
   /** B1.a, B1.c: what stopped it being larger. A binding constraint is a real state. */
   readonly bound: 'demand' | 'labour' | 'margin' | 'capacity';
   /** Capital Programme A2, Goods B1.a: what its plant lets it start a period. None: it needs none. */
@@ -107,7 +110,8 @@ export interface Planned {
   /** B1.b: what money costs it at the margin now, which is what a project is measured against. */
   readonly costOfCapital: CostOfCapital | null;
   /** E2: the employment it wants, in hours — the labour that makes what it expects to sell. */
-  readonly hours: number;
+  /** Law 8: whole hours. A wage is struck for an hour and never for part of one. */
+  readonly hours: Qty;
   /** Labour C1: the most it will pay for an hour, which is what an hour is worth to it. */
   readonly wageBid: number;
   readonly orders: readonly PlannedOrder[];
@@ -230,7 +234,13 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<num
   // A firm with no idea what its stock fetches cannot say how much of it covers a payroll, so what
   // it needs is all of it: it has bills and no view (Firm D1).
   const forced = short <= 0 ? 0 : price.some ? div(short, price.value, 'units it must sell') : stock;
-  const cannotKeep = add(mul(stock, tech.spoilage, 'what will perish'), forced, 'what it cannot keep');
+  // Law 8: a piece is the smallest thing there is, so a PART of one it cannot keep is a whole one
+  // it cannot keep — a loaf a quarter stale is a stale loaf, and a payroll covered by all but a
+  // cent is a payroll not covered. It rounds up for both reasons, and what is left over is exactly
+  // what the register says it holds less that, so no fraction survives on either side.
+  const cannotKeep = upTick(
+    add(mul(stock, tech.spoilage, 'what will perish'), forced, 'what it cannot keep'),
+  );
   const atMarket = cannotKeep < stock ? cannotKeep : stock;
   const out: PlannedOrder[] = [];
   if (material(atMarket, 2, stock)) {
@@ -330,11 +340,16 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: 'capacity' as const }] : []),
   ];
   const binding = limits.reduce((a, b) => (b.qty < a.qty ? b : a));
-  const batch = !worthMaking || wanted <= 0 ? 0 : binding.qty;
+  // Law 8: WHAT IT WILL START is whole pieces, decided here and nowhere else. Every limit above
+  // is a division — expected sales over a yield, hours over hours-per-unit, plant over what a unit
+  // takes — so the binding one is a fraction of a piece, and a part-started unit is not started.
+  const batch = !worthMaking || wanted <= 0 ? NO_QTY : downTick(binding.qty);
   const bound = !worthMaking ? 'margin' : binding.bound;
   const orders = [...selling];
   for (const [n, input] of tech.inputs.entries()) {
-    const need = mul(batch, input.qtyPerUnit, 'what the batch draws');
+    // Law 8: a recipe met with the piece below is a recipe not met (`produce.ts` draws the same
+    // way), so what it bids for is the whole pieces the batch needs and never the fraction under.
+    const need = upTick(mul(batch, input.qtyPerUnit, 'what the batch draws'));
     const buy = sub(need, view.quantity(input.instrument), 'what it must buy');
     if (!material(buy, 2, need) || buy <= 0) continue;
     orders.push({
@@ -397,7 +412,10 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     // E2: the labour that makes what it expects to sell, period after period. The stock it happens
     // to hold moves the batch, not the workforce: people are a relationship and letting them go
     // costs severance (Labour C3), so a firm does not shed a soft week's worth of them.
-    hours: mul(perPeriod, tech.hoursPerUnit, 'the employment it wants'),
+    // Law 8: an hour has a smallest piece like everything else, and what it posts is a whole
+    // number of them. Down, because it is what this firm will PAY for: a posting rounded up is a
+    // wage bill it did not decide on.
+    hours: downTick(mul(perPeriod, tech.hoursPerUnit, 'the employment it wants')),
     wageBid: perHour,
     orders,
   });
@@ -503,7 +521,11 @@ export function ordersFrom(event: Event, market: MarketId, self: PartyId): Order
     if (side !== 'buy' && side !== 'sell') continue;
     if (typeof qty !== 'number') continue;
     if (typeof price !== 'number' && price !== 'market') continue;
-    out.push({ party: self, side, price, qty });
+    // Law 8, Law 19: read back from the firm's OWN published plan, so what reaches the book is
+    // what it decided and never a second derivation of it (Clearing F1). `asQty` throws if the
+    // plan it is reading carried a size that is not a whole number of pieces — which is the check
+    // that a decision published off the grid cannot quietly become an order.
+    out.push({ party: self, side, price, qty: asQty(qty, `${self}'s posted size`) });
   }
   return out;
 }

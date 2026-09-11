@@ -66,6 +66,7 @@ import {
   SHORT_TENORS,
   TENOR_WINDOW_YEARS,
 } from './data.js';
+import { downTick, upTick } from '../../core/tick.js';
 
 export const TREASURY_PARAMS = {
   bufferPeriods: paramId('treasury.buffer.periods'),
@@ -511,7 +512,10 @@ function announce(
     CURVE_DAY_COUNT,
     'reservation',
   );
-  const units = div(size, reservation, 'units offered');
+  // Law 8: it needs to raise a sum of money and it raises it by selling UNITS of a line, which are
+  // indivisible — so what it brings is the whole units that sum comes to. Up, because the ask is
+  // the money: an issue a fraction of a unit short of what the programme needs is short of it.
+  const units = upTick(div(size, reservation, 'units offered'));
   ctx.offer({
     market: marketOf(ctx, instrument),
     issuer: id,
@@ -758,7 +762,9 @@ function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const cash = view.cash(ccy);
   // D1: it buys out of the balance it has, and an empty account buys nothing.
   const afford = spend < cash ? spend : cash;
-  const qty = div(afford, print.value.price, 'what the budget buys');
+  // Law 8: a budget divided by a price is a fraction of a unit, and the state buys whole ones like
+  // everybody else. Down: what it can afford never rounds up past the money it has.
+  const qty = downTick(div(afford, print.value.price, 'what the budget buys'));
   return qty > 0 ? [{ party: view.self.id, side: 'buy', price: print.value.price, qty }] : [];
 }
 
@@ -780,7 +786,8 @@ function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
   // has any. A treasury that is short does not buy its own paper back (A2, D4).
   const spare = sparePerProgramme(view);
   if (spare <= 0) return [];
-  const qty = div(spare, print.value.price, 'units');
+  // Law 8: whole units of its own paper, out of money it does not need.
+  const qty = downTick(div(spare, print.value.price, 'units'));
   return qty > 0 ? [{ party: view.self.id, side: 'buy', price: print.value.price, qty }] : [];
 }
 

@@ -23,40 +23,16 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
-  BANKS,
   HOUSEHOLD,
   PHX,
-  assemble,
-  foundationSpec,
   moneyInstrumentId,
-  type BankDecl,
   type World,
 } from '../../src/index.js';
+import { rigWorld } from '../rig.js';
 import { unexpected } from '../expected.js';
 
 const PERIODS = 26;
 
-/**
- * Seed B1, B4: a fourth disposition, declared with its own reason like the three in the world's own
- * table. It is what the other three are not — a bank that lends and takes deposits and makes a
- * market in nothing but the paper its own treasury holds, so what it earns comes from lending
- * rather than from carrying anybody's inventory.
- */
-const FOURTH: BankDecl = {
-  bank: 'bank.d',
-  size: 3,
-  memoryPeriods: 13,
-  returnOnCapital: 0.09,
-  capitalBuffer: 0.015,
-  liquidityCushion: 0.3,
-  limitPerBorrower: 0.3,
-  depositMargin: 0.005,
-  bufferMemory: 13,
-  makes: ['sovereign.bill', 'sovereign.bond'],
-  capitalAtRisk: 0.15,
-  concentration: 0.4,
-  why: 'A fourth bank for the measurement: a quarter of a year of memory on both sides, the middling return on capital, a cushion between the cautious one and the keen one, and a book it does not run.',
-};
 
 interface Aggregates {
   /** How many the world OPENED with, read at the seal. */
@@ -71,8 +47,8 @@ interface Aggregates {
   readonly couldLeave: number;
 }
 
-function at(rows: readonly BankDecl[]): Aggregates {
-  const w = assemble(foundationSpec('bank-count', rows));
+function at(count: number): Aggregates {
+  const w = rigWorld('bank-count', count);
   // What it OPENED with, read before it runs: `ofKind` answers with the living (Register F2), and a
   // bank that fails mid-run is the mechanism working rather than the count being wrong (XI-3).
   const opened = w.parties.ofKind(BANK).length;
@@ -119,9 +95,12 @@ function read(w: World): Aggregates {
 }
 
 describe('the same world with two banks, three and four (Seed B1, XI-15)', () => {
-  const two = at(BANKS.slice(0, 2));
-  const three = at(BANKS);
-  const four = at([...BANKS, FOURTH]);
+  // Seed B4: the count is the only thing that changes. What each bank is like is DRAWN from the
+  // same spread and the same seed value, so a world of four is not a world of three with a row
+  // appended by hand — it is this world asked for four.
+  const two = at(2);
+  const three = at(3);
+  const four = at(4);
 
   it('opens with the banks its table declares, and no others', () => {
     expect(two.banks).toBe(2);

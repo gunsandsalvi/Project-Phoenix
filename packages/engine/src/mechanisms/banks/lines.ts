@@ -31,6 +31,7 @@ import { period as asPeriod } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { add, div, sub } from '../../core/num.js';
+import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { LineWeights } from './capital.js';
@@ -88,7 +89,12 @@ export function publishLines(
     const asks = r.line === DEALING ? (wants > 0 ? wants : 0) : left;
     // Arithmetic, not a bound (Law 6): it cannot be allotted room that does not exist. What is
     // left can be nothing, and then the line behind stops writing.
-    const give = left < asks ? left : asks;
+    //
+    // Law 8: AND IT IS MONEY, so what a line is allotted is a whole number of the smallest piece of
+    // it. Both numbers above are a capital position over a risk weight, so both land between two
+    // pieces; a line cannot be given a fraction of a cent to lend, and the treasury keeps whatever
+    // the rounding leaves rather than handing it to a line that did not ask for it.
+    const give = downTick(left < asks ? left : asks);
     allotted.set(r.line, give > 0 ? give : 0);
     left = left - give;
   }

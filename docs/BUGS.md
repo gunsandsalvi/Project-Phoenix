@@ -281,6 +281,127 @@ owner and size are not yet read — the assertion reports the array, not its con
 
 ---
 
+### 12-10 — A ceased bank keeps its reserve overdraft, and nobody is owed it
+
+**Where.** `audit.money` and `audit.names`, in a world of thirty banks.
+
+**Measured.** Probe of `foundationSpec` at 30 banks / 300 firms, seed `probe`, periods 3-5:
+
+```
+p3 money(4): bank.ab closes -4,075,747,840 per member on money:cb.north:PHX with no lender row behind it
+   names(2): bank.w has ceased and still holds -37,303,027 of money:cb.north:PHX
+p4 money(3), names(6): bank.ab -2,982,351,011 and bank.z -817,328,529, both ceased
+p5 the same two, unchanged
+```
+
+Three banks fail, and each leaves a NEGATIVE balance on the central bank's money behind it. Two
+families see it and say different halves of the same thing: `money` says an overdraft with no lender
+row behind it (a borrowing with no lender is money with no issuer), and `names` says a party that
+has ceased still holds something.
+
+**Why it was never seen.** It needs a bank to fail. With three banks in the world the foundation ran
+fifty-two periods without one; with thirty, three fail inside five. The count of banks was carrying
+this, exactly the way it was carrying the opening balance sheet (12-1).
+
+**What it is not.** It is not the resolution missing the overdraft: the number does not move after
+the bank ceases, so nothing is still running. It is that resolution ends a bank whose reserve
+account is overdrawn and the overdraft goes nowhere — Appendix B's "no death without a destination",
+applied to a liability rather than a holding.
+
+**Where it belongs.** Estate/resolution, and `money-market/resolution.ts` is where a failed bank's
+book is moved. Not positioned yet.
+
+### 12-11 — The journal and the ledger were walked end to end on every read — **RESOLVED**
+
+**Where.** `journal/journal.ts`, `ledger/ledger.ts`.
+
+**Measured.** 10 banks / 60 firms: p1 226ms, p3 280ms, p5 567ms, p6 764ms, with the journal at
+17,000 events — the cost of a period was the cost of every period before it. `lastOf(kind, subject)`
+scanned backwards to the beginning of time whenever a party had never said that kind of thing, and
+every party asks what it last said, every period.
+
+**Fixed in this item under Law 18** (layout and traversal are free; the reads return exactly what
+they returned). The same events under three arrangements, written where the event is written: a list
+per kind, a list per period, and the latest per (kind, subject). 30 banks / 300 firms went from
+5.7s to 1.5s at p3 and 10.5s to 2.2s at p4.
+
+**Still open underneath it.** Events per period keep RISING (3,929 at p1 to 21,000 at p5 in the same
+run) because rows accumulate and each says something every period. That is a real growth in what the
+world has to say, not a defect, but at thirty million people and three thousand firms it decides
+whether a run is possible at all. Not positioned.
+
+### 12-12 — What a period costs at the real scale
+
+**Measured.** `foundationWorld('full')` — 30 banks, 3,000 named firms, 30,000,000 people, 3,169
+parties, 303 instruments, 261 markets. Assembly 0.4s. Audit green in every built family.
+
+```
+        before this item's layout work     after
+p1      27.1s                              7.0s
+p2      30.5s                              8.6s
+p3      (not reached in 115s)             12.4s
+```
+
+What one period of it SAYS, at p3: 69,344 events over 36,887 settled instructions — 18,407
+revaluations, 16,804 settlements, 7,382 surprises, 5,971 perishings, 3,038 credit quotes, 3,000
+plans. None of that is a defect: three thousand firms deciding and being revalued is what three
+thousand firms cost. It rises period on period as holdings accumulate.
+
+**What it means for the loop.** A 26-period run is about seven minutes and roughly 2,000,000 events
+in memory. That is a deliberate run, not a unit test. The tests therefore build SMALLER worlds
+explicitly, through the same `foundationSpec(seed, banks, firms)` door the real one uses — a test rig
+that says it is one. The WORLD is the real one; the rig is visibly a rig.
+
+**Not positioned, and it is the next thing this will need.** Four fifths of what is left is the
+market fan-out: a session asks every party of a kind whether it has an order in it, so 261 markets
+and 3,169 parties is 827,000 questions a period whose answer is almost always no. The kernel cannot
+guess which parties could have an order — that is a mechanism's own business — so the fix is a
+module contract change (a participant saying which markets it is ever in) and it needs an item.
+
+
+### 12-13 — A quantity was a `number`, so a fraction of a cent could be anything — **RESOLVED**
+
+**The defect.** Every number in the engine was a `number`. Nothing distinguished A COUNT OF PIECES
+from a price, a rate or a value, so every author had to remember Law 8 by hand — and the ones who
+divided money by a price to get units did not. What was caught was caught by runtime guards at the
+far end (settlement's `onTheGrid`, the register, the order book), long after the site that made it;
+and a published DECISION that never reached any of them was never caught at all.
+
+**Measured.** A scan of every quantity-named field in 78,607 journal events of a 24-firm world:
+
+```
+    288  firms.plan.batch          e.g. 4,649,446.196200187 grams started
+     85  bank.lines.lines[].room   e.g. 1,545,512,753.9337654 cents allotted to a line
+     56  fund.struck.spare         e.g. -182,283,969.53417602 cents
+      5  bank.arbitrage.gap        (a PRICE, misread by the scan's own field names)
+      1  bank.arbitrage.shares     e.g. 246,798.02755023047 shares
+```
+
+Plus, at the order book: a desk's `bidSize`, a firm's sell schedule, a household cell's demand
+curve, a treasury's procurement, an equity issue, a plant bid — all sizes computed by division and
+posted as they came out.
+
+**Fixed at the cause.** `Qty` is now a TYPE (`core/tick.ts`): a branded count of pieces, produced by
+exactly five doors — `toTick`, `downTick`, `upTick`, `splitOnTick`, and `asQty` for a number that is
+already a count (it throws if it is not). Everything that CARRIES a quantity asks for it: an order's
+size, a fill, a lot, a lien, what is outstanding, a primary offer, what the register reads back, what
+a declared amount comes to, and the decisions modules publish (a plan's batch and hours, a quote's
+two sizes, an equity buyback and issue, a cell's shares per member, a venue's hours). A module that
+divides money by a price now gets a `number` and cannot put it anywhere a quantity goes without
+saying WHICH WAY IT ROUNDS — which is the decision it was skipping, and it is its own to make.
+
+**And one duplicate deleted.** `core/money.ts` held a second `Qty` — a boxed `{amount, unit}` value
+object with its own add, subtract and scale — that NOTHING in the engine ever used and that enforced
+no grid. Two representations of one real thing (Law 4). It is gone; the currency-mismatch read it
+carried is the wire's (`ledger/settlement.ts` refuses a leg in a currency the party does not book
+in), and `test/core.test.ts` says so where the old test stood.
+
+**The result.** The same scan reports ZERO off-grid quantities in 97,867 events, the compiler names
+every new site at once instead of a probe finding them one at a time, and the runtime check in the
+clearing solver is deleted — the type is the check, and a check written twice is the one that fires
+last.
+
+
 ## Carried in from item pre12
 
 These two were named in `docs/RECORD.md`'s `pre12` entry and handed to item 12 rather than fixed,

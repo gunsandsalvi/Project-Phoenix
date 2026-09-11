@@ -27,6 +27,8 @@
  * result wearing a preference's name (Law 2).
  */
 import { paramId, type ParamId } from '../../core/ids.js';
+import { prng } from '../../rng/prng.js';
+import { between, betweenWhole, drawSize, type Spread, type Tail } from '../../rng/spread.js';
 
 export interface BankDecl {
   readonly bank: string;
@@ -110,58 +112,145 @@ export function bankOf(rows: readonly BankDecl[], bank: string): BankDecl | unde
   return rows.find((r) => r.bank === bank);
 }
 
-export const BANKS: readonly BankDecl[] = [
-  {
-    bank: 'bank.a',
-    size: 4,
-    memoryPeriods: 26,
-    returnOnCapital: 0.1,
-    capitalBuffer: 0.02,
-    liquidityCushion: 0.2,
-    limitPerBorrower: 0.25,
-    depositMargin: 0.006,
-    bufferMemory: 26,
-    // NOT sovereign paper only, and not equities only: a bank makes a market in every priced line
-    // this world has, including the paper its own treasury holds for liquidity — which is why the
-    // treasury never has to post (Dealer Desks C2.a: it hands the desk a target and the quote does
-    // the rest).
-    makes: ['equity.share', 'fund.share', 'sovereign.bill', 'sovereign.bond'],
-    capitalAtRisk: 0.5,
-    concentration: 0.3,
-    why: 'The larger and more cautious of the two: it remembers a borrower for half a year, wants a tenth on its capital, runs two points above what it must, holds a fifth of what could leave beyond what the rule asks — four times the cushion the other one keeps, exactly as it runs four times the capital buffer and will not have more than a quarter of its capital out to one name, and it will not have more than half of it standing behind a trading book. It is the larger dealer in absolute terms because it is the larger bank, and the more timid one as a share of what it owns. It keeps the wider margin on the money it takes in rather than bidding for deposits it does not need: the gap between the two margins is what a depositor decides about, and it is a fifth of a point, which is more than the wholesale money will sit still for and less than the operational money will move for.',
+/**
+ * Seed B1, B4, XI-16 B1.a: WHAT A BANK IS LIKE IS DRAWN, ONCE, AT THE SEED — the same way a
+ * household's memory is, and for the same reason: a sector whose members are all alike moves as one
+ * and never produces a market.
+ *
+ * IT USED TO BE A TABLE OF THREE, and the table was the defect. Eleven numbers a bank, written out
+ * one bank at a time, is not a distribution — it is thirty-three numbers claiming to be one, and a
+ * world of two hundred banks would have been two thousand two hundred. Law 2 asks for the FEWEST
+ * primitives: what a bank varies over is stated once, as a range with a reason, and how many banks
+ * there are is a count. Change the count and the world has that many, each with its own
+ * disposition, and no number anywhere is restated.
+ *
+ * Every draw is still a PREFERENCE, and every drawn value is declared in the parameter register
+ * under that bank's own name (`banks/index.ts`), so the register prints what each one is like and
+ * a reader can see why it did what it did. What is stated here is the WIDTH, which is what a
+ * dispersion is; the values are the world's.
+ */
+export interface BankDispersion {
+  readonly size: Tail;
+  readonly memoryPeriods: Spread;
+  readonly returnOnCapital: Spread;
+  readonly capitalBuffer: Spread;
+  readonly liquidityCushion: Spread;
+  readonly limitPerBorrower: Spread;
+  readonly depositMargin: Spread;
+  readonly capitalAtRisk: Spread;
+  readonly concentration: Spread;
+}
+
+export const BANK_SPREAD: BankDispersion = {
+  size: {
+    concentration: 1.1,
+    why: 'Seed B4: how big it is beside the others. A banking system is not a few banks of similar size with a spread on them — it is a handful that settle most of the payments and a long tail that settle almost none, and no uniform draw produces that at any width. Just above the heaviest tail there is, so the largest bank in a world of thirty holds a couple of orders of magnitude more than the smallest. It is a SHAPE: what a bank is worth is an outcome of who banks with it, what it lent and what it lost, and this stands in for the history that produced the sector until a world has run one (Part XII, worklist 16).',
   },
-  {
-    bank: 'bank.b',
-    size: 3,
-    memoryPeriods: 8,
-    returnOnCapital: 0.14,
-    capitalBuffer: 0.005,
-    liquidityCushion: 0.05,
-    limitPerBorrower: 0.4,
-    depositMargin: 0.004,
-    bufferMemory: 8,
-    makes: ['equity.share', 'fund.share', 'sovereign.bill', 'sovereign.bond'],
-    capitalAtRisk: 0.8,
-    concentration: 0.5,
-    why: 'The keener one: a short memory, a higher return demanded on its capital, a twentieth of a cushion above the liquidity rule and half a point above the capital one and a bigger appetite for a single name and for a trading book: four fifths of its capital will stand behind one, and it spreads that book over fewer lines. It is the smaller book and the harder-skewing one, and it is the book whose stopping is what a thin market looks like. It will win the business the other one turns away and it will wear what comes with it. A short memory of its own outflows means a thinner buffer, and a thin margin on funding means it pays up for deposits and lives on the volume — the same disposition on both sides of its balance sheet.',
+  memoryPeriods: {
+    low: 8,
+    high: 52,
+    why: 'Banks Lending C1.b, Banks Funding C2.a: how far back it looks — at a borrower it has judged and at its own worst weeks. A quarter to a whole year: one bank prices an old failure into today loan and another has forgotten it, which is what makes two lenders quote a name differently.',
   },
-  {
-    bank: 'bank.c',
-    size: 2,
-    memoryPeriods: 52,
-    returnOnCapital: 0.07,
-    capitalBuffer: 0.04,
-    liquidityCushion: 0.4,
-    limitPerBorrower: 0.15,
-    depositMargin: 0.008,
-    bufferMemory: 52,
-    // It makes a market in the paper it holds for liquidity and in the fund whose shares its own
-    // depositors buy, and in NOTHING ELSE. A share is a claim on a business it has no view of, and
-    // a bank that will not take a view does not quote one — which is a real disposition and the
-    // reason `makes` is data about a bank rather than a list every bank shares (Law 15).
-    makes: ['fund.share', 'sovereign.bill', 'sovereign.bond'],
-    capitalAtRisk: 0.2,
-    concentration: 0.25,
-    why: 'The careful one, and the smallest: it remembers a borrower and its own bad weeks for a whole year, asks the least on its capital and runs the widest cushion over both requirements, will not have more than a seventh of its capital out to one name, keeps the widest margin on the money it takes in and puts a fifth of its capital behind a trading book it spreads over more lines than either of the others. It wins nothing on price and it is still there when the other two have filled up — which is what a third bank is for: with two, every depositor that moves is the whole of one side of the market and every session is one name facing one name.',
+  returnOnCapital: {
+    low: 0.07,
+    high: 0.14,
+    why: 'Banks Lending C1.c: what it needs to earn on the capital a loan consumes, per annum. Its own, and the whole of why a borrower shopping two banks gets two prices (C2) — a borrower with one price to take has not shopped.',
   },
-];
+  capitalBuffer: {
+    low: 0.005,
+    high: 0.04,
+    why: 'Banks Capital B2, Banks Lending B2.a: how far above the requirement it insists on running. Its own caution, and it is why two banks stop lending at different moments rather than all at once.',
+  },
+  liquidityCushion: {
+    low: 0.05,
+    high: 0.4,
+    why: 'Banks Funding C2, Money Market A2.a: what it holds liquid above what the rule asks, as a share of the money that could leave. A different caution from the capital one: a bank can be bold about capital and timid about liquidity, and the two get it into different sorts of trouble.',
+  },
+  limitPerBorrower: {
+    low: 0.15,
+    high: 0.4,
+    why: 'Banks Lending F3: the most it will have out to one name, as a share of its own capital. A limit that binds, and binds at a different size for each of them — which is what makes a large borrower shop past the first bank that fills up.',
+  },
+  depositMargin: {
+    low: 0.004,
+    high: 0.008,
+    why: 'Banks Funding B1.a, B3: what it keeps for itself out of what money is worth to it. Two banks that keep the same margin are one bank; the gap between them is what a depositor is deciding about, and it has to be wider than what a wholesale account will sit still for and narrower than what an operational one will move for.',
+  },
+  capitalAtRisk: {
+    low: 0.15,
+    high: 0.8,
+    why: 'Dealer Desks D1, F1: the most of its own capital it will have standing behind its dealing book. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything — which is how one line trouble reaches another. A dealer without a limit is a synthetic counterparty wearing a dealer name.',
+  },
+  concentration: {
+    low: 0.25,
+    high: 0.5,
+    why: 'Dealer Desks D1: the most of that book it will have in ONE line. A share rather than a count of pieces, because a count means something different in a line quoted in shares and one quoted in par, and would have to be restated every time a price moved.',
+  },
+};
+
+/**
+ * Seed B1: HOW MANY BANKS THIS WORLD HAS. It is a count and nothing else follows from changing it
+ * but the world having that many — which is what makes it measurable the way the cell grain is
+ * (XI-15, `test/resolution/banks.test.ts`). THIRTY, which is what a country's banking system has:
+ * a handful that settle most of the payments and a tail of small ones. With two, every depositor
+ * that answers a rate is the whole of one side of the deposit market, every interbank session is
+ * one name facing one name, and a bank in trouble has exactly one place to go — so the count was
+ * silently load-bearing on every mechanism that needs somebody else to be there, and the world was
+ * a test of the mechanisms rather than a run of them.
+ */
+export const BANK_COUNT = 30;
+
+/**
+ * The banks of a world, drawn from the spread above. Deterministic in the world's seed value and in
+ * nothing else (Seed A5, Audit D3): the same seed gives the same banks, and a world asked for two
+ * hundred of them gets two hundred without a line of data being written.
+ */
+export function drawBanks(count: number, seed: string): readonly BankDecl[] {
+  const rng = prng(seed, 'banks');
+  const out: BankDecl[] = [];
+  for (let n = 0; n < count; n += 1) {
+    const capitalAtRisk = between(rng, BANK_SPREAD.capitalAtRisk);
+    out.push({
+      bank: bankName(n),
+      size: drawSize(rng, BANK_SPREAD.size),
+      // Law 8: a memory is a count of periods, so it is drawn as one.
+      memoryPeriods: betweenWhole(rng, BANK_SPREAD.memoryPeriods),
+      returnOnCapital: between(rng, BANK_SPREAD.returnOnCapital),
+      capitalBuffer: between(rng, BANK_SPREAD.capitalBuffer),
+      liquidityCushion: between(rng, BANK_SPREAD.liquidityCushion),
+      limitPerBorrower: between(rng, BANK_SPREAD.limitPerBorrower),
+      depositMargin: between(rng, BANK_SPREAD.depositMargin),
+      bufferMemory: betweenWhole(rng, BANK_SPREAD.memoryPeriods),
+      // Dealer Desks A1, C5: WHICH LINES IT QUOTES IS DERIVED FROM WHAT IT WILL RISK, not drawn
+      // separately. A bank that will not put much capital behind a book does not run one: it makes
+      // a market in the paper its own treasury holds for liquidity and in nothing else, because a
+      // share is a claim on a business it has no view of and a bank that will not take a view does
+      // not quote one. So `makes` is a consequence of a preference it already has (Law 2).
+      makes:
+        capitalAtRisk > midpoint(BANK_SPREAD.capitalAtRisk)
+          ? ['equity.share', 'fund.share', 'sovereign.bill', 'sovereign.bond']
+          : ['sovereign.bill', 'sovereign.bond'],
+      capitalAtRisk,
+      concentration: between(rng, BANK_SPREAD.concentration),
+      why: `Seed B4: drawn at the seed from the stated spread, like every other bank in this world. Nothing about it is stated one bank at a time, and what it is like is printed in the parameter register under its own name.`,
+    });
+  }
+  return out;
+}
+
+const midpoint = (s: Spread): number => s.low + (s.high - s.low) / 2;
+
+/**
+ * Law 9: what a bank is called. `bank.a` … `bank.z`, then `bank.aa` — a name a reader can say, for
+ * as many of them as the world asks for.
+ */
+export function bankName(n: number): string {
+  let at = n;
+  let out = '';
+  do {
+    out = String.fromCharCode(97 + (at % 26)) + out;
+    at = Math.floor(at / 26) - 1;
+  } while (at >= 0);
+  return `bank.${out}`;
+}
+

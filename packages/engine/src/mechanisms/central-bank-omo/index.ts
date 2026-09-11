@@ -32,6 +32,7 @@ import { CENTRAL_BANK, TREASURY } from '../../registry/profiles.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { downTick } from '../../core/tick.js';
 
 export const CB_PARAMS = {
   targetShare: paramId('centralBank.omo.targetHoldingShare'),
@@ -110,9 +111,16 @@ export const centralBankOmo: SystemModule = {
         const gap = sub(target, held, 'omo gap');
         // A gap smaller than the dust of the subtraction that produced it is not a policy decision.
         if (!material(gap, 2, add(Math.abs(target), Math.abs(held), 'gap magnitude'))) return [];
-        if (gap > 0) return [{ party: view.self.id, side: 'buy', price: 'market', qty: gap }];
+        // Law 8: the target is a share of a line, so the gap it leaves is a fraction of a unit of
+        // paper. It buys and sells whole units of it like anybody else — a central bank is not
+        // exempt from what a unit IS — and it rounds towards where it already is, because what it
+        // is doing is closing a gap and never overshooting one.
+        if (gap > 0) {
+          const want = downTick(gap);
+          return want > 0 ? [{ party: view.self.id, side: 'buy', price: 'market', qty: want }] : [];
+        }
         const free = view.free(i.id);
-        const size = -gap < free ? -gap : free;
+        const size = downTick(-gap < free ? -gap : free);
         return size > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: size }] : [];
       },
     },

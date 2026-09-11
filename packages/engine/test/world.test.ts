@@ -15,8 +15,9 @@ import {
   assemble,
   cellSide,
   foundationSeedFor,
-  foundationSpec,
-  foundationWorld,
+  drawBanks,
+  drawFirms,
+  BANK_COUNT,
   moneyInstrumentId,
   none,
   orderModules,
@@ -33,6 +34,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { RIG_FIRMS, rigWorld, rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { phx } from './units.js';
@@ -92,7 +94,7 @@ function phase(fn: (ctx: MechanismContext) => void): SystemModule {
 }
 
 function withModules(seed: string, ...extra: SystemModule[]): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
 }
 
@@ -103,7 +105,7 @@ function bareWith(seed: string, ...extra: SystemModule[]): World {
 
 /** The bare world where no bank will lend a penny: every limit for every name is nothing (C3). */
 function noLending(seed: string, ...extra: SystemModule[]): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules = spec.modules
     .filter(
       (m) =>
@@ -131,7 +133,7 @@ function noLending(seed: string, ...extra: SystemModule[]): World {
  * treasury's decisions.
  */
 function bare(seed: string, ...extra: SystemModule[]): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const kernelOnly = spec.modules
     .filter(
       (m) =>
@@ -147,14 +149,14 @@ function bare(seed: string, ...extra: SystemModule[]): World {
 
 describe('assembly (Law 15, Part XIII)', () => {
   it('orders modules by their requirements and refuses a cycle or a missing dependency', () => {
-    const ordered = orderModules([foundationSeedFor(), sovereignInstruments]);
+    const ordered = orderModules([foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order')), sovereignInstruments]);
     expect(ordered.map((m) => m.id)).toEqual(['sovereign-instruments', 'seed.foundation']);
-    const orphan: SystemModule = { ...foundationSeedFor(), id: 'x', requires: ['nope'] };
+    const orphan: SystemModule = { ...foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order')), id: 'x', requires: ['nope'] };
     expect(() => orderModules([orphan])).toThrow(InvalidRegistry);
   });
 
   it('refuses an instrument whose kind has no profile, and validates terms through the profile', () => {
-    const w = foundationWorld('seed-K');
+    const w = rigWorld('seed-K');
     expect(() =>
       w.instruments.add({
         id: 'x' as never,
@@ -168,7 +170,7 @@ describe('assembly (Law 15, Part XIII)', () => {
   });
 
   it('exposes no register write to a module or the app (Law 4: one writer)', () => {
-    const w = foundationWorld('seed-W');
+    const w = rigWorld('seed-W');
     expect('credit' in w.register).toBe(false);
     expect('moneyDelta' in w.register).toBe(false);
     expect(() => w.seedStore()).toThrow(Forbidden);
@@ -178,7 +180,7 @@ describe('assembly (Law 15, Part XIII)', () => {
 
 describe('the seed (Seed A2)', () => {
   it('passes the audit at period zero, with every family built or saying it is not', () => {
-    const w = foundationWorld('seed-A');
+    const w = rigWorld('seed-A');
     const report = w.last?.audit;
     expect(report?.total).toBe(0);
     expect(report?.families.map((f) => f.family)).toHaveLength(9);
@@ -223,8 +225,8 @@ describe('the seed (Seed A2)', () => {
   });
 
   it('is reproducible from the seed value (Seed A5, Audit D3)', () => {
-    const a = foundationWorld('seed-B');
-    const b = foundationWorld('seed-B');
+    const a = rigWorld('seed-B');
+    const b = rigWorld('seed-B');
     for (let i = 0; i < 30; i += 1) {
       a.step();
       b.step();
@@ -233,7 +235,7 @@ describe('the seed (Seed A2)', () => {
     // A different seed value is a different world: nothing about the OPENING state is drawn any
     // more — the seed states no dispersion at all — so what differs is what the parties then did,
     // starting from the memories they were each given (§46 B1.a).
-    const c = foundationWorld('seed-C');
+    const c = rigWorld('seed-C');
     for (let i = 0; i < 30; i += 1) c.step();
     expect(snapshot(c, { kind: 'inspector' }, 10).positions).not.toEqual(
       snapshot(a, { kind: 'inspector' }, 10).positions,
@@ -241,7 +243,7 @@ describe('the seed (Seed A2)', () => {
   });
 
   it('states no dispersion and produces one: the cells start equal and do not stay so (Seed B4)', () => {
-    const w = foundationWorld('seed-D');
+    const w = rigWorld('seed-D');
     const cells = w.parties.ofKind(HOUSEHOLD);
     expect(cells.length).toBe(12);
     const weights = cells.map((c) => (c.representation === 'cell' ? c.weight : 0));
@@ -271,7 +273,7 @@ describe('the period loop', () => {
   });
 
   it('runs a year with its mechanisms in it and stays consistent (XI-9)', () => {
-    const w = foundationWorld('seed-E2');
+    const w = rigWorld('seed-E2');
     for (let i = 0; i < 52; i += 1) {
       expect(unexpected(w.step().audit)).toEqual([]);
     }
@@ -293,7 +295,7 @@ describe('the period loop', () => {
   });
 
   it('runs a year of the whole chain, and every family it has built is green (Part XII)', () => {
-    const w = foundationWorld('seed-E3');
+    const w = rigWorld('seed-E3');
     // Nothing is forgiven here any more. Until the corridor existed this world reported one red
     // every auction cycle — a bank that paid for what it won out of reserves its own customers had
     // already moved, with nobody able to lend it the difference overnight (Money B3.b). The window
@@ -391,7 +393,7 @@ describe('the period loop', () => {
   });
 
   it('a phase cannot read a print the period has not produced (Clearing F1.a)', () => {
-    const w = foundationWorld('seed-G');
+    const w = rigWorld('seed-G');
     expect(() => w.prices.printOrThrow(GOV_LINE, period(1))).toThrow(NotYetProduced);
   });
 
@@ -539,7 +541,7 @@ describe('a market with reasons on both sides', () => {
 
 describe('participant views (Observer A4, Expectations D1)', () => {
   it('show a party its own state and the public state, and nothing of anyone else', () => {
-    const w = foundationWorld('seed-L');
+    const w = rigWorld('seed-L');
     w.step();
     const view = w.participantView(partyId('firm.1'));
     expect(view.self.id).toBe('firm.1');
@@ -570,7 +572,7 @@ describe('participant views (Observer A4, Expectations D1)', () => {
 
 describe('the observer surface (Observer A2, A4, D3)', () => {
   it('shows the inspector what the modules keep, and a party only its own outlook', () => {
-    const w = foundationWorld('seed-O');
+    const w = rigWorld('seed-O');
     for (let i = 0; i < 6; i += 1) w.step();
     const inspector = snapshot(w, { kind: 'inspector' }, 10);
     // A4: the inspector's product is the whole of it — the employment rows, the inventories a
@@ -592,7 +594,7 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
   });
 
   it('reaches what is said once a period however much else was said (B1, D1)', () => {
-    const w = foundationWorld('seed-O2');
+    const w = rigWorld('seed-O2');
     for (let i = 0; i < 6; i += 1) w.step();
     // A period says far more than ten things, so the programme the treasury published this period
     // is nowhere near the back of a ten-deep feed of everything.
@@ -628,7 +630,7 @@ const PAYMENT = phx(1);
 
 describe('settlement contracts', () => {
   it('refuses a cell side without a per-member amount (XI-15)', () => {
-    const w = foundationWorld('seed-M');
+    const w = rigWorld('seed-M');
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell === undefined) throw new Error('no cell');
     const draft: InstructionDraft = {
@@ -761,7 +763,7 @@ describe('cells (XI-15)', () => {
   });
 
   it('a weight changes only by the five events, and never to nobody', () => {
-    const w = foundationWorld('seed-P');
+    const w = rigWorld('seed-P');
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell?.representation !== 'cell') throw new Error('no cell');
     const ctx = w.mechanismContext('test');

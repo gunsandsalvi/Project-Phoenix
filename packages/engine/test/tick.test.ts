@@ -13,8 +13,6 @@ import {
   commonGrain,
   currencyUnit,
   downTick,
-  foundationSpec,
-  foundationWorld,
   none,
   onTick,
   partyId,
@@ -27,6 +25,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigWorld, rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 
 describe('what a piece is (Law 8)', () => {
@@ -138,7 +137,7 @@ function payer(amount: number): SystemModule {
 
 describe('the wire refuses what does not exist (Law 8, Money C1)', () => {
   it('throws on half a cent, and settles a whole one', () => {
-    const spec = foundationSpec('offgrid');
+    const spec = rigSpec('offgrid');
     const bad = assemble({ ...spec, modules: [...spec.modules, payer(0.5)] });
     expect(() => bad.step()).toThrow(/not a whole number of pieces/);
     const good = assemble({ ...spec, modules: [...spec.modules, payer(1)] });
@@ -151,7 +150,7 @@ function atShift(
   shift: number,
   periods: number,
 ): { produced: number; money: number; batches: number; piece: number; reds: number } {
-  const spec = foundationSpec('piece-invariance');
+  const spec = rigSpec('piece-invariance');
   const params = spec.params.map((p) =>
     p.id === KERNEL_PARAMS.pieceShift ? { ...p, value: shift } : p,
   );
@@ -214,7 +213,7 @@ describe('how fine the pieces are, is a RESOLUTION (Law 2)', () => {
   });
 
   it('conserves money exactly, which is what whole pieces buy', () => {
-    const w = foundationWorld('piece-conserve');
+    const w = rigWorld('piece-conserve');
     for (let i = 0; i < 8; i += 1) w.step();
     const money = w.last?.audit.families.find((f) => f.family === 'money');
     // NOTHING. Money is conserved, no stock moved by more than its own creation legs, and no

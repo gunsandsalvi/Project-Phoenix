@@ -16,9 +16,16 @@
  * a whole market from ever crossing.
  */
 import { describe, expect, it } from 'vitest';
-import { levelsBelow, rungsOver, sum, type Rung } from '../../src/index.js';
+import { downTick, levelsBelow, rungsOver, sum, type Rung } from '../../src/index.js';
 
-const BUDGET = 37.5;
+/**
+ * Law 8: a budget is a count of the smallest pieces of money there are, and what it buys is a count
+ * of the smallest pieces of the thing. It used to be 37.5 — three dozen pieces — and at that size
+ * the whole-piece curve and the real-number one are visibly different numbers; at a real budget they
+ * differ by at most one piece in millions, which is what "a piece is the smallest thing there is"
+ * means when the thing is money. The SIZE of the budget is this test's own resolution.
+ */
+const BUDGET = 37_500_000;
 const OPINION = 2.75;
 const GRAINS = [1, 2, 5, 10, 50, 200];
 
@@ -37,12 +44,14 @@ describe('a cell own demand curve at every grain (Law 2)', () => {
       const top = Math.max(...rungs.map((r) => r.price));
       expect(top).toBeCloseTo(OPINION, 12);
       // At every level of the coarsest grid — which every finer grid contains — the book sees
-      // exactly the budget divided by the price, which is the curve itself.
+      // exactly the budget divided by the price, IN WHOLE PIECES, which is the curve itself: there
+      // is nothing between two pieces for the grid to have moved it to (Law 8).
       for (const level of coarse) {
-        expect(demandAt(rungs, level)).toBeCloseTo(BUDGET / level, 9);
+        expect(demandAt(rungs, level)).toBe(downTick(BUDGET / level));
       }
-      // Law 7: and the money it committed is its budget, whatever the session then clears at.
-      expect(demandAt(rungs, top) * top).toBeCloseTo(BUDGET, 9);
+      // Law 7: and the money it committed is its budget, to within the one piece that a whole
+      // number of them at a price cannot reach. That is not a tolerance — it is the piece.
+      expect(Math.abs(demandAt(rungs, top) * top - BUDGET)).toBeLessThanOrEqual(top);
     }
   });
 

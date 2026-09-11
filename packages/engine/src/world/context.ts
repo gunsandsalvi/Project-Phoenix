@@ -44,6 +44,7 @@ import type {
 import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import type { Prng } from '../rng/prng.js';
+import type { Qty } from '../core/tick.js';
 
 /** Reads every context shares. Every method here is a read; nothing mutates. */
 export interface KernelReads {
@@ -96,10 +97,11 @@ export interface ParticipantView extends KernelReads {
   readonly parties: PartiesReads;
   /** Own holdings, per member (A2). */
   holdings(): readonly Holding[];
-  quantity(instrument: InstrumentId): number;
-  free(instrument: InstrumentId): number;
+  /** Law 8: what the register holds is whole pieces, so what it reads back is a count of them. */
+  quantity(instrument: InstrumentId): Qty;
+  free(instrument: InstrumentId): Qty;
   /** Own balance at own bank in a currency, per member. */
-  cash(ccy: CurrencyCode): number;
+  cash(ccy: CurrencyCode): Qty;
   /** Own equity account, per member. */
   equity(): number;
   /**

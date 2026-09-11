@@ -7,14 +7,12 @@
 import { describe, expect, it } from 'vitest';
 import {
   FIRM,
-  FUNDS,
   HOUSEHOLD,
   dustOf,
   funds,
   PHX,
   REGION,
   assemble,
-  foundationSpec,
   goodId,
   households,
   isMoneyLeg,
@@ -26,6 +24,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec , rigDraw } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -116,7 +115,7 @@ function payer(perMember: number, spread: number): SystemModule {
 }
 
 function world(...extra: readonly SystemModule[]): World {
-  const spec = foundationSpec('households');
+  const spec = rigSpec('households');
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
 }
 
@@ -128,21 +127,21 @@ function world(...extra: readonly SystemModule[]): World {
  * year-long run's business.
  */
 function paidWorld(...extra: readonly SystemModule[]): World {
-  const spec = foundationSpec('households');
+  const spec = rigSpec('households');
   // Equity goes with the firms: a share is a claim on one, so a world with none has no shares —
   // and the desks go with it, because they open holding the lines they make a market in. The money
   // fund stays; the exchange-traded one does not, because its basket was those shares.
   const kept = spec.modules.filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
-    .map((m) => (m.id === 'funds' ? funds(FUNDS, []) : m));
+    .map((m) => (m.id === 'funds' ? funds(rigDraw('households').funds, []) : m));
   return assemble({ ...spec, modules: [...kept, ...extra] });
 }
 
 /** The same world at a finer grain, for the one measurement that counts cells rather than sums them. */
 function spreadWorld(...extra: readonly SystemModule[]): World {
-  const spec = foundationSpec('households');
+  const spec = rigSpec('households');
   const modules = spec.modules
     .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
-    .map((m) => (m.id === 'funds' ? funds(FUNDS, []) : m))
+    .map((m) => (m.id === 'funds' ? funds(rigDraw('households').funds, []) : m))
     .map((m) =>
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding'
@@ -250,7 +249,7 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
     // fills; one that wants a great deal bids far below the market and stays in its deposit.
     // That is the substitution D5.a is about, and it is the channel a deposit rate would reach.
     const bought = (premium: number): number => {
-      const spec = foundationSpec('premium');
+      const spec = rigSpec('premium');
       const modules = spec.modules.map((m) =>
         m.id === 'households'
           ? {

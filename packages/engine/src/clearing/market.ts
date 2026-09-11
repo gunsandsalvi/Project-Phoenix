@@ -20,6 +20,7 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
 import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
 import { add, div, finite, mul, sub, sum, zeroIfNone } from '../core/num.js';
+import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
 import { commonGrain, downToGrain, toGrain } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
@@ -45,8 +46,8 @@ export interface MarketDecl {
 export interface PrimaryOffer {
   readonly market: MarketId;
   readonly issuer: PartyId;
-  /** Units offered this session. */
-  readonly size: number;
+  /** Law 8: whole units offered this session. An issuer brings pieces, like anybody else. */
+  readonly size: Qty;
   /** The least the issuer will accept per unit; below it the paper is withdrawn (C7). */
   readonly reservation: number;
   /** C2: every winner pays the stop-out. */

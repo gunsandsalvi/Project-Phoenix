@@ -27,7 +27,7 @@ import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId } from '../../core/ids.js';
-import { add, div, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
+import { add, div, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -37,7 +37,6 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { SystemModule } from '../../world/module.js';
 import {
-  BANKS,
   bankParam,
   dealingParam,
   TRADING_BOOK_RISK_WEIGHT,
@@ -262,14 +261,6 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
   });
   if (funding <= 0 || ctx.period === 0) return blend(0);
   const previous = period(ctx.period - 1);
-  const paid: number[] = [];
-  for (const r of ctx.ledger.inPeriod(previous)) {
-    if (r.outcome !== 'settled' || r.instruction.cause !== 'coupon') continue;
-    for (const leg of r.instruction.legs) {
-      if (!isMoneyLeg(leg) || leg.from.holder !== bank || leg.ccy !== ccy) continue;
-      paid.push(leg.amount);
-    }
-  }
   // Law 8: a rate is per annum, so what it paid over this period is divided by the fraction of a
   // year the period actually was — read off the calendar's own dates, never a periods-per-year.
   const year = yearFraction(
@@ -278,14 +269,62 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
     ctx.calendar.startOf(ctx.period),
   );
   if (year <= 0) return blend(0);
-  return blend(div(sum(paid).value, year, 'what it paid on what it owes, per annum'));
+  return blend(div(couponsPaid(ctx, bank, ccy), year, 'what it paid on what it owes, per annum'));
 }
 
-/** What this bank owes: every liability of its own that anybody holds. */
+/**
+ * B2.b, Law 18, Law 19: WHAT EVERY BANK PAID IN COUPONS LAST PERIOD, walked ONCE.
+ *
+ * A settled period is finished, so what left a bank in it cannot change — and every borrower that
+ * shops asks every bank what its money costs, which asked this same question three thousand times a
+ * bank. Ninety thousand walks of a ledger that had already stopped moving was four fifths of the
+ * cost of a period. One walk, held under the period it is about, and every reader gets the number
+ * that walk found.
+ *
+ * It is layout and not a mechanism: the walk is the same walk, and what it answers is what it
+ * answered. The two LIVE parts of a bank's cost of funds — what it owes and what its capital is —
+ * are read where they are asked for, because both move inside a period as loans settle.
+ */
+interface CouponsPaid {
+  readonly period: number;
+  readonly byBank: Map<string, number>;
+}
+
+function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
+  const held = ctx.state<CouponsPaid>('banks.couponsPaid', () => ({ period: -1, byBank: new Map() }));
+  if (held.period !== ctx.period) {
+    held.byBank.clear();
+    for (const r of ctx.ledger.inPeriod(period(ctx.period - 1))) {
+      if (r.outcome !== 'settled' || r.instruction.cause !== 'coupon') continue;
+      for (const leg of r.instruction.legs) {
+        if (!isMoneyLeg(leg)) continue;
+        const key = `${leg.from.holder}\u0000${leg.ccy}`;
+        const before = held.byBank.get(key);
+        held.byBank.set(
+          key,
+          before === undefined ? leg.amount : add(before, leg.amount, 'coupons it paid'),
+        );
+      }
+    }
+    (held as { period: number }).period = ctx.period;
+  }
+  // A bank that paid no coupon in that period paid nothing, and nothing is a number: the walk
+  // above visited every settled instruction of it, so an absence here is an answer and not a gap.
+  // `zeroIfNone` is the one place that says so, and it says it for quantities only (Appendix A).
+  return zeroIfNone(held.byBank.get(`${bank}\u0000${ccy}`));
+}
+
+/**
+ * What this bank owes: every liability of its own that anybody holds.
+ *
+ * Law 18: the instruments an ISSUER has out, by name. Walking every instrument in the world to find
+ * one bank's own was the second of the two scans a shopping borrower paid for, and a world with a
+ * share line per listed firm has hundreds of them.
+ */
 function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
   const terms: number[] = [];
-  for (const i of ctx.instruments.all()) {
-    if (!i.issuer.some || i.issuer.value !== bank || i.ccy !== ccy) continue;
+  for (const i of ctx.instruments.issuedBy(bank)) {
+    if (i.ccy !== ccy) continue;
     if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
     terms.push(i.issued);
   }
@@ -656,7 +695,7 @@ function tradingBookIsCapitalised(): Family {
  * second one). A world with two of them or with four is this world with a different table and no
  * number in it restated, which is what lets the count be measured (XI-15).
  */
-export function banks(rows: readonly BankDecl[] = BANKS): SystemModule {
+export function banks(rows: readonly BankDecl[]): SystemModule {
   return {
   id: 'banks',
   spec: 'Banks Lending',

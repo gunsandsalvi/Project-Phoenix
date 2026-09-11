@@ -43,7 +43,10 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { add, addTo, div, dustOf, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
-import { downTick } from '../../core/tick.js';
+import { asQty, downTick, subQty, upTick, type Qty } from '../../core/tick.js';
+
+/** Law 8: one piece — the smallest step there is, and the only literal a count of them can have. */
+const ONE_PIECE = asQty(1);
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
@@ -58,7 +61,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
-import { ETFS, FUNDS, FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
+import { FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
 import { navOf } from './nav.js';
 
@@ -176,7 +179,8 @@ function emptyBook(): Book {
   return { queued: [], struck: {}, previous: {} };
 }
 
-const declOf = (fund: string): FundDecl | undefined => FUNDS.find((f) => f.fund === fund);
+const declOf = (decls: readonly FundDecl[], fund: string): FundDecl | undefined =>
+  decls.find((f) => f.fund === fund);
 
 function etfParamsOf(etfs: readonly EtfDecl[]): ParamDecl[] {
   return etfs.map((e) => ({
@@ -190,7 +194,7 @@ function etfParamsOf(etfs: readonly EtfDecl[]): ParamDecl[] {
   }));
 }
 
-function paramsOf(): ParamDecl[] {
+function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
   return [
     {
       id: FUND_SWITCHING_COST,
@@ -209,7 +213,7 @@ function paramsOf(): ParamDecl[] {
       owner: 'model',
       why: 'Fund Shares B1: a fund with no shares has nothing to divide by, so the first subscription fixes the unit its shares are counted in. Double it and every share count halves and no value, flow or decision moves — which is what makes it a resolution and not a price (Law 2).',
     },
-    ...FUNDS.flatMap((f): ParamDecl[] => [
+    ...decls.flatMap((f): ParamDecl[] => [
       {
         id: fundParam(f.fund, 'buffer'),
         value: f.buffer,
@@ -334,7 +338,7 @@ function subscribe(
   let shares = downTick(div(budget, perShare, 'shares it gets'));
   let paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
   if (paid > cash) {
-    shares = sub(shares, 1, 'a piece less');
+    shares = subQty(shares, ONE_PIECE, 'a piece less');
     paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
   }
   if (shares <= 0 || paid <= 0 || !material(shares, 2, sharesAsked)) return;
@@ -524,10 +528,17 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   payQueue(ctx, b, d);
   const owed = owedOn(ctx, b, d);
   const cash = ctx.register.quantity(d.fund as PartyId, moneyOf(ctx, d.fund as PartyId, ccy));
-  const buffer = mul(
-    ctx.params.get(fundParam(d.fund, 'buffer')),
-    mul(perShare, share.issued, 'net assets'),
-    'the cash it keeps back',
+  // C2.a, Law 8: WHAT IT KEEPS BACK IS MONEY, so it is a whole number of the smallest piece of it.
+  // Up, because it is what the fund insists on holding: a buffer a cent short of what its own rule
+  // asks for is a buffer it did not keep. What is left over after it — what the fund has spare —
+  // is then a count too, and the schedule its orders are built from is on the grid by arithmetic
+  // rather than by a rounding somewhere further down.
+  const buffer = upTick(
+    mul(
+      ctx.params.get(fundParam(d.fund, 'buffer')),
+      mul(perShare, share.issued, 'net assets'),
+      'the cash it keeps back',
+    ),
   );
   ctx.record(
     'fund.struck',
@@ -543,7 +554,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       // C2.a: what it must find, and what it has spare. Its orders read these and nothing else,
       // so the decision and the schedule are one decision (Law 4).
       shortfall: owed,
-      spare: sub(sub(cash, buffer, 'over its buffer'), owed, 'and after what it owes'),
+      spare: subQty(subQty(cash, buffer, 'over its buffer'), owed, 'and after what it owes'),
       oldestMark: oldest,
       // D2, D2.a: what it offers a saver — what the paper its mandate lets it hold is yielding,
       // less what its manager takes. Both halves are public reads (Sovereign D3, B3), it causes
@@ -575,14 +586,17 @@ function offeredYield(ctx: MechanismContext, d: FundDecl): number {
 }
 
 /** What this fund still owes its redeemers, at the NAV each of them struck (C4). */
-function owedOn(ctx: MechanismContext, b: Book, d: FundDecl): number {
+function owedOn(ctx: MechanismContext, b: Book, d: FundDecl): Qty {
   const terms: number[] = [];
   for (const q of b.queued) {
     if (q.fund !== d.fund) continue;
     const holder = ctx.parties.get(q.holder);
-    terms.push(mul(totalFor(holder, q.sharesPerMember), q.navStruck, 'what it is owed'));
+    // C2, Law 8: what a redemption COMES TO is shares at a NAV, so it lands between two pieces of
+    // money — and what the fund must find is the piece above, because paying all but a fraction of
+    // a cent is not paying. It is the same rounding a subscription takes the other way (`cashFor`).
+    terms.push(upTick(mul(totalFor(holder, q.sharesPerMember), q.navStruck, 'what it is owed')));
   }
-  return sum(terms).value;
+  return asQty(sum(terms).value, 'what its queue is owed');
 }
 
 /**
@@ -804,8 +818,12 @@ function readEtf(ctx: MechanismContext, d: EtfDecl): void {
  * are opposites: cash it must put to work per its mandate, and a redemption it must find the money
  * for. The second is the forced sale (XI-2): it names no price, because it has no choice.
  */
-function ordersOf(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const d = declOf(view.self.id);
+function ordersOf(
+  decls: readonly FundDecl[],
+  view: ParticipantView,
+  m: MarketDecl,
+): readonly Order[] {
+  const d = declOf(decls, view.self.id);
   if (d === undefined) return [];
   const own = view.lastOwn('fund.struck');
   if (!own.some || own.value.period !== view.period) return [];
@@ -827,7 +845,11 @@ function ordersOf(view: ParticipantView, m: MarketDecl): readonly Order[] {
     const total = holdingsWorth(view);
     if (total <= 0) return [];
     const fraction = div(shortfall, total, 'the share of its book it must raise');
-    const qty = fraction >= 1 ? units : mul(units, fraction, 'units it must sell');
+    // Law 8: a share of a holding is a fraction of a unit, and a unit is what there is. It rounds
+    // UP because this is a redemption it has to MEET — selling all but a fraction of what covers it
+    // leaves the investor short — and it can never be more than what it holds.
+    const wants = fraction >= 1 ? units : upTick(mul(units, fraction, 'units it must sell'));
+    const qty = wants < units ? wants : units;
     if (!material(qty, 2, units)) return [];
     // XI-2: at whatever the market gives. A forced seller that named a price would not be one.
     return [{ party: view.self.id, side: 'sell', price: 'market', qty }];
@@ -846,9 +868,10 @@ function ordersOf(view: ParticipantView, m: MarketDecl): readonly Order[] {
   if (lines === 0) return [];
   const each = div(spare, lines, 'what it puts into each line it may hold');
   const dirty = add(price, view.accrued(i.id), 'what a unit costs it');
-  const qty = div(each, dirty, 'units it bids for');
+  // Law 8: whole units. Down, because it is what the cash it has spare actually reaches.
+  const qty = downTick(div(each, dirty, 'units it bids for'));
   // Law 7: this line's share against what the whole of what it has spare would have bought.
-  if (!material(qty, lines + 1, div(spare, dirty, 'what the whole of it would buy'))) return [];
+  if (qty <= 0 || !material(qty, lines + 1, div(spare, dirty, 'what the whole of it would buy'))) return [];
   return [{ party: view.self.id, side: 'buy', price, qty }];
 }
 
@@ -1062,8 +1085,8 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
 }
 
 export function funds(
-  decls: readonly FundDecl[] = FUNDS,
-  etfs: readonly EtfDecl[] = ETFS,
+  decls: readonly FundDecl[],
+  etfs: readonly EtfDecl[],
 ): SystemModule {
   const state = emptyBook();
   // The observer sees the book as the data it is; the slot holds this very object (Law 4).
@@ -1086,7 +1109,7 @@ export function funds(
     // count is what a claim on a book and a claim on a firm are both counted in (Equity A2), and
     // two modules cannot each introduce it — so it is registry data and this module only uses it.
     units: [],
-    params: [...paramsOf(), ...etfParamsOf(etfs)],
+    params: [...paramsOf(decls), ...etfParamsOf(etfs)],
     phases: [
       {
         name: 'funds.strike',
@@ -1152,7 +1175,8 @@ export function funds(
     participants: [
       {
         partyKind: FUND,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => ordersOf(view, m),
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
+          ordersOf(decls, view, m),
       },
     ],
     families: [equityIsZero(), noRequestVanishes(state)],

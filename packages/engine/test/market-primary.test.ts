@@ -15,7 +15,6 @@ import {
   assemble,
   civil,
   clear,
-  foundationSpec,
   instrumentId,
   marketId,
   partyId,
@@ -29,8 +28,14 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { paidTheSame } from './expected.js';
 import { notDealing } from './no-dealing.js';
+import { asQty, type Qty } from '../src/core/tick.js';
+
+/** Law 8: a size in this test is a count of the unit's own pieces, like every size anywhere. */
+const q = asQty;
+
 
 /** The one market this test drives, with its optional readings taken. */
 const BILL = instrumentId('gov.north.bill.2027-12-15');
@@ -65,9 +70,9 @@ function auctionOf(m: MarketResult): {
 
 /** A module that posts the treasury's offer and the bidders' schedules for one period. */
 function auctioneer(
-  size: number,
+  size: Qty,
   reservation: number,
-  bids: readonly { party: string; price: number | 'market'; qty: number }[],
+  bids: readonly { party: string; price: number | 'market'; qty: Qty }[],
 ): SystemModule {
   return {
     id: 'test.auctioneer',
@@ -113,7 +118,7 @@ function auctioneer(
 
 /** The kernel and the opening state: the auction under test is the only one in the world. */
 function world(...extra: SystemModule[]): World {
-  const spec = foundationSpec('seed-auction');
+  const spec = rigSpec('seed-auction');
   const kernelOnly = spec.modules.filter(
     (m) =>
       m.id === 'sovereign-instruments' ||
@@ -130,10 +135,10 @@ describe('the primary market (Sovereign C)', () => {
     const w = world(
       // Sized to what these three bidders actually hold: a dealer bids out of the cash it has
       // (C3.a), and a test whose bids exceed it would be testing that rule and not this one.
-      auctioneer(60, 0.9, [
-        { party: 'firm.1', price: 0.99, qty: 40 },
-        { party: 'firm.2', price: 0.97, qty: 40 },
-        { party: 'firm.3', price: 0.93, qty: 40 },
+      auctioneer(q(60), 0.9, [
+        { party: 'firm.1', price: 0.99, qty: q(40) },
+        { party: 'firm.2', price: 0.97, qty: q(40) },
+        { party: 'firm.3', price: 0.93, qty: q(40) },
       ]),
     );
     const before = w.instruments.get(GOV_LINE).issued;
@@ -159,7 +164,7 @@ describe('the primary market (Sovereign C)', () => {
   });
 
   it('withdraws the paper nobody bid for and the withdrawal is an event (C7, D5.a)', () => {
-    const w = world(auctioneer(300, 0.99, [{ party: 'firm.1', price: 0.5, qty: 500 }]));
+    const w = world(auctioneer(q(300), 0.99, [{ party: 'firm.1', price: 0.5, qty: q(500) }]));
     const before = w.instruments.get(GOV_LINE).issued;
     const r = w.step();
     const m = result(r.markets, GOV_MARKET);
@@ -172,7 +177,7 @@ describe('the primary market (Sovereign C)', () => {
   });
 
   it('cuts the size when the book is thin: weak demand is a lower price or less paper (C5)', () => {
-    const w = world(auctioneer(60, 0.9, [{ party: 'firm.1', price: 0.92, qty: 20 }]));
+    const w = world(auctioneer(q(60), 0.9, [{ party: 'firm.1', price: 0.92, qty: q(20) }]));
     const r = w.step();
     const m = result(r.markets, GOV_MARKET);
     expect(priceOf(m)).toBe(0.92);
@@ -183,10 +188,10 @@ describe('the primary market (Sovereign C)', () => {
 
 describe('a quantity with no level (Central Bank C3, Clearing C4.c)', () => {
   it('takes the worst level the other side posted and never invents one', () => {
-    const buys: Order[] = [{ party: partyId('a'), side: 'buy', price: 'market', qty: 10 }];
+    const buys: Order[] = [{ party: partyId('a'), side: 'buy', price: 'market', qty: q(10) }];
     const sells: Order[] = [
-      { party: partyId('s1'), side: 'sell', price: 0.95, qty: 5 },
-      { party: partyId('s2'), side: 'sell', price: 0.98, qty: 5 },
+      { party: partyId('s1'), side: 'sell', price: 0.95, qty: q(5) },
+      { party: partyId('s2'), side: 'sell', price: 0.98, qty: q(5) },
     ];
     const { resolved, unpriced } = resolveMarketOrders([...buys, ...sells]);
     expect(unpriced).toHaveLength(0);
@@ -197,7 +202,7 @@ describe('a quantity with no level (Central Bank C3, Clearing C4.c)', () => {
   });
 
   it('is not in the book at all when the other side posted nothing', () => {
-    const orders: Order[] = [{ party: partyId('a'), side: 'buy', price: 'market', qty: 10 }];
+    const orders: Order[] = [{ party: partyId('a'), side: 'buy', price: 'market', qty: q(10) }];
     const { resolved, unpriced } = resolveMarketOrders(orders);
     expect(resolved).toHaveLength(0);
     expect(unpriced).toHaveLength(1);
@@ -247,7 +252,7 @@ describe('a line with no price (XI-6)', () => {
             ctx.offer({
               market: BILL_MARKET,
               issuer: TREASURY_NORTH,
-              size: 100,
+              size: q(100),
               reservation: 0.99,
               allotment: 'uniformPrice',
             });

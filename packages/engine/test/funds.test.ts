@@ -17,8 +17,6 @@ import {
   dustOf,
   PHX,
   assemble,
-  foundationSpec,
-  foundationWorld,
   fundVenue,
   instrumentId,
   partyId,
@@ -28,11 +26,22 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigFor, rigSpec, rigWorld } from './rig.js';
 import { unexpected } from './expected.js';
+import { scaleQty } from '../src/core/tick.js';
 
-const FUND_ID = partyId('fund.money.north');
-const MANAGER = partyId('manager.north');
-const SHARE = shareLineOf('fund.money.north');
+/**
+ * Seed B1.a: this world's funds are DRAWN — a bank large enough to sponsor one has one, and which
+ * banks those are is an outcome of the draw. So the fund is asked for rather than named.
+ */
+const DREW = rigFor('funds', { funds: 1 });
+const FUND_DECL = DREW.draw.funds[0] ?? (() => {
+  throw new Error('the rig drew no money fund');
+})();
+const FUND_ID = partyId(FUND_DECL.fund);
+const MANAGER = partyId(FUND_DECL.manager);
+const SHARE = shareLineOf(FUND_DECL.fund);
+const RIG = { banks: 3, firms: DREW.firms };
 const BILL = instrumentId('gov.north.bill.2026-06-15');
 
 /** Everybody who holds a share asks for all of it back, in one period: a run (C4.a). */
@@ -57,11 +66,12 @@ function everybodyRedeems(at: number): SystemModule {
           for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
             const held = ctx.register.quantity(p.id, SHARE);
             if (held <= 0 || p.representation !== 'cell') continue;
-            ctx.post(fundVenue('fund.money.north'), {
+            ctx.post(fundVenue(FUND_DECL.fund), {
               party: p.id,
               side: 'sell',
               price: 'market',
-              qty: held * p.weight,
+              // XI-15: whole shares for each member, times how many members there are.
+              qty: scaleQty(held, p.weight, 'shares the cell redeems'),
             });
           }
         },
@@ -73,17 +83,17 @@ function everybodyRedeems(at: number): SystemModule {
 }
 
 function runWorld(seed: string, at: number): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed, RIG.banks, RIG.firms);
   return assemble({ ...spec, modules: [...spec.modules, everybodyRedeems(at)] });
 }
 
 /** The same world with a manager that charges more than the paper earns (B3, D4). */
 function greedy(fee: number): World {
-  const spec = foundationSpec('funds-greedy');
+  const spec = rigSpec('funds', RIG.banks, RIG.firms);
   const modules = spec.modules.map((m) => ({
     ...m,
     params: m.params.map((p) =>
-      p.id === 'fund.fee.fund.money.north' ? { ...p, value: fee } : p,
+      p.id === `fund.fee.${FUND_DECL.fund}` ? { ...p, value: fee } : p,
     ),
   }));
   return assemble({ ...spec, modules });
@@ -94,7 +104,7 @@ const nav = (w: World): number => w.valuation.markPerUnit(SHARE, w.period);
 
 describe('what a fund is (Fund Shares A1, A2, A3)', () => {
   it('is a party whose liability is its shares and whose equity is nothing', () => {
-    const w = foundationWorld('funds-a');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 8; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const fund = w.parties.get(FUND_ID);
     expect(fund.kind).toBe(FUND);
@@ -110,7 +120,7 @@ describe('what a fund is (Fund Shares A1, A2, A3)', () => {
   });
 
   it('holds only what its mandate allows, and it holds something (A4, C1.a, F1)', () => {
-    const w = foundationWorld('funds-b');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 8; i += 1) w.step();
     const held = w.register.holdingsOf(FUND_ID).filter((h) => h.instrument !== SHARE);
     expect(held.length).toBeGreaterThan(0);
@@ -132,7 +142,7 @@ describe('what a fund is (Fund Shares A1, A2, A3)', () => {
 
 describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
   it('is a read of the book over the shares, and nothing stores it', () => {
-    const w = foundationWorld('funds-c');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 8; i += 1) w.step();
     const shares = w.instruments.get(SHARE).issued;
     const assets = w.register
@@ -148,7 +158,7 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
   });
 
   it('falls when the book falls: nothing holds it at one (D4)', () => {
-    const w = foundationWorld('funds-d');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 6; i += 1) w.step();
     const before = nav(w);
     const moves: number[] = [];
@@ -208,7 +218,7 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
   });
 
   it('pays the manager, and the fee comes out of the holders (B3, F3)', () => {
-    const w = foundationWorld('funds-e');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 8; i += 1) w.step();
     const fees = w.journal.ofKind('fund.fee').filter((e) => e.data['paid'] === true);
     expect(fees.length).toBeGreaterThan(0);
@@ -220,7 +230,7 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
 
 describe('creation and redemption (Fund Shares C1, C2, C3, C5)', () => {
   it('takes cash and gives shares in one instruction, at the NAV it struck (C1)', () => {
-    const w = foundationWorld('funds-f');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 6; i += 1) w.step();
     const subs = w.journal.ofKind('fund.subscribed').filter((e) => e.data['settled'] === true);
     expect(subs.length).toBeGreaterThan(0);
@@ -240,7 +250,7 @@ describe('creation and redemption (Fund Shares C1, C2, C3, C5)', () => {
   });
 
   it('gives the money back, and what it cannot pay it never drops (C2, C2.b, C4)', () => {
-    const w = runWorld('funds-g', 8);
+    const w = runWorld('funds', 8);
     for (let i = 0; i < 14; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const asked = w.journal.ofKind('fund.requested');
     expect(asked.length).toBeGreaterThan(0);
@@ -257,7 +267,7 @@ describe('creation and redemption (Fund Shares C1, C2, C3, C5)', () => {
   });
 
   it('sells into a market it does not price when the buffer runs out (C2.a, C2.b, XI-2)', () => {
-    const w = runWorld('funds-h', 8);
+    const w = runWorld('funds', 8);
     for (let i = 0; i < 26; i += 1) w.step();
     // XI-2: the forced sale. It offers what it holds at whatever the book gives — a seller that
     // named a price would not be forced — and the market it sells into is the bills' own.
@@ -281,7 +291,7 @@ describe('creation and redemption (Fund Shares C1, C2, C3, C5)', () => {
 
 describe('what a saver does with it (Fund Shares D2, D2.a, D3)', () => {
   it('substitutes out of a deposit that pays nothing, and the fund buys the paper (D2, D3)', () => {
-    const w = foundationWorld('funds-i');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 10; i += 1) w.step();
     const cells = w.parties.ofKind(HOUSEHOLD).filter((p) => p.status.alive);
     const holding = cells.filter((c) => w.register.quantity(c.id, SHARE) > 0);
@@ -298,7 +308,7 @@ describe('what a saver does with it (Fund Shares D2, D2.a, D3)', () => {
   });
 
   it('shows the fund on the surface: what it is worth, what it holds, what it owes', () => {
-    const w = foundationWorld('funds-j');
+    const w = rigWorld('funds', RIG.banks, RIG.firms);
     for (let i = 0; i < 8; i += 1) w.step();
     const view = snapshot(w, { kind: 'inspector' }, 50);
     const line = view.instruments.find((i) => i.id === SHARE);
@@ -313,13 +323,13 @@ describe('what a saver does with it (Fund Shares D2, D2.a, D3)', () => {
 
 describe('a year with a redemption wave in it', () => {
   it('stays green and gives the same world twice from the same seed (Law 13, Observer E3)', () => {
-    const a = runWorld('funds-year', 20);
+    const a = runWorld('funds', 20);
     for (let i = 0; i < 52; i += 1) expect(unexpected(a.step().audit)).toEqual([]);
     // The wave happened, it was met by selling, and the fund is still there afterwards.
     expect(a.journal.ofKind('fund.gate').length).toBeGreaterThan(0);
     expect(a.parties.get(FUND_ID).status.alive).toBe(true);
     expect(a.instruments.get(SHARE).issued).toBeGreaterThan(0);
-    const b = runWorld('funds-year', 20);
+    const b = runWorld('funds', 20);
     for (let i = 0; i < 52; i += 1) b.step();
     expect(snapshot(b, { kind: 'inspector' }, 50)).toEqual(snapshot(a, { kind: 'inspector' }, 50));
   });

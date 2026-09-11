@@ -20,7 +20,6 @@ import {
   buildLagParam,
   capacityFrom,
   capitalChargePerUnit,
-  foundationSpec,
   goodId,
   isCreateLeg,
   nextPeriod,
@@ -44,8 +43,10 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigSpec } from './rig.js';
 import { sameQuantity, unexpected } from './expected.js';
 import { machinesPerTonne, perTonne, phx, tonnes } from './units.js';
+import type { Qty } from '../src/core/tick.js';
 
 const FIRM_1 = partyId('firm.1'); // grain, at bank.a
 const FIRM_4 = partyId('firm.4'); // grain, the biggest farm
@@ -60,7 +61,7 @@ const MACHINERY = CAPITAL_KINDS[0]?.id ?? 'machinery';
  * A buyer with money of its own, pointed at one market: it stands in for the demand this world has
  * somewhere else, so that a test of what a SELLER does has a second side that cannot run out.
  */
-function hungryFor(instrument: string, price: number, qty: number): SystemModule {
+function hungryFor(instrument: string, price: number, qty: Qty): SystemModule {
   return {
     id: 'test.buyer',
     spec: 'Goods C3',
@@ -104,7 +105,7 @@ function hungryFor(instrument: string, price: number, qty: number): SystemModule
  * registry, and every mechanism reads it the same way it reads any other (Law 15).
  */
 function tightWorld(seed: string, over: Readonly<Record<string, number>> = {}): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules = spec.modules.map((m) => ({
     ...m,
     params: m.params.map((p) => {

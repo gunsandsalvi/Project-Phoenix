@@ -19,7 +19,7 @@
  * SHAPE: the curve opens flat and the auctions and the secondary market give it whatever shape they
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
-import { addDays, civil } from '../calendar/civil.js';
+import { addDays, addMonths, civil, compareCivil, formatCivil, type Civil } from '../calendar/civil.js';
 import {
   cohortId,
   currencyCode,
@@ -51,7 +51,7 @@ import {
   type SovereignBillTerms,
   type SovereignBondTerms,
 } from '../mechanisms/sovereign-instruments/index.js';
-import { BANKS, type BankDecl } from '../mechanisms/banks/data.js';
+import { BANK_COUNT, drawBanks, type BankDecl } from '../mechanisms/banks/data.js';
 import { banks } from '../mechanisms/banks/index.js';
 import {
   CAPITAL_KINDS,
@@ -65,15 +65,19 @@ import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
-import { goodId, goodMarketId, goodTerms, goods, wipId } from '../mechanisms/goods/index.js';
+import { FIRM_COUNT, drawFirms, type FirmDecl } from '../mechanisms/firms/data.js';
+import { goodId, goodMarketId, goods, wipId } from '../mechanisms/goods/index.js';
+import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
+import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
 import { funds } from '../mechanisms/funds/index.js';
+import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
 import { labour } from '../mechanisms/labour/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
-import { splitOnTick } from '../core/tick.js';
+import { downTick, splitOnTick } from '../core/tick.js';
 import { displayName } from '../registry/naming.js';
 import { MONEY_PIECES, SHARE_PIECES } from '../registry/grid.js';
 import { BANK, CENTRAL_BANK, FIRM, HOUSEHOLD, MONEY_KIND, SHARES, TREASURY } from '../registry/profiles.js';
@@ -106,113 +110,145 @@ export const GOV_CURVE = curveFamilyId('gov.north');
 export const MATURITY_MONTHS: readonly number[] = [3, 6, 9, 12];
 export const MATURITY_DAY = 15;
 
-/** What the seed opens outstanding: a profile, not one line (Seed C3, Treasury D4.a). */
+/**
+ * What the seed opens outstanding: a PROFILE, and never a table of amounts (Seed C3, Treasury D4.a).
+ *
+ * A TENOR, and the weight the stock carries at it — for each of the two reasons anybody in this
+ * world owns the paper, because they are different reasons and they sit at different places on the
+ * curve. A bank holds it because it is the liquid asset its own rule asks of it, so its weight is
+ * at the short end; a household holds it because it is saving, so its weight is at the long end.
+ * Neither weight is an amount: an amount has to be restated every time the world changes size, and
+ * a number restated to keep a result is a result wearing an endowment's name (Law 2). How much
+ * there IS of it is one number per member of the population, below.
+ */
+interface SeedTenor {
+  readonly paper: 'bill' | 'bond';
+  /** Months from the epoch. It is PLACED on the issuer's own maturity grid, never stated (B3.a). */
+  readonly months: number;
+  /** Seed B4: the part of what the banking system holds that sits in this line. */
+  readonly bankWeight: number;
+  /** The part of what households hold directly that sits in this line. */
+  readonly householdWeight: number;
+  readonly why: string;
+}
+
+const MONTHS_PER_YEAR = 12;
+
+const SEED_PROFILE: readonly SeedTenor[] = [
+  {
+    paper: 'bill',
+    months: 3,
+    bankWeight: 5,
+    householdWeight: 0,
+    why: 'The shortest bill on the grid. A bank holds it because it is the asset its own liquidity rule asks of it and nobody saves at three months, so the whole of this line is at the banks.',
+  },
+  {
+    paper: 'bill',
+    months: 6,
+    bankWeight: 5,
+    householdWeight: 0,
+    why: 'The same reason a quarter further out. Two bills rather than one so that the short end of the curve has a shape the first auction can move.',
+  },
+  {
+    paper: 'bill',
+    months: MONTHS_PER_YEAR,
+    bankWeight: 5,
+    householdWeight: 1,
+    why: 'The year bill: the first line a saver is in at all, and the last one a treasury is. It is where the two reasons to hold the paper overlap, which is what makes it the line a shock passes through.',
+  },
+  {
+    paper: 'bond',
+    months: 2 * MONTHS_PER_YEAR,
+    bankWeight: 3,
+    householdWeight: 2,
+    why: 'The first coupon-paying line. A bank still holds it — it is liquid and it is this issuer — but a saver is now the larger part of the demand, which is what makes a bond market different from a bill market.',
+  },
+  {
+    paper: 'bond',
+    months: 5 * MONTHS_PER_YEAR,
+    bankWeight: 3,
+    householdWeight: 3,
+    why: 'The belly of the curve, and the line a bank is least glad to be holding when rates move: long enough to lose real money on and short enough that it cannot claim to be holding it to maturity.',
+  },
+  {
+    paper: 'bond',
+    months: 10 * MONTHS_PER_YEAR,
+    bankWeight: 3,
+    householdWeight: 4,
+    why: 'Sovereign D4: the benchmark, and the line every other price in this world is quoted against. The largest single household holding, because it is what saving for a life stage actually looks like.',
+  },
+];
+
+/** One line of the profile, once the grid has placed it and the population has sized it. */
 interface SeedLine {
   readonly id: string;
   /** Which of the two sovereign instruments this line is (Sovereign B1: two, not one with a flag). */
   readonly paper: 'bill' | 'bond';
-  readonly maturity: { y: number; m: number; d: number };
-  /**
-   * Seed B4: what the BANKING SYSTEM holds of this line, split across the banks that exist in
-   * proportion to each one's stated size. It used to be one number per bank per line — eighteen of
-   * them, whose spread came to a few per cent — and what those eighteen were saying is here in one
-   * number per line and one size per bank. Which lines each bank ends up concentrated in is then an
-   * outcome of what it buys and sells from period one, rather than something the seed decided.
-   */
+  readonly maturity: Civil;
+  /** Units the banking system holds, split across the banks that exist by each one's size. */
   readonly banks: number;
-  /** Per member of every household cell, before dispersion (Seed B4). */
+  /** Units one member of every household cell holds (Seed B4, XI-15). */
   readonly perMember: number;
 }
 
-const SEED_LINES: readonly SeedLine[] = [
-  { id: 'gov.north.bill.2026-06-15', paper: 'bill', maturity: { y: 2026, m: 6, d: 15 }, banks: 500000, perMember: 0 },
-  { id: 'gov.north.bill.2026-09-15', paper: 'bill', maturity: { y: 2026, m: 9, d: 15 }, banks: 500000, perMember: 0 },
-  { id: 'gov.north.bill.2027-03-15', paper: 'bill', maturity: { y: 2027, m: 3, d: 15 }, banks: 500000, perMember: 20 },
-  { id: 'gov.north.2028-03-15', paper: 'bond', maturity: { y: 2028, m: 3, d: 15 }, banks: 300000, perMember: 40 },
-  { id: 'gov.north.2031-03-15', paper: 'bond', maturity: { y: 2031, m: 3, d: 15 }, banks: 300000, perMember: 60 },
-  { id: 'gov.north.2036-03-15', paper: 'bond', maturity: { y: 2036, m: 3, d: 15 }, banks: 300000, perMember: 80 },
-];
+/**
+ * B3.a: the issuer places every line it brings on its own maturity grid, so a tenor asked for is a
+ * date the market already trades rather than a new one. The first grid day at or after the tenor.
+ */
+function onGrid(epoch: Civil, months: number): Civil {
+  const wanted = addMonths(epoch, months);
+  for (let ahead = 0; ahead <= MONTHS_PER_YEAR; ahead += 1) {
+    const at = addMonths(wanted, ahead);
+    if (!MATURITY_MONTHS.includes(at.m)) continue;
+    const day = civil(at.y, at.m, MATURITY_DAY);
+    if (compareCivil(day, wanted) >= 0) return day;
+  }
+  throw new Missing('Sovereign B3.a', `no grid date within a year of ${months} months out`, { months });
+}
+
+/**
+ * Seed C3, B4: THE PROFILE, SIZED BY THE POPULATION IT IS OWED TO. Everything outstanding is a
+ * weight of one stated number — what a member of this world holds of its sovereign's debt — so a
+ * world of thirty million people has thirty million people's worth of it and no line of data is
+ * restated. Law 8: whole units, because a unit of the paper is indivisible.
+ */
+function seedLines(epoch: Civil, members: number, perMember: number, householdShare: number): SeedLine[] {
+  const bankWeight = sum(SEED_PROFILE.map((t) => t.bankWeight)).value;
+  const householdWeight = sum(SEED_PROFILE.map((t) => t.householdWeight)).value;
+  const atBanks = mul(mul(members, perMember, 'the debt outstanding'), 1 - householdShare, 'at the banks');
+  const perHead = mul(perMember, householdShare, 'what a member holds directly');
+  return SEED_PROFILE.map((t): SeedLine => {
+    const maturity = onGrid(epoch, t.months);
+    const dated = formatCivil(maturity);
+    return {
+      id: t.paper === 'bond' ? `gov.north.${dated}` : `gov.north.bill.${dated}`,
+      paper: t.paper,
+      maturity,
+      banks: Math.round(div(mul(atBanks, t.bankWeight, 'its weight'), bankWeight, 'this line')),
+      perMember: Math.round(div(mul(perHead, t.householdWeight, 'its weight'), householdWeight, 'this line')),
+    };
+  });
+}
 
 /** One day count for the seeded paper, so an opening price and its yield use one convention. */
 const SEED_DAY_COUNT: DayCount = 'ACT/ACT';
 
 /**
- * What each firm opens with of what it makes, and what is already on its line (Seed D1: a stock
- * consistent with the flows that will act on it). It is ONE PERIOD of what the chain downstream of
- * it can take — the households' own income says what that is — and not a hoard: a firm sitting on a
- * year of stock would produce nothing for a year, and the seed would have decided that.
- */
-interface SeedFirm {
-  readonly firm: string;
-  readonly name: string;
-  /** Seed C1: the money it opens with, which is some bank's liability like anybody else's. */
-  readonly cash: number;
-  readonly subUnit: string;
-  /** Units finished and ready to sell. */
-  readonly finished: number;
-  /** Units started and not yet off the line: only a good whose batch takes longer than a period. */
-  readonly onTheLine: number;
-  /** Seed D1: units of what its recipe draws, so its first batch is not waiting on a market. */
-  readonly inputs: number;
-  /**
-   * Capital Programme A2, Seed D1: the plant it opens with, in units of the kind its line needs.
-   * A world whose firms open with no plant produces nothing at all until somebody has built some,
-   * which is not an opening condition, it is a different world. It is stated with headroom over
-   * what the firm is currently making — a going concern is not running at its ceiling — and it is
-   * spread over three vintages so that replacement comes round a third at a time rather than all at
-   * once (Seed C3's reason, applied to plant instead of to the maturity profile).
-   */
-  readonly plant: number;
-  readonly why: string;
-}
-
-/**
- * Seed B1, B1.a, B4: three firms in every line, no two the same size and no two the same cost.
+ * What a firm opens with of what it makes, of what its recipe draws, and of the plant that lets it
+ * make anything at all (Seed D1: a stock consistent with the flows that will act on it).
  *
- * Every line has a firm at each bank (B3). A bank whose customers all sit on one side of the
- * payment chain is a bank with a structural reserve drain, and until the corridor exists (worklist
- * 11) nothing in this world could lend it the difference — so a seed that arranged one would be
- * opening with a flow it has no mechanism for, which is what D1 forbids.
+ * NONE OF IT IS STATED ONE FIRM AT A TIME, AND NONE OF IT IS AN AMOUNT. It used to be a table of
+ * twelve rows and six columns — seventy-two numbers, every one of them a quantity that meant what it
+ * meant only for a world of six thousand people and twelve firms. What is stated instead is the
+ * SCALE of the world (one number: what a member of the population takes off the end of the chain in
+ * a period) and the three RATIOS below; everything a firm opens holding is that, walked up the
+ * chain through the good's own recipe (Law 19) and divided by the firm's own size (Seed B4).
  *
- * The LINE TOTALS are exactly what they were when each line had one firm in it. This item changes
- * the structure of the sector and not the scale of the world: choosing endowments to make some
- * employment number come out would be steering the model, and measuring it is Part XII's job and
- * not this one (Law 11). What each firm is worth is stated with a reason, as the one firm's was.
+ * So a world of thirty million people opens with thirty million people's worth of stock in it, held
+ * by however many firms it has, in the proportions their own sizes give — and the seed has not
+ * chosen a single quantity anywhere.
  */
-const SEED_FIRMS: readonly SeedFirm[] = [
-  // Grain — 200 of cash, 90 finished and 90 on the line, as the one farm held.
-  { firm: 'firm.4', name: 'Broadacre Farm', cash: 100000, subUnit: 'grain', finished: 45, onTheLine: 45, inputs: 0, plant: 68,
-    why: 'The largest farm in the region and the one that works the best ground.' },
-  { firm: 'firm.1', name: 'Middlefield Farm', cash: 65000, subUnit: 'grain', finished: 30, onTheLine: 30, inputs: 0, plant: 45,
-    why: 'An ordinary farm of ordinary size.' },
-  { firm: 'firm.7', name: 'Hollow Farm', cash: 35000, subUnit: 'grain', finished: 15, onTheLine: 15, inputs: 0, plant: 23,
-    why: 'The smallest, on the poorest ground, with the least cash to carry a bad season.' },
-  // Flour — 150 of cash, 75 milled and 110 tonnes of grain to mill, as the one mill held.
-  { firm: 'firm.5', name: 'Riverside Mill', cash: 75000, subUnit: 'flour', finished: 38, onTheLine: 0, inputs: 55, plant: 46,
-    why: 'The big mill, and the one that has already bought most of the grain it will grind.' },
-  { firm: 'firm.2', name: 'Town Mill', cash: 50000, subUnit: 'flour', finished: 25, onTheLine: 0, inputs: 37, plant: 30,
-    why: 'An ordinary mill.' },
-  { firm: 'firm.8', name: 'Old Mill', cash: 25000, subUnit: 'flour', finished: 12, onTheLine: 0, inputs: 18, plant: 14,
-    why: 'The smallest and the oldest.' },
-  // Bread — 250 of cash, 105 baked and 75 tonnes of flour, as the one bakery held.
-  { firm: 'firm.6', name: 'City Bakery', cash: 125000, subUnit: 'bread', finished: 52, onTheLine: 0, inputs: 38, plant: 39,
-    why: 'A plant bakery: the biggest oven and the biggest week of bread in the shop.' },
-  { firm: 'firm.3', name: 'High Street Bakery', cash: 80000, subUnit: 'bread', finished: 35, onTheLine: 0, inputs: 25, plant: 26,
-    why: 'An ordinary bakery.' },
-  { firm: 'firm.9', name: 'Corner Bakery', cash: 45000, subUnit: 'bread', finished: 18, onTheLine: 0, inputs: 12, plant: 14,
-    why: 'The smallest, and the one holding the least flour against a week it cannot predict.' },
-  // Capital Programme C1, E2: the line that BUILDS the capital. Its output is somebody else's
-  // plant, its revenue is somebody else's investment, and the people it employs are employed by
-  // the decision to expand. It needs no plant of its own: a workshop is people and a bench, and
-  // saying so is a statement about this world's technology rather than a missing constraint.
-  { firm: 'firm.10', name: 'North Engineering', cash: 60000, subUnit: 'machine', finished: 4, onTheLine: 3, inputs: 0, plant: 0,
-    why: 'The best-equipped workshop in the region and the one with machines already on the bench.' },
-  { firm: 'firm.11', name: 'Town Works', cash: 40000, subUnit: 'machine', finished: 3, onTheLine: 2, inputs: 0, plant: 0,
-    why: 'An ordinary workshop.' },
-  { firm: 'firm.12', name: 'Lane Workshop', cash: 25000, subUnit: 'machine', finished: 2, onTheLine: 1, inputs: 0, plant: 0,
-    why: 'The smallest, and the one that will be priced out of engineering labour first.' },
-];
-
+const SEED_STOCK_BASIS = 0.8;
 /** Seed C4: the level each market opens at, which is the good's and not any one firm's. */
 const SEED_MARKETS: readonly { readonly subUnit: string; readonly opensAt: number; readonly why: string }[] = [
   { subUnit: 'grain', opensAt: 400,
@@ -232,11 +268,14 @@ const SEED_MARKETS: readonly { readonly subUnit: string; readonly opensAt: numbe
  */
 const SEED_PLANT_AGES: readonly number[] = [26, 78, 130];
 
-const SEED_STOCK_BASIS = 0.8;
-
 const P = {
   cellsPerKey: paramId('seed.households.cellsPerKey'),
   membersPerCohort: paramId('seed.households.membersPerCohort'),
+  outputPerMember: paramId('seed.outputPerMember'),
+  debtPerMember: paramId('seed.sovereign.debtPerMember'),
+  householdDebtShare: paramId('seed.sovereign.householdShare'),
+  firmCashPeriods: paramId('seed.firm.cashPeriods'),
+  plantHeadroom: paramId('seed.firm.plantHeadroom'),
   openingYield: paramId('seed.openingYield'),
   cbOpeningShare: paramId('seed.centralBank.openingHoldingShare'),
   treasuryBufferShare: paramId('seed.treasury.bufferShare'),
@@ -280,7 +319,10 @@ function openingPrices(): ParamDecl[] {
  * spread across them too — so nothing here is restated when the count changes, which is what lets
  * the count be MEASURED (XI-15, `test/resolution/banks.test.ts`).
  */
-export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): SystemModule {
+export function foundationSeedFor(
+  bankRows: readonly BankDecl[],
+  firmRows: readonly FirmDecl[],
+): SystemModule {
   return {
   id: 'seed.foundation',
   spec: 'Seed',
@@ -316,11 +358,52 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
     },
     {
       id: P.membersPerCohort,
-      value: 3000,
+      value: 15_000_000,
       unit: 'count',
-      kind: 'resolution',
+      kind: 'placeholder',
       owner: 'model',
-      why: 'The population each cohort stands for, spread across the banks that exist and cut into `cellsPerKey` cells at each of them. It is per COHORT and not per (cohort, bank) key, because how many banks a world has is a resolution of its own (`banks.count`) and a population that grew with it would be the count of banks answering a question about how many people there are.',
+      standsInFor: { mechanism: 'Households A5', worklistItem: '13f' },
+      why: 'HOW MANY PEOPLE THERE ARE. Fifteen million a cohort and two cohorts, so thirty million in the region — which is a country, and the scale every other number in this seed is a ratio against. It was six thousand, and six thousand was a test rig wearing a world\'s name: a labour venue with a handful of employers in it, a bank sector whose smallest member was the size of one firm, and a bill line a single household cell could have bought outright. Every mechanism that needs somebody else to be there — a second bidder, another lender, a market that does not move when one party leaves — was being tested against a world too small to have one. It is a PLACEHOLDER and not a resolution: the answer MOVES with it, which is the whole reason it had to change, and what ends it is a population with births and deaths in it (worklist 13f) rather than a count anybody states.',
+    },
+    {
+      id: P.outputPerMember,
+      value: 0.0175,
+      unit: 'units of a final good per member per period',
+      kind: 'shape',
+      owner: 'model',
+      why: 'Seed D1: THE SCALE OF THE REAL ECONOMY, and the only quantity this seed states. What a member of the population takes off the end of the chain in a period; everything any firm opens holding is this, walked up the chain through the good\'s own recipe (Law 19) and divided by that firm\'s own size. It is a SHAPE with no death, for the same reason the opening yield has none: a world that opens with stock in it has to say how much, and period zero is before any market has run. From period one it is an OUTCOME and nothing reads this again — households spend a share of income at a cleared price (Households C3) and what that buys is the price\'s business. What retires it is a measurement rather than a mechanism: run the same world from a different one and see whether it converges to the same place (Part XII).',
+    },
+    {
+      id: P.debtPerMember,
+      value: 600,
+      unit: 'PHX of par per member',
+      kind: 'shape',
+      owner: 'model',
+      why: 'Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER IS OUTSTANDING, per member of the population it is owed by. A stock and not a flow, and per head rather than in total, because the total is not free: a treasury that has borrowed is a treasury that spent, and how much it spent is a function of how many people it spent it on. The profile above says where on the curve it sits and who holds it; this says how much of it there is. From period one the treasury\'s own funding programme decides its stock and nothing reads this again (Treasury D4).',
+    },
+    {
+      id: P.householdDebtShare,
+      value: 1 / 3,
+      unit: 'share of the debt outstanding',
+      kind: 'shape',
+      owner: 'model',
+      why: 'Sovereign E2.f, Seed E2: the part of the sovereign debt households hold DIRECTLY, with the banking system holding the rest. Two holders and two reasons: a bank holds it because its own liquidity rule asks for a liquid asset, a household because it is saving, and a line held by only one of them has one side to its market. What replaces it is who actually bids in the auctions and the secondary sessions, which happens from period one.',
+    },
+    {
+      id: P.firmCashPeriods,
+      value: 3,
+      unit: 'periods of turnover',
+      kind: 'shape',
+      owner: 'model',
+      why: 'Seed C1, D1: how many periods of its own turnover a firm opens holding as money. It pays its wage bill and buys its inputs before it is paid for what it sells, so a firm that opens with nothing fails in its first period on a timing gap and not on its economics — which is a statement about the seed and not about the firm (Firm D1). Three periods, because the chain is three deep and the money has to get from the end of it back to the start. From period one what a firm holds is what it was paid less what it spent, and nothing reads this again.',
+    },
+    {
+      id: P.plantHeadroom,
+      value: 1.5,
+      unit: 'multiple of what the line currently starts',
+      kind: 'shape',
+      owner: 'model',
+      why: 'Capital Programme A2, Seed D1: how much plant a firm opens with over what its current output needs. A going concern is not running at its ceiling — a firm with no headroom cannot answer a good week at all, and a world of them would show a supply response of exactly zero from the first period. From period one investment decides the stock and nothing reads this again (Capital Programme B1).',
     },
     ...openingPrices(),
     {
@@ -368,10 +451,10 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
     banks.forEach((b, n) => {
       ctx.parties.add(named(b.id, BANK, `Bank ${String.fromCharCode(65 + n)}`, CB));
     });
-    // Seed B1, B3: three firms to a line, spread across the banks that exist so that no bank's
+    // Seed B1, B3: the firms this world drew, spread across the banks that exist so that no bank's
     // customers all sit on one side of the payment chain — a bank whose do has a structural reserve
     // drain, which is a flow this world would be opening with rather than producing.
-    SEED_FIRMS.forEach((f, n) => {
+    firmRows.forEach((f, n) => {
       const bank = banks[n % banks.length];
       if (bank === undefined) return;
       ctx.parties.add(named(partyId(f.firm), FIRM, f.name, bank.id));
@@ -389,14 +472,80 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
       });
     }
 
+    // Households: cells per (region, cohort, bank) key, weights summing to the key's population
+    // (Seed B1.a). They are created BEFORE the endowments because they are the parties the
+    // endowments have to add up against: a bank's funding is its depositors' money, and until the
+    // depositors exist there is nobody for it to be owed to.
+    //
+    // THEY OPEN WITH SOMETHING, and the comment that used to stand here said the opposite. It
+    // justified a household holding nothing by citing Seed E — which says "no OUTCOME is seeded"
+    // (E1) and "the seed sets reasons and ENDOWMENTS" (E2). Opening wealth is an endowment, in
+    // exactly the sense E2 names, and every other party in this seed has one stated: the firms get
+    // cash and stock, the banks reserves and paper, the treasury a buffer. Households alone held
+    // nothing, and what that produced is measurable: no saver funds a bank, so the banks were 63%
+    // to 84% their own equity; equity at the return it asks is the dearest money a bank has, so
+    // every bank required 5.7% to 8.9% of every issuer; and paper near par yields 2%, so no bid was
+    // ever posted. 187 of 312 sovereign sessions cleared with NO DEMAND AT ALL. The seed was not
+    // declining to say how rich anybody is — it was saying everybody is poor, which is a statement
+    // about the answer with no mechanism behind it.
+    //
+    // What they are unequal in is still an outcome from the first period on: who was hired, at what
+    // wage, and what each of them made of it. What is endowed is the stock they start from.
+    // XI-15, Law 2: THE POPULATION IS A PROPERTY OF THE WORLD AND NOT OF ITS BANKS. What is stated
+    // is how many people a cohort stands for; how many cells they are cut into is one resolution
+    // (`cellsPerKey`) and how many banks they are spread over is another (`banks.count`), and
+    // neither may change how many people there are. Stating it per (cohort, bank) key meant a world
+    // with a fourth bank had a third more people in it, which is the count of banks answering a
+    // question about the population.
+    const cells = positiveCount(ctx.params.get(P.cellsPerKey), 'cellsPerKey');
+    const members = positiveCount(ctx.params.get(P.membersPerCohort), 'membersPerCohort');
+    for (const cohort of ctx.registry.cohorts) {
+      // Seed B4: and they are spread across the banks IN PROPORTION TO SIZE, so a bigger bank has
+      // more depositors — which is what makes it bigger. Split exactly: a weight is a count of
+      // people and the odd person has a named cell (core/tick.ts), never a fraction anywhere.
+      const perBank = splitOnTick(members, banks.map((b) => b.size));
+      const weights = banks.flatMap((bank, at) =>
+        splitPopulation(zeroIfNone(perBank[at]), cells).map((weight, n) => ({ bank, weight, n })),
+      );
+      weights.forEach(({ bank, weight, n }) => {
+        if (weight <= 0) return;
+        const cell: CellParty = {
+          id: partyId(`hh.${cohort.id}.${bank.id}.${n}`),
+          kind: HOUSEHOLD,
+          region: REGION,
+          name: `Households ${cohort.name} at ${bank.id} #${n}`,
+          bank: bank.id,
+          representation: 'cell',
+          status: { alive: true },
+          weight,
+          key: { region: REGION, cohort: cohortId(cohort.id), bank: bank.id },
+        };
+        ctx.parties.add(cell);
+      });
+    }
+
+
     // The maturity profile, outstanding with remaining lives (Seed C3, Treasury D4.a). Every bond
-    // carries the coupon that makes it par at the opening yield, so nothing but a level is claimed.
+    // carries the coupon that makes it par at the opening yield, so nothing but a level is claimed,
+    // and how much of it there is, is the population it is owed by (Law 2: one number, not a table).
+    // Law 19: HOW MANY PEOPLE THERE ARE is read off the cells that were just created, never
+    // recomputed from the parameter they were cut from — a second derivation of a population is a
+    // second population, and it goes wrong the first time a split does not come out.
+    const householdMembers = ctx.parties
+      .ofKind(HOUSEHOLD)
+      .reduce((t, c) => t + weightOf(c), 0);
     const y = ctx.params.get(P.openingYield);
     const opening = new Map<string, number>();
-    for (const line of SEED_LINES) {
+    const seedLineRows = seedLines(
+      ctx.calendar.epoch,
+      householdMembers,
+      ctx.params.get(P.debtPerMember),
+      ctx.params.get(P.householdDebtShare),
+    );
+    for (const line of seedLineRows) {
       const id = instrumentId(line.id);
       const market = marketId(`mkt.${line.id}`);
-      const maturity = civil(line.maturity.y, line.maturity.m, line.maturity.d);
+      const maturity = line.maturity;
       const terms: SovereignBondTerms | SovereignBillTerms =
         line.paper === 'bond'
           ? {
@@ -438,53 +587,109 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
       });
     }
 
-    // Households: cells per (region, cohort, bank) key, weights summing to the key's population
-    // (Seed B1.a). They are created BEFORE the endowments because they are the parties the
-    // endowments have to add up against: a bank's funding is its depositors' money, and until the
-    // depositors exist there is nobody for it to be owed to.
+    // ------------------------------------------------------------------------------------------
+    // WHAT EVERY FIRM OPENS HOLDING (Seed D1, Goods A2.a, Capital Programme A2; Law 2, Law 19)
     //
-    // THEY OPEN WITH SOMETHING, and the comment that used to stand here said the opposite. It
-    // justified a household holding nothing by citing Seed E — which says "no OUTCOME is seeded"
-    // (E1) and "the seed sets reasons and ENDOWMENTS" (E2). Opening wealth is an endowment, in
-    // exactly the sense E2 names, and every other party in this seed has one stated: the firms get
-    // cash and stock, the banks reserves and paper, the treasury a buffer. Households alone held
-    // nothing, and what that produced is measurable: no saver funds a bank, so the banks were 63%
-    // to 84% their own equity; equity at the return it asks is the dearest money a bank has, so
-    // every bank required 5.7% to 8.9% of every issuer; and paper near par yields 2%, so no bid was
-    // ever posted. 187 of 312 sovereign sessions cleared with NO DEMAND AT ALL. The seed was not
-    // declining to say how rich anybody is — it was saying everybody is poor, which is a statement
-    // about the answer with no mechanism behind it.
+    // ONE STATED QUANTITY IN THE WHOLE SEED: what a member of the population takes off the end of
+    // the chain in a period. Everything else here is walked UP the chain from it through the good's
+    // own recipe — the recipe says how much of an input a unit started draws and the yield says how
+    // many of the started ones arrive, so a line's throughput is decided by what draws it and never
+    // stated — and then divided among that line's firms by their own sizes.
     //
-    // What they are unequal in is still an outcome from the first period on: who was hired, at what
-    // wage, and what each of them made of it. What is endowed is the stock they start from.
-    // XI-15, Law 2: THE POPULATION IS A PROPERTY OF THE WORLD AND NOT OF ITS BANKS. What is stated
-    // is how many people a cohort stands for; how many cells they are cut into is one resolution
-    // (`cellsPerKey`) and how many banks they are spread over is another (`banks.count`), and
-    // neither may change how many people there are. Stating it per (cohort, bank) key meant a world
-    // with a fourth bank had a third more people in it, which is the count of banks answering a
-    // question about the population.
-    const cells = positiveCount(ctx.params.get(P.cellsPerKey), 'cellsPerKey');
-    const members = positiveCount(ctx.params.get(P.membersPerCohort), 'membersPerCohort');
-    for (const cohort of ctx.registry.cohorts) {
-      const weights = splitPopulation(members, banks.length * cells);
-      weights.forEach((weight, at) => {
-        const bank = banks[Math.floor(at / cells)];
-        const n = at % cells;
-        if (bank === undefined) return;
-        const cell: CellParty = {
-          id: partyId(`hh.${cohort.id}.${bank.id}.${n}`),
-          kind: HOUSEHOLD,
-          region: REGION,
-          name: `Households ${cohort.name} at ${bank.id} #${n}`,
-          bank: bank.id,
-          representation: 'cell',
-          status: { alive: true },
-          weight,
-          key: { region: REGION, cohort: cohortId(cohort.id), bank: bank.id },
-        };
-        ctx.parties.add(cell);
-      });
+    // The seed therefore chooses no amount anywhere. Ask it for thirty million people and it opens
+    // with thirty million people's worth of grain, flour, bread, machines and plant, held by
+    // however many firms the world has, in the proportions their own draws gave them.
+    // ------------------------------------------------------------------------------------------
+    const started = new Map<string, number>();
+    const madeHere = firmRows.filter((f) => ctx.instruments.has(goodId(f.subUnit, REGION)));
+    const sizeOfLine = new Map<string, number>();
+    for (const f of madeHere) {
+      sizeOfLine.set(f.subUnit, add(zeroIfNone(sizeOfLine.get(f.subUnit)), f.size, 'its line'));
     }
+    // Law 19: the recipe is read from the ONE place that writes it — the goods registry, in the
+    // units a person says it in. The instrument's own terms carry the same recipe converted to
+    // pieces of each good (Law 8), and this seed speaks in named units by contract, so reading the
+    // converted copy here would be converting it back.
+    const recipeOf = (subUnit: string): GoodDecl => {
+      const d = GOODS.find((g) => g.subUnit === subUnit);
+      if (d === undefined) throw new Missing('Goods A1', `no recipe for ${subUnit}`, { subUnit });
+      return d;
+    };
+    // What draws what. A good nothing else draws is what this world makes FOR somebody: the
+    // population, for a consumption good, and the replacement of worn-out plant, for a capital one.
+    const drawnBy = new Map<string, string[]>();
+    for (const subUnit of sizeOfLine.keys()) {
+      for (const input of recipeOf(subUnit).inputs) {
+        drawnBy.set(input.subUnit, [...(drawnBy.get(input.subUnit) ?? []), subUnit]);
+      }
+    }
+    const madeInto = new Set(CAPITAL_KINDS.map((k) => k.madeFrom));
+    const finalGoods = [...sizeOfLine.keys()]
+      .filter((g) => (drawnBy.get(g) ?? []).length === 0 && !madeInto.has(g))
+      .sort();
+    const perMember = ctx.params.get(P.outputPerMember);
+    for (const g of finalGoods) {
+      // Households C3: what the population takes off the end of it, and the line has to START
+      // enough that this much arrives (Goods B4: the yield is what does not).
+      const taken = div(mul(householdMembers, perMember, 'what it eats'), finalGoods.length, 'each');
+      started.set(g, div(taken, recipeOf(g).yieldRate, 'started for it'));
+    }
+    // Down the chain, deepest first: a line starts what everything it feeds draws from it.
+    const upstream = [...sizeOfLine.keys()].filter((g) => !finalGoods.includes(g) && !madeInto.has(g));
+    let settled = new Set(finalGoods);
+    while (upstream.some((g) => !settled.has(g))) {
+      const next = upstream.find(
+        (g) => !settled.has(g) && (drawnBy.get(g) ?? []).every((d) => settled.has(d)),
+      );
+      if (next === undefined) break;
+      let drawn = 0;
+      for (const by of drawnBy.get(next) ?? []) {
+        const qty = recipeOf(by).inputs.find((i) => i.subUnit === next);
+        if (qty === undefined) continue;
+        drawn = add(drawn, mul(zeroIfNone(started.get(by)), qty.qtyPerUnit, 'what it draws'), 'drawn');
+      }
+      started.set(next, div(drawn, recipeOf(next).yieldRate, 'started for it'));
+      settled = new Set([...settled, next]);
+    }
+    // Capital Programme A2: the plant those lines run on, with the headroom a going concern has.
+    const headroom = ctx.params.get(P.plantHeadroom);
+    const plantOf = (subUnit: string, kind: string): number => {
+      const need = recipeOf(subUnit).plant.find((q) => q.capitalKind === kind);
+      if (need === undefined) return 0;
+      return mul(
+        mul(zeroIfNone(started.get(subUnit)), need.unitsPerUnitPerPeriod, 'the plant it takes'),
+        headroom,
+        'with the headroom a going concern has',
+      );
+    };
+    // A4.b: and the capital-goods line starts what REPLACES the plant that wears out — one life's
+    // worth of it a life, which is what a stock of machines with a life in it demands every period.
+    for (const kind of CAPITAL_KINDS) {
+      if (!sizeOfLine.has(kind.madeFrom)) continue;
+      const inService = sum([...sizeOfLine.keys()].map((g) => plantOf(g, kind.id))).value;
+      const wearing = div(inService, kind.usefulLifePeriods, 'what wears out in a period');
+      started.set(kind.madeFrom, div(wearing, recipeOf(kind.madeFrom).yieldRate, 'started for it'));
+    }
+    // Seed B4: and a firm's share of its own line is its own size over the line's.
+    const shareOf = (f: FirmDecl): number => div(f.size, zeroIfNone(sizeOfLine.get(f.subUnit)), 'its share');
+    /** What this firm starts in a period. Everything it opens holding is a period of this. */
+    const startsOf = (f: FirmDecl): number => mul(zeroIfNone(started.get(f.subUnit)), shareOf(f), 'its own');
+    const cashPeriods = ctx.params.get(P.firmCashPeriods);
+    /**
+     * Seed C1: the money it opens with, as periods of its own turnover at what the good opens at.
+     * It pays its wage bill and buys its inputs before it is paid for what it sells, so a firm that
+     * opens with nothing fails on a timing gap rather than on its economics (Firm D1).
+     */
+    const cashOf = (f: FirmDecl): number =>
+      mul(
+        mul(
+          mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what arrives'),
+          ctx.params.get(openingPrice(f.subUnit)),
+          'what it turns over',
+        ),
+        cashPeriods,
+        'periods of it',
+      );
 
     // ------------------------------------------------------------------------------------------
     // THE OPENING BALANCE SHEET (Seed A3, C1, C5, E2; Central Bank A2, C1; Banks Capital B1.b)
@@ -496,31 +701,21 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
     // and no number here was chosen by looking at the answer (the 11.3 record is what that costs).
     // ------------------------------------------------------------------------------------------
 
-    // The paper each bank holds is stated; what a household member holds is stated per member.
-    const householdMembers = ctx.parties
-      .ofKind(HOUSEHOLD)
-      .reduce((t, c) => t + weightOf(c), 0);
-    const bankPaper = new Map<PartyId, number>(banks.map((b) => [b.id, 0]));
+    // What a household member holds in PAPER is stated per member; what the banking system holds
+    // of each line is stated; everything else on this sheet is derived from those two and from the
+    // rule each bank runs its own book to.
+    let systemPaper = 0;
     let centralBankAssets = 0;
+    const paperIn = new Map<string, number>();
 
-    for (const line of SEED_LINES) {
+    for (const line of seedLineRows) {
       const id = instrumentId(line.id);
       const price = openingOf(opening, line.id);
       const par = priced(ctx, id, price);
-      // Law 2, Law 8: what the banking system holds of the line, split by each bank's stated size
-      // into WHOLE UNITS that sum to exactly what was stated — the odd unit goes to the largest
-      // remainder and has a named holder, rather than being lost to a division that does not come
-      // out (core/tick.ts).
-      const perBank = splitOnTick(line.banks, banks.map((b) => b.size));
-      banks.forEach((b, at) => {
-        const units = zeroIfNone(perBank[at]);
-        if (units <= 0) return;
-        ctx.endowUnits(b.id, id, held(ctx, id, units), par);
-        bankPaper.set(b.id, add(zeroIfNone(bankPaper.get(b.id)), units * price, 'bank paper'));
-      });
+      paperIn.set(line.id, line.banks * price);
+      systemPaper = add(systemPaper, line.banks * price, 'what the banking system holds');
       // Seed E2, XI-15: every member of every cell holds the same stated amount, and the cell
-      // carries it with its weight. This column has been in this table since the seed was written
-      // and nothing has ever read it — which is why the sovereign's book had one side.
+      // carries it with its weight.
       if (line.perMember > 0) {
         for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
           ctx.endowUnits(cell.id, id, held(ctx, id, line.perMember), par);
@@ -545,31 +740,98 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
 
     // Money A1, Central Bank A2: NO CENTRAL-BANK MONEY EXISTS THAT ITS ISSUER BOUGHT NOTHING WITH.
     // Its money is its liability and the paper above is the asset it bought with it, so THE SIZE OF
-    // ITS BALANCE SHEET IS ALREADY DECIDED: what is left to say is who holds that money. The seed
-    // used to hand out 160,000,000 of reserves against 53,531,106 of assets and leave the
-    // difference — 106,468,894 — as a hole the central bank then paid the floor rate on for ever;
-    // then it stated three reserve figures that had to come to less than assets a share decided,
-    // and a world with fewer households did not open. Both were the same defect: a stated number on
-    // the side of an identity that is not free.
+    // ITS BALANCE SHEET IS ALREADY DECIDED: what is left to say is who holds that money.
     //
     // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
     // single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what is stated about it is
-    // ITS SHARE of that balance sheet. The banks hold the rest, in proportion to the paper each of
-    // them holds: a bigger bank settles bigger payments and carries more against them. Nothing here
-    // can fail to add up, because the last holder gets the residue of a subtraction (Law 2).
+    // ITS SHARE of that balance sheet. The banks hold the rest as reserves.
     const buffer = mul(centralBankAssets, ctx.params.get(P.treasuryBufferShare), "the treasury's buffer");
     ctx.endowMoney(TREASURY_NORTH, PHX, cash(ctx, buffer));
     const reserves = sub(centralBankAssets, buffer, 'what the banks hold in reserve');
-    const allPaper = sum([...bankPaper.values()]).value;
-    const bankReserves = new Map<PartyId, number>(
-      [...bankPaper].map(([bank, paper]) => [
-        bank,
-        div(mul(reserves, paper, "this bank's share of the paper"), allPaper, 'its reserves'),
+    // Seed C1, Banks Capital B1.b: A BANK'S BALANCE SHEET FOLLOWS ITS DEPOSITORS, and this is the
+    // line of causality the whole sheet turns on.
+    //
+    // It used to run the other way: the system's paper was split between banks BY THEIR STATED
+    // SIZE, a bank's assets were whatever that came to, and its depositors took the residue. That
+    // works for three banks and stops working for twenty — a firm's account is a stated amount and
+    // a bank's share of the paper shrinks as 1/count, so past a certain number some bank is handed
+    // a depositor bigger than the whole book its capital rule lets it fund, and the world refuses
+    // to open. The count of banks was silently load-bearing, which is what makes it worth a
+    // derivation rather than a table (Seed B1).
+    //
+    // So: what each bank must FUND is its firms' accounts plus its households' share of what is
+    // left, and its assets are what its own leverage line makes of that. One unknown — what a unit
+    // of bank size funds in household money — and it is solved rather than chosen:
+    //
+    //   Σ (firms_i + size_i·H) / (1 − line_i) = assets to go round
+    //
+    // Nothing here is fitted and nothing is capped: a bank with a large depositor is a large bank
+    // because of it, which is what a deposit IS.
+    const all = systemPaper + reserves;
+    const atBank = new Map<PartyId, number>(banks.map((b) => [b.id, 0]));
+    for (const f of madeHere) {
+      const bank = ctx.parties.get(partyId(f.firm)).bank;
+      atBank.set(bank, add(zeroIfNone(atBank.get(bank)), cashOf(f), 'what its firms hold at it'));
+    }
+    const lineOfBank = new Map<PartyId, number>(
+      bankRows.map((r) => [
+        partyId(r.bank),
+        add(ctx.params.get(P.leverageRatio), r.capitalBuffer, 'the line this bank runs to'),
       ]),
     );
-    for (const [bank, reserve] of bankReserves) ctx.endowMoney(bank, PHX, cash(ctx, reserve));
+    const over = (b: { id: PartyId }): number => {
+      const left = 1 - zeroIfNone(lineOfBank.get(b.id));
+      // Seed D1, Banks Capital B1.b: a bank that must fund EVERY asset out of its own capital can
+      // hold no deposit at all, and this world opens its firms with accounts at it. There is no
+      // balance sheet that satisfies both, so the seed says which rule made it impossible rather
+      // than dividing by it and handing the world a negative amount of assets to go round.
+      forbid(
+        left > 0,
+        'Seed D1',
+        `${b.id} must fund ${zeroIfNone(lineOfBank.get(b.id))} of every asset out of its own capital, so it can take no deposit — and this world opens depositors at it`,
+        { bank: b.id, line: zeroIfNone(lineOfBank.get(b.id)) },
+      );
+      return left;
+    };
+    const firmsPart = sum(banks.map((b) => div(zeroIfNone(atBank.get(b.id)), over(b), 'its firms'))).value;
+    const sizePart = sum(banks.map((b) => div(b.size, over(b), 'its households'))).value;
+    forbid(
+      sizePart > 0 && all > firmsPart,
+      'Seed D1',
+      `this world's banks cannot carry the accounts it opens them with: ${firmsPart} of assets are needed for the firms alone and there are ${all}`,
+      { all, firmsPart },
+    );
+    const perSize = div(sub(all, firmsPart, 'what is left for the households'), sizePart, 'per unit of size');
+    const assetsOf = (b: { id: PartyId; size: number }): number =>
+      div(add(zeroIfNone(atBank.get(b.id)), mul(b.size, perSize, 'its households'), 'what it funds'), over(b), 'its assets');
+    const assets = new Map<PartyId, number>(banks.map((b) => [b.id, assetsOf(b)]));
 
-    for (const f of SEED_FIRMS) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, f.cash));
+    // Its assets are paper and reserves in the proportion the system holds them, because at the
+    // opening nothing has yet decided otherwise — the treasury's own liquidity plan does that from
+    // period one (Banks Funding C1).
+    const paperShare = div(systemPaper, all, 'the part of a book that is paper');
+    for (const b of banks) {
+      const mine = zeroIfNone(assets.get(b.id));
+      ctx.endowMoney(b.id, PHX, cash(ctx, sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves')));
+    }
+    for (const line of seedLineRows) {
+      const id = instrumentId(line.id);
+      const price = openingOf(opening, line.id);
+      const par = priced(ctx, id, price);
+      // Law 8: whole units, split so they sum to exactly what the system holds of the line — the
+      // odd unit goes to the largest remainder and has a named holder (core/tick.ts).
+      const perBank = splitOnTick(
+        line.banks,
+        banks.map((b) => mul(zeroIfNone(assets.get(b.id)), paperShare, 'its paper')),
+      );
+      banks.forEach((b, at) => {
+        const units = zeroIfNone(perBank[at]);
+        if (units <= 0) return;
+        ctx.endowUnits(b.id, id, held(ctx, id, units), par);
+      });
+    }
+
+    for (const f of madeHere) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, cashOf(f)));
 
     // Banks Capital B1.b, A3: a bank opens where ITS OWN CAPITAL RULE puts it, so it neither has to
     // shrink on the first morning nor opens with headroom nobody gave it. At the opening its assets
@@ -604,45 +866,57 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
         provenance: { kind: 'opening' },
       });
     }
-    for (const row of SEED_FIRMS) {
+    for (const row of madeHere) {
       // A firm whose good this world does not make opens with nothing, because there is nothing
       // for it to hold: the seed endows what exists and never brings an instrument into being to
-      // have something to endow (Seed A1).
-      if (!ctx.instruments.has(goodId(row.subUnit, REGION))) continue;
+      // have something to endow (Seed A1). `madeHere` is exactly those that do.
       const firm = partyId(row.firm);
       const price = ctx.params.get(openingPrice(row.subUnit));
+      const starts = startsOf(row);
+      // Seed D1: ONE PERIOD of what it makes, finished and ready to sell; what a batch still in
+      // flight comes to, which is a period of starts for every period its recipe keeps it (B3); and
+      // what one period of starting draws of each of its inputs. Never a hoard: a firm sitting on a
+      // year of stock would produce nothing for a year and the seed would have decided that.
+      const finished = mul(starts, recipeOf(row.subUnit).yieldRate, 'what arrives in a period');
+      const onTheLine = mul(starts, recipeOf(row.subUnit).leadTimePeriods, 'what is still in flight');
       // Seed C4: what it cost whoever holds it is the seed's, and it is below what the market
       // opens at — a firm holding stock it could only sell at a loss would never have made it.
       const good = goodId(row.subUnit, REGION);
       const basis = priced(ctx, good, price * SEED_STOCK_BASIS);
-      if (row.finished > 0) ctx.endowUnits(firm, good, held(ctx, good, row.finished), basis);
-      if (row.onTheLine > 0) {
+      if (finished > 0) ctx.endowUnits(firm, good, held(ctx, good, finished), basis);
+      if (onTheLine > 0) {
         const wip = wipId(row.subUnit, REGION);
-        ctx.endowUnits(firm, wip, held(ctx, wip, row.onTheLine), priced(ctx, wip, price * SEED_STOCK_BASIS));
+        ctx.endowUnits(firm, wip, held(ctx, wip, onTheLine), priced(ctx, wip, price * SEED_STOCK_BASIS));
       }
       // Seed D1: what its recipe draws, so its first batch is not waiting on a market session.
       // Law 19: WHAT it draws is read from the good's own terms, never listed a second time here.
-      for (const input of goodTerms(ctx.instruments.get(goodId(row.subUnit, REGION))).recipe.inputs) {
-        if (row.inputs <= 0 || !ctx.instruments.has(goodId(input.subUnit, REGION))) continue;
+      for (const input of recipeOf(row.subUnit).inputs) {
+        if (!ctx.instruments.has(goodId(input.subUnit, REGION))) continue;
         const line = goodId(input.subUnit, REGION);
         const paid = ctx.params.get(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
-        ctx.endowUnits(firm, line, held(ctx, line, row.inputs), priced(ctx, line, paid));
+        const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
+        if (drawn <= 0) continue;
+        ctx.endowUnits(firm, line, held(ctx, line, drawn), priced(ctx, line, paid));
       }
       // Capital Programme A2, A6, Seed D1: the plant its line runs on, spread over three vintages
       // of different ages, each carried at what is left of what a new one costs. WHICH kind of
       // plant is read from the good's own recipe (Law 19), and how many units it needs to make what
       // it makes is that recipe's number too — the seed states only how much headroom it opens with.
-      for (const need of goodTerms(ctx.instruments.get(goodId(row.subUnit, REGION))).recipe.plant) {
+      for (const need of recipeOf(row.subUnit).plant) {
         const kind = CAPITAL_KINDS.find((k) => k.id === need.capitalKind);
         // A world assembled without the capital programme has no plant to endow, exactly as a
         // world that does not make a good has no stock of it to endow (Seed A1).
-        if (kind === undefined || row.plant <= 0) continue;
+        if (kind === undefined) continue;
         if (!ctx.registry.instrumentKinds.has(plantKindId(kind.id))) continue;
+        // Law 8: a machine is a whole machine. What a share of a line's plant comes to is a
+        // fraction of one, and what the firm HOLDS is the machines that fraction reaches.
+        const mine = downTick(mul(plantOf(row.subUnit, kind.id), shareOf(row), 'its own plant'));
+        if (mine <= 0) continue;
         const newPrice = ctx.params.get(openingPrice(kind.madeFrom));
         const life = ctx.params.get(paramId(`plant.usefulLife.${kind.id}`));
         // Law 8: whole machines, and the odd one has a named vintage rather than being lost to a
         // division that does not come out (core/tick.ts).
-        const perVintage = splitOnTick(row.plant, SEED_PLANT_AGES.map(() => 1));
+        const perVintage = splitOnTick(mine, SEED_PLANT_AGES.map(() => 1));
         SEED_PLANT_AGES.forEach((age, at) => {
           const serviceDate = addDays(ctx.calendar.epoch, -age * ctx.calendar.periodDays);
           const id = seedVintage(ctx, kind, REGION, serviceDate);
@@ -685,7 +959,7 @@ export function foundationSeedFor(bankRows: readonly BankDecl[] = BANKS): System
  * is a second copy of the register that goes wrong the moment somebody endows something without
  * adding to it — which is exactly how this defect arrived.
  */
-export function foundationFundingFor(bankRows: readonly BankDecl[] = BANKS): SystemModule {
+export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModule {
   return {
     id: 'seed.funding',
     spec: 'Seed',
@@ -794,7 +1068,52 @@ function splitPopulation(population: number, cells: number): number[] {
  * different table — which is what a measurement of the count needs and what a count held beside the
  * table would have quietly broken (Law 4).
  */
-export function foundationSpec(seed: string, bankRows: readonly BankDecl[] = BANKS): AssemblySpec {
+/**
+ * Seed B1, B1.a, B4, Law 4: WHAT A WORLD IS MADE OF, drawn once from its own seed value.
+ *
+ * Every module that needs to know which banks, firms, listings or funds this world has reads it
+ * from here, and so does anybody asking the question from outside — a test, the observer, a
+ * measurement of the count. One draw, one answer: a second one somewhere else would be a second
+ * world wearing this one's name, and the first thing to go wrong would be a firm that exists in
+ * one of them and not the other.
+ */
+export interface FoundationDraw {
+  readonly banks: readonly BankDecl[];
+  readonly firms: readonly FirmDecl[];
+  readonly listed: readonly ListedDecl[];
+  readonly funds: readonly FundDecl[];
+  readonly etfs: readonly EtfDecl[];
+}
+
+export function foundationDraw(
+  seed: string,
+  bankRows: readonly BankDecl[] = drawBanks(BANK_COUNT, seed),
+  firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed),
+): FoundationDraw {
+  const names = bankRows.map((b) => b.bank);
+  const listed = drawListed(firmRows, names, seed);
+  return {
+    banks: bankRows,
+    firms: firmRows,
+    listed,
+    funds: drawFunds(bankRows, seed),
+    etfs: drawEtfs(listed.map((r) => String(equityLineOf(r.firm))), names, seed),
+  };
+}
+
+export function foundationSpec(
+  seed: string,
+  /**
+   * Seed B1, B4: how many banks this world has, and what each of them is like — DRAWN from the
+   * stated spread and from this world's own seed value, so a world of two hundred banks is one
+   * number and not two thousand two hundred (Audit D3: the same seed gives the same banks).
+   */
+  bankRows: readonly BankDecl[] = drawBanks(BANK_COUNT, seed),
+  /** Seed B1.a, B4: and the firms, the same way and for the same reason. */
+  firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed),
+): AssemblySpec {
+  // Seed B1.a: WHAT THIS WORLD IS MADE OF — one draw, reaching every module that needs it.
+  const drew = foundationDraw(seed, bankRows, firmRows);
   return {
     seed,
     epoch: civil(2026, 1, 5),
@@ -863,7 +1182,7 @@ export function foundationSpec(seed: string, bankRows: readonly BankDecl[] = BAN
       // require each other, and that is what puts them in it.
       expectations,
       creditEvents,
-      banks(bankRows),
+      banks(drew.banks),
       estate,
       goods(),
       // Capital Programme: the kind of thing plant is, and the schedule it wears out on. Before the
@@ -871,13 +1190,13 @@ export function foundationSpec(seed: string, bankRows: readonly BankDecl[] = BAN
       // invest against what a machine costs (B1) — and a kind has to be registered to be held.
       capitalProgramme(),
       labour(),
-      firms(),
+      firms(drew.firms),
       households(),
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
-      equity(),
-      funds(),
+      equity(drew.listed),
+      funds(drew.funds, drew.etfs),
       sovereignInstruments,
       sovereignCurve(TREASURY_NORTH, PHX),
       treasury,
@@ -886,8 +1205,8 @@ export function foundationSpec(seed: string, bankRows: readonly BankDecl[] = BAN
       // those two put into the world, and it prices a name off what the lending module published
       // about it. Both reach it as public events and prints, never as imports (Law 15).
       moneyMarket,
-      foundationSeedFor(bankRows),
-      foundationFundingFor(bankRows),
+      foundationSeedFor(drew.banks, drew.firms),
+      foundationFundingFor(drew.banks),
     ],
   };
 }

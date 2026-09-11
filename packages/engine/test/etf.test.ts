@@ -12,13 +12,10 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  ETFS,
-  FUNDS,
   PHX,
   assemble,
   etfMarketOf,
   etfVenue,
-  foundationSpec,
   funds,
   instrumentId,
   partyId,
@@ -27,7 +24,9 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigDraw, rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
+import { asQty, type Qty } from '../src/core/tick.js';
 
 const FUND = partyId('etf.north');
 const MANAGER = partyId('manager.etf.north');
@@ -42,7 +41,7 @@ const LINE_4 = instrumentId('equity.firm.4');
  * world in which the fund's own market has a side that is not a bank's dealing line (§46 A3).
  */
 function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
-  const spec = foundationSpec(seed);
+  const spec = rigSpec(seed);
   const modules = spec.modules.map((m) =>
     m.id === 'households'
       ? { ...m, params: m.params.map((p) => (p.id === 'households.buffer.periods' ? { ...p, value: 0 } : p)) }
@@ -52,7 +51,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
 }
 
 /** Somebody who brings a basket in or gives one back, at a period the test chooses (G1.a). */
-function bringsABasket(party: string, side: 'buy' | 'sell', shares: number, at: number): SystemModule {
+function bringsABasket(party: string, side: 'buy' | 'sell', shares: Qty, at: number): SystemModule {
   return {
     id: 'test.creation',
     spec: 'Fund Shares E3 Fund Shares G1.a',
@@ -122,7 +121,7 @@ describe('two values for one claim (Fund Shares E1, E2)', () => {
 
 describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
   it('takes a slice of its own book and gives shares against it, in one instruction', () => {
-    const w = saversWorld('etf-create', [bringsABasket('bank.a', 'buy', 10, 3)]);
+    const w = saversWorld('etf-create', [bringsABasket('bank.a', 'buy', asQty(10), 3)]);
     const before = w.instruments.get(SHARE).issued;
     const basketBefore = w.register.quantity(FUND, LINE_4) / before;
     for (let i = 0; i < 3; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
@@ -144,7 +143,7 @@ describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
   });
 
   it('gives the slice back and takes the shares, and sells nothing to do it (XI-2)', () => {
-    const w = saversWorld('etf-redeem', [bringsABasket('bank.a', 'sell', 5, 4)]);
+    const w = saversWorld('etf-redeem', [bringsABasket('bank.a', 'sell', asQty(5), 4)]);
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const back = w.journal.ofKind('etf.redeemed').filter((e) => e.period === w.period);
     expect(back.length).toBeGreaterThan(0);
@@ -167,7 +166,7 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
     const acted = w.journal.ofKind('bank.arbitrage');
     expect(acted.length).toBeGreaterThan(0);
     for (const e of acted) {
-      const gap = Number(e.data['gap']);
+      const gap = Number(e.data['premium']);
       // E3.a: the reason is the bank's own, and it is arithmetic it can state — the difference
       // against what a period of carrying the position costs it at its own rate (Dealer Desks D3).
       expect(Math.abs(gap)).toBeGreaterThan(Number(e.data['worth']));
@@ -201,7 +200,7 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
     // one in which E4's "the gap can simply persist" is a claim about the model rather than about
     // how long the test happened to run. Everything else in the world is untouched: the fund still
     // strikes, the market still trades, and the two numbers still differ.
-    const spec = foundationSpec('etf-persist');
+    const spec = rigSpec('etf-persist');
     const noParticipant = spec.modules.map((m) =>
       m.id === 'banks' ? { ...m, phases: m.phases.filter((p) => p.name !== 'banks.arbitrage') } : m,
     );
@@ -270,11 +269,12 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
   it('is a smaller fund and not a broken one: the basket backs the shares that were taken', () => {
     // Only the sponsor turned up — the desks that would make its market are not in this world, so
     // what they were down to take is not what anybody took.
-    const sponsorOnly = ETFS.map((e) => ({ ...e, launchedBy: { 'manager.etf.north': 20 } }));
-    const spec = foundationSpec('etf-small');
+    const drew = rigDraw('etf-small');
+    const sponsorOnly = drew.etfs.map((e) => ({ ...e, launchedBy: { 'manager.etf.north': 20 } }));
+    const spec = rigSpec('etf-small');
     const w = assemble({
       ...spec,
-      modules: spec.modules.map((m) => (m.id === 'funds' ? funds(FUNDS, sponsorOnly) : m)),
+      modules: spec.modules.map((m) => (m.id === 'funds' ? funds(drew.funds, sponsorOnly) : m)),
     });
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     // A basket backing shares nobody holds would be a NAV that was a multiple of what the fund

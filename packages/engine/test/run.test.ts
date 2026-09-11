@@ -21,8 +21,6 @@ import {
   MM_PARAMS,
   PHX,
   assemble,
-  foundationSpec,
-  foundationWorld,
   moneyInstrumentId,
   partyId,
   snapshot,
@@ -30,6 +28,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { rigWorld, rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 
 const BANK_A = partyId('bank.a');
@@ -54,7 +53,7 @@ function num(e: Event | undefined, key: string): number {
 }
 
 describe('a depositor leaving (Banks Funding E1, E3, E3.a)', () => {
-  const w = run(foundationWorld('run-a'), RUN + 2);
+  const w = run(rigWorld('run-a'), RUN + 2);
 
   it('takes the reserves behind it, in the same instruction (E3.a)', () => {
     const moved = events(w, 'deposit.moved').filter((e) => e.period === RUN);
@@ -121,7 +120,7 @@ describe('a depositor leaving (Banks Funding E1, E3, E3.a)', () => {
 describe('what insurance does to it (Banks Funding A1.a, E4, E4.a)', () => {
   /** The same world with the guarantee set differently, wherever the number is declared. */
   function withLimit(seed: string, limit: number): World {
-    const spec = foundationSpec(seed);
+    const spec = rigSpec(seed);
     const modules: SystemModule[] = spec.modules.map((m) => ({
       ...m,
       params: m.params.map((p) => (p.id === MM_PARAMS.insuranceLimit ? { ...p, value: limit } : p)),
@@ -161,7 +160,7 @@ describe('what insurance does to it (Banks Funding A1.a, E4, E4.a)', () => {
     // is a real payment out of a bank's own money, every period, on what IT has covered — so a bank
     // funded by insured households pays for the guarantee it gets and one funded by wholesale money
     // pays almost nothing.
-    const w = run(foundationWorld('run-fund'), 6);
+    const w = run(rigWorld('run-fund'), 6);
     const paid = events(w, 'insurance.premium');
     expect(paid.length).toBeGreaterThan(0);
     const insurer = partyId('insurer.north');
@@ -183,7 +182,7 @@ describe('a year with a funding squeeze in it (Money Market, Banks Funding, Bank
     // liabilities, is taken over by the other bank over the wire, and the world goes on. Every
     // family the audit has built is at zero in every one of the fifty-two periods, with nothing
     // forgiven — `unexpected()` is every violation the audit reported.
-    const w = run(foundationWorld('run-a'), 52);
+    const w = run(rigWorld('run-a'), 52);
     const squeezed = events(w, 'moneyMarket.refused');
     expect(squeezed.length).toBeGreaterThan(0);
     // The ladder was walked, not skipped, and IN D1'S ORDER: the depositors left, the session was
@@ -200,7 +199,7 @@ describe('a year with a funding squeeze in it (Money Market, Banks Funding, Bank
     expect(events(w, 'moneyMarket.window').length).toBeGreaterThan(0);
     // Observer E3, Law 13: the same seed gives the same world. A run this long through a failure
     // and a takeover is where a stray iteration order or a Date would show, and none does.
-    const again = foundationWorld('run-a');
+    const again = rigWorld('run-a');
     for (let i = 0; i < 52; i += 1) again.step();
     expect(snapshot(again, { kind: 'inspector' }, 40)).toEqual(snapshot(w, { kind: 'inspector' }, 40));
   });

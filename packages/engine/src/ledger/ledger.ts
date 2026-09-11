@@ -10,6 +10,13 @@ import type { SettlementRecord } from './instruction.js';
 
 export class Ledger {
   private readonly records: SettlementRecord[] = [];
+  /**
+   * Law 18: the same records under a second arrangement, written where they are appended so there
+   * is one writer and nothing to go stale (Law 4). `inPeriod` is asked once per bank per period —
+   * every bank reads what its lines earned off the wire (Law 19) — and filtering the whole ledger
+   * for it made the cost of a period the cost of every period before it.
+   */
+  private readonly byPeriod = new Map<Period, SettlementRecord[]>();
   private next = 1;
 
   /** The next instruction number; settlement stamps it on the instruction it is about to apply. */
@@ -22,6 +29,10 @@ export class Ledger {
   /** Append is the only write. There is no reversal (E2); a correction is a new instruction (E2.a). */
   append(r: SettlementRecord): void {
     this.records.push(r);
+    const at = r.instruction.period;
+    const list = this.byPeriod.get(at);
+    if (list === undefined) this.byPeriod.set(at, [r]);
+    else list.push(r);
   }
 
   all(): readonly SettlementRecord[] {
@@ -29,10 +40,12 @@ export class Ledger {
   }
 
   inPeriod(period: Period): readonly SettlementRecord[] {
-    return this.records.filter((r) => r.instruction.period === period);
+    return this.byPeriod.get(period) ?? EMPTY;
   }
 
   get length(): number {
     return this.records.length;
   }
 }
+
+const EMPTY: readonly SettlementRecord[] = Object.freeze([]);

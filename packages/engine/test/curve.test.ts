@@ -10,11 +10,11 @@ import {
   TREASURY_NORTH,
   curveFamilyId,
   curveFamilyOf,
-  foundationWorld,
   priceAt,
   yieldOf,
   type World,
 } from '../src/index.js';
+import { rigWorld } from './rig.js';
 
 const FAMILY = curveFamilyOf(TREASURY_NORTH, PHX);
 
@@ -24,13 +24,13 @@ function curveOf(w: World): ReturnType<World['curve']> {
 
 describe('the curve (Sovereign D3)', () => {
   it('is one owner, one convention, and a family nobody declared is not a curve (D3.a, D3.c)', () => {
-    const w = foundationWorld('curve-a');
+    const w = rigWorld('curve-a');
     expect(curveOf(w).compounding).toBe('annual');
     expect(() => w.curve(curveFamilyId('nobody:PHX'))).toThrow();
   });
 
   it('has a point per line, in tenor order, each marked traded or stale (D3.b)', () => {
-    const w = foundationWorld('curve-b');
+    const w = rigWorld('curve-b');
     w.step();
     const points = curveOf(w).points;
     expect(points.length).toBeGreaterThan(3);
@@ -43,7 +43,7 @@ describe('the curve (Sovereign D3)', () => {
   });
 
   it('says interpolated between its points, extrapolated beyond them, none when it has none', () => {
-    const w = foundationWorld('curve-c');
+    const w = rigWorld('curve-c');
     w.step();
     const c = curveOf(w);
     const first = c.points[0];
@@ -57,7 +57,7 @@ describe('the curve (Sovereign D3)', () => {
   });
 
   it('derives the yield from the price and never the other way round (D2, N7.b)', () => {
-    const w = foundationWorld('curve-d');
+    const w = rigWorld('curve-d');
     w.step();
     const i = w.instruments.get(GOV_LINE);
     const on = w.calendar.startOf(w.period);
@@ -73,7 +73,7 @@ describe('the curve (Sovereign D3)', () => {
   });
 
   it('reads a level the holders of the paper put it at, without being told one', () => {
-    const w = foundationWorld('curve-e');
+    const w = rigWorld('curve-e');
     w.step();
     const ten = curveOf(w).at(10);
     expect(ten.yield.some).toBe(true);
