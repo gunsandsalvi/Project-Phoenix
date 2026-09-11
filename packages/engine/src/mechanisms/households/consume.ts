@@ -55,8 +55,10 @@ export interface HouseholdParams {
 
 /**
  * C1: what one member of this cell decides to spend this period, in its own money. It is what it
- * expects to earn, plus the gap between the cash it holds and the cushion it wants, closed at its
- * own patience — and never more than it holds, because nobody lends to it (C1.d).
+ * expects to earn, plus the gap between what it owns and the cushion it wants, closed at its own
+ * patience — and never more than it can PAY WITH, because nobody lends to it (C1.d). What it can
+ * pay with is its account and what a money fund owes it on demand (D2), which is `budget`; what it
+ * holds in the account alone is `cash` and has not been the whole of it since money funds existed.
  */
 export interface Spending {
   /** What it will actually spend, per member. */
@@ -67,8 +69,15 @@ export interface Spending {
   readonly buffer: number;
   /** Its own outlook of what it will earn (C1.a). */
   readonly expected: number;
-  /** What it holds, per member — the whole of what it can pay with, because nobody lends to it. */
+  /** What it holds in its account, per member. */
   readonly cash: number;
+  /**
+   * C1.d, D2: THE WHOLE OF WHAT IT CAN PAY WITH, per member — its account and what it can ask back
+   * from a money fund on demand, because nobody lends to it and those are the two places its money
+   * is. It is the number that bound the decision, so it is the number `constrained` is about, and
+   * it is published: a reader that had only `cash` would see a cell spending more than it holds.
+   */
+  readonly budget: number;
   /** C1.b, D3: what it owns, per member — its cash and its holdings at what the market last said. */
   readonly wealth: number;
   /** C1.d: whether its budget bound it, which is a threshold a mean-preserving spread moves cells across (A2.g). */
@@ -120,6 +129,7 @@ export function spendPerMember(
     buffer,
     expected: income.value.expected,
     cash,
+    budget,
     wealth,
     constrained: wanted > budget,
   });

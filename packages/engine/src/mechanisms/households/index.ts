@@ -377,6 +377,9 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       wantedPerMember: decided.value.wanted,
       bufferPerMember: decided.value.buffer,
       cashPerMember: decided.value.cash,
+      // C1.d, D2: what it could pay with, which is its account AND what a money fund owes it on
+      // demand. A reader with only the account sees a cell spending more than it holds.
+      budgetPerMember: decided.value.budget,
       wealthPerMember: decided.value.wealth,
       expectedIncome: decided.value.expected,
       // C1.d: its budget bound it. A2.g counts these, and a mean-preserving spread moves cells

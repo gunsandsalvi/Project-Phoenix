@@ -15,8 +15,11 @@ import {
   assemble,
   goodId,
   households,
+  div,
   isMoneyLeg,
+  weightOf,
   instrumentId,
+  shareLineOf,
   partyId,
   type CellParty,
   type Event,
@@ -31,9 +34,20 @@ import { phx } from './units.js';
 
 const BREAD = goodId('bread', REGION);
 const BANK_A = partyId('bank.a');
-const SHARE = instrumentId('share.fund.money.north');
+/**
+ * Seed B1.a, PLAN §7: THE MONEY FUND OF THIS WORLD, asked for rather than named. There was one
+ * fund called `fund.money.north` when there was one region called North; the world has four
+ * countries now and a money fund per bank, so both the party id and the share line written down
+ * here named nothing — `holdingsOf` answered an empty list and two assertions about what a saver
+ * holds were made about a fund that does not exist.
+ */
+const MONEY_FUNDS = rigDraw('households').funds.map((f) => f.fund);
+const FUND_SHARES = MONEY_FUNDS.map((f) => shareLineOf(f));
 /** A named payer with money of its own, so what a run shows is the spread and nothing else. */
 const PAYER = partyId('payer.1');
+
+/** How many periods of its own payments the payer's purse carries: longer than any run in this file. */
+const PERIODS_OVER = 64;
 
 /**
  * A2.g: a payer that can spread what it pays across cells without moving what it pays in total.
@@ -43,7 +57,18 @@ const PAYER = partyId('payer.1');
  * It pays out of its own account, seeded deep enough that neither run can run it dry — so what
  * differs between two runs is the spread and nothing else.
  */
-function payer(perMember: number, spread: number): SystemModule {
+function payer(spreadShare: number): SystemModule {
+  /**
+   * PLAN §7: WHAT IT PAYS IS WHAT ITS PURSE COVERS, decided once at the seed from the population it
+   * is about to pay and the longest run in this file. It used to be an amount — a thousand dollars
+   * a member a week against a hundred million in the account — and 11.5 made this world's cells
+   * many times what that purse could carry: the payer ran dry in its first week, ceased in its
+   * tenth, and the phase went on addressing a dead party (Money E4 stopped the run, correctly).
+   * Deriving it keeps the world exactly as it was — the endowment is unchanged — and makes the
+   * payer solvent for any run here however big the population turns out.
+   */
+  let base = 0;
+  let off = 0;
   return {
     id: 'test.payer',
     spec: 'Households B2',
@@ -63,12 +88,22 @@ function payer(perMember: number, spread: number): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(PAYER, USD, phx(100_000_000));
+      const purse = phx(100_000_000);
+      ctx.endowMoney(PAYER, USD, purse);
+      let members = 0;
+      for (const p of ctx.parties.ofKind(HOUSEHOLD)) members += weightOf(p);
+      const share = members > 0 ? div(div(purse, members, 'what one member gets'), PERIODS_OVER, 'a period of it') : 0;
+      // Law 8: BOTH SIDES OF THE SPREAD ARE WHOLE PIECES, struck here rather than at the payment.
+      // A spread is mean-preserving only if what it adds to one cell is exactly what it takes from
+      // another, and `base × (1 ± share)` rounded at the payment is not: the two roundings do not
+      // cancel, and the run paid 61,008 more into the spread world than into the flat one.
+      base = ctx.registry.payable(USD, share);
+      off = ctx.registry.payable(USD, share * spreadShare);
       // Seed A4: a deposit is a bank's liability, and a bank that owes it holds something against
       // it. Without the reserves, the first payment across banks would be an overdraft this world
       // has no lender for yet (Money B3.c, worklist 11) — an artefact of the seed, not of anything
       // a household did.
-      ctx.endowMoney(BANK_A, USD, phx(100_000_000));
+      ctx.endowMoney(BANK_A, USD, purse);
     },
     phases: [
       {
@@ -77,6 +112,9 @@ function payer(perMember: number, spread: number): SystemModule {
         cycle: 0,
         anchor: { after: 'corporateActions' },
         run: (ctx: MechanismContext) => {
+          // Money E4: a module does not address a party that has ceased. Its purse is sized so it
+          // does not, and saying so is what makes that a property rather than an assumption.
+          if (!ctx.parties.get(PAYER).status.alive) return;
           const cells = ctx.parties
             .ofKind(HOUSEHOLD)
             .filter((p): p is CellParty => p.representation === 'cell' && p.status.alive && p.key.bank === BANK_A);
@@ -86,11 +124,8 @@ function payer(perMember: number, spread: number): SystemModule {
             // and the two runs pay the same money to the same people either way.
             // Law 8: it pays real money, so each member is paid a whole number of the smallest
             // piece of it — and what the payer hands over is that times the count of them.
-            const each = ctx.registry.payable(
-              USD,
-              perMember + (cell.key.cohort === 'working' ? spread : -spread),
-            );
-            if (each <= 0) return;
+            const paid = cell.key.cohort === 'working' ? base + off : base - off;
+            if (paid <= 0) return;
             ctx.settle({
               legs: [
                 {
@@ -98,9 +133,9 @@ function payer(perMember: number, spread: number): SystemModule {
                   from: { holder: PAYER, issuer: BANK_A },
                   to: { holder: cell.id, issuer: cell.bank },
                   ccy: USD,
-                  amount: each * cell.weight,
+                  amount: paid * cell.weight,
                   fromCell: { some: false },
-                  toCell: { some: true, value: { perMember: each, weight: cell.weight } },
+                  toCell: { some: true, value: { perMember: paid, weight: cell.weight } },
                 },
               ],
               cause: 'transfer',
@@ -181,10 +216,17 @@ describe('what a household decides (Households C1, C2)', () => {
       const spend = num(e, 'spendPerMember');
       const income = num(e, 'expectedIncome');
       const cash = num(e, 'cashPerMember');
+      const budget = num(e, 'budgetPerMember');
       const buffer = num(e, 'bufferPerMember');
       // C1.a, C1.d: what it expects to earn, plus the gap to its cushion at its own patience, and
-      // never more than it holds — because nobody lends to it.
-      expect(spend).toBeLessThanOrEqual(cash);
+      // never more than it can PAY WITH — because nobody lends to it. What it can pay with is the
+      // account AND what a money fund owes it on demand (D2): a fund share is a substitute for a
+      // deposit, so money in one is money this cell spends. This read `cash` and was right while
+      // there was nowhere else for a saver's money to be; a cell now holds most of its liquidity in
+      // the fund (D5.a) and spends a little over its account every period, which is the
+      // substitution working and not a cell borrowing.
+      expect(budget).toBeGreaterThanOrEqual(cash);
+      expect(spend).toBeLessThanOrEqual(budget);
       expect(spend).toBeGreaterThan(0);
       // Its cushion is periods of what it expects, so a cell expecting more wants more in hand.
       expect(buffer).toBeGreaterThan(income);
@@ -221,19 +263,28 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
     const w = world();
     for (let i = 0; i < 6; i += 1) w.step();
     const cells = w.parties.ofKind(HOUSEHOLD).filter((p) => p.status.alive);
+    // Law 19: WHAT A CLAIM IS is the instrument's own kind, read from the registry. This matched
+    // ids beginning `gov.`, and this world's sovereign lines are `ust.`, `bund.`, `gilt.` and
+    // `jgb.` since it gained four countries — so the filter named nothing and the count it asserted
+    // came entirely from the fund shares beside it.
+    const isClaim = (i: string): boolean => {
+      const kind = String(w.instruments.get(instrumentId(i)).kind);
+      return kind.startsWith('sovereign.') || kind === 'fund.share' || kind === 'equity.share';
+    };
     const claims = cells
       .flatMap((c) => w.register.holdingsOf(c.id))
-      .filter((h) => h.instrument.startsWith('gov.') || h.instrument.startsWith('share.'));
+      .filter((h) => isClaim(String(h.instrument)));
     expect(claims.length).toBeGreaterThan(0);
     // D2, D3: it goes through the MONEY FUND, and that is the substitution working rather than a
     // channel closed. A saver in this world is below the cushion it wants every period, so it has
     // nothing it can tie up for a bill's own life — and a fund of short paper is exactly the thing
     // it can hold instead of a deposit and still ask back. So the paper is bought, by the fund, on
     // the savers' behalf: "its size determines how much paper can be placed" (D3).
-    const fund = partyId('fund.money.north');
-    const held = w.register
-      .holdingsOf(fund)
-      .filter((h) => String(h.instrument).startsWith('gov.'));
+    const held = MONEY_FUNDS.flatMap((f) =>
+      w.register
+        .holdingsOf(partyId(f))
+        .filter((h) => String(w.instruments.get(h.instrument).kind).startsWith('sovereign.')),
+    );
     expect(held.length).toBeGreaterThan(0);
     // D5.a, D2.a: and it is a SUBSTITUTION, which is why a cell's own account can be down to what
     // it is about to spend. A deposit pays it nothing and a fund of short paper pays it something
@@ -242,7 +293,9 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
     // missing, because no bank in this world bids for a deposit yet (Banks Funding B1, worklist
     // 11). Nothing was allocated pro rata: every cell decided its own, and what it holds is what
     // it decided.
-    const liquid = cells.map((c) => w.cash(c.id, USD) + w.register.quantity(c.id, SHARE));
+    const liquid = cells.map(
+      (c) => w.cash(c.id, USD) + FUND_SHARES.reduce((t, l) => t + w.register.quantity(c.id, l), 0),
+    );
     for (const held of liquid) expect(held).toBeGreaterThan(0);
   });
 
@@ -332,7 +385,7 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
 
 describe('what the state collects (Treasury C1, C1.a, C3)', () => {
   it('taxes what a household was actually paid, out of the payer own account', () => {
-    const w = paidWorld(payer(phx(100), 0));
+    const w = paidWorld(payer(0));
     for (let i = 0; i < 4; i += 1) {
       const r = w.step();
       expect(unexpected(r.audit)).toEqual([]);
@@ -397,7 +450,7 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
 
 describe('the sector is a distribution and not an average (Households A2.f, A2.g)', () => {
   it('publishes what it was paid as a sum of what named payers paid it (B5)', () => {
-    const w = paidWorld(payer(phx(100), 0));
+    const w = paidWorld(payer(0));
     for (let i = 0; i < 3; i += 1) w.step();
     const income = w.journal.ofKind('households.income');
     const published = income[income.length - 1];
@@ -424,8 +477,8 @@ describe('the sector is a distribution and not an average (Households A2.f, A2.g
     // at all depends on where the threshold happens to fall between four lumps. That is exactly
     // what cell resolution is for (XI-15), and the resolution test says the aggregates do not turn
     // on it — but a count of crossings is not an aggregate, and it does.
-    const flat = spreadWorld(payer(phx(1000), 0));
-    const spread = spreadWorld(payer(phx(1000), phx(900)));
+    const flat = spreadWorld(payer(0));
+    const spread = spreadWorld(payer(9 / 10));
     const periods = 12;
     for (let i = 0; i < periods; i += 1) {
       flat.step();

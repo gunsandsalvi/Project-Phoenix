@@ -516,3 +516,28 @@ invest, never borrow (12d-6) and therefore never raise. Positioned at worklist *
 is judged.
 
 Seen at: `packages/engine/src/mechanisms/equity/decide.ts:76`.
+
+### 12d-10 — a line's makers are drawn and nobody reads them
+
+`ListedDecl.makers` (`equity/data.ts:44`) says which of this world's banks make a market in a given
+share line — "a market in one name has a few makers, not all of them and not one" (Dealer Desks A3),
+drawn `MAKERS_PER_LINE` at a time. Nothing reads it. `dealingOrders` asks the BANK's own `makes`
+list, which is by instrument KIND, so every bank that deals shares at all quotes every line in the
+world — which is the "every bank has a view of every firm" that A3 says a dealer is not.
+
+It went unread when 11.5 moved the equity float off the desks and onto the household cells that
+save: the comment at `foundation.ts:491` records why (the float on the desks raises nothing at the
+window and put every bank under the liquidity standard). Moving it was right; what it left behind is
+a datum with no reader.
+
+Two things follow, and neither is 12d's:
+- A3 is MISSING, not out of scope: quoting should be per line and is per kind.
+- A desk therefore opens holding no inventory in any line and builds one only by trading, which is
+  what `dealing.test.ts` measures — four of its tests are about a desk with a position (how it skews
+  when it is long, which limit binds, what it publishes) and there is never one to measure.
+
+Belongs with the dealer desks, so it is an inserted item after the equity float is settled — the
+same place 12d-8's authorised participants are answered.
+
+Seen at: `packages/engine/src/mechanisms/equity/data.ts:44`,
+`packages/engine/src/mechanisms/banks/dealing.ts:203`.
