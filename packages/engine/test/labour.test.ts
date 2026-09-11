@@ -8,6 +8,8 @@ import { describe, expect, it } from 'vitest';
 import {
   type PartyId,
   HOUSEHOLD,
+  moneyInstrumentId,
+  mul,
   OCCUPATIONS,
   funds,
   isMoneyLeg,
@@ -24,7 +26,7 @@ import {
 import { rigSpec, rigDraw, mergeModules, quiet } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { minutes, perHour } from './units.js';
-import type { Qty } from '../src/core/tick.js';
+import { upTick, type Qty } from '../src/core/tick.js';
 
 const FIRM_1 = partyId('firm.1');
 const FIRM_2 = partyId('firm.2');
@@ -66,7 +68,10 @@ function employer(post: (ctx: MechanismContext) => void): SystemModule {
  * them is the test's own — a world with nine real firms bidding in the same venues would be testing
  * their decisions instead. What the venue does with several real bidders is its own test (Firm A3).
  */
-function world(post: (ctx: MechanismContext) => void = () => undefined): World {
+function world(
+  post: (ctx: MechanismContext) => void = () => undefined,
+  extra: readonly SystemModule[] = [],
+): World {
   const spec = rigSpec('labour');
   const modules = spec.modules
     // QUIET, not absent. `seed.foundation` stands firms up and therefore REQUIRES the module that
@@ -88,7 +93,62 @@ function world(post: (ctx: MechanismContext) => void = () => undefined): World {
         }
       : m,
   );
-  return assemble({ ...spec, modules: mergeModules(modules, [employer(post)]) });
+  return assemble({ ...spec, modules: mergeModules(modules, [employer(post), ...extra]) });
+}
+
+/**
+ * PLAN §7: EVERY HOUR EVERY MEMBER OF THIS WORLD COULD SELL, read when the order is posted.
+ *
+ * Two tests here are about a venue with more demand in it than hours — who fills and who does not —
+ * and they asked for sixty people. Sixty was more than this town had while the seed STATED its
+ * scale; 11.5 derives it from the hours its people offer against the hours its chain needs, and
+ * sixty is now a rounding error in the population, so every bid filled and both tests were about a
+ * market that never ran short. This is more hours than any venue in this world has on offer,
+ * however big the world turns out.
+ */
+function everyHourInTown(ctx: MechanismContext): Qty {
+  let members = 0;
+  for (const p of ctx.parties.ofKind(HOUSEHOLD)) members += p.representation === 'cell' ? p.weight : 1;
+  return minutes(members * HOURS_PER_MEMBER);
+}
+
+/**
+ * ...and an employer that can PAY for them. A firm of this world buys about a fortieth of the
+ * town's week out of its own account, so an order for the town's whole week would simply fail to
+ * settle rather than out-bid anybody — a shortage the venue never sees. What stands in for the
+ * demand this world has somewhere else is money, and it is a multiple of what the firm has rather
+ * than an amount (the rig's `deepBuyer` stands in for a goods buyer the same way).
+ */
+const DEEP = 100;
+
+function deepPockets(...firms: readonly PartyId[]): SystemModule {
+  return {
+    id: 'test.pockets',
+    spec: 'Labour C1',
+    requires: ['seed.foundation'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [],
+    participants: [],
+    families: [],
+    seed(ctx) {
+      for (const firm of firms) {
+        const bank = ctx.parties.get(firm).bank;
+        const deep = upTick(
+          mul(
+            ctx.register.quantity(firm, moneyInstrumentId(bank, USD)),
+            DEEP,
+            'far deeper pockets than a firm',
+          ),
+        );
+        ctx.endowMoney(firm, USD, deep);
+        ctx.endowMoney(bank, USD, deep);
+      }
+    },
+  };
 }
 
 function allRows(w: World): EmploymentRow[] {
@@ -126,10 +186,21 @@ function paidBy(w: World, party: PartyId, period: number): number {
   return total;
 }
 
-function interestPaidTo(w: World, party: PartyId, period: number): number {
+/**
+ * Law 19: EVERYTHING THAT MOVED THIS PARTY'S MONEY IN A PERIOD THAT IS NOT ITS WAGE BILL.
+ *
+ * It used to be the deposit interest alone, on the grounds that "the account moved for two
+ * reasons". It moves for more than two now — 12a gives every issuer three assessors charging it for
+ * its rating every period (Ratings A5), which is 709,407 of the 709,407 this test was out by — and
+ * a test that lists the causes it knows about is a list that goes stale every time the world gains
+ * a flow. So it reads the wire and takes the wage out of it, which is the one thing it is about.
+ */
+function movedApartFromWages(w: World, party: PartyId, period: number): number {
   let total = 0;
   for (const r of w.ledger.inPeriod(period as never)) {
-    if (r.outcome !== 'settled' || r.instruction.cause !== 'coupon') continue;
+    if (r.outcome !== 'settled') continue;
+    const why = r.instruction.reason;
+    if (why.includes('wages from') || why.includes('severance from')) continue;
     for (const leg of r.instruction.legs) {
       if (!isMoneyLeg(leg)) continue;
       if (leg.to.holder === party) total += leg.amount;
@@ -147,8 +218,15 @@ describe('the venue (Labour A3, D1)', () => {
     expect(v.ccy).toBe(USD);
     expect(v.clearedBy).toBe('labour');
     expect(v.key['occupation']).toBe('bakery');
-    // A3: a job in one occupation is not a job in another, so they are different venues entirely.
-    expect(w.venues.filter((x) => x.clearedBy === 'labour')).toHaveLength(OCCUPATIONS.length);
+    // A3: ONE PER REGION AND OCCUPATION, which is what the clause says and is now four countries
+    // wide (12d: the world gained Europe, the United Kingdom and Japan). A job in one occupation is
+    // not a job in another and a job in one country is not a job in the next, so the census is the
+    // pair and not the count: every (region, occupation) exactly once, and nothing else.
+    const venues = w.venues.filter((x) => x.clearedBy === 'labour');
+    const pairs = venues.map((x) => `${String(x.key['region'])}/${String(x.key['occupation'])}`);
+    const regions = [...new Set(venues.map((x) => String(x.key['region'])))];
+    expect(new Set(pairs).size).toBe(pairs.length);
+    expect(pairs).toHaveLength(regions.length * OCCUPATIONS.length);
     expect(w.venue(MILL).id).not.toBe(v.id);
   });
 });
@@ -200,10 +278,15 @@ describe('a hire (Labour A4, XI-10)', () => {
     const row = rows(w)[0];
     if (row === undefined) throw new Error('nobody was hired');
     const bill = 3 * hours(1) * row.wagePerHour;
-    // What left the account is the wage bill. What ARRIVED in the same period is what its bank pays
-    // it on the balance (Banks Funding B1, worklist 11), so the account is read against both —
-    // the wage is asserted on the wire below, where it happened.
-    paidTheSame(w.cash(FIRM_1, USD) - interestPaidTo(w, FIRM_1, w.period), firmBefore - bill, 3);
+    // What left the account is the wage bill. What else moved in the same period is this world
+    // running — its bank pays it on the balance (Banks Funding B1) and its three assessors charge
+    // it for its rating (Ratings A5) — so the account is read against the WIRE rather than against
+    // a list of causes (Law 19), and the wage is asserted on the wire below, where it happened.
+    paidTheSame(
+      w.cash(FIRM_1, USD) - movedApartFromWages(w, FIRM_1, w.period),
+      firmBefore - bill,
+      3,
+    );
     const paidPerMember = hours(1) * row.wagePerHour;
     const r = w.step();
     expect(r.audit.total).toBe(0);
@@ -229,9 +312,9 @@ describe('the clearing (Labour D1)', () => {
     const w = world((ctx) => {
       if (ctx.period !== 2) return;
       // Between them they want more hours than the town has, so the wage decides who gets them.
-      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: hours(60) });
-      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(22), qty: hours(20) });
-    });
+      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(30), qty: everyHourInTown(ctx) });
+      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(22), qty: everyHourInTown(ctx) });
+    }, [deepPockets(FIRM_1, FIRM_2)]);
     w.step();
     w.step();
     const hired = allRows(w).filter((r) => r.occupation === 'bakery');
@@ -300,9 +383,9 @@ describe('the level the venue prints (Labour D1, D1.a)', () => {
     const w = world((ctx) => {
       if (ctx.period !== 2) return;
       // Between them they want more people than this town has looking for work.
-      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(70), qty: hours(60) });
-      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(35), qty: hours(60) });
-    });
+      ctx.post(BAKERY, { party: FIRM_1, side: 'buy', price: perHour(70), qty: everyHourInTown(ctx) });
+      ctx.post(BAKERY, { party: FIRM_2, side: 'buy', price: perHour(35), qty: everyHourInTown(ctx) });
+    }, [deepPockets(FIRM_1, FIRM_2)]);
     w.step();
     w.step();
     const high = rows(w, FIRM_1).reduce((a, r) => a + r.headcount, 0);
