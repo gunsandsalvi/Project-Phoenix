@@ -13,6 +13,15 @@ export interface Civil {
 /** Days since 1970-01-01 (may be negative). */
 export type DayNumber = number;
 
+/**
+ * The Gregorian year, as arithmetic rather than as a choice: twelve months, four quarters of three.
+ * It is TIMEKEEPING and not a parameter — a world with thirteen months would be a different
+ * calendar, not this one with a number changed (Money G3.a).
+ */
+export const MONTHS_IN_YEAR = 12;
+export const MONTHS_IN_QUARTER = 3;
+export const QUARTERS_IN_YEAR = 4;
+
 export function isLeap(y: number): boolean {
   return (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
 }

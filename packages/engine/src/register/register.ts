@@ -326,7 +326,6 @@ export class Register {
     );
   }
 
-
   /**
    * Law 8, Register A1.c: A QUANTITY IN THE REGISTER IS A WHOLE NUMBER OF PIECES, and this is the
    * one place that says so.
@@ -512,10 +511,7 @@ export class Register {
     );
     const key = moneyKey(holder, instrument);
     const walk = this.moneyAccount.get(key);
-    this.moneyAccount.set(
-      key,
-      moved(walk ?? opened(before, key), delta, `balance of ${key}`),
-    );
+    this.moneyAccount.set(key, moved(walk ?? opened(before, key), delta, `balance of ${key}`));
     if (after === 0 && h.liens.length === 0) {
       this.drop(holder, instrument);
       return 0;
@@ -642,7 +638,11 @@ export class Register {
     // whose account said it had been moved eighteen times and whose ledger carried nine, which is
     // the count check in the `accounts` family catching a hole a sum alone would have missed.
     const kept = this.equityLedger.get(from);
-    if (kept !== undefined) this.equityLedger.set(to, kept.map((entry) => ({ ...entry, party: to })));
+    if (kept !== undefined)
+      this.equityLedger.set(
+        to,
+        kept.map((entry) => ({ ...entry, party: to })),
+      );
   }
 
   /** Remove every trace of a party that has merged away; the caller has verified identical state. */

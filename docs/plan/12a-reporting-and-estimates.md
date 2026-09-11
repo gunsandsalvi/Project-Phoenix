@@ -266,18 +266,31 @@ read (§46 C2). Two numbers here would be Law 4's defect wearing a business suit
       account did over that span (measured against the balance read at both ends, which is the read
       a report is built on), the split carries its history, and `equity()` is still exactly
       `equityWalk().value` — so the balance is never produced by summing the entries (Law 4).
-- [ ] 4. The fiscal calendar as a read: a company's anchor month in the module registry, the quarter's
-      dates from `civil.ts`, the periods in it from the calendar. Test G3.b holds — nothing finer.
-- [ ] 5. `reporting.lag.days` declared POLICY, owner `parliament`, with its reason.
-- [ ] 6. `isPublic(view, firm)` as three register reads; test that a firm whose shares nobody outside
-      holds is not public and publishes nothing (G4), and that it becomes public in the period its
-      shares are first held outside.
-- [ ] 7. The `reporting.publish` phase and the `reporting.report` event: income from the equity
-      entries grouped by the cause their writer wrote, plus the revaluation subtotal.
-- [ ] 8. The balance sheet in the report, read exactly as the accounts family reads it — one read, not
-      a second implementation (Law 4).
-- [ ] 9. The cash statement from the ledger's money legs with counterparty and reason.
-- [ ] 10. Shares outstanding in the report; a test that no per-share figure is stored anywhere (G5).
+- [x] 4. The fiscal calendar as a read (`reporting/fiscal.ts`): a company's anchor month DRAWN from
+      the world's seed and its own identity (so years end in different months and reporting season
+      is continuous rather than one week), the quarter's dates from `civil.ts`, the periods in it
+      from the calendar. Nothing counts periods anywhere (G6). `MONTHS_IN_YEAR`, `MONTHS_IN_QUARTER`
+      and `QUARTERS_IN_YEAR` moved into `calendar/civil.ts`, where the Gregorian year is arithmetic
+      rather than a parameter.
+- [x] 5. `reporting.lag.days` declared POLICY, owner `parliament`, with its reason: it is the width
+      of the only information asymmetry this world has.
+- [x] 6. `isPublic(ctx, firm, line)` as register reads, with `listedLineOf` asking the kind's
+      PROFILE (the one instrument a party issues that is not a liability of its issuer and that a
+      market prices) rather than any kind id — so nothing branches on what sort of thing a share is
+      (Law 15). Tested: only listed companies report, and the firms that are not listed say nothing.
+- [x] 7. The `reporting.publish` phase and the `reporting.report` event: income from the equity
+      entries grouped by the instruction's own cause, plus the revaluation subtotal, plus the bottom
+      line which IS the sum of the decomposition. A quarter that opened before the epoch is not
+      reported — it has no books in it, which is an absent period rather than a short one.
+- [x] 8. `balanceSheet(view, party)` extracted from `audit/families/accounts.ts` and used by BOTH
+      the family and the report — one implementation, structurally typed so an `AuditView` and a
+      `MechanismContext` can each pass what they have (Law 4).
+- [x] 9. The cash statement from the ledger's own money legs, grouped by NAMED counterparty, money
+      and cause — every key a fact the wire wrote, so nothing is bucketed and nothing invented
+      (Law 9, A2.a). A quarter is two thousand payments and two thousand rows is the ledger printed
+      out; 321 lines naming assessors, banks, the fund and the household cells is a statement.
+- [x] 10. Shares outstanding in the report, read off the line; a test that no per-share figure is
+      stored anywhere (G5: earnings per share is income over shares, both of them reads).
 - [ ] 11. `reporting.restate` and its trigger: a figure the report carried that the books later
       disagree with, caught by 12a.2's family contribution.
 - [ ] 12. Guidance published with the report, from the firm's existing outlook object; a test that the

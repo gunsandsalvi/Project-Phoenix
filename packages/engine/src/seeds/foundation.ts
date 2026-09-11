@@ -87,6 +87,7 @@ import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
 import { EQUITY_INDEX, indices } from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
+import { reporting } from '../mechanisms/reporting/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -1755,6 +1756,10 @@ export function foundationSpec(
           seed,
         ),
       ),
+      // Reporting: after `equity`, because what makes a company public is a share line somebody
+      // outside holds, and after everything that moves a company's equity account, because what it
+      // publishes is what those moves came to (Reporting A1.a, A2).
+      reporting(seed),
       foundationSeedFor(drew.banks, drew.firms),
       foundationFundingFor(drew.banks),
     ],

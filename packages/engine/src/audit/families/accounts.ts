@@ -21,11 +21,103 @@
  * violation the moment the world starts paying itself.
  */
 import { issuedBy } from '../../register/instruments.js';
-import { combineDust, sum, withinDust } from '../../core/num.js';
+import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
+import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
+
+/**
+ * Audit B5, Reporting A2, Law 4: WHAT A PARTY IS WORTH, read from the register and the marks.
+ *
+ * Two readers want this and there must be one of it. The `accounts` family compares it against the
+ * equity account, which is the check; a public company's report PUBLISHES it as its balance sheet
+ * at the fiscal close (Reporting A2), which is a read of the same thing. A report with its own
+ * implementation of the balance sheet would be a second set of accounts able to disagree with the
+ * one the audit checks — exactly what A2.a forbids — and the disagreement would surface as a
+ * company whose published sheet balances and whose audited one does not.
+ *
+ * It is structural in its view so both callers can pass what they have: the family has an
+ * `AuditView`, a module has a `MechanismContext`, and every read here is on both.
+ */
+export interface BalanceReads {
+  readonly period: Period;
+  readonly registry: AuditView['registry'];
+  readonly parties: { get: AuditView['parties']['get'] };
+  readonly instruments: Pick<AuditView['instruments'], 'all' | 'get'>;
+  readonly register: Pick<
+    AuditView['register'],
+    'holdingsOf' | 'holdersOf' | 'holding' | 'moneyWalk'
+  >;
+  readonly valuation: Pick<AuditView['valuation'], 'valueOfLots' | 'inMoney'>;
+}
+
+/** The two sides and the rounding the read carries, per member of the party (XI-15). */
+export interface BalanceSheet {
+  readonly assets: Sum;
+  readonly liabilities: Sum;
+  /** Law 7: the walk behind every money balance the two sides are read off, per member. */
+  readonly walked: number;
+  readonly ccy: CurrencyCode;
+}
+
+export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
+  const p = view.parties.get(party);
+  const home = view.registry.region(p.region).ccy;
+  const assetTerms: number[] = [];
+  // Law 7: the rounding the READ carries, which is the walk behind every money balance it is read
+  // off, not the rounding of adding them up today.
+  let walked = 0;
+  for (const h of view.register.holdingsOf(party)) {
+    const inst = view.instruments.get(h.instrument);
+    // Currency C4, C5, D2: A POSITION IN ANOTHER MONEY IS AN ASSET LIKE ANY OTHER, converted at the
+    // rate in force — the same rate the same period settled at, so what a balance sheet says and
+    // what a payment does cannot disagree.
+    assetTerms.push(
+      view.valuation.inMoney(
+        view.valuation.valueOfLots(inst.id, h.lots, view.period),
+        inst.ccy,
+        home,
+        view.period,
+      ),
+    );
+    if (view.registry.instrumentKind(inst.kind).pricing === 'money') {
+      walked += view.register.moneyWalk(party, inst.id).dust;
+    }
+  }
+  const liabilityTerms: number[] = [];
+  for (const inst of view.instruments.all()) {
+    if (!issuedBy(inst, party) || !view.registry.instrumentKind(inst.kind).liabilityOfIssuer)
+      continue;
+    const isMoney = view.registry.instrumentKind(inst.kind).pricing === 'money';
+    for (const holder of view.register.holdersOf(inst.id)) {
+      const h = view.register.holding(holder, inst.id);
+      if (!h.some) continue;
+      const w = weightOf(view.parties.get(holder));
+      liabilityTerms.push(
+        view.valuation.inMoney(
+          view.valuation.valueOfLots(inst.id, h.value.lots, view.period),
+          inst.ccy,
+          home,
+          view.period,
+        ) * w,
+      );
+      // What this party owes IS those balances, read from the other side (Register B3), so every
+      // rounding they have taken since they were opened is a rounding in this number.
+      if (isMoney) walked += view.register.moneyWalk(holder, inst.id).dust * w;
+    }
+  }
+  // Per member of the party (XI-15): holdings are per member; liabilities are held by others in
+  // total and are divided by the party's own weight.
+  const w = weightOf(p);
+  return {
+    assets: sum(assetTerms),
+    liabilities: sum(liabilityTerms.map((t) => t / w)),
+    walked: walked / w,
+    ccy: home,
+  };
+}
 
 export function accountsFamily(): Family {
   return {
@@ -36,58 +128,14 @@ export function accountsFamily(): Family {
     check(view: AuditView): Violation[] {
       const out: Violation[] = [];
       for (const p of view.parties.alive()) {
-        const home = view.registry.region(p.region).ccy;
-        const assetTerms: number[] = [];
-        // Law 7: the rounding the READ carries, which is the walk behind every money balance it is
-        // read off, not the rounding of adding them up today.
-        let walked = 0;
-        for (const h of view.register.holdingsOf(p.id)) {
-          const inst = view.instruments.get(h.instrument);
-          // Currency C4, C5, D2: A POSITION IN ANOTHER MONEY IS AN ASSET LIKE ANY OTHER, converted
-          // at the rate in force — the same rate the same period settled at, so what a balance
-          // sheet says and what a payment does cannot disagree. It used to be SKIPPED, with the
-          // reason "currency layer not built": the family was reporting a balance sheet with the
-          // foreign half missing and calling it balanced, which is a check that passes by not
-          // looking (Law 4). The layer is built; the skip is gone.
-          assetTerms.push(
-            view.valuation.inMoney(
-              view.valuation.valueOfLots(inst.id, h.lots, view.period),
-              inst.ccy,
-              home,
-              view.period,
-            ),
-          );
-          if (view.registry.instrumentKind(inst.kind).pricing === 'money') {
-            walked += view.register.moneyWalk(p.id, inst.id).dust;
-          }
-        }
-        const liabilityTerms: number[] = [];
-        for (const inst of view.instruments.all()) {
-          if (!issuedBy(inst, p.id) || !view.registry.instrumentKind(inst.kind).liabilityOfIssuer)
-            continue;
-          const isMoney = view.registry.instrumentKind(inst.kind).pricing === 'money';
-          for (const holder of view.register.holdersOf(inst.id)) {
-            const h = view.register.holding(holder, inst.id);
-            if (!h.some) continue;
-            const w = weightOf(view.parties.get(holder));
-            liabilityTerms.push(
-              view.valuation.inMoney(
-                view.valuation.valueOfLots(inst.id, h.value.lots, view.period),
-                inst.ccy,
-                home,
-                view.period,
-              ) * w,
-            );
-            // What this party owes IS those balances, read from the other side (Register B3), so
-            // every rounding they have taken since they were opened is a rounding in this number.
-            if (isMoney) walked += view.register.moneyWalk(holder, inst.id).dust * w;
-          }
-        }
-        // Per member of the party (XI-15): holdings are per member; liabilities are held by others in
-        // total and are divided by the party's own weight.
-        const w = weightOf(p);
-        const assets = sum(assetTerms);
-        const liabilities = sum(liabilityTerms.map((t) => t / w));
+        // Law 4: ONE READ OF THE BALANCE SHEET, the same one a public company publishes (Reporting
+        // A2). A family with its own copy of it would be checking the equity account against a
+        // number no reader outside the audit ever sees.
+        const sheet = balanceSheet(view, p.id);
+        const home = sheet.ccy;
+        const assets = sheet.assets;
+        const liabilities = sheet.liabilities;
+        const walked = sheet.walked;
         if (!view.register.hasEquityAccount(p.id)) {
           out.push({
             family: 'accounts',
@@ -111,7 +159,11 @@ export function accountsFamily(): Family {
         const read = sum([assets.value, -liabilities.value]);
         // Per member, like the two sides it belongs to (XI-15).
         const dust =
-          combineDust(assets, liabilities, read) + equity.dust + revaluation.dust + stands.dust + walked / w;
+          combineDust(assets, liabilities, read) +
+          equity.dust +
+          revaluation.dust +
+          stands.dust +
+          walked;
         if (!withinDust(read.value, stands.value, dust)) {
           out.push({
             family: 'accounts',
