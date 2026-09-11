@@ -343,6 +343,29 @@ before the seal; nothing else.
 
 Do not skip steps; do not reorder them.
 
+> **BUILD FORWARD. THE FILE TAKES THE FINDINGS.**
+>
+> The order the owner set, and it overrides every instinct to stop and fix:
+>
+> 1. **Implement.** The work is the next item in the ordered list. That is what a session does.
+> 2. **Every bug goes in `docs/BUGS.md`.** Every one, without exception — a red test, a number that
+>    looks wrong, an audit family that fires, a mechanism that never runs, a world that stops. It is
+>    written down where it was seen and what was measured, and the item carries on. Nothing is
+>    chased, and nothing is quietly left out either: a finding not written down is a finding lost.
+> 3. **Tests run at the END of a full module, not during one.** A suite run mid-item measures a world
+>    that is half-built, and what it reports is the half that is missing (Law 11). Run them when the
+>    module is complete, read what they say, and put what they say in the bug file.
+>
+> The reason is Law 11 and Law 10 together. A misbehaving number is not a work item — the missing
+> mechanism is — and this world is nowhere near complete, so most of what looks wrong is a mechanism
+> that has not been built yet. Stopping to fix it costs the ordered list its order, and fixes the
+> symptom of an absence.
+>
+> What this does NOT license: a contract violation the engine throws on is not "a finding to write
+> down and walk past" when it stops the build — an impossible quantity, a one-sided flow, a missing
+> writer. Those are the mechanism refusing to be built wrong. Fix what is impossible; write down what
+> is merely improbable, because improbable is usually a model that is not finished.
+
 1. **Open.** Take the first open item in `docs/WORKLIST.md`. Open `docs/plan/<item>.md`. Read the
    spec sections it lists in full, and the ARCHITECTURE sections it touches.
 2. **Confirm the split.** The item file has sub-items and a step checklist. If the world that has
@@ -353,14 +376,18 @@ Do not skip steps; do not reorder them.
 5. **Mechanism.** Phases, participants, seed. Draft instructions; never write stores. Decide from
    views. Failure as outcomes.
 6. **Audit.** Add the identities. A family reports built only when it checks something real.
-7. **Tests.** As the item file lists them. A failing family expected by the item is asserted by name.
-8. **Gates.** `npm run check` green. `npm run coverage:spec` recounted. The browser smoke test green
-   if the surface changed.
+7. **Tests.** As the item file lists them — WRITTEN as the item goes, RUN when the module is
+   complete. A failing family expected by the item is asserted by name. What a run reports goes in
+   `docs/BUGS.md`, all of it, before anything is changed in response to it.
+8. **Gates.** `npm run check` at the end of the module. `npm run coverage:spec` recounted. The
+   browser smoke test green if the surface changed.
 9. **Tick the steps** in the item file as you go (`- [x]`); `npm run plan:progress` recounts.
-10. **Park what you find.** A bug found while working the item goes in `docs/BUGS.md` — what was
-    measured, where it was seen, what is ruled out — and the item carries on from the step it was
-    on. Chasing it is how an item stops being one bounded change (Law 14) and how the ordered list
-    stops being ordered (Law 10).
+10. **Park what you find. All of it.** Every bug goes in `docs/BUGS.md` — what was measured, where
+    it was seen, what is ruled out — and the item carries on from the step it was on. Chasing one is
+    how an item stops being one bounded change (Law 14) and how the ordered list stops being ordered
+    (Law 10). The one exception is a violation that stops the build: an impossible quantity, a
+    one-sided flow, a fact with two writers. Those are fixed where they are, because the engine
+    will not run past them — and they are written down too.
 11. **Close.** Write the record entry (what, why, found, deleted, forecast with its killer); delete
     the item file; leave its manifest row (a missing file counts as done); set the worklist row to
     done; **position every finding in `docs/BUGS.md`** — into the item that should fix it, or as an
@@ -460,9 +487,18 @@ maturity; a bill issuer + tenor; a share its issuer; a good its sub-unit; a mark
 | Kernel tests     | settlement routing, DvP, cells, calendar, register facade, module ordering                                               | `test/*.test.ts`                        |
 | Surface tests    | the inspector renders a stepped world in a real browser                                                                  | `packages/app/e2e`                      |
 
+**WHEN THEY RUN.** At the end of a full module, never during one. A suite run mid-item is measuring
+a world that is half-built and reporting the half that is missing (Law 11), and a session that
+answers it spends itself on tests instead of on the thing the tests are for. Write them as the item
+goes; run them when the module closes; put everything the run says in `docs/BUGS.md` before changing
+anything in response.
+
 A test never widens a tolerance; a test that needs a bound to pass is a finding; a failing audit
 family is asserted by name in the test and named in the record; every test that draws randomness
-names its seed.
+names its seed. **A test never names a party.** This world's banks, firms, listings and funds are
+DRAWN (Seed B1.a) — `firm.4` is not "the big farm", it is whatever the draw made it — so a test asks
+the draw for a mill, a dealer, a listed line (`test/rig.ts`), and a test that writes an id down is
+asserting against a world that no longer exists.
 
 ---
 

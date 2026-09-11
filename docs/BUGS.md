@@ -1,9 +1,22 @@
 # Open findings — the holding pen
 
-**What this file is.** A bug found while working an item does not derail the item and does not get
-chased on the spot. It is written down here, with what was measured and where it was seen, and the
-item carries on (Law 10: one ordered list, one item at a time; Law 11: a misbehaving number is not a
-work item, the missing mechanism is).
+**What this file is.** EVERY bug goes here. A bug found while working an item does not derail the
+item and does not get chased on the spot: it is written down, with what was measured and where it
+was seen, and the item carries on (Law 10: one ordered list, one item at a time; Law 11: a
+misbehaving number is not a work item, the missing mechanism is).
+
+**All of them, and nothing quietly dropped.** A red test, a number that looks wrong, an audit family
+that fires, a mechanism that never runs, a world that stops before the period it used to reach. This
+world is nowhere near complete, so most of what looks wrong is a mechanism nobody has built yet —
+which is exactly why it is written down rather than chased, and exactly why it must not be lost.
+
+**The one thing fixed on the spot** is a violation that STOPS THE BUILD: an impossible quantity, a
+one-sided flow, a fact with two writers. The engine refuses to run past those, so they are fixed
+where they are — and written down here as well, marked RESOLVED, so the record of what this world
+did to get here is complete.
+
+**Tests belong at the end of a module.** What a suite run reports lands here first, in full, before
+anything is changed in response to it.
 
 **What happens to it.** When the item closes, every finding here is POSITIONED: moved into the
 `docs/plan/<item>.md` of the item that should fix it, or inserted as an item of its own at its
@@ -499,6 +512,49 @@ only acts when a desk MAKES the line and has room, and every desk in this world 
 limit (12-14) — so nobody closes the gap. And the ETF's launch is now drawn (`funds/data.ts`): a
 world whose listed lines are few gives each ETF share a very thin book, and a book worth almost
 nothing is a share worth almost nothing. Not positioned.
+
+
+### 12-17 — The test suite, as it stands after item 12's scale change
+
+**Measured.** `npm run vitest run`, whole suite, after the derived-scale commit: **144 failed, 194
+passed of 338**. Lint and typecheck are green; the world is green in every audit family at full
+scale (30 banks, 3,000 firms, 30,000,000 people) for as long as it runs.
+
+**What the 144 are, in three groups.**
+
+1. **Tests that name a party.** `firm.4` was "the big farm" in a hand-written table of twelve and is
+   whatever the draw made it in a world that draws three thousand. Every such test asserts against a
+   world that no longer exists. `test/rig.ts` is the door — `firmIn`, `listedIn`, `dealerIn`,
+   `rigFor` — and `dealing`, `capital`, `estate`, `equity`, `funds` are migrated; the rest are not.
+
+2. **Tests that assert an amount from the old seed.** `expect(view.cash(PHX)).toBe(phx(65_000))` and
+   its kind. Nothing in the seed is stated any more, so no amount in a test can be either: what they
+   should assert is the property the test is named for.
+
+3. **Tests that need a mechanism this world does not reach.** Investment is the largest: capacity is
+   150× the run rate (12-15), so no firm ever has a gap and `firms.invest` is empty in every seed
+   over forty periods. Those tests are the model telling the truth.
+
+**And one regression in reachability, which is 12-16.** Before the derived scale the world ran 52
+periods; it now stops around period 12 when the exchange-traded fund's price collapse drives a
+constant-budget demand curve past 2^53. The collapse is older than the change — the change made the
+quantities large enough for `asQty` to refuse them. Every test that runs more than ~12 periods now
+throws, which is most of the jump from 69 failures to 144.
+
+**Not positioned.** The migration is mechanical and belongs with the item that closes 12; the third
+group belongs with 12-15 and 12-16.
+
+### 12-18 — The test rig is not the world, and that is now stated
+
+**Not a bug — a decision, recorded so it is not mistaken for one.** `foundationWorld` is THE WORLD:
+thirty million people, three thousand named firms, thirty banks, 261 markets, and about ten seconds
+a period (12-12). A file of forty tests cannot build it forty times and should not want to.
+
+`packages/engine/test/rig.ts` builds SCALE MODELS through the same door — `foundationSpec(seed,
+banks, firms)` with a smaller draw — and keeps the real world's ratios: ten thousand people to a
+named firm, so the population scales with the firm count and a cell's order never runs past exact
+arithmetic. It grows whichever count a test's need lives in: BANKS for a dealer (three thousand
+firms will not produce a second dealer in a world with three banks), FIRMS for a listing or a fund.
 
 
 ## Carried in from item pre12

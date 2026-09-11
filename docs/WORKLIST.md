@@ -5,6 +5,13 @@ A new item is **inserted** at the position its dependencies put it, never append
 where it landed and why. An item is done when its checks are green, `docs/RECORD.md` has its entry,
 and `docs/COVERAGE.md` is re-marked, all in one commit (Law 14).
 
+> **BUILD FORWARD.** A session's work is the next item on this list. Every bug found on the way goes
+> in `docs/BUGS.md` — every one, with what was measured and where — and the item carries on. Tests
+> are written as the item goes and RUN at the end of a full module, never during one: a suite run
+> mid-item measures a half-built world and reports the half that is missing (Law 11). The one thing
+> fixed on the spot is a violation that stops the build — an impossible quantity, a one-sided flow,
+> a fact with two writers — because the engine will not run past it. See `docs/PLAN.md` §5.
+
 The order follows Part XIII. Each open item's detailed implementation is in `docs/plan/<item>.md`
 (deleted when the item closes; the progress figure in `docs/PLAN.md` is recounted from those files
 by `npm run plan:progress`). Item 13 was split into 13a–13i when the plan was written in full; the

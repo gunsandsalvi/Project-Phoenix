@@ -162,16 +162,36 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
 
 - Toolchain: TypeScript strict, npm workspaces (`packages/engine`, `packages/app`), Vitest,
   fast-check, ESLint (custom rules in `tools/eslint-rules`), Vite, Capacitor for Android.
-- Run `npm run check` (lint + typecheck + tests + spec citations + plan progress) before every
-  commit. All green or the item is not done.
+- Run `npm run check` (lint + typecheck + tests + spec citations + plan progress) at the END OF A
+  MODULE, not mid-item. All green or the module is not done. Lint and typecheck are cheap and can
+  run whenever; the suite is a measurement and measurements come last (Law 11).
+- **A test never names a party.** This world's banks, firms, listings and funds are DRAWN (Seed
+  B1.a): `firm.4` is not "the big farm", it is whatever the draw made it. A test asks the draw for
+  a mill, a dealer, a listed line (`packages/engine/test/rig.ts`), and builds a SCALE MODEL of the
+  world rather than the world — same modules, same laws, fewer of each.
 - Take the first open item in `docs/WORKLIST.md`. Read `docs/PLAN.md` (the build loop, the module
   contract, the canonical period) and the item's own file `docs/plan/<item>.md` (design, steps,
   tests, exit criteria, guard) before writing code. Tick the item's steps (`- [x]`) as they close;
   run `npm run plan:progress` to recount the completion figure; delete the item file when the item
   closes. One item, one commit. Write the RECORD entry and re-mark COVERAGE in the same commit.
-- **A bug found mid-item goes in `docs/BUGS.md` and the item carries on.** Never chase it on the
-  spot: write what was measured and where it was seen, and keep to the step you are on (Law 10,
-  Law 11). When the item closes, every finding in that file is POSITIONED — moved into the
+- **BUILD FORWARD. EVERY BUG GOES IN `docs/BUGS.md`. TESTS RUN AT THE END OF A MODULE.**
+  The three rules the owner set, and they override the instinct to stop and fix:
+  1. **The work is the next item.** A session implements; it does not go bug-hunting.
+  2. **Every bug is written down — all of them.** A red test, a number that looks wrong, an audit
+     family that fires, a mechanism that never runs, a world that stops: it goes in `docs/BUGS.md`
+     with what was measured and where it was seen, and the item carries on from the step it was on.
+     Nothing is chased, and nothing is silently dropped: a finding not written down is lost.
+  3. **Tests are WRITTEN as the item goes and RUN when the module is complete.** A suite run
+     mid-item measures a half-built world and reports the half that is missing (Law 11). Run it at
+     the end, read what it says, and put what it says in the bug file before changing anything.
+
+  The reason is Law 10 and Law 11 together: a misbehaving number is not a work item, the missing
+  mechanism is — and most of what looks wrong in a world this unfinished is a mechanism nobody has
+  built yet. The exception is a violation that STOPS THE BUILD: an impossible quantity, a one-sided
+  flow, a fact with two writers. The engine will not run past those, so they are fixed where they
+  are — and written down too. Fix what is impossible; record what is merely improbable.
+
+  When the item closes, every finding in that file is POSITIONED — moved into the
   `docs/plan/<item>.md` of the item that should fix it, or inserted as its own item at its
   dependency position — and the record says where each landed. A finding leaves that file only by
   being placed. The file is temporary and goes when it is empty.
