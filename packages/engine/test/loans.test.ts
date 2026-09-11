@@ -7,6 +7,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   moneyInstrumentId,
+  mul,
+  upTick,
   BANK_COUNT,
   drawBanks,
   InvalidRegistry,
@@ -99,7 +101,13 @@ function overspendsItsLimit(at = 2): SystemModule {
             from: { holder: BORROWER, issuer: bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
-            amount: ctx.registry.payable(USD, held + limit / 2),
+            // B3.a: A LITTLE over what it holds — a hundredth of what its bank will lend ONE NAME.
+            // Half of that per-name limit used to be affordable and is not: a bank's room is the
+            // LEAST of its capital, its appetite and its funding (Banks Lending B3), and the
+            // per-name limit is only one of the three. What this module is for is an overdraft the
+            // bank ALLOWS, so it asks for one small enough that the other two are not the binding
+            // constraint.
+            amount: ctx.registry.payable(USD, held + limit / 100),
             fromCell: none(),
             toCell: none(),
           };
@@ -112,7 +120,13 @@ function overspendsItsLimit(at = 2): SystemModule {
   };
 }
 
-function overspends(amount: number, at = 2): SystemModule {
+/**
+ * PLAN §7: `times` is how many times its own money it tries to spend, and what that COMES TO is read
+ * off its account at the moment it spends. An amount written down was more than a firm held when the
+ * seed stated this world's scale, and 11.5 derives it: three hundred thousand is now small change
+ * and the payment it was meant to fail simply went through.
+ */
+function overspends(times: number, at = 2): SystemModule {
   return {
     id: 'test.overspends',
     spec: 'Money B3.a',
@@ -130,12 +144,16 @@ function overspends(amount: number, at = 2): SystemModule {
         anchor: { before: 'corporateActions' },
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
+          const has = ctx.register.quantity(
+            BORROWER,
+            moneyInstrumentId(ctx.parties.get(BORROWER).bank, USD),
+          );
           const leg: Leg = {
             kind: 'money',
             from: { holder: BORROWER, issuer: ctx.parties.get(BORROWER).bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
-            amount,
+            amount: upTick(mul(has, times, 'what it tries to spend')),
             fromCell: none(),
             toCell: none(),
           };
@@ -270,12 +288,28 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     const rows = drawBanks(BANK_COUNT, 'loans');
     const asked = rows.map((x) => x.returnOnCapital);
     expect(new Set(asked).size).toBe(rows.length);
-    // C2: the borrower took the KEENEST, and which bank that is falls out of the data rather than
-    // being named here — the one that wants least on its capital quotes the tighter loan and wins
-    // the business, and a wide quote loses volume (C2.a).
-    const keenest = [...rows].sort((x, y) => x.returnOnCapital - y.returnOnCapital)[0];
-    expect(written?.data['bank']).toBe(keenest?.bank);
+    // C2: the borrower took the KEENEST QUOTE IT WAS GIVEN, which is not the same as the keenest
+    // bank in the draw — a bank quotes when it has the room and the appetite for the name, so which
+    // of them is in the running is an outcome and not a list. The quotes are public events, so the
+    // comparison is read off the ones this borrower actually received.
+    const keenest = w.journal
+      .ofKind('credit.quoted')
+      .filter((e) => e.data['borrower'] === written?.data['borrower'] && e.period === written?.period)
+      .pop();
+    expect(keenest, 'nobody quoted this borrower, so nothing was compared').toBeDefined();
+    expect(written?.data['bank']).toBe(keenest?.data['bank']);
     expect(rate).toBeGreaterThan(0);
+    // C1: THE RATE IS ITS FOUR TERMS AND NOTHING ELSE — cost of funds, expected loss, the capital
+    // charge and what it costs to run the loan — and the quote publishes all four, so the claim is
+    // checked by adding them up rather than by asserting which of them happen to be positive in
+    // this world (a borrower that has never failed has an expected loss of a true zero).
+    const terms = ['costOfFunds', 'expectedLoss', 'capitalCharge', 'operatingCost'] as const;
+    for (const k of terms) expect(Number(keenest?.data[k])).toBeGreaterThanOrEqual(0);
+    const built = terms.reduce((n, k) => n + Number(keenest?.data[k]), 0);
+    expect(built).toBeCloseTo(Number(keenest?.data['rate']), 12);
+    // The rate it was WRITTEN at is not asserted to be the rate it was QUOTED: they differ by three
+    // parts in a million, because `publishQuotes` and `runRequests` each derive it (docs/BUGS.md
+    // 12d-3). That is one fact with two writers and it is a finding, not something to assert around.
   });
 
   it('gets dearer for a borrower that has failed to pay (C1.b, C4, Corporate Credit G8)', () => {
@@ -283,13 +317,13 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     for (let i = 0; i < 8; i += 1) clean.step();
     const cleanRate = Number(clean.journal.ofKind('credit.written')[0]?.data['rate']);
     // The same request from a borrower the banks have watched fail to pay.
-    const marked = world([overspends(phx(1_000_000), 2), asksFor(phx(10_000), 6)], 0);
+    const marked = world([overspends(2, 2), asksFor(phx(10_000), 6)], 0);
     for (let i = 0; i < 8; i += 1) marked.step();
     const seen = marked.journal
       .ofKind('credit.default')
       .filter((e) => e.data['party'] === BORROWER);
     expect(seen.length).toBeGreaterThan(0);
-    const marked2 = world([overspends(phx(1_000_000), 2), asksFor(phx(10_000), 6)]);
+    const marked2 = world([overspends(2, 2), asksFor(phx(10_000), 6)]);
     for (let i = 0; i < 8; i += 1) marked2.step();
     const markedRate = Number(marked2.journal.ofKind('credit.written')[0]?.data['rate']);
     // C1.b: the bank's own view of this borrower moved, so the price moved. A default is
@@ -302,7 +336,7 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
   it('carries the loan at what its lender expects to recover, and the charge is visible', () => {
     // The same borrower, seen to fail, then borrowing: the bank prices it dearer AND carries it
     // lower, off the one model (C4) — two beliefs would mean the price and the provision disagree.
-    const w = world([overspends(phx(1_000_000), 2), asksFor(phx(10_000), 6)]);
+    const w = world([overspends(2, 2), asksFor(phx(10_000), 6)]);
     for (let i = 0; i < 9; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
@@ -355,7 +389,8 @@ describe('an overdrawn customer (Money B3.a, B3.c)', () => {
   });
 
   it('is refused when the bank has no room, and then the payment simply fails (B3.c)', () => {
-    const w = world([overspends(phx(300_000))], 0);
+    // Twice its money, at a bank that will lend nothing: the payment has nowhere to come from.
+    const w = world([overspends(2)], 0);
     for (let i = 0; i < 4; i += 1) w.step();
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
     expect(failed.length).toBeGreaterThan(0);
@@ -374,12 +409,27 @@ describe('carrying it (Banks Lending D3, E1)', () => {
     for (let i = 0; i < 4; i += 1) w.step();
     const lenderBefore = w.register.equity(BANK_OF_A);
     const borrowerBefore = w.cash(BORROWER, USD);
+    const from = w.period;
     w.step();
-    // D3: interest accrues and is received. It leaves the borrower's account by name — and it
-    // reaches the lender by EXTINGUISHING the deposit the lender itself issued, which is what
-    // being paid in your own money is (Money C2). The bank's liabilities fall, so it is richer.
-    expect(w.cash(BORROWER, USD)).toBeLessThan(borrowerBefore);
-    expect(w.register.equity(BANK_OF_A)).toBeGreaterThan(lenderBefore);
+    // D3: interest accrues and is RECEIVED — read off the wire, which is where a payment is. It
+    // used to be read as "the borrower's account fell", and that held only while nothing else paid
+    // the borrower anything in the same period: a firm in a running world is being paid for what it
+    // sells at the same time as it is paying its interest, and a net movement is not the payment.
+    const paid = w.ledger
+      .inPeriod(w.period)
+      .filter((r) => r.outcome === 'settled' && r.instruction.cause === 'coupon')
+      .filter((r) => r.instruction.legs.some((l) => l.kind === 'money' && l.from.holder === BORROWER));
+    expect(paid.length, 'no interest was paid at all').toBeGreaterThan(0);
+    // And it reaches the lender by EXTINGUISHING the deposit the lender itself issued, which is
+    // what being paid in your own money is (Money C2). Its equity ledger says so entry by entry
+    // (12a) — a NET movement does not, because the same bank is paying its own depositors in the
+    // same period and that is a different flow with a different cause.
+    const got = w.register
+      .equityEntries(BANK_OF_A, from, w.period)
+      .filter((e) => /coupon/i.test(e.cause) && e.delta > 0);
+    expect(got.length, 'the lender was not paid on its loan at all').toBeGreaterThan(0);
+    expect(borrowerBefore).toBeGreaterThan(0);
+    expect(lenderBefore).not.toBe(w.register.equity(BANK_OF_A));
   });
 
   it('is a default when the borrower does not pay it (E1, E2)', () => {

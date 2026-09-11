@@ -471,7 +471,12 @@ export function foundationSeedFor(
     // offers and when it retires, `households` states who the people are, `goods` states the recipes
     // the chain is made of. A world assembled without them cannot be seeded at all, and saying so
     // here is better than the missing parameter it used to fail on.
-    requires: ['sovereign-instruments', 'goods', 'firms', 'households', 'labour'],
+    // Part XIII: AND `banks`, because this seed READS `regulation.leverageRatio` by id to size a
+    // bank's opening balance sheet (Seed C1, Banks Capital B1.b). A seed may not import a mechanism,
+    // so it reads the number by name — and a dependency read by name is still a dependency: a world
+    // assembled without the module that declares it got `parameter regulation.leverageRatio is not
+    // declared` instead of whatever it was actually testing.
+    requires: ['sovereign-instruments', 'goods', 'firms', 'households', 'labour', 'banks'],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],

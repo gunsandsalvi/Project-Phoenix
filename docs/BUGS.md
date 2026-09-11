@@ -314,6 +314,25 @@ point on one. So the world no longer dies on it and the read is honest. **The pr
 **Not chased.** A second reason in the sovereign book is the same item 12c was, in a different market,
 and it is not a test migration. To be positioned when 12d closes.
 
+### 12d-3 — A loan's rate is derived twice, and the two do not agree
+
+**Where.** `mechanisms/banks/index.ts`: `publishQuotes` calls `quote(...)` per bank and records the
+keenest as `credit.quoted`; `runRequests` calls `shop(...)` — which calls `quote(...)` again — and
+writes the loan at `best.rate`.
+
+**Measured.** Same borrower, same period, same bank; quoted `0.013676115348016367` and written
+`0.013676161104839884`. Three parts in a million apart, which is nowhere near the dust of either
+derivation: the inputs move between the two phases (a bank's cost of funds is read afresh, and so is
+what it has seen default).
+
+**Law 4.** One fact, two writers. A borrower took a loan at a rate it was not quoted, and both
+numbers are published under its name. The fix is a read, not a second derivation: what is written is
+what was QUOTED — `runRequests` should take the published quote rather than re-deriving one — and
+where the quoting bank cannot lend after all, that is a refusal to record rather than a silently
+different price (C3.a: declined volume is visible).
+
+**Not chased.** It is the lending mechanism and 12d is the tests. To be positioned when 12d closes.
+
 ### 12d-1 — No firm in this world ever wants plant, so nothing is ever built
 
 **Where.** `mechanisms/firms/invest.ts` (`project`), `mechanisms/capital-programme/`. Seen with
