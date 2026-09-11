@@ -11,7 +11,7 @@ import {
   OCCUPATIONS,
   funds,
   isMoneyLeg,
-  PHX,
+  USD,
   REGION,
   assemble,
   labourVenue,
@@ -141,7 +141,7 @@ describe('the venue (Labour A3, D1)', () => {
     const w = world();
     const v = w.venue(BAKERY);
     expect(v.unit).toBe('hours');
-    expect(v.ccy).toBe(PHX);
+    expect(v.ccy).toBe(USD);
     expect(v.clearedBy).toBe('labour');
     expect(v.key['occupation']).toBe('bakery');
     // A3: a job in one occupation is not a job in another, so they are different venues entirely.
@@ -192,7 +192,7 @@ describe('a hire (Labour A4, XI-10)', () => {
       }
     });
     w.step();
-    const firmBefore = w.cash(FIRM_1, PHX);
+    const firmBefore = w.cash(FIRM_1, USD);
     w.step();
     const row = rows(w)[0];
     if (row === undefined) throw new Error('nobody was hired');
@@ -200,7 +200,7 @@ describe('a hire (Labour A4, XI-10)', () => {
     // What left the account is the wage bill. What ARRIVED in the same period is what its bank pays
     // it on the balance (Banks Funding B1, worklist 11), so the account is read against both —
     // the wage is asserted on the wire below, where it happened.
-    paidTheSame(w.cash(FIRM_1, PHX) - interestPaidTo(w, FIRM_1, w.period), firmBefore - bill, 3);
+    paidTheSame(w.cash(FIRM_1, USD) - interestPaidTo(w, FIRM_1, w.period), firmBefore - bill, 3);
     const paidPerMember = hours(1) * row.wagePerHour;
     const r = w.step();
     expect(r.audit.total).toBe(0);
@@ -362,7 +362,7 @@ describe('the contract (Labour D2, C3)', () => {
     w.step();
     w.step();
     w.step();
-    const before = w.cash(FIRM_1, PHX);
+    const before = w.cash(FIRM_1, USD);
     const r = w.step();
     expect(r.audit.total).toBe(0);
     const ev = w.journal.ofKind('labour.separation').filter((e) => e.subjects.includes(FIRM_1));
@@ -377,7 +377,7 @@ describe('the contract (Labour D2, C3)', () => {
     const wageBill = 5 * hours(1) * struck;
     // Ten roundings: five people paid a wage and five paid severance, each to their own piece.
     paidTheSame(paidBy(w, FIRM_1, r.period), wageBill + severancePerMember * 5, 10);
-    expect(before).toBeGreaterThan(w.cash(FIRM_1, PHX));
+    expect(before).toBeGreaterThan(w.cash(FIRM_1, USD));
     expect(rows(w)[0]?.headcount).toBe(5);
   });
 });

@@ -282,14 +282,26 @@ it to be reachable. A step that is not written is a step that gets skipped, so t
 - [x] 12.2 kernel: a market whose print is a RATE and whose trade is two money legs in two
       currencies, settling atomically; markets run in a declared order so a payer short of a money
       can buy it before the market that needs it (Spot FX A1, C1, F1.a)
-- [ ] 12.3 kernel: the reads the modules need — `view.index`, a view with no prints for an assessor
-      (Ratings A2.a, structurally), and what a party owes in a money it does not have (Spot FX B1)
-- [ ] `spot-fx`: every pair a market on its own flow; the participants with their own reasons; the
+- [x] 12.3 kernel: the reads the modules need — `view.index`, a view with no prints for an assessor
+      (Ratings A2.a, structurally), and what a party owes in a money it does not have (Spot FX B1).
+      `owedIn` is SIGNED — short of a money and sitting on one are the same balance read from either
+      end (B1 and B2), so there is one read and not two rules. `rateIn` came with it: the rate in
+      force is one read, not each participant finding a pair and inverting it (Currency C5, Law 4)
+- [x] `spot-fx`: every pair a market on its own flow; the participants with their own reasons; the
       dealer left with the other side; triangular consistency as an outcome bounded arbitrageurs
       enforce and a persistent gap measurable; one convention for what a payment settles in
-      (Currency C1–C3, Spot FX B, C, D, E, F; XI-12)
-- [ ] The seed opens a second region and a second currency, with cross holdings, so a coupon crosses
-      a border and somebody is short a money it does not issue (Seed B3, Currency B1)
+      (Currency C1–C3, Spot FX B, C, D, E, F; XI-12). Three things the build settled: a party deals
+      in the pair between the money it needs and its OWN, so one balance is never committed in three
+      books at once and nothing is ROUTED through a third money (XI-12); a bank speaks ONCE in a
+      pair, through its desk, because its unwanted balance IS the desk's book (Law 4, and otherwise
+      Clearing A2 fires); and a desk PAST its own limit posts a size with no level, which is the rung
+      its paper book already had (XI-2) and is what moves a rate when every desk is on one side
+- [x] The seed opens FOUR regions and four currencies (United States, Europe, United Kingdom,
+      Japan), with cross holdings, so a coupon crosses a border and somebody is short a money it
+      does not issue (Seed B3, Currency B1). Four and not two, because a triangle needs three: with
+      two moneys `triangles()` is empty and XI-12 cannot be expressed at all. The three abroad are
+      stubs — a central bank, a treasury and one line of paper each — and a real economy there is
+      13i's
 - [ ] `indices`: the rate benchmark as the overnight money-market print; a policy rate is not a benchmark; test
 - [ ] `indices`: producer and consumer price indices from the ledger's trades with different baskets and weights; test: they diverge when a distribution wedge exists (G1.c: partial until 13c)
 - [ ] `indices`: no stored level (E2), no history before the first print (D5.a); test: a beta over a window with fewer prints than the window is Missing

@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BANK_A,
   KERNEL_PARAMS,
-  PHX,
+  USD,
   assemble,
   commonGrain,
   currencyUnit,
@@ -121,7 +121,7 @@ function payer(amount: number): SystemModule {
             kind: 'money',
             from: { holder: BANK_A, issuer: BANK_A },
             to: { holder: partyId('firm.1'), issuer: BANK_A },
-            ccy: PHX,
+            ccy: USD,
             amount,
             fromCell: none(),
             toCell: none(),
@@ -155,7 +155,7 @@ function atShift(
     p.id === KERNEL_PARAMS.pieceShift ? { ...p, value: shift } : p,
   );
   const w: World = assemble({ ...spec, params });
-  const perPHX = w.registry.subdivision(currencyUnit(PHX));
+  const perUSD = w.registry.subdivision(currencyUnit(USD));
   const perTonne = w.registry.subdivision(unitId('tonnes'));
   let produced = 0;
   let batches = 0;
@@ -170,10 +170,10 @@ function atShift(
     }
   }
   // Read back in NAMED units, because that is what two worlds declared at different subdivisions
-  // have in common: one holds cents and the other tenths of a cent, and both hold the same PHX.
+  // have in common: one holds cents and the other tenths of a cent, and both hold the same USD.
   return {
     produced: produced / perTonne,
-    money: (w.moneyStock()['PHX'] ?? 0) / perPHX,
+    money: (w.moneyStock()['USD'] ?? 0) / perUSD,
     batches,
     piece: 1 / perTonne,
     reds,

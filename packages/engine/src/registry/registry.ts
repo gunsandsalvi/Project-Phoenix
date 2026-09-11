@@ -44,14 +44,14 @@ export interface UnitDecl {
   readonly name: string;
   /**
    * Law 1, Law 8: HOW MANY INDIVISIBLE PIECES ONE OF THESE IS DIVIDED INTO — a hundred cents to the
-   * PHX, a thousand kilos to the tonne, one machine to a machine.
+   * USD, a thousand kilos to the tonne, one machine to a machine.
    *
    * A QUANTITY OF THIS UNIT IS A COUNT OF THOSE PIECES and is always a whole number: the state
    * holds 18849 cents, never 188.49 of anything. That is the only way the arithmetic is exact —
    * integers add and compare exactly in binary — so no balance drifts, no check needs a tolerance,
    * and nothing finer than a piece can be paid, lent, refused or left over anywhere in the world.
    *
-   * The NAME is what a person reads (PHX, tonnes); this is how the number relates to it, and it is
+   * The NAME is what a person reads (USD, tonnes); this is how the number relates to it, and it is
    * used at the two boundaries where the two meet: a seed declaring an amount and a report showing
    * one. How fine it is, is a RESOLUTION (Law 2): the same world declared in tenths of a cent must
    * follow the same path, and the registry's shift moves every unit's subdivision together so that
@@ -173,7 +173,7 @@ export class Registry {
   }
 
 /**
-   * Law 8: how many indivisible pieces one NAMED unit of this is — a hundred cents to the PHX. It
+   * Law 8: how many indivisible pieces one NAMED unit of this is — a hundred cents to the USD. It
    * is asked at the two boundaries where a person's number meets the state's: `pieces` converts a
    * declared amount into the count the state holds, and `named` converts it back for a report.
    * Nothing in between ever divides by it: every quantity in the engine is already a count.
@@ -186,7 +186,7 @@ export class Registry {
     return made;
   }
 
-  /** What a declared amount of this unit IS, as a count of pieces: 188.49 PHX is 18849 cents. */
+  /** What a declared amount of this unit IS, as a count of pieces: 188.49 USD is 18849 cents. */
   pieces(id: UnitId, named: number): Qty {
     return toTick(named * this.subdivision(id));
   }
@@ -194,14 +194,14 @@ export class Registry {
   /**
    * Law 8: a PRICE declared as money per named unit, as the state holds one — money pieces per
    * piece of the thing. Prices are ratios and the state's two subdivisions are both in them, so a
-   * price of 400 PHX the tonne is four hundredths of a cent the gram, and value = units x price
+   * price of 400 USD the tonne is four hundredths of a cent the gram, and value = units x price
    * comes out in cents without anybody converting anything downstream.
    */
   priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: number): number {
     return (perNamedUnit * this.subdivision(currencyUnit(ccy))) / this.subdivision(unit);
   }
 
-  /** The other way, for a reader: 18849 cents is 188.49 PHX. Never used to decide anything. */
+  /** The other way, for a reader: 18849 cents is 188.49 USD. Never used to decide anything. */
   named(id: UnitId, pieces: number): number {
     return pieces / this.subdivision(id);
   }

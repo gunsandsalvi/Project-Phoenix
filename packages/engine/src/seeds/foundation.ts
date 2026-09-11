@@ -32,8 +32,11 @@ import {
   paramId,
   partyId,
   regionId,
+  type CurrencyCode,
   type ParamId,
   type PartyId,
+  type RegionId,
+  fxPairId,
 } from '../core/ids.js';
 import { Missing } from '../core/errors.js';
 import type { DayCount } from '../calendar/daycount.js';
@@ -74,6 +77,7 @@ import { funds } from '../mechanisms/funds/index.js';
 import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
+import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -88,10 +92,77 @@ import type { SeedContext } from '../world/context.js';
 import type { SystemModule } from '../world/module.js';
 import type { World } from '../world/world.js';
 
-export const PHX = currencyCode('PHX');
-export const REGION = regionId('north');
-export const CB = partyId('cb.north');
-export const TREASURY_NORTH = partyId('treasury.north');
+export const USD = currencyCode('USD');
+export const REGION = regionId('us');
+export const CB = partyId('fed');
+export const TREASURY_US = partyId('treasury.us');
+
+/**
+ * Currency A1, A2, A3; Spot FX A3, XI-12: THE OTHER MONEYS, and the central banks whose liabilities
+ * they are. A currency is not a label on an amount — it is a named issuer's promise (A2) — so every
+ * one of these means another issuer, another sovereign borrowing in it, and a market against each
+ * of the others.
+ *
+ * They are SMALLER PLACES and they say so: a central bank, a treasury and one line of paper each,
+ * with no firms, no households and no labour market, because a real economy abroad is 13i's
+ * cross-border item and not this one. What they are here for is what the currency layer needs to be
+ * reachable at all: a holding in a money that is not its holder's own, a coupon that arrives in it,
+ * two parties with opposite reasons to be in a pair (the US banks earning a foreign money they have
+ * no use for, the foreign reserve manager earning dollars it has none for) — and, because there are
+ * FOUR of them and not two, a cross that is not the dollar's: with three moneys in a triangle there
+ * is a round trip to be taken, which is what XI-12 is about and what a two-country world cannot
+ * express at all (no third leg, no vehicle, no gap to close).
+ *
+ * The names are labels for clarity, not claims about the real places (Law 1 is about mechanism).
+ */
+export interface CountryDecl {
+  readonly region: RegionId;
+  readonly name: string;
+  readonly ccy: CurrencyCode;
+  readonly ccyName: string;
+  readonly centralBank: PartyId;
+  readonly centralBankName: string;
+  readonly treasury: PartyId;
+  readonly treasuryName: string;
+  /** Law 9: the stem of its government paper's id, as that market's own shorthand for it. */
+  readonly paper: string;
+}
+
+export const ABROAD: readonly CountryDecl[] = [
+  {
+    region: regionId('eu'),
+    name: 'Europe',
+    ccy: currencyCode('EUR'),
+    ccyName: 'euro',
+    centralBank: partyId('ecb'),
+    centralBankName: 'European Central Bank',
+    treasury: partyId('treasury.eu'),
+    treasuryName: 'European Treasury',
+    paper: 'bund',
+  },
+  {
+    region: regionId('uk'),
+    name: 'United Kingdom',
+    ccy: currencyCode('GBP'),
+    ccyName: 'pound sterling',
+    centralBank: partyId('boe'),
+    centralBankName: 'Bank of England',
+    treasury: partyId('treasury.uk'),
+    treasuryName: 'HM Treasury',
+    paper: 'gilt',
+  },
+  {
+    region: regionId('jp'),
+    name: 'Japan',
+    ccy: currencyCode('JPY'),
+    ccyName: 'yen',
+    centralBank: partyId('boj'),
+    centralBankName: 'Bank of Japan',
+    treasury: partyId('treasury.jp'),
+    treasuryName: 'Japanese Treasury',
+    paper: 'jgb',
+  },
+];
 /**
  * Seed B1, B4: WHICH BANKS THIS WORLD HAS is the table the banks module declares, and the seed is
  * built from the same one — there is no count beside it and no second list (Law 4). `BANK_A` and
@@ -101,10 +172,10 @@ export const TREASURY_NORTH = partyId('treasury.north');
 export const BANK_A = partyId('bank.a');
 export const BANK_B = partyId('bank.b');
 /** The ten-year benchmark: the line every other price is quoted against (Sovereign D4). */
-export const GOV_LINE = instrumentId('gov.north.2036-03-15');
-export const GOV_MARKET = marketId('mkt.gov.north.2036-03-15');
+export const GOV_LINE = instrumentId('ust.2036-03-15');
+export const GOV_MARKET = marketId('mkt.ust.2036-03-15');
 /** Sovereign D3.a: one owner of the curve, one convention, declared by the module that owns it. */
-export const GOV_CURVE = curveFamilyId('gov.north');
+export const GOV_CURVE = curveFamilyId('ust');
 
 /** The issuer's own maturity grid: it places every line it brings on one of these days (B3.a). */
 export const MATURITY_MONTHS: readonly number[] = [3, 6, 9, 12];
@@ -133,6 +204,14 @@ interface SeedTenor {
 }
 
 const MONTHS_PER_YEAR = 12;
+
+/**
+ * Sovereign D4, Currency A3: the one tenor every other country borrows at. Ten years, which is the
+ * benchmark America's own curve is quoted against — the same point on two curves is what makes a
+ * spread between two countries mean anything (XI-7), and it is the only line each of them needs to
+ * be a borrower in its own money.
+ */
+const ABROAD_TENOR_MONTHS = 10 * MONTHS_PER_YEAR;
 
 const SEED_PROFILE: readonly SeedTenor[] = [
   {
@@ -221,7 +300,7 @@ function seedLines(epoch: Civil, members: number, perMember: number, householdSh
     const maturity = onGrid(epoch, t.months);
     const dated = formatCivil(maturity);
     return {
-      id: t.paper === 'bond' ? `gov.north.${dated}` : `gov.north.bill.${dated}`,
+      id: t.paper === 'bond' ? `ust.${dated}` : `ust.bill.${dated}`,
       paper: t.paper,
       maturity,
       banks: Math.round(div(mul(atBanks, t.bankWeight, 'its weight'), bankWeight, 'this line')),
@@ -280,6 +359,8 @@ const P = {
   retirementAge: paramId('labour.retirementAge'),
   plantHeadroom: paramId('seed.firm.plantHeadroom'),
   openingYield: paramId('seed.openingYield'),
+  openingRate: paramId('seed.openingRate'),
+  crossHoldingShare: paramId('seed.crossHoldingShare'),
   cbOpeningShare: paramId('seed.centralBank.openingHoldingShare'),
   treasuryBufferShare: paramId('seed.treasury.bufferShare'),
   // Declared by another module and read here by id, because a seed may not import a mechanism
@@ -308,7 +389,7 @@ function openingPrices(): ParamDecl[] {
   return SEED_MARKETS.map((row) => ({
     id: openingPrice(row.subUnit),
     value: row.opensAt,
-    unit: `PHX per unit of ${row.subUnit}`,
+    unit: `USD per unit of ${row.subUnit}`,
     kind: 'shape' as const,
     owner: 'model' as const,
     why: `Seed C4: ${row.why} It is the first clearing's input and not a permanent mark: the session in period one prints a price nobody stated and nothing reads this number again.`,
@@ -400,6 +481,22 @@ export function foundationSeedFor(
       owner: 'model',
       why: 'Capital Programme A2, Seed D1: how much plant a firm opens with over what its current output needs. A going concern is not running at its ceiling — a firm with no headroom cannot answer a good week at all, and a world of them would show a supply response of exactly zero from the first period. From period one investment decides the stock and nothing reads this again (Capital Programme B1).',
     },
+    {
+      id: P.openingRate,
+      value: 1,
+      unit: 'units of the quote money per unit of the base',
+      kind: 'shape',
+      owner: 'model',
+      why: "Spot FX C1, Seed C4: what one unit of one money costs in another, before any pair has ever traded. A market that has never traded has no price (XI-6) and a world that opens with holdings in four moneys has to say what they are worth in each other, so ONE level is claimed and each pair's own first session replaces it. One, and the same one for every pair, because a level of one asserts less than any other number would: it says the moneys are all the same size, which is what a world with nothing to distinguish them yet has no reason to deny — and it opens the three crosses consistent with the three dollar rates, so the triangle starts with no gap in it rather than with one somebody put there. What it opens at is not what it stays at: America's banks earn euros, sterling and yen they have no use for and the foreign reserve managers earn dollars they have none for, and where those meet is the rate from period one.",
+    },
+    {
+      id: P.crossHoldingShare,
+      value: 0.08,
+      unit: "share of a holder's paper that is another country's",
+      kind: 'shape',
+      owner: 'model',
+      why: "Currency D2, Central Bank F4: how much of what a holder has in paper is a foreign government's, over all of them together and split evenly between the countries that issue it. A bank holds some because it is the liquid asset of a market it deals in; a central bank holds it because that is what reserves are. Eight per cent, which is small enough that America is a domestic banking system with some foreign paper rather than a currency fund, and large enough that a week of exchange rates is visible in what a bank is worth. Evenly, because the seed has nothing to say about which foreign government a bank prefers and a split that said otherwise would be a portfolio decision nobody took. From period one what anybody holds abroad is an outcome of what it bought and sold, and nothing reads this again — the portfolio decision that replaces it is 13h's.",
+    },
     ...openingPrices(),
     {
       id: P.openingYield,
@@ -435,8 +532,24 @@ export function foundationSeedFor(
       representation: 'named',
       status: { alive: true },
     });
-    ctx.parties.add(named(CB, CENTRAL_BANK, 'Central Bank of North', CB));
-    ctx.parties.add(named(TREASURY_NORTH, TREASURY, 'Treasury of North', CB));
+    ctx.parties.add(named(CB, CENTRAL_BANK, 'Federal Reserve', CB));
+    ctx.parties.add(named(TREASURY_US, TREASURY, 'US Treasury', CB));
+    // Currency A2, A3: each other money's issuer and the sovereign that borrows in it. They book in
+    // their own region, which is what makes everything they hold of American paper FOREIGN and
+    // everything America holds of theirs foreign the other way (D2).
+    for (const c of ABROAD) {
+      const abroad = (id: PartyId, kind: NamedParty['kind'], name: string): NamedParty => ({
+        id,
+        kind,
+        region: c.region,
+        name,
+        bank: c.centralBank,
+        representation: 'named',
+        status: { alive: true },
+      });
+      ctx.parties.add(abroad(c.centralBank, CENTRAL_BANK, c.centralBankName));
+      ctx.parties.add(abroad(c.treasury, TREASURY, c.treasuryName));
+    }
     // Seed B1, B4: as many banks as `banks.count`, each with the disposition and the size its own
     // row states. THREE by default, because with two every depositor that answers a rate is the
     // whole of one side of the deposit market, every interbank session is one name facing one name,
@@ -455,13 +568,25 @@ export function foundationSeedFor(
       ctx.parties.add(named(partyId(f.firm), FIRM, f.name, bank.id));
     });
 
-    // Money instruments: one per issuer (Money A1, D2).
+    // Money instruments: one per issuer (Money A1, D2). Each central bank issues its own region's
+    // money and a bank issues the money of the region it books in — there is no such thing as
+    // money without an issuer, and none of it is anybody else's (A1).
     for (const issuer of [CB, ...banks.map((b) => b.id)]) {
       ctx.instruments.add({
-        id: moneyInstrumentId(issuer, PHX),
+        id: moneyInstrumentId(issuer, USD),
         kind: MONEY_KIND,
         issuer: some(issuer),
-        ccy: PHX,
+        ccy: USD,
+        terms: { kind: MONEY_KIND },
+        market: none(),
+      });
+    }
+    for (const c of ABROAD) {
+      ctx.instruments.add({
+        id: moneyInstrumentId(c.centralBank, c.ccy),
+        kind: MONEY_KIND,
+        issuer: some(c.centralBank),
+        ccy: c.ccy,
         terms: { kind: MONEY_KIND },
         market: none(),
       });
@@ -723,8 +848,8 @@ export function foundationSeedFor(
       ctx.instruments.add({
         id,
         kind: line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL,
-        issuer: some(TREASURY_NORTH),
-        ccy: PHX,
+        issuer: some(TREASURY_US),
+        ccy: USD,
         terms,
         market: some(market),
       });
@@ -732,7 +857,7 @@ export function foundationSeedFor(
         id: market,
         name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
         instrument: id,
-        ccy: PHX,
+        ccy: USD,
         rationing: 'proRata',
       });
       const flows = ctx.registry
@@ -745,7 +870,84 @@ export function foundationSeedFor(
         market,
         period: ctx.period,
         price: priced(ctx, id, price),
-        ccy: PHX,
+        ccy: USD,
+        provenance: { kind: 'opening' },
+      });
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // THE OTHER COUNTRIES' PAPER, AND WHO HOLDS WHOSE (Currency A3, D2; Spot FX A3, B1, B2; Bond N3)
+    //
+    // One line each, at the benchmark tenor, in that country's own money and promised by its own
+    // treasury. The US banks hold some of all three and each foreign reserve manager holds dollars:
+    // that is what a cross holding IS, and it is what makes every part of the currency layer
+    // reachable at once —
+    //
+    //   a position in a money that is not its holder's own, so the revaluation has something to
+    //   revalue (D2); a COUPON that arrives in a money its receiver does not book in, so the
+    //   conversion is a real payment and not a display (C4); two parties with OPPOSITE reasons to
+    //   be in the pair market — the US banks earning euros, sterling and yen they have no use for
+    //   and the foreign central banks earning dollars they have none for (B1, B2), neither of them
+    //   a view of the rate (XI-13); and SIX pairs rather than one, so a cross exists that is not
+    //   the dollar and a round trip through three of them either does or does not pay (XI-12).
+    //
+    // WHAT EVERY RATE OPENS AT is the one stated level, like every other opening price, and each
+    // pair's own first session replaces it (Seed C4).
+    const abroadLine = new Map<string, InstrumentId>();
+    const abroadPrice = new Map<string, number>();
+    for (const c of ABROAD) {
+      const line = instrumentId(`${c.paper}.${formatCivil(onGrid(ctx.calendar.epoch, ABROAD_TENOR_MONTHS))}`);
+      const market = marketId(`mkt.${line}`);
+      const terms: SovereignBondTerms = {
+        kind: SOVEREIGN_BOND,
+        coupon: rate(y, ANNUAL),
+        couponPeriodicity: SEMI_ANNUAL,
+        dayCount: SEED_DAY_COUNT,
+        issueDate: ctx.calendar.epoch,
+        maturity: onGrid(ctx.calendar.epoch, ABROAD_TENOR_MONTHS),
+      };
+      ctx.instruments.add({
+        id: line,
+        kind: SOVEREIGN_BOND,
+        issuer: some(c.treasury),
+        ccy: c.ccy,
+        terms,
+        market: some(market),
+      });
+      ctx.openMarket({
+        id: market,
+        name: displayName(ctx.instruments.get(line), ctx.parties, ctx.registry),
+        instrument: line,
+        ccy: c.ccy,
+        rationing: 'proRata',
+      });
+      const flows = ctx.registry
+        .instrumentKind(SOVEREIGN_BOND)
+        .cashFlows(ctx.instruments.get(line), ctx.calendar.epoch, ctx.calendar);
+      const price = priceAt(flows, y, ctx.calendar.epoch, SEED_DAY_COUNT, `opening ${line}`);
+      ctx.prices.write({
+        instrument: line,
+        market,
+        period: ctx.period,
+        price: priced(ctx, line, price),
+        ccy: c.ccy,
+        provenance: { kind: 'opening' },
+      });
+      abroadLine.set(String(c.region), line);
+      abroadPrice.set(String(c.region), price);
+    }
+    // Spot FX C1, Seed C4: what a unit of one money costs in another, before any pair has traded.
+    // EVERY pair, including the three that are not the dollar's: a cross with no opening level is a
+    // market whose dealers have nothing to quote around, and a world that opens with holdings in
+    // four moneys has to say what they are worth in each other. One level for all of them, because
+    // one asserts less than any other number would (P.openingRate), and six sessions replace it.
+    for (const { base, quote } of pairsOf([...ctx.registry.currencies.keys()])) {
+      ctx.prices.write({
+        instrument: fxPairId(base, quote),
+        market: fxMarketOf(base, quote),
+        period: ctx.period,
+        price: ctx.params.get(P.openingRate),
+        ccy: quote,
         provenance: { kind: 'opening' },
       });
     }
@@ -804,7 +1006,7 @@ export function foundationSeedFor(
     // single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what is stated about it is
     // ITS SHARE of that balance sheet. The banks hold the rest as reserves.
     const buffer = mul(centralBankAssets, ctx.params.get(P.treasuryBufferShare), "the treasury's buffer");
-    ctx.endowMoney(TREASURY_NORTH, PHX, cash(ctx, buffer));
+    ctx.endowMoney(TREASURY_US, USD, cash(ctx, buffer));
     const reserves = sub(centralBankAssets, buffer, 'what the banks hold in reserve');
     // Seed C1, Banks Capital B1.b: A BANK'S BALANCE SHEET FOLLOWS ITS DEPOSITORS, and this is the
     // line of causality the whole sheet turns on.
@@ -870,7 +1072,7 @@ export function foundationSeedFor(
     const paperShare = div(systemPaper, all, 'the part of a book that is paper');
     for (const b of banks) {
       const mine = zeroIfNone(assets.get(b.id));
-      ctx.endowMoney(b.id, PHX, cash(ctx, sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves')));
+      ctx.endowMoney(b.id, USD, cash(ctx, sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves')));
     }
     for (const line of seedLineRows) {
       const id = instrumentId(line.id);
@@ -889,7 +1091,58 @@ export function foundationSeedFor(
       });
     }
 
-    for (const f of madeHere) ctx.endowMoney(partyId(f.firm), PHX, cash(ctx, cashOf(f)));
+    for (const f of madeHere) ctx.endowMoney(partyId(f.firm), USD, cash(ctx, cashOf(f)));
+
+    // ------------------------------------------------------------------------------------------
+    // THE CROSS HOLDINGS (Currency D2, Spot FX B1, B2; Central Bank F4)
+    //
+    // A share of what the US banks hold in paper is FOREIGN paper, split over the three countries
+    // that issue it, and each of those countries' central banks holds dollars. Neither is a
+    // position anybody took a view on: a bank holds a foreign government's bond because it is the
+    // liquid asset of a market it deals in, and a central bank holds another's because that is what
+    // reserves ARE (F4).
+    //
+    // What it produces is the whole currency layer at once: a holding to revalue every period, a
+    // coupon that arrives in a money its receiver does not book in, and parties who each end up
+    // with a money they have no use for — which is two sides of a market (XI-13).
+    const crossShare = ctx.params.get(P.crossHoldingShare);
+    const abroadShare = div(crossShare, ABROAD.length, 'the part of it that is any ONE country\u2019s');
+    for (const b of banks) {
+      const mine = zeroIfNone(assets.get(b.id));
+      const foreign = mul(mul(mine, paperShare, 'its paper'), abroadShare, 'the part of it that is foreign');
+      for (const c of ABROAD) {
+        const line = instrumentId(String(abroadLine.get(String(c.region))));
+        const price = openingOf(abroadPrice, String(c.region));
+        const units = div(foreign, price, `units of ${c.name}\u2019s line`);
+        if (units <= 0) continue;
+        ctx.endowUnits(b.id, line, held(ctx, line, units), priced(ctx, line, price));
+      }
+    }
+    // Central Bank F4: and each of their own reserves, which are a claim on the American issuer. It
+    // is the benchmark line, because that is the one a reserve manager holds.
+    const reserveLine = instrumentId(seedLineRows[seedLineRows.length - 1]?.id ?? String(GOV_LINE));
+    const reservePrice = openingOf(opening, String(reserveLine));
+    for (const c of ABROAD) {
+      const reserveUnits = div(
+        mul(systemPaper, abroadShare, `what ${c.name} holds of it`),
+        reservePrice,
+        `units ${c.name} holds`,
+      );
+      if (reserveUnits <= 0) continue;
+      ctx.endowUnits(
+        c.centralBank,
+        reserveLine,
+        held(ctx, reserveLine, reserveUnits),
+        priced(ctx, reserveLine, reservePrice),
+      );
+      // Treasury D4.b: and each treasury opens with a buffer of its own money, because a treasury
+      // that depends on every auction clearing has no way to pay a coupon in week one.
+      ctx.endowMoney(
+        c.treasury,
+        c.ccy,
+        ctx.registry.payable(c.ccy, mul(reserveUnits, reservePrice, 'what it holds abroad')),
+      );
+    }
 
     // Banks Capital B1.b, A3: a bank opens where ITS OWN CAPITAL RULE puts it, so it neither has to
     // shrink on the first morning nor opens with headroom nobody gave it. At the opening its assets
@@ -920,7 +1173,7 @@ export function foundationSeedFor(
         market: goodMarketId(row.subUnit, REGION),
         period: ctx.period,
         price: priced(ctx, goodId(row.subUnit, REGION), ctx.params.get(openingPrice(row.subUnit))),
-        ccy: PHX,
+        ccy: USD,
         provenance: { kind: 'opening' },
       });
     }
@@ -1048,7 +1301,7 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         // in trouble. The buffer is its own (B2), so no two banks open at the same share and none
         // of them opens at a number this seed chose.
         const leverage = add(minimum, row.capitalBuffer, 'the line this bank runs to');
-        const own = moneyInstrumentId(bank, PHX);
+        const own = moneyInstrumentId(bank, USD);
         let assets = 0;
         for (const h of ctx.register.holdingsOf(bank)) {
           if (h.instrument === own) continue;
@@ -1077,7 +1330,7 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         );
         // XI-15: per member, and the cell carries it with its weight.
         const perMember = div(fromHouseholds, members, 'the deposit one member opens with');
-        for (const cell of cells) ctx.endowMoney(cell.id, PHX, perMember);
+        for (const cell of cells) ctx.endowMoney(cell.id, USD, perMember);
       }
     },
   };
@@ -1085,13 +1338,13 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
 
 /**
  * Law 8: THE SEED SPEAKS IN NAMED UNITS AND THE STATE HOLDS PIECES, and this is the one boundary
- * between them. A number here is what a person would say — 100,000 PHX, 45 tonnes, 400 PHX the
+ * between them. A number here is what a person would say — 100,000 USD, 45 tonnes, 400 USD the
  * tonne — and what goes into the register is the count of indivisible pieces that comes to: cents,
  * grams, whole machines. Nothing downstream converts anything, because everything downstream is
  * already a count.
  */
 function cash(ctx: SeedContext, phx: number): number {
-  return ctx.registry.pieces(currencyUnit(PHX), phx);
+  return ctx.registry.pieces(currencyUnit(USD), phx);
 }
 
 /** The same for units of an instrument, in whatever its own unit is named in. */
@@ -1101,7 +1354,7 @@ function held(ctx: SeedContext, instrument: InstrumentId, named: number): number
 
 /** And for a price: money for one NAMED unit becomes money pieces for one piece. */
 function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: number): number {
-  return ctx.registry.priceOf(PHX, ctx.instruments.get(instrument).unit, perNamedUnit);
+  return ctx.registry.priceOf(USD, ctx.instruments.get(instrument).unit, perNamedUnit);
 }
 
 /** The opening price the seed computed for a line; a line with none is a defect, never a default. */
@@ -1176,13 +1429,24 @@ export function foundationSpec(
     seed,
     epoch: civil(2026, 1, 5),
     registry: {
-      currencies: [{ code: PHX, name: 'Phoenix unit', centralBank: CB }],
-      regions: [{ id: REGION, name: 'North', ccy: PHX }],
+      currencies: [
+        { code: USD, name: 'US dollar', centralBank: CB },
+        ...ABROAD.map((c) => ({ code: c.ccy, name: c.ccyName, centralBank: c.centralBank })),
+      ],
+      regions: [
+        { id: REGION, name: 'United States', ccy: USD },
+        ...ABROAD.map((c) => ({ id: c.region, name: c.name, ccy: c.ccy })),
+      ],
       units: [
-        // Money A2, Law 8: a PHX is a hundred cents, like any real money, and the cent is the
+        // Money A2, Law 8: a USD is a hundred cents, like any real money, and the cent is the
         // smallest amount of it that exists. Every balance in this world is a whole number of them,
         // so nothing below a cent can be paid, lent, owed or left over anywhere.
-        { id: currencyUnit(PHX), name: 'PHX', perUnit: MONEY_PIECES },
+        { id: currencyUnit(USD), name: 'USD', perUnit: MONEY_PIECES },
+        // Currency A3, Law 8: each other money is divided into its own smallest piece, and each is
+        // its OWN unit. Two currencies are never added (Money A2.b) and this is where that starts:
+        // an amount of euros is counted in euro pieces, and what it comes to in dollars is a
+        // conversion at a rate somebody traded at (Currency C5) and never an addition.
+        ...ABROAD.map((c) => ({ id: currencyUnit(c.ccy), name: String(c.ccy), perUnit: MONEY_PIECES })),
         // Equity A2, Fund Shares A2: a SHARE COUNT, which more than one system counts in and no
         // one of them owns. A share is INDIVISIBLE, as a register of members holds it: what one is
         // worth is the seed's own resolution (Equity's opening level), set low enough that a
@@ -1256,13 +1520,16 @@ export function foundationSpec(
       equity(drew.listed),
       funds(drew.funds, drew.etfs),
       sovereignInstruments,
-      sovereignCurve(TREASURY_NORTH, PHX),
+      sovereignCurve(TREASURY_US, USD),
       treasury,
       centralBankOmo,
       // The money market after the treasury and the curve: a bank funds itself against the paper
       // those two put into the world, and it prices a name off what the lending module published
       // about it. Both reach it as public events and prints, never as imports (Law 15).
       moneyMarket,
+      // Currency, Spot FX: the pairs, after the banks whose desks quote them and the money market
+      // whose overnight book they fund a position in.
+      spotFx(drew.banks),
       foundationSeedFor(drew.banks, drew.firms),
       foundationFundingFor(drew.banks),
     ],

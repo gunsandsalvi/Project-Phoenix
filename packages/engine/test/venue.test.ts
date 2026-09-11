@@ -16,7 +16,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BANK,
   HOUSEHOLD,
-  PHX,
+  USD,
   assemble,
   currencyUnit,
   venueId,
@@ -57,8 +57,8 @@ function venueOwner(opts: { gatherTwice?: boolean; gatherAnother?: boolean } = {
               id: VENUE,
               name: 'a venue somebody clears',
               clearedBy: 'test.venue-owner',
-              unit: currencyUnit(PHX),
-              ccy: PHX,
+              unit: currencyUnit(USD),
+              ccy: USD,
               key: {},
             });
           }
@@ -120,8 +120,8 @@ function anotherVenue(): SystemModule {
             id: OTHER,
             name: 'a venue somebody else clears',
             clearedBy: 'test.another',
-            unit: currencyUnit(PHX),
-            ccy: PHX,
+            unit: currencyUnit(USD),
+            ccy: USD,
             key: {},
           });
         },

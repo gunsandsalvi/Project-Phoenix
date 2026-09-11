@@ -28,10 +28,11 @@ import type {
 import type { Running } from '../core/num.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
-import type { Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
+import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
 import type { CurveRead } from '../prices/curve.js';
+import type { IndexRead } from '../prices/index-read.js';
 import type { PriceStore, Print } from '../prices/price-store.js';
 import type { Valuation } from '../prices/value.js';
 import type { Holding, Register, RegisterReads } from '../register/register.js';
@@ -127,6 +128,28 @@ export interface ParticipantView extends KernelReads {
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
   curve(family: CurveFamilyId): CurveRead;
   /**
+   * Indices A2, E2, D5.a: an index's level, computed from its constituents' prints where it is
+   * asked for. Nothing stores one, so it cannot be stale and cannot become an input to what it
+   * measures (A1.a). A world before the index's own first period has none — which is Missing and
+   * not a base level carried backwards (D5.a).
+   */
+  index(id: string): Option<IndexRead>;
+  /**
+   * Spot FX B1, B2: THIS PARTY'S POSITION IN A MONEY, this period and next — the reason a party is
+   * in a currency market at all. It is a read of its OWN obligations (A4: nobody else's) against
+   * its OWN balance: what falls due in `ccy` less what it holds of it. POSITIVE is short of a money
+   * it has to pay (B1); NEGATIVE is holding one nothing it owes is in (B2). Both are the same read
+   * because they are the same balance.
+   */
+  owedIn(ccy: CurrencyCode): number;
+  /**
+   * Currency C5, Law 4: THE RATE IN FORCE between two moneys — the last thing a pair's session
+   * printed, at or before now. It is public like every other print (Clearing E1), and it is one
+   * read rather than each participant finding the pair, inverting it when it is quoted the other
+   * way round and deciding what to do when neither direction has ever traded.
+   */
+  rateIn(from: CurrencyCode, to: CurrencyCode): number;
+  /**
    * Expectations A1, A2: what THIS party expects of a variable, formed from what it observed. A
    * party that has never observed the variable has no outlook, and gets none rather than a default
    * (Appendix A). There is no global expectation to fall back on (A2.b).
@@ -195,6 +218,14 @@ export interface MechanismContext extends KernelReads {
   /** A random stream that is this module's own, deterministic in (seed, module, period). */
   readonly rng: Prng;
   participant(party: PartyId): ParticipantView;
+  /**
+   * Money A1, A2.b, Currency D2, Law 4: WHICH account a party holds a given money in. Its own
+   * money is at its own bank; a money its bank does not issue is held at that money's own central
+   * bank, because a claim has to be on somebody who can pay it. One writer of that rule, the
+   * kernel's, so a module never assembles an account out of a party's `bank` field: a module that
+   * did would be right in one currency and wrong in every other.
+   */
+  accountOf(party: PartyId, ccy: CurrencyCode): AccountRef;
   /** The only way state moves (Money D4). */
   settle(draft: InstructionDraft): SettlementRecord;
   /** Register a new instrument with nothing issued; issuance is a settlement leg (Register B1). */
@@ -227,6 +258,19 @@ export interface MechanismContext extends KernelReads {
   accrued(instrument: InstrumentId): number;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
   curve(family: CurveFamilyId): CurveRead;
+  /**
+   * Indices A2, E2, D5.a: an index's level, computed from its constituents' prints where it is
+   * asked for. Nothing stores one, so it cannot be stale and cannot become an input to what it
+   * measures (A1.a). A world before the index's own first period has none — which is Missing and
+   * not a base level carried backwards (D5.a).
+   */
+  index(id: string): Option<IndexRead>;
+  /**
+   * Ratings A2, A2.a: a party's own view WITH NO PRICES IN IT — `print`, `mark` and `index` all
+   * Missing and `curve` refused. An assessment made from state is made from state because the
+   * prices are not reachable, not because the code that makes it chose not to look.
+   */
+  blind(party: PartyId): ParticipantView;
   /**
    * XI-8, Firm Birth E1, E3: a party comes into existence mid-run. An estate opens because
    * something died; a firm is born because somebody funded it (worklist 13g). The seed states who

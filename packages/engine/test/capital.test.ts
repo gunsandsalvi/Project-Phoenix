@@ -14,7 +14,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CAPITAL_KINDS,
   FIRM,
-  PHX,
+  USD,
   REGION,
   assemble,
   buildLagParam,
@@ -88,8 +88,8 @@ function hungryFor(instrument: string, price: number, qty: Qty): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, PHX, phx(1_000_000));
-      ctx.endowMoney(BANK_A, PHX, phx(1_000_000));
+      ctx.endowMoney(BUYER, USD, phx(1_000_000));
+      ctx.endowMoney(BANK_A, USD, phx(1_000_000));
     },
     participants: [
       {
@@ -153,7 +153,7 @@ describe('what capital is (Capital Programme A)', () => {
     expect(kind.liabilityOfIssuer).toBe(false);
     expect(kind.physical).toBe(true);
     // A4: its own unit. A machine in service is never added to a tonne of anything.
-    expect(String(kind.unit(PHX))).toContain(MACHINERY);
+    expect(String(kind.unit(USD))).toContain(MACHINERY);
     const vintages = w.instruments.all().filter(isPlant);
     expect(vintages.length).toBeGreaterThan(1);
     for (const v of vintages) {
@@ -307,7 +307,7 @@ describe('what a purchase becomes (Capital Programme A4.c, C, Firm Birth A2.a)',
     for (const s of sellers) expect(w.parties.has(s as never)).toBe(true);
     // C2: paid for in cash, out of an account, in a currency. Every one of those trades moved money.
     expect(
-      bought.every((r) => r.instruction.legs.some((l) => l.kind === 'money' && l.ccy === PHX)),
+      bought.every((r) => r.instruction.legs.some((l) => l.kind === 'money' && l.ccy === USD)),
     ).toBe(true);
     expect(plantTerms(w.instruments.get(vintage as never)).capitalKind).toBe(MACHINERY);
   });
@@ -585,7 +585,7 @@ describe('what a holder requires (Corporate Credit E5)', () => {
     expect(said.length).toBeGreaterThan(1);
     const rates = said.map((e) => {
       const required = e.data['required'] as Record<string, number>;
-      return required['treasury.north'] ?? 0;
+      return required['treasury.us'] ?? 0;
     });
     // E5.a, E5.c: each bank's own, so two banks with different capital and different required
     // returns on it do not require the same thing of the same paper (A4.b: they disagree).

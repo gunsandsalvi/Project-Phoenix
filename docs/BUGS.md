@@ -587,3 +587,42 @@ failed instruction). Then `firm.1` **ceases inside the same period** — all six
 sixty people, and depends on that employer surviving the period it hired in. Whether what starves it
 is the opening balance sheet is 12's question; whether a test of a matching rule should depend on
 its employer's solvency is a question about the test.
+
+
+## From item 12 — the currency layer
+
+### 12-13 — The banks sell the seed's cross holdings in week one
+
+**Where.** `packages/engine/src/mechanisms/banks/treasury.ts` (`liquidityTargets`), seen with
+`foundationSpec('probe', drawBanks(3), drawFirms(24))` at period 1.
+
+**Measured.** Every bank's holding of `bund/gilt/jgb` goes out in the first session and the foreign
+central banks take it: three `trade` instructions, 426,231,562,134 pieces of each foreign money paid
+by the issuing central bank to `bank.a`. The cross holding the seed opened with is gone by period 2.
+
+**Why it is not fixed here.** A bank's LIQUIDITY portfolio is now correctly its own money only (a
+foreign bond raises a money its own central bank does not issue and will not take at the window —
+that part IS fixed, item 12). What is missing is the other reason to hold paper abroad: a POSITION,
+taken because of what the holder expects of the rate and the yield. That is worklist 13h's portfolio
+decision, and until it exists a foreign bond has no holder with a reason, so it is sold. The seed
+states the opening cross holdings knowing this (`seed.crossHoldingShare` says so), and what the sale
+produces — foreign cash in the banks' hands — is exactly the B2 reason the pair market needs.
+
+**Position.** 13h.
+
+### 12-14 — The dollar drifts one way because only one side of the world trades
+
+**Measured.** USD/EUR, USD/GBP and USD/JPY all go 1.000000 → 1.018545 over nine periods, monotonically
+and almost identically; the three crosses never trade at all and stay at 1.
+
+**Why.** The three countries abroad are stubs: a central bank, a treasury and one bond line, with no
+firms, no households and no imports. So every pair has US banks on one side with a foreign balance
+they have no use for, and nobody on the other with a reason to want it. The rate moves the only way
+a one-sided book can move. The crosses have no participant at all, because no party's own money is in
+them — which is correct for this world and is why the triangular gap stays at zero.
+
+**Not a defect of the currency layer.** It is the cross-border economy missing (13i): trade invoiced
+in another country's money is what puts parties on both sides of a pair. The mechanisms that would
+close it — a reason to hold a foreign balance (13h) and a reason to need one (13i) — are both placed.
+
+**Position.** 13i, with 13h.

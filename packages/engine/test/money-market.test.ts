@@ -15,7 +15,7 @@ import {
   BANK,
   CB,
   MM_PARAMS,
-  PHX,
+  USD,
   assemble,
   moneyInstrumentId,
   none,
@@ -270,7 +270,7 @@ describe('what a bank publishes about itself (Banks Funding F1, F4, C1, C1.a)', 
       expect(said?.public).toBe(true);
       // F2: the reserve balance is a READ OF ITS ACCOUNT, never a mirrored copy.
       expect(num(said, 'reserves')).toBe(
-        w.register.quantity(bank, moneyInstrumentId(CB, PHX)),
+        w.register.quantity(bank, moneyInstrumentId(CB, USD)),
       );
       // C1, C1.a: liquid assets are the account, what comes back tomorrow, and what its own
       // unencumbered eligible paper would actually raise at the haircut the central bank declared.
@@ -456,8 +456,8 @@ function paysMoreThanItHas(from: PartyId, to: PartyId, at: number): SystemModule
         anchor: { after: 'corporateActions' },
         run: (ctx) => {
           if (ctx.period !== at) return;
-          const cb = ctx.registry.centralBankOf(PHX);
-          const account = moneyInstrumentId(cb, PHX);
+          const cb = ctx.registry.centralBankOf(USD);
+          const account = moneyInstrumentId(cb, USD);
           const has = ctx.register.quantity(from, account);
           ctx.settle({
             legs: [
@@ -465,7 +465,7 @@ function paysMoreThanItHas(from: PartyId, to: PartyId, at: number): SystemModule
                 kind: 'money',
                 from: { holder: from, issuer: cb },
                 to: { holder: to, issuer: cb },
-                ccy: PHX,
+                ccy: USD,
                 amount: has + phx(50_000),
                 fromCell: { some: false },
                 toCell: { some: false },
@@ -564,7 +564,7 @@ describe('what somebody outside can see (Banks Funding F1, F2, F4, Observer A5)'
       expect(Object.keys(b.deposits)).toContain('retail');
       // F2: the reserve balance is its one account at the central bank, and the surface says the
       // same number the register does.
-      expect(b.reserves).toBe(w.register.quantity(partyId(b.bank), moneyInstrumentId(CB, PHX)));
+      expect(b.reserves).toBe(w.register.quantity(partyId(b.bank), moneyInstrumentId(CB, USD)));
       // B3.a: where its capital stands, and which of the two rules is the one biting.
       expect(b.capital).toBeGreaterThan(0);
       expect(b.binds).not.toBeNull();

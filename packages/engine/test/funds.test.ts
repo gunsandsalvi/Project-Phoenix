@@ -15,7 +15,7 @@ import {
   FUND,
   HOUSEHOLD,
   dustOf,
-  PHX,
+  USD,
   assemble,
   fundVenue,
   instrumentId,
@@ -42,7 +42,7 @@ const FUND_ID = partyId(FUND_DECL.fund);
 const MANAGER = partyId(FUND_DECL.manager);
 const SHARE = shareLineOf(FUND_DECL.fund);
 const RIG = { banks: 3, firms: DREW.firms };
-const BILL = instrumentId('gov.north.bill.2026-06-15');
+const BILL = instrumentId('ust.bill.2026-06-15');
 
 /** Everybody who holds a share asks for all of it back, in one period: a run (C4.a). */
 function everybodyRedeems(at: number): SystemModule {
@@ -223,7 +223,7 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
     const fees = w.journal.ofKind('fund.fee').filter((e) => e.data['paid'] === true);
     expect(fees.length).toBeGreaterThan(0);
     // F3: the manager is a separate party and the fee is its income.
-    expect(w.cash(MANAGER, PHX)).toBeGreaterThan(0);
+    expect(w.cash(MANAGER, USD)).toBeGreaterThan(0);
     expect(fees.every((e) => Number(e.data['amount']) > 0)).toBe(true);
   });
 });

@@ -41,7 +41,7 @@ export interface ParamDecl {
   readonly id: ParamId;
   /**
    * The value AS A PERSON DECLARES IT. Where `quantityOf` names a unit this is a NAMED amount of
-   * it — four hundred thousand PHX, seven thousand hours — and what the register answers is the
+   * it — four hundred thousand USD, seven thousand hours — and what the register answers is the
    * count of pieces the state holds (Law 8). Everywhere else it is the number itself.
    */
   readonly value: number;
@@ -53,7 +53,7 @@ export interface ParamDecl {
   readonly unit: string;
   /**
    * Law 2, Law 8: the value is an AMOUNT of something, declared the way a person says it — thirty
-   * thousand PHX, seven thousand hours, four hundred thousand units of a line. WHICH unit is named
+   * thousand USD, seven thousand hours, four hundred thousand units of a line. WHICH unit is named
    * by whoever reads it (`amount`), because one policy or preference is a number for whatever money,
    * time or paper the party reading it deals in; the register turns it into the count of indivisible
    * pieces that unit is counted in. So a declared amount MOVES WITH THE WORLD'S RESOLUTION instead

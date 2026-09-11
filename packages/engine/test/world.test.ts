@@ -10,8 +10,8 @@ import {
   FIRM,
   InvalidRegistry,
   NotYetProduced,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   assemble,
   cellSide,
   foundationSeedFor,
@@ -161,8 +161,8 @@ describe('assembly (Law 15, Part XIII)', () => {
       w.instruments.add({
         id: 'x' as never,
         kind: 'unknown.kind' as never,
-        issuer: some(TREASURY_NORTH),
-        ccy: PHX,
+        issuer: some(TREASURY_US),
+        ccy: USD,
         terms: { kind: 'unknown.kind' as never },
         market: none(),
       }),
@@ -249,13 +249,13 @@ describe('the seed (Seed A2)', () => {
     const weights = cells.map((c) => (c.representation === 'cell' ? c.weight : 0));
     expect(sum(weights).value).toBe(6000);
     // Seed E: the seed decides nothing about how rich anybody is. Every cell opens with nothing.
-    expect(new Set(cells.map((c) => w.cash(c.id, PHX)))).toEqual(new Set([0]));
+    expect(new Set(cells.map((c) => w.cash(c.id, USD)))).toEqual(new Set([0]));
     for (let i = 0; i < 8; i += 1) w.step();
     // B4: and a sector of equals never produces a market — so the dispersion has to come from
     // somewhere. It comes from what happened: who was hired, at what wage, and what each of them
     // did with it. It is an outcome now, where it used to be a number the seed stated.
     const alive = w.parties.ofKind(HOUSEHOLD).filter((c) => c.status.alive);
-    expect(new Set(alive.map((c) => w.cash(c.id, PHX))).size).toBeGreaterThan(1);
+    expect(new Set(alive.map((c) => w.cash(c.id, USD))).size).toBeGreaterThan(1);
   });
 });
 
@@ -284,14 +284,14 @@ describe('the period loop', () => {
     // whole of the constraint, and it is what a treasury with an overdraft would never show.
     const advances = w.journal
       .ofKind('reserve.overdraft')
-      .filter((e) => e.subjects.includes(TREASURY_NORTH));
+      .filter((e) => e.subjects.includes(TREASURY_US));
     expect(advances).toHaveLength(0);
     for (const e of w.journal.ofKind('treasury.shortfall')) {
       expect(Number(e.data['unpaid'])).toBeGreaterThan(0);
     }
     // And it came back: what it could not pay out of an empty account it funded at the next
     // auction, so the constraint bites and then releases rather than ending the world.
-    expect(w.cash(TREASURY_NORTH, PHX)).toBeGreaterThan(0);
+    expect(w.cash(TREASURY_US, USD)).toBeGreaterThan(0);
   });
 
   it('runs a year of the whole chain, and every family it has built is green (Part XII)', () => {
@@ -345,7 +345,7 @@ describe('the period loop', () => {
     const w = bare('seed-F');
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell === undefined) throw new Error('no cell');
-    const treasuryBefore = w.cash(TREASURY_NORTH, PHX);
+    const treasuryBefore = w.cash(TREASURY_US, USD);
     const target = w.calendar.periodOf({ y: 2026, m: 9, d: 15 });
     while (w.period < target) {
       w.step();
@@ -369,8 +369,8 @@ describe('the period loop', () => {
     for (const r of coupons) {
       for (const leg of r.instruction.legs) {
         if (leg.kind !== 'money') continue;
-        expect(leg.from.holder).toBe(TREASURY_NORTH);
-        expect(leg.to.holder).not.toBe(TREASURY_NORTH);
+        expect(leg.from.holder).toBe(TREASURY_US);
+        expect(leg.to.holder).not.toBe(TREASURY_US);
         if (leg.to.holder === CB) reachedCb += leg.amount;
       }
     }
@@ -389,7 +389,7 @@ describe('the period loop', () => {
       }
     }
     expect(reachedBank).toBeGreaterThan(0);
-    expect(w.cash(TREASURY_NORTH, PHX)).toBeLessThan(treasuryBefore);
+    expect(w.cash(TREASURY_US, USD)).toBeLessThan(treasuryBefore);
   });
 
   it('a phase cannot read a print the period has not produced (Clearing F1.a)', () => {
@@ -417,7 +417,7 @@ describe('the period loop', () => {
           run: (ctx) => {
             seen.push(`${ctx.period}:${ctx.cycle}`);
             expect('credit' in ctx.register).toBe(false);
-            expect(ctx.participant(TREASURY_NORTH).self.id).toBe(TREASURY_NORTH);
+            expect(ctx.participant(TREASURY_US).self.id).toBe(TREASURY_US);
           },
         },
       ],
@@ -531,7 +531,7 @@ describe('a market with reasons on both sides', () => {
     expect(gov?.failedTrades).toBe(1);
     expect(gov?.settledVolume).toBe(0);
     expect(w.register.quantity(partyId('firm.2'), GOV_LINE)).toBe(0);
-    expect(w.cash(partyId('firm.2'), PHX)).toBe(phx(50_000));
+    expect(w.cash(partyId('firm.2'), USD)).toBe(phx(50_000));
     const failed = w.ledger.all().filter((x) => x.outcome === 'failed');
     expect(failed).toHaveLength(1);
     expect(failed[0]?.outcome === 'failed' && failed[0].reason.kind).toBe('overdraftRefused');
@@ -545,7 +545,7 @@ describe('participant views (Observer A4, Expectations D1)', () => {
     w.step();
     const view = w.participantView(partyId('firm.1'));
     expect(view.self.id).toBe('firm.1');
-    expect(view.cash(PHX)).toBe(phx(65_000));
+    expect(view.cash(USD)).toBe(phx(65_000));
     expect(view.holdings().every((h) => h.holder === 'firm.1')).toBe(true);
     expect(view.print(GOV_LINE).some).toBe(true);
     const keys = Object.keys(view);
@@ -639,7 +639,7 @@ describe('settlement contracts', () => {
           kind: 'money',
           from: { holder: partyId('firm.1'), issuer: BANK_A },
           to: { holder: cell.id, issuer: cell.bank },
-          ccy: PHX,
+          ccy: USD,
           amount: 10,
           fromCell: none(),
           toCell: none(),
@@ -673,7 +673,7 @@ describe('settlement contracts', () => {
               kind: 'money',
               from: { holder: payer, issuer: BANK_A },
               to: { holder: cell.id, issuer: BANK_B },
-              ccy: PHX,
+              ccy: USD,
               amount: totalFor(cell, PAYMENT),
               fromCell: none(),
               toCell: side === undefined ? none() : some(side),
@@ -682,17 +682,17 @@ describe('settlement contracts', () => {
           cause: 'transfer',
           reason: 'wages',
         };
-        const reservesA = ctx.register.quantity(BANK_A, moneyInstrumentId(CB, PHX));
-        const cellBefore = ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, PHX));
+        const reservesA = ctx.register.quantity(BANK_A, moneyInstrumentId(CB, USD));
+        const cellBefore = ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, USD));
         const rec = ctx.settle(draft);
         expect(rec.outcome).toBe('settled');
         if (rec.outcome !== 'settled') return;
         expect(rec.reserveLegs).toHaveLength(2);
         // Counts of cents, so the two sides are EXACTLY equal and no closeness is asked for.
-        expect(ctx.register.quantity(BANK_A, moneyInstrumentId(CB, PHX))).toBe(
+        expect(ctx.register.quantity(BANK_A, moneyInstrumentId(CB, USD))).toBe(
           reservesA - totalFor(cell, PAYMENT),
         );
-        expect(ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, PHX))).toBe(
+        expect(ctx.register.quantity(cell.id, moneyInstrumentId(BANK_B, USD))).toBe(
           cellBefore + PAYMENT,
         );
 
@@ -702,7 +702,7 @@ describe('settlement contracts', () => {
               kind: 'money',
               from: { holder: payer, issuer: BANK_A },
               to: { holder: payee, issuer: BANK_A },
-              ccy: PHX,
+              ccy: USD,
               amount: 5,
               fromCell: none(),
               toCell: none(),

@@ -11,8 +11,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   GOV_LINE,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   assemble,
   moneyInstrumentId,
   partyId,
@@ -46,13 +46,13 @@ function drain(): SystemModule {
         cycle: 0,
         anchor: { before: 'corporateActions' },
         run: (ctx: MechanismContext) => {
-          const cash = ctx.participant(TREASURY_NORTH).cash(PHX);
+          const cash = ctx.participant(TREASURY_US).cash(USD);
           if (cash <= 0) return;
           const leg: Leg = {
             kind: 'money',
-            from: { holder: TREASURY_NORTH, issuer: ctx.parties.get(TREASURY_NORTH).bank },
+            from: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
             to: { holder: SINK, issuer: ctx.parties.get(SINK).bank },
-            ccy: PHX,
+            ccy: USD,
             amount: cash,
             fromCell: { some: false },
             toCell: { some: false },
@@ -108,15 +108,15 @@ describe('a payment that did not happen (XI-1, Money E1)', () => {
     // Firm Birth C3: others react to it, so it is public — and it names who failed, on what, to
     // whom, and for how much, because a holder must be able to observe it (N12).
     expect(ev?.public).toBe(true);
-    expect(ev?.subjects).toContain(TREASURY_NORTH);
+    expect(ev?.subjects).toContain(TREASURY_US);
     expect(String(ev?.data['definition']).length).toBeGreaterThan(0);
     expect(Number(ev?.data['amountDue'])).toBeGreaterThan(0);
-    expect(ev?.data['issuer']).toBe(TREASURY_NORTH);
+    expect(ev?.data['issuer']).toBe(TREASURY_US);
     // Money E1.a: it did not silently not happen. The failed instruction is in the ledger, and the
     // payee's receivable that did not arrive is a read of it (E1.b).
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
     expect(failed.length).toBeGreaterThan(0);
-    expect(w.cash(TREASURY_NORTH, PHX)).toBe(0);
+    expect(w.cash(TREASURY_US, USD)).toBe(0);
   });
 
   it('writes the status, once, and nothing restores it (Banks Lending E2)', () => {
@@ -146,7 +146,7 @@ describe('a payment that did not happen (XI-1, Money E1)', () => {
     const line = w.instruments.get(GOV_LINE);
     expect(line.status.live && line.status.performing).toBe(true);
     // And money cannot default at all: a kind with no definition of failure does not answer.
-    const cash = w.instruments.get(moneyInstrumentId(partyId('bank.a'), PHX));
+    const cash = w.instruments.get(moneyInstrumentId(partyId('bank.a'), USD));
     expect(w.registry.instrumentKind(cash.kind).defaultOn).toBeUndefined();
   });
 });

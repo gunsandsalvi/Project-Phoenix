@@ -230,8 +230,6 @@ export function writeRow(
     collateral: cover,
   };
   ctx.issue({ id, kind: terms.kind, issuer: some(s.borrower), ccy, terms, market: none() });
-  const lender = ctx.parties.get(s.lender);
-  const borrower = ctx.parties.get(s.borrower);
   const legs: Leg[] = [
     {
       kind: 'asset',
@@ -246,8 +244,8 @@ export function writeRow(
     },
     {
       kind: 'money',
-      from: { holder: s.lender, issuer: lender.bank },
-      to: { holder: s.borrower, issuer: borrower.bank },
+      from: ctx.accountOf(s.lender, ccy),
+      to: ctx.accountOf(s.borrower, ccy),
       ccy,
       amount: s.amount,
       fromCell: none(),

@@ -20,7 +20,7 @@ import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from
 import { Missing } from '../../core/errors.js';
 import { add, div, material, mul, sub, sum } from '../../core/num.js';
 import { upTick } from '../../core/tick.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { wasTraded } from '../../prices/price-store.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -99,7 +99,9 @@ function capitalOf(view: ParticipantView): number {
 function linesQuoted(view: ParticipantView, d: BankDecl): number {
   let n = 0;
   for (const m of view.markets) {
-    const i = view.instruments.get(m.instrument);
+    const subject = delivers(m);
+    if (!subject.some) continue;
+    const i = view.instruments.get(subject.value);
     if (i.status.live && d.makes.includes(String(i.kind))) n += 1;
   }
   return n;
@@ -193,7 +195,11 @@ export function dealingOrders(
 ): readonly Order[] {
   const d = bankOf(rows, view.self.id);
   if (d === undefined || !view.self.status.alive) return [];
-  const i = view.instruments.get(m.instrument);
+  // Spot FX D1: a pair delivers nothing, so this desk has nothing to quote in it. What a bank does
+  // in a pair market is its FX desk's, and that desk is the spot-fx module's own participant.
+  const subject = delivers(m);
+  if (!subject.some) return [];
+  const i = view.instruments.get(subject.value);
   if (!i.status.live || !d.makes.includes(String(i.kind))) return [];
   const state = stateOf(view, d);
   if (state === undefined) return [];
@@ -247,7 +253,9 @@ function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty
   let total = 0;
   let mine = 0;
   for (const m of view.markets) {
-    const i = view.instruments.get(m.instrument);
+    const subject = delivers(m);
+    if (!subject.some) continue;
+    const i = view.instruments.get(subject.value);
     if (!i.status.live || !d.makes.includes(String(i.kind))) continue;
     const mark = view.mark(i.id);
     const free = view.free(i.id);
@@ -417,7 +425,9 @@ export function publishDealing(
   if (state === undefined) return;
   const lines: Record<string, unknown> = {};
   for (const m of ctx.markets) {
-    const i = ctx.instruments.get(m.instrument);
+    const subject = delivers(m);
+    if (!subject.some) continue;
+    const i = ctx.instruments.get(subject.value);
     if (!i.status.live || !d.makes.includes(String(i.kind))) continue;
     const quoted = quoteFor(view, i.id, state);
     if (!quoted.some) continue;

@@ -55,7 +55,7 @@ export const moneyInstrumentId = (issuer: PartyId, ccy: CurrencyCode): Instrumen
   `money:${issuer}:${ccy}` as InstrumentId;
 
 /**
- * Spot FX A3, C1, Law 9: A CURRENCY PAIR, named the way a market names one — `PHX/SOU`, the base
+ * Spot FX A3, C1, Law 9: A CURRENCY PAIR, named the way a market names one — `USD/SOU`, the base
  * over the quote, and the price of it is what one unit of the base costs in the quote.
  *
  * It is an instrument ID and NOT an instrument. Nothing issues a pair, nobody holds one, and the

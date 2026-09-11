@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 import {
   HOUSEHOLD,
   LABOUR_NUMBERS,
-  PHX,
+  USD,
   REGION,
   assemble,
   goodId,
@@ -104,11 +104,11 @@ function read(w: World): Aggregates {
     cells: cells.length,
     venues: w.venues.filter((v) => v.clearedBy === 'labour').length,
     employed: Object.values(rows).reduce((a, r) => a + r.headcount, 0),
-    cash: cells.reduce((a, p) => a + w.cash(p.id, PHX) * weightOf(p), 0),
+    cash: cells.reduce((a, p) => a + w.cash(p.id, USD) * weightOf(p), 0),
     bread: w.register.heldTotal(goodId('bread', REGION)),
     deposits: deposits(w),
     crossing: Math.max(
-      ...cells.map((p) => w.register.quantity(p.id, moneyInstrumentId(p.bank, PHX)) * weightOf(p)),
+      ...cells.map((p) => w.register.quantity(p.id, moneyInstrumentId(p.bank, USD)) * weightOf(p)),
     ),
     wage,
   };
@@ -122,11 +122,11 @@ function read(w: World): Aggregates {
  * by the size of a bank's spare balance whatever the population does.
  */
 function deposits(w: World): number {
-  const cb = w.registry.centralBankOf(PHX);
+  const cb = w.registry.centralBankOf(USD);
   let total = 0;
   for (const h of w.register.allHoldings()) {
     const i = w.instruments.get(h.instrument);
-    if (w.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== PHX) continue;
+    if (w.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== USD) continue;
     if (i.issuer.some && i.issuer.value === cb) continue;
     const p = w.parties.get(h.holder);
     const weight = p.representation === 'cell' ? p.weight : 1;

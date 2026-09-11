@@ -10,7 +10,7 @@ import {
   HOUSEHOLD,
   dustOf,
   funds,
-  PHX,
+  USD,
   REGION,
   assemble,
   goodId,
@@ -62,12 +62,12 @@ function payer(perMember: number, spread: number): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(PAYER, PHX, phx(100_000_000));
+      ctx.endowMoney(PAYER, USD, phx(100_000_000));
       // Seed A4: a deposit is a bank's liability, and a bank that owes it holds something against
       // it. Without the reserves, the first payment across banks would be an overdraft this world
       // has no lender for yet (Money B3.c, worklist 11) — an artefact of the seed, not of anything
       // a household did.
-      ctx.endowMoney(BANK_A, PHX, phx(100_000_000));
+      ctx.endowMoney(BANK_A, USD, phx(100_000_000));
     },
     phases: [
       {
@@ -86,7 +86,7 @@ function payer(perMember: number, spread: number): SystemModule {
             // Law 8: it pays real money, so each member is paid a whole number of the smallest
             // piece of it — and what the payer hands over is that times the count of them.
             const each = ctx.registry.payable(
-              PHX,
+              USD,
               perMember + (cell.key.cohort === 'working' ? spread : -spread),
             );
             if (each <= 0) return;
@@ -96,7 +96,7 @@ function payer(perMember: number, spread: number): SystemModule {
                   kind: 'money',
                   from: { holder: PAYER, issuer: BANK_A },
                   to: { holder: cell.id, issuer: cell.bank },
-                  ccy: PHX,
+                  ccy: USD,
                   amount: each * cell.weight,
                   fromCell: { some: false },
                   toCell: { some: true, value: { perMember: each, weight: cell.weight } },
@@ -239,7 +239,7 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
     // missing, because no bank in this world bids for a deposit yet (Banks Funding B1, worklist
     // 11). Nothing was allocated pro rata: every cell decided its own, and what it holds is what
     // it decided.
-    const liquid = cells.map((c) => w.cash(c.id, PHX) + w.register.quantity(c.id, SHARE));
+    const liquid = cells.map((c) => w.cash(c.id, USD) + w.register.quantity(c.id, SHARE));
     for (const held of liquid) expect(held).toBeGreaterThan(0);
   });
 
@@ -384,7 +384,7 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
       .filter(isMoneyLeg);
     // C1.a: out of the payer's own account, every one of them.
     expect(paid.length).toBeGreaterThan(0);
-    for (const leg of paid) expect(leg.to.holder).toBe('treasury.north');
+    for (const leg of paid) expect(leg.to.holder).toBe('treasury.us');
   });
 });
 

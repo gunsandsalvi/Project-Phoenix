@@ -28,7 +28,7 @@ import { par } from './units.js';
 import { notDealing } from './no-dealing.js';
 
 const FIRM_1 = partyId('firm.1');
-/** Five hundred PHX of face, in the pieces the register counts par in (Law 8). */
+/** Five hundred USD of face, in the pieces the register counts par in (Law 8). */
 const QTY = par(500);
 /** A price for a unit of par is a ratio of money to face, so it is the same number on the grid. */
 const CLEAN = 0.98;

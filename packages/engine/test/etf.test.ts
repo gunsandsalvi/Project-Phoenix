@@ -12,7 +12,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  PHX,
+  USD,
   assemble,
   etfMarketOf,
   etfVenue,
@@ -240,7 +240,7 @@ describe('what the manager takes (B3, F3)', () => {
     const fees = accrued.filter((e) => e.data['paid'] === true);
     expect(fees.length).toBeGreaterThan(0);
     // F3: the manager is a separate party and the fee is its income, so it has the money.
-    expect(w.cash(MANAGER, PHX)).toBeGreaterThan(0);
+    expect(w.cash(MANAGER, USD)).toBeGreaterThan(0);
     // B3, Law 5: what left the fund left it. Every fee is a numbered instruction with two sides,
     // out of the fund's own account and into the manager's — never a subtraction from a number.
     const instructions = w.ledger

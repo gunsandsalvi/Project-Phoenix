@@ -10,8 +10,9 @@
  * world/context.ts. Replacing a system is replacing its module.
  */
 import type { Family } from '../audit/audit.js';
+import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
-import type { MarketDecl } from '../clearing/market.js';
+import type { MarketDecl, MarketKind } from '../clearing/market.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import type { InstrumentKindId, PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
@@ -59,6 +60,17 @@ export interface PhaseDecl {
  */
 export interface ParticipantDecl {
   readonly partyKind: PartyKindId;
+  /**
+   * Spot FX D1, Clearing B2, Law 15: WHICH SORT OF MARKET THIS PARTICIPANT IS ASKED ABOUT — the
+   * same dispatch key `MARKET_KINDS` runs on, and absent means `asset`, which is what every
+   * participant declared before pairs existed.
+   *
+   * A pair market delivers nothing anybody holds, so a desk that trades instruments has no schedule
+   * to post in one and is never asked for one; a currency desk has nothing to say about a bond.
+   * Asking everybody about everything and letting each one discover it holds no view is how a
+   * participant ends up looking up an instrument behind a market that has none.
+   */
+  readonly in?: MarketKind;
   orders(view: ParticipantView, market: MarketDecl): readonly Order[];
 }
 
@@ -155,6 +167,13 @@ export interface SystemModule {
   readonly venueParticipants?: readonly VenueParticipantDecl[];
   /** Contributions to the audit families (a module may build or extend a family). */
   readonly families: readonly Family[];
+  /**
+   * Indices A1, D5: the index rules this module states. An index is a RULE over constituents, and
+   * the rule is data (Law 15); what it comes to is a read (`view.index`), applied in one place so
+   * two readers cannot get two levels. One system of them across the world (D5), which is what a
+   * single registry at assembly gives: a second module declaring the same id is refused.
+   */
+  readonly indices?: readonly IndexDecl[];
   /**
    * Expectations A2, XI-16: what a party expects. Exactly one module may answer this — an
    * expectation is a fact about a party and has one writer (Law 4) — and the kernel asks it

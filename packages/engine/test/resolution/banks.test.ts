@@ -24,7 +24,7 @@ import { describe, expect, it } from 'vitest';
 import {
   BANK,
   HOUSEHOLD,
-  PHX,
+  USD,
   moneyInstrumentId,
   type World,
 } from '../../src/index.js';
@@ -62,11 +62,11 @@ function read(w: World): Aggregates {
     p.representation === 'cell' ? p.weight : 1;
   const banks = w.parties.ofKind(BANK);
 
-  const cb = w.registry.centralBankOf(PHX);
+  const cb = w.registry.centralBankOf(USD);
   let deposits = 0;
   for (const h of w.register.allHoldings()) {
     const i = w.instruments.get(h.instrument);
-    if (w.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== PHX) continue;
+    if (w.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== USD) continue;
     if (i.issuer.some && i.issuer.value === cb) continue;
     const p = w.parties.get(h.holder);
     deposits += w.register.quantity(h.holder, h.instrument) * weightOf(p);
@@ -88,7 +88,7 @@ function read(w: World): Aggregates {
     alive: banks.length,
     people: cells.reduce((a, p) => a + weightOf(p), 0),
     deposits,
-    reserves: banks.reduce((a, b) => a + w.register.quantity(b.id, moneyInstrumentId(cb, PHX)), 0),
+    reserves: banks.reduce((a, b) => a + w.register.quantity(b.id, moneyInstrumentId(cb, USD)), 0),
     liquid,
     couldLeave,
   };

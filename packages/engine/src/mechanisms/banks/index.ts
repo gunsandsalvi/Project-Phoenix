@@ -442,7 +442,7 @@ function write(
       // the borrower spends it" arrives at the moment of the drawing rather than after it. A
       // borrower left holding the LENDER's money would be a borrower with an account it never
       // opened, invisible to every read that asks what it has (Money A1, B3).
-      to: { holder: borrower, issuer: ctx.parties.get(borrower).bank },
+      to: ctx.accountOf(borrower, ccy),
       ccy,
       amount: principal,
       fromCell: none(),
@@ -503,7 +503,7 @@ function draw(
       kind: 'money',
       from: { holder: lender, issuer: lender },
       // B1.b, as above: the drawing lands in the borrower's own account, wherever that is.
-      to: { holder: borrower, issuer: ctx.parties.get(borrower).bank },
+      to: ctx.accountOf(borrower, ccy),
       ccy,
       amount,
       fromCell: none(),

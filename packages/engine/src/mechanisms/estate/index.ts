@@ -311,7 +311,7 @@ function repay(
     {
       kind: 'money',
       from: { holder: estate, issuer: issuerOf(ctx.instruments.get(account)) },
-      to: { holder: claim.holder, issuer: holder.bank },
+      to: ctx.accountOf(claim.holder, ccy),
       ccy,
       amount: share.total,
       fromCell: none(),

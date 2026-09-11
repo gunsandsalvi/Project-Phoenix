@@ -90,6 +90,7 @@ export function assemble(spec: AssemblySpec): World {
       world.provideBankChoice(m.id, d.partyKind, (view) => d.chooses(view));
     }
     for (const k of m.resolves ?? []) world.provideResolution(m.id, k);
+    for (const i of m.indices ?? []) world.addIndex(i, m.id);
     for (const v of m.marks ?? []) world.provideMark(m.id, v.instrumentKind, v.value);
     requireBankChoices(m);
   }

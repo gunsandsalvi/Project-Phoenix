@@ -8,7 +8,7 @@ import { describe, expect, it } from 'vitest';
 import {
   FIRM,
   FIRM_SWITCHING_COST,
-  PHX,
+  USD,
   REGION,
   assemble,
   firms,
@@ -70,8 +70,8 @@ function buyer(subUnit: string, price: number, qty: Qty): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, PHX, phx(100_000_000));
-      ctx.endowMoney(BANK_A, PHX, phx(100_000_000));
+      ctx.endowMoney(BUYER, USD, phx(100_000_000));
+      ctx.endowMoney(BANK_A, USD, phx(100_000_000));
     },
     phases: [],
     participants: [
@@ -97,7 +97,7 @@ function grainWorld(tonnesWanted = 40): World {
   return world(buyer('grain', perTonne(GRAIN_OPENS_AT), tonnes(tonnesWanted)));
 }
 
-/** What the seed states the grain market opens at, in PHX for a tonne, which a buyer bids around. */
+/** What the seed states the grain market opens at, in USD for a tonne, which a buyer bids around. */
 const GRAIN_OPENS_AT = 400;
 
 function events(w: World, kind: EventKind, subject: string): Event[] {
@@ -343,8 +343,8 @@ describe('who is in the goods market, and who is not', () => {
     // Its policy is about sovereign paper. A central bank standing in the grain market with a size
     // set by its own policy is the buyer of last resort this world does not have, and it would be
     // buying the harvest at whatever the book asked.
-    expect(w.register.quantity(partyId('cb.north'), GRAIN)).toBe(0);
-    expect(w.register.holdersOf(GRAIN)).not.toContain('cb.north');
+    expect(w.register.quantity(partyId('fed'), GRAIN)).toBe(0);
+    expect(w.register.holdersOf(GRAIN)).not.toContain('fed');
   });
 });
 

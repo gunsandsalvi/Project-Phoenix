@@ -156,7 +156,7 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
   const leg: Leg = {
     kind: 'money',
     from: { holder: cb, issuer: cb },
-    to: { holder: to.id, issuer: ctx.parties.get(to.id).bank },
+    to: ctx.accountOf(to.id, ccy),
     ccy,
     amount: paid,
     fromCell: none(),

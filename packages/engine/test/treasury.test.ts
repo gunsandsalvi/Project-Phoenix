@@ -8,9 +8,9 @@ import { describe, expect, it } from 'vitest';
 import {
   CB,
   HOUSEHOLD,
-  PHX,
+  USD,
   REGION,
-  TREASURY_NORTH,
+  TREASURY_US,
   TREASURY_PARAMS,
   assemble,
   currencyUnit,
@@ -74,9 +74,9 @@ describe('outlays and receipts (Treasury B1, C1)', () => {
   it('pays every household cell by name, per member, and the money arrives', () => {
     const w = rigWorld('tsy-d');
     const cells = w.parties.ofKind(HOUSEHOLD);
-    const before = cells.map((c) => w.cash(c.id, PHX));
+    const before = cells.map((c) => w.cash(c.id, USD));
     w.step();
-    const after = cells.map((c) => w.cash(c.id, PHX));
+    const after = cells.map((c) => w.cash(c.id, USD));
     expect(after.every((x, i) => x > (before[i] ?? 0))).toBe(true);
     const transfers = w.ledger
       .inPeriod(w.period)
@@ -122,15 +122,15 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
     const rows = Object.values(
       (w.stateSlots()['labour/employment'] as { rows: Record<string, EmploymentRow> }).rows,
     );
-    const public_ = rows.filter((r) => r.employer === TREASURY_NORTH);
+    const public_ = rows.filter((r) => r.employer === TREASURY_US);
     // Labour F1: the state is an employer, not a payer of a mandate number to a cohort.
     expect(public_.length).toBeGreaterThan(0);
     expect(public_.every((r) => r.headcount > 0 && r.wagePerHour > 0)).toBe(true);
     // What it pays is what its own rows say, and it leaves its account by name.
-    const bill = w.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(TREASURY_NORTH));
+    const bill = w.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(TREASURY_US));
     const last = bill[bill.length - 1];
     expect(Number(last?.data['paid'])).toBeGreaterThan(0);
-    const account = moneyInstrumentId(w.parties.get(TREASURY_NORTH).bank, PHX);
+    const account = moneyInstrumentId(w.parties.get(TREASURY_US).bank, USD);
     const workers = new Set(public_.map((r) => r.worker));
     const paid = w.ledger
       .inPeriod(w.period)
@@ -139,7 +139,7 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
       .filter(
         (l) =>
           l.kind === 'money' &&
-          l.from.holder === TREASURY_NORTH &&
+          l.from.holder === TREASURY_US &&
           moneyInstrumentId(l.from.issuer, l.ccy) === account &&
           workers.has(l.to.holder),
       );
@@ -156,14 +156,14 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
         .inPeriod(r.period)
         .filter((x) => x.outcome === 'settled')
         .flatMap((x) => x.instruction.legs)
-        .filter((l) => l.kind === 'asset' && l.instrument === bread && l.to === TREASURY_NORTH)
+        .filter((l) => l.kind === 'asset' && l.instrument === bread && l.to === TREASURY_US)
         .reduce((a, l) => a + (l.kind === 'asset' ? l.qty : 0), 0);
     }
     // Goods C3, C4: it holds what it managed to buy, from named sellers, at the price the market
     // made — never a quantity it asked for and always got.
     expect(bought).toBeGreaterThan(0);
     // Law 8: a budget is an AMOUNT of the state's own money, so it is read in the pieces of it.
-    const budget = w.params.amount(TREASURY_PARAMS.purchases, currencyUnit(PHX));
+    const budget = w.params.amount(TREASURY_PARAMS.purchases, currencyUnit(USD));
     const print = w.prices.latest(bread, w.period);
     expect(print.some).toBe(true);
     // It never buys more than the budget it stated: the budget is what it spends, and what that
@@ -196,22 +196,22 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
             seed: (ctx: Parameters<NonNullable<typeof m.seed>>[0]) => {
               m.seed?.(ctx);
               // Take the buffer away: the account is empty when the first outlay falls due.
-              const account = moneyInstrumentId(CB, PHX);
-              const held = ctx.register.quantity(TREASURY_NORTH, account);
-              ctx.register.moneyDelta(TREASURY_NORTH, account, negQty(held), ctx.period, false);
+              const account = moneyInstrumentId(CB, USD);
+              const held = ctx.register.quantity(TREASURY_US, account);
+              ctx.register.moneyDelta(TREASURY_US, account, negQty(held), ctx.period, false);
               ctx.instruments.adjustIssued(account, negQty(held));
             },
           }
         : m,
     );
     const w = assemble({ ...spec, modules: drained });
-    expect(w.cash(TREASURY_NORTH, PHX)).toBe(0);
+    expect(w.cash(TREASURY_US, USD)).toBe(0);
     const r = w.step();
     const shortfall = w.journal.ofKind('treasury.shortfall').find((e) => e.period === r.period);
     expect(shortfall).toBeDefined();
     expect(shortfall?.data['unpaid']).toBeGreaterThan(0);
     // The account never went below zero: nothing advanced it (D3, Central Bank E2).
-    expect(w.cash(TREASURY_NORTH, PHX)).toBeGreaterThanOrEqual(0);
+    expect(w.cash(TREASURY_US, USD)).toBeGreaterThanOrEqual(0);
     const refused = w.ledger
       .inPeriod(r.period)
       .filter((x) => x.outcome === 'failed' && x.reason.kind === 'overdraftRefused');
@@ -236,7 +236,7 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
         (r) =>
           r.outcome === 'failed' &&
           r.instruction.cause === 'coupon' &&
-          r.instruction.legs.some((l) => l.kind === 'money' && l.from.holder === TREASURY_NORTH),
+          r.instruction.legs.some((l) => l.kind === 'money' && l.from.holder === TREASURY_US),
       );
     expect(missed).toHaveLength(0);
     // XI-9: the constraint is real, so a mandate can still go short in a week when the receipts do
@@ -245,8 +245,8 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
     for (const e of w.journal.ofKind('treasury.shortfall')) {
       expect(Number(e.data['paid'])).toBeGreaterThan(0);
     }
-    expect(w.cash(TREASURY_NORTH, PHX)).toBeGreaterThan(0);
+    expect(w.cash(TREASURY_US, USD)).toBeGreaterThan(0);
     // A3.a: its equity is negative and that is normal; the number is still a read.
-    expect(w.register.equity(TREASURY_NORTH)).toBeLessThan(0);
+    expect(w.register.equity(TREASURY_US)).toBeLessThan(0);
   });
 });

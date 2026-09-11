@@ -360,6 +360,17 @@ function tradeInstruction(
   return MARKET_KINDS[m.kind ?? 'asset'](m, t, price, accruedPerUnit, deps);
 }
 
+/**
+ * Spot FX A1, Clearing D1, Law 4: WHAT A MARKET DELIVERS — the instrument that changes hands in it,
+ * when what it moves is a thing somebody holds. A pair delivers nothing: its two legs are money,
+ * and the id it prints under names a price rather than an instrument anybody could be handed. One
+ * writer of that, because every reader that walks the market list and asks the instrument store
+ * about the subject would otherwise have to know what a pair is.
+ */
+export function delivers(m: MarketDecl): Option<InstrumentId> {
+  return m.fx === undefined ? some(m.instrument) : none<InstrumentId>();
+}
+
 /** Law 15: one row per kind of market, and nothing anywhere branches on which (`MarketKind`). */
 const MARKET_KINDS: Readonly<
   Record<

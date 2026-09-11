@@ -9,7 +9,7 @@ import { perTonne, phx, tonnes } from './units.js';
 import { describe, expect, it } from 'vitest';
 import {
   FIRM,
-  PHX,
+  USD,
   REGION,
   assemble,
   displayName,
@@ -135,7 +135,7 @@ describe('what a good is (Goods A)', () => {
     const stone = w.instruments.get(STONE_ID);
     expect(stone.issuer.some).toBe(false);
     expect(stone.unit).toBe('tonnes');
-    expect(stone.ccy).toBe(PHX);
+    expect(stone.ccy).toBe(USD);
     const profile = w.registry.instrumentKind(goodKindId('stone'));
     expect(profile.physical).toBe(true);
     // XI-6, E1: its price comes from its market; what a holder carries it at is what it cost.
@@ -145,7 +145,7 @@ describe('what a good is (Goods A)', () => {
     // C6, C2: one market per (region, sub-unit), clearing in that region's money.
     const market = w.market(goodMarketId('stone', REGION));
     expect(market.instrument).toBe(STONE_ID);
-    expect(market.ccy).toBe(PHX);
+    expect(market.ccy).toBe(USD);
     expect(market.rationing).toBe('proRata');
     // Law 9: named as a market names it — what it is and where — never by its identifier.
     expect(displayName(stone, w.parties, w.registry)).toBe('stone, North');
@@ -177,7 +177,7 @@ describe('what a good is (Goods A)', () => {
     const doctored: SystemModule = {
       ...inMoney,
       params: inMoney.params.map((p) =>
-        p.id === recipeParam('gravel', 'stone') ? { ...p, unit: `PHX per tonne of gravel` } : p,
+        p.id === recipeParam('gravel', 'stone') ? { ...p, unit: `USD per tonne of gravel` } : p,
       ),
     };
     expect(() => assemble({ ...spec, modules: [...kernelOnly, doctored] })).toThrow(/A2\.b/);
@@ -392,7 +392,7 @@ describe('the market (Goods C)', () => {
   it('leaves with the seller what nobody bought, and pays it in its own money (C5, C6)', () => {
     const w = trading([{ party: 'firm.2', price: 1.2, qty: 1 }]);
     w.step();
-    const cash = w.cash(FIRM_1, PHX);
+    const cash = w.cash(FIRM_1, USD);
     const r = w.step();
     expect(r.audit.total).toBe(0);
     const m = r.markets.find((x) => x.market === goodMarketId('stone', REGION));
@@ -405,7 +405,7 @@ describe('the market (Goods C)', () => {
     // moved by more than that — a week of deposit interest reached it too — which is its bank's
     // business and not this market's, so what this reads is the payment (Law 19).
     expect(paidTo(w, FIRM_1, 'trade')).toBe(phx(1));
-    expect(w.cash(FIRM_1, PHX)).toBeGreaterThan(cash);
+    expect(w.cash(FIRM_1, USD)).toBeGreaterThan(cash);
   });
 
   it('rations pro rata when the buyers want more than there is (C4)', () => {

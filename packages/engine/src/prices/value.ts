@@ -155,7 +155,10 @@ export class Valuation {
    */
   rateInForce(from: CurrencyCode, to: CurrencyCode, at: Period): number {
     if (from === to) return 1;
-    const asOf = this.recognisedThrough >= at ? at : period(at - 1);
+    // At period zero there is no period before it to have struck a rate, so the one in force is
+    // the one the seed wrote — which is what "the opening world is priced at a stated level" means
+    // for a rate exactly as it does for a price (Seed C4).
+    const asOf = this.recognisedThrough >= at || at === 0 ? at : period(at - 1);
     const direct = this.prices.latest(fxPairId(from, to), asOf);
     if (direct.some) return direct.value.price;
     // C3: the same market read the other way round. It is not a second market and not a second

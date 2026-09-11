@@ -14,7 +14,7 @@ import {
   FIRM,
   isMoneyLeg,
   HOUSEHOLD,
-  PHX,
+  USD,
   REGION,
   assemble,
   currencyUnit,
@@ -103,7 +103,7 @@ function owesMoreThanItHas(): SystemModule {
           id,
           kind,
           issuer: some(DEBTOR),
-          ccy: PHX,
+          ccy: USD,
           terms: { kind },
           market: none(),
         });
@@ -146,7 +146,7 @@ function cannotPay(amount: number): SystemModule {
                 kind: 'money',
                 from: { holder: DEBTOR, issuer: ctx.parties.get(DEBTOR).bank },
                 to: { holder: SENIOR_HOLDER, issuer: to.bank },
-                ccy: PHX,
+                ccy: USD,
                 amount,
                 fromCell: none(),
                 toCell: none(),
@@ -165,7 +165,7 @@ function cannotPay(amount: number): SystemModule {
         id: SENIOR,
         kind: SENIOR_KIND,
         issuer: some(DEBTOR),
-        ccy: PHX,
+        ccy: USD,
         terms: { kind: SENIOR_KIND },
         market: none(),
       });
@@ -206,7 +206,7 @@ function paysAStranger(): SystemModule {
                 kind: 'money',
                 from: { holder: ESTATE_OF_DEBTOR, issuer: estate.bank },
                 to: { holder: JUNIOR_HOLDER, issuer: stranger.bank },
-                ccy: PHX,
+                ccy: USD,
                 amount: 1,
                 fromCell: none(),
                 toCell: none(),
@@ -277,8 +277,8 @@ function hungryBuyer(): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, PHX, phx(100_000_000));
-      ctx.endowMoney(partyId('bank.a'), PHX, phx(100_000_000));
+      ctx.endowMoney(BUYER, USD, phx(100_000_000));
+      ctx.endowMoney(partyId('bank.a'), USD, phx(100_000_000));
     },
     participants: [
       {
@@ -302,7 +302,7 @@ function worldWithADeathInIt(seed = 'estate'): World {
 describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {
   it('opens an estate that takes what it held and assumes what it owed (D5, Register F2)', () => {
     const w = failingWorld(owesMoreThanItHas());
-    const held = w.cash(DEBTOR, PHX);
+    const held = w.cash(DEBTOR, USD);
     expect(held).toBeGreaterThan(0);
     expect(unexpected(w.step().audit)).toEqual([]);
 
@@ -320,11 +320,11 @@ describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {
       .filter((r) => r.instruction.reason === `${DEBTOR} to its estate`);
     expect(moves.length).toBeGreaterThan(0);
     expect(moves.every((r) => r.outcome === 'settled')).toBe(true);
-    expect(w.cash(DEBTOR, PHX)).toBe(0);
+    expect(w.cash(DEBTOR, USD)).toBe(0);
     // It arrived, and it goes out again with the NEXT period's payments — because paying is what
     // an estate does and payments have a slot (estates.settle). What the estate had is what it then
     // distributed, which is D2.a's whole point: a recovery is what the assets fetched.
-    expect(w.cash(ESTATE_OF_DEBTOR, PHX)).toBeCloseTo(held, 9);
+    expect(w.cash(ESTATE_OF_DEBTOR, USD)).toBeCloseTo(held, 9);
     expect(unexpected(w.step().audit)).toEqual([]);
     const out = w.journal.ofKind('estate.paid').filter((e) => e.data['estate'] === ESTATE_OF_DEBTOR);
     expect(out.reduce((t, e) => t + Number(e.data['paid']), 0)).toBeCloseTo(held, 9);
@@ -354,14 +354,14 @@ describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {
     expect(w.parties.resolve(DEBTOR).id).toBe(ESTATE_OF_DEBTOR);
     expect(w.parties.resolve(ESTATE_OF_DEBTOR).id).toBe(ESTATE_OF_DEBTOR);
     // D6.a: and it ended holding nothing, which is what lets it end at all.
-    expect(w.cash(ESTATE_OF_DEBTOR, PHX)).toBe(0);
+    expect(w.cash(ESTATE_OF_DEBTOR, USD)).toBe(0);
   });
 });
 
 describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
   it('pays senior first, pro rata within the rank, and the junior recovers nothing (G5.a)', () => {
     const w = failingWorld(owesMoreThanItHas());
-    const had = w.cash(DEBTOR, PHX);
+    const had = w.cash(DEBTOR, USD);
     // The estate opens in the first period and pays in the second: what it holds is distributed
     // with the period's other payments, not in the phase that opened it (estates.settle).
     w.step();

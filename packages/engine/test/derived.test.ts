@@ -10,7 +10,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
-  PHX,
+  USD,
   assemble,
   instrumentId,
   instrumentKindId,
@@ -84,11 +84,11 @@ function aBookAndItsClaims(claims: number, countsItsOwn = false): SystemModule {
         id: CLAIM,
         kind: CLAIM_KIND,
         issuer: some(BOOK),
-        ccy: PHX,
+        ccy: USD,
         terms: { kind: CLAIM_KIND },
         market: none(),
       });
-      ctx.endowMoney(BOOK, PHX, 1000);
+      ctx.endowMoney(BOOK, USD, 1000);
       ctx.endowUnits(HOLDER, CLAIM, claims / 2, 1);
       ctx.endowUnits(OTHER, CLAIM, claims / 2, 1);
     },
@@ -131,7 +131,7 @@ describe('a value that is derived (XI-6, Fund Shares B1)', () => {
     expect(unexpected(w.step().audit)).toEqual([]);
     // The book holds money and nothing else, so a claim is worth what it holds over how many
     // claims there are — the same money mark everyone else is valued at, not a second price system.
-    const book = w.cash(BOOK, PHX);
+    const book = w.cash(BOOK, USD);
     expect(book).toBeGreaterThan(0);
     expect(w.valuation.markPerUnit(CLAIM, w.period)).toBeCloseTo(book / 100, 9);
     expect(w.register.quantity(HOLDER, CLAIM)).toBe(50);

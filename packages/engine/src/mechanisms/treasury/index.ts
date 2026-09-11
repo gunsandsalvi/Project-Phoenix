@@ -39,7 +39,7 @@ import { struckIn } from '../../prices/price-store.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { isAssetLeg, isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
-import { weightOf } from '../../parties/party.js';
+import { weightOf, type CellParty } from '../../parties/party.js';
 import { HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -137,10 +137,7 @@ function mandatePerPeriod(ctx: MechanismContext, id: PartyId): number {
     ctx.params.amount(TREASURY_PARAMS.purchases, money),
     lastWageBill(ctx, id),
   ];
-  for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
-    if (!p.status.alive || p.representation !== 'cell') continue;
-    terms.push(mul(p.weight, transfers, 'transfers'));
-  }
+  for (const p of itsPeople(ctx, id)) terms.push(mul(p.weight, transfers, 'transfers'));
   return sum(terms).value;
 }
 
@@ -601,8 +598,24 @@ function marketOf(ctx: MechanismContext, instrument: InstrumentId): MarketId {
 
 /** A3: it has one account, and every payment leaves it. */
 function accountOf(ctx: MechanismContext, party: PartyId, ccy: CurrencyCode): InstrumentId {
-  const p = ctx.parties.get(party);
-  return moneyInstrumentId(p.bank, ccy);
+  return moneyInstrumentId(ctx.accountOf(party, ccy).issuer, ccy);
+}
+
+/**
+ * A1, Polity A1, Currency A3: the households this state is the state OF — the ones booked in its
+ * own region. A state's mandate reaches its own people and its taxes fall on them; a world with a
+ * second sovereign in it is the place where that stops being a distinction without a difference,
+ * because a treasury that paid every household everywhere would be paying the other one's people
+ * in a money neither their bank nor they hold.
+ */
+function itsPeople(ctx: MechanismContext, id: PartyId): readonly CellParty[] {
+  const region = ctx.parties.get(id).region;
+  const its: CellParty[] = [];
+  for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
+    if (!p.status.alive || p.representation !== 'cell' || p.region !== region) continue;
+    its.push(p);
+  }
+  return its;
 }
 
 /**
@@ -615,8 +628,7 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
   const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, currencyUnit(ccy));
   let paid = 0;
   let short = 0;
-  for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
-    if (!p.status.alive || p.representation !== 'cell') continue;
+  for (const p of itsPeople(ctx, id)) {
     // Law 8, XI-15: each member of the cell is paid a whole number of the smallest piece of the
     // money, so what the mandate actually costs is that times the weight — and the fraction below
     // a piece is not paid, because it is not money.
@@ -626,8 +638,8 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
     const total = share.total;
     const leg: Leg = {
       kind: 'money',
-      from: { holder: id, issuer: ctx.parties.get(id).bank },
-      to: { holder: p.id, issuer: p.bank },
+      from: ctx.accountOf(id, ccy),
+      to: ctx.accountOf(p.id, ccy),
       ccy,
       amount: total,
       fromCell: none(),
@@ -665,7 +677,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   const onInterest = ctx.params.get(TREASURY_PARAMS.taxInterest);
   const onIncome = ctx.params.get(TREASURY_PARAMS.taxIncome);
   const onConsumption = ctx.params.get(TREASURY_PARAMS.taxConsumption);
-  const cells = new Set(ctx.parties.ofKind(HOUSEHOLD).map((p) => p.id));
+  const cells = new Set(itsPeople(ctx, id).map((p) => p.id));
   const due = new Map<PartyId, number>();
   const bases = { interest: 0, income: 0, consumption: 0 };
   for (const r of ctx.ledger.inPeriod(previous)) {
@@ -706,8 +718,8 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     if (share.total <= 0) continue;
     const leg: Leg = {
       kind: 'money',
-      from: { holder: payer, issuer: p.bank },
-      to: { holder: id, issuer: ctx.parties.get(id).bank },
+      from: ctx.accountOf(payer, ccy),
+      to: ctx.accountOf(id, ccy),
       ccy,
       amount: share.total,
       fromCell: p.representation === 'cell' ? some({ perMember, weight: p.weight }) : none(),

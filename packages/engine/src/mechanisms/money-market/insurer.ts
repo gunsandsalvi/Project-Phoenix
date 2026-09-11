@@ -78,8 +78,8 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
       legs: [
         {
           kind: 'money',
-          from: { holder: bank, issuer: p.bank },
-          to: { holder: INSURER, issuer: ctx.parties.get(INSURER).bank },
+          from: ctx.accountOf(bank, ccy),
+          to: ctx.accountOf(INSURER, ccy),
           ccy,
           amount: due,
           fromCell: none(),

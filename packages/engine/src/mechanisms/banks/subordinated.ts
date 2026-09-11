@@ -281,7 +281,7 @@ function writeSub(
     },
     {
       kind: 'money',
-      from: { holder: lender, issuer: ctx.parties.get(lender).bank },
+      from: ctx.accountOf(lender, ccy),
       to: { holder: bank, issuer: moneyIssuerOf(ctx, bank) },
       ccy,
       amount,

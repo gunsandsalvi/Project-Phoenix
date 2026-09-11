@@ -19,8 +19,8 @@ import { describe, expect, it } from 'vitest';
 import {
   INSURER,
   INSURER_PARAMS,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   assemble,
   moneyInstrumentId,
   none,
@@ -72,7 +72,7 @@ function penalty(at: number): SystemModule {
           if (!ctx.parties.get(BANK_A).status.alive) return;
           if (ctx.period === at) {
             each = ctx.registry.payable(
-              PHX,
+              USD,
               ctx.participant(BANK_A).equity() * SHARE,
             );
           }
@@ -82,8 +82,8 @@ function penalty(at: number): SystemModule {
               {
                 kind: 'money',
                 from: { holder: BANK_A, issuer: ctx.parties.get(BANK_A).bank },
-                to: { holder: TREASURY_NORTH, issuer: ctx.parties.get(TREASURY_NORTH).bank },
-                ccy: PHX,
+                to: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
+                ccy: USD,
                 amount: each,
                 fromCell: none(),
                 toCell: none(),
@@ -237,7 +237,7 @@ describe('the acquirer (Banks Capital D3, D6, C3.b)', () => {
     expect(w.parties.get(BANK_A).status.alive).toBe(false);
     // C3.b: THE DEPOSITS KEEP WORKING. Every depositor that banked at the failed bank now holds
     // money issued by the acquirer, and holds it in an account at the acquirer.
-    const dead = moneyInstrumentId(BANK_A, PHX);
+    const dead = moneyInstrumentId(BANK_A, USD);
     expect(w.register.holdersOf(dead).length).toBe(0);
     for (const p of w.parties.all()) {
       if (!p.status.alive) continue;
@@ -291,7 +291,7 @@ describe('the guarantee (Banks Funding A1.a, Banks Capital D4, D5)', () => {
     const then = events(unfunded, 'bank.resolution.done', BANK_A)[0];
     expect(unfunded.register.quantity(INSURER, moneyInstrumentId(
       unfunded.parties.get(INSURER).bank,
-      PHX,
+      USD,
     ))).toBe(0);
     expect(num(then, 'insurerPaid')).toBe(0);
     expect(num(then, 'pursePaid')).toBeGreaterThan(0);

@@ -470,15 +470,15 @@ function payFrom(
   if (!ctx.parties.has(from)) return 0;
   const payer = ctx.parties.get(from);
   if (!payer.status.alive) return 0;
-  const has = ctx.register.quantity(from, moneyInstrumentId(payer.bank, ccy));
+  const has = ctx.register.quantity(from, moneyInstrumentId(ctx.accountOf(from, ccy).issuer, ccy));
   const amount = ctx.registry.payable(ccy, wanted > has ? has : wanted);
   if (amount <= 0) return 0;
   const r = ctx.settle({
     legs: [
       {
         kind: 'money',
-        from: { holder: from, issuer: payer.bank },
-        to: { holder: to, issuer: ctx.parties.get(to).bank },
+        from: ctx.accountOf(from, ccy),
+        to: ctx.accountOf(to, ccy),
         ccy,
         amount,
         fromCell: none(),

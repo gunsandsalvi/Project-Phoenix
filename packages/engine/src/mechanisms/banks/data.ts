@@ -29,6 +29,7 @@
 import { paramId, type ParamId } from '../../core/ids.js';
 import { prng } from '../../rng/prng.js';
 import { between, betweenWhole, drawSize, type Spread, type Tail } from '../../rng/spread.js';
+import { FX_SPREAD } from '../spot-fx/data.js';
 
 export interface BankDecl {
   readonly bank: string;
@@ -94,6 +95,15 @@ export interface BankDecl {
    * seen; a short one has forgotten it. It is the same memory it prices its funding off.
    */
   readonly bufferMemory: number;
+  /**
+   * Spot FX D1, D2: the most of its own capital it will have standing behind a position in ONE
+   * currency. A currency desk without a limit is the buyer of last resort this world does not have.
+   */
+  readonly fxInventoryLimit: number;
+  /** Spot FX D3: what it wants for standing between two currencies for a period. Its own. */
+  readonly fxEdge: number;
+  /** Spot FX C2.a, E3: what a three-legged trade must beat before this desk does it. Its own. */
+  readonly fxArbitrageEdge: number;
   readonly why: string;
 }
 
@@ -221,6 +231,9 @@ export function drawBanks(count: number, seed: string): readonly BankDecl[] {
       limitPerBorrower: between(rng, BANK_SPREAD.limitPerBorrower),
       depositMargin: between(rng, BANK_SPREAD.depositMargin),
       bufferMemory: betweenWhole(rng, BANK_SPREAD.memoryPeriods),
+      fxInventoryLimit: between(rng, FX_SPREAD.inventoryLimit),
+      fxEdge: between(rng, FX_SPREAD.edge),
+      fxArbitrageEdge: between(rng, FX_SPREAD.arbitrageEdge),
       // Dealer Desks A1, C5: WHICH LINES IT QUOTES IS DERIVED FROM WHAT IT WILL RISK, not drawn
       // separately. A bank that will not put much capital behind a book does not run one: it makes
       // a market in the paper its own treasury holds for liquidity and in nothing else, because a

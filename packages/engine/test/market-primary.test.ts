@@ -9,9 +9,9 @@ import {
   FIRM,
   GOV_LINE,
   GOV_MARKET,
-  PHX,
+  USD,
   SOVEREIGN_BILL,
-  TREASURY_NORTH,
+  TREASURY_US,
   assemble,
   civil,
   clear,
@@ -38,7 +38,7 @@ const q = asQty;
 
 
 /** The one market this test drives, with its optional readings taken. */
-const BILL = instrumentId('gov.north.bill.2027-12-15');
+const BILL = instrumentId('ust.bill.2027-12-15');
 const BILL_MARKET = marketId('mkt.bill');
 
 function result(markets: readonly MarketResult[], id: string): MarketResult {
@@ -93,7 +93,7 @@ function auctioneer(
           if (ctx.period !== 1) return;
           ctx.offer({
             market: GOV_MARKET,
-            issuer: TREASURY_NORTH,
+            issuer: TREASURY_US,
             size,
             reservation,
             allotment: 'uniformPrice',
@@ -142,7 +142,7 @@ describe('the primary market (Sovereign C)', () => {
       ]),
     );
     const before = w.instruments.get(GOV_LINE).issued;
-    const cashBefore = w.cash(TREASURY_NORTH, PHX);
+    const cashBefore = w.cash(TREASURY_US, USD);
     const accrued = w.accruedPerUnit(GOV_LINE, period(1));
     const r = w.step();
     const m = result(r.markets, GOV_MARKET);
@@ -157,7 +157,7 @@ describe('the primary market (Sovereign C)', () => {
     expect(w.instruments.get(GOV_LINE).issued).toBeCloseTo(before + 60, 9);
     // C6: the proceeds reach the treasury's account — the clean price and the interest that had
     // accrued on the paper it just sold (N9.b).
-    paidTheSame(w.cash(TREASURY_NORTH, PHX), cashBefore + 60 * (0.97 + accrued));
+    paidTheSame(w.cash(TREASURY_US, USD), cashBefore + 60 * (0.97 + accrued));
     const ev = w.journal.ofKind('auction.result');
     expect(ev).toHaveLength(1);
     expect(ev[0]?.public).toBe(true);
@@ -237,8 +237,8 @@ describe('a line with no price (XI-6)', () => {
             ctx.issue({
               id: BILL,
               kind: SOVEREIGN_BILL,
-              issuer: some(TREASURY_NORTH),
-              ccy: PHX,
+              issuer: some(TREASURY_US),
+              ccy: USD,
               terms,
               market: some(BILL_MARKET),
             });
@@ -246,12 +246,12 @@ describe('a line with no price (XI-6)', () => {
               id: BILL_MARKET,
               name: 'North bill 2027-12-15',
               instrument: BILL,
-              ccy: PHX,
+              ccy: USD,
               rationing: 'proRata',
             });
             ctx.offer({
               market: BILL_MARKET,
-              issuer: TREASURY_NORTH,
+              issuer: TREASURY_US,
               size: q(100),
               reservation: 0.99,
               allotment: 'uniformPrice',

@@ -19,7 +19,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CB,
   MM_PARAMS,
-  PHX,
+  USD,
   assemble,
   moneyInstrumentId,
   partyId,
@@ -171,7 +171,7 @@ describe('what insurance does to it (Banks Funding A1.a, E4, E4.a)', () => {
       collected += num(e, 'due');
     }
     // Seed E1: it opened with nothing, and what it has is what it has actually been paid.
-    expect(w.register.quantity(insurer, moneyInstrumentId(CB, PHX))).toBe(collected);
+    expect(w.register.quantity(insurer, moneyInstrumentId(CB, USD))).toBe(collected);
   });
 });
 

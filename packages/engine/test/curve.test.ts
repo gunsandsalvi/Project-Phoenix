@@ -6,8 +6,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   GOV_LINE,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   curveFamilyId,
   curveFamilyOf,
   priceAt,
@@ -16,7 +16,7 @@ import {
 } from '../src/index.js';
 import { rigWorld } from './rig.js';
 
-const FAMILY = curveFamilyOf(TREASURY_NORTH, PHX);
+const FAMILY = curveFamilyOf(TREASURY_US, USD);
 
 function curveOf(w: World): ReturnType<World['curve']> {
   return w.curve(FAMILY);
@@ -26,7 +26,7 @@ describe('the curve (Sovereign D3)', () => {
   it('is one owner, one convention, and a family nobody declared is not a curve (D3.a, D3.c)', () => {
     const w = rigWorld('curve-a');
     expect(curveOf(w).compounding).toBe('annual');
-    expect(() => w.curve(curveFamilyId('nobody:PHX'))).toThrow();
+    expect(() => w.curve(curveFamilyId('nobody:USD'))).toThrow();
   });
 
   it('has a point per line, in tenor order, each marked traded or stale (D3.b)', () => {
@@ -92,7 +92,7 @@ describe('the curve (Sovereign D3)', () => {
         .filter((e) => e.period === w.period)
         .map((e) => {
           const required = e.data['required'] as Record<string, number>;
-          return required[String(TREASURY_NORTH)] ?? Number.POSITIVE_INFINITY;
+          return required[String(TREASURY_US)] ?? Number.POSITIVE_INFINITY;
         }),
     );
     expect(Number.isFinite(keenest)).toBe(true);

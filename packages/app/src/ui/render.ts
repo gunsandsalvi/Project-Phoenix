@@ -48,7 +48,7 @@ function money(s: Snapshot, ccy: string, pieces: number | null | undefined, digi
 
 /**
  * A PRICE is money pieces for one piece of the thing, so what a person reads is that carried up by
- * both subdivisions: four hundredths of a cent the gram IS four hundred PHX the tonne.
+ * both subdivisions: four hundredths of a cent the gram IS four hundred USD the tonne.
  */
 function priceOf(s: Snapshot, ccy: string, unit: string, price: number): string {
   const perMoney = s.subdivisions[ccy];

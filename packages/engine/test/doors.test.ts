@@ -12,7 +12,7 @@ import {
   BANK_B,
   FIRM,
   InvalidRegistry,
-  PHX,
+  USD,
   assemble,
   instrumentId,
   instrumentKindId,
@@ -139,7 +139,7 @@ function openWheat(ctx: MechanismContext): void {
     id: WHEAT_ID,
     kind: WHEAT,
     issuer: none(),
-    ccy: PHX,
+    ccy: USD,
     terms: { kind: WHEAT },
     market: some(WHEAT_MARKET),
   });
@@ -147,7 +147,7 @@ function openWheat(ctx: MechanismContext): void {
     id: WHEAT_MARKET,
     name: 'wheat, North',
     instrument: WHEAT_ID,
-    ccy: PHX,
+    ccy: USD,
     rationing: 'proRata',
   });
 }
@@ -192,7 +192,7 @@ describe('what a party expects (Expectations A2)', () => {
             ? none<Outlook>()
             : some<Outlook>({
                 expected: v,
-                unit: 'PHX',
+                unit: 'USD',
                 per: ANNUAL,
                 confidence: 0,
                 formed: ctx.period,
@@ -354,7 +354,7 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
           id: WHEAT_ID,
           kind: WHEAT,
           issuer: none(),
-          ccy: PHX,
+          ccy: USD,
           terms: { kind: WHEAT },
           market: some(WHEAT_MARKET),
         });
@@ -362,7 +362,7 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
           id: WHEAT_MARKET,
           name: 'wheat, North',
           instrument: WHEAT_ID,
-          ccy: PHX,
+          ccy: USD,
           rationing: 'proRata',
         });
         ctx.settle({
@@ -403,7 +403,7 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
  * Money Market B3.c, Register D5: collateral is bound and freed by the wire, and what is bound is
  * neither sellable nor pledgeable a second time.
  */
-const GOV = instrumentId('gov.north.2036-03-15');
+const GOV = instrumentId('ust.2036-03-15');
 
 function pledgeModule(run: (ctx: MechanismContext) => void): SystemModule {
   return {
@@ -477,7 +477,7 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
               kind: 'money',
               from: { holder: BANK_B, issuer: BANK_B },
               to: { holder: BANK_A, issuer: BANK_B },
-              ccy: PHX,
+              ccy: USD,
               amount: 10,
               fromCell: none(),
               toCell: none(),
@@ -487,7 +487,7 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
           reason: 'bank.b lends against paper bank.a does not have free',
         });
         outcome = r.outcome === 'failed' ? r.reason.kind : 'settled';
-        paid = ctx.register.quantity(BANK_A, moneyInstrumentId(BANK_B, PHX));
+        paid = ctx.register.quantity(BANK_A, moneyInstrumentId(BANK_B, USD));
       }),
     );
     w.step();

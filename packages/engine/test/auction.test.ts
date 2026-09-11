@@ -7,8 +7,8 @@ import { describe, expect, it } from 'vitest';
 import {
   BANK,
   FIRM,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   assemble,
   moneyInstrumentId,
   type World,
@@ -39,11 +39,11 @@ function auctions(w: World): AuctionRow[] {
 describe('the obligation (Sovereign C3)', () => {
   it('brings dealers to every auction, so the paper is placed and the cash reaches the issuer', () => {
     const w = rigWorld('auc-a');
-    let cashBefore = w.cash(TREASURY_NORTH, PHX);
+    let cashBefore = w.cash(TREASURY_US, USD);
     for (let i = 0; i < 12; i += 1) {
       const before = cashBefore;
       const r = w.step();
-      cashBefore = w.cash(TREASURY_NORTH, PHX);
+      cashBefore = w.cash(TREASURY_US, USD);
       const row = auctions(w).find((a) => a.period === r.period);
       if (row === undefined) continue;
       expect(row.cover).toBeGreaterThan(0);
@@ -101,9 +101,9 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
               for (const party of [
                 ...ctx.parties.ofKind(BANK),
                 ...ctx.parties.ofKind(FIRM),
-                ctx.parties.get(TREASURY_NORTH),
+                ctx.parties.get(TREASURY_US),
               ]) {
-                const account = moneyInstrumentId(party.bank, PHX);
+                const account = moneyInstrumentId(party.bank, USD);
                 const held = ctx.register.quantity(party.id, account);
                 if (held <= 0) continue;
                 ctx.register.moneyDelta(party.id, account, negQty(held), ctx.period, false);

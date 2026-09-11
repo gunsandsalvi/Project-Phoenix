@@ -208,7 +208,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
     {
       id: FUND_PARAMS.openingShare,
       value: MONEY_PIECES,
-      unit: 'pieces of money per share at the first subscription (one PHX)',
+      unit: 'pieces of money per share at the first subscription (one USD)',
       kind: 'resolution',
       owner: 'model',
       why: 'Fund Shares B1: a fund with no shares has nothing to divide by, so the first subscription fixes the unit its shares are counted in. Double it and every share count halves and no value, flow or decision moves — which is what makes it a resolution and not a price (Law 2).',
@@ -298,8 +298,8 @@ function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amo
   const manager = ctx.parties.get(d.manager as PartyId);
   const leg: Leg = {
     kind: 'money',
-    from: { holder: fund.id, issuer: fund.bank },
-    to: { holder: manager.id, issuer: manager.bank },
+    from: ctx.accountOf(fund.id, ctx.registry.region(fund.region).ccy),
+    to: ctx.accountOf(manager.id, ctx.registry.region(fund.region).ccy),
     ccy: ctx.registry.region(fund.region).ccy,
     amount,
     fromCell: none(),
@@ -347,8 +347,8 @@ function subscribe(
   const legs: Leg[] = [
     {
       kind: 'money',
-      from: { holder, issuer: party.bank },
-      to: { holder: fund.id, issuer: fund.bank },
+      from: ctx.accountOf(holder, ccy),
+      to: ctx.accountOf(fund.id, ccy),
       ccy,
       amount: totalFor(party, paid),
       fromCell: money === undefined ? none() : some(money),
@@ -420,8 +420,8 @@ function redeem(
       },
       {
         kind: 'money',
-        from: { holder: fund.id, issuer: fund.bank },
-        to: { holder, issuer: party.bank },
+        from: ctx.accountOf(fund.id, ccy),
+        to: ctx.accountOf(holder, ccy),
         ccy,
         amount: mul(perMemberCash, weight, 'what it is paid'),
         fromCell: none(),
@@ -744,8 +744,8 @@ function distribute(ctx: MechanismContext, d: EtfDecl, share: InstrumentId, mone
       legs: [
         {
           kind: 'money',
-          from: { holder: fund.id, issuer: fund.bank },
-          to: { holder, issuer: party.bank },
+          from: ctx.accountOf(fund.id, ccy),
+          to: ctx.accountOf(holder, ccy),
           ccy,
           amount: total,
           fromCell: none(),

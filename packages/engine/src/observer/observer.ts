@@ -177,7 +177,7 @@ export interface Snapshot {
   readonly moneyStock: Readonly<Record<string, number>>;
   /**
    * Law 8, Observer F1: HOW MANY PIECES ONE NAMED UNIT IS, by unit name — a hundred cents to the
-   * PHX, a million grams to the tonne.
+   * USD, a million grams to the tonne.
    *
    * Every quantity in this snapshot is a COUNT OF PIECES, because that is what the state holds and
    * a surface that quietly rewrote them would be a surface with arithmetic of its own in it. What a

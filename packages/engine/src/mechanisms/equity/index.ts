@@ -80,7 +80,7 @@ function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
     {
       id: OPENING_SHARE,
       value: MONEY_PIECES,
-      unit: 'pieces of money per share at the seed (one PHX)',
+      unit: 'pieces of money per share at the seed (one USD)',
       kind: 'resolution',
       owner: 'model',
       why: 'Seed C4, Law 2: a market that has never traded has no price (XI-6) and a world that opens with shares outstanding has to say what one is. It is a RESOLUTION: double it and halve every share count the seed states and no value, flow or decision moves — which is exactly what a split does (D4), so the invariance is a mechanism in this world and a test of it, not a claim about one.',
@@ -190,8 +190,8 @@ function payDividend(ctx: MechanismContext, row: ListedDecl, line: Instrument, p
     const side = cellSide(holder, perMemberCash);
     const leg: Leg = {
       kind: 'money',
-      from: { holder: firm, issuer: ctx.parties.get(firm).bank },
-      to: { holder: holderId, issuer: holder.bank },
+      from: ctx.accountOf(firm, line.ccy),
+      to: ctx.accountOf(holderId, line.ccy),
       ccy: line.ccy,
       amount: total,
       fromCell: none(),

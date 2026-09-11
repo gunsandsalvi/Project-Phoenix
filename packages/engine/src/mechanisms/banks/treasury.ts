@@ -25,6 +25,7 @@
  */
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
+import { delivers } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -91,9 +92,18 @@ export function liquidityPlan(view: ParticipantView, cushion: number): Option<Li
 export function liquidityLines(view: ParticipantView, d: BankDecl): readonly InstrumentId[] {
   const out: InstrumentId[] = [];
   const on = view.calendar.startOf(view.period);
+  const home = view.registry.region(view.self.region).ccy;
   for (const m of view.markets) {
-    const i = view.instruments.get(m.instrument);
+    const subject = delivers(m);
+    if (!subject.some) continue;
+    const i = view.instruments.get(subject.value);
     if (!i.status.live || !d.makes.includes(String(i.kind))) continue;
+    // Currency D4, Money Market B3.a: IN ITS OWN MONEY. A liquidity portfolio is what a bank sells
+    // or pledges to raise the money it settles in, and a foreign government's bond raises a money
+    // its own central bank does not issue and will not take (the window is its own system's, and
+    // that is why a bank short of a foreign money has to buy it). Paper abroad is a POSITION, and
+    // what a bank holds abroad as a position is 13h's portfolio decision, not this.
+    if (i.ccy !== home) continue;
     if (view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar).length === 0) continue;
     out.push(i.id);
   }
@@ -119,7 +129,9 @@ export function liquidityTargets(
   // NOTHING — which is an answer and not a missing number. So nothing downstream ever has to decide
   // what an absent target means, because there are none.
   for (const m of view.markets) {
-    const i = view.instruments.get(m.instrument);
+    const subject = delivers(m);
+    if (!subject.some) continue;
+    const i = view.instruments.get(subject.value);
     if (i.status.live && d.makes.includes(String(i.kind))) out.set(i.id, 0);
   }
   if (!plan.some || plan.value.paper <= 0 || lines.length === 0) return out;

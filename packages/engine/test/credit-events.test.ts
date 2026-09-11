@@ -11,8 +11,8 @@ import { describe, expect, it } from 'vitest';
 import {
   GOV_LINE,
   HOUSEHOLD,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   assemble,
   creditEvents,
   currencyUnit,
@@ -63,7 +63,7 @@ function overpromise(amount: number): SystemModule {
             kind: 'money',
             from: { holder: PAYER, issuer: ctx.parties.get(PAYER).bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
-            ccy: PHX,
+            ccy: USD,
             amount,
             fromCell: none(),
             toCell: none(),
@@ -118,7 +118,7 @@ function oneLine(): SystemModule {
         id: LINE_C,
         kind: PLAIN_KIND,
         issuer: some(PAYER),
-        ccy: PHX,
+        ccy: USD,
         terms: { kind: PLAIN_KIND },
         market: none(),
       });
@@ -195,8 +195,8 @@ function cellCannotPay(): SystemModule {
           const leg: Leg = {
             kind: 'money',
             from: { holder: cell.id, issuer: cell.bank },
-            to: { holder: TREASURY_NORTH, issuer: ctx.parties.get(TREASURY_NORTH).bank },
-            ccy: PHX,
+            to: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
+            ccy: USD,
             amount: totalFor(cell, perMember),
             fromCell: some({ perMember, weight: cell.weight }),
             toCell: none(),
@@ -240,7 +240,7 @@ describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
     // E1.a: it did not silently not happen, and it did not silently overdraw.
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
     expect(failed).toHaveLength(1);
-    expect(w.cash(PAYER, PHX)).toBeGreaterThan(0);
+    expect(w.cash(PAYER, USD)).toBeGreaterThan(0);
   });
 
   it('says nothing about a payment that went through (Firm Birth C2.a)', () => {
@@ -257,7 +257,7 @@ describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
     expect(mine.every((f) => f.instruction.legs.some((l) => l.kind === 'money'))).toBe(true);
     // The counterparty sees it too, because it WAS the counterparty — and a third party does not.
     expect(w.participantView(PAYEE).failedPayments(10).length).toBe(mine.length);
-    expect(w.participantView(TREASURY_NORTH).failedPayments(10)).toEqual([]);
+    expect(w.participantView(TREASURY_US).failedPayments(10)).toEqual([]);
   });
 });
 
@@ -305,7 +305,7 @@ function twoLines(): SystemModule {
           id,
           kind: ACCEL_KIND,
           issuer: some(PAYER),
-          ccy: PHX,
+          ccy: USD,
           terms: { kind: ACCEL_KIND },
           market: none(),
         });
@@ -339,7 +339,7 @@ describe('acceleration (Corporate Credit G2)', () => {
     for (let i = 0; i < 3; i += 1) w.step();
     // Nothing of the treasury's was made due by anything, because sovereign paper declares it.
     for (const e of w.journal.ofKind('credit.accelerated')) {
-      expect(e.data['issuer']).not.toBe(TREASURY_NORTH);
+      expect(e.data['issuer']).not.toBe(TREASURY_US);
     }
   });
 });
@@ -413,7 +413,7 @@ describe('the world it lives in', () => {
     const holder = snapshot(w, { kind: 'party', party: PAYEE }, 50);
     expect(holder.journal.some((e) => e.kind === 'credit.default')).toBe(true);
     expect(holder.journal.some((e) => e.kind === 'credit.impaired')).toBe(true);
-    const other = snapshot(w, { kind: 'party', party: TREASURY_NORTH }, 50);
+    const other = snapshot(w, { kind: 'party', party: TREASURY_US }, 50);
     expect(other.journal.some((e) => e.kind === 'credit.impaired')).toBe(false);
   });
 
@@ -424,7 +424,7 @@ describe('the world it lives in', () => {
     const modules = spec.modules.map((m) => ({
       ...m,
       params: m.params.map((p) =>
-        // Law 8: a declared amount, in the money a person says it in — a hundred PHX a member a
+        // Law 8: a declared amount, in the money a person says it in — a hundred USD a member a
         // week against a standing mandate of twelve, which is about a tenth of a week's wage paid
         // to every member of the population and far more than this state can raise. The register
         // turns it into the pieces the wire counts, like any other amount.
@@ -438,12 +438,12 @@ describe('the world it lives in', () => {
     // It could not meet what it had promised, so it is a payer in default of payment (Money E1)...
     const asParty = w.journal
       .ofKind('credit.default')
-      .filter((e) => e.data['party'] === TREASURY_NORTH);
+      .filter((e) => e.data['party'] === TREASURY_US);
     expect(asParty.length).toBeGreaterThan(0);
     // ...and a coupon it owed did not arrive, which its own paper calls a default (Bond N12).
     const asIssuer = w.journal
       .ofKind('credit.default')
-      .filter((e) => e.data['issuer'] === TREASURY_NORTH);
+      .filter((e) => e.data['issuer'] === TREASURY_US);
     expect(asIssuer.length).toBeGreaterThan(0);
     const line = String(asIssuer[0]?.data['instrument']);
     const i = w.instruments.get(line as never);

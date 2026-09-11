@@ -416,8 +416,8 @@ function payFrom(
   const side = cellSide(to, share.perMember);
   const leg: Leg = {
     kind: 'money',
-    from: { holder: payer, issuer: from.bank },
-    to: { holder: cell, issuer: to.bank },
+    from: ctx.accountOf(payer, ccy),
+    to: ctx.accountOf(cell, ccy),
     ccy,
     amount: share.total,
     fromCell: none(),

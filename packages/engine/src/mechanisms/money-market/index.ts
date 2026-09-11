@@ -870,6 +870,23 @@ function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): Overdraft
   // Only a bank settles in reserves; anybody else overdrawn at the central bank is the treasury
   // asking for an advance, and there is none (Central Bank E2, Treasury D3).
   if (!o.holderIssuesMoney) return { allow: false };
+  // Currency D4, XI-12, Central Bank D1: A CENTRAL BANK LENDS TO ITS OWN SYSTEM. A bank booked in
+  // another region has no reserve account here and no claim on this window — it is not supervised
+  // here, it holds none of the collateral this window takes, and there is no resolution authority
+  // behind it. So a bank short of a FOREIGN money is not short of reserves: it has to buy that
+  // money from somebody who has it, at a rate, in the pair's own session (Spot FX B1), and a bank
+  // that cannot does not pay. Without this the second currency arrives as an unlimited foreign
+  // overdraft — money issued to a holder with no lender row behind it, which is Money B3.c's
+  // finding and the reason a world with two moneys would never need an FX market at all.
+  if (ctx.registry.region(ctx.parties.get(o.holder).region).ccy !== o.ccy) {
+    ctx.record(
+      'centralBank.refused',
+      [o.issuer, o.holder],
+      { bank: o.holder, short: o.shortfall, ccy: o.ccy, foreign: true },
+      true,
+    );
+    return { allow: false };
+  }
   const on = ctx.calendar.startOf(ctx.period);
   const power = borrowingPower(
     windowAdvances(

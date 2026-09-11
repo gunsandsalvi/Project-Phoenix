@@ -11,8 +11,8 @@ import {
   drawBanks,
   InvalidRegistry,
   LOAN,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   assemble,
   isLoan,
   loanKind,
@@ -52,7 +52,7 @@ function asksFor(amount: number, at = 1): SystemModule {
         anchor: { before: 'corporateActions' },
         run: (ctx: MechanismContext) => {
           if (ctx.period !== at) return;
-          ctx.record('firms.funding', [BORROWER], { short: amount, owed: amount, ccy: PHX }, false);
+          ctx.record('firms.funding', [BORROWER], { short: amount, owed: amount, ccy: USD }, false);
         },
       },
     ],
@@ -93,13 +93,13 @@ function overspendsItsLimit(at = 2): SystemModule {
             .filter((e) => e.subjects.includes(bank));
           const limit = Number(said[said.length - 1]?.data['limitPerName']);
           if (!Number.isFinite(limit) || limit <= 0) return;
-          const held = ctx.register.quantity(BORROWER, moneyInstrumentId(bank, PHX));
+          const held = ctx.register.quantity(BORROWER, moneyInstrumentId(bank, USD));
           const leg: Leg = {
             kind: 'money',
             from: { holder: BORROWER, issuer: bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
-            ccy: PHX,
-            amount: ctx.registry.payable(PHX, held + limit / 2),
+            ccy: USD,
+            amount: ctx.registry.payable(USD, held + limit / 2),
             fromCell: none(),
             toCell: none(),
           };
@@ -134,7 +134,7 @@ function overspends(amount: number, at = 2): SystemModule {
             kind: 'money',
             from: { holder: BORROWER, issuer: ctx.parties.get(BORROWER).bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
-            ccy: PHX,
+            ccy: USD,
             amount,
             fromCell: none(),
             toCell: none(),
@@ -224,7 +224,7 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
     const w = world([asksFor(phx(20_000))]);
     // Period 1 is where it says what it is short of; period 2 is where the credit is arranged.
     w.step();
-    const before = w.cash(BORROWER, PHX);
+    const before = w.cash(BORROWER, USD);
     w.step();
     const written = w.journal.ofKind('credit.written');
     expect(written.length).toBe(1);
@@ -233,7 +233,7 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
     // B1: the loan on one side and the borrower's balance on the other, at the same instant.
     // ...and the one other thing that reached the account this period: a week of deposit interest
     // from its own bank (Banks Funding B1), which is not this loan's doing.
-    expect(w.cash(BORROWER, PHX)).toBe(before + principal + paidTo(w, BORROWER, 'coupon'));
+    expect(w.cash(BORROWER, USD)).toBe(before + principal + paidTo(w, BORROWER, 'coupon'));
     expect(loans(w)).toHaveLength(1);
     expect(loans(w)[0]?.issued).toBeCloseTo(principal, 9);
     // B1.a: no reserve leaves. The whole of endogenous money is that this instruction has no
@@ -353,7 +353,7 @@ describe('an overdrawn customer (Money B3.a, B3.c)', () => {
     expect(rows.length).toBeGreaterThan(0);
     expect(rows[0]?.rate).toBeGreaterThan(0);
     // The account is not below zero any more: the deposit the loan created brought it back.
-    expect(w.cash(BORROWER, PHX)).toBeGreaterThanOrEqual(0);
+    expect(w.cash(BORROWER, USD)).toBeGreaterThanOrEqual(0);
   });
 
   it('is refused when the bank has no room, and then the payment simply fails (B3.c)', () => {
@@ -375,12 +375,12 @@ describe('carrying it (Banks Lending D3, E1)', () => {
     const w = world([asksFor(phx(20_000))]);
     for (let i = 0; i < 4; i += 1) w.step();
     const lenderBefore = w.register.equity(BANK_OF_A);
-    const borrowerBefore = w.cash(BORROWER, PHX);
+    const borrowerBefore = w.cash(BORROWER, USD);
     w.step();
     // D3: interest accrues and is received. It leaves the borrower's account by name — and it
     // reaches the lender by EXTINGUISHING the deposit the lender itself issued, which is what
     // being paid in your own money is (Money C2). The bank's liabilities fall, so it is richer.
-    expect(w.cash(BORROWER, PHX)).toBeLessThan(borrowerBefore);
+    expect(w.cash(BORROWER, USD)).toBeLessThan(borrowerBefore);
     expect(w.register.equity(BANK_OF_A)).toBeGreaterThan(lenderBefore);
   });
 
@@ -418,6 +418,6 @@ describe('the world it lives in', () => {
       expect(isLoan(row.terms) && row.terms.lender.startsWith('bank.')).toBe(true);
     }
     expect(w.parties.ofKind(partyId('bank') as never).length).toBeGreaterThan(0);
-    expect(TREASURY_NORTH).toBeDefined();
+    expect(TREASURY_US).toBeDefined();
   });
 });

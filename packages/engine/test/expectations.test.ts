@@ -9,7 +9,7 @@ import {
   BANK_B,
   EXPECTATION_PARAMS,
   HOUSEHOLD,
-  TREASURY_NORTH,
+  TREASURY_US,
   partyId,
   type World,
 } from '../src/index.js';
@@ -77,17 +77,17 @@ describe('how an outlook moves (B1, B2, B4)', () => {
     for (let i = 0; i < 20; i += 1) w.step();
     // The treasury's own income is what it collects, which is nothing in most periods and a lump
     // when the coupons it taxes fall due: a step it did not see coming.
-    const before = expected(w, TREASURY_NORTH, 'income');
+    const before = expected(w, TREASURY_US, 'income');
     let jumped = false;
     for (let i = 0; i < 20 && !jumped; i += 1) {
       w.step();
-      const now = expected(w, TREASURY_NORTH, 'income');
+      const now = expected(w, TREASURY_US, 'income');
       if (before !== null && now !== null && Math.abs(now - before) > 1e-9) jumped = true;
     }
-    const after = expected(w, TREASURY_NORTH, 'income');
+    const after = expected(w, TREASURY_US, 'income');
     expect(after).not.toBeNull();
     // B1: it moved, but by a fraction of the gap — never all the way in one period.
-    const surprises = w.journal.ofKind('expectations.surprise').filter((e) => e.subjects[0] === TREASURY_NORTH);
+    const surprises = w.journal.ofKind('expectations.surprise').filter((e) => e.subjects[0] === TREASURY_US);
     expect(surprises.length).toBeGreaterThan(0);
     const last = surprises[surprises.length - 1];
     const gap = Math.abs(last?.data['surprise'] as number);

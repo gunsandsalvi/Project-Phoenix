@@ -230,12 +230,26 @@ function optionalCell(c: ReturnType<typeof cellSide>): Option<CellSide> {
   return c === undefined ? none() : some(c);
 }
 
-/** Money B1: an account is (holder, issuer, currency); every party banks somewhere. */
+/**
+ * Money B1, A1; Currency A2, B1: an account is (holder, issuer, currency), and every party banks
+ * somewhere — IN THE MONEY IT BANKS IN.
+ *
+ * A party's own bank issues its own region's money and nobody else's (A1: no money without an
+ * issuer, and an issuer issues one). So a party that is paid in a money its bank does not issue is
+ * paid into an account at THAT money's own central bank — which is what a correspondent account
+ * abroad is, and the only place a claim in a foreign money can be without somebody inventing one.
+ *
+ * It is a read of the registry (`centralBankOf`) and not a rule about who may hold what: any party
+ * can be owed any money, and where the claim sits follows from whose liability that money IS.
+ */
 export function accountResolver(
   parties: Parties,
+  centralBankOf: (ccy: CurrencyCode) => PartyId,
+  homeOf: (party: PartyId) => CurrencyCode,
 ): (party: PartyId, ccy: CurrencyCode) => { holder: PartyId; issuer: PartyId } {
-  return (party) => {
+  return (party, ccy) => {
     const p = parties.get(party);
-    return { holder: party, issuer: p.bank };
+    if (homeOf(party) === ccy) return { holder: party, issuer: p.bank };
+    return { holder: party, issuer: centralBankOf(ccy) };
   };
 }

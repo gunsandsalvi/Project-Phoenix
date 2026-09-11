@@ -23,7 +23,7 @@ import {
   period,
 } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
-import { InvalidRegistry, Missing } from '../core/errors.js';
+import { InvalidRegistry, Missing, Unpriced } from '../core/errors.js';
 import {
   type CurrencyCode,
   type CurveFamilyId,
@@ -38,9 +38,10 @@ import {
   fxPairId,
 } from '../core/ids.js';
 
-import { addTo } from '../core/num.js';
+import { add, addTo, mul, sub } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
+  delivers,
   runMarket,
   type MarketDecl,
   type MarketResult,
@@ -54,7 +55,7 @@ import { Ledger } from '../ledger/ledger.js';
 import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf } from '../parties/party.js';
 import { type CurveRead, readCurve } from '../prices/curve.js';
-import { PriceStore } from '../prices/price-store.js';
+import { PriceStore, type Print } from '../prices/price-store.js';
 import { Valuation } from '../prices/value.js';
 import { Instruments } from '../register/instruments.js';
 import { Register, type RegisterReads, registerReads } from '../register/register.js';
@@ -81,6 +82,7 @@ import type {
 } from './module.js';
 import { revalue } from './revalue.js';
 import type { Qty } from '../core/tick.js';
+import { readIndex, type IndexDecl, type IndexRead } from '../prices/index-read.js';
 
 
 
@@ -159,6 +161,8 @@ export class World {
   /** Law 18: one participant view per party per cycle. Layout only; every read reaches live state. */
   private readonly views = new Map<PartyId, ParticipantView>();
   private viewsAt = '';
+  /** Indices A1, D5: the rules this world's modules declared. One list, read by `index`. */
+  private readonly indexList = new Map<string, IndexDecl>();
   /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
   private readonly resolvers = new Map<PartyKindId, string>();
   private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
@@ -183,7 +187,11 @@ export class World {
     this.register = registerReads(this.store);
     this.valuation = new Valuation(this.registry, this.instruments, this.prices, this.register);
     this.root = prng(spec.seed);
-    this.accountOf = accountResolver(this.parties);
+    this.accountOf = accountResolver(
+      this.parties,
+      (ccy) => this.registry.centralBankOf(ccy),
+      (party) => this.registry.region(this.parties.get(party).region).ccy,
+    );
     this.settlement = new Settlement({
       registry: this.registry,
       calendar: this.calendar,
@@ -241,7 +249,10 @@ export class World {
           // event and the venue simply stops (Bond N10).
           w.lastMarkets = [...w.marketList]
             .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))
-            .filter((m) => (m.kind ?? 'asset') === 'fx' || w.instruments.get(m.instrument).status.live)
+            .filter((m) => {
+              const subject = delivers(m);
+              return !subject.some || w.instruments.get(subject.value).status.live;
+            })
             .map((m) => w.runOne(m));
         },
       },
@@ -318,6 +329,29 @@ export class World {
 
   addMarket(m: MarketDecl): void {
     forbid(!this.marketList.some((x) => x.id === m.id), 'Law 4', `market ${m.id} declared twice`);
+    const pair = m.fx;
+    if (pair !== undefined) {
+      // Spot FX A1, A3: a PAIR market moves money against money, so there is no instrument behind
+      // it to ask about — nobody issues a pair and nobody holds one. What is checked instead is
+      // that the two moneys exist and are two, and that the price is quoted in the one it is
+      // quoted in: a pair against itself is not a market and a pair priced in a third money would
+      // be the vehicle currency XI-12 forbids.
+      this.registry.currency(pair.base);
+      this.registry.currency(pair.quote);
+      forbid(pair.base !== pair.quote, 'Spot FX A3', `${m.id} is a money against itself`);
+      forbid(
+        m.ccy === pair.quote,
+        'Spot FX C1',
+        `${m.id} prices ${pair.base}/${pair.quote} in ${m.ccy}, which is neither side of it`,
+      );
+      forbid(
+        m.instrument === fxPairId(pair.base, pair.quote),
+        'Law 9',
+        `${m.id} names ${m.instrument}, which is not ${pair.base}/${pair.quote}`,
+      );
+      this.marketList.push(m);
+      return;
+    }
     const inst = this.instruments.get(m.instrument);
     const pricing = this.registry.instrumentKind(inst.kind).pricing;
     forbid(
@@ -709,6 +743,33 @@ export class World {
     return made;
   }
 
+  /**
+   * Ratings A2, A2.a: THE SAME VIEW WITH NO PRICES IN IT.
+   *
+   * A rating is an assessment made from STATE — leverage, coverage, cash, what a party said about
+   * itself, what happened to it — and never from what its paper trades at. A2.a says so, and a
+   * module that merely promised not to look would be a rule in a comment: the first time somebody
+   * added "and the spread" to the methodology nothing would have refused it.
+   *
+   * So the assessor is handed a view whose `print` and `mark` answer Missing for everything. It is
+   * not a different view and not a copy — the same object, with two reads closed — so everything
+   * else an assessor can see it still sees, and what it cannot see it cannot see by construction
+   * rather than by discipline. An index is a price too, and it goes with them.
+   */
+  blindView(party: PartyId): ParticipantView {
+    const open = this.participantView(party);
+    return Object.freeze({
+      ...open,
+      self: open.self,
+      print: () => none<Print>(),
+      mark: () => none<number>(),
+      index: () => none<IndexRead>(),
+      curve: (): never => {
+        throw new Unpriced('Ratings A2.a', `${party} assesses from state and is shown no prices`);
+      },
+    });
+  }
+
   private buildParticipantView(party: PartyId): ParticipantView {
     const view = {
       period: this.currentPeriod,
@@ -757,6 +818,10 @@ export class World {
         const e = this.journal.lastOf(kind, party);
         return e === undefined ? none() : some(e);
       },
+      index: (id: string) => this.index(id),
+      owedIn: (ccy: CurrencyCode) => this.owedIn(party, ccy),
+      rateIn: (from: CurrencyCode, to: CurrencyCode) =>
+        this.valuation.rateInForce(from, to, this.currentPeriod),
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
     } as Omit<ParticipantView, 'self'>;
     // The party record itself is replaced when it ceases, changes weight or moves its bank, so it
@@ -786,6 +851,9 @@ export class World {
       valuation: this.valuation,
       journal: this.journal,
       ledger: this.ledger,
+      index: (id: string) => this.index(id),
+      /** Ratings A2.a: the view an assessor decides from — the same one, with the prices closed. */
+      blind: (party: PartyId) => this.blindView(party),
       cells: {
         split: (cell, members, cause) =>
           splitCell(cell, members, cause, this.currentPeriod, this.currentCycle, cellDeps),
@@ -799,6 +867,7 @@ export class World {
       rng: this.root.derive(`module/${owner}/${this.currentPeriod}`),
       state: <T extends object>(name: string, initial: () => T): T => this.slot(owner, name, initial),
       participant: (party) => this.participantView(party),
+      accountOf: (party, ccy) => this.accountOf(party, ccy),
       settle: (draft) => this.settlement.settle(draft, this.currentPeriod, this.currentCycle),
       issue: (decl) => this.instruments.add(decl),
       openMarket: (decl) => {
@@ -985,10 +1054,14 @@ export class World {
     return Object.fromEntries(acc);
   }
 
-  /** A party's balance at its own bank in a currency, per member (Money B1). */
+  /**
+   * A party's balance in a currency, per member (Money B1) — at the account that currency's money
+   * sits in for it (`accountOf`), which is its own bank for its own money and that money's own
+   * central bank for a foreign one. Reading it at `p.bank` would be a second writer of that rule
+   * and would answer nothing for every foreign balance in the world (Currency D2, Law 4).
+   */
   cash(party: PartyId, ccy: CurrencyCode): Qty {
-    const p = this.parties.get(party);
-    return this.register.quantity(p.id, moneyInstrumentId(p.bank, ccy));
+    return this.register.quantity(party, moneyInstrumentId(this.accountOf(party, ccy).issuer, ccy));
   }
 
   // ---- internals -------------------------------------------------------------------------------
@@ -1011,6 +1084,66 @@ export class World {
    * job, at a wage — so the kernel's market runner cannot settle it, but the book is still the
    * kernel's: one place schedules are collected, emptied at the top of every period.
    */
+  /**
+   * Indices A2, E2, D5.a: an index's level, computed where it is asked for from its constituents'
+   * prints. The rules are the modules' data (`SystemModule.indices`), registered at assembly, and
+   * the arithmetic is one function (`prices/index-read.ts`) so nobody can apply it a second way.
+   */
+  index(id: string): Option<IndexRead> {
+    const decl = this.indexList.get(id);
+    if (decl === undefined) return none<IndexRead>();
+    return readIndex(decl, this.currentPeriod, {
+      price: (instrument, at) => {
+        const p = this.prices.latest(instrument, at);
+        // A2: what the market SAID in that period, not what it was carried at. An index built on
+        // carried marks would move when nothing traded, which is a level nobody made (Law 3).
+        return p.some && p.value.period === at ? some(p.value.price) : none<number>();
+      },
+    });
+  }
+
+  /**
+   * Spot FX B1, B2: A PARTY'S POSITION IN A MONEY against its own obligations in it — what its
+   * liabilities say falls due in `ccy` this period and next, LESS what it holds of it. Positive is
+   * B1, a party short of a money it has to pay; negative is B2, a party holding a money nothing it
+   * owes is denominated in. One number, because they are one fact seen from either end, and two
+   * reads would be two rules about the same balance (Law 4).
+   *
+   * It is a READ of what the instruments themselves say (Law 19): the due actions of every line
+   * this party issued, priced per unit and multiplied by what is outstanding.
+   */
+  owedIn(party: PartyId, ccy: CurrencyCode): number {
+    let owed = 0;
+    for (const inst of this.instruments.issuedBy(party)) {
+      if (inst.ccy !== ccy || !inst.status.live) continue;
+      for (const ahead of [0, 1]) {
+        const at = period(this.currentPeriod + ahead);
+        for (const action of this.registry.instrumentKind(inst.kind).due(inst, at, this.calendar)) {
+          if (action.kind === 'coupon') {
+            owed = add(owed, mul(inst.issued, action.amountPerUnit, 'a coupon it owes'), 'owed');
+          } else owed = add(owed, inst.issued, 'a line it must repay');
+        }
+      }
+    }
+    // XI-15: a cell owes per member and holds per member, so the two are already comparable.
+    return sub(owed, this.cash(party, ccy), `${party}'s position in ${ccy}`);
+  }
+
+  /**
+   * Indices A1, D5: register a module's index rule. ONE SYSTEM of them across the world — a second
+   * module declaring the same id is two answers to what the index says, which is Law 4's defect
+   * arriving in the one place a number is supposed to be beyond argument.
+   */
+  addIndex(decl: IndexDecl, owner: string): void {
+    forbid(!this.sealed, 'Indices A1', 'an index rule is declared at assembly');
+    forbid(
+      !this.indexList.has(decl.id),
+      'Indices D5',
+      `index ${decl.id} is declared twice; ${owner} is the second`,
+    );
+    this.indexList.set(decl.id, decl);
+  }
+
   post(venue: VenueId, order: Order): void {
     forbid(this.sealed, 'Seed A2', 'a posting is made inside a period, not at assembly');
     this.venue(venue);
@@ -1056,6 +1189,10 @@ export class World {
   private runOne(m: MarketDecl): MarketResult {
     const orders: Order[] = [];
     for (const decl of this.participantDecls) {
+      // Spot FX D1: a participant answers the sort of market it declared itself in, and nothing
+      // else. Both defaults are `asset`, which is every market and every desk that existed before
+      // a pair did — so this changes nothing for any of them (Law 15: one key, no branch).
+      if ((decl.in ?? 'asset') !== (m.kind ?? 'asset')) continue;
       for (const party of this.parties.ofKind(decl.partyKind)) {
         // A ceased party takes no part (Money E4): it has no reasons, and an order in its name
         // would be an instruction addressed to somebody who is not there. What it held is its

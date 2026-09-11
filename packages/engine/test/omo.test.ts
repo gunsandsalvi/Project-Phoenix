@@ -9,8 +9,8 @@ import {
   CB,
   CB_PARAMS,
   GOV_LINE,
-  PHX,
-  TREASURY_NORTH,
+  USD,
+  TREASURY_US,
   assemble,
   dustOf,
   type SystemModule,
@@ -33,7 +33,7 @@ describe('open-market operations (Central Bank C)', () => {
   it('buys towards the share policy chose, paying with money it creates (C1, C1.a, C2)', () => {
     const w = rigWorld('omo-a');
     const share = w.params.get(CB_PARAMS.targetShare);
-    const stockBefore = w.moneyStock()['PHX'] ?? 0;
+    const stockBefore = w.moneyStock()['USD'] ?? 0;
     w.step();
     const gapBefore = Math.abs(
       w.register.quantity(CB, GOV_LINE) / w.instruments.get(GOV_LINE).issued - share,
@@ -43,7 +43,7 @@ describe('open-market operations (Central Bank C)', () => {
       w.register.quantity(CB, GOV_LINE) / w.instruments.get(GOV_LINE).issued - share,
     );
     // H2: what it bought created reserves, so the base grew.
-    expect(w.moneyStock()['PHX'] ?? 0).toBeGreaterThan(stockBefore);
+    expect(w.moneyStock()['USD'] ?? 0).toBeGreaterThan(stockBefore);
     expect(w.register.quantity(CB, GOV_LINE)).toBeGreaterThan(0);
     // C1.a: it holds the size policy chose, and it gets there by buying and selling into a market
     // — so what it can close is what somebody was on the other side of.
@@ -65,7 +65,7 @@ describe('open-market operations (Central Bank C)', () => {
         // too (Fund Shares C1). What this is about is the primary market for the STATE's paper.
         if (leg.kind !== 'asset' || !String(leg.instrument).startsWith('gov.')) continue;
         allotments += 1;
-        expect(leg.from).toBe(TREASURY_NORTH);
+        expect(leg.from).toBe(TREASURY_US);
         expect(leg.to).not.toBe(CB);
       }
     }
@@ -102,14 +102,14 @@ describe('open-market operations (Central Bank C)', () => {
       .filter((h) => h.holder === CB)
       .length;
     expect(heldOff).toBeLessThanOrEqual(heldOn);
-    expect(off.moneyStock()['PHX'] ?? 0).toBeLessThan(on.moneyStock()['PHX'] ?? 0);
+    expect(off.moneyStock()['USD'] ?? 0).toBeLessThan(on.moneyStock()['USD'] ?? 0);
   });
 });
 
 describe('remittance (Central Bank E3)', () => {
   it('hands over what its own instructions earned, on its own calendar, and says so', () => {
     const w = rigWorld('omo-e');
-    const before = w.cash(TREASURY_NORTH, PHX);
+    const before = w.cash(TREASURY_US, USD);
     for (let i = 0; i < 60; i += 1) w.step();
     const remittances = w.journal.ofKind('centralBank.remittance');
     expect(remittances.length).toBeGreaterThan(0);
@@ -117,7 +117,7 @@ describe('remittance (Central Bank E3)', () => {
     expect(first?.public).toBe(true);
     expect(first?.data['income'] as number).toBeGreaterThan(0);
     expect(first?.data['settled']).toBe(true);
-    expect(w.cash(TREASURY_NORTH, PHX)).not.toBe(before);
+    expect(w.cash(TREASURY_US, USD)).not.toBe(before);
   });
 
   it('remits income and not revaluation (E3.a): what it hands over is what its ledger produced', () => {

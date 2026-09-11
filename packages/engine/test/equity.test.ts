@@ -15,7 +15,7 @@ import {
   HOUSEHOLD,
   REGION,
   OPENING_SHARE,
-  PHX,
+  USD,
   SHARE,
   assemble,
   equityLineOf,
@@ -89,7 +89,7 @@ function pays(
                   kind: 'money',
                   from: { holder: BANK_A, issuer: BANK_A },
                   to: { holder, issuer: party.bank },
-                  ccy: PHX,
+                  ccy: USD,
                   amount: row.amount * party.weight,
                   fromCell: { some: false },
                   toCell: { some: true, value: { perMember: row.amount, weight: party.weight } },
@@ -179,8 +179,8 @@ function hungryFor(subUnit: string): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, PHX, phx(100_000_000));
-      ctx.endowMoney(BANK_A, PHX, phx(100_000_000));
+      ctx.endowMoney(BUYER, USD, phx(100_000_000));
+      ctx.endowMoney(BANK_A, USD, phx(100_000_000));
     },
     participants: [
       {
@@ -230,8 +230,8 @@ describe('what a share is (Equity A)', () => {
     // A1.a: it ranks below everything the issuer owes. Money is 0, an unsecured loan is 1.
     const line = w.instruments.get(LINE_4);
     expect(kind.ranking(line).seniority).toBeGreaterThan(
-      w.registry.instrumentKind(w.instruments.get(moneyInstrumentId(BANK_A, PHX)).kind).ranking(
-        w.instruments.get(moneyInstrumentId(BANK_A, PHX)),
+      w.registry.instrumentKind(w.instruments.get(moneyInstrumentId(BANK_A, USD)).kind).ranking(
+        w.instruments.get(moneyInstrumentId(BANK_A, USD)),
       ).seniority,
     );
   });
@@ -353,7 +353,7 @@ describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
   });
 
   it('refuses to restate a line whose kind does not split (Law 15)', () => {
-    const w = worldWith('equity', [splits('gov.north.2036-03-15', 2, 2)]);
+    const w = worldWith('equity', [splits('ust.2036-03-15', 2, 2)]);
     w.step();
     expect(() => w.step()).toThrow(/not a kind whose count a split may change/);
   });
