@@ -17,11 +17,13 @@ import {
   goodKindId,
   goodMarketId,
   goodTerms,
+  GOODS,
   goods,
   isDestroyLeg,
   isMoneyLeg,
   none,
   partyId,
+  type PartyId,
   recipeParam,
   spoilageParam,
   type GoodDecl,
@@ -30,7 +32,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec, withDependencies, mergeModules } from './rig.js';
+import { firmIn, rigDraw, rigSpec, withDependencies, mergeModules } from './rig.js';
 import { notDealing } from './no-dealing.js';
 import { asQty } from '../src/core/tick.js';
 import { negQty } from '../src/core/tick.js';
@@ -88,7 +90,14 @@ m.id === 'sovereign-instruments' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: mergeModules(kernelOnly, [goods(rows), ...extra]) });
+  // Seed A3, Seed D1: the test's goods are ADDED to this world's, not put in place of them. The
+  // seed sizes the world from the hours its chain needs against the hours its people offer, and
+  // this world's firms make grain, flour, bread and machines — a registry that knew only stone
+  // would be a world whose firms make nothing anybody has a recipe for, which has no scale at all.
+  return assemble({
+    ...spec,
+    modules: mergeModules(kernelOnly, [goods([...GOODS, ...rows]), ...extra]),
+  });
 }
 
 /** A module that runs one function each period: whatever the test is about. */
@@ -147,7 +156,7 @@ describe('what a good is (Goods A)', () => {
     expect(market.ccy).toBe(USD);
     expect(market.rationing).toBe('proRata');
     // Law 9: named as a market names it — what it is and where — never by its identifier.
-    expect(displayName(stone, w.parties, w.registry)).toBe('stone, North');
+    expect(displayName(stone, w.parties, w.registry)).toBe('stone, United States');
   });
 
   it('is made from fixed physical quantities, declared in physical units (A2.a, A2.b)', () => {
@@ -261,32 +270,42 @@ describe('inventory (Goods E)', () => {
           ],
         ),
       );
+    const moved = (w: World): number => {
+      w.step();
+      const before = w.register.equity(FIRM_1);
+      const r = w.step();
+      expect(r.audit.total).toBe(0);
+      return w.register.equity(FIRM_1) - before;
+    };
     const down = build(1);
-    down.step();
-    const before = down.register.equity(FIRM_1);
-    const r = down.step();
-    expect(r.audit.total).toBe(0);
+    const up = build(3);
+    const fell = moved(down);
+    const rose = moved(up);
     const h = down.register.holding(FIRM_1, STONE_ID);
     expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(perTonne(1));
-    // E3: a charge to income in the period it happens — one realised on the tonne that sold at 1
-    // against a cost of 2, and one on each of the nine that stayed and are now worth less.
-    // ...and its equity moved by that write-down and by the one other thing that reached it this
-    // period: the week of deposit interest its bank paid it (Banks Funding B1).
-    expect(down.register.equity(FIRM_1)).toBe(before - phx(10) + paidTo(down, FIRM_1, 'coupon'));
-
-    const up = build(3);
-    up.step();
-    const flat = up.register.equity(FIRM_1);
-    up.step();
     const held = up.register.holding(FIRM_1, STONE_ID);
     expect(held.some && held.value.lots[0]?.basisPerUnit).toBe(perTonne(2));
-    // The sale at 3 is a realised gain on the one tonne that left; the nine that stayed do not
-    // move at all, because inventory is never carried above cost (E2.c).
-    expect(up.register.equity(FIRM_1)).toBe(flat + phx(1) + paidTo(up, FIRM_1, 'coupon'));
+    // E2, E2.c, E3: THE TWO WORLDS DIFFER IN ONE THING — what the tonne sold at. Everything else
+    // that reaches this firm's equity in the period is the same in both (the week of deposit
+    // interest, what it pays for the opinions somebody has of it), so the difference between the
+    // two moves is the whole of what the price did and nothing else.
+    //
+    // At 1: a realised loss of one on the tonne that sold, and nine written down from 2 to 1 — ten.
+    // At 3: a realised gain of one on the tonne that sold, and NOTHING on the nine that stayed,
+    // because inventory is never carried above cost. Eleven apart.
+    expect(rose - fell).toBe(phx(11));
   });
 });
 
 describe('what perishes (Goods E4)', () => {
+  /**
+   * A baker that is not one: the firm here MAKES MACHINES, so it opens holding no bread at all and
+   * what it has after a week is what this test put there and what perished of it. A test that used
+   * the world's own baker would be measuring the seed's opening inventory as well as the spoilage,
+   * and it would have to know how big this world is to say what it expected (Seed A3, Law 11).
+   */
+  const baker = (): PartyId => firmIn(rigDraw('goods.perish'), 'machine');
+
   const bread = (): World => {
     const spec = rigSpec('goods.perish');
     const modules = withDependencies(spec.modules, (m) =>
@@ -302,7 +321,7 @@ m.id === 'sovereign-instruments' ||
       modules: [
         ...modules,
         acts((ctx) => {
-          if (ctx.period === 1) make(ctx, 'firm.1', 'bread', tonnes(10), perTonne(2));
+          if (ctx.period === 1) make(ctx, String(baker()), 'bread', tonnes(10), perTonne(2));
         }),
       ],
     });
@@ -313,7 +332,7 @@ m.id === 'sovereign-instruments' ||
     const r = w.step();
     expect(r.audit.total).toBe(0);
     // A quarter of the ten tonnes went stale in the week it sat there.
-    expect(w.register.quantity(FIRM_1, BREAD_ID)).toBe(tonnes(7.5));
+    expect(w.register.quantity(baker(), BREAD_ID)).toBe(tonnes(7.5));
     // What is issued is what is held, by everybody: this baker is not the only one in the world.
     expect(w.instruments.get(BREAD_ID).issued).toBeCloseTo(
       w.register.heldTotal(BREAD_ID).value,
@@ -324,7 +343,7 @@ m.id === 'sovereign-instruments' ||
       .filter(
         (x) =>
           x.outcome === 'settled' &&
-          x.instruction.legs.some((l) => isDestroyLeg(l) && l.party === FIRM_1 && l.instrument === BREAD_ID),
+          x.instruction.legs.some((l) => isDestroyLeg(l) && l.party === baker() && l.instrument === BREAD_ID),
       );
     expect(spoiled).toHaveLength(1);
     const legs = spoiled[0]?.instruction.legs ?? [];
@@ -338,7 +357,7 @@ m.id === 'sovereign-instruments' ||
     // settlement is what said so — the event carries what it charged, not a number recomputed.
     const ev = w.journal
       .ofKind('goods.perished')
-      .filter((e) => e.subjects.includes(FIRM_1) && e.subjects.includes(BREAD_ID));
+      .filter((e) => e.subjects.includes(baker()) && e.subjects.includes(BREAD_ID));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.data['unitsPerMember']).toBe(tonnes(2.5));
     expect(ev[0]?.data['chargePerMember']).toBe(negQty(phx(2.5 * 2)));
@@ -350,7 +369,7 @@ m.id === 'sovereign-instruments' ||
     w.step();
     const r = w.step();
     expect(r.audit.total).toBe(0);
-    expect(w.register.quantity(FIRM_1, BREAD_ID)).toBe(tonnes(7.5 * 0.75));
+    expect(w.register.quantity(baker(), BREAD_ID)).toBe(tonnes(7.5 * 0.75));
   });
 });
 
