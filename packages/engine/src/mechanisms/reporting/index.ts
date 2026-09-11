@@ -29,19 +29,29 @@ import type { SystemModule } from '../../world/module.js';
 import { REPORTING_PARAMS, anchorOf, reportingParams } from './data.js';
 import { publishableOn, quarterClosedBy, spanOf } from './fiscal.js';
 import { cashOf, incomeOf, isPublic, listedLineOf } from './report.js';
+import { guidanceOf, hasMoved, nextQuarter, type Guidance } from './guidance.js';
 
 export * from './data.js';
 export * from './fiscal.js';
 export * from './report.js';
+export * from './guidance.js';
 
 /** What this module has already published, so a quarter is reported once (A1: on a calendar). */
 interface Published {
   /** Company id to the labels of the quarters it has reported. */
   readonly done: Record<string, string[]>;
+  /** A5: what each report SAID it earned, so a later disagreement with the books is a restatement. */
+  readonly said: Record<string, number>;
+  /** B2: the per-period figure this management last guided to, so a revision is a MOVE and not a date. */
+  readonly guiding: Map<string, number>;
 }
 
 function published(ctx: MechanismContext): Published {
-  return ctx.state<Published>('reporting', () => ({ done: {} }));
+  return ctx.state<Published>('reporting', () => ({
+    done: {},
+    said: {},
+    guiding: new Map<string, number>(),
+  }));
 }
 
 /**
@@ -71,21 +81,112 @@ function publish(seed: string, ctx: MechanismContext): void {
     // where its own year end falls.
     if (compareCivil(quarter.begins, ctx.calendar.epoch) < 0) continue;
     const already = state.done[String(company.id)];
-    if (already?.includes(quarter.label) === true) continue;
-    report(ctx, company.id, quarter.label, quarter, line);
+    if (already?.includes(quarter.label) === true) {
+      // A5: RESTATEMENT. The entries are append-only and never edited (Register E2.a), so a figure
+      // already published can only change one way: a later entry dated into a span already
+      // reported. Re-reading the span every period is what catches it, and the original stands.
+      restate(ctx, company.id, quarter, state);
+      continue;
+    }
+    const earned = report(ctx, company.id, quarter.label, quarter, line);
+    state.said[key(company.id, quarter.label)] = earned;
     if (already === undefined) state.done[String(company.id)] = [quarter.label];
     else already.push(quarter.label);
+    // B1: and management guides to the quarter that opens next, in the lines the report carries.
+    guide(ctx, company.id, nextQuarter(anchorOf(seed, company.id), quarter), state);
+  }
+  // B2: a revision is information, so it is looked for every period and not only on a report.
+  revise(seed, ctx, state);
+}
+
+function key(company: PartyId, quarter: string): string {
+  return `${company}|${quarter}`;
+}
+
+/**
+ * A5: republished with a correction, dated, with the original standing (Register E2.a: a correction
+ * is a new entry, never an erasure). A restatement is information about the management.
+ */
+function restate(
+  ctx: MechanismContext,
+  company: PartyId,
+  quarter: ReturnType<typeof quarterClosedBy>,
+  state: Published,
+): void {
+  const was = state.said[key(company, quarter.label)];
+  if (was === undefined) return;
+  const span = spanOf(quarter, ctx.calendar);
+  const now = incomeOf(ctx, company, span.from, span.to).total;
+  if (!hasMoved(now, was)) return;
+  ctx.record(
+    'reporting.restate',
+    [company],
+    { company, quarter: quarter.label, was, now, moved: now - was },
+    true,
+  );
+  state.said[key(company, quarter.label)] = now;
+}
+
+/** B1, B4: what management expects of the coming quarter — its OWN outlook, published. */
+function guide(
+  ctx: MechanismContext,
+  company: PartyId,
+  coming: ReturnType<typeof quarterClosedBy>,
+  state: Published,
+): void {
+  const said = guidanceOf(ctx, company, coming);
+  if (said === undefined) {
+    // B2: withdrawal. A management that no longer has a view of its own income has nothing to say,
+    // and saying nothing is an event because the last thing it said is still standing.
+    if (!state.guiding.has(String(company))) return;
+    state.guiding.delete(String(company));
+    ctx.record('reporting.guidance.withdrawn', [company], { company, quarter: coming.label }, true);
+    return;
+  }
+  publishGuidance(ctx, company, said, state);
+}
+
+function publishGuidance(
+  ctx: MechanismContext,
+  company: PartyId,
+  said: Guidance,
+  state: Published,
+): void {
+  state.guiding.set(String(company), said.perPeriod);
+  ctx.record('reporting.guidance', [company], { company, ...said }, true);
+}
+
+/**
+ * B2: REVISED BETWEEN REPORTS, on a move and never on a schedule. A management whose own outlook has
+ * moved past the dust of the arithmetic that produced it has told its own decisions something new,
+ * and B4 says the audience is told the same thing.
+ */
+function revise(seed: string, ctx: MechanismContext, state: Published): void {
+  const today = ctx.calendar.endOf(ctx.period);
+  for (const company of ctx.parties.ofKind(FIRM)) {
+    const standing = state.guiding.get(String(company.id));
+    if (standing === undefined) continue;
+    if (!company.status.alive || !isPublic(ctx, company.id, listedLineOf(ctx, company.id))) {
+      state.guiding.delete(String(company.id));
+      ctx.record('reporting.guidance.withdrawn', [company.id], { company: company.id }, true);
+      continue;
+    }
+    const anchor = anchorOf(seed, company.id);
+    const coming = nextQuarter(anchor, quarterClosedBy(anchor, today));
+    const now = guidanceOf(ctx, company.id, coming);
+    if (now === undefined || !hasMoved(now.perPeriod, standing)) continue;
+    publishGuidance(ctx, company.id, now, state);
   }
 }
 
-/** The report itself: three statements, every line of them a read (A2). */
+/** The report itself: three statements, every line of them a read (A2). Returns the bottom line. */
 function report(
   ctx: MechanismContext,
   company: PartyId,
   label: string,
   quarter: ReturnType<typeof quarterClosedBy>,
   line: ReturnType<typeof listedLineOf>,
-): void {
+): number {
   forbid(line !== undefined, 'Reporting A1', `${company} reports with no share line`);
   const span = spanOf(quarter, ctx.calendar);
   const income = incomeOf(ctx, company, span.from, span.to);
@@ -126,6 +227,7 @@ function report(
     },
     true,
   );
+  return income.total;
 }
 
 /**

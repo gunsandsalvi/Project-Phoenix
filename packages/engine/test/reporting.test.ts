@@ -18,6 +18,7 @@ import {
   partyId,
   civil,
   compareCivil,
+  guidanceRecord,
   publishableOn,
   quarterClosedBy,
   spanOf,
@@ -193,5 +194,83 @@ describe('what a report carries (Reporting A2, A2.a, G2, G5)', () => {
     // outcome written down (Law 2), so the report carries the two and never their ratio.
     const keys = Object.keys(r!.data).join(' ');
     expect(/perShare|eps/i.test(keys)).toBe(false);
+  });
+});
+
+describe('guidance (Reporting B1, B2, B3, B4; Firm E7)', () => {
+  it('publishes the SAME number the firm own decisions read, and not a second one (B4)', () => {
+    const w = ran('reporting', 45);
+    const said = w.journal.ofKind('reporting.guidance');
+    expect(said.length).toBeGreaterThan(0);
+    for (const e of said.slice(-5)) {
+      const firm = partyId(e.subjects[0]!);
+      const own = w.participantView(firm).outlook('income');
+      if (!own.some) throw new Error(`${firm} guided with no outlook of its own income`);
+      // B4: a management that guides to a number it is not itself acting on has had its decisions
+      // made somewhere else. The published figure IS the outlook, with the periodicity stated
+      // beside it — the quarter figure is that number times the periods, and both are shown.
+      expect(Number(e.data['perPeriod'])).toBe(own.value.expected);
+      expect(String(e.data['unit'])).toBe(own.value.unit);
+      expect(Number(e.data['guided'])).toBeCloseTo(
+        Number(e.data['perPeriod']) * Number(e.data['periods']),
+        6,
+      );
+      // §46 A5: a horizon and a unit, or it is not an outlook.
+      expect(Number(e.data['periods'])).toBeGreaterThan(0);
+      expect(String(e.data['quarter']).length).toBeGreaterThan(0);
+    }
+  });
+
+  it('guides to the quarter that is COMING, never the one just reported (B1)', () => {
+    const w = ran('reporting', 45);
+    const reported = new Set(
+      w.journal
+        .ofKind('reporting.report')
+        .map((e) => `${e.subjects[0]}|${String(e.data['quarter'])}`),
+    );
+    for (const e of w.journal.ofKind('reporting.guidance')) {
+      const key = `${e.subjects[0]}|${String(e.data['quarter'])}`;
+      // Guiding to a quarter whose result is already published is not a forecast.
+      const already = w.journal
+        .ofKind('reporting.report')
+        .some(
+          (r) => `${r.subjects[0]}|${String(r.data['quarter'])}` === key && r.period <= e.period,
+        );
+      expect(already, `${key} was guided to after it had been reported`).toBe(false);
+    }
+    expect(reported.size).toBeGreaterThan(0);
+  });
+
+  it('revises on a MOVE and not on a schedule (B2)', () => {
+    const w = ran('reporting', 45);
+    const guiding = w.journal.ofKind('reporting.guidance');
+    const companies = new Set(guiding.map((e) => String(e.subjects[0])));
+    expect(companies.size).toBeGreaterThan(0);
+    // A revision published every period regardless would carry no information at all — which is
+    // what makes it a calendar rather than news. So there are fewer than one a period per company.
+    expect(guiding.length).toBeLessThan(45 * companies.size);
+    // And no two consecutive statements from one company say the same thing.
+    const last = new Map<string, number>();
+    for (const e of guiding) {
+      const who = String(e.subjects[0]);
+      const now = Number(e.data['perPeriod']);
+      expect(last.get(who), `${who} republished a figure it had not changed`).not.toBe(now);
+      last.set(who, now);
+    }
+  });
+
+  it('is a READ of the journal and stores nothing (B3)', () => {
+    const w = ran('reporting', 60);
+    const company = partyId(w.journal.ofKind('reporting.report')[0]!.subjects[0]!);
+    const record = guidanceRecord(w, company);
+    // It pairs what a management SAID with what its books then produced, and it exists only while
+    // somebody is looking: a stored record would be a second account of what a company said.
+    expect(record.quarters).toBeGreaterThan(0);
+    for (const m of record.misses) {
+      expect(typeof m.guided).toBe('number');
+      expect(typeof m.earned).toBe('number');
+    }
+    // And it is the same answer twice, because it is computed from the same journal both times.
+    expect(guidanceRecord(w, company).quarters).toBe(record.quarters);
   });
 });

@@ -35,7 +35,7 @@ export interface Quarter {
 }
 
 /** The last day of the month `c` is in, which is where a fiscal period ends. */
-function endOfMonth(c: Civil): Civil {
+export function endOfMonth(c: Civil): Civil {
   return civil(c.y, c.m, daysInMonth(c.y, c.m));
 }
 
@@ -55,11 +55,33 @@ export function quarterClosedBy(anchor: number, on: Civil): Quarter {
   );
   // The anchor's own month-end in the year `on` is in, and then back three months at a time until
   // one of them is on or before `on`. Four steps at most: a year has four quarters.
+  // Back to one that has closed, and then FORWARD to the latest one that has. Only walking back
+  // found the anchor month's own close and stopped there, so a company reported its first quarter
+  // and then the same quarter for ever — three reports in forty periods where there should have
+  // been nine, and never the one that had just closed.
   let ends = endOfMonth(civil(on.y, anchor, 1));
   while (compareCivil(ends, on) > 0) ends = endOfMonth(addMonths(ends, -MONTHS_IN_QUARTER));
+  for (;;) {
+    const next = endOfMonth(addMonths(ends, MONTHS_IN_QUARTER));
+    if (compareCivil(next, on) > 0) break;
+    ends = next;
+  }
+  return quarterEndingOn(anchor, ends);
+}
+
+/**
+ * The quarter whose CLOSE is this date. One builder, because "three months back to the first" is
+ * the arithmetic both callers want and a second copy of it would be the one that drifts (Law 4).
+ *
+ * The close is taken to the month's own last day first. Adding three months to the 30th of April
+ * lands on the 30th of July, and July closes on the 31st — so a walk that carried the day number
+ * would step a day short every time a short month met a long one, and a quarter would silently
+ * become the one before it.
+ */
+export function quarterEndingOn(anchor: number, close: Civil): Quarter {
+  const ends = endOfMonth(close);
   const opens = addMonths(ends, -(MONTHS_IN_QUARTER - 1));
-  const begins = civil(opens.y, opens.m, 1);
-  return { begins, ends, label: labelOf(anchor, ends) };
+  return { begins: civil(opens.y, opens.m, 1), ends, label: labelOf(anchor, ends) };
 }
 
 /**
@@ -68,10 +90,13 @@ export function quarterClosedBy(anchor: number, on: Civil): Quarter {
  * different year ends would think they covered the same three months.
  */
 function labelOf(anchor: number, ends: Civil): string {
-  const back = (ends.m - anchor + MONTHS_IN_YEAR) % MONTHS_IN_YEAR;
-  const quarter = QUARTERS_IN_YEAR - back / MONTHS_IN_QUARTER;
-  // The fiscal year is named for the calendar year its LAST quarter ends in.
-  const year = back === 0 ? ends.y : ends.y + (anchor < ends.m ? 1 : 0);
+  // How many quarters this close is BEFORE the year's own end: none for the anchor month itself,
+  // which is the fourth quarter, and three for the one that opens the year.
+  const before = ((anchor - ends.m + MONTHS_IN_YEAR) % MONTHS_IN_YEAR) / MONTHS_IN_QUARTER;
+  const quarter = QUARTERS_IN_YEAR - before;
+  // The fiscal year is named for the calendar year it ENDS in, which is this year when the close is
+  // at or before the anchor month and the next one when it is past it.
+  const year = ends.m <= anchor ? ends.y : ends.y + 1;
   return `${year}-FQ${quarter}`;
 }
 

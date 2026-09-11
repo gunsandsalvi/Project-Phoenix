@@ -291,13 +291,22 @@ read (§46 C2). Two numbers here would be Law 4's defect wearing a business suit
       out; 321 lines naming assessors, banks, the fund and the household cells is a statement.
 - [x] 10. Shares outstanding in the report, read off the line; a test that no per-share figure is
       stored anywhere (G5: earnings per share is income over shares, both of them reads).
-- [ ] 11. `reporting.restate` and its trigger: a figure the report carried that the books later
-      disagree with, caught by 12a.2's family contribution.
-- [ ] 12. Guidance published with the report, from the firm's existing outlook object; a test that the
-      published number and the number the firm's own decisions read are the same object (B4).
-- [ ] 13. Guidance revision and withdrawal as events, fired on a move bigger than the arithmetic's
-      dust, never on a schedule.
-- [ ] 14. `view.guidanceRecord(firm)` as a read of the journal; nothing stored.
+- [x] 11. `reporting.restate` and its trigger, and the trigger needs no audit coupling: the entries
+      are append-only and never edited (Register E2.a), so a published figure can change only one
+      way — a later entry dated into a span already reported. The module re-reads the span every
+      period and restates when it no longer sums to what was published, with the original standing.
+- [x] 12. Guidance published with the report, from the firm's existing `income` outlook — the same
+      object `firms` reads when it plans. The event carries the outlook's own figure AND the quarter
+      figure with the period count that produced it, so a reader can see there is one number and a
+      periodicity, not two numbers (B4). Tested against `view.outlook('income')` directly.
+- [x] 13. Revision fires on a move bigger than the dust of the arithmetic that produced it, looked
+      for every period and published only when it moved — a statement republished every period would
+      be a calendar and not news. Withdrawal fires when a management loses its own view or its
+      company stops being public. Tested: fewer statements than periods, and no two consecutive ones
+      from a company say the same thing.
+- [x] 14. `guidanceRecord(reads, firm)` as a read of the journal, taking anything that can read it —
+      a module context, the observer, a test — because the record is public and needs nothing
+      private. Nothing stored: a stored record would be a second account of what a company said.
 - [ ] 15. Module `research`: the estimate outlook, formed from the bank's own observations of the
       company, published as `research.estimate`.
 - [ ] 16. **The C6 test**: move the share print with the company's state unchanged; no estimate moves.
