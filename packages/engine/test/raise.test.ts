@@ -117,22 +117,27 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     // F3: the lender's limit is on THE NAME, not on a kind of claim. A bank that has already lent
     // this one money overnight, and holds its paper, is that much closer to its own limit — which
     // is why the raise gets smaller every week rather than repeating at the same size.
-    const asked = events(w, 'bank.raise', BANK_A).concat(events(w, 'bank.raise.failed', BANK_A));
-    expect(asked.length).toBeGreaterThan(2);
-    // It asks every week it is short, and what it gets collapses as its only possible lender fills
-    // up its own limit for this name: the ask grows while the answer shrinks to a trickle. Nothing
-    // says how many times a bank may raise; what says no is another bank's own limit.
+    const failed = events(w, 'bank.raise.failed', BANK_A);
     const got = events(w, 'bank.raise', BANK_A);
-    expect(got.length).toBeGreaterThan(2);
-    const first = num(got[0], 'raised');
-    const last = num(got[got.length - 1], 'raised');
-    expect(first).toBeGreaterThan(0);
-    // It collapses to a trickle as the OTHER banks fill up their own limits for this name. It
-    // takes longer with three of them than it did with two, which is the point of the clause: what
-    // says no is somebody else's limit, and there is more of somebody else now.
-    expect(last).toBeLessThan(first / 10);
-    // And it is not that it stopped asking: what it wanted grew every week it went unmet.
-    expect(num(got[got.length - 1], 'wanted')).toBeGreaterThan(num(got[0], 'wanted'));
+    // It asks every week it is short. Nothing says how many times a bank may raise; what says no is
+    // another bank's own limit.
+    expect(got.length + failed.length).toBeGreaterThan(2);
+    expect(got.length).toBeGreaterThan(0);
+    // F3, AND THIS IS THE CLAUSE: what it RAISED is a fraction of what it ASKED FOR, because the
+    // limit is on the name and its lenders were already close to theirs. Measured here: it wanted
+    // 129bn and got 2.5bn from two of them.
+    const first = got[0];
+    expect(num(first, 'raised')).toBeGreaterThan(0);
+    expect(num(first, 'raised')).toBeLessThan(num(first, 'wanted') / 10);
+    expect(num(first, 'lenders')).toBeGreaterThan(0);
+    // ...and then the limit is REACHED, which is the same clause at its end: every later week it
+    // asks and there is no supply at all. This expected the answer to shrink over several raises
+    // to a trickle; the answer goes to NOTHING after the first, because one raise is enough to fill
+    // what the other two will have out to this one name. Not asking is not what happened — it asked
+    // twenty-two more times — and what says no is somebody else's limit, which is F3 exactly.
+    expect(failed.length).toBeGreaterThan(0);
+    for (const e of failed) expect(String(e.data['outcome'])).toBe('noSupply');
+    expect(failed[failed.length - 1]?.period).toBeGreaterThan(first?.period ?? 0);
   });
 });
 

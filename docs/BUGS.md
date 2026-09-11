@@ -680,3 +680,24 @@ behind them do not.
 
 Seen at: `packages/engine/src/mechanisms/spot-fx/participants.ts:168`,
 `packages/engine/src/seeds/foundation.ts`.
+
+### 12d-16 — the cell grain moves the money by more than whole people are worth
+
+`resolution/cells.test.ts` runs the same world at three cell grains and asks that the aggregates
+differ only by what whole people do. The cash differs by **60,119,516** against a bar of
+**51,247,510** — seventeen per cent over, and the bar is the mechanism's own: the hours a whole
+person supplies over the run, across every labour venue, at the most any venue is paying.
+
+(The bar was read off the LAST `labour.goingRate` event, which with four countries is as likely to
+be one where nobody works; it is now the most any venue pays, which is what its own comment said.
+The numbers did not move — the United States is the only place in this world with a wage — so the
+bar was already right and the excess is real.)
+
+XI-15's own instruction for this is not to widen it: *"if the aggregates move, the resolution is too
+coarse and the finding is the resolution."* So the test stays red and this is the finding. What
+moves more than people do is what an INSTITUTION does — the test says so itself one line further
+down, where the deposit bar is a whole crossing — and which whole cells crossed which bank in which
+week is exactly what the grain changes. Whether the answer is a finer opening grain or a mechanism
+that stops a cell's whole account moving at once is worklist **16**, with the rest of the level.
+
+Seen at: `packages/engine/test/resolution/cells.test.ts:169`.

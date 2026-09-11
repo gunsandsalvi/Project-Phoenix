@@ -95,10 +95,17 @@ function read(w: World): Aggregates {
   // Labour D1.c: the going rate is a public read of what is actually paid, occupation by
   // occupation. The most any venue pays is the most a whole person could be earning, which is what
   // bounds the money that follows one — a single venue's last print is one thin book and is not.
-  const rates = w.journal.ofKind('labour.goingRate');
-  const last = rates[rates.length - 1];
-  const paid = (last?.data['wagePerHour'] ?? {}) as Record<string, number>;
-  const wage = Object.values(paid).reduce((a, x) => (x > a ? x : a), 0);
+  // THE MOST ANY VENUE IS PAYING, which is what the comment above says and what the bar needs —
+  // over every venue this world has, not over whichever one published last. There are twenty of
+  // them now (four countries by five occupations) and the last to publish is as likely to be a
+  // country with nobody working in it as the one these cells live in, so "the last print" was a
+  // thin book and sometimes an empty one.
+  let wage = 0;
+  for (const e of w.journal.ofKind('labour.goingRate')) {
+    for (const paid of Object.values((e.data['wagePerHour'] ?? {}) as Record<string, number>)) {
+      if (paid > wage) wage = paid;
+    }
+  }
   return {
     people: cells.reduce((a, p) => a + weightOf(p), 0),
     cells: cells.length,

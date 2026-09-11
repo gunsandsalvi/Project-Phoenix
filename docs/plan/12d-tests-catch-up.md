@@ -422,6 +422,7 @@ by one, and the record names which item makes each of the named ones green.
 | `opening-liquidity.test.ts` | leaves every desk inside its own limit | 12d-12 | dealer desks |
 | `bank-resolution.test.ts` | pays out of the fund the banks paid into (D4, D5) | 12d-13 | a valuation loss |
 | `spot-fx.test.ts` | moves one money against another | 12d-15 | 12/13h, the currency layer |
+| `resolution/cells.test.ts` | differs only by what whole people do | 12d-16 | 16 |
 
 Everything else named in `docs/BUGS.md` is a finding about a mechanism whose test does not depend on
 it: they are positioned when this item closes, and the record says where each landed.
