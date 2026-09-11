@@ -12,17 +12,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   period,
-  FIRM,
   isMoneyLeg,
   HOUSEHOLD,
   USD,
-  REGION,
   assemble,
   currencyUnit,
-  div,
-  downTick,
-  goodId,
-  mul,
   instrumentId,
   instrumentKindId,
   none,
@@ -33,15 +27,12 @@ import {
   upTick,
   type InstrumentKindId,
   type InstrumentKindProfile,
-  type MarketDecl,
   type MechanismContext,
-  type Order,
-  type ParticipantView,
   type SeedContext,
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigDraw, rigSpec, mergeModules, withDependencies } from './rig.js';
+import { deepBuyer, rigDraw, rigSpec, mergeModules, withDependencies } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -282,89 +273,16 @@ function failingWorld(...extra: readonly SystemModule[]): World {
 }
 
 /**
- * A buyer of flour far bigger than the crop that makes it: the mills bid the grain price up against
- * each other until one of them is paying more for the grain than the flour fetches. That is a firm
- * dying of its own decisions in a world that is otherwise running normally — which is the only kind
- * of death worth testing the consequences of.
+ * The world the seed opens, with somebody hungry enough in it to kill a mill: a buyer of flour far
+ * bigger than the crop that makes it, so the mills bid the grain price up against each other until
+ * one of them is paying more for the grain than the flour fetches. That is a firm dying of its own
+ * decisions in a world that is otherwise running normally — the only kind of death worth testing
+ * the consequences of. What "far bigger" means is the rig's (`deepBuyer`), because it is a property
+ * of this world rather than a number, and `firms.test.ts` wants the same second side.
  */
-/** How much deeper this buyer's pockets are than a mill's, and how far over the going rate it pays. */
-const BIG = 100;
-const OVER = 3;
-
-/** Law 19: what a firm in this world is actually holding in money, read when this module seeds. */
-function firmMoney(ctx: SeedContext): number {
-  let most = 0;
-  for (const f of DREW.firms) {
-    let held = 0;
-    for (const h of ctx.register.holdingsOf(partyId(f.firm))) {
-      const i = ctx.instruments.get(h.instrument);
-      if (ctx.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== USD) continue;
-      held += h.lots.reduce((acc, l) => acc + l.qty, 0);
-    }
-    if (held > most) most = held;
-  }
-  return most;
-}
-
-function hungryBuyer(): SystemModule {
-  const BUYER = partyId('buyer.1');
-  const instrument = goodId('flour', REGION);
-  return {
-    id: 'test.buyer',
-    spec: 'Goods C3',
-    requires: ['goods', 'seed.foundation'],
-    instrumentKinds: [],
-    partyKinds: [],
-    curveFamilies: [],
-    units: [],
-    params: [],
-    phases: [],
-    seed(ctx) {
-      ctx.parties.add({
-        id: BUYER,
-        kind: FIRM,
-        region: REGION,
-        name: 'A buyer',
-        bank: partyId('bank.a'),
-        representation: 'named',
-        status: { alive: true },
-      });
-      // PLAN §7: FAR BIGGER THAN THE CROP is the property, and it has to be read. A hundred million
-      // and four hundred tonnes were far bigger than the crop when the seed STATED this world's
-      // scale; 11.5 derives it, and four hundred tonnes is now a quarter of one per cent of what
-      // this world makes in a week — so the mills were never squeezed, nobody died, and three tests
-      // about what a death costs tested nothing. What it is endowed with is a multiple of what a
-      // firm in this world actually holds, so the buyer is big however big the world turns out.
-      const deep = upTick(mul(firmMoney(ctx), BIG, 'a buyer with far deeper pockets than a mill'));
-      ctx.endowMoney(BUYER, USD, deep);
-      ctx.endowMoney(partyId('bank.a'), USD, deep);
-    },
-    participants: [
-      {
-        partyKind: FIRM,
-        // C3: it pays well over the going rate for as much as its money will buy, which is what
-        // being hungry IS — and both halves are read off this world rather than stated. The mills
-        // bid the grain up against each other to serve it until one is paying more for the grain
-        // than the flour fetches, and that mill dies of its own decisions.
-        speculative: true,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          if (view.self.id !== BUYER || m.instrument !== instrument) return [];
-          const going = view.mark(instrument);
-          if (!going.some || going.value <= 0) return [];
-          const price = mul(going.value, OVER, 'well over what flour is fetching');
-          const qty = downTick(div(view.cash(USD), price, 'as much as its money buys'));
-          return qty > 0 ? [{ party: BUYER, side: 'buy', price, qty }] : [];
-        },
-      },
-    ],
-    families: [],
-  };
-}
-
-/** The world the seed opens, with somebody hungry enough in it to kill a mill. */
 function worldWithADeathInIt(seed = 'estate'): World {
   const spec = rigSpec(seed);
-  return assemble({ ...spec, modules: mergeModules(spec.modules, [hungryBuyer()]) });
+  return assemble({ ...spec, modules: mergeModules(spec.modules, [deepBuyer(DREW, 'flour')]) });
 }
 
 describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {

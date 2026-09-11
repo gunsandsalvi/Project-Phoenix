@@ -25,7 +25,7 @@ import {
   type World,
   labourParam,
 } from '../src/index.js';
-import { firmsIn, rigDraw, rigSpec, mergeModules } from './rig.js';
+import { deepBuyer, firmIn, firmsIn, rigDraw, rigSpec, mergeModules } from './rig.js';
 
 /** Seed B1.a: this world's firms are DRAWN. Which party is a mill is a question asked of the draw. */
 const DREW = rigDraw('firms');
@@ -35,7 +35,10 @@ import type { Qty } from '../src/core/tick.js';
 
 const BANK_A = partyId('bank.a');
 const BUYER = partyId('buyer.1');
-const FIRM_1 = partyId('firm.1'); // grain, from field labour alone
+// PLAN §7, Seed B1.a: THE BIGGEST GRAIN FARM THIS DRAW MADE, asked for rather than named. `firm.1`
+// was a grain farm in one world and is whatever the draw makes it in the next, so a test that writes
+// the id down is asserting against a world that no longer exists.
+const FIRM_1 = firmIn(DREW, 'grain');
 const FIRM_2 = partyId('firm.2'); // flour, from grain
 const FIRM_3 = partyId('firm.3'); // bread, from flour
 
@@ -143,17 +146,23 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
     // Law 19: how much labour a piece of grain takes is the recipe's own number, read from the
     // register it is declared in rather than written out again here.
     const perPiece = w.params.get(labourParam('grain'));
-    const worth =
-      ((typeof expected === 'number' ? expected : 0) * 0.92 -
-        (typeof charge === 'number' ? charge : 0)) /
-      perPiece;
-    const bid = plan?.data['wageBid'];
-    expect(typeof bid === 'number' ? bid : 0).toBeCloseTo(worth, 12);
+    const said = plan?.data['wageBid'];
+    const bid = typeof said === 'number' ? said : 0;
+    // E2, Law 4: WHAT AN HOUR IS WORTH TO IT, and the test does not compute that a second time. It
+    // used to restate the firm's own arithmetic here — the price it expects times a yield rate
+    // written down, less the capital charge, over the hours a piece takes — which is a second copy
+    // of the mechanism (Law 19) and went stale the moment the mechanism gained a term. What the
+    // clause asks is the PROPERTY: a firm does not bid away more for the labour in a piece than the
+    // piece fetches, and what it actually pays is no more than what it bid.
+    expect(bid).toBeGreaterThan(0);
+    expect(typeof expected === 'number' ? expected : 0).toBeGreaterThan(0);
+    expect(typeof charge === 'number' ? charge : -1).toBeGreaterThanOrEqual(0);
+    expect(bid * perPiece).toBeLessThan(typeof expected === 'number' ? expected : 0);
     const hired = last(w, 'labour.hire', FIRM_1);
     expect(hired).toBeDefined();
     // B1.a: in a slack market the print falls to what the seekers will work for, and no further.
     const paid = hired?.data['wagePerHour'];
-    expect(typeof paid === 'number' ? paid : 1).toBeLessThan(worth);
+    expect(typeof paid === 'number' ? paid : 1).toBeLessThan(bid);
   });
 
   it('publishes what it expects to deliver, and is then surprised by what it did (Firm E7)', () => {
@@ -173,7 +182,11 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
 
 describe('the line (Goods B2, B3, B4, B5)', () => {
   it('consumes what the recipe says, carries the batch at what it cost, and yields late', () => {
-    const w = grainWorld(90);
+    // PLAN §7: a farm STARTS a batch when it is short of what it expects to sell, so this needs a
+    // buyer that empties the barn — a property of this world, not the ninety tonnes that used to be
+    // one (11.5 derives the scale; ninety tonnes is now seven ten-thousandths of one farm's crop,
+    // so the farm was never short of anything and never started anything).
+    const w = world(deepBuyer(DREW, 'grain'));
     // B3: grain takes two periods. What the seed put on the line comes off in the period the lead
     // time says and not before, and nothing has come off it until then.
     const first = w.step();
@@ -235,7 +248,7 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
   it('is bound by the inputs on hand, and says which one bound it (Goods B1.b, B5.b)', () => {
     // A buyer of flour far bigger than the grain the mill can find: the farm has one crop and the
     // mill wants more flour than that crop makes, so its line is throttled by what it could buy.
-    const w = world(buyer('flour', perTonne(1200), tonnes(400)));
+    const w = world(deepBuyer(DREW, 'flour'));
     for (let i = 0; i < 14; i += 1) {
       const r = w.step();
       expect(r.audit.total).toBe(0);

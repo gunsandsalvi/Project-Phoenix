@@ -19,19 +19,31 @@
  * means something different in the next world. A test that wants a mill asks for one.
  */
 import {
+  FIRM,
   FIRM_COUNT,
+  REGION,
+  USD,
   assemble,
+  div,
+  downTick,
   drawBanks,
   drawFirms,
   foundationDraw,
   foundationSpec,
+  goodId,
+  mul,
   paramId,
   partyId,
+  upTick,
   type AssemblySpec,
   type BankDecl,
   type FirmDecl,
   type FoundationDraw,
+  type MarketDecl,
+  type Order,
+  type ParticipantView,
   type PartyId,
+  type SeedContext,
   type SystemModule,
   type World,
 } from '../src/index.js';
@@ -309,4 +321,88 @@ export function ranWorld(seed: string, periods: number, banks = RIG_BANKS, firms
   for (let i = 0; i < periods; i += 1) w.step();
   stepped.set(key, w);
   return w;
+}
+
+/**
+ * A BUYER DEEP ENOUGH TO EMPTY THIS WORLD'S BARN, and both halves of "deep" are read off the world.
+ *
+ * A test of what a SELLER does needs a second side that cannot run out of cash halfway through and
+ * change the subject — and "far bigger than the crop" is a PROPERTY of this world, never a tonnage.
+ * A hundred million dollars and four hundred tonnes were far bigger than the crop while the seed
+ * STATED this world's scale; 11.5 derives it, and four hundred tonnes is now a fraction of a per
+ * cent of what one farm is sitting on. A written-down appetite therefore bought a rounding error,
+ * no seller was ever short of anything, and tests about what a firm does when it runs out tested
+ * nothing. So this one pays a multiple of the going rate for as much as its money buys, and its
+ * money is a multiple of what a firm in this world actually holds: big however big the world is.
+ *
+ * It is `speculative` because that is what it is (Clearing C2): it posts against the going mark
+ * rather than a print of its own, and it stands in for demand this world has somewhere else.
+ */
+export const DEEP_BUYER = partyId('buyer.1');
+
+/** How much deeper this buyer's pockets are than a firm's, and how far over the going rate it pays. */
+const DEEP = 100;
+const OVER = 3;
+
+/** Law 19: what a firm in this world is actually holding in money, read when this module seeds. */
+function firmMoney(ctx: SeedContext, draw: FoundationDraw): number {
+  let most = 0;
+  for (const f of draw.firms) {
+    let held = 0;
+    for (const h of ctx.register.holdingsOf(partyId(f.firm))) {
+      const i = ctx.instruments.get(h.instrument);
+      if (ctx.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== USD) continue;
+      held += h.lots.reduce((acc, l) => acc + l.qty, 0);
+    }
+    if (held > most) most = held;
+  }
+  return most;
+}
+
+export function deepBuyer(
+  draw: FoundationDraw,
+  subUnit: string,
+  bank = partyId('bank.a'),
+): SystemModule {
+  const instrument = goodId(subUnit, REGION);
+  return {
+    id: 'test.buyer',
+    spec: 'Goods C3',
+    requires: ['goods', 'seed.foundation'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [],
+    seed(ctx) {
+      ctx.parties.add({
+        id: DEEP_BUYER,
+        kind: FIRM,
+        region: REGION,
+        name: 'A buyer',
+        bank,
+        representation: 'named',
+        status: { alive: true },
+      });
+      const deep = upTick(mul(firmMoney(ctx, draw), DEEP, 'far deeper pockets than a firm'));
+      ctx.endowMoney(DEEP_BUYER, USD, deep);
+      ctx.endowMoney(bank, USD, deep);
+    },
+    participants: [
+      {
+        partyKind: FIRM,
+        speculative: true,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
+          if (view.self.id !== DEEP_BUYER || m.instrument !== instrument) return [];
+          const going = view.mark(instrument);
+          if (!going.some || going.value <= 0) return [];
+          const price = mul(going.value, OVER, 'well over what it is fetching');
+          const qty = downTick(div(view.cash(USD), price, 'as much as its money buys'));
+          return qty > 0 ? [{ party: DEEP_BUYER, side: 'buy', price, qty }] : [];
+        },
+      },
+    ],
+    families: [],
+  };
 }
