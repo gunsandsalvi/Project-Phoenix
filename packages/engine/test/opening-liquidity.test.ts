@@ -18,12 +18,14 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
+  FUND,
   HOUSEHOLD,
   USD,
   assemble,
   moneyInstrumentId,
   none,
   partyId,
+  period,
   some,
   type Event,
   type MechanismContext,
@@ -100,10 +102,16 @@ describe('who opens holding a listed line (Equity A1, B3; Seed E1)', () => {
     // Not one piece of it on a bank's book: a dealer's inventory is a position it takes by trading,
     // and at period zero nobody has traded anything (Seed E1).
     for (const p of w.parties.ofKind(BANK)) expect(w.register.quantity(p.id, id)).toBe(0);
-    // And every piece of it has a named holder: what the members hold IS the line (Law 8).
+    // And every piece of it has a named holder: what the savers hold IS the line (Law 8) — DIRECTLY
+    // or through a fund that holds it for them. An index fund's launch takes its basket out of the
+    // float (Fund Shares E3), so a slice of every line it tracks opens on the fund's book and the
+    // savers hold that slice through its shares instead. Counting only the cells left the fund's
+    // slice looking like a piece of the line with nobody behind it, which is the one thing this is
+    // about; what it is NOT about is which vehicle a saver holds it in.
     let held = 0;
-    for (const cell of w.parties.ofKind(HOUSEHOLD)) {
-      held += w.register.quantity(cell.id, id) * (cell.representation === 'cell' ? cell.weight : 1);
+    for (const p of w.parties.all()) {
+      if (p.kind !== HOUSEHOLD && p.kind !== FUND) continue;
+      held += w.register.quantity(p.id, id) * (p.representation === 'cell' ? p.weight : 1);
     }
     expect(held).toBe(w.instruments.get(id).issued);
     expect(held).toBeGreaterThan(0);
@@ -163,9 +171,14 @@ function penalty(at: number, weeks: number, share: number): SystemModule {
           if (!p.status.alive) return;
           const cb = ctx.registry.centralBankOf(USD);
           if (each === 0) {
+            // Law 3, Clearing F1.a: AT THE MARKS THAT EXIST. This phase runs before the markets do,
+            // so this period has no print yet and asking for one throws — which is the kernel doing
+            // its job (a phase reading a not-yet-produced print). A penalty is struck off the last
+            // balance sheet anybody could read, and that is last week's.
+            const on = period(ctx.period - 1);
             let assets = 0;
             for (const h of ctx.register.holdingsOf(bank)) {
-              assets += ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period);
+              assets += ctx.valuation.valueOfLots(h.instrument, h.lots, on);
             }
             each = Math.round(assets * share);
           }

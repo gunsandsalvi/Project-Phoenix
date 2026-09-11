@@ -541,3 +541,51 @@ same place 12d-8's authorised participants are answered.
 
 Seen at: `packages/engine/src/mechanisms/equity/data.ts:44`,
 `packages/engine/src/mechanisms/banks/dealing.ts:203`.
+
+### 12d-11 — every bank posts the same deposit board, so no depositor ever moves
+
+Measured over 52 periods of two rig seeds (`deposits-why`, `run-a`): `deposit.moved` fires **zero**
+times, no bank draws the window, no session refuses one — and the reason is one number. The three
+banks' boards are identical to the last digit:
+
+```
+bank.a {"retail":0.012500073062255977,"corporate":0.014500073062255977, ...}
+bank.b {"retail":0.012500073062255977, ...}
+bank.c {"retail":0.012500073062255977, ...}
+```
+
+`defended` (`banks/treasury.ts:334`) matches the keenest rival exactly whenever that rival pays more
+than this bank's own offer and less than what the money is worth to it. Matching is free, perfect
+and instant, so every board converges on the keenest bank's own offer every period, and the
+`depositMargin` each bank was drawn with never shows. A household moves on a GAP (`households/bank.ts`)
+and there is never one.
+
+That is Seed B4's failure mode stated the other way round: a sector of equals never produces a
+market, and §46 A3's disagreement — the thing that gives a market two sides — has been matched away.
+The missing mechanism is whatever makes matching imperfect; A1.d's stickiness is deliberately NOT
+it (`setBoard` refuses to subtract a depositor's cost from a rate, and is right to).
+
+**Six tests are named on this and stay red**: `deposits.test.ts` 3 (all three doors, the class that
+drains, the class that splits) and `run.test.ts` 3 (the whole E1 → E3.a → B7 → C4.b → failure chain,
+which cannot start). It belongs with deposit competition — Banks Funding B1/D1 — and is an inserted
+item there, not 12d's.
+
+Seen at: `packages/engine/src/mechanisms/banks/treasury.ts:334`.
+
+### 12d-12 — a desk's limit is measured against its bank's liquidity portfolio
+
+`opening-liquidity.test.ts` asks that every desk opens inside its own limit (Dealer Desks D1, D4).
+Measured at the rig's six banks: `roomLeft -58,287,103,191` against a book of 53,417,676,666, and
+the book is almost entirely SOVEREIGN PAPER — tens of billions of `ust.bill.*` and `ust.*` per bank,
+against 30,531 of the one fund share on it.
+
+That paper is the bank treasury's liquidity buffer, not a position its desk took. `quoteFor` reads
+inventory as `view.free(instrument)` and the aggregate book as the whole of it, so a bank holding
+what the liquidity standard requires is a desk over its dealing limit before it has quoted anything.
+The per-line arithmetic already knows the difference — `state.targetIn(instrument)` is where the
+treasury wants the line, and `away = inventory − target` — and the AGGREGATE does not.
+
+One holding, two purposes, one of them measured with the other's ruler (Law 4). Belongs with the
+dealer desks, beside 12d-10 and 12d-8. The test is named and stays red.
+
+Seen at: `packages/engine/src/mechanisms/banks/dealing-quote.ts:208`.

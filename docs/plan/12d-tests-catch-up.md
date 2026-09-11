@@ -417,6 +417,9 @@ by one, and the record names which item makes each of the named ones green.
 | --- | --- | --- | --- |
 | `capital.test.ts` | ten, an investment decision that correctly declines | 12d-1, 12-15 | 16 |
 | `equity.test.ts` | sells new shares when it is short and the market is dear | 12d-9 | 16 |
+| `deposits.test.ts` | three, every door and the class that drains | 12d-11 | deposit competition |
+| `run.test.ts` | three, the whole run chain, which cannot start | 12d-11 | deposit competition |
+| `opening-liquidity.test.ts` | leaves every desk inside its own limit | 12d-12 | dealer desks |
 
 Everything else named in `docs/BUGS.md` is a finding about a mechanism whose test does not depend on
 it: they are positioned when this item closes, and the record says where each landed.
