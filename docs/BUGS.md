@@ -313,11 +313,43 @@ green by editing them: a test that asserts plant is bought, built, bid for at wh
 service is worth, and retired into a new vintage is asserting the mechanism, and the mechanism does
 not run (Law 11, and 12d's own guard names this temptation by name).
 
-**Where it belongs.** Its own item, INSERTED BEFORE 12d CLOSES, because 12d's exit criterion is a
-green `npm run check` and ten tests cannot go green until a firm wants a machine. The first step is
-the one question this finding does not answer: why `wanted` is empty — whether the gap between the
-cautious run rate and capacity never opens, whether the hurdle is never cleared, or whether
-`plantHeld` reports a ceiling nobody is at.
+**WHY `wanted` IS EMPTY, measured by instrumenting every gate in `project()` and reverting it.** It is
+the capacity gate, first try, every firm, every period:
+
+```
+GATE gap | gap=-20877525277.3  cautious=4474722.7  capacityNext=20882000000
+```
+
+A farm's plant lets it run at **4,670 times** the rate it is sure enough of to build for. A second
+firm, from its own start event: `{"planned":5198475,"bound":"plan","capacity":109022000000}` — bound
+by its own PLAN at twenty-one thousandths of one per cent of what its plant allows.
+
+**SO THE MECHANISM IS RIGHT.** A firm with four thousand times the plant it needs declining to buy
+more is Capital Programme B3 working exactly as written, and `project()` is correct to return none.
+There is nothing to fix in `firms/invest.ts` or `capital-programme/`.
+
+**And the test's lever cannot reach it either.** `capital.test.ts` turns `goods.grain.plant.machinery`
+up four times to put the farms at their ceiling — but the SEED sizes a firm's plant from that same
+recipe figure (`plantOf` = what the line starts x the plant it takes x 1.5 headroom), so raising the
+requirement raises the endowment with it and the ratio does not move. Measured at 64x, 1024x, 4096x
+and 16384x: `capital.commissioned 0` at every one of them. The knob is not a knob.
+
+**What it actually is.** The seed sizes a firm for `startsOf(f)`, derived from the hours this world's
+people offer against the hours its chain needs, and gives it 1.5x the plant that needs. The firm then
+plans from what it expects to SELL — and that is about fourteen thousand times smaller. The world can
+make far more than anybody in it buys, and every consequence of that follows: no firm is near its
+ceiling, no machine is ever bought, no plant is ever built.
+
+**Which is 12-15, and it is not this item's and not the capital mechanism's.** "A world whose firms
+produce a hundred and fiftieth of the scale their plant is sized for" is already recorded and already
+positioned at **worklist 16**, where a level is judged — and closing a gap between what a world can
+make and what it buys reaches the seed's sizing, the recipes, wages, prices and the household
+consumption rule all at once. Tuning any of them here to make ten tests pass is exactly what Part XII
+exists to prevent.
+
+**So the ten reds stay red and are NAMED.** They assert a mechanism that is correct and never fires,
+and 12d may not edit them into agreement with a world that does not invest (Law 11; 12d's own guard).
+What 12d owes them is this entry and a worklist row saying which item makes them green: **16**.
 
 ### 12b-2 — RESOLVED here: a value in one money written into an account kept in another
 

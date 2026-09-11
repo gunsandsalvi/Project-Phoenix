@@ -397,9 +397,19 @@ matching rule asserts about the match, and the world it builds has to let the ma
 
 ## Exit criteria
 
-`npm run check` is green, and every red that was closed is closed for a stated reason: the world
-moved and the test now asserts the property, or the mechanism was wrong and an item says so. No
-party id, no seed amount and no widened tolerance is left in a test that did not have one.
+Every red is either CLOSED for a stated reason — the world moved and the test now asserts the
+property — or NAMED: the mechanism is wrong (or correct and never fires), an item says so, and the
+test is left red rather than edited into agreement with it. No party id, no seed amount and no
+widened tolerance is left in a test that did not have one.
+
+**This is a change to what this item said, and it says so.** The line above read "`npm run check` is
+green", and that cannot be true at the same time as "a red that is a mechanism's fault gets an item":
+a test asserting a mechanism that does not run stays red until the mechanism runs, and making it
+green is precisely the temptation this file's own guard names. `capital.test.ts` is the case that
+forced the question — ten reds asserting an investment decision that is CORRECT to decline, because
+every firm in this world has four thousand times the plant it needs (`docs/BUGS.md` 12d-1, and it is
+12-15's level, positioned at worklist **16**). So 12d closes with the suite's reds accounted for one
+by one, and the record names which item makes each of the named ones green.
 
 ## Guard
 
