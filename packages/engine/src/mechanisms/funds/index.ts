@@ -1080,28 +1080,50 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     );
   }
   if (backs.length === 0) return;
-  // Law 8: whole shares. Each holder takes ITS OWN slice of that, so a world missing the desks that
-  // would have made its market launches a fund short by exactly their slices — which is Seed A3's
-  // "only what somebody who EXISTS actually took" and is why this is not one split of one total.
+  // Law 8: whole shares. Each holder puts in ITS OWN slice, so a world missing the desks that would
+  // have made its market launches a fund short by exactly their slices — which is Seed A3's "only
+  // what somebody who EXISTS actually took" and is why this is not one split of one total.
   const full = downTick(backs.reduce((a, b) => (b < a ? b : a)));
   if (full <= 0) return;
-  const taken = holders.map(([, share]) =>
-    downTick(mul(full, share, "this holder's slice of the launch")),
-  );
-  const launched = sum(taken).value;
-  if (launched <= 0) return;
-  const contributions: number[] = [];
+  const asked = sum(
+    holders.map(([, share]) => downTick(mul(full, share, "this holder's slice of the launch"))),
+  ).value;
+  if (asked <= 0) return;
+  // E3: the basket comes in FIRST and the shares are issued against what came. A holder gives up
+  // whole pieces per member (XI-15), so a little less of a line arrives than the arithmetic asked
+  // for — and a fund that issued against the ask would have issued shares its book did not back.
+  const gathered: { readonly perShare: number; readonly units: number; readonly price: number }[] = [];
   for (const [line, perShare] of Object.entries(e.basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
     const opening = ctx.prices.latest(id, ctx.period);
     if (!opening.some) continue;
-    const units = mul(perShare, launched, 'units of this line the launch put in');
+    const units = outOfTheFloat(
+      ctx,
+      id,
+      mul(perShare, asked, 'units of this line the launch asks for'),
+      e.fund as PartyId,
+    );
+    if (units <= 0) return;
     ctx.register.credit(e.fund as PartyId, id, units, opening.value.price, ctx.period);
-    ctx.instruments.adjustIssued(id, units);
-    contributions.push(mul(perShare, opening.value.price, 'what this line contributes to a share'));
+    gathered.push({ perShare, units, price: opening.value.price });
   }
-  const perShare = sum(contributions).value;
+  if (gathered.length === 0) return;
+  // The line that came up shortest says how many shares the basket backs; every other line has a
+  // little over, and what the fund holds per share is READ off it anyway (`basketOf`).
+  const backed = downTick(
+    gathered
+      .map((g) => div(g.units, g.perShare, 'the shares this line backs'))
+      .reduce((a, b) => (b < a ? b : a)),
+  );
+  const taken = holders.map(([, share]) =>
+    downTick(mul(backed, share, "this holder's slice of what the basket backs")),
+  );
+  const launched = sum(taken).value;
+  if (launched <= 0) return;
+  const perShare = sum(
+    gathered.map((g) => mul(g.perShare, g.price, 'what this line contributes to a share')),
+  ).value;
   if (perShare <= 0) return;
   for (const [at, [holder]] of holders.entries()) {
     const mine = taken[at];
@@ -1118,6 +1140,46 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     ccy: region.ccy,
     provenance: { kind: 'opening' },
   });
+}
+
+/**
+ * Seed A3, Equity A1, C1.a: A LAUNCH TAKES ITS BASKET OUT OF THE FLOAT, and never adds to it.
+ *
+ * It used to CREATE the units — `credit` to the fund and `adjustIssued` on the line — which is
+ * twenty thousand shares of a company nobody subscribed for, handed to a fund that paid nothing.
+ * At a stated launch of twenty thousand against a line of a hundred and eighty million that was a
+ * hundredth of a basis point and it never showed. Sized to the world it is five per cent, and five
+ * per cent is a company issuing a twentieth of itself and receiving nothing for it: `issued` stops
+ * being `book / price`, so every holder's claim on the residual is diluted by exactly the fund's
+ * basket and the book value a saver reads off the accounts is short by it (Equity A1, B3).
+ *
+ * So the launch takes what it holds from the holders that have it, pro rata, and the line's count
+ * does not move (D4: it changes only by a named event, and a launch is not one). What each of them
+ * gives up is per member and whole (Law 8, XI-15), so a cell too small to give up one piece gives up
+ * none and the fund holds a little less than the arithmetic asked for — which is what its basket per
+ * share is READ as anyway (`basketOf`), never stated.
+ */
+function outOfTheFloat(
+  ctx: SeedContext,
+  id: InstrumentId,
+  wanted: number,
+  fund: PartyId,
+): number {
+  const outstanding = ctx.instruments.get(id).issued;
+  if (outstanding <= 0 || wanted <= 0) return 0;
+  const taken: number[] = [];
+  for (const holder of ctx.register.holdersOf(id)) {
+    if (holder === fund) continue;
+    const weight = weightOf(ctx.parties.get(holder));
+    const mine = ctx.register.quantity(holder, id);
+    const perMember = downTick(
+      div(mul(mine, wanted, 'its share of what the launch takes'), outstanding, 'per member'),
+    );
+    if (perMember <= 0) continue;
+    ctx.register.debit(holder, id, perMember);
+    taken.push(mul(perMember, weight, 'units this holder gave up'));
+  }
+  return sum(taken).value;
 }
 
 export function funds(

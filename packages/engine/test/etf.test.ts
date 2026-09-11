@@ -371,7 +371,11 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
       .holdingsOf(FUND)
       .filter((h) => String(h.instrument).startsWith('equity.firm.'));
     expect(basket.length, 'the fund holds no shares at all').toBeGreaterThan(0);
-    for (const h of basket) expect(w.register.quantity(FUND, h.instrument)).toBeCloseTo(issued, 9);
+    // BACKS them, which is the clause, and is not the same as equalling them: a launch takes its
+    // basket out of the float and a holder gives up whole pieces PER MEMBER (Law 8, XI-15), so what
+    // arrives lands a little either side of the arithmetic — and the shares are issued against what
+    // arrived. What one share is a claim on is read off the holdings (B1), never stated.
+    for (const h of basket) expect(w.register.quantity(FUND, h.instrument)).toBeGreaterThanOrEqual(issued);
     const struck = w.journal.ofKind('etf.struck').filter((e) => e.period === w.period);
     expect(Number(struck[0]?.data['perShare'])).toBeGreaterThan(0);
   });
