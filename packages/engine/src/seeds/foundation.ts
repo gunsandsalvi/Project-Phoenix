@@ -1104,27 +1104,36 @@ export function foundationSeedFor(
     // ------------------------------------------------------------------------------------------
     // THE CROSS HOLDINGS (Currency D2, Spot FX B1, B2; Central Bank F4)
     //
-    // A share of what the US banks hold in paper is FOREIGN paper, split over the three countries
-    // that issue it, and each of those countries' central banks holds dollars. Neither is a
-    // position anybody took a view on: a bank holds a foreign government's bond because it is the
-    // liquid asset of a market it deals in, and a central bank holds another's because that is what
-    // reserves ARE (F4).
+    // EVERY CROSS HOLDING IN THIS WORLD IS A CENTRAL BANK'S, and that is not a convenience — it is
+    // the only holder for whom foreign paper is what it is FOR (Central Bank F4: reserves ARE a
+    // claim on another country's issuer). Each country's central bank holds the others' paper, and
+    // that one fact gives the currency layer everything it needs: a position to revalue every
+    // period (Currency D2, and for a central bank it goes to its revaluation account, A2.c), a
+    // COUPON that arrives in a money its receiver does not book in (C4), and parties on both sides
+    // of a pair holding a money they have no use for (Spot FX B1, B2; XI-13).
     //
-    // What it produces is the whole currency layer at once: a holding to revalue every period, a
-    // coupon that arrives in a money its receiver does not book in, and parties who each end up
-    // with a money they have no use for — which is two sides of a market (XI-13).
+    // IT IS NOT THE COMMERCIAL BANKS', and the first version of this seed had it be. A bank's
+    // liquid assets are its reserves plus what its own unencumbered paper would raise AT ITS OWN
+    // CENTRAL BANK'S WINDOW (Money Market C1, C1.a) — and a foreign government's bond raises
+    // nothing there, because the window is its own system's (Currency D4). So eight per cent of the
+    // banking system's paper moved abroad took eight per cent of its liquidity with it, every bank
+    // in the world went to negative funding room, `publishQuotes` stopped quoting anybody, and
+    // lending, investment and the whole real chain stopped with it — 121 credit quotes became 20.
+    // That is not a finding about banks; it is a seed that put a position where its own liquidity
+    // rule says it cannot be. What a COMMERCIAL bank holds abroad is a decision it takes with its
+    // own capital once there is a reason to (13h), and it is not the seed's to state.
     const crossShare = ctx.params.get(P.crossHoldingShare);
     const abroadShare = div(crossShare, ABROAD.length, 'the part of it that is any ONE country\u2019s');
-    for (const b of banks) {
-      const mine = zeroIfNone(assets.get(b.id));
-      const foreign = mul(mul(mine, paperShare, 'its paper'), abroadShare, 'the part of it that is foreign');
-      for (const c of ABROAD) {
-        const line = instrumentId(String(abroadLine.get(String(c.region))));
-        const price = openingOf(abroadPrice, String(c.region));
-        const units = div(foreign, price, `units of ${c.name}\u2019s line`);
-        if (units <= 0) continue;
-        ctx.endowUnits(b.id, line, held(ctx, line, units), priced(ctx, line, price));
-      }
+    const home = ctx.registry.centralBankOf(USD);
+    for (const c of ABROAD) {
+      const line = instrumentId(String(abroadLine.get(String(c.region))));
+      const price = openingOf(abroadPrice, String(c.region));
+      // F4: what it holds of one country's paper is the same share of the system's paper that
+      // country's own central bank holds of America's — the arrangement is symmetric because
+      // nothing here says which of them is the reserve currency (XI-12).
+      const units = div(mul(systemPaper, abroadShare, `what it holds of ${c.name}`), price, 'units');
+      if (units <= 0) continue;
+      ctx.endowUnits(home, line, held(ctx, line, units), priced(ctx, line, price));
     }
     // Central Bank F4: and each of their own reserves, which are a claim on the American issuer. It
     // is the benchmark line, because that is the one a reserve manager holds.
@@ -1516,7 +1525,10 @@ export function foundationSpec(
       creditEvents,
       banks(drew.banks),
       estate,
-      goods(),
+      // Goods A1: the goods of THIS world are made in the one region that has firms in it. The
+      // three abroad are a central bank, a treasury and a bond line (13i builds their economies),
+      // so opening grain markets there would be three books nobody is ever on either side of.
+      goods(GOODS, [REGION]),
       // Capital Programme: the kind of thing plant is, and the schedule it wears out on. Before the
       // firms, because a firm decides what to make against the plant it holds (A2) and what to
       // invest against what a machine costs (B1) — and a kind has to be registered to be held.

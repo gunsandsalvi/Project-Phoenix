@@ -114,6 +114,12 @@
     "steps": 16
   },
   {
+    "id": "11.5",
+    "title": "The banking system opens meeting its own liquidity standard",
+    "file": "11.5-bank-liquidity-opening.md",
+    "steps": 7
+  },
+  {
     "id": "12",
     "title": "An anchored market: the second opinion, the balance sheets under it, and the currency layer",
     "file": "12-currency-benchmarks-ratings.md",

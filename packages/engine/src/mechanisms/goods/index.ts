@@ -23,7 +23,7 @@ import { forbid } from '../../core/assert.js';
 import type { Period } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { AuditView } from '../../audit/view.js';
-import type { InstrumentId, InstrumentKindId } from '../../core/ids.js';
+import type { InstrumentId, InstrumentKindId, RegionId } from '../../core/ids.js';
 import { addTo, combineDust, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { isCreateLeg, isDestroyLeg } from '../../ledger/instruction.js';
@@ -374,7 +374,20 @@ function drawFor(view: AuditView, output: InstrumentId, qty: number): Map<Instru
  * The module. It is built per world, because the units identity it contributes remembers the stock
  * it saw last period, and that memory is one world's (Law 4).
  */
-export function goods(rows: readonly GoodDecl[] = GOODS): SystemModule {
+export function goods(
+  rows: readonly GoodDecl[] = GOODS,
+  /**
+   * Goods A1, C6: WHERE THESE THINGS ARE MADE AND TRADED. A good exists in a place because somebody
+   * there makes it, and a market for it exists because somebody there buys it — so which regions is
+   * data about this world, like the recipes themselves, and not a fact about goods. A world of four
+   * countries whose economy is in one of them would otherwise open four grain markets and stand
+   * three of them up with nobody on either side for ever, which is three markets that are not
+   * markets (Clearing A1) and three lines nobody can price (XI-6).
+   *
+   * Absent is every region the registry has, which is what a one-region world means by it.
+   */
+  regions?: readonly RegionId[],
+): SystemModule {
   // What perishes in store is the good; the batch on the line is counted with it and perishes with
   // nothing (B3), so the two sets are different questions and are kept apart.
   const kinds = new Set(rows.map((d) => goodKindId(d.subUnit)));
@@ -405,7 +418,9 @@ export function goods(rows: readonly GoodDecl[] = GOODS): SystemModule {
     families: [unitsIdentity(physical), recipeIdentity()],
     seed(ctx: SeedContext): void {
       refuseValueRecipes(ctx, rows);
-      for (const region of ctx.registry.regions.values()) {
+      const where = regions ?? [...ctx.registry.regions.values()].map((r) => r.id);
+      for (const id0 of where) {
+        const region = ctx.registry.region(id0);
         for (const d of rows) {
           const id = goodId(d.subUnit, region.id);
           ctx.instruments.add({

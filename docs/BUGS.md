@@ -966,3 +966,47 @@ the four.
 - collects on what households were paid and on what they bought (C1, C1.a)
   - `AssertionError: expected 0 to be greater than 0`
 
+
+
+### 12-19 — The banking system opens just below its own liquidity standard, and nobody lends
+
+**Where.** `packages/engine/src/seeds/foundation.ts` (the opening balance sheet) against
+`mechanisms/banks/quote.ts` (`fundingRoom`) and `mechanisms/money-market/deposits.ts` (`couldLeave`).
+
+**Measured.** A bank quotes a borrower only if it has room, and room is the least of capital,
+appetite and FUNDING. Funding room is `liquid − couldLeave`: what its reserves and its own paper
+would raise at its central bank's window, less the uninsured deposits that could run. In the rig
+world every bank opens with that negative:
+
+```
+bank.a  reserves 18.1e9  paper 25.0e9  liquid 64.8e9  couldLeave 71.1e9  → room −6.3e9
+bank.b  reserves 10.1e9  paper 19.6e9  liquid 29.8e9  couldLeave 40.7e9  → room −10.9e9
+```
+
+so `publishQuotes` quotes almost nobody. **Demonstrated to be the gate:** with deposits fully
+insured (`regulation.depositInsurance.limit` raised so nothing can run), credit quotes go from 23 to
+**230** in the same ten periods, with no other change.
+
+**What it costs.** Everything downstream of credit is dark: no loans, so no firm has a quoted rate,
+so `costOfCapital` is Missing for most of them, so `project()` is never reached and investment never
+happens. That is most of `capital.test.ts`, much of `loans.test.ts` and `credit-events.test.ts`, and
+it is why a firm that is plant-bound still never commissions anything.
+
+**Why it is the seed and not the rule.** `couldLeave` is a real stress — the uninsured part of every
+deposit — and `liquid` is a real read. What is wrong is the OPENING: the banks hold about two thirds
+of their assets in government paper, which the window takes only at a haircut, and one third in
+reserves. The system therefore opens below the standard it is then measured against. The record for
+item 11 established the pattern for the other side of this: **a bank opens where its own capital
+rule puts it**, derived, so that it neither has to shrink on the first morning nor opens with
+headroom nobody gave it. Its LIQUIDITY was never given the same treatment.
+
+**The shape of the fix.** The size of the central bank's balance sheet is what decides the mix: its
+paper is the banks' reserves. `seed.centralBank.openingHoldingShare` is a stated shape (0.2); it
+should be DERIVED from the standard the banks are held to, exactly as their capital is derived from
+the leverage rule. That is one equation and one unknown, and it is not seeding an outcome: a
+regulation is not an equilibrium, and the open-market operation still has its own target to move
+towards (Central Bank C1, and the comment there says why the two must differ).
+
+**Position.** Its own item, **11.5**, inserted before 12a: it is the opening balance sheet, which is
+what 11.4 was about and what item 12 absorbed. Everything after it that wants a firm to borrow —
+12a's income statement above all — reads a world where nobody does until this is fixed.
