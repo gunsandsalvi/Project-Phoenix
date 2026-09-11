@@ -1130,7 +1130,10 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     instrument: share,
     market,
     period: ctx.period,
-    price: perShare,
+    // Law 8, 12b.1: A LEVEL IS ON ITS MARKET'S OWN GRID, opening print included. What one share is
+    // a claim on is a division and lands wherever it lands (`perShare` above); what a market SHOWS
+    // is a tick, and a print off the grid is a level nobody could have posted.
+    price: ctx.registry.onQuoteGrid(FUND_SHARE, region.ccy, perShare),
     ccy: region.ccy,
     provenance: { kind: 'opening' },
   });
