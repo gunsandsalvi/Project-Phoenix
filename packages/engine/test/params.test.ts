@@ -95,8 +95,8 @@ describe('what the foundation world declares (XI-14)', () => {
     // a list that every item has to edit is a stale doc with ids in it (Law 16).
     expect(report.placeholders.length).toBeGreaterThan(0);
     for (const p of report.placeholders) {
-      expect(String(p.mechanism).length, `${p.id} stands in for nothing`).toBeGreaterThan(0);
-      expect(String(p.worklistItem), `${p.id} names no item that kills it`).not.toBe('');
+      expect(p.mechanism.length, `${p.id} stands in for nothing`).toBeGreaterThan(0);
+      expect(p.worklistItem, `${p.id} names no item that kills it`).not.toBe('');
     }
     // And the count is a READ of the register, never a number anybody wrote beside it (Law 19).
     expect(report.counts.placeholder).toBe(report.placeholders.length);

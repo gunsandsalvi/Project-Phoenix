@@ -13,6 +13,7 @@ import {
   partyId,
   type World,
 } from '../src/index.js';
+import { dustOf } from '../src/core/num.js';
 import { rigWorld } from './rig.js';
 
 function expected(w: World, party: string, variable: string): number | null {
@@ -57,19 +58,32 @@ describe('an outlook is personal (Expectations A2)', () => {
 describe('how an outlook moves (B1, B2, B4)', () => {
   it('is corrected towards what happened, at the party own speed, and never faster', () => {
     const w = rigWorld('exp-c');
-    // The treasury pays every cell the same mandate every period, so what a cell observes is
-    // steady: its outlook walks towards that number and arrives at it, never past it.
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell === undefined) throw new Error('no cell');
-    const seen: number[] = [];
-    for (let i = 0; i < 10; i += 1) {
-      w.step();
-      const e = expected(w, cell.id, 'income');
-      if (e !== null) seen.push(e);
+    for (let i = 0; i < 10; i += 1) w.step();
+    // §46 B1, B2, B4: THE CORRECTION IS TOWARDS WHAT HAPPENED AND NEVER PAST IT. This used to
+    // assert the outlook stood STILL for ten periods, on the grounds that the treasury pays every
+    // cell the same mandate every period — which was true of a world where the state was a cell's
+    // only payer. It is not: this cell is paid a wage by a firm whose own decisions move, so what
+    // it observes moves and so does what it expects. A number that does not move is not what B1 is
+    // about; what it is about is HOW one moves, and that is read off the surprises the party
+    // recorded (Law 19): every step lands between where it was and what it saw.
+    const scored = w.journal
+      .ofKind('expectations.surprise')
+      .filter((e) => e.subjects.includes(cell.id) && e.data['variable'] === 'income');
+    expect(scored.length).toBeGreaterThan(4);
+    for (const [at, e] of scored.entries()) {
+      const next = scored[at + 1];
+      if (next === undefined) continue;
+      const was = Number(e.data['expected']);
+      const saw = Number(e.data['observed']);
+      const now = Number(next.data['expected']);
+      // Towards, at its own speed: between where it was and what it saw, inclusive of either end.
+      const low = Math.min(was, saw);
+      const high = Math.max(was, saw);
+      expect(now).toBeGreaterThanOrEqual(low - dustOf(2, Math.abs(low) + Math.abs(now)));
+      expect(now).toBeLessThanOrEqual(high + dustOf(2, Math.abs(high) + Math.abs(now)));
     }
-    expect(seen.length).toBeGreaterThan(4);
-    const first = seen[0] ?? 0;
-    expect(seen.every((x) => Math.abs(x - first) < 1e-9)).toBe(true);
   });
 
   it('lags a step change by the party own memory (B1, B5)', () => {

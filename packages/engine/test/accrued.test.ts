@@ -22,6 +22,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { dustOf, withinDust } from '../src/core/num.js';
 import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTheSame, paidTo } from './expected.js';
 import { par } from './units.js';
@@ -164,7 +165,14 @@ describe('a trade in the middle of a coupon period', () => {
     // The lot the buyer holds carries the clean price, so its mark is the print and not the print
     // plus somebody else's interest.
     const h = w.register.holding(FIRM_1, GOV_LINE);
-    expect(h.some && h.value.lots.some((l) => l.basisPerUnit === CLEAN)).toBe(true);
+    // Law 7, Law 8: TO WITHIN THE DUST OF THE GRID THE LEVEL IS ON. A limit is posted on the
+    // market's own tick (12b.1) and a ten-thousandth of face is not binary-exact, so the level that
+    // cleared is the tick nearest `CLEAN` rather than the decimal typed here — an exact comparison
+    // is against a number that is not on the grid at all.
+    const lots = h.some ? h.value.lots : [];
+    expect(
+      lots.some((l) => withinDust(l.basisPerUnit, CLEAN, dustOf(2, l.basisPerUnit + CLEAN))),
+    ).toBe(true);
     // The ledger records what travelled, so nobody has to re-derive it (Law 19).
     const legs = trades
       .flatMap((r) => r.instruction.legs)
