@@ -25,8 +25,17 @@ interface AuctionRow {
   readonly stopOut: number | null;
 }
 
-function auctions(w: World): AuctionRow[] {
-  return w.journal.ofKind('auction.result').map((e) => ({
+/**
+ * Polity A1, PLAN §7: THE AUCTIONS OF ONE ISSUER. This world has four states selling paper (12d:
+ * the United States, Europe, the United Kingdom and Japan), and they auction in the same periods —
+ * so "the auction this period" was whichever of the four the journal happened to record first, and
+ * a test about the US treasury's cash was reading Japan's book. The issuer is on the event.
+ */
+function auctions(w: World, issuer: string = TREASURY_US): AuctionRow[] {
+  return w.journal
+    .ofKind('auction.result')
+    .filter((e) => e.subjects.includes(issuer))
+    .map((e) => ({
     period: e.period,
     line: String(e.data['line']),
     size: e.data['size'] as number,
@@ -40,19 +49,30 @@ describe('the obligation (Sovereign C3)', () => {
   it('brings dealers to every auction, so the paper is placed and the cash reaches the issuer', () => {
     const w = rigWorld('auc-a');
     let cashBefore = w.cash(TREASURY_US, USD);
+    let placed = 0;
     for (let i = 0; i < 12; i += 1) {
       const before = cashBefore;
       const r = w.step();
       cashBefore = w.cash(TREASURY_US, USD);
       const row = auctions(w).find((a) => a.period === r.period);
       if (row === undefined) continue;
+      // C3: THE OBLIGATION IS TO BID, and it is discharged at every auction — the dealers turn up.
       expect(row.cover).toBeGreaterThan(0);
+      // C7, D5.a: what they bid is their own, and the issuer never sells below its reservation, so
+      // an auction CAN fail — it does at period 12 of this run, on the long line, with a cover of
+      // 1.4 and every bid under the reserve. This asserted every auction places its paper, which is
+      // the one thing the next test is about. What follows a STRUCK stop-out is the placing.
+      if (row.stopOut === null) {
+        expect(row.allotted).toBe(0);
+        continue;
+      }
       expect(row.allotted).toBeGreaterThan(0);
       // C6: the proceeds reach the account, so the period it auctions in is a period it gains cash.
       expect(cashBefore).toBeGreaterThan(before - row.size);
-      expect(row.stopOut).not.toBeNull();
+      placed += 1;
     }
     expect(auctions(w).length).toBeGreaterThan(1);
+    expect(placed, 'no auction in this run placed any paper at all').toBeGreaterThan(0);
   });
 
   it('re-opens the line the tenor lands on rather than making a new one beside it (B3.a)', () => {
@@ -116,7 +136,11 @@ m.id !== 'central-bank-omo');
     );
     const w = assemble({ ...spec, modules: broke });
     let failed = false;
-    for (let i = 0; i < 12; i += 1) {
+    // Sovereign B3: WHEN this world's treasury next comes to market is its own funding programme's
+    // decision, and the programme moved when the seed's scale was derived (11.5) — twelve periods
+    // used to reach an auction of the long line and now reaches the bill that still places. What
+    // the clause is about is the auction that fails, so the run is long enough to contain one.
+    for (let i = 0; i < 16; i += 1) {
       const r = w.step();
       const row = auctions(w).find((a) => a.period === r.period);
       if (row?.allotted === 0) {
