@@ -11,13 +11,15 @@
  */
 import { describe, expect, it } from 'vitest';
 import { consensusOf, partyId, type World } from '../src/index.js';
-import { rigWorld } from './rig.js';
+import { ranWorld } from './rig.js';
 
-function ran(seed: string, periods: number, banks = 4, firms = 40): World {
-  const w = rigWorld(seed, banks, firms);
-  for (let i = 0; i < periods; i += 1) w.step();
-  return w;
-}
+/**
+ * Law 18: a world of this seed and draw, stepped this far — built ONCE for the whole file and read
+ * by every test that asks for the same one (`test/rig.ts`). Every test below only READS what its
+ * world did; a test that needed to act on one would build its own.
+ */
+const ran = (seed: string, periods: number, banks = 4, firms = 40): World =>
+  ranWorld(seed, periods, banks, firms);
 
 describe('the estimate (Reporting C1, C3, C4)', () => {
   it('is published by a named bank about a named company, with what it was formed from', () => {

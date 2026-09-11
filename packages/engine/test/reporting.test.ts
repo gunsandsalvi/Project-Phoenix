@@ -26,17 +26,19 @@ import {
   type PartyId,
   type World,
 } from '../src/index.js';
-import { rigWorld } from './rig.js';
+import { ranWorld } from './rig.js';
 
 function reportsOf(w: World): readonly Event[] {
   return w.journal.ofKind('reporting.report');
 }
 
-function ran(seed: string, periods: number, banks = 4, firms = 40): World {
-  const w = rigWorld(seed, banks, firms);
-  for (let i = 0; i < periods; i += 1) w.step();
-  return w;
-}
+/**
+ * Law 18: a world of this seed and draw, stepped this far — built ONCE for the whole file and read
+ * by every test that asks for the same one (`test/rig.ts`). Every test below only READS what its
+ * world did; a test that needed to act on one would build its own.
+ */
+const ran = (seed: string, periods: number, banks = 4, firms = 40): World =>
+  ranWorld(seed, periods, banks, firms);
 
 describe('the fiscal calendar is dates (Reporting A3, G6; Money G3.a, G3.b)', () => {
   it('closes a quarter on the last day of a month, three months at a time, round the year', () => {
@@ -62,7 +64,7 @@ describe('the fiscal calendar is dates (Reporting A3, G6; Money G3.a, G3.b)', ()
   });
 
   it('places the quarter on the one calendar, and nothing in it is finer than a period (G3.b)', () => {
-    const w = rigWorld('fiscal', 3, 12);
+    const w = ranWorld('fiscal', 0, 3, 12);
     const q = quarterClosedBy(4, civil(2026, 6, 15));
     const span = spanOf(q, w.calendar);
     // A3: a whole number of periods only by accident. What must hold is that the span's ends are
@@ -73,7 +75,7 @@ describe('the fiscal calendar is dates (Reporting A3, G6; Money G3.a, G3.b)', ()
   });
 
   it('publishes after a lag that is a POLICY somebody wrote (A4, A4.a)', () => {
-    const w = rigWorld('fiscal', 3, 12);
+    const w = ranWorld('fiscal', 0, 3, 12);
     const decl = w.params.decl(REPORTING_PARAMS.lag);
     expect(decl.kind).toBe('policy');
     expect(decl.owner).toBe('parliament');
@@ -83,7 +85,7 @@ describe('the fiscal calendar is dates (Reporting A3, G6; Money G3.a, G3.b)', ()
   });
 
   it('gives companies different year ends, so reporting season is not one week (A3)', () => {
-    const w = rigWorld('anchors', 4, 40);
+    const w = ranWorld('anchors', 0, 4, 40);
     const anchors = new Set(w.parties.ofKind(FIRM).map((f) => anchorOf('anchors', f.id)));
     // If every company closed in the same month there would be one season a year instead of a thing
     // that happens continuously, and every surprise in this world would land on the same morning.

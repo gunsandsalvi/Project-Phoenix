@@ -35,7 +35,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { listedIn, rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
+import { listedIn, ranWorld, rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 
@@ -224,7 +224,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
 
 describe('what a share is (Equity A)', () => {
   it('is a residual claim and not a liability of the firm that issued it (A1, A1.a)', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    const w = ranWorld('equity', 0, RIG.banks, RIG.firms);
     const kind = w.registry.instrumentKind(SHARE);
     expect(kind.liabilityOfIssuer).toBe(false);
     // A1.a: it ranks below everything the issuer owes. Money is 0, an unsecured loan is 1.
@@ -237,7 +237,7 @@ describe('what a share is (Equity A)', () => {
   });
 
   it('is perpetual and promises nothing dated, so nothing can discount it (A4, B3)', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    const w = ranWorld('equity', 0, RIG.banks, RIG.firms);
     const kind = w.registry.instrumentKind(SHARE);
     const line = w.instruments.get(LINE_4);
     expect(kind.due(line, w.period, w.calendar)).toHaveLength(0);
@@ -248,7 +248,7 @@ describe('what a share is (Equity A)', () => {
   });
 
   it('is named by its issuer and carries a vote per share (A5, A6, F3, XI-15)', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    const w = ranWorld('equity', 0, RIG.banks, RIG.firms);
     const line = w.instruments.get(LINE_4);
     expect(isShare(line.terms)).toBe(true);
     const terms = shareTerms(line);
@@ -266,7 +266,7 @@ describe('what a share is (Equity A)', () => {
   });
 
   it('opens at a level that is a resolution and not a shape (Seed C4, Law 2)', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    const w = ranWorld('equity', 0, RIG.banks, RIG.firms);
     const decl = w.params.decl(OPENING_SHARE);
     expect(decl.kind).toBe('resolution');
     // Law 2: the shapes this world declares are the four goods' opening prices, the opening yield
@@ -397,8 +397,7 @@ describe('what the firm does with it (Equity D)', () => {
   });
 
   it('never sells below its own reservation: a failed issue is a real outcome (D1.c, Clearing C4.a)', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
-    for (let i = 0; i < 30; i += 1) w.step();
+    const w = ranWorld('equity', 30, RIG.banks, RIG.firms);
     const auctions = w.journal
       .ofKind('auction.result')
       .filter((e) => String(e.data['line']).startsWith('equity.'));
@@ -416,8 +415,7 @@ describe('what the firm does with it (Equity D)', () => {
   });
 
   it('buys its own back only when the market is below its own book, and the cash is gone (D2, D2.b)', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
-    for (let i = 0; i < 40; i += 1) w.step();
+    const w = ranWorld('equity', 40, RIG.banks, RIG.firms);
     for (const e of w.journal.ofKind('equity.plan')) {
       const buyback = Number(e.data['buyback']);
       const dividend = Number(e.data['dividendPerShare']);
@@ -432,8 +430,7 @@ describe('what the firm does with it (Equity D)', () => {
 
 describe('what the holder gets (Equity F)', () => {
   it('gets no income from earnings that were not distributed (F4)', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
-    for (let i = 0; i < 8; i += 1) w.step();
+    const w = ranWorld('equity', 8, RIG.banks, RIG.firms);
     // F4: retained earnings reach a holder through the PRICE and never as income credited to it.
     // What reaches a holder's account is a settled money leg, so a period in which a firm retained
     // and paid nothing is a period in which nothing reached anybody on account of holding it.
@@ -475,8 +472,7 @@ describe('what the holder gets (Equity F)', () => {
 
 describe('the reads (Equity B4, B4.a, C1.b, G3)', () => {
   it('publishes the count, the float, the votes and what the market says it is all worth', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
-    for (let i = 0; i < 4; i += 1) w.step();
+    const w = ranWorld('equity', 4, RIG.banks, RIG.firms);
     const read = w.journal.ofKind('equity.reads').filter((e) => e.subjects.includes(BIG)).pop();
     expect(read).toBeDefined();
     expect(read?.public).toBe(true);
@@ -592,7 +588,7 @@ describe('the ownership identity (Equity C1.a)', () => {
 
 describe('the firm that has no shares (Law 15)', () => {
   it('is a real state: a firm this world did not list has no line and no market', () => {
-    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    const w = ranWorld('equity', 0, RIG.banks, RIG.firms);
     expect(w.instruments.has(equityLineOf(UNLISTED))).toBe(false);
     expect(w.markets.some((m) => m.id === equityMarketOf(UNLISTED))).toBe(false);
     expect(w.parties.ofKind(FIRM).length).toBeGreaterThan(3);

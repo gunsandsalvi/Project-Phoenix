@@ -251,6 +251,41 @@ company out of baskets it used to be in), so the two parted by exactly one step 
 unchanged for ever — which is why it looked like a step and not a drift. The step is now taken once,
 at the close of the period, and a reader inside a period gets the last level that is finished.
 
+## Found while working item 12c.1
+
+### 12c.1-1 — The cell partition refines every period and never coarsens
+
+**Where.** `world/cells.ts` (`mergeCells`, which nothing has ever called), `mechanisms/labour/
+matching.ts` (which splits on every hire and every release). Seen with `rigWorld('perf', 4, 40)`.
+
+**Measured.** Household cells, by period:
+
+```
+at seed 16      p15 260      p30 546      p45 844        — nineteen new cells a period
+```
+
+and every one alive. So the world itself grows: parties 318 → 604 → 902, holdings 3394 → 10433,
+ledger rows in a period 3188 → 9829 — and the cost of a period goes from 146ms at period 5 to
+1755ms at period 55, which makes a run quadratic in the periods it takes.
+
+**AND MERGING WOULD RECLAIM NOTHING.** At period 45, grouped by (cell key + exact per-member state),
+844 cells make **843 distinct groups**; ignoring lot acquisition periods too, still 843. The cells are
+genuinely different: a member who was hired has been paid and one who was not has not, so every
+partial event partitions the population a little finer and nothing ever makes two groups identical
+again. The representation degenerates towards one cell per person, which is the one thing a cell
+exists to avoid (XI-15: per-member state, no mean).
+
+**What is missing, and it is a question rather than a fix.** XI-15 gives five events that change a
+weight and `merge` is one of them, but a merge needs two cells that are the SAME — and in a world
+where every wage payment distinguishes its recipient, sameness never comes back. Either the state a
+cell carries is coarser than the register (members of a cell share a bank and a cohort, so why not a
+balance?), or a cell needs a rule for when two nearly-identical groups become one, and that rule is a
+modelling decision with an owner. Neither is a performance question.
+
+**Not chased.** 12c.1 is a Law 18 item and Law 18 says mechanisms, economics and boundaries never
+change in one. To be positioned when 12c.1 closes — a candidate for **worklist 16**, where the
+representation is measured, or its own item before the scale runs of Part XII.
+
 ### 12b-2 — RESOLVED here: a value in one money written into an account kept in another
 
 Named while reproducing 12b at `410bf16`, and it had two sites, both the same cause:

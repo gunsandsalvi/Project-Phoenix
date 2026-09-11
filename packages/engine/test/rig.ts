@@ -275,3 +275,33 @@ export function mergeModules(
   const replaced = new Set(extra.map((m) => m.id));
   return [...base.filter((m) => !replaced.has(m.id)), ...extra];
 }
+
+/**
+ * Law 18, PLAN §7: A WORLD THAT HAS ALREADY BEEN STEPPED, built once and shared.
+ *
+ * A world is a pure function of (seed, banks, firms) and the number of periods run — assembly is
+ * deterministic and `step` takes no input — so two tests asking for "this seed, this draw, sixty
+ * periods" are asking for ONE world, and building it twice is building it twice. `research.test.ts`
+ * asked for the same one eight times and paid 357 seconds for it; the three worst files between them
+ * built twenty-six worlds that were twenty-six copies of four.
+ *
+ * IT IS ONLY FOR READING, and the name says so. Everything a stepped world can be asked — what
+ * printed, what settled, what the journal says, what the audit found — is a read, and a shared read
+ * is the same answer. A test that steps the world further, settles an instruction into it or
+ * assembles it with extra modules is CHANGING it, and must build its own through `rigWorld`: what it
+ * wants is not a world that has been stepped, it is a world it can act on.
+ *
+ * Nothing about any world changes here. Law 18's gate is behaviour: the same tests pass and the same
+ * tests fail with this door as without it, and a test whose answer moves means it was mutating one.
+ */
+const stepped = new Map<string, World>();
+
+export function ranWorld(seed: string, periods: number, banks = RIG_BANKS, firms = RIG_FIRMS): World {
+  const key = `${seed}|${periods}|${banks}|${firms}`;
+  const held = stepped.get(key);
+  if (held !== undefined) return held;
+  const w = rigWorld(seed, banks, firms);
+  for (let i = 0; i < periods; i += 1) w.step();
+  stepped.set(key, w);
+  return w;
+}

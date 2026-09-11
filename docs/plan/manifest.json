@@ -156,6 +156,12 @@
     "steps": 5
   },
   {
+    "id": "12c.1",
+    "title": "The suite that got slower every period",
+    "file": "12c.1-suite-cost.md",
+    "steps": 5
+  },
+  {
     "id": "12d",
     "title": "The tests catch up with the world",
     "file": "12d-tests-catch-up.md",

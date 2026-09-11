@@ -20,15 +20,13 @@
  */
 import { describe, expect, it } from 'vitest';
 import { instrumentId, partyId, type World } from '../src/index.js';
-import { rigWorld } from './rig.js';
+import { ranWorld, rigWorld } from './rig.js';
 
 const AYEAR = 52;
 
-function ran(seed: string, periods = AYEAR, banks = 4, firms = 40): World {
-  const w = rigWorld(seed, banks, firms);
-  for (let i = 0; i < periods; i += 1) w.step();
-  return w;
-}
+/** Law 18: one world per (seed, shape, periods) for the whole file — every test here only reads. */
+const ran = (seed: string, periods = AYEAR, banks = 4, firms = 40): World =>
+  ranWorld(seed, periods, banks, firms);
 
 /** What each listed company last told everybody its residual was, per share (Reporting A2). */
 function bookPerShare(w: World): Map<string, number> {

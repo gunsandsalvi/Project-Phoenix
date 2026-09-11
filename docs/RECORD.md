@@ -2558,3 +2558,59 @@ what the company is worth without the company's own reports running away first. 
 line's print parts from its published book per share by an order of magnitude while that company goes
 on reporting normally, then the saver is not the marginal buyer and the desks are still pricing each
 other — and the next place to look is how much of the float a cell can actually bid for.
+
+---
+
+## 12c.1 — The suite that got slower every period
+
+**Inserted where the cost growth was observed** (Law 18), between 12c and 12d, because 12d is 168
+test migrations and an eleven-minute loop is not a loop.
+
+**643 seconds → 331, with 168 failed and 257 passed before and after — the same tests, name for
+name.** That is Law 18's gate and it was checked as a diff of the failing names, not as a count.
+
+**What the growth was.** Cost per period goes 146ms at period 5 to 1755ms at period 55 — twelve times
+dearer, so a run is quadratic in the periods it takes. Three candidates were measured and ruled out
+before anything was changed: the journal's reads are indexed (`ofKind` and `lastOf` are map lookups);
+the equity ledger walk is 22ms at period 40; and removing `reporting` and `research` entirely leaves
+the growth ratio unchanged (2.06x against 2.33x). The CPU profile is flat with 14% in the collector,
+which is what a world that is simply BIGGER looks like — and it is:
+
+```
+p15  parties 318  holdings 3394  ledger rows 3188      household cells: 16 at the seed
+p30  parties 604  holdings 6588  ledger rows 5761                       546 at period 30
+p45  parties 902  holdings 10433 ledger rows 9829                       844 at period 45
+```
+
+**Nineteen new household cells a period, and `mergeCells` has never once been called.** But merging
+would reclaim nothing: at period 45 the 844 cells make 843 distinct (key + state) groups. They are
+genuinely different — a member who was hired has been paid and one who was not has not — so the
+partition refines with every partial event and never coarsens. That is a MODEL finding about XI-15
+(`docs/BUGS.md` 12c.1-1) and Law 18 forbids touching it in a performance item.
+
+**What this item did instead** is stop the suite paying for it. A world is a pure function of (seed,
+draw, periods run), so two tests asking for the same one are asking for ONE world. `test/rig.ts`
+gained `ranWorld(seed, periods, banks, firms)`, which builds each once and shares it; the three
+expensive files asked through it. `research.test.ts` 357s → 65s (it had built the same 60-period
+world eight times); `reporting.test.ts` 170s → 75s.
+
+**And the door's rule is the interesting part.** A shared world is for READING. A test that steps it
+further, settles into it or assembles it with extra modules is CHANGING it and must build its own —
+which the gate caught immediately: converting two tests in `equity.test.ts` that stepped their world
+inside the test body turned six failures into seven, and the seventh was a test reading a world an
+earlier one had already advanced. They were given their own back. `balance-identity.test.ts` was
+converted and then REVERTED for the same reason, before running: every test in it steps the world it
+is handed, so no two may share one.
+
+`equity.test.ts` is unchanged at 258s and honestly so: its expensive tests step forty and fifty-two
+periods asserting the audit at each one, which is the property they are named for.
+
+**Found and not chased.** `docs/BUGS.md` **12c.1-1**: the cell partition refines every period and
+never coarsens, so the representation degenerates towards one cell per person. Either a cell's state
+is coarser than the register's or there is a rule for when two nearly-identical groups become one,
+and both are modelling decisions with an owner. Positioned when this item closes.
+
+**Forecast, with its killer.** The claim is that every world shared through `ranWorld` is read and
+never written, so sharing cannot change an answer. The killer: any test whose result moves when the
+file's test order changes is one that mutates a shared world — `vitest --sequence.shuffle` is the
+measurement, and it belongs in 12d where the suite is being worked anyway.
