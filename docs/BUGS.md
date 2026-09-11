@@ -286,6 +286,39 @@ modelling decision with an owner. Neither is a performance question.
 change in one. To be positioned when 12c.1 closes — a candidate for **worklist 16**, where the
 representation is measured, or its own item before the scale runs of Part XII.
 
+## Found while working item 12d
+
+### 12d-1 — No firm in this world ever wants plant, so nothing is ever built
+
+**Where.** `mechanisms/firms/invest.ts` (`project`), `mechanisms/capital-programme/`. Seen with
+`rigWorld('capital', 4, 40)` and with the tight world `capital.test.ts` builds (four machines to the
+tonne instead of one).
+
+**Measured.** Twelve periods, with the plant requirement turned up four times:
+
+```
+capital.commissioned 0      capital.retired 0      machine market: 48 sessions, 0 cleared
+firms.funding: {"short":-4862120749,"owed":0,"programme":0,"ccy":"USD"}     — programme 0, every firm
+credit.quoted 288                                                          — so it is NOT 12-19
+```
+
+**It is not the funding.** 11.5 gave the banks room and they quote: 288 credit quotes in twelve
+periods. The chain stops earlier than that — `project()` returns `none` at `if (wanted.length === 0)`,
+so no firm ever WANTS a machine, so nothing is bid for, so the machine market never clears in
+forty-eight consecutive sessions, so `commission` (which reads settled trades) has nothing to read.
+
+**What it costs.** Ten of the eleven reds in `capital.test.ts` are this one thing — every assertion
+of the shape `expected 0 to be greater than 0`. They are NOT migration work and must not be made
+green by editing them: a test that asserts plant is bought, built, bid for at what its remaining
+service is worth, and retired into a new vintage is asserting the mechanism, and the mechanism does
+not run (Law 11, and 12d's own guard names this temptation by name).
+
+**Where it belongs.** Its own item, INSERTED BEFORE 12d CLOSES, because 12d's exit criterion is a
+green `npm run check` and ten tests cannot go green until a firm wants a machine. The first step is
+the one question this finding does not answer: why `wanted` is empty — whether the gap between the
+cautious run rate and capacity never opens, whether the hurdle is never cleared, or whether
+`plantHeld` reports a ceiling nobody is at.
+
 ### 12b-2 — RESOLVED here: a value in one money written into an account kept in another
 
 Named while reproducing 12b at `410bf16`, and it had two sites, both the same cause:

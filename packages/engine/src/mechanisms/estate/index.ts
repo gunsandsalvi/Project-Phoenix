@@ -29,6 +29,7 @@ import { holdsSomething, type AuditView } from '../../audit/view.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId, partyKindId } from '../../core/ids.js';
 import { div, material, mul, sub, sum, withinDust } from '../../core/num.js';
+import { Impossible } from '../../core/errors.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { shareFor } from '../../ledger/settlement.js';
@@ -40,7 +41,7 @@ import { failedWhy } from '../../world/failure.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
-import { subQty } from '../../core/tick.js';
+import { splitOnTick, subQty } from '../../core/tick.js';
 import { asQty } from '../../core/tick.js';
 import { negQty } from '../../core/tick.js';
 
@@ -265,9 +266,19 @@ function distributeFrom(
     const here = claims.filter((c) => c.seniority === rank);
     const owed = sum(here.map((c) => c.units)).value;
     if (owed <= 0) continue;
-    const share = cash < owed ? div(cash, owed, 'what this rank gets on the pound') : 1;
-    for (const c of here) {
-      const pay = mul(c.units, share, 'what this holder is paid');
+    // D2.a, Law 8: PRO RATA OVER SOMETHING WITH A SMALLEST PIECE IS THE LARGEST-REMAINDER SPLIT,
+    // not a multiplication by a proportion (core/tick.ts says so, and the clearing solver already
+    // does it this way). Multiplying each claim by `cash / owed` and rounding each result down left
+    // the odd piece unallocated — and this loop then carried it to the NEXT RANK, so a junior holder
+    // recovered a penny while the senior rank was short of everything it was owed, which is exactly
+    // what G5.a forbids. `splitOnTick` makes the parts sum to what there was and states who gets the
+    // odd piece (ties to the earlier claimant), so a rank that cannot be paid in full consumes the
+    // whole pool by construction and there is nothing left to fall through.
+    const parts = cash < owed ? splitOnTick(cash, here.map((c) => c.units)) : here.map((c) => c.units);
+    for (const [at, c] of here.entries()) {
+      const pay = parts[at];
+      // `splitOnTick` returns one part per claim, so an absent one is arithmetically impossible.
+      if (pay === undefined) throw new Impossible('Law 8', `no share for claim ${at} of this rank`);
       if (!material(pay, 2, c.units)) continue;
       const paid = repay(ctx, estate, c, pay, account, ccy);
       if (!paid.some) continue;

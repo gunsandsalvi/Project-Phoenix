@@ -19,7 +19,10 @@ import {
   REGION,
   assemble,
   currencyUnit,
+  div,
+  downTick,
   goodId,
+  mul,
   instrumentId,
   instrumentKindId,
   none,
@@ -27,18 +30,20 @@ import {
   type PartyId,
   snapshot,
   some,
+  upTick,
   type InstrumentKindId,
   type InstrumentKindProfile,
   type MarketDecl,
   type MechanismContext,
   type Order,
   type ParticipantView,
+  type SeedContext,
   type SystemModule,
   type World,
 } from '../src/index.js';
 import { rigDraw, rigSpec, mergeModules, withDependencies } from './rig.js';
 import { unexpected } from './expected.js';
-import { perTonne, phx, tonnes } from './units.js';
+import { phx } from './units.js';
 
 /**
  * Seed B1.a: four named parties of this world, asked for rather than named. A waterfall test needs
@@ -82,6 +87,21 @@ function claimKind(id: InstrumentKindId, seniority: number): InstrumentKindProfi
  * assets on the first period it is looked at, which is one of the two things Firm D4 calls failure.
  * The senior line has two holders so a rank has something to be divided pro rata BETWEEN.
  */
+/**
+ * Law 19: WHAT THIS PARTY HAS, read out of the register and the kernel's own valuer at the moment
+ * this module seeds — every holding, not just its cash, because "owes more than it has" is about
+ * its assets and a firm holds stock and plant as well as money.
+ */
+function whatItHolds(ctx: SeedContext, party: PartyId): number {
+  let held = 0;
+  for (const h of ctx.register.holdingsOf(party)) {
+    const i = ctx.instruments.get(h.instrument);
+    if (i.ccy !== USD) continue;
+    held += ctx.valuation.valueOfLots(i.id, h.lots, ctx.period);
+  }
+  return held;
+}
+
 function owesMoreThanItHas(): SystemModule {
   return {
     id: 'test.owes',
@@ -109,9 +129,24 @@ function owesMoreThanItHas(): SystemModule {
           market: none(),
         });
       }
-      ctx.endowUnits(SENIOR_HOLDER, SENIOR, phx(1_000_000), 1);
-      ctx.endowUnits(OTHER_SENIOR_HOLDER, SENIOR, phx(1_000_000), 1);
-      ctx.endowUnits(JUNIOR_HOLDER, JUNIOR, phx(1_000_000), 1);
+      // PLAN §7: MORE THAN IT HAS is the property, and it is the name of this function. It used to
+      // be a million written down, and a million was more than a firm held when the seed STATED
+      // this world's scale; 11.5 derives that scale from the hours its people offer against the
+      // hours its chain needs, and a firm now holds far more than a million — so the debtor paid,
+      // nothing failed, and nine tests about what happens after a death tested nothing.
+      //
+      // So it is read: what the debtor is actually holding when this module seeds, and the three
+      // claims come to half as much again. A test that writes an amount down is asserting against
+      // a world that no longer exists (Law 19).
+      // G5.a: EACH claim is the whole of what the debtor has, so the two senior holders together are
+      // owed twice it and the junior is owed a third as much again. The seniors therefore take
+      // everything there is, pro rata between them, and the junior recovers nothing — which is the
+      // property this file is about and the only sizing that produces it whatever the estate turns
+      // out to be worth when it opens.
+      const each = upTick(whatItHolds(ctx, DEBTOR));
+      ctx.endowUnits(SENIOR_HOLDER, SENIOR, each, 1);
+      ctx.endowUnits(OTHER_SENIOR_HOLDER, SENIOR, each, 1);
+      ctx.endowUnits(JUNIOR_HOLDER, JUNIOR, each, 1);
     },
   };
 }
@@ -252,6 +287,25 @@ function failingWorld(...extra: readonly SystemModule[]): World {
  * dying of its own decisions in a world that is otherwise running normally — which is the only kind
  * of death worth testing the consequences of.
  */
+/** How much deeper this buyer's pockets are than a mill's, and how far over the going rate it pays. */
+const BIG = 100;
+const OVER = 3;
+
+/** Law 19: what a firm in this world is actually holding in money, read when this module seeds. */
+function firmMoney(ctx: SeedContext): number {
+  let most = 0;
+  for (const f of DREW.firms) {
+    let held = 0;
+    for (const h of ctx.register.holdingsOf(partyId(f.firm))) {
+      const i = ctx.instruments.get(h.instrument);
+      if (ctx.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== USD) continue;
+      held += h.lots.reduce((acc, l) => acc + l.qty, 0);
+    }
+    if (held > most) most = held;
+  }
+  return most;
+}
+
 function hungryBuyer(): SystemModule {
   const BUYER = partyId('buyer.1');
   const instrument = goodId('flour', REGION);
@@ -275,16 +329,32 @@ function hungryBuyer(): SystemModule {
         representation: 'named',
         status: { alive: true },
       });
-      ctx.endowMoney(BUYER, USD, phx(100_000_000));
-      ctx.endowMoney(partyId('bank.a'), USD, phx(100_000_000));
+      // PLAN §7: FAR BIGGER THAN THE CROP is the property, and it has to be read. A hundred million
+      // and four hundred tonnes were far bigger than the crop when the seed STATED this world's
+      // scale; 11.5 derives it, and four hundred tonnes is now a quarter of one per cent of what
+      // this world makes in a week — so the mills were never squeezed, nobody died, and three tests
+      // about what a death costs tested nothing. What it is endowed with is a multiple of what a
+      // firm in this world actually holds, so the buyer is big however big the world turns out.
+      const deep = upTick(mul(firmMoney(ctx), BIG, 'a buyer with far deeper pockets than a mill'));
+      ctx.endowMoney(BUYER, USD, deep);
+      ctx.endowMoney(partyId('bank.a'), USD, deep);
     },
     participants: [
       {
         partyKind: FIRM,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
-          view.self.id === BUYER && m.instrument === instrument
-            ? [{ party: BUYER, side: 'buy', price: perTonne(1200), qty: tonnes(400) }]
-            : [],
+        // C3: it pays well over the going rate for as much as its money will buy, which is what
+        // being hungry IS — and both halves are read off this world rather than stated. The mills
+        // bid the grain up against each other to serve it until one is paying more for the grain
+        // than the flour fetches, and that mill dies of its own decisions.
+        speculative: true,
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
+          if (view.self.id !== BUYER || m.instrument !== instrument) return [];
+          const going = view.mark(instrument);
+          if (!going.some || going.value <= 0) return [];
+          const price = mul(going.value, OVER, 'well over what flour is fetching');
+          const qty = downTick(div(view.cash(USD), price, 'as much as its money buys'));
+          return qty > 0 ? [{ party: BUYER, side: 'buy', price, qty }] : [];
+        },
       },
     ],
     families: [],
@@ -360,6 +430,7 @@ describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
   it('pays senior first, pro rata within the rank, and the junior recovers nothing (G5.a)', () => {
     const w = failingWorld(owesMoreThanItHas());
     const had = w.cash(DEBTOR, USD);
+    const juniorHeld = w.register.quantity(JUNIOR_HOLDER, JUNIOR);
     // The estate opens in the first period and pays in the second: what it holds is distributed
     // with the period's other payments, not in the phase that opened it (estates.settle).
     w.step();
@@ -372,25 +443,38 @@ describe('the waterfall (XI-8, Firm Birth D2, D2.a)', () => {
     expect(paid.every((e) => e.data['instrument'] === SENIOR)).toBe(true);
     const a = Number(paid[0]?.data['paid']);
     const b = Number(paid[1]?.data['paid']);
-    // D2.a: what they got is what the assets fetched, split by what they were owed — never a rate.
-    expect(a).toBeCloseTo(b, 9);
+    // D2.a, Law 8: what they got is what the assets fetched, split by what they were owed — never a
+    // rate. Two equal claims get equal shares TO WITHIN ONE PIECE, because the pool is a whole
+    // number of pieces and an odd one cannot be halved: it goes to the earlier claimant by the
+    // stated rule (`splitOnTick`). That is not a tolerance — one piece is the smallest thing there
+    // is — and the sum is what makes it exact: the parts come to the whole pool and nothing is left
+    // over to fall to a junior rank, which is what this used to do.
+    expect(Math.abs(a - b)).toBeLessThanOrEqual(1);
     expect(a + b).toBeCloseTo(had, 9);
-    expect(w.register.quantity(JUNIOR_HOLDER, JUNIOR)).toBe(phx(1_000_000));
+    // Its claim is untouched, and what it was is READ rather than written down: how much the junior
+    // was endowed with follows from what the debtor turned out to be holding (Seed B1.a), and a
+    // test that states the amount is asserting against a world that no longer exists (PLAN §7).
+    expect(w.register.quantity(JUNIOR_HOLDER, JUNIOR)).toBe(juniorHeld);
   });
 
   it('writes off what it never paid, and the loss lands on the holders (D3, E5)', () => {
     const w = failingWorld(owesMoreThanItHas());
     const seniorBefore = w.register.equity(SENIOR_HOLDER);
     const juniorBefore = w.register.equity(JUNIOR_HOLDER);
+    // What it was carrying, read off the register before anything happens to it (Law 19).
+    const juniorHeld = w.register.quantity(JUNIOR_HOLDER, JUNIOR);
     for (let i = 0; i < 12; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     // D3: the loss is on named holders, in proportion to what each was owed and not paid.
     expect(w.register.quantity(SENIOR_HOLDER, SENIOR)).toBe(0);
     expect(w.register.quantity(JUNIOR_HOLDER, JUNIOR)).toBe(0);
     expect(w.register.equity(SENIOR_HOLDER)).toBeLessThan(seniorBefore);
-    // The junior was paid nothing at all, so it lost the whole of what it was carrying.
-    // It also earned a week of deposit interest on its account while this ran, which is its
-    // bank's business and not the waterfall's (Banks Funding B1).
-    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeCloseTo(phx(1_000_000), -5);
+    // The junior was paid nothing at all, so it lost AT LEAST the whole of what it was carrying.
+    // Not exactly it, and this used to say so: the holder is a real firm in a running world, and
+    // over the twelve periods this takes it also pays its people, buys its inputs and earns a week
+    // of deposit interest — none of which is the waterfall's business. What the waterfall owes this
+    // test is that the whole claim landed on the holder, and that is a floor on the fall, not a
+    // window around it.
+    expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeGreaterThanOrEqual(juniorHeld);
     // ...and it lost MORE than the senior did, which is the whole of what being junior means.
     expect(juniorBefore - w.register.equity(JUNIOR_HOLDER)).toBeGreaterThan(
       seniorBefore - w.register.equity(SENIOR_HOLDER),
