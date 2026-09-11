@@ -1,8 +1,9 @@
 # MISSING MECHANISMS
 
-Eight mechanisms this world does not have. Seven the specification does not name at all; one it
-names and nothing owns. Each entry says what the mechanism is, what its absence costs, what this
-specification's own laws would require of it, and where it would sit.
+Nine mechanisms this world does not have. Seven the specification does not name at all; one it
+names and nothing owns; one it provides in general and declares in a set of two where a market has
+many. Each entry says what the mechanism is, what its absence costs, what this specification's own
+laws would require of it, and where it would sit.
 
 Nothing here is scheduled. Law 10 makes an insertion the owner's call, and Law 11 says a
 misbehaving number is not a work item — these are absences, not findings about numbers.
@@ -17,6 +18,7 @@ misbehaving number is not a work item — these are absences, not findings about
 | **M6** | **Greenfield direct investment, and the parent–subsidiary group** | enter a foreign market by building; consolidate; repatriate; abandon |
 | **M7** | **The covered bond** | fund a bank when unsecured funding closes |
 | **M8** | **The deliverable bond future, the net basis, the basis trade** | generate real repo demand; trade cash against futures (specified, unowned) |
+| **M9** | **The index and fund set: size and grade segments, a global line, and their vehicles** | make a flow mean something — an inclusion, a fallen angel, an IG/HY rotation |
 
 ---
 
@@ -264,3 +266,90 @@ are tied by delivery rather than by a formula (`Derivative X3`).
 
 **Where it would sit.** After `13b`'s classes, with the repo demand it creates. It needs a decision
 rather than a finding: an item at that position, or an explicit note that it waits.
+
+---
+
+## C. PROVIDED IN GENERAL, DECLARED IN A SET OF TWO
+
+### M9 — SIZE AND GRADE SEGMENTS, A GLOBAL LINE, AND A VEHICLE ON EACH
+
+The machinery is here and largely built. `Indices A1` admits **any** stated rule over any stated
+constituent set at any stated weights; levels are reads, chained across a rebalance and never stored
+(`A2`, `B2.a`, `E2`); a weight is a count of a real thing (`B1`); a listed vehicle exists with its
+shares priced in a session, its NAV and its print published side by side, creation units that are
+pro-rata slices of what it actually holds, and a premium nothing clamps (`Fund Shares E1`–`E4`,
+`G1.a`); and a tracker holds the index's own basket and trades a rebalance for real (`Indices C1`,
+`C2`).
+
+What is declared is a set of two. `Indices D` names "the index families this world needs" and lists
+an equity index **per region** (`D1`), a credit index **per currency** (`D2`), the rate benchmark
+(`D3`) and the price level (`D4`). One listed vehicle rides the equity line. So the segmentation a
+real market is organised by does not exist:
+
+| | today | the set |
+|---|---|---|
+| equity | one index per region | **large-cap, small-cap, all-cap** per region, and a **global** line above them |
+| credit | one index per currency | **investment grade** and **high yield** per currency |
+| loans | nothing | a **leveraged loan** index per currency |
+| vehicles | one listed fund | a listed vehicle **per index**, tracking that index by mandate |
+| credit default index | one series (`CDS A5`) | **IG and HY series**, each rolled on its own grade |
+
+Six indices to a region and a vehicle on each, plus the global line — against two indices and one
+vehicle today.
+
+**What the absence costs.** Segmentation is what makes a **flow** mean anything.
+
+- With one basket per region there is no inclusion and no exclusion of any size: the constituent set
+  `B2` describes changes only when a firm is born or dies. So `C1`'s "a manager is measured against
+  it, and that measurement drives flows" and `C2.a`'s "inclusion should be visible in the
+  constituent's price, as a consequence" have almost nothing to be about.
+- There is **no quality dimension in credit as a market**. Nothing anywhere separates investment
+  grade from high yield, so the single most recognisable shape of a risk-off move — high yield
+  widening while investment grade holds — is not expressible, in the cash market or in the default
+  index.
+- The **fallen angel** does not exist. A name crossing the grade boundary should be a forced sale by
+  every tracker on one side and a forced purchase of the same line by every tracker on the other, in
+  the same period, on top of `Insurers C5`'s forced sale on a downgrade and `Ratings C1`'s mandate.
+  There is no boundary for a downgrade to cross.
+- `C2`'s simultaneity — *every tracker, at the same time* — is a market of one.
+- And **no index measures anything across regions**, so there is no line a cross-border investor can
+  hold or be measured against, which leaves the currency layer with no aggregate equity claim in it.
+
+**What each part has to be here.**
+
+- **The size split** is a stated rule on a real count (`B1`: market capitalisation is a price times a
+  count), and the boundary must be **crossable**, so a firm graduates into the large-cap line and
+  drops out of the small-cap one and every vehicle on both has to trade it. `A3` bites hardest here:
+  the boundary is read from the constituents' own prints, never from the index, or the index selects
+  its own members by its own level.
+- **The grade split** is struck on the assessors' grades — and this world has **three assessors that
+  disagree** (`Ratings`), so the rule must say whose grade counts or how they combine, publicly and
+  in advance (`A1.a`). That disagreement is the point: an index boundary that depends on whose
+  opinion you take is what makes a downgrade contestable rather than arithmetic.
+- **The leveraged loan index is impossible today, and not for want of a rule.** `A2` says an index
+  reads cleared prices and nothing else, and a loan is carried at cost and names no market at all
+  (`Banks Lending D1`). It waits on the secondary loan market in `13f`. Its vehicle is then the one
+  place a real liquidity mismatch lives — a claim redeemable on demand over an instrument that
+  settles slowly — with the cost of a late sale landing on the holders who stayed (`Fund Shares
+  C4.a`) and `XI-2`'s forced seller behind it.
+- **The global line** is the only index that crosses regions, so its level is expressed in a stated
+  money at cleared rates (`Spot FX`, `XI-12`) — and stating that money must not make it the vehicle
+  currency of the model by construction.
+- **A vehicle per index** holds that index's basket by mandate, which is how the tracker already
+  works. It posts **reservations, not market orders**: a forced seller is real and a forced buyer is
+  forbidden, which this build has already learned once by walking an equity index to 4153 in two
+  sessions.
+- **The default index in two grades** extends `CDS A5` from one series to two: names fixed at the
+  roll by grade (`A5.a`), each series clearing on its own book with its own index-against-single-name
+  basis (`A5.b`). The high-yield series is the one where a constituent's credit event actually fires
+  and settles its weight.
+- **All of it is data.** The rules, the boundaries, the constituent sets and the weight choices are
+  registry rows (`Law 15`), inside the one index system (`D5`) — no mechanism branches on a segment
+  id. An empty basket reports Missing rather than a base level, which is already how this system
+  behaves, so the high-yield and loan lines will honestly report nothing until their markets clear.
+
+**Where it would sit.** In four places, not one: the equity size split and the global line after
+`12c` (the equity book has to clear before a capitalisation boundary means anything); the IG/HY
+credit split with `13f`, when corporate paper trades and the credit index's basket stops being empty;
+the two-grade default index with `13b`, as the `cds.index` kind carrying two series instead of one;
+the leveraged loan index and its vehicle after `13f`'s loan market, last of the four.
