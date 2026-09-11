@@ -99,13 +99,26 @@ describe('one face (Dealer Desks A1, Clearing A2, Law 4)', () => {
     // Law 4: one decider, one face. This is the assembly fact the kernel's self-cross refusal is
     // the run-time half of — a bank cannot show two schedules to one book if only one module has
     // anything to say for it.
-    const inMarkets = spec.modules.filter((m) =>
-      m.participants.some((x) => x.partyKind === BANK),
-    );
+    // ONE FACE PER BOOK, which is what a sort of market is: a bank's paper desk quotes the markets
+    // that deliver an instrument and its currency desk quotes the pairs, and neither is ever asked
+    // about the other's (`ParticipantDecl.in`). So the fact to assert is not that one module speaks
+    // for a bank anywhere — it is that no two speak for it in the same book, which is the assembly
+    // half of the kernel's refusal to let one party cross itself (Clearing A2).
+    const speakers = new Map<string, string[]>();
+    for (const m of spec.modules) {
+      for (const p of m.participants) {
+        if (p.partyKind !== BANK) continue;
+        const book = p.in ?? 'asset';
+        speakers.set(book, [...(speakers.get(book) ?? []), m.id]);
+      }
+    }
+    expect([...speakers.keys()].sort()).toEqual(['asset', 'fx']);
+    for (const [, who] of speakers) expect(new Set(who).size).toBe(1);
+    expect(speakers.get('asset')).toEqual(['banks']);
+    expect(speakers.get('fx')).toEqual(['spot-fx']);
     const inVenues = spec.modules.filter((m) =>
       (m.venueParticipants ?? []).some((x) => x.partyKind === BANK),
     );
-    expect(inMarkets.map((m) => m.id)).toEqual(['banks']);
     expect(inVenues.map((m) => m.id)).toEqual(['banks']);
   });
 

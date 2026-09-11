@@ -250,9 +250,13 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
       {
         id: ASSESSOR_SWITCHING_COST,
         value: 4000,
-        unit: 'USD',
-        kind: 'technology',
-        owner: 'model',
+        // Law 8, XI-14: DENOMINATED, so what it is worth is a count of pieces of whatever money the
+        // account is in — not of one named currency. An assessor in a world with four moneys banks
+        // in its own, and a cost stated in dollars would be one only an American assessor could pay.
+        denominated: true as const,
+        unit: 'of the money the account is in, per move',
+        kind: 'preference' as const,
+        owner: 'model' as const,
         why: 'Banks Funding A1.d, E1: what it costs an assessor to move the account its fees arrive in and its salaries leave from — the payments to redirect, the issuers to tell. It is the whole of what makes a small operating balance sticky and a large one not, and it is a real cost of a real operation rather than a reluctance anybody stated.',
       },
     ],

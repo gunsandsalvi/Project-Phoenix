@@ -189,10 +189,10 @@ describe('the seed (Seed A2)', () => {
     const report = w.last?.audit;
     expect(report?.total).toBe(0);
     expect(report?.families.map((f) => f.family)).toHaveLength(9);
-    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual([
-      'crossMarket',
-      'zeroSum',
-    ]);
+    // Audit A3: an unbuilt family reports "not built" and NEVER green. `crossMarket` is built now —
+    // item 12 gave it its two contributions, the triangular gap and the index against its own
+    // constituents — so the one family this world still has nobody for is `zeroSum`.
+    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual(['zeroSum']);
     // XI-14: TWO PLACEHOLDERS STAND, and they are the two management fees. The bank's liquidity
     // buffer was the last one anybody counted — a stated share of the money it had issued, standing
     // in for a decision nobody had built — and 11.2 built the decision (Banks Funding C2). The fees
@@ -321,10 +321,10 @@ describe('the period loop', () => {
       'flows',
       'units',
     ]);
-    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual([
-      'crossMarket',
-      'zeroSum',
-    ]);
+    // Audit A3: an unbuilt family reports "not built" and NEVER green. `crossMarket` is built now —
+    // item 12 gave it its two contributions, the triangular gap and the index against its own
+    // constituents — so the one family this world still has nobody for is `zeroSum`.
+    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual(['zeroSum']);
     // And the chain really ran the whole way: batches were started out of a recipe, people were
     // hired and paid, and households bought the finished good from a named seller.
     expect(w.journal.ofKind('firms.started').length).toBeGreaterThan(0);

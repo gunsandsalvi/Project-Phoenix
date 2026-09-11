@@ -23,6 +23,7 @@ import {
   type MechanismContext,
   type SystemModule,
   type World,
+  TREASURY_US,
 } from '../src/index.js';
 import { rigSpec , rigDraw, withDependencies, mergeModules } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
@@ -335,7 +336,11 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
       const r = w.step();
       expect(unexpected(r.audit)).toEqual([]);
     }
-    const receipts = w.journal.ofKind('treasury.receipts').find((e) => e.period === w.period);
+    // Polity A1, Currency A3: THIS world's state, not whichever one published first. Four countries
+    // collect taxes now, and the one whose households these are is the one in their own region.
+    const receipts = w.journal
+      .ofKind('treasury.receipts')
+      .find((e) => e.period === w.period && e.subjects.includes(String(TREASURY_US)));
     const bases = receipts?.data['bases'] as Record<string, number> | undefined;
     expect(bases?.['income']).toBeGreaterThan(0);
     // C3: what was collected is the sum of what named payers actually paid, on the wire.
