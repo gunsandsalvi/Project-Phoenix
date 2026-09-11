@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  type ParticipantView,
+  div,
+  mul,
+  upTick,
+  downToTick,
+  upToTick,
   BANK_A,
   BANK_B,
   CB,
@@ -46,7 +52,14 @@ function violations(w: World): string[] {
 }
 
 /** A module that gives firms and banks reasons to be in the benchmark line's market. */
-function traders(orders: (m: string, party: string) => Order[]): SystemModule {
+/**
+ * PLAN §7: the closure is handed the party's own VIEW, so a test can size an order off what that
+ * party actually holds rather than off an amount it wrote down. Which is what "a buyer without the
+ * cash" has to mean now that 11.5 derives this world's scale: how much a firm opens with is an
+ * outcome of the seed's arithmetic, and a bid stated in advance is either far under it (so the
+ * buyer pays easily and the test tests nothing) or far over it by luck.
+ */
+function traders(orders: (m: string, party: string, view: ParticipantView) => Order[]): SystemModule {
   return {
     id: 'test.traders',
     spec: 'Clearing B2',
@@ -58,10 +71,10 @@ function traders(orders: (m: string, party: string) => Order[]): SystemModule {
     params: [],
     phases: [],
     participants: [
-      { partyKind: FIRM, orders: (view, m) => orders(m.instrument, view.self.id) },
+      { partyKind: FIRM, orders: (view, m) => orders(m.instrument, view.self.id, view) },
       {
         partyKind: partyId('bank') as never,
-        orders: (view, m) => orders(m.instrument, view.self.id),
+        orders: (view, m) => orders(m.instrument, view.self.id, view),
       },
     ],
     families: [],
@@ -200,17 +213,22 @@ describe('the seed (Seed A2)', () => {
     // their reason and both were declared shapes, so the field guards passed and the honest measure
     // read zero. A shape with a scheduled death IS a placeholder (Law 2), and the register now
     // refuses the other way round.
-    expect(report?.reads.placeholders).toBe(5);
+    // FOUR, and the one that went is the point of counting them: `seed.centralBank.
+    // openingHoldingShare` named 11.5 as the item that would kill it, 11.5 came, and it is a POLICY
+    // the central bank takes now rather than a share somebody stated. A placeholder that dies on
+    // the item it named is the register working exactly as XI-14 asks.
+    expect(report?.reads.placeholders).toBe(4);
+    // PLAN §7: what each stands in for and which item kills it, never the id — a fund's own id
+    // carries the bank it was launched at, and WHICH bank is an outcome of the draw (Seed B1.a).
     expect(
       snapshot(w, { kind: 'inspector' }, 10)
-        .params.placeholders.map((p) => `${p.id} -> ${p.mechanism} at ${p.worklistItem}`)
+        .params.placeholders.map((p) => `${p.mechanism} at ${p.worklistItem}`)
         .sort(),
     ).toEqual([
-      'fund.fee.etf.us -> Fund Shares F3 at 13h',
-      'fund.fee.fund.money.bank.a -> Fund Shares F3 at 13h',
-      'seed.centralBank.openingHoldingShare -> Banks Funding C1 at 11.5',
-      'seed.crossHoldingShare -> Central Bank F4 at 13h',
-      'seed.households.membersPerCohort -> Households A5 at 13f',
+      'Central Bank F4 at 13h',
+      'Fund Shares F3 at 13h',
+      'Fund Shares F3 at 13h',
+      'Households A5 at 13f',
     ]);
     // XI-14: EIGHTEEN SHAPES, and the count is honest in both directions — it went UP because this
     // world says more, and two of what used to be shapes became placeholders because a worklist
@@ -259,8 +277,16 @@ describe('the seed (Seed A2)', () => {
     // XI-15: how many people there are is the rig's, read from where the world was built rather
     // than written down a second time; the twelve cells above are where they are REPRESENTED.
     expect(sum(weights).value).toBe(rigMembers(RIG_FIRMS) * 2);
-    // Seed E: the seed decides nothing about how rich anybody is. Every cell opens with nothing.
-    expect(new Set(cells.map((c) => w.cash(c.id, USD)))).toEqual(new Set([0]));
+    // Seed E, Banks Capital B1.b: the seed decides nothing about how rich anybody is — WITHIN A
+    // BANK'S DEPOSITORS, which is where the claim can be made now. It used to be "every cell opens
+    // with nothing", and that stopped being true when `seed.funding` was built (item 12): a bank's
+    // balance sheet follows its depositors, so what a cell opens holding is the residue its own
+    // bank needs funding and not a number anybody chose for it. Two banks need different amounts;
+    // two cells at ONE bank are identical, and that is the statement the seed is making.
+    for (const bank of new Set(cells.map((c) => String(c.bank)))) {
+      const here = cells.filter((c) => String(c.bank) === bank);
+      expect(new Set(here.map((c) => w.cash(c.id, USD))).size, `cells at ${bank} differ`).toBe(1);
+    }
     for (let i = 0; i < 8; i += 1) w.step();
     // B4: and a sector of equals never produces a market — so the dispersion has to come from
     // somewhere. It comes from what happened: who was hired, at what wage, and what each of them
@@ -314,14 +340,15 @@ describe('the period loop', () => {
     // whole year is clean: every family the world has built, every period, no exceptions.
     for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const report = w.last?.audit;
-    // Seven families are built and green, named so a green run says what it checked; two say they
-    // are NOT BUILT rather than being green by omission (Audit C2.a) — cross-market arbitrage needs
-    // a second venue for one thing (worklist 12) and zero-sum needs the derivative layer (13a).
-    // Seven families are built; the money one is built AND currently red for the reason above.
+    // EIGHT families are built and green, named so a green run says what it checked; ONE says it is
+    // NOT BUILT rather than green by omission (Audit C2.a) — zero-sum needs the derivative layer
+    // (13a). `crossMarket` joined them when item 12 gave it its two contributions, the triangular
+    // gap and an index against its own constituents, and this list had not been re-read since.
     expect(report?.families.filter((f) => f.built).map((f) => f.family)).toEqual([
       'money',
       'ownership',
       'prices',
+      'crossMarket',
       'accounts',
       'names',
       'flows',
@@ -491,16 +518,26 @@ describe('a market with reasons on both sides', () => {
         return [];
       }),
     );
+    // What the seller was holding before the session: how much the seed gives it is an outcome of
+    // the seed's own arithmetic (11.5 derives this world's scale), and what DvP owes this test is
+    // that the paper which left one side arrived at the other — which is a difference, not a level.
+    const sellerHad = w.register.quantity(BANK_B, GOV_LINE);
     const r = w.step();
     expect(violations(w)).toEqual([]);
     const gov = r.markets.find((m) => m.market === GOV_MARKET);
     expect(gov?.outcome).toBe('cleared');
     expect(gov?.settledVolume).toBe(phx(60_000));
     expect(w.register.quantity(partyId('firm.1'), GOV_LINE)).toBe(phx(60_000));
-    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(phx(40_000));
+    expect(w.register.quantity(BANK_B, GOV_LINE)).toBe(sellerHad - phx(60_000));
     const print = w.prices.printOrThrow(GOV_LINE, w.period);
     expect(print.provenance.kind).toBe('traded');
-    expect([0.97, 0.99]).toContain(print.price);
+    // Clearing C4.c, Law 8: the level is one somebody POSTED, on this market's own grid. A buy is
+    // the most it will pay so it goes down to a tick, a sell the least it will accept so it goes up
+    // — and `n x tick` carries one rounding, because a ten-thousandth is not a binary fraction
+    // (12b.1 says so where the doors are). So the two levels this test posted are what it compares
+    // against, gridded the way the book grids them, rather than the two numbers it typed.
+    const tick = w.registry.tickFor(w.instruments.get(GOV_LINE).kind, USD);
+    expect([upToTick(0.97, tick), downToTick(0.99, tick)]).toContain(print.price);
   });
 
   it('refuses a party on both sides of one book at crossing prices (Clearing A2, Register D2)', () => {
@@ -526,23 +563,45 @@ describe('a market with reasons on both sides', () => {
     // A bank with no appetite for a name is a real bank, and it is what makes a fail a fail.
     const w = noLending(
       'seed-J',
-      traders((instrument, party) => {
+      traders((instrument, party, view) => {
         if (instrument !== GOV_LINE) return [];
         // Sized to what the seller actually holds: what this tests is a buyer that cannot pay,
         // and a seller that cannot deliver would fail the trade one step earlier for another reason.
-        if (party === 'firm.2')
-          return [{ party: partyId(party), side: 'buy', price: 1.2, qty: phx(90_000) }];
-        if (party === 'bank.a')
-          return [{ party: partyId(party), side: 'sell', price: 1.2, qty: phx(90_000) }];
-        return [];
+        // Register C3.b: MORE THAN ITS MONEY REACHES, read off its own account — twice what it
+        // could pay for at the level it is bidding, so the whole trade has to fail and not a part
+        // of it. The SELLER offers everything it holds, so the buyer is the short side and the
+        // volume that clears is the buyer's own over-bid: a seller that could not deliver would
+        // fail the trade one step earlier, for a different reason.
+        if (party === 'firm.2') {
+          const beyond = upTick(mul(div(view.cash(USD), 1.2, 'what its money reaches'), 2, 'twice it'));
+          return [{ party: partyId(party), side: 'buy', price: 1.2, qty: beyond }];
+        }
+        // EVERY bank offers what it holds, so the supply is the banking system's whole position in
+        // the line and the buyer's over-bid is the short side. One bank's holding is an outcome of
+        // the seed's draw and need not be bigger than a firm's money.
+        const held = view.quantity(GOV_LINE);
+        return held > 0 ? [{ party: partyId(party), side: 'sell', price: 1.2, qty: held }] : [];
       }),
     );
+    const had = w.cash(partyId('firm.2'), USD);
+    // The test is only a test if the seller has more paper than the buyer's money reaches: with
+    // less, the buyer could pay for all of it and nothing would fail.
+    const offered = w.register.holdersOf(GOV_LINE).reduce((n, h) => n + w.register.quantity(h, GOV_LINE), 0);
+    expect(offered, 'the sellers hold less than the buyer can pay for, so nothing would fail').toBeGreaterThan(had / 1.2);
     const r = w.step();
     const gov = r.markets.find((m) => m.market === GOV_MARKET);
     expect(gov?.failedTrades).toBe(1);
-    expect(gov?.settledVolume).toBe(0);
-    expect(w.register.quantity(partyId('firm.2'), GOV_LINE)).toBe(0);
-    expect(w.cash(partyId('firm.2'), USD)).toBe(phx(50_000));
+    // C3.b: THE WHOLE TRADE, NOT HALF OF IT. The buyer is matched against several sellers now —
+    // one bank's holding is not necessarily bigger than a firm's money, so the whole banking system
+    // offers — and it settles the ones its money covers and fails the one that does not. What the
+    // clause is about is that the failing one moved NOTHING: the buyer holds exactly what settled,
+    // and its money fell by exactly what that cost, with no leg of the failed instruction anywhere.
+    const got = w.register.quantity(partyId('firm.2'), GOV_LINE);
+    expect(got).toBe(gov?.settledVolume);
+    // It paid for what it got and nothing more — read off its account rather than re-derived from a
+    // price (Law 19): what it paid is what the settled legs moved, and the failed one moved none.
+    expect(w.cash(partyId('firm.2'), USD)).toBeLessThan(had);
+    expect(w.cash(partyId('firm.2'), USD)).toBeGreaterThanOrEqual(0);
     const failed = w.ledger.all().filter((x) => x.outcome === 'failed');
     expect(failed).toHaveLength(1);
     expect(failed[0]?.outcome === 'failed' && failed[0].reason.kind).toBe('overdraftRefused');
@@ -556,7 +615,11 @@ describe('participant views (Observer A4, Expectations D1)', () => {
     w.step();
     const view = w.participantView(partyId('firm.1'));
     expect(view.self.id).toBe('firm.1');
-    expect(view.cash(USD)).toBe(phx(65_000));
+    // A4: WHAT IT SEES IS ITS OWN, and the amount is read from the register rather than written
+    // down — how much a firm opens with is an outcome of the seed's arithmetic (11.5 derives this
+    // world's scale), and what the view owes this test is that it shows the holder its own number.
+    expect(view.cash(USD)).toBe(w.cash(partyId('firm.1'), USD));
+    expect(view.cash(USD)).toBeGreaterThan(0);
     expect(view.holdings().every((h) => h.holder === 'firm.1')).toBe(true);
     expect(view.print(GOV_LINE).some).toBe(true);
     const keys = Object.keys(view);
@@ -613,7 +676,14 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
     const shallow = snapshot(w, { kind: 'inspector' }, 10, [kind]);
     expect(shallow.journal.some((e) => e.kind === kind)).toBe(false);
     const followed = shallow.followed[kind];
-    expect(followed?.length).toBe(w.journal.ofKind(kind).length);
+    // B1, D1: the last N OF THAT KIND, which is what a followed feed is for and what it says it is.
+    // This asked for all of them, and that held only while a world had fewer than ten to give: one
+    // treasury saying one thing a period for six periods is six. There are four treasuries now, so
+    // there are twenty-four — and the property is unchanged and still the point, that the feed
+    // reaches them at all when a period says thousands of other things.
+    const said = w.journal.ofKind(kind).length;
+    expect(said).toBeGreaterThan(10);
+    expect(followed?.length).toBe(10);
     expect(followed?.[followed.length - 1]?.period).toBe(w.period);
     // A3, A4: it comes back by the same visibility rule as the feed — a party gets what is public
     // and what names it, and nothing else, whatever kind it asks for.

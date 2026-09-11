@@ -288,6 +288,32 @@ representation is measured, or its own item before the scale runs of Part XII.
 
 ## Found while working item 12d
 
+### 12d-2 — A treasury bill prints at five times what it redeems for
+
+**Where.** The sovereign secondary book. Seen with `rigWorld('seed-A')` and `rigWorld('seed-B')`.
+
+**Measured.** `ust.bill.2026-06-15` carried at `1.0042` from period 12 in one world and reaching
+**`4.949`** in another — a bill that pays one at maturity, priced at nearly five. The engine found it
+by dying on it: `yield of ust.bill.2026-06-15 is Infinity`, because the yield that discounts a
+payment of one to a price of five, days from redemption, is below minus a hundred per cent and the
+discount factor underflows to nothing.
+
+**It is 12c's finding in the bill book.** Both sides of a dealer's quote come from its own view, its
+view follows the last print, and a book with nothing else in it is a fixed point — which is exactly
+what 12c fixed for shares by giving a saver a reason off the issuer's own published accounts. The
+sovereign book has no such party: the households' ladder prices paper off a public curve at their own
+required yield (`portfolio.ts`), and the curve is read off the prints, so the anchor is the print
+again.
+
+**What was fixed here, and it is only the arithmetic.** A search that walks outward now STOPS at the
+edge of what the function answers instead of marching past it (`invertDecreasing`), a present value
+says it diverges as the rate approaches minus one rather than throwing from inside the walk
+(`curve.ts`), and a curve is built from the lines that HAVE a yield — a print with none is not a
+point on one. So the world no longer dies on it and the read is honest. **The price is not fixed.**
+
+**Not chased.** A second reason in the sovereign book is the same item 12c was, in a different market,
+and it is not a test migration. To be positioned when 12d closes.
+
 ### 12d-1 — No firm in this world ever wants plant, so nothing is ever built
 
 **Where.** `mechanisms/firms/invest.ts` (`project`), `mechanisms/capital-programme/`. Seen with

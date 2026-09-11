@@ -215,28 +215,57 @@ export function zeroIfNone(q: number | undefined): number {
 }
 
 /**
- * Invert a strictly decreasing function by bisection: the x in [lo, hi] at which f(x) = target.
+ * Invert a strictly decreasing function by bisection: the x at which f(x) = target.
+ *
  * Arithmetic, not a decision: it inverts a function somebody else stated. The bracket is a bracket
  * and is never reported as an answer (Clearing C4.c is about prices; this returns an x it found).
- * Throws Impossible when the target is outside what the bracket can reach.
+ *
+ * `undefined` WHERE THERE IS NO SUCH X, and that is an answer rather than a failure. `f` is defined
+ * on part of the line and the walk stops at the edge of it; a target outside what the function
+ * reaches there has no inverse, which is a true thing about the target — a bill priced above what
+ * it redeems for, days from redeeming, has no yield — and the caller is the one that knows what to
+ * do about it. It used to march past that edge and ask `f` for a value there; the answer was
+ * Infinity, `finite` threw from inside the walk, and the run stopped on what looked like an
+ * arithmetic defect and was a price.
  */
-export function invertDecreasing(f: (x: number) => number, target: number, what: string): number {
+function answered(f: (x: number) => number, x: number): number | undefined {
+  const y = f(x);
+  return Number.isFinite(y) ? y : undefined;
+}
+
+export function invertDecreasing(
+  f: (x: number) => number,
+  target: number,
+  what: string,
+): number | undefined {
   // Find a bracket by walking outward from zero. A bracket is arithmetic and is never an answer:
   // what comes back is the x where f(x) meets the target, not an end of the search.
   let a = 0;
   let b = 1;
-  for (let i = 0; i < 64 && finite(f(a), what) < target; i += 1) a = a === 0 ? -0.5 : (a - 1) / 2;
-  for (let i = 0; i < 64 && finite(f(b), what) > target; i += 1) b *= 2;
-  const fa = finite(f(a), what);
-  const fb = finite(f(b), what);
-  if (fa < target || fb > target) {
-    throw new Impossible('Law 7', `${what}: ${target} is outside [${fb}, ${fa}]`, {
-      what,
-      target,
-      lo: fa,
-      hi: fb,
-    });
+  // A WALK STOPS AT THE EDGE OF WHAT THE FUNCTION MEANS. `f` is only defined on part of the line —
+  // a present value is a discount factor and a discount factor of a rate at or below minus one is
+  // not a number — and the walk outward reaches that edge before it reaches an answer whenever the
+  // target is beyond the range. It used to keep going and ask `f` for a value there: the answer was
+  // Infinity, `finite` threw inside the walk, and what a reader saw was `yield of ust.bill... is
+  // Infinity` rather than the truth, which is that a bill priced above what it redeems for, days
+  // from redeeming, has no yield at all. So the walk keeps the last x that ANSWERED, and the check
+  // below reports a target outside the range as what it is.
+  let fa = answered(f, a);
+  for (let i = 0; i < 64 && fa !== undefined && fa < target; i += 1) {
+    const next = a === 0 ? -0.5 : (a - 1) / 2;
+    const at = answered(f, next);
+    if (at === undefined) break;
+    a = next;
+    fa = at;
   }
+  let fb = answered(f, b);
+  for (let i = 0; i < 64 && fb !== undefined && fb > target; i += 1) {
+    const at = answered(f, b * 2);
+    if (at === undefined) break;
+    b *= 2;
+    fb = at;
+  }
+  if (fa === undefined || fb === undefined || fa < target || fb > target) return undefined;
   // Halve the bracket until it is narrower than the dust of the numbers being compared, and no
   // more than a stated number of times, so the loop terminates on any input.
   for (let i = 0; i < 128; i += 1) {

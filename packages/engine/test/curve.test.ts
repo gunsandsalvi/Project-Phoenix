@@ -65,11 +65,16 @@ describe('the curve (Sovereign D3)', () => {
     const print = w.prices.latest(GOV_LINE, w.period);
     if (!print.some) throw new Error('no print');
     const dirty = print.value.price + w.accruedPerUnit(GOV_LINE, w.period);
+    // A price this line printed HAS a yield, and the read says so rather than assuming it: a price
+    // for which none exists is a real state (a bill above what it redeems for), and the curve
+    // leaves such a line out rather than inventing a rate for it.
     const y = yieldOf(flows, dirty, on, 'ACT/ACT', 'test');
+    expect(y.some, 'this print has no yield, so the round trip cannot be tested').toBe(true);
+    if (!y.some) return;
     // The round trip closes: the yield is what discounts these flows to that price, and nothing else.
-    expect(priceAt(flows, y, on, 'ACT/ACT', 'test')).toBeCloseTo(dirty, 9);
+    expect(priceAt(flows, y.value, on, 'ACT/ACT', 'test')).toBeCloseTo(dirty, 9);
     const point = curveOf(w).points.find((p) => p.instrument === GOV_LINE);
-    expect(point?.yield).toBeCloseTo(y, 9);
+    expect(point?.yield).toBeCloseTo(y.value, 9);
   });
 
   it('reads a level the holders of the paper put it at, without being told one', () => {

@@ -95,14 +95,26 @@ export function yieldOf(
   from: Civil,
   dc: DayCount,
   what: string,
-): number {
-  const pv = (y: number): number =>
-    sum(
-      flows.map((f) =>
-        div(f.perUnit, Math.pow(add(1, y, 'discount base'), yearFraction(dc, from, f.date)), what),
-      ),
-    ).value;
-  return invertDecreasing(pv, finite(price, what), what);
+): Option<number> {
+  const pv = (y: number): number => {
+    let total = 0;
+    for (const f of flows) {
+      const factor = Math.pow(add(1, y, 'discount base'), yearFraction(dc, from, f.date));
+      // THE PRESENT VALUE DIVERGES AS THE RATE APPROACHES MINUS ONE, and saying so is not the same
+      // as failing. A discount factor is `(1+y)^t`, so at a rate of minus a hundred per cent it is
+      // nothing and what a payment is worth today is unbounded — which is an answer about the
+      // FUNCTION and not a defect in the arithmetic. The search that inverts this walks outward
+      // until something stops answering (`invertDecreasing`), so what it needs here is a number it
+      // can recognise as "past the edge" rather than a throw from inside the walk: dividing by that
+      // zero is what made a bill priced above what it redeems for, days from redeeming, report
+      // `yield ... is Infinity` instead of having no yield.
+      if (!(factor > 0) || !Number.isFinite(factor)) return Number.POSITIVE_INFINITY;
+      total += div(f.perUnit, factor, what);
+    }
+    return total;
+  };
+  const y = invertDecreasing(pv, finite(price, what), what);
+  return y === undefined ? none<number>() : some(finite(y, what));
 }
 
 /** The present value of cash flows at one yield: the inverse of yieldOf, used to quote a price. */
@@ -139,10 +151,17 @@ export function readCurve(
     const tenorYears = yearFraction(family.dayCount, on, last.date);
     if (tenorYears <= 0) continue;
     const dirty = add(print.value.price, inputs.accrued(i, on), 'dirty price');
+    // D3: A CURVE IS THE LINES THAT HAVE A YIELD. A print for which no yield exists is not a point
+    // on one — a bill printed above what it redeems for, days from redeeming, is a price with no
+    // rate behind it — and leaving it out is the honest read rather than a curve built on a number
+    // the arithmetic could not produce. That it happens at all is a finding about the BOOK that
+    // printed it (docs/BUGS.md), not about the curve.
+    const y = yieldOf(flows, dirty, on, family.dayCount, `yield of ${i.id}`);
+    if (!y.some) continue;
     points.push({
       instrument: i.id,
       tenorYears,
-      yield: yieldOf(flows, dirty, on, family.dayCount, `yield of ${i.id}`),
+      yield: y.value,
       provenance: tradedIn(print.value, at) ? 'traded' : 'stale',
     });
   }

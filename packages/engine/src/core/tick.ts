@@ -30,7 +30,7 @@
  */
 import { Impossible } from './errors.js';
 import type { Brand } from './ids.js';
-import { finite } from './num.js';
+import { dustOf, finite } from './num.js';
 
 /**
  * Law 8: A QUANTITY IS A COUNT OF PIECES, AND THE TYPE SAYS SO.
@@ -269,12 +269,14 @@ export function toGrain(value: number, grain: number): number {
  * residue, being one multiplication rather than an accumulation, is what Law 7's dust is for.
  */
 export function downToTick(price: number, tick: number): number {
-  return Math.floor(finite(price, 'price') / positiveTick(tick)) * tick;
+  const n = ticksIn(price, tick);
+  return (onIt(n) ? Math.round(n) : Math.floor(n)) * tick;
 }
 
 /** The same, upwards: the least level on the grid that is not below what was asked (Law 8). */
 export function upToTick(price: number, tick: number): number {
-  return Math.ceil(finite(price, 'price') / positiveTick(tick)) * tick;
+  const n = ticksIn(price, tick);
+  return (onIt(n) ? Math.round(n) : Math.ceil(n)) * tick;
 }
 
 /**
@@ -283,7 +285,28 @@ export function upToTick(price: number, tick: number): number {
  * side to take the direction from and the nearest is the honest answer.
  */
 export function toTickOf(price: number, tick: number): number {
-  return Math.round(finite(price, 'price') / positiveTick(tick)) * tick;
+  return Math.round(ticksIn(price, tick)) * tick;
+}
+
+function ticksIn(price: number, tick: number): number {
+  return finite(price, 'price') / positiveTick(tick);
+}
+
+/**
+ * Law 7: A LEVEL THAT IS ALREADY ON THE GRID, to the dust of asking the question.
+ *
+ * `1.2 / 0.0001` is 11999.999999999998, because neither a fifth nor a ten-thousandth is a binary
+ * fraction — so a buy AT a tick was floored a whole tick DOWN while a sell at the same tick was
+ * ceilinged UP, and a book with a bid and an ask at one level came back `noOverlap`. Two orders
+ * that agreed did not trade, and nothing anywhere said so.
+ *
+ * The tolerance is what the arithmetic did: ONE division, over the magnitude it produced. It is not
+ * a band around the grid — a level a tick away is still a tick away and is still moved — it is the
+ * recognition that a division of two numbers neither of which is representable cannot answer
+ * exactly, and the direction a limit rounds may not turn on which side of an integer the error fell.
+ */
+function onIt(n: number): boolean {
+  return Math.abs(n - Math.round(n)) <= dustOf(1, Math.abs(n));
 }
 
 function positiveTick(tick: number): number {

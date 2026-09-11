@@ -152,11 +152,25 @@ interface Trade {
  * read off the side and is not a choice anybody gets to make differently.
  */
 function onTheGrid(orders: readonly Order[], tick: number): Order[] {
-  return orders.map((o) =>
-    o.price === 'market'
-      ? o
-      : { ...o, price: o.side === 'buy' ? downToTick(o.price, tick) : upToTick(o.price, tick) },
-  );
+  const out: Order[] = [];
+  for (const o of orders) {
+    if (o.price === 'market') {
+      out.push(o);
+      continue;
+    }
+    const level = o.side === 'buy' ? downToTick(o.price, tick) : upToTick(o.price, tick);
+    // Law 8, Clearing A2: A LIMIT BELOW THE SMALLEST INCREMENT THIS MARKET QUOTES IS NOT A LIMIT.
+    // A buyer that will pay less than one tick has no level it could name here — rounding its bid
+    // the way its own side means takes it to nothing, and nothing is not an offer. It is simply not
+    // in this book at this session, which is the same answer a party with no size to post gets.
+    //
+    // It must not be POSTED at zero, which is what this did: a bill printed at nothing, and the
+    // first read that divided by that price threw `yield of ust.bill.2026-06-15 is Infinity`. A
+    // price of zero is not a cheap price, it is the absence of one (XI-6).
+    if (level <= 0) continue;
+    out.push({ ...o, price: level });
+  }
+  return out;
 }
 
 export function runMarket(

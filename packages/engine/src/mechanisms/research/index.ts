@@ -66,6 +66,13 @@ function deskOf(all: Desks, bank: PartyId): Desk {
  * like — which is exactly why the count per name comes out uneven (D3) without anybody spreading it.
  */
 function needsTheView(ctx: MechanismContext, bank: PartyId, company: PartyId): boolean {
+  // D2, Money E4: A COMPANY THAT HAS CEASED IS NOT ONE ANYBODY COVERS. It has no next quarter to
+  // have a view of, and a desk publishing an estimate of one is naming a party that is not there —
+  // which the `names` family says out loud, and said in every year-long run in the suite. Coverage
+  // ENDS rather than lapsing: the desk takes the same `research.dropped` path it takes for a name
+  // it can no longer justify, so the last thing said about a dead company is that nobody is
+  // covering it (D3).
+  if (!ctx.parties.get(company).status.alive) return false;
   const view = ctx.participant(bank);
   // It HOLDS something the company issued — a share it took, or a loan row it wrote to it (§23).
   for (const h of view.holdings()) {
@@ -353,7 +360,27 @@ function researchNames(): Family {
         if (e.period !== view.period) continue;
         for (const who of e.subjects) {
           const there = view.parties.has(partyId(who));
-          if (there && view.parties.get(partyId(who)).status.alive) continue;
+          if (!there) {
+            out.push({
+              family: 'names',
+              spec: 'Reporting C2',
+              owner: who,
+              size: 1,
+              unit: 'estimates',
+              period: view.period,
+              message: `an estimate names ${who}, which does not exist`,
+            });
+            continue;
+          }
+          // C2, Money E4: alive WHEN IT WAS SAID, which is not the same question as alive now. This
+          // audit runs at the close of the period and a party can cease inside one — a bank fails in
+          // the resolution slot after its desk has published, an issuer is wound up in the period it
+          // was last reported on. An estimate that named a living party and was overtaken by its
+          // death is not an estimate about a party that is not there; it is the record of what
+          // somebody thought before it happened, and C2 asks that a view have a real holder and a
+          // real subject, not that both outlive the period.
+          const status = view.parties.get(partyId(who)).status;
+          if (status.alive || status.ceasedIn >= e.period) continue;
           out.push({
             family: 'names',
             spec: 'Reporting C2',
@@ -361,7 +388,7 @@ function researchNames(): Family {
             size: 1,
             unit: 'estimates',
             period: view.period,
-            message: `an estimate names ${who}, which ${there ? 'has ceased' : 'does not exist'}`,
+            message: `an estimate names ${who}, which ceased in period ${status.ceasedIn}`,
           });
         }
       }
