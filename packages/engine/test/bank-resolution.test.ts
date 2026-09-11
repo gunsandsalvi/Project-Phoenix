@@ -132,14 +132,15 @@ describe('the valuation and the hole (Banks Capital D1)', () => {
 
   it('opens on the trigger that fired, and says which one it was (C1, C1.a)', () => {
     expect(valued).toBeDefined();
-    // C1.a: BOTH triggers exist and the resolution names the one that fired. What this world
-    // reaches is the CASH one — and that is a finding about the world rather than about the
-    // clause. A bank here cannot become insolvent while it is still liquid: the only loss big
-    // enough to eat its capital is a payment, the money for a payment that big comes from the
-    // window against its own paper, and paying it away takes its cash with it. Insolvency while
-    // liquid needs a loss that is NOT a payment — an asset written down — which needs a bank whose
-    // capital is a tenth of its book rather than four fifths of it (recorded, worklist 11.3).
-    expect(String(valued?.data['why'])).toMatch(/could not pay/);
+    // C1.a: BOTH triggers exist and the resolution NAMES THE ONE THAT FIRED. Which one this world
+    // reaches is a fact about the world and not about the clause, so the clause is what is asserted.
+    //
+    // It used to say the cash trigger, with a note that a bank here could not become insolvent
+    // while still liquid — the only loss big enough to eat its capital was a payment, and paying it
+    // away took the cash with it. That stopped being true: this world now reaches the SOLVENCY
+    // trigger ("its liabilities are past its assets by 1500372191"), which is the loss that is not
+    // a payment the note said would need a bank whose capital is a tenth of its book. It has one.
+    expect(String(valued?.data['why'])).toMatch(/could not pay|liabilities are past its assets/);
     // What matters for everything below is that the HOLE is real: it owes more than the book is
     // worth at marks, so there is something for the hierarchy to work through (D1, D2).
     expect(num(valued, 'hole')).toBeGreaterThan(0);
@@ -179,14 +180,29 @@ describe('who bears it (Banks Capital A2, D2, D2.a, E3)', () => {
 
   it('cuts every uninsured claim by the same proportion (D2, D2.a)', () => {
     expect(down.length).toBeGreaterThan(1);
-    const shares = down.map((e) => num(e, 'lost') / num(e, 'owed'));
-    // A2.c, D2.a: PARI PASSU is not a rule applied afterwards. Every claim that ranks together takes
+    // A2.c, D2.a: PARI PASSU is not a rule applied afterwards. Every claim THAT RANKS TOGETHER takes
     // the same share of the same loss, which is what they would have got in a liquidation — a
     // depositor above the limit and a bank that lent it a month of money are the same creditor here.
     // The shares differ only by the whole piece each write-down was rounded to (Law 8).
-    const first = shares[0] ?? 0;
-    expect(first).toBeGreaterThan(0);
-    for (const share of shares) expect(share).toBeCloseTo(first, 4);
+    //
+    // WITHIN A RANK, and the event says which rank each claim is in. This used to compare them all
+    // against the first, which held while every claim in the world ranked together; a bank with
+    // subordinated debt in its funding has two ranks, and one of them is wiped while the other is
+    // barely touched — which is what being junior MEANS and not a failure of pari passu.
+    const byRank = new Map<number, number[]>();
+    for (const e of down) {
+      const rank = num(e, 'rank');
+      byRank.set(rank, [...(byRank.get(rank) ?? []), num(e, 'lost') / num(e, 'owed')]);
+    }
+    expect(byRank.size, 'nothing was written down at any rank').toBeGreaterThan(0);
+    let compared = 0;
+    for (const [, shares] of byRank) {
+      const first = shares[0] ?? 0;
+      expect(first).toBeGreaterThan(0);
+      for (const share of shares) expect(share).toBeCloseTo(first, 4);
+      compared += shares.length;
+    }
+    expect(compared).toBe(down.length);
   });
 
   it('leaves a secured lender alone for what its own paper covers (D2, B3.c)', () => {
@@ -245,8 +261,12 @@ describe('the acquirer (Banks Capital D3, D6, C3.b)', () => {
     }
     // Law 2, D6: and nothing of its own is left in a dead party's hands.
     expect(w.register.holdingsOf(BANK_A).filter((h) => h.lots.length > 0)).toEqual([]);
-    // Register F2: a reference to it resolves to whoever succeeded it.
-    expect(w.parties.resolve(BANK_A).id).toBe(BANK_B);
+    // Register F2: a reference to it resolves to whoever succeeded it — and WHICH bank bid for the
+    // book is an outcome of what each of their own views made of it (D3), so the successor is read
+    // off the resolution rather than named here (PLAN §7).
+    const took = events(w, 'bank.resolution.done', BANK_A)[0];
+    expect(took, 'nobody took the book, so there is no successor to resolve to').toBeDefined();
+    expect(String(w.parties.resolve(BANK_A).id)).toBe(String(took?.data['acquirer']));
   });
 });
 
