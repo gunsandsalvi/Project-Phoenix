@@ -23,6 +23,7 @@
  * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
  */
 import type { Family, Violation } from '../../audit/audit.js';
+import { CENT_TICK } from '../../registry/grid.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -129,6 +130,11 @@ export const fundManagerKind: PartyKindProfile = {
 export const fundShareKind: InstrumentKindProfile = {
   id: FUND_SHARE,
   pricing: 'derived',
+  // Law 8, E2: a cent, because an exchange-traded fund's shares TRADE and a share trades in cents.
+  // It is the grid of the posted price and never of the net asset value: what the book comes to per
+  // share is arithmetic and rounding it would leave the fund holding a residue of its own holders'
+  // money (A3, and the audit says so within two periods).
+  priceTick: CENT_TICK,
   // What a holder's book has recognised is the last value read, which revaluation re-marks each
   // period; a derived value has no stored history for a carrying rule to read back (prices/value.ts).
   carry: 'cost',

@@ -46,6 +46,7 @@ export const KERNEL_PARAMS = {
   cyclesPerPeriod: paramId('calendar.cyclesPerPeriod'),
   worstInstances: paramId('audit.worstInstances'),
   pieceShift: paramId('resolution.pieceShift'),
+  tickShift: paramId('markets.tickShift'),
 } as const;
 
 export function assemble(spec: AssemblySpec): World {
@@ -65,6 +66,7 @@ export function assemble(spec: AssemblySpec): World {
       curveFamilies: modules.flatMap((m) => m.curveFamilies),
     },
     new ParamRegister(declared).get(KERNEL_PARAMS.pieceShift),
+    new ParamRegister(declared).get(KERNEL_PARAMS.tickShift),
   );
   const params = new ParamRegister(declared, registry);
   const calendar = new Calendar({

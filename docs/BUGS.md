@@ -166,6 +166,61 @@ destination; being dropped by the analysts who covered it is part of what happen
 **Not chased.** It is 12a's module and 12a is closed; the fix is one read, and it belongs with an
 item that is in that module. To be positioned when 12b closes.
 
+## Found while working item 12b.1
+
+### 12b.1-1 — A fund whose whole float is redeemed lives on as an empty vehicle
+
+**Where.** `mechanisms/funds/` (`redeemInKind`, and whatever should notice). Seen with
+`foundationSpec('year', drawBanks(4,'year'), drawFirms(40,'year'))`.
+
+**Measured.** The exchange-traded fund's shares are redeemed in kind down to nothing at period 10,
+and then:
+
+```
+p  9 issued 20000  mkt.share.etf.us noOverlap 985 vol 0
+p 10 issued 0      mkt.share.etf.us noDemand 985 vol 0
+p 11..52 issued 0  noDemand
+```
+
+**What is missing.** Nothing immortal (XI-3) and no death without a destination (XI-8): a vehicle
+with no shares outstanding holds nothing and is owed nothing by anybody, and it should wind up — or
+creation should be able to restart it, which is what an authorised participant's other half is for
+(E3, G1.a). Instead it sits in the world for ever with a market nobody can be on either side of.
+
+**Fixed on the spot, because it STOPPED THE BUILD.** `navOf` threw `Fund Shares B1` — "no shares
+outstanding to divide by" — at a dealer asking `view.mark()` for a line it holds none of.
+`world.markOf` now answers `none` for a derived line with nothing outstanding, which is what an
+OPTIONAL read owes a caller: a claim on a book, per share, has no answer when there are no shares,
+and that is XI-6's "unpriced" rather than a crash. A reader that REQUIRES a price still throws at
+the site that requires it. The empty vehicle itself is the finding and is not fixed.
+
+**Not chased.** To be positioned when 12b.1 closes.
+
+### 12b.1-2 — A share in this world is worth a fraction of a cent
+
+**Where.** `mechanisms/equity/`, exposed by the price grid.
+
+**Measured.** At period 52 of a four-bank, forty-firm year, WITHOUT a price grid:
+
+```
+equity.firm.11  0.00026 USD/share   23,991,042,300 shares
+equity.firm.13  0.00030 USD/share    9,579,949,734 shares
+equity.firm.17  0.00465 USD/share   48,375,963,805 shares
+```
+
+and WITH the grid, the same lines sit on the smallest thing that exists — one cent — because there
+is nothing below it to drift to.
+
+**What it says.** The grid did not break the share market; it made the break visible. A firm with
+twenty-four BILLION shares outstanding at a hundredth of a cent each is not a share register anybody
+would recognise, and a real market's cent tick is a one per cent grid on a price like that. Two
+numbers are wrong together — the float and the level — and the level is 12c's finding 12-15 walking
+downwards instead of upwards.
+
+**Not chased**, and the tick is NOT loosened to accommodate it: a cent a share is what a share market
+quotes in, and a grid widened to fit a broken price would be the price deciding the resolution. To be
+positioned with 12c, which owns the share book.
+
 ### 12b-2 — RESOLVED here: a value in one money written into an account kept in another
 
 Named while reproducing 12b at `410bf16`, and it had two sites, both the same cause:

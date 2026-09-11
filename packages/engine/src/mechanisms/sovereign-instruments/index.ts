@@ -8,6 +8,7 @@
  * the treasury's programme are separate modules (worklist 3); this one is only the paper.
  */
 import type { Calendar } from '../../calendar/calendar.js';
+import { FACE_TICK } from '../../registry/grid.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
@@ -63,6 +64,10 @@ function validateDates(issue: Civil, maturity: Civil, what: string): void {
 export const sovereignBond: InstrumentKindProfile = {
   id: SOVEREIGN_BOND,
   pricing: 'cleared',
+  // Law 8: government paper is quoted as a fraction of its own face, and it moves in
+  // ten-thousandths of one — a basis point of price, which is the grid a sovereign book
+  // actually quotes on. A cent of face would be a whole percentage point of a bond.
+  priceTick: FACE_TICK,
   carry: 'mark',
   liabilityOfIssuer: true,
   unit: () => PAR,
@@ -159,6 +164,10 @@ function couponDates(t: SovereignBondTerms, cal: Calendar): readonly Civil[] {
 export const sovereignBill: InstrumentKindProfile = {
   id: SOVEREIGN_BILL,
   pricing: 'cleared',
+  // Law 8: government paper is quoted as a fraction of its own face, and it moves in
+  // ten-thousandths of one — a basis point of price, which is the grid a sovereign book
+  // actually quotes on. A cent of face would be a whole percentage point of a bond.
+  priceTick: FACE_TICK,
   carry: 'mark',
   liabilityOfIssuer: true,
   unit: () => PAR,

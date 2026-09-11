@@ -9,7 +9,7 @@
  * world is built, because parties are state, not data.
  */
 import { InvalidRegistry, Missing } from '../core/errors.js';
-import { downTick, piecesPerUnit, toTick } from '../core/tick.js';
+import { downTick, piecesPerUnit, toTick, toTickOf } from '../core/tick.js';
 import { currencyUnit } from '../core/ids.js';
 import type {
   CohortId,
@@ -30,6 +30,17 @@ export interface CurrencyDecl {
   readonly name: string;
   /** The named issuer whose liability the currency is (Currency A2). */
   readonly centralBank: PartyId;
+  /**
+   * Law 1, Law 8: THE SMALLEST INCREMENT A RATE QUOTED IN THIS MONEY MOVES BY, per unit of the
+   * money being bought — what a dealer calls a pip.
+   *
+   * It belongs to the QUOTE money and not to the pair, which is the real convention and not a
+   * simplification: every pair quoted in dollars moves in ten-thousandths of one and every pair
+   * quoted in yen moves in hundredths of one, because what the increment is worth is a fact about
+   * the money the price is IN. How fine it is, is a RESOLUTION (Law 2), and `resolution.tickShift`
+   * moves every tick in the world together so the invariance can be run.
+   */
+  readonly quoteTick: number;
 }
 
 export interface RegionDecl {
@@ -90,6 +101,8 @@ export class Registry {
   readonly currencies: ReadonlyMap<CurrencyCode, CurrencyDecl>;
   /** Law 2: what every unit's subdivision is multiplied by, for the invariance test. */
   readonly pieceShift: number;
+  /** Law 2: what every declared price tick is DIVIDED by, which is the same test for the price grid. */
+  readonly tickShift: number;
   readonly regions: ReadonlyMap<RegionId, RegionDecl>;
   readonly units: ReadonlyMap<UnitId, UnitDecl>;
   readonly cohorts: readonly CohortDecl[];
@@ -101,9 +114,15 @@ export class Registry {
 
   private readonly subdivisions = new Map<UnitId, number>();
 
-  /** `pieceShift`: Law 2's resolution knob — how many times finer every unit's pieces are. */
-  constructor(data: RegistryData, pieceShift: number) {
+  /**
+   * Law 2's two resolution knobs: `pieceShift` is how many times finer every unit's PIECES are, and
+   * `tickShift` how many times finer every quoted PRICE is. They are separate because the grids are
+   * separate — a share is indivisible and still quotes in cents — and each is tested the same way,
+   * by declaring the same world finer and showing its path does not turn on the number.
+   */
+  constructor(data: RegistryData, pieceShift: number, tickShift: number) {
     this.pieceShift = pieceShift;
+    this.tickShift = tickShift;
     this.currencies = unique(data.currencies, (c) => c.code, 'currency');
     this.regions = unique(data.regions, (r) => r.id, 'region');
     this.units = unique(data.units, (u) => u.id, 'unit');
@@ -161,6 +180,37 @@ export class Registry {
           `instrument kind ${k.id} derives a value but is priced by ${k.pricing}`,
         );
       }
+      // Law 8, worklist 12b.1: A KIND SOMEBODY QUOTES HAS A SMALLEST INCREMENT AND EVERY OTHER KIND
+      // HAS NONE, and both mistakes are refused here rather than found later in a price with sixteen
+      // figures in it.
+      //
+      // QUOTED means SOMEBODY CAN POST A LIMIT IN IT. Money is worth one of itself (Money D2) and a
+      // kind carried at cost is never offered at a level, so neither has a grid. A DERIVED kind has
+      // one, because its shares trade: an exchange-traded fund is a claim on a book AND a line in a
+      // market, and Fund Shares E2 is the clause that says those are two numbers about one thing.
+      //
+      // WHICH IS EXACTLY WHERE THE GRID GOES AND WHERE IT DOES NOT. The traded number is posted by a
+      // party and is on the grid like every other posted level; the DERIVED value is arithmetic on a
+      // book (B1) that nobody offers, and it is not. Rounding that one was tried and the audit
+      // refused it within two periods: it leaves `assets - shares x value` belonging to nobody, and
+      // a fund's equity is zero BY CONSTRUCTION (A3) — a residual with no holder, which is Law 2's
+      // defect made by putting a grid on a number nobody posts.
+      const quoted = k.pricing === 'cleared' || k.pricing === 'derived';
+      if (quoted && k.priceTick === undefined) {
+        throw new InvalidRegistry(
+          'Law 8',
+          `instrument kind ${k.id} can be posted at a level and declares no price tick`,
+        );
+      }
+      if (!quoted && k.priceTick !== undefined) {
+        throw new InvalidRegistry(
+          'Law 8',
+          `instrument kind ${k.id} declares a price tick and is never posted at one (${k.pricing})`,
+        );
+      }
+      if (k.priceTick !== undefined && !(k.priceTick > 0)) {
+        throw new InvalidRegistry('Law 8', `instrument kind ${k.id} has a price tick of ${k.priceTick}`);
+      }
     }
     for (const f of this.curveFamilies.values()) {
       if (!this.currencies.has(f.ccy)) {
@@ -199,6 +249,51 @@ export class Registry {
    */
   priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: number): number {
     return (perNamedUnit * this.subdivision(currencyUnit(ccy))) / this.subdivision(unit);
+  }
+
+  /**
+   * Law 8, Clearing C4.c: THE SMALLEST INCREMENT THIS KIND IS QUOTED IN, in the same terms a price
+   * is held in — money pieces per piece of the thing — so a level is on the grid when it is a whole
+   * number of these.
+   *
+   * It is `priceOf` applied to the declared tick, because a tick IS a price: the smallest one that
+   * is not nothing. Law 2's `tickShift` divides it, which is how the same world is declared with a
+   * finer grid and its path shown not to turn on the number.
+   */
+  tickFor(kind: InstrumentKindId, ccy: CurrencyCode): number {
+    const k = this.instrumentKind(kind);
+    const declared = k.priceTick;
+    if (declared === undefined) {
+      throw new InvalidRegistry('Law 8', `instrument kind ${kind} is never posted at a level and has no tick`);
+    }
+    return this.priceOf(ccy, k.unit(ccy), declared / this.tickShift);
+  }
+
+  /**
+   * Law 8: a stated level, put on this kind's quote grid where it HAS one.
+   *
+   * A kind that is never quoted has no quote grid and this passes its number through: what is
+   * stated for a lot of work-in-progress or a loan row is a COST, not a level a market could print,
+   * and a cost lands on the money's own grid at the moment it is paid (`Registry.cashFor`). Giving
+   * it a quote tick would be inventing a market for a thing that has none.
+   */
+  onQuoteGrid(kind: InstrumentKindId, ccy: CurrencyCode, price: number): number {
+    return this.instrumentKind(kind).priceTick === undefined
+      ? price
+      : toTickOf(price, this.tickFor(kind, ccy));
+  }
+
+  /**
+   * Spot FX C1, Law 8: the same question for a RATE, whose grid belongs to the money it is quoted
+   * in (`CurrencyDecl.quoteTick`) — a pip. The base money's unit is what one of is being bought,
+   * so the two subdivisions in the ratio are the two moneys' own.
+   */
+  rateTickFor(base: CurrencyCode, quote: CurrencyCode): number {
+    return this.priceOf(
+      quote,
+      currencyUnit(base),
+      this.currency(quote).quoteTick / this.tickShift,
+    );
   }
 
   /** The other way, for a reader: 18849 cents is 188.49 USD. Never used to decide anything. */

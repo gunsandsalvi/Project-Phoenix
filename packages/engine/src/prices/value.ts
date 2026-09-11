@@ -127,6 +127,12 @@ export class Valuation {
     this.deriving.add(instrument);
     const value = derive(i, at, this.reads());
     this.deriving.delete(instrument);
+    // Law 8, worklist 12b.1: AND IT IS NOT PUT ON A PRICE GRID, which was tried and was wrong.
+    // A derived value is arithmetic on a book (B1) and not a level anybody offers, so rounding it
+    // to a tick would leave `assets - shares x value` belonging to nobody — and a fund's equity is
+    // zero BY CONSTRUCTION (A3), so the audit reported the residue as mislaid money inside two
+    // periods. A grid belongs to what is POSTED. What a fund's shares change hands at IS posted,
+    // and that number is ticked in the book like every other (clearing/market.ts).
     return value;
   }
 

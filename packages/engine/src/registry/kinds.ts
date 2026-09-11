@@ -108,6 +108,22 @@ export interface InstrumentKindProfile {
   readonly liabilityOfIssuer: boolean;
   /** The unit its quantity is counted in (Register A1.c), given its currency. */
   readonly unit: (ccy: CurrencyCode) => UnitId;
+  /**
+   * Law 1, Law 8: THE SMALLEST INCREMENT THIS KIND IS QUOTED IN, as money per named unit of it —
+   * a cent a share, a basis point of a bond's face, a cent a tonne.
+   *
+   * A price is a quantity like any other and has a smallest piece for the same reason: a market
+   * quotes on a grid, and a level finer than its tick is not a level anybody can hit. Without one
+   * a print carried sixteen significant figures and every `units x price` read inherited them
+   * (worklist 12b.1), so a balance sheet was finer than any money that could ever pay it.
+   *
+   * It is DECLARED and not derived from the money's own grid, because the two are different
+   * conventions: a share moves in cents and a bond in ten-thousandths of its face, and both are paid
+   * for in the same cents. Only a kind whose price comes from a market or a derivation has one —
+   * money is worth one of itself and a kind carried at cost is never quoted (the registry refuses
+   * either mistake at assembly). How fine it is, is a RESOLUTION (Law 2).
+   */
+  readonly priceTick?: number;
   /** Validate kind-specific terms at registration; throw InvalidRegistry otherwise. */
   readonly validateTerms: (terms: Terms) => void;
   /**

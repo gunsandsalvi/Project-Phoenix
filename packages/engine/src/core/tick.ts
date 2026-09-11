@@ -248,3 +248,47 @@ export function toGrain(value: number, grain: number): number {
   // trade would then be reporting the second rounding as a discrepancy (Law 7).
   return Math.round(finite(value, 'quantity') / whole(grain)) * grain;
 }
+
+/**
+ * Law 1, Law 8, Clearing C4.c: A LEVEL ON THE MARKET'S OWN GRID.
+ *
+ * A market quotes on a grid — cents a share, pips a rate, ten-thousandths of a bond's face — and a
+ * level finer than its tick is not a level anybody can hit. It is the same argument this file makes
+ * for a quantity, made about a price: what is real has a smallest piece, and nothing finer exists.
+ *
+ * WHICH WAY IT ROUNDS IS NOT A CHOICE, and that is the difference from a quantity. A size means two
+ * things — what a party CAN do and what it MUST do — so its author says which way it goes. A LIMIT
+ * means exactly one: `Order.price` is the most a buyer will pay or the least a seller will accept,
+ * so a buy that cannot be at 49.7938 can only be at 49.79 and a sell can only be at 49.80. Rounding
+ * either the other way would post an order its author did not agree to. The side decides, and the
+ * kernel is honouring what the poster said rather than deciding for it.
+ *
+ * THE TICK IS NOT EXACTLY REPRESENTABLE and this does not pretend otherwise: a hundredth is not a
+ * binary fraction, so `n x tick` carries one rounding. What it buys is a level that is a whole
+ * number of a real market's increments instead of one with seventeen digits in it — and the
+ * residue, being one multiplication rather than an accumulation, is what Law 7's dust is for.
+ */
+export function downToTick(price: number, tick: number): number {
+  return Math.floor(finite(price, 'price') / positiveTick(tick)) * tick;
+}
+
+/** The same, upwards: the least level on the grid that is not below what was asked (Law 8). */
+export function upToTick(price: number, tick: number): number {
+  return Math.ceil(finite(price, 'price') / positiveTick(tick)) * tick;
+}
+
+/**
+ * Law 8: the nearest level on the grid, for a price that is STATED rather than posted — a seed's
+ * opening level, a published net asset value. Nobody is promising anything at it, so there is no
+ * side to take the direction from and the nearest is the honest answer.
+ */
+export function toTickOf(price: number, tick: number): number {
+  return Math.round(finite(price, 'price') / positiveTick(tick)) * tick;
+}
+
+function positiveTick(tick: number): number {
+  if (!(tick > 0) || !Number.isFinite(tick)) {
+    throw new Impossible('Law 8', `a price tick is a positive increment, got ${tick}`);
+  }
+  return tick;
+}

@@ -520,7 +520,13 @@ export class World {
     // the claim on the book. What the session printed is what a third party paid for one, and the
     // gap between the two is a read (E4) rather than one of them being the other's approximation.
     if (this.registry.instrumentKind(i.kind).pricing === 'derived') {
-      return some(this.valuation.markPerUnit(i.id, at));
+      // B1: a claim on a book is worth that book PER SHARE, so a line with nothing outstanding has
+      // nothing to divide by — and the answer is that there is no value, not a wrong one. It is
+      // `none` HERE because `mark` is the optional read: a desk asking after a line it holds none
+      // of is asking a fair question, and XI-6's answer to "what is this worth" when nothing has
+      // priced it is that it is unpriced. A reader that REQUIRES a price still gets the throw, at
+      // the site that requires it (`markPerUnit`, `printOrThrow`).
+      return i.issued > 0 ? some(this.valuation.markPerUnit(i.id, at)) : none<number>();
     }
     const printed = this.prices.latest(instrument, at);
     if (printed.some) return some(printed.value.price);
@@ -1306,6 +1312,15 @@ export class World {
       parties: this.parties,
       registry: this.registry,
       unitOf: (instrument) => this.instruments.get(instrument).unit,
+      // Law 8, Law 15: which registry row answers "what does this market quote in" follows from
+      // what the market PRICES — a pair's grid belongs to the money it is quoted in, an asset's to
+      // the kind of thing it is. Both are declarations, and neither is a branch on a kind id.
+      tickOf: (decl) => {
+        const pair = decl.fx;
+        return pair === undefined
+          ? this.registry.tickFor(this.instruments.get(decl.instrument).kind, decl.ccy)
+          : this.registry.rateTickFor(pair.base, pair.quote);
+      },
       prices: this.prices,
       settlement: this.settlement,
       journal: this.journal,

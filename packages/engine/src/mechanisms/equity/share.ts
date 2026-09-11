@@ -16,6 +16,7 @@
  * (A1.a), so an estate reaches it last, and reaching it last with nothing left is the wipe.
  */
 import type { InstrumentKindId, PartyId } from '../../core/ids.js';
+import { CENT_TICK } from '../../registry/grid.js';
 import { instrumentKindId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { mul } from '../../core/num.js';
@@ -69,6 +70,9 @@ export const shareKind: InstrumentKindProfile = {
   id: SHARE,
   // B2: a price clears per share, per period, out of the schedules holders and buyers post (B1).
   pricing: 'cleared',
+  // Law 8: a share is quoted in cents, which is what every share market this world is modelled on
+  // quotes in.
+  priceTick: CENT_TICK,
   // C3, C4: marked at that price, and the change in the mark is P&L reaching the holder's income —
   // for every holder class without exception, which is what carrying it at the mark means.
   carry: 'mark',

@@ -19,6 +19,8 @@
  * SHAPE: the curve opens flat and the auctions and the secondary market give it whatever shape they
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
+import { toTickOf } from '../core/tick.js';
+import { PIP, PIP_YEN } from '../registry/grid.js';
 import {
   addDays,
   addMonths,
@@ -145,6 +147,8 @@ export interface CountryDecl {
   readonly treasuryName: string;
   /** Law 9: the stem of its government paper's id, as that market's own shorthand for it. */
   readonly paper: string;
+  /** Law 8: the smallest increment a rate quoted in this money moves by — its pip (12b.1). */
+  readonly quoteTick: number;
 }
 
 export const ABROAD: readonly CountryDecl[] = [
@@ -152,6 +156,7 @@ export const ABROAD: readonly CountryDecl[] = [
     region: regionId('eu'),
     name: 'Europe',
     ccy: currencyCode('EUR'),
+    quoteTick: PIP,
     ccyName: 'euro',
     centralBank: partyId('ecb'),
     centralBankName: 'European Central Bank',
@@ -163,6 +168,7 @@ export const ABROAD: readonly CountryDecl[] = [
     region: regionId('uk'),
     name: 'United Kingdom',
     ccy: currencyCode('GBP'),
+    quoteTick: PIP,
     ccyName: 'pound sterling',
     centralBank: partyId('boe'),
     centralBankName: 'Bank of England',
@@ -174,6 +180,7 @@ export const ABROAD: readonly CountryDecl[] = [
     region: regionId('jp'),
     name: 'Japan',
     ccy: currencyCode('JPY'),
+    quoteTick: PIP_YEN,
     ccyName: 'yen',
     centralBank: partyId('boj'),
     centralBankName: 'Bank of Japan',
@@ -1035,7 +1042,11 @@ export function foundationSeedFor(
           instrument: fxPairId(base, quote),
           market: fxMarketOf(base, quote),
           period: ctx.period,
-          price: ctx.params.get(P.openingRate),
+          // Law 8: a rate is a price and opens on its pair's own grid — its pip.
+          price: toTickOf(
+            ctx.params.get(P.openingRate),
+            ctx.registry.rateTickFor(base, quote),
+          ),
           ccy: quote,
           provenance: { kind: 'opening' },
         });
@@ -1547,7 +1558,12 @@ function inNamedUnits(ctx: SeedContext, instrument: InstrumentId, pieces: number
 
 /** And for a price: money for one NAMED unit becomes money pieces for one piece. */
 function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: number): number {
-  return ctx.registry.priceOf(USD, ctx.instruments.get(instrument).unit, perNamedUnit);
+  const i = ctx.instruments.get(instrument);
+  // Law 8, Seed C4: AN OPENING LEVEL IS A PRICE AND SITS ON THE SAME GRID AS ONE. Nobody posted it
+  // and nobody promised anything at it, so there is no side to take a direction from and the
+  // nearest tick is the honest answer — but a stated level off the grid would be a level this
+  // market could never print again, which is the whole defect 12b.1 exists to remove.
+  return ctx.registry.onQuoteGrid(i.kind, USD, ctx.registry.priceOf(USD, i.unit, perNamedUnit));
 }
 
 /** The opening price the seed computed for a line; a line with none is a defect, never a default. */
@@ -1630,8 +1646,13 @@ export function foundationSpec(
     epoch: civil(2026, 1, 5),
     registry: {
       currencies: [
-        { code: USD, name: 'US dollar', centralBank: CB },
-        ...ABROAD.map((c) => ({ code: c.ccy, name: c.ccyName, centralBank: c.centralBank })),
+        { code: USD, name: 'US dollar', centralBank: CB, quoteTick: PIP },
+        ...ABROAD.map((c) => ({
+          code: c.ccy,
+          name: c.ccyName,
+          centralBank: c.centralBank,
+          quoteTick: c.quoteTick,
+        })),
       ],
       regions: [
         { id: REGION, name: 'United States', ccy: USD },
@@ -1699,6 +1720,14 @@ export function foundationSpec(
         kind: 'resolution',
         owner: 'model',
         why: 'Law 8, Law 2: how many times finer than declared every unit is divided — 10 makes the piece a tenth of a cent, a tenth of a gram and a tenth of a share. Each unit states its own subdivision; this moves them all together, which is what makes the subdivision a RESOLUTION that can be TESTED: declare the same world in finer pieces and every structural invariant must hold exactly and the path must not move.',
+      },
+      {
+        id: KERNEL_PARAMS.tickShift,
+        value: 1,
+        unit: "divisor of every kind's declared price tick",
+        kind: 'technology',
+        owner: 'model',
+        why: "Law 8, Law 2: how many times finer than declared every QUOTED PRICE moves — 10 makes the tick a tenth of a cent a share, a tenth of a basis point of a bond's face and a tenth of a pip. Each kind states its own increment (registry/grid.ts) and this moves them all together. It is a TECHNOLOGY and not a resolution, which is what measuring it said: a coarser tick pulls every bid down and every ask up until books that used to cross no longer do, so it changes what trades and this world's money stock moves three per cent between one grid and another without converging. That is what a tick does in a real venue. What running the world at a finer one tests is that every STRUCTURAL invariant holds exactly, never that the path is unchanged.",
       },
     ],
     modules: [

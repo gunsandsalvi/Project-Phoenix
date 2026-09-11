@@ -2408,3 +2408,81 @@ decomposition are complements. The killer: if 12b.1's price grid or 12c's equity
 `Audit B5` violation whose size is not dust, then the identity was holding because every rate in the
 delivered world is one, and `balance-identity.test.ts`'s second world was not the excitation it
 claims to be.
+
+---
+
+## 12b.1 — A price has a smallest piece
+
+**The owner's decision, and it was right for a reason the item only found by building it.** Every
+quantity in this world has a realistic minimum subunit; a price is one of them. What the build then
+measured twice contradicted what the plan predicted, and both corrections made the item better.
+
+**What it is.** Each kind that can be POSTED at a level declares its smallest increment in the terms
+a person states it in — a cent a share, a ten-thousandth of a bond's own face, a cent a tonne, a
+whole money for a machine — and a rate's belongs to the money it is quoted in, which is a pip. They
+sit in `registry/grid.ts` beside the piece constants, because they are the same decision about the
+other grid. The registry converts them through `priceOf` (a tick IS a price: the smallest one that
+is not nothing) and refuses at assembly both mistakes: a kind somebody can post that declares none,
+and a kind nobody posts that declares one.
+
+**Where it is applied, and where it deliberately is not.** ONE door, in the book: every order
+reaching the solver goes through `runMarket`, and there every limit lands on the market's grid. The
+PRINT is untouched — a cleared level is a posted level (Clearing C4.c, "posted and never a bracket"),
+so every print is on the grid by construction and nothing rounds an outcome (Law 6). Measured: 29 of
+29 markets that printed in a year, at three different grids, on the grid; none off it.
+
+**Correction 1 — the direction is not a choice, and the item is far smaller for it.** The plan said
+each poster must say which way its price rounds, as `downTick`/`upTick` make an author say for a
+size. Wrong: a size means two things (what a party CAN do, what it MUST do) and a LIMIT means exactly
+one per side, which `Order.price` already states — the most a buyer will pay, the least a seller will
+accept. A buy that cannot be at 49.7938 can only be at 49.79 and a sell can only be at 49.80. So the
+side decides, one place in the kernel honours what the poster promised, and the twenty-one module
+files that post orders are untouched.
+
+**Correction 2 — it is a TECHNOLOGY, not a RESOLUTION, and the measurement said so.** A finer PIECE
+rounds an amount, so its effect shrinks with the piece and the path converges (the existing
+invariance test asserts exactly that ratio). A finer TICK moves the LEVEL a decision is taken at, and
+a coarser one pulls every bid down and every ask up until books that used to cross no longer do — so
+it changes WHO TRADES. Measured: the money stock moves 3.2% between one tick grid and another and
+does not converge in either direction. That is what a tick does in a real venue and why exchanges
+argue about tick sizes. So `resolution.tickShift` became `markets.tickShift`, declared TECHNOLOGY,
+and what the invariance test asserts is that every STRUCTURAL invariant holds EXACTLY at every grid —
+never that the path is the same, which it is not and should not be.
+
+**And the audit settled the derived case within two periods.** A fund's net asset value was ticked
+first, on the argument that a fund publishes to the cent. `Fund Shares A3` reported it immediately —
+`etf.us has equity of 3` — because rounding `assets / shares` leaves the difference with nobody
+holding it and a fund's equity is zero BY CONSTRUCTION. A grid belongs to what is POSTED. So the
+traded line keeps its cent tick (E2: a claim on a book and a line in a market are two numbers about
+one thing) and the derivation is left exactly as the arithmetic gives it.
+
+**One violation stopped the build and was fixed where it stood.** A fully-redeemed ETF has no shares
+to divide by, and `navOf` threw at a dealer asking `view.mark()` for a line it holds none of.
+`world.markOf` now answers `none` for a derived line with nothing outstanding: that is what an
+OPTIONAL read owes a caller, and XI-6's "unpriced" is the right answer to "what is one of these
+worth" when there are none. A reader that REQUIRES a price still throws at the site that requires it.
+
+**What it exposed, which is the point of the exercise.** Without a grid, this world's shares had
+drifted to 0.00026 USD each on floats of twenty-four billion shares a firm. With one they sit on the
+smallest thing that exists. The grid did not break the share book — it made the break undeniable, and
+it is 12c's finding 12-15 walking downwards. The tick is NOT loosened to accommodate it: a cent a
+share is what a share market quotes in, and a grid widened to fit a broken price would be the price
+choosing the resolution.
+
+**What it does not fix.** A tick is not exactly representable in binary, so `n x tick` still carries
+one rounding, and the cash a trade settles at still lands on its own money's grain — so the rate a
+trade REALISES can differ from its print by less than one piece, exactly as `clearing/market.ts`
+already said. What changed is that a price is now a whole number of a real market's increments
+instead of a number with seventeen digits in it.
+
+**Coverage.** `Money A2`, `Clearing C4.c`, `Seed C4`, `Spot FX C1`, `Fund Shares E2` re-marked.
+
+**Found and not chased**, in `docs/BUGS.md`: **12b.1-1**, a fund whose whole float is redeemed lives
+on for ever as an empty vehicle with a market nobody can be on either side of (XI-3, XI-8);
+**12b.1-2**, a share in this world is worth a fraction of a cent, to be positioned with 12c.
+
+**Forecast, with its killer.** The claim is that no price anywhere in this engine can now be off its
+market's grid, because there is one way into the book and the print is a posted level. The killer:
+if any market ever prints a level that is not a whole number of its ticks, then something reaches the
+price store without passing the book — and the candidates are named, a seed's stated level and a
+derived value, both of which this item decided deliberately.

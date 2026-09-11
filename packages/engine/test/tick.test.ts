@@ -13,13 +13,16 @@ import {
   commonGrain,
   currencyUnit,
   downTick,
+  downToTick,
   none,
   onTick,
   partyId,
   splitOnTick,
   toTick,
+  toTickOf,
   unitId,
   upTick,
+  upToTick,
   type Leg,
   type MechanismContext,
   type SystemModule,
@@ -254,5 +257,105 @@ describe('how fine the pieces are, is a RESOLUTION (Law 2)', () => {
     // account closes below zero without a lender behind it — with no tolerance anywhere in any of
     // the three, because whole pieces add exactly.
     expect(money?.violations).toEqual([]);
+  });
+});
+
+/**
+ * The same world, quoted in ticks `shift` times finer than each kind declares.
+ *
+ * It is `atShift`'s twin and deliberately so: the two grids are separate resolutions and each has
+ * to be shown to be one. A share stays indivisible while its price moves in tenths of a cent, which
+ * is exactly the case that says the price grid is not the quantity grid wearing a different name.
+ */
+function atTickShift(
+  shift: number,
+  periods: number,
+): { reds: number; offGrid: number; prints: number; printed: number } {
+  const spec = rigSpec('tick-invariance');
+  const params = spec.params.map((p) =>
+    p.id === KERNEL_PARAMS.tickShift ? { ...p, value: shift } : p,
+  );
+  const w: World = assemble({ ...spec, params });
+  let reds = 0;
+  for (let i = 0; i < periods; i += 1) reds += unexpected(w.step().audit).length;
+  let offGrid = 0;
+  let prints = 0;
+  let printed = 0;
+  for (const m of w.markets) {
+    const last = w.prices.latest(m.instrument, w.period);
+    if (!last.some) continue;
+    prints += 1;
+    printed += last.value.price;
+    const pair = m.fx;
+    const tick =
+      pair === undefined
+        ? w.registry.tickFor(w.instruments.get(m.instrument).kind, m.ccy)
+        : w.registry.rateTickFor(pair.base, pair.quote);
+    const ticks = last.value.price / tick;
+    // Law 7: `n x tick` carries one rounding, because a hundredth is not a binary fraction. What
+    // is asserted is that the level IS a whole number of ticks, to the dust of that one product —
+    // never that the product is exact, which it cannot be and this does not pretend.
+    if (Math.abs(ticks - Math.round(ticks)) > Math.abs(ticks) * 1e-9 + 1e-9) offGrid += 1;
+  }
+  return { reds, offGrid, prints, printed };
+}
+
+describe('how fine a PRICE is, is a TECHNOLOGY (Law 2, Law 8)', () => {
+  it('prints every level on its own market’s grid, and never off it', () => {
+    // The claim of the whole item: there is no price anywhere in this world that is not a whole
+    // number of the increments its market quotes in. It is asserted over every market that has
+    // printed at all, at three different grids, because a rule that held at one would be a
+    // coincidence of that one.
+    for (const shift of [1, 10, 100]) {
+      const at = atTickShift(shift, 6);
+      expect(at.prints, 'no market printed, so nothing was tested').toBeGreaterThan(0);
+      expect(at.offGrid).toBe(0);
+    }
+  });
+
+  it('holds every structural invariant exactly, at every tick', () => {
+    // Same claim as the piece grid's, and it must be as exact: a finer or coarser quote changes
+    // WHAT clears and at what level, and it may not change whether money is conserved, whether
+    // holdings sum to what is issued, or whether anything is left with no holder.
+    for (const shift of [1, 10, 100]) expect(atTickShift(shift, 6).reds).toBe(0);
+  });
+
+  it('CHANGES what trades, which is why it is a technology and not a resolution', () => {
+    // THE ITEM EXPECTED A RESOLUTION AND THE MEASUREMENT SAID OTHERWISE, and this is the test that
+    // says so rather than a paragraph claiming it.
+    //
+    // A finer PIECE rounds an amount, so its effect shrinks with the piece and the path converges —
+    // which the piece test above asserts as a ratio. A finer TICK does something else entirely: it
+    // moves the LEVEL a decision is taken at, and a coarser one pulls every bid down and every ask
+    // up until books that used to cross no longer do. So it changes WHO TRADES, and this world's
+    // money stock moves by per cents between one grid and another, in neither direction reliably.
+    //
+    // That is not an artefact to be minimised. It is what a tick does in a real venue, and it is
+    // why exchanges and their regulators argue about tick sizes at all. A world where it made no
+    // difference would be one where the grid was decorative — so the assertion is that it is NOT,
+    // and the invariance that must hold exactly is the structural one, asserted above.
+    const coarse = atTickShift(1, 6);
+    const finest = atTickShift(100, 6);
+    const moved = Math.abs(coarse.printed - finest.printed) / Math.abs(coarse.printed);
+    expect(moved, 'the tick changed nothing, so the grid is decorative').toBeGreaterThan(0);
+  });
+});
+
+describe('a price on the grid (Law 8)', () => {
+  it('takes a limit the way its own side means it', () => {
+    // A buy is the MOST it will pay, so it cannot be moved up; a sell is the LEAST it will accept,
+    // so it cannot be moved down. There is no third answer and no preference to state.
+    expect(downToTick(49.7938, 0.01)).toBeCloseTo(49.79, 10);
+    expect(upToTick(49.7938, 0.01)).toBeCloseTo(49.8, 10);
+    // A level already on the grid is left where it is, both ways.
+    expect(downToTick(50, 0.01)).toBeCloseTo(50, 10);
+    expect(upToTick(50, 0.01)).toBeCloseTo(50, 10);
+    // And a STATED level — a seed's opening price, which nobody posted — takes the nearest.
+    expect(toTickOf(0.98849, 0.0001)).toBeCloseTo(0.9885, 10);
+  });
+
+  it('refuses an increment that is not one', () => {
+    expect(() => downToTick(1, 0)).toThrow(/positive increment/);
+    expect(() => upToTick(1, -1)).toThrow(/positive increment/);
   });
 });

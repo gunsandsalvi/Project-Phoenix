@@ -14,6 +14,7 @@
  * (Goods D, worklist 13c) there is nobody to pay, so no such charge exists here at all.
  */
 import { InvalidRegistry } from '../../core/errors.js';
+import { CENT_TICK } from '../../registry/grid.js';
 import type { InstrumentKindId } from '../../core/ids.js';
 import { material, mul, sub, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
@@ -38,6 +39,9 @@ export function goodProfile(d: GoodDecl): InstrumentKindProfile {
     id: goodKindId(d.subUnit),
     // C2: its price is what its market cleared at. E1: what a holder carries it at is what it cost.
     pricing: 'cleared',
+    // Law 8: a commodity is quoted in cents the tonne, which is about a tenth of what a real grain
+    // market ticks in — finer than the convention, never coarser, so nothing real is unquotable.
+    priceTick: CENT_TICK,
     carry: 'cost',
     // A1: a tonne of grain is a real thing, not a promise; nobody owes it to anybody.
     liabilityOfIssuer: false,

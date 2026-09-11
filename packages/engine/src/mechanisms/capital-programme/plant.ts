@@ -23,6 +23,7 @@
  * about what everybody else's is still able to make.
  */
 import type { Calendar } from '../../calendar/calendar.js';
+import { WHOLE_MONEY_TICK } from '../../registry/grid.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../../calendar/civil.js';
 import { InvalidRegistry, Missing } from '../../core/errors.js';
 import {
@@ -147,6 +148,8 @@ export function plantProfile(d: CapitalKindDecl): InstrumentKindProfile {
   return {
     id: plantKindId(d.id),
     pricing: 'cleared',
+    // Law 8: plant is quoted to the whole money. A machine is not haggled over in cents.
+    priceTick: WHOLE_MONEY_TICK,
     carry: 'cost',
     // A1: plant is a thing its holder owns. Nobody promised it and nobody owes it.
     liabilityOfIssuer: false,

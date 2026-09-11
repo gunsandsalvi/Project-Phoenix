@@ -22,7 +22,7 @@ import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type
 import { add, div, finite, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
-import { commonGrain, downToGrain, toGrain } from '../core/tick.js';
+import { commonGrain, downToGrain, downToTick, toGrain, upToTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { AccountRef, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
@@ -104,6 +104,12 @@ export interface MarketRunDeps {
   readonly instrumentIssuer: (instrument: InstrumentId) => Option<PartyId>;
   /** Register A1.c: what this line is counted in, so its smallest piece can be asked for. */
   readonly unitOf: (instrument: InstrumentId) => UnitId;
+  /**
+   * Law 8, Clearing C4.c: THE SMALLEST INCREMENT THIS MARKET QUOTES IN, in the terms a price is
+   * held in. Asked of the world rather than worked out here, because what a kind's tick is and what
+   * a pair's is are two registry rows and this file is not where either lives (Law 15).
+   */
+  readonly tickOf: (m: MarketDecl) => number;
 }
 
 export interface MarketResult {
@@ -137,6 +143,22 @@ interface Trade {
   readonly qty: number;
 }
 
+/**
+ * Law 8: the book, on the market's own grid.
+ *
+ * A `market` order names no level — it takes whatever the book offers (solver.ts) — so there is
+ * nothing to put on a grid and it passes through. Everything else is a LIMIT, and a limit has one
+ * meaning per side: the most a buyer will pay, the least a seller will accept. So the direction is
+ * read off the side and is not a choice anybody gets to make differently.
+ */
+function onTheGrid(orders: readonly Order[], tick: number): Order[] {
+  return orders.map((o) =>
+    o.price === 'market'
+      ? o
+      : { ...o, price: o.side === 'buy' ? downToTick(o.price, tick) : upToTick(o.price, tick) },
+  );
+}
+
 export function runMarket(
   m: MarketDecl,
   posted: readonly Order[],
@@ -165,9 +187,22 @@ export function runMarket(
       qty: offer.value.size,
     });
   }
+  // Law 8, Clearing C4.c: EVERY LEVEL IN THE BOOK IS ON THIS MARKET'S GRID, and this is the one
+  // door into it. A price finer than the tick is not a price anybody can hit, and a solver that
+  // cleared at one would print it (C4.c: the level is POSTED, never a bracket) — which is how
+  // prints came to carry sixteen significant figures and every `units x price` read in the world
+  // inherited them (worklist 12b.1).
+  //
+  // It is HERE and not at each of the twenty-one places that post, for the reason the print is not
+  // rounded either: there is one book, everything that reaches it comes through this function, and
+  // a rule applied in one place cannot be forgotten in another (Law 4). What the rule is, is not a
+  // decision — a limit means the most a buyer will pay or the least a seller will accept, so the
+  // side it was posted on says which way the grid takes it, and the kernel is honouring what the
+  // poster promised rather than choosing on its behalf.
+  const book = onTheGrid(orders, deps.tickOf(m));
   // Sovereign C2: a session carrying an offer is an auction, and its stated allotment is the
   // stop-out. Without one the venue is an open book and the sellers compete.
-  const outcome = clear(orders, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
+  const outcome = clear(book, m.rationing, offer.some ? 'marginalBid' : 'sellersCompete');
   switch (outcome.kind) {
     case 'cleared': {
       const trades = pairFills(m, outcome.fills, (p) => weightOf(deps.parties.get(p)));
@@ -195,7 +230,7 @@ export function runMarket(
       // curve, every holder's equity and the next session's quotes would all then be built on. So
       // it prints nothing of its own and the last real price stands, visibly stale and saying why.
       if (settledVolume <= 0) {
-        return carryLast(m, 'nothingSettled', period, cycle, deps, offer, orders, outcome.fills);
+        return carryLast(m, 'nothingSettled', period, cycle, deps, offer, book, outcome.fills);
       }
       deps.prices.write({
         instrument: m.instrument,
@@ -221,7 +256,7 @@ export function runMarket(
       );
       const auction = offer.some
         ? some(
-            auctionResult(offer.value, orders, outcome.fills, some(outcome.price), allotted),
+            auctionResult(offer.value, book, outcome.fills, some(outcome.price), allotted),
           )
         : none<AuctionResult>();
       if (auction.some) journalAuction(m, auction.value, period, cycle, deps);
@@ -237,7 +272,7 @@ export function runMarket(
     case 'noDemand':
     case 'noSupply':
     case 'noOverlap':
-      return carryLast(m, outcome.kind, period, cycle, deps, offer, orders, []);
+      return carryLast(m, outcome.kind, period, cycle, deps, offer, book, []);
     default:
       return assertNever(outcome, 'Outcome');
   }

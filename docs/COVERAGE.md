@@ -12,7 +12,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Money A1` | MET | packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money A1.d` | MET | packages/engine/src/audit/families/money.ts |
-| `Money A2` | MET | packages/engine/src/core/tick.ts (money is a COUNT of indivisible pieces and the count is a branded Qty, so an amount below a piece cannot be constructed anywhere), packages/engine/src/registry/grid.ts, packages/engine/src/registry/registry.ts (the one boundary between a person’s number and the state’s) |
+| `Money A2` | MET | packages/engine/src/core/tick.ts (money is a COUNT of indivisible pieces and the count is a branded Qty, so an amount below a piece cannot be constructed anywhere; and a PRICE has a smallest increment for the same reason — `downToTick`, `upToTick`, `toTickOf`), packages/engine/src/registry/grid.ts, packages/engine/src/registry/registry.ts (the one boundary between a person’s number and the state’s), packages/engine/test/tick.test.ts |
 | `Money A2.b` | MET | packages/engine/src/ledger/settlement.ts (a money leg names one currency and settles in it; what an amount in another comes to is a conversion at a rate somebody traded, never an addition), packages/engine/src/prices/value.ts, packages/engine/src/world/revalue.ts (a mark is in the instrument’s money and an account in its party’s: the move between them converts) |
 | `Money A3` | MET | packages/engine/src/world/actions.ts (accountResolver: which account a party holds a money in — its own bank for its own money, that money’s own central bank for a foreign one), packages/engine/src/world/world.ts |
 | `Money A4` | MISSING |  |
@@ -95,7 +95,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Clearing C2` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing C3` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/core/tick.ts (a pro-rata split is in whole pieces, summing to exactly the whole, with the odd piece to a named claimant), packages/engine/src/clearing/market.ts (two parties exchange at the grain both can hold) |
 | `Clearing C4` | MET | packages/engine/src/clearing/solver.ts |
-| `Clearing C4.c` | MET | packages/engine/src/clearing/solver.ts |
+| `Clearing C4.c` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/clearing/market.ts (every limit reaching the book is on that market's own tick, so the level the solver picks is a posted level that is on the grid by construction — nothing rounds the print) |
 | `Clearing C5` | MET | packages/engine/src/clearing/solver.ts |
 | `Clearing D1` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/prices/price-store.ts |
 | `Clearing D2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/clearing/solver.ts |
@@ -155,7 +155,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Seed C1` | MET | packages/engine/src/world/assemble.ts (the opening equity IS the balance sheet the audit checks it against, not a second copy of it) |
 | `Seed C2` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed C3` | MET | packages/engine/src/seeds/foundation.ts |
-| `Seed C4` | MET | packages/engine/src/seeds/foundation.ts |
+| `Seed C4` | MET | packages/engine/src/seeds/foundation.ts (a stated opening level is a price and sits on the same grid as one, so the level the world opens at is one its market could print again) |
 | `Seed C5` | MISSING |  |
 | `Seed D1` | MET | packages/engine/src/seeds/foundation.ts (a coupon the treasury can pay, a stock of every good at what it cost, and one lead time of work in progress on every line, so period one is the line running and not the line starting). Employment is deliberately NOT seeded: a seeded row needs a seeded wage, which is a price nobody cleared (Law 3). The venue strikes the first rows in period two and the seeded stock is what carries the lines until it does |
 | `Seed D2` | MISSING |  |
@@ -474,7 +474,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Spot FX B4` | PARTIAL | packages/engine/src/mechanisms/spot-fx/index.ts — the participants are the kernel’s kinds plus the banks’ desks. A party whose reason to be in a pair is a VIEW of the rate is 13h’s hedge fund; nothing here speculates on a currency |
 | `Spot FX B5` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (the desk quotes both ways, its edge is its own, and its spread is twice that rather than a width anybody stated) |
 | `Spot FX B6` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (a desk cannot sell a money it has not got and cannot pay with one it has not got — arithmetic, not a limit) |
-| `Spot FX C1` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts (the rate is a PRINT of the pair’s own session, in the one price store) |
+| `Spot FX C1` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts (the rate is a PRINT of the pair’s own session, in the one price store), packages/engine/src/registry/registry.ts (`rateTickFor`: a rate moves in pips, and a pip belongs to the money it is quoted in) |
 | `Spot FX C2` | MET | packages/engine/src/mechanisms/spot-fx/arbitrage.ts (the desk decides once and its three books read the decision back as ordinary orders) |
 | `Spot FX C3` | MET | packages/engine/src/mechanisms/spot-fx/arbitrage.ts, packages/engine/src/mechanisms/spot-fx/family.ts (the gap closes to a desk’s own cost and no further, and a standing gap is measured rather than closed) |
 | `Spot FX C4` | MET | packages/engine/src/clearing/market.ts (each leg lands on the smallest piece of its OWN money, and the two pieces are different sizes) |
@@ -516,7 +516,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Fund Shares D4` | MET | packages/engine/src/mechanisms/funds/nav.ts (nothing can hold the number at one because there is nothing to hold it WITH: the value is the division, and if the assets fall it falls), packages/engine/test/funds.test.ts |
 | `Fund Shares D5` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts (the flow into the fund is a consequence of the cell's own budget and stops when what the fund offers stops clearing what the cell requires). Whether flows rise when its yield beats DEPOSITS cannot be measured until a deposit has a rate (worklist 11); it is a VERIFY for Part XII |
 | `Fund Shares E1` | MET | packages/engine/src/mechanisms/funds/index.ts (its shares have a market and a session prices them, which is the whole of what makes it exchange-traded: it is the same claim on the same kind of book as any other fund's), packages/engine/test/etf.test.ts |
-| `Fund Shares E2` | MET | packages/engine/src/mechanisms/funds/etf.ts, packages/engine/src/mechanisms/funds/index.ts (the NAV read off its own book and the print the session made, published together and different numbers; neither is the other's approximation), packages/engine/test/etf.test.ts |
+| `Fund Shares E2` | MET | packages/engine/src/mechanisms/funds/etf.ts, packages/engine/src/mechanisms/funds/index.ts (the NAV read off its own book and the print the session made, published together and different numbers; neither is the other's approximation — and only the POSTED one is on a price grid, because rounding the other leaves the fund holding a residue of its holders' money), packages/engine/test/etf.test.ts |
 | `Fund Shares E3` | MET | packages/engine/src/mechanisms/funds/etf.ts (a creation unit is a pro-rata slice of what the fund ACTUALLY holds, so a creation cannot change what the fund is; delivered and taken back in one instruction, every leg or none), packages/engine/src/mechanisms/banks/dealing.ts (E3.a: a desk does it because the gap is worth more than a period of carrying the position costs it, and does nothing when it is not — so a gap nobody will close stays open) |
 | `Fund Shares E4` | MET | packages/engine/src/mechanisms/funds/index.ts (the premium is a READ of the two prices published beside them; nothing anywhere clamps it and nothing tries to close it), packages/engine/test/etf.test.ts (a large one persists, which is E4's finding about liquidity rather than a defect in the arithmetic) |
 | `Fund Shares F1` | MET | packages/engine/src/mechanisms/funds/index.ts (it does not create its assets: every unit it holds it bought from a named seller in a market that cleared), packages/engine/test/funds.test.ts |
