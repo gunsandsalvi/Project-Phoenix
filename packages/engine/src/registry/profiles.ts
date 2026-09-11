@@ -1,6 +1,15 @@
 /**
- * The kernel's own kinds: money, and the parties money needs (a central bank, a bank) plus the
- * party kinds every world has. Everything else is registered by a module.
+ * The kernel's own kinds: money, and the parties MONEY NEEDS — a central bank, a treasury, a bank.
+ * Everything else is registered by the module that owns its behaviour.
+ *
+ * THE ID AND THE PROFILE ARE DIFFERENT THINGS, and item 11.6 is where that was settled. A kind's
+ * PROFILE is behaviour — how it is represented, the ways it can fail, whether it borrows, what
+ * class of depositor it is, whether it issues money — and ARCHITECTURE 4.9b says one module owns
+ * it. A kind's ID is a NAME, and any module may need to say it: `labour` posts openings for firms,
+ * `ratings` charges them, `equity` opens a line on one. So the ids of the kinds more than one
+ * module names live here beside the kernel's own, and the profiles of `firm` and `household` live
+ * in `firms` and `households` with the behaviour they describe. Naming them from the owning module
+ * instead would be a cross-module import, which is the defect this fix exists to avoid.
  *
  * @spec Equity A2 Fund Shares A2 Treasury D3 Sovereign A3.b Central Bank A1 Central Bank A1.a Central Bank E2 Money A1 Money A1.b Money A1.c Money D2 Money B3.a Money B3.b Money B3.c XI-15 Households A2.e Small-Business Pools A6
  */
@@ -50,7 +59,7 @@ export const BANK = partyKindId('bank');
 export const FIRM = partyKindId('firm');
 export const HOUSEHOLD = partyKindId('household');
 
-/** The party kinds the kernel needs or every world has (XI-15: institutions named, populations as cells). */
+/** The party kinds the kernel itself needs: the ones money cannot exist without (Money A1, A1.b, A1.c). */
 export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   {
     id: CENTRAL_BANK,
@@ -110,14 +119,4 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   // A default in a money it cannot create is real, and that needs the currency layer (worklist 12).
   // Treasury D3, Central Bank E2: it banks at the central bank, and that is not a choice it revisits.
   { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true, depositClass: null, sovereign: true },
-  // XI-3, Firm D4: it can fail two ways and they are different — no cash to pay something due, or
-  // liabilities exceeding assets. Both, because a firm can be either without the other.
-  // Banks Funding A1.b: fewer, larger, operational — a firm banks where it transacts.
-  { id: FIRM, representation: 'named', moneyIssuer: null, fails: ['cash', 'solvency'], borrows: true, depositClass: 'corporate' },
-  // XI-3: a household cell dissolves into a NAMED HEIR CELL rather than into an estate (Households
-  // F1, F2), and what happens when its members cannot pay is their lender's enforcement. Both are
-  // the household life cycle and consumer credit, which is worklist 13d.
-  // Households C1.d: nobody lends to a household in this world; consumer credit is 13d.
-  // Banks Funding A1.a: many, small, sticky, insured to a limit — which is what a cell IS (XI-15).
-  { id: HOUSEHOLD, representation: 'cell', moneyIssuer: null, fails: [], borrows: false, depositClass: 'retail' },
 ];

@@ -25,7 +25,7 @@
  * bid, and the market clears below it whenever supply is ample.
  */
 import { Missing } from '../../core/errors.js';
-import type { MarketId, PartyId } from '../../core/ids.js';
+import { marketId, type MarketId, type PartyId } from '../../core/ids.js';
 import type { InstrumentId } from '../../core/ids.js';
 import { add, div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -504,6 +504,23 @@ function priceOf(prices: readonly Option<number>[], n: number): number {
 function marketOf(view: ParticipantView, instrument: InstrumentId): MarketId {
   const terms = goodTerms(view.instruments.get(instrument));
   return goodMarketId(terms.subUnit, terms.region);
+}
+
+/**
+ * Law 18, Law 19: the books this firm could be in at all, read off the SAME published plan the
+ * orders are read off. Two lists that could disagree would be two writers of one fact (Law 4); this
+ * one cannot, because it is the market ids of those orders and nothing else.
+ */
+export function marketsIn(event: Event): MarketId[] {
+  const rows = event.data['orders'];
+  if (!Array.isArray(rows)) return [];
+  const out = new Set<string>();
+  for (const row of rows as unknown[]) {
+    if (typeof row !== 'object' || row === null) continue;
+    const id = (row as Record<string, unknown>)['market'];
+    if (typeof id === 'string') out.add(id);
+  }
+  return [...out].map((id) => marketId(id));
 }
 
 /** The orders this firm decided on, read back from its own published plan (Law 4). */

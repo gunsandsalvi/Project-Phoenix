@@ -14,7 +14,7 @@ import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
 import type { MarketDecl, MarketKind } from '../clearing/market.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import type { InstrumentKindId, PartyKindId } from '../core/ids.js';
+import type { InstrumentKindId, MarketId, PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type {
   InstrumentKindProfile,
@@ -71,6 +71,24 @@ export interface ParticipantDecl {
    * participant ends up looking up an instrument behind a market that has none.
    */
   readonly in?: MarketKind;
+  /**
+   * Law 18, Clearing B2: WHICH MARKETS THIS PARTY COULD BE IN AT ALL THIS CYCLE.
+   *
+   * A session asks every party of a kind whether it has an order in it, and at the real scale that
+   * is 261 markets against 3,169 parties — 827,000 questions a period whose answer is almost always
+   * no, and four fifths of what a period costs. THE KERNEL CANNOT GUESS THE ANSWER: which books a
+   * party is in is its own business and changes period to period, so the only place it can come
+   * from is the module that owns the party.
+   *
+   * It is a READ, never a second copy (Law 19, Law 4): a participant answers out of the same thing
+   * its `orders` answers out of — the plan that party published this period — so a market it names
+   * here and a market it posts in cannot disagree. Omitted means every market of its declared kind,
+   * which is what every participant did before this door existed and is right for a kind with few
+   * parties or a party in every book.
+   *
+   * It may name a market that does not exist; it is a filter and not a claim about the world.
+   */
+  readonly markets?: (view: ParticipantView) => readonly MarketId[];
   orders(view: ParticipantView, market: MarketDecl): readonly Order[];
 }
 

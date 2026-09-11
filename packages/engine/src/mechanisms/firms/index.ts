@@ -22,7 +22,7 @@
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import type { PartyId } from '../../core/ids.js';
+import type { MarketId, PartyId } from '../../core/ids.js';
 import { add, combineDust, dustOf, mul, sub, sum, withinDust } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
@@ -30,7 +30,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
-import { ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
+import { marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
 import { NO_QTY } from '../../core/tick.js';
 
@@ -152,7 +152,27 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
     // has to be registered before a firm can be asked what it has (Capital Programme A2).
     requires: ['expectations', 'goods', 'labour', 'capital-programme'],
     instrumentKinds: [],
-    partyKinds: [],
+    // ARCHITECTURE 4.9b: A KIND IS OWNED BY THE MODULE THAT OWNS ITS BEHAVIOUR. Every field here is
+    // this module's subject — how a firm fails, that it borrows, what kind of depositor it is — so
+    // a kernel that declared them was answering for a system it does not implement, and the guard
+    // that asks a module how its depositors leave (Banks Funding A1.d, E1) could say nothing about
+    // the largest class of them. The ID stays in the kernel's registry, because `labour`, `equity`,
+    // `ratings` and `treasury` all have to NAME a firm and naming it from here would be a
+    // cross-module import (worklist 11.6).
+    //
+    // XI-3, Firm D4: it can fail two ways and they are different — no cash to pay something due, or
+    // liabilities exceeding assets. Both, because a firm can be either without the other.
+    // Banks Funding A1.b: fewer, larger, operational — a firm banks where it transacts.
+    partyKinds: [
+      {
+        id: FIRM,
+        representation: 'named',
+        moneyIssuer: null,
+        fails: ['cash', 'solvency'],
+        borrows: true,
+        depositClass: 'corporate',
+      },
+    ],
     curveFamilies: [],
     units: [],
     // Law 2: one number per firm and nothing else. What a thing is made out of, how long it takes
@@ -233,6 +253,14 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
     participants: [
       {
         partyKind: FIRM,
+        // Law 18: the books it could be in, off the plan its orders come off. At the real scale
+        // there are three thousand firms and 261 markets, and a firm is in two or three of them.
+        markets: (view: ParticipantView): readonly MarketId[] => {
+          if (lineOf(byName, view.self.id) === undefined) return [];
+          const own = view.lastOwn('firms.plan');
+          if (!own.some || own.value.period !== view.period) return [];
+          return marketsIn(own.value);
+        },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           if (lineOf(byName, view.self.id) === undefined) return [];
           const own = view.lastOwn('firms.plan');

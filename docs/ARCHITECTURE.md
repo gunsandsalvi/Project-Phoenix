@@ -457,9 +457,24 @@ the line that bank runs to: the regulatory minimum plus its own buffer, which is
 it and is one each bank had already declared. It requires only `seed.foundation` — naming the
 modules it must follow would make a world assembled without them unable to fund anybody at all.
 
+**A kind's PROFILE belongs to its module; a kind's ID belongs to the kernel** (item 11.6). A profile
+is behaviour — how a kind is represented, the ways it can fail, whether it borrows, what class of
+depositor it is, whether it issues money — and 4.9b's "a kind is owned by exactly one module" is
+about that. An id is a NAME, and a module that does not own a kind still has to say it: `labour`
+posts openings for firms, `ratings` charges them, `equity` opens a line on one. So the ids sit in
+`registry/profiles.ts` with the kernel's own, and `firm` and `household` are declared by `firms` and
+`households` — naming them from the owning module instead would be the cross-module import the lint
+rule forbids. What that buys: the guard that says a module declaring a depositor must say how it
+leaves (Banks Funding A1.d, E1) now covers every depositor there is, with no exception list.
+
 **Schedules come through one door, in a market and in a venue.** A market gathers its orders from
 the `participants` modules declare per party kind, each evaluated with that party's own
-`ParticipantView` (`world.ts` `runOne`). A VENUE — where something is struck that is not the
+`ParticipantView` (`world.ts` `runOne`). A participant may also declare `markets(view)` — which
+books that party is in at all this cycle — and the kernel builds a per-cycle index from it and asks
+only those (Law 18). The kernel cannot guess the answer, because which books a party is in is its
+own business and changes period to period; and the answer is a READ of the same published plan the
+orders come out of, so the two cannot disagree (Law 4, Law 19). Declaring nothing means every market
+of the participant's kind, which is what every participant did before the door existed. A VENUE — where something is struck that is not the
 transfer of an instrument, a job at a wage or a week of money at a rate — is cleared by the module
 that opened it (Clearing B2, Labour C5), and its schedules come the same way: a module declares
 `venueParticipants`, the module that opened the venue calls `ctx.gather(venue)` at the top of its

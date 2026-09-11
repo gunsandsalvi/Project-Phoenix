@@ -462,7 +462,7 @@ export function foundationSeedFor(
     // offers and when it retires, `households` states who the people are, `goods` states the recipes
     // the chain is made of. A world assembled without them cannot be seeded at all, and saying so
     // here is better than the missing parameter it used to fail on.
-    requires: ['sovereign-instruments', 'goods', 'households', 'labour'],
+    requires: ['sovereign-instruments', 'goods', 'firms', 'households', 'labour'],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],

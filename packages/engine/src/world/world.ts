@@ -52,7 +52,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import { Journal } from '../journal/journal.js';
 import { Ledger } from '../ledger/ledger.js';
 import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
-import { Parties, partiesReads, weightOf } from '../parties/party.js';
+import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
 import { type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore, type Print } from '../prices/price-store.js';
 import { Valuation } from '../prices/value.js';
@@ -160,6 +160,17 @@ export class World {
   /** Law 18: one participant view per party per cycle. Layout only; every read reaches live state. */
   private readonly views = new Map<PartyId, ParticipantView>();
   private viewsAt = '';
+  /**
+   * Law 18: which parties a market has to ask, for the participants that say (`ParticipantDecl`).
+   *
+   * Built once a cycle, per participant declaration, by asking each of its parties which books it
+   * is in and turning that inside out. It is a TRAVERSAL and nothing else: the same parties get the
+   * same question in the same order and post the same orders — a participant that names no markets
+   * is asked about none, which is what it said, and one that declares nothing is asked about every
+   * market of its kind exactly as before.
+   */
+  private readonly asks = new Map<number, Map<MarketId, PartyId[]>>();
+  private asksAt = '';
   /** Indices A1, D5: the rules this world's modules declared. One list, read by `index`. */
   private readonly indexList = new Map<string, IndexDecl>();
   /** Law 18: this reader's own memory of the levels it has walked (prices/index-read.ts). */
@@ -1207,6 +1218,40 @@ export class World {
     return this.registry.instrumentKind(i.kind).accrued(i, this.calendar.startOf(at), this.calendar);
   }
 
+  /**
+   * Law 18: the parties this market has to ask, which is every party of the kind unless the module
+   * that owns them said otherwise (`ParticipantDecl.markets`).
+   *
+   * The index is per cycle, because which books a party is in is a decision it takes each period
+   * and a market opened mid-run has to be reachable the moment it exists. Nothing here decides
+   * anything: it asks the module the same question the market was about to ask, once instead of
+   * once per book.
+   */
+  private asked(at: number, decl: ParticipantDecl, m: MarketDecl): readonly Party[] {
+    const naming = decl.markets;
+    if (naming === undefined) return this.parties.ofKind(decl.partyKind);
+    const stamp = `${this.currentPeriod}:${this.currentCycle}`;
+    if (this.asksAt !== stamp) {
+      this.asks.clear();
+      this.asksAt = stamp;
+    }
+    let byMarket = this.asks.get(at);
+    if (byMarket === undefined) {
+      byMarket = new Map<MarketId, PartyId[]>();
+      for (const party of this.parties.ofKind(decl.partyKind)) {
+        if (!party.status.alive) continue;
+        for (const id of naming(this.participantView(party.id))) {
+          const already = byMarket.get(id);
+          if (already === undefined) byMarket.set(id, [party.id]);
+          else already.push(party.id);
+        }
+      }
+      this.asks.set(at, byMarket);
+    }
+    const here = byMarket.get(m.id);
+    return here === undefined ? [] : here.map((id) => this.parties.get(id));
+  }
+
   private runOne(m: MarketDecl): MarketResult {
     const orders: Order[] = [];
     // XI-13, Ratings A5.a: WHETHER ANYBODY IN THIS BOOK HAS A VIEW. A participant that puts its own
@@ -1216,12 +1261,12 @@ export class World {
     // there is nothing to prevent, and a world may honestly have such a book — it is SAID, every
     // period, so that a price made that way is never mistaken for one that was not.
     let withAView = false;
-    for (const decl of this.participantDecls) {
+    for (const [at, decl] of this.participantDecls.entries()) {
       // Spot FX D1: a participant answers the sort of market it declared itself in, and nothing
       // else. Both defaults are `asset`, which is every market and every desk that existed before
       // a pair did — so this changes nothing for any of them (Law 15: one key, no branch).
       if ((decl.in ?? 'asset') !== (m.kind ?? 'asset')) continue;
-      for (const party of this.parties.ofKind(decl.partyKind)) {
+      for (const party of this.asked(at, decl, m)) {
         // A ceased party takes no part (Money E4): it has no reasons, and an order in its name
         // would be an instruction addressed to somebody who is not there. What it held is its
         // estate's now, and the estate posts its own orders under its own name (XI-8).

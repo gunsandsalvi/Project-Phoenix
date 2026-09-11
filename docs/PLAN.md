@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 55.4%** (305 of 551 steps across 39 items).
+**Plan completion: 56.6%** (312 of 551 steps across 39 items).
 **Requirement coverage: 44.8%** (610 MET, 81 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -40,7 +40,7 @@ The plan has two parts:
 | pre12 — The guards that keep the documents true | 16 | 16 | closed |
 | 11.5 — The banking system opens meeting its own liquidity standard | 9 | 9 | closed |
 | 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer | 32 | 32 | closed |
-| [11.6 — The module contract: kinds where their behaviour is, markets a participant is in](plan/11.6-module-contract.md) | 7 | 0 | open |
+| 11.6 — The module contract: kinds where their behaviour is, markets a participant is in | 7 | 7 | closed |
 | [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 26 | 0 | open |
 | [12b — The balance sheet that takes one step out of true](plan/12b-balance-sheet-step.md) | 6 | 0 | open |
 | [12c — The equity book walks away](plan/12c-equity-anchor.md) | 5 | 0 | open |
@@ -282,12 +282,12 @@ A module is `packages/engine/src/mechanisms/<id>/index.ts` exporting one `System
 | `spec`            | the spec system(s) it implements, e.g. `'Sovereign'`, `'Treasury Sovereign XI-9'`                                          |
 | `requires`        | module ids it depends on; assembly orders by these; a cycle or a missing id is a construction error                        |
 | `instrumentKinds` | profiles for kinds this module owns; a kind is owned by exactly one module                                                 |
-| `partyKinds`      | profiles for party kinds it owns (a fund, an insurer, a clearing house)                                                    |
+| `partyKinds`      | profiles for party kinds it owns (a firm, a household, a fund, an insurer, a clearing house). The PROFILE is behaviour and one module owns it; the ID is a name and lives in the kernel's registry where any module may say it |
 | `curveFamilies`   | curve families it declares: one owner, one compounding, one day count (Sovereign D3.a)                                     |
 | `units`           | physical units it introduces (tonnes, dwellings, hours)                                                                    |
 | `params`          | every number it reads: id, value, unit, kind, owner, why; for a placeholder, `standsInFor`                                 |
 | `phases`          | what it runs: name, spec, cycle, anchor (`{ before }` or `{ after }` a kernel phase or another module's phase), `run(ctx)` |
-| `participants`    | reasons to be in a market, per party kind: `orders(view, market)`                                                          |
+| `participants`    | reasons to be in a market, per party kind: `orders(view, market)`, optionally `in` (which SORT of market) and `markets(view)` (which books this party is in at all this cycle — a read of the same plan `orders` reads, never a second copy) |
 | `venueParticipants` | the same for a venue, which asks for schedules rather than clearing a book (item 11.1)                                    |
 | `families`        | audit contributions: `{ name, contributor, spec, built, check(view) }`                                                     |
 | `outlooks`        | how a party of its kinds forms its own outlook, if it does (§46, XI-16)                                                    |

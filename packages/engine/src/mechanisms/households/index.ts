@@ -24,7 +24,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
-import { paramId, type PartyId } from '../../core/ids.js';
+import { marketId, paramId, type MarketId, type PartyId } from '../../core/ids.js';
 import { addTo, combineDust, div, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
@@ -241,7 +241,27 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     // missing dependency, which is the same defect wearing a worse message.
     requires: ['expectations', 'goods', 'labour', 'treasury'],
     instrumentKinds: [],
-    partyKinds: [],
+    // ARCHITECTURE 4.9b: A KIND IS OWNED BY THE MODULE THAT OWNS ITS BEHAVIOUR (worklist 11.6). A
+    // household's representation, its failure modes and its deposit class are all this module's
+    // subject, and while the kernel declared them the guard that asks a module how its depositors
+    // leave (Banks Funding A1.d, E1) said nothing about the stickiest class of deposit there is.
+    // The ID stays in the kernel's registry: the seed, `labour` and `treasury` all name a household.
+    //
+    // XI-3: a household cell dissolves into a NAMED HEIR CELL rather than into an estate (Households
+    // F1, F2), and what happens when its members cannot pay is their lender's enforcement. Both are
+    // the household life cycle and consumer credit, which is worklist 13d.
+    // Households C1.d: nobody lends to a household in this world; consumer credit is 13d.
+    // Banks Funding A1.a: many, small, sticky, insured to a limit — which is what a cell IS (XI-15).
+    partyKinds: [
+      {
+        id: HOUSEHOLD,
+        representation: 'cell',
+        moneyIssuer: null,
+        fails: [],
+        borrows: false,
+        depositClass: 'retail',
+      },
+    ],
     curveFamilies: [],
     units: [],
     params: paramsOf(),
@@ -262,6 +282,15 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     participants: [
       {
         partyKind: HOUSEHOLD,
+        // Law 18: the books this cell could be in, off the plan its orders come off (Law 19). A
+        // cell buys three or four goods and holds a ladder in a handful of lines; the world it is
+        // in has 261 markets, and asking it about every one of them was four fifths of what a
+        // period cost.
+        markets: (view: ParticipantView): readonly MarketId[] => {
+          const own = view.lastOwn('households.plan');
+          if (!own.some || own.value.period !== view.period) return [];
+          return marketsIn(own.value.data['orders']);
+        },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           const own = view.lastOwn('households.plan');
           if (!own.some || own.value.period !== view.period) return [];
@@ -369,6 +398,17 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
 }
 
 /** The orders this cell decided on, read back from its own plan (Law 4: one decision, one writer). */
+function marketsIn(rows: unknown): MarketId[] {
+  if (!Array.isArray(rows)) return [];
+  const out = new Set<string>();
+  for (const row of rows as unknown[]) {
+    if (typeof row !== 'object' || row === null) continue;
+    const id = (row as Record<string, unknown>)['market'];
+    if (typeof id === 'string') out.add(id);
+  }
+  return [...out].map((id) => marketId(id));
+}
+
 function ordersFrom(rows: unknown, market: string, self: PartyId): Order[] {
   if (!Array.isArray(rows)) return [];
   const out: Order[] = [];

@@ -112,15 +112,13 @@ export function assemble(spec: AssemblySpec): World {
  *
  * It asks each MODULE about its OWN declaration rather than asking the registry about every kind,
  * and that is what makes it a check rather than a nuisance: a world assembled from four modules to
- * exercise one kernel door has the kernel's party kinds in it and no `firms` to speak for them, and
- * a guard that fired there would be refusing a legitimate world for a defect that is not in it.
+ * exercise one kernel door has the kernel's party kinds in it and nothing to speak for them, and a
+ * guard that fired there would be refusing a legitimate world for a defect that is not in it.
  *
- * WHAT IT DOES NOT COVER, and the gap is real: `FIRM` and `HOUSEHOLD` are declared in
- * `KERNEL_PARTY_KINDS`, so no module's declaration carries them and this says nothing about them.
- * A kind the kernel declares and a module owns the behaviour of is the ownership defect
- * ARCHITECTURE 4.9b names ("a kind is owned by exactly one module"); it is worklist 11.6 rather
- * than fixed here, because moving those two kinds into their modules is a kernel change of its own
- * and this item is not it.
+ * IT COVERS EVERY DEPOSITOR NOW, with no exception list, because `firm` and `household` are
+ * declared by `firms` and `households` rather than by the kernel (worklist 11.6). The kernel's own
+ * kinds are the ones money needs, and not one of them is anybody's deposit base — so there is no
+ * kind this can reach that no module has to answer for.
  */
 function requireBankChoices(m: SystemModule): void {
   const answered = new Set((m.bankChoices ?? []).map((d) => String(d.partyKind)));

@@ -2171,3 +2171,72 @@ if a later item puts any other unfundable asset on a bank's opening book — 13f
 vehicles, 13h's fund stakes — and the metric falls below one again without the float coming back,
 then the mix was load-bearing after all and `seed.centralBank.openingHoldingShare` wants a derivation
 rather than a policy.
+
+## 11.6 — The module contract: a kind lives where its behaviour lives, and a participant says which markets it is in
+
+**What it was for.** Two findings from item 12 about what a `SystemModule` DECLARES, neither of them
+moving a number. Item 2a is the precedent for taking them together: the contract is one subject.
+
+**A KIND'S PROFILE BELONGS TO ITS MODULE; A KIND'S ID BELONGS TO THE KERNEL, and that distinction is
+the whole of the first half.** 12-7: `FIRM` and `HOUSEHOLD` were declared in `KERNEL_PARTY_KINDS`
+while `firms` and `households` owned their behaviour, so the guard that says a module declaring a
+depositor must say how it leaves (Banks Funding A1.d, E1) — which asks each module about its OWN
+declaration, because a reduced world has the kernel's kinds in it and nothing to speak for them —
+could say nothing about the two largest classes of deposit there are.
+
+The plan's step said to move the kinds into their modules and have every module import them from
+there. **That half is wrong and the lint rule says so**: `labour` posts openings for firms,
+`ratings` charges them, `equity` opens a line on one, `treasury` taxes them — importing `FIRM` from
+`mechanisms/firms/` is exactly the cross-module import `no-cross-module-import` forbids. What
+separates cleanly is the profile from the id: a PROFILE is behaviour (representation, failure modes,
+whether it borrows, what depositor it is, whether it issues money) and one module owns it; an ID is
+a name and any module may need to say it. So the two profiles moved and the two ids stayed, the
+`assemble.ts` comment recording the gap is deleted, and `requireBankChoices` now covers every
+declared depositor with no exception list — the kernel's own kinds are the ones money needs, and not
+one of them is anybody's deposit base. `seed.foundation` gained `firms` in its `requires`, because
+it creates parties of that kind and a world that registered the kind elsewhere was relying on luck.
+
+**A PARTICIPANT SAYS WHICH MARKETS IT IS IN** (12-12). A session asked every party of a kind whether
+it had an order in it; at full scale that is 261 markets against 3,178 parties. The kernel cannot
+guess which could answer yes — which books a party is in is its own business and changes period to
+period — so the module that owns the party says, through `ParticipantDecl.markets(view)`, and the
+kernel builds a per-cycle index from it. `firms` and `households` answer out of the SAME published
+plan their `orders` are read out of, so the two lists cannot disagree (Law 4, Law 19); a participant
+that declares nothing is asked about every market of its kind exactly as before.
+
+**What could go wrong here is silent** — a `markets` narrower than the party's own `orders` loses
+real schedules out of a real book and nothing throws — so `test/fan-out.test.ts` runs the expensive
+path once against the cheap one: every participant asked for orders in every market there is,
+asserting it never posts in a book it did not name.
+
+**Measured, and the item's own preamble was wrong.** At `foundationWorld('full')` — 3,178 parties,
+309 instruments, assembly 0.7s — with the door off and then on, and the same world both ways
+(47,322 / 109,380 / 201,230 events):
+
+```
+        door off      door on
+p1      8,419ms       6,888ms
+p2     10,519ms       9,404ms
+p3     21,270ms      19,277ms
+```
+
+**The market fan-out is 9 to 18 per cent of a period, not the four fifths item 12 attributed to it.**
+That attribution came from reasoning about the question count rather than from timing it, and this
+is the correction. The same identity was checked twice more at rig scale by hashing the ledger and
+the journal with the door on and off: 8,581 instructions at 6 banks/40 firms and 7,635 at 20
+banks/200 firms, identical hashes both times.
+
+**And a period costs MORE than item 12 recorded, which is 11.5's doing and worth naming.** Item 12
+measured p3 at 12.4s and about 69,000 events; it is now 19.3s and about 92,000. The float moved to
+the savers in 11.5, so every household cell holds every listed line and every one of those holdings
+is revalued every period. That is the price of putting ownership where the reason is, and it is a
+real cost rather than a defect — the answer to it is 12c, which gives a saver a reason to hold one
+line rather than all of them, after which what a cell holds is an outcome and not a slice of
+everything.
+
+**Forecast, with its killer.** The claim is that the fan-out was a second-order cost and that what
+dominates a period is what the world has to SAY — revaluations, surprises, settlements — which grows
+with holdings rather than with markets. The killer: if 13a's derivative books and 13b's classes push
+the market count up an order of magnitude while holdings stay flat and a period gets dearer in step
+with the markets rather than the holdings, then the fan-out was the thing after all and the index
+wants to be the default rather than a door a module opts into.
