@@ -718,3 +718,251 @@ booked for it.
 the one artefact that has to reconcile what an issuer recognised against what it was paid, line by
 line — and that decomposition is what will name which event this is, instead of a bisection over
 forty periods of a four-country world.
+
+
+## The 81 reds item 12 closes with, named
+
+PLAN §5 asks for the year-long run green **or its expected red families named in the record**, and
+`pre12` set the precedent: they are named by TEST, not carried under a sentence. There were 26 before
+this item; the module's own work took the suite from 151 reds to 81 and 213 passes to 248.
+
+**None of them is a world that will not assemble.** Every one is an assertion: something a test
+expected of a world that has changed under it. Four things changed it, and every red below is one of
+the four.
+
+1. **The seed's scale is DERIVED** (from the hours this world's people offer against the hours its
+   chain needs) where it used to be stated. Every opening balance sheet moved, so every test that
+   asserted an absolute quantity — a firm's cash, a cell's holding, a wage bill — now reads a
+   different number. This is the largest class and it is not a defect: the record for the derived
+   scale says the stated number starved the world.
+2. **Four countries where there was one.** A test that took "the treasury" or "the first print" can
+   now get Europe's.
+3. **Three assessors charge every issuer a fee, every period** (Ratings A5). Any test that enumerated
+   what reached a party's equity in a period is now short by that.
+4. **A busier world in the small worlds.** The seed needs `goods`, `households` and `labour` to size
+   itself, so they are assembled wherever it is — quiet (no phases, no participants) unless the test
+   asked for them, but their kinds, units and parameters are there.
+
+
+### `capital.test.ts` — 12
+
+- a dearer cost of capital means a dearer quote, less investment and less output
+  - `AssertionError: expected [ Array(1) ] to deeply equal []`
+- binds production, says so, and reports utilisation as a read of the outcome
+  - `AssertionError: expected 0 to be greater than 0`
+- does not invest when it cannot fund it, and says what it wanted to (B2, B2.a, Firm E4.a)
+  - `AssertionError: expected 0 to be greater than 0`
+- has no project when it is running below its plant, and one when it is at it (B3)
+  - `AssertionError: expected 0 to be greater than 0`
+- is a bank’s own cost of funds and the capital it consumes, and it differs from a fund’s
+  - `Missing: [Law 2] parameter fund.requiredYield.fund.money.north is not declared`
+- is bid for at what its REMAINING service is worth, and that is less (D3)
+  - `AssertionError: expected 0 to be greater than 0`
+- is bought from a named producer, paid in cash, and built before it works (C1, C2, C3)
+  - `AssertionError: expected 0 to be greater than 0`
+- is built, and plant only moves when a leg says why
+  - `AssertionError: expected 0 to be greater than 0`
+- is never born from nothing: the machines are destroyed into it (Firm Birth A2.a, C4)
+  - `AssertionError: expected 0 to be greater than 0`
+- is the BUYER’s question, so a producer’s own output is stock and not plant (A4.c)
+  - `AssertionError: expected 0 to be greater than 0`
+- leaves the register when it is fully worn, and the charge stops with it (A6)
+  - `AssertionError: expected [ …(3) ] to deeply equal []`
+- reads what its EQUITY costs off its own share price when a market prices one (B1.b)
+  - `AssertionError: expected null not to be null`
+
+### `estate.test.ts` — 9
+
+- dies of no cash while solvent, and pays only the people with a claim on it
+  - `AssertionError: expected [] to have a length of 1 but got +0`
+- is what every reference to it resolves to, for as many hops as it takes (D5)
+  - `AssertionError: expected true to be false // Object.is equality`
+- leaves household cells alone, because nothing commits one past its cash (C1.d, XI-3)
+  - `AssertionError: expected [ { outcome: 'failed', …(2) }, …(35) ] to deeply equal []`
+- opens an estate that takes what it held and assumes what it owed (D5, Register F2)
+  - `AssertionError: expected [] to have a length of 1 but got +0`
+- pays senior first, pro rata within the rank, and the junior recovers nothing (G5.a)
+  - `AssertionError: expected [] to deeply equal [ 'firm.2', 'firm.3' ]`
+- releases the dead firm‘s workers through the labour market‘s own path (Labour C4, F1)
+  - `AssertionError: expected 0 to be greater than 0`
+- shows the estate, its programme and where the dead party went (Observer B5)
+  - `AssertionError: expected undefined to be false // Object.is equality`
+- stays green and gives the same world twice from the same seed (Law 13, Observer E3)
+  - `AssertionError: expected [ …(2) ] to deeply equal []`
+- writes off what it never paid, and the loss lands on the holders (D3, E5)
+  - `AssertionError: expected 100000000 to be +0 // Object.is equality`
+
+### `loans.test.ts` — 9
+
+- accrues interest that is paid to the lender, period by period
+  - `AssertionError: expected 15465073912 to be less than 15460665519`
+- carries the loan at what its lender expects to recover, and the charge is visible
+  - `AssertionError: expected 1 to be less than 1`
+- declines when its limit for one name binds, and the decline is recorded
+  - `AssertionError: expected [ 'capital', 'appetite' ] to include 'funding'`
+- gets dearer for a borrower that has failed to pay (C1.b, C4, Corporate Credit G8)
+  - `AssertionError: expected 0 to be greater than 0`
+- is borrowing: what the bank allowed is a row by the close, not a hole
+  - `AssertionError: expected [ { outcome: 'failed', …(2) } ] to have a length of +0 but got `
+- is four named terms, and two banks do not quote the same
+  - `AssertionError: expected 'bank.b' to be 'bank.q' // Object.is equality`
+- is refused when the bank has no room, and then the payment simply fails (B3.c)
+  - `AssertionError: expected 0 to be greater than 0`
+- refuses to seal a world whose bank says it is a credit decision and nobody takes it
+  - `AssertionError: expected error to be instance of InvalidRegistry`
+- runs a year with lending in it and stays consistent
+  - `AssertionError: expected [ …(3) ] to deeply equal []`
+
+### `world.test.ts` — 9
+
+- a buyer without the cash fails the whole trade, not half of it (Register C3.b)
+  - `AssertionError: expected +0 to be 1 // Object.is equality`
+- clears, settles paper against cash in one instruction, and revalues everyone (XI-5, D4)
+  - `AssertionError: expected 8367406200 to be 4000000 // Object.is equality`
+- is reproducible from the seed value (Seed A5, Audit D3)
+  - `NonFinite: [Law 7] yield of ust.bill.2026-06-15 is Infinity`
+- passes the audit at period zero, with every family built or saying it is not
+  - `AssertionError: expected 3 to be 2 // Object.is equality`
+- reaches what is said once a period however much else was said (B1, D1)
+  - `AssertionError: expected 10 to be 24 // Object.is equality`
+- runs a year of the whole chain, and every family it has built is green (Part XII)
+  - `AssertionError: expected [ …(2) ] to deeply equal []`
+- runs a year with its mechanisms in it and stays consistent (XI-9)
+  - `AssertionError: expected [ Array(1) ] to deeply equal []`
+- show a party its own state and the public state, and nothing of anyone else
+  - `AssertionError: expected 4262447488 to be 6500000 // Object.is equality`
+- states no dispersion and produces one: the cells start equal and do not stay so (Seed B4)
+  - `AssertionError: expected 120000 to be 6000 // Object.is equality`
+
+### `credit-events.test.ts` — 6
+
+- assembles into the foundation and a year stays consistent
+  - `AssertionError: expected [ …(2) ] to deeply equal []`
+- is a named state, publicly, with the payee that did not get paid (E1.b)
+  - `AssertionError: expected undefined to be defined`
+- is named like anybody else, and the amount is the whole cell own
+  - `AssertionError: expected undefined to be defined`
+- runs a year on a state that spends past what it can fund, and it defaults (XI-9, XI-1)
+  - `NonFinite: [Law 7] yield of ust.bill.2026-06-15 is Infinity`
+- shows a defaulted line as one, and a holder its own impairment (Observer A4, E2)
+  - `AssertionError: expected false to be true // Object.is equality`
+- shows a party its own failures and nobody else (Observer A4, Money E1.b)
+  - `AssertionError: expected 0 to be greater than 0`
+
+### `equity.test.ts` — 5
+
+- changes only by a named event, and a split moves no value at all
+  - `AssertionError: expected 204158695 to be close to 206680387, received difference is 2521`
+- holds exactly what is outstanding, every period of a year
+  - `AssertionError: expected [ Array(1) ] to deeply equal []`
+- is wiped by the waterfall when the firm fails, and not by a special case (E4, F2)
+  - `AssertionError: expected [ Array(1) ] to deeply equal []`
+- opens at a level that is a resolution and not a shape (Seed C4, Law 2)
+  - `AssertionError: expected 20 to be 6 // Object.is equality`
+- sells new shares when it is short and the market is dear, and the count rises (D1, D1.a)
+  - `AssertionError: expected [ Array(1) ] to deeply equal []`
+
+### `households.test.ts` — 5
+
+- holds a claim instead of a deposit when the claim pays it enough, and not otherwise
+  - `AssertionError: expected 0 to be greater than 0`
+- is drawn into paper when paper pays it enough, and not when it does not (D5.a)
+  - `AssertionError: expected [ …(3) ] to deeply equal []`
+- moves cells across a threshold under a mean-preserving spread while the mean stands (A2.g)
+  - `Forbidden: [Money E4] instruction 6517 addresses payer.1, which ceased in period 10`
+- taxes what a household paid for real things, and the household finds it on top
+  - `AssertionError: expected 'treasury.eu' to be 'treasury.us' // Object.is equality`
+- taxes what a household was actually paid, out of the payer own account
+  - `AssertionError: expected 35205948 to be close to 29620836, received difference is 558511`
+
+### `firms.test.ts` — 4
+
+- consumes what the recipe says, carries the batch at what it cost, and yields late
+  - `AssertionError: expected 0 to be greater than 0`
+- is bound by the inputs on hand, and says which one bound it (Goods B1.b, B5.b)
+  - `AssertionError: expected undefined to be defined`
+- offers what it cannot keep at whatever the book gives, and holds the rest above it
+  - `AssertionError: expected 0 to be greater than 25000000`
+- plans and posts an opening once it knows what it sells (Firm E2, Labour C1, C5)
+  - `AssertionError: expected 3221.666643189904 to be close to 9109.166104256543, received di`
+
+### `labour.test.ts` — 4
+
+- fills the higher offer first when there are not enough hours for both (D1.a)
+  - `AssertionError: expected 60 to be greater than 60`
+- fills the offer above the going rate and leaves the one below it unfilled (D1.a)
+  - `AssertionError: expected true to be false // Object.is equality`
+- is one per region and occupation, in hours, in the money of the place
+  - `AssertionError: expected [ …(20) ] to have a length of 5 but got 20`
+- pays the wage out of the employer own account, every period (F1, E1)
+  - `Error: expected 2964349843 to be 2965062261 to the nearest piece of money (within 3)`
+
+### `omo.test.ts` — 3
+
+- buys towards the share policy chose, paying with money it creates (C1, C1.a, C2)
+  - `AssertionError: expected 193539908341 to be greater than 407691146572`
+- is never in a primary market: the seller there is the issuer (C1.b, Treasury D3.a)
+  - `AssertionError: expected 0 to be greater than 0`
+- lets the book run off when reinvestment is off, and the base shrinks with it (C4)
+  - `AssertionError: expected 250905739141 to be less than 241413910041`
+
+### `auction.test.ts` — 2
+
+- brings dealers to every auction, so the paper is placed and the cash reaches the issuer
+  - `AssertionError: expected 0 to be greater than 0`
+- fails: nobody absorbs the remainder, and the treasury is left lower than the plan assumed
+  - `AssertionError: expected false to be true // Object.is equality`
+
+### `derived.test.ts` — 2
+
+- is the book divided by the claims, read at the ask and stored nowhere
+  - `AssertionError: expected 32516605.679680005 to be close to 23858631.64, received differe`
+- moves when the book moves, and the holders carry the move (Clearing D4, Audit B5)
+  - `AssertionError: expected 1625830233.9840012 to be close to 1625830233.9840002, received `
+
+### `etf.test.ts` — 2
+
+- is a smaller fund and not a broken one: the basket backs the shares that were taken
+  - `AssertionError: expected [ Array(1) ] to deeply equal []`
+- is closed by a bank when it is worth more than carrying it costs, and only then
+  - `AssertionError: expected [ …(2) ] to deeply equal []`
+
+### `money-market.test.ts` — 2
+
+- differs between two banks with different mixes, and the difference reaches the quote
+  - `AssertionError: expected 0.08872050184756518 to be 0.007477730304328664 // Object.is equ`
+- pays more for money when it keeps less of what money is worth to it (B1.a)
+  - `AssertionError: expected [ …(2) ] to deeply equal []`
+
+### `raise.test.ts` — 2
+
+- counts as capital, so raising it moves the position it was raised against (A2, B1)
+  - `AssertionError: expected 2866226042.000002 to be close to 2866226042, received differenc`
+- is bounded by what a lender will have out to one name (F3)
+  - `AssertionError: expected 1 to be greater than 2`
+
+### `bank-capital.test.ts` — 1
+
+- is an outcome of what the bank holds, and moves when the rules move (B1.c)
+  - `AssertionError: expected false to be true // Object.is equality`
+
+### `dealing.test.ts` — 1
+
+- shrinks the bid to whichever of its limits binds, and says which one did (D4)
+  - `AssertionError: expected 'book' to be 'position' // Object.is equality`
+
+### `expectations.test.ts` — 1
+
+- is corrected towards what happened, at the party own speed, and never faster
+  - `AssertionError: expected false to be true // Object.is equality`
+
+### `params.test.ts` — 1
+
+- counts the two management fees as the placeholders they are, and names their item
+  - `AssertionError: expected [ …(2) ] to deeply equal [ …(2) ]`
+
+### `treasury.test.ts` — 1
+
+- collects on what households were paid and on what they bought (C1, C1.a)
+  - `AssertionError: expected 0 to be greater than 0`
+

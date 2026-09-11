@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 54.0%** (276 of 511 steps across 34 items).
-**Requirement coverage: 38.6%** (525 MET, 74 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
+**Plan completion: 56.6%** (296 of 523 steps across 36 items).
+**Requirement coverage: 44.8%** (610 MET, 81 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -38,8 +38,10 @@ The plan has two parts:
 | 10.4 — What a lot is carried at, after the marks are taken | — | — | closed (no item file) |
 | 11 — Money market, corridor, bank capital | 32 | 32 | closed |
 | pre12 — The guards that keep the documents true | 16 | 16 | closed |
-| [12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer](plan/12-currency-benchmarks-ratings.md) | 32 | 12 | in progress |
+| 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer | 32 | 32 | closed |
 | [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 25 | 0 | open |
+| [12b — The balance sheet that takes one step out of true](plan/12b-balance-sheet-step.md) | 6 | 0 | open |
+| [12c — The equity book walks away](plan/12c-equity-anchor.md) | 6 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
 | [13c — Commodities and freight](plan/13c-commodities-freight.md) | 14 | 0 | open |

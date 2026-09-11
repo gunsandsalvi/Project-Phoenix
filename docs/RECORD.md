@@ -1883,3 +1883,96 @@ some other reason — then the reason is the wrong place to look and the death b
 
 **State.** 313 of 339 checks pass, against 297 of 323 before. The sixteen new ones are this item's
 guards; the twenty-six reds are the same twenty-six, by name.
+
+
+## 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer
+
+**What it was for.** XI-13 asks that no price be one party's own view read back to itself; XI-12 asks
+for more than one money with no vehicle between them; XI-7 asks for a benchmark somebody paid; §44
+asks for an assessment made from state rather than from a price. The item absorbed 11.3 and 11.4
+because the anchor and the currency layer are one thing: no second currency can be laid on a market
+whose only participants are dealers quoting off their own last print.
+
+**FOUR COUNTRIES, and that was the first finding.** The plan said a second region and a second
+currency. Two moneys cannot express XI-12 at all: `triangles()` is empty, there is no third leg and
+no round trip, and "no vehicle currency" is a sentence about a world that cannot have one. So the
+seed opens the United States (USD, Federal Reserve, US Treasury, `ust.*`) and three stub economies —
+Europe (EUR, ECB, `bund.*`), the United Kingdom (GBP, Bank of England, `gilt.*`) and Japan (JPY,
+Bank of Japan, `jgb.*`) — each a central bank, a treasury and one benchmark line, declared in one
+table. The names are labels for clarity; a real economy abroad is 13i's.
+
+**WHICH ACCOUNT A PARTY HOLDS A MONEY IN had twenty-odd writers.** Every one of them was
+`{holder, issuer: party.bank}` — right in one currency and wrong in every other. It is
+`ctx.accountOf(party, ccy)` now, one resolver: a party's own money at its own bank, a foreign money
+at that money's own central bank. `world.cash` reads through the same rule, or a foreign balance is
+not findable at all. That is Law 4 arriving in a place nobody had looked, because with one currency
+the twenty copies all gave the same answer.
+
+**What the layer needed that the plan had not named.**
+
+- **A central bank lends to its own system** (Currency D4, Central Bank D1). A bank booked elsewhere
+  has no reserve account here and no window, so a bank short of a foreign money has to BUY it —
+  which is why a spot market exists. Without it the second currency arrived as an unlimited foreign
+  overdraft and Money B3.c fired at −333,922,766 SOU on the first run.
+- **A market says what it DELIVERS.** A pair delivers nothing anybody holds, so the asset desks and
+  the liquidity walkers skip it, and a participant answers the sort of market it declared itself in
+  (`ParticipantDecl.in`). Three separate crashes were one missing distinction.
+- **`owedIn` is signed.** Short of a money and sitting on one are the same balance read from either
+  end (Spot FX B1 and B2), so there is one read and not two rules.
+- **A party deals in the pair between the money it needs and its own**, so one balance is never
+  committed in three books at once and nothing is ROUTED through a third money (XI-12). **A bank
+  speaks once in a book** — its unwanted balance IS its desk's position, and when the desk has
+  decided on a round trip that leg is what it is doing there; both were Clearing A2 firing. **A desk
+  past its own limit posts a size and no level**, which is the rung its paper book already had
+  (XI-2) and is what moves a rate when every desk is on one side.
+- **A tracker pays what a line is worth, never anything.** The first version posted market orders and
+  walked the equity index from 99.88 to 4153 in two sessions: a forced SELLER is real (XI-2), a
+  forced BUYER is what Appendix B forbids.
+
+**And one fix that was not about currencies at all. A CLEARED SESSION THAT SETTLES NOTHING NO LONGER
+PRINTS.** `mkt.share.etf.us` cleared at 63,905 against a NAV of 200 with `settledVolume: 0` — a level
+nobody paid, written because the book had crossed. The authorised participants created 6.6 billion
+shares against it and the next session's demand summed past 2^53 and threw. A price is what somebody
+paid (Law 3, Clearing E1): the session now carries the last real price forward, visibly stale, with
+a new `nothingSettled` reason, and the three no-trade paths are one function. The symptom was a
+fund's share price; the cause was in the kernel's market; nothing between them was wrong.
+
+**What else was built.** `indices`: one system, rules built from the registry's own regions and
+currencies, levels that are reads and nothing that stores one, an index of an empty basket reporting
+Missing rather than its base, and a benchmark that is TRANSACTED — secured and unsecured are two
+benchmarks and this world's unsecured overnight book never clears, so it publishes no unsecured
+fixing. `ratings`: three assessors with drawn methodologies, grades made from state through a view
+with the prices CLOSED (so A2.a is structural, not a convention), coarse and sticky, and the conflict
+kept and priced — the rated party pays the assessor every period, by instruction. The second opinion
+is a fact on the party kind's profile (`speculative`) and a `market.noView` observation every period
+a book runs with orders in it and nobody with a view: in this world that is the four goods markets
+and nothing else. `crossMarket` built with both contributions; Currency D4 added to `money`.
+
+**Performance, after the owner said twenty-five minutes was not sustainable.** The suite was
+quadratic in the period number: `failedPayments` filtered the entire ledger on every call and an
+assessor asks it of every issuer it rates; an index level chained from the base on every read, and a
+basket weighted by what was BOUGHT reads a period of the ledger to answer; `owedIn` walked every line
+a party had issued, once per pair market per money. All three are Law 18 — the same numbers, less
+traversal — and the fourth was a correctness statement that happened to be most of the cost: an
+assessor rates the paper anybody can buy, not every bilateral loan row in the world. A forty-period
+run went from 962ms a period to 305ms, and the suite from over twenty-five minutes to four and a half.
+
+**State.** 248 of 329 tests pass, against 195 of 338 when the item opened. The 81 reds are named
+test by test in `docs/BUGS.md`, with the four things that changed under them — chiefly that the
+seed's scale is DERIVED now, so every test that asserted an absolute quantity reads a different
+number. None of them is a world that will not assemble.
+
+**Six findings written down and positioned**, none chased (Law 11): 12-13 the banks sell the seed's
+cross holdings in week one (13h's portfolio decision missing); 12-14 the dollar drifts one way
+because only one side of the world trades (13i); 12-15 an equity line walks away as the sovereign
+line did before 11.3 (its own item, before 13g); 12-16 the print above, fixed here; 12-17 every
+sovereign grades `c` because a state's capacity is its tax base and no read of it exists (12a);
+12-18 a bank's balance sheet takes one step out of true and never comes back — measured to the
+point where the equity side is exactly its events, so the gap is on the read side (12a's income
+statement is the decomposition that will name it).
+
+**Forecast, with its killer.** The claim this item makes is that a price made by parties who all
+follow the same rule is not a price, and that saying so (`market.noView`) is better than preventing
+it. The killer: if the four goods markets it names stay the only ones for the next three items while
+the equity book goes on walking away (12-15), then the observation is not reaching the thing it is
+about and it wants a participant rather than a note.

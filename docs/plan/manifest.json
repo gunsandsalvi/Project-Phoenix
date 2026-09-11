@@ -126,6 +126,18 @@
     "steps": 25
   },
   {
+    "id": "12b",
+    "title": "The balance sheet that takes one step out of true",
+    "file": "12b-balance-sheet-step.md",
+    "steps": 6
+  },
+  {
+    "id": "12c",
+    "title": "The equity book walks away",
+    "file": "12c-equity-anchor.md",
+    "steps": 6
+  },
+  {
     "id": "13a",
     "title": "The derivative layer",
     "file": "13a-derivative-layer.md",
