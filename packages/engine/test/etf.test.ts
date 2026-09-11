@@ -273,9 +273,13 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
   it('is a smaller fund and not a broken one: the basket backs the shares that were taken', () => {
     // Only the sponsor turned up — the desks that would make its market are not in this world, so
     // what they were down to take is not what anybody took.
-    const drew = rigDraw('etf-small');
+    // Seed B1.a: a world that HAS an exchange-traded fund, asked for rather than assumed — which
+    // firms list is a draw, and the default rig on this seed lists none, so `drew.etfs` was empty
+    // and the line this test reads did not exist at all.
+    const shape = rigShapeFor('etf-small', { etfs: 1 });
+    const drew = rigDraw('etf-small', shape.banks, shape.firms);
     const sponsorOnly = drew.etfs.map((e) => ({ ...e, launchedBy: { 'manager.etf.us': 20 } }));
-    const spec = rigSpec('etf-small');
+    const spec = rigSpec('etf-small', shape.banks, shape.firms);
     const w = assemble({
       ...spec,
       modules: spec.modules.map((m) => (m.id === 'funds' ? funds(drew.funds, sponsorOnly) : m)),
@@ -284,7 +288,14 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
     // A basket backing shares nobody holds would be a NAV that was a multiple of what the fund
     // owed, and a fund with more assets than claims on them is money with no holder (Law 2).
     expect(w.instruments.get(SHARE).issued).toBe(20);
-    expect(w.register.quantity(FUND, LINE_4)).toBeCloseTo(20, 9);
+    // PLAN §7: the basket is WHATEVER THE INDEX SAYS on this seed, not a line named here — which
+    // firms are listed is a draw, and a fund holding `equity.firm.4` is a fact about one world.
+    // What the clause is about is that the fund holds a basket at all, and one unit of it per share.
+    const basket = w.register
+      .holdingsOf(FUND)
+      .filter((h) => String(h.instrument).startsWith('equity.firm.'));
+    expect(basket.length, 'the fund holds no shares at all').toBeGreaterThan(0);
+    for (const h of basket) expect(w.register.quantity(FUND, h.instrument)).toBeCloseTo(20, 9);
     const struck = w.journal.ofKind('etf.struck').filter((e) => e.period === w.period);
     expect(Number(struck[0]?.data['perShare'])).toBeGreaterThan(0);
   });

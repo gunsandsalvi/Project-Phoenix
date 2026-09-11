@@ -129,6 +129,19 @@ export function savingLines(
       if (price > 0) paper.push({ instrument: i, price });
       continue;
     }
+    // A CLAIM ON A BOOK IS WORTH THE BOOK (Fund Shares B1), and that is a different question from
+    // what a residual claim on a COMPANY is worth. A fund publishes no report — it is not a public
+    // company, it is a vehicle — so a saver that only knew how to read accounts had no reason to
+    // hold a fund share at all, and the exchange-traded fund's book showed it: `noDemand` every
+    // period, nobody on either side, from the moment 12c gave the saver its reason.
+    //
+    // Law 15: this is the kind's own declared PRICING, the same dispatch key the kernel values
+    // every instrument through, and not a branch on what sort of thing it is.
+    if (view.registry.instrumentKind(i.kind).pricing === 'derived') {
+      const worth = view.mark(i.id);
+      if (worth.some && worth.value > 0) shares.push({ instrument: i, price: worth.value });
+      continue;
+    }
     // A share: the book it is a piece of, plus what it earns on that book (A1, B3, §48).
     if (forShares <= 0 || year <= 0 || i.issued <= 0) continue;
     const said = publishedBy(view, i);

@@ -333,6 +333,24 @@ different price (C3.a: declined volume is visible).
 
 **Not chased.** It is the lending mechanism and 12d is the tests. To be positioned when 12d closes.
 
+### 12d-4 — An exchange-traded fund's own market clears nothing
+
+**Where.** `mechanisms/funds/`, the ETF's secondary market. Seen with the world `etf.test.ts` builds
+(`rigShapeFor(seed, { etfs: 1 })`, households with no buffer).
+
+**Measured.** Before this item, `noDemand` every period — nobody was in the book at all. That half
+was a regression 12c introduced and it is fixed here: a saver's reason became the issuer's PUBLISHED
+ACCOUNTS, and a fund publishes none, so no saver would hold a fund share. A claim on a book is worth
+the book (Fund Shares B1), so a claim whose kind says its value is DERIVED is valued at that — the
+kernel's own read, through the same dispatch key everything else is valued by.
+
+**What is left.** `nothingSettled` every period: there are bids now and no trade comes of them, and
+no failed instruction names the line either — so the trades are not being drafted rather than being
+refused. Four of `etf.test.ts`'s reds are this one thing (a market that clears, a slice taken against
+shares, a mark nobody traded at, a book somebody would close).
+
+**Not chased.** It is the funds module and 12d is the tests. To be positioned when 12d closes.
+
 ### 12d-1 — No firm in this world ever wants plant, so nothing is ever built
 
 **Where.** `mechanisms/firms/invest.ts` (`project`), `mechanisms/capital-programme/`. Seen with
