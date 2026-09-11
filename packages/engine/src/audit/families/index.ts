@@ -1,6 +1,6 @@
 import type { Family } from '../audit.js';
 import type { AuditMemory } from '../memory.js';
-import { accountsFamily } from './accounts.js';
+import { accountsFamily, equityLedgerFamily } from './accounts.js';
 import { flowsFamily } from './flows.js';
 import { moneyFamily } from './money.js';
 import { namesFamily } from './names.js';
@@ -17,6 +17,7 @@ export function standardFamilies(memory: AuditMemory): Family[] {
     pricesFamily(),
     crossMarketFamily(),
     accountsFamily(),
+    equityLedgerFamily(),
     namesFamily(),
     flowsFamily(memory),
     zeroSumFamily(),

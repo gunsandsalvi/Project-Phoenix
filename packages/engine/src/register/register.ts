@@ -10,10 +10,10 @@
  * The equity book is the stated equity account per party (Audit B5): a balance moved only by named
  * events (settlement's realised effects, revaluation, capital), never a stored total of anything.
  */
-import type { Period } from '../calendar/calendar.js';
+import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
-import type { InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
+import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
 import { dustOf, finite, moved, opened, sum, type Running, type Sum } from '../core/num.js';
 import { NO_QTY, asQty, onTick, scaleQty, subQty, type Qty } from '../core/tick.js';
 import { type Option, none, some } from '../core/option.js';
@@ -66,6 +66,38 @@ export interface EquityMove {
    * a party whose equity is zero by construction an apology every period.
    */
   readonly through?: number;
+  /**
+   * Reporting A2, G2, Law 19: WHEN IT MOVED, so what a party earned over a span is a READ.
+   *
+   * Every move already carries the cause its writer wrote, and the register threw it away: only the
+   * running balance survived, so comprehensive income was recoverable exactly and nothing above the
+   * bottom line was. A report that wanted "revenue" had to parse the reason strings on money legs —
+   * recovering by inference a fact its writer knew and did not record.
+   */
+  readonly period: Period;
+  readonly cycle: Cycle;
+  /** The instruction that moved it, where settlement moved it: a report cites what it reads. */
+  readonly instruction?: InstructionId;
+}
+
+/**
+ * Reporting A2, G2, Register E2.a: ONE MOVE OF ONE PARTY'S EQUITY, kept.
+ *
+ * It is the ITEMISATION and never the balance. `equityWalk` stays the accumulator and stays
+ * authoritative (Law 4: one writer of one fact); these are what it is made of, so the two can be
+ * compared as independent records and a report built on them is checkable rather than merely
+ * produced (Audit A1.a). Summing them to PRODUCE the balance would make that check a tautology.
+ *
+ * Append-only, never edited, never reversed: a correction is a new entry (Register E2.a).
+ */
+export interface EquityEntry {
+  readonly party: PartyId;
+  readonly period: Period;
+  readonly cycle: Cycle;
+  /** Per member for a cell, in the party's home currency — the same number `moveEquity` was given. */
+  readonly delta: number;
+  readonly cause: string;
+  readonly instruction?: InstructionId;
 }
 
 /**
@@ -83,6 +115,13 @@ export class Register {
   private readonly byHolder = new Map<PartyId, Map<InstrumentId, MutableHolding>>();
   private readonly byInstrument = new Map<InstrumentId, Set<PartyId>>();
   private readonly equityAccount = new Map<PartyId, Running>();
+  /**
+   * Reporting A2, G2: every move of every equity account, in writing order, per party.
+   *
+   * It grows with events rather than with parties, which is the same order of growth as the lots of
+   * every holding the register already keeps. It is never read to produce a balance.
+   */
+  private readonly equityLedger = new Map<PartyId, EquityEntry[]>();
   /**
    * Central Bank A2.c, Currency D2.a: THE REVALUATION ACCOUNT. A second equity-like account, moved
    * by exactly one thing — what a change in an exchange rate did to a position held in a money that
@@ -228,15 +267,49 @@ export class Register {
     );
     this.parties.get(party);
     this.equityAccount.set(party, opened(value, `equity of ${party}`));
+    // Reporting A2, G2: the opening is an itemised fact too (Seed C1: at period zero the equity IS
+    // the read). With it in the ledger the two records are comparable without an argument about
+    // where each starts — Σ every entry is the balance, exactly, and a missing entry is a
+    // difference rather than a difference-plus-an-opening-nobody-recorded.
+    this.equityLedger.set(party, [
+      {
+        party,
+        period: 0 as Period,
+        cycle: 0 as Cycle,
+        delta: value,
+        cause: `equity of ${party} stated at the opening`,
+      },
+    ]);
   }
 
-  /** Move the equity account by a named event (Audit B5). */
+  /** Move the equity account by a named event (Audit B5), and keep the event (Reporting A2, G2). */
   moveEquity(move: EquityMove): void {
     const cur = this.equityWalk(move.party);
     this.equityAccount.set(
       move.party,
       moved(cur, move.delta, `equity of ${move.party}`, throughOf(move)),
     );
+    const kept = this.equityLedger.get(move.party);
+    const entry: EquityEntry = {
+      party: move.party,
+      period: move.period,
+      cycle: move.cycle,
+      delta: move.delta,
+      cause: move.cause,
+      ...(move.instruction === undefined ? {} : { instruction: move.instruction }),
+    };
+    if (kept === undefined) this.equityLedger.set(move.party, [entry]);
+    else kept.push(entry);
+  }
+
+  /**
+   * Reporting A2, G2: what moved this party's equity between two periods, in the words its writers
+   * wrote. Inclusive of both ends, because a fiscal quarter is a span of whole periods (G3.b).
+   */
+  equityEntries(party: PartyId, from: Period, to: Period): readonly EquityEntry[] {
+    const kept = this.equityLedger.get(party);
+    if (kept === undefined) return [];
+    return kept.filter((e) => e.period >= from && e.period <= to);
   }
 
   /**
@@ -563,6 +636,13 @@ export class Register {
     // The copy is the same number reached the same way, so it inherits the walk as well (XI-15).
     const e = this.equityAccount.get(from);
     if (e !== undefined) this.equityAccount.set(to, e);
+    // Reporting A2, XI-15: AND THE ITEMISATION, which is per-member state like everything else here.
+    // A split is one member described twice, so the new cell's equity has the same history as the
+    // old one's — it did not arrive from nowhere. Copying the walk and not the entries left a cell
+    // whose account said it had been moved eighteen times and whose ledger carried nine, which is
+    // the count check in the `accounts` family catching a hole a sum alone would have missed.
+    const kept = this.equityLedger.get(from);
+    if (kept !== undefined) this.equityLedger.set(to, kept.map((entry) => ({ ...entry, party: to })));
   }
 
   /** Remove every trace of a party that has merged away; the caller has verified identical state. */
@@ -571,6 +651,7 @@ export class Register {
     if (m !== undefined) for (const inst of m.keys()) this.index(inst).delete(party);
     this.byHolder.delete(party);
     this.equityAccount.delete(party);
+    this.equityLedger.delete(party);
   }
 
   // ---- internals ---------------------------------------------------------------------------
@@ -637,6 +718,7 @@ export type RegisterReads = Pick<
   | 'allHoldings'
   | 'equity'
   | 'equityWalk'
+  | 'equityEntries'
   | 'hasEquityAccount'
   | 'revaluation'
   | 'revaluationWalk'
@@ -659,6 +741,8 @@ export function registerReads(store: Register): RegisterReads {
     equity: (party: PartyId) => store.equity(party),
     moneyWalk: (holder: PartyId, instrument: InstrumentId) => store.moneyWalk(holder, instrument),
     equityWalk: (party: PartyId) => store.equityWalk(party),
+    equityEntries: (party: PartyId, from: Period, to: Period) =>
+      store.equityEntries(party, from, to),
     hasEquityAccount: (party: PartyId) => store.hasEquityAccount(party),
     revaluation: (party: PartyId) => store.revaluation(party),
     revaluationWalk: (party: PartyId) => store.revaluationWalk(party),

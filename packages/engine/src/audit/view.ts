@@ -40,6 +40,7 @@ export interface AuditView {
     | 'allHoldings'
     | 'equity'
     | 'equityWalk'
+    | 'equityEntries'
     | 'hasEquityAccount'
     | 'revaluation'
     | 'revaluationWalk'

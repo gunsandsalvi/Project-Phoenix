@@ -23,6 +23,7 @@
 import { issuedBy } from '../../register/instruments.js';
 import { combineDust, sum, withinDust } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
+import type { Period } from '../../calendar/calendar.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
@@ -120,6 +121,67 @@ export function accountsFamily(): Family {
             unit: home,
             period: view.period,
             message: `${p.id}: assets ${assets.value} - liabilities ${liabilities.value} != equity account ${equity.value} (per member)`,
+          });
+        }
+      }
+      return out;
+    },
+  };
+}
+
+/**
+ * Reporting A2, A2.a, G2; Audit A1.a, Law 4: THE ITEMISATION AND THE BALANCE ARE TWO RECORDS OF ONE
+ * THING, and this is where they are made to agree.
+ *
+ * A report says what a company earned by reading the entries that moved its equity account
+ * (`equityEntries`). That is only worth reading if the entries are ALL of them — a report built on
+ * an itemisation that has lost one is a second set of accounts, which is exactly what A2.a forbids.
+ * So the check is the sum of every entry against the balance the walk carries, and the COUNT of
+ * them against the number of moves the walk counted. The second is what catches an entry that is
+ * missing and one that was invented to replace it: a sum can be made to agree by two errors, a
+ * count cannot.
+ *
+ * It is never the other way round. The walk is the balance and stays the balance (Law 4); if the
+ * entries were summed to PRODUCE it this check would be a tautology and the report would be
+ * unfalsifiable.
+ */
+export function equityLedgerFamily(): Family {
+  return {
+    name: 'accounts',
+    contributor: 'kernel.equityLedger',
+    spec: 'Reporting A2 Reporting G2 Audit A1.a Law 4',
+    built: true,
+    check(view: AuditView): Violation[] {
+      const out: Violation[] = [];
+      for (const p of view.parties.alive()) {
+        if (!view.register.hasEquityAccount(p.id)) continue;
+        const walk = view.register.equityWalk(p.id);
+        const entries = view.register.equityEntries(p.id, 0 as Period, view.period);
+        const home = view.registry.region(p.region).ccy;
+        // One entry for the opening statement, one for every move since (Register E2.a: nothing is
+        // edited and nothing is reversed, so the count only ever grows).
+        if (entries.length !== walk.moves + 1) {
+          out.push({
+            family: 'accounts',
+            spec: 'Reporting A2',
+            owner: String(p.id),
+            size: entries.length - (walk.moves + 1),
+            unit: 'entries',
+            period: view.period,
+            message: `${p.id}: the equity ledger has ${entries.length} entries and the account has been moved ${walk.moves} times from one opening`,
+          });
+          continue;
+        }
+        const itemised = sum(entries.map((e) => e.delta));
+        if (!withinDust(itemised.value, walk.value, itemised.dust + walk.dust)) {
+          out.push({
+            family: 'accounts',
+            spec: 'Reporting G2',
+            owner: String(p.id),
+            size: itemised.value - walk.value,
+            unit: home,
+            period: view.period,
+            message: `${p.id}: the equity ledger sums to ${itemised.value} and the account stands at ${walk.value} (per member)`,
           });
         }
       }

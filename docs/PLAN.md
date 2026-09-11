@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 56.6%** (312 of 551 steps across 39 items).
+**Plan completion: 57.2%** (315 of 551 steps across 39 items).
 **Requirement coverage: 44.8%** (610 MET, 81 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -41,7 +41,7 @@ The plan has two parts:
 | 11.5 — The banking system opens meeting its own liquidity standard | 9 | 9 | closed |
 | 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer | 32 | 32 | closed |
 | 11.6 — The module contract: kinds where their behaviour is, markets a participant is in | 7 | 7 | closed |
-| [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 26 | 0 | open |
+| [12a — Reporting and estimates](plan/12a-reporting-and-estimates.md) | 26 | 3 | in progress |
 | [12b — The balance sheet that takes one step out of true](plan/12b-balance-sheet-step.md) | 6 | 0 | open |
 | [12c — The equity book walks away](plan/12c-equity-anchor.md) | 5 | 0 | open |
 | [12d — The tests catch up with the world](plan/12d-tests-catch-up.md) | 8 | 0 | open |

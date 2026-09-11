@@ -78,6 +78,8 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
     if (delta === 0) continue;
     d.register.moveEquity({
       party: h.holder,
+      period,
+      cycle,
       delta,
       cause: `revaluation of ${inst.id} in period ${period}`,
       through,
@@ -103,6 +105,8 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
     if (delta === 0) continue;
     d.register.moveEquity({
       party: issuer,
+      period,
+      cycle,
       delta,
       cause: `revaluation of own liabilities in period ${period}`,
       through: zeroIfNone(issuerThrough.get(issuer)),
@@ -234,6 +238,8 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
     if (delta === 0) continue;
     const move = {
       party: h.holder,
+      period,
+      cycle,
       delta,
       cause: `exchange rate on ${inst.id} in period ${period}`,
       // Law 7: it passed through the whole position in home money, not the change in it.

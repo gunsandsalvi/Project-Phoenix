@@ -1021,8 +1021,15 @@ export class Settlement {
       if (delta === 0) continue;
       this.d.register.moveEquity({
         party,
+        period: ins.period,
+        cycle: ins.cycle,
         delta,
-        cause: `instruction ${ins.id}`,
+        // Reporting A2, G2: the cause is the instruction's OWN reason, which is the sentence its
+        // writer wrote about why the units moved (C1.b). A report groups by it, so what a company
+        // says it earned is what its own mechanisms said they were doing — never a chart of
+        // accounts the report invented on top of them.
+        cause: ins.reason,
+        instruction: ins.id,
         through: zeroIfNone(gross.get(party)),
       });
       effects.push({ party, delta });

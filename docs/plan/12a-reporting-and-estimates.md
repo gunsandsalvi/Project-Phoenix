@@ -251,12 +251,21 @@ read (§46 C2). Two numbers here would be Law 4's defect wearing a business suit
 
 ## Steps
 
-- [ ] 1. `EquityEntry` and the register's append-only list; `moveEquity` writes one; `RegisterReads`
-      gains `equityEntries(party, from, to)`.
-- [ ] 2. The `accounts` family contribution: Σ entries over a span equals the walk's movement, within
-      the walk's own dust; test with a party moved a thousand times in a period.
-- [ ] 3. Test that the entries are the itemisation and not the balance: the walk is unchanged by the
-      change, and deleting an entry is caught by the family rather than silently re-summed.
+- [x] 1. `EquityEntry` and the register's append-only list; `moveEquity` writes one; `RegisterReads`
+      and the audit view gain `equityEntries(party, from, to)`. `EquityMove` now carries the period,
+      the cycle and the instruction, which the type change caught at all five writers. Settlement's
+      cause is the instruction's OWN reason (its writer's sentence), not `instruction <id>`, and
+      `stateEquity` writes the opening as an entry so Σ entries IS the balance with nothing left
+      over to argue about.
+- [x] 2. The `accounts` family contribution (`equityLedgerFamily`): Σ entries against the walk's
+      value within the walk's own dust, AND the COUNT of entries against the walk's count of moves —
+      a sum can be made to agree by two errors, a count cannot. It found one immediately: a cell
+      split copied the walk and not the itemisation, so a split cell's account said eighteen moves
+      and its ledger carried nine. The itemisation is per-member state and now travels with it.
+- [x] 3. `test/equity-ledger.test.ts`: the count says none is missing, any span sums to what the
+      account did over that span (measured against the balance read at both ends, which is the read
+      a report is built on), the split carries its history, and `equity()` is still exactly
+      `equityWalk().value` — so the balance is never produced by summing the entries (Law 4).
 - [ ] 4. The fiscal calendar as a read: a company's anchor month in the module registry, the quarter's
       dates from `civil.ts`, the periods in it from the calendar. Test G3.b holds — nothing finer.
 - [ ] 5. `reporting.lag.days` declared POLICY, owner `parliament`, with its reason.
