@@ -144,6 +144,12 @@
     "steps": 6
   },
   {
+    "id": "12b.1",
+    "title": "A price has a smallest piece",
+    "file": "12b.1-price-grid.md",
+    "steps": 9
+  },
+  {
     "id": "12c",
     "title": "The equity book walks away",
     "file": "12c-equity-anchor.md",

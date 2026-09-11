@@ -80,36 +80,6 @@ look solvent. To be positioned when 12a closes.
 
 ## Found while working item 12b
 
-### 12b-1 — A price is not on any grid, so every value is finer than money goes
-
-**Where.** `prices/price-store.ts` (`PricePrint.price` is a bare `number`), `clearing/solver.ts`
-(a fill is `at: g.o.price` — whatever the poster computed), and every read that multiplies by one:
-`prices/value.ts` `valueOfLots`, `markPerUnit`, `carryingPerUnit`.
-
-**Measured.** Prints carry sixteen significant figures: `share.etf.us` at `511.12891311042875`,
-`equity.firm.11` at `49.7938868935811`, `jgb.2036-03-15` at `0.8887345371057928`. So every
-`units × price` number is off the money grid by construction — a balance sheet at
-`15901695062647.4`, an equity account at `2407881467552.351`, a revaluation delta at
-`-6097242077.790232`. A money BALANCE is a whole count of pieces (`money:ecb:EUR 306717802678`)
-because a quantity has a type and five doors (`core/tick.ts`); a price has neither.
-
-**It is a gap, not a decision.** The spec has no clause on price resolution and no parameter
-declares one, and nothing in the code states that a price is deliberately continuous. `core/tick.ts`
-argues for the quantity grid from the real mechanism — "a unit of anything real has a smallest piece
-and nothing finer exists" — and that argument is word for word the argument for a price: a market
-has a minimum increment and prints on it. `clearing/market.ts` (fxTrade, assetTrade) already names
-the consequence it lives with: cash lands on its own grain, so "the rate a trade REALISES can differ
-from the print by less than one piece".
-
-**Shape of the fix, when it is taken.** The increment is a RESOLUTION (Law 2), declared per market
-beside `UnitDecl.perUnit` and shifted with it so invariance can be run. It belongs at the POSTING
-door — an order posts at a tick of its market, the way a size posts on the unit's grid — and never
-on the print: a cleared price is an outcome, and rounding the print would be a bound on it (Law 6).
-
-**Where it belongs.** Not 12b, which is one wrong conversion (12b-2) and nothing to do with
-resolution; a price grid changes every cleared number in the world and is measured, not guessed.
-To be positioned when 12b closes.
-
 ### 12b-2 — RESOLVED here: the revaluation mark is booked in the instrument's money
 
 Named while reproducing 12b at `410bf16`: `world/revalue.ts` computes a mark move in the
