@@ -432,3 +432,76 @@ it: they are positioned when this item closes, and the record says where each la
 PLAN §7 (a test never names a party, never widens a tolerance, never needs a bound); Law 7; Law 11
 (the temptation this whole item is exposed to: a red that is a mechanism's fault made green by
 editing the assertion); Law 13 (a bad number is a finding, not a regression).
+
+---
+
+## State at handover
+
+**The item is OPEN.** It is not close to done and this section says exactly where it stopped, so the
+next session starts from a measurement rather than from a guess.
+
+### The count
+
+`409` tests. The last full-suite measurement gave **27 red** (from 168 at the item's start, then 50).
+**That figure is stale** — three mechanism changes landed after it (below), and none of them has been
+measured against the whole suite. **Run the suite first and read what it says before touching
+anything** (the standing rule: run at the end of a module, read it, write what it says down).
+
+### What is accounted for and what is not
+
+The table above names ~22 reds, each with a finding in `docs/BUGS.md` and the item that makes it
+green. Those are done: they close red, on purpose, and the record will say so.
+
+**Untriaged**, and the first work of the next session — these are candidates, not a verified list,
+because they were seen in a run that predates the mechanism changes below:
+
+| file | what was seen |
+| --- | --- |
+| `equity.test.ts` | two reds beyond the one in the table |
+| `indices.test.ts` | one |
+| `omo.test.ts` | one, C4 — the reinvestment decision |
+| `ratings.test.ts` | one |
+| `run.test.ts` | a third red beyond the two the deposit board accounts for |
+
+Each is most likely a regression from a mechanism change made inside this item, not a moved world.
+They are the one class this item may not migrate: triage each in writing before editing a line of
+test (the item's own first step, and its guard).
+
+### Mechanism changes made inside this item
+
+These moved numbers other tests read, and they are the reason the count above is stale:
+
+1. **The ETF launch is derived and comes out of the float** (`mechanisms/funds/data.ts`,
+   `funds/index.ts`). `ETF_LAUNCH_UNITS = 20_000` is gone; `ETF_LAUNCH_SHARE = 0.05` replaces it, the
+   shares are decided first, and `outOfTheFloat` takes exactly the basket those shares claim from the
+   holders, pro rata per member. `perShare` is `Σ(units × price) ÷ launched` — what one share is a
+   claim on — so no surplus basket is created (`etf.us has equity of 600`, then `-15,599,400`, both
+   gone).
+2. **Cost of funds is published per currency** (`mechanisms/banks/index.ts`). One event per bank
+   carrying the home currency at the top level plus `alsoIn: Record<ccy, FundingCost>` for every
+   other, because `publishQuotes` prices off the **borrower's** currency.
+3. **A fund's opening print lands on its market's grid** (`funds/index.ts`, `onQuoteGrid`) — it was a
+   raw division and `tick.test.ts` caught it (commit `4f84fc7`).
+
+Also: `Spending` gained `budget` (cash + onDemand) and the plan event gained `budgetPerMember`
+(`mechanisms/households/`).
+
+### One change was reverted, and the finding it was chasing stands
+
+The attempt to give a computed balance the dust of its terms rather than of its answer
+(`opened` / `stateEquityAsRead` / the equity read) did not clear its failure and carried a lint
+error. It was reverted whole. The finding is **`docs/BUGS.md` 12d-21**, with the cause stated.
+
+### Findings added after the last suite run
+
+`12d-17` … `12d-21`, from a full read of the specification rather than from a test: the bank display
+names past Z, the countries being typed rather than drawn, `region` as a key dimension with one
+value, a stale fund-manager name, and the dust of a stated balance. `12d-17` and `12d-20` are small
+and local; `12d-18` is the structural half of `12d-15` and belongs with the cross-border item.
+
+### What closing this item still needs
+
+Everything in **Steps** that is unticked, and in this order: the three contract violations
+root-caused; the untriaged reds above triaged in writing; the remaining migrations; then
+`npm run check`, the coverage re-mark, the record entry naming every inserted item, every finding in
+`docs/BUGS.md` positioned, this file deleted and the worklist row set to done.

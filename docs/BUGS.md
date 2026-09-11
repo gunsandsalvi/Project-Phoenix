@@ -762,3 +762,24 @@ world are drawn. Fund managers are a population like any other (Seed B1, B1.a) a
 `drawManagers`.
 
 Seen at: `packages/engine/src/mechanisms/funds/data.ts:185`, `:241`.
+
+### 12d-21 — a stated balance is charged the dust of its answer, not of its terms
+
+`opened(value)` (`core/num.ts:81`) returns `dust: moveDust(v, 0)` = `ε × |v|`: the rounding of
+stating the number itself. That is right for a balance somebody stated. It is wrong for a balance
+somebody **computed**, because Law 7's dust is `terms × ε × Σ|magnitudes|` — of the terms that
+produced it, never of the answer.
+
+Where it bites: a fund's equity is zero by construction (Fund Shares A3), and that zero is a
+contribution of ~4e11 minus a book of ~4e11. `opened(0)` charges it `ε × 0` and the seed audit's
+accounts family then reports the real residue — measured at **0.00008869**, which is `ε × 4e11` to
+the digit — as a violation. Sub-cent, but not dust by the derivation being used, and widening
+anything is forbidden.
+
+The fix is a door that takes the terms rather than the total, so a balance reached by subtraction
+opens with the dust its subtraction earned. An attempt at it during 12d touched `opened`,
+`stateEquityAsRead` (`world/assemble.ts`) and the equity read together, did not clear the failure
+and carried a lint error; it was reverted whole (Law 13 — a change wrong on its own terms). The
+finding stands and the cause is stated above.
+
+Seen at: `packages/engine/src/core/num.ts:81`, seed audit at period zero via the ETF launch.
