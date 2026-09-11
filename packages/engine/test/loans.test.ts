@@ -308,8 +308,8 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     const built = terms.reduce((n, k) => n + Number(keenest?.data[k]), 0);
     expect(built).toBeCloseTo(Number(keenest?.data['rate']), 12);
     // The rate it was WRITTEN at is not asserted to be the rate it was QUOTED: they differ by three
-    // parts in a million, because `publishQuotes` and `runRequests` each derive it (docs/BUGS.md
-    // 12d-3). That is one fact with two writers and it is a finding, not something to assert around.
+    // parts in a million, because `publishQuotes` and `runRequests` each derive it (worklist 13f).
+    // That is one fact with two writers and it is a finding, not something to assert around.
   });
 
   it('gets dearer for a borrower that has failed to pay (C1.b, C4, Corporate Credit G8)', () => {

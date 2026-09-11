@@ -63,7 +63,7 @@ const rowsOf = () => DREW.draw.banks;
  *
  * So a desk with a book to price off is stood in for here. Its size is a share of the line rather
  * than an amount — the tests set their own limits against it and the arithmetic is theirs — and the
- * finding that the world does not produce one is `docs/BUGS.md` 12d-10, with A3's per-line quoting.
+ * finding that the world does not produce one is worklist 13b, with A3's per-line quoting.
  */
 const A_TENTH = 10;
 

@@ -171,19 +171,19 @@
     "id": "13a",
     "title": "The derivative layer",
     "file": "13a-derivative-layer.md",
-    "steps": 16
+    "steps": 17
   },
   {
     "id": "13b",
     "title": "The derivative classes",
     "file": "13b-derivative-classes.md",
-    "steps": 20
+    "steps": 27
   },
   {
     "id": "13c",
     "title": "Commodities and freight",
     "file": "13c-commodities-freight.md",
-    "steps": 14
+    "steps": 16
   },
   {
     "id": "13d",
@@ -195,37 +195,37 @@
     "id": "13e",
     "title": "Trade credit, small business, securitisation",
     "file": "13e-trade-credit-pools-securitisation.md",
-    "steps": 18
+    "steps": 20
   },
   {
     "id": "13f",
     "title": "Corporate credit, short-term debt, lending and financing",
     "file": "13f-corporate-credit-financing.md",
-    "steps": 22
+    "steps": 28
   },
   {
     "id": "13g",
     "title": "Corporate control and firm birth",
     "file": "13g-mna-birth.md",
-    "steps": 13
+    "steps": 15
   },
   {
     "id": "13h",
     "title": "Insurers, hedge funds, private equity",
     "file": "13h-insurers-hedge-pe.md",
-    "steps": 19
+    "steps": 22
   },
   {
     "id": "13i",
     "title": "Cross-border",
     "file": "13i-cross-border.md",
-    "steps": 11
+    "steps": 17
   },
   {
     "id": "14",
     "title": "The polity",
     "file": "14-polity.md",
-    "steps": 12
+    "steps": 13
   },
   {
     "id": "15",
@@ -237,7 +237,7 @@
     "id": "16",
     "title": "Measure",
     "file": "16-measure.md",
-    "steps": 13
+    "steps": 14
   },
   {
     "id": "17",

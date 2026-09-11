@@ -33,6 +33,54 @@ D4.a, F3 (fully); Equity C5, C7; Fund Shares B2.
 
 ---
 
+## Findings this item carries
+
+### A loan's rate is derived twice, and the two do not agree (`12d-3`)
+
+`mechanisms/banks/index.ts`: `publishQuotes` calls `quote(...)` per bank and records the keenest as
+`credit.quoted`; `runRequests` calls `shop(...)` — which calls `quote(...)` again — and writes the
+loan at `best.rate`. Same borrower, same period, same bank; quoted `0.013676115348016367` and written
+`0.013676161104839884`. Three parts in a million apart, which is nowhere near the dust of either
+derivation: the inputs move between the two phases (a bank's cost of funds is read afresh, and so is
+what it has seen default). **Law 4**: one fact, two writers. A borrower took a loan at a rate it was
+not quoted, and both numbers are published under its name. The fix is a read, not a second
+derivation: what is written is what was QUOTED, and where the quoting bank cannot lend after all,
+that is a refusal to record rather than a silently different price (`C3.a`: declined volume is
+visible). It lands here because this item is the one that opens the facility and the syndicate —
+two more places a quote becomes a row.
+
+### An exchange-traded fund's desks cannot create, because none of them holds the basket (`12d-8`)
+
+Measured in the rig at three banks and forty-eight firms over sixty periods: 11.5 moved every listed
+line's float off the dealing desks and onto the household cells that save, and nothing moves a share
+back — at period 56 the only named holder of `equity.firm.30` is the fund itself. A desk that has not
+got the basket cannot create (`Fund Shares F1`), so `E3` runs one way only and `E3.a`'s premium —
+measured at **0.28 of NAV, twenty-six times what a period of carry costs** — has nobody able to close
+it. `etf.test.ts` stands (1) in with a fixture that opens the participants holding the basket. The
+mechanism that answers it is in this item: **securities lending**, where a desk borrows the units it
+has to deliver and gives the lender collateral for them. Seen at
+`packages/engine/src/mechanisms/funds/etf.ts`.
+
+### Every bank posts the same deposit board, so no depositor ever moves (`12d-11`)
+
+Measured over 52 periods of two rig seeds: `deposit.moved` fires **zero** times, no bank draws the
+window, no session refuses one. The three banks' boards are identical to the last digit
+(`retail 0.012500073062255977` at every one of them). `defended` (`banks/treasury.ts:334`) matches the
+keenest rival exactly whenever that rival pays more than this bank's own offer and less than what the
+money is worth to it. Matching is free, perfect and instant, so every board converges on the keenest
+bank's own offer every period and the `depositMargin` each bank was drawn with never shows. That is
+`Seed B4`'s failure mode stated the other way round — a sector of equals never produces a market —
+and `§46 A3`'s disagreement has been matched away. Six tests are named on it and stay red until it is
+answered (`deposits.test.ts` 3, `run.test.ts` 3: the whole E1 → E3.a → B7 → C4.b → failure chain
+cannot start). `A1.d`'s stickiness is deliberately NOT the answer (`setBoard` refuses to subtract a
+depositor's cost from a rate, and is right to). What IS the answer is in this item: a bank with a
+cheaper wholesale alternative — its own paper, a committed facility, a note it can roll — does not
+match a deposit it can replace, so what makes matching imperfect is the **price of the other
+funding** rather than a friction anybody wrote down. Seen at
+`packages/engine/src/mechanisms/banks/treasury.ts:334`.
+
+---
+
 ## Design
 
 ### Sub-item 13f.1 Kernel: commitment markets
@@ -226,9 +274,73 @@ riskAversion`, dispersed) approached at its own pace (`firm.horizon`, item 10); 
   limit per client (preference of the broker's risk function); Equity C5 (leverage on shares) is met
   by this row.
 
+### The schedule shapes the bond contract does not yet admit
+
+`Bond N5` admits **exactly three** coupon shapes — fixed, floating, zero — and says so deliberately;
+`Corp Credit F3` admits bullet or amortising principal. So there is no indexed coupon and no indexed
+principal anywhere, and no step-up, sinking fund, payment holiday, or coupon contingent on a declared
+event. The shapes land here because this is the item that opens the corporate bond's terms; each is a
+**term of the paper** read by the kernel's corporate actions through the kind's `due` and
+`cashFlows`, and none of them is a mechanism of its own.
+
+- **The index-linked obligation** is the one that matters, because it is the only instrument in which
+  **inflation itself is priced**. This world has a PPI and a CPI (`Goods G1`, `Indices D4`, completed
+  at 13c) and gives every party its own inflation outlook (`§46`), and there is nowhere those outlooks
+  **meet and clear**: no breakeven, therefore no market-priced expectation of inflation anywhere, and
+  no **real** cost of funds for the sovereign whose paper the rest of the model treats so carefully.
+  `XI-13` is what makes it bite — the market must be able to disagree with the model — and on
+  inflation it cannot, because there is no instrument to disagree in.
+  - The reference is **this world's own CPI print**, at a stated publication lag, applied to the
+    **principal** as well as the coupon, with the uplift a real claim that settles. `Law 2` admits
+    imported primitives and forbids imported equilibria: an imported inflation series would be the
+    second kind. `Law 8` applies at the writer — the lag, the base period and the periodicity are
+    part of the number and are named in the terms.
+  - The **treasury** issues linkers alongside its nominal grid (item 3's programme decides the mix
+    from its own quotes), so `XI-9`'s funding constraint is faced in real terms too, and the
+    **breakeven** is a READ of two cleared prices at the same tenor — never a stored series, never an
+    input to anything that prices either leg.
+- **Step-up** (a coupon that rises on a stated date or on a stated rating event) and **sinking fund**
+  (principal retired to a schedule) are the two commonest ways a real issuer shapes its own ladder,
+  which `Sovereign A2` asks to be a programme rather than a calendar; both are terms, and the sinking
+  fund's retirements are ordinary buybacks at the schedule's dates.
+- **Payment holiday** is the restructuring-short-of-default that `Corp Credit B2.b` (waiver and cure)
+  and `G7` (restructuring) already imply and that nothing can express as a *term* of the paper: the
+  holder's vote grants it, the schedule moves, and no default event fires.
+- **Contingent coupon**: a coupon that pays only when a stated, observable condition holds (a
+  published metric of the issuer's own accounts, a declared event) — the condition is read from a
+  public event, never from a probability.
+
+### The credit index in two grades, and the loan index
+
+`Indices D2` declares one credit index per currency, so **there is no quality dimension in credit as
+a market**: nothing separates investment grade from high yield, and the single most recognisable
+shape of a risk-off move — high yield widening while investment grade holds — is not expressible in
+the cash market at all. The **fallen angel** does not exist either: a name crossing the grade boundary
+should be a forced sale by every tracker on one side and a forced purchase of the same line by every
+tracker on the other, in the same period, on top of `Insurers C5`'s forced sale on a downgrade and
+`Ratings C1`'s mandate — and there is no boundary for a downgrade to cross. (13b builds the equity
+size split, the global line and the two-grade DEFAULT index; the cash credit split is here, where
+corporate paper starts to clear and the credit index's basket stops being empty.)
+
+- **IG and HY per currency**: a stated rule struck on the assessors' grades, and this world has
+  **three assessors that disagree** (`Ratings`), so the rule says whose grade counts or how they
+  combine, publicly and in advance (`A1.a`). That disagreement is the point: an index boundary that
+  depends on whose opinion you take is what makes a downgrade contestable rather than arithmetic.
+- **The leveraged loan index waits on this item and not on a rule**: `A2` says an index reads cleared
+  prices and nothing else, and a loan is carried at cost and names no market at all
+  (`Banks Lending D1`). The secondary loan market this item opens (`D4`: a share sold by reseat with
+  a money leg at a cleared price) is what makes the line possible, so the index and its vehicle come
+  **after** it, last of the four.
+- Its vehicle is then the one place a real **liquidity mismatch** lives — a claim redeemable on demand
+  over an instrument that settles slowly — with the cost of a late sale landing on the holders who
+  stayed (`Fund Shares C4.a`) and `XI-2`'s forced seller behind it.
+
 ### Parameters
 
-`desk.limit.underwriting` (preference per desk); `firm.riskAversion` (preference, dispersed);
+`bond.indexation.lag` (a term per issue: the publication lag of the CPI print it references),
+`bond.stepUp.*`, `bond.sinkingFund.*`, `bond.contingentCoupon.*` (terms per issue: data);
+`index.rules.credit.*` (data: the grade boundary and whose grade counts); no `inflation.*` series and
+no breakeven store exist. `desk.limit.underwriting` (preference per desk); `firm.riskAversion` (preference, dispersed);
 `bond.restructuring.majority` (a term per issue: data); `facility.commitmentFee` is a **quote**, not
 a parameter; `secLoan.haircut` does not exist (a decision); `broker.limit.perClient`, `broker.
 horizon` (preferences per broker); `discountNote.dayCount` (a term: data). No `recovery`, no
@@ -243,12 +355,18 @@ horizon` (preferences per broker); `discountNote.dayCount` (a term: data). No `r
   in the same period as the book closed.
 - `names`: every syndicate share names a member that posted it; every facility names both sides;
   every re-pledge chain resolves to a live lien.
+- `flows` again for the shapes: an indexed coupon's uplift is a claim that SETTLES, so what a linker
+  pays is two-sided like every other payment and no uplift is ever a re-mark with nobody on the other
+  end; a sinking fund's retirement moves issued amount and cash together.
 
 ### Files
 
 ```
 packages/engine/src/clearing/commitmentMarket.ts, clearing/market.ts (13f.1)
-packages/engine/src/mechanisms/corporate-credit/{index.ts,bond.ts,structure.ts,covenants.ts,primary.ts,underwriter.ts,syndicate.ts,tap.ts,facility.ts,restructuring.ts,holders.ts}
+packages/engine/src/mechanisms/corporate-credit/{index.ts,bond.ts,schedules.ts,structure.ts,covenants.ts,primary.ts,underwriter.ts,syndicate.ts,tap.ts,facility.ts,restructuring.ts,holders.ts}
+packages/engine/src/mechanisms/sovereign-instruments/linker.ts (the treasury's indexed line)
+packages/engine/src/mechanisms/indices/data.ts (the credit grade boundary; the loan line)
+packages/engine/src/mechanisms/banks/{index.ts,treasury.ts} (one written rate; a board that is not matched away)
 packages/engine/src/mechanisms/bank-lending/syndicated.ts (D4.a: the loan syndicate on the commitment market)
 packages/engine/src/mechanisms/short-term-debt/{index.ts,note.ts,roll.ts,buyers.ts}
 packages/engine/src/mechanisms/securities-lending/{index.ts,loan.ts,collateral.ts,fee.ts,manufactured.ts,recall.ts}
@@ -281,7 +399,13 @@ packages/engine/test/{commitment-market,corporate-bond,capital-structure,covenan
 - [ ] Securities lending: title passes with holdings summing to issued, collateral at the lender's own haircut, marks each period, manufactured payments on the issuer's dates, fee clears with the rebate as the same number, cash collateral reinvested at the lender's risk, an agent's share; tests (§14 A, B, C)
 - [ ] Recall, failed return with buy-in, re-pledge chains traceable, lendable pool capping shorts, no short without a borrow (Equity C7); tests (§14 D, E)
 - [ ] Prime brokerage: the relationship and its lien, the margin loan above cost of funds consuming capital and liquidity, the short side financed, portfolio margin from the broker's own measured move with offsets, calls in `margin.calls`, the line never floored, requirements raised on the broker's view, liquidation into the market with the shortfall on the broker's capital, exposure and limit per client, the multi-broker blind spot (Equity C5); tests (§15)
-- [ ] Observer: books, syndicates and their fills, facilities, restructurings, borrow fees, margin per client (own view only); year-long run green; determinism; H2/H3 as reads; coverage re-marked; record entry
+- [ ] The schedule shapes as terms of the paper: an **indexed** coupon and principal off this world's own CPI print at a stated lag and base period, a step-up, a sinking fund, a payment holiday granted by the holders' vote, a contingent coupon read off a public event; the treasury issues a linker beside its nominal grid and the **breakeven** is a read of two cleared prices stored nowhere; tests: no imported inflation series, no uplift without a settlement (Bond N5, Law 2, Law 8, XI-9, XI-13)
+- [ ] The cash credit index in two grades per currency, struck on the assessors' published grades with the rule saying whose counts, publicly and in advance; a fallen angel is a forced sale by every tracker on one side and a purchase by every tracker on the other in the same period; tests (Indices A1.a, A3, B2, C2, C2.a; Ratings C1; Insurers C5)
+- [ ] The leveraged loan index and its vehicle, after the secondary loan market this item opens: a claim redeemable on demand over an instrument that settles slowly, with the cost of a late sale landing on the holders who stayed; tests (Indices A2, Fund Shares C4.a, XI-2)
+- [ ] One rate per loan (`12d-3`): what is written is the quote that was published, and a bank that cannot lend after all records a refusal rather than a different price; the second derivation is deleted and the record names the read that replaces it; tests (Law 4, Law 19, Banks Lending C3.a)
+- [ ] A desk that must deliver a basket can BORROW it (`12d-8`): creation runs both ways once the borrow market exists, and the exchange-traded fund's premium has somebody able to close it; test (Fund Shares E3, E3.a, F1)
+- [ ] A deposit board that is not matched away (`12d-11`): a bank with a cheaper wholesale alternative — its own paper, a facility, a note it can roll — does not match a deposit it can replace, so the drawn `depositMargin` shows and a depositor has a gap to move on; tests: `deposit.moved` fires, and the failure chain E1 → E3.a → B7 → C4.b can start (Banks Funding A1.d, B1, D1; Seed B4; §46 A3)
+- [ ] Observer: books, syndicates and their fills, facilities, restructurings, borrow fees, margin per client (own view only), the breakeven and the grade boundary as reads; year-long run green; determinism; H2/H3 as reads; coverage re-marked; record entry
 - [ ] Delete this file; worklist row 13f → done; commit and push
 
 ## Exit criteria
@@ -295,4 +419,6 @@ call moves cash or closes positions and its line can go negative.
 
 Corporate Credit C10.b, C11.d, D5, D8, E5.d; Short-Term Debt E1–E3; Securities Lending C4, E1–E3; Prime
 Brokerage C3.b, C5, E4; Banks Lending F3; Dealer Desks D1, D2 (a share sits against the member's
-own limit).
+own limit); Bond N7.b (a linker's price is cleared and its real yield derived, never the reverse);
+Law 2 (no imported inflation series); Indices A3 (the grade boundary is read off the assessors'
+opinions, never off the index).

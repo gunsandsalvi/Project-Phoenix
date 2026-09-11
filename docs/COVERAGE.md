@@ -358,6 +358,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign H4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H5` | MISSING |  |
 | `Sovereign I1` | MISSING |  |
+| `Sovereign I1.a` | MISSING |  |
 | `Sovereign I2` | MISSING |  |
 | `Sovereign I3` | MISSING |  |
 | `Sovereign I3.a` | MISSING |  |

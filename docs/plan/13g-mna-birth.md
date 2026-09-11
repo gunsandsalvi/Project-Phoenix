@@ -22,6 +22,33 @@ list); Indices B2 (constituent exit on acquisition, fully).
 
 ---
 
+## Findings this item carries
+
+Both are the same sentence — **a name that has gone is still referenced** — and this is the item whose
+kernel door resolves every reference to a party that stopped existing.
+
+### A ceased issuer's share line stays live and keeps printing (`12c-1`)
+
+`firm.13` ceases; its share line `equity.firm.13` has `issued === 0` from then on, so its published
+book per share reads `Infinity` — and the market still prints 11 every period, with `market.noView`
+firing on it because the only parties left in the book are the desks. `XI-8`: no death without a
+destination. A company that has ceased has no residual for a share to be a claim on, so its line
+should stop trading and its market should close — the estate settles what is left and the claim is
+extinguished. Instead there is a live market in the shares of a company that does not exist, priced
+by desks alone. Seen at `mechanisms/equity/`, `mechanisms/estate/` with
+`foundationSpec('probe', drawBanks(4,'probe'), drawFirms(40,'probe'))`.
+
+### A research desk keeps covering a company that has ceased (`12b-6`)
+
+Reported by the `names` family: `p52 names Reporting C2: an estimate names firm.17, which has
+ceased`, and the same for `firm.11` at p53. Coverage is initiated and dropped for reasons the desk
+has (`§48 D1`, `D3`), and death is not one of them: nothing in `cover` asks whether the name is still
+alive, so a desk goes on publishing a view of a company that no longer exists. The estate gives death
+a destination; being dropped by the analysts who covered it is part of what happens to a name. Seen
+at `mechanisms/research/`.
+
+---
+
 ## Design
 
 ### Sub-item 13g.1 Kernel: merging two parties
@@ -101,10 +128,38 @@ list); Indices B2 (constituent exit on acquisition, fully).
   population, its age distribution and its sector mix move with conditions and are never equal by
   construction.
 
+### Productivity that improves with cumulative output
+
+A firm's productivity is its **technology**: a declared primitive, the recipe's hours scaled by that
+firm's own number. Nothing makes a unit cheaper with experience, and nothing makes a firm better at
+making a thing by having made more of it. `Firm A3` requires firms to differ in cost, and they do —
+by a dispersion set at the seed that then never changes. Relative cost is therefore fixed at birth up
+to scale: **an entrant can never out-learn an incumbent** (`Firm Birth A4`, `A5`), the capital
+programme's expansion can only ever buy capacity and never a lower unit cost, and nothing in the
+world gets cheaper to make. A model whose costs only ever move with input prices has no supply side
+of its own. It lands in this item because the entrant is what it is about, and it is upstream of the
+recipe work (item 15) because it changes what a unit costs.
+
+- **A drift is a written path** and `Appendix B` forbids that class of number, so the admissible form
+  is TECHNOLOGY keyed to **cumulative units actually produced** — a state the register can answer
+  (the journal's own `production` legs by maker and good), carried by the firm, with the rate of
+  decline declared and owned. A firm's unit cost is then a consequence of what it has MADE rather
+  than of how long it has existed.
+- It lands in unit cost (`Goods B5`) and therefore in the offer, the wage bid and the margin, which
+  is why it cannot be a display number: the same read every other cost line goes through.
+- An entrant with a better rate of decline overtakes an incumbent that has made more, or it does not,
+  and either way the crossing is an OUTCOME nobody wrote (`Firm Birth A5`).
+- R&D, if it is ever wanted, is a different mechanism — a spend, a lag, an uncertain outcome — and
+  not this one. (`research` in this specification is sell-side research: `§48`, an assessor's
+  estimate, not a firm's spending.)
+
 ### Parameters
 
 `tender.acceptance` is a **term** of each bid (the acquirer's choice); `rating.noHistoryGrade`
-(data, assessor). No `mergerRate`, no `birthRate`, no `synergy.*`, no screening threshold exist.
+(data, assessor); `firm.learningRate.<good>` (technology, owner stated: the decline in hours per unit
+per doubling of cumulative units made) and the cumulative count itself is a READ of the journal, not a
+parameter and not a stored aggregate. No `mergerRate`, no `birthRate`, no `synergy.*`, no
+`productivity.growth` path and no screening threshold exist.
 
 ### Audit contributions
 
@@ -118,7 +173,8 @@ list); Indices B2 (constituent exit on acquisition, fully).
 ```
 packages/engine/src/world/context.ts, register/instruments.ts (13g.1: parties.merge)
 packages/engine/src/mechanisms/corporate-control/{index.ts,intent.ts,funding.ts,tender.ts,resistance.ts,after.ts}
-packages/engine/src/mechanisms/firm-birth/{index.ts,entry.ts,age.ts}
+packages/engine/src/mechanisms/firm-birth/{index.ts,entry.ts,age.ts,learning.ts}
+packages/engine/src/mechanisms/equity/… (a ceased issuer's line stops trading), research/cover.ts (coverage dropped on death)
 packages/engine/src/mechanisms/firms/… (owner preferences, targets seen), ratings/… (age)
 packages/engine/test/{merge-door,intent,tender,competing-bids,resistance,consideration,after-merger,firm-birth,age,population}.test.ts
 ```
@@ -139,7 +195,9 @@ packages/engine/test/{merge-door,intent,tender,competing-bids,resistance,conside
 - [ ] Firm birth as a founder cell's decision from sector margins and its own funding: a split, a new identity, equity from the founders' account, a loan the bank decides, plant bought with a lag, a balance sheet that balances, a competitor from period one; tests (§34 A1–A5, A2.a, A4.a, A4.b, B1)
 - [ ] Age read by every pricer: history-based measures Missing over short histories; the agency's stated no-history grade; a lender's PD reads a short history as such; tests (B2)
 - [ ] Population, age distribution and sector mix as reads that move; a long-run test that births and deaths are not equal by construction; tests (E3, E4)
-- [ ] Observer: bids, tenders, premiums, completed deals, births; year-long run green; determinism; coverage re-marked; Equity E1–E3 closed; record entry
+- [ ] A name that has gone is gone everywhere (`12c-1`, `12b-6`): a ceased issuer's line stops trading and its market closes with the claim extinguished at the estate, and the desks that covered it drop coverage; the names family holds over both; tests (XI-8, §48 D3, Reporting C2)
+- [ ] Productivity that improves with cumulative output: TECHNOLOGY keyed to the units a firm has actually made, read off the journal's own production legs, landing in unit cost and therefore in the offer, the wage bid and the margin; an entrant can out-learn an incumbent and the crossing is an outcome; tests: no written path, no stored cumulative aggregate (Firm A3, Firm Birth A4, A5, Goods B5, Law 2)
+- [ ] Observer: bids, tenders, premiums, completed deals, births, cumulative output and unit cost per firm; year-long run green; determinism; coverage re-marked; Equity E1–E3 closed; record entry
 - [ ] Delete this file; worklist row 13g → done; commit and push
 
 ## Exit criteria
@@ -151,4 +209,5 @@ plant; a newborn is priced as one.
 ## Guard
 
 M&A B5, E1–E3; Firm Birth A2.a, E1–E3; Equity C2.e; Observer B2.a (the event does not move the
-price; the participants do).
+price; the participants do); Appendix B (no written productivity path); Law 19 (cumulative output is
+read off what was produced, never accumulated in a second place).

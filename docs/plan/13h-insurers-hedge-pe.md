@@ -72,6 +72,55 @@ is still missing is the other reason to hold paper abroad, a POSITION taken beca
 holder expects of the rate and the yield. `seed.crossHoldingShare` is a PLACEHOLDER whose named death
 is this item (Law 2), and the portfolio decision is what kills it.
 
+### A treasury bill prints at five times what it redeems for (`12d-2`)
+
+The sovereign secondary book, seen with two rig seeds: `ust.bill.2026-06-15` carried at `1.0042` from
+period 12 in one world and reaching **`4.949`** in another — a bill that pays one at maturity, priced
+at nearly five. The engine found it by dying on it: `yield of ust.bill.2026-06-15 is Infinity`,
+because the yield that discounts a payment of one to a price of five, days from redemption, is below
+minus a hundred per cent and the discount factor underflows to nothing.
+
+**It is 12c's finding in the bill book.** Both sides of a dealer's quote come from its own view, its
+view follows the last print, and a book with nothing else in it is a fixed point — which is exactly
+what 12c fixed for shares by giving a saver a reason off the issuer's own published accounts. The
+sovereign book has no such party: the households' ladder prices paper off a public curve at their own
+required yield, and the curve is read off the prints, so the anchor is the print again. 12d fixed the
+ARITHMETIC only — a search that walks outward stops at the edge of what the function answers, a
+present value says it diverges as the rate approaches minus one rather than throwing from inside the
+walk, and a curve is built from the lines that HAVE a yield — so the world no longer dies on it and
+the read is honest. **The price is not fixed**, and the second reason that fixes it is this item's
+holder: a party that wants a dated claim because of what it owes at that date.
+
+### The deposit guarantee can only pay for a loss no payment can cause (`12d-13`)
+
+`bank-resolution.test.ts` "pays out of the fund the banks paid into, and the purse only after it"
+(`Banks Capital D4`, `D5`) is red. The arithmetic says exactly when the insurer pays: `unmet = hole −
+holders`, `holders` reaches at most the exposed pool, and the pool is every UNINSURED claim — so the
+insurer pays **iff the bank's assets are worth less than its insured deposits**. That is the right
+condition and the file's shock cannot reach it, because the loss it applies is a PAYMENT and a bank
+can only pay what it holds in money: its loans and its paper are untouched, so assets never fall
+below a few hundred million of insured deposits. Measured across penalties of 1, 8, 20, 40 and 80
+times the bank's capital: at 8 the hole is 22bn against a 120bn pool and `insurerPaid` is **8,272** —
+a rounding remainder, not the guarantee; past 20 the penalty cannot be paid at all, the bank fails on
+CASH instead, and the hole goes negative. What the clause needs is a **valuation** loss — a mark
+collapsing on assets the bank holds — and that is a market event rather than a fixture. This item is
+where one becomes reachable: the failure loop below is a forced sale that moves prints, and the
+prints reach every other holder's marks. Seen at
+`packages/engine/src/mechanisms/money-market/resolution.ts:341`.
+
+### A fund whose whole float is redeemed lives on as an empty vehicle (`12b.1-1`)
+
+The exchange-traded fund's shares are redeemed in kind down to nothing at period 10, and then
+`issued 0` with `noDemand` in every session from period 11 to 52. Nothing immortal (`XI-3`) and no
+death without a destination (`XI-8`): a vehicle with no shares outstanding holds nothing and is owed
+nothing by anybody, and it should wind up — or creation should be able to restart it, which is what
+an authorised participant's other half is for (`Fund Shares E3`, `G1.a`). Instead it sits in the world
+for ever with a market nobody can be on either side of. One half was fixed on the spot because it
+STOPPED THE BUILD (`navOf` threw at a dealer asking `view.mark()` for a line with nothing
+outstanding; `world.markOf` now answers `none`, which is what an optional read owes a caller). The
+empty vehicle itself is this item's, beside the private-equity fund's own wind-up, which is the same
+sentence: claims resolve, never freeze.
+
 ---
 
 ## Design
@@ -103,8 +152,10 @@ is this item (Law 2), and the portfolio decision is what kills it.
 - **Claims** (A4.c, B3, B4): per member, an event from the line's frequency and severity
   (technology primitives `claims.<line>.frequency`, `claims.<line>.severity`, declared as such: they
   are the world's physical hazard, not a credit rate: XI-1 concerns defaults, which stay events of
-  state); a **catastrophe** is one journaled event hitting every policy of a line in a region at
-  once (a scenario seed's event; B4); claims are instructions insurer → beneficiary.
+  state); a **catastrophe** is 13c's `environment` event reaching every policy of a line in a region
+  at once (B4) — the SAME event that destroyed a producer's units and took a route's capacity away,
+  read here rather than drawn again, because an insurer's loss and a producer's loss from one storm
+  are one representation of one thing (Law 4); claims are instructions insurer → beneficiary.
 - **Assets** (C): the portfolio decision (C1) matches the schedule's tenors (C2: the participant's
   bond and swap demand is built from the liability schedule's cash flows by tenor: C2.a: a one-way
   demand for long bonds and receiver swaps: IRS B2 → MET); illiquid assets: a limited partner in PE
@@ -138,7 +189,11 @@ is this item (Law 2), and the portfolio decision is what kills it.
   exceeds the margin), repo (B3: item 11) — the amount is the lender's decision (B4); gross, net and
   equity are three reads on the observer (B5).
 - **What it does** (C): positions for reasons (C1): the `speculative` participant in every derivative
-  and credit book (its outlook vs the print: this is the party that lets the market disagree with
+  and credit book — including 13b's **option** book, where a fund whose strategy is to be short
+  dispersion writes cover out of the same balance-sheet budget every other position comes out of, and
+  quotes from the move it expects the underlying to realise plus the return its capital requires on
+  what the position consumes (this is the second side `§46 A3` has been missing: parties could
+  disagree about a level and had no way to disagree about how far it would move) — (its outlook vs the print: this is the party that lets the market disagree with
   the model; XI-13's assembly check is satisfied by hedge funds on both sides of every book, so the
   desks' own view is no longer the only one); a buyer of forced sales when it has capacity (C2: its
   participant reads the session's `forced.sale` orders as an opportunity and bids at its own
@@ -219,7 +274,7 @@ mechanism input (a scenario event), no `contagion.*`, no `hurdle` other than the
 packages/engine/src/mechanisms/insurers/{index.ts,liability.ts,cover.ts,claims.ts,matching.ts,gap.ts,pension.ts,resolution.ts}
 packages/engine/src/mechanisms/hedge-funds/{index.ts,mandate.ts,leverage.ts,participants.ts,fees.ts}
 packages/engine/src/mechanisms/private-equity/{index.ts,commitments.ts,buyout.ts,hold.ts,exit.ts,mark.ts}
-packages/engine/src/mechanisms/funds/fees.ts (competition), households/portfolio.ts (fund choice, pension contributions)
+packages/engine/src/mechanisms/funds/{fees.ts,windup.ts} (competition; a vehicle with nothing outstanding), households/portfolio.ts (fund choice, pension contributions)
 packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching,gap-hedge,insurer-failure,pension-claim,hedge-fund,hf-leverage,hf-view,hf-loop,pe-calls,buyout,pe-hold,pe-exit,fund-fees}.test.ts
 ```
 
@@ -232,7 +287,7 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 - [ ] The cover market: quotes from own experience and capital, sized by surplus; policy to the lower quote; unplaced cover; premiums and claims as instructions; an insurer with no surplus writes nothing; tests (A4, A4.a–A4.c)
 - [ ] Claims as per-member events from declared technology primitives; a catastrophe as one event on many policies; tests (B3, B4)
 - [ ] Matching: bond and swap demand built from the liability schedule by tenor (IRS B2 → MET); LP in PE; securities lending; downgrade-forced sales; tests (C1–C5)
-- [ ] **The long end has a holder** (the finding above): the two-, five- and ten-year auctions are bid by a party that wants the tenor because of what it owes at it, not by dealers meeting an obligation. Test: cover at a long auction exceeds `dealershipShare`, or it does not and the issuer's withdrawal is priced rather than structural
+- [ ] **The long end has a holder** (the findings above): the two-, five- and ten-year auctions are bid by a party that wants the tenor because of what it owes at it, not by dealers meeting an obligation — and the bill and bond books gain the second reason their prints have never had (`12d-2`). Tests: cover at a long auction exceeds `dealershipShare`, or it does not and the issuer's withdrawal is priced rather than structural; a dated claim's print is not a fixed point of the desks' own view
 - [ ] **A position is held for a reason** (the finding above): a holder decides what foreign and long-dated paper to carry from its own outlook on the rate and the yield, so `seed.crossHoldingShare` dies as a PLACEHOLDER (Law 2) and a cross holding survives period 1 when its holder still wants it
 - [ ] The gap: duration and cash-flow reads; equity moving opposite to a bank's; shortfall actions by the sponsor, the fund or the schedule; swap hedges that call margin; tests (D1–D4, D4.a)
 - [ ] Failure: negative equity resolves to a successor's tender or the estate with beneficiaries ranking; tests (A3, XI-3)
@@ -244,6 +299,9 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 - [ ] `peFund` and `holdco` kinds; commitments; calls as instructions on dates that fail when unmet with the contractual forfeit; manager fees; life and wind-up resolving to cash or in-kind; tests (A1–A5, E2)
 - [ ] The buyout: a conditional tender funded by target debt that lenders clear and an equity cheque from calls; the target's balance sheet transformed; sources = uses contribution; tests (B1–B5, E1)
 - [ ] The hold and the exit: owner influence through preferences, recapitalisation lenders can refuse, failure wiping the equity only, the `marked` provenance shown as such, exit by tender or IPO as the first cleared price, a closed market extending the hold, distributions in cash, returns as a read; tests (C1–C5, D1–D5, E3)
+- [ ] The short-dispersion side of the option book: a fund writes 13b's options from the same balance-sheet budget as every other position, so the premium has two sides with reasons and parties can disagree about dispersion as well as level; tests (§46 A3, XI-13, Derivative D7.a)
+- [ ] A valuation loss a bank can actually take (`12d-13`): the loop's forced sales move prints, the prints reach the marks of every other holder of that paper, and a bank's assets can fall below its insured deposits — so the guarantee's condition is reachable and `bank-resolution.test.ts`'s D4/D5 test has a world to run in; tests
+- [ ] A vehicle with nothing outstanding winds up or can be restarted (`12b.1-1`): no empty immortal claim with a market nobody can be on either side of; the same sentence as the private-equity wind-up; tests (XI-3, XI-8, Fund Shares E3, G1.a)
 - [ ] Fund fee competition: managers quote, investors compare on their own outlook; item 8's fee shape deleted; Currency E2 complete; observer: liabilities and gaps, cover books, hedge-fund reads, PE deals with marks flagged; year-long run green with a rate-move scenario; determinism
 - [ ] Coverage re-marked; record entry with both shapes' deaths (`funds.managementFee` and `seed.crossHoldingShare`); delete this file; worklist row 13h → done; commit and push
 

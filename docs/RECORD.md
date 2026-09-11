@@ -2614,3 +2614,94 @@ and both are modelling decisions with an owner. Positioned when this item closes
 never written, so sharing cannot change an answer. The killer: any test whose result moves when the
 file's test order changes is one that mutates a shared world — `vitest --sequence.shuffle` is the
 measurement, and it belongs in 12d where the suite is being worked anyway.
+
+## The missing mechanisms are positioned, 12d is closed, and the holding pen is emptied again
+
+**What this is.** Not an item: three documents closed in one change, on the owner's instruction.
+`docs/MISSING_MECHANISMS.md` held nine mechanisms this world does not have and said none of them was
+scheduled; `docs/plan/12d-tests-catch-up.md` was one step into eight; `docs/BUGS.md` held twenty-nine
+findings from 12a, 12b, 12b.1, 12c, 12c.1 and 12d. All three are now empty of anything that is not
+placed, and all three are deleted — the treatment a closed item's own file gets, and the only way a
+finding or an absence may leave a holding pen.
+
+**Why the nine are scheduled now.** Law 10 makes an insertion the owner's call and the call is taken.
+Each of them already argued its own position — "after 13b's classes", "with 13c, where the units
+are", "13i, after 13g" — so none needed a new place in the order, and none becomes a new item: a
+mechanism lands inside the item whose dependencies it named, written at the level of detail that
+item's file is written at. What the fold-in is NOT: a promise that each is small. M1 is a whole
+instrument family and M9 is four separate pieces in four places, and the step counts say so (13b 20 →
+27, 13f 22 → 28).
+
+| | mechanism | where it landed, and why there |
+| --- | --- | --- |
+| M1 | options, and a premium that clears | **13b** — after the classes and after the equity book clears (12c), because `D3.a` forbids an underlying that exists only inside the derivative. Its writer, a fund short dispersion, is a step in 13h |
+| M2 | the index-linked obligation, step-up, sinking fund, payment holiday, contingent coupon | **13f** — the item that opens the bond's terms, after 12a and after 13c completes the CPI the linker references, before 14 |
+| M3 | the central-bank swap line as a facility | **13i** — it cannot precede 13b's `xccy`: a facility that prices off a basis needs the basis to clear first |
+| M4 | the physical environment as standing state | **13c**, where the units are; read by 13h when the cover market lands |
+| M5 | productivity that improves with cumulative output | **13g** — with the firm's cost base and the entrant that `Firm Birth A5` says can beat an incumbent, upstream of the recipe work at 15 |
+| M6 | greenfield investment and the parent–subsidiary group | **13i**, after 13g: it is a birth with a foreign funder, so it needs both |
+| M7 | the covered bond | **13e**, as securitisation's on-balance-sheet sibling: the same parts, the other side of the sheet |
+| M8 | the deliverable bond future, the net basis, the basis trade | **13b**. This one was written as needing a decision — an item at that position, or a note that it waits. It is neither: `Sovereign I1`, `I2`, `I3` and `I3.a` are SPECIFIED and carried MISSING with no item, and `I1.a` had no COVERAGE row at all. A specified clause no item names is a hole in the plan (Appendix C), so it is owned where the classes are and the row for `I1.a` is added here |
+| M9 | the index and fund set | **13b** (equity size split, the global line, a vehicle per index, the default index in two grades) and **13f** (the IG/HY cash credit split; then the leveraged loan index, last, because `A2` says an index reads cleared prices and a loan has no market until 13f opens one) |
+
+**Why 12d is closed at one step of eight, unread.** The owner's instruction, and the file was deleted
+without being opened. What the record can say about it is what the findings say: of the ninety reds it
+was written to migrate, the ones measured in detail are not migrations at all — ten in
+`capital.test.ts` assert a mechanism that is correct and never fires (`12d-1`), six are a deposit
+market with one side in it (`12d-11`), three are an FX book that has never had a bid (`12d-15`), four
+are a fund whose desks cannot obtain the basket (`12d-8`), and one is a level (`12d-7`). A suite
+migrated against those would be asserting agreement with a half-built world, which is the thing
+Law 11 and the item's own guard both name. So the reds stay red, each is now named in the item that
+builds the mechanism it waits on, and those items re-read them as they land.
+
+**Where each finding went.** Every one is POSITIONED, verbatim where it was measured (a measurement
+is what it said; a re-typed one is a claim).
+
+| finding | what it was | where |
+| --- | --- | --- |
+| 12a-1 | the equity index read a level its own prints did not make | RESOLVED in 12c |
+| 12a-2 | every issuer misses payments in every window, so every grade is the worst one | 16 |
+| 12b-2 | a value in one money written into an account kept in another | RESOLVED in 12b |
+| 12b-3 | no pair has ever traded: every FX session is `noDemand`, for ever | 13i |
+| 12b-4 | one opening rate cannot state a consistent triangle, and the seed adds two currencies | 13i |
+| 12b-5 | the trading-book check's dust counts its own terms and not the other side's | 13a |
+| 12b-6 | a research desk keeps covering a company that has ceased | 13g |
+| 12b.1-1 | a fund whose whole float is redeemed lives on as an empty vehicle | 13h |
+| 12b.1-2 | a share in this world is worth a fraction of a cent | 16 |
+| 12c-1 | a ceased issuer's share line stays live and keeps printing | 13g |
+| 12c-2 | the two readers of an index walked the same step at different moments | RESOLVED in 12c |
+| 12c.1-1 | the cell partition refines every period and never coarsens | 16 |
+| 12d-1 | no firm ever wants plant, so nothing is ever built | 16 |
+| 12d-2 | a treasury bill prints at five times what it redeems for | 13h |
+| 12d-3 | a loan's rate is derived twice, and the two do not agree | 13f |
+| 12d-4 | an exchange-traded fund's own market clears nothing | 13b (every index vehicle would inherit it) |
+| 12d-5 | a levy that fails is recorded and then forgotten: no arrears | 14 |
+| 12d-6 | twelve firms, eighteen periods, one loan | 16 |
+| 12d-7 | a saver has no reason to hold a share until the first published quarter | 16 |
+| 12d-8 | an exchange-traded fund whose desks cannot create | 13f (the borrow market is how a desk gets the basket) |
+| 12d-9 | no listed firm is ever short, so Equity D1 never fires | 16 |
+| 12d-10 | a line's makers are drawn and nobody reads them | 13b (before anything hedges off the book) |
+| 12d-11 | every bank posts the same deposit board, so no depositor ever moves | 13f (a bank with cheaper paper does not match) |
+| 12d-12 | a desk's limit is measured against its bank's liquidity portfolio | 13b |
+| 12d-13 | the deposit guarantee can only pay for a loss no payment can cause | 13h (the loop is what makes a valuation loss reachable) |
+| 12d-14 | a bank lends a money it has not funded | 13b (the FX swap that funds a foreign book) |
+| 12d-15 | four countries, one population: no FX book ever has a bid | 13i |
+| 12d-16 | the cell grain moves the money by more than whole people are worth | 16 |
+| 12d-17 | the bank display names run past Z into punctuation | 13i |
+| 12d-18 | the countries are the one population that was typed, not drawn | 13i |
+| 12d-19 | `region` is a declared cell key dimension with one value | 13i |
+| 12d-20 | `North Asset Management` manages a fund in a world with no north | 13i |
+| 12d-21 | a stated balance is charged the dust of its answer, not of its terms | 13a |
+
+**Six comments in the engine and the tests cited the deleted file by finding number** and now cite the
+worklist item that owns each one — a stale comment is a defect (Law 16) and a path that does not exist
+is the stalest kind. `docs/COVERAGE.md` gained the `Sovereign I1.a` row it never had. The manifest
+gained ten step recounts (13a 16→17, 13b 20→27, 13c 14→16, 13e 18→20, 13f 22→28, 13g 13→15, 13h 19→22,
+13i 11→17, 14 12→13, 16 13→14) and `docs/WORKLIST.md` says what each item now carries.
+
+**Forecast, with its killer.** The claim in the fold-in is that none of the nine needed a new worklist
+position — that every one of them is a mechanism inside an item that was already going to be worked,
+rather than an item of its own. The killer is the work: if any of them cannot be built inside its
+host item as one bounded change (Law 14), it is an item and the record of that item says so when it
+is split out.
+

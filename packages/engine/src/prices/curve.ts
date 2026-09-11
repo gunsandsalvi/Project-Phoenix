@@ -155,7 +155,8 @@ export function readCurve(
     // on one — a bill printed above what it redeems for, days from redeeming, is a price with no
     // rate behind it — and leaving it out is the honest read rather than a curve built on a number
     // the arithmetic could not produce. That it happens at all is a finding about the BOOK that
-    // printed it (docs/BUGS.md), not about the curve.
+    // printed it — a dated claim with no holder but the desks that quote it, worklist 13h — not
+    // about the curve.
     const y = yieldOf(flows, dirty, on, family.dayCount, `yield of ${i.id}`);
     if (!y.some) continue;
     points.push({

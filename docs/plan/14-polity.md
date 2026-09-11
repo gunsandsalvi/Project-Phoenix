@@ -21,6 +21,25 @@ fully).
 
 ---
 
+## The finding this item carries
+
+### A levy that fails is recorded and then forgotten: no arrears (`12d-5`)
+
+Measured in `estate.test.ts` at 14 periods of the rig world: **855 failed tax legs** from household
+cells, and nothing else a cell posted ever failed. `treasury/index.ts:728` settles the levy and, when
+it fails, adds it to `unpaid` on `treasury.receipts` — which is right (`Money E1`, `D3`: a payer that
+cannot pay has not paid). But `unpaid` is a number in an event and nothing carries it: the cell does
+not owe it next period, the treasury does not chase it, and the receipt is not short by it in any
+account. So a tax that failed is a hole between two balance sheets that only the journal knows about.
+
+The mechanism is **arrears** — a levy that is not paid becomes a claim the treasury holds on the
+payer, ranking where the law says — and the law is this item: what a tax is, what happens when it is
+not paid, and where the claim ranks in `XI-8`'s waterfall are all fiscal policy with an owner
+(`Polity D1`, `D3`). It is a claim like any other: an instrument with a named creditor and a named
+debtor, carried until it is paid, written off, or ranked in an estate.
+
+---
+
 ## Design
 
 ### Sub-item 14.1 Kernel: owners and the mandate door
@@ -115,6 +134,7 @@ packages/engine/test/{param-owners,platforms,vote,abstention,seats,coalition,hun
 - [ ] Seats by the rule; the government by the coalition rule; a hung parliament continues the standing mandate and is reported; tests (C1, C2, C2.a)
 - [ ] The mandate as the seat-weighted coalition platform, journaled with subjects, written through the door at the lag; C3.b contribution; tests (C3, C3.b, C4, E4)
 - [ ] What it controls: fiscal rates, transfers, buffer, outlay programme, regulatory ratios, the target; never the rate, a price, a quantity or an outcome; tests (D1–D4, D3.a)
+- [ ] **Arrears** (`12d-5`): a levy that fails becomes a claim the treasury holds on the payer — an instrument with two named sides, carried until paid, written off or ranked in an estate at the place the law states; the receipt is short by it in the accounts and not only in the journal; tests (Money E1, D3; XI-8; Polity D1, D3)
 - [ ] Consequences through the mechanisms only: the treasury programme reads the new numbers; a multi-year scenario shows the deficit changing through named outlays and receipts after an election; tests (E1–E3)
 - [ ] Approval rating as a lagged observer read that nothing reads; tests (F4)
 - [ ] B4: two seeds with equal weighted-mean income and different dispersion give different seat counts; F5: seats and mandate computed from members; tests

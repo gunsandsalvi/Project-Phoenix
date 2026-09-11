@@ -58,6 +58,80 @@ fiftieth of what its firms are equipped to sell them is short of wages or short 
 the audit cannot see it because every flow in it has two sides and balances. It is a LEVEL, and a
 level is this item's business.
 
+### Seven more, all of them the same level seen from a different system
+
+Each was measured while another item was being worked, each was left alone (Law 11), and each is a
+LEVEL rather than a mechanism. They are here so the first measurement starts from what is already
+known rather than from a fresh look.
+
+- **No firm in this world ever wants plant, so nothing is ever built** (`12d-1`). Twelve periods with
+  the plant requirement turned up four times: `capital.commissioned 0`, `capital.retired 0`, 48
+  machine sessions and 0 cleared, `programme 0` at every firm — and 288 credit quotes in the same
+  twelve periods, so it is NOT the funding. `project()` returns `none` at `wanted.length === 0`, and
+  instrumenting every gate says it is the capacity gate, first try, every firm, every period:
+  `gap=-20877525277.3 cautious=4474722.7 capacityNext=20882000000` — a farm's plant lets it run at
+  **4,670 times** the rate it is sure enough of to build for. **So the mechanism is right**: a firm
+  with four thousand times the plant it needs declining to buy more is Capital Programme B3 working
+  as written. The test's lever cannot reach it either: the seed sizes plant from the same recipe
+  figure the test turns up, so raising the requirement raises the endowment (measured at 64x, 1024x,
+  4096x and 16384x: `capital.commissioned 0` at every one). Ten of the eleven reds in
+  `capital.test.ts` are this one thing, they assert a mechanism that is correct and never fires, and
+  they may not be edited into agreement with a world that does not invest.
+- **Twelve firms, eighteen periods, one loan** (`12d-6`). Counted off `w.instruments.all()`:
+  `loan 1`, against 34 interbank, 21 repo and 10 subordinated. Firms here do not borrow, so nothing
+  about a firm's leverage, its cost of debt or a bank's corporate book is exercised by any test that
+  builds this world. Probably the same cause; recorded separately because it is a different
+  measurement and may have a different one.
+- **No listed firm is ever short, so Equity D1 never fires** (`12d-9`). `decideEquity` sells shares
+  only when the firm's own funding read says it is short of what it is about to have to pay, and over
+  forty periods no listed firm ever is: every `equity.plan` reads `issue: 0`, and the last of them
+  are BUYBACKS. The mechanism declines correctly.
+- **A saver has no reason to hold a share until the issuer's first published quarter** (`12d-7`). 12c
+  anchored the equity book on published accounts, and a company publishes on a fiscal calendar whose
+  first report is for the first quarter opening on or after the epoch — measured across five rig
+  seeds, **period 25 to 29**, with one seed publishing nothing in forty. So for the first half-year
+  of every run no saver names a price for any share and the equity books have one side. The mechanism
+  is not wrong (a saver that invented a figure would be holding a second set of the issuer's books),
+  but a saver with NO read is not the only honest answer either: what a holder can see before the
+  first report is its own basis, the market's own print and the prospectus. Whether that is a reason
+  is `§46`'s question.
+- **A share in this world is worth a fraction of a cent** (`12b.1-2`). At period 52 of a four-bank,
+  forty-firm year: `equity.firm.11` at 0.00026 USD/share on 23,991,042,300 shares; `firm.17` at
+  0.00465 on 48,375,963,805. With the price grid the same lines sit on the smallest thing that
+  exists, one cent, because there is nothing below it to drift to. The grid did not break the share
+  market; it made the break visible. **Two numbers are wrong together — the float and the level** —
+  and the tick is NOT loosened to accommodate them: a grid widened to fit a broken price would be the
+  price deciding the resolution.
+- **Every issuer misses payments in every window, so every grade is the worst one** (`12a-2`).
+  Measured through the assessor's own blind view at period 30 with a seven-period window:
+  `treasury.us missed 1129`, `bank.a missed 3`, `firm.8 missed 24`, `firm.18 missed 24`. 12a fixed
+  the measure (coverage against what an issuer TAKES IN, and a horizon rather than a count), and the
+  grades are still one grade because the branch that binds is not the ratio: an issuer that cannot
+  pay what falls due is what the worst grade is FOR (`§44 A2`). The grade distribution is a
+  MEASUREMENT of this world and never a target; forcing a spread would be tuning the assessor to make
+  the world look solvent.
+- **The cell grain moves the money by more than whole people are worth** (`12d-16`).
+  `resolution/cells.test.ts` runs one world at three cell grains and asks that the aggregates differ
+  only by what whole people do: the cash differs by **60,119,516** against a bar of **51,247,510** —
+  seventeen per cent over, on a bar that is the hours a whole person supplies over the run at the most
+  any venue pays. `XI-15`'s own instruction is not to widen it: *"if the aggregates move, the
+  resolution is too coarse and the finding is the resolution."* What moves more than people do is what
+  an INSTITUTION does — which whole cells crossed which bank in which week — so the answer is a finer
+  opening grain or a mechanism that stops a cell's whole account moving at once, and both are
+  decisions with an owner.
+- **The cell partition refines every period and never coarsens** (`12c.1-1`). Household cells: 16 at
+  the seed, 260 at p15, 546 at p30, 844 at p45 — nineteen new a period, and `mergeCells` has never
+  once been called. **And merging would reclaim nothing**: at period 45, grouped by cell key plus
+  exact per-member state, 844 cells make **843 distinct groups**. They are genuinely different — a
+  member who was hired has been paid and one who was not has not — so every partial event partitions
+  the population a little finer and nothing ever makes two groups identical again. The representation
+  degenerates towards one cell per person, which is the one thing a cell exists to avoid. `XI-15`
+  gives five events that change a weight and `merge` is one of them, but a merge needs two cells that
+  are the SAME. Either the state a cell carries is coarser than the register's (members of a cell
+  share a bank and a cohort, so why not a balance?), or a cell needs a rule for when two nearly
+  identical groups become one — and both are modelling decisions with an owner, which is why this is a
+  measurement and not a performance question.
+
 ---
 
 ## Design
@@ -123,7 +197,8 @@ docs/measure/<run>/
 - [ ] The run ladder: profile, season, long with shocks, fixed point; all four deterministic with reads snapshotted under `docs/measure/`
 - [ ] Findings inserted as worklist items at their dependency positions with their plan files and manifest rows
 - [ ] The measurement surface: families, VERIFY groups, chains, observations, each with its derivation and no display-only number (Observer D3, E1)
-- [ ] The level above re-measured against the world 11.5 leaves: what a member earns, what it spends and what that buys at the cleared price, party by party, with the finding it names inserted as an item rather than adjusted
+- [ ] The level above re-measured against the world 11.5 leaves: what a member earns, what it spends and what that buys at the cleared price, party by party, with the finding it names inserted as an item rather than adjusted — and with it the seven that came from it: plant nobody wants, a world with one loan in it, a firm that is never short, a saver with no read before the first report, a share worth a hundredth of a cent, a grade distribution of one grade
+- [ ] The REPRESENTATION measured and decided (`12d-16`, `12c.1-1`): the aggregates at 1×/2×/4× against the bar of what whole people do, and the cell partition that refines every period and never coarsens — each reported as a resolution finding with the two admissible answers named (a coarser per-member state, or a stated rule for when two nearly identical groups become one) and the owner's decision recorded, never widened
 - [ ] Coverage final pass: every VERIFY row carries its measured status; record entry
 - [ ] Delete this file; worklist row 16 → done; commit and push
 

@@ -118,7 +118,8 @@ function linesQuoted(view: ParticipantView, d: BankDecl): number {
 export function carryRate(view: ParticipantView): number | undefined {
   // Law 8, Currency A3: IN ITS OWN MONEY, which is what the event carries at the top level — what
   // it costs this bank in the other moneys it lends in is beside it, under `alsoIn`. Which money a
-  // desk funds a FOREIGN line in is a question this does not yet ask (`docs/BUGS.md` 12d-14).
+  // desk funds a FOREIGN line in is a question this does not yet ask (worklist 13b, where the FX swap
+  // that funds a foreign book clears).
   const said = view.lastOwn('bank.costOfFunds');
   const perAnnum = said.some ? said.value.data['perAnnum'] : undefined;
   if (typeof perAnnum !== 'number') return undefined;

@@ -106,9 +106,40 @@ rank }` (C2.a: stated boundaries), `pricing: 'cleared'` (C3: each tranche has a 
   runs with the vehicle as lender of record (its waterfall's servicer decision is the originator's,
   under a servicing agreement: a fee row).
 
+### The covered bond (securitisation's on-balance-sheet sibling)
+
+Securitisation moves loans **off** the balance sheet into a vehicle with tranches and attachments.
+The on-balance-sheet alternative does not exist anywhere in this world: a bank's bond **secured on a
+ring-fenced pool of its own loans**, where the pool is replenished to hold a cover ratio and the
+holder has recourse **both** to the pool and to the bank. `Banks Funding A2` names "paper it issues"
+with no secured variety, and `XI-8`'s waterfall has no dual-recourse claim to rank. It is the
+instrument a bank reaches for when unsecured funding closes — the one channel that survives a
+downgrade, which is exactly the state `Banks Funding` and `Money Market` are built to reach — and
+without it a bank's only answers to a funding squeeze are repo against sovereign collateral and the
+central bank. It is built in this module because it is made of the same parts: named loan rows, a
+pool, a ranking, and holders.
+
+- **Kind** `coveredBond` (owned by `securitisation`): terms `{ issuer (a bank), coupon, maturity,
+pool: PoolId, coverRatio }`; `liabilityOfIssuer: true`, `pricing: 'cleared'`, ranking declared so
+  that the estate and the resolution read it off the instrument like every other claim (Law 15).
+- **The pool is liens, not a transfer** (`Register D`): the bank still owns the loan rows and still
+  collects on them; each is pledged, pledgor the bank and beneficiary the bond, so the units leave
+  the free balance and cannot be pledged twice or sold (`D5.a`). A **substitution** is a release then
+  a pledge in one instruction; a release that would take the pool below the cover ratio is **refused
+  at the call** (the instruction fails, the row is never written), not corrected afterwards — the
+  cover ratio is a **term of the instrument**, not a bound on a number (Law 6).
+- **Dual recourse in one waterfall** (`XI-8`): the holder's claim ranks on the pool first, and what
+  the pool does not cover ranks **unsecured against the bank** in the same ranking as everything
+  else. The estate reads both from the instrument; there is no special case anywhere.
+- **Why a bank issues one**: its funding participant compares the covered quote against unsecured
+  paper and repo at its own cost of funds (item 11's reads), and the gap is what its own name is
+  worth unsecured — so a downgraded bank's issuance shifts into the secured channel as a consequence
+  rather than as a rule.
+
 ### Parameters
 
-`tradeCredit.terms.*` are **decisions**, not parameters; `smallFirm.key` (data: dimensions),
+`coveredBond.coverRatio` is a **term of each issue** (the bank's own commitment at issuance), not a
+parameter and not a bound; `tradeCredit.terms.*` are **decisions**, not parameters; `smallFirm.key` (data: dimensions),
 `smallFirm.promotionThreshold` does not exist (a read of the desks' smallest underwriting);
 `tranche.attachments.<deal>` (data per deal, stated by the arranger's decision); `repo.eligible.
 tranche.senior` (policy). No `lossRate`, no `poolPopulation`, no `defaultCorrelation` exist.
@@ -118,7 +149,8 @@ tranche.senior` (policy). No `lossRate`, no `poolPopulation`, no `defaultCorrela
 - `flows`: Trade Credit C4 (receivables = payables, per period, exactly); vehicle cash in = cash out
   - retained, per period.
 - `ownership`: Securitisation C6: tranche faces sum to the pool's face after every loss; every tranche
-  has holders (E2).
+  has holders (E2); a covered pool's pledged face over its bond's face is at or above the cover ratio
+  every period, reported as a READ of the liens (never enforced by adjusting anything).
 - `units`: Σ smallFirm weights per key is the sector population; changes only by the five events.
 - `names`: every receivable has a live payer or a claim in an estate (E2, E3); every vehicle's rows
   name borrowers (E1).
@@ -128,10 +160,10 @@ tranche.senior` (policy). No `lossRate`, no `poolPopulation`, no `defaultCorrela
 ```
 packages/engine/src/mechanisms/trade-credit/{index.ts,terms.ts,lateness.ts,factoring.ts}
 packages/engine/src/mechanisms/small-business/{index.ts,profile.ts,promotion.ts}
-packages/engine/src/mechanisms/securitisation/{index.ts,vehicle.ts,tranche.ts,waterfall.ts,transfer.ts}
+packages/engine/src/mechanisms/securitisation/{index.ts,vehicle.ts,tranche.ts,waterfall.ts,transfer.ts,covered.ts}
 packages/engine/src/register/instruments.ts (reseat for invoice rows)
 packages/engine/src/mechanisms/estate/waterfall.ts (trade creditors both ways)
-packages/engine/test/{trade-terms,lateness,shipment-stop,factoring,supply-chain-contagion,small-firms,cell-default,promotion,vehicle,tranches,tranche-loss,mortgage-pool}.test.ts
+packages/engine/test/{trade-terms,lateness,shipment-stop,factoring,supply-chain-contagion,small-firms,cell-default,promotion,vehicle,tranches,tranche-loss,mortgage-pool,covered-bond}.test.ts
 ```
 
 ---
@@ -153,6 +185,8 @@ packages/engine/test/{trade-terms,lateness,shipment-stop,factoring,supply-chain-
 - [ ] Vehicle distribution by seniority from the loans' actual cash; tests (C5)
 - [ ] Loss allocation: a write-off in the pool writes down tranches from the bottom by attachment on a date; C6 contribution; senior losses emergent from correlation in a scenario; tests (C2.a, C6, D4, D4.a, E1)
 - [ ] Senior tranches as repo collateral; mortgage pools through the same vehicle with the foreclosure path; tests (D3, Housing C6)
+- [ ] `coveredBond`: a pool of liens on loan rows the bank still owns and still collects on; a substitution is a release and a pledge in one instruction and a release that breaks the cover ratio is refused at the call; the ratio is a term of the issue and not a bound; tests (Register D, D5.a, Banks Funding A2, Law 6)
+- [ ] Dual recourse in the one waterfall: the pool first, then unsecured against the bank in the same ranking as every other claim, read off the instrument with no special case; a bank whose unsecured quote has widened issues secured as a consequence; tests (XI-8, Banks Funding, Law 15)
 - [ ] Observer: pools, tranches, attachments, losses, holders; year-long run green with a regional shock scenario; determinism
 - [ ] Coverage re-marked; record entry
 - [ ] Delete this file; worklist row 13e → done; commit and push
@@ -167,4 +201,6 @@ only because a row left its book.
 ## Guard
 
 Trade Credit E1–E3; Small-Business Pools A2.a, E1–E6; XI-11 (no risk transfer without a
-transferee); Housing E3 (no mortgage without a balance sheet behind it, the vehicle's included).
+transferee); Housing E3 (no mortgage without a balance sheet behind it, the vehicle's included);
+Law 6 (a cover ratio is a promise the issuer made, enforced by refusing the release — never a clamp
+on a number afterwards); Register D5.a (no unit pledged twice).

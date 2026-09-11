@@ -22,6 +22,52 @@ D2.c. The zero-sum audit family is built here.
 
 ---
 
+## Findings this item carries
+
+Both are one thing: **a balance reached by arithmetic is charged the dust of its answer instead of
+the dust of its terms** (Law 7). This item is where it has to be fixed, because `D1.b` asks that the
+marks across a contract sum to zero **exactly** — a family whose subject is an exact identity cannot
+be built on a door that mis-states what an identity costs.
+
+### A stated balance is charged the dust of its answer, not of its terms (`12d-21`)
+
+`opened(value)` (`core/num.ts:81`) returns `dust: moveDust(v, 0)` = `ε × |v|`: the rounding of
+stating the number itself. That is right for a balance somebody stated. It is wrong for a balance
+somebody **computed**, because Law 7's dust is `terms × ε × Σ|magnitudes|` — of the terms that
+produced it, never of the answer.
+
+Where it bites: a fund's equity is zero by construction (Fund Shares A3), and that zero is a
+contribution of ~4e11 minus a book of ~4e11. `opened(0)` charges it `ε × 0` and the seed audit's
+accounts family then reports the real residue — measured at **0.00008869**, which is `ε × 4e11` to
+the digit — as a violation. Sub-cent, but not dust by the derivation being used, and widening
+anything is forbidden.
+
+The fix is a door that takes the terms rather than the total, so a balance reached by subtraction
+opens with the dust its subtraction earned. An attempt at it during 12d touched `opened`,
+`stateEquityAsRead` (`world/assemble.ts`) and the equity read together, did not clear the failure
+and carried a lint error; it was reverted whole (Law 13 — a change wrong on its own terms). The
+finding stands and the cause is stated above. Seen at `packages/engine/src/core/num.ts:81`, seed
+audit at period zero via the ETF launch.
+
+### The trading-book check's dust counts its own terms and not the other side's (`12b-5`)
+
+`mechanisms/banks/index.ts`, `tradingBookIsCapitalised`, contributing to `accounts`. From period 41
+of a 52-period run, every period:
+
+```
+bank.a: its dealing book weighs 50408462604.28294 and it published 50408462604.2827
+```
+
+A gap of 0.000244140625 — 2^-12, pure binary dust — on numbers of 5.0e10. The derivation is short,
+not absent: it allows `dustOf(terms.length + 2, |rwa| + |asked|)`, where `terms` are the dealing
+lines above target. But `rwa` is the bank's published weighting of its WHOLE book, a sum over far
+more terms than this check can see, and Law 7 says the tolerance is what the arithmetic did — so the
+terms that went into the other side belong in it. The honest fix is the same door: a published
+balance carries the count its own sum had, so a reader can derive the dust of the comparison rather
+than guessing at it.
+
+---
+
 ## Design
 
 ### Sub-item 13a.1 Kernel: the contract store
@@ -148,6 +194,7 @@ packages/engine/test/support/testForward.ts
 
 ## Steps
 
+- [ ] A balance carries the dust of its TERMS: a door that opens a computed balance with what its arithmetic did, and a published balance that carries its own term count so the reader of it can too; the seed audit's residue at the ETF launch and the trading-book check both derive rather than widen; tests (Law 7; `12d-21`, `12b-5`)
 - [ ] 13a.1 Kernel: the contract store with two sides, identity, `open/close/novate` doors, own-side reads, per-pair exposure read and no cross-counterparty read; `DerivativeKindProfile`; tests
 - [ ] 13a.1 Kernel: valuation of a contract as a signed mark; the accounts family carries it as asset and liability; the `zeroSum` family built (per contract exact, aggregate, VM paid = received); tests: one contract defect lights one family
 - [ ] Underlying must be a print this world clears or an event it records: assembly throws otherwise (G4, D3.a); test

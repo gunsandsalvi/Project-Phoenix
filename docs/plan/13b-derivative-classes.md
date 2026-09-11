@@ -22,6 +22,62 @@ Dealer Desks E1, E2; Corporate Credit H4, H4.a; Equity (hedging) from item 9's P
 
 ---
 
+## Findings this item carries
+
+Three are one thing: **a desk's book is not the bank's book**, and nothing in this item may hedge,
+quote or margin off a position read wrong. The fourth is a currency a bank never funded.
+
+### A line's makers are drawn and nobody reads them (`12d-10`)
+
+`ListedDecl.makers` (`equity/data.ts:44`) says which of this world's banks make a market in a given
+share line — "a market in one name has a few makers, not all of them and not one" (Dealer Desks A3),
+drawn `MAKERS_PER_LINE` at a time. Nothing reads it. `dealingOrders` asks the BANK's own `makes`
+list, which is by instrument KIND, so every bank that deals shares at all quotes every line in the
+world — which is the "every bank has a view of every firm" that A3 says a dealer is not. It went
+unread when 11.5 moved the equity float off the desks and onto the household cells that save. Two
+things follow: A3 is MISSING rather than out of scope, and a desk opens holding no inventory in any
+line, which is what four of `dealing.test.ts`'s tests are about. Seen at
+`packages/engine/src/mechanisms/equity/data.ts:44`, `packages/engine/src/mechanisms/banks/dealing.ts:203`.
+
+### A desk's limit is measured against its bank's liquidity portfolio (`12d-12`)
+
+`opening-liquidity.test.ts` asks that every desk opens inside its own limit (Dealer Desks D1, D4).
+Measured at the rig's six banks: `roomLeft -58,287,103,191` against a book of 53,417,676,666, and
+the book is almost entirely SOVEREIGN PAPER — tens of billions of `ust.bill.*` and `ust.*` per bank,
+against 30,531 of the one fund share on it. That paper is the bank treasury's liquidity buffer, not
+a position its desk took. `quoteFor` reads inventory as `view.free(instrument)` and the aggregate
+book as the whole of it, so a bank holding what the liquidity standard requires is a desk over its
+dealing limit before it has quoted anything. The per-line arithmetic already knows the difference —
+`state.targetIn(instrument)` is where the treasury wants the line, and `away = inventory − target` —
+and the AGGREGATE does not. One holding, two purposes, one of them measured with the other's ruler
+(Law 4). Seen at `packages/engine/src/mechanisms/banks/dealing-quote.ts:208`.
+
+### A bank lends a money it has not funded, and a desk carries one in a money nobody named (`12d-14`)
+
+`publishQuotes` asks every bank in the world what it would lend a borrower and prices the answer off
+`costOfFunds(bank, the BORROWER's currency)`. A US bank quoting a European firm is quoting a euro
+loan — with `owedBy(bank, EUR) = 0`. `costOfFunds` then blends an interest cost of nothing with the
+bank's whole equity, so the quote comes out at the bank's required return on capital and nothing
+else: measured at 0.0887 against 0.0044 for the same bank's own money. Worse inside `costOfFunds`
+itself: `owed` and `couponsPaid` are per currency, but `capital` is `equity()` — the bank's whole
+capital in its own money — so the blend adds two currencies (Appendix B). And `carryRate` applies
+what funding costs the bank to every line it quotes, including one denominated in somebody else's
+money. 12d fixed the publication only (`bank.costOfFunds` now carries `alsoIn`, and `carryRate`
+names the currency it is taking). **The mechanism is this item's**: a bank that has not funded a
+currency borrows or swaps it, and the FX swap below is where it does. Seen at
+`packages/engine/src/mechanisms/banks/index.ts:248`, `:1082`, `.../banks/dealing.ts:118`.
+
+### An exchange-traded fund's own market clears nothing (`12d-4`)
+
+`nothingSettled` every period in the world `etf.test.ts` builds: there are bids and no trade comes of
+them, and no failed instruction names the line either — so the trades are not being drafted rather
+than being refused. Four of `etf.test.ts`'s reds are this one thing (a market that clears, a slice
+taken against shares, a mark nobody traded at, a book somebody would close). It lands here because
+this item puts a **listed vehicle on every index** and every one of them would inherit it. Seen at
+`packages/engine/src/mechanisms/funds/etf.ts`.
+
+---
+
 ## Design
 
 ### Rate-priced markets
@@ -66,7 +122,11 @@ solver's monotonicity check throws on a malformed one.
   terminates (D4).
 - **The index** (A5): a `cds.index` kind on a series of names fixed at the roll (data per series);
   a name's event settles its weight once for every contract on the line; the line runs on with
-  survivors; its own book; the index-vs-single-name basis is a read (A5.b).
+  survivors; its own book; the index-vs-single-name basis is a read (A5.b). The series come in
+  **two grades**, investment grade and high yield, each rolled on its own grade off the assessors'
+  published opinions (A5.a; below, "The index set"): one series is a market with no quality
+  dimension in it, and the high-yield series is the one where a constituent's credit event actually
+  fires and settles its weight.
 - **Reads**: basis vs the cash bond's spread over the sovereign curve at every tenor both books print
   (C3, C3.a: a read on the observer; C3.b: a standing observation); net notional per reference (E3).
 
@@ -130,11 +190,121 @@ floatPeriodicity, accrual conventions }` (A2: legs need not match); underlying =
   schedule sized to its net inventory; E2: the hedge is a contract with a counterparty and its own
   margin), funds with mandates that track the index (a cheaper way to be exposed), a view.
 
+### Module `options` (the price of optionality)
+
+Positioned here because this specification requires the price of optionality in three places and
+provides no market in which one is formed: `Bond N11.a` requires **a price the issuer pays** for an
+early-termination regime, `Banks Lending` has prepayment at the borrower's option, and
+`Short-Term Debt B4` states it outright — a committed line with no fee on undrawn headroom is *"a
+free option the lender did not sell"*. It also costs the expectations layer its second dimension:
+`§46 A3` makes the DISAGREEMENT load-bearing, and parties can disagree about a level while nothing
+lets them disagree about **dispersion**, so a world of identical variance opinions is assumed rather
+than cleared. It comes after the classes above and after the equity book clears (12c), because
+`D3.a` forbids an underlying that exists only inside the derivative.
+
+- `requires: ['derivative-layer', 'equity', 'indices', 'dealers']`.
+- **Kind** `option`: terms `{ underlying, right: 'call' | 'put', strike: Price, expiry, exercise:
+'european', multiplier }`; underlying = a listed line's own cleared print or an index that clears
+  (`Indices C3`); two named counterparties, holder and writer, the contract an asset to one and a
+  liability to the other with the marks summing to zero (`D1`, `D1.b`).
+- **The premium is what clears** (`D7`, `D7.a`, Law 3): a market per (underlying, right, strike,
+  expiry); the print is the premium per unit in the underlying's money. Clearing a volatility and
+  deriving the premium from it is the shape `Bond N7.b` forbids for a bond — **implied volatility is
+  the derived read an observer takes back off the premium**, like a spread off a bond price, and no
+  parameter or store named `volatility.*` exists anywhere (a lint over the module, as `no-value-recipe`
+  is over recipes).
+- **Cash** (`D2`, `D8`, `D9`): the premium is a periodic leg that fires exactly once, holder → writer
+  in the period the contract is struck; after that the mark moves every period as variation margin
+  through 13a (`D8.a`, `D9`), so a writer's loss is cash it has to find. **Expiry is an event**
+  (`D11`, `D11.a`): exercised at intrinsic value against the expiry print or expired worthless,
+  truing up beyond what the marks already paid, and the contract ceases on both books at once.
+- **Initial margin** from the underlying's own measured move through 13a's read, and the house's
+  member limits binding **at the strike**: a member that cannot margin the position does not get it
+  (`Derivative Layer E1–E4`).
+- **Demand with a reason** (`B`-shaped, never a hedge ratio): a holder buying cover for a book it
+  actually holds, sized by what its own surplus must absorb over the tenor at its management's own
+  risk aversion, net of cover it already holds — the insurer's and the fund's participants at 13h
+  post it, the desks post it here.
+- **Supply with a reason**: a desk writing out of the same balance-sheet budget it runs every other
+  class on, quoting from the move it expects the underlying to realise plus the return its capital
+  requires on what the position consumes; 13h's funds add the strategy that is short dispersion.
+
+### Module `bond-futures` (Sovereign I, and the trade that makes repo demand real)
+
+`Sovereign I1`–`I3.a` specify a deliverable future on the benchmark bond and nothing owns them:
+`docs/COVERAGE.md` carries `I1`, `I2`, `I3` and `I3.a` as MISSING with no evidence and had no row at
+all for `I1.a`. That is not a finding and not an owner's decision — a specified clause that no item
+names is a hole in the plan (Appendix C) — so it is owned here, with the classes, and the row for
+`I1.a` is added to COVERAGE in this item.
+
+- `requires: ['derivative-layer', 'sovereign-curve', 'money-market', 'dealers']`.
+- **Kind** `bond.future`: terms `{ deliverable: InstrumentId (a named benchmark line), expiry,
+contractSize }`; the price is **per unit of face** (`I1`); at delivery the contract settles to that
+  bond's own cleared cash price — an asset leg of the line against cash at the settlement price, one
+  instruction, DvP; margined by 13a.
+- **The carry and the net basis** (`I1.a`): the bond financed in repo to delivery earns its coupon
+  and pays the financing (both reads of things this world already prints: the coupon from the
+  instrument's terms, the financing from item 11's secured book); the print against that is the **net
+  basis**, a MEASUREMENT on the observer and never a setting. No `basis.*` parameter exists.
+- **Who is on the line** (`I2`): a duration mandate short of duration goes **long** the future below
+  carry (13h's insurers and pensions); a holder over its sovereign target **shorts** the excess above
+  it (a bank treasury, from item 11's own target read); a dealer quotes **both ways** at carry.
+- **The basis trade** (`I3`): long the cash bond, financed in repo, short the future when the basis
+  pays for it — *"the largest single source of real repo demand in a real market"*. The participant
+  posts all three legs in the same session from its own funded line; `I3.a` FORBID: it is funded,
+  margined and **cut on a drawdown** — the trader's own module closes the position when its equity
+  falls past its own tolerance, and nothing makes it whole. The repo demand it creates is a read
+  (item 11's secured book, by reason).
+
+### The index set: size and grade segments, a global line, and a vehicle on each
+
+The machinery is built and the DECLARED SET is two. `Indices A1` admits any stated rule over any
+stated constituent set at any stated weights; levels are reads chained across a rebalance and never
+stored (`A2`, `B2.a`, `E2`); a weight is a count of a real thing (`B1`); a listed vehicle exists with
+its NAV and its print published side by side and a premium nothing clamps (`Fund Shares E1`–`E4`,
+`G1.a`); and a tracker holds the index's own basket and trades a rebalance for real (`Indices C1`,
+`C2`). What is declared is an equity index per region (`D1`), a credit index per currency (`D2`), the
+rate benchmark (`D3`) and the price level (`D4`), with one listed vehicle on the equity line — so the
+segmentation a real market is organised by does not exist, and a **flow** cannot mean anything:
+with one basket per region the constituent set changes only when a firm is born or dies, so `C1`'s
+"a manager is measured against it, and that measurement drives flows" and `C2.a`'s "inclusion should
+be visible in the constituent's price" have almost nothing to be about; `C2`'s simultaneity — every
+tracker, at the same time — is a market of one; and no index measures anything across regions, which
+leaves the currency layer with no aggregate equity claim in it.
+
+Built here (the equity and default halves; the cash credit split and the loan index are 13f's, where
+corporate paper and a secondary loan market start to clear):
+
+- **The size split**: `largeCap`, `smallCap` and `allCap` per region, a stated rule on a real count
+  (`B1`: capitalisation is a price times a count), read from the **constituents' own prints** and
+  never from the index (`A3`: else the index selects its own members by its own level). The boundary
+  must be **crossable**: a firm graduates into the large-cap line and drops out of the small-cap one,
+  and every vehicle on both has to trade it.
+- **The grade split in the default index**: IG and HY series, names fixed at the roll by grade
+  (`CDS A5.a`), each clearing on its own book with its own index-against-single-name basis (`A5.b`).
+  This world has **three assessors that disagree** (`Ratings`), so the rule states whose grade counts
+  or how they combine, publicly and in advance (`A1.a`) — that disagreement is the point: an index
+  boundary that depends on whose opinion you take is what makes a downgrade contestable rather than
+  arithmetic.
+- **The global line**: the only index that crosses regions, so its level is expressed in a stated
+  money at cleared rates (`Spot FX`, `XI-12`) — and stating that money must not make it the vehicle
+  currency of the model by construction (the rule names the money as data, and the level is a read
+  through the period's own prints).
+- **A vehicle per index**, holding that index's basket by mandate, which is how the tracker already
+  works. It posts **reservations, not market orders**: a forced seller is real and a forced buyer is
+  forbidden, which this build learned once by walking an equity index to 4153 in two sessions (12c).
+- **All of it is data** (`Law 15`, `Indices D5`): rules, boundaries, constituent sets and weight
+  choices are registry rows inside the one index system; no mechanism branches on a segment id. An
+  empty basket reports Missing rather than a base level, which is already how this system behaves.
+
 ### Parameters
 
-`cds.tenors`, `irs.tenors`, `fx.forward.tenors` (data); `cds.index.series.*` (data: names, weights,
-roll date); `regulation.riskWeight.cds.sold`, `regulation.riskWeight.derivative` (policy, parliament);
-no `recovery.rate` (D2.a), no `basis.*`, no `parity.*` exist.
+`cds.tenors`, `irs.tenors`, `fx.forward.tenors` (data); `cds.index.series.*` (data per grade:
+names, weights, roll date); `regulation.riskWeight.cds.sold`, `regulation.riskWeight.derivative`
+(policy, parliament); `option.strikes`, `option.expiries` (data: the ladder a market is opened on);
+`bond.future.contractSize`, `bond.future.expiries` (data); `index.rules.*` (data: the stated rule,
+its constituent set, its weights, its boundary and whose grade counts); no `recovery.rate` (D2.a),
+no `basis.*`, no `parity.*`, no `volatility.*` and no `margin.rate` exist.
 
 ### Audit contributions
 
@@ -143,6 +313,13 @@ no `recovery.rate` (D2.a), no `basis.*`, no `parity.*` exist.
   Indices C3: the future's settlement equals the index read on expiry (a check).
 - `flows`: FX Forwards E3: no maturity passes without both legs settling (an instruction that fails
   is a recorded fail in the estate path, never a silent skip).
+- `zeroSum` again for the option book: a premium paid once is received once, and an exercise moves
+  intrinsic value from one named side to the other.
+- `crossMarket`: `Sovereign I1` — a bond future's settlement equals the deliverable line's own cleared
+  cash price on the delivery date (a check); the net basis and the implied volatility are READS and
+  are reported as such, never checked against a level.
+- `ownership`: every index's constituent set resolves to live instruments, and the vehicle on an index
+  holds the basket its mandate names (`Indices B1`, `C1`).
 
 ### Files
 
@@ -152,6 +329,11 @@ packages/engine/src/mechanisms/cds/{index.ts,contract.ts,event.ts,indexSeries.ts
 packages/engine/src/mechanisms/irs/{index.ts,contract.ts,curve.ts,participants.ts}
 packages/engine/src/mechanisms/fx-derivatives/{index.ts,forward.ts,swap.ts,xccy.ts,cip.ts,participants.ts}
 packages/engine/src/mechanisms/index-futures/{index.ts,contract.ts}
+packages/engine/src/mechanisms/options/{index.ts,contract.ts,premium.ts,exercise.ts,participants.ts}
+packages/engine/src/mechanisms/bond-futures/{index.ts,contract.ts,delivery.ts,basis.ts,participants.ts}
+packages/engine/src/mechanisms/indices/{data.ts,segments.ts,global.ts} (the set, as registry rows)
+packages/engine/src/mechanisms/funds/tracker.ts (a vehicle per index, posting reservations)
+packages/engine/src/mechanisms/banks/{dealing.ts,dealing-quote.ts} (per-line makers; the aggregate book net of the treasury's target)
 packages/engine/src/mechanisms/dealers/hedge.ts (E1)
 packages/engine/test/{rate-markets,cds,cds-event,cds-index,irs,swap-curve,fx-forward,fx-swap,cip,xccy,index-future,desk-hedge}.test.ts
 ```
@@ -177,7 +359,14 @@ packages/engine/test/{rate-markets,cds,cds-event,cds-index,irs,swap-curve,fx-for
 - [ ] FX hedgers: invoice books, foreign-asset holders rolling, desks with width from carrying cost; E4 residual as an observer read per party; tests (D1–D4, E2, E4)
 - [ ] `index.future` kind: cash-settled against the index read at expiry; margined; tests (Indices C3)
 - [ ] Desks hedge inventory with a contract that has a counterparty and margin (Dealer Desks E1, E2); item 9's hedging PARTIAL closed; the test-only forward from 13a deleted; tests
-- [ ] Observer: curves per class, bases, net notional per reference, hedged residuals; year-long run green in two currencies; determinism; scenario test: swap spread and CDS basis behave differently calm and stressed (direction only)
+- [ ] A desk's book is the position it TOOK, before anything hedges off it: quoting per line from the makers drawn for that line (Dealer Desks A3), and the aggregate limit measured net of what the treasury holds for liquidity (D1, D4); tests: a bank holding the liquidity standard is not over its dealing limit before it has quoted (`12d-10`, `12d-12`)
+- [ ] `option` kind: holder and writer, premium as a periodic leg that fires once, a mark every period as variation margin, expiry exercised at intrinsic against the expiry print or worthless, ceasing on both books at once; underlying a print this world clears; tests (D1, D1.b, D2, D3, D3.a, D8, D8.a, D9, D11, D11.a)
+- [ ] The premium CLEARS on its own book and implied volatility is the read taken back off it; no volatility parameter or store exists anywhere (lint + test); initial margin from the underlying's own measured move with the house's limits binding at the strike; tests (D7, D7.a, D7.b, Law 3, Derivative Layer E1–E4)
+- [ ] Option demand and supply with reasons: cover for a book actually held, sized by what the holder's own surplus must absorb at its own risk aversion net of cover held; a desk writing from its balance-sheet budget at the move it expects plus the return its capital requires; tests: no hedge ratio anywhere; 13h's short-dispersion fund declared PARTIAL to there
+- [ ] `bond.future` kind: a named benchmark line as the deliverable, price per unit of face, delivery as DvP at the bond's own cleared cash price, margined; the crossMarket check on the delivery date; tests (Sovereign I1)
+- [ ] The carry, the net basis and the basis trade: carry read from the coupon its terms promise and the financing item 11's secured book prints; the net basis measured and never set; a duration mandate long below carry, a holder over target short above it, a dealer both ways at carry; the trade funded, margined and cut on a drawdown with nothing making it whole; the repo demand it creates as a read; tests (I1.a, I2, I3, I3.a)
+- [ ] The index set: large-, small- and all-cap per region from the constituents' own prints with a boundary a firm can cross both ways, the global line in a stated money at cleared rates, the default index in IG and HY series rolled on the assessors' published grades, and a listed vehicle per index holding its basket by mandate and posting reservations; every rule, boundary and weight a registry row; the vehicle's own market drafts the trades it clears (`12d-4`); tests (Indices A1, A1.a, A2, A3, B1, B2, B2.a, C1, C2, C2.a, D5, E2; CDS A5, A5.a, A5.b; Fund Shares E1–E4, G1.a)
+- [ ] Observer: curves per class, bases, net notional per reference, hedged residuals, implied volatility as a derived read, the index set with its boundaries and its vehicles; year-long run green in two currencies; determinism; scenario test: swap spread and CDS basis behave differently calm and stressed (direction only)
 - [ ] Coverage re-marked; PARTIAL rows for IRS B2/B2.a named to 13h; record entry
 - [ ] Delete this file; worklist row 13b → done; commit and push
 
@@ -190,4 +379,6 @@ is one number; a desk's hedge is a position with a counterparty.
 ## Guard
 
 CDS D2.a, E4, B5; IRS E1–E3; FX Forwards B3.b, E1–E3; Corporate Credit H4.a; Derivative contract
-X3.
+D3.a, D7.b, X3; Sovereign I1.a and I3.a (the basis is measured, and the basis trader can lose);
+Indices A3 (a boundary is read off the constituents, never off the index) and B2.a (nothing stores a
+level); Law 3 (no premium derived from a volatility somebody chose).

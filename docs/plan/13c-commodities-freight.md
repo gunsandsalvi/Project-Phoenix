@@ -47,7 +47,8 @@ G1.c; Indices D4, D4.a (PARTIAL → MET).
   inputs; their costs differ by seed dispersion (B1.a: the supply schedule is the set of their
   reservations at own unit cost, posted through `firms.decide`); capacity fixed short-run by plant
   (B2, item 10); **disruption** (B3) is a journaled destroy leg on a producer's plant or inventory
-  with a cause (a scenario seed's event at 16; never a price multiplier); a producer may hold rather
+  with a cause, and the cause is the `environment` module's own published event (below), never a
+  price multiplier and never a draw private to this module; a producer may hold rather
   than sell when its outlook of the price exceeds today's print plus carry (B4: its own view).
 - **Demand** (C): firms whose recipes consume the grade (C1, C2: the recipe is fixed in the period, so
   their bids are inelastic: quantity needed at any price up to their own margin); households for
@@ -67,8 +68,9 @@ G1.c; Indices D4, D4.a (PARTIAL → MET).
   per unit moved (B3: fuel bought as a commodity at 13c, labour from the labour market, the capital
   charge from item 10).
 - **Routes** (A4): data: `(from, to, transitPeriods, capacityKind)`; capacity on one route is not
-  capacity on another; a **blocked route** is a journaled event that sets a route's capacity to zero
-  for a stated number of periods (B4: a real loss of units moved; scenario seeds only).
+  capacity on another; a **blocked route** is a journaled event that takes a route's capacity away
+  for the periods the event lasts (B4: a real loss of units moved), read from the same
+  `environment.state` event a producer's disruption is read from — one cause, two consequences.
 - **The market** (D1): one market per route in the `markets` phase, ordered **before** the goods
   markets whose deliveries need it: a shipper's goods order across locations is posted with a freight
   order for the units, and the goods trade is admitted only up to the freight fill (D6: capacity
@@ -88,6 +90,42 @@ G1.c; Indices D4, D4.a (PARTIAL → MET).
 - **Substitution** (C2): a shipper facing a freight price above what the trade earns holds, sources
   locally (its goods order goes to the local market), or does not trade: its `decide` phase compares
   delivered prices per source location from its own view.
+
+### Module `environment` (the physical world as standing state)
+
+Four sections require the consequences of a physical shock and nothing in this world produces one:
+`Commodities B3` (production disrupted — a real loss of units at the point they would have been
+made), `Goods B4` (**yield**: not everything started is finished), `Freight B4` (capacity lost or
+blocked) and `Insurers B4` (a catastrophe is one event hitting many policies at once, which is
+different from the average being higher). What produces any of them otherwise is a scenario seed's
+event plus, in insurance, per-line frequency and severity declared as technology — so the insurer's
+loss and the producer's loss would be **two unrelated draws for one event**, which is `Law 4`'s "one
+representation per real thing" one level above a number. And the chain `Commodities E4` names —
+commodity shock to margins to inflation to policy — could only ever be exercised by injecting a
+scenario, never by the world producing one.
+
+- `requires: ['goods']` (it needs units and regions and nothing else; every reader reads it through
+  the kernel, not through an import).
+- **What it is** (`Law 2`): TECHNOLOGY. A physical fact with a **unit, an owner, a region and a
+  period**, carried as state by this module and written by nobody else: growing conditions per region
+  and season, water and wind, the state of a route's passage, the hazard standing over a region this
+  period. Each is a declared parameter with its unit and its owner, drawn per region and period from
+  the world's own stream — never a probability living inside the module that consumes it (13h refuses
+  `catastrophe.probability` as a primitive, and this is that refusal seen from the other side).
+- **How it crosses** (4.9b): as a **public event**, `environment.state`, published each period per
+  region before the production phases, plus the legs it draws itself where the loss actually lands.
+  Commodities, goods, freight and insurance READ the event; none of them writes it. A module never
+  imports another, and this is the same door `bank.capital` and `deposit.classes` already cross.
+- **One event, several consequences** (the whole point): one disruption is a `destroy` leg on a named
+  producer's inventory or plant **where the units were**, a yield shortfall on the batches that were
+  started (`Goods B4`: the batch's own `due` returns fewer units than its recipe promised, and the
+  difference is a real loss on the lot), a route's capacity gone for the periods the event lasts
+  (`Freight B4`), and — when 13h's cover market lands — the claims of every policy of that line in
+  that region at once (`Insurers B4`). Each is a real destruction of units or capacity at its own
+  site; nothing anywhere multiplies a price.
+- **What it is not**: not a shock schedule, not a written path, not a "scenario mode". The state
+  varies period to period as state, and a scenario at 16 is a stated OPENING of it, not a second
+  mechanism.
 
 ### Module `commodity-futures`
 
@@ -123,7 +161,8 @@ their divergence is the margin story (D4.a). PARTIAL → MET.
 
 ### Parameters
 
-`commodity.grades.*` (data: unit, locations), `storage.capacity.<location>` (technology via plant),
+`environment.<fact>.<region>` (technology: unit, owner, region, period — the standing physical
+state); `commodity.grades.*` (data: unit, locations), `storage.capacity.<location>` (technology via plant),
 `route.*` (data), `carrier.capacity.<kind>` (technology), `commodity.future.contractSize.<grade>`
 (data), `commodity.future.expiries` (data). No `inventory.percent`, no `basis.*`, no
 `convergence.*`, no `volatility.*` exist.
@@ -137,18 +176,21 @@ their divergence is the margin story (D4.a). PARTIAL → MET.
 ### Files
 
 ```
+packages/engine/src/mechanisms/environment/{index.ts,state.ts,events.ts}
 packages/engine/src/mechanisms/commodities/{index.ts,inventory.ts,storage.ts,producers.ts,consumers.ts}
 packages/engine/src/mechanisms/freight/{index.ts,routes.ts,market.ts,transit.ts,carrier.ts}
 packages/engine/src/mechanisms/commodity-futures/{index.ts,contract.ts,expiry.ts,participants.ts,arbitrage.ts}
 packages/engine/src/mechanisms/goods/… (delivered price, location in identity)
 packages/engine/src/mechanisms/indices/prices.ts (freight and distribution margin)
-packages/engine/test/{commodity-spot,inventory,storage,disruption,freight,transit,location-basis,futures,expiry,roll,curve}.test.ts
+packages/engine/test/{environment,commodity-spot,inventory,storage,disruption,freight,transit,location-basis,futures,expiry,roll,curve}.test.ts
 ```
 
 ---
 
 ## Steps
 
+- [ ] `environment` as standing state: a physical fact per (region, period) with a unit and an owner, declared TECHNOLOGY, written by this module and by nothing else, published as a public event every period before production; tests: no reader writes it and no consumer of it declares a hazard of its own (Law 2, Law 4)
+- [ ] One event, several consequences: the same published state is a producer's destroyed units, a yield shortfall on batches already started, a route's capacity gone, and (declared PARTIAL to 13h) every policy of a line in that region; each a real loss where it happens and none a multiplier on a price; tests (Commodities B3, Goods B4, Freight B4, Insurers B4)
 - [ ] Commodity as a good with grade and location in its identity; inventory per (holder, location) carried across periods; storage as capacity with a cleared fee paid to its owner; no free holding; tests (A1–A4, D2.a, D3, F2)
 - [ ] Producers with dispersed costs and plant-fixed capacity; disruption as a journaled loss of units with a cause; a producer holds on its own outlook; tests (B1–B4, F3)
 - [ ] Consumers by recipe, households for energy, investors holding physical in paid storage; spot clears per (grade, location); units family D5 contribution; tests (C1–C3, D1, D5, F1)
@@ -172,5 +214,6 @@ costs the roller; the consumer index can diverge from the producer index.
 
 ## Guard
 
-Commodities Spot F1–F3, D2.a; Commodity Futures C4.a, E1–E3; Freight E1–E3; Commodities Spot F2 (no negative
-inventory).
+Commodities Spot F1–F3, D2.a; Commodity Futures C4.a, E1–E3; Freight E1–E3; Commodities Spot F2 (no
+negative inventory); Law 4 (one physical event has one representation, read by four systems and
+written by none of them).

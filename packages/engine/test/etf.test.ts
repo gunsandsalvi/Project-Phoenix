@@ -64,7 +64,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
  * cells that actually save, and nothing has moved a share back: over fifty-six periods of the rig
  * the only named holder of the index line is the fund itself. So the desks can only ever REDEEM,
  * one side of E3 never runs, and E3.a's premium — measured at 0.28 and never closed — has nobody
- * who could close it (`docs/BUGS.md` 12d-8).
+ * who could close it (worklist 13f: a desk BORROWS the basket it has to deliver).
  *
  * That is a finding about this world and not about the venue, so it is named there and stood in for
  * here: the participants open holding the basket, which is what a desk that makes this market IS.
@@ -240,7 +240,7 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
     // so its price is a mark carried forward in fifty-nine of them and a desk may not act on one
     // (Clearing E4) — every act of arbitrage there is lands in the period after the single session
     // that traded, and they are all on the same side of it. What makes an exchange-traded fund's
-    // own market this thin is `docs/BUGS.md` 12d-8; until it is answered, no run reaches both.
+    // own market this thin is worklist 13f's borrow market; until it is answered, no run reaches both.
     for (const e of acted) {
       expect(e.data['side']).toBe(Number(e.data['premium']) > 0 ? 'create' : 'redeem');
     }
