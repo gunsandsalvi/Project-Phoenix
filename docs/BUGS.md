@@ -589,3 +589,32 @@ One holding, two purposes, one of them measured with the other's ruler (Law 4). 
 dealer desks, beside 12d-10 and 12d-8. The test is named and stays red.
 
 Seen at: `packages/engine/src/mechanisms/banks/dealing-quote.ts:208`.
+
+### 12d-13 — the deposit guarantee can only pay for a loss no payment can cause
+
+`bank-resolution.test.ts` "pays out of the fund the banks paid into, and the purse only after it"
+(D4, D5) is red and stays red.
+
+The arithmetic says exactly when the insurer pays. `unmet = hole − holders`, `holders` reaches at
+most the exposed pool, and the pool is every UNINSURED claim (`resolution.ts:283`, `uninsuredAt`).
+So with `hole = owes − assets` and `pool ≈ owes − insured`:
+
+> the insurer pays **iff the bank's assets are worth less than its insured deposits**.
+
+That is the right condition — it is what a deposit guarantee is for — and this file's shock cannot
+reach it. The loss is a PAYMENT, and a bank can only pay what it holds in money: its loans and its
+paper are untouched, so assets never fall below a few hundred million of insured deposits. Measured
+across penalties of 1, 8, 20, 40 and 80 times the bank's capital: at 8 the hole is 22bn against a
+120bn pool and `insurerPaid` is **8,272** — a rounding remainder, not the guarantee; past 20 the
+penalty simply cannot be paid, the bank fails on CASH instead, and the hole goes NEGATIVE (assets
+above liabilities, which is D6's funding failure and has no hole at all).
+
+The file's own note saw the shape of this: "the only loss big enough to eat its capital was a
+payment, and paying it away took the cash with it." What the clause needs is a VALUATION loss — a
+mark collapsing on assets the bank holds — and that is a market event, not a fixture. The test
+passed before by asserting a rounding remainder was positive.
+
+Its companion is green and covers the other half: raising the cover stops households being written
+down, and lowering it does not (A1.a, D4).
+
+Seen at: `packages/engine/src/mechanisms/money-market/resolution.ts:341`.
