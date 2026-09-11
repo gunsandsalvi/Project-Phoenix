@@ -428,3 +428,32 @@ Named while reproducing 12b at `410bf16`, and it had two sites, both the same ca
 Both silent at a rate of one, which is why the world never showed it after `a6b2922`. Fixed in 12b:
 the mark converts through `intoOwnMoney`, and the seed's copy of the balance sheet is deleted in
 favour of `balanceSheet`, the one read.
+
+### 12d-5 — a levy that fails is recorded and then forgotten: no arrears
+
+Measured in `estate.test.ts` at 14 periods of the rig world: **855 failed tax legs** from household
+cells, and nothing else a cell posted ever failed. `treasury/index.ts:728` settles the levy and, when
+it fails, adds it to `unpaid` on `treasury.receipts` — which is right (Money E1, D3: a payer that
+cannot pay has not paid). But `unpaid` is a number in an event and nothing carries it: the cell does
+not owe it next period, the treasury does not chase it, and the receipt is not short by it in any
+account. So a tax that failed is a hole between two balance sheets that only the journal knows about.
+
+The mechanism is arrears — a levy that is not paid becomes a claim the treasury holds on the payer,
+ranking where the law says. There is no instrument for it (worklist 13 gives trade payables their
+first one), and the fiscal state is **worklist 14**.
+
+Seen at: `packages/engine/src/mechanisms/treasury/index.ts:728`.
+
+### 12d-6 — twelve firms, eighteen periods, one loan
+
+Counted off `w.instruments.all()` in the estate rig at period 18: `loan 1`, against 34 interbank, 21
+repo and 10 subordinated. Firms in this world do not borrow, so nothing about a firm's leverage, its
+cost of debt or a bank's corporate book is being exercised by any test that builds this world — and
+the dead firm in `estate.test.ts` had issued no paper at all, which is what sent that test looking
+for it elsewhere.
+
+Probably the same cause as 12-15 (a world that produces a fraction of what its plant is sized for
+and therefore never invests, hence never needs funding), and if so it is **worklist 16**. Recorded
+separately because it is a different measurement and may have a different cause.
+
+Seen at: `packages/engine/test/estate.test.ts` (`worldWithADeathInIt`, 18 periods).

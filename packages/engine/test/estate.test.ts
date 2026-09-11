@@ -11,6 +11,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  moneyInstrumentId,
+  mul,
   period,
   isMoneyLeg,
   HOUSEHOLD,
@@ -32,7 +34,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { deepBuyer, rigDraw, rigSpec, mergeModules, withDependencies } from './rig.js';
+import { DEEP_BUYER, deepBuyer, rigDraw, rigSpec, mergeModules, withDependencies } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -148,7 +150,10 @@ function owesMoreThanItHas(): SystemModule {
  * payment fails; what it could not pay it still cannot, which is the cash trigger. It stays solvent
  * throughout, so its estate has more than its claims are worth and money is left over at the end.
  */
-function cannotPay(amount: number): SystemModule {
+/** How much more than its own cash the bill it promised to pay comes to (PLAN §7: read, not stated). */
+const MORE_THAN_IT_HAS = 2;
+
+function cannotPay(): SystemModule {
   return {
     id: 'test.cannot-pay',
     spec: 'Firm D4 Money E1',
@@ -167,6 +172,19 @@ function cannotPay(amount: number): SystemModule {
         run: (ctx: MechanismContext) => {
           if (ctx.period !== 1) return;
           const to = ctx.parties.get(SENIOR_HOLDER);
+          // PLAN §7: A BILL BIGGER THAN ITS MONEY, which is a property of the debtor's own account
+          // and never an amount. A million dollars was more than a firm had when the seed STATED
+          // this world's scale; 11.5 derives it, and a firm now holds many times that — so the
+          // payment went through, no estate opened, and a test about dying of no cash watched a
+          // firm pay a bill.
+          const bank = ctx.parties.get(DEBTOR).bank;
+          const amount = upTick(
+            mul(
+              ctx.register.quantity(DEBTOR, moneyInstrumentId(bank, USD)),
+              MORE_THAN_IT_HAS,
+              'more than it has',
+            ),
+          );
           ctx.settle({
             legs: [
               {
@@ -273,6 +291,77 @@ function failingWorld(...extra: readonly SystemModule[]): World {
 }
 
 /**
+ * Labour C4, Firm Birth D4.a: A DEATH SUDDEN ENOUGH TO CATCH A FIRM STILL EMPLOYING.
+ *
+ * A mill that starves on its own margin winds its line down FIRST: it plans nothing, sheds its
+ * hours through C3, and by the day it cannot pay there is nobody left on its books — so `release`
+ * has no row to reach and the clause it implements is never shown. That is the world behaving
+ * correctly and a test watching the wrong death. A death reaches workers only when it arrives
+ * before the firm has finished shutting down, so this is one: a bill far larger than anything the
+ * firm holds or any bank would lend it, falling due on a day it is employing people.
+ *
+ * PLAN §7: WHICH firm is an outcome. The phase asks the journal who is employing and alive, and
+ * takes the last answer; it never names one.
+ */
+const WHEN_THE_BILL_FALLS = 12;
+const FAR_MORE_THAN_IT_HAS = 100;
+
+function suddenBill(): SystemModule {
+  return {
+    id: 'test.sudden-bill',
+    spec: 'Firm D4 Labour C4',
+    requires: ['seed.foundation', 'labour', 'credit-events'],
+    instrumentKinds: [],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    participants: [],
+    families: [],
+    phases: [
+      {
+        name: 'test.sudden-bill',
+        spec: 'Money E1',
+        cycle: 0,
+        anchor: { before: 'corporateActions' },
+        run: (ctx: MechanismContext) => {
+          if (ctx.period !== WHEN_THE_BILL_FALLS) return;
+          const employing = ctx.journal
+            .ofKind('labour.hire')
+            .map((e) => partyId(String(e.data['employer'])))
+            .filter((id) => ctx.parties.has(id) && ctx.parties.get(id).status.alive);
+          const who = employing[employing.length - 1];
+          if (who === undefined) return;
+          const bank = ctx.parties.get(who).bank;
+          const owed = upTick(
+            mul(
+              ctx.register.quantity(who, moneyInstrumentId(bank, USD)),
+              FAR_MORE_THAN_IT_HAS,
+              'far more than it has',
+            ),
+          );
+          ctx.settle({
+            legs: [
+              {
+                kind: 'money',
+                from: { holder: who, issuer: bank },
+                to: { holder: DEEP_BUYER, issuer: ctx.parties.get(DEEP_BUYER).bank },
+                ccy: USD,
+                amount: owed,
+                fromCell: none(),
+                toCell: none(),
+              },
+            ],
+            cause: 'transfer',
+            reason: 'a bill it had promised to pay',
+          });
+        },
+      },
+    ],
+  };
+}
+
+/**
  * The world the seed opens, with somebody hungry enough in it to kill a mill: a buyer of flour far
  * bigger than the crop that makes it, so the mills bid the grain price up against each other until
  * one of them is paying more for the grain than the flour fetches. That is a firm dying of its own
@@ -282,7 +371,7 @@ function failingWorld(...extra: readonly SystemModule[]): World {
  */
 function worldWithADeathInIt(seed = 'estate'): World {
   const spec = rigSpec(seed);
-  return assemble({ ...spec, modules: mergeModules(spec.modules, [deepBuyer(DREW, 'flour')]) });
+  return assemble({ ...spec, modules: mergeModules(spec.modules, [deepBuyer(DREW, 'flour'), suddenBill()]) });
 }
 
 describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {
@@ -448,10 +537,18 @@ describe('what a death costs the real economy (Firm Birth D4, D4.a)', () => {
     const winding = book.estates?.[`estate.${dead}`];
     expect(winding).toBeDefined();
     expect(Number(winding?.closesAfter)).toBeGreaterThan(w.period - 1);
-    // The paper it owes is on the surface too, still outstanding and now issued by the estate.
-    expect(
-      view.instruments.some((i) => i.issuer === `estate.${dead}` && i.live && i.issued > 0),
-    ).toBe(true);
+    // The paper it owes is on the surface too, still outstanding and now issued by the estate —
+    // and THAT is shown where this world produces it. The firm the hungry buyer kills has issued
+    // nothing: over eighteen periods this world writes one loan in total, so the party that dies of
+    // its own margin dies owing only wages and a bill. So the second half of B5 is asked of the
+    // death that DOES have paper behind it — the debtor of the waterfall above, whose senior and
+    // junior claims outlive it because there was never enough to pay them.
+    const owing = failingWorld(owesMoreThanItHas());
+    for (let i = 0; i < 4; i += 1) owing.step();
+    const owed = snapshot(owing, { kind: 'inspector' }, 200);
+    const estate = `estate.${DEBTOR}`;
+    expect(owed.parties.find((p) => p.id === estate)?.alive).toBe(true);
+    expect(owed.instruments.some((i) => i.issuer === estate && i.live && i.issued > 0)).toBe(true);
   });
 });
 
@@ -459,7 +556,7 @@ describe('the other failure, and what an estate may not do (Firm D4, Firm Birth 
   it('dies of no cash while solvent, and pays only the people with a claim on it', () => {
     // A world where no bank will lend: what it could not pay it still cannot, which is the cash
     // failure, and it is a different one from the balance sheet's (Banks Capital C1.a).
-    const w = failingWorld(cannotPay(phx(1_000_000)), paysAStranger());
+    const w = failingWorld(cannotPay(), paysAStranger());
     const violations: string[] = [];
     for (let i = 0; i < 3; i += 1) {
       violations.push(...w.step().audit.families.flatMap((f) => f.violations).map((v) => v.message));
@@ -489,16 +586,28 @@ describe('what does not open an estate', () => {
     ).toEqual([]);
     // ...and there is nothing for either to fire on yet, because a cell spends what it holds. That
     // absence is the clause (C1.d) and it breaks silently, so it is asserted rather than assumed.
-    // What a cell sees of a failure is both sides of it (Money E1.b) — what it could not pay AND
-    // what did not reach it — and only the first is C1.d. A dividend that never arrived is the
-    // payer's failure and a real state of the world; it says nothing about the cell's own cash.
+    //
+    // WHAT C1.d FORBIDS IS A COMMITMENT, and a cell makes one when it bids, borrows or promises.
+    // A LEVY IS NOT ONE: the treasury assesses last period's income and consumption and asks for
+    // the money this period (Treasury C1), and a cell that has since spent it has not committed
+    // itself past its cash — it has been billed for a period it already lived. So a failed tax leg
+    // is the treasury's collection failing, which it records as `unpaid`, and it is on the same
+    // side of Money E1.b as a dividend that never arrived. What C1.d owns is everything else, and
+    // that set is empty: over fourteen periods not one payment a cell ITSELF posted failed.
+    let levies = 0;
     for (const cell of cells) {
-      const owedByIt = w
+      const failed = w
         .participantView(cell)
         .failedPayments(period(0))
         .filter((f) => f.instruction.legs.some((l) => isMoneyLeg(l) && l.from.holder === cell));
-      expect(owedByIt).toEqual([]);
+      levies += failed.filter((f) => f.instruction.reason === `tax due from ${cell}`).length;
+      expect(failed.filter((f) => f.instruction.reason !== `tax due from ${cell}`)).toEqual([]);
     }
+    // Money E1, D3: and the levies that failed are a state somebody carries, not a silent hole —
+    // the treasury says how much it did not collect, in the period it did not collect it.
+    expect(levies).toBeGreaterThan(0);
+    const short = w.journal.ofKind('treasury.receipts').filter((e) => Number(e.data['unpaid']) > 0);
+    expect(short.length).toBeGreaterThan(0);
   });
 });
 
