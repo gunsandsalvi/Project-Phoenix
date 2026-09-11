@@ -1085,14 +1085,18 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   // what somebody who EXISTS actually took" and is why this is not one split of one total.
   const full = downTick(backs.reduce((a, b) => (b < a ? b : a)));
   if (full <= 0) return;
-  const asked = sum(
-    holders.map(([, share]) => downTick(mul(full, share, "this holder's slice of the launch"))),
-  ).value;
-  if (asked <= 0) return;
-  // E3: the basket comes in FIRST and the shares are issued against what came. A holder gives up
-  // whole pieces per member (XI-15), so a little less of a line arrives than the arithmetic asked
-  // for — and a fund that issued against the ask would have issued shares its book did not back.
-  const gathered: { readonly perShare: number; readonly units: number; readonly price: number }[] = [];
+  const taken = holders.map(([, share]) =>
+    downTick(mul(full, share, "this holder's slice of the launch")),
+  );
+  const launched = sum(taken).value;
+  if (launched <= 0) return;
+  // E3, Fund Shares A3: THE BASKET IS WHAT THE SHARES ARE A CLAIM ON, so the shares are decided
+  // first and exactly that much is taken. A holder gives up whole pieces PER MEMBER (XI-15), so a
+  // little LESS of a line may arrive than the arithmetic asked for — and that is the safe way for
+  // it to be out. Taking first and issuing against what came left the fund holding more than its
+  // shares claimed, and a fund holding more than its shares claim HAS EQUITY: the accounts family
+  // said so at period zero, `etf.us has equity of 600`, which is somebody's money mislaid.
+  const contributions: number[] = [];
   for (const [line, perShare] of Object.entries(e.basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
@@ -1101,29 +1105,19 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     const units = outOfTheFloat(
       ctx,
       id,
-      mul(perShare, asked, 'units of this line the launch asks for'),
+      mul(perShare, launched, 'units of this line the launch takes'),
       e.fund as PartyId,
     );
     if (units <= 0) return;
     ctx.register.credit(e.fund as PartyId, id, units, opening.value.price, ctx.period);
-    gathered.push({ perShare, units, price: opening.value.price });
+    contributions.push(mul(units, opening.value.price, 'what this line put in'));
   }
-  if (gathered.length === 0) return;
-  // The line that came up shortest says how many shares the basket backs; every other line has a
-  // little over, and what the fund holds per share is READ off it anyway (`basketOf`).
-  const backed = downTick(
-    gathered
-      .map((g) => div(g.units, g.perShare, 'the shares this line backs'))
-      .reduce((a, b) => (b < a ? b : a)),
-  );
-  const taken = holders.map(([, share]) =>
-    downTick(mul(backed, share, "this holder's slice of what the basket backs")),
-  );
-  const launched = sum(taken).value;
-  if (launched <= 0) return;
-  const perShare = sum(
-    gathered.map((g) => mul(g.perShare, g.price, 'what this line contributes to a share')),
-  ).value;
+  // Law 19, Fund Shares A3: WHAT ONE SHARE IS A CLAIM ON IS READ OFF THE BASKET THAT ARRIVED, never
+  // off the one that was asked for. A holder gives up whole pieces per member, so a little less of
+  // a line comes in — and a share issued at what a whole basket would have been worth is a claim on
+  // more than the fund has: its holders carry it at that basis, the fund owes them that, and the
+  // difference is equity a fund may not have (measured at -15,599,400 before this read).
+  const perShare = div(sum(contributions).value, launched, 'what one share is a claim on');
   if (perShare <= 0) return;
   for (const [at, [holder]] of holders.entries()) {
     const mine = taken[at];
