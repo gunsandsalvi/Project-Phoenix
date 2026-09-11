@@ -219,6 +219,7 @@ export function withDependencies(
 ): SystemModule[] {
   const byId = new Map(all.map((m) => [m.id, m]));
   const keep = new Set<string>();
+  const asked = new Set<string>();
   const take = (m: SystemModule): void => {
     if (keep.has(m.id)) return;
     keep.add(m.id);
@@ -227,8 +228,37 @@ export function withDependencies(
       if (dep !== undefined) take(dep);
     }
   };
-  for (const m of all) if (wanted(m)) take(m);
-  return all.filter((m) => keep.has(m.id));
+  for (const m of all) {
+    if (!wanted(m)) continue;
+    asked.add(m.id);
+    take(m);
+  }
+  return all.filter((m) => keep.has(m.id)).map((m) => (asked.has(m.id) ? m : quiet(m)));
+}
+
+/**
+ * A module for WHAT IT DECLARES, not for what it does: its kinds, its units, its parameters and its
+ * registry, with nothing that acts.
+ *
+ * This is what a dependency IS to a test that did not ask for it. The seed reads the goods module's
+ * recipes and the labour module's hours to size this world (Seed A3), so those modules have to be
+ * assembled — but a test of the kernel's own wire did not ask for a labour market to clear or for
+ * households to go shopping, and a world that ran them would be measuring them too. Nothing here
+ * changes a mechanism: a module that acts in a world that asked for it acts exactly as it did.
+ */
+export function quiet(m: SystemModule): SystemModule {
+  /* eslint-disable @typescript-eslint/no-unused-vars -- the two providers are dropped by name. */
+  const { outlooks, creditDecisions, ...rest } = m;
+  /* eslint-enable @typescript-eslint/no-unused-vars */
+  return {
+    ...rest,
+    phases: [],
+    participants: [],
+    venueParticipants: [],
+    bankChoices: [],
+    families: [],
+    marks: [],
+  };
 }
 
 /**
