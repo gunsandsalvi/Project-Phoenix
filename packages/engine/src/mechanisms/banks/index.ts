@@ -975,6 +975,9 @@ export function banks(rows: readonly BankDecl[]): SystemModule {
   participants: [
     {
       partyKind: BANK,
+      // XI-13, Dealer Desks A1: a dealer puts its own capital behind what it thinks a line is worth
+      // and carries the loss when it is wrong. Every order this face posts is that.
+      speculative: true,
       orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
         dealingOrders(view, m, rows),
     },

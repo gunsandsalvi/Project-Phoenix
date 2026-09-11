@@ -2486,3 +2486,75 @@ market's grid, because there is one way into the book and the print is a posted 
 if any market ever prints a level that is not a whole number of its ticks, then something reaches the
 price store without passing the book — and the candidates are named, a seed's stated level and a
 derived value, both of which this item decided deliberately.
+
+---
+
+## 12c — The equity book walks away
+
+**The finding, and the cause.** `equity.firm.13` printed `100.00, 99.91, 99.76, 99.73, 127.13,
+9613.36` and then stopped trading, every one of those a session with real settled volume. Nothing was
+wrong with the solver. Both sides of a dealer's quote come from that dealer's own view, its view
+follows the last print, and a book with nothing in it but desks is a fixed point (XI-13). What was
+missing was a party whose reason to be there was not the last print.
+
+**And the party was already in the register.** 11.5 put the float in the savers' hands; what they
+lacked was a reason. The saver's share valuation was what the issuer had PAID it (`payout.declared`),
+and TWO firms in forty declared a payout — so thirty-eight listed lines had nobody in them with a
+view, and `market.noView` said so every period.
+
+**The reason, and it is the one §48 made possible.** A share is a claim on the residual (Equity A1),
+and since 12a every public company PUBLISHES what its residual is and what it earns on it, on its own
+fiscal calendar, to everybody at once. So a saver prices the claim at
+
+    the book it is a piece of  +  what it earns a year / what this cell requires
+
+— two figures the company itself published, and one thing that is the cell's own: what it requires of
+a claim that promises nothing, which is its liquidity preference plus how wrong its own income has
+recently been (§46 B3). Two cells therefore want different prices for one firm, and that disagreement
+is what gives the book two sides (§46 A3). Nothing is discounted, nothing is forecast, no multiple is
+imposed, and there is NO BOUND anywhere: a company far enough under water simply has no bid, which is
+the absence of a reason and not a floor. 11.3 was thrown away for writing one.
+
+**Deliberately not consulted: the analysts.** A bank's estimate of what a company will earn is a
+different object with a different owner (`research.estimate`), and a saver reading it would be one
+more party with no reason of its own — which is exactly what Reporting E2 forbids and what
+`check:forbids` enforces over the source.
+
+**Measured.** Three worlds, a year each. `probe`: the two listed lines swing 1.18x and 1.23x over the
+last twenty periods against 96x in five sessions before. `year`: 1.23x to 3.33x. `anchor`: flat. And
+the print tracks the published residual — `firm.35` printed 71 against a published book per share of
+71.71, a ratio of 0.99 — which is what `equity-anchor.test.ts` asserts, at a factor of two either way
+that is "the same size of number" rather than a band anybody tuned.
+
+**A second structural fix: whether a party has a view belongs to the PARTICIPANT, not the kind.**
+`market.noView` counted `PartyKindProfile.speculative`, and a kind is the wrong owner — a bank's
+dealing desk has a view and the same bank's treasury funding itself does not, and they are one party
+of one kind. It moved to `ParticipantDecl`, where the posting is declared. `noView` on the equity
+books fell from 84 events in a year to 36, and every one that remains is a line whose issuer has
+never published anything — which is honest, because a company with no accounts cannot be valued by
+anybody except off the last print.
+
+**And 12a-1 is fixed here, as its positioning said it would be.** The equity index read a level its
+own prints did not make — a step at one period, carried unchanged. The cause was WHEN each reader
+took the step, not how: a level is a chain, and a basket is NOT a function of the period alone (a
+constituent's shares outstanding is the count there is now, and a delisting takes a company out of
+baskets it used to be in). The tracker fund asked during the markets phase, so the kernel chained
+period t with the companies alive mid-period while the audit's independent reader chained it at the
+close with the ones still alive — and the two parted by exactly that step. The step is now taken
+ONCE, at the close of the period, for every index; a reader inside a period gets the last level that
+is finished, which is the rule every other read here follows. Nothing is stored that anybody can read
+(Appendix B stands); what is kept is each reader's own place in its own walk.
+
+**Coverage.** `Equity B3`, `Indices A2`, `Indices E3` re-marked.
+
+**Found and not chased.** `docs/BUGS.md` **12c-1**: a ceased issuer's share line stays live and keeps
+printing — `equity.firm.13` has `issued === 0` and a market that still prints 11 every period with
+only desks in it. XI-8 says no death without a destination, and a company that has ceased has no
+residual for a share to be a claim on.
+
+**Forecast, with its killer.** The claim is that a listed line is now anchored by a party whose level
+comes from the issuer's own published accounts rather than from the book, so it cannot run away from
+what the company is worth without the company's own reports running away first. The killer: if a
+line's print parts from its published book per share by an order of magnitude while that company goes
+on reporting normally, then the saver is not the marginal buyer and the desks are still pricing each
+other — and the next place to look is how much of the float a cell can actually bid for.

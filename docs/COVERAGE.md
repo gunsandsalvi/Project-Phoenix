@@ -399,7 +399,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Equity A6` | MET | packages/engine/src/mechanisms/equity/index.ts, packages/engine/src/mechanisms/equity/share.ts (the issuer names the line, as a market names a share; the internal id is never the display name, Law 9) |
 | `Equity B1` | MET | packages/engine/src/mechanisms/households/portfolio.ts (a holder or buyer posts its own schedule, off its own opinion and its own budget, and who trades is the outcome), packages/engine/src/mechanisms/banks/dealing-quote.ts (and a desk posts two out of its own state) |
 | `Equity B2` | MET | packages/engine/src/mechanisms/equity/index.ts, packages/engine/src/clearing/market.ts (one cleared price per line per period, out of the same solver as every other market) |
-| `Equity B3` | MET | packages/engine/src/mechanisms/equity/share.ts (there is no multiple, book value, discounted cash flow or target anywhere: the kind promises nothing dated, so nothing could discount it, and the price is what the session made of the schedules). An opinion is a participant's own and enters its schedule (packages/engine/src/mechanisms/households/portfolio.ts) |
+| `Equity B3` | MET | packages/engine/src/mechanisms/equity/share.ts (there is no multiple, discounted cash flow or target anywhere: the kind promises nothing dated, so nothing could discount it, and the price is what the session made of the schedules). An opinion is a participant's own and enters its schedule (packages/engine/src/mechanisms/households/portfolio.ts: a saver prices the claim off what the company itself published it owns net of what it owes, plus what it earns on that, at what THAT cell requires — so two cells want different prices for one firm), packages/engine/test/equity-anchor.test.ts |
 | `Equity B4` | MET | packages/engine/src/mechanisms/equity/opinion.ts (shares times price, read in one place so nobody derives it a second way); B4.a: nothing compares it against shares times price, because the read is the only writer of it |
 | `Equity B4.a` | MISSING |  |
 | `Equity B5` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/src/mechanisms/banks/dealing-quote.ts (a desk quotes both sides out of its own inventory and its own capital, and what it earns is the width it quoted less what the inventory did) |
@@ -756,7 +756,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | requirement | status | where / why |
 |---|---|---|
 | `Indices A1` | MET | packages/engine/src/mechanisms/indices/baskets.ts, packages/engine/src/prices/index-read.ts (an index is a stated rule over constituents, and the rule is data) |
-| `Indices A2` | MET | packages/engine/src/prices/index-read.ts (the level is applied where it is asked for; nothing stores one) |
+| `Indices A2` | MET | packages/engine/src/prices/index-read.ts (the level is applied where it is asked for; nothing stores one), packages/engine/src/world/world.ts (`walkIndices`: the step is taken ONCE, at the close of the period, so no reader ever re-derives a past step against a basket that period never had) |
 | `Indices A3` | MET | packages/engine/src/prices/index-read.ts (the level is chained, so a rebalance moves nothing) |
 | `Indices A4` | MET | packages/engine/src/mechanisms/indices/index.ts (the base is a declared resolution: doubling it doubles every level and changes nothing) |
 | `Indices B1` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a weight is a COUNT of the line — shares in issue, par outstanding, units bought — never a share of the index) |
@@ -776,7 +776,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Indices D5` | MET | packages/engine/src/world/world.ts (one system: a second module declaring the same id is refused at assembly) |
 | `Indices E1` | MET | packages/engine/src/mechanisms/indices/index.ts, packages/engine/src/observer/observer.ts (published as an observation, with what it was read from) |
 | `Indices E2` | MET | packages/engine/src/prices/index-read.ts (no stored level, so it cannot be stale and cannot be revised) |
-| `Indices E3` | MET | packages/engine/src/audit/families/cross-market.ts (the audit reads every index a second time from the prints and puts the two against each other) |
+| `Indices E3` | MET | packages/engine/src/audit/families/cross-market.ts (the audit reads every index a second time from the prints and puts the two against each other), packages/engine/test/equity-anchor.test.ts (the two agree every period of a year) |
 
 ## Banks Lending
 

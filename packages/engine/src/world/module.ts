@@ -89,6 +89,22 @@ export interface ParticipantDecl {
    * It may name a market that does not exist; it is a filter and not a claim about the world.
    */
   readonly markets?: (view: ParticipantView) => readonly MarketId[];
+  /**
+   * XI-13: WHETHER THIS PARTICIPANT IS IN THE BOOK BECAUSE IT HAS A VIEW — it names a level from
+   * what it thinks the thing is worth, puts its own money behind that, and takes the loss when it is
+   * wrong. It is what `market.noView` counts, and what a second opinion is made of.
+   *
+   * IT BELONGS TO THE PARTICIPANT AND NOT TO THE PARTY KIND, which is what worklist 12c measured
+   * rather than assumed. It was a flag on the kind, and a kind is the wrong owner: a bank's dealing
+   * desk has a view and the same bank's treasury funding itself does not, and they are one party of
+   * one kind. A household saving had no view in any book while its reason was a rule — and the
+   * moment it prices a share off what that company published it owns net of what it owes, it has
+   * one, in that book and not in the others. Whether a party is there for a view is a fact about WHY
+   * IT IS POSTING, so it is declared where the posting is declared.
+   *
+   * Absent means it is not: a participant that does not claim a view does not have one counted.
+   */
+  readonly speculative?: boolean;
   orders(view: ParticipantView, market: MarketDecl): readonly Order[];
 }
 

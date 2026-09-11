@@ -221,6 +221,36 @@ downwards instead of upwards.
 quotes in, and a grid widened to fit a broken price would be the price deciding the resolution. To be
 positioned with 12c, which owns the share book.
 
+## Found while working item 12c
+
+### 12c-1 — A ceased issuer's share line stays live and keeps printing
+
+**Where.** `mechanisms/equity/`, `mechanisms/estate/`. Seen with
+`foundationSpec('probe', drawBanks(4,'probe'), drawFirms(40,'probe'))`.
+
+**Measured.** `firm.13` ceases; its share line `equity.firm.13` has `issued === 0` from then on, so
+its published book per share reads `Infinity` — and the market still prints 11 every period, with
+`market.noView` firing on it because the only parties left in the book are the desks.
+
+**What is missing.** XI-8: no death without a destination. A company that has ceased has no residual
+for a share to be a claim on, so its line should stop trading and its market should close — the
+estate settles what is left and the claim is extinguished. Instead there is a live market in the
+shares of a company that does not exist, priced by desks alone.
+
+**Not chased.** It is the estate's business rather than the share book's, and 12c is the anchor. To
+be positioned when 12c closes.
+
+### 12c-2 — RESOLVED here: 12a-1, the index read a level its own prints did not make
+
+12a's finding, positioned into this item and fixed: the two readers of an index — the kernel's and
+the audit's independent one — walked the SAME period's step at different moments in it. The tracker
+fund asked during the markets phase, so the kernel chained period t with the companies alive then;
+the audit chained it at the close with the ones still alive. A basket is not a function of the
+period alone (a constituent's shares outstanding is the count there is NOW, and a delisting takes a
+company out of baskets it used to be in), so the two parted by exactly one step and carried the gap
+unchanged for ever — which is why it looked like a step and not a drift. The step is now taken once,
+at the close of the period, and a reader inside a period gets the last level that is finished.
+
 ### 12b-2 — RESOLVED here: a value in one money written into an account kept in another
 
 Named while reproducing 12b at `410bf16`, and it had two sites, both the same cause:

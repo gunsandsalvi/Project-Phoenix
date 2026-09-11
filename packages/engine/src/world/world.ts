@@ -175,6 +175,32 @@ export class World {
   private readonly indexList = new Map<string, IndexDecl>();
   /** Law 18: this reader's own memory of the levels it has walked (prices/index-read.ts). */
   private readonly indexLevels = indexCache();
+  /**
+   * Indices A2, E3, Law 19: THE LAST PERIOD WHOSE INDEX STEP IS TAKEN, which is the last period an
+   * index HAS a level for.
+   *
+   * A level is a CHAIN — last period's level times what its basket did — so it may be walked once
+   * or it is not the same chain. And what a basket IS, is not a function of the period alone: a
+   * constituent's shares outstanding is the count there is NOW and a delisting takes a company out
+   * of every basket including the ones it used to be in. So the step has to be taken at ONE moment,
+   * the same one for everybody, and that moment is the close of the period, when its prints are
+   * final and nothing else will happen in it.
+   *
+   * IT WAS TAKEN WHEREVER SOMEBODY FIRST ASKED, and that is worklist 12a's finding 12a-1: the
+   * tracker fund asked during the markets phase, so the kernel's walk took period t's step with the
+   * companies that were alive mid-period, while the audit's independent reader took the same step at
+   * the close with the ones still alive then. The two parted by exactly that step — `equity.us reads
+   * 69.0647 where its own prints make 69.0662` — and carried the gap unchanged for ever after, which
+   * is why it looked like a step rather than a drift.
+   *
+   * A reader DURING a period therefore gets the last complete level and not a half-made one, which
+   * is the same rule every other read in this engine follows: a phase reading a not-yet-produced
+   * print throws, and a level whose period is not over has not been produced.
+   *
+   * Nothing is stored that anybody can read (Appendix B: no stored index level). What is kept is
+   * each reader's own place in its own walk, which is what walking a chain means.
+   */
+  private indexThrough: Period = period(0);
   /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
   private readonly resolvers = new Map<PartyKindId, string>();
   private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
@@ -690,6 +716,7 @@ export class World {
     forbid(!this.sealed, 'Seed A2', 'the world is already sealed');
     this.requireCreditDeciders();
     this.sealed = true;
+    this.walkIndices();
     const report = this.audit.run(this.view(), this.reads());
     remember(this.view(), this.memory);
     this.journal.record(
@@ -720,6 +747,7 @@ export class World {
       phase.run(this);
     }
     this.currentCycle = this.calendar.lastCycle;
+    this.walkIndices();
     const audit = this.audit.run(this.view(), this.reads());
     remember(this.view(), this.memory);
     this.journal.record(
@@ -1133,10 +1161,16 @@ export class World {
    * prints. The rules are the modules' data (`SystemModule.indices`), registered at assembly, and
    * the arithmetic is one function (`prices/index-read.ts`) so nobody can apply it a second way.
    */
+  /** The one moment a period's index step is taken, for every index, in order (Indices A2, E3). */
+  private walkIndices(): void {
+    this.indexThrough = this.currentPeriod;
+    for (const id of this.indexList.keys()) this.index(id);
+  }
+
   index(id: string): Option<IndexRead> {
     const decl = this.indexList.get(id);
     if (decl === undefined) return none<IndexRead>();
-    return readIndex(decl, this.currentPeriod, {
+    return readIndex(decl, this.indexThrough, {
       cache: this.indexLevels,
       world: {
         calendar: this.calendar,
@@ -1292,7 +1326,7 @@ export class World {
         // estate's now, and the estate posts its own orders under its own name (XI-8).
         if (!party.status.alive) continue;
         const posted = decl.orders(this.participantView(party.id), m);
-        if (posted.length > 0 && this.registry.partyKind(decl.partyKind).speculative === true) {
+        if (posted.length > 0 && decl.speculative === true) {
           withAView = true;
         }
         orders.push(...posted);

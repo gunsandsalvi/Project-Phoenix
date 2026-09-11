@@ -126,6 +126,8 @@ export function spotFx(rows: readonly BankDecl[]): SystemModule {
         // books is asking (Clearing F1).
         partyKind: BANK,
         in: 'fx' as const,
+        // XI-13: a desk that will carry a currency position is there for a view, like any other.
+        speculative: true,
         // B5, D4, Law 4: a bank's position in a pair is ITS DESK'S BOOK, and the quote already has
         // that position in it (`dealerOrders` skews both sides by it). Asking it for a need order
         // as well would be the same balance offered twice by the same party — and at crossing

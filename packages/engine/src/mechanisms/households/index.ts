@@ -282,6 +282,13 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     participants: [
       {
         partyKind: HOUSEHOLD,
+        // XI-13, Equity B3: A SAVER IS IN A SHARE BOOK FOR A VIEW, and worklist 12c is what made
+        // that true rather than a claim. It names a level from what the company itself published it
+        // owns net of what it owes and what it earns on that, at what THIS cell requires of a claim
+        // that promises nothing — its own money behind its own opinion, and its own loss when the
+        // claim turns out to be worth less. Before that its only reason was a liquidity ladder over
+        // sovereign paper, which is a rule, and the share books had nobody in them but the desks.
+        speculative: true,
         // Law 18: the books this cell could be in, off the plan its orders come off (Law 19). A
         // cell buys three or four goods and holds a ladder in a handful of lines; the world it is
         // in has 261 markets, and asking it about every one of them was four fifths of what a

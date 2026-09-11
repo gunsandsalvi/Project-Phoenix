@@ -26,7 +26,8 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { add, div, material, mul, sum } from '../../core/num.js';
+import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import { none, some, type Option } from '../../core/option.js';
 import { downTick } from '../../core/tick.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -60,13 +61,36 @@ export interface SavingLine {
  *   those payments return what it requires: its liquidity premium, what it wants for giving up
  *   access to its money. It will only tie its money up for its own horizon, so anything that comes
  *   back later is not somewhere its money can go.
- * - **A share.** It promises NOTHING (Equity A4). Nothing about it can be discounted, so the only
- *   thing the cell can go on is what the issuer has actually been paying, which every issuer that
- *   pays anything declares publicly under one name (`payout.declared`: Equity D3 for a firm, Fund
- *   Shares B3 for a fund), capitalised at what it requires of a claim that promises nothing — its
- *   liquidity premium PLUS how wrong its own income has recently been (§46 B3). Two cells with
- *   different histories therefore want different prices for the same firm, and that disagreement is
- *   what gives the book two sides (§46 A3, XI-13).
+ * - **A share.** It promises NOTHING (Equity A4), so nothing about it can be discounted. What it IS
+ *   is a claim on the residual (A1) — on what the issuer EARNS, which is what B3 says a saver holds
+ *   it for — and since §48 every public company PUBLISHES what it earned, on its own fiscal
+ *   calendar, to everybody at once (`reporting.report`). So that is what the cell goes on: a public,
+ *   dated fact about the thing it is buying a piece of, capitalised at what it requires of a claim
+ *   that promises nothing — its liquidity premium PLUS how wrong its own income has recently been
+ *   (§46 B3). Two cells with different histories therefore want different prices for the same firm,
+ *   and that disagreement is what gives the book two sides (§46 A3, XI-13).
+ *
+ *   IT USED TO BE WHAT THE ISSUER HAD PAID (`payout.declared`), and that was the best a saver could
+ *   do before there were reports — but it left the book without an anchor, which is worklist 12c's
+ *   whole finding: two firms in forty declared a payout, so thirty-eight listed lines had no party
+ *   in them with a reason that was not the last print, and `market.noView` said so every period. A
+ *   distribution is management's choice about what to do with the residual; the residual is what the
+ *   claim IS. One fact, read once, for every listed line (Law 4, Law 19).
+ *
+ *   AND THE RESIDUAL HAS TWO PARTS, because the balance sheet and the income statement are both in
+ *   that report and they answer different halves of one question. What a share IS, is a piece of
+ *   what the company owns net of what it owes (A1) — its published `assets - liabilities`, over the
+ *   register's count of shares. What holding it EARNS is the residual the company adds to that each
+ *   period, which is worth what this cell requires of a claim that promises nothing. So:
+ *
+ *       worth = the book it is a piece of  +  what it earns a year / what this cell requires
+ *
+ *   Nothing is discounted, nothing is forecast and no multiple is imposed: both terms are figures
+ *   the company itself published, and the only thing that is this cell's own is what it requires,
+ *   which differs between cells and is why they disagree (§46 A3). A company LOSING money is worth
+ *   less than its book to a saver and the second term is negative — and if it is negative enough the
+ *   whole is, and this cell simply names no price. That is the absence of a reason, never a floor
+ *   (Law 6): nobody is stopped from bidding, there is just nothing to bid for.
  *
  * This is the "yield against risk" D5 names, and it is the reason the horizon comment above pointed
  * at worklist 9: until something in this world priced risk, a cell had only liquidity to weigh.
@@ -105,18 +129,72 @@ export function savingLines(
       if (price > 0) paper.push({ instrument: i, price });
       continue;
     }
-    // A share: what it has been paying, capitalised at what this cell requires of it.
-    if (forShares <= 0 || year <= 0) continue;
-    const declared = view.lastPublicAbout('payout.declared', i.issuer.value);
-    if (!declared.some) continue;
-    const perShare = declared.value.data['perShare'];
-    if (typeof perShare !== 'number' || perShare <= 0) continue;
-    // Law 8: what it was paid is per period and what it requires is per annum, so the period is
+    // A share: the book it is a piece of, plus what it earns on that book (A1, B3, §48).
+    if (forShares <= 0 || year <= 0 || i.issued <= 0) continue;
+    const said = publishedBy(view, i);
+    if (!said.some) continue;
+    // Law 8: what it earns is per period and what the cell requires is per annum, so the period is
     // turned into the fraction of a year the calendar says it is.
-    const value = div(div(perShare, year, 'what it paid, per annum'), forShares, 'what it is worth');
+    const onTheBook = div(
+      div(said.value.earnedPerShare, year, 'what it earns a share, per annum'),
+      forShares,
+      'what earning that is worth',
+    );
+    const value = add(said.value.bookPerShare, onTheBook, 'what the claim is worth to it');
+    // A company far enough under water is one this cell will not name a price for. That is not a
+    // floor: it is the absence of a reason to bid, and a saver with no reason posts nothing (B6).
     if (value > 0) shares.push({ instrument: i, price: value });
   }
   return { paper, shares };
+}
+
+/**
+ * Equity B3, Reporting A1, A2, Law 19: WHAT THIS COMPANY LAST TOLD EVERYBODY IT EARNED, per share
+ * and per period.
+ *
+ * It is a READ of a public event and nothing else: the company published a figure for a span of
+ * periods it named (§48), and how many shares that residual is divided between is the register's own
+ * count of them (Equity A2). Nothing is estimated here and nothing is stored — a saver that had its
+ * own idea of what a company earned would be holding a second set of that company's books (Law 4),
+ * and what a BANK thinks it will earn next is a different object with a different owner, published
+ * under its own name (`research.estimate`) and deliberately not consulted here: a saver reading the
+ * analysts would be one more party with no reason of its own (Reporting E2).
+ */
+function publishedBy(
+  view: ParticipantView,
+  i: Instrument,
+): Option<{ readonly bookPerShare: number; readonly earnedPerShare: number }> {
+  if (!i.issuer.some) return none();
+  const said = view.lastPublicAbout('reporting.report', i.issuer.value);
+  if (!said.some) return none();
+  const earned = said.value.data['earned'];
+  const assets = said.value.data['assets'];
+  const liabilities = said.value.data['liabilities'];
+  const from = said.value.data['from'];
+  const to = said.value.data['to'];
+  if (
+    typeof earned !== 'number' ||
+    typeof assets !== 'number' ||
+    typeof liabilities !== 'number' ||
+    typeof from !== 'number' ||
+    typeof to !== 'number'
+  ) {
+    return none();
+  }
+  const periods = to - from + 1;
+  if (periods <= 0) return none();
+  return some({
+    bookPerShare: div(
+      sub(assets, liabilities, 'the residual its shares are a claim on'),
+      i.issued,
+      'what that is a share',
+    ),
+    earnedPerShare: div(
+      div(earned, periods, 'what it earned a period'),
+      i.issued,
+      'what that is a share',
+    ),
+  });
 }
 
 /**

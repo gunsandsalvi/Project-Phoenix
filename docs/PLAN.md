@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 63.0%** (353 of 560 steps across 40 items).
+**Plan completion: 63.9%** (358 of 560 steps across 40 items).
 **Requirement coverage: 47.2%** (642 MET, 83 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -44,7 +44,7 @@ The plan has two parts:
 | 12a — Reporting and estimates | 26 | 26 | closed |
 | 12b — The balance sheet that takes one step out of true | 6 | 6 | closed |
 | 12b.1 — A price has a smallest piece | 9 | 9 | closed |
-| [12c — The equity book walks away](plan/12c-equity-anchor.md) | 5 | 0 | open |
+| 12c — The equity book walks away | 5 | 5 | closed |
 | [12d — The tests catch up with the world](plan/12d-tests-catch-up.md) | 8 | 0 | open |
 | [13a — The derivative layer](plan/13a-derivative-layer.md) | 16 | 0 | open |
 | [13b — The derivative classes](plan/13b-derivative-classes.md) | 20 | 0 | open |
