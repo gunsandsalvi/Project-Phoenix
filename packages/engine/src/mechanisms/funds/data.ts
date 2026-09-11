@@ -68,6 +68,18 @@ export interface EtfDecl {
    */
   readonly basket: Readonly<Record<string, number>>;
   /**
+   * Indices C2, C2.a, Equity C2.c: THE INDEX IT TRACKS, by id. A tracker's mandate is not a list of
+   * lines somebody typed — it is a rule, and the rule is the index's. So what it should hold is
+   * whatever the index says is in it at whatever the index weighs it, and a REBALANCE is the index
+   * answering differently: a line listed, a line gone, a weight moved. The fund then has to trade,
+   * in the same session, at whatever the book gives it (C2.a) — it is not choosing, which is the
+   * whole of what makes a tracker a transmission channel rather than an investor.
+   *
+   * The id is a plain string because a fund may not import the module that declares the index
+   * (`no-cross-module-import`); what index this world's tracker tracks is data about this world.
+   */
+  readonly tracks: string;
+  /**
    * Seed A3: who holds its shares at launch and how many. A fund is launched by somebody putting a
    * basket in and taking the shares that came out, and in this world that is its sponsor and the
    * banks whose dealing lines will make its market — an authorised participant with no shares can only ever
@@ -127,12 +139,13 @@ export function drawEtfs(
   lines: readonly string[],
   banks: readonly string[],
   seed: string,
+  tracks: string,
 ): readonly EtfDecl[] {
   if (lines.length === 0) return [];
   const rng = prng(seed, 'etf');
   const basket: Record<string, number> = {};
   for (const line of lines) basket[line] = 1;
-  const manager = 'manager.etf.north';
+  const manager = 'manager.etf.us';
   const launchedBy: Record<string, number> = {};
   const sponsorShare = Math.round(ETF_LAUNCH_UNITS * ETF_SPONSOR_SHARE);
   launchedBy[manager] = sponsorShare;
@@ -155,12 +168,13 @@ export function drawEtfs(
   const home = chosen[0];
   return [
     {
-      fund: 'etf.north',
-      name: 'North Listed Equity Fund',
+      fund: 'etf.us',
+      name: 'US Listed Equity Fund',
       manager,
-      managerName: 'North Index Managers',
+      managerName: 'American Index Managers',
       bank: home ?? manager,
       basket,
+      tracks,
       launchedBy,
       needs: ['equity', 'banks'],
       fee: 0.001,

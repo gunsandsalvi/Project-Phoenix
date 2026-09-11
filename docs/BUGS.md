@@ -626,3 +626,42 @@ in another country's money is what puts parties on both sides of a pair. The mec
 close it — a reason to hold a foreign balance (13h) and a reason to need one (13i) — are both placed.
 
 **Position.** 13i, with 13h.
+
+### 12-15 — An equity line walks away, the way the sovereign line did before 11.3
+
+**Where.** `packages/engine/src/mechanisms/equity/`, item 9's dealers. Seen with
+`foundationSpec('probe', drawBanks(4), drawFirms(40))`.
+
+**Measured.** `equity.firm.13` prints 100.00, 99.91, 99.76, 99.73, **127.13**, **9613.36**, and then
+the market stops trading at all. Every one of those is a session with real settled volume behind it
+(1.2e9, 6.8e8, 1.9e10, 7.9e9, 2.3e6 units), so it is not a print with nobody on the other side — it
+is desks crossing each other and carrying the line with them.
+
+**Why it is not fixed here.** It is XI-13's fixed point in the EQUITY market: this is the same
+defect item 12's own preamble describes for the sovereign market ("its only participants are
+dealers, both sides of a dealer's quote come from its own view, and its own view follows the last
+print"), and step 238 fixed it only for "the one market that funds the model". The equity book needs
+the same treatment — a participant whose reason is not the last print. Confirmed pre-existing:
+the series is identical with the index tracker's participant removed.
+
+**Not the tracker.** The tracker that arrived with this item is a second reason in that book, but it
+is not enough on its own: its target is its holding, so most periods it has nothing to trade, and it
+pays what the line last printed rather than whatever is asked (Appendix B: no forced buyer).
+
+**Position.** Its own item, inserted before 13g (corporate control), since a listed firm's price is
+what control is bought with. Same shape as 11.3's fix in the sovereign book.
+
+### 12-16 — A cleared session that settles nothing used to print its level
+
+**Where.** `packages/engine/src/clearing/market.ts`, `runMarket`.
+
+**Measured.** `mkt.share.etf.us` at period 3: `outcome: cleared, price: 63905.76, settledVolume: 0,
+failedTrades: 0`. The book crossed, every trade it made was too small to pay for, and the level was
+written as a print anyway — a 320x premium over the fund's own NAV. The authorised participants then
+created 6,612,441,391 shares against it, and the next session's demand summed past 2^53 and threw
+`[Law 8] demand at a level is 75127974101250380`.
+
+**FIXED IN THIS ITEM** (it stopped the build): a print is what somebody paid (Law 3, Clearing E1), so
+a session that settles nothing carries the last real price forward, visibly stale, with the new
+`nothingSettled` reason on it. Written down because the finding is worth keeping: the symptom was a
+fund's share price, the cause was in the kernel's market, and nothing between them was wrong.

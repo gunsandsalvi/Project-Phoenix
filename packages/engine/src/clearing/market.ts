@@ -189,6 +189,14 @@ export function runMarket(
             allotted = finite(allotted + t.qty, 'allotted');
         } else failed += 1;
       }
+      // Law 3, Clearing E1: A PRINT IS WHAT SOMEBODY PAID. A session whose book crossed but whose
+      // every trade then failed to become a settled instruction has produced a level and no trade,
+      // and writing it would be a price with nobody on either side of it — one that the marks, the
+      // curve, every holder's equity and the next session's quotes would all then be built on. So
+      // it prints nothing of its own and the last real price stands, visibly stale and saying why.
+      if (settledVolume <= 0) {
+        return carryLast(m, 'nothingSettled', period, cycle, deps, offer, orders, outcome.fills);
+      }
       deps.prices.write({
         instrument: m.instrument,
         market: m.id,
@@ -228,66 +236,68 @@ export function runMarket(
     }
     case 'noDemand':
     case 'noSupply':
-    case 'noOverlap': {
-      const auction = offer.some
-        ? some(auctionResult(offer.value, orders, [], none<number>(), 0))
-        : none<AuctionResult>();
-      if (auction.some) journalAuction(m, auction.value, period, cycle, deps);
-      const last = deps.prices.latest(m.instrument, period);
-      if (!last.some) {
-        // Nothing traded and nothing to carry: the line has no price at all, which is what a
-        // reader is told when it asks (XI-6). A print is never invented to fill the gap.
-        deps.journal.record(
-          period,
-          cycle,
-          'print',
-          [m.id, m.instrument],
-          { printed: false, reason: outcome.kind },
-          true,
-        );
-        return {
-          market: m.id,
-          outcome: outcome.kind,
-          price: none(),
-          settledVolume: 0,
-          failedTrades: 0,
-          auction,
-        };
-      }
-      const from = struckIn(last.value);
-      deps.prices.write({
-        instrument: m.instrument,
-        market: m.id,
-        period,
-        price: last.value.price,
-        ccy: m.ccy,
-        provenance: { kind: 'stale', from, reason: outcome.kind },
-      });
-      deps.journal.record(
-        period,
-        cycle,
-        'print',
-        [m.id, m.instrument],
-        {
-          stale: true,
-          reason: outcome.kind,
-          carriedFrom: from,
-          price: last.value.price,
-        },
-        true,
-      );
-      return {
-        market: m.id,
-        outcome: outcome.kind,
-        price: some(last.value.price),
-        settledVolume: 0,
-        failedTrades: 0,
-        auction,
-      };
-    }
+    case 'noOverlap':
+      return carryLast(m, outcome.kind, period, cycle, deps, offer, orders, []);
     default:
       return assertNever(outcome, 'Outcome');
   }
+}
+
+/**
+ * Clearing C4.b, E1, XI-6: A SESSION THAT PRODUCED NO TRADE. What stands is the last real price,
+ * carried forward and VISIBLY stale with the reason on it — or, when there has never been one,
+ * nothing at all, because a price is never invented to fill a gap.
+ *
+ * One function for every way a session can end without a trade (Law 4): the book had one side, the
+ * two sides did not meet, or they met and nothing settled. They are different reasons and each says
+ * which it was; what happens to the price is the same thing, and it is written once.
+ */
+function carryLast(
+  m: MarketDecl,
+  reason: StaleReason,
+  period: Period,
+  cycle: Cycle,
+  deps: MarketRunDeps,
+  offer: Option<PrimaryOffer>,
+  orders: readonly Order[],
+  fills: readonly Fill[],
+): MarketResult {
+  const auction = offer.some
+    ? some(auctionResult(offer.value, orders, fills, none<number>(), 0))
+    : none<AuctionResult>();
+  if (auction.some) journalAuction(m, auction.value, period, cycle, deps);
+  const last = deps.prices.latest(m.instrument, period);
+  if (!last.some) {
+    // Nothing traded and nothing to carry: the line has no price at all, which is what a reader is
+    // told when it asks (XI-6). A print is never invented to fill the gap.
+    deps.journal.record(period, cycle, 'print', [m.id, m.instrument], { printed: false, reason }, true);
+    return { market: m.id, outcome: reason, price: none(), settledVolume: 0, failedTrades: 0, auction };
+  }
+  const from = struckIn(last.value);
+  deps.prices.write({
+    instrument: m.instrument,
+    market: m.id,
+    period,
+    price: last.value.price,
+    ccy: m.ccy,
+    provenance: { kind: 'stale', from, reason },
+  });
+  deps.journal.record(
+    period,
+    cycle,
+    'print',
+    [m.id, m.instrument],
+    { stale: true, reason, carriedFrom: from, price: last.value.price },
+    true,
+  );
+  return {
+    market: m.id,
+    outcome: reason,
+    price: some(last.value.price),
+    settledVolume: 0,
+    failedTrades: 0,
+    auction,
+  };
 }
 
 /** Pair buy fills with sell fills, walking both lists; every trade has two named sides (D2). */

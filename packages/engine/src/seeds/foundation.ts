@@ -78,7 +78,7 @@ import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
-import { indices } from '../mechanisms/indices/index.js';
+import { EQUITY_INDEX, indices } from '../mechanisms/indices/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -1409,7 +1409,9 @@ export function foundationDraw(
     firms: firmRows,
     listed,
     funds: drawFunds(bankRows, seed),
-    etfs: drawEtfs(listed.map((r) => String(equityLineOf(r.firm))), names, seed),
+    // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
+    // declares it. The seed is where the two meet, because it is the only place that may know both.
+    etfs: drawEtfs(listed.map((r) => String(equityLineOf(r.firm))), names, seed, EQUITY_INDEX(REGION)),
   };
 }
 

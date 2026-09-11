@@ -63,6 +63,7 @@ import type { SystemModule } from '../../world/module.js';
 import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
 import { FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
+import { trackerOrders } from './tracker.js';
 import { navOf } from './nav.js';
 
 export * from './data.js';
@@ -1175,8 +1176,14 @@ export function funds(
     participants: [
       {
         partyKind: FUND,
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
-          ordersOf(decls, view, m),
+        // Two mandates, two reasons, and a fund has exactly one of them: a money fund puts its
+        // spare cash to work at a yield it requires (D2), a tracker holds the index whatever it
+        // costs (Indices C2). Neither answers for a fund that is not its own, so the two never
+        // both speak for one party (Law 4).
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => [
+          ...ordersOf(decls, view, m),
+          ...trackerOrders(etfs, view, m),
+        ],
       },
     ],
     families: [equityIsZero(), noRequestVanishes(state)],

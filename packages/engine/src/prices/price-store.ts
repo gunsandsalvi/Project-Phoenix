@@ -23,8 +23,21 @@ export type Provenance =
   | { readonly kind: 'interpolated' }
   | { readonly kind: 'extrapolated' };
 
-/** C4.b: at least three distinct non-clearing outcomes are representable. */
-export type StaleReason = 'noDemand' | 'noSupply' | 'noOverlap' | 'excessCommitted';
+/**
+ * C4.b: at least three distinct non-clearing outcomes are representable.
+ *
+ * `nothingSettled` is the fifth and it is not a clearing failure: the book crossed and the session
+ * struck a level, and then not one of the trades it made became a settled instruction — every one
+ * of them was too small to pay for, or could not be delivered. A LEVEL NOBODY PAID IS NOT A PRICE
+ * (Law 3, Clearing E1), so the session prints nothing of its own and what stands is the last real
+ * one, visibly stale, with this as the reason.
+ */
+export type StaleReason =
+  | 'noDemand'
+  | 'noSupply'
+  | 'noOverlap'
+  | 'excessCommitted'
+  | 'nothingSettled';
 
 export interface Print {
   readonly instrument: InstrumentId;

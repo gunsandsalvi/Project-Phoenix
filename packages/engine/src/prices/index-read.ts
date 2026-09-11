@@ -80,6 +80,13 @@ export interface IndexRead {
   readonly level: number;
   /** How many periods of level there are behind it — what a window may be measured over (XI-7). */
   readonly periods: number;
+  /**
+   * A1, C1: WHAT THE RULE SAYS IS IN IT, whether or not it printed this period. This is what a
+   * mandate refers to (C1): a tracker holds the index's basket, and a line that simply did not
+   * trade this week has not left the index — reading membership off what printed would have every
+   * quiet line sold and bought back, which is churn nobody asked for and a rebalance that never was.
+   */
+  readonly basket: readonly Constituent[];
   /** A2: what it was read FROM, so a reader can see the index is its constituents and nothing else. */
   readonly from: readonly { readonly instrument: InstrumentId; readonly price: number; readonly weight: number }[];
 }
@@ -131,7 +138,13 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
     const p = d.price(c.instrument, at);
     if (p.some) from.push({ instrument: c.instrument, price: p.value, weight: c.weight });
   }
-  return some({ id: decl.id, level, periods: add(at - decl.from, 1, 'periods of level'), from });
+  return some({
+    id: decl.id,
+    level,
+    periods: add(at - decl.from, 1, 'periods of level'),
+    basket: constituents,
+    from,
+  });
 }
 
 /** D5: asking for an index this world does not have is a defect, never an empty answer. */

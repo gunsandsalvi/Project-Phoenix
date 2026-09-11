@@ -27,9 +27,21 @@ function onStateCredit(w: IndexWorld, i: Instrument): boolean {
   return i.issuer.some && w.registry.partyKind(w.parties.get(i.issuer.value).kind).sovereign === true;
 }
 
-/** A line that trades, is alive, and somebody issued. Everything below starts here. */
+/**
+ * A line that trades, is alive, somebody issued — and IS NOT A CLAIM ON A BOOK.
+ *
+ * A1.a: the last of those is the whole of why this function exists. A fund's shares are worth what
+ * the fund's book is worth, so an index that counted them would be counting its own constituents a
+ * second time — and once a fund TRACKS the index (Indices C2), the index contains a line whose
+ * value is the index, the tracker buys its own shares to hold the basket, and there is a fixed point
+ * in the one number that is supposed to measure everything else. The kind's own profile says which
+ * lines those are (`pricing: 'derived'`): it is what a claim on a book IS, not a list of them.
+ */
 function listed(w: IndexWorld): readonly Instrument[] {
-  return w.instruments.all().filter((i) => i.status.live && i.market.some && i.issuer.some);
+  return w.instruments
+    .all()
+    .filter((i) => i.status.live && i.market.some && i.issuer.some)
+    .filter((i) => w.registry.instrumentKind(i.kind).pricing !== 'derived');
 }
 
 /** B3: a claim with DATED PAYMENTS on it, which is what tells a bond from a share (Law 15). */

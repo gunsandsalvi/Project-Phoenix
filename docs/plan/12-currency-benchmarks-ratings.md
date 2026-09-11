@@ -317,7 +317,14 @@ it to be reachable. A step that is not written is a step that gets skipped, so t
       against. An index rule is given the public world at the READ (`IndexWorld`) rather than being
       told its constituents at assembly, so a basket is what is listed now and what was bought this
       period; and the base is a declared resolution read through the register
-- [ ] Fund mandates that track an index: rebalance as a forced trade in the same session; test
+- [x] Fund mandates that track an index: a rebalance is a real trade in the same session. Three
+      things the build settled: MEMBERSHIP is the rule's and not this period's prints (a line that
+      did not trade has not left the index, or every quiet line goes out and comes back every week);
+      the target is priced off what the fund can SEE (the last print at or before now), not off the
+      index's own `from`, or the target would move with the running order of the markets; and only
+      the line that LEFT the index is sold at market — a forced seller is real (XI-2), a forced
+      buyer is not (Appendix B), so every other leg of a rebalance carries the price the line last
+      printed and is never more than the fund's cash actually buys
 - [ ] `ratings`: assessor party kind paid by issuers; grades from state through a view without prints (A2.a structurally); coarse and sticky; published; tests: a rating never moves when only the price moves
 - [ ] `ratings`: instrument vs issuer ratings; consumers: mandates, risk weights per grade, haircuts as one input to the lender's PD, information; tests: a downgrade past a mandate boundary forces sales by every bound holder in the same session (C1.a)
 - [ ] `ratings`: E3: the assessor can be wrong: a rated-safe issuer defaults in a scenario test; E4: the distribution of grades is a read
