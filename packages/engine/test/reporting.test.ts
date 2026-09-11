@@ -27,6 +27,7 @@ import {
   type World,
 } from '../src/index.js';
 import { ranWorld } from './rig.js';
+import { dustOf, withinDust } from '../src/core/num.js';
 
 function reportsOf(w: World): readonly Event[] {
   return w.journal.ofKind('reporting.report');
@@ -143,12 +144,23 @@ describe('what a report carries (Reporting A2, A2.a, G2, G5)', () => {
     const lines = r!.data['income'] as { cause: string; amount: number; entries: number }[];
     expect(lines.length).toBeGreaterThan(1);
     // The bottom line IS the sum of the decomposition — it is not computed a second way (Law 4).
+    //
+    // Law 7: WITHIN THE DUST OF THIS ADDITION, which is derived from the numbers being added and is
+    // not a number of decimal places. `toBeCloseTo(..., 6)` is a fixed band of 5e-7, and this
+    // world's equity ledger reached 1.24e10: one addition of it carries 2.7e-6 of floating-point
+    // dust before anybody has done anything wrong, so the band was reporting arithmetic as a defect.
+    // A band is never the answer — the dust is `terms × ε × Σ|magnitudes|` and it is computed here.
     const summed = lines.reduce((t, l) => t + l.amount, 0);
-    expect(summed).toBeCloseTo(Number(r!.data['earned']), 6);
+    const earned = Number(r!.data['earned']);
+    const scale = lines.reduce((t, l) => t + Math.abs(l.amount), Math.abs(earned));
+    expect(withinDust(summed, earned, dustOf(lines.length + 1, scale))).toBe(true);
     // And the marks are separable, because they are the part nobody was paid.
     const marks = lines.find((l) => l.cause === 'revaluation');
     expect(marks).toBeDefined();
-    expect(marks!.amount).toBeCloseTo(Number(r!.data['revaluation']), 6);
+    const revalued = Number(r!.data['revaluation']);
+    expect(
+      withinDust(marks!.amount, revalued, dustOf(2, Math.abs(marks!.amount) + Math.abs(revalued))),
+    ).toBe(true);
     // Every key is a word its own writer wrote: the instruction's cause or the marks. A key this
     // module invented would be a chart of accounts, which is what A2.a forbids.
     for (const l of lines) expect(l.entries).toBeGreaterThan(0);
@@ -202,12 +214,22 @@ describe('what a report carries (Reporting A2, A2.a, G2, G5)', () => {
 describe('guidance (Reporting B1, B2, B3, B4; Firm E7)', () => {
   it('publishes the SAME number the firm own decisions read, and not a second one (B4)', () => {
     const w = ran('reporting', 45);
-    const said = w.journal.ofKind('reporting.guidance');
-    expect(said.length).toBeGreaterThan(0);
-    for (const e of said.slice(-5)) {
+    const all = w.journal.ofKind('reporting.guidance');
+    expect(all.length).toBeGreaterThan(0);
+    // §46 C1, B4: AN OUTLOOK IS A NUMBER AT AN INSTANT. It is formed adaptively from the firm's own
+    // history, so it moves every period — and `outlook('income')` answers with the one in force NOW.
+    // This took the last five guidances and compared each of them against today's outlook, which
+    // asks a management that guided six weeks ago to have guided today's number. What B4 forbids is
+    // a SECOND number, and the only instant at which the two can be read together is this one.
+    const said = all.filter((e) => e.period === w.period);
+    expect(said.length, 'nothing was guided in the period the outlooks are read at').toBeGreaterThan(0);
+    for (const e of said) {
       const firm = partyId(e.subjects[0]!);
       const own = w.participantView(firm).outlook('income');
       if (!own.some) throw new Error(`${firm} guided with no outlook of its own income`);
+      // ...and the event says which instant it was formed at, so "the same number" is checkable
+      // against an older guidance too, by whoever holds that period's outlook (Law 19).
+      expect(Number(e.data['formed'])).toBe(e.period);
       // B4: a management that guides to a number it is not itself acting on has had its decisions
       // made somewhere else. The published figure IS the outlook, with the periodicity stated
       // beside it — the quarter figure is that number times the periods, and both are shown.

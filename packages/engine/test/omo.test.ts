@@ -13,6 +13,8 @@ import {
   TREASURY_US,
   assemble,
   dustOf,
+  isMoneyLeg,
+  moneyInstrumentId,
   type SystemModule,
   type World,
 } from '../src/index.js';
@@ -33,7 +35,7 @@ describe('open-market operations (Central Bank C)', () => {
   it('buys towards the share policy chose, paying with money it creates (C1, C1.a, C2)', () => {
     const w = rigWorld('omo-a');
     const share = w.params.get(CB_PARAMS.targetShare);
-    const stockBefore = w.moneyStock()['USD'] ?? 0;
+    const baseBefore = w.instruments.get(moneyInstrumentId(CB, USD)).issued;
     w.step();
     const gapBefore = Math.abs(
       w.register.quantity(CB, GOV_LINE) / w.instruments.get(GOV_LINE).issued - share,
@@ -42,9 +44,28 @@ describe('open-market operations (Central Bank C)', () => {
     const gapAfter = Math.abs(
       w.register.quantity(CB, GOV_LINE) / w.instruments.get(GOV_LINE).issued - share,
     );
-    // H2: what it bought created reserves, so the base grew.
-    expect(w.moneyStock()['USD'] ?? 0).toBeGreaterThan(stockBefore);
+    // H2, C2: WHAT IT DID MOVED THE BASE, and it paid with money it creates. WHICH WAY the base
+    // moved is an outcome and not the clause: a central bank above the share policy chose SELLS,
+    // and the base falls. This asserted it grew, and it asserted it of the world's whole USD stock
+    // rather than of the money this bank issues — a number that also moves every time a loan is
+    // written or repaid, which is nobody's open-market operation. Over these thirty periods the
+    // base went from 100.9bn to 25.8bn because the bank was selling towards its target.
+    const base = (): number => w.instruments.get(moneyInstrumentId(CB, USD)).issued;
+    expect(base()).not.toBe(baseBefore);
     expect(w.register.quantity(CB, GOV_LINE)).toBeGreaterThan(0);
+    // C2: every piece of that move was paid for with money THIS bank issues — its own liability on
+    // one side of its own purchase, which is what "paying with money it creates" is (Law 5).
+    const ownSide = w.ledger
+      .all()
+      .filter((r) => r.outcome === 'settled')
+      .flatMap((r) => r.instruction.legs)
+      .filter(isMoneyLeg)
+      .filter((leg) => leg.ccy === USD && (leg.from.holder === CB || leg.to.holder === CB));
+    expect(ownSide.length).toBeGreaterThan(0);
+    // In its OWN money: it is the issuer of every dollar of reserves, so a dollar leg it is on has
+    // its own name on one side of it. What it does in somebody else's money is a reserve position
+    // (Currency D2) and a different clause.
+    for (const leg of ownSide) expect(leg.from.issuer === CB || leg.to.issuer === CB).toBe(true);
     // C1.a: it holds the size policy chose, and it gets there by buying and selling into a market
     // — so what it can close is what somebody was on the other side of.
     expect(gapAfter).toBeLessThanOrEqual(gapBefore);
@@ -63,7 +84,14 @@ describe('open-market operations (Central Bank C)', () => {
       for (const leg of r.instruction.legs) {
         // An issuance is any claim coming into existence — a fund issues shares to a subscriber
         // too (Fund Shares C1). What this is about is the primary market for the STATE's paper.
-        if (leg.kind !== 'asset' || !String(leg.instrument).startsWith('gov.')) continue;
+        // Law 19, PLAN §7: THE STATE'S PAPER IS ITS KIND AND ITS ISSUER, read from the registry.
+        // This matched ids beginning `gov.`, and this world's sovereign lines are `ust.`, `bund.`,
+        // `gilt.` and `jgb.` since it gained four countries — so it matched nothing at all and the
+        // loop asserted about an empty set.
+        if (leg.kind !== 'asset') continue;
+        const i = w.instruments.get(leg.instrument);
+        if (!String(i.kind).startsWith('sovereign.')) continue;
+        if (!i.issuer.some || i.issuer.value !== TREASURY_US) continue;
         allotments += 1;
         expect(leg.from).toBe(TREASURY_US);
         expect(leg.to).not.toBe(CB);
