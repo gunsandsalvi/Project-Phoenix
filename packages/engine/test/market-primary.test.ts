@@ -28,6 +28,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { dustOf, withinDust } from '../src/core/num.js';
 import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTheSame } from './expected.js';
 import { notDealing } from './no-dealing.js';
@@ -147,7 +148,12 @@ describe('the primary market (Sovereign C)', () => {
     const m = result(r.markets, GOV_MARKET);
     expect(m.outcome).toBe('cleared');
     // C2: one level, the lowest accepted bid; the top bidder does not pay its own bid.
-    expect(priceOf(m)).toBe(0.97);
+    //
+    // Law 7, Law 8: TO WITHIN THE DUST OF THE GRID THE LEVEL IS ON. A limit is posted on the
+    // market's own tick (12b.1), and a tick of a ten-thousandth of face is not binary-exact — 0.97
+    // is 9700 ticks and 9700 ticks is 0.9700000000000001. An exact comparison against the decimal
+    // somebody typed is comparing a level to a number that is not on the grid at all.
+    expect(withinDust(priceOf(m), 0.97, dustOf(2, priceOf(m) + 0.97))).toBe(true);
     expect(auctionOf(m).allotted).toBe(60);
     // C4: cover is what was bid over what was offered.
     expect(auctionOf(m).cover).toBeCloseTo(2, 12);

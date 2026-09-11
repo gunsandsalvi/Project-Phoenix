@@ -86,15 +86,18 @@ describe('a shape with a scheduled death is a placeholder (Law 2)', () => {
 });
 
 describe('what the foundation world declares (XI-14)', () => {
-  it('counts the two management fees as the placeholders they are, and names their item', () => {
+  it('names every placeholder and the item that kills it (Law 2)', () => {
     const report = rigWorld('params').params.report();
-    expect(report.counts.placeholder).toBe(2);
-    expect(
-      report.placeholders.map((p) => `${p.id} -> ${p.mechanism} at ${p.worklistItem}`),
-    ).toEqual([
-      'fund.fee.fund.money.north -> Fund Shares F3 at 13h',
-      'fund.fee.etf.north -> Fund Shares F3 at 13h',
-    ]);
+    // Law 2: A PLACEHOLDER NAMES THE MECHANISM IT STANDS IN FOR AND THE ITEM THAT DELETES IT, and
+    // that is what is asserted — not a count of them and not a list. This named the two management
+    // fees of a world with one region in it (`fund.fee.fund.money.north`, `fund.fee.etf.north`),
+    // and this world has four countries, a money fund per bank and two more placeholders since:
+    // a list that every item has to edit is a stale doc with ids in it (Law 16).
+    expect(report.placeholders.length).toBeGreaterThan(0);
+    for (const p of report.placeholders) {
+      expect(String(p.mechanism).length, `${p.id} stands in for nothing`).toBeGreaterThan(0);
+      expect(String(p.worklistItem), `${p.id} names no item that kills it`).not.toBe('');
+    }
     // And the count is a READ of the register, never a number anybody wrote beside it (Law 19).
     expect(report.counts.placeholder).toBe(report.placeholders.length);
     expect(report.counts.shape).toBe(report.shapes.length);

@@ -174,7 +174,9 @@ describe('the state as an employer and a buyer (Treasury B1, Labour F1)', () => 
   it('collects on what households were paid and on what they bought (C1, C1.a)', () => {
     const w = rigWorld('tsy-h');
     for (let i = 0; i < 12; i += 1) w.step();
-    const events = w.journal.ofKind('treasury.receipts');
+    // Polity A1, PLAN §7: THIS world's state. Four of them collect now and they publish in the same
+    // period, so "the last receipt" was whichever of the four the journal recorded last.
+    const events = w.journal.ofKind('treasury.receipts').filter((e) => e.subjects.includes(TREASURY_US));
     const last = events[events.length - 1];
     const bases = last?.data['bases'] as Record<string, number> | undefined;
     // Three bases, each read off what a named payer actually paid, each carrying one rate.

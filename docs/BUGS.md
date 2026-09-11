@@ -645,3 +645,38 @@ loan — is the currency layer's, worklist **12/13h**.
 
 Seen at: `packages/engine/src/mechanisms/banks/index.ts:248` (`costOfFunds`), `:1082`
 (`publishQuotes`), `packages/engine/src/mechanisms/banks/dealing.ts:118`.
+
+### 12d-15 — four countries, one population: no FX book ever has a bid
+
+Measured in the rig (`fx`, 12 periods): every one of the six currency markets prints `noDemand` in
+every session and the rate stands at its opening 1 for ever. No spot trade has ever settled, so
+`spot-fx.test.ts`'s "moves one money against another, both on their own grids, or neither moves"
+has nothing to read. It is red and stays red.
+
+The cause is one line of measurement:
+
+```
+banks              [ 'bank.a:us', 'bank.b:us', 'bank.c:us' ]
+firm regions       [ 'us' ]
+household regions  [ 'us' ]
+```
+
+The world gained Europe, the United Kingdom and Japan as SOVEREIGNS — a treasury, a central bank, a
+curve and a currency each — and no population. Every bank, firm and household in it lives in the
+United States and holds nothing but dollars.
+
+From there the FX book cannot have two sides, and the arithmetic says so exactly. A dealer's bid in
+`USD/EUR` is `least(room − held, cash(EUR) / rate)` — to BID for the pair it must hold the QUOTE
+money — and no party in this world holds a euro. So every desk offers and none bids, in every pair,
+for ever. Buying euros would be selling the pair, and the parties who would want to are European,
+and there are none.
+
+It also explains two things measured elsewhere: banks are refused at the foreign windows (`ccy: EUR,
+foreign: true`) with no market to go to instead, and the foreign treasuries' auctions are covered
+many times over and place nothing.
+
+This is the currency layer's (XI-12, worklist **12/13h**): the sovereigns exist and the economies
+behind them do not.
+
+Seen at: `packages/engine/src/mechanisms/spot-fx/participants.ts:168`,
+`packages/engine/src/seeds/foundation.ts`.
