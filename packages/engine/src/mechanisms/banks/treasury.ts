@@ -331,13 +331,16 @@ function refusedLastSession(ctx: MechanismContext, bank: PartyId): Option<number
  * another worked out that the gap had cost it more than moving would (E1). That is not a deposit
  * market: it is a bank that cannot see a rival's board its own depositors can read.
  */
-export function defended(best: Option<number>, own: number, worth: number): number {
+export function defended(best: Option<number>, own: number, stopAt: number): number {
   if (!best.some) return own;
   // B1.a, D1: it matches a rival that is paying more, and it stops at what the money is worth to
   // it — past that it funds itself in the market instead and lets the deposit go, which is the
-  // alternative D1 names and not a cap on anything. What it will not do is guess how far under the
-  // rival it could sit: that is the depositor's arithmetic (E1) and it is done there.
-  return best.value > own && best.value < worth ? best.value : own;
+  // alternative D1 names and not a cap on anything. `stopAt` is that point FOR THIS CLASS, struck
+  // by the caller from the same numbers the board is: what the money is worth less what the
+  // guarantee on this class costs, because the rate is not the whole of what the bank pays for it.
+  // What it will not do is guess how far under the rival it could sit: that is the depositor's
+  // arithmetic (E1) and it is done there.
+  return best.value > own && best.value < stopAt ? best.value : own;
 }
 
 /**
@@ -372,7 +375,12 @@ export function pledgeable(view: ParticipantView): number {
  * tomorrow, which is what rolling is.
  */
 export function fallsDueNext(view: ParticipantView, ccy: CurrencyCode): number {
-  return dueNext(view, ccy, (i) => i.issuer.some && i.issuer.value === view.self.id, (i) => i.issued);
+  return dueNext(
+    view,
+    ccy,
+    (i) => i.issuer.some && i.issuer.value === view.self.id,
+    (i) => i.issued,
+  );
 }
 
 /**
@@ -381,7 +389,12 @@ export function fallsDueNext(view: ParticipantView, ccy: CurrencyCode): number {
  * holds an overnight claim that turns back into a balance, and that is as liquid as an asset gets.
  */
 export function comesBackNext(view: ParticipantView, ccy: CurrencyCode): number {
-  return dueNext(view, ccy, () => true, (i) => view.quantity(i.id));
+  return dueNext(
+    view,
+    ccy,
+    () => true,
+    (i) => view.quantity(i.id),
+  );
 }
 
 function dueNext(
@@ -411,7 +424,8 @@ function dueNext(
 export function positionOf(view: ParticipantView, ccy: CurrencyCode): TreasuryPosition {
   const reserves = view.cash(ccy);
   const said = view.lastOwn('bank.buffer');
-  const held = said.some && said.value.period === view.period ? said.value.data['buffer'] : undefined;
+  const held =
+    said.some && said.value.period === view.period ? said.value.data['buffer'] : undefined;
   const buffer = typeof held === 'number' ? held : 0;
   return { bank: view.self.id, reserves, buffer, gap: sub(reserves, buffer, 'its position') };
 }
@@ -554,7 +568,14 @@ export function setBoard(
   // payment out of this bank's account (`insurance.premium`) rather than a stated stickiness.
   for (const cls of classes) {
     const own = sub(net, cls.premium, `what the guarantee on ${cls.id} costs it`);
-    rates[cls.id] = defended(bestRival(ctx, bank, cls.id), own, worth);
+    // D1, D3, Banks Capital D4: AND IT STOPS DEFENDING THIS CLASS AT WHAT THIS CLASS IS WORTH TO
+    // IT. The bank's all-in cost of an insured deposit is the rate it pays the depositor PLUS the
+    // premium it pays the insurer, so a stopping point of `worth` let it match a rival all the way
+    // up to `worth + premium` all-in for money worth `worth` — it paid the guarantee twice, once
+    // out of the board and once out of the match. It is the same number the board is struck from,
+    // per class, in one place: what the money is worth less what the guarantee on it costs.
+    const stopAt = sub(worth, cls.premium, `what ${cls.id} is worth to it, net of its guarantee`);
+    rates[cls.id] = defended(bestRival(ctx, bank, cls.id), own, stopAt);
   }
   ctx.record('bank.depositRate', [bank], { bank, ccy, rates }, true);
 }
@@ -589,7 +610,16 @@ export function publishBuffer(
   ctx.record(
     'bank.buffer',
     [bank],
-    { bank, ccy, move, buffer: bufferOf(memory, bank), reserves: ctx.register.quantity(bank, moneyInstrumentId(ctx.registry.centralBankOf(ccy), ccy)) },
+    {
+      bank,
+      ccy,
+      move,
+      buffer: bufferOf(memory, bank),
+      reserves: ctx.register.quantity(
+        bank,
+        moneyInstrumentId(ctx.registry.centralBankOf(ccy), ccy),
+      ),
+    },
     true,
   );
 }

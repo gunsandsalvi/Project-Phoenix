@@ -126,7 +126,11 @@ function payer(amount: number): SystemModule {
             fromCell: none(),
             toCell: none(),
           };
-          ctx.settle({ legs: [leg], cause: 'transfer', reason: 'a payment of something that is not money' });
+          ctx.settle({
+            legs: [leg],
+            cause: 'transfer',
+            reason: 'a payment of something that is not money',
+          });
         },
       },
     ],
@@ -149,7 +153,14 @@ describe('the wire refuses what does not exist (Law 8, Money C1)', () => {
 function atShift(
   shift: number,
   periods: number,
-): { produced: number; money: number; batches: number; piece: number; reds: number } {
+): {
+  produced: number;
+  money: number;
+  opened: number;
+  batches: number;
+  piece: number;
+  reds: number;
+} {
   const spec = rigSpec('piece-invariance');
   const params = spec.params.map((p) =>
     p.id === KERNEL_PARAMS.pieceShift ? { ...p, value: shift } : p,
@@ -157,6 +168,9 @@ function atShift(
   const w: World = assemble({ ...spec, params });
   const perUSD = w.registry.subdivision(currencyUnit(USD));
   const perTonne = w.registry.subdivision(unitId('tonnes'));
+  // What the world OPENED with, before a period has run: the seed's own arithmetic, with nothing
+  // any mechanism did on top of it.
+  const opened = (w.moneyStock()['USD'] ?? 0) / perUSD;
   let produced = 0;
   let batches = 0;
   let reds = 0;
@@ -174,6 +188,7 @@ function atShift(
   return {
     produced: produced / perTonne,
     money: (w.moneyStock()['USD'] ?? 0) / perUSD,
+    opened,
     batches,
     piece: 1 / perTonne,
     reds,
@@ -210,6 +225,25 @@ describe('how fine the pieces are, is a RESOLUTION (Law 2)', () => {
     // what makes the difference a rounding rather than a different world.
     expect(coarse.batches).toBeGreaterThan(0);
     expect(coarse.piece).toBeGreaterThan(0);
+  });
+
+  it('opens the same world at every subdivision, before a period has run', () => {
+    // THIS IS THE HALF THAT WAS BROKEN, and it was broken in the seed's own arithmetic rather than
+    // anywhere a mechanism could reach. Two reads there divided a count of PIECES by a NAMED amount
+    // and multiplied a count of PIECES by a price per NAMED unit — the hours this world's people
+    // offer against the hours its chain needs, and the foreign paper its central bank holds. So a
+    // world declared in finer pieces made ninety times as much of everything and its central bank
+    // bought eight times the reserves, and at a hundredth of a cent the money stock went past exact
+    // arithmetic and Law 8 refused to open the world at all (11.5's finding pre12-1).
+    //
+    // The opening has no thresholds in it — nobody has decided anything yet — so what is left is
+    // rounding, and rounding gets a factor of ten smaller when the piece does.
+    const coarse = atShift(1, 0);
+    const finer = atShift(10, 0);
+    const finest = atShift(100, 0);
+    const gap = (a: number, b: number): number => Math.abs(a - b) / Math.abs(a);
+    expect(coarse.opened).toBeGreaterThan(0);
+    expect(gap(finer.opened, finest.opened)).toBeLessThan(gap(coarse.opened, finer.opened));
   });
 
   it('conserves money exactly, which is what whole pieces buy', () => {

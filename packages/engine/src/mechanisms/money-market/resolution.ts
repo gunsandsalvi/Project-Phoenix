@@ -43,6 +43,7 @@
  */
 import type { CurrencyCode, InstrumentId, ParamId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId } from '../../core/ids.js';
+import { forbid } from '../../core/assert.js';
 import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { CellSide } from '../../ledger/instruction.js';
@@ -57,6 +58,7 @@ import { insuredAt, uninsuredAt } from './deposits.js';
 import { INSURER } from './insurer.js';
 import type { Instrument } from '../../register/instruments.js';
 import { isRow } from './rows.js';
+import { NO_QTY, subQty } from '../../core/tick.js';
 
 /** D1: what the failed bank has, what it owes, and the difference between them. */
 export interface Valuation {
@@ -151,7 +153,9 @@ function bidFor(ctx: MechanismContext, bank: PartyId, v: Valuation): Bid {
     bank,
     pays: bid,
     declined,
-    why: declined ? 'taking the book would leave its own equity underwater' : 'it will take the book',
+    why: declined
+      ? 'taking the book would leave its own equity underwater'
+      : 'it will take the book',
   };
 }
 
@@ -316,9 +320,10 @@ function allocate(
       // Clearing C3: pro rata, in whole pieces, and the odd piece has a named holder.
       const share = ctx.registry.payable(ccy, mul(div(e.owed, pool, 'its share'), cut, 'its loss'));
       if (share <= 0) continue;
-      const lost = e.row === undefined
-        ? writeDownDeposit(ctx, bank, e.holder, ccy, share)
-        : writeDownRow(ctx, bank, e.holder, e.row, share, e.owed);
+      const lost =
+        e.row === undefined
+          ? writeDownDeposit(ctx, bank, e.holder, ccy, share)
+          : writeDownRow(ctx, bank, e.holder, e.row, share, e.owed);
       holders = add(holders, lost, 'what holders lost');
       // E2, A2.c: a loss that landed on a name, said out loud. Nobody is written down quietly.
       ctx.record(
@@ -447,7 +452,9 @@ function writeDownRow(
     cause: 'corporateAction',
     reason: `${holder} is written down on ${row} in ${bank}'s resolution`,
   });
-  return r.outcome === 'settled' ? mul(moved, div(owed, total, 'what a unit was worth'), 'lost') : 0;
+  return r.outcome === 'settled'
+    ? mul(moved, div(owed, total, 'what a unit was worth'), 'lost')
+    : 0;
 }
 
 /** The sovereign of the failed bank's own region: D5's payer has a name. */
@@ -498,7 +505,12 @@ function payFrom(
  * to owe, and every depositor's account is re-issued by the acquirer so that the money keeps
  * working the morning after (C3.b).
  */
-function moveBook(ctx: MechanismContext, bank: PartyId, acquirer: PartyId, ccy: CurrencyCode): void {
+function moveBook(
+  ctx: MechanismContext,
+  bank: PartyId,
+  acquirer: PartyId,
+  ccy: CurrencyCode,
+): void {
   const own = moneyInstrumentId(bank, ccy);
   // The rows it borrowed on, and the paper it issued: the obligation moves, the holders do not.
   //
@@ -554,9 +566,48 @@ function moveBook(ctx: MechanismContext, bank: PartyId, acquirer: PartyId, ccy: 
   for (const h of [...ctx.register.holdingsOf(bank)]) {
     if (h.instrument === own) continue;
     const units = ctx.register.quantity(bank, h.instrument);
-    if (units <= 0) continue;
+    if (units === 0) continue;
     const i = ctx.instruments.get(h.instrument);
     const money = ctx.registry.instrumentKind(i.kind).pricing === 'money';
+    if (units < 0) {
+      // Appendix B, Money B3: NO DEATH WITHOUT A DESTINATION, and a liability has one too.
+      //
+      // A negative balance on somebody else's money is not a holding this loop can move — it is a
+      // BORROWING from the issuer, and it was being skipped with everything else that was not a
+      // positive quantity. So a bank whose reserve account was overdrawn when it failed took the
+      // overdraft to the grave with it: `money` reported a borrowing with no lender row behind it
+      // and `names` a ceased party still holding something, every period, for the rest of the run,
+      // and neither number ever moved again because nothing was still running (11.5's finding
+      // 12-10 — three banks of thirty, −4,075,747,840 and −37,303,027 and −817,328,529).
+      //
+      // It moves the only way a negative balance can: the acquirer pays it in, so the dead bank's
+      // account closes at zero and the acquirer's falls by what it assumed. That is the same
+      // sentence as the `assume` above, written for a liability the register holds as a quantity
+      // rather than as an instrument somebody issued.
+      forbid(
+        money,
+        'Register A1',
+        `${bank} holds ${units} of ${h.instrument}, which is not money and cannot be negative`,
+        { bank, instrument: String(h.instrument), units },
+      );
+      const owed = subQty(NO_QTY, units, 'what the failed bank was overdrawn by');
+      ctx.settle({
+        legs: [
+          {
+            kind: 'money',
+            from: { holder: acquirer, issuer: i.issuer.some ? i.issuer.value : bank },
+            to: { holder: bank, issuer: i.issuer.some ? i.issuer.value : bank },
+            ccy: i.ccy,
+            amount: owed,
+            fromCell: none(),
+            toCell: none(),
+          },
+        ],
+        cause: 'corporateAction',
+        reason: `${acquirer} assumes ${bank}'s overdraft on ${h.instrument}`,
+      });
+      continue;
+    }
     const liens = [...h.liens];
     for (const lien of liens) {
       ctx.settle({
@@ -722,7 +773,8 @@ function moveBook(ctx: MechanismContext, bank: PartyId, acquirer: PartyId, ccy: 
       cause: 'corporateAction',
       reason: `${acquirer} takes over ${holder}'s account at ${bank}`,
     });
-    if (r.outcome === 'settled') ctx.moveBank(holder, acquirer, `${bank} was resolved into ${acquirer}`);
+    if (r.outcome === 'settled')
+      ctx.moveBank(holder, acquirer, `${bank} was resolved into ${acquirer}`);
   }
   // Money B1, Money E4: and EVERYBODY WHO BANKED THERE moves, not only the ones with a balance on
   // the day. An account is (holder, issuer, currency), so a party still pointing at a bank that has
@@ -764,18 +816,38 @@ export function nothingLeftBehind(): Family {
     check: (view) => {
       const out: Violation[] = [];
       const say = (owner: string, size: number, unit: string, message: string): void => {
-        out.push({ family: 'names', spec: 'Banks Capital D6', owner, size, unit, period: view.period, message });
+        out.push({
+          family: 'names',
+          spec: 'Banks Capital D6',
+          owner,
+          size,
+          unit,
+          period: view.period,
+          message,
+        });
       };
       for (const p of view.parties.all()) {
         if (p.status.alive || view.registry.partyKind(p.kind).moneyIssuer === null) continue;
         for (const h of view.register.holdingsOf(p.id)) {
           const qty = view.register.quantity(p.id, h.instrument);
-          if (qty !== 0) say(String(p.id), qty, 'units', `${p.id} has ceased and still holds ${qty} of ${h.instrument}`);
+          if (qty !== 0)
+            say(
+              String(p.id),
+              qty,
+              'units',
+              `${p.id} has ceased and still holds ${qty} of ${h.instrument}`,
+            );
         }
         for (const i of view.instruments.all()) {
           if (!i.status.live || !i.issuer.some || i.issuer.value !== p.id) continue;
           const held = view.register.heldTotal(i.id).value;
-          if (held !== 0) say(String(i.id), held, 'units', `${i.id} is issued by ${p.id}, which ceased, and ${held} of it is still held`);
+          if (held !== 0)
+            say(
+              String(i.id),
+              held,
+              'units',
+              `${i.id} is issued by ${p.id}, which ceased, and ${held} of it is still held`,
+            );
         }
         for (const q of view.parties.all()) {
           if (!q.status.alive || q.bank !== p.id) continue;

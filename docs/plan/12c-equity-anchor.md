@@ -22,29 +22,16 @@ IS a second reason in the book — but a weak one: its target is its holding, so
 nothing to trade, and it pays what the line last printed rather than whatever is asked (Appendix B:
 no forced buyer). A second reason that is silent most weeks does not anchor a book.
 
-**And the second finding, which is the same absence read from the other end: EVERY DEALER OPENS
-ABOVE ITS OWN LIMIT, BECAUSE THE FLOAT IS THE FIRM'S WHOLE BOOK.** In a rig world of six banks and
-twelve firms at period 4, the desk making the listed line publishes `roomLeft: -630,738,745` — six
-hundred million more than the limit it set itself, on the first morning, and every desk in every seed
-is in that state. Item 12 made the float a READ rather than a stated table (a share is a claim on the
-residual, and at period zero a firm's residual is its whole opening book, so the line is that book in
-shares of one PHX, as the money was called before item 12 renamed it — Law 19), and that part is right: a larger firm has a larger line without a number
-being written beside its name. What is wrong is WHO OPENS HOLDING IT. All of it goes to the banks
-that make its market, and a dealer's inventory is a working stock, not the whole float of every name
-it quotes. **A saver holds the float; a dealer holds what it can carry** — which is the same sentence
-as this item's first step, and is why the two are one item. It is not impossible and it resolves
-itself (a desk over its limit stops bidding and sells, D4, and the world is green in every family
-with it), but it costs the book its other side on the one morning that decides where the line starts,
-and it means no desk in any seed is ever seen with room to GROW: D4's "shrinks the bid to whichever
-limit binds" can only ever report the aggregate one, and `test/dealing.test.ts` has to construct a
-state to see the other two.
-
-The obstacle is an ordering one: a bank's limit is a share of its capital, and its capital is set by
-`seed.funding`, which runs after `equity` because it has to see every asset. Two candidates, and this
-item picks one and says why — read the limit against the assets the foundation endowed (a
-re-derivation of `seed.funding`'s own rule, so Law 4 says no), or move the float to the households
-entirely and let the desks acquire inventory in period one's session (which overturns the recorded
-reason that a maker opening with nothing can only ever bid).
+**AND THE SAVERS ALREADY HOLD THE LINE, which is half of this item's first step.** Item 11.5 moved
+the equity float off the desks that make each line's market and onto the households: a share is a
+claim on the residual (A1), a dealer's inventory is a position it takes by TRADING, and a seed that
+opened the desks holding the whole float of every line had stated an outcome (Seed E1) while putting
+four times a bank's capital of window-ineligible asset on its balance sheet. So the party this item
+has to name — the one whose reason to be in an equity book is not the last print — is already in the
+register holding the line, with a portfolio decision of its own
+(`mechanisms/households/portfolio.ts`). What is NOT done is the reason: a saver's ladder today is a
+yield comparison, not a view of what a firm's earnings are worth, and a book with a dealer on one
+side and a yield-shopper on the other is still a book where nobody is pricing the claim.
 
 **Where it lands and why.** Before 13g. A tender offer is priced off a listed share and the
 acquirer's own view of it, and a price that walks is not one. It is also what 12a's earnings surprise
@@ -66,10 +53,6 @@ bound, and it is the cheapest way to learn what not to do here.
 - [ ] Name the party whose reason to be in an equity book is not the last print. The candidates this
       world has are a saver holding a claim on a firm's earnings (Equity B3) and 13h's hedge fund;
       say which, and why the other is not it
-- [ ] The float opens where that party is, not all of it on the desks that make the line: a desk
-      opens inside its own limit and can be seen with room to GROW, and `test/dealing.test.ts` stops
-      constructing a state to see the two limits that never bind. One of the two candidates above is
-      taken and the record says which and why (Law 4 decides against the first)
 - [ ] Build that reason. No bound, no floor under a bid, no cap over an offer — 11.3 was thrown away
       for exactly that and the record says so
 - [ ] Test: a world of dealers only is the FAILING case and says so; a world with the reason in it

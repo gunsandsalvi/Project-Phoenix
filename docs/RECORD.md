@@ -2056,3 +2056,118 @@ gained two rows and five step recounts; `docs/PLAN.md` gained the rig decision (
 holding pen is deleted when empty; `docs/WORKLIST.md` gained two rows. Eight comments in the engine
 and the tests cited the deleted file by finding number and now cite the worklist item that owns each
 one — a stale comment is a defect (Law 16), and a path that does not exist is the stalest kind.
+
+## 11.5 — The banking system opens meeting its own liquidity standard
+
+**What it was for.** A bank lends what it holds beyond what could leave it (Banks Funding D4, D4.a),
+so a bank that opens below that line lends nothing on the first morning and everything downstream of
+credit is dark. Item 12 measured that and named it 12-19; this item was to make the opening satisfy
+the rule the world is then measured against, with no number chosen to make it so.
+
+**THE CAUSE WAS NOT THE ONE THE PLAN NAMED, and measuring it first is what found that.** The plan
+said the mix: the banks hold too much of their book in government paper, which the window takes only
+at a haircut, so derive `seed.centralBank.openingHoldingShare` from the standard. The algebra says
+otherwise. `liquid ≥ couldLeave` rearranges to
+
+```
+A·line + insured  ≥  illiquid assets + paper·haircut
+```
+
+— **what cannot run (capital and insured deposits) must fund what cannot be turned into cash at
+par** — and the haircut term is small: a paper share of 0.166 against a haircut of 0.05 is 0.83% of
+a book, against capital lines of 3.8 to 6.8%. The mix was never the binding thing. What was on the
+other side was `other`: in a six-bank world the two banks that made a market in a listed line opened
+holding **6.84e10 of equity float against 1.76e10 of capital**, and opened at a liquidity metric of
+0.84 and 0.89, while the four banks that made no market opened at 1.04 to 1.07. **A share raises
+nothing at the central bank's window** (C1.a), so the float was four times the capital in
+unfundable asset on the one balance sheet whose whole liquidity turns on what its assets raise there.
+
+**THE FIX IS WHO HOLDS THE FLOAT, and it deletes a seeded outcome** (Seed E1). A share is a claim on
+the residual (Equity A1) and the parties in this world with a reason to hold one are its savers
+(B3); a dealer's inventory is a working position it takes by TRADING, so a seed that opens the desks
+holding the whole float of every line they make has stated an outcome and given ownership to the one
+party whose holding of it is supposed to be the result of a market. Item 9 opened them holding it
+for a reason that was true then — "a bank that opens making a market with nothing to sell can only
+ever bid", and the one alternative tried, a FOUNDER, drained the sector's money into a hole. A saver
+is not that hole: it consumes, it banks, and since item 10 it has a portfolio decision of its own.
+Every member holds the same slice of every line, because the seed has nothing to say about which
+saver prefers which firm, and the line is what the members hold (Law 8: the division that does not
+come out is never issued, so every piece has a named holder from the instant it exists).
+
+**Measured after.** Every bank, in every seed, at 2, 3, 4, 6, 8, 10 and 20 banks, opens at a metric
+of **1.03 to 1.08** — none below. The count of banks is no longer load-bearing (XI-15, Seed B1), and
+what decides the number is each bank's own capital line against the haircut on its own paper. Credit
+is quoted from period one, 40 quotes a period in a six-bank world, and `costOfCapital` is a NUMBER
+(0.0320 for a firm at period 12) where it was Missing for most firms before. A twenty-bank world
+stays above the line for six periods and then one bank and then five fall below, which is C4 working
+— the position is the residue of everybody else's period and the bank did not choose it.
+
+**`seed.centralBank.openingHoldingShare` IS A POLICY, and that is the item's answer to its own first
+step.** It was a PLACEHOLDER standing for a derivation from the liquidity standard, and there is no
+derivation to make: the standard is an inequality that is slack from a paper share of 0 to one of
+about 0.77, not an equation with one root. Central Bank C1.a says it outright — "the size is set by
+policy" — so the parameter is now a policy owned by the central bank, with the measurement in its
+`why`. Nothing was derived into existence to satisfy a step; the step was wrong and the record says
+what replaced it.
+
+**AND TWO UNIT ERRORS IN THE SEED, both of the same class, which is what pre12-1 actually was.** The
+resolution invariance (Law 2) is: declare the same world in finer pieces and its path must not move.
+It was written up as a three per cent miss and had since become a throw. Neither description was the
+defect. `params.amount` returns a count of PIECES, and:
+
+- `hoursOffered` (pieces of an hour) was divided by `hoursForOne` (named hours from the recipes), so
+  **this world's entire real economy was multiplied by the subdivision of an hour**;
+- the central bank's foreign reserves were accumulated as `drawn × price` — a count of PIECES times
+  a price per NAMED unit — so **eight per cent of the system's paper became eight times it**, and
+  the money issued against it went with it.
+
+Both move again when the pieces are made finer, which is why the invariance test caught them and
+nothing else did. With one unit on both sides of every ratio and every value: the opening money
+stock is 3.7046e9 / 3.7183e9 / 3.7197e9 USD at a cent, a tenth of a cent and a hundredth — a gap of
+0.37% then 0.04%, converging by the factor the piece did — where it had been 3.13e10 / 2.83e11 and a
+refusal to open at all. The audit is green in every family at all three subdivisions. The world is
+**8.4× smaller** than it was, and that is the error leaving rather than the world shrinking.
+
+**What is still not invariant, and it is 16's:** `produced` agrees to five figures at a cent and a
+tenth and then moves 1.7% at a hundredth, with the batch count going 24, 23, 28. A firm on the edge
+of starting a batch starts it in one run and not the other — this world decides at thresholds
+because Law 2 forbids deciding at an average — so a path invariance over threshold decisions can
+hold in distribution and not point by point. Worklist 16 already has the step ("resolution at
+1×/2×/4× with the error bar recorded") and that is where the claim belongs; the numbers above are
+its starting point.
+
+**The other three findings this item carried.**
+
+- **12-10, a ceased bank's reserve overdraft.** `moveBook` skipped everything that was not a
+  positive quantity, so a bank whose reserve account was overdrawn when it failed took the overdraft
+  to the grave: `money` reported a borrowing with no lender row and `names` a ceased party still
+  holding something, every period for the rest of the run, and neither number moved again because
+  nothing was still running. A negative balance is not a holding — it is a BORROWING from the
+  issuer — and it moves the only way one can: the acquirer pays it in, the dead bank's account
+  closes at zero, and the acquirer's falls by what it assumed. Appendix B's "no death without a
+  destination", applied to a liability.
+- **12-8, a bank defending a deposit past what the guarantee costs.** `setBoard` struck the board at
+  `worth − margin − premium`, correctly, and then `defended` let it match a rival anywhere up to
+  `worth` — comparing a RATE against a number the bank's all-in cost exceeds by the premium, so it
+  paid the guarantee twice, once out of the board and once out of the match. The stopping point is
+  now struck per class from the same numbers the board is: what the money is worth less what the
+  guarantee on that class costs. One number, one place, per class (Law 12).
+- **pre12-1** above.
+
+**Still dark, and it is not credit's fault any more.** No loan is written and no firm invests, over
+sixteen periods of a six-bank world — but `investmentGap` is 0 and 13 of 24 firms are bound by
+DEMAND, with capacity 14× the run rate. That is 12-15's level, already positioned at worklist 16,
+and this item removes the credit explanation from it: the chain from a bank's funding to a firm's
+cost of capital is lit, and what is missing is demand rather than a lender.
+
+**Found and not chased.** `docs/COVERAGE.md` has no row for `Central Bank C1.a` (and none for
+`Central Bank C2.a`), so its 1,361 rows are not one per clause. Nothing enforces completeness — the
+citation check only verifies that the citations used resolve. Worklist 16's coverage final pass is
+where that belongs.
+
+**Forecast, with its killer.** The claim is that a bank's opening liquidity is decided by what it
+holds that the window will not take, and that the reserve-to-paper mix is second order. The killer:
+if a later item puts any other unfundable asset on a bank's opening book — 13f's securitisation
+vehicles, 13h's fund stakes — and the metric falls below one again without the float coming back,
+then the mix was load-bearing after all and `seed.centralBank.openingHoldingShare` wants a derivation
+rather than a policy.
