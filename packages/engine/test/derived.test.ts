@@ -131,9 +131,13 @@ describe('a value that is derived (XI-6, Fund Shares B1)', () => {
   it('is the book divided by the claims, read at the ask and stored nowhere', () => {
     const w = world(aBookAndItsClaims(100));
     expect(unexpected(w.step().audit)).toEqual([]);
-    // The book holds money and nothing else, so a claim is worth what it holds over how many
-    // claims there are — the same money mark everyone else is valued at, not a second price system.
-    const book = w.cash(BOOK, USD);
+    // A claim is worth WHAT THE BOOK HOLDS over how many claims there are — every holding of it at
+    // the marks everyone else is valued at, not a second price system. It used to read the book's
+    // CASH, and that was the whole of it while nothing else reached the book; it is paid deposit
+    // interest now like any other holder, and a book with more in it than money is still a book.
+    const book = w.register
+      .holdingsOf(BOOK)
+      .reduce((n, h) => n + w.valuation.valueOfLots(h.instrument, h.lots, w.period), 0);
     expect(book).toBeGreaterThan(0);
     expect(w.valuation.markPerUnit(CLAIM, w.period)).toBeCloseTo(book / 100, 9);
     expect(w.register.quantity(HOLDER, CLAIM)).toBe(50);
@@ -143,13 +147,19 @@ describe('a value that is derived (XI-6, Fund Shares B1)', () => {
 
   it('moves when the book moves, and the holders carry the move (Clearing D4, Audit B5)', () => {
     const w = world(aBookAndItsClaims(100));
-    const before = w.register.equity(HOLDER);
+    const from = w.period;
     w.step();
-    // The claim was endowed at a basis of 1, so the first revaluation moves each holder's equity
-    // by what its own claims turned out to be worth — and the book's by the mirror of both, because
-    // a claim is its issuer's liability.
+    // The claim was endowed at a basis of 1, so the first REVALUATION moves each holder's equity by
+    // what its own claims turned out to be worth — and the book's by the mirror of both, because a
+    // claim is its issuer's liability. Read off the entry that booked it (12a's equity ledger): a
+    // net movement is not the revaluation, because the holder is paid deposit interest in the same
+    // period and that is a different flow with a different cause.
     const mark = w.valuation.markPerUnit(CLAIM, w.period);
-    expect(w.register.equity(HOLDER) - before).toBeCloseTo(50 * (mark - 1), 6);
+    const marked = w.register
+      .equityEntries(HOLDER, from, w.period)
+      .filter((e) => e.cause.includes('revaluation') && e.cause.includes(String(CLAIM)));
+    expect(marked.length, 'nothing re-marked the claim at all').toBeGreaterThan(0);
+    expect(marked.reduce((n, e) => n + e.delta, 0)).toBeCloseTo(50 * (mark - 1), 6);
     expect(unexpected(w.step().audit)).toEqual([]);
   });
 

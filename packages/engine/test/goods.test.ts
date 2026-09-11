@@ -8,6 +8,9 @@ import { paidTo } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 import { describe, expect, it } from 'vitest';
 import {
+  downToTick,
+  upToTick,
+  type InstrumentId,
   FIRM,
   USD,
   REGION,
@@ -135,6 +138,16 @@ function make(ctx: MechanismContext, holder: string, id: string, qty: number, co
     cause: 'seed',
     reason: `the opening stock of ${id}`,
   });
+}
+
+/**
+ * Law 8, Clearing C4.c: a level as this market would have it. A buy is the most it will pay so it
+ * goes DOWN to a tick and a sell the least it will accept so it goes UP, and what comes back is
+ * what the book could actually print (12b.1).
+ */
+function onTick(w: World, instrument: InstrumentId, price: number, side: 'buy' | 'sell'): number {
+  const tick = w.registry.tickFor(w.instruments.get(instrument).kind, USD);
+  return side === 'buy' ? downToTick(price, tick) : upToTick(price, tick);
 }
 
 describe('what a good is (Goods A)', () => {
@@ -282,8 +295,14 @@ describe('inventory (Goods E)', () => {
     const fell = moved(down);
     const rose = moved(up);
     const h = down.register.holding(FIRM_1, STONE_ID);
-    expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(perTonne(1));
+    // Law 8, 12b.1: a lot's basis is the level the trade struck, and a level is a whole number of
+    // its market's ticks — `n x tick` carries one rounding, because neither a hundredth nor a
+    // millionth is a binary fraction. So the comparison is against the posted level ON THE GRID,
+    // which is what the market could print, rather than against the number this test typed.
+    expect(h.some && h.value.lots[0]?.basisPerUnit).toBe(onTick(down, STONE_ID, perTonne(1), 'sell'));
     const held = up.register.holding(FIRM_1, STONE_ID);
+    // This lot's basis is the level STATED for it and not one a market struck, so it is not on the
+    // grid and is not asserted to be: a seed states a level, a session prints one (Seed C4).
     expect(held.some && held.value.lots[0]?.basisPerUnit).toBe(perTonne(2));
     // E2, E2.c, E3: THE TWO WORLDS DIFFER IN ONE THING — what the tonne sold at. Everything else
     // that reaches this firm's equity in the period is the same in both (the week of deposit
@@ -413,7 +432,7 @@ describe('the market (Goods C)', () => {
     expect(r.audit.total).toBe(0);
     const m = r.markets.find((x) => x.market === goodMarketId('stone', REGION));
     expect(m?.outcome).toBe('cleared');
-    expect(m?.price.some === true && m.price.value).toBe(perTonne(1));
+    expect(m?.price.some === true && m.price.value).toBe(onTick(w, STONE_ID, perTonne(1), 'sell'));
     expect(m?.settledVolume).toBe(tonnes(1));
     // C5: illiquidity in goods is unsold stock. Nine tonnes stayed where they were.
     expect(w.register.quantity(FIRM_1, STONE_ID)).toBe(tonnes(9));
