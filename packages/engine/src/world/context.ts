@@ -185,7 +185,10 @@ export interface MechanismContext extends KernelReads {
   readonly parties: PartiesReads;
   readonly register: RegisterReads;
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history'>;
-  readonly valuation: Pick<Valuation, 'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust'>;
+  readonly valuation: Pick<
+    Valuation,
+    'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust' | 'inMoney' | 'rateInForce'
+  >;
   readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail'>;
   readonly ledger: Pick<Ledger, 'inPeriod' | 'length'>;
   readonly cells: CellEvents;

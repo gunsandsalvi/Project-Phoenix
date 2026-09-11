@@ -35,6 +35,7 @@ import {
   type PartyId,
   type PartyKindId,
   type VenueId,
+  fxPairId,
 } from '../core/ids.js';
 
 import { addTo } from '../core/num.js';
@@ -243,6 +244,16 @@ export class World {
         run: (w) => {
           revalue(w.period, w.cycle, {
             marked: (instrument, at) => w.markOf(instrument, at),
+            // Currency D1: what this period's spot session struck for the pair, straight off the
+            // price store — the one read in the engine that deliberately looks past the rate still
+            // in force, because bringing the books to it is what revaluation IS (D3).
+            rateAt: (from, to, at) => {
+              if (from === to) return some(1);
+              const direct = w.prices.latest(fxPairId(from, to), at);
+              if (direct.some) return some(direct.value.price);
+              const inverse = w.prices.latest(fxPairId(to, from), at);
+              return inverse.some && inverse.value.price > 0 ? some(1 / inverse.value.price) : none();
+            },
             calendar: w.calendar,
             registry: w.registry,
             parties: w.parties,

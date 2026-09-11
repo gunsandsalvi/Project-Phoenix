@@ -16,7 +16,7 @@
  */
 import { issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
-import type { InstrumentId, PartyId } from '../core/ids.js';
+import type { CurrencyCode, InstrumentId, PartyId } from '../core/ids.js';
 import { impossible } from '../core/assert.js';
 import { none, type Option } from '../core/option.js';
 import { addTo, div, finite, mul, sub, zeroIfNone } from '../core/num.js';
@@ -31,6 +31,13 @@ import type { Registry } from '../registry/registry.js';
 export interface RevalueDeps {
   /** What a market last said a unit is worth, for a kind whose lots are carried at cost. */
   marked(instrument: InstrumentId, period: Period): Option<number>;
+  /**
+   * Currency D1, D3: the rate THIS period's spot session struck, which is the one the books are
+   * about to be brought to. It is asked for separately from `rateInForce` because that answers with
+   * the rate still in force — the one the period has been settling at — and the whole of the FX
+   * revaluation is the difference between the two.
+   */
+  rateAt(from: CurrencyCode, to: CurrencyCode, at: Period): Option<number>;
   readonly calendar: Calendar;
   readonly registry: Registry;
   readonly parties: Parties;
@@ -41,6 +48,17 @@ export interface RevalueDeps {
 }
 
 export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
+  // Currency D2, D3: WHAT THE RATE DID, before anything is re-marked. A position held in a money
+  // that is not the holder's own has TWO reasons to move in a period — what the thing is worth in
+  // its own money, and what that money is worth in the holder's — and separating them is what makes
+  // both exact rather than one number with a cross term inside it:
+  //
+  //     v(t)·r(t) − v(t−1)·r(t−1)  =  r(t)·(v(t) − v(t−1))  +  v(t−1)·(r(t) − r(t−1))
+  //                                   ── the marks, below ──    ── the rate, here ──
+  //
+  // So this step runs FIRST, on what the position was carried at, and the marks below then convert
+  // at the new rate. Neither is an approximation of the other and nothing is left over (Law 2).
+  revalueForeign(period, cycle, d);
   const issuerMoves = new Map<PartyId, number>();
   // Law 7: what the re-marking passed THROUGH, which is the position's whole value and not the
   // change in it. A book re-marked from 6000 to 6000.01 moved by a penny and rounded a 6000, and
@@ -176,4 +194,64 @@ function toWhatTheKindSays(
     );
   }
   return { delta, through, carried: units === 0 ? 0 : div(value, units, 'carried per unit') };
+}
+
+
+/**
+ * Currency D1, D2, D2.a; Central Bank A2.c: what a week of exchange rates did to every position
+ * held in a money that is not the holder's own.
+ *
+ * IT IS A REAL GAIN OR LOSS and it lands on the holder's own equity (D2.a): a bank long another
+ * country's money is long it, and the week the rate moves is the week it made or lost the money.
+ * The one exception is a CENTRAL BANK, whose foreign reserves are the other side of what it printed
+ * rather than a position it took: what the rate does to those goes to its revaluation account and
+ * never to the line that says what it earned (A2.c, F4).
+ *
+ * Nothing moves for a world with one currency in it: `rateInForce` answers one for a money against
+ * itself, so every delta is zero and this walk costs a comparison per holding. A world with two and
+ * no market between them has no rate at all, and the read throws where it is asked for rather than
+ * inventing a level (Currency C5) — which is the same answer an unpriced holding gets anywhere.
+ */
+function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
+  for (const h of d.register.allHoldings()) {
+    const inst = d.instruments.get(h.instrument);
+    const home = d.registry.region(d.parties.get(h.holder).region).ccy;
+    if (inst.ccy === home) continue;
+    // D3: the rate the period opened at, and the rate its own session struck. The marks have not
+    // run yet, so `rateInForce` is still answering with the opening one — which is why the new one
+    // is asked for by name here and is the only place in the engine that does.
+    const was = d.valuation.rateInForce(inst.ccy, home, period);
+    const now = d.rateAt(inst.ccy, home, period);
+    if (!now.some || now.value === was) continue;
+    // What the equity account has already recognised, in the instrument's OWN money: the marks
+    // below move that to this period's print, and this moves the money it is counted in.
+    let carried = 0;
+    for (const lot of h.lots) {
+      carried = carried + mul(lot.qty, d.valuation.carryingPerUnit(inst.id, lot, period), 'carried');
+    }
+    if (carried === 0) continue;
+    const delta = mul(carried, sub(now.value, was, 'what the rate moved by'), 'what it did');
+    if (delta === 0) continue;
+    const move = {
+      party: h.holder,
+      delta,
+      cause: `exchange rate on ${inst.id} in period ${period}`,
+      // Law 7: it passed through the whole position in home money, not the change in it.
+      through: Math.abs(mul(carried, now.value, 'the position in its holder\u2019s money')),
+    };
+    // A2.c: the one holder whose foreign position is not a position — the central bank OF the money
+    // it books in, holding the other side of what it printed. It is asked of the registry, which
+    // names it (`centralBankOf`), and never of the party's kind: what matters is that this party is
+    // this currency's issuer, not what sort of thing it is (Law 15).
+    if (d.registry.centralBankOf(home) === h.holder) d.register.moveRevaluation(move);
+    else d.register.moveEquity(move);
+    d.journal.record(
+      period,
+      cycle,
+      'revaluation.fx',
+      [h.holder, inst.id],
+      { deltaPerMember: delta, ccy: inst.ccy, home, was, now: now.value, carried },
+      false,
+    );
+  }
 }

@@ -11,7 +11,7 @@
 import { type Period, period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
 import { Forbidden, Unpriced } from '../core/errors.js';
-import type { InstrumentId, PartyId } from '../core/ids.js';
+import { fxPairId, type CurrencyCode, type InstrumentId, type PartyId } from '../core/ids.js';
 import { none, some, type Option } from '../core/option.js';
 import { dustOf, mul, sum, type Running } from '../core/num.js';
 import type { InstrumentsReads as Instruments } from '../register/instruments.js';
@@ -130,10 +130,49 @@ export class Valuation {
     return value;
   }
 
-  /** The mark per unit in force for `at` (throws NotYetProduced before the market has printed). */
   /** Clearing D4: revaluation has run for this period; its marks are in the equity accounts now. */
   remarked(at: Period): void {
     this.recognisedThrough = at;
+  }
+
+  /**
+   * Currency C5, D1, D3: THE RATE IN FORCE — what one unit of `from` costs in `to`, for `at`.
+   *
+   * There is ONE rate for a period and everything uses it: what a payment settles at and what a
+   * balance sheet is valued at are the same number (C5), because a world where they differ is one
+   * where a party can be solvent at the settlement rate and insolvent at the valuation rate and
+   * neither is wrong. It is the spot market's own print (Spot FX C1) — a rate is a price, struck by
+   * real supply meeting real demand, and it lives in the one price store like every other price.
+   *
+   * D3 decides WHICH print: everything inside a period values at the rate the period opened with,
+   * and the revaluation at the close brings the books to the rate this period's session struck. So
+   * a reader during the cycles gets `at - 1`'s print and a reader at revaluation gets `at`'s, and
+   * the difference between the two IS what the revaluation books. That is `recognisedThrough`, the
+   * same switch the marks turn on, because it is the same moment.
+   *
+   * A money is one of itself: the only other hard-coded price of one, and it is arithmetic rather
+   * than a claim (Money D2 has the first).
+   */
+  rateInForce(from: CurrencyCode, to: CurrencyCode, at: Period): number {
+    if (from === to) return 1;
+    const asOf = this.recognisedThrough >= at ? at : period(at - 1);
+    const direct = this.prices.latest(fxPairId(from, to), asOf);
+    if (direct.some) return direct.value.price;
+    // C3: the same market read the other way round. It is not a second market and not a second
+    // number — one over a rate is the same rate — so nothing is triangulated and no vehicle
+    // currency is invented (C3.b).
+    const inverse = this.prices.latest(fxPairId(to, from), asOf);
+    if (inverse.some && inverse.value.price > 0) return 1 / inverse.value.price;
+    throw new Unpriced('Currency C5', `no rate for ${from}/${to} in force at ${at}`, { from, to, at });
+  }
+
+  /**
+   * Currency C4, D2: what an amount of `from` is worth in `to`, at the rate in force. It CONVERTS
+   * and never stores: nothing anywhere holds a balance in a money that is not its own (C4.a), and a
+   * balance sheet that adds two currencies does it here, once, at one rate.
+   */
+  inMoney(value: number, from: CurrencyCode, to: CurrencyCode, at: Period): number {
+    return from === to ? value : mul(value, this.rateInForce(from, to, at), `${from} in ${to}`);
   }
 
   markPerUnit(instrument: InstrumentId, at: Period): number {

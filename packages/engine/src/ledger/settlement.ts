@@ -22,7 +22,7 @@
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid, impossible } from '../core/assert.js';
-import { Forbidden, Mismatch, Missing } from '../core/errors.js';
+import { Forbidden, Missing } from '../core/errors.js';
 import {
   currencyUnit,
   type CurrencyCode,
@@ -837,10 +837,27 @@ export class Settlement {
     // trade takes a book down by the price and up by the value in one instruction, and the
     // rounding that leaves behind is the price's, not the difference's.
     const gross = new Map<PartyId, number>();
-    const bump = (party: PartyId, delta: number): void => {
-      addTo(equity, party, delta);
-      addTo(gross, party, Math.abs(delta));
+    const bump = (party: PartyId, delta: number, instrument: InstrumentId): void => {
+      const own = inOwn(party, delta, this.d.instruments.get(instrument).ccy);
+      addTo(equity, party, own);
+      addTo(gross, party, Math.abs(own));
     };
+    /**
+     * Currency C5, Money A2.b: AN EQUITY ACCOUNT IS KEPT IN ITS PARTY'S OWN MONEY, so what a leg in
+     * another money did to it is converted at the rate that same period settles at — the one rate
+     * (C5), asked for once, here. Two currencies are still never added; two amounts in ONE are.
+     *
+     * For everything in a party's own money this is the number that went in, unchanged, and for a
+     * world with one currency it never runs. Where the single-currency guard used to stand, and it
+     * does the thing the guard was standing in for.
+     */
+    const inOwn = (party: PartyId, delta: number, ccy: CurrencyCode): number =>
+      this.d.valuation.inMoney(
+        delta,
+        ccy,
+        this.d.registry.region(this.d.parties.get(party).region).ccy,
+        ins.period,
+      );
 
     ops.forEach((op, index) => {
       switch (op.op) {
@@ -850,7 +867,7 @@ export class Settlement {
             drawnByOp.set(index, [
               { lot: 0 as never, qty: op.qty, basisPerUnit: 1, acquired: ins.period },
             ]);
-            bump(op.party, -op.qty);
+            bump(op.party, -op.qty, op.instrument);
           } else {
             const drawn = this.d.register.debit(op.party, op.instrument, op.qty);
             drawnByOp.set(index, drawn);
@@ -863,7 +880,7 @@ export class Settlement {
                 ),
               ),
             ).value;
-            bump(op.party, -carrying);
+            bump(op.party, -carrying, op.instrument);
           }
           deltas.push({
             party: op.party,
@@ -879,7 +896,7 @@ export class Settlement {
           if (op.money)
             this.d.register.moneyDelta(op.party, op.instrument, op.qty, ins.period, true);
           else this.d.register.credit(op.party, op.instrument, op.qty, basis, ins.period);
-          bump(op.party, mul(op.qty, basis, 'credit value'));
+          bump(op.party, mul(op.qty, basis, 'credit value'), op.instrument);
           deltas.push({
             party: op.party,
             instrument: op.instrument,
@@ -896,6 +913,7 @@ export class Settlement {
               bump(
                 issuerOf(inst),
                 mul(op.totalQty, carryingOf(op.fromDebit) - basis, 'issuer re-mark'),
+                inst.id,
               );
             }
           }
@@ -913,7 +931,7 @@ export class Settlement {
           const inst = this.d.instruments.get(op.instrument);
           if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
             const per = op.valuePerUnit === 'carrying' ? carryingOf(op.fromDebit) : op.valuePerUnit;
-            bump(op.issuer, -mul(op.qty, per, 'issue value'));
+            bump(op.issuer, -mul(op.qty, per, 'issue value'), op.instrument);
           }
           break;
         }
@@ -948,7 +966,7 @@ export class Settlement {
                 : op.valuePerUnit === 'carrying'
                   ? 1
                   : op.valuePerUnit;
-            bump(op.issuer, mul(op.qty, per, 'redeem value'));
+            bump(op.issuer, mul(op.qty, per, 'redeem value'), op.instrument);
           }
           break;
         }
@@ -989,8 +1007,8 @@ export class Settlement {
                 }),
               ).value;
           this.d.instruments.reseat(op.instrument, op.to);
-          bump(op.from, owed);
-          bump(op.to, -owed);
+          bump(op.from, owed, op.instrument);
+          bump(op.to, -owed, op.instrument);
           break;
         }
         default:
@@ -1001,7 +1019,6 @@ export class Settlement {
     const effects: EquityEffect[] = [];
     for (const [party, delta] of equity) {
       if (delta === 0) continue;
-      this.checkHomeCurrency(party, ins);
       this.d.register.moveEquity({
         party,
         delta,
@@ -1014,38 +1031,21 @@ export class Settlement {
   }
 
   /**
-   * Equity accounts are kept in the party's home money. Until the currency layer revalues foreign
-   * positions (Currency D2, worklist: currency layer) an instruction may not touch an instrument in
-   * another money: two currencies are never added (Money A2.b).
+   * Money A2.b, Currency C5, D2: THE SINGLE-CURRENCY GUARD IS GONE, and what replaces it is the
+   * rate.
+   *
+   * It read: "equity accounts are kept in the party's home money, so until the currency layer
+   * revalues foreign positions an instruction may not touch an instrument in another money." That
+   * was true and it was a PLACEHOLDER wearing a contract's clothes — it did not check an invariant,
+   * it refused a world that had not been built. The world is built now: every position in a money
+   * that is not its holder's own revalues to the rate in force at the close of each period
+   * (`world/revalue.ts`), and what a balance sheet in two currencies comes to is one conversion at
+   * one rate, in one place (`Valuation.inMoney`).
+   *
+   * Two currencies are STILL never added (A2.b). What is added is two amounts in ONE currency, one
+   * of which was converted at the rate the same period settled at (C5) — which is what an accountant
+   * means by it and what the clause is about.
    */
-  private checkHomeCurrency(party: PartyId, ins: Instruction): void {
-    const home = this.d.registry.region(this.d.parties.get(party).region).ccy;
-    for (const leg of ins.legs) {
-      const ccy = leg.kind === 'money' ? leg.ccy : this.d.instruments.get(leg.instrument).ccy;
-      const touches =
-        leg.kind === 'money'
-          ? leg.from.holder === party ||
-            leg.to.holder === party ||
-            leg.from.issuer === party ||
-            leg.to.issuer === party
-          : leg.kind === 'asset' || leg.kind === 'assume'
-            ? leg.from === party || leg.to === party
-            : leg.kind === 'pledge' || leg.kind === 'release'
-              ? leg.pledgor === party || leg.beneficiary === party
-              : leg.party === party;
-      if (touches && ccy !== home) {
-        throw new Mismatch(
-          'Money A2.b',
-          `instruction ${ins.id}: ${party} books in ${home}; leg is in ${ccy} (currency layer not built)`,
-          {
-            party,
-            home,
-            ccy,
-          },
-        );
-      }
-    }
-  }
 }
 
 

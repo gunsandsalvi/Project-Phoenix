@@ -84,6 +84,22 @@ export class Register {
   private readonly byInstrument = new Map<InstrumentId, Set<PartyId>>();
   private readonly equityAccount = new Map<PartyId, Running>();
   /**
+   * Central Bank A2.c, Currency D2.a: THE REVALUATION ACCOUNT. A second equity-like account, moved
+   * by exactly one thing — what a change in an exchange rate did to a position held in a money that
+   * is not the holder's own.
+   *
+   * It exists because a central bank's foreign reserves are not its profit. Every other holder books
+   * a rate move straight to equity, because for them it IS a gain or a loss: a bank that is long
+   * another country's money is long it, and the week the rate moves is the week it made or lost the
+   * money. A central bank holding foreign reserves against its own issued money is not taking a
+   * position — it is holding the other side of what it printed — so what the rate does to those
+   * reserves sits in an account of its own and never in the line that says what it earned (F4).
+   *
+   * The accounts family therefore asks a central bank for equity PLUS this, and everybody else for
+   * equity, which is the one place the difference is stated.
+   */
+  private readonly revaluationAccount = new Map<PartyId, Running>();
+  /**
    * Money D2, Law 7: the walk behind every money balance. A balance is one lot moved once per leg
    * since the account was opened, so what a check asking "is this account overdrawn" is entitled to
    * call dust is that walk — not a band, and not a second tolerance beside the one settlement uses
@@ -180,6 +196,19 @@ export class Register {
     return this.equityAccount.has(party);
   }
 
+  /**
+   * Currency D2.a, Central Bank A2.c: what exchange rates have done to this party's foreign
+   * positions, cumulatively. Zero for a party that has never held foreign money — that is a
+   * quantity and not a missing value, because every party has the account and most never move it.
+   */
+  revaluation(party: PartyId): number {
+    return this.revaluationWalk(party).value;
+  }
+
+  revaluationWalk(party: PartyId): Running {
+    return this.revaluationAccount.get(party) ?? opened(0, `revaluation account of ${party}`);
+  }
+
   /** The walk behind a money balance: what every move on that account has cost it in rounding. */
   moneyWalk(holder: PartyId, instrument: InstrumentId): Running {
     return (
@@ -207,6 +236,20 @@ export class Register {
     this.equityAccount.set(
       move.party,
       moved(cur, move.delta, `equity of ${move.party}`, throughOf(move)),
+    );
+  }
+
+  /**
+   * Currency D2.a: move the revaluation account. ONE WRITER — the FX step of revaluation — because
+   * one thing moves it, and an account two events can move is an account that cannot say what it is
+   * for (Law 4). It needs no `stateEquity` twin: a party that has never held foreign money has
+   * nothing in it, which is zero rather than missing.
+   */
+  moveRevaluation(move: EquityMove): void {
+    const cur = this.revaluationWalk(move.party);
+    this.revaluationAccount.set(
+      move.party,
+      moved(cur, move.delta, `revaluation account of ${move.party}`, throughOf(move)),
     );
   }
 
@@ -595,6 +638,8 @@ export type RegisterReads = Pick<
   | 'equity'
   | 'equityWalk'
   | 'hasEquityAccount'
+  | 'revaluation'
+  | 'revaluationWalk'
   | 'moneyWalk'
 >;
 
@@ -615,5 +660,7 @@ export function registerReads(store: Register): RegisterReads {
     moneyWalk: (holder: PartyId, instrument: InstrumentId) => store.moneyWalk(holder, instrument),
     equityWalk: (party: PartyId) => store.equityWalk(party),
     hasEquityAccount: (party: PartyId) => store.hasEquityAccount(party),
+    revaluation: (party: PartyId) => store.revaluation(party),
+    revaluationWalk: (party: PartyId) => store.revaluationWalk(party),
   });
 }

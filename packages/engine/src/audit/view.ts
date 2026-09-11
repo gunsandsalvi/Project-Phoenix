@@ -39,12 +39,14 @@ export interface AuditView {
     | 'equity'
     | 'equityWalk'
     | 'hasEquityAccount'
+    | 'revaluation'
+    | 'revaluationWalk'
     | 'moneyWalk'
   >;
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history' | 'instruments'>;
   readonly valuation: Pick<
     Valuation,
-    'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots' | 'equityDust'
+    'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots' | 'equityDust' | 'inMoney' | 'rateInForce'
   >;
   readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'tail'>;

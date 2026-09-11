@@ -275,7 +275,7 @@ price is a rate and whose trade is two money legs (12.2), the views the modules 
 `spot-fx` module itself — plus the second region and currency the seed has to open with for any of
 it to be reachable. A step that is not written is a step that gets skipped, so they are written.
 
-- [ ] 12.1 kernel: the rate IN FORCE for a period (the previous period's print during the cycles,
+- [x] 12.1 kernel: the rate IN FORCE for a period (the previous period's print during the cycles,
       this period's at revaluation); every foreign holding revalues to it against the holder's
       equity or a central bank's revaluation account; `checkHomeCurrency` and the accounts family's
       skip of foreign instruments are both deleted in the same change (Currency D1–D3, Money A2.b)

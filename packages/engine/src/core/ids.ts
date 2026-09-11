@@ -53,3 +53,16 @@ export const currencyUnit = (ccy: CurrencyCode): UnitId => `ccy:${ccy}` as UnitI
 /** The instrument that is `issuer`'s money in `ccy` (Money A1, D2). */
 export const moneyInstrumentId = (issuer: PartyId, ccy: CurrencyCode): InstrumentId =>
   `money:${issuer}:${ccy}` as InstrumentId;
+
+/**
+ * Spot FX A3, C1, Law 9: A CURRENCY PAIR, named the way a market names one — `PHX/SOU`, the base
+ * over the quote, and the price of it is what one unit of the base costs in the quote.
+ *
+ * It is an instrument ID and NOT an instrument. Nothing issues a pair, nobody holds one, and the
+ * register has no row for it: what a spot trade moves is money, two legs of it in two currencies
+ * (A1). What the id is for is the PRINT — one price store, one kind of print, and a rate is a price
+ * like any other, struck by real supply meeting real demand in a market with a name (Law 3). A
+ * second store for rates would be a second answer to "what did this market say" (Law 4).
+ */
+export const fxPairId = (base: CurrencyCode, quote: CurrencyCode): InstrumentId =>
+  `fx:${base}/${quote}` as InstrumentId;
