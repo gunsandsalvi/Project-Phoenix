@@ -701,3 +701,64 @@ week is exactly what the grain changes. Whether the answer is a finer opening gr
 that stops a cell's whole account moving at once is worklist **16**, with the rest of the level.
 
 Seen at: `packages/engine/test/resolution/cells.test.ts:169`.
+
+### 12d-17 — the bank display names run past Z into punctuation
+
+`BANK_COUNT` is 30 and the seed's display name is `Bank ${String.fromCharCode(65 + n)}`, so banks
+27 to 30 are called **`Bank [`**, **`Bank \`**, **`Bank ]`** and **`Bank ^`**. The *id* generator
+beside it (`bankName`, banks/data.ts:260) carries to `bank.aa` correctly; the display name is a
+second, worse copy of the same rule written at the other end of the codebase (Law 4), and it was
+right only while the count was under 27.
+
+Law 9: a display name is what a market calls the thing. `Bank ^` is not a name, and the count that
+breaks it is a RESOLUTION nobody may be afraid to raise (banks/data.ts:211).
+
+Seen at: `packages/engine/src/seeds/foundation.ts:634`.
+
+### 12d-18 — the countries are the one population in this world that was typed, not drawn
+
+Every other population is drawn from stated spreads and is deterministic in the world's seed value
+(`drawBanks`, `drawFirms`, `drawListed`, `drawFunds`, `drawEtfs`, `drawAssessors` — Seed B1.a, B4).
+There is no `drawCountries`. `ABROAD` (foundation.ts:154) is a hand-written table of three rows
+carrying `'Europe' / 'European Central Bank' / 'European Treasury' / 'bund'`,
+`'United Kingdom' / 'Bank of England' / 'HM Treasury' / 'gilt'`,
+`'Japan' / 'Bank of Japan' / 'Japanese Treasury' / 'jgb'`, and the home region is
+`'United States' / 'Federal Reserve' / 'US Treasury'` written the same way.
+
+The consequence is not the names. It is that a typed population gets exactly the attributes somebody
+typed, and what was typed is a central bank, a treasury and a ten-year line — so the three rows are
+**structurally identical** (one tenor, one opening yield, one `crossHoldingShare` split evenly, one
+opening rate) and Seed B4's *"a sector of equals never produces a market"* is broken by construction
+in the one sector where it was never noticed, because nobody thought of a country as a member of a
+population. It is also why every attribute a country needs and did not get — banks, firms,
+households, a labour market, a goods market — is absent rather than declared missing: the row has no
+field for it, so nothing counts it.
+
+This is the structural half of 12d-15 (which measures the effect: no FX book ever has a bid).
+
+Seen at: `packages/engine/src/seeds/foundation.ts:154`.
+
+### 12d-19 — `region` is a declared cell key dimension with one value
+
+XI-15 and Appendix A: the cell key is what the registry declares, at present `region, cohort, bank`.
+Only the United States has households, so `region` stratifies nothing and every cell in the world
+carries the same value for a third of its key. A key dimension that cannot cut the ensemble is a
+dimension that costs a cross product and buys nothing, and it hides the fact that the represented
+sector is one country's.
+
+Not a defect to fix by deleting the dimension — the fix is populations abroad (the same place
+12d-18 goes). Recorded so that the resolution measurement in `resolution/cells.test.ts` is read
+knowing what it is and is not varying over.
+
+Seen at: `packages/engine/src/seeds/foundation.ts:1692`.
+
+### 12d-20 — `North Asset Management` manages a fund in a world with no north
+
+`funds/data.ts:241` names every bank's money-fund manager `North Asset Management ${at}`. The world
+it manages in is the United States; the name is left over from a one-region world called North and
+is now a stale fact with a reader (Law 16). Beside it, `'American Index Managers'` and
+`'US Listed Equity Fund'` (data.ts:185-187) are typed the same way, while the FIRMS in the same
+world are drawn. Fund managers are a population like any other (Seed B1, B1.a) and there is no
+`drawManagers`.
+
+Seen at: `packages/engine/src/mechanisms/funds/data.ts:185`, `:241`.
