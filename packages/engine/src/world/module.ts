@@ -22,7 +22,7 @@ import type {
   OverdraftDecision,
   PartyKindProfile,
 } from '../registry/kinds.js';
-import type { ParamDecl } from '../registry/params.js';
+import type { ParamDecl, ParamRegister } from '../registry/params.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
@@ -173,7 +173,7 @@ export interface SystemModule {
    * two readers cannot get two levels. One system of them across the world (D5), which is what a
    * single registry at assembly gives: a second module declaring the same id is refused.
    */
-  readonly indices?: readonly IndexDecl[];
+  indices?(params: Pick<ParamRegister, 'get' | 'amount'>): readonly IndexDecl[];
   /**
    * Expectations A2, XI-16: what a party expects. Exactly one module may answer this — an
    * expectation is a fact about a party and has one writer (Law 4) — and the kernel asks it

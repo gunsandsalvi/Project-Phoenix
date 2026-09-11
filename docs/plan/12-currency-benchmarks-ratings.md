@@ -302,15 +302,32 @@ it to be reachable. A step that is not written is a step that gets skipped, so t
       two moneys `triangles()` is empty and XI-12 cannot be expressed at all. The three abroad are
       stubs — a central bank, a treasury and one line of paper each — and a real economy there is
       13i's
-- [ ] `indices`: the rate benchmark as the overnight money-market print; a policy rate is not a benchmark; test
-- [ ] `indices`: producer and consumer price indices from the ledger's trades with different baskets and weights; test: they diverge when a distribution wedge exists (G1.c: partial until 13c)
-- [ ] `indices`: no stored level (E2), no history before the first print (D5.a); test: a beta over a window with fewer prints than the window is Missing
+- [x] `indices`: the rate benchmark as the overnight money-market print; a policy rate is not a
+      benchmark. SECURED AND UNSECURED ARE TWO BENCHMARKS, not one averaged: money lent against
+      collateral and money lent on a name are two prices for two things (Law 4). A book that did not
+      trade has no fixing at all and nothing is published for it — this world's unsecured overnight
+      book never clears, and the absence of an unsecured fixing is the honest way to say so
+- [x] `indices`: producer and consumer price indices from the ledger's trades with different baskets
+      and weights (partial until 13c's wedge). PER REGION, and the region comes off the two SIDES of
+      the delivery — producer weighs what this region's sellers sold, consumer what this region's
+      cells bought — so no basket has to look inside a good's own terms to know where it belongs
+- [x] `indices`: no stored level (E2), no history before the first print (D5.a). An index of an
+      EMPTY basket reports Missing and never its base — a credit index in a world with no corporate
+      paper says nothing rather than saying 100. `IndexRead.periods` is what a window is measured
+      against. An index rule is given the public world at the READ (`IndexWorld`) rather than being
+      told its constituents at assembly, so a basket is what is listed now and what was bought this
+      period; and the base is a declared resolution read through the register
 - [ ] Fund mandates that track an index: rebalance as a forced trade in the same session; test
 - [ ] `ratings`: assessor party kind paid by issuers; grades from state through a view without prints (A2.a structurally); coarse and sticky; published; tests: a rating never moves when only the price moves
 - [ ] `ratings`: instrument vs issuer ratings; consumers: mandates, risk weights per grade, haircuts as one input to the lender's PD, information; tests: a downgrade past a mandate boundary forces sales by every bound holder in the same session (C1.a)
 - [ ] `ratings`: E3: the assessor can be wrong: a rated-safe issuer defaults in a scenario test; E4: the distribution of grades is a read
 - [ ] Second opinion: `speculative` party-kind flag; assembly check per credit market; `market.noView` standing observation; tests
-- [ ] Audit: `crossMarket` family built with its two contributions; tests
+- [x] Audit: `crossMarket` family built with its two contributions. `indices` reads every index a
+      SECOND time from the prints with none of the kernel's own read in the way and puts the two
+      against each other — which is what makes it independent and what would catch a cached level;
+      `spot-fx` reports a triangular gap only when it is BIGGER than the cheapest desk's round trip,
+      because a gap inside that cost is the market working and closing it would be the enforced
+      convergence Appendix B forbids
 - [ ] Observer: rates per pair, triangular gap, indices, price indices, ratings, the numéraire view for display only
 - [ ] Year-long run green in two currencies with cross-border coupons flowing; determinism
 - [ ] Part XII chain tests as scenarios: a downgrade causes selling, capital pressure and funding loss (D4, direction only)

@@ -78,6 +78,7 @@ import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
+import { indices } from '../mechanisms/indices/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -1530,6 +1531,9 @@ export function foundationSpec(
       // Currency, Spot FX: the pairs, after the banks whose desks quote them and the money market
       // whose overnight book they fund a position in.
       spotFx(drew.banks),
+      // Indices: after everything that prints, because an index is what its constituents printed
+      // and the benchmark is what the overnight book settled at (Indices D3.a, E1).
+      indices([REGION, ...ABROAD.map((c) => c.region)], [USD, ...ABROAD.map((c) => c.ccy)]),
       foundationSeedFor(drew.banks, drew.firms),
       foundationFundingFor(drew.banks),
     ],

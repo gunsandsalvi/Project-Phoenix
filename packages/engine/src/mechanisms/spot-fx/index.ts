@@ -33,6 +33,7 @@ import type { BankDecl } from '../banks/data.js';
 import { FX_SPREAD, fxParam } from './data.js';
 import { arbitrage } from './arbitrage.js';
 import { arbitrageOrders, dealerOrders, needOrders } from './participants.js';
+import { triangularConsistency } from './family.js';
 
 export * from './data.js';
 export { triangles, type Triangle } from './arbitrage.js';
@@ -147,7 +148,7 @@ export function spotFx(rows: readonly BankDecl[]): SystemModule {
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => needOrders(view, m),
       })),
     ],
-    families: [],
+    families: [triangularConsistency(rows)],
     seed(ctx) {
       // A3: every pair is a market, opened at the seed because the pairs are the currencies and the
       // currencies are the registry's. Nothing states which pairs trade: a world with two moneys in

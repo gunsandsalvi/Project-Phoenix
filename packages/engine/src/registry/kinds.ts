@@ -312,4 +312,12 @@ export interface PartyKindProfile {
    * fact and its answer in one place (Law 4).
    */
   readonly depositClass: string | null;
+  /**
+   * Indices D2, Ratings B2, Sovereign A1: WHOSE CREDIT A PARTY OF THIS KIND BORROWS ON. A state
+   * borrows on the state's — it taxes, and its central bank issues the money the debt is in — and
+   * everybody else borrows on its own. It is a fact about the kind, declared with the kind (Law 15):
+   * a credit index that asked "is the issuer the treasury?" would be that branch written out, and
+   * would quietly be wrong the first time a world has two sovereigns or an agency.
+   */
+  readonly sovereign?: boolean;
 }

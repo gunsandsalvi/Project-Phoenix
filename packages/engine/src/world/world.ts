@@ -1041,7 +1041,14 @@ export class World {
       ledger: this.ledger,
       journal: this.journal,
       markets: this.marketList,
+      indexList: this.indexRules(),
+      index: (id: string) => this.index(id),
     };
+  }
+
+  /** Indices D5: the rules, in declaration order — one system, read the same way by everybody. */
+  indexRules(): readonly IndexDecl[] {
+    return [...this.indexList.values()];
   }
 
   /** The money stock per currency is a read of issuers' liabilities (Money A4), never stored. */
@@ -1093,6 +1100,13 @@ export class World {
     const decl = this.indexList.get(id);
     if (decl === undefined) return none<IndexRead>();
     return readIndex(decl, this.currentPeriod, {
+      world: {
+        calendar: this.calendar,
+        registry: this.registry,
+        parties: this.parties,
+        instruments: this.instruments,
+        ledger: this.ledger,
+      },
       price: (instrument, at) => {
         const p = this.prices.latest(instrument, at);
         // A2: what the market SAID in that period, not what it was carried at. An index built on

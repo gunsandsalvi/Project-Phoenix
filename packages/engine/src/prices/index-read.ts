@@ -18,11 +18,32 @@
  * is CHAINED: each period's level is the period before it times what this period's basket did, and
  * what a basket did is measured against itself.
  */
-import type { Period } from '../calendar/calendar.js';
+import type { Calendar, Period } from '../calendar/calendar.js';
 import { Missing } from '../core/errors.js';
 import type { InstrumentId } from '../core/ids.js';
 import { add, div, mul, sum } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
+import type { Ledger } from '../ledger/ledger.js';
+import type { PartiesReads } from '../parties/party.js';
+import type { InstrumentsReads } from '../register/instruments.js';
+import type { Registry } from '../registry/registry.js';
+
+/**
+ * A1, A2: WHAT A RULE MAY LOOK AT to say what is in it. Public state and nothing else: which lines
+ * exist and who issued them, who those issuers are, and what was actually traded. A rule that could
+ * reach further would be an index with a view in it, and an index is a measurement (A1.a).
+ *
+ * It is given at the READ, not closed over at assembly: what is in an equity index is whatever is
+ * listed now, and what a basket weighs is what was bought this period. A rule that had to be told
+ * its constituents at assembly could only ever describe the world the seed opened with.
+ */
+export interface IndexWorld {
+  readonly calendar: Calendar;
+  readonly registry: Registry;
+  readonly parties: PartiesReads;
+  readonly instruments: InstrumentsReads;
+  readonly ledger: Pick<Ledger, 'inPeriod'>;
+}
 
 /** A1: one constituent of an index, and what it counts for. */
 export interface Constituent {
@@ -44,7 +65,7 @@ export interface IndexDecl {
   readonly id: string;
   readonly name: string;
   /** A1: what the rule says is in it, this period. A rebalance is this answering differently. */
-  constituents(at: Period): readonly Constituent[];
+  constituents(at: Period, w: IndexWorld): readonly Constituent[];
   /**
    * A4: what the index was set to when it began. A base is a UNIT and not a claim: doubling it
    * doubles every level and changes nothing anybody does, which is what makes it a resolution.
@@ -66,6 +87,7 @@ export interface IndexRead {
 /** What the index reader needs of the world: the prints, and nothing else (A2). */
 export interface IndexDeps {
   price(instrument: InstrumentId, at: Period): Option<number>;
+  readonly world: IndexWorld;
 }
 
 /**
@@ -81,9 +103,13 @@ export interface IndexDeps {
  */
 export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<IndexRead> {
   if (at < decl.from) return none<IndexRead>();
+  // A1, Law 2: AN INDEX OF NOTHING IS NOT A NUMBER. A rule whose basket is empty — a credit index
+  // in a world with no corporate paper in it yet — reports Missing, never its base level: a base
+  // carried over an empty basket is a level nobody's prints produced (A2, D5.a).
+  if (decl.constituents(at, d.world).length === 0) return none<IndexRead>();
   let level = decl.base;
   for (let t = decl.from + 1; t <= at; t += 1) {
-    const now = decl.constituents(t as Period);
+    const now = decl.constituents(t as Period, d.world);
     const terms: number[] = [];
     const wasTerms: number[] = [];
     for (const c of now) {
@@ -99,7 +125,7 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
     if (then === 0) continue;
     level = mul(level, div(sum(terms).value, then, 'what the basket did'), 'chained');
   }
-  const constituents = decl.constituents(at);
+  const constituents = decl.constituents(at, d.world);
   const from: { instrument: InstrumentId; price: number; weight: number }[] = [];
   for (const c of constituents) {
     const p = d.price(c.instrument, at);

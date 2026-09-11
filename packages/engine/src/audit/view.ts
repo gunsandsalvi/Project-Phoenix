@@ -17,14 +17,16 @@ import type { Register } from '../register/register.js';
 import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import type { MarketDecl } from '../clearing/market.js';
+import type { IndexDecl, IndexRead } from '../prices/index-read.js';
+import type { Option } from '../core/option.js';
 
 export interface AuditView {
   readonly period: Period;
   readonly calendar: Calendar;
   readonly registry: Registry;
   readonly params: Pick<ParamRegister, 'report' | 'all' | 'get'>;
-  readonly parties: Pick<Parties, 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve'>;
-  readonly instruments: Pick<Instruments, 'get' | 'has' | 'all'>;
+  readonly parties: Pick<Parties, 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve' | 'cell'>;
+  readonly instruments: Pick<Instruments, 'get' | 'has' | 'all' | 'issuedBy'>;
   readonly register: Pick<
     Register,
     | 'holding'
@@ -51,6 +53,14 @@ export interface AuditView {
   readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'tail'>;
   readonly markets: readonly MarketDecl[];
+  /**
+   * Indices E3, D5: the index rules this world declares, and what each of them reads as. Both, so a
+   * check can put the level against the constituents that made it — which is the one thing an index
+   * can be wrong about once nothing stores it (a cache, a weight restated, a basket read at the
+   * wrong period).
+   */
+  readonly indexList: readonly IndexDecl[];
+  index(id: string): Option<IndexRead>;
 }
 
 /**

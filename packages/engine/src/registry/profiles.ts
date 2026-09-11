@@ -105,7 +105,7 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   // cannot pay does not pay, and that is a real recorded state (Treasury D3) — it does not end it.
   // A default in a money it cannot create is real, and that needs the currency layer (worklist 12).
   // Treasury D3, Central Bank E2: it banks at the central bank, and that is not a choice it revisits.
-  { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true, depositClass: null },
+  { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true, depositClass: null, sovereign: true },
   // XI-3, Firm D4: it can fail two ways and they are different — no cash to pay something due, or
   // liabilities exceeding assets. Both, because a firm can be either without the other.
   // Banks Funding A1.b: fewer, larger, operational — a firm banks where it transacts.
