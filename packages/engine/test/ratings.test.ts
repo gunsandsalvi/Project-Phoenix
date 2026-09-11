@@ -9,9 +9,11 @@ import {
   ASSESSOR,
   ASSESSOR_COUNT,
   GRADES,
+  TREASURY_US,
   bandOf,
   forInstrument,
   partyId,
+  period,
   type AssessorDecl,
 } from '../src/index.js';
 import { rigWorld } from './rig.js';
@@ -90,7 +92,8 @@ describe('the assessors of a world (Ratings A1, A5, D5)', () => {
       if (typeof who === 'string') subjects.add(who);
     }
     // D1: the state is rated too, on the same measure as anybody else.
-    for (const t of w.parties.ofKind(partyId('treasury') as never)) expect(subjects.has(t.id)).toBe(true);
+    for (const t of w.parties.ofKind(partyId('treasury') as never))
+      expect(subjects.has(t.id)).toBe(true);
   });
 
   it('is sticky: a grade does not move the period its measure crosses a boundary (A3)', () => {
@@ -143,5 +146,41 @@ describe('the second opinion (XI-13, Ratings A5.a)', () => {
     const credit = w.markets.find((m) => String(m.id).startsWith('mkt.ust.'));
     expect(credit).toBeDefined();
     expect(said.some((e) => e.data['market'] === credit?.id)).toBe(false);
+  });
+});
+
+describe('what the measure is (Ratings A2, B1; Reporting G2)', () => {
+  /** The assessor's own horizon: as many periods back as there are grades on its scale (B3). */
+  const WINDOW = GRADES.length;
+
+  it('is what falls due against what the issuer TAKES IN, not against what it is worth', () => {
+    // 12-17: the measure used to be `owedIn` against `equity`, and a state's book equity is deeply
+    // negative BY CONSTRUCTION — it owes its whole debt and owns nothing — so every treasury in the
+    // world graded worst from period one and told nobody anything. A state's capacity to pay is its
+    // tax base; a firm's is what it sells. Both are "what reached it", which is the equity ledger
+    // item 12a built, with the MARKS EXCLUDED: a revaluation is what the world now thinks a thing
+    // is worth and nobody handed it over (Clearing D4).
+    const w = rigWorld('ratings-measure', 4, 24);
+    for (let i = 0; i < 12; i += 1) w.step();
+    const treasury = w.blindView(TREASURY_US);
+    expect(treasury.equity()).toBeLessThan(0);
+    // What it takes in is a different number from what it is worth, and it is the one the measure
+    // uses now. A world where the two agreed would not be testing anything.
+    expect(treasury.earned(WINDOW)).not.toBe(treasury.equity());
+    expect(treasury.earned(WINDOW)).toBeGreaterThan(0);
+  });
+
+  it('lets a missed payment AGE OUT, because a grade is about a party state now (A2, A3)', () => {
+    // `failedPayments` took a COUNT of failures rather than a horizon, so an assessor asking for
+    // "the failures in its own memory" got every failure that party had ever had — and an issuer
+    // that missed one payment in its first week was graded the worst there is for the rest of the
+    // run. A count of events is not a horizon.
+    const w = rigWorld('ratings-measure', 4, 24);
+    for (let i = 0; i < 12; i += 1) w.step();
+    const view = w.blindView(TREASURY_US);
+    const all = view.failedPayments(period(0)).length;
+    const recent = view.failedPayments(period(w.period - 1)).length;
+    expect(all).toBeGreaterThan(0);
+    expect(recent).toBeLessThan(all);
   });
 });

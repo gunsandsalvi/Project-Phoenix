@@ -34,16 +34,21 @@ const FORBIDS: readonly Forbid[] = [
     pattern: /\bview\.print\(|\bview\.mark\(|\bprices\./,
   },
   {
-    spec: 'Reporting F2.a, G1',
-    why: 'the only path from a surprise to an order is a party’s own outlook; a module that read a report or an estimate directly and posted differently because of it would have written a price path, and the print would look exactly the same as one that had not',
+    spec: 'Reporting F2.a',
+    why: 'the only path from a surprise to an order is a party’s own outlook (§46 C3); a module that read the SURPRISE and posted differently because of it would have written a price path, and the print would look exactly the same as one that had not. The report and the estimate are public information and G1 requires that something read them — it is the surprise that must reach a price only through somebody changing their mind',
+    // Again the observer is the exception, and the same one: it shows the surprise and decides
+    // nothing with it (§45 B2.a, Observer D3 — no display-only number that changes the model).
     applies: (p) =>
-      !p.includes(join('mechanisms', 'reporting')) && !p.includes(join('mechanisms', 'research')),
-    pattern: /'reporting\.|'research\./,
+      !p.includes(join('mechanisms', 'research')) && !p.includes(join('src', 'observer')),
+    pattern: /'research\.surprise'/,
   },
   {
     spec: 'Reporting E2, E3',
     why: 'there is no variable in this world called the market’s expectation (§46 A2.b); a party may observe the consensus as one more published statistic, but nothing may read it AS its outlook',
-    applies: (p) => !p.includes(join('mechanisms', 'research')),
+    // The OBSERVER is the one exception and it is the one §45 B2.a names: a surface decides
+    // nothing, and looking at it changes nothing. E2 forbids a consensus a DECISION consults.
+    applies: (p) =>
+      !p.includes(join('mechanisms', 'research')) && !p.includes(join('src', 'observer')),
     pattern: /consensusOf\(/,
   },
 ];

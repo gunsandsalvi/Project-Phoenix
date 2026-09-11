@@ -106,6 +106,16 @@ export interface ParticipantView extends KernelReads {
   /** Own equity account, per member. */
   equity(): number;
   /**
+   * Reporting A2, G2, §44 B1: WHAT THIS PARTY TOOK IN over the last `periods` periods — the moves of
+   * its own equity account that an INSTRUCTION made, which is what somebody actually paid it.
+   *
+   * The marks are excluded and that is the whole point of the distinction: a revaluation is what the
+   * world now thinks a thing is worth and nobody handed it over, so an issuer's capacity to pay what
+   * falls due is what reached it, not what it was re-marked at (Clearing D4). It is a read of the
+   * equity ledger and never a second tally of the same events (Law 4, Law 19).
+   */
+  earned(periods: number): number;
+  /**
    * Law 7: the same account WITH the walk that produced it. A balance moved once per event since
    * the party was born is not one rounding old, and for a party whose equity is zero by
    * construction (a fund, Fund Shares A3) the difference is what decides whether it is insolvent.
@@ -160,7 +170,8 @@ export interface ParticipantView extends KernelReads {
    * knows what it failed to pay and what did not reach it, because it was a side of both; it learns
    * nothing here about anybody else's failures, which reach it as public events or not at all.
    */
-  failedPayments(last: number): readonly Failed[];
+  /** Money E1.b: what this party failed to pay in the periods from `since` on (a horizon, not a count). */
+  failedPayments(since: Period): readonly Failed[];
   /** Public events (A3): prints, weight events, cessations, facility draws, the audit's counts. */
   publicEvents(last: number): readonly Event[];
   /**

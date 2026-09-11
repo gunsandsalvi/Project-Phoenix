@@ -1515,44 +1515,44 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Reporting A1` | MISSING |  |
-| `Reporting A2` | MISSING |  |
-| `Reporting A2.a` | MISSING |  |
-| `Reporting A3` | MISSING |  |
-| `Reporting A4` | MISSING |  |
-| `Reporting A5` | MISSING |  |
-| `Reporting B1` | PARTIAL | the management already publishes its own outlook of its own earnings and the surprise against it is a recorded event (Firm E7, packages/engine/src/mechanisms/firms/produce.ts). What is missing is the fiscal calendar it publishes on, the report lines it guides to, and the report that settles it (worklist 12a) |
-| `Reporting B2` | MISSING |  |
-| `Reporting B3` | PARTIAL | the outlook is the management's own and can be wrong (Firm E7, packages/engine/src/mechanisms/expectations/index.ts). Nobody yet weighs a management's record of being wrong, because nothing else reads the guidance (worklist 12a) |
-| `Reporting B4` | MISSING |  |
-| `Reporting C1` | MISSING |  |
-| `Reporting C2` | MISSING |  |
-| `Reporting C3` | MISSING |  |
-| `Reporting C4` | MISSING |  |
-| `Reporting C5` | MISSING |  |
-| `Reporting C6` | MISSING |  |
-| `Reporting D1` | MISSING |  |
-| `Reporting D2` | MISSING |  |
-| `Reporting D3` | MISSING |  |
-| `Reporting D3.a` | MISSING |  |
-| `Reporting E1` | MISSING |  |
-| `Reporting E2` | MISSING |  |
-| `Reporting E3` | MISSING |  |
-| `Reporting F1` | PARTIAL | the surprise against the firm's own outlook is recorded per party per variable (Expectations B2, packages/engine/src/mechanisms/expectations/index.ts). Settling a report against a BANK's estimate needs the estimate, which is worklist 12a |
-| `Reporting F2` | MISSING |  |
-| `Reporting F2.a` | MISSING |  |
-| `Reporting F3` | MISSING |  |
+| `Reporting A1` | MET | packages/engine/src/mechanisms/reporting/index.ts (`publish`: every public company, on its own fiscal calendar) with report.ts (`isPublic`, `listedLineOf` — a read of the register every period, no flag and no kind: A1.a) |
+| `Reporting A2` | MET | packages/engine/src/mechanisms/reporting/report.ts and index.ts (income from the equity ledger, the balance sheet from the SAME `balanceSheet()` the accounts family checks, the cash from the wire own money legs) |
+| `Reporting A2.a` | MET | packages/engine/src/audit/families/accounts.ts (`equityLedgerFamily`: the itemisation against the balance, and the COUNT of entries against the count of moves — a sum can agree by two errors, a count cannot) |
+| `Reporting A3` | MET | packages/engine/src/mechanisms/reporting/fiscal.ts (a quarter is a pair of dates; the periods in it are asked of the one calendar and are a whole number only by accident) |
+| `Reporting A4` | MET | packages/engine/src/mechanisms/reporting/data.ts (`reporting.lag.days`, POLICY, owner parliament) with fiscal.ts (`publishableOn`); the report is a public journal event and there is no other way out, so the gap is the only asymmetry there is (A4.a) |
+| `Reporting A5` | MET | packages/engine/src/mechanisms/reporting/index.ts (`restate`: the entries are append-only, so a published figure changes only by a later entry dated into a reported span — re-read every period, with the original standing) |
+| `Reporting B1` | MET | packages/engine/src/mechanisms/reporting/guidance.ts (`guidanceOf`: the firm own `income` outlook, for the coming quarter, in the report own lines) |
+| `Reporting B2` | MET | packages/engine/src/mechanisms/reporting/index.ts (`revise`, `guide`: a revision on a move past the arithmetic dust, a withdrawal when the management loses its view — both events with dates, neither on a schedule) |
+| `Reporting B3` | MET | packages/engine/src/mechanisms/reporting/guidance.ts (`guidanceRecord`: a read of the journal pairing what a management said with what it then reported; nothing stored) |
+| `Reporting B4` | MET | packages/engine/src/mechanisms/reporting/guidance.ts (the published figure IS `view.outlook(income)` — the object the firm own decisions read — with the periodicity stated beside it rather than a second number) |
+| `Reporting C1` | MET | packages/engine/src/mechanisms/research/estimate.ts (`estimateFrom`, `seenOf`: an adaptive outlook over what THAT bank observed of THAT company, at its own drawn memory) |
+| `Reporting C2` | MET | packages/engine/src/mechanisms/research/index.ts (`research.estimate`, public, naming the bank and the company) |
+| `Reporting C3` | MET | packages/engine/src/mechanisms/research/data.ts (`memoryOf`, drawn per bank) — measured: consensus counts of 1 to 3 with real spreads, nobody dispersing them |
+| `Reporting C4` | MET | packages/engine/src/mechanisms/research/index.ts (a desk reads only what was published since it last spoke, so a view that has seen nothing new does not move) |
+| `Reporting C5` | MET | packages/engine/src/mechanisms/research/estimate.ts (the management guidance is one more observation, weighed by that management own record, never the answer) |
+| `Reporting C6` | MET | tools/check-forbids.ts (no read of a print, a mark or the price store anywhere in mechanisms/research — a CHECK, because a test cannot see this break) |
+| `Reporting D1` | MET | packages/engine/src/mechanisms/research/index.ts (`needsTheView`: it holds something the company issued, or its own desk makes a market in the line) |
+| `Reporting D2` | MET | packages/engine/src/mechanisms/research/index.ts (`pay`) with data.ts (`research.hoursPerName`, TECHNOLOGY) — costed at what the labour venue cleared at and paid per member to named cells |
+| `Reporting D3` | MET | packages/engine/src/mechanisms/research/index.ts (the count per name is an outcome of what banks books look like; nothing assigns coverage) |
+| `Reporting D3.a` | MET | packages/engine/test/research.test.ts (the counts are not all equal and no name is covered by every bank) |
+| `Reporting E1` | MET | packages/engine/src/mechanisms/research/index.ts (`consensusOf`: count, mean, spread and the age of the oldest estimate in it, computed at the moment of reading) |
+| `Reporting E2` | MET | tools/check-forbids.ts (nothing outside research and the observer calls `consensusOf` at all) |
+| `Reporting E3` | MET | packages/engine/src/mechanisms/research/index.ts (`consensusOf` reads the journal and stores nothing) |
+| `Reporting F1` | MET | packages/engine/src/mechanisms/research/index.ts (`settle`, anchored BEFORE `cover`, so a surprise is measured against what the bank said before the report) |
+| `Reporting F2` | MET | packages/engine/src/mechanisms/research/index.ts (the surprise is an observation and the module writes no price; the chain to a print is the party own outlook and the book) |
+| `Reporting F2.a` | MET | tools/check-forbids.ts (no module outside research names `research.surprise`; there is no parameter anywhere whose unit is a price move) |
+| `Reporting F3` | MET | packages/engine/src/mechanisms/research/estimate.ts (`missedBy`: a read of this management own past guidance against its own past reports, weighed into what its next guidance is worth) |
 | `Reporting F4` | MISSING |  |
-| `Reporting G1` | MISSING |  |
-| `Reporting G2` | MISSING |  |
-| `Reporting G3` | MISSING |  |
-| `Reporting G4` | MISSING |  |
-| `Reporting G5` | MISSING |  |
-| `Reporting G6` | MISSING |  |
-| `Reporting H1` | MISSING |  |
-| `Reporting H2` | MISSING |  |
-| `Reporting H3` | MISSING |  |
-| `Reporting H4` | MISSING |  |
+| `Reporting G1` | MET | packages/engine/src/mechanisms/research/index.ts and mechanisms/ratings/assess.ts (the reports are read: an estimate is formed from them and an assessor measures coverage against what the issuer takes in) |
+| `Reporting G2` | MET | packages/engine/src/register/register.ts (`EquityEntry`) with mechanisms/reporting/report.ts (`incomeOf`: the account movement decomposed into what the instructions and the marks did) |
+| `Reporting G3` | PARTIAL | no analyst always right and none always wrong by a fixed amount: the estimates are formed from drawn memories and observed reports, so neither is written anywhere — but whether it HOLDS is a measurement over a long run, which is worklist 16 |
+| `Reporting G4` | MET | packages/engine/src/mechanisms/reporting/report.ts (`isPublic`) and mechanisms/research/index.ts (`reported`: there is nothing to estimate about a company that has not published) |
+| `Reporting G5` | MET | packages/engine/src/mechanisms/reporting/index.ts (the report carries shares outstanding and income; no per-share figure is stored anywhere) |
+| `Reporting G6` | MET | packages/engine/src/mechanisms/reporting/fiscal.ts (nothing counts periods; a quarter is placed by date and nothing in it is finer than a period) |
+| `Reporting H1` | PARTIAL | the dispersion of estimates on a name is a read (`consensusOf().spread`); whether it widens after volatile results is a Part XII measurement — worklist 16 |
+| `Reporting H2` | PARTIAL | the surprise and the print are both recorded; whether the price moves more on a large surprise is a Part XII measurement — worklist 16 |
+| `Reporting H3` | PARTIAL | the count of estimates per name and their dispersion are reads; whether they respond to a company record is a Part XII measurement — worklist 16 |
+| `Reporting H4` | PARTIAL | the consensus carries the age of the oldest estimate in it; whether it lags the information that produced it is a Part XII measurement — worklist 16 |
 
 ## Observer
 

@@ -18,6 +18,7 @@
  * patience before the published grade moves — otherwise a rating is a weekly restatement of a
  * balance sheet, and every mandate that refers to it churns with it (C1.a).
  */
+import { period as asPeriod } from '../../calendar/calendar.js';
 import { div, mul } from '../../core/num.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -33,24 +34,38 @@ export interface Measure {
 /**
  * B1, A2: the measure and the band it falls in.
  *
- * STRAIN is what falls due in the issuer's own money, this period and next, against what the issuer
- * is worth — `owedIn` against `equity`, both of them reads of the issuer's own account. Negative
- * strain is an issuer holding more of its own money than it owes, which is the top of the scale;
- * the bands widen geometrically from the assessor's own first boundary, so the scale spends its
- * resolution where issuers actually sit rather than putting six of seven grades inside a few
- * per cent (B3: an assessor's methodology is its own).
+ * STRAIN IS WHAT FALLS DUE AGAINST WHAT THE ISSUER TAKES IN — `owedIn` against `earned`, both of
+ * them reads of the issuer's own account. That is a COVERAGE RATIO, which is the measure an assessor
+ * actually uses, and it is the one this world can make honestly.
  *
- * Law 6: nothing here is clamped. A party worth nothing has no strain that means anything — the
- * ratio is not defined — and gets the worst grade because an issuer with no capital behind what it
- * owes is the thing the worst grade is FOR, not because a number was pushed back inside a range.
+ * IT USED TO BE AGAINST WHAT THE ISSUER IS WORTH, and item 12 recorded what that cost (12-17): every
+ * treasury in the world graded `c` from period one, because a state's book equity is deeply negative
+ * BY CONSTRUCTION — it owes its whole debt and owns nothing — and every firm downgraded together
+ * whenever one common cost crossed them all in the same week. Neither of those was a signal about an
+ * issuer. A state's capacity to pay is its TAX BASE, a firm's is what it sells, and until item 12a
+ * built the equity ledger there was no read of either: what reached a party was recoverable only as
+ * the bottom line of everything, marks included.
+ *
+ * THE MARKS ARE EXCLUDED and that is the distinction the whole measure turns on. A revaluation is
+ * what the world now thinks a thing is worth and nobody handed it over; what an issuer can pay a
+ * coupon out of is what somebody actually paid IT (Clearing D4, Reporting G2).
+ *
+ * Law 6: nothing here is clamped. An issuer taking in nothing against what it owes has no coverage
+ * that means anything — the ratio is not defined — and gets the worst grade because that is the
+ * thing the worst grade is FOR, not because a number was pushed back inside a range.
  */
 export function assess(blind: ParticipantView, d: AssessorDecl, ccy: CurrencyCode): Measure {
-  const missed = blind.failedPayments(GRADES.length).length;
-  const worth = blind.equity();
-  if (missed > 0 || worth <= 0) {
+  // ONE HORIZON for both halves of the measure: what this assessor looks back over. A missed
+  // payment ages out of it, which is what makes a grade a judgement about a party's state NOW
+  // rather than a mark that never comes off (§44 A2, A3).
+  const window = GRADES.length;
+  const since = asPeriod(blind.period > window ? blind.period - window : 0);
+  const missed = blind.failedPayments(since).length;
+  const takesIn = blind.earned(window);
+  if (missed > 0 || takesIn <= 0) {
     return { strain: missed > 0 ? missed : 0, missed, grade: WORST };
   }
-  const strain = div(blind.owedIn(ccy), worth, 'what falls due against what it is worth');
+  const strain = div(blind.owedIn(ccy), takesIn, 'what falls due against what it takes in');
   return { strain, missed, grade: bandOf(strain, d) };
 }
 

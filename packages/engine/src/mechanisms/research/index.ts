@@ -26,6 +26,7 @@ import { weightOf } from '../../parties/party.js';
 import { cellSide } from '../../ledger/settlement.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import type { Family, Violation } from '../../audit/audit.js';
 import { estimateFrom, seenOf } from './estimate.js';
 import { RESEARCH_PARAMS, researchParams, memoryOf } from './data.js';
 
@@ -333,6 +334,71 @@ export function consensusOf(
   };
 }
 
+/**
+ * Audit B3, Law 5: every estimate names a bank and a company that ARE HERE, and every desk that was
+ * paid was paid by somebody to somebody.
+ *
+ * An estimate about a party that has ceased is an opinion about nobody, and a research cost with no
+ * payee is a one-sided flow even when nothing failed. Both break quietly: the numbers look the same.
+ */
+function researchNames(): Family {
+  return {
+    name: 'names',
+    contributor: 'research',
+    spec: 'Reporting C2 Reporting G4 Audit B3 Register F2',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const e of view.journal.ofKind('research.estimate')) {
+        if (e.period !== view.period) continue;
+        for (const who of e.subjects) {
+          const there = view.parties.has(partyId(who));
+          if (there && view.parties.get(partyId(who)).status.alive) continue;
+          out.push({
+            family: 'names',
+            spec: 'Reporting C2',
+            owner: who,
+            size: 1,
+            unit: 'estimates',
+            period: view.period,
+            message: `an estimate names ${who}, which ${there ? 'has ceased' : 'does not exist'}`,
+          });
+        }
+      }
+      return out;
+    },
+  };
+}
+
+/** Law 5, Reporting D2: what a research desk cost was paid, in full, to somebody with a name. */
+function researchFlows(): Family {
+  return {
+    name: 'flows',
+    contributor: 'research',
+    spec: 'Reporting D2 Law 5',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const r of view.ledger.inPeriod(view.period)) {
+        if (!r.instruction.reason.includes('research desk')) continue;
+        if (r.outcome === 'settled') continue;
+        out.push({
+          family: 'flows',
+          spec: 'Reporting D2',
+          owner: r.instruction.legs[0]?.kind ?? 'a desk',
+          size: 1,
+          unit: 'instructions',
+          period: view.period,
+          // D2 asks for a cost that is PAID. A bank that could not pay its analysts has a funding
+          // problem and that is a real state — but it is one somebody must be able to see.
+          message: `a research desk cost did not settle: ${r.instruction.reason}`,
+        });
+      }
+      return out;
+    },
+  };
+}
+
 /** C1, D1: the module. The banks that exist do this; there is no analyst party kind. */
 export function research(seed: string): SystemModule {
   forbid(seed.length > 0, 'Seed A5', 'a research desk is drawn from the world seed');
@@ -369,6 +435,6 @@ export function research(seed: string): SystemModule {
       },
     ],
     participants: [],
-    families: [],
+    families: [researchNames(), researchFlows()],
   };
 }

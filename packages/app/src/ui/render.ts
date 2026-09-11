@@ -294,6 +294,91 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
     root.append(section);
   }
 
+  // Reporting A1, A2, E1; Observer A3, D3: what each public company published, what management
+  // guides to, what every bank covering it says, and what the last report did to those views. It is
+  // a display and nothing else — no number here is one the model reads back (Observer D3).
+  if (s.statements.length > 0) {
+    const statements = el('section', { id: 'statements' }, el('h2', {}, 'Statements'));
+    for (const v of s.statements) {
+      const head = el('h3', {}, `${v.company} — ${v.quarter} (published p${String(v.period)})`);
+      const lines = el(
+        'table',
+        {},
+        el('thead', {}, el('tr', {}, el('th', {}, 'line'), el('th', {}, 'amount'))),
+      );
+      const body = el('tbody', {});
+      for (const row of v.income) {
+        body.append(
+          el('tr', {}, el('td', {}, row.cause), el('td', {}, money(s, v.ccy, row.amount))),
+        );
+      }
+      body.append(
+        el(
+          'tr',
+          { class: 'total' },
+          el('td', {}, 'earned'),
+          el('td', {}, money(s, v.ccy, v.earned)),
+        ),
+        el('tr', {}, el('td', {}, 'of which marks'), el('td', {}, money(s, v.ccy, v.revaluation))),
+        el('tr', {}, el('td', {}, 'assets'), el('td', {}, money(s, v.ccy, v.assets))),
+        el('tr', {}, el('td', {}, 'liabilities'), el('td', {}, money(s, v.ccy, v.liabilities))),
+        el('tr', {}, el('td', {}, 'shares outstanding'), el('td', {}, num(v.shares, 0))),
+      );
+      lines.append(body);
+      statements.append(head, lines);
+      const said = el('p', { class: 'guidance' });
+      said.textContent =
+        v.guided === null
+          ? 'management is guiding to nothing'
+          : `management guides ${v.guidedFor ?? ''} to ${money(s, v.ccy, v.guided)}`;
+      statements.append(said);
+      if (v.estimates.length > 0) {
+        const banks = el(
+          'table',
+          {},
+          el(
+            'thead',
+            {},
+            el(
+              'tr',
+              {},
+              el('th', {}, 'bank'),
+              el('th', {}, 'estimate / period'),
+              el('th', {}, 'said'),
+            ),
+          ),
+        );
+        const rows = el('tbody', {});
+        for (const e of v.estimates) {
+          rows.append(
+            el(
+              'tr',
+              {},
+              el('td', {}, e.bank),
+              el('td', {}, money(s, v.ccy, e.perPeriod)),
+              el('td', {}, `p${String(e.period)}`),
+            ),
+          );
+        }
+        banks.append(rows);
+        statements.append(banks);
+      }
+      if (v.consensus !== null) {
+        const read = el('p', { class: 'consensus' });
+        // E1, §45 A5: a statistic with its lag on it. It is computed at the moment of looking and
+        // stored nowhere, which is why it carries the age of the oldest estimate in it (E3).
+        read.textContent = `consensus of ${String(v.consensus.count)}: ${money(s, v.ccy, v.consensus.mean)}, spread ${money(s, v.ccy, v.consensus.spread)}, oldest p${String(v.consensus.oldest)}`;
+        statements.append(read);
+      }
+      for (const x of v.surprises) {
+        const line = el('p', { class: 'surprise' });
+        line.textContent = `${x.bank} was out by ${money(s, v.ccy, x.surprise)}`;
+        statements.append(line);
+      }
+    }
+    root.append(statements);
+  }
+
   // Parties
   const parties = el('section', { id: 'parties' }, el('h2', {}, 'Parties'));
   const tt = el(

@@ -2240,3 +2240,100 @@ with holdings rather than with markets. The killer: if 13a's derivative books an
 the market count up an order of magnitude while holdings stay flat and a period gets dearer in step
 with the markets rather than the holdings, then the fan-out was the thing after all and the index
 wants to be the default rather than a door a module opts into.
+
+## 12a — Reporting and estimates
+
+**What it was for.** §48 arrived with this item inserted. The world already had the SUBSTANCE of
+corporate reporting — accrual matching, inventory at the lower of cost and net realisable value, a
+firm publishing its own expectation — and none of the APPARATUS: no fiscal calendar, no report, no
+bank publishing an estimate of anybody, no surprise with a name on it.
+
+**THE KERNEL CHANGE IS ONE LINE OF STATE AND IT UNLOCKS THE REST.** `moveEquity` always received the
+cause its writer wrote and always threw it away, so comprehensive income was recoverable exactly —
+it is the movement of the account — and NOTHING ABOVE THE BOTTOM LINE WAS. A report that wanted a
+line of it would have had to parse the reason strings on money legs, recovering by inference a fact
+its writer knew and did not record. The register now keeps an append-only `EquityEntry` per move;
+`EquityMove` gained the date and the instruction, and making them required is what found all five
+writers; settlement's cause is the instruction's own reason rather than `instruction <id>`, which
+was useless to group by; and `stateEquity` writes the opening as an entry so Σ entries IS the
+balance with no opening left over to argue about.
+
+**It is the itemisation and never the balance** (Law 4). `equityWalk` is still the accumulator and
+still authoritative, so the two are independent records and the `accounts` family compares them
+(Audit A1.a). **The new contribution found a defect on its first run**: it checks the sum AND the
+COUNT — a sum can be made to agree by two errors, a count cannot — and a cell split was copying the
+equity walk but not the itemisation, so split cells' accounts said eighteen moves while their
+ledgers carried nine, every period in every seed.
+
+**WHAT A REPORT IS.** Every figure in it is the same number some other reader of this world already
+has. Income is the equity ledger's entries grouped by the instruction's own cause with the
+revaluation subtotal separable and the bottom line the SUM of that decomposition. The balance sheet
+is `balanceSheet()`, EXTRACTED from the accounts family so the report and the audit are one
+implementation — a report with its own would be a second set of accounts able to disagree with the
+one the audit proves. The cash is the wire's own money legs grouped by NAMED counterparty, money and
+cause: 321 lines naming the assessors a company pays, the bank that pays its coupon and the
+household cells that take its dividend, where the raw legs were 2,141.
+
+**THE CALENDAR IS DATES** (G6). A company's year ends in a month drawn from the world's seed and its
+own identity, so reporting season happens continuously rather than in one week; a quarter is the
+pair of dates that bound it and a whole number of periods only by accident. Two bugs in that walk,
+both found by running it: `quarterClosedBy` walked back to a closed quarter and stopped, so a
+company published its first quarter and then the same quarter for ever — three reports in forty
+periods where there should have been nine; and the LABEL was wrong the same way, with July after an
+April year end coming out FQ3 where it is FQ1 of the next fiscal year.
+
+**GUIDANCE IS NOT A SECOND NUMBER** (B4). What is published is the firm's `income` outlook — the
+same object `firms` reads when it plans — with the periodicity stated beside it. A revision is
+looked for every period and published only when the management's own view has moved past the dust of
+the arithmetic that produced it: a statement republished every period regardless would be a calendar
+and not news. Restatement needs no audit coupling: the entries are append-only, so a published
+figure can change exactly one way, and re-reading the span every period is what catches it.
+
+**BANKS DISAGREE, AND NOBODY ARRANGED IT** (C3). An estimate is an adaptive outlook over what THAT
+bank observed of THAT company — the reports it has seen and the guidance the management published,
+weighed by what that management's record is worth — corrected at the bank's own DRAWN memory.
+Measured over 52 periods: three banks covering one name with a spread of 2.6e7 between them.
+Coverage is uneven because a bank covers a name its own book needs the view of, and it COSTS:
+`research.hoursPerName` is technology, costed at what the labour venue cleared at and paid per
+member to named household cells — 359 settled instructions over 40 periods, with no research budget
+parameter anywhere, because a budget is the cost STATED where D2 asks for it to be PAID.
+
+**Settling runs before covering**, so a surprise is measured against what the bank said BEFORE the
+report. A view revised on the report and then scored against it would be surprised by nothing.
+
+**THREE FORBIDS IN THIS SYSTEM BREAK SILENTLY, so they are CHECKS and not tests**
+(`tools/check-forbids.ts`, wired into `npm run check`): no price read anywhere in `research` (C6),
+no module outside `research` naming `research.surprise` (F2.a), and nothing outside `research`
+calling `consensusOf` (E2, E3). The observer is the one exception to the last two and it is the
+exception §45 B2.a names: a surface decides nothing. A world that broke any of these would run,
+publish, print and balance, and look exactly like one that did not — which is precisely the case
+for a guard rather than an assertion, and "a rule that can be a check should be one".
+
+**AND THE RATINGS MEASURE CHANGED, which is 12-17's fix.** An assessor measures what falls due
+against what the issuer TAKES IN — a coverage ratio, read off the equity ledger with the MARKS
+EXCLUDED, because a revaluation is what the world now thinks a thing is worth and nobody handed it
+over. A treasury is no longer graded by a book equity that is negative by construction. A second
+defect was found on the way: `failedPayments` took a COUNT of failures rather than a horizon, so an
+issuer that missed one payment in its first week was graded the worst there is for ever — a count of
+events is not a horizon, and a rating is a judgement about a party's state now.
+
+**The grades are still one grade, and that is the world.** Every issuer in this world misses payments
+in every seven-period window — the treasury 1,129 of them, a firm 24 — and an issuer that cannot pay
+what falls due is what the worst grade is FOR. Parked as 12a-2 and positioned with 12-15's level at
+worklist 16: forcing a spread here would be tuning the assessor to make the world look solvent.
+
+**Coverage.** 32 Reporting clauses MET, 5 PARTIAL (G3 and H1–H4, which are Part XII measurements and
+say so). Requirement coverage 44.8% → 47.2%.
+
+**Found and not chased.** `docs/BUGS.md` 12a-1: the equity index reads a level its own prints do not
+make, from period 25 on, a step rather than a drift — not this item's, since nothing in it touches a
+price, and most likely 11.5 moving the float, since a free-float weighting is a read of who holds
+what. 12a-2 above. And `docs/COVERAGE.md` has no row for `Reporting A1.a` (nor `Central Bank C1.a`,
+nor `C2.a`), so its 1,361 rows are not one per clause — worklist 16's coverage pass.
+
+**Forecast, with its killer.** The claim is that a report built as a READ cannot disagree with the
+books, because the two are the same function and the audit compares the itemisation against the
+balance both ways. The killer: if 12b's balance-sheet step turns out to be an event whose read side
+and equity side differ, then a report published in that period carried a balance sheet the equity
+account did not agree with, and `reporting.restate` should have fired and did not — in which case
+the restatement trigger is watching the wrong half.

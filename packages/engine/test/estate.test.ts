@@ -11,6 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  period,
   FIRM,
   isMoneyLeg,
   HOUSEHOLD,
@@ -492,7 +493,7 @@ describe('what does not open an estate', () => {
     for (const cell of cells) {
       const owedByIt = w
         .participantView(cell)
-        .failedPayments(200)
+        .failedPayments(period(0))
         .filter((f) => f.instruction.legs.some((l) => isMoneyLeg(l) && l.from.holder === cell));
       expect(owedByIt).toEqual([]);
     }

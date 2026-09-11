@@ -38,7 +38,7 @@ import {
   fxPairId,
 } from '../core/ids.js';
 
-import { add, addTo, mul, sub } from '../core/num.js';
+import { add, addTo, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
   delivers,
@@ -800,13 +800,27 @@ export class World {
       free: (instrument) => this.store.free(party, instrument),
       cash: (ccy) => this.cash(party, ccy),
       equity: () => this.store.equity(party),
+      earned: (periods: number) => {
+        // The window is inclusive of this period and runs back `periods` of them, or to the epoch
+        // where the world is younger than that — a party cannot have taken in anything before it
+        // existed, and pretending the window is full would understate what it takes in a period.
+        const from = period(this.currentPeriod > periods ? this.currentPeriod - periods : 0);
+        const terms: number[] = [];
+        for (const e of this.store.equityEntries(party, from, this.currentPeriod)) {
+          // Reporting G2: what an INSTRUCTION did. An entry with no instruction behind it is a mark,
+          // and a mark is not money anybody paid (Clearing D4).
+          if (e.instruction === undefined) continue;
+          terms.push(e.delta);
+        }
+        return sum(terms).value;
+      },
       equityWalk: () => this.store.equityWalk(party),
       print: (instrument) => this.prices.latest(instrument, this.currentPeriod),
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
-      failedPayments: (last: number) => this.ledger.failedFor(party, last),
+      failedPayments: (since: Period) => this.ledger.failedFor(party, since),
       publicEvents: (last) => this.journal.visibleTo(party, last),
       outlook: (variable) => this.outlookOf(party, variable),
       lastPublic: (kind) => {

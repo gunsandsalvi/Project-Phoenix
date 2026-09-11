@@ -45,3 +45,33 @@ and something in the level and something in the constituents disagree about whic
 **Where it belongs.** With the equity book, which is worklist **12c**: the index is a read of the
 same book that item is about, and a level that disagrees with its own constituents is the same class
 of defect as a print that disagrees with what was paid for it. To be positioned when 12a closes.
+
+### 12a-2 — Every issuer misses payments in every window, so every grade is the worst one
+
+**Where.** `mechanisms/ratings/assess.ts`, measured directly through the assessor's own blind view
+in `rigWorld('ratings', 4, 40)` at period 30, with a seven-period window:
+
+```
+treasury.us   missed 1129   takesIn  2.995e+10   owedIn -5.734e+10
+bank.a        missed    3   takesIn -4.079e+10   owedIn  0
+firm.8        missed   24   takesIn -9.894e+07   owedIn -2.938e+09
+firm.18       missed   24   takesIn -1.403e+08   owedIn -5.887e+09
+```
+
+**What item 12a fixed, and what it did not.** 12-17 said every sovereign grades `c` because the
+measure was what falls due against what the issuer is WORTH, and a state's book equity is deeply
+negative by construction. That is fixed: the measure is a coverage ratio against what the issuer
+TAKES IN, read off the equity ledger with the marks excluded, and `treasury.us` takes in +3.0e10. A
+second defect was fixed on the way — `failedPayments` took a COUNT of failures rather than a horizon,
+so an issuer that missed one payment in its first week was graded the worst there is for ever.
+
+**And the grades are still one grade**, because the branch that binds is not the ratio: every issuer
+in this world misses payments in every seven-period window, and an issuer that cannot pay what falls
+due is what the worst grade is FOR (§44 A2). The measure is reporting the world correctly.
+
+**Where it belongs.** With **12-15's level** at worklist **16**: a world whose firms produce a
+hundred and fiftieth of the scale their plant is sized for, whose treasury is refused at the window
+748 times a run (12-3), and whose banks have only just been given funding room (11.5) is a world
+where nobody can pay. The grade distribution is a MEASUREMENT of that and never a target — Part XII
+is where a level is judged, and forcing a spread here would be tuning the assessor to make the world
+look solvent. To be positioned when 12a closes.

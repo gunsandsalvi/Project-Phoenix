@@ -48,9 +48,19 @@ export class Ledger {
     }
   }
 
-  /** Money E1.b: what this party's own payments did, most recent last. A read, in its own order. */
-  failedFor(party: string, last: number): readonly Failed[] {
-    return (this.failedBy.get(party) ?? EMPTY_FAILED).slice(-last);
+  /**
+   * Money E1.b: what this party's own payments did SINCE a period, most recent last.
+   *
+   * It used to take a COUNT — the last n failures, whenever they happened — and the one caller that
+   * wanted a window got the other thing: an assessor asking for "the failures in its own memory"
+   * received every failure that party had ever had, so an issuer that missed one payment in its
+   * first week was graded the worst there is for the rest of the run (item 12a). A count of events
+   * is not a horizon, and a rating is a judgement about a party's state NOW (§44 A2).
+   */
+  failedFor(party: string, since: Period): readonly Failed[] {
+    const mine = this.failedBy.get(party);
+    if (mine === undefined) return EMPTY_FAILED;
+    return mine.filter((r) => r.instruction.period >= since);
   }
 
   all(): readonly SettlementRecord[] {

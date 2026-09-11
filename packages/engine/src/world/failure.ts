@@ -15,13 +15,14 @@
  * and liabilities past its assets. The two have different triggers and different remedies, and
  * whichever fired is named in the reason so the resolution can say which one it was.
  */
+import type { Period } from '../calendar/calendar.js';
 import { sum, withinDust } from '../core/num.js';
 import { unpaid } from '../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from './context.js';
 
 /** What it failed to pay this period out of its own balance, and has not since covered (Money E1). */
 export function stillOwed(view: ParticipantView): number {
-  const mine = view.failedPayments(Number.MAX_SAFE_INTEGER);
+  const mine = view.failedPayments(FROM_THE_BEGINNING);
   const terms: number[] = [];
   for (const f of mine) {
     if (f.instruction.period !== view.period) continue;
@@ -36,6 +37,9 @@ export function stillOwed(view: ParticipantView): number {
  * die, which is how XI-3's two exceptions — the central bank, and a treasury in its own money — are
  * named consequences of what they ARE rather than omissions.
  */
+/** Money E1.b: every failure this party has ever had — the epoch is where its history starts. */
+const FROM_THE_BEGINNING = 0 as Period;
+
 export function failedWhy(ctx: MechanismContext, view: ParticipantView): string | undefined {
   const can = ctx.registry.partyKind(view.self.kind).fails ?? [];
   const ccy = ctx.registry.region(view.self.region).ccy;

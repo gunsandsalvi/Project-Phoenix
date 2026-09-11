@@ -9,6 +9,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  period,
   GOV_LINE,
   HOUSEHOLD,
   USD,
@@ -251,12 +252,12 @@ describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
   it('shows a party its own failures and nobody else (Observer A4, Money E1.b)', () => {
     const w = world(overpromise(phx(1_000_000)));
     for (let i = 0; i < 4; i += 1) w.step();
-    const mine = w.participantView(PAYER).failedPayments(10);
+    const mine = w.participantView(PAYER).failedPayments(period(0));
     expect(mine.length).toBeGreaterThan(0);
     expect(mine.every((f) => f.instruction.legs.some((l) => l.kind === 'money'))).toBe(true);
     // The counterparty sees it too, because it WAS the counterparty — and a third party does not.
-    expect(w.participantView(PAYEE).failedPayments(10).length).toBe(mine.length);
-    expect(w.participantView(TREASURY_US).failedPayments(10)).toEqual([]);
+    expect(w.participantView(PAYEE).failedPayments(period(0)).length).toBe(mine.length);
+    expect(w.participantView(TREASURY_US).failedPayments(period(0))).toEqual([]);
   });
 });
 

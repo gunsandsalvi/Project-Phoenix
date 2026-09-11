@@ -8,7 +8,7 @@
 import { formatCivil } from '../calendar/civil.js';
 import { div, mul, sub } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
-import type { PartyId } from '../core/ids.js';
+import { partyId, type PartyId } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
 import { displayName } from '../registry/naming.js';
@@ -16,6 +16,7 @@ import type { World } from '../world/world.js';
 import type { AuditReport } from '../audit/audit.js';
 import type { ParamReport } from '../registry/params.js';
 import type { Event, EventKind } from '../journal/journal.js';
+import { consensusOf } from '../mechanisms/research/index.js';
 
 /** A4: an inspector's full view and a participant's partial view are different products. */
 export type Scope =
@@ -193,6 +194,44 @@ export interface RatingView {
   readonly period: number;
 }
 
+/**
+ * Reporting A1, A2, E1; Observer A3, B2.a, D3: WHAT A PUBLIC COMPANY HAS PUBLISHED, and what the
+ * banks that cover it have said about it. Every field is a read of a public event; nothing here is
+ * stored and looking changes nothing.
+ */
+export interface StatementsView {
+  readonly company: string;
+  readonly quarter: string;
+  readonly period: number;
+  /** G2: the bottom line, and the part of it the marks made rather than anybody paying. */
+  readonly earned: number;
+  readonly revaluation: number;
+  /** A2: the income decomposed, in the words its own writers wrote. */
+  readonly income: readonly { readonly cause: string; readonly amount: number }[];
+  readonly assets: number;
+  readonly liabilities: number;
+  readonly shares: number;
+  readonly ccy: string;
+  /** B1: what management guides to for the coming quarter, if it is guiding. */
+  readonly guided: number | null;
+  readonly guidedFor: string | null;
+  /** C2: the estimates standing, by the bank whose view each is. */
+  readonly estimates: readonly {
+    readonly bank: string;
+    readonly perPeriod: number;
+    readonly period: number;
+  }[];
+  /** E1: the read, with how stale the oldest estimate in it is. Stored nowhere (E3). */
+  readonly consensus: {
+    readonly count: number;
+    readonly mean: number;
+    readonly spread: number;
+    readonly oldest: number;
+  } | null;
+  /** F1: what the last report did to the views standing against it. */
+  readonly surprises: readonly { readonly bank: string; readonly surprise: number }[];
+}
+
 export interface Snapshot {
   readonly seed: string;
   readonly period: number;
@@ -225,6 +264,8 @@ export interface Snapshot {
   readonly indices: readonly IndexView[];
   /** Ratings A1, E4: the published opinions, most recent last. */
   readonly ratings: readonly RatingView[];
+  /** Reporting A1, E1; Observer A3: what each public company published, and what banks say of it. */
+  readonly statements: readonly StatementsView[];
   readonly audit: AuditReport | null;
   readonly params: ParamReport;
   readonly moneyStock: Readonly<Record<string, number>>;
@@ -441,6 +482,7 @@ export function snapshot(
     triangles: trianglesOf(w),
     indices: indicesOf(w),
     ratings: ratingsOf(w, journalTail, sees),
+    statements: statementsOf(w, sees),
     audit: w.last?.audit ?? null,
     params: w.params.report(),
     moneyStock: w.moneyStock(),
@@ -532,6 +574,84 @@ function indicesOf(w: World): readonly IndexView[] {
 }
 
 /** Ratings A1, E4: the actions as they were published, which is the only place a grade lives. */
+/**
+ * Reporting A1, A2, B1, C2, E1, F1: the three statements a public company published, its guidance,
+ * every bank's estimate of it, the consensus read and the last surprise — assembled at the moment
+ * of asking out of public events, and stored nowhere (E3, Observer E3).
+ *
+ * The latest report per company, because a statement is what a company last said; the reader who
+ * wants the history has the journal, which is where it is.
+ */
+function statementsOf(w: World, sees: (e: Event) => boolean): readonly StatementsView[] {
+  const text = (v: unknown): string => (typeof v === 'string' ? v : '');
+  const nums = (v: unknown): number => (typeof v === 'number' ? v : 0);
+  const latest = new Map<string, Event>();
+  for (const e of w.journal.ofKind('reporting.report')) {
+    if (!sees(e)) continue;
+    const who = e.subjects[0];
+    if (who !== undefined) latest.set(who, e);
+  }
+  const out: StatementsView[] = [];
+  for (const [company, report] of latest) {
+    const guidance = lastOf(w, 'reporting.guidance', company, sees);
+    const estimates = new Map<string, { perPeriod: number; period: number }>();
+    for (const e of w.journal.ofKind('research.estimate')) {
+      if (!sees(e) || e.subjects[1] !== company) continue;
+      estimates.set(text(e.data['bank']), {
+        perPeriod: nums(e.data['perPeriod']),
+        period: e.period,
+      });
+    }
+    const read = consensusOf(w, partyId(company));
+    const rows = report.data['income'];
+    out.push({
+      company,
+      quarter: text(report.data['quarter']),
+      period: report.period,
+      earned: nums(report.data['earned']),
+      revaluation: nums(report.data['revaluation']),
+      income: Array.isArray(rows)
+        ? (rows as unknown[]).map((r) => {
+            const row = r as Record<string, unknown>;
+            return { cause: text(row['cause']), amount: nums(row['amount']) };
+          })
+        : [],
+      assets: nums(report.data['assets']),
+      liabilities: nums(report.data['liabilities']),
+      shares: nums(report.data['shares']),
+      ccy: text(report.data['ccy']),
+      guided: guidance === undefined ? null : nums(guidance.data['guided']),
+      guidedFor: guidance === undefined ? null : text(guidance.data['quarter']),
+      estimates: [...estimates].map(([bank, v]) => ({
+        bank,
+        perPeriod: v.perPeriod,
+        period: v.period,
+      })),
+      consensus: read.some ? read.value : null,
+      surprises: w.journal
+        .ofKind('research.surprise')
+        .filter((e) => sees(e) && e.subjects[1] === company && e.period === report.period)
+        .map((e) => ({ bank: text(e.data['bank']), surprise: nums(e.data['surprise']) })),
+    });
+  }
+  return out;
+}
+
+/** The last thing this party said of a kind, as the observer may see it. */
+function lastOf(
+  w: World,
+  kind: EventKind,
+  party: string,
+  sees: (e: Event) => boolean,
+): Event | undefined {
+  let held: Event | undefined;
+  for (const e of w.journal.ofKind(kind)) {
+    if (!sees(e) || e.subjects[0] !== party) continue;
+    held = e;
+  }
+  return held;
+}
+
 function ratingsOf(w: World, depth: number, sees: (e: Event) => boolean): readonly RatingView[] {
   const text = (v: unknown): string => (typeof v === 'string' ? v : '');
   return w.journal.recentOfKind('rating.action', depth, sees).map((e) => ({
