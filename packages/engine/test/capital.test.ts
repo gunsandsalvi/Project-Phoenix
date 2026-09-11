@@ -43,14 +43,20 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { firmIn, rigDraw, rigSpec } from './rig.js';
 import { sameQuantity, unexpected } from './expected.js';
 import { machinesPerTonne, perTonne, phx, tonnes } from './units.js';
 import type { Qty } from '../src/core/tick.js';
 
-const FIRM_1 = partyId('firm.1'); // grain, at bank.a
-const FIRM_4 = partyId('firm.4'); // grain, the biggest farm
-const FIRM_10 = partyId('firm.10'); // machines
+/**
+ * Seed B1.a: this world's firms are DRAWN, so which party grows grain and which builds machines is
+ * a question asked of the draw. `firm.1` meant "grain, at bank.a" in a hand-written table of twelve
+ * and means nothing at all in a world that draws three thousand.
+ */
+const DREW = rigDraw('capital');
+const FIRM_1 = firmIn(DREW, 'grain', 1);
+const FIRM_4 = firmIn(DREW, 'grain', 0);
+const FIRM_10 = firmIn(DREW, 'machine', 0);
 const BANK_A = partyId('bank.a');
 const BUYER = partyId('buyer.1');
 const MACHINE = goodId('machine', REGION);

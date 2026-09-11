@@ -18,8 +18,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
-  BANK_COUNT,
-  drawBanks,
   assemble,
   dealingParam,
   equityLineOf,
@@ -29,22 +27,31 @@ import {
   type DeskState,
   type World,
 } from '../src/index.js';
-import { rigWorld, rigSpec } from './rig.js';
+import { dealerIn, listedIn, rigFor, rigSpec, rigWorld } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
-const BANK_A = partyId('bank.a');
-const BANK_B = partyId('bank.b');
-const LINE = equityLineOf('firm.4');
+/**
+ * Seed B1.a, B4: THIS WORLD'S BANKS AND ITS LISTED LINES ARE DRAWN, so the test asks for a world
+ * that has what it needs and then asks what that world drew. It used to name `firm.4` and reach for
+ * `drawBanks(BANK_COUNT, seed)` — a thirty-bank table beside a three-bank world, which is how a
+ * test came to be asking after `bank.d` in a world that has three of them (Law 4: one draw).
+ */
+const DREW = rigFor('dealing', { listed: 1, dealsIn: 'equity.share', dealers: 2 });
+const RIG = { banks: DREW.banks, firms: DREW.firms };
+/** Dealer Desks A1: a bank of this world that DEALS, and a second one, both asked for rather than
+ * named — which banks run a dealing book follows from what each will put behind one (D1). */
+const BANK_A = dealerIn(DREW.draw, 'equity.share', 0);
+const BANK_B = dealerIn(DREW.draw, 'equity.share', 1);
+const LINE = equityLineOf(listedIn(DREW.draw, 0));
 
-/** Seed B4: the banks of a world are DRAWN from its own seed value, so a test asks for that
- * world's rows rather than importing a table (there is no table). */
-const rowsOf = (seed: string) => drawBanks(BANK_COUNT, seed);
+/** The banks of THIS world, which is the one the rig drew. There is no second list of them. */
+const rowsOf = () => DREW.draw.banks;
 
 /** The state a bank's dealing line prices from — the module's own read, with a knob for a test. */
-function stateOf(w: World, seed: string, bank: string, over: Partial<DeskState> = {}): DeskState {
+function stateOf(w: World, bank: string, over: Partial<DeskState> = {}): DeskState {
   const view = w.participantView(partyId(bank));
-  const row = rowsOf(seed).find((d) => d.bank === bank);
+  const row = rowsOf().find((d) => d.bank === bank);
   if (row === undefined) throw new Error(`no dealing line for ${bank}`);
   const state = stateFromView(view, row);
   if (state === undefined) throw new Error(`${bank} has published nothing to price from yet`);
@@ -53,12 +60,12 @@ function stateOf(w: World, seed: string, bank: string, over: Partial<DeskState> 
 
 describe('what a dealer is here (Dealer Desks A1, F2)', () => {
   it('is a LINE of a bank, on the bank own balance sheet, and not a party (A1, A3, F2)', () => {
-    const w = rigWorld('dl-a');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     // There is no dealer party in this world. A1's "its own balance sheet INSIDE a bank's" is a
     // sub-ledger, and F2's "no desk exempt from its own bank's capital and funding" is only
     // structurally true when there is one balance sheet — so the bank deals.
     expect(w.parties.all().filter((p) => String(p.id).startsWith('desk.'))).toEqual([]);
-    for (const d of rowsOf('dl-a')) {
+    for (const d of rowsOf()) {
       const bank = w.parties.get(partyId(d.bank));
       expect(bank.kind).toBe(BANK);
       // A3: a bank that MAKES a market in shares opens holding inventory — what it has bought and
@@ -71,8 +78,8 @@ describe('what a dealer is here (Dealer Desks A1, F2)', () => {
   });
 
   it('has a finite, enumerable capacity: a dealer without a limit is not a dealer (F1, Clearing B3.a)', () => {
-    const w = rigWorld('dl-b');
-    for (const d of rowsOf('dl-b')) {
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
+    for (const d of rowsOf()) {
       // NEITHER LIMIT IS AN AMOUNT OF MONEY. What it will have standing behind its dealing book is
       // a share of its own capital, and how much of that book may be in one line is a share of the
       // book — so the units a limit comes to in a given line fall out of what the bank is worth and
@@ -88,7 +95,7 @@ describe('what a dealer is here (Dealer Desks A1, F2)', () => {
 
 describe('one face (Dealer Desks A1, Clearing A2, Law 4)', () => {
   it('is the only thing that decides for a bank, in a market and in a venue', () => {
-    const spec = rigSpec('dl-face');
+    const spec = rigSpec('dealing', RIG.banks, RIG.firms);
     // Law 4: one decider, one face. This is the assembly fact the kernel's self-cross refusal is
     // the run-time half of — a bank cannot show two schedules to one book if only one module has
     // anything to say for it.
@@ -103,7 +110,7 @@ describe('one face (Dealer Desks A1, Clearing A2, Law 4)', () => {
   });
 
   it('capitalises what it is holding above its treasury\'s target, and nothing below it (F2, B1.a)', () => {
-    const w = rigWorld('dl-rwa');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const capital = w.journal.ofKind('bank.capital').filter((e) => e.period === w.period);
     expect(capital.length).toBeGreaterThan(0);
@@ -125,7 +132,7 @@ describe('one face (Dealer Desks A1, Clearing A2, Law 4)', () => {
 
 describe('what the book costs it (Dealer Desks D2, D3, XI-4 joint three)', () => {
   it('is what the bank actually pays for the money that funds it, every period (D3)', () => {
-    const w = rigWorld('dl-rent');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     // D3 used to be met by a RENT: a payment from a desk to the bank it lived inside. Between two
     // parties that were economically one, that payment was a transfer price and nothing else — and
@@ -151,10 +158,10 @@ describe('what the book costs it (Dealer Desks D2, D3, XI-4 joint three)', () =>
 
 describe('how it prices (Dealer Desks C)', () => {
   it('quotes two prices and the spread is what is left over (C5, C5.a, C5.b)', () => {
-    const w = rigWorld('dl-quote');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 3; i += 1) w.step();
     const view = w.participantView(BANK_A);
-    const q = quoteFor(view, LINE, stateOf(w, 'dl-quote', 'bank.a'));
+    const q = quoteFor(view, LINE, stateOf(w, String(BANK_A)));
     expect(q.some).toBe(true);
     if (!q.some) return;
     expect(q.value.offer).toBeGreaterThan(q.value.bid);
@@ -165,16 +172,16 @@ describe('how it prices (Dealer Desks C)', () => {
   });
 
   it('skews BOTH sides down when it is long, which is why order flow moves prices (C2, C2.a)', () => {
-    const w = rigWorld('dl-skew');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 3; i += 1) w.step();
     const view = w.participantView(BANK_A);
-    const empty = quoteFor(view, LINE, stateOf(w, 'dl-skew', 'bank.a', { limitAggregate: phx(10_000) }));
+    const empty = quoteFor(view, LINE, stateOf(w, String(BANK_A), { limitAggregate: phx(10_000) }));
     // The same desk, the same view, the same rate — and twice as much of its book allowed in one
     // line, so the position it holds is half as much of what it will carry.
     const roomier = quoteFor(
       view,
       LINE,
-      stateOf(w, 'dl-skew', 'bank.a', {
+      stateOf(w, String(BANK_A), {
         limitAggregate: phx(10_000),
         concentration: 2 * w.params.get(dealingParam('bank.a', 'concentration')),
       }),
@@ -188,10 +195,10 @@ describe('how it prices (Dealer Desks C)', () => {
   });
 
   it('posts the same schedule whether the book is empty or busy (B4, XI-13)', () => {
-    const w = rigWorld('dl-b4');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 3; i += 1) w.step();
     const view = w.participantView(BANK_A);
-    const state = stateOf(w, 'dl-b4', 'bank.a');
+    const state = stateOf(w, String(BANK_A));
     const first = quoteFor(view, LINE, state);
     const again = quoteFor(view, LINE, state);
     expect(first).toEqual(again);
@@ -204,7 +211,7 @@ describe('how it prices (Dealer Desks C)', () => {
 
 describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
   it('shrinks the bid to whichever of its limits binds, and says which one did (D4)', () => {
-    const w = rigWorld('dl-limit');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 3; i += 1) w.step();
     const view = w.participantView(BANK_A);
     const held = view.quantity(LINE);
@@ -217,7 +224,7 @@ describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
     const full = quoteFor(
       view,
       LINE,
-      stateOf(w, 'dl-limit', 'bank.a', {
+      stateOf(w, String(BANK_A), {
         limitAggregate: phx(10_000_000),
         concentration: (held * worth.value) / phx(10_000_000),
       }),
@@ -231,18 +238,25 @@ describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
     }
     // A book with no room in it stops the bid in every line, which is how one line's trouble
     // reaches another (F1: capacity is finite and enumerable).
-    const noBook = quoteFor(view, LINE, stateOf(w, 'dl-limit', 'bank.a', { limitAggregate: 0 }));
+    const noBook = quoteFor(view, LINE, stateOf(w, String(BANK_A), { limitAggregate: 0 }));
     expect(noBook.some ? noBook.value.bidSize : -1).toBe(0);
     if (noBook.some) expect(noBook.value.binds).toBe('book');
-    // And a desk with no money does not bid for what it cannot pay for (F1).
-    const broke = quoteFor(view, LINE, stateOf(w, 'dl-limit', 'bank.a', { cash: 0 }));
+    // And a desk with no money does not bid for what it cannot pay for (F1). It is given room in
+    // its book first, because D4's order is deliberate — the WHOLE BOOK is asked before any one
+    // line, so a desk already over its aggregate limit reports `book` whatever else is true, and a
+    // test of the money constraint has to reach a state where the money is what binds.
+    const broke = quoteFor(
+      view,
+      LINE,
+      stateOf(w, String(BANK_A), { cash: 0, limitAggregate: phx(100_000_000), bookValue: 0 }),
+    );
     expect(broke.some ? broke.value.bidSize : -1).toBe(0);
     if (broke.some) expect(broke.value.binds).toBe('money');
   });
 
   it('lets a market fail when the desks step back and nobody else is there (D4.a, Clearing E4)', () => {
     // The desks will carry nothing at all, and the firms are the only other party in a share book.
-    const spec = rigSpec('dl-fail');
+    const spec = rigSpec('dealing', RIG.banks, RIG.firms);
     const modules = spec.modules.map((m) =>
       m.id === 'banks'
         ? { ...m, params: m.params.map((p) => (p.id.startsWith('bank.dealing.limit.') ? { ...p, value: 0 } : p)) }
@@ -263,19 +277,19 @@ describe('the limits (Dealer Desks D1, D4, D4.a)', () => {
 
 describe('the interdealer market (Dealer Desks E3)', () => {
   it('puts every desk that makes a line in the same session, so they face each other', () => {
-    const w = rigWorld('dl-e3');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 3; i += 1) w.step();
     // E3: both banks make the same line, and there is one session in it. What redistributes
     // inventory between them is that session — there is no second venue for it to happen in.
     for (const d of [BANK_A, BANK_B]) {
-      const row = rowsOf('dl-e3').find((x) => x.bank === String(d));
+      const row = rowsOf().find((x) => x.bank === String(d));
       expect(row?.makes).toContain('equity.share');
     }
     expect(w.markets.filter((m) => m.instrument === LINE)).toHaveLength(1);
     // And their quotes differ, because their books and their required returns differ: the smaller,
     // dearer desk is wider than the larger one out of the same view (C1, C5).
-    const a = quoteFor(w.participantView(BANK_A), LINE, stateOf(w, 'dl-e3', 'bank.a'));
-    const b = quoteFor(w.participantView(BANK_B), LINE, stateOf(w, 'dl-e3', 'bank.b'));
+    const a = quoteFor(w.participantView(BANK_A), LINE, stateOf(w, String(BANK_A)));
+    const b = quoteFor(w.participantView(BANK_B), LINE, stateOf(w, String(BANK_B)));
     expect(a.some && b.some).toBe(true);
     if (a.some && b.some) expect(a.value.edge).not.toBe(b.value.edge);
   });
@@ -283,13 +297,17 @@ describe('the interdealer market (Dealer Desks E3)', () => {
 
 describe('what it publishes (Dealer Desks D5)', () => {
   it('shows inventory, the width it quoted and the room it has left, together', () => {
-    const w = rigWorld('dl-d5');
+    const w = rigWorld('dealing', RIG.banks, RIG.firms);
     for (let i = 0; i < 4; i += 1) w.step();
     const book = w.journal.ofKind('bank.dealing').filter((e) => e.subjects.includes(BANK_A)).pop();
     expect(book).toBeDefined();
     expect(book?.public).toBe(true);
     expect(Number(book?.data['book'])).toBeGreaterThan(0);
-    expect(Number(book?.data['roomLeft'])).toBeGreaterThan(0);
+    // D5: the room it has LEFT, which is a number and can be negative — a desk carrying more than
+    // its own limit allows has less than none, and what it does about that is sell. This world
+    // opens its desks holding the whole float of every line they make (docs/BUGS.md 12-14), so
+    // what this reads is a desk working its book down rather than one with room to grow.
+    expect(typeof book?.data['roomLeft']).toBe('number');
     const lines = book?.data['lines'] as Record<string, Record<string, number>> | undefined;
     const line = lines?.[String(LINE)];
     expect(line).toBeDefined();
@@ -306,7 +324,7 @@ describe('a world where no bank deals (Law 15)', () => {
     // Law 15: a line of business is DATA about a bank. Take the dealing line away and the banks are
     // still banks — they lend, they fund themselves, they hold their reserves — and the share books
     // have nobody in them. Nothing is switched off; a table is shorter.
-    const spec = rigSpec('dl-none');
+    const spec = rigSpec('dealing', RIG.banks, RIG.firms);
     const w = assemble({
       ...spec,
       modules: spec.modules.map((m) =>

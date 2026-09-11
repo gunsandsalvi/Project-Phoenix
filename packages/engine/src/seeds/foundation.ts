@@ -73,7 +73,7 @@ import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/
 import { funds } from '../mechanisms/funds/index.js';
 import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
-import { labour } from '../mechanisms/labour/index.js';
+import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -271,10 +271,13 @@ const SEED_PLANT_AGES: readonly number[] = [26, 78, 130];
 const P = {
   cellsPerKey: paramId('seed.households.cellsPerKey'),
   membersPerCohort: paramId('seed.households.membersPerCohort'),
-  outputPerMember: paramId('seed.outputPerMember'),
-  debtPerMember: paramId('seed.sovereign.debtPerMember'),
+  debtPeriods: paramId('seed.sovereign.debtPeriods'),
   householdDebtShare: paramId('seed.sovereign.householdShare'),
   firmCashPeriods: paramId('seed.firm.cashPeriods'),
+  // Declared by the labour module and read here by id: what a member's time comes to in a period,
+  // and who is in the workforce at all. A seed may not import a mechanism.
+  hoursPerMember: paramId('labour.hoursPerMember'),
+  retirementAge: paramId('labour.retirementAge'),
   plantHeadroom: paramId('seed.firm.plantHeadroom'),
   openingYield: paramId('seed.openingYield'),
   cbOpeningShare: paramId('seed.centralBank.openingHoldingShare'),
@@ -366,20 +369,12 @@ export function foundationSeedFor(
       why: 'HOW MANY PEOPLE THERE ARE. Fifteen million a cohort and two cohorts, so thirty million in the region — which is a country, and the scale every other number in this seed is a ratio against. It was six thousand, and six thousand was a test rig wearing a world\'s name: a labour venue with a handful of employers in it, a bank sector whose smallest member was the size of one firm, and a bill line a single household cell could have bought outright. Every mechanism that needs somebody else to be there — a second bidder, another lender, a market that does not move when one party leaves — was being tested against a world too small to have one. It is a PLACEHOLDER and not a resolution: the answer MOVES with it, which is the whole reason it had to change, and what ends it is a population with births and deaths in it (worklist 13f) rather than a count anybody states.',
     },
     {
-      id: P.outputPerMember,
-      value: 0.0175,
-      unit: 'units of a final good per member per period',
+      id: P.debtPeriods,
+      value: 21,
+      unit: "periods of the economy's own output",
       kind: 'shape',
       owner: 'model',
-      why: 'Seed D1: THE SCALE OF THE REAL ECONOMY, and the only quantity this seed states. What a member of the population takes off the end of the chain in a period; everything any firm opens holding is this, walked up the chain through the good\'s own recipe (Law 19) and divided by that firm\'s own size. It is a SHAPE with no death, for the same reason the opening yield has none: a world that opens with stock in it has to say how much, and period zero is before any market has run. From period one it is an OUTCOME and nothing reads this again — households spend a share of income at a cleared price (Households C3) and what that buys is the price\'s business. What retires it is a measurement rather than a mechanism: run the same world from a different one and see whether it converges to the same place (Part XII).',
-    },
-    {
-      id: P.debtPerMember,
-      value: 600,
-      unit: 'PHX of par per member',
-      kind: 'shape',
-      owner: 'model',
-      why: 'Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER IS OUTSTANDING, per member of the population it is owed by. A stock and not a flow, and per head rather than in total, because the total is not free: a treasury that has borrowed is a treasury that spent, and how much it spent is a function of how many people it spent it on. The profile above says where on the curve it sits and who holds it; this says how much of it there is. From period one the treasury\'s own funding programme decides its stock and nothing reads this again (Treasury D4).',
+      why: "Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER IS OUTSTANDING, as periods of what this world TURNS OVER. A stock against a flow, which is the ratio a sovereign's debt is actually spoken of in. It is not per head: a treasury that has borrowed is a treasury that spent, and what it spent it on is an economy rather than a queue of people, so a world whose people can make forty times as much has forty times the debt and the same ratio — stated per head it did not scale with the real economy at all, and the banks could not carry their own depositors' accounts. TWENTY-ONE AND NOT FIFTY-TWO, because turnover is not output: this walk values every stage of the chain, so a tonne of bread is counted again as the flour and again as the grain, and gross turnover comes to something over twice what the world actually makes. A debt of a year of output is therefore a third of a year of turnover, which is what this is. From period one the treasury's own funding programme decides its stock and nothing reads this again (Treasury D4).",
     },
     {
       id: P.householdDebtShare,
@@ -524,22 +519,190 @@ export function foundationSeedFor(
       });
     }
 
-
-    // The maturity profile, outstanding with remaining lives (Seed C3, Treasury D4.a). Every bond
-    // carries the coupon that makes it par at the opening yield, so nothing but a level is claimed,
-    // and how much of it there is, is the population it is owed by (Law 2: one number, not a table).
     // Law 19: HOW MANY PEOPLE THERE ARE is read off the cells that were just created, never
     // recomputed from the parameter they were cut from — a second derivation of a population is a
     // second population, and it goes wrong the first time a split does not come out.
     const householdMembers = ctx.parties
       .ofKind(HOUSEHOLD)
       .reduce((t, c) => t + weightOf(c), 0);
+
+    // ------------------------------------------------------------------------------------------
+    // WHAT EVERY FIRM OPENS HOLDING (Seed D1, Goods A2.a, Capital Programme A2; Law 2, Law 19)
+    //
+    // NO STATED QUANTITY AT ALL. What this world makes is what its people's time makes: the chain
+    // is walked once at unit scale through each good's own recipe — the recipe says how much of an
+    // input a unit started draws, the yield says how many of the started ones arrive, and the hours
+    // say what each step costs — and the hours the population offers then divide by the hours one
+    // unit of the final good costs all the way down.
+    //
+    // The seed therefore chooses no amount anywhere. Ask it for thirty million people and it opens
+    // with what thirty million people can make of grain, flour, bread, machines and plant, held by
+    // however many firms the world has, in the proportions their own draws gave them.
+    // ------------------------------------------------------------------------------------------
+    const started = new Map<string, number>();
+    const madeHere = firmRows.filter((f) => ctx.instruments.has(goodId(f.subUnit, REGION)));
+    const sizeOfLine = new Map<string, number>();
+    for (const f of madeHere) {
+      sizeOfLine.set(f.subUnit, add(zeroIfNone(sizeOfLine.get(f.subUnit)), f.size, 'its line'));
+    }
+    // Law 19: the recipe is read from the ONE place that writes it — the goods registry, in the
+    // units a person says it in. The instrument's own terms carry the same recipe converted to
+    // pieces of each good (Law 8), and this seed speaks in named units by contract, so reading the
+    // converted copy here would be converting it back.
+    const recipeOf = (subUnit: string): GoodDecl => {
+      const d = GOODS.find((g) => g.subUnit === subUnit);
+      if (d === undefined) throw new Missing('Goods A1', `no recipe for ${subUnit}`, { subUnit });
+      return d;
+    };
+    // What draws what. A good nothing else draws is what this world makes FOR somebody: the
+    // population, for a consumption good, and the replacement of worn-out plant, for a capital one.
+    const drawnBy = new Map<string, string[]>();
+    for (const subUnit of sizeOfLine.keys()) {
+      for (const input of recipeOf(subUnit).inputs) {
+        drawnBy.set(input.subUnit, [...(drawnBy.get(input.subUnit) ?? []), subUnit]);
+      }
+    }
+    const madeInto = new Set(CAPITAL_KINDS.map((k) => k.madeFrom));
+    const finalGoods = [...sizeOfLine.keys()]
+      .filter((g) => (drawnBy.get(g) ?? []).length === 0 && !madeInto.has(g))
+      .sort();
+    // ------------------------------------------------------------------------------------------
+    // HOW BIG THIS ECONOMY IS, and it is NOT STATED (Law 2: the fewest primitives).
+    //
+    // What a world makes is what its people's time makes. Every step of every chain takes hours
+    // the recipe names (Goods A2.c), the people offer the hours their own week has in it (Labour
+    // A1, B2), and the ones who offer them are the cohorts below the retirement age (B3). Between
+    // them those three facts FIX the scale, and there is nothing left for the seed to say about it.
+    //
+    // It used to be one stated number — what a member takes off the end of the chain in a period —
+    // and the number was two orders of magnitude below what the population could produce: it asked
+    // 0.4 hours a week of a member who offers 35, so 97% of this world's time had nowhere to go,
+    // the wage bill was a fortieth of what its people could earn, and every firm was bound by a
+    // demand that could never have paid for what its plant was sized to make (docs/BUGS.md 12-15).
+    // The seed was not sizing an economy; it was starving one.
+    //
+    // ONE PASS AT UNIT SCALE and then a multiplication, because the chain is linear in its output:
+    // ask what one unit of the final good costs in hours ALL THE WAY DOWN — including the machines
+    // that wear out making it — and the answer divides the hours there are.
+    // ------------------------------------------------------------------------------------------
+    const retirementAge = ctx.params.get(P.retirementAge);
+    const perWeek = ctx.params.amount(P.hoursPerMember, HOURS);
+    let hoursOffered = 0;
+    for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
+      if (cell.representation !== 'cell') continue;
+      if (ctx.registry.cohort(cell.key.cohort).fromAge >= retirementAge) continue;
+      hoursOffered = add(hoursOffered, mul(weightOf(cell), perWeek, 'what it offers'), 'the hours there are');
+    }
+    for (const g of finalGoods) {
+      started.set(g, div(1, recipeOf(g).yieldRate, 'started for one of it'));
+    }
+    // Down the chain, deepest first: a line starts what everything it feeds draws from it.
+    const upstream = [...sizeOfLine.keys()].filter((g) => !finalGoods.includes(g) && !madeInto.has(g));
+    let settled = new Set(finalGoods);
+    while (upstream.some((g) => !settled.has(g))) {
+      const next = upstream.find(
+        (g) => !settled.has(g) && (drawnBy.get(g) ?? []).every((d) => settled.has(d)),
+      );
+      if (next === undefined) break;
+      let drawn = 0;
+      for (const by of drawnBy.get(next) ?? []) {
+        const qty = recipeOf(by).inputs.find((i) => i.subUnit === next);
+        if (qty === undefined) continue;
+        drawn = add(drawn, mul(zeroIfNone(started.get(by)), qty.qtyPerUnit, 'what it draws'), 'drawn');
+      }
+      started.set(next, div(drawn, recipeOf(next).yieldRate, 'started for it'));
+      settled = new Set([...settled, next]);
+    }
+    // Capital Programme A2: the plant those lines run on, with the headroom a going concern has.
+    const headroom = ctx.params.get(P.plantHeadroom);
+    const plantOf = (subUnit: string, kind: string): number => {
+      const need = recipeOf(subUnit).plant.find((q) => q.capitalKind === kind);
+      if (need === undefined) return 0;
+      return mul(
+        mul(zeroIfNone(started.get(subUnit)), need.unitsPerUnitPerPeriod, 'the plant it takes'),
+        headroom,
+        'with the headroom a going concern has',
+      );
+    };
+    // A4.b: and the capital-goods line starts what REPLACES the plant that wears out — one life's
+    // worth of it a life, which is what a stock of machines with a life in it demands every period.
+    for (const kind of CAPITAL_KINDS) {
+      if (!sizeOfLine.has(kind.madeFrom)) continue;
+      const inService = sum([...sizeOfLine.keys()].map((g) => plantOf(g, kind.id))).value;
+      const wearing = div(inService, kind.usefulLifePeriods, 'what wears out in a period');
+      started.set(kind.madeFrom, div(wearing, recipeOf(kind.madeFrom).yieldRate, 'started for it'));
+    }
+    // Goods A2.c, Labour A1: AND NOW THE SCALE. Everything above is what ONE unit of the final good
+    // costs the world, all the way down — the grain it takes, the milling, the baking, and the
+    // share of a machine's life it wears out. What that comes to in HOURS divides the hours the
+    // population has, and the answer is how many of the final good this world makes in a period.
+    //
+    // Law 19: the hours are the recipe's own, read from the goods registry like everything else
+    // here, and a firm's own productivity does not enter — that is dispersion WITHIN a line
+    // (Firm A3), and what is being sized is the line.
+    const hoursForOne = sum(
+      [...sizeOfLine.keys()].map((g) =>
+        mul(zeroIfNone(started.get(g)), recipeOf(g).labourHoursPerUnit, `the hours ${g} takes`),
+      ),
+    ).value;
+    forbid(
+      hoursForOne > 0,
+      'Seed D1',
+      'this world makes nothing that takes anybody any time, so its people have nothing to do',
+      { hoursForOne },
+    );
+    const scale = div(hoursOffered, hoursForOne, 'how many of the final good the hours there are make');
+    for (const g of [...started.keys()]) {
+      started.set(g, mul(zeroIfNone(started.get(g)), scale, `what ${g} starts in a period`));
+    }
+    // Seed B4: and a firm's share of its own line is its own size over the line's.
+    const shareOf = (f: FirmDecl): number => div(f.size, zeroIfNone(sizeOfLine.get(f.subUnit)), 'its share');
+    /** What this firm starts in a period. Everything it opens holding is a period of this. */
+    const startsOf = (f: FirmDecl): number => mul(zeroIfNone(started.get(f.subUnit)), shareOf(f), 'its own');
+    const cashPeriods = ctx.params.get(P.firmCashPeriods);
+    /**
+     * Seed C1: the money it opens with, as periods of its own turnover at what the good opens at.
+     * It pays its wage bill and buys its inputs before it is paid for what it sells, so a firm that
+     * opens with nothing fails on a timing gap rather than on its economics (Firm D1).
+     */
+    const cashOf = (f: FirmDecl): number =>
+      mul(
+        mul(
+          mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what arrives'),
+          ctx.params.get(openingPrice(f.subUnit)),
+          'what it turns over',
+        ),
+        cashPeriods,
+        'periods of it',
+      );
+
+
+
+    // The maturity profile, outstanding with remaining lives (Seed C3, Treasury D4.a). Every bond
+    // carries the coupon that makes it par at the opening yield, so nothing but a level is claimed,
+    // and how much of it there is, is the population it is owed by (Law 2: one number, not a table).
     const y = ctx.params.get(P.openingYield);
     const opening = new Map<string, number>();
+    // Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER THERE IS, as a stock of the economy it is
+    // owed by rather than of the heads in it. A treasury that has borrowed is a treasury that
+    // spent, and what it spent it on is an economy — so what is stated is how many periods of what
+    // this world MAKES the sovereign owes, and the amount follows from the same walk everything
+    // else here follows from. Stated per head it did not scale with the real economy at all: a
+    // world whose people could make forty times as much had the same money in it, and its banks
+    // could not carry their own depositors' accounts (Seed D1 refused to open it).
+    const turnover = sum(
+      [...sizeOfLine.keys()].map((g) =>
+        mul(
+          mul(zeroIfNone(started.get(g)), recipeOf(g).yieldRate, `what ${g} makes in a period`),
+          ctx.params.get(openingPrice(g)),
+          'what that fetches',
+        ),
+      ),
+    ).value;
     const seedLineRows = seedLines(
       ctx.calendar.epoch,
       householdMembers,
-      ctx.params.get(P.debtPerMember),
+      div(mul(turnover, ctx.params.get(P.debtPeriods), 'the debt outstanding'), householdMembers, 'per member'),
       ctx.params.get(P.householdDebtShare),
     );
     for (const line of seedLineRows) {
@@ -586,111 +749,6 @@ export function foundationSeedFor(
         provenance: { kind: 'opening' },
       });
     }
-
-    // ------------------------------------------------------------------------------------------
-    // WHAT EVERY FIRM OPENS HOLDING (Seed D1, Goods A2.a, Capital Programme A2; Law 2, Law 19)
-    //
-    // ONE STATED QUANTITY IN THE WHOLE SEED: what a member of the population takes off the end of
-    // the chain in a period. Everything else here is walked UP the chain from it through the good's
-    // own recipe — the recipe says how much of an input a unit started draws and the yield says how
-    // many of the started ones arrive, so a line's throughput is decided by what draws it and never
-    // stated — and then divided among that line's firms by their own sizes.
-    //
-    // The seed therefore chooses no amount anywhere. Ask it for thirty million people and it opens
-    // with thirty million people's worth of grain, flour, bread, machines and plant, held by
-    // however many firms the world has, in the proportions their own draws gave them.
-    // ------------------------------------------------------------------------------------------
-    const started = new Map<string, number>();
-    const madeHere = firmRows.filter((f) => ctx.instruments.has(goodId(f.subUnit, REGION)));
-    const sizeOfLine = new Map<string, number>();
-    for (const f of madeHere) {
-      sizeOfLine.set(f.subUnit, add(zeroIfNone(sizeOfLine.get(f.subUnit)), f.size, 'its line'));
-    }
-    // Law 19: the recipe is read from the ONE place that writes it — the goods registry, in the
-    // units a person says it in. The instrument's own terms carry the same recipe converted to
-    // pieces of each good (Law 8), and this seed speaks in named units by contract, so reading the
-    // converted copy here would be converting it back.
-    const recipeOf = (subUnit: string): GoodDecl => {
-      const d = GOODS.find((g) => g.subUnit === subUnit);
-      if (d === undefined) throw new Missing('Goods A1', `no recipe for ${subUnit}`, { subUnit });
-      return d;
-    };
-    // What draws what. A good nothing else draws is what this world makes FOR somebody: the
-    // population, for a consumption good, and the replacement of worn-out plant, for a capital one.
-    const drawnBy = new Map<string, string[]>();
-    for (const subUnit of sizeOfLine.keys()) {
-      for (const input of recipeOf(subUnit).inputs) {
-        drawnBy.set(input.subUnit, [...(drawnBy.get(input.subUnit) ?? []), subUnit]);
-      }
-    }
-    const madeInto = new Set(CAPITAL_KINDS.map((k) => k.madeFrom));
-    const finalGoods = [...sizeOfLine.keys()]
-      .filter((g) => (drawnBy.get(g) ?? []).length === 0 && !madeInto.has(g))
-      .sort();
-    const perMember = ctx.params.get(P.outputPerMember);
-    for (const g of finalGoods) {
-      // Households C3: what the population takes off the end of it, and the line has to START
-      // enough that this much arrives (Goods B4: the yield is what does not).
-      const taken = div(mul(householdMembers, perMember, 'what it eats'), finalGoods.length, 'each');
-      started.set(g, div(taken, recipeOf(g).yieldRate, 'started for it'));
-    }
-    // Down the chain, deepest first: a line starts what everything it feeds draws from it.
-    const upstream = [...sizeOfLine.keys()].filter((g) => !finalGoods.includes(g) && !madeInto.has(g));
-    let settled = new Set(finalGoods);
-    while (upstream.some((g) => !settled.has(g))) {
-      const next = upstream.find(
-        (g) => !settled.has(g) && (drawnBy.get(g) ?? []).every((d) => settled.has(d)),
-      );
-      if (next === undefined) break;
-      let drawn = 0;
-      for (const by of drawnBy.get(next) ?? []) {
-        const qty = recipeOf(by).inputs.find((i) => i.subUnit === next);
-        if (qty === undefined) continue;
-        drawn = add(drawn, mul(zeroIfNone(started.get(by)), qty.qtyPerUnit, 'what it draws'), 'drawn');
-      }
-      started.set(next, div(drawn, recipeOf(next).yieldRate, 'started for it'));
-      settled = new Set([...settled, next]);
-    }
-    // Capital Programme A2: the plant those lines run on, with the headroom a going concern has.
-    const headroom = ctx.params.get(P.plantHeadroom);
-    const plantOf = (subUnit: string, kind: string): number => {
-      const need = recipeOf(subUnit).plant.find((q) => q.capitalKind === kind);
-      if (need === undefined) return 0;
-      return mul(
-        mul(zeroIfNone(started.get(subUnit)), need.unitsPerUnitPerPeriod, 'the plant it takes'),
-        headroom,
-        'with the headroom a going concern has',
-      );
-    };
-    // A4.b: and the capital-goods line starts what REPLACES the plant that wears out — one life's
-    // worth of it a life, which is what a stock of machines with a life in it demands every period.
-    for (const kind of CAPITAL_KINDS) {
-      if (!sizeOfLine.has(kind.madeFrom)) continue;
-      const inService = sum([...sizeOfLine.keys()].map((g) => plantOf(g, kind.id))).value;
-      const wearing = div(inService, kind.usefulLifePeriods, 'what wears out in a period');
-      started.set(kind.madeFrom, div(wearing, recipeOf(kind.madeFrom).yieldRate, 'started for it'));
-    }
-    // Seed B4: and a firm's share of its own line is its own size over the line's.
-    const shareOf = (f: FirmDecl): number => div(f.size, zeroIfNone(sizeOfLine.get(f.subUnit)), 'its share');
-    /** What this firm starts in a period. Everything it opens holding is a period of this. */
-    const startsOf = (f: FirmDecl): number => mul(zeroIfNone(started.get(f.subUnit)), shareOf(f), 'its own');
-    const cashPeriods = ctx.params.get(P.firmCashPeriods);
-    /**
-     * Seed C1: the money it opens with, as periods of its own turnover at what the good opens at.
-     * It pays its wage bill and buys its inputs before it is paid for what it sells, so a firm that
-     * opens with nothing fails on a timing gap rather than on its economics (Firm D1).
-     */
-    const cashOf = (f: FirmDecl): number =>
-      mul(
-        mul(
-          mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what arrives'),
-          ctx.params.get(openingPrice(f.subUnit)),
-          'what it turns over',
-        ),
-        cashPeriods,
-        'periods of it',
-      );
-
     // ------------------------------------------------------------------------------------------
     // THE OPENING BALANCE SHEET (Seed A3, C1, C5, E2; Central Bank A2, C1; Banks Capital B1.b)
     //
@@ -1091,7 +1149,7 @@ export function foundationDraw(
   firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed),
 ): FoundationDraw {
   const names = bankRows.map((b) => b.bank);
-  const listed = drawListed(firmRows, names, seed);
+  const listed = drawListed(firmRows, bankRows, seed);
   return {
     banks: bankRows,
     firms: firmRows,

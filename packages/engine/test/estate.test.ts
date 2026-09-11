@@ -23,6 +23,7 @@ import {
   instrumentKindId,
   none,
   partyId,
+  type PartyId,
   snapshot,
   some,
   type InstrumentKindId,
@@ -34,15 +35,20 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigDraw, rigSpec } from './rig.js';
 import { unexpected } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 
-const DEBTOR = partyId('firm.1');
-const SENIOR_HOLDER = partyId('firm.2');
-const OTHER_SENIOR_HOLDER = partyId('firm.3');
-const JUNIOR_HOLDER = partyId('firm.4');
-const ESTATE_OF_DEBTOR = partyId('estate.firm.1');
+/**
+ * Seed B1.a: four named parties of this world, asked for rather than named. A waterfall test needs
+ * a debtor and three creditors and does not care what any of them makes — but it does care that
+ * they EXIST, and which ids exist is an outcome of the draw.
+ */
+const DREW = rigDraw('estate');
+const [DEBTOR, SENIOR_HOLDER, OTHER_SENIOR_HOLDER, JUNIOR_HOLDER] = DREW.firms
+  .slice(0, 4)
+  .map((f) => partyId(f.firm)) as [PartyId, PartyId, PartyId, PartyId];
+const ESTATE_OF_DEBTOR = partyId(`estate.${String(DEBTOR)}`);
 
 const SENIOR_KIND = instrumentKindId('test.senior');
 const JUNIOR_KIND = instrumentKindId('test.junior');

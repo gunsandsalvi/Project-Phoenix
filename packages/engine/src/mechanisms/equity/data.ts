@@ -81,6 +81,9 @@ export const LISTING_SIZE = 8;
  */
 export const MAKERS_PER_LINE = 3;
 
+/** Dealer Desks C5: what a share line IS, as a bank's own row names the kinds it makes. */
+const SHARE_KIND = 'equity.share';
+
 /**
  * Seed B1.a, B4: WHICH FIRMS THIS WORLD LISTED, drawn from the firms it has.
  *
@@ -90,15 +93,26 @@ export const MAKERS_PER_LINE = 3;
  */
 export function drawListed(
   firms: readonly { readonly firm: string; readonly size: number }[],
-  banks: readonly string[],
+  /**
+   * Dealer Desks A1, A3: the banks of this world AND WHAT EACH OF THEM MAKES A MARKET IN. A line's
+   * makers are drawn from the banks that deal shares and never from all of them: a bank that opens
+   * holding a line it does not quote is holding inventory for a book it does not run, which is not
+   * a dealer with a position — it is a position with nobody behind it (Law 4).
+   *
+   * A world where no bank deals shares lists its firms and none of them has a float. That is a real
+   * state and not a gap: the line exists, the market exists, and nothing is outstanding until
+   * somebody issues into it (Equity D1).
+   */
+  banks: readonly { readonly bank: string; readonly makes: readonly string[] }[],
   seed: string,
 ): readonly ListedDecl[] {
   const rng = prng(seed, 'equity');
   const out: ListedDecl[] = [];
+  const dealers = banks.filter((b) => b.makes.includes(SHARE_KIND)).map((b) => b.bank);
   for (const f of firms) {
     if (f.size < LISTING_SIZE) continue;
     // A3: the makers, drawn without repeating a name — a bank cannot be two of a line's makers.
-    const pool = [...banks];
+    const pool = [...dealers];
     const makers: string[] = [];
     while (makers.length < MAKERS_PER_LINE && pool.length > 0) {
       const at = rng.int(pool.length);

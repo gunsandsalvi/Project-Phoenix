@@ -28,6 +28,7 @@ import {
   paramId,
   partyId,
   type AssemblySpec,
+  type BankDecl,
   type FirmDecl,
   type FoundationDraw,
   type PartyId,
@@ -111,32 +112,67 @@ export interface Needs {
   readonly listed?: number;
   readonly funds?: number;
   readonly etfs?: number;
+  /**
+   * Dealer Desks C5: an instrument kind at least one of this world's banks makes a market in.
+   * WHICH banks deal is drawn — it follows from what a bank will put behind a book, which is its
+   * own preference — so a test about a dealer asks for a world that has one rather than naming a
+   * bank and hoping.
+   */
+  readonly dealsIn?: string;
+  /** How many of them it needs. An interdealer market takes two (E3). */
+  readonly dealers?: number;
 }
 
-export function rigFirmsFor(seed: string, need: Needs, banks = RIG_BANKS): number {
+/** What a world has to BE to show the thing a test is about: how many banks and how many firms. */
+export interface RigShape {
+  readonly banks: number;
+  readonly firms: number;
+}
+
+/**
+ * The smallest world on this seed that HAS what the test needs.
+ *
+ * Each need lives in a different draw, so each grows a different count: how many banks deal follows
+ * from what each bank will put behind a book, so a world short of dealers needs more BANKS; which
+ * firms are listed follows from how big they are, so a world short of listings needs more FIRMS.
+ * Growing the wrong one for ever is how this first went wrong — three thousand firms will not
+ * produce a second dealer in a world with three banks in it.
+ *
+ * Nothing is fitted: the rules stay the rules and the draws stay the draws. What moves is a count,
+ * which is what Seed B1.a says a count is for.
+ */
+export function rigShapeFor(seed: string, need: Needs): RigShape {
+  let banks = RIG_BANKS;
   let firms = RIG_FIRMS;
-  for (let tries = 0; tries < 8; tries += 1) {
+  for (let tries = 0; tries < 12; tries += 1) {
     const d = rigDraw(seed, banks, firms);
-    if (
-      d.listed.length >= (need.listed ?? 0) &&
-      d.funds.length >= (need.funds ?? 0) &&
-      d.etfs.length >= (need.etfs ?? 0)
-    ) {
-      return firms;
-    }
-    firms *= 2;
+    const shortOfDealers =
+      need.dealsIn !== undefined && dealersIn(d, need.dealsIn).length < (need.dealers ?? 1);
+    const shortOfFirmThings =
+      d.listed.length < (need.listed ?? 0) ||
+      d.funds.length < (need.funds ?? 0) ||
+      d.etfs.length < (need.etfs ?? 0);
+    if (!shortOfDealers && !shortOfFirmThings) return { banks, firms };
+    if (shortOfDealers) banks += RIG_BANKS;
+    if (shortOfFirmThings) firms *= 2;
   }
-  throw new Error(`no rig of up to ${firms} firms on seed ${seed} has ${JSON.stringify(need)}`);
+  throw new Error(
+    `no rig of up to ${banks} banks and ${firms} firms on seed ${seed} has ${JSON.stringify(need)}`,
+  );
 }
 
-/** A world that has what the test needs, and the draw that made it. Both from one count (Law 4). */
+/** A world that has what the test needs, and the draw that made it. Both from one shape (Law 4). */
 export function rigFor(
   seed: string,
   need: Needs,
-  banks = RIG_BANKS,
-): { readonly world: World; readonly draw: FoundationDraw; readonly firms: number } {
-  const firms = rigFirmsFor(seed, need, banks);
-  return { world: rigWorld(seed, banks, firms), draw: rigDraw(seed, banks, firms), firms };
+): { readonly world: World; readonly draw: FoundationDraw; readonly firms: number; readonly banks: number } {
+  const shape = rigShapeFor(seed, need);
+  return {
+    world: rigWorld(seed, shape.banks, shape.firms),
+    draw: rigDraw(seed, shape.banks, shape.firms),
+    firms: shape.firms,
+    banks: shape.banks,
+  };
 }
 
 /** The firm behind a listed line, largest first — "the big listed one" with an answer. */
@@ -146,4 +182,20 @@ export function listedIn(draw: FoundationDraw, nth = 0): string {
   const row = rows[nth];
   if (row === undefined) throw new Error(`this world listed ${rows.length} firms, not ${nth + 1}`);
   return row.firm;
+}
+
+/** Dealer Desks A1, C5: the banks of this world that make a market in a kind, largest first. */
+export function dealersIn(draw: FoundationDraw, kind: string): readonly BankDecl[] {
+  return [...draw.banks]
+    .filter((b) => b.makes.includes(kind))
+    .sort((a, b) => b.size - a.size);
+}
+
+/** One of them. Asking for one a world does not have throws rather than naming a bank that is not. */
+export function dealerIn(draw: FoundationDraw, kind: string, nth = 0): PartyId {
+  const b = dealersIn(draw, kind)[nth];
+  if (b === undefined) {
+    throw new Error(`this world has ${dealersIn(draw, kind).length} dealers in ${kind}, not ${nth + 1}`);
+  }
+  return partyId(b.bank);
 }

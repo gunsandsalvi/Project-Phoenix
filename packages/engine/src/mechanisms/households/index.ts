@@ -380,7 +380,7 @@ function ordersFrom(rows: unknown, market: string, self: PartyId): Order[] {
     if (typeof qty !== 'number' || qty <= 0) continue;
     // Law 19: read back from what this cell published, through the one door that says a size is a
     // count of pieces — and that throws if what it published was not (core/tick.ts).
-    out.push({ party: self, side, price, qty: asQty(qty, `${self}'s posted size`) });
+    out.push({ party: self, side, price, qty: asQty(qty, `${self}'s posted size in ${market} at ${price}`) });
   }
   return out;
 }

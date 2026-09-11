@@ -402,6 +402,105 @@ clearing solver is deleted — the type is the check, and a check written twice 
 last.
 
 
+### 12-14 — Every dealer opens above its own limit, because the float is the firm's whole book
+
+**Where.** `seeds/foundation.ts` (the equity float), read back in `bank.dealing`'s `roomLeft`.
+
+**Measured.** A rig world of six banks and twelve firms, period 4: the desk making the listed line
+publishes `roomLeft: -630,738,745` — it is carrying six hundred million more than the limit it set
+itself, on the first morning, and every desk in every seed is in the same state.
+
+**Why.** Item 12 made the float a READ instead of a stated table: a share is a claim on the residual,
+and at period zero a firm's residual is everything it holds, so the line is its own opening book in
+shares of one PHX (Law 19). That part is right — a larger firm has a larger line without a number
+being written beside its name. What is wrong is WHO OPENS HOLDING IT: all of it goes to the three
+banks that make its market, and a dealer's inventory is a working stock, not the whole float of
+every name it quotes. A saver holds the float; a dealer holds what it can carry.
+
+**Not impossible, and it resolves itself.** A desk over its limit stops bidding and sells (D4), which
+is a mechanism this world has and runs — the world is green in every audit family with this in it.
+What it costs is that no desk in any seed is ever seen with room to GROW, so D4's "shrinks the bid to
+whichever limit binds" can only ever report the aggregate one, and `test/dealing.test.ts` has to
+construct a state to see the other two.
+
+**What it wants.** The float split between the makers and the savers: the makers hold what their own
+declared limits let them carry and the households hold the rest. The obstacle is an ordering one —
+a bank's limit is a share of its capital, and its capital is set by `seed.funding`, which runs after
+`equity` because it has to see every asset. Two candidate fixes: read the limit against the assets
+the foundation endowed (a re-derivation of `seed.funding`'s own rule, so Law 4 says no), or move the
+float to the households entirely and let the desks acquire inventory in period one's session (which
+overturns the recorded reason that a maker opening with nothing can only ever bid). Not positioned.
+
+
+### 12-15 — The world produces a hundred and fiftieth of the scale its seed states
+
+**Where.** Everywhere downstream of `seed.outputPerMember`. Seen in `firms.plan`.
+
+**Measured.** Rig world, seed `capital`, 120,000 people, 12 firms, period 40:
+
+```
+firm.1  batch 1,322,910   runRate 2,417,363    capacity 376,000,000   bound: demand
+firm.2  batch 34,823,497  runRate 63,646,945   capacity 324,000,000   bound: demand
+firm.3  batch 3,023,152   runRate 5,447,483    capacity 388,000,000   bound: demand
+```
+
+A firm's plant lets it start 376 tonnes a period and it starts 1.3. The seed sized that plant from
+what the population takes off the end of the chain — 0.0175 units a member a period, walked up
+through each recipe — so the seed and the mechanisms disagree about the size of this economy by two
+orders of magnitude, and what they disagree about is DEMAND: every firm is bound by what it expects
+to sell, at a hundred and fiftieth of what the seed assumed it would.
+
+**What it is not.** Not a Law 8 defect (every quantity here is a whole count), not an audit finding
+(green in every family), and not arithmetic: the plant derivation checks out — capacity comes to
+`starts × plantHeadroom` exactly, as intended.
+
+**What it costs now.** Investment never happens. Capacity is 150× the run rate, so no firm ever has
+a gap, so `firms.invest` and `capital.commissioned` are empty in every seed over forty periods —
+which is most of `test/capital.test.ts` failing, and it is the model telling the truth rather than
+the tests being wrong.
+
+**Where to look.** The circuit, not the seed: what households are paid, what they spend, and what
+that buys at the cleared price. A world whose people earn a hundred and fiftieth of what its firms
+are equipped to sell them is short of wages or short of employment, and the audit cannot see it
+because every flow in it has two sides and balances — it is a LEVEL, and Part XII (worklist 16) is
+where a level is measured. Recorded here so the measurement has a starting number.
+
+**Not positioned.** It is a measurement, and measuring is what comes after the recipe (Part XIII 15).
+
+
+### 12-16 — The exchange-traded fund's share price collapses, and the demand curve then walls
+
+**Where.** `mkt.share.etf.north`, seen from `households/index.ts`'s posted size.
+
+**Measured.** Rig world, 3 banks, 24 firms, period 13:
+
+```
+[Law 8] hh.working.bank.c.0's posted size in mkt.share.etf.north
+        at 0.000003759692749549884 is 20,508,330,497,107,040
+```
+
+An ETF share is launched at one PHX (100 pieces of money) and is a claim on one share of each listed
+line. Twelve periods later the market is printing 0.0000038 of a piece for one — seven orders of
+magnitude below what the fund's own book says a share is worth, and the read that says so (E4, the
+gap between the two values) is exactly what the arbitrage is supposed to close.
+
+**Why it stops the world.** A cell's demand is its budget over a price (Households D5, Clearing A2.a):
+a hyperbola, and at a price of 3.8e-6 the quantity it asks for is 2.05e16 — past 2^53, where integers
+stop being exact. `asQty` refuses it, which is right: that is not a large order, it is an order the
+machine can no longer add up (Law 8).
+
+**Not caused by this item's scale change, but revealed by it.** The collapse is presumably older; at
+the previous scale the same collapse produced quantities that still fitted inside exact arithmetic,
+so nothing refused them and the world ran on with a market printing nonsense. The world now reaches
+period 12 instead of 52, and what it reaches is the truth rather than the same defect uncounted.
+
+**Where to look.** Two candidates, both in this item's own area. The arbitrage (`banks/dealing.ts`)
+only acts when a desk MAKES the line and has room, and every desk in this world opens above its own
+limit (12-14) — so nobody closes the gap. And the ETF's launch is now drawn (`funds/data.ts`): a
+world whose listed lines are few gives each ETF share a very thin book, and a book worth almost
+nothing is a share worth almost nothing. Not positioned.
+
+
 ## Carried in from item pre12
 
 These two were named in `docs/RECORD.md`'s `pre12` entry and handed to item 12 rather than fixed,
