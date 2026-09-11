@@ -457,3 +457,48 @@ and therefore never invests, hence never needs funding), and if so it is **workl
 separately because it is a different measurement and may have a different cause.
 
 Seen at: `packages/engine/test/estate.test.ts` (`worldWithADeathInIt`, 18 periods).
+
+### 12d-7 — a saver has no reason to hold a share until the issuer's first published quarter
+
+12c anchored the equity book on published accounts (Reporting A1, A2, §48, `households/portfolio.ts`
+`publishedBy`): a cell values a share at the residual the company published plus what it published
+earning on it. A company publishes on a fiscal calendar, and the first report is for the first
+quarter that OPENS on or after the epoch — measured across five rig seeds, **period 25 to 29**, and
+one seed (`etf-stale`, twelve firms) publishes nothing in forty.
+
+So for the first half-year of every run no saver names a price for any share, the equity books have
+one side, and nothing about what a share is worth to a holder (Equity B1, B3, XI-13, §46 A3) can be
+shown by a test that runs fewer than about thirty periods. From period 25 the books do work: twelve
+of the next thirty-one sessions in `equity.firm.30` traded.
+
+The mechanism is not wrong — a saver that invented a figure for an unreported company would be
+holding a second set of its books (Law 4) — but a saver with NO read at all is not the only honest
+answer either: what a holder can see before the first report is its own basis, the market's own
+print, and the company's prospectus. Whether that is a reason is §46's question, and it is worklist
+**16** with 12-15.
+
+Seen at: `packages/engine/test/equity.test.ts`, `packages/engine/test/etf.test.ts`.
+
+### 12d-8 — an exchange-traded fund whose desks cannot create, and whose market trades once
+
+Two measurements of the same world (`etf-arb`, the rig at three banks and forty-eight firms, sixty
+periods):
+
+1. **No authorised participant ever holds the basket.** 11.5 moved every listed line's float off the
+   dealing desks and onto the household cells that save, and nothing moves a share back: at period
+   56 the only named holder of `equity.firm.30` is the fund itself. A desk that has not got the
+   basket cannot create (Fund Shares F1), so E3 runs one way only and E3.a's premium — measured at
+   0.28 of NAV, twenty-six times what a period of carry costs — has nobody able to close it.
+2. **The fund's own market trades once in sixty sessions.** Every other session is `noOverlap`, so
+   the price is a carried mark in fifty-nine of them and no desk may act on one (Clearing E4). Every
+   act of arbitrage in the run therefore lands in the one period after the one session that traded,
+   and no run reaches both sides of E3.
+
+(1) is stood in for in `etf.test.ts` by a fixture that opens the participants holding the basket, as
+a desk that makes this market would. (2) is not stood in for: the test asserts what the decision
+does and names this entry for what the run cannot reach.
+
+Also measured on the way: the fund's own basket holding falls from 6,948,844 to 14,904 over the run
+while its shares outstanding do not, so its NAV per share collapses. Not chased (Law 11) — recorded.
+
+Seen at: `packages/engine/src/mechanisms/funds/etf.ts`, `packages/engine/test/etf.test.ts`.

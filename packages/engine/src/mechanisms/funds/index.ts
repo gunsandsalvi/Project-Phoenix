@@ -62,7 +62,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
-import { FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
+import { ETF_LAUNCH_SHARE, FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
 import { trackerOrders } from './tracker.js';
 import { navOf } from './nav.js';
@@ -1061,9 +1061,34 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   // has a smaller fund, and its basket has to back the shares that were taken and no more — a
   // basket backing shares nobody holds would be a fund whose NAV was a multiple of what it owed.
   const holders = Object.entries(e.launchedBy).filter(
-    ([holder, shares]) => shares > 0 && ctx.parties.has(holder as PartyId),
+    ([holder, share]) => share > 0 && ctx.parties.has(holder as PartyId),
   );
-  const launched = sum(holders.map(([, shares]) => shares)).value;
+  if (holders.length === 0) return;
+  // Law 19, E3.a: HOW BIG THE LAUNCH IS, read off the lines it tracks rather than stated
+  // (`ETF_LAUNCH_SHARE`). A share of the fund is `perShare` of each line, so what each line can
+  // back is its own float over that, and the SMALLEST of them is as far as all of them reach.
+  const backs: number[] = [];
+  for (const [line, perShare] of Object.entries(e.basket)) {
+    const id = instrumentId(line);
+    if (!ctx.instruments.has(id) || perShare <= 0) continue;
+    backs.push(
+      div(
+        mul(ctx.instruments.get(id).issued, ETF_LAUNCH_SHARE, 'the share of this line it holds'),
+        perShare,
+        'the shares of the fund this line backs',
+      ),
+    );
+  }
+  if (backs.length === 0) return;
+  // Law 8: whole shares. Each holder takes ITS OWN slice of that, so a world missing the desks that
+  // would have made its market launches a fund short by exactly their slices — which is Seed A3's
+  // "only what somebody who EXISTS actually took" and is why this is not one split of one total.
+  const full = downTick(backs.reduce((a, b) => (b < a ? b : a)));
+  if (full <= 0) return;
+  const taken = holders.map(([, share]) =>
+    downTick(mul(full, share, "this holder's slice of the launch")),
+  );
+  const launched = sum(taken).value;
   if (launched <= 0) return;
   const contributions: number[] = [];
   for (const [line, perShare] of Object.entries(e.basket)) {
@@ -1078,7 +1103,11 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   }
   const perShare = sum(contributions).value;
   if (perShare <= 0) return;
-  for (const [holder, shares] of holders) ctx.endowUnits(holder as PartyId, share, shares, perShare);
+  for (const [at, [holder]] of holders.entries()) {
+    const mine = taken[at];
+    if (mine === undefined || mine <= 0) continue;
+    ctx.endowUnits(holder as PartyId, share, mine, perShare);
+  }
   // Seed C4: the level its market opens at, which is what its book was worth when it opened. The
   // first session reprices it, and the two have been able to differ ever since (E2).
   ctx.prices.write({

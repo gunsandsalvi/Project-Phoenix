@@ -9,7 +9,6 @@
  * what the mandate allows and nothing else. That is what makes a fund a transmission channel.
  */
 import { paramId, type ParamId } from '../../core/ids.js';
-import { splitOnTick } from '../../core/tick.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
 
@@ -80,10 +79,14 @@ export interface EtfDecl {
    */
   readonly tracks: string;
   /**
-   * Seed A3: who holds its shares at launch and how many. A fund is launched by somebody putting a
-   * basket in and taking the shares that came out, and in this world that is its sponsor and the
-   * banks whose dealing lines will make its market — an authorised participant with no shares can only ever
-   * create, and a gap the other way would have nobody able to close it (E3.a).
+   * Seed A3: who holds its shares at launch and WHAT SHARE OF IT each of them took. A fund is
+   * launched by somebody putting a basket in and taking the shares that came out, and in this world
+   * that is its sponsor and the banks whose dealing lines will make its market — an authorised
+   * participant with no shares can only ever create, and a gap the other way would have nobody able
+   * to close it (E3.a).
+   *
+   * Shares of the launch, not counts of shares: how many shares that comes to is read off the lines
+   * the basket names, which only the seed can see (`ETF_LAUNCH_SHARE`).
    */
   readonly launchedBy: Readonly<Record<string, number>>;
   /**
@@ -110,12 +113,25 @@ export interface EtfDecl {
  */
 
 /**
- * Law 8, E3.a: how many shares a creation unit is, as a multiple of one share of each line in the
- * basket. A launch has to be big enough that a creation or a redemption of one unit is a real
- * trade in every line it touches: a fund launched at sixty shares against a float of a hundred
- * thousand is a rounding error with a manager attached, and nothing it did would reach a price.
+ * Law 2, Law 19, E3.a: HOW BIG THE LAUNCH IS, as a share of the lines it tracks.
+ *
+ * A launch has to be big enough that a creation or a redemption is a real trade in every line it
+ * touches: a fund launched at sixty shares against a float of a hundred thousand is a rounding
+ * error with a manager attached, and nothing it did would reach a price.
+ *
+ * IT USED TO BE A COUNT — twenty thousand shares — and a count is a claim about a world whose scale
+ * the seed STATED. 11.5 derives that scale from the hours this world's people offer against the
+ * hours its chain needs, and the lines this fund tracks now open at a hundred and eighty million
+ * shares apiece: twenty thousand is one ten-thousandth of the smallest of them, so a household cell
+ * bidding for the whole fund was bidding a fraction of a cent per member, every session crossed and
+ * settled nothing, and the price the file is about was the opening one for ever. The number was the
+ * rounding error its own comment warned about.
+ *
+ * So it is read off the lines instead: the fund holds this share of the SMALLEST line in its basket,
+ * which is the one that binds — a share of each is what tracking an index means, and the smallest is
+ * as far as a common multiple of all of them reaches.
  */
-export const ETF_LAUNCH_UNITS = 20_000;
+export const ETF_LAUNCH_SHARE = 0.05;
 
 /**
  * Seed A3: how the launch is divided between the sponsor and the banks whose dealing lines make its
@@ -147,8 +163,7 @@ export function drawEtfs(
   for (const line of lines) basket[line] = 1;
   const manager = 'manager.etf.us';
   const launchedBy: Record<string, number> = {};
-  const sponsorShare = Math.round(ETF_LAUNCH_UNITS * ETF_SPONSOR_SHARE);
-  launchedBy[manager] = sponsorShare;
+  launchedBy[manager] = ETF_SPONSOR_SHARE;
   // The participants, drawn without repeating a name: a bank cannot be two of them.
   const pool = [...banks];
   const chosen: string[] = [];
@@ -159,12 +174,10 @@ export function drawEtfs(
     if (taken !== undefined) chosen.push(taken);
   }
   // E3: what is left for the participants once the sponsor has its own slice, written just above.
-  const rest = ETF_LAUNCH_UNITS - sponsorShare;
-  const each = splitOnTick(rest, chosen.map(() => 1));
-  chosen.sort().forEach((bank, at) => {
-    const mine = each[at];
-    if (mine !== undefined && mine > 0) launchedBy[bank] = mine;
-  });
+  // These are SHARES OF THE LAUNCH and not counts: how many shares that comes to is the seed's,
+  // because it is the one that can see how big the lines turned out (`seedEtf`).
+  const rest = 1 - ETF_SPONSOR_SHARE;
+  for (const bank of [...chosen].sort()) launchedBy[bank] = rest / chosen.length;
   const home = chosen[0];
   return [
     {
