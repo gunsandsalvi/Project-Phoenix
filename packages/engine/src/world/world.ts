@@ -230,8 +230,18 @@ export class World {
         run: (w) => {
           // Register B4: a matured line moves no units, so its market has nothing left to clear.
           // The instrument's cessation is the event; the venue simply stops (Bond N10).
-          w.lastMarkets = w.marketList
-            .filter((m) => w.instruments.get(m.instrument).status.live)
+          // Spot FX F1.a, Clearing F1: MARKETS RUN IN DECLARED ORDER, so a payer short of a money
+          // buys it in the pair's own session — with its own counterparty, at a rate that cleared —
+          // BEFORE the session that needs it. "Never inside the trade" is what that means: no market
+          // converts anything for anybody, and no kernel picks a route (XI-12).
+          //
+          // A pair market has no instrument behind it (nobody holds a pair), so what is asked about
+          // liveness is only asked of the markets that move one. Register B4: a matured line moves
+          // no units, so its market has nothing left to clear — the instrument's cessation is the
+          // event and the venue simply stops (Bond N10).
+          w.lastMarkets = [...w.marketList]
+            .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER))
+            .filter((m) => (m.kind ?? 'asset') === 'fx' || w.instruments.get(m.instrument).status.live)
             .map((m) => w.runOne(m));
         },
       },

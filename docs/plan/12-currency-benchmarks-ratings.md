@@ -279,7 +279,7 @@ it to be reachable. A step that is not written is a step that gets skipped, so t
       this period's at revaluation); every foreign holding revalues to it against the holder's
       equity or a central bank's revaluation account; `checkHomeCurrency` and the accounts family's
       skip of foreign instruments are both deleted in the same change (Currency D1–D3, Money A2.b)
-- [ ] 12.2 kernel: a market whose print is a RATE and whose trade is two money legs in two
+- [x] 12.2 kernel: a market whose print is a RATE and whose trade is two money legs in two
       currencies, settling atomically; markets run in a declared order so a payer short of a money
       can buy it before the market that needs it (Spot FX A1, C1, F1.a)
 - [ ] 12.3 kernel: the reads the modules need — `view.index`, a view with no prints for an assessor

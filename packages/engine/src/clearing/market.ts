@@ -30,13 +30,46 @@ import { weightOf, type Parties } from '../parties/party.js';
 import { struckIn, type PriceStore, type StaleReason } from '../prices/price-store.js';
 import type { Registry } from '../registry/registry.js';
 import { clear, type Fill, type Order, type Rationing } from './solver.js';
+import { Missing } from '../core/errors.js';
+
+/**
+ * Spot FX A1, C1; Law 15: WHAT KIND OF THING THIS MARKET MOVES, as a dispatch key and never a
+ * branch. An `asset` market moves an instrument against money, which is every market this world had
+ * until now. An `fx` market moves MONEY AGAINST MONEY: a spot trade is two money legs in two
+ * currencies at a rate (A1), so there is no instrument to deliver and no issuer to ask about.
+ *
+ * What the two share is everything else — one solver, one book, one print, one rationing rule — and
+ * what differs is the instruction a fill becomes. That difference lives in one table
+ * (`MARKET_KINDS`) so a third kind is a row rather than an `if`.
+ */
+export type MarketKind = 'asset' | 'fx';
 
 export interface MarketDecl {
   readonly id: MarketId;
   readonly name: string;
+  /**
+   * What the print is ABOUT. For an asset market, the instrument that changes hands. For a pair, the
+   * pair itself (`fxPairId`) — an id with no instrument behind it, because nobody holds a pair: what
+   * it names is the subject of the price, and a rate is a price (Law 3).
+   */
   readonly instrument: InstrumentId;
+  /** What the price is IN: the quote currency of a pair, the money an asset is paid for in. */
   readonly ccy: CurrencyCode;
   readonly rationing: Rationing;
+  readonly kind?: MarketKind;
+  /**
+   * Spot FX A1, A3: the two moneys, when this is a pair. The price is what one unit of `base` costs
+   * in `quote`, so a BUY takes base and gives quote — which is the same convention a market uses.
+   */
+  readonly fx?: { readonly base: CurrencyCode; readonly quote: CurrencyCode };
+  /**
+   * Spot FX F1.a, Clearing F1: WHERE IN THE PERIOD THIS MARKET RUNS. Markets clear in ascending
+   * order, so a payer short of a money can buy it before the market that needs it — which is F1.a's
+   * "never inside the trade": the conversion is its own session with its own counterparty, and the
+   * goods market that follows finds the money already there. Absent is last, which is where every
+   * market that does not care sits.
+   */
+  readonly order?: number;
 }
 
 /**
@@ -138,7 +171,8 @@ export function runMarket(
   switch (outcome.kind) {
     case 'cleared': {
       const trades = pairFills(m, outcome.fills, (p) => weightOf(deps.parties.get(p)));
-      const accrued = deps.accruedPerUnit(m.instrument, period);
+      // A pair has no coupon and no instrument to ask about: what accrues on money is nothing.
+      const accrued = (m.kind ?? 'asset') === 'fx' ? 0 : deps.accruedPerUnit(m.instrument, period);
       let settledVolume = 0;
       let allotted = 0;
       let failed = 0;
@@ -317,6 +351,87 @@ function pairFills(
  * accrued now and rises by the coupon then, and the seller's income is what it earned.
  */
 function tradeInstruction(
+  m: MarketDecl,
+  t: Trade,
+  price: number,
+  accruedPerUnit: number,
+  deps: MarketRunDeps,
+): Option<InstructionDraft> {
+  return MARKET_KINDS[m.kind ?? 'asset'](m, t, price, accruedPerUnit, deps);
+}
+
+/** Law 15: one row per kind of market, and nothing anywhere branches on which (`MarketKind`). */
+const MARKET_KINDS: Readonly<
+  Record<
+    MarketKind,
+    (
+      m: MarketDecl,
+      t: Trade,
+      price: number,
+      accruedPerUnit: number,
+      deps: MarketRunDeps,
+    ) => Option<InstructionDraft>
+  >
+> = Object.freeze({ asset: assetTrade, fx: fxTrade });
+
+/**
+ * Spot FX A1, C1, XI-5: A SPOT TRADE IS TWO MONEY LEGS, and both settle or neither does.
+ *
+ * There is no asset here and no issuer: what changes hands is one money for another, at the rate
+ * the session struck. The buyer of the pair takes the BASE and gives the QUOTE — one unit of base
+ * costs `price` of quote, which is the convention the print is in — and delivery-versus-payment is
+ * the atomicity settlement already has: an instruction applies whole or not at all (XI-5), so
+ * neither side can be left having paid for money it did not get (Herstatt, C6).
+ *
+ * Law 8 twice over: each leg lands on the smallest piece of its OWN money, and the two pieces are
+ * different sizes. What the quote side comes to is struck on its own grain at the rate, so the rate
+ * a trade REALISES can differ from the print by less than one piece — exactly as an asset trade's
+ * cash does, and for the same reason.
+ */
+function fxTrade(
+  m: MarketDecl,
+  t: Trade,
+  price: number,
+  _accruedPerUnit: number,
+  deps: MarketRunDeps,
+): Option<InstructionDraft> {
+  const pair = m.fx;
+  if (pair === undefined) {
+    throw new Missing('Spot FX A3', `${m.id} is a pair market and names no pair`, { market: m.id });
+  }
+  const buyer = deps.parties.get(t.buyer);
+  const seller = deps.parties.get(t.seller);
+  const grain = commonGrain(weightOf(buyer), weightOf(seller));
+  const quote = toGrain(mul(t.qty, price, 'what the base costs in quote'), grain);
+  if (quote <= 0) return none<InstructionDraft>();
+  const baseOut = cellSide(seller, t.qty / weightOf(seller));
+  const baseIn = cellSide(buyer, t.qty / weightOf(buyer));
+  const quoteOut = cellSide(buyer, quote / weightOf(buyer));
+  const quoteIn = cellSide(seller, quote / weightOf(seller));
+  const legs: Leg[] = [
+    {
+      kind: 'money',
+      from: deps.accountOf(t.seller, pair.base),
+      to: deps.accountOf(t.buyer, pair.base),
+      ccy: pair.base,
+      amount: t.qty,
+      fromCell: baseOut === undefined ? none() : some(baseOut),
+      toCell: baseIn === undefined ? none() : some(baseIn),
+    },
+    {
+      kind: 'money',
+      from: deps.accountOf(t.buyer, pair.quote),
+      to: deps.accountOf(t.seller, pair.quote),
+      ccy: pair.quote,
+      amount: quote,
+      fromCell: quoteOut === undefined ? none() : some(quoteOut),
+      toCell: quoteIn === undefined ? none() : some(quoteIn),
+    },
+  ];
+  return some({ legs, cause: 'trade', reason: `${m.name}: ${t.qty} @ ${price}` });
+}
+
+function assetTrade(
   m: MarketDecl,
   t: Trade,
   price: number,
