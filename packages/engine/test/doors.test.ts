@@ -28,6 +28,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { CENT_TICK } from '../src/registry/grid.js';
 import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTo } from './expected.js';
 import { notDealing } from './no-dealing.js';
@@ -42,6 +43,9 @@ const FIRM_1 = partyId('firm.1');
 const wheat: InstrumentKindProfile = {
   id: WHEAT,
   pricing: 'cleared',
+  // Law 8: a kind somebody can post a limit in says what its smallest increment is, and a commodity
+  // is quoted in cents the tonne — the same grid this world's own goods use (registry/grid.ts).
+  priceTick: CENT_TICK,
   carry: 'cost',
   liabilityOfIssuer: false,
   physical: true,

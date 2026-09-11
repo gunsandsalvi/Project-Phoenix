@@ -255,7 +255,12 @@ export function quiet(m: SystemModule): SystemModule {
     phases: [],
     participants: [],
     venueParticipants: [],
-    bankChoices: [],
+    // Banks Funding A1.d, E1: WHERE A KIND BANKS IS PART OF DECLARING IT, not part of acting. This
+    // used to be emptied with the rest and it took the ANSWER while leaving the QUESTION: the module
+    // still declares `firm` a corporate depositor, the seed still creates firms, those firms still
+    // hold their money at a bank — and assembly rightly refused a world that said who its depositors
+    // were and not where they banked (67 of the suite's reds, every one of them a small world built
+    // through this door). A quiet module is one that does not ACT; it is not one that declares less.
     families: [],
     marks: [],
   };

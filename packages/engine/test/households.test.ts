@@ -25,7 +25,7 @@ import {
   type World,
   TREASURY_US,
 } from '../src/index.js';
-import { rigSpec , rigDraw, withDependencies, mergeModules } from './rig.js';
+import { rigSpec, rigDraw, withDependencies, mergeModules, quiet } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -129,11 +129,12 @@ function world(...extra: readonly SystemModule[]): World {
  */
 function paidWorld(...extra: readonly SystemModule[]): World {
   const spec = rigSpec('households');
-  // Equity goes with the firms: a share is a claim on one, so a world with none has no shares —
-  // and the desks go with it, because they open holding the lines they make a market in. The money
-  // fund stays; the exchange-traded one does not, because its basket was those shares.
-  const kept = withDependencies(spec.modules, (m) =>
-m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
+  // QUIET, not absent. `seed.foundation` stands firms up and so REQUIRES the module that says what
+  // a firm IS (11.6), and a world without it is refused at assembly. What this test needs is a world
+  // where no firm ACTS — no firm bidding in a venue, no share for the desks to make a market in —
+  // which is what `quiet` gives: the kinds, the units and the parameters, and nothing that acts.
+  const kept = withDependencies(spec.modules, () => true)
+    .map((m) => (m.id === 'firms' || m.id === 'equity' || m.id === 'dealers' ? quiet(m) : m))
     .map((m) => (m.id === 'funds' ? funds(rigDraw('households').funds, []) : m));
   return assemble({ ...spec, modules: mergeModules(kept, extra) });
 }
@@ -142,7 +143,7 @@ m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
 function spreadWorld(...extra: readonly SystemModule[]): World {
   const spec = rigSpec('households');
   const modules = spec.modules
-    .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
+    .map((m) => (m.id === 'firms' || m.id === 'equity' || m.id === 'dealers' ? quiet(m) : m))
     .map((m) => (m.id === 'funds' ? funds(rigDraw('households').funds, []) : m))
     .map((m) =>
       m.id === 'seed.foundation' ||

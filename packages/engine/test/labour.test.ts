@@ -21,7 +21,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec , rigDraw, mergeModules } from './rig.js';
+import { rigSpec, rigDraw, mergeModules, quiet } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { minutes, perHour } from './units.js';
 import type { Qty } from '../src/core/tick.js';
@@ -69,10 +69,13 @@ function employer(post: (ctx: MechanismContext) => void): SystemModule {
 function world(post: (ctx: MechanismContext) => void = () => undefined): World {
   const spec = rigSpec('labour');
   const modules = spec.modules
-    // Equity goes with it: a share is a claim on a firm, so a world with no firms has none —
-    // and the desks go with the equity, because they open holding the lines they make a market in.
-    // The money fund stays; the exchange-traded one does not, because its basket was those shares.
-    .filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
+    // QUIET, not absent. `seed.foundation` stands firms up and therefore REQUIRES the module that
+    // says what a firm IS (worklist 11.6 moved the kind there), so a world without it is refused at
+    // assembly and rightly. What this test needs is not a world with no firms — it is a world where
+    // no OTHER firm bids in its venues, because nine real ones would be testing their decisions
+    // instead of the matching rule. That is exactly what `quiet` means: the kind, the units and the
+    // parameters, with nothing that acts. Equity goes the same way, and the desks with it.
+    .map((m) => (m.id === 'firms' || m.id === 'equity' || m.id === 'dealers' ? quiet(m) : m))
     .map((m) => (m.id === 'funds' ? funds(rigDraw('labour').funds, []) : m))
     .map((m) =>
     m.id === 'seed.foundation' ||

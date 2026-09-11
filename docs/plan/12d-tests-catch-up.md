@@ -46,9 +46,25 @@ the four:
 
 ## The state this item opens at
 
-`npm run vitest run` at the close of item 12: **283 passed, 90 failed of 373.** Lint, typecheck and
-`check:spec` are green, and the world is green in every built audit family at full scale for as long
-as it runs. None of the 90 is a world that will not assemble.
+**The figures below are item 12's and they are stale.** 11.5, 11.6, 12a, 12b, 12b.1, 12c and 12c.1
+each moved the world since, and the real baseline measured at the head of this item is **257 passed,
+168 failed of 425**. What it was at item 12's close, for the record: 283 passed, 90 failed of 373,
+and none of the 90 was a world that would not assemble — which is no longer true either.
+
+### The triage, by what the failure SAYS (written before a test was edited)
+
+Grouping by error class rather than by file is what made this tractable: **91 of the 168 were three
+mechanical causes**, none of them an assertion about a number.
+
+| n | class | cause | verdict |
+| --- | --- | --- | --- |
+| 67 | `InvalidRegistry [Banks Funding E1]` | `quiet()` in the rig emptied a module's `bankChoices` while keeping the party kind that declares a deposit class — it took the ANSWER and left the QUESTION | rig defect, migrate |
+| 12 | `InvalidRegistry [Part XIII]` | `labour` and `households` build a world with the `firms` module REMOVED, and 11.6 made `seed.foundation` require it | test asks for the wrong thing, migrate |
+| 12 | `InvalidRegistry [Law 8]` | test-local instrument kinds declared before 12b.1 required a price tick | migrate |
+| 100 | `AssertionError` | assertions about a world that moved, and the mechanism findings hiding among them | one group at a time, below |
+| 5 | `Missing` / `Forbidden` / `Error` | the contract violations | root-cause each |
+
+**After the three mechanical groups: 108 failed of 425.** Every registry refusal is gone.
 
 ---
 
@@ -361,7 +377,7 @@ matching rule asserts about the match, and the world it builds has to let the ma
 
 ## Steps
 
-- [ ] Every red above is triaged in writing: **moved world** (migrate) or **mechanism** (insert an
+- [x] Every red above is triaged in writing: **moved world** (migrate) or **mechanism** (insert an
       item). The triage is written down before a single test is edited, so the second class cannot
       be absorbed into the first while the file is being worked
 - [ ] The three contract violations are root-caused. Each becomes either a one-line fix in the test

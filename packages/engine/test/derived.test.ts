@@ -22,6 +22,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { CENT_TICK } from '../src/registry/grid.js';
 import { rigSpec, mergeModules, withDependencies } from './rig.js';
 import { unexpected } from './expected.js';
 
@@ -41,6 +42,9 @@ function claimKind(countsItsOwn = false): InstrumentKindProfile {
   return {
     id: CLAIM_KIND,
     pricing: 'derived',
+    // Law 8, Fund Shares E2: a claim on a book also TRADES, and what trades is posted on a grid —
+    // in cents, like any share. What the book comes to per claim is arithmetic and is not on one.
+    priceTick: CENT_TICK,
     carry: 'cost',
     liabilityOfIssuer: true,
     fairValueThroughIncome: true,
