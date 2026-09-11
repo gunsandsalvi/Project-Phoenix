@@ -22,7 +22,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, mergeModules, withDependencies } from './rig.js';
 import { unexpected } from './expected.js';
 
 const BOOK = partyId('firm.1');
@@ -119,10 +119,8 @@ function holdsItsOwnClaim(): SystemModule {
 
 function world(...extra: readonly SystemModule[]): World {
   const spec = rigSpec('derived');
-  const kernel = spec.modules.filter((m) =>
-    ['sovereign-instruments', 'seed.foundation', 'banks', 'money-market'].includes(m.id),
-  );
-  return assemble({ ...spec, modules: [...kernel, ...extra] });
+  const kernel = withDependencies(spec.modules, (m) => ['sovereign-instruments', 'seed.foundation', 'banks', 'money-market'].includes(m.id));
+  return assemble({ ...spec, modules: mergeModules(kernel, extra) });
 }
 
 describe('a value that is derived (XI-6, Fund Shares B1)', () => {

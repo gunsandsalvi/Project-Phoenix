@@ -25,7 +25,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigWorld, rigSpec } from './rig.js';
+import { rigWorld, rigSpec, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 
 describe('what a piece is (Law 8)', () => {
@@ -138,9 +138,9 @@ function payer(amount: number): SystemModule {
 describe('the wire refuses what does not exist (Law 8, Money C1)', () => {
   it('throws on half a cent, and settles a whole one', () => {
     const spec = rigSpec('offgrid');
-    const bad = assemble({ ...spec, modules: [...spec.modules, payer(0.5)] });
+    const bad = assemble({ ...spec, modules: mergeModules(spec.modules, [payer(0.5)]) });
     expect(() => bad.step()).toThrow(/not a whole number of pieces/);
-    const good = assemble({ ...spec, modules: [...spec.modules, payer(1)] });
+    const good = assemble({ ...spec, modules: mergeModules(spec.modules, [payer(1)]) });
     expect(() => good.step()).not.toThrow();
   });
 });

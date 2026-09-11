@@ -35,7 +35,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { listedIn, rigFor, rigSpec, rigWorld } from './rig.js';
+import { listedIn, rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 
@@ -197,7 +197,7 @@ function hungryFor(subUnit: string): SystemModule {
 
 function worldWith(seed: string, extra: readonly SystemModule[]): World {
   const spec = rigSpec(seed, RIG.banks, RIG.firms);
-  return assemble({ ...spec, modules: [...spec.modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(spec.modules, extra) });
 }
 
 /**
@@ -219,7 +219,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
         }
       : m,
   );
-  return assemble({ ...spec, modules: [...modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
 describe('what a share is (Equity A)', () => {

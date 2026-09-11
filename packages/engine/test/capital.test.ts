@@ -43,7 +43,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { firmIn, rigDraw, rigSpec } from './rig.js';
+import { firmIn, rigDraw, rigSpec, mergeModules } from './rig.js';
 import { sameQuantity, unexpected } from './expected.js';
 import { machinesPerTonne, perTonne, phx, tonnes } from './units.js';
 import type { Qty } from '../src/core/tick.js';
@@ -119,7 +119,7 @@ function tightWorld(seed: string, over: Readonly<Record<string, number>> = {}): 
       return value === undefined ? p : { ...p, value };
     }),
   }));
-  return assemble({ ...spec, modules: [...modules, hungryFor(GRAIN, perTonne(600), tonnes(500))] });
+  return assemble({ ...spec, modules: mergeModules(modules, [hungryFor(GRAIN, perTonne(600), tonnes(500))]) });
 }
 
 const TIGHT = { 'goods.grain.plant.machinery': machinesPerTonne(4) } as const;

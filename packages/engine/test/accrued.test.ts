@@ -22,7 +22,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTheSame, paidTo } from './expected.js';
 import { par } from './units.js';
 import { notDealing } from './no-dealing.js';
@@ -69,15 +69,14 @@ function oneTrade(at: number): SystemModule {
  */
 function world(at: number): World {
   const spec = rigSpec('seed-accrued');
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
+  const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, oneTrade(at)] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, [oneTrade(at)]) });
 }
 
 /** The settled trades in one line this period: what this test is about, and nothing else. */

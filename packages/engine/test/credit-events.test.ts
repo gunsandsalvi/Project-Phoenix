@@ -32,7 +32,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
 import { notDealing } from './no-dealing.js';
@@ -212,16 +212,15 @@ function cellCannotPay(): SystemModule {
 
 function world(...extra: SystemModule[]): World {
   const spec = rigSpec('credit-events');
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
+  const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market' ||
       m.id === 'credit-events',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, extra) });
 }
 
 describe('a party that could not pay (Money E1, Firm D4, D5)', () => {

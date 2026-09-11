@@ -26,7 +26,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigFor, rigSpec, rigWorld } from './rig.js';
+import { rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { scaleQty } from '../src/core/tick.js';
 
@@ -84,7 +84,7 @@ function everybodyRedeems(at: number): SystemModule {
 
 function runWorld(seed: string, at: number): World {
   const spec = rigSpec(seed, RIG.banks, RIG.firms);
-  return assemble({ ...spec, modules: [...spec.modules, everybodyRedeems(at)] });
+  return assemble({ ...spec, modules: mergeModules(spec.modules, [everybodyRedeems(at)]) });
 }
 
 /** The same world with a manager that charges more than the paper earns (B3, D4). */

@@ -131,10 +131,16 @@ export function spotFx(rows: readonly BankDecl[]): SystemModule {
         // as well would be the same balance offered twice by the same party — and at crossing
         // prices, because the desk's own bid is where its unwanted money goes (Clearing A2). What a
         // bank does with a money it has too much of is quote it cheaper, which is D4.
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => [
-          ...dealerOrders(view, m, byName.get(String(view.self.id))),
-          ...arbitrageOrders(view, m),
-        ],
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
+          // C2.a, Clearing A2, Law 4: A BANK SPEAKS ONCE IN A BOOK. When its desk has decided on a
+          // round trip, the leg in this book IS what it is doing here: the arbitrage carries a size
+          // and no level, so quoting around it as well would put one party on both sides of one
+          // session at crossing prices — which is a party trading with itself and a print that
+          // moved nothing between two balance sheets.
+          const legs = arbitrageOrders(view, m);
+          if (legs.length > 0) return legs;
+          return dealerOrders(view, m, byName.get(String(view.self.id)));
+        },
       },
       // B1, B2: and everybody else who owes a money it has not got or holds one it does not want.
       // The reason is the same reason whoever has it, so it is one function asked of every kind

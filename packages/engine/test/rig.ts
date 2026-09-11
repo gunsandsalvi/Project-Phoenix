@@ -32,6 +32,7 @@ import {
   type FirmDecl,
   type FoundationDraw,
   type PartyId,
+  type SystemModule,
   type World,
 } from '../src/index.js';
 
@@ -198,4 +199,49 @@ export function dealerIn(draw: FoundationDraw, kind: string, nth = 0): PartyId {
     throw new Error(`this world has ${dealersIn(draw, kind).length} dealers in ${kind}, not ${nth + 1}`);
   }
   return partyId(b.bank);
+}
+
+/**
+ * Part XIII: THE NAMED MODULES AND EVERYTHING THEY REQUIRE, computed rather than listed.
+ *
+ * A world is not a list of modules somebody picked — it is a closure, because a module that names a
+ * dependency means it. The seed derives this world's scale from the hours its people offer against
+ * the hours its chain needs (Seed A3), so `goods`, `households` and `labour` come with it whether a
+ * test asked for them or not. Writing that list out by hand in each test file would be a second
+ * dependency graph, and it would go stale the first time a module gained a requirement (Law 4).
+ *
+ * None of what comes along has a phase before the kernel's own, so a test of the kernel still
+ * measures the kernel.
+ */
+export function withDependencies(
+  all: readonly SystemModule[],
+  wanted: (m: SystemModule) => boolean,
+): SystemModule[] {
+  const byId = new Map(all.map((m) => [m.id, m]));
+  const keep = new Set<string>();
+  const take = (m: SystemModule): void => {
+    if (keep.has(m.id)) return;
+    keep.add(m.id);
+    for (const r of m.requires) {
+      const dep = byId.get(r);
+      if (dep !== undefined) take(dep);
+    }
+  };
+  for (const m of all) if (wanted(m)) take(m);
+  return all.filter((m) => keep.has(m.id));
+}
+
+/**
+ * Law 4: ONE MODULE PER ID. A test that hands in its own copy of a module — a `goods` with its own
+ * recipes, a `banks` that will not deal — means that one INSTEAD of the world's, and the closure
+ * above will have pulled the world's in behind it. Merging here rather than concatenating is what
+ * says which of the two the world gets, and it is why assembling stopped complaining that a unit
+ * was declared twice.
+ */
+export function mergeModules(
+  base: readonly SystemModule[],
+  extra: readonly SystemModule[],
+): SystemModule[] {
+  const replaced = new Set(extra.map((m) => m.id));
+  return [...base.filter((m) => !replaced.has(m.id)), ...extra];
 }

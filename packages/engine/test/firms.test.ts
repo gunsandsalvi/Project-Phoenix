@@ -25,7 +25,7 @@ import {
   type World,
   labourParam,
 } from '../src/index.js';
-import { firmsIn, rigDraw, rigSpec } from './rig.js';
+import { firmsIn, rigDraw, rigSpec, mergeModules } from './rig.js';
 
 /** Seed B1.a: this world's firms are DRAWN. Which party is a mill is a question asked of the draw. */
 const DREW = rigDraw('firms');
@@ -89,7 +89,7 @@ function buyer(subUnit: string, price: number, qty: Qty): SystemModule {
 
 function world(...extra: readonly SystemModule[]): World {
   const spec = rigSpec('firms');
-  return assemble({ ...spec, modules: [...spec.modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(spec.modules, extra) });
 }
 
 /** The world the seed opens, with somebody buying grain: the farm's own market has two sides. */

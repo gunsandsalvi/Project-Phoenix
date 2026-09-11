@@ -34,7 +34,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { RIG_FIRMS, rigWorld, rigSpec } from './rig.js';
+import { RIG_FIRMS, rigWorld, rigSpec, withDependencies, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { phx } from './units.js';
@@ -95,34 +95,7 @@ function phase(fn: (ctx: MechanismContext) => void): SystemModule {
 
 function withModules(seed: string, ...extra: SystemModule[]): World {
   const spec = rigSpec(seed);
-  return assemble({ ...spec, modules: [...spec.modules, ...extra] });
-}
-
-/**
- * Part XIII: THE NAMED MODULES AND WHAT THEY REQUIRE, transitively.
- *
- * A world is not a list of modules somebody picked — it is a closure, because a module that names a
- * dependency means it. The seed derives this world's scale from the hours its people offer against
- * the hours its chain needs (Seed A3), so the modules that own those facts come with it whether a
- * test wanted them or not, and enumerating them here by hand would be a second dependency graph
- * that goes stale the first time one of them gains a requirement (Law 4).
- */
-function withDependencies(
-  all: readonly SystemModule[],
-  wanted: (m: SystemModule) => boolean,
-): SystemModule[] {
-  const byId = new Map(all.map((m) => [m.id, m]));
-  const keep = new Set<string>();
-  const take = (m: SystemModule): void => {
-    if (keep.has(m.id)) return;
-    keep.add(m.id);
-    for (const r of m.requires) {
-      const dep = byId.get(r);
-      if (dep !== undefined) take(dep);
-    }
-  };
-  for (const m of all) if (wanted(m)) take(m);
-  return all.filter((m) => keep.has(m.id));
+  return assemble({ ...spec, modules: mergeModules(spec.modules, extra) });
 }
 
 /** The bare world with extra modules: the kernel's own behaviour, driven by the test alone. */
@@ -147,7 +120,7 @@ function noLending(seed: string, ...extra: SystemModule[]): World {
         p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: 0 } : p,
       ),
     }));
-  return assemble({ ...spec, modules: [...modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
 
@@ -169,7 +142,7 @@ function bare(seed: string, ...extra: SystemModule[]): World {
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, extra) });
 }
 
 describe('assembly (Law 15, Part XIII)', () => {

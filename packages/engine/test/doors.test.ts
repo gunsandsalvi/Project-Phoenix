@@ -29,7 +29,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTo } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { asQty } from '../src/core/tick.js';
@@ -121,15 +121,14 @@ function trader(price: number): SystemModule {
 
 function world(...extra: SystemModule[]): World {
   const spec = rigSpec('doors');
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
+  const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, extra) });
 }
 
 /** Bring the wheat instrument into the world, then make and use up units of it. */

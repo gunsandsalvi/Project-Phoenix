@@ -35,7 +35,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigDraw, rigSpec } from './rig.js';
+import { rigDraw, rigSpec, mergeModules, withDependencies } from './rig.js';
 import { unexpected } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 
@@ -226,17 +226,14 @@ function paysAStranger(): SystemModule {
 /** The kernel, the two modules a death needs — what fails, and where it goes — and the two lenders. */
 function failingWorld(...extra: readonly SystemModule[]): World {
   const spec = rigSpec('estate');
-  const kernel = spec.modules
-    .filter((m) =>
-      [
+  const kernel = withDependencies(spec.modules, (m) => [
         'sovereign-instruments',
         'seed.foundation',
         'banks',
         'money-market',
         'credit-events',
         'estate',
-      ].includes(m.id),
-    )
+      ].includes(m.id))
     // No bank in this world will lend a penny, so a party that cannot pay simply does not pay: the
     // refusal is the answer B3.c wants and the failure is a real state (Money E1).
     .map((m) => ({
@@ -245,7 +242,7 @@ function failingWorld(...extra: readonly SystemModule[]): World {
         p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: 0 } : p,
       ),
     }));
-  return assemble({ ...spec, modules: [...kernel, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernel, extra) });
 }
 
 /**
@@ -296,7 +293,7 @@ function hungryBuyer(): SystemModule {
 /** The world the seed opens, with somebody hungry enough in it to kill a mill. */
 function worldWithADeathInIt(seed = 'estate'): World {
   const spec = rigSpec(seed);
-  return assemble({ ...spec, modules: [...spec.modules, hungryBuyer()] });
+  return assemble({ ...spec, modules: mergeModules(spec.modules, [hungryBuyer()]) });
 }
 
 describe('a party that fails (XI-3, Firm D4, Firm Birth D1)', () => {

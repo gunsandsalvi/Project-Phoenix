@@ -24,7 +24,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigDraw, rigSpec } from './rig.js';
+import { rigDraw, rigSpec, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { asQty, type Qty } from '../src/core/tick.js';
 
@@ -47,7 +47,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
       ? { ...m, params: m.params.map((p) => (p.id === 'households.buffer.periods' ? { ...p, value: 0 } : p)) }
       : m,
   );
-  return assemble({ ...spec, modules: [...modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
 /** Somebody who brings a basket in or gives one back, at a period the test chooses (G1.a). */

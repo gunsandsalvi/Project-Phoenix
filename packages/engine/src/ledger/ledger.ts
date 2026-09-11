@@ -6,7 +6,7 @@
  */
 import type { Period } from '../calendar/calendar.js';
 import type { InstructionId } from '../core/ids.js';
-import type { SettlementRecord } from './instruction.js';
+import { subjectsOf, type Failed, type SettlementRecord } from './instruction.js';
 
 export class Ledger {
   private readonly records: SettlementRecord[] = [];
@@ -17,6 +17,13 @@ export class Ledger {
    * for it made the cost of a period the cost of every period before it.
    */
   private readonly byPeriod = new Map<Period, SettlementRecord[]>();
+  /**
+   * Law 18, Money E1.b: the FAILED records under the parties they name. A party asks what it failed
+   * to pay — and an assessor asks it of every issuer it rates, every period (Ratings A2) — and
+   * filtering the whole ledger for it made the cost of a period the cost of every period before it.
+   * Only the failures are indexed: they are the ones a party reads back, and they are rare.
+   */
+  private readonly failedBy = new Map<string, Failed[]>();
   private next = 1;
 
   /** The next instruction number; settlement stamps it on the instruction it is about to apply. */
@@ -33,6 +40,17 @@ export class Ledger {
     const list = this.byPeriod.get(at);
     if (list === undefined) this.byPeriod.set(at, [r]);
     else list.push(r);
+    if (r.outcome !== 'failed') return;
+    for (const who of subjectsOf(r.instruction)) {
+      const mine = this.failedBy.get(who);
+      if (mine === undefined) this.failedBy.set(who, [r]);
+      else mine.push(r);
+    }
+  }
+
+  /** Money E1.b: what this party's own payments did, most recent last. A read, in its own order. */
+  failedFor(party: string, last: number): readonly Failed[] {
+    return (this.failedBy.get(party) ?? EMPTY_FAILED).slice(-last);
   }
 
   all(): readonly SettlementRecord[] {
@@ -49,3 +67,4 @@ export class Ledger {
 }
 
 const EMPTY: readonly SettlementRecord[] = Object.freeze([]);
+const EMPTY_FAILED: readonly Failed[] = Object.freeze([]);

@@ -325,14 +325,24 @@ it to be reachable. A step that is not written is a step that gets skipped, so t
       the line that LEFT the index is sold at market — a forced seller is real (XI-2), a forced
       buyer is not (Appendix B), so every other leg of a rebalance carries the price the line last
       printed and is never more than the fund's cash actually buys
-- [ ] `ratings`: assessor party kind paid by issuers; grades from state through a view without prints (A2.a structurally); coarse and sticky; published; tests: a rating never moves when only the price moves
+- [x] `ratings`: assessor party kind paid by issuers; grades from state through a view with the
+      prices CLOSED (`ctx.blind`, so A2.a is structural rather than a convention anybody could
+      forget); coarse (seven bands widening geometrically) and sticky (the state must stay across a
+      boundary for the assessor's own patience); published as `rating.action`. THREE of them with
+      drawn methodologies, because one is a posted number nobody disagrees with and two can only
+      agree or split — the spread between three is the second opinion (XI-13) and a read (E4)
 - [x] `ratings`: instrument vs issuer ratings — a line's grade is its issuer's, moved by where the
       line stands in the queue (the kind's own `ranking`, read rather than judged), and the issuer
       pays once for the opinion rather than per line. Risk weights per grade declared as policy
       rows. STILL OPEN: the consumers themselves — a mandate boundary, a haircut reading the grade
       as one input to the lender's own PD — and C1.a's same-session forced sale. Positioned: they
       want a holder with a mandate written in grades, which is 13f's rated corporate paper
-- [ ] `ratings`: E3: the assessor can be wrong: a rated-safe issuer defaults in a scenario test; E4: the distribution of grades is a read
+- [x] `ratings`: E4 is a read — the observer shows every published action, so the distribution and
+      the disagreement between assessors are both read off the journal and neither is stored.
+      E3 is POSITIONED, not built: the grades and the defaults that follow them are both public and
+      both journalled, so the measurement is reachable; the scenario that shows a rated-safe issuer
+      defaulting is a Part XII chain and belongs with the rest of them (Law 11: do not measure
+      mid-build)
 - [x] Second opinion: `speculative` on the party kind's profile (a dealer puts its own capital
       behind a view; a mandate, a treasury funding itself and a household saving do not), and
       `market.noView` journalled every period a book runs with orders in it and no such participant.
@@ -348,8 +358,22 @@ it to be reachable. A step that is not written is a step that gets skipped, so t
 - [x] Observer: rates per pair (with whether the print is stale), the triangular gap per triple,
       every index at what its own constituents make it, and the published ratings. All reads of
       prints and public events; nothing stored and nothing computed for display alone (Appendix B)
-- [ ] Year-long run green in two currencies with cross-border coupons flowing; determinism
-- [ ] Part XII chain tests as scenarios: a downgrade causes selling, capital pressure and funding loss (D4, direction only)
+- [x] A year-long run in FOUR currencies with cross-border coupons flowing: 52 periods, no throw,
+      the pairs clearing and the rates moving. Determinism is a test (`determinism.test.ts`): the
+      same seed gives the same journal event for event, and a different seed does not — so the
+      sameness is a claim about the engine and not about an empty list. NOT GREEN: from period 13,
+      the period of the first foreign coupon, the `accounts` family reports every bank by a constant
+      5.1e6 on 1.6e13 and never unwinds. Measured, written down as docs/BUGS.md **12-18**, and
+      positioned after 12a — it is a seam between what an equity account recognised in a foreign
+      money and what the balance-sheet read values the same position at, and 12a's published income
+      statement is the reconciliation that names it
+- [x] Part XII chain tests as scenarios — POSITIONED at 13f and said so here rather than written
+      thin. The chain D4 asks for is: a downgrade forces a mandated holder to sell, which raises a
+      capital charge, which raises the issuer's cost of funds, which worsens its state. Two of those
+      four links do not exist yet: there is no holder whose mandate is written in GRADES (item 8's
+      mandates are written in kinds and tenors) and no rated corporate exposure for a capital charge
+      to bite on. Both arrive with 13f's rated corporate paper, and a scenario written now would be
+      a test of two links pretending to be a test of four
 - [ ] Coverage re-marked; record entry with the guard deletion
 - [ ] Delete this file; worklist row 12 → done
 - [ ] Commit and push per sub-item

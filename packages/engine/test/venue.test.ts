@@ -27,7 +27,7 @@ import {
   type VenueDecl,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { notDealing } from './no-dealing.js';
 import { asQty } from '../src/core/tick.js';
 
@@ -134,15 +134,14 @@ function anotherVenue(): SystemModule {
 
 function world(...extra: SystemModule[]): World {
   const spec = rigSpec('venue');
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
+  const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, extra) });
 }
 
 describe('a venue and the schedules posted into it (Clearing B2, Observer A4)', () => {

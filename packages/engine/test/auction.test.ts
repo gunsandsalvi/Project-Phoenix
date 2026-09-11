@@ -13,7 +13,7 @@ import {
   moneyInstrumentId,
   type World,
 } from '../src/index.js';
-import { rigWorld, rigSpec } from './rig.js';
+import { rigWorld, rigSpec, withDependencies } from './rig.js';
 import { negQty } from '../src/core/tick.js';
 
 interface AuctionRow {
@@ -72,7 +72,8 @@ describe('when the dealers step back (C3.a, Treasury D5.a)', () => {
     // nothing has traded and nothing can, does not reach what the issuer will take. With no central
     // bank buying in the market there is nothing to put money back into anybody's hands either.
     const spec = rigSpec('auc-c');
-    const withoutCentralBank = spec.modules.filter((m) => m.id !== 'central-bank-omo');
+    const withoutCentralBank = withDependencies(spec.modules, (m) =>
+m.id !== 'central-bank-omo');
     const stepped = withoutCentralBank.map((m) =>
       m.id === 'banks'
         ? {

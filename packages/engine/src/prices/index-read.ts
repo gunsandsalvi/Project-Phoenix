@@ -95,6 +95,36 @@ export interface IndexRead {
 export interface IndexDeps {
   price(instrument: InstrumentId, at: Period): Option<number>;
   readonly world: IndexWorld;
+  /**
+   * Law 18: WHERE THIS READER GOT TO LAST TIME. A level is chained from the base, so asking for it
+   * at period 40 walks forty baskets and forty pairs of prints — and a basket that weighs what was
+   * bought reads a period of the ledger to answer. Nothing about that changes here: the same steps
+   * are taken over the same prints and the arithmetic is the same arithmetic. What the cache holds
+   * is a level for a period that is OVER, which no later print can move, so the walk starts from
+   * the last one instead of from the beginning.
+   *
+   * It is the READER's, not the index's (E2: nothing stores a level). Two readers with two caches
+   * each recompute from the prints and never from each other, which is what lets the audit check
+   * the engine's read against one of its own (E3).
+   */
+  readonly cache?: IndexCache;
+}
+
+/** Law 18: a reader's own memory of the levels it has already walked. */
+export interface IndexCache {
+  get(id: string, at: Period): number | undefined;
+  set(id: string, at: Period, level: number): void;
+}
+
+/** The cache every reader makes for itself: a level per (index, period), and nothing else. */
+export function indexCache(): IndexCache {
+  const held = new Map<string, number>();
+  return {
+    get: (id, at) => held.get(`${id}|${at}`),
+    set: (id, at, level) => {
+      held.set(`${id}|${at}`, level);
+    },
+  };
 }
 
 /**
@@ -114,8 +144,18 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
   // in a world with no corporate paper in it yet — reports Missing, never its base level: a base
   // carried over an empty basket is a level nobody's prints produced (A2, D5.a).
   if (decl.constituents(at, d.world).length === 0) return none<IndexRead>();
+  // Law 18: start from the last period this reader has already walked. Every step it skips is a
+  // step it took before, over prints that cannot have changed since.
   let level = decl.base;
-  for (let t = decl.from + 1; t <= at; t += 1) {
+  let start: Period = decl.from;
+  for (let t = at - 1; t > decl.from; t -= 1) {
+    const held = d.cache?.get(decl.id, t as Period);
+    if (held === undefined) continue;
+    level = held;
+    start = t as Period;
+    break;
+  }
+  for (let t = start + 1; t <= at; t += 1) {
     const now = decl.constituents(t as Period, d.world);
     const terms: number[] = [];
     const wasTerms: number[] = [];
@@ -131,6 +171,8 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
     // it carries because nothing moved rather than because somebody held it there (Law 6).
     if (then === 0) continue;
     level = mul(level, div(sum(terms).value, then, 'what the basket did'), 'chained');
+    // Only a period that is OVER is remembered: this period's prints are still being made.
+    if (t < at) d.cache?.set(decl.id, t as Period, level);
   }
   const constituents = decl.constituents(at, d.world);
   const from: { instrument: InstrumentId; price: number; weight: number }[] = [];

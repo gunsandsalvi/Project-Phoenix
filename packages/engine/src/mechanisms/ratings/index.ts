@@ -114,7 +114,12 @@ function rateTheLines(
   measured: Measure,
 ): void {
   for (const i of ctx.instruments.issuedBy(issuer)) {
-    if (!i.status.live) continue;
+    // A1, B2.a: THE PAPER ANYBODY CAN BUY. An assessor sells an opinion to whoever might hold a
+    // line, so what it has an opinion about is a line with a market — a bilateral loan has one
+    // holder, and that holder did its own credit work on it (A5.a: a rating is never the only
+    // assessment). Rating every private claim between two banks would be an assessor with an
+    // opinion about a contract neither party asked it about.
+    if (!i.status.live || !i.market.some) continue;
     const rank = ctx.registry.instrumentKind(i.kind).ranking(i);
     const grade = forInstrument(measured.grade, rank.seniority, rank.secured.length > 0);
     publishIfMoved(ctx, d, forMe, String(i.id), { ...measured, grade }, [d.assessor, String(i.id)], {

@@ -10,7 +10,7 @@
  */
 import { div, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { readIndex, type IndexDeps } from '../../prices/index-read.js';
+import { indexCache, readIndex, type IndexCache, type IndexDeps } from '../../prices/index-read.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
@@ -24,6 +24,10 @@ import type { AuditView } from '../view.js';
  * one the two agree exactly, and a FORBID that holds is worth as much as a mechanism that works.
  */
 export function indexIsItsConstituents(): Family {
+  // Law 18, E3: the family's OWN memory of the levels it has walked, never the engine's. Two
+  // readers, two caches, each recomputing from the prints — which is what makes the second reading
+  // a check on the first rather than a copy of it.
+  const cache = indexCache();
   return {
     name: 'crossMarket',
     contributor: 'indices',
@@ -31,7 +35,7 @@ export function indexIsItsConstituents(): Family {
     built: true,
     check(view: AuditView): Violation[] {
       const out: Violation[] = [];
-      const deps = depsOf(view);
+      const deps = depsOf(view, cache);
       for (const decl of view.indexList) {
         const said = view.index(decl.id);
         const own = readIndex(decl, view.period, deps);
@@ -73,8 +77,9 @@ export function indexIsItsConstituents(): Family {
  * reads the kernel gives the rule, taken independently — so the two paths share the prints and
  * nothing else.
  */
-function depsOf(view: AuditView): IndexDeps {
+function depsOf(view: AuditView, cache: IndexCache): IndexDeps {
   return {
+    cache,
     world: {
       calendar: view.calendar,
       registry: view.registry,

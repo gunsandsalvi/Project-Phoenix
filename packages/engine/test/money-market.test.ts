@@ -27,7 +27,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigWorld, rigSpec } from './rig.js';
+import { rigWorld, rigSpec, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -377,7 +377,7 @@ function withoutCollateral(
     return m;
   });
   // The pledge runs FIRST, before anything else in the period can leave the bank short.
-  return assemble({ ...spec, modules: [...modules, everythingPledged(partyId(encumbered)), ...extra] });
+  return assemble({ ...spec, modules: mergeModules(modules, [everythingPledged(partyId(encumbered)), ...extra]) });
 }
 
 /**

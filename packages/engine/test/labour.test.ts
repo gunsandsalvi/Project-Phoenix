@@ -21,7 +21,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec , rigDraw } from './rig.js';
+import { rigSpec , rigDraw, mergeModules } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { minutes, perHour } from './units.js';
 import type { Qty } from '../src/core/tick.js';
@@ -85,7 +85,7 @@ function world(post: (ctx: MechanismContext) => void = () => undefined): World {
         }
       : m,
   );
-  return assemble({ ...spec, modules: [...modules, employer(post)] });
+  return assemble({ ...spec, modules: mergeModules(modules, [employer(post)]) });
 }
 
 function allRows(w: World): EmploymentRow[] {

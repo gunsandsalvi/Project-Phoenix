@@ -23,7 +23,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { notDealing } from './no-dealing.js';
 
 const SINK = partyId('firm.1');
@@ -70,15 +70,14 @@ function drain(): SystemModule {
 /** The kernel and the opening state: no treasury programme to refill what the test took. */
 function world(...extra: SystemModule[]): World {
   const spec = rigSpec('default-events');
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
+  const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, extra) });
 }
 
 describe('what an instrument says a default is (Bond N12, N13.a)', () => {

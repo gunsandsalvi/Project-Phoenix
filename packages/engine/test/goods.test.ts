@@ -30,7 +30,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { notDealing } from './no-dealing.js';
 import { asQty } from '../src/core/tick.js';
 import { negQty } from '../src/core/tick.js';
@@ -81,15 +81,14 @@ const BREAD_ID = goodId('bread', REGION);
 /** The kernel, the foundation's parties, and one goods registry under test. */
 function world(rows: readonly GoodDecl[], ...extra: SystemModule[]): World {
   const spec = rigSpec('goods');
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
+  const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, goods(rows), ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, [goods(rows), ...extra]) });
 }
 
 /** A module that runs one function each period: whatever the test is about. */
@@ -165,9 +164,8 @@ describe('what a good is (Goods A)', () => {
 
   it('refuses a recipe denominated in money: that is a substitution nobody declared (A2.b)', () => {
     const spec = rigSpec('goods');
-    const kernelOnly = spec.modules.filter(
-      (m) =>
-        m.id === 'sovereign-instruments' ||
+    const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
         m.id === 'banks' ||
@@ -180,7 +178,7 @@ describe('what a good is (Goods A)', () => {
         p.id === recipeParam('gravel', 'stone') ? { ...p, unit: `USD per tonne of gravel` } : p,
       ),
     };
-    expect(() => assemble({ ...spec, modules: [...kernelOnly, doctored] })).toThrow(/A2\.b/);
+    expect(() => assemble({ ...spec, modules: mergeModules(kernelOnly, [doctored]) })).toThrow(/A2\.b/);
   });
 
   it('makes a thing out of the things it is made from, and nothing out of nothing (Commodities Spot F1)', () => {
@@ -291,9 +289,8 @@ describe('inventory (Goods E)', () => {
 describe('what perishes (Goods E4)', () => {
   const bread = (): World => {
     const spec = rigSpec('goods.perish');
-    const modules = spec.modules.filter(
-      (m) =>
-        m.id === 'sovereign-instruments' ||
+    const modules = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
         m.id === 'banks' ||
@@ -425,9 +422,8 @@ describe('the market (Goods C)', () => {
 describe('the units identity (Part XII)', () => {
   it('is a contribution of its own and holds across making, selling and perishing', () => {
     const spec = rigSpec('goods.units');
-    const modules = spec.modules.filter(
-      (m) =>
-        m.id === 'sovereign-instruments' ||
+    const modules = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
         m.id === 'banks' ||

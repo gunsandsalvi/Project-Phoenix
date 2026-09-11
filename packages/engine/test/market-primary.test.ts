@@ -28,7 +28,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTheSame } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { asQty, type Qty } from '../src/core/tick.js';
@@ -119,15 +119,14 @@ function auctioneer(
 /** The kernel and the opening state: the auction under test is the only one in the world. */
 function world(...extra: SystemModule[]): World {
   const spec = rigSpec('seed-auction');
-  const kernelOnly = spec.modules.filter(
-    (m) =>
-      m.id === 'sovereign-instruments' ||
+  const kernelOnly = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
       m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
       m.id === 'banks' ||
       m.id === 'money-market',
   ).map(notDealing);
-  return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kernelOnly, extra) });
 }
 
 describe('the primary market (Sovereign C)', () => {

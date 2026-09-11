@@ -24,7 +24,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec } from './rig.js';
+import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTo, unexpected } from './expected.js';
 import { phx } from './units.js';
 import { notDealing } from './no-dealing.js';
@@ -151,10 +151,8 @@ function overspends(amount: number, at = 2): SystemModule {
 
 function world(extra: readonly SystemModule[] = [], limits?: number): World {
   const spec = rigSpec('loans');
-  const modules = spec.modules
-    .filter(
-      (m) =>
-        m.id === 'sovereign-instruments' ||
+  const modules = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' ||
         m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
         m.id === 'credit-events' ||
@@ -171,7 +169,7 @@ function world(extra: readonly SystemModule[] = [], limits?: number): World {
             ),
           },
     ).map(notDealing);
-  return assemble({ ...spec, modules: [...modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
 function loans(w: World): { id: string; issued: number; lender: string; rate: number }[] {
@@ -189,8 +187,8 @@ function loans(w: World): { id: string; issued: number; lender: string; rate: nu
 describe('who answers for an overdraft (Money B3.a)', () => {
   it('refuses to seal a world whose bank says it is a credit decision and nobody takes it', () => {
     const spec = rigSpec('no-decider');
-    const modules = spec.modules.filter(
-      (m) => m.id === 'sovereign-instruments' || m.id === 'seed.foundation' ||
+    const modules = withDependencies(spec.modules, (m) =>
+m.id === 'sovereign-instruments' || m.id === 'seed.foundation' ||
       m.id === 'seed.funding',
     );
     // A bank kind that says an overdraft at it is a credit decision, in a world with no lender to

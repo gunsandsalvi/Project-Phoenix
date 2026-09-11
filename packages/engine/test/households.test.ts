@@ -24,7 +24,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigSpec , rigDraw } from './rig.js';
+import { rigSpec , rigDraw, withDependencies, mergeModules } from './rig.js';
 import { paidTheSame, unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -116,7 +116,7 @@ function payer(perMember: number, spread: number): SystemModule {
 
 function world(...extra: readonly SystemModule[]): World {
   const spec = rigSpec('households');
-  return assemble({ ...spec, modules: [...spec.modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(spec.modules, extra) });
 }
 
 /**
@@ -131,9 +131,10 @@ function paidWorld(...extra: readonly SystemModule[]): World {
   // Equity goes with the firms: a share is a claim on one, so a world with none has no shares —
   // and the desks go with it, because they open holding the lines they make a market in. The money
   // fund stays; the exchange-traded one does not, because its basket was those shares.
-  const kept = spec.modules.filter((m) => m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
+  const kept = withDependencies(spec.modules, (m) =>
+m.id !== 'firms' && m.id !== 'equity' && m.id !== 'dealers')
     .map((m) => (m.id === 'funds' ? funds(rigDraw('households').funds, []) : m));
-  return assemble({ ...spec, modules: [...kept, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(kept, extra) });
 }
 
 /** The same world at a finer grain, for the one measurement that counts cells rather than sums them. */
@@ -153,7 +154,7 @@ function spreadWorld(...extra: readonly SystemModule[]): World {
           }
         : m,
     );
-  return assemble({ ...spec, modules: [...modules, ...extra] });
+  return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
 function plans(w: World, at: number): Event[] {

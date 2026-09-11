@@ -50,7 +50,6 @@ import {
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import { Journal } from '../journal/journal.js';
-import { subjectsOf, type Failed } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
 import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf } from '../parties/party.js';
@@ -82,7 +81,7 @@ import type {
 } from './module.js';
 import { revalue } from './revalue.js';
 import type { Qty } from '../core/tick.js';
-import { readIndex, type IndexDecl, type IndexRead } from '../prices/index-read.js';
+import { indexCache, readIndex, type IndexDecl, type IndexRead } from '../prices/index-read.js';
 
 
 
@@ -163,6 +162,8 @@ export class World {
   private viewsAt = '';
   /** Indices A1, D5: the rules this world's modules declared. One list, read by `index`. */
   private readonly indexList = new Map<string, IndexDecl>();
+  /** Law 18: this reader's own memory of the levels it has walked (prices/index-read.ts). */
+  private readonly indexLevels = indexCache();
   /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
   private readonly resolvers = new Map<PartyKindId, string>();
   private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
@@ -771,6 +772,7 @@ export class World {
   }
 
   private buildParticipantView(party: PartyId): ParticipantView {
+    const owed = new Map<CurrencyCode, number>();
     const view = {
       period: this.currentPeriod,
       cycle: this.currentCycle,
@@ -793,13 +795,7 @@ export class World {
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
-      failedPayments: (last: number) =>
-        this.ledger
-          .all()
-          .filter(
-            (r): r is Failed => r.outcome === 'failed' && subjectsOf(r.instruction).includes(party),
-          )
-          .slice(-last),
+      failedPayments: (last: number) => this.ledger.failedFor(party, last),
       publicEvents: (last) => this.journal.visibleTo(party, last),
       outlook: (variable) => this.outlookOf(party, variable),
       lastPublic: (kind) => {
@@ -819,7 +815,17 @@ export class World {
         return e === undefined ? none() : some(e);
       },
       index: (id: string) => this.index(id),
-      owedIn: (ccy: CurrencyCode) => this.owedIn(party, ccy),
+      // Law 18: asked once per money per party per period. It walks every line the party issued —
+      // and a bank issues a row every time it lends — so the six pair markets asking it four times
+      // each was the same walk twelve times over. The view is rebuilt every period and every cycle,
+      // so what this remembers cannot outlive the state it was read from.
+      owedIn: (ccy: CurrencyCode) => {
+        const held = owed.get(ccy);
+        if (held !== undefined) return held;
+        const now = this.owedIn(party, ccy);
+        owed.set(ccy, now);
+        return now;
+      },
       rateIn: (from: CurrencyCode, to: CurrencyCode) =>
         this.valuation.rateInForce(from, to, this.currentPeriod),
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
@@ -1100,6 +1106,7 @@ export class World {
     const decl = this.indexList.get(id);
     if (decl === undefined) return none<IndexRead>();
     return readIndex(decl, this.currentPeriod, {
+      cache: this.indexLevels,
       world: {
         calendar: this.calendar,
         registry: this.registry,
