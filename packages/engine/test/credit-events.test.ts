@@ -9,6 +9,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  moneyInstrumentId,
+  mul,
+  upTick,
   period,
   GOV_LINE,
   HOUSEHOLD,
@@ -34,7 +37,7 @@ import {
   type World,
 } from '../src/index.js';
 import { rigSpec, withDependencies, mergeModules } from './rig.js';
-import { paidTo, unexpected } from './expected.js';
+import { unexpected } from './expected.js';
 import { phx } from './units.js';
 import { notDealing } from './no-dealing.js';
 
@@ -42,6 +45,14 @@ const PAYER = partyId('firm.1');
 const PAYEE = partyId('firm.2');
 
 /** A party that promises more than it holds, before anything else runs. */
+/**
+ * How much more than it has the payer promises. PLAN §7: the AMOUNT is read at the moment the
+ * payment is made, not written down — a million was more than a party held when the seed STATED
+ * this world's scale, and 11.5 derives it. What this module is for is a payment that cannot be
+ * made, so what it promises is a multiple of what the payer is holding when it promises it.
+ */
+const MORE_THAN_IT_HAS = 2;
+
 function overpromise(amount: number): SystemModule {
   return {
     id: 'test.overpromise',
@@ -60,12 +71,18 @@ function overpromise(amount: number): SystemModule {
         anchor: { before: 'corporateActions' },
         run: (ctx: MechanismContext) => {
           if (ctx.period !== 2) return;
+          // `amount` of 1 means a payment it CAN make (the test that says nothing happens); any
+          // larger figure means one it cannot, and how much larger is read off its own account.
+          const owed =
+            amount <= 1
+              ? amount
+              : upTick(mul(ctx.register.quantity(PAYER, moneyInstrumentId(ctx.parties.get(PAYER).bank, USD)), MORE_THAN_IT_HAS, 'more than it has'));
           const leg: Leg = {
             kind: 'money',
             from: { holder: PAYER, issuer: ctx.parties.get(PAYER).bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
-            amount,
+            amount: owed,
             fromCell: none(),
             toCell: none(),
           };
@@ -192,7 +209,15 @@ function cellCannotPay(): SystemModule {
             .ofKind(HOUSEHOLD)
             .find((p): p is CellParty => p.representation === 'cell');
           if (cell === undefined) return;
-          const perMember = phx(1_000);
+          // PLAN §7: more than a MEMBER holds, read off the cell's own account. A thousand was more
+          // than a member had when the seed stated this world's scale; 11.5 derives it.
+          const perMember = upTick(
+            mul(
+              ctx.register.quantity(cell.id, moneyInstrumentId(cell.bank, USD)),
+              MORE_THAN_IT_HAS,
+              'more than a member has',
+            ),
+          );
           const leg: Leg = {
             kind: 'money',
             from: { holder: cell.id, issuer: cell.bank },
@@ -220,7 +245,18 @@ m.id === 'sovereign-instruments' ||
       m.id === 'banks' ||
       m.id === 'money-market' ||
       m.id === 'credit-events',
-  ).map(notDealing);
+  )
+    .map(notDealing)
+    // Banks Lending B3.c: NO BANK IN THIS WORLD WILL LEND A PENNY, so a party that cannot pay simply
+    // does not pay. Without this the payer is granted an overdraft and the payment goes through —
+    // which is a bank doing its job and the wrong world for a test about what a FAILURE is. A bank
+    // with no appetite for a name is a real bank, and it is what makes a fail a fail.
+    .map((m) => ({
+      ...m,
+      params: m.params.map((x) =>
+        String(x.id).startsWith('bank.limitPerBorrower.') ? { ...x, value: 0 } : x,
+      ),
+    }));
   return assemble({ ...spec, modules: mergeModules(kernelOnly, extra) });
 }
 
@@ -235,7 +271,8 @@ describe('a party that could not pay (Money E1, Firm D4, D5)', () => {
     expect(ev?.subjects).toContain(PAYER);
     expect(ev?.subjects).toContain(PAYEE);
     expect(ev?.data['payee']).toBe(PAYEE);
-    expect(ev?.data['amountDue']).toBe(phx(1_000_000));
+    // What fell due is what the payer could not pay, read from the event rather than restated.
+    expect(Number(ev?.data['amountDue'])).toBeGreaterThan(w.cash(PAYER, USD));
     expect(String(ev?.data['why']).length).toBeGreaterThan(0);
     // E1.a: it did not silently not happen, and it did not silently overdraw.
     const failed = w.ledger.all().filter((r) => r.outcome === 'failed');
@@ -360,11 +397,17 @@ describe('what a holder is left carrying (Register E3, Banks Lending E2)', () =>
     // Law 11, XI-1: and it books nothing. There is no provision, because there is nothing to assess
     // a recovery against yet — the module declares not one number, which is the point.
     expect(creditEvents.params).toHaveLength(0);
-    const equity = w.register.equity(PAYEE);
+    // XI-1, Law 11: AND IT BOOKS NOTHING, which is a statement about the impairment and not about
+    // everything else. This used to say the holder's equity moved by exactly the week's deposit
+    // interest, and that held only while nothing else in the world touched it — a holder is a real
+    // party and its account moves for its own reasons every period. What the clause asks is that
+    // NO entry in its equity ledger was written by this: 12a's ledger names the cause of every move
+    // one, so the absence can be read rather than inferred from a total that has to stand still.
+    const from = w.period;
     w.step();
-    // ...and the only thing that DID move its equity is the week of deposit interest its bank paid
-    // it (Banks Funding B1), which is not the impairment doing anything.
-    expect(w.register.equity(PAYEE)).toBe(equity + paidTo(w, PAYEE, 'coupon'));
+    const moved = w.register.equityEntries(PAYEE, from, w.period);
+    expect(moved.length).toBeGreaterThan(0);
+    expect(moved.filter((e) => /impair|provision|writ/i.test(e.cause))).toEqual([]);
   });
 });
 
@@ -373,17 +416,25 @@ describe('a claim that is extinguished (Banks Lending E5, E5.a)', () => {
     const w = world(oneLine(), writeOff(LINE_C));
     w.step();
     const carrying = 5 * 1;
-    const before = w.register.equity(PAYEE);
-    const issuerBefore = w.register.equity(PAYER);
+    const from = w.period;
     w.step();
     // E5: the claim leaves the holder's book on a date, by a real leg to the issuer that promised
     // it — never by a number vanishing (Register A3: no leg to nobody).
     expect(w.register.quantity(PAYEE, LINE_B)).toBe(0);
     // E5.a: the loss that reaches capital is principal minus recovery minus what was already taken,
-    // and with nothing recovered and nothing provisioned that is exactly the carrying value.
-    expect(w.register.equity(PAYEE)).toBe(before - carrying + paidTo(w, PAYEE, 'coupon'));
+    // and with nothing recovered and nothing provisioned that is exactly the carrying value — READ
+    // OFF THE ENTRY THAT BOOKED IT (12a's equity ledger) rather than inferred from a total standing
+    // still, which it only did while nothing else in the world touched these two parties.
+    const wrote = (who: typeof PAYEE, sign: number): void => {
+      const entries = w.register
+        .equityEntries(who, from, w.period)
+        .filter((e) => Math.abs(Math.abs(e.delta) - carrying) < 1);
+      expect(entries.length, `${who} has no entry for what the claim was carried at`).toBe(1);
+      expect(Math.sign(entries[0]?.delta ?? 0)).toBe(sign);
+    };
+    wrote(PAYEE, -1);
     // And it is not a loss to the world: the issuer it was owed by is relieved of the same amount.
-    expect(w.register.equity(PAYER)).toBe(issuerBefore + carrying + paidTo(w, PAYER, 'coupon'));
+    wrote(PAYER, 1);
   });
 });
 
@@ -410,11 +461,15 @@ describe('the world it lives in', () => {
     expect(line?.performing).toBe(false);
     expect(inspector.instruments.find((i) => i.id === GOV_LINE)?.performing).toBe(true);
     // A default is public, so everyone sees it; what a holder is carrying is not.
-    const holder = snapshot(w, { kind: 'party', party: PAYEE }, 50);
-    expect(holder.journal.some((e) => e.kind === 'credit.default')).toBe(true);
-    expect(holder.journal.some((e) => e.kind === 'credit.impaired')).toBe(true);
-    const other = snapshot(w, { kind: 'party', party: TREASURY_US }, 50);
-    expect(other.journal.some((e) => e.kind === 'credit.impaired')).toBe(false);
+    // B1, D1: read through the FOLLOWED feed, which is what a reader uses for something said once
+    // and rarely — the fifty-deep tail of everything is a tail of everything, and a busier world
+    // pushes a default out of it however public it is.
+    const kinds = ['credit.default', 'credit.impaired'] as const;
+    const holder = snapshot(w, { kind: 'party', party: PAYEE }, 50, kinds);
+    expect(holder.followed['credit.default']?.length).toBeGreaterThan(0);
+    expect(holder.followed['credit.impaired']?.length).toBeGreaterThan(0);
+    const other = snapshot(w, { kind: 'party', party: TREASURY_US }, 50, kinds);
+    expect(other.followed['credit.impaired']?.length).toBe(0);
   });
 
   it('runs a year on a state that spends past what it can fund, and it defaults (XI-9, XI-1)', () => {
