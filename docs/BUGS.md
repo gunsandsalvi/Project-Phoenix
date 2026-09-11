@@ -618,3 +618,30 @@ Its companion is green and covers the other half: raising the cover stops househ
 down, and lowering it does not (A1.a, D4).
 
 Seen at: `packages/engine/src/mechanisms/money-market/resolution.ts:341`.
+
+### 12d-14 — a bank lends a money it has not funded, and a desk carries one in a money nobody named
+
+Two halves of the same gap, found while closing `money-market.test.ts`'s Law 4 assertion.
+
+**The quote.** `publishQuotes` asks every bank in the world what it would lend a borrower, and
+prices the answer off `costOfFunds(bank, the BORROWER's currency)`. A US bank quoting a European
+firm is therefore quoting a euro loan — with `owedBy(bank, EUR) = 0`. `costOfFunds` then blends an
+interest cost of nothing with the bank's whole equity, so the quote comes out at the bank's required
+return on capital and nothing else: measured at 0.0887 against 0.0044 for the same bank's own money.
+A bank that has not funded a currency has to borrow or swap it, and nothing here does either.
+
+Worse inside `costOfFunds` itself: `owed` and `couponsPaid` are per currency, but `capital` is
+`equity()` — the bank's whole capital in its own money — so the blend adds two currencies (Appendix
+B: two currencies are never added).
+
+**The desk.** `carryRate` reads what funding costs the bank and applies it to every line it quotes,
+including a line denominated in somebody else's money. Which money a desk funds a foreign position
+in is not asked.
+
+Fixed here only as far as the publication: the event now carries what funding costs the bank in
+every other money beside its own (`alsoIn`), so the number a quote is priced off is one somebody
+published, and `carryRate` names the currency it is taking. The MECHANISM — a bank funding a foreign
+loan — is the currency layer's, worklist **12/13h**.
+
+Seen at: `packages/engine/src/mechanisms/banks/index.ts:248` (`costOfFunds`), `:1082`
+(`publishQuotes`), `packages/engine/src/mechanisms/banks/dealing.ts:118`.

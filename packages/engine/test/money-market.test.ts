@@ -101,9 +101,17 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
     let checked = 0;
     for (const q of events(w, 'credit.quoted')) {
       const bank = String(q.data['bank']);
+      // Law 8, Currency A3: A COST OF FUNDS IS PER CURRENCY. A bank lends in every money this
+      // world has and prices each quote off what funding costs it IN THAT MONEY, so comparing a
+      // euro quote against the bank's own dollar number is comparing two numbers that were both
+      // right. Its own money is the event's top line; the others are beside it, named.
       const said = events(w, 'bank.costOfFunds', bank).find((e) => e.period === q.period);
       expect(said).toBeDefined();
-      expect(num(q, 'costOfFunds')).toBe(num(said, 'perAnnum'));
+      const ccy = String(q.data['ccy']);
+      const alsoIn = said!.data['alsoIn'] as Record<string, { perAnnum: number }>;
+      const published = ccy === String(said!.data['ccy']) ? num(said, 'perAnnum') : alsoIn[ccy]?.perAnnum;
+      expect(published, `${bank} quoted in ${ccy} and published no cost of funds in it`).toBeDefined();
+      expect(num(q, 'costOfFunds')).toBe(published);
       // C1: and a quote is its funding plus what the loan itself costs it, never less.
       expect(num(q, 'rate')).toBeGreaterThan(num(q, 'costOfFunds'));
       checked += 1;

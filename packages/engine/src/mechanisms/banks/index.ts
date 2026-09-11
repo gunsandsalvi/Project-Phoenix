@@ -1186,14 +1186,33 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
 function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const b of ctx.parties.ofKind(BANK)) {
     if (declOf(rows, b.id) === undefined || !b.status.alive) continue;
-    const ccy = ctx.registry.region(b.region).ccy;
+    const home = ctx.registry.region(b.region).ccy;
+    // Law 8, Currency A3: ONE PER CURRENCY IT OWES IN. What funding costs a bank is a number in a
+    // money — it is what it paid on what it owes, and it owes in every money it has taken a
+    // liability in. This published its HOME currency only, while `publishQuotes` prices a loan off
+    // `costOfFunds(bank, the BORROWER's currency)`: a bank lending to a European firm quoted off a
+    // euro funding cost that nothing in this world had published, so the one number every reader is
+    // supposed to share existed for a dollar and nowhere else (Law 4, Law 19).
+    // Currency A3, Law 8: AND IN EVERY OTHER MONEY IT MIGHT LEND IN. `publishQuotes` asks every
+    // bank what it would lend a European firm and prices that quote off
+    // `costOfFunds(bank, the BORROWER's currency)` — so a dollar bank quoting a euro loan priced it
+    // off a euro funding cost that nothing in this world had published, and the one number every
+    // reader is supposed to share existed for a dollar and nowhere else (Law 4, Law 19).
+    //
+    // It stays ONE event per bank, because a reader asking a bank what money costs it means its own
+    // money and `lastOwn` must not depend on which currency a loop reached last. The others are
+    // beside it, named, and the home one is not repeated among them.
+    const alsoIn: Record<string, FundingCost> = {};
+    for (const ccy of ctx.registry.currencies.keys()) {
+      if (ccy !== home) alsoIn[ccy] = costOfFunds(ctx, b.id, ccy);
+    }
     ctx.record(
       'bank.costOfFunds',
       [b.id],
       // B2.b, Law 4: the blend AND ITS PARTS, so what it paid and what its capital costs it are
       // readable separately by whoever needs one of them — and so that nobody has to re-derive
       // either from the other (Law 19).
-      { bank: b.id, ccy, ...costOfFunds(ctx, b.id, ccy) },
+      { bank: b.id, ccy: home, ...costOfFunds(ctx, b.id, home), alsoIn },
       true,
     );
   }
