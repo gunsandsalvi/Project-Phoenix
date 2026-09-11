@@ -6,6 +6,7 @@
  * @spec Sovereign D3 Sovereign D3.b Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
  */
 import { formatCivil } from '../calendar/civil.js';
+import { div, mul, sub } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
 import type { PartyId } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
@@ -148,6 +149,50 @@ export interface BankView {
   readonly age: number | null;
 }
 
+/**
+ * Currency C5, Spot FX C3, E3, Observer A1: THE RATE BETWEEN TWO MONEYS, and whether the triangle
+ * it sits in adds up. Both are reads of prints anybody may see; neither is computed for display and
+ * neither is stored (`no display-only number`, Appendix B). The gap is what the direct pair says
+ * against what the long way round says, as a share of the direct — a persistent one is a
+ * measurement about this world (E3) and never a correction applied to a price.
+ */
+export interface RateView {
+  readonly pair: string;
+  readonly base: string;
+  readonly quote: string;
+  readonly rate: number | null;
+  readonly stale: boolean;
+  readonly market: string;
+}
+
+export interface TriangleView {
+  readonly through: string;
+  readonly crossed: number;
+  readonly direct: number;
+  readonly gap: number;
+}
+
+/**
+ * Indices A2, E1: WHAT AN INDEX SAYS AND WHAT IT WAS READ FROM. The level is applied where it is
+ * asked for, so the surface shows the same number every other reader gets, together with how many
+ * periods stand behind it (D5.a: a window longer than that is Missing, never quietly shortened).
+ */
+export interface IndexView {
+  readonly id: string;
+  readonly level: number;
+  readonly periods: number;
+  readonly constituents: number;
+}
+
+/** Ratings A1, E4: WHOSE OPINION, ABOUT WHOM, AND WHAT IT WAS. Three assessors, three answers. */
+export interface RatingView {
+  readonly assessor: string;
+  readonly subject: string;
+  readonly grade: string;
+  readonly was: string | null;
+  readonly period: number;
+}
+
 export interface Snapshot {
   readonly seed: string;
   readonly period: number;
@@ -172,6 +217,14 @@ export interface Snapshot {
   readonly positions: readonly PositionView[];
   /** F1, F2, F4, B3.a: what each bank last published about its funding and its capital. */
   readonly banks: readonly BankView[];
+  /** Currency C5: what each pair last printed, and whether that was this period (D1). */
+  readonly rates: readonly RateView[];
+  /** Spot FX C3, E3: what the triangles say, as a standing measurement. */
+  readonly triangles: readonly TriangleView[];
+  /** Indices E1: every index this world declares, at what its own constituents make it. */
+  readonly indices: readonly IndexView[];
+  /** Ratings A1, E4: the published opinions, most recent last. */
+  readonly ratings: readonly RatingView[];
   readonly audit: AuditReport | null;
   readonly params: ParamReport;
   readonly moneyStock: Readonly<Record<string, number>>;
@@ -384,6 +437,10 @@ export function snapshot(
     yields,
     positions,
     banks,
+    rates: ratesOf(w),
+    triangles: trianglesOf(w),
+    indices: indicesOf(w),
+    ratings: ratingsOf(w, journalTail, sees),
     audit: w.last?.audit ?? null,
     params: w.params.report(),
     moneyStock: w.moneyStock(),
@@ -402,4 +459,86 @@ export function snapshot(
     outlooks,
     state: scope.kind === 'inspector' ? w.stateSlots() : null,
   };
+}
+
+/** Currency C5, D1: every pair's last print, with whether it was struck this period. */
+function ratesOf(w: World): readonly RateView[] {
+  const out: RateView[] = [];
+  for (const m of w.markets) {
+    const pair = m.fx;
+    if (pair === undefined) continue;
+    const p = w.prices.latest(m.instrument, w.period);
+    out.push({
+      pair: `${pair.base}/${pair.quote}`,
+      base: pair.base,
+      quote: pair.quote,
+      rate: p.some ? p.value.price : null,
+      stale: p.some ? p.value.provenance.kind === 'stale' : false,
+      market: m.id,
+    });
+  }
+  return out;
+}
+
+/**
+ * Spot FX C3: every triple of moneys this world has markets for, and what the two routes between
+ * two of them say. Read from the prints, like everything else here.
+ */
+function trianglesOf(w: World): readonly TriangleView[] {
+  const rate = (base: string, quote: string): number | null => {
+    const m = w.markets.find((x) => x.fx?.base === base && x.fx.quote === quote);
+    if (m === undefined) return null;
+    const p = w.prices.latest(m.instrument, w.period);
+    return p.some ? p.value.price : null;
+  };
+  const codes = [...w.registry.currencies.keys()].map(String);
+  const out: TriangleView[] = [];
+  for (let i = 0; i < codes.length; i += 1) {
+    for (let j = i + 1; j < codes.length; j += 1) {
+      for (let k = j + 1; k < codes.length; k += 1) {
+        const [a, b, c] = [codes[i], codes[j], codes[k]];
+        if (a === undefined || b === undefined || c === undefined) continue;
+        const ab = rate(a, b);
+        const bc = rate(b, c);
+        const ac = rate(a, c);
+        if (ab === null || bc === null || ac === null || ac <= 0) continue;
+        const crossed = mul(ab, bc, `${a} through ${b} into ${c}`);
+        out.push({
+          through: `${a}/${b}/${c}`,
+          crossed,
+          direct: ac,
+          gap: div(sub(crossed, ac, 'what the two routes disagree by'), ac, 'as a share'),
+        });
+      }
+    }
+  }
+  return out;
+}
+
+/** Indices A2, E2: the level applied where it is asked for — the same read every module gets. */
+function indicesOf(w: World): readonly IndexView[] {
+  const out: IndexView[] = [];
+  for (const decl of w.indexRules()) {
+    const read = w.index(decl.id);
+    if (!read.some) continue;
+    out.push({
+      id: decl.id,
+      level: read.value.level,
+      periods: read.value.periods,
+      constituents: read.value.basket.length,
+    });
+  }
+  return out;
+}
+
+/** Ratings A1, E4: the actions as they were published, which is the only place a grade lives. */
+function ratingsOf(w: World, depth: number, sees: (e: Event) => boolean): readonly RatingView[] {
+  const text = (v: unknown): string => (typeof v === 'string' ? v : '');
+  return w.journal.recentOfKind('rating.action', depth, sees).map((e) => ({
+    assessor: text(e.data['assessor']),
+    subject: text(e.data['subject']) === '' ? text(e.data['instrument']) : text(e.data['subject']),
+    grade: text(e.data['grade']),
+    was: typeof e.data['was'] === 'string' ? e.data['was'] : null,
+    period: e.period,
+  }));
 }

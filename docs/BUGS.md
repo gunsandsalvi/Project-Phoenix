@@ -665,3 +665,24 @@ created 6,612,441,391 shares against it, and the next session's demand summed pa
 a session that settles nothing carries the last real price forward, visibly stale, with the new
 `nothingSettled` reason on it. Written down because the finding is worth keeping: the symptom was a
 fund's share price, the cause was in the kernel's market, and nothing between them was wrong.
+
+### 12-17 — Every sovereign is rated `c`, and every firm downgrades in one session
+
+**Where.** `packages/engine/src/mechanisms/ratings/assess.ts`.
+
+**Measured.** At period 1 all four treasuries are graded `c` by all three assessors. At period 4
+every firm goes `aaa` to `c` at once for two of the three assessors.
+
+**Why.** The one measure the assessor can make honestly today is what falls due against what the
+issuer is WORTH — `owedIn` against `equity`, both reads of the issuer's own account through a view
+with no prices in it. A treasury's book equity is deeply negative by construction: it owes its whole
+debt and owns nothing. That is not a signal, it is what a state's balance sheet looks like, and a
+state's capacity to pay is its TAX BASE, which this world has no read of. The firms move together
+because the same common cost crosses them all in the same week.
+
+**The missing mechanism is a published income statement per issuer** — what it took in and what it
+paid out, stated by the issuer itself — which is §48 and worklist item **12a (reporting and
+estimates)**, the item immediately after this one. With that read the measure becomes what falls due
+against what it takes in, which is a coverage ratio and is the measure an assessor actually uses.
+
+**Position.** 12a.

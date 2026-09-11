@@ -326,16 +326,28 @@ it to be reachable. A step that is not written is a step that gets skipped, so t
       buyer is not (Appendix B), so every other leg of a rebalance carries the price the line last
       printed and is never more than the fund's cash actually buys
 - [ ] `ratings`: assessor party kind paid by issuers; grades from state through a view without prints (A2.a structurally); coarse and sticky; published; tests: a rating never moves when only the price moves
-- [ ] `ratings`: instrument vs issuer ratings; consumers: mandates, risk weights per grade, haircuts as one input to the lender's PD, information; tests: a downgrade past a mandate boundary forces sales by every bound holder in the same session (C1.a)
+- [x] `ratings`: instrument vs issuer ratings — a line's grade is its issuer's, moved by where the
+      line stands in the queue (the kind's own `ranking`, read rather than judged), and the issuer
+      pays once for the opinion rather than per line. Risk weights per grade declared as policy
+      rows. STILL OPEN: the consumers themselves — a mandate boundary, a haircut reading the grade
+      as one input to the lender's own PD — and C1.a's same-session forced sale. Positioned: they
+      want a holder with a mandate written in grades, which is 13f's rated corporate paper
 - [ ] `ratings`: E3: the assessor can be wrong: a rated-safe issuer defaults in a scenario test; E4: the distribution of grades is a read
-- [ ] Second opinion: `speculative` party-kind flag; assembly check per credit market; `market.noView` standing observation; tests
+- [x] Second opinion: `speculative` on the party kind's profile (a dealer puts its own capital
+      behind a view; a mandate, a treasury funding itself and a household saving do not), and
+      `market.noView` journalled every period a book runs with orders in it and no such participant.
+      Said rather than prevented — a world may honestly have such a book, and what matters is that a
+      price made that way is never mistaken for one that was not. Measured: in this world it is the
+      four goods markets and nothing else; every credit book has a desk in it
 - [x] Audit: `crossMarket` family built with its two contributions. `indices` reads every index a
       SECOND time from the prints with none of the kernel's own read in the way and puts the two
       against each other — which is what makes it independent and what would catch a cached level;
       `spot-fx` reports a triangular gap only when it is BIGGER than the cheapest desk's round trip,
       because a gap inside that cost is the market working and closing it would be the enforced
       convergence Appendix B forbids
-- [ ] Observer: rates per pair, triangular gap, indices, price indices, ratings, the numéraire view for display only
+- [x] Observer: rates per pair (with whether the print is stale), the triangular gap per triple,
+      every index at what its own constituents make it, and the published ratings. All reads of
+      prints and public events; nothing stored and nothing computed for display alone (Appendix B)
 - [ ] Year-long run green in two currencies with cross-border coupons flowing; determinism
 - [ ] Part XII chain tests as scenarios: a downgrade causes selling, capital pressure and funding loss (D4, direction only)
 - [ ] Coverage re-marked; record entry with the guard deletion

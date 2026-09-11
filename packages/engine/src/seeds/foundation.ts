@@ -79,6 +79,7 @@ import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
 import { EQUITY_INDEX, indices } from '../mechanisms/indices/index.js';
+import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -1536,6 +1537,9 @@ export function foundationSpec(
       // Indices: after everything that prints, because an index is what its constituents printed
       // and the benchmark is what the overnight book settled at (Indices D3.a, E1).
       indices([REGION, ...ABROAD.map((c) => c.region)], [USD, ...ABROAD.map((c) => c.ccy)]),
+      // Ratings: after everything it has an opinion about, and it reads none of them — it decides
+      // from state through a view with the prices closed (Ratings A2.a).
+      ratings(drawAssessors(ASSESSOR_COUNT, drew.banks.map((b) => b.bank), seed)),
       foundationSeedFor(drew.banks, drew.firms),
       foundationFundingFor(drew.banks),
     ],

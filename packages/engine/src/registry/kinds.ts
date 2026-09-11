@@ -320,4 +320,16 @@ export interface PartyKindProfile {
    * would quietly be wrong the first time a world has two sovereigns or an agency.
    */
   readonly sovereign?: boolean;
+  /**
+   * XI-13, Corporate Credit A4.b, CDS B5, IRS B4: whether a party of this kind is in a market
+   * BECAUSE IT HAS A VIEW — it puts its own capital behind what it thinks something is worth and
+   * takes the loss when it is wrong. A dealer is; a fund following a mandate, a treasury funding
+   * itself and a household saving are not.
+   *
+   * It is what the second opinion is made of. A book whose every participant is mandate-driven has
+   * one opinion in it wearing several hats: every schedule in it comes from the same last print,
+   * and the print then follows the schedules. That is the fixed point XI-13 is about, and a market
+   * in that state says so every period it runs (`market.noView`) rather than being prevented.
+   */
+  readonly speculative?: boolean;
 }

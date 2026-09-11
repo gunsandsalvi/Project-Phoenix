@@ -94,6 +94,10 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     // and in the market all day. Its own account is at the central bank because that is what
     // settling in central bank money IS (Money C2.a), so no module gives it a reason to move it.
     depositClass: 'wholesale',
+    // XI-13, Dealer Desks A1: a dealer puts its own capital behind what it thinks a line is worth
+    // and carries the loss when it is wrong. It is the party in this world whose reason to be in a
+    // credit book is a VIEW rather than a rule, which is what a second opinion is made of.
+    speculative: true,
     moneyIssuer: {
       // B3.a: a customer overdrawn is BORROWING, and it is a credit decision by its bank — the room
       // its own capital supports, and a refusal past it. A party kind profile cannot take that

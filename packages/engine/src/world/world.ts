@@ -1202,6 +1202,13 @@ export class World {
 
   private runOne(m: MarketDecl): MarketResult {
     const orders: Order[] = [];
+    // XI-13, Ratings A5.a: WHETHER ANYBODY IN THIS BOOK HAS A VIEW. A participant that puts its own
+    // capital behind what it thinks a line is worth is what makes a price an opinion met by another
+    // opinion; a book whose every schedule comes from a mandate has one view in it wearing several
+    // hats, and the print then follows the schedules that followed the print. It is not prevented —
+    // there is nothing to prevent, and a world may honestly have such a book — it is SAID, every
+    // period, so that a price made that way is never mistaken for one that was not.
+    let withAView = false;
     for (const decl of this.participantDecls) {
       // Spot FX D1: a participant answers the sort of market it declared itself in, and nothing
       // else. Both defaults are `asset`, which is every market and every desk that existed before
@@ -1212,8 +1219,22 @@ export class World {
         // would be an instruction addressed to somebody who is not there. What it held is its
         // estate's now, and the estate posts its own orders under its own name (XI-8).
         if (!party.status.alive) continue;
-        orders.push(...decl.orders(this.participantView(party.id), m));
+        const posted = decl.orders(this.participantView(party.id), m);
+        if (posted.length > 0 && this.registry.partyKind(decl.partyKind).speculative === true) {
+          withAView = true;
+        }
+        orders.push(...posted);
       }
+    }
+    if (!withAView && orders.length > 0) {
+      this.journal.record(
+        this.currentPeriod,
+        this.currentCycle,
+        'market.noView',
+        [m.id, m.instrument],
+        { market: m.id, instrument: m.instrument, orders: orders.length },
+        true,
+      );
     }
     return runMarket(m, orders, this.offer(m.id), this.currentPeriod, this.currentCycle, {
       parties: this.parties,
