@@ -88,6 +88,7 @@ import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
 import { EQUITY_INDEX, indices } from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { reporting } from '../mechanisms/reporting/index.js';
+import { research } from '../mechanisms/research/index.js';
 import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
@@ -1760,6 +1761,9 @@ export function foundationSpec(
       // outside holds, and after everything that moves a company's equity account, because what it
       // publishes is what those moves came to (Reporting A1.a, A2).
       reporting(seed),
+      // Research: after `reporting`, because what a bank estimates is the report a company will
+      // publish and what settles its estimate is the one it just did (Reporting C1, F1).
+      research(seed),
       foundationSeedFor(drew.banks, drew.firms),
       foundationFundingFor(drew.banks),
     ],

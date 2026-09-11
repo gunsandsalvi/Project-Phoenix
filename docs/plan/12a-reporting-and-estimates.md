@@ -307,20 +307,38 @@ read (§46 C2). Two numbers here would be Law 4's defect wearing a business suit
 - [x] 14. `guidanceRecord(reads, firm)` as a read of the journal, taking anything that can read it —
       a module context, the observer, a test — because the record is public and needs nothing
       private. Nothing stored: a stored record would be a second account of what a company said.
-- [ ] 15. Module `research`: the estimate outlook, formed from the bank's own observations of the
-      company, published as `research.estimate`.
-- [ ] 16. **The C6 test**: move the share print with the company's state unchanged; no estimate moves.
-- [ ] 17. Estimate revision on information, with its date and size; a test that a revision with no
-      observation behind it fails §46 B2.a.
-- [ ] 18. Coverage: analyst hours as TECHNOLOGY per name covered, hired through the labour venue, paid
-      to a named payee; initiate and drop as decisions.
-- [ ] 19. **The D3.a test**: the counts of estimates per name are not all equal, and no name is covered
-      by every bank.
-- [ ] 20. Settling: on a report, score the guidance and every estimate; record the surprise per party.
-- [ ] 21. **The F2.a test**: no participant in the share market reads a `reporting.*` or `research.*`
-      event; the only path from a surprise to an order is the party's own outlook.
-- [ ] 22. `view.consensus(company)` computed at read time with its staleness; a test that it is stored
-      nowhere and that no deciding module imports it (E2, E3).
+- [x] 15. Module `research`: the estimate is an adaptive outlook over what THAT bank has observed of
+      THAT company — the reports it has seen and the guidance the management published, weighed by
+      what that management's record is worth (F3, §46 B3) — corrected at the bank's OWN drawn memory
+      and never faster. Published as `research.estimate`, named and dated.
+- [x] 16. **C6 is a CHECK, not a test** (`tools/check-forbids.ts`, run by `npm run check`): no read
+      of a print, a mark or the price store anywhere in `mechanisms/research`. A test could not see
+      this break — the estimates would simply track the market and look like estimates — and a rule
+      nobody can see the breaking of is exactly the case for a guard rather than an assertion.
+- [x] 17. Revision on information, with its date and size. A desk reads only what has been published
+      SINCE it last spoke, so an observation is never counted twice and a view that has seen nothing
+      new does not move — which is what makes a revision information rather than a calendar entry
+      (§46 B2.a). Tested: no desk speaks in anything like every period, and every revision moved.
+- [x] 18. Coverage: `research.hoursPerName` as TECHNOLOGY, costed at whatever the labour venue
+      cleared at (read off this world's own wage prints — there is no research budget parameter
+      anywhere), and PAID, per member, to the household cells that bank there. 359 instructions over
+      40 periods, every one settled. Initiate and drop are public events, taken on whether the
+      bank's own book needs the view (D1): it holds something the company issued, or its own desk
+      makes a market in the line.
+- [x] 19. **The D3.a test**: the counts per name are not all equal and no name is covered by every
+      bank. Measured: 1 and 2 of 4 banks, with real spreads between the estimates (1.7e8 on one
+      name, 3.3e8 on another) — so the disagreement C3 asks for is there and nobody arranged it.
+- [x] 20. Settling: `research.settle` runs BEFORE `research.cover`, so a surprise is measured
+      against what the bank said before the report rather than after it — a view revised on the
+      report and then scored against it would be surprised by nothing, every time. The surprise
+      carries the name of the party whose view it was (§46 B2).
+- [x] 21. **F2.a is a CHECK**: no module outside `reporting` and `research` names a `reporting.*` or
+      `research.*` event anywhere. The only path from a surprise to an order is the party's own
+      outlook, and a module that read a report directly and posted differently because of it would
+      have written a price path whose print looks exactly like one that had not.
+- [x] 22. `consensusOf(reads, company)` computed at read time — count, mean, spread and the period
+      of the oldest estimate in it — and stored nowhere. **E2 is a CHECK**: nothing outside
+      `research` calls it at all.
 - [ ] 23. The `names` and `flows` contributions.
 - [ ] 24. The observer's `StatementsView`; the browser smoke test shows one company's three statements,
       its guidance, its estimates and the consensus.

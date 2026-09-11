@@ -2,7 +2,7 @@
   "name": "project-phoenix",
   "private": true,
   "version": "0.0.1",
-  "description": "Project Phoenix — a simulated closed-circuit economy",
+  "description": "Project Phoenix \u2014 a simulated closed-circuit economy",
   "type": "module",
   "workspaces": [
     "packages/engine",
@@ -12,7 +12,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "check": "npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run plan:check",
+    "check": "npm run lint && npm run typecheck && npm run test && npm run check:spec && npm run check:forbids && npm run plan:check",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
@@ -27,7 +27,8 @@
     "plan:check": "tsx tools/plan-progress.ts --check",
     "build": "npm run build --workspace packages/engine && npm run build --workspace packages/app",
     "dev": "npm run dev --workspace packages/app",
-    "e2e": "playwright test"
+    "e2e": "playwright test",
+    "check:forbids": "tsx tools/check-forbids.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
