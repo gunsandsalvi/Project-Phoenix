@@ -428,9 +428,13 @@ export function foundationSeedFor(
       id: P.cbOpeningShare,
       value: 0.2,
       unit: 'ratio of a line outstanding',
-      kind: 'shape',
+      kind: 'placeholder',
       owner: 'model',
-      why: 'Seed E2, Central Bank C1: what the central bank opens holding of every sovereign line, and therefore how big its balance sheet is — every reserve it has issued was issued to buy this paper (Central Bank A2). It is stated BELOW the OMO\'s own target share so that the central bank opens short of what its policy wants and its first open-market session has something to do: a seed that opened it at its target would be seeding the outcome of the mechanism it is about to run (Seed E1). The mechanism that replaces this number is the open-market session itself, which runs from period one.',
+      why: "Seed E2, Central Bank C1: what the central bank opens holding of every sovereign line, and therefore how big its balance sheet is — every reserve it has issued was issued to buy this paper (Central Bank A2). It is stated BELOW the OMO's own target share so that the central bank opens short of what its policy wants and its first open-market session has something to do: a seed that opened it at its target would be seeding the outcome of the mechanism it is about to run (Seed E1). It is a PLACEHOLDER and not a shape, because this number decides the banks' reserve-to-paper mix and therefore whether the banking system opens meeting the liquidity standard it is measured against — and it does not (docs/BUGS.md 12-19: every bank opens with negative funding room and nobody lends). What replaces it is a derivation from that standard, which is item 11.5.",
+      standsInFor: {
+        mechanism: 'Banks Funding C1',
+        worklistItem: '11.5',
+      },
     },
     {
       id: P.treasuryBufferShare,
@@ -501,9 +505,13 @@ export function foundationSeedFor(
       id: P.crossHoldingShare,
       value: 0.08,
       unit: "share of a holder's paper that is another country's",
-      kind: 'shape',
+      kind: 'placeholder',
       owner: 'model',
-      why: "Currency D2, Central Bank F4: how much of what a holder has in paper is a foreign government's, over all of them together and split evenly between the countries that issue it. A bank holds some because it is the liquid asset of a market it deals in; a central bank holds it because that is what reserves are. Eight per cent, which is small enough that America is a domestic banking system with some foreign paper rather than a currency fund, and large enough that a week of exchange rates is visible in what a bank is worth. Evenly, because the seed has nothing to say about which foreign government a bank prefers and a split that said otherwise would be a portfolio decision nobody took. From period one what anybody holds abroad is an outcome of what it bought and sold, and nothing reads this again — the portfolio decision that replaces it is 13h's.",
+      why: "Currency D2, Central Bank F4: how much of every central bank's reserves is another country's paper, split evenly between the countries that issue it. A central bank holds it because that is what reserves ARE (F4), and it is the only holder for whom foreign paper is what it is for — what a COMMERCIAL bank holds abroad is a position it takes with its own capital, which is 13h's decision and not the seed's. Eight per cent, small enough that this is a reserve holding rather than a currency fund and large enough that a week of exchange rates is visible in what a central bank is worth. Evenly, because the seed has nothing to say about which foreign government a reserve manager prefers. It is a PLACEHOLDER: what replaces it is the portfolio decision at 13h, after which what anybody holds abroad is an outcome of what it bought and sold.",
+      standsInFor: {
+        mechanism: 'Central Bank F4',
+        worklistItem: '13h',
+      },
     },
     ...openingPrices(),
     {
@@ -1006,6 +1014,28 @@ export function foundationSeedFor(
       }
     }
 
+    const crossShare = ctx.params.get(P.crossHoldingShare);
+    const abroadShare = div(crossShare, ABROAD.length, 'the part of it that is any ONE country\u2019s');
+    // Central Bank F4, Currency D2: AND ITS RESERVES, which are the other countries' paper. It is
+    // on this side of the sheet with the domestic paper and for the same reason: it is an asset the
+    // central bank bought with money it issued, so it is part of what decides how big its balance
+    // sheet is. Holding it anywhere else was the first version of this seed and it is what took the
+    // banking system's liquidity abroad (docs/BUGS.md 12-19): a foreign bond raises nothing at a
+    // window that is its own system's, so a commercial bank holding one holds an illiquid asset.
+    for (const c of ABROAD) {
+      const line = instrumentId(String(abroadLine.get(String(c.region))));
+      const price = openingOf(abroadPrice, String(c.region));
+      // What it holds of one country's paper is the same share of the system's paper that country's
+      // own central bank holds of America's: the arrangement is symmetric, because nothing in this
+      // world says which of the four is the reserve currency (XI-12).
+      const units = div(mul(systemPaper, abroadShare, `what it holds of ${c.name}`), price, 'units');
+      if (units <= 0) continue;
+      const drawn = held(ctx, line, units);
+      if (drawn <= 0) continue;
+      ctx.endowUnits(CB, line, drawn, priced(ctx, line, price));
+      centralBankAssets = add(centralBankAssets, drawn * price, 'its reserves abroad');
+    }
+
     // Money A1, Central Bank A2: NO CENTRAL-BANK MONEY EXISTS THAT ITS ISSUER BOUGHT NOTHING WITH.
     // Its money is its liability and the paper above is the asset it bought with it, so THE SIZE OF
     // ITS BALANCE SHEET IS ALREADY DECIDED: what is left to say is who holds that money.
@@ -1122,19 +1152,6 @@ export function foundationSeedFor(
     // That is not a finding about banks; it is a seed that put a position where its own liquidity
     // rule says it cannot be. What a COMMERCIAL bank holds abroad is a decision it takes with its
     // own capital once there is a reason to (13h), and it is not the seed's to state.
-    const crossShare = ctx.params.get(P.crossHoldingShare);
-    const abroadShare = div(crossShare, ABROAD.length, 'the part of it that is any ONE country\u2019s');
-    const home = ctx.registry.centralBankOf(USD);
-    for (const c of ABROAD) {
-      const line = instrumentId(String(abroadLine.get(String(c.region))));
-      const price = openingOf(abroadPrice, String(c.region));
-      // F4: what it holds of one country's paper is the same share of the system's paper that
-      // country's own central bank holds of America's — the arrangement is symmetric because
-      // nothing here says which of them is the reserve currency (XI-12).
-      const units = div(mul(systemPaper, abroadShare, `what it holds of ${c.name}`), price, 'units');
-      if (units <= 0) continue;
-      ctx.endowUnits(home, line, held(ctx, line, units), priced(ctx, line, price));
-    }
     // Central Bank F4: and each of their own reserves, which are a claim on the American issuer. It
     // is the benchmark line, because that is the one a reserve manager holds.
     const reserveLine = instrumentId(seedLineRows[seedLineRows.length - 1]?.id ?? String(GOV_LINE));

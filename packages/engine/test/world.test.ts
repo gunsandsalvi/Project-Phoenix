@@ -34,7 +34,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { RIG_FIRMS, rigWorld, rigSpec, withDependencies, mergeModules } from './rig.js';
+import { RIG_FIRMS, rigWorld, rigSpec, withDependencies, mergeModules, rigMembers } from './rig.js';
 import { unexpected } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { phx } from './units.js';
@@ -200,33 +200,37 @@ describe('the seed (Seed A2)', () => {
     // their reason and both were declared shapes, so the field guards passed and the honest measure
     // read zero. A shape with a scheduled death IS a placeholder (Law 2), and the register now
     // refuses the other way round.
-    expect(report?.reads.placeholders).toBe(2);
+    expect(report?.reads.placeholders).toBe(5);
     expect(
       snapshot(w, { kind: 'inspector' }, 10)
-        .params.placeholders.filter((p) => p.id.includes('fund.fee'))
-        .map((p) => `${p.mechanism} at ${p.worklistItem}`),
-    ).toEqual(['Fund Shares F3 at 13h', 'Fund Shares F3 at 13h']);
-    // And eight shapes. Five are the levels the world opens at (Seed C4) — the four goods and the
-    // opening yield: a market that has never traded has no price, so a world that opens with stock
-    // in it opens with a level for that stock, and no worklist item will ever delete that, which is
-    // why they are shapes and not placeholders with a death nobody could keep. The sixth is the
-    // width of the one preference whose dispersion is still stated (§46 B1.a). What is unequal
-    // about households is not here: it is what happened to them.
+        .params.placeholders.map((p) => `${p.id} -> ${p.mechanism} at ${p.worklistItem}`)
+        .sort(),
+    ).toEqual([
+      'fund.fee.etf.us -> Fund Shares F3 at 13h',
+      'fund.fee.fund.money.bank.a -> Fund Shares F3 at 13h',
+      'seed.centralBank.openingHoldingShare -> Banks Funding C1 at 11.5',
+      'seed.crossHoldingShare -> Central Bank F4 at 13h',
+      'seed.households.membersPerCohort -> Households A5 at 13f',
+    ]);
+    // XI-14: EIGHTEEN SHAPES, and the count is honest in both directions — it went UP because this
+    // world says more, and two of what used to be shapes became placeholders because a worklist
+    // item is now named that kills them (Law 2: a shape with a scheduled death IS a placeholder).
     //
-    // The last two are the opening balance sheet of the central bank — the share of every sovereign
-    // line it opens holding, and the share of the money that buys it that the treasury opens with
-    // rather than the banks. THE COUNT WENT UP AND FEWER NUMBERS ARE STATED, which is the only way
-    // that happens honestly: what stood here before was three reserve figures written into a table
-    // in the seed, declared to nobody and counted by nothing, plus the central bank's own OMO
-    // target read across from another module — so the central bank opened at the holding its own
-    // policy wanted and its first open-market session had nothing to do, which is a seeded outcome
-    // (Seed E1) and an imported equilibrium (Law 2). Two declared shapes now say what those four
-    // numbers said, and everything else on that balance sheet is arithmetic that cannot fail to
-    // add up.
-    expect(report?.reads.shapes).toBe(8);
-    // Three banks, two cohorts, a thousand people to a (cohort, bank) key: a key is where a
-    // population is REPRESENTED, so a world with a third bank in it has a third more households.
-    expect(report?.reads.populations['household']).toBe(6000);
+    // Five are the levels the world opens at (Seed C4) — the four goods and the opening yield: a
+    // market that has never traded has no price, so a world that opens with stock in it opens with
+    // a level for that stock, and no worklist item will ever delete that. One is the width of the
+    // one preference whose dispersion is still stated (§46 B1.a). One is the level every currency
+    // pair opens at, for the same reason the goods do (Spot FX C1). Six are the three assessors'
+    // methodologies — where each puts its first grade boundary and how fast its bands widen — and
+    // those are shapes about an answer that only a measurement can kill (Ratings E3, Part XII).
+    // The rest are the seed's own: the treasury's buffer share, what a firm opens holding in cash
+    // and in plant, and the household share of the sovereign's debt.
+    expect(report?.reads.shapes).toBe(18);
+    // XI-15: the population is the rig's, and the rig keeps the real world's ratio of people to
+    // firms — so it is READ from the same place the world was built from rather than written down
+    // again here. Two cohorts hold it between them; how many (cohort, bank) keys it is spread over
+    // is where it is REPRESENTED and changes nothing about how many people there are.
+    expect(report?.reads.populations['household']).toBe(rigMembers(RIG_FIRMS) * 2);
   });
 
   it('is reproducible from the seed value (Seed A5, Audit D3)', () => {
@@ -252,7 +256,9 @@ describe('the seed (Seed A2)', () => {
     const cells = w.parties.ofKind(HOUSEHOLD);
     expect(cells.length).toBe(12);
     const weights = cells.map((c) => (c.representation === 'cell' ? c.weight : 0));
-    expect(sum(weights).value).toBe(6000);
+    // XI-15: how many people there are is the rig's, read from where the world was built rather
+    // than written down a second time; the twelve cells above are where they are REPRESENTED.
+    expect(sum(weights).value).toBe(rigMembers(RIG_FIRMS) * 2);
     // Seed E: the seed decides nothing about how rich anybody is. Every cell opens with nothing.
     expect(new Set(cells.map((c) => w.cash(c.id, USD)))).toEqual(new Set([0]));
     for (let i = 0; i < 8; i += 1) w.step();
