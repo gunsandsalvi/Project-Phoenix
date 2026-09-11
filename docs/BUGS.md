@@ -686,3 +686,37 @@ estimates)**, the item immediately after this one. With that read the measure be
 against what it takes in, which is a coverage ratio and is the measure an assessor actually uses.
 
 **Position.** 12a.
+
+### 12-18 — A bank's balance sheet stops adding up at the first foreign coupon
+
+**Where.** `packages/engine/src/audit/families/accounts.ts` against `src/world/revalue.ts` and
+`src/ledger/settlement.ts`'s equity conversion. Seen with `foundationSpec('year', drawBanks(4),
+drawFirms(40))`.
+
+**Measured.** Every period from 1 to 12 the `accounts` family is green. At period 13 all four banks
+report at once and then the size never changes again:
+
+```
+bank.a: assets 15901695062647.4 - liabilities 13493808450681 != equity account 2407881467552.351
+        (a gap of 5,144,414.05 USD per member, constant from p13 to p52)
+bank.b 42,621,128.06   bank.c 114,506,019.90   bank.d 76,298,831.49
+```
+
+Period 13 is the first foreign COUPON date (`bund/gilt/jgb` pay on 03-15) and the first period in
+which the banks sold foreign paper: `bank.a`'s JGB holding falls from 34,904,460,844 to
+23,701,905,954 and its JPY balance rises by about the same value. The gap is a step, not a drift —
+it appears once and then persists unchanged while the rates are stale.
+
+**Ruled out.** The FX revaluation is running and is correct where it runs: `revaluation.fx` fires in
+every period the pair actually printed (p2, p14) and in none where the print is stale, which is what
+Currency D1 asks for.
+
+**What it looks like.** A seam between what the equity account recognised in a FOREIGN money and
+what the balance-sheet read values the same position at — the accrued interest on a foreign bond
+recognised over several periods at several rates, realised in one payment at one rate. That is
+Currency D2/D4's own territory and it wants one measurement (which term of the accounts family moved
+between p12 and p13) rather than a guess.
+
+**Position.** Its own item, inserted immediately after 12a (reporting and estimates): 12a builds the
+published income statement, and what an issuer recognised in a foreign money against what it was
+paid is exactly the reconciliation that statement has to survive.

@@ -61,7 +61,12 @@ export function indices(regions: readonly RegionId[], currencies: readonly Curre
   return {
     id: 'indices',
     spec: 'Indices',
-    requires: ['equity', 'goods', 'money-market'],
+    // D5, Law 15: NOTHING. An index rule is built from the registry's own regions and currencies
+    // and reads prints, public events and the ledger — never another module. A world with no equity
+    // in it has an equity index with an empty basket and therefore no level (A1), which is the
+    // right answer; requiring the modules whose lines happen to be in a basket would make the one
+    // index system refuse to assemble in every world that has fewer of them.
+    requires: [],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],

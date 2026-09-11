@@ -25,27 +25,37 @@ import type { Family, Violation } from '../../audit/audit.js';
 export const CURVE_COMPOUNDING = 'annual';
 export const CURVE_DAY_COUNT = 'ACT/ACT';
 
-export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule {
-  const family: CurveFamilyDecl = {
+/**
+ * D3.a, Currency A3: ONE MODULE, ONE CONVENTION, AND A FAMILY PER SOVEREIGN THAT BORROWS.
+ *
+ * Every issuer that borrows in its own money has its own curve — its own prints, its own points —
+ * and a world with four of them has four families. What they share is the convention (D3.c), which
+ * is stated once here and is why they are one module rather than four: four modules would be four
+ * places a compounding basis could be written down and three of them could be wrong.
+ */
+export function sovereignCurve(
+  issuers: readonly { readonly issuer: PartyId; readonly ccy: CurrencyCode }[],
+): SystemModule {
+  const families: CurveFamilyDecl[] = issuers.map(({ issuer, ccy }) => ({
     id: curveFamilyOf(issuer, ccy),
     name: `${issuer} curve in ${ccy}`,
     issuer,
     ccy,
     compounding: CURVE_COMPOUNDING,
     dayCount: CURVE_DAY_COUNT,
-  };
+  }));
   return {
     id: 'sovereign-curve',
     spec: 'Sovereign D',
     requires: ['sovereign-instruments'],
     instrumentKinds: [],
     partyKinds: [],
-    curveFamilies: [family],
+    curveFamilies: families,
     units: [],
     params: [],
     phases: [],
     participants: [],
-    families: [pointsMatchPrints(family)],
+    families: [pointsMatchPrints(families)],
   };
 }
 
@@ -54,7 +64,7 @@ export function sovereignCurve(issuer: PartyId, ccy: CurrencyCode): SystemModule
  * curve is built at the read, so this is not a check against itself: it compares the label the read
  * produced with the provenance the price store recorded when the market printed.
  */
-function pointsMatchPrints(family: CurveFamilyDecl): Family {
+function pointsMatchPrints(families: readonly CurveFamilyDecl[]): Family {
   return {
     name: 'prices',
     contributor: 'sovereign-curve',
@@ -63,7 +73,8 @@ function pointsMatchPrints(family: CurveFamilyDecl): Family {
     check: (view) => {
       const out: Violation[] = [];
       for (const i of view.instruments.all()) {
-        if (!issuedBy(i, family.issuer) || i.ccy !== family.ccy || !i.status.live) continue;
+        if (!i.status.live) continue;
+        if (!families.some((f) => issuedBy(i, f.issuer) && i.ccy === f.ccy)) continue;
         const print = view.prices.read(i.id, view.period);
         const traded = print.some && tradedIn(print.value, view.period);
         const carried = view.prices.latest(i.id, view.period);

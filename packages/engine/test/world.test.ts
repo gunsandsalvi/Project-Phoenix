@@ -98,6 +98,33 @@ function withModules(seed: string, ...extra: SystemModule[]): World {
   return assemble({ ...spec, modules: [...spec.modules, ...extra] });
 }
 
+/**
+ * Part XIII: THE NAMED MODULES AND WHAT THEY REQUIRE, transitively.
+ *
+ * A world is not a list of modules somebody picked — it is a closure, because a module that names a
+ * dependency means it. The seed derives this world's scale from the hours its people offer against
+ * the hours its chain needs (Seed A3), so the modules that own those facts come with it whether a
+ * test wanted them or not, and enumerating them here by hand would be a second dependency graph
+ * that goes stale the first time one of them gains a requirement (Law 4).
+ */
+function withDependencies(
+  all: readonly SystemModule[],
+  wanted: (m: SystemModule) => boolean,
+): SystemModule[] {
+  const byId = new Map(all.map((m) => [m.id, m]));
+  const keep = new Set<string>();
+  const take = (m: SystemModule): void => {
+    if (keep.has(m.id)) return;
+    keep.add(m.id);
+    for (const r of m.requires) {
+      const dep = byId.get(r);
+      if (dep !== undefined) take(dep);
+    }
+  };
+  for (const m of all) if (wanted(m)) take(m);
+  return all.filter((m) => keep.has(m.id));
+}
+
 /** The bare world with extra modules: the kernel's own behaviour, driven by the test alone. */
 function bareWith(seed: string, ...extra: SystemModule[]): World {
   return bare(seed, ...extra);
@@ -106,16 +133,15 @@ function bareWith(seed: string, ...extra: SystemModule[]): World {
 /** The bare world where no bank will lend a penny: every limit for every name is nothing (C3). */
 function noLending(seed: string, ...extra: SystemModule[]): World {
   const spec = rigSpec(seed);
-  const modules = spec.modules
-    .filter(
-      (m) =>
-        m.id === 'sovereign-instruments' ||
-        m.id === 'seed.foundation' ||
+  const modules = withDependencies(
+    spec.modules,
+    (m) =>
+      m.id === 'sovereign-instruments' ||
+      m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
-        m.id === 'banks' ||
-        m.id === 'money-market',
-    )
-    .map((m) => ({
+      m.id === 'banks' ||
+      m.id === 'money-market',
+  ).map((m) => ({
       ...notDealing(m),
       params: m.params.map((p) =>
         p.id.startsWith('bank.limitPerBorrower.') ? { ...p, value: 0 } : p,
@@ -134,22 +160,28 @@ function noLending(seed: string, ...extra: SystemModule[]): World {
  */
 function bare(seed: string, ...extra: SystemModule[]): World {
   const spec = rigSpec(seed);
-  const kernelOnly = spec.modules
-    .filter(
-      (m) =>
-        m.id === 'sovereign-instruments' ||
-        m.id === 'seed.foundation' ||
+  const kernelOnly = withDependencies(
+    spec.modules,
+    (m) =>
+      m.id === 'sovereign-instruments' ||
+      m.id === 'seed.foundation' ||
       m.id === 'seed.funding' ||
-        m.id === 'banks' ||
-        m.id === 'money-market',
-    )
-    .map(notDealing);
+      m.id === 'banks' ||
+      m.id === 'money-market',
+  ).map(notDealing);
   return assemble({ ...spec, modules: [...kernelOnly, ...extra] });
 }
 
 describe('assembly (Law 15, Part XIII)', () => {
   it('orders modules by their requirements and refuses a cycle or a missing dependency', () => {
-    const ordered = orderModules([foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order')), sovereignInstruments]);
+    // Two modules, one of which requires the other: the order is the dependency's, whatever order
+    // they were handed in. A module with requirements nobody supplied is the other half of the same
+    // rule, and both are what Part XIII means by an order that is declared rather than written.
+    const seedOnly: SystemModule = {
+      ...foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order')),
+      requires: ['sovereign-instruments'],
+    };
+    const ordered = orderModules([seedOnly, sovereignInstruments]);
     expect(ordered.map((m) => m.id)).toEqual(['sovereign-instruments', 'seed.foundation']);
     const orphan: SystemModule = { ...foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order')), id: 'x', requires: ['nope'] };
     expect(() => orderModules([orphan])).toThrow(InvalidRegistry);

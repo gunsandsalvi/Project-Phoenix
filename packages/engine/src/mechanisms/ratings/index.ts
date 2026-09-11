@@ -231,7 +231,10 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
   return {
     id: 'ratings',
     spec: 'Ratings',
-    requires: ['banks', 'firms', 'treasury', 'credit-events'],
+    // A5: only the banks, because an assessor banks with one and its seed names it. Who it has an
+    // opinion ABOUT is whoever is there to have one about (the kinds that borrow), which is a read
+    // of the registry and not a dependency.
+    requires: ['banks'],
     instrumentKinds: [],
     partyKinds: [assessorKind],
     curveFamilies: [],

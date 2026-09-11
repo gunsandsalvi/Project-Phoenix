@@ -234,7 +234,12 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     spec: 'Households, Sovereign E2.f',
     // It buys goods, it acts on its own outlook, and it sells its members' hours in the venue the
     // labour module runs — so all three must be there before it decides anything.
-    requires: ['expectations', 'goods', 'labour'],
+    // Part XIII, Law 4: and `treasury`, because what a household is charged at the counter includes
+    // the tax on it (`treasury.tax.consumption`) and that number is the state's, read by id. A
+    // module that reads another's parameter depends on it whether or not it imports it — and a
+    // world assembled without the one that declares it fails on a missing number rather than on a
+    // missing dependency, which is the same defect wearing a worse message.
+    requires: ['expectations', 'goods', 'labour', 'treasury'],
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],

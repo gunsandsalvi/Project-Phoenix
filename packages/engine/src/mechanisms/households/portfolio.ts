@@ -225,8 +225,18 @@ export function shareOrders(
       continue;
     }
     // XI-15: the rungs are ONE MEMBER's, in whole shares, and the cell posts that many apiece.
+    //
+    // Law 8: AND NEVER MORE OF A LINE THAN THERE IS. What a buyer's money reaches at a price is
+    // `budget / price`, which is the curve and is right; how many of the thing exist is a different
+    // fact, and it is the one that makes a bid a bid. It is the mirror of the seller's "never more
+    // than it holds" — the arithmetic of what there is to deliver, not a limit on what anybody
+    // wants — and without it a line whose price has collapsed has every saver bidding for many
+    // times the whole company, and the demand at a level stops being an exact count at all
+    // (`asQty` threw at 1.5e16 in a year-long run; docs/BUGS.md 12-15 is why the price collapsed).
+    const exist = line.instrument.issued;
     for (const rung of rungsOver(levelsBelow(line.price, steps), perLine)) {
-      const qty = mul(rung.qty, weight, 'what the cell puts in');
+      const wanted = mul(rung.qty, weight, 'what the cell puts in');
+      const qty = downTick(wanted < exist ? wanted : exist);
       if (qty <= 0) continue;
       out.push({ market, instrument: id, side: 'buy', price: rung.price, qty });
     }

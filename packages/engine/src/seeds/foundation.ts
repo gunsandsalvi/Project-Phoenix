@@ -412,7 +412,13 @@ export function foundationSeedFor(
   return {
   id: 'seed.foundation',
   spec: 'Seed',
-  requires: ['sovereign-instruments'],
+  // Part XIII, Seed A3: what this seed READS to size the world it opens. The scale is derived, not
+  // stated — it is the hours this world's people actually offer, divided into the hours the chain
+  // needs — so the modules that own those facts have to be here: `labour` states what a member
+  // offers and when it retires, `households` states who the people are, `goods` states the recipes
+  // the chain is made of. A world assembled without them cannot be seeded at all, and saying so
+  // here is better than the missing parameter it used to fail on.
+  requires: ['sovereign-instruments', 'goods', 'households', 'labour'],
   instrumentKinds: [],
   partyKinds: [],
   curveFamilies: [],
@@ -1524,7 +1530,15 @@ export function foundationSpec(
       equity(drew.listed),
       funds(drew.funds, drew.etfs),
       sovereignInstruments,
-      sovereignCurve(TREASURY_US, USD),
+      // Sovereign D3.a, Currency A3: EVERY SOVEREIGN THAT BORROWS HAS A CURVE, and it is its own —
+      // one issuer, one money, its own prints. A world whose foreign lines had no curve family
+      // would have paper anybody may hold and nobody may value at a yield (D4.a throws where it is
+      // asked), which is the same line being a bond here and not one there. One module, because
+      // the CONVENTION is one thing and four modules would be four places to write it down.
+      sovereignCurve([
+        { issuer: TREASURY_US, ccy: USD },
+        ...ABROAD.map((c) => ({ issuer: c.treasury, ccy: c.ccy })),
+      ]),
       treasury,
       centralBankOmo,
       // The money market after the treasury and the curve: a bank funds itself against the paper
