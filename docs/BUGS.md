@@ -502,3 +502,17 @@ Also measured on the way: the fund's own basket holding falls from 6,948,844 to 
 while its shares outstanding do not, so its NAV per share collapses. Not chased (Law 11) — recorded.
 
 Seen at: `packages/engine/src/mechanisms/funds/etf.ts`, `packages/engine/test/etf.test.ts`.
+
+### 12d-9 — no listed firm is ever short, so D1 never fires
+
+`equity.test.ts` "sells new shares when it is short and the market is dear" is red and stays red.
+`decideEquity` sells shares only when `spare < 0` — the firm's own funding read says it is short of
+what it is about to have to pay — and over forty periods of the rig no listed firm ever is: every
+`equity.plan` in the run reads `issue: 0`, and the last of them are BUYBACKS, which is the opposite
+corner of the same decision. The mechanism is correct and declines correctly.
+
+Same cause as 12d-1 and 12-15: a world whose firms hold far more than their own plans need, never
+invest, never borrow (12d-6) and therefore never raise. Positioned at worklist **16**, where a level
+is judged.
+
+Seen at: `packages/engine/src/mechanisms/equity/decide.ts:76`.

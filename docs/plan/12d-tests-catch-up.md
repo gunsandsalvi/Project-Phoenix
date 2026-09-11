@@ -411,6 +411,16 @@ every firm in this world has four thousand times the plant it needs (`docs/BUGS.
 12-15's level, positioned at worklist **16**). So 12d closes with the suite's reds accounted for one
 by one, and the record names which item makes each of the named ones green.
 
+## The reds this item closes with, and what makes each green
+
+| file | test | finding | item |
+| --- | --- | --- | --- |
+| `capital.test.ts` | ten, an investment decision that correctly declines | 12d-1, 12-15 | 16 |
+| `equity.test.ts` | sells new shares when it is short and the market is dear | 12d-9 | 16 |
+
+Everything else named in `docs/BUGS.md` is a finding about a mechanism whose test does not depend on
+it: they are positioned when this item closes, and the record says where each landed.
+
 ## Guard
 
 PLAN §7 (a test never names a party, never widens a tolerance, never needs a bound); Law 7; Law 11
