@@ -24,15 +24,15 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigDraw, rigSpec, mergeModules } from './rig.js';
+import { rigDraw, rigSpec, mergeModules, rigShapeFor } from './rig.js';
 import { unexpected } from './expected.js';
 import { asQty, type Qty } from '../src/core/tick.js';
 
-const FUND = partyId('etf.north');
-const MANAGER = partyId('manager.etf.north');
-const SHARE = shareLineOf('etf.north');
-const MARKET = etfMarketOf('etf.north');
-const VENUE = etfVenue('etf.north');
+const FUND = partyId('etf.us');
+const MANAGER = partyId('manager.etf.us');
+const SHARE = shareLineOf('etf.us');
+const MARKET = etfMarketOf('etf.us');
+const VENUE = etfVenue('etf.us');
 const LINE_4 = instrumentId('equity.firm.4');
 
 /**
@@ -41,7 +41,11 @@ const LINE_4 = instrumentId('equity.firm.4');
  * world in which the fund's own market has a side that is not a bank's dealing line (§46 A3).
  */
 function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
-  const spec = rigSpec(seed);
+  // Seed B1.a: a world with an exchange-traded fund in it, ASKED FOR rather than assumed. Which
+  // firms list is a draw, and a world that listed none launches none — so a test that took the
+  // default rig would be measuring a fund that is not there.
+  const shape = rigShapeFor(seed, { etfs: 1 });
+  const spec = rigSpec(seed, shape.banks, shape.firms);
   const modules = spec.modules.map((m) =>
     m.id === 'households'
       ? { ...m, params: m.params.map((p) => (p.id === 'households.buffer.periods' ? { ...p, value: 0 } : p)) }
@@ -270,7 +274,7 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
     // Only the sponsor turned up — the desks that would make its market are not in this world, so
     // what they were down to take is not what anybody took.
     const drew = rigDraw('etf-small');
-    const sponsorOnly = drew.etfs.map((e) => ({ ...e, launchedBy: { 'manager.etf.north': 20 } }));
+    const sponsorOnly = drew.etfs.map((e) => ({ ...e, launchedBy: { 'manager.etf.us': 20 } }));
     const spec = rigSpec('etf-small');
     const w = assemble({
       ...spec,

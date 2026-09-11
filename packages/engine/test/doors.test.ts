@@ -4,7 +4,6 @@
  *
  * @spec Expectations A1 Expectations A2 Expectations A2.b Goods A1 Commodities Spot D5 Goods E1 Goods E2 Goods E2.c Goods E4 Commodities Spot F1 Law 4 Observer E3
  */
-import { TONNE_PIECES } from '../src/registry/grid.js';
 import { describe, expect, it } from 'vitest';
 import {
   ANNUAL,
@@ -72,7 +71,10 @@ function goodsModule(profile: InstrumentKindProfile, run: (ctx: MechanismContext
     instrumentKinds: [profile],
     partyKinds: [],
     curveFamilies: [],
-    units: [{ id: TONNES, name: 'tonnes', perUnit: TONNE_PIECES }],
+    // Law 4: the tonne is the GOODS module's unit and this world has it. A module that declared it
+    // again would be a second writer of how many grams one is, and assembly refuses that — which is
+    // the guard doing its job rather than a problem with the guard.
+    units: [],
     params: [],
     phases: [
       {
@@ -203,17 +205,19 @@ describe('what a party expects (Expectations A2)', () => {
             .map((k) => k.slice(`${party}|`.length)),
       },
     };
-    const w = world(outlooks);
-    const view = w.participantView(FIRM_1);
-    const got = view.outlook('x');
-    expect(got.some).toBe(true);
-    expect(got.some ? got.value.expected : null).toBe(3);
-    // A2: the door also says WHICH variables this party has an outlook of, so nothing has to guess
-    // a name — and a party that has observed nothing answers with nothing.
-    expect(w.outlookVariables(FIRM_1)).toEqual(['x']);
+    // A2.b: AND THERE IS ONLY ONE OF THEM. This world already has the module that keeps what
+    // parties expect, so a second provider is refused at assembly — an expectation is a fact about
+    // a party and a fact has one writer (Law 4). The refusal is the door working, and it names
+    // both claimants so it is obvious which two disagreed.
+    expect(() => world(outlooks)).toThrow(/second writer of what a party expects/);
+    // And the one provider answers through the same door: a party that has observed nothing has no
+    // outlook of anything, which is an answer and not a default (Appendix A).
+    const w = world();
+    expect(w.outlookVariables(FIRM_1)).toEqual([]);
+    expect(w.participantView(FIRM_1).outlook('x').some).toBe(false);
     expect(w.outlookVariables(BANK_A)).toEqual([]);
     // A2.b: nobody else's expectation is reachable, and an unobserved variable has none.
-    expect(view.outlook('y').some).toBe(false);
+    expect(w.participantView(FIRM_1).outlook('y').some).toBe(false);
     expect(w.participantView(BANK_A).outlook('x').some).toBe(false);
   });
 

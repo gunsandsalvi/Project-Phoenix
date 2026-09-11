@@ -687,36 +687,34 @@ against what it takes in, which is a coverage ratio and is the measure an assess
 
 **Position.** 12a.
 
-### 12-18 — A bank's balance sheet stops adding up at the first foreign coupon
+### 12-18 — A bank's balance sheet takes one step out of true and never comes back
 
-**Where.** `packages/engine/src/audit/families/accounts.ts` against `src/world/revalue.ts` and
-`src/ledger/settlement.ts`'s equity conversion. Seen with `foundationSpec('year', drawBanks(4),
-drawFirms(40))`.
+**Where.** The seam between `packages/engine/src/audit/families/accounts.ts` (the read) and what the
+equity account was moved by. Reproduced with `foundationSpec('year', drawBanks(4, 'year'),
+drawFirms(40, 'year'))`, and reached in the suite by `etf.test.ts` and `capital.test.ts`.
 
-**Measured.** Every period from 1 to 12 the `accounts` family is green. At period 13 all four banks
-report at once and then the size never changes again:
+**Measured, in four steps.**
 
-```
-bank.a: assets 15901695062647.4 - liabilities 13493808450681 != equity account 2407881467552.351
-        (a gap of 5,144,414.05 USD per member, constant from p13 to p52)
-bank.b 42,621,128.06   bank.c 114,506,019.90   bank.d 76,298,831.49
-```
+1. Every period to 12 the `accounts` family is green. At period 13 all four banks report at once,
+   and the size then never changes again for forty more periods:
+   `bank.a: assets 15901695062647.4 - liabilities 13493808450681 != equity account 2407881467552.351`
+   — a gap of 5,144,414.06 per member on a book of 1.6e13, or three parts in ten million.
+2. **The equity side is fully explained.** Over period 13 the account moved −968,138,613,902.62, and
+   the settled instructions plus the revaluation events account for exactly that: ledger
+   +96,945,101,314.52 (corporateAction +104.4e9, coupon −3.4e9, trade −2.8e9, transfer −1.2e9) and
+   revaluation −1,065,083,715,217.14. Nothing moved that account without an event.
+3. **So the gap is on the READ side**: what the register and the price store say the book is worth
+   changed by 5,144,414.06 more than every event that touched it.
+4. **It is not the foreign half.** The holdings that moved most over that period are repo rows and
+   equity lines in the bank's own money; the foreign positions move by amounts the revaluation
+   books. The first guess — that it was the foreign coupon date — does not survive the measurement.
 
-Period 13 is the first foreign COUPON date (`bund/gilt/jgb` pay on 03-15) and the first period in
-which the banks sold foreign paper: `bank.a`'s JGB holding falls from 34,904,460,844 to
-23,701,905,954 and its JPY balance rises by about the same value. The gap is a step, not a drift —
-it appears once and then persists unchanged while the rates are stale.
+**A step, not a drift.** It appears in one period and is then carried unchanged, which rules out
+accumulating dust (that would keep growing) and points at a single event whose read-side effect and
+equity-side effect differ — a lot valued one way by `valueOfLots` and another by what settlement
+booked for it.
 
-**Ruled out.** The FX revaluation is running and is correct where it runs: `revaluation.fx` fires in
-every period the pair actually printed (p2, p14) and in none where the print is stale, which is what
-Currency D1 asks for.
-
-**What it looks like.** A seam between what the equity account recognised in a FOREIGN money and
-what the balance-sheet read values the same position at — the accrued interest on a foreign bond
-recognised over several periods at several rates, realised in one payment at one rate. That is
-Currency D2/D4's own territory and it wants one measurement (which term of the accounts family moved
-between p12 and p13) rather than a guess.
-
-**Position.** Its own item, inserted immediately after 12a (reporting and estimates): 12a builds the
-published income statement, and what an issuer recognised in a foreign money against what it was
-paid is exactly the reconciliation that statement has to survive.
+**Position.** Its own item, inserted after 12a. 12a builds the published income statement, which is
+the one artefact that has to reconcile what an issuer recognised against what it was paid, line by
+line — and that decomposition is what will name which event this is, instead of a bisection over
+forty periods of a four-country world.
