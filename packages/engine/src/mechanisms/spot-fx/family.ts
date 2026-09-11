@@ -1,9 +1,9 @@
 /**
  * What the triangle says, as a standing measurement.
  *
- * @spec Spot FX C3 Spot FX C3.b Spot FX E3 Currency C3 Currency C3.a Currency C3.b XI-12 XI-13 Law 3 Law 6 Audit B4
+ * @spec Spot FX C3 Spot FX E3 Currency C3 Currency C3.a Currency C3.b XI-12 XI-13 Law 3 Law 6 Audit B4
  *
- * C3.b: NOTHING ENFORCES THE IDENTITY. Each pair clears on its own flow, so `A/C` is whatever its
+ * Currency C3.b: NOTHING ENFORCES THE IDENTITY. Each pair clears on its own flow, so `A/C` is whatever its
  * own book made it and may disagree with `A/B` times `B/C`. What is checked here is not that they
  * agree — that would be the enforced convergence Appendix B forbids — but whether a gap has been
  * left standing that a desk should have taken.

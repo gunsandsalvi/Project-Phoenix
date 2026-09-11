@@ -12,9 +12,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Money A1` | MET | packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money A1.d` | MET | packages/engine/src/audit/families/money.ts |
-| `Money A2` | MET | packages/engine/src/core/money.ts, packages/engine/src/core/tick.ts (money is a COUNT of indivisible pieces and the count is an integer: cents, so amounts add exactly and nothing below a cent exists anywhere), packages/engine/src/registry/grid.ts, packages/engine/src/registry/registry.ts (the one boundary between a person's number and the state's) |
-| `Money A2.b` | MET | packages/engine/src/core/money.ts |
-| `Money A3` | MISSING |  |
+| `Money A2` | MET | packages/engine/src/core/tick.ts (money is a COUNT of indivisible pieces and the count is a branded Qty, so an amount below a piece cannot be constructed anywhere), packages/engine/src/registry/grid.ts, packages/engine/src/registry/registry.ts (the one boundary between a person’s number and the state’s) |
+| `Money A2.b` | MET | packages/engine/src/ledger/settlement.ts (a money leg names one currency and settles in it; what an amount in another comes to is a conversion at a rate somebody traded, never an addition), packages/engine/src/prices/value.ts |
+| `Money A3` | MET | packages/engine/src/world/actions.ts (accountResolver: which account a party holds a money in — its own bank for its own money, that money’s own central bank for a foreign one), packages/engine/src/world/world.ts |
 | `Money A4` | MISSING |  |
 | `Money B1` | MISSING |  |
 | `Money B1.b` | MISSING |  |
@@ -169,31 +169,31 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Currency A1` | MISSING |  |
+| `Currency A1` | MET | packages/engine/src/seeds/foundation.ts (four moneys, each a named central bank’s liability), packages/engine/src/registry/registry.ts |
 | `Currency A2` | MET | packages/engine/src/audit/families/names.ts, packages/engine/src/registry/registry.ts |
-| `Currency A3` | MET | packages/engine/src/core/money.ts |
-| `Currency A4` | MET | packages/engine/src/core/money.ts |
-| `Currency A5` | PARTIAL | one currency in the foundation registry; several are data. The closed named set, and a party holding any of them, is the currency layer (worklist 12) |
-| `Currency B1` | MISSING |  |
-| `Currency B2` | MISSING |  |
-| `Currency B3` | MISSING |  |
-| `Currency B4` | MISSING |  |
-| `Currency B5` | MISSING |  |
-| `Currency C1` | MISSING |  |
-| `Currency C2` | MISSING |  |
-| `Currency C3` | MISSING |  |
-| `Currency C4` | MISSING |  |
-| `Currency C4.a` | MISSING |  |
-| `Currency C5` | MISSING |  |
-| `Currency D1` | MISSING |  |
-| `Currency D2` | MISSING |  |
-| `Currency D2.b` | MISSING |  |
-| `Currency D3` | PARTIAL | ordering enforced for marks; foreign positions cannot exist until the currency layer, which is where the FX revaluation is placed before them and the single-currency guard in settlement is deleted (worklist 12) |
-| `Currency D4` | MISSING |  |
-| `Currency E1` | MISSING |  |
+| `Currency A3` | MET | packages/engine/src/seeds/foundation.ts (each money is its own unit with its own smallest piece), packages/engine/src/registry/grid.ts |
+| `Currency A4` | MET | packages/engine/src/registry/registry.ts, packages/engine/src/seeds/foundation.ts |
+| `Currency A5` | MET | packages/engine/src/seeds/foundation.ts (the closed named set: USD, EUR, GBP, JPY, each with its issuer, its region and its unit) |
+| `Currency B1` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (a party short of a money it does not issue buys it in the pair between that money and its own) |
+| `Currency B2` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (and a party holding one it has no use for sells it there, which is the same read from the other end) |
+| `Currency B3` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (the dealer: its position in a pair is what it holds of the money that is not its own) |
+| `Currency B4` | MET | packages/engine/src/mechanisms/money-market/index.ts (a central bank lends to its own system; a bank short of a foreign money has no window and must buy it) |
+| `Currency B5` | MET | packages/engine/src/mechanisms/spot-fx/index.ts (every pair is a market, opened at the seed from the currencies themselves) |
+| `Currency C1` | MET | packages/engine/src/clearing/market.ts (an fx trade is two money legs in two currencies at the rate the session struck) |
+| `Currency C2` | MET | packages/engine/src/clearing/market.ts (both legs settle or neither does: an instruction applies whole or not at all) |
+| `Currency C3` | MET | packages/engine/src/mechanisms/spot-fx/arbitrage.ts (the triangle closes because a desk takes the round trip, never because anything enforces an identity), packages/engine/src/mechanisms/spot-fx/family.ts |
+| `Currency C4` | MET | packages/engine/src/seeds/foundation.ts (a coupon in a money its receiver does not book in is a real payment: the foreign lines pay to holders abroad) |
+| `Currency C4.a` | MET | packages/engine/src/ledger/settlement.ts (what the payment settles in is the leg’s own currency, at the account that money sits in for each side) |
+| `Currency C5` | MET | packages/engine/src/prices/value.ts (rateInForce: ONE rate for a period — what a payment settles at and what a balance sheet is valued at are the same number), packages/engine/src/world/context.ts |
+| `Currency D1` | MET | packages/engine/src/prices/value.ts (everything inside a period values at the rate the period opened with; the revaluation at the close brings the books to the rate this period’s session struck) |
+| `Currency D2` | MET | packages/engine/src/world/revalue.ts (every position in a money that is not its holder’s own is revalued to the holder’s equity) |
+| `Currency D2.b` | MET | packages/engine/src/world/revalue.ts, packages/engine/src/register/register.ts (a central bank’s foreign reserves go to its revaluation account, never to what it earned) |
+| `Currency D3` | MET | packages/engine/src/world/revalue.ts (the FX revaluation runs before the marks, so the two do not each claim the other’s move) |
+| `Currency D4` | MET | packages/engine/src/audit/families/currency.ts (what every revaluation booked against what the period’s rate move on the positions revalued comes to, reached from the events rather than the register) |
+| `Currency E1` | MET | packages/engine/src/observer/observer.ts (the rate of every pair, with whether the print is this period’s) |
 | `Currency E2` | MISSING |  |
-| `Currency E3` | MISSING |  |
-| `Currency E4` | MISSING |  |
+| `Currency E3` | MET | packages/engine/src/mechanisms/spot-fx/family.ts (the triangular gap per triple, reported only when it is bigger than the cheapest desk’s round trip) |
+| `Currency E4` | MET | packages/engine/src/observer/observer.ts, packages/engine/src/world/revalue.ts (what the rate did to a holder is a journalled event with its own size) |
 
 ## Bond
 
@@ -465,33 +465,33 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Spot FX A1` | MISSING |  |
-| `Spot FX A2` | MISSING |  |
-| `Spot FX A3` | MISSING |  |
-| `Spot FX B1` | MISSING |  |
-| `Spot FX B2` | MISSING |  |
-| `Spot FX B3` | MISSING |  |
-| `Spot FX B4` | MISSING |  |
-| `Spot FX B5` | MISSING |  |
-| `Spot FX B6` | MISSING |  |
-| `Spot FX C1` | MISSING |  |
-| `Spot FX C2` | MISSING |  |
-| `Spot FX C3` | MISSING |  |
-| `Spot FX C4` | MISSING |  |
-| `Spot FX C5` | MISSING |  |
-| `Spot FX C6` | MISSING |  |
-| `Spot FX D1` | MISSING |  |
-| `Spot FX D2` | MISSING |  |
-| `Spot FX D3` | MISSING |  |
-| `Spot FX D4` | MISSING |  |
-| `Spot FX D5` | MISSING |  |
-| `Spot FX E1` | MISSING |  |
-| `Spot FX E2` | MISSING |  |
-| `Spot FX E3` | MISSING |  |
-| `Spot FX E4` | MISSING |  |
-| `Spot FX F1` | MISSING |  |
-| `Spot FX F1.a` | MISSING |  |
-| `Spot FX F1.b` | MISSING |  |
+| `Spot FX A1` | MET | packages/engine/src/clearing/market.ts (a spot trade is two money legs at the rate the session struck; there is no asset and no issuer) |
+| `Spot FX A2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/ledger/settlement.ts (both legs settle or neither does — the atomicity an instruction already has, which is Herstatt) |
+| `Spot FX A3` | MET | packages/engine/src/core/ids.ts (a pair is named as a market names one), packages/engine/src/world/world.ts (a pair against itself, or priced in a third money, is refused at assembly) |
+| `Spot FX B1` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (a party short of a money it has to pay posts a size and no level) |
+| `Spot FX B2` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (and one holding a money nothing it owes is in sells it — the same signed read, `owedIn`) |
+| `Spot FX B3` | MET | packages/engine/src/world/world.ts (owedIn: what a party’s own liabilities say falls due in a money, less what it holds of it) |
+| `Spot FX B4` | PARTIAL | packages/engine/src/mechanisms/spot-fx/index.ts — the participants are the kernel’s kinds plus the banks’ desks. A party whose reason to be in a pair is a VIEW of the rate is 13h’s hedge fund; nothing here speculates on a currency |
+| `Spot FX B5` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (the desk quotes both ways, its edge is its own, and its spread is twice that rather than a width anybody stated) |
+| `Spot FX B6` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (a desk cannot sell a money it has not got and cannot pay with one it has not got — arithmetic, not a limit) |
+| `Spot FX C1` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts (the rate is a PRINT of the pair’s own session, in the one price store) |
+| `Spot FX C2` | MET | packages/engine/src/mechanisms/spot-fx/arbitrage.ts (the desk decides once and its three books read the decision back as ordinary orders) |
+| `Spot FX C3` | MET | packages/engine/src/mechanisms/spot-fx/arbitrage.ts, packages/engine/src/mechanisms/spot-fx/family.ts (the gap closes to a desk’s own cost and no further, and a standing gap is measured rather than closed) |
+| `Spot FX C4` | MET | packages/engine/src/clearing/market.ts (each leg lands on the smallest piece of its OWN money, and the two pieces are different sizes) |
+| `Spot FX C5` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (the spread is the desk’s edge either side, never a stated width) |
+| `Spot FX C6` | MET | packages/engine/src/ledger/settlement.ts (neither side can be left having paid for money it did not get) |
+| `Spot FX D1` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts, packages/engine/src/mechanisms/spot-fx/data.ts (what a desk will risk in a pair is its own share of its own capital) |
+| `Spot FX D2` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (past its own limit it stops quoting and takes the market: the rung its paper book already had) |
+| `Spot FX D3` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (what it can deliver and what it can pay with, both read off its own balances) |
+| `Spot FX D4` | MET | packages/engine/src/mechanisms/spot-fx/participants.ts (its own position skews both sides, which is how order flow moves a rate with nobody deciding that it should) |
+| `Spot FX D5` | MET | packages/engine/src/mechanisms/spot-fx/data.ts (every number in a desk’s quote is declared under that desk’s own name) |
+| `Spot FX E1` | MET | packages/engine/src/observer/observer.ts (every pair’s rate, and whether it is this period’s print) |
+| `Spot FX E2` | MET | packages/engine/src/journal/journal.ts, packages/engine/src/clearing/market.ts (a session that produced no trade says so and carries the last real price, visibly stale) |
+| `Spot FX E3` | MET | packages/engine/src/mechanisms/spot-fx/family.ts, packages/engine/src/observer/observer.ts (the triangular gap as a standing measurement with an owner and a size) |
+| `Spot FX E4` | MET | packages/engine/src/world/revalue.ts (what a rate move did to a holder is an event with its own size) |
+| `Spot FX F1` | MET | packages/engine/src/world/world.ts (markets clear in declared order; a pair runs first) |
+| `Spot FX F1.a` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/spot-fx/index.ts (the conversion is its own session with its own counterparty — never inside another trade) |
+| `Spot FX F1.b` | MET | packages/engine/src/clearing/market.ts (a pair’s market order is the same order every other book takes) |
 
 ## Fund Shares
 
@@ -755,28 +755,28 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Indices A1` | MISSING |  |
-| `Indices A2` | MISSING |  |
-| `Indices A3` | MISSING |  |
-| `Indices A4` | MISSING |  |
-| `Indices B1` | MISSING |  |
-| `Indices B2` | MISSING |  |
-| `Indices B3` | MISSING |  |
-| `Indices B4` | MISSING |  |
-| `Indices C1` | MISSING |  |
-| `Indices C2` | MISSING |  |
-| `Indices C2.a` | MISSING |  |
-| `Indices C3` | MISSING |  |
-| `Indices C4` | MISSING |  |
-| `Indices D1` | MISSING |  |
-| `Indices D2` | MISSING |  |
-| `Indices D3` | MISSING |  |
-| `Indices D3.b` | MISSING |  |
-| `Indices D4` | MISSING |  |
-| `Indices D5` | MISSING |  |
-| `Indices E1` | MISSING |  |
-| `Indices E2` | MISSING |  |
-| `Indices E3` | MISSING |  |
+| `Indices A1` | MET | packages/engine/src/mechanisms/indices/baskets.ts, packages/engine/src/prices/index-read.ts (an index is a stated rule over constituents, and the rule is data) |
+| `Indices A2` | MET | packages/engine/src/prices/index-read.ts (the level is applied where it is asked for; nothing stores one) |
+| `Indices A3` | MET | packages/engine/src/prices/index-read.ts (the level is chained, so a rebalance moves nothing) |
+| `Indices A4` | MET | packages/engine/src/mechanisms/indices/index.ts (the base is a declared resolution: doubling it doubles every level and changes nothing) |
+| `Indices B1` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a weight is a COUNT of the line — shares in issue, par outstanding, units bought — never a share of the index) |
+| `Indices B2` | MET | packages/engine/src/prices/index-read.ts (each step compares this period’s basket against itself a period ago) |
+| `Indices B3` | MET | packages/engine/src/world/world.ts (a split multiplies the count and divides the price in one event, so the basket is worth what it was) |
+| `Indices B4` | MET | packages/engine/src/prices/index-read.ts (a line that did not print is not in the step: an index cannot report a price nobody made) |
+| `Indices C1` | MET | packages/engine/src/mechanisms/funds/tracker.ts (a mandate refers to the index’s own basket, not to what happened to print) |
+| `Indices C2` | MET | packages/engine/src/mechanisms/funds/tracker.ts, packages/engine/src/mechanisms/funds/data.ts (a tracker holds the index at the index’s weights and trades the difference) |
+| `Indices C2.a` | MET | packages/engine/src/mechanisms/funds/tracker.ts (a rebalance is a real trade in the same session; a line that left the index goes out at market) |
+| `Indices C3` | PARTIAL | settlement of an index derivative is 13b’s; nothing settles against a level here |
+| `Indices C4` | PARTIAL | packages/engine/src/mechanisms/indices/benchmark.ts — the benchmark is published and transacted; a floating coupon that FIXES on it is 13f’s |
+| `Indices D1` | MET | packages/engine/src/mechanisms/indices/baskets.ts (an equity index per region, over the listed shares of the companies that book there) |
+| `Indices D2` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a credit index per currency, over the dated claims somebody other than the state promised — empty, and therefore Missing, until 13f issues some) |
+| `Indices D3` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (the volume-weighted rate of the overnight lending that SETTLED, per book; a book that did not trade has no fixing) |
+| `Indices D3.b` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (nothing here reads the corridor: what the central bank administers is not what the market paid) |
+| `Indices D4` | PARTIAL | packages/engine/src/mechanisms/indices/baskets.ts — producer and consumer indices over the same goods weighed by what this region’s sellers sold and what its cells bought. What will part the two levels is the wedge between the gate and the counter, which is 13c’s freight and distribution margin |
+| `Indices D5` | MET | packages/engine/src/world/world.ts (one system: a second module declaring the same id is refused at assembly) |
+| `Indices E1` | MET | packages/engine/src/mechanisms/indices/index.ts, packages/engine/src/observer/observer.ts (published as an observation, with what it was read from) |
+| `Indices E2` | MET | packages/engine/src/prices/index-read.ts (no stored level, so it cannot be stale and cannot be revised) |
+| `Indices E3` | MET | packages/engine/src/audit/families/cross-market.ts (the audit reads every index a second time from the prints and puts the two against each other) |
 
 ## Banks Lending
 
@@ -1456,10 +1456,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Cross-Border A1` | MISSING |  |
-| `Cross-Border A2` | MISSING |  |
-| `Cross-Border A3` | MISSING |  |
-| `Cross-Border A4` | MISSING |  |
+| `Cross-Border A1` | PARTIAL | packages/engine/src/seeds/foundation.ts — four regions, each with its own money, its own central bank and its own sovereign borrower. The three abroad have no firms, no households and no labour market: a real economy there is 13i’s |
+| `Cross-Border A2` | MET | packages/engine/src/seeds/foundation.ts (a holder in one region holds another’s paper, and the coupon crosses the border in the issuer’s money) |
+| `Cross-Border A3` | MET | packages/engine/src/world/revalue.ts, packages/engine/src/audit/families/accounts.ts (what a holder abroad is worth at home moves with the rate, and the balance sheet reads it in the holder’s own money) |
+| `Cross-Border A4` | PARTIAL | packages/engine/src/mechanisms/spot-fx — the capital flow that exists is the one the cross holdings and the coupons produce. Trade invoiced in another country’s money, and a portfolio decision to hold abroad, are 13i and 13h |
 | `Cross-Border B1` | MISSING |  |
 | `Cross-Border B2` | MISSING |  |
 | `Cross-Border B3` | MISSING |  |
@@ -1487,29 +1487,29 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Ratings A1` | MISSING |  |
-| `Ratings A2` | MISSING |  |
-| `Ratings A2.a` | MISSING |  |
-| `Ratings A3` | MISSING |  |
-| `Ratings A4` | MISSING |  |
-| `Ratings A5` | MISSING |  |
-| `Ratings B1` | MISSING |  |
-| `Ratings B2` | MISSING |  |
-| `Ratings B3` | MISSING |  |
-| `Ratings C1` | MISSING |  |
-| `Ratings C2` | MISSING |  |
+| `Ratings A1` | MET | packages/engine/src/mechanisms/ratings/index.ts (a grade is a named assessor’s opinion, published as its own action) |
+| `Ratings A2` | MET | packages/engine/src/mechanisms/ratings/assess.ts (from the issuer’s own public state: what falls due against what it is worth, and whether it has missed a payment) |
+| `Ratings A2.a` | MET | packages/engine/src/world/world.ts (blindView: the assessor decides from a view whose prints, marks, indices and curves are all closed — structurally, not by convention) |
+| `Ratings A3` | MET | packages/engine/src/mechanisms/ratings/assess.ts, packages/engine/src/mechanisms/ratings/index.ts (seven coarse bands, and the state must stay across a boundary for the assessor’s own patience) |
+| `Ratings A4` | MET | packages/engine/src/mechanisms/ratings/index.ts (every move is published with what it was, and with the measure behind it) |
+| `Ratings A5` | MET | packages/engine/src/mechanisms/ratings/index.ts (the rated party pays the assessor every period, by instruction, from its own account — the conflict kept and priced) |
+| `Ratings B1` | MET | packages/engine/src/mechanisms/ratings/assess.ts (the measure, and the band it falls in on this assessor’s own geometrically widening scale) |
+| `Ratings B2` | MET | packages/engine/src/mechanisms/ratings/assess.ts (an instrument’s grade is its issuer’s, moved by where the line stands in the queue) |
+| `Ratings B3` | MET | packages/engine/src/mechanisms/ratings/data.ts (each assessor’s thresholds and patience are its own, drawn and declared under its own name) |
+| `Ratings C1` | PARTIAL | packages/engine/src/mechanisms/funds/tracker.ts — a mandate that refers to an INDEX is built; one written in grades wants a holder of rated paper, which is 13f’s |
+| `Ratings C2` | PARTIAL | packages/engine/src/mechanisms/ratings/index.ts declares a risk weight per grade as policy; the bank that reads it into its own capital rule is 13f’s rated exposure |
 | `Ratings C3` | MISSING |  |
 | `Ratings C4` | MISSING |  |
-| `Ratings C5` | MISSING |  |
-| `Ratings D1` | MISSING |  |
-| `Ratings D2` | MISSING |  |
+| `Ratings C5` | MET | packages/engine/src/mechanisms/ratings/index.ts (a rating action is public, so a participant’s outlook may observe it like anything else) |
+| `Ratings D1` | MET | packages/engine/src/mechanisms/ratings/index.ts (everybody who borrows on its own credit is rated, the state included) |
+| `Ratings D2` | MET | packages/engine/src/mechanisms/ratings/index.ts (the subjects are the party kinds that borrow, asked of the registry rather than listed) |
 | `Ratings D3` | MISSING |  |
 | `Ratings D4` | MISSING |  |
-| `Ratings D5` | MISSING |  |
-| `Ratings E1` | MISSING |  |
-| `Ratings E2` | MISSING |  |
-| `Ratings E3` | MISSING |  |
-| `Ratings E4` | MISSING |  |
+| `Ratings D5` | MET | packages/engine/src/mechanisms/ratings/data.ts (three assessors, so a world has a spread of opinions rather than an opinion) |
+| `Ratings E1` | MET | packages/engine/src/mechanisms/ratings/index.ts, packages/engine/src/observer/observer.ts (published where anybody may read it) |
+| `Ratings E2` | MET | packages/engine/src/mechanisms/ratings/index.ts (what moved a grade is in the action: the measure, and what it was before) |
+| `Ratings E3` | PARTIAL | the grades and the defaults that follow them are both public and both journalled; the scenario that shows a rated-safe issuer defaulting is a Part XII measurement |
+| `Ratings E4` | MET | packages/engine/src/observer/observer.ts (the distribution of grades is a read of the published actions) |
 
 ## Reporting
 

@@ -1,9 +1,9 @@
 /**
  * Triangular consistency, as an outcome with somebody's cost in it.
  *
- * @spec Spot FX C2 Spot FX C2.a Spot FX C3 Spot FX C3.a Spot FX C3.b Spot FX E3 Currency C3 Currency C3.a Currency C3.b XI-12 XI-13 Law 3 Law 6 Appendix B
+ * @spec Spot FX C2 Spot FX C2.a Spot FX C3 Spot FX E3 Currency C3 Currency C3.a Currency C3.b XI-12 XI-13 Law 3 Law 6 Appendix B
  *
- * THE KERNEL NEVER TRIANGULATES (C3.b, XI-12). There is no vehicle currency, no cross computed from
+ * THE KERNEL NEVER TRIANGULATES (Currency C3.b, XI-12). There is no vehicle currency, no cross computed from
  * two rates, and no identity enforced anywhere: each pair clears on its own flow, and `A/C` is
  * whatever `A/C`'s own book made it, which may disagree with `A/B` times `B/C`.
  *
@@ -39,7 +39,7 @@ export interface Triangle {
 /**
  * C3: every triple of currencies this world has a market for, each once. A world with two moneys
  * has no triangle at all and nothing here runs — which is right: consistency between two rates is
- * the inverse (C3.a), and that is one market read two ways rather than an arbitrage.
+ * the inverse (Currency C3.a), and that is one market read two ways rather than an arbitrage.
  */
 export function triangles(markets: readonly MarketDecl[]): readonly Triangle[] {
   // What makes a market a pair is that it NAMES one. Asking `m.fx` rather than `m.kind` is the

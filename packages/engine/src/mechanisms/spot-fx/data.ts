@@ -35,6 +35,6 @@ export const FX_SPREAD: FxDispersion = {
   arbitrageEdge: {
     low: 0.001,
     high: 0.006,
-    why: 'Spot FX C2.a, E3: what a three-legged trade must beat before this desk does it — its own cost of doing three trades at once and carrying all three overnight. It is what makes triangular consistency an OUTCOME with a width rather than an identity the kernel enforces (C3.b): the gap closes to somebody’s cost and no further, and the desk with the lowest cost is the one that closes it.',
+    why: 'Spot FX C2.a, E3: what a three-legged trade must beat before this desk does it — its own cost of doing three trades at once and carrying all three overnight. It is what makes triangular consistency an OUTCOME with a width rather than an identity the kernel enforces (Currency C3.b): the gap closes to somebody’s cost and no further, and the desk with the lowest cost is the one that closes it.',
   },
 };

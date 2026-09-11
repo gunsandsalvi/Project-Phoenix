@@ -1,7 +1,7 @@
 /**
  * Who is in a currency market, and why.
  *
- * @spec Spot FX B1 Spot FX B2 Spot FX B5 Spot FX C5 Spot FX C5.a Spot FX D1 Spot FX D2 Spot FX D3 Spot FX D4 Spot FX D5 Law 3 Law 6 Law 19 XI-13
+ * @spec Spot FX B1 Spot FX B2 Spot FX B5 Spot FX C5 Spot FX D1 Spot FX D2 Spot FX D3 Spot FX D4 Spot FX D5 Law 3 Law 6 Law 19 XI-13
  *
  * XI-13 is why this file has more than one function in it. A market whose only participant is a
  * dealer quoting off the last print is a fixed point: both sides come from one view, the view

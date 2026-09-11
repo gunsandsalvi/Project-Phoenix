@@ -1,7 +1,7 @@
 /**
  * The currency market: every pair a market on its own flow, and no vehicle anywhere.
  *
- * @spec Spot FX A1 Spot FX A2 Spot FX A3 Spot FX B1 Spot FX B2 Spot FX B5 Spot FX B6 Spot FX C1 Spot FX C2 Spot FX C2.a Spot FX C3 Spot FX C3.b Spot FX C4 Spot FX C5 Spot FX C6 Spot FX D1 Spot FX D2 Spot FX D3 Spot FX D4 Spot FX D5 Spot FX E1 Spot FX E3 Currency A3 Currency B1 Currency C1 Currency C2 Currency C3 Currency C3.a Currency C3.b XI-12 XI-13 Law 3 Law 6 Law 15
+ * @spec Spot FX A1 Spot FX A2 Spot FX A3 Spot FX B1 Spot FX B2 Spot FX B5 Spot FX B6 Spot FX C1 Spot FX C2 Spot FX C2.a Spot FX C3 Spot FX C4 Spot FX C5 Spot FX C6 Spot FX D1 Spot FX D2 Spot FX D3 Spot FX D4 Spot FX D5 Spot FX E1 Spot FX E3 Currency A3 Currency B1 Currency C1 Currency C2 Currency C3 Currency C3.a Currency C3.b XI-12 XI-13 Law 3 Law 6 Law 15
  *
  * A RATE IS A PRICE, and this module does nothing to it but bring the two sides that make it. Every
  * pair among this world's currencies opens as a market (A3); a spot trade is two money legs settling
@@ -17,7 +17,7 @@
  *   B5 a DEALER, quoting both ways from its own inventory and its own limit (D1-D5);
  *   E3 an ARBITRAGEUR, when the cross and the direct route disagree by more than its own cost.
  *
- * NO VEHICLE CURRENCY (C3.b, XI-12). The ledger never triangulates: every conversion is a trade in
+ * NO VEHICLE CURRENCY (Currency C3.b, XI-12). The ledger never triangulates: every conversion is a trade in
  * the pair the payer chose, and if the cheapest route it can see is two trades then it posts two
  * orders. That is its choice and never the kernel's, which is why a cross rate here is a fact about
  * what people did rather than an arithmetic identity.
