@@ -9,7 +9,7 @@
  * the kernel states every equity account once as the read (Seed C1), and the world is sealed with
  * the audit at period zero (Seed A2).
  */
-import { issuedBy } from '../register/instruments.js';
+import { balanceSheet, type BalanceReads } from '../audit/families/accounts.js';
 import { Calendar } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import { forbid } from '../core/assert.js';
@@ -208,26 +208,30 @@ function seedContext(w: World): SeedContext {
   };
 }
 
-/** Seed C1: at period zero the equity is the read; from then on only events move it (Audit B5.b). */
+/**
+ * Seed C1, Audit B5.b, Law 4: at period zero the equity IS the read; from then on only events move
+ * it. And it is the SAME read — `balanceSheet`, the one the audit checks the account against and the
+ * one a public company publishes (Reporting A2).
+ *
+ * It had its own copy of that sum, and the copy was one conversion short: it added `valueOfLots`
+ * across every holding in whatever money the instrument was priced in, where the read it is checked
+ * against converts each one into the party's own (Currency D2). At a rate of one the two agreed and
+ * nothing showed; at any other rate the world opened with a stated equity that its own balance sheet
+ * contradicted, for every party holding anything foreign — a central bank's whole reserve position.
+ * Two implementations of one fact is the defect (Law 4), and the fix is the one that deletes one.
+ */
 function stateEquityAsRead(w: World): void {
   const store = w.seedStore();
+  const reads: BalanceReads = {
+    period: w.period,
+    registry: w.registry,
+    parties: { get: (id) => w.parties.get(id) },
+    instruments: w.instruments,
+    register: store,
+    valuation: w.valuation,
+  };
   for (const p of w.parties.all()) {
-    let assets = 0;
-    for (const h of store.holdingsOf(p.id)) {
-      assets += w.valuation.valueOfLots(h.instrument, h.lots, w.period);
-    }
-    let liabilities = 0;
-    for (const inst of w.instruments.all()) {
-      if (!issuedBy(inst, p.id) || !w.registry.instrumentKind(inst.kind).liabilityOfIssuer) continue;
-      for (const holder of store.holdersOf(inst.id)) {
-        const h = store.holding(holder, inst.id);
-        if (!h.some) continue;
-        liabilities +=
-          w.valuation.valueOfLots(inst.id, h.value.lots, w.period) *
-          weightOf(w.parties.get(holder));
-      }
-    }
-    // Holdings are per member already; liabilities are held by others in total (XI-15).
-    store.stateEquity(p.id, assets - liabilities / weightOf(p));
+    const sheet = balanceSheet(reads, p.id);
+    store.stateEquity(p.id, sheet.assets.value - sheet.liabilities.value);
   }
 }

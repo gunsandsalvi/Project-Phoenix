@@ -13,7 +13,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Money A1` | MET | packages/engine/src/registry/profiles.ts, packages/engine/src/seeds/foundation.ts |
 | `Money A1.d` | MET | packages/engine/src/audit/families/money.ts |
 | `Money A2` | MET | packages/engine/src/core/tick.ts (money is a COUNT of indivisible pieces and the count is a branded Qty, so an amount below a piece cannot be constructed anywhere), packages/engine/src/registry/grid.ts, packages/engine/src/registry/registry.ts (the one boundary between a person’s number and the state’s) |
-| `Money A2.b` | MET | packages/engine/src/ledger/settlement.ts (a money leg names one currency and settles in it; what an amount in another comes to is a conversion at a rate somebody traded, never an addition), packages/engine/src/prices/value.ts |
+| `Money A2.b` | MET | packages/engine/src/ledger/settlement.ts (a money leg names one currency and settles in it; what an amount in another comes to is a conversion at a rate somebody traded, never an addition), packages/engine/src/prices/value.ts, packages/engine/src/world/revalue.ts (a mark is in the instrument’s money and an account in its party’s: the move between them converts) |
 | `Money A3` | MET | packages/engine/src/world/actions.ts (accountResolver: which account a party holds a money in — its own bank for its own money, that money’s own central bank for a foreign one), packages/engine/src/world/world.ts |
 | `Money A4` | MISSING |  |
 | `Money B1` | MISSING |  |
@@ -122,7 +122,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Audit B2` | MET | packages/engine/src/audit/families/ownership.ts |
 | `Audit B3` | MET | packages/engine/src/audit/families/prices.ts, packages/engine/src/prices/value.ts |
 | `Audit B4` | PARTIAL | the crossMarket family is declared and reports NOT BUILT, never green. It becomes buildable when one economic thing is reached two ways: a share and the index containing it, at worklist 12 (Indices); a future and its underlying, at worklist 13c; a bond and its derived spread is already the curve's own read |
-| `Audit B5` | MET | packages/engine/src/audit/families/accounts.ts, packages/engine/src/ledger/settlement.ts, packages/engine/src/register/register.ts, packages/engine/src/world/revalue.ts |
+| `Audit B5` | MET | packages/engine/src/audit/families/accounts.ts (`balanceSheet` is the ONE read: the audit checks it, a report publishes it and the seed states the opening account as it), packages/engine/src/ledger/settlement.ts, packages/engine/src/register/register.ts, packages/engine/src/world/revalue.ts, packages/engine/test/balance-identity.test.ts (every party, a year, four moneys that are not the same size) |
 | `Audit B6` | MET | packages/engine/src/audit/families/names.ts |
 | `Audit B7` | MET | packages/engine/src/audit/families/flows.ts |
 | `Audit B8` | PARTIAL | independence is measured once a defect can light families (Part XII) |
@@ -152,7 +152,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Seed B3` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/registry.ts, packages/engine/src/seeds/foundation.ts |
 | `Seed B4` | MET | packages/engine/src/seeds/foundation.ts (no two firms in a line open with the same stock or the same cash), packages/engine/src/mechanisms/firms/data.ts (and none of them takes the same hours to a tonne, so no two bid the same wage). The household cells open IDENTICAL on purpose and their dispersion is produced rather than stated — the memory each draws at entry, and who was hired at what wage (packages/engine/test/world.test.ts): stating a size distribution for them would be seeding an outcome (E1) |
 | `Seed B5` | MISSING |  |
-| `Seed C1` | MET | packages/engine/src/world/assemble.ts |
+| `Seed C1` | MET | packages/engine/src/world/assemble.ts (the opening equity IS the balance sheet the audit checks it against, not a second copy of it) |
 | `Seed C2` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed C3` | MET | packages/engine/src/seeds/foundation.ts |
 | `Seed C4` | MET | packages/engine/src/seeds/foundation.ts |
@@ -186,7 +186,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Currency C4.a` | MET | packages/engine/src/ledger/settlement.ts (what the payment settles in is the leg’s own currency, at the account that money sits in for each side) |
 | `Currency C5` | MET | packages/engine/src/prices/value.ts (rateInForce: ONE rate for a period — what a payment settles at and what a balance sheet is valued at are the same number), packages/engine/src/world/context.ts |
 | `Currency D1` | MET | packages/engine/src/prices/value.ts (everything inside a period values at the rate the period opened with; the revaluation at the close brings the books to the rate this period’s session struck) |
-| `Currency D2` | MET | packages/engine/src/world/revalue.ts (every position in a money that is not its holder’s own is revalued to the holder’s equity) |
+| `Currency D2` | MET | packages/engine/src/world/revalue.ts (every position in a money that is not its holder’s own is revalued to the holder’s equity, and the mark is converted into that money on the way — `intoOwnMoney`, the same rate the balance sheet reads at) |
 | `Currency D2.b` | MET | packages/engine/src/world/revalue.ts, packages/engine/src/register/register.ts (a central bank’s foreign reserves go to its revaluation account, never to what it earned) |
 | `Currency D3` | MET | packages/engine/src/world/revalue.ts (the FX revaluation runs before the marks, so the two do not each claim the other’s move) |
 | `Currency D4` | MET | packages/engine/src/audit/families/currency.ts (what every revaluation booked against what the period’s rate move on the positions revalued comes to, reached from the events rather than the register) |

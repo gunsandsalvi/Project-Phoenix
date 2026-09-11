@@ -80,10 +80,103 @@ look solvent. To be positioned when 12a closes.
 
 ## Found while working item 12b
 
-### 12b-2 — RESOLVED here: the revaluation mark is booked in the instrument's money
+### 12b-3 — No pair has ever traded: every FX session is `noDemand`, for ever
 
-Named while reproducing 12b at `410bf16`: `world/revalue.ts` computes a mark move in the
-INSTRUMENT's currency and writes it to an equity account kept in the HOLDER's. Gap =
-`delta × (1 − rate)` = `6097242077.790232 × 0.0008437280310877` = `5144414.05`, which is the
-reported size to four decimal places. Still live in today's tree and silent only because every
-rate is exactly 1. Fixed in 12b.
+**Where.** `mechanisms/spot-fx/`, against `foundationSpec('year', drawBanks(4,'year'), drawFirms(40,'year'))`.
+
+**Measured.** All six pairs, every period from 1 to 30:
+
+```
+p 1 mkt.fx.USD/EUR noDemand price 1 vol 0      p 30 mkt.fx.USD/EUR noDemand price 1 vol 0
+p 1 mkt.fx.USD/JPY noDemand price 1 vol 0      p 30 mkt.fx.USD/JPY noDemand price 1 vol 0
+```
+
+Not one bid, not one trade, in any pair, ever. So the rate never leaves the level the seed claimed
+and `seed.openingRate`'s own justification is now false: it says "each pair's own first session
+replaces it" and "where those meet is the rate from period one", and there is no first session.
+
+**Why it is probably here.** At `410bf16` the pairs DID print (0.9991562719689123) because the
+commercial banks held foreign government paper and a bank with a foreign position has an FX reason.
+`a6b2922` moved every cross holding to the central banks — correctly, for the liquidity reason it
+gives — and the demand side went with it. A central bank holding reserves has no reason to trade
+them; the banks that had one no longer hold anything foreign.
+
+**What it costs.** The whole currency layer's price discovery never runs, so every conversion in the
+world is a multiplication by one and every defect that lives in a conversion is invisible. 12b was
+exactly such a defect and could only be measured by stating a different opening rate.
+
+**Not chased.** Law 11: the misbehaving number is not the work item, the missing mechanism is — and
+the missing mechanism here is a reason to hold another country's money. To be positioned when 12b
+closes; it is a candidate for **13i (cross-border)**, which is where sourcing across regions and
+foreign-currency issuance give somebody that reason.
+
+### 12b-4 — The seed adds two currencies, and one parameter cannot state a consistent triangle
+
+**Where.** `seeds/foundation.ts`: `centralBankAssets` adds `inNamedUnits(ctx, line, drawn) * price`
+for each foreign reserve line, where `price` is that line's price in ITS money and the sum is in USD;
+and the foreign treasuries' buffer is `mul(reserveUnits, reservePrice, 'what it holds abroad')` — a
+USD value — endowed as `c.ccy` money.
+
+**Measured.** Invisible at the delivered opening rate of one. It is Money A2.b ("two currencies are
+never added") holding only because the two are the same size.
+
+**And the rate cannot be anything else.** `seed.openingRate` is ONE number for all six pairs, so the
+only value that leaves the triangle consistent is 1: at 0.8 the `crossMarket` family reports
+`USD through EUR into GBP costs 0.64 against 0.8 direct`. A world cannot currently be opened with
+realistic rates at all — 150 JPY to the dollar is not expressible.
+
+**Not chased.** It changes no number in the delivered world and 12b is the identity, not the
+opening. To be positioned when 12b closes, with 12b-3: the same item that gives somebody a reason to
+hold another money is the one that needs the openings to be real.
+
+### 12b-5 — The trading-book check's dust counts its own terms and not the other side's
+
+**Where.** `mechanisms/banks/index.ts`, `tradingBookIsCapitalised`, contributing to `accounts`.
+
+**Measured.** From period 41 of a 52-period run, every period:
+
+```
+bank.a: its dealing book weighs 50408462604.28294 and it published 50408462604.2827
+```
+
+A gap of 0.000244140625 — 2^-12, pure binary dust — on numbers of 5.0e10.
+
+**The derivation is short, not absent.** It allows `dustOf(terms.length + 2, |rwa| + |asked|)`, where
+`terms` are the dealing lines above target. But `rwa` is the bank's published weighting of its WHOLE
+book, a sum over far more terms than this check can see, and Law 7 says the tolerance is what the
+arithmetic did — so the terms that went into the other side belong in it. The honest fix is for the
+`bank.capital` event to carry the count its own sum had, not for this check to widen a band.
+
+**Not chased, and not widened.** 12b's own step says a check that only passes with a band is
+reporting the defect a second time; this one is a different check with an under-derived tolerance.
+To be positioned when 12b closes.
+
+### 12b-6 — A research desk keeps covering a company that has ceased
+
+**Where.** `mechanisms/research/` (12a's module), reported by the `names` family.
+
+**Measured.** `p52 names Reporting C2: an estimate names firm.17, which has ceased`, and the same
+for `firm.11` at p53.
+
+**What is missing.** Coverage is initiated and dropped for reasons the desk has (D1, D3), and death
+is not one of them: nothing in `cover` asks whether the name is still alive, so a desk goes on
+publishing a view of a company that no longer exists. The estate item (XI-8) gives death a
+destination; being dropped by the analysts who covered it is part of what happens to a name.
+
+**Not chased.** It is 12a's module and 12a is closed; the fix is one read, and it belongs with an
+item that is in that module. To be positioned when 12b closes.
+
+### 12b-2 — RESOLVED here: a value in one money written into an account kept in another
+
+Named while reproducing 12b at `410bf16`, and it had two sites, both the same cause:
+
+1. `world/revalue.ts` computed a mark move in the INSTRUMENT's currency and wrote it to an equity
+   account kept in the HOLDER's. Gap = `delta x (1 - rate)` =
+   `6097242077.790232 x 0.0008437280310877` = `5144414.05`, the reported size to four decimals.
+2. `world/assemble.ts` `stateEquityAsRead` had its own copy of the balance sheet that summed
+   `valueOfLots` across four moneys without converting any of them, so every central bank OPENED
+   contradicting the sheet the audit checks it against.
+
+Both silent at a rate of one, which is why the world never showed it after `a6b2922`. Fixed in 12b:
+the mark converts through `intoOwnMoney`, and the seed's copy of the balance sheet is deleted in
+favour of `balanceSheet`, the one read.

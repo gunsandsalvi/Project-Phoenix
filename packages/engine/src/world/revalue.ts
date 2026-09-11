@@ -76,13 +76,16 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
     } else continue;
     const { delta, through, carried } = moved;
     if (delta === 0) continue;
+    // A MARK IS IN THE INSTRUMENT'S MONEY AND AN ACCOUNT IS IN ITS PARTY'S, so the move between
+    // them is a conversion — the one the decomposition above already says this step makes.
+    const toHolder = intoOwnMoney(h.holder, inst.ccy, period, d);
     d.register.moveEquity({
       party: h.holder,
       period,
       cycle,
-      delta,
+      delta: mul(delta, toHolder, 'what it did in its holder’s money'),
       cause: `revaluation of ${inst.id} in period ${period}`,
-      through,
+      through: mul(through, toHolder, 'what it passed through in its holder’s money'),
     });
     d.journal.record(
       period,
@@ -90,15 +93,28 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       'revaluation',
       [h.holder, inst.id],
       {
-        deltaPerMember: delta,
+        // Law 8: the money is part of both numbers, and they are in different ones. What the
+        // account moved by is in the holder's; what a unit is carried at is a price and prices are
+        // in the money the thing is priced in.
+        deltaPerMember: mul(delta, toHolder, 'what it did in its holder’s money'),
         mark: carried,
+        markedIn: inst.ccy,
       },
       false,
     );
     if (profile.liabilityOfIssuer) {
       const weight = weightOf(d.parties.get(h.holder));
-      addTo(issuerMoves, issuerOf(inst), -mul(delta, weight, 'issuer revaluation'));
-      addTo(issuerThrough, issuerOf(inst), mul(through, weight, 'what its liability passed through'));
+      const issuer = issuerOf(inst);
+      // And the issuer's account is in the ISSUER's money, which is not always the holder's: a
+      // liability one party carries in its own money is the same liability the other side converts
+      // from the instrument's, and the two conversions are different reads of the one rate.
+      const toIssuer = intoOwnMoney(issuer, inst.ccy, period, d);
+      addTo(issuerMoves, issuer, -mul(mul(delta, toIssuer, 'in its issuer’s money'), weight, 'issuer revaluation'));
+      addTo(
+        issuerThrough,
+        issuer,
+        mul(mul(through, toIssuer, 'in its issuer’s money'), weight, 'what its liability passed through'),
+      );
     }
   }
   for (const [issuer, delta] of issuerMoves) {
@@ -123,6 +139,28 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       false,
     );
   }
+}
+
+/**
+ * Currency C5, D2, D3: WHAT ONE UNIT OF `ccy` IS WORTH IN THIS PARTY'S OWN MONEY, at the rate this
+ * period's session struck.
+ *
+ * An equity account is kept in its party's own money (Money A2.b) and a mark is in the money the
+ * instrument is priced in, so writing one into the other is a conversion. It is the same conversion
+ * the balance sheet makes when it reads the position (`audit/families/accounts.ts`) and the same one
+ * settlement makes for a leg in another money (`ledger/settlement.ts`, `inOwn`) — one rate for the
+ * period, asked for in each of the three places that need it (C5).
+ *
+ * It asks `rateAt` and not `rateInForce` for the reason `revalueForeign` does: the books are being
+ * brought to this period's print right now, and the rate still in force is the one the period
+ * SETTLED at. Where this period's session struck nothing, no rate changed and the one in force is
+ * the answer — which is the same case `revalueForeign` skips.
+ */
+function intoOwnMoney(party: PartyId, ccy: CurrencyCode, at: Period, d: RevalueDeps): number {
+  const home = d.registry.region(d.parties.get(party).region).ccy;
+  if (ccy === home) return 1;
+  const struck = d.rateAt(ccy, home, at);
+  return struck.some ? struck.value : d.valuation.rateInForce(ccy, home, at);
 }
 
 /**
@@ -225,8 +263,10 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
     // run yet, so `rateInForce` is still answering with the opening one — which is why the new one
     // is asked for by name here and is the only place in the engine that does.
     const was = d.valuation.rateInForce(inst.ccy, home, period);
-    const now = d.rateAt(inst.ccy, home, period);
-    if (!now.some || now.value === was) continue;
+    // The SAME read the marks below convert at (`intoOwnMoney`), which is what makes the two halves
+    // of the decomposition sum to what the balance sheet says and leave nothing over (Law 4).
+    const now = intoOwnMoney(h.holder, inst.ccy, period, d);
+    if (now === was) continue;
     // What the equity account has already recognised, in the instrument's OWN money: the marks
     // below move that to this period's print, and this moves the money it is counted in.
     let carried = 0;
@@ -234,7 +274,7 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       carried = carried + mul(lot.qty, d.valuation.carryingPerUnit(inst.id, lot, period), 'carried');
     }
     if (carried === 0) continue;
-    const delta = mul(carried, sub(now.value, was, 'what the rate moved by'), 'what it did');
+    const delta = mul(carried, sub(now, was, 'what the rate moved by'), 'what it did');
     if (delta === 0) continue;
     const move = {
       party: h.holder,
@@ -243,7 +283,7 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       delta,
       cause: `exchange rate on ${inst.id} in period ${period}`,
       // Law 7: it passed through the whole position in home money, not the change in it.
-      through: Math.abs(mul(carried, now.value, 'the position in its holder\u2019s money')),
+      through: Math.abs(mul(carried, now, 'the position in its holder\u2019s money')),
     };
     // A2.c: the one holder whose foreign position is not a position — the central bank OF the money
     // it books in, holding the other side of what it printed. It is asked of the registry, which
@@ -256,7 +296,7 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       cycle,
       'revaluation.fx',
       [h.holder, inst.id],
-      { deltaPerMember: delta, ccy: inst.ccy, home, was, now: now.value, carried },
+      { deltaPerMember: delta, ccy: inst.ccy, home, was, now: now, carried },
       false,
     );
   }

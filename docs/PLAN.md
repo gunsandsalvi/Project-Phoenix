@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 60.4%** (338 of 560 steps across 40 items).
+**Plan completion: 61.4%** (344 of 560 steps across 40 items).
 **Requirement coverage: 47.2%** (642 MET, 83 PARTIAL, 0 OUT OF SCOPE of 1361 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -42,7 +42,7 @@ The plan has two parts:
 | 12 — An anchored market: the second opinion, the balance sheets under it, and the currency layer | 32 | 32 | closed |
 | 11.6 — The module contract: kinds where their behaviour is, markets a participant is in | 7 | 7 | closed |
 | 12a — Reporting and estimates | 26 | 26 | closed |
-| [12b — The balance sheet that takes one step out of true](plan/12b-balance-sheet-step.md) | 6 | 0 | open |
+| 12b — The balance sheet that takes one step out of true | 6 | 6 | closed |
 | [12b.1 — A price has a smallest piece](plan/12b.1-price-grid.md) | 9 | 0 | open |
 | [12c — The equity book walks away](plan/12c-equity-anchor.md) | 5 | 0 | open |
 | [12d — The tests catch up with the world](plan/12d-tests-catch-up.md) | 8 | 0 | open |

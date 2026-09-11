@@ -2337,3 +2337,74 @@ balance both ways. The killer: if 12b's balance-sheet step turns out to be an ev
 and equity side differ, then a report published in that period carried a balance sheet the equity
 account did not agree with, and `reporting.restate` should have fired and did not — in which case
 the restatement trigger is watching the wrong half.
+
+---
+
+## 12b — The balance sheet that takes one step out of true
+
+**The step was named, and it was one conversion.** 12-18 reported that at period 13 every bank's
+`assets − liabilities` parted from its equity account by a fixed amount — 5,144,414.06 on a book of
+1.6e13 for `bank.a` — and never came back. Item 12 had ruled the foreign half out, on the evidence
+that the holdings which MOVED most over that period were repo rows and equity lines in the bank's own
+money. That rule-out was wrong, and it was wrong in an instructive way: the holding that moves most
+is not the holding whose two sides disagree.
+
+**It did not reproduce on today's tree**, so the first work was establishing why rather than
+declaring it fixed (Law 13: a bad number is a finding). Reproduced exactly at `410bf16`, gone at
+`a6b2922` — the commit that moved every cross-border holding from the commercial banks to the central
+banks. The defect did not go with it; only its excitation did.
+
+**The decomposition.** At `410bf16`, `bank.a`'s p13 mark event on `jgb.2036-03-15` booked
+`-6,097,242,077.790232`, and the JPY/USD rate in force was `0.9991562719689123`:
+
+```
+6097242077.790232 x (1 - 0.9991562719689123) = 5144414.053   against the reported 5144414.049
+```
+
+**The cause, and it had two sites.** A VALUE IN ONE MONEY WRITTEN INTO AN ACCOUNT KEPT IN ANOTHER.
+`world/revalue.ts` computed a mark move in the instrument's currency and wrote it to an equity
+account in the holder's — while the read it is checked against converts (`Valuation.inMoney`). Its
+own comment already claimed the marks "then convert at the new rate" and the code never did. The
+issuer's mirror of that move had the same hole from the other end, and the issuer's money is not
+always the holder's either. And `world/assemble.ts` `stateEquityAsRead` kept a SECOND COPY of the
+balance sheet that summed `valueOfLots` across four moneys without converting any of them, so at any
+rate but one the world opened with every central bank contradicting its own sheet.
+
+**The fix removes code (Law 12).** `intoOwnMoney` is one read of one rate, and `revalueForeign` now
+takes its `now` from it too — so the two halves of the decomposition
+`v(t)r(t) − v(t−1)r(t−1) = r(t)(v(t) − v(t−1)) + v(t−1)(r(t) − r(t−1))` are exact by construction
+rather than by coincidence. `stateEquityAsRead`'s copy of the balance sheet is deleted: the seed now
+states the opening account as `balanceSheet`, which is the read the audit checks it against and the
+read a public company publishes (Reporting A2.a). Three readers, one function. No tolerance anywhere
+was widened, which 12b's own step forbids.
+
+**Also corrected:** the Audit B5 violation reported its size against the equity account alone, when
+the identity it had just failed is the read against equity AND the revaluation account — so for a
+central bank, the one party whose second account is the whole point, it named a different number from
+the one that failed.
+
+**Measured.** A four-currency world at a stated opening rate of 0.8: before, every central bank
+breaks at period 1 and stays broken; after, the identity holds for every party over 52 periods.
+`packages/engine/test/balance-identity.test.ts` is that measurement, and it asserts the world it runs
+in has foreign positions in it — a test of a conversion in a world where every rate is one is
+`x * 1 === x`.
+
+**Coverage.** `Audit B5`, `Seed C1`, `Currency D2`, `Money A2.b` re-marked with the one read.
+
+**Found and not chased**, all in `docs/BUGS.md` and all to be positioned when this item's successors
+open: **12b-3**, no pair has ever traded — every FX session is `noDemand` in all six pairs for ever,
+because `a6b2922` moved the foreign holdings to the central banks and the demand side went with them,
+so the entire currency layer's price discovery never runs; **12b-4**, the seed adds two currencies in
+two places (harmless at parity) and `seed.openingRate` is one number for six pairs, so no consistent
+non-parity world can be stated at all; **12b-5**, the trading-book check's dust counts its own terms
+and not the published figure's; **12b-6**, a research desk keeps covering a company that has ceased.
+**12b-1** — a price is on no grid — was not parked but DECIDED: the owner's standing decision is that
+every quantity has a realistic minimum subunit, a price included, and it is worklist **12b.1**,
+inserted after this item and before 12c and 12d.
+
+**Forecast, with its killer.** The claim is that this identity now holds for structural reasons and
+not arithmetic ones: there is one balance sheet, one rate read, and the two sides of the revaluation
+decomposition are complements. The killer: if 12b.1's price grid or 12c's equity fix produces an
+`Audit B5` violation whose size is not dust, then the identity was holding because every rate in the
+delivered world is one, and `balance-identity.test.ts`'s second world was not the excitation it
+claims to be.

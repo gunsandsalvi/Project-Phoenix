@@ -169,10 +169,14 @@ export function accountsFamily(): Family {
             family: 'accounts',
             spec: 'Audit B5',
             owner: p.id,
-            size: read.value - equity.value,
+            // A2: the size is the gap in the identity that was CHECKED, which is the read against
+            // what stands — equity and, for a central bank of its own money, its revaluation
+            // account. Reporting it against equity alone named a different number from the one the
+            // comparison failed on, for exactly the party whose second account is the point.
+            size: read.value - stands.value,
             unit: home,
             period: view.period,
-            message: `${p.id}: assets ${assets.value} - liabilities ${liabilities.value} != equity account ${equity.value} (per member)`,
+            message: `${p.id}: assets ${assets.value} - liabilities ${liabilities.value} != the ${revaluation.value === 0 ? `equity account ${equity.value}` : `accounts it stands on ${stands.value} (equity ${equity.value} and revaluation ${revaluation.value})`} (per member)`,
           });
         }
       }
