@@ -62,11 +62,12 @@ export function flowsFamily(memory: AuditMemory): Family {
        * XI-15, Audit C3: THE ONE CELL WHOSE BOOK REALLY DID APPEAR OR VANISH, and no other.
        *
        * Every quantity compared here is PER MEMBER, so a weight event that only changes how many
-       * members there are changes nothing this family is looking at: an entry, a death and a
-       * promotion are checked exactly like any other period. Two of the five copy a book without
-       * an instruction — a split gives the NEW cell its parent's per-member state, and a merge
-       * forgets the absorbed one — and it is those two cells, named on the event itself, that have
-       * a holding with no leg behind it.
+       * members there are changes nothing this family is looking at: an entry and a death are
+       * checked exactly like any other period. THREE of the five copy a book without an
+       * instruction — a split gives the NEW cell its parent's per-member state, a merge forgets the
+       * absorbed one, and since 13d.1 a PROMOTION is a split that changes the key, which gives the
+       * new cell the same book for the same reason — and it is those cells, named on the event
+       * itself, that have a holding with no leg behind it.
        *
        * It used to exempt every SUBJECT of every weight event, which is both cells of a split or a
        * merge and the cell itself for the other three — so a household cell that gained a member
@@ -78,7 +79,14 @@ export function flowsFamily(memory: AuditMemory): Family {
       for (const e of view.journal.inPeriod(view.period)) {
         if (e.kind !== 'weight') continue;
         const kind = e.data['kind'];
-        const who = kind === 'split' ? e.data['to'] : kind === 'merge' ? e.data['from'] : undefined;
+        // 13d.1: a promotion that names a cell it moved people TO is a re-key, and the new cell's
+        // book was copied rather than settled. One that names none is an ordinary weight change.
+        const who =
+          kind === 'split' || kind === 'promotion'
+            ? e.data['to']
+            : kind === 'merge'
+              ? e.data['from']
+              : undefined;
         if (typeof who === 'string') copied.add(who);
       }
 

@@ -77,7 +77,7 @@ import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
-import { mergeCells, splitCell, weightEvent } from './cells.js';
+import { mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
 import type {
   ContractsRead,
   MechanismContext,
@@ -1285,6 +1285,8 @@ export class World {
         weight: (cell, kind, members, cause) => {
           weightEvent(cell, kind, members, cause, this.currentPeriod, this.currentCycle, cellDeps);
         },
+        reKey: (cell, members, key, cause) =>
+          reKeyCell(cell, members, key, cause, this.currentPeriod, this.currentCycle, cellDeps),
       },
       contracts: this.contracts,
       voyages: this.voyages,

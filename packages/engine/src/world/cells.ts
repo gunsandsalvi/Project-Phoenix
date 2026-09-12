@@ -145,6 +145,74 @@ export function weightEvent(
   );
 }
 
+/**
+ * XI-15, Households F1, F1.a (13d.1): A SPLIT THAT CHANGES THE KEY, which is how a weight moves
+ * between keys without value moving with it.
+ *
+ * What makes two households different is in the cell's key, so getting older, retiring or buying a
+ * roof is a cell moving from one key to another. It cannot be a transfer: a cell carries its
+ * holdings PER MEMBER in whole pieces, and a leg's quantity must equal `perMember × weight` on each
+ * side at once, which two weights in the millions share no useful number for. It cannot be a merge
+ * either, because a merge is a renaming and refuses two cells whose state differs.
+ *
+ * So it is a SPLIT — exact, per-member state and all, totals preserved by construction — with a
+ * different key on the part that moved. Nobody appears, nobody disappears, and nothing crosses.
+ *
+ * The weight event is a PROMOTION, which is what XI-15 has the word for: the members did not enter,
+ * they did not die, and the cell they left is not being renamed. It is the fifth thing that happens
+ * to a weight, and this is the first thing in this world that does it.
+ */
+export function reKeyCell(
+  cell: PartyId,
+  members: number,
+  key: Readonly<Record<string, string>>,
+  cause: string,
+  period: Period,
+  cycle: Cycle,
+  d: CellDeps,
+): PartyId {
+  const c = d.parties.cell(cell);
+  positiveCount(members, 'members re-keyed');
+  forbid(
+    members < c.weight,
+    'XI-15',
+    `cannot re-key ${members} of ${c.weight} members of ${cell}; a whole cell moves as itself`,
+  );
+  forbid(
+    Object.keys(key).every((k) => k in c.key),
+    'XI-15',
+    `re-key of ${cell} names a dimension its key does not have`,
+    { key },
+  );
+  const id = nextSplitId(c, d.parties);
+  const fresh: CellParty = {
+    ...c,
+    id,
+    name: `${c.name} / ${cause}`,
+    weight: members,
+    key: { ...c.key, ...key },
+  };
+  d.parties.add(fresh);
+  d.register.copyMemberState(cell, id);
+  d.parties.applyWeight({
+    kind: 'promotion',
+    party: cell,
+    before: c.weight,
+    after: c.weight - members,
+    period,
+    cause,
+  });
+  d.journal.record(
+    period,
+    cycle,
+    'weight',
+    [cell, id],
+    { kind: 'promotion', from: cell, to: id, members, key, cause },
+    true,
+  );
+  return id;
+}
+
 function nextSplitId(c: CellParty, parties: Parties): PartyId {
   for (let n = 1; ; n += 1) {
     const id = partyId(`${c.id}.${n}`);

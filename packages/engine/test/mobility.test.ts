@@ -5,7 +5,7 @@
  * @spec Labour A3 Labour A3.a Labour A3.b Labour B1 Labour B3 Labour C4 XI-10 Law 2 Law 15
  */
 import { describe, expect, it } from 'vitest';
-import { LABOUR_PARAMS, paramId } from '../src/index.js';
+import { HOUSEHOLD, LABOUR_PARAMS, paramId } from '../src/index.js';
 import { LABOUR_NUMBERS, OCCUPATIONS } from '../src/mechanisms/labour/data.js';
 import { rigWorld } from './rig.js';
 
@@ -89,5 +89,39 @@ describe('a bank employs people, and the borrower pays them (13d, Banks Lending 
       // A lending officer is not a baker, and the venue says so.
       expect(venues.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe('a cell moves between keys and nothing crosses (13d.1, XI-15)', () => {
+  it('ages people by re-keying them, which is a split with a different key', () => {
+    const w = rigWorld('rekey-a');
+    const before = w.parties.ofKind(HOUSEHOLD).reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 0), 0);
+    for (let i = 0; i < 3; i += 1) w.step();
+    const after = w.parties.ofKind(HOUSEHOLD).reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 0), 0);
+    // XI-15: NOBODY APPEARS AND NOBODY DISAPPEARS. A re-key is exact by construction, because it is
+    // a split: the part that crossed carries the same per-member state and the totals add up.
+    expect(after).toBe(before);
+    const moves = w.journal
+      .ofKind('weight')
+      .filter((e) => e.data['kind'] === 'promotion' && typeof e.data['to'] === 'string');
+    expect(moves.length).toBeGreaterThan(0);
+    for (const m of moves) {
+      // The event names both cells and says which dimension moved, so a reader can see what
+      // happened without being told; and no instruction was needed, because nothing was paid.
+      expect(m.subjects.length).toBe(2);
+      expect(m.data['key']).toBeDefined();
+    }
+  });
+
+  it('states no retirement mechanism anywhere: retiring is an age (F3)', () => {
+    const w = rigWorld('rekey-a');
+    for (const d of w.params.all()) {
+      const id = String(d.id).toLowerCase();
+      expect(id).not.toContain('retirementrate');
+      expect(id).not.toContain('retire.share');
+    }
+    // What IS declared is the age the band starts at, which is a fact about people.
+    expect(w.registry.cohorts.length).toBeGreaterThan(1);
+    for (const c of w.registry.cohorts) expect(c.fromAge).toBeGreaterThanOrEqual(0);
   });
 });

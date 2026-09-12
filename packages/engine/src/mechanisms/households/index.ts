@@ -35,6 +35,7 @@ import type { SystemModule } from '../../world/module.js';
 import { householdChoosesBank, HOUSEHOLD_SWITCHING_COST } from './bank.js';
 import { CONSUMPTION, type ConsumptionDecl } from './data.js';
 import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
+import { age } from './lifecycle.js';
 import {
   cushionForFund,
   fundOrders,
@@ -292,6 +293,15 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
             if (p.status.alive) decide(ctx, p.id, rows);
           }
         },
+      },
+      {
+        name: 'households.lifecycle',
+        spec: 'Households F1 Households F1.a Households F3 XI-15',
+        cycle: 'anchor',
+        // After everything else has happened to them: somebody who crossed into retirement this
+        // period worked this period, and ageing them first would be backdating it.
+        anchor: { after: 'revaluation' },
+        run: age,
       },
     ],
     participants: [

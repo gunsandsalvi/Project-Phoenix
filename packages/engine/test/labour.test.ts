@@ -239,7 +239,7 @@ describe('a hire (Labour A4, XI-10)', () => {
       }
     });
     w.step();
-    const cellsBefore = w.parties.ofKind(HOUSEHOLD).length;
+    const before = new Set(w.parties.ofKind(HOUSEHOLD).map((p) => String(p.id)));
     const r = w.step();
     expect(r.audit.total).toBe(0);
     const hired = rows(w);
@@ -254,8 +254,12 @@ describe('a hire (Labour A4, XI-10)', () => {
     expect(struck).toBe(perHour(30));
     const printed = w.journal.ofKind('labour.print').find((e) => e.subjects.includes(BAKERY));
     expect(printed?.data['wagePerHour']).toBe(struck);
-    // A4.c: the three who took the job are their own cell now; the rest are still looking.
-    expect(w.parties.ofKind(HOUSEHOLD).length).toBe(cellsBefore + 1);
+    // A4.c: the three who took the job are their own cell now; the rest are still looking. What is
+    // asserted is that the WORKER is a cell that did not exist before — 13d.1 made ageing a
+    // re-key, so a period creates cells for a reason that has nothing to do with this hire, and a
+    // count of every household cell in the world is no longer a statement about a hire.
+    expect(before.has(String(row?.worker))).toBe(false);
+    expect(w.parties.ofKind(HOUSEHOLD).length).toBeGreaterThan(before.size);
     const worker = row === undefined ? undefined : w.parties.get(row.worker);
     expect(worker?.representation).toBe('cell');
     expect(worker?.representation === 'cell' ? worker.weight : 0).toBe(3);

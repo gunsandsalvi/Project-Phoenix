@@ -341,6 +341,16 @@ export interface CellEvents {
     members: number,
     cause: string,
   ): void;
+  /**
+   * XI-15 (13d.1): a split that changes the key — how a weight moves between keys without value
+   * moving with it. Returns the new cell, which carries the same per-member state and the new key.
+   */
+  reKey(
+    cell: PartyId,
+    members: number,
+    key: Readonly<Record<string, string>>,
+    cause: string,
+  ): PartyId;
 }
 
 /**
