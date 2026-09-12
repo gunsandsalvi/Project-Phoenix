@@ -1079,3 +1079,163 @@ summing `paid` across the rounds counts the house's capital twice. Naming the li
 rather than admitted at zero), and on a requirement below one piece of money — with every one of
 them journaled and measured (E4) and nothing anywhere raising the limit — is Law 6 done properly:
 the constraint is a quantity somebody HAS, not a number somebody chose.
+
+## Money creation and destruction — checked exhaustively, and it is right
+
+The user's question deserves a direct answer, so here is the whole of it.
+
+Money can enter or leave this world at exactly two places in `ledger/settlement.ts`: the `issue` op
+and the `redeem` op, each reachable only from `expandMoney` and `expandAsset`. Every module-level
+site that triggers one is:
+
+| site | what it is | correct? |
+| --- | --- | --- |
+| `banks/index.ts:436` | a bank lends: its own deposit created into the borrower's account, in the same instruction as the loan the borrower issues | **yes** — this is endogenous money, and the comment correctly notes no reserve leaves the bank when both sides bank there (B1.a) |
+| `banks/index.ts:504` | a drawing on an existing line | yes |
+| `central-bank-omo/index.ts:158` | the central bank remits its income to the treasury, in reserves it issues | yes |
+| `money-market/resolution.ts:394` | a bail-in: a depositor's claim on a failed bank extinguished | yes |
+| `money-market/resolution.ts:757+765` | an acquirer takes over an account: the failed bank's deposit destroyed and the acquirer's created, **two legs, one instruction** | yes, and this is the hard one to get right |
+
+And the implicit path, which is the one most likely to be wrong and is not: a loan REPAYMENT. The
+borrower pays `accountOf(bank)`, which is the bank's account at the CENTRAL bank, so the leg crosses
+issuers; settlement then redeems the borrower's deposit (destroying it), credits the bank's reserves
+and debits them again in the cross-issuer branch — net zero reserves, one deposit destroyed. That is
+exactly right and it falls out of the wire rather than being coded anywhere.
+
+**There is no other way for money to be created or destroyed in this engine.** No module writes
+`issued` directly, no module holds the register, and `adjustIssued` has three call sites, all inside
+settlement. On this criterion the answer is unqualified: yes.
+
+## `mechanisms/estate/`
+
+**SHAPE — the estate's reservation is a formula discount off the last print, and the module's own
+header says that is the thing it must not be.**
+
+```ts
+const total = sub(closesAfter, view.period, 'left') + 1;
+price: mul(print.value.price, div(left, total, 'how much of its patience is left'), 'reservation')
+```
+
+That is `print × left/(left+1)` — 1/2, 2/3, 3/4, 4/5 as the programme runs down. The inline comment
+says "There is no discount curve here — the number is how long is left", and the module header says
+"ASSETS ARE SOLD, not valued... **a formula discount off book is a stated price with no buyer**".
+`left/(left+1)` is a discount curve off book. It is not derived from anything the estate knows about
+the asset, the bidders, or what it has to raise — only from the calendar and a parameter.
+
+Two consequences. First, it is a written price path (Appendix B: no written price path), in the one
+module whose whole purpose is that a forced sale realises what a market pays. Second, the schedule
+is PUBLIC — `estate.opened` journals `closesAfter` and the programme length is a parameter — so any
+bidder can compute the exact period the estate will capitulate and simply wait. That is predatory
+trading, which is real, but here it is an artefact of the formula rather than an outcome of anyone's
+decision.
+
+**And the codebase already contains the right answer, one module over.** `funds/index.ts:861`, the
+other forced seller: `price: 'market'`, with the comment "XI-2: at whatever the market gives. A
+forced seller that named a price would not be one." Two modules, one problem — a seller under time
+pressure — and two answers, one of which is a reason and one of which is a curve. **What it would
+take:** the estate's reservation is what it expects to get by waiting (its own outlook of that
+line's price, which XI-16 already gives every party) against the chance its programme ends first —
+or, simpler and just as honest, it is the fund's answer: an estate that must sell names no price.
+
+## The rest of the mechanisms — swept, with what the sweep found
+
+Mechanically clean across all twenty-eight: no `Math.min`/`Math.max`, no `?? 0` or `|| 0`, no
+`=== 'someKind'` branches, four `eslint-disable` lines in the whole tree and each defended in a
+sentence. `Math.floor`/`Math.round` appear ten times and all ten are on counts of people, cells,
+months or auctions rather than on a unit's pieces.
+
+Every module's header states an architecture and, where I checked, the code holds to it:
+`households` really has no representative agent; `funds` really lets the forced sale name no price;
+`ratings` really keeps the issuer-pays conflict rather than assuming it away; `research` really
+makes coverage an outcome of a bank's own book (D3.a) rather than universal; `indices` really stores
+no level; `reporting` really reads the same `balanceSheet` the audit checks. That consistency is the
+most valuable property this codebase has and it is not an accident.
+
+**MINOR — `banks/index.ts:309` writes through a `readonly` with a cast:**
+`(held as { period: number }).period = ctx.period;`. The field is declared `readonly` on
+`CouponsPaid` and then written anyway. The cache is correct and the argument for it (Law 18: one
+walk of a period that has stopped moving) is right; the cast is a type-system escape in a codebase
+whose whole method is that the compiler holds the rules.
+
+**MINOR — `central-bank-omo` posts `price: 'market'` for its open-market purchases.** In this
+solver a market buy resolves to the HIGHEST ask anybody posted, so a central bank closing a gap
+towards its 25%-of-line target is a price-insensitive bidder at the top of the book in every
+sovereign session where it has one. The quantity limit is real policy (Central Bank C1, and the
+module correctly refuses to stand in any other market), so this is not the buyer of last resort
+Appendix B forbids — but "market" here means "pay the worst level posted", which is more aggressive
+than any real open-market operation, and it makes the central bank the marginal price-setter in the
+sovereign book rather than a large participant in it.
+
+---
+
+# The verdict, and what to do first
+
+83 findings: 25 DEFECT, 6 RISK, 9 SHAPE, 5 SEAM, 38 MINOR.
+
+## Answering the four questions directly
+
+**Does it follow its own rules?** Mostly, and where it does not the cause is almost always the same:
+**a rule is enforced by a check that has drifted from the rule.** `no-cross-module-import` never
+fires; `no-bounds` bans a spelling; `no-kind-branch` sees three syntaxes; a shape's scheduled death
+is policed by a regex over prose; `Audit.run`'s `built` flag is `some()` when it should be `every()`.
+The laws in `CLAUDE.md` are good and the code mostly obeys them out of discipline. The machinery
+that was supposed to make discipline unnecessary is the weakest part of the tree.
+
+**Is the modelling realistic, and is anything top-down?** The modelling is unusually honest. Every
+decision I traced is a party's own, taken from its own state and its own outlook, with no aggregate
+anywhere a decision could read. Three things are asserted rather than derived, and all three are
+identified above: the estate's `left/(left+1)` reservation (a written price path, in the module that
+forbids one), consumption as a fixed share of money spending (unit-elastic demand, the assumption
+`no-value-recipe` refuses on the production side), and the issuer's own-credit gain (a firm's equity
+RISES as its own bonds fall). The third is the one that will bite a mechanism: it fights XI-3.
+
+**Is money created and destroyed only in the right places?** Yes, unqualified. Two ops, six module
+sites, all correct, and the hard case (a loan repayment destroying a deposit without moving a
+reserve) falls out of the wire rather than being coded. See the table above.
+
+**Is it really modular?** Yes for INSTANCES, no for SHAPES, and the numbers are in the table under
+`world/module.ts`: seven derivative classes cost six kernel files; the derivative LAYER cost
+twenty-four. About half of those twenty-four were avoidable and the four avoidable causes are named.
+But the deeper answer is the headline finding: **the module boundary is not enforced at all**, six
+modules import each other including one cycle, and the architecture's central claim rests on a lint
+rule with a regex bug.
+
+## What to do, in order
+
+The order is by what unblocks the most, not by severity.
+
+1. **Fix `no-cross-module-import`, then fix the six crossings.** One regex; then the six. It is the
+   only finding that makes every other structural claim in `ARCHITECTURE.md` checkable again, and
+   `banks ↔ spot-fx` is an initialisation bug waiting for the next `const`.
+2. **`Instruments.restate` does not invalidate `all()`.** One line. A share split currently leaves a
+   stale `issued` in front of every reader for the rest of the run.
+3. **`Contracts.open` validates neither its terms nor their kind.** Two lines, copied from
+   `Instruments.add`. Without them a mis-kinded contract marks zero on both books forever.
+4. **Delete the dead dust from `register/register.ts` and `ledger/settlement.ts`.** Law 8 retired it;
+   about forty lines go, including the one branch in the engine that can destroy units.
+5. **Delete the `committed` term from the derivative layer's `admits`.** One line. Every contract
+   book is currently half the size the mechanism says.
+6. **Decide the own-credit question** (settlement's issuer re-mark and revaluation's `issuerMoves`).
+   This is a modelling decision, not a bug fix, and it should be recorded as one.
+7. **Fix the flows family's weight exemption and the audit's `built` flag.** Both are holes in the
+   instrument that is supposed to find everything else.
+8. **Give the estate a reason instead of a curve**, and take the fund's answer if nothing better
+   presents itself.
+9. **Write the paragraph in `ARCHITECTURE.md`** saying which kernel types a module may extend and
+   which are closed. Every one of the eleven hooks was a good decision; nothing says where the line
+   is, so the twelfth will be taken the same way the eleventh was.
+
+Everything else is real and can wait. Nothing in this review is a reason to stop building forward:
+items 1–5 are each one to three lines, 6 is a decision to record, and 7–9 are the kind of work that
+is cheapest done between items rather than inside one.
+
+## One thing worth saying plainly
+
+The prose in this codebase is doing real work, and it is what made this review possible: almost
+every finding above was found by reading what a file SAYS it does against what it does. That only
+works because the files say what they do, at length, with the clause cited. Four of the findings —
+`core/tick.ts`'s "a leg's amount", `register/register.ts`'s "guarding the STORE rather than each
+writer", `estate`'s "a formula discount off book", `parties`'s "lifting a relationship into the key
+is a data change" — are cases where a file states the rule in its own header and the code two
+hundred lines down does not follow it. In a codebase with ordinary comments none of those would be
+findable at all.
