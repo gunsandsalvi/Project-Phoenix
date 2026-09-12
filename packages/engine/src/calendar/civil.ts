@@ -82,6 +82,11 @@ export function addMonths(c: Civil, months: number): Civil {
   return civil(y, m, c.d > dim ? dim : c.d);
 }
 
+/** The same day of the month, `years` later — twelve months at a time, on the same arithmetic. */
+export function addYears(c: Civil, years: number): Civil {
+  return addMonths(c, years * 12);
+}
+
 export function addDays(c: Civil, days: number): Civil {
   return fromDayNumber(dayNumber(c) + days);
 }

@@ -708,7 +708,18 @@ function tradingBookIsCapitalised(): Family {
  * second one). A world with two of them or with four is this world with a different table and no
  * number in it restated, which is what lets the count be measured (XI-15).
  */
-export function banks(rows: readonly BankDecl[]): SystemModule {
+/**
+ * Dealer Desks A3: WHICH BANKS MAKE A MARKET IN ONE NAMED LINE.
+ *
+ * A market in one name has a few makers, not all of them and not one — and which few is DRAWN,
+ * because a bank that has never taken a view of a firm does not quote it. The draw lives with the
+ * listing that made it (`ListedDecl.makers`), so the world that assembles both hands it in here.
+ * A line nobody drew makers for answers `undefined`, and then the bank's own `makes` list decides,
+ * which is every line that has no per-name makers: sovereign paper, a fund's shares, a bill.
+ */
+export type MakersOf = (instrument: InstrumentId) => readonly string[] | undefined;
+
+export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemModule {
   return {
   id: 'banks',
   spec: 'Banks Lending',
@@ -992,7 +1003,7 @@ export function banks(rows: readonly BankDecl[]): SystemModule {
       // and carries the loss when it is wrong. Every order this face posts is that.
       speculative: true,
       orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
-        dealingOrders(view, m, rows),
+        dealingOrders(view, m, rows, makersOf),
     },
   ],
   marks: [

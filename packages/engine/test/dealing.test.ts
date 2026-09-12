@@ -163,10 +163,15 @@ describe('one face (Dealer Desks A1, Clearing A2, Law 4)', () => {
         speakers.set(book, [...(speakers.get(book) ?? []), m.id]);
       }
     }
-    expect([...speakers.keys()].sort()).toEqual(['asset', 'fx']);
+    expect([...speakers.keys()].sort()).toEqual(['asset', 'contract', 'fx']);
     for (const [, who] of speakers) expect(new Set(who).size).toBe(1);
     expect(speakers.get('asset')).toEqual(['banks']);
     expect(speakers.get('fx')).toEqual(['spot-fx']);
+    // And the third sort of book, now that there are contracts in this world: the LAYER speaks for
+    // a bank in one, once, and asks the kind of contract the book carries for its reasons
+    // (`DerivativeKindProfile.orders`). Six classes each declaring a participant would be six
+    // modules speaking for one bank in one book — the thing this test exists to refuse.
+    expect(speakers.get('contract')).toEqual(['derivative-layer']);
     const inVenues = spec.modules.filter((m) =>
       (m.venueParticipants ?? []).some((x) => x.partyKind === BANK),
     );

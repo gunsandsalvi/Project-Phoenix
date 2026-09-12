@@ -95,12 +95,41 @@ export interface ContractView {
   readonly house: string | null;
   readonly notional: number;
   readonly struckAt: number;
+  /**
+   * D7, D7.b: WHAT `struckAt` IS. A forward's is money for a unit of the thing; a swap's or a
+   * credit default swap's is a RATE PER ANNUM on the notional, and a reader shown 0.01 with no
+   * word for which has been shown a number and not a price (Law 8: the unit is part of it).
+   */
+  readonly struckAs: 'money' | 'rate';
   /** D8: what it is worth to `a`; `b`'s is the negation (Derivative Layer A3). */
   readonly markToA: number;
   /** D1 (layer): what the kind requires against it, or null when the underlying has no record. */
   readonly initialMargin: number | null;
   readonly opened: number;
   readonly ccy: string;
+}
+
+/**
+ * A contract BOOK's own print: what a session in it agreed, and what that level means.
+ *
+ * @spec CDS A1.d CDS C3 IRS C1 IRS C1.a FX Forwards C1 Sovereign I1.a Derivative D7 Law 3 Law 8
+ *
+ * Every curve this item added is the set of these: a reference's protection across tenors, a
+ * money's swap rate across tenors, a pair's forward across tenors, an option's premium at a strike.
+ * None of them is stored and none of them is fitted — each point is a level somebody paid, and a
+ * tenor nobody traded simply has no point on the list.
+ */
+export interface ContractPrintView {
+  readonly market: string;
+  readonly name: string;
+  readonly kind: string;
+  /** The level the session struck. */
+  readonly level: number;
+  /** Law 8: money per unit, or a RATE per annum — a reader shown 0.01 with no word has a number. */
+  readonly quotedAs: 'money' | 'rate';
+  readonly ccy: string;
+  /** Clearing E1: how real it is — a session this period, or the last one carried. */
+  readonly traded: boolean;
 }
 
 export interface OutlookView {
@@ -280,6 +309,8 @@ export interface Snapshot {
   readonly positions: readonly PositionView[];
   /** Derivative X1, D1: the open contracts a viewer is a side of, with what each is worth to `a`. */
   readonly contracts: readonly ContractView[];
+  /** What every contract book last printed — the curves, the premiums and the bases, as reads. */
+  readonly contractPrints: readonly ContractPrintView[];
   /** F1, F2, F4, B3.a: what each bank last published about its funding and its capital. */
   readonly banks: readonly BankView[];
   /** Currency C5: what each pair last printed, and whether that was this period (D1). */
@@ -424,10 +455,29 @@ export function snapshot(
       house: c.house === null ? null : String(c.house),
       notional: c.notional,
       struckAt: c.struckAt,
+      struckAs: w.registry.derivativeKind(c.kind).quotedAs ?? 'money',
       markToA: w.contractMark(c, w.period),
       initialMargin: margin.some ? margin.value : null,
       opened: c.opened,
       ccy: String(c.ccy),
+    });
+  }
+  // Clearing E1, Law 3: every contract book's own level is public, like every other print. It is
+  // read off the store rather than rebuilt, and a book that has never traded is simply not here.
+  const contractPrints: ContractPrintView[] = [];
+  for (const m of w.markets) {
+    const decl = m.contract;
+    if (decl === undefined) continue;
+    const print = w.prices.latest(m.instrument, w.period);
+    if (!print.some) continue;
+    contractPrints.push({
+      market: String(m.id),
+      name: m.name,
+      kind: String(decl.kind),
+      level: print.value.price,
+      quotedAs: w.registry.derivativeKind(decl.kind).quotedAs ?? 'money',
+      ccy: String(m.ccy),
+      traded: print.value.period === w.period,
     });
   }
   const banks: BankView[] = [];
@@ -525,6 +575,7 @@ export function snapshot(
     yields,
     positions,
     contracts,
+    contractPrints,
     banks,
     rates: ratesOf(w),
     triangles: trianglesOf(w),

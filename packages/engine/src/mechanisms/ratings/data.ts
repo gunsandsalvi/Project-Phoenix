@@ -23,12 +23,14 @@ export const ASSESSOR = partyKindId('assessor');
  * handful of public facts does not carry twenty distinctions, and because what consumes a grade —
  * a mandate boundary, a risk weight, a haircut — is a step function and a finer scale would only
  * move the steps around. The names are labels; what they order is the list.
+ *
+ * It is DECLARED IN THE REGISTRY and read from there (`registry/grades.ts`), because a default
+ * index divides its series on the same ladder (CDS A5.a) and two copies of an ordering is how two
+ * systems come to disagree about which way is better (Law 4).
  */
-export const GRADES = ['aaa', 'aa', 'a', 'bbb', 'bb', 'b', 'c'] as const;
-export type Grade = (typeof GRADES)[number];
+import { GRADES, WORST, type Grade } from '../../registry/grades.js';
 
-/** The worst grade: where an issuer that has missed a payment goes, whatever else is true of it. */
-export const WORST: Grade = 'c';
+export { GRADES, WORST, type Grade };
 
 export interface AssessorDecl {
   readonly assessor: string;

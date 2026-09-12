@@ -97,6 +97,9 @@ function termsOn(w: World, strike: number, expiry: number, long = true): Forward
     strike,
     long,
     window: 8,
+    // The fixture's own fields: this book is written by hand, so nobody is asked to trade in it.
+    size: 0,
+    movers: [],
   };
 }
 

@@ -19,6 +19,10 @@
  * means something different in the next world. A test that wants a mill asks for one.
  */
 import {
+  BANK,
+  CENTRAL_BANK,
+  HOUSEHOLD,
+  TREASURY,
   FIRM,
   FIRM_COUNT,
   REGION,
@@ -245,8 +249,28 @@ export function withDependencies(
     asked.add(m.id);
     take(m);
   }
-  return all.filter((m) => keep.has(m.id)).map((m) => (asked.has(m.id) ? m : quiet(m)));
+  const kept = all.filter((m) => keep.has(m.id));
+  /**
+   * Clearing B2, Law 15: A TRIMMED WORLD CANNOT SPEAK FOR A KIND IT DOES NOT HAVE.
+   *
+   * A module may declare a participant for a kind another module registers — the derivative layer
+   * asks every kind that trades contracts in a world for its reasons, and which kinds those are is
+   * the world's own answer. `addParticipant` refuses a kind nobody registered, and rightly: that
+   * guard is what catches a mistyped kind. So when this function takes a module out, the schedules
+   * that spoke for the kinds it declared go with it.
+   */
+  const here = new Set(kept.flatMap((m) => m.partyKinds.map((k) => String(k.id))));
+  for (const k of KERNEL_PARTY_KINDS) here.add(String(k));
+  const onlyKindsHere = (m: SystemModule): SystemModule => ({
+    ...m,
+    participants: m.participants.filter((p) => here.has(String(p.partyKind))),
+    venueParticipants: (m.venueParticipants ?? []).filter((p) => here.has(String(p.partyKind))),
+  });
+  return kept.map((m) => onlyKindsHere(asked.has(m.id) ? m : quiet(m)));
 }
+
+/** The kinds the kernel itself registers, which every world has whatever it was trimmed to. */
+const KERNEL_PARTY_KINDS = [CENTRAL_BANK, TREASURY, BANK, FIRM, HOUSEHOLD];
 
 /**
  * A module for WHAT IT DECLARES, not for what it does: its kinds, its units, its parameters and its

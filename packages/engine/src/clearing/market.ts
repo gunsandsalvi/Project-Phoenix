@@ -197,6 +197,15 @@ interface Trade {
 function onTheGrid(orders: readonly Order[], tick: number): Order[] {
   const out: Order[] = [];
   for (const o of orders) {
+    // Law 8, Clearing A2: AND A SIZE BELOW ONE PIECE IS NOT A SIZE. A reservation for less than the
+    // smallest deliverable piece of the thing is a party that wants some of it and cannot name an
+    // amount anybody could fill — the same answer a bid below one tick gets, for the same reason.
+    //
+    // It is HERE, with the grid rule, and not at each of the places that post, because it is the
+    // same rule: what a book can hold is whole pieces at whole ticks, and a rule applied in one
+    // place cannot be forgotten in another (Law 4). Rounding it UP is what must not happen — that
+    // posts a size its owner never asked for.
+    if (o.qty <= 0) continue;
     if (o.price === 'market') {
       out.push(o);
       continue;

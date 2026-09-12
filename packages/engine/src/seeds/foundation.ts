@@ -82,12 +82,18 @@ import { goodId, goodMarketId, goods, wipId } from '../mechanisms/goods/index.js
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
-import { funds } from '../mechanisms/funds/index.js';
+import { funds, FUND } from '../mechanisms/funds/index.js';
 import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
-import { derivativeLayer } from '../mechanisms/derivative-layer/index.js';
+import { derivativeLayer, houseIdFor, TRADES_CONTRACTS } from '../mechanisms/derivative-layer/index.js';
+import { cds } from '../mechanisms/cds/index.js';
+import { irs } from '../mechanisms/irs/index.js';
+import { fxDerivatives } from '../mechanisms/fx-derivatives/index.js';
+import { indexFutures } from '../mechanisms/index-futures/index.js';
+import { options } from '../mechanisms/options/index.js';
+import { bondFutures } from '../mechanisms/bond-futures/index.js';
 import { EQUITY_INDEX, indices } from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { reporting } from '../mechanisms/reporting/index.js';
@@ -1743,7 +1749,13 @@ export function foundationSpec(
       // require each other, and that is what puts them in it.
       expectations,
       creditEvents,
-      banks(drew.banks),
+      // Dealer Desks A3: the desks, and WHICH LINES EACH OF THEM MAKES — drawn with the listing
+      // (`ListedDecl.makers`) and handed in here, because the bank that quotes and the listing that
+      // drew its makers are two systems and one fact (Law 4).
+      banks(drew.banks, (instrument) => {
+        const row = drew.listed.find((l) => equityLineOf(l.firm) === instrument);
+        return row?.makers;
+      }),
       estate,
       // Goods A1: the goods of THIS world are made in the one region that has firms in it. The
       // three abroad are a central bank, a treasury and a bond line (13i builds their economies),
@@ -1784,10 +1796,44 @@ export function foundationSpec(
       // member funds there, and after the estate, because a default resolves into one (XI-8). It
       // brings no class of contract with it (13b does that): what it brings is the house, the
       // margin, the fund and the waterfall every class then runs on.
-      derivativeLayer,
+      // XI-3, Clearing B2: the layer, and WHO TRADES CONTRACTS in this world — its banks and its
+      // firms, and the funds the funds module declares. A module cannot name a kind this world
+      // never registered, so the world that assembles both says which kinds there are.
+      derivativeLayer([...TRADES_CONTRACTS, FUND]),
+      // CDS: the first class on the layer (13b). After it, because a book clears through the house
+      // it opened; before the indices, because a default index is an index OF these books.
+      cds(houseIdFor),
+      // Swaps: after the money market, whose overnight book is what a floating leg fixes on
+      // (IRS A1.a, E3), and after the indices publish that fixing.
+      irs(houseIdFor),
+      // FX derivatives: after the pairs, because the forward settles against the spot print, and
+      // after the money market, because the carry a bank quotes is what the two moneys cost it.
+      fxDerivatives(houseIdFor),
       // Indices: after everything that prints, because an index is what its constituents printed
       // and the benchmark is what the overnight book settled at (Indices D3.a, E1).
       indices([REGION, ...ABROAD.map((c) => c.region)], [USD, ...ABROAD.map((c) => c.ccy)]),
+      // Index futures: after the indices, because what this settles against is an index READ
+      // (Indices C3), and it is what a dealer's hedge actually is (Dealer Desks E1, E2).
+      // Options: after the equity book clears, because D3.a forbids an underlying that exists only
+      // inside the derivative — the ladder is written on the listed lines this world already
+      // prints. What it gives the world is a price for optionality, which three other systems need
+      // and none of them can form (Bond N11.a, Short-Term Debt B4, §46 A3).
+      options(houseIdFor, (ctx) =>
+        ctx.instruments
+          .all()
+          // Law 15: WHAT IT IS COUNTED IN, which is a registry row, rather than which kind it is.
+          // An option ladder belongs on the lines a person owns a count of.
+          .filter((i) => i.status.live && i.unit === SHARES)
+          .map((i) => i.id),
+      ),
+      // Bond futures: Sovereign I1–I3.a, owned here because a specified clause no item names is a
+      // hole in the plan (Appendix C). After the curve and the money market, because the carry it
+      // is measured against is a coupon and a financing rate both of them already print.
+      bondFutures(houseIdFor, TREASURY_US),
+      indexFutures(houseIdFor, [
+        { id: EQUITY_INDEX(REGION), ccy: USD },
+        ...ABROAD.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy })),
+      ]),
       // Ratings: after everything it has an opinion about, and it reads none of them — it decides
       // from state through a view with the prices closed (Ratings A2.a).
       ratings(

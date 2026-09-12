@@ -141,7 +141,10 @@ function publish(
       if (!fixing.some) continue;
       ctx.record(
         'index.benchmark',
-        [String(ccy)],
+        // D3, Law 4: SECURED AND UNSECURED ARE TWO BENCHMARKS and a reader has to be able to ask
+        // for one of them by name. The currency alone names both, so the book names itself too —
+        // a subject is what an event is ABOUT, and this event is about one book in one money.
+        [String(ccy), `${String(ccy)}:${secured ? 'secured' : 'unsecured'}`],
         {
           ccy,
           secured,

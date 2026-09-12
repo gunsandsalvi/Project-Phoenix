@@ -22,12 +22,16 @@ import {
   type ContractId,
   type CurrencyCode,
   type PartyId,
+  type PartyKindId,
 } from '../../core/ids.js';
 import { add, dustOf, sub, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
+import type { MarketDecl } from '../../clearing/market.js';
+import type { Order } from '../../clearing/solver.js';
+import { BANK, FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { ClearingCapacity, SystemModule } from '../../world/module.js';
 import {
@@ -39,7 +43,17 @@ import {
   CLOSE_OUT_CLAIM,
   type CloseOutTerms,
 } from './kinds.js';
-import { callOn, committed, marginLineId, marginPairsOf, moveMargin, posted, requirement } from './margin.js';
+import {
+  callOn,
+  committed,
+  marginLineId,
+  marginPairsOf,
+  moveMargin,
+  pledgeInstead,
+  posted,
+  releasePledges,
+  requirement,
+} from './margin.js';
 import { fundLineId, houseSheet, inFund, membersOf, runWaterfall, trueUpFund } from './house.js';
 
 export * from './kinds.js';
@@ -47,6 +61,15 @@ export * from './margin.js';
 export * from './house.js';
 
 export const CLEARING_HOUSE = partyKindId('clearingHouse');
+
+/**
+ * WHOSE REASONS A CONTRACT BOOK ASKS FOR by default: the kernel's own kinds, which every world has.
+ *
+ * A world with funds or insurers in it has more, and the world that assembles them says so — a
+ * module cannot declare a participant for a kind this world never registered (`addParticipant`
+ * refuses it, and rightly: that guard is what catches a mistyped kind).
+ */
+export const TRADES_CONTRACTS: readonly PartyKindId[] = [BANK, FIRM];
 
 export const LAYER_PARAMS = {
   horizon: paramId('clearingHouse.closeOutHorizon'),
@@ -170,7 +193,30 @@ function capacity(): ClearingCapacity {
       );
       if (!need.some) return [];
       const amount = ctx.registry.cashFor(m.ccy, need.value);
-      return amount <= 0 ? [] : moveMargin(ctx, party, against, m.ccy, amount);
+      if (amount > 0) return moveMargin(ctx, party, against, m.ccy, amount);
+      /**
+       * G2, Law 8: NO EXPOSURE WITHOUT MARGIN, OR A STATED REASON THERE IS NONE — and here there
+       * is one, so it is stated. A requirement of a fraction of a cent is a real requirement that
+       * is smaller than the smallest piece of the money it would be posted in: nothing moves,
+       * because nothing CAN move, and a trade admitted with nothing behind it is exactly what G2
+       * is about. Saying so is the difference between "too small to post" and "nobody measured
+       * it" — and a default fund sized from a book of these is a fund of nothing, which somebody
+       * should be able to see before a member fails rather than afterwards.
+       */
+      ctx.record(
+        'margin.none',
+        [party, against, String(m.id)],
+        {
+          poster: party,
+          holder: against,
+          market: m.id,
+          ccy: m.ccy,
+          required: need.value,
+          why: 'the requirement is smaller than one piece of this money',
+        },
+        true,
+      );
+      return [];
     },
   };
 }
@@ -199,7 +245,7 @@ function marginCalls(ctx: MechanismContext): void {
         if (by === 0) continue;
         const legs = moveMargin(ctx, side, pair.other, pair.ccy, by);
         if (legs.length === 0) continue;
-        const r = ctx.settle({
+        let r = ctx.settle({
           legs,
           cause: 'transfer',
           reason:
@@ -207,6 +253,37 @@ function marginCalls(ctx: MechanismContext): void {
               ? `${side} posts ${by} of margin to ${pair.other}`
               : `${pair.other} returns ${-by} of margin to ${side}`,
         });
+        /**
+         * D4.a, D9, D9.a: A CALL HAS THREE ANSWERS, and cash is only one of them. A party that
+         * could not pay may PLEDGE instead — the units stay its own, the coupon and the mark stay
+         * its own, and what changes is that they are bound and it cannot move them. The third
+         * answer is a forced sale, and that is its own module's business (XI-2 door one).
+         *
+         * It is tried after the payment failed rather than instead of it, because a party with the
+         * cash pays: posting securities when you have money is a choice nobody makes, and the
+         * order these are tried in is what makes collateral the answer to a SHORTFALL.
+         */
+        if (by > 0 && r.outcome !== 'settled') {
+          const bound = pledgeInstead(ctx, side, pair.other, pair.ccy, by);
+          if (bound.length > 0) {
+            r = ctx.settle({
+              legs: bound,
+              cause: 'transfer',
+              reason: `${side} pledges what it holds against ${by} it could not pay ${pair.other}`,
+            });
+          }
+        }
+        if (by < 0) {
+          // D9.a: and it comes back. What secured a requirement that has gone is free again.
+          const free = releasePledges(ctx, side, pair.other, pair.ccy);
+          if (free.length > 0) {
+            ctx.settle({
+              legs: free,
+              cause: 'transfer',
+              reason: `${pair.other} releases what ${side} pledged`,
+            });
+          }
+        }
         if (by > 0) {
           const call = callOn(ctx, side, pair.other, pair.ccy);
           ctx.record(
@@ -224,6 +301,57 @@ function marginCalls(ctx: MechanismContext): void {
           );
         }
       }
+    }
+  }
+}
+
+/**
+ * D4, D5, D6, D6.a: WHAT THE TERMS PUT IN THIS PERIOD, PAID.
+ *
+ * A derivative's periodic payments are not margin and are not the mark: they are what the contract
+ * itself says falls due — a protection premium, the net of two swap legs, a notional exchange at
+ * maturity — and every one of them is a real payment between two named parties in a stated money
+ * (D5: each leg in its own). The kernel already knows what they are, because the kind's profile
+ * says so; what was missing until a class had one was anybody settling them.
+ *
+ * It goes through settlement like any payment, so a party that cannot pay FAILS (Money E1) and is
+ * in that state with everything that follows from it. Nothing here nets across contracts: one row,
+ * one obligation, one instruction (Law 5, G3).
+ */
+function payLegs(ctx: MechanismContext): void {
+  for (const c of ctx.contracts.open_()) {
+    for (const due of ctx.contracts.legsDue(c, ctx.period)) {
+      const amount = ctx.registry.cashFor(due.ccy, due.amount);
+      if (amount <= 0) continue;
+      const r = ctx.settle({
+        legs: [
+          {
+            kind: 'money',
+            from: ctx.accountOf(due.from, due.ccy),
+            to: ctx.accountOf(due.to, due.ccy),
+            ccy: due.ccy,
+            amount,
+            fromCell: none(),
+            toCell: none(),
+          },
+        ],
+        cause: 'coupon',
+        reason: `${c.id}: ${due.why}`,
+      });
+      ctx.record(
+        'contract.paid',
+        [String(c.id), due.from, due.to],
+        {
+          contract: String(c.id),
+          from: due.from,
+          to: due.to,
+          ccy: due.ccy,
+          amount,
+          why: due.why,
+          settled: r.outcome === 'settled',
+        },
+        true,
+      );
     }
   }
 }
@@ -286,7 +414,12 @@ function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): vo
   const value = ctx.contracts.closeOut(c, ctx.period);
   const legs: Leg[] = [{ kind: 'contract', act: 'close', contract: id, why }];
   const owed = ctx.registry.cashFor(c.ccy, value < 0 ? -value : value);
-  if (owed > 0) {
+  // Money E4: THE ROW CLOSES EITHER WAY, AND THE MONEY ONLY MOVES BETWEEN THE LIVING. Both sides
+  // of a row can cease in one period — a member and the house it faced — and a termination that
+  // insisted on paying would be an instruction addressed to somebody who is not there. What is
+  // owed then is a claim on an estate (C4.c), which is where `closeOutOnDefault` puts it.
+  const living = ctx.parties.get(c.a).status.alive && ctx.parties.get(c.b).status.alive;
+  if (owed > 0 && living) {
     legs.push({
       kind: 'money',
       from: ctx.accountOf(value > 0 ? c.b : c.a, c.ccy),
@@ -321,19 +454,39 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
   const estate = ctx.parties.resolve(dead).id;
   if (estate === dead) return;
   const survivor = before.a === dead ? before.b : before.a;
+  /**
+   * D1.a, Register F2: A CONTRACT HAS TWO SIDES AND THEY ARE DIFFERENT PARTIES. A successor can be
+   * the party on the other side of the row — a bank resolved into the one facing it, an estate
+   * whose successor is its counterparty — and novating then would make one party both sides of its
+   * own obligation, which is not a contract but a statement about itself. The row is torn up
+   * instead: what one side owed the other, it now owes nobody.
+   */
+  if (estate === survivor) {
+    settleAndTearUp(ctx, id, `${dead} ceased into ${survivor}, which was the other side`);
+    return;
+  }
   const value = ctx.contracts.closeOut(before, ctx.period);
   const owedToSurvivor = before.a === survivor ? value : -value;
-  ctx.settle({
+  const moved = ctx.settle({
     legs: [{ kind: 'contract', act: 'novate', contract: id, from: dead, to: estate }],
     cause: 'default',
     reason: `${dead} ceased; ${id} moves to ${estate}`,
   });
+  // Register F2, Money E4: THE ROW MOVES FIRST OR NOTHING ELSE HAPPENS. A close-out paid to a
+  // party that has ceased is an instruction addressed to somebody who is not there, and the
+  // novation is what puts a living name on the row. If it did not settle, the row stays where it
+  // is and is closed out next period — a recorded state, not a payment into the dark.
+  if (moved.outcome !== 'settled') return;
   const collateral = posted(ctx, dead, survivor, before.ccy);
   const claim = owedToSurvivor > 0 ? sub(owedToSurvivor, collateral, 'the mark less what it holds') : 0;
   settleAndTearUp(ctx, id, `${dead} ceased`);
   if (claim > 0) issueCloseOutClaim(ctx, estate, survivor, before.ccy, claim);
   const house = before.house;
-  if (house !== null && survivor === house) {
+  // C5, XI-3, Money E4: A HOUSE THAT HAS ITSELF CEASED RUNS NO WATERFALL. Running past the end of
+  // one is exactly how a house fails (C5), so a member defaulting into a house that is already
+  // gone is two defaults and not one — and the house's own is its estate's business now. Every
+  // line of a waterfall is an instruction naming the house, and it is not there to be named.
+  if (house !== null && survivor === house && ctx.parties.get(house).status.alive) {
     runWaterfall(ctx, house, dead, before.ccy, claim > 0 ? claim : 0);
   }
 }
@@ -352,22 +505,29 @@ function issueCloseOutClaim(
   // collateral agree to within a cent does not open a claim nobody can settle (Register C1).
   const qty = ctx.registry.cashFor(ccy, amount);
   if (qty <= 0) return;
-  const id = instrumentId(`closeOut:${owedBy}:${owedTo}:${ctx.period}`);
+  // Register F2: EVERY REFERENCE RESOLVES TO SOMEBODY WHO EXISTS. Both sides of a row can have
+  // ceased by the time it is closed out — a member and the house it faced, in one period — and a
+  // claim issued to a party that is gone is a claim nobody could ever be paid on. Each name is
+  // resolved to its successor, which is what an estate is for.
+  const from = ctx.parties.resolve(owedBy).id;
+  const to = ctx.parties.resolve(owedTo).id;
+  if (from === to) return;
+  const id = instrumentId(`closeOut:${from}:${to}:${ctx.period}`);
   if (!ctx.instruments.has(id)) {
     const terms: CloseOutTerms = {
       kind: CLOSE_OUT_CLAIM,
-      owedBy,
-      owedTo,
+      owedBy: from,
+      owedTo: to,
       struck: ctx.calendar.startOf(ctx.period),
     };
-    ctx.issue({ id, kind: CLOSE_OUT_CLAIM, issuer: some(owedBy), ccy, terms, market: none() });
+    ctx.issue({ id, kind: CLOSE_OUT_CLAIM, issuer: some(from), ccy, terms, market: none() });
   }
   ctx.settle({
     legs: [
       {
         kind: 'asset',
-        from: owedBy,
-        to: owedTo,
+        from,
+        to,
         instrument: id,
         qty,
         pricePerUnit: some(1),
@@ -377,7 +537,7 @@ function issueCloseOutClaim(
       },
     ],
     cause: 'default',
-    reason: `${owedBy} owes ${owedTo} ${amount} on a close-out`,
+    reason: `${from} owes ${to} ${amount} on a close-out`,
   });
 }
 
@@ -485,7 +645,10 @@ export function capacityOf(view: ParticipantView, ccy: CurrencyCode, buffer: num
   return add(sub(cash, cash * buffer, 'net of its buffer'), -committed(view, ccy), 'room to commit');
 }
 
-export const derivativeLayer: SystemModule = {
+export function derivativeLayer(
+  tradesContracts: readonly PartyKindId[] = TRADES_CONTRACTS,
+): SystemModule {
+  return {
   id: 'derivative-layer',
   spec: 'Derivative Layer, Derivative contract',
   // The estate is what a default resolves into (XI-8) and the money market is where a member finds
@@ -503,7 +666,7 @@ export const derivativeLayer: SystemModule = {
   phases: [
     {
       name: 'margin.calls',
-      spec: 'Derivative Layer D1 Derivative Layer D2 Derivative Layer D4 Derivative Layer D5 XI-2',
+      spec: 'Derivative D4 Derivative D5 Derivative D6 Derivative D6.a Derivative Layer D1 Derivative Layer D2 Derivative Layer D4 Derivative Layer D5 XI-2',
       cycle: 0,
       // Requirements are re-measured against LAST CLOSE's marks, at the top of the period, so a
       // call caused by them can be met out of this period's session (docs/PLAN.md §8). A call
@@ -511,6 +674,10 @@ export const derivativeLayer: SystemModule = {
       // honest rather than a second session hiding it.
       anchor: { after: 'corporateActions' },
       run: (ctx: MechanismContext): void => {
+        // D4 before D2: what the terms put in this period is an obligation the contract created,
+        // and the margin is what secures what is LEFT after it. A call measured before the
+        // period's own payment moved would be securing an exposure that is about to change.
+        payLegs(ctx);
         marginCalls(ctx);
         trueUpFunds(ctx);
       },
@@ -526,7 +693,26 @@ export const derivativeLayer: SystemModule = {
       run: resolveContracts,
     },
   ],
-  participants: [],
+  /**
+   * Clearing A2, Clearing B2, Law 4, Law 15: ONE FACE PER BOOK.
+   *
+   * A contract book is the layer's, so the layer is what speaks for a party in one — once per
+   * party kind — and what it says is whatever the KIND of contract that book carries says (the
+   * profile's own `orders`). Six class modules each declaring a participant would be six modules
+   * speaking for one bank in one book, which the kernel refuses at the moment they cross and Law 4
+   * forbids before that: one fact, one writer.
+   */
+  participants: tradesContracts.map((partyKind) => ({
+    partyKind,
+    in: 'contract' as const,
+    speculative: true,
+    orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
+      const decl = m.contract;
+      if (decl === undefined) return [];
+      const profile = view.registry.derivativeKind(decl.kind);
+      return profile.orders?.(view, m) ?? [];
+    },
+  })),
   families: [marginIsHeld(), contractsNameTheLiving()],
   seed(ctx): void {
     // C2, C3: one house per currency this world has, named and banked like any other party. A house
@@ -550,7 +736,8 @@ export const derivativeLayer: SystemModule = {
       });
     }
   },
-};
+  };
+}
 
 /** Law 9: an id is an id. The house of a money is named for the money its members settle in. */
 export function houseIdFor(ccy: CurrencyCode): PartyId {

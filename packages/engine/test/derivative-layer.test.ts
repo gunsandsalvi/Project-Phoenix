@@ -166,6 +166,12 @@ function book(opts: {
             strike: opts.strike,
             long: true,
             window: 8,
+            // Clearing A2, Law 4: WHO TRADES THIS BOOK AND HOW MUCH, carried by the book itself.
+            // The layer declares the one participant a contract book asks and the kind answers it
+            // (`DerivativeKindProfile.orders`), so the fixture's intent has to travel with the
+            // terms rather than in a second participant of its own.
+            size: opts.size,
+            movers: opts.movers === true ? [String(MOVERS[0])] : [],
           };
           ctx.openMarket({
             id: BOOK,
@@ -426,6 +432,8 @@ describe('capacity (E1, E2, E4)', () => {
       strike: 1,
       long: true,
       window: 8,
+      size: 0,
+      movers: [],
     };
     const need = w.contracts.marginFor(
       {

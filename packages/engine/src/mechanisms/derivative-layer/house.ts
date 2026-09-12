@@ -218,7 +218,11 @@ export function runWaterfall(
     const held = survivors.map((m) => inFund(ctx, m, house, ccy));
     const pool = sum(held).value;
     if (pool > 0) {
-      const shares = splitOnTick(left < pool ? left : pool, held);
+      // Law 8: WHAT IS SPLIT IS A COUNT OF PIECES. The loss arrived as a mark and the lines above
+      // paid it in whole pieces, so what is left carries the dust of those subtractions — and a
+      // residue smaller than one piece is not a loss anybody can be allocated a share of.
+      const share = ctx.registry.cashFor(ccy, left < pool ? left : pool);
+      const shares = splitOnTick(share, held);
       survivors.forEach((m, i) => {
         take('survivors', m, fundLineId(m, house, ccy), zeroIfNone(shares[i]));
       });

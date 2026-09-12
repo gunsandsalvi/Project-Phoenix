@@ -27,6 +27,8 @@ import {
   type MarketId,
   type Period,
   derivativeKindId,
+  partyKindId,
+  asQty,
   CENT_TICK,
 } from '../../src/index.js';
 
@@ -46,6 +48,9 @@ export interface ForwardTerms extends ContractTerms {
   readonly long: boolean;
   /** D1 (layer): how many periods of the underlying's own prints the margin is measured over. */
   readonly window: number;
+  /** What the fixture wants traded in this book, and by whom. Test-only, like the kind. */
+  readonly size: number;
+  readonly movers: readonly string[];
 }
 
 export const isForward = (t: ContractTerms): t is ForwardTerms =>
@@ -97,6 +102,30 @@ export const testForwardKind: DerivativeKindProfile = {
         'over the life it has left',
       ),
     );
+  },
+  /**
+   * Clearing A2, Law 4: THE KIND CARRIES ITS OWN REASONS, because the layer declares the one
+   * participant a contract book asks (`DerivativeKindProfile.orders`). The fixture's two banks and
+   * its own movers say what they want here rather than in a second participant of their own, which
+   * would be two modules speaking for one party in one book.
+   */
+  orders: (view, m) => {
+    const t = m.contract?.terms;
+    if (t === undefined || !isForward(t)) return [];
+    const me = String(view.self.id);
+    if (t.movers.includes(me)) {
+      const first = t.movers[0];
+      return first === undefined
+        ? []
+        : [{ party: view.self.id, side: me === first ? 'buy' : 'sell', price: t.strike, qty: asQty(t.size) }];
+    }
+    const banks = view.parties
+      .ofKind(partyKindId('bank'))
+      .filter((b) => b.status.alive)
+      .map((b) => String(b.id));
+    if (banks[0] === me) return [{ party: view.self.id, side: 'buy', price: t.strike, qty: asQty(t.size) }];
+    if (banks[1] === me) return [{ party: view.self.id, side: 'sell', price: t.strike, qty: asQty(t.size) }];
+    return [];
   },
   // D11.a: the stated close-out value is what it is worth now. A forward's payoff is its mark.
   closeOut: markOf,

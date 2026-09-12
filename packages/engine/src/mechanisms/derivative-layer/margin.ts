@@ -19,7 +19,7 @@
  */
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
-import { add, sub, sum, zeroIfNone } from '../../core/num.js';
+import { add, div, mul, sub, sum, zeroIfNone } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -171,4 +171,89 @@ export function callOn(
     short,
     rows: ctx.contracts.between(poster, holder).map((c) => c.id),
   };
+}
+
+/**
+ * D9, D9.a, D4.a, Register D: WHAT IT POSTS WHEN IT HAS NO CASH — a holding, with a lien on it.
+ *
+ * D9.a is the whole of it: posted collateral leaves the poster's free balance, is still owned, and
+ * comes back. Cash meets that by leaving the account and returning as a claim; SECURITIES meet it
+ * by staying exactly where they are and being bound — the poster keeps the coupon and the mark, and
+ * cannot move the units. That difference is the reason both exist, and it is why the answer to a
+ * call is not always "sell something": D4.a says a party may post cash, pledge, or sell, and until
+ * a class pledged, this world only had the first and the third.
+ *
+ * What it pledges is what it has FREE, line by line, at what the line is worth, until the shortfall
+ * is covered. Nothing is haircut here: what a lien is worth is what the thing is worth, and a
+ * haircut is the holder's own credit decision (Repo C2) rather than a number this door invents.
+ */
+export function pledgeInstead(
+  ctx: MechanismContext,
+  poster: PartyId,
+  holder: PartyId,
+  ccy: CurrencyCode,
+  shortfall: number,
+): readonly Leg[] {
+  if (shortfall <= 0) return [];
+  const legs: Leg[] = [];
+  let left = shortfall;
+  for (const h of ctx.participant(poster).holdings()) {
+    if (left <= 0) break;
+    const free = ctx.register.free(poster, h.instrument);
+    if (free <= 0) continue;
+    const i = ctx.instruments.get(h.instrument);
+    // Money is posted as money (C3.a: an asset swap), not bound in place — and A LINE NOBODY
+    // PRICES CANNOT SECURE ANYTHING, because neither side could say what it covers. What this
+    // world prices is what a market cleared (XI-6), so that is what may be pledged; a claim
+    // carried at cost has no mark, and asking it for one throws rather than guessing.
+    if (i.ccy !== ccy) continue;
+    if (ctx.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
+    const print = ctx.prices.latest(h.instrument, ctx.period);
+    // A line that has never printed has no level either side could agree it covers. That is a
+    // real answer about a real line and not a reason to reach for a number somewhere else.
+    if (!print.some || print.value.price <= 0) continue;
+    const per = print.value.price;
+    const want = ctx.registry.deliverable(i.unit, div(left, per, 'units this line would cover'));
+    const units = want < free ? want : free;
+    if (units <= 0) continue;
+    legs.push({
+      kind: 'pledge',
+      pledgor: poster,
+      beneficiary: holder,
+      instrument: h.instrument,
+      qty: units,
+      secures: `margin with ${holder} in ${ccy}`,
+      pledgorCell: none(),
+    });
+    left = sub(left, mul(units, per, 'what these units cover'), 'the shortfall after this line');
+  }
+  return legs;
+}
+
+/** D9.a, Register D5: the other half — the lien ends and the units are free again. */
+export function releasePledges(
+  ctx: MechanismContext,
+  poster: PartyId,
+  holder: PartyId,
+  ccy: CurrencyCode,
+): readonly Leg[] {
+  const legs: Leg[] = [];
+  for (const h of ctx.participant(poster).holdings()) {
+    const held = ctx.register.holding(poster, h.instrument);
+    if (!held.some) continue;
+    for (const lien of held.value.liens) {
+      if (lien.beneficiary !== holder) continue;
+      // Law 19: the lien says what it secures, so which of a party's liens this door may lift is
+      // read off the lien rather than guessed at from what it is bound to.
+      if (!lien.reason.includes(String(ccy))) continue;
+      legs.push({
+        kind: 'release',
+        pledgor: poster,
+        beneficiary: holder,
+        instrument: h.instrument,
+        lien: lien.id,
+      });
+    }
+  }
+  return legs;
 }

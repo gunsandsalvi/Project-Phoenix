@@ -32,6 +32,9 @@ import type { Event, EventKind } from '../journal/journal.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { IndexRead } from '../prices/index-read.js';
 import type { Print } from '../prices/price-store.js';
+import type { MarketDecl } from '../clearing/market.js';
+import type { Order } from '../clearing/solver.js';
+import type { ParticipantView } from '../world/context.js';
 import type { Namer } from './naming.js';
 import type { ParamRegister } from './params.js';
 
@@ -129,6 +132,20 @@ export interface DerivativeKindProfile {
    * how fine it is, is a RESOLUTION (Law 2): `tickShift` divides it with every other.
    */
   readonly priceTick: number;
+  /**
+   * D7, D7.b, Law 8: WHAT THE CLEARED LEVEL IS — money per unit of notional, or a RATE per annum.
+   *
+   * A swap and a credit default swap clear on a rate: what the two sides agree is the fixed rate or
+   * the running spread that makes the contract worth nothing at inception (D7.b), and the size
+   * against it is a notional. A forward or an option clears on money. The solver does not care —
+   * a schedule is size against a level either way — but a reader does, because a level of 0.0125
+   * is a hundred and twenty-five basis points and not a cent and a quarter.
+   *
+   * It belongs to the KIND and not to the book: what a credit default swap is quoted in is a fact
+   * about credit default swaps, and a second copy of it on every market that opens one would be a
+   * fact with two writers (Law 4). Absent means money, which is what every kind before rates was.
+   */
+  readonly quotedAs?: 'money' | 'rate';
   /** D3, G4: what it settles against. Checked against the world when a contract is opened. */
   readonly underlying: (c: Contract) => Underlying;
   readonly validateTerms: (terms: ContractTerms) => void;
@@ -171,6 +188,20 @@ export interface DerivativeKindProfile {
   readonly closeOut: (c: Contract, at: Period, reads: ContractReads) => number;
   /** D6, D11: whether the term has run out at `at`, so the contract expires this period. */
   readonly expires: (c: Contract, at: Period, calendar: Calendar) => boolean;
+  /**
+   * Clearing B2, Law 4, Law 15: WHY A PARTY IS IN THIS KIND OF BOOK, asked of the kind.
+   *
+   * Every book in this world needs reasons on both sides of it, and the reasons to be in a credit
+   * default swap are not the reasons to be in a bond future. But ONE PARTY SHOWS ONE FACE TO ONE
+   * BOOK (Clearing A2: nobody crosses themselves), and a party whose schedule came from six
+   * modules would be six opinions wearing one name — so the layer declares the participant once,
+   * per party kind, and asks the kind of contract the book carries. The dispatch is the table
+   * Law 15 asks for; the reasons stay with the class that has them.
+   *
+   * Absent means no party of any kind has a reason to be in this kind of book of its own accord —
+   * a test-only kind, or one whose rows are written by a mechanism rather than a session.
+   */
+  readonly orders?: (view: ParticipantView, m: MarketDecl) => readonly Order[];
 }
 
 /**

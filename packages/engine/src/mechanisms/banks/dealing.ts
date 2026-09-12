@@ -196,6 +196,7 @@ export function dealingOrders(
   view: ParticipantView,
   m: MarketDecl,
   rows: readonly BankDecl[],
+  makersOf?: (instrument: InstrumentId) => readonly string[] | undefined,
 ): readonly Order[] {
   const d = bankOf(rows, view.self.id);
   if (d === undefined || !view.self.status.alive) return [];
@@ -205,6 +206,16 @@ export function dealingOrders(
   if (!subject.some) return [];
   const i = view.instruments.get(subject.value);
   if (!i.status.live || !d.makes.includes(String(i.kind))) return [];
+  /**
+   * Dealer Desks A3: AND THIS LINE'S OWN MAKERS, when it has any. Dealing in a KIND is what a bank
+   * decided to be in the business of; dealing in one NAME is a second decision, drawn per line, and
+   * the two are not the same fact. Without this, every bank that deals shares at all quotes every
+   * share in the world — which is the "every bank has a view of every firm" that A3 says a dealer
+   * is not, and it is what left every desk opening with no inventory in any line (worklist 13b,
+   * finding `12d-10`).
+   */
+  const makers = makersOf?.(i.id);
+  if (makers !== undefined && !makers.includes(String(view.self.id))) return [];
   const state = stateOf(view, d);
   if (state === undefined) return [];
   const quoted = quoteFor(view, i.id, state);
