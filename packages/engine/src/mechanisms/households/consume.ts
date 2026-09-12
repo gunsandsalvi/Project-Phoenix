@@ -97,7 +97,7 @@ export function spendPerMember(
 ): Option<Spending> {
   const income = view.outlook('income');
   if (!income.some) return none();
-  const ccy = view.registry.region(view.self.region).ccy;
+  const ccy = view.registry.currencyOf(view.self.region);
   const cash = view.cash(ccy);
   const budget = add(cash, onDemand, 'what it can pay with');
   const wealth = add(wealthOf(view, cash), onDemand, 'what it owns');

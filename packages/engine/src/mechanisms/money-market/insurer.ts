@@ -64,7 +64,7 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
   for (const bank of banks) {
     const p = ctx.parties.get(bank);
     if (!p.status.alive) continue;
-    const ccy = ctx.registry.region(p.region).ccy;
+    const ccy = ctx.registry.currencyOf(p.region);
     const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
     const covered: number[] = [];
     for (const holder of ctx.register.holdersOf(moneyInstrumentId(bank, ccy))) {

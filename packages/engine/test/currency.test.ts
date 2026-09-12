@@ -35,7 +35,7 @@ describe('the currencies a world has (Currency A1, A3, A5)', () => {
     }
     // A3: one region per money and one money per region — a region banks in one thing.
     const regions = [...w.registry.regions.values()];
-    expect(new Set(regions.map((r) => r.ccy)).size).toBe(codes.length);
+    expect(new Set(regions.map((r) => w.registry.currencyOf(r.id))).size).toBe(codes.length);
   });
 });
 
@@ -152,7 +152,7 @@ describe('a central bank lends to its own system (Currency D4, Central Bank D1)'
     const w = rigWorld('ccy-G');
     for (let i = 0; i < 6; i += 1) w.step();
     const home = (party: string): CurrencyCode =>
-      w.registry.region(w.parties.get(partyId(party)).region).ccy;
+      w.registry.currencyOf(w.parties.get(partyId(party)).region);
     for (const e of w.journal.ofKind('centralBank.refused')) {
       if (e.data['foreign'] !== true) continue;
       const bank = e.data['bank'];

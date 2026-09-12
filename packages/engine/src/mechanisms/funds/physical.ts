@@ -64,7 +64,7 @@ export function physicalOrders(
   if (most <= 0) return [];
   // Law 6: it bids for what its OWN CASH reaches at that level and no more. Not a limit anybody set
   // — it is a quantity it has, in the way that selling units nobody holds is not a thing to do.
-  const ccy = view.registry.region(view.self.region).ccy;
+  const ccy = view.registry.currencyOf(view.self.region);
   const qty = downTick(div(view.cash(ccy), most, 'pieces its own cash reaches'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: most, qty }];

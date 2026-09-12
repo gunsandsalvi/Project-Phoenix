@@ -451,7 +451,7 @@ export function goods(
             // A1: nobody issued a tonne of grain, and naming a party that had would be a fiction.
             issuer: none(),
             // C6: the price is in the seller's money, which is the money of the region it is in.
-            ccy: region.ccy,
+            ccy: ctx.registry.currencyOf(region.id),
             terms: goodTermsOf(d, region.id, inputsOf(d, rows)),
             market: some(goodMarketId(d.subUnit, region.id)),
           });
@@ -459,7 +459,7 @@ export function goods(
             id: goodMarketId(d.subUnit, region.id),
             name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
             instrument: id,
-            ccy: region.ccy,
+            ccy: ctx.registry.currencyOf(region.id),
             // C4: the rationing rule, stated once for every goods market: pro rata, so a shortage
             // is shared in the proportion each buyer asked for and nobody is privileged.
             rationing: 'proRata',
@@ -470,7 +470,7 @@ export function goods(
             id: wipId(d.subUnit, region.id),
             kind: wipKindId(d.subUnit),
             issuer: none(),
-            ccy: region.ccy,
+            ccy: ctx.registry.currencyOf(region.id),
             terms: wipTermsOf(d, region.id),
             market: none(),
           });

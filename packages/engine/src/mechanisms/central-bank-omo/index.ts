@@ -99,7 +99,7 @@ export const centralBankOmo: SystemModule = {
         if (view.offer(m.id).some) return [];
         const i = view.instruments.get(m.instrument);
         if (view.registry.instrumentKind(i.kind).pricing !== 'cleared') return [];
-        if (i.ccy !== view.registry.region(view.self.region).ccy) return [];
+        if (i.ccy !== view.registry.currencyOf(view.self.region)) return [];
         // C1: it buys SOVEREIGN paper. Everything else that clears in its money — a tonne of grain,
         // a share, a corporate line — is somebody else's market, and a central bank standing in it
         // with a size set by its own policy is the buyer of last resort this world does not have
@@ -151,7 +151,7 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
     ctx.record('centralBank.loss', [cb], { income, since: previous }, true);
     return;
   }
-  const ccy = ctx.registry.region(ctx.parties.get(cb).region).ccy;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(cb).region);
   // Law 8: it remits whole pieces of the money it issues; the piece it cannot divide stays on its
   // own books and is remitted with next period's income (E3).
   const paid = ctx.registry.payable(ccy, income);

@@ -175,7 +175,7 @@ const bankParamOf = (bank: PartyId): ParamId => paramId(`bank.returnOnCapital.${
  */
 export function resolve(ctx: MechanismContext, bank: PartyId, why: string): boolean {
   const p = ctx.parties.get(bank);
-  const ccy = ctx.registry.region(p.region).ccy;
+  const ccy = ctx.registry.currencyOf(p.region);
   const v = valueBook(ctx, bank, ccy);
   // C1.a: WHICH TRIGGER FIRED is part of the record. A bank that could not pay and a bank whose
   // liabilities are past its assets are two different failures with two different remedies.

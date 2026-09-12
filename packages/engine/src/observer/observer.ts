@@ -677,7 +677,7 @@ export function snapshot(
       successor: p.status.alive ? null : p.status.successor,
       equityPerMember:
         visible(p.id) && w.register.hasEquityAccount(p.id) ? w.register.equity(p.id) : null,
-      ccy: w.registry.region(p.region).ccy,
+      ccy: w.registry.currencyOf(p.region),
     })),
     instruments: w.instruments.all().map((i) => ({
       id: i.id,

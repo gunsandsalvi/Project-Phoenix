@@ -293,7 +293,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
 function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): number {
   const party = ctx.parties.get(fund as PartyId);
   return ctx.registry.payable(
-    ctx.registry.region(party.region).ccy,
+    ctx.registry.currencyOf(party.region),
     mul(
       mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
       mul(
@@ -327,9 +327,9 @@ function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amo
   const manager = ctx.parties.get(d.manager as PartyId);
   const leg: Leg = {
     kind: 'money',
-    from: ctx.accountOf(fund.id, ctx.registry.region(fund.region).ccy),
-    to: ctx.accountOf(manager.id, ctx.registry.region(fund.region).ccy),
-    ccy: ctx.registry.region(fund.region).ccy,
+    from: ctx.accountOf(fund.id, ctx.registry.currencyOf(fund.region)),
+    to: ctx.accountOf(manager.id, ctx.registry.currencyOf(fund.region)),
+    ccy: ctx.registry.currencyOf(fund.region),
     amount,
     fromCell: none(),
     toCell: none(),
@@ -364,7 +364,7 @@ function subscribe(
   if (perShare <= 0) return;
   const party = ctx.parties.get(holder);
   const fund = ctx.parties.get(d.fund as PartyId);
-  const ccy = ctx.registry.region(fund.region).ccy;
+  const ccy = ctx.registry.currencyOf(fund.region);
   // C1.d of the buyer's own budget: it subscribes with the money it has, and what it cannot pay
   // for it does not buy. That is a budget, not a bound on the decision.
   const cash = ctx.participant(holder).cash(ccy);
@@ -428,7 +428,7 @@ function redeem(
 ): number {
   const party = ctx.parties.get(holder);
   const fund = ctx.parties.get(d.fund as PartyId);
-  const ccy = ctx.registry.region(fund.region).ccy;
+  const ccy = ctx.registry.currencyOf(fund.region);
   // XI-15: the register holds a cell's position PER MEMBER, which is the unit a request is in.
   const held = ctx.register.quantity(holder, share.id);
   const weight = weightOf(party);
@@ -508,7 +508,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   if (!ctx.parties.get(d.fund as PartyId).status.alive) return;
   const share = ctx.instruments.get(shareLineOf(d.fund));
   const opening = ctx.params.price(FUND_PARAMS.openingShare);
-  const ccy = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region).ccy;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(d.fund as PartyId).region);
   const previous = b.previous[d.fund];
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
   // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
@@ -638,7 +638,7 @@ function offeredYield(ctx: MechanismContext, d: FundDecl): number {
   const by = ctx.calendar.startOf(periodOf(ctx.period + tenor));
   let best = 0;
   for (const family of ctx.registry.curveFamilies.values()) {
-    if (family.ccy !== region.ccy) continue;
+    if (family.ccy !== ctx.registry.currencyOf(region.id)) continue;
     const read = ctx.curve(family.id).at(yearFraction(family.dayCount, on, by));
     if (read.yield.some) best = read.yield.value;
   }
@@ -765,7 +765,7 @@ function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
     id: share,
     kind: FUND_SHARE,
     issuer: some(fund),
-    ccy: region.ccy,
+    ccy: ctx.registry.currencyOf(region.id),
     terms,
     // E1: its shares TRADE, which is what makes it an exchange-traded fund — the same claim on the
     // same kind of book as any other fund's, with a session in it as well (E2).
@@ -775,7 +775,7 @@ function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
     id: market,
     name: `${e.name} shares`,
     instrument: share,
-    ccy: region.ccy,
+    ccy: ctx.registry.currencyOf(region.id),
     rationing: 'proRata',
   });
   // G1.a: where it is created and redeemed IN KIND — not a market and it does not clear, so the
@@ -785,7 +785,7 @@ function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
     name: `${e.name} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
-    ccy: region.ccy,
+    ccy: ctx.registry.currencyOf(region.id),
     key: { kind: 'etf', fund: e.fund, share },
   });
   const launched = firstCreation(ctx, e, share, size);
@@ -874,8 +874,8 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
   // the NAV is a read of the book and the book is smaller once it has left. The same accrual and
   // the same convention as every other fund (Law 4): what it owes goes to the wire whole, and a
   // fund without the money has a refused payment rather than a discount nobody granted it.
-  const money = moneyOf(ctx, fund, ctx.registry.region(ctx.parties.get(fund).region).ccy);
-  const ccy = ctx.registry.region(ctx.parties.get(fund).region).ccy;
+  const money = moneyOf(ctx, fund, ctx.registry.currencyOf(ctx.parties.get(fund).region));
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(fund).region);
   if (share.issued > 0) payFee(ctx, d, ctx.registry.payable(ccy, feeAccrued(ctx, d.fund, share)));
   // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
   // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
@@ -902,7 +902,7 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
 function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
   const fund = ctx.parties.get(d.fund as PartyId);
   if (!fund.status.alive) return;
-  const ccy = ctx.registry.region(fund.region).ccy;
+  const ccy = ctx.registry.currencyOf(fund.region);
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
   const buffer = mul(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
@@ -947,7 +947,7 @@ function distribute(ctx: MechanismContext, d: EtfDecl, share: InstrumentId, mone
   if (issued <= 0 || cash <= 0) return;
   const perShare = div(cash, issued, 'what it passes on per share');
   if (!material(perShare, 2, perShare)) return;
-  const ccy = ctx.registry.region(fund.region).ccy;
+  const ccy = ctx.registry.currencyOf(fund.region);
   const paid: number[] = [];
   let failed = 0;
   for (const holder of ctx.register.holdersOf(share)) {
@@ -1155,7 +1155,7 @@ function equityIsZero(): Family {
           spec: 'Fund Shares A3',
           owner: p.id,
           size: walk.value,
-          unit: view.registry.region(p.region).ccy,
+          unit: view.registry.currencyOf(p.region),
           period: view.period,
           message: `${p.id} has equity of ${walk.value}: a fund with equity has mislaid somebody's money`,
         });
@@ -1252,7 +1252,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     id: share,
     kind: FUND_SHARE,
     issuer: some(e.fund as PartyId),
-    ccy: region.ccy,
+    ccy: ctx.registry.currencyOf(region.id),
     terms,
     // E1: its shares TRADE, which is the whole of what makes it an exchange-traded fund. It is the
     // same claim on the same kind of book as any other fund's; what is different is that there is
@@ -1263,7 +1263,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     id: market,
     name: `${e.name} shares`,
     instrument: share,
-    ccy: region.ccy,
+    ccy: ctx.registry.currencyOf(region.id),
     rationing: 'proRata',
   });
   // G1.a: where it is created and redeemed IN KIND. It is not a market and it does not clear —
@@ -1274,7 +1274,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     name: `${e.name} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
-    ccy: region.ccy,
+    ccy: ctx.registry.currencyOf(region.id),
     key: { kind: 'etf', fund: e.fund, share },
   });
   // Seed A3: only what somebody who EXISTS actually took. A world without the banks that launch it
@@ -1353,8 +1353,8 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     // Law 8, 12b.1: A LEVEL IS ON ITS MARKET'S OWN GRID, opening print included. What one share is
     // a claim on is a division and lands wherever it lands (`perShare` above); what a market SHOWS
     // is a tick, and a print off the grid is a level nobody could have posted.
-    price: ctx.registry.onQuoteGrid(FUND_SHARE, region.ccy, perShare),
-    ccy: region.ccy,
+    price: ctx.registry.onQuoteGrid(FUND_SHARE, ctx.registry.currencyOf(region.id), perShare),
+    ccy: ctx.registry.currencyOf(region.id),
     provenance: { kind: 'opening' },
   });
 }
@@ -1528,7 +1528,7 @@ export function funds(
             status: { alive: true },
           });
         }
-        const ccy = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region).ccy;
+        const ccy = ctx.registry.currencyOf(ctx.parties.get(d.fund as PartyId).region);
         const terms: FundShareTerms = { kind: FUND_SHARE, fund: d.fund as PartyId };
         ctx.instruments.add({
           id: shareLineOf(d.fund),

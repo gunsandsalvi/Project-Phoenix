@@ -42,7 +42,7 @@ const FROM_THE_BEGINNING = 0 as Period;
 
 export function failedWhy(ctx: MechanismContext, view: ParticipantView): string | undefined {
   const can = ctx.registry.partyKind(view.self.kind).fails ?? [];
-  const ccy = ctx.registry.region(view.self.region).ccy;
+  const ccy = ctx.registry.currencyOf(view.self.region);
   if (can.includes('cash')) {
     const owed = stillOwed(view);
     if (owed > 0 && owed > view.cash(ccy)) {

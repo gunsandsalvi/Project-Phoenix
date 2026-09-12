@@ -110,7 +110,7 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
     representation: 'named',
     status: { alive: true },
   });
-  const ccy = ctx.registry.region(p.region).ccy;
+  const ccy = ctx.registry.currencyOf(p.region);
   // D5: everything the dead party ISSUED is assumed by the estate, so a holder of that paper still
   // holds a claim on somebody who exists. It goes over the wire like any other change of book: the
   // obligation leaves one balance sheet and lands on the other in one numbered instruction (Law 5).
@@ -614,7 +614,7 @@ export const estate: SystemModule = {
           if (w.closed) continue;
           const estateId = partyId(id);
           if (!ctx.parties.get(estateId).status.alive) continue;
-          const ccy = ctx.registry.region(ctx.parties.get(estateId).region).ccy;
+          const ccy = ctx.registry.currencyOf(ctx.parties.get(estateId).region);
           distribute(ctx, estateId, ccy);
           if (ctx.period >= w.closesAfter) close(ctx, estateId, w, ccy);
         }

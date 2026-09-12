@@ -74,7 +74,7 @@ export function trackerOrders(
     // Law 6: and never more than its own cash buys. A fund holding a book and no money is not a
     // bidder for anything — that is arithmetic, not a limit, and a bid it could not have paid for
     // is a trade that fails to settle every session and a level nobody pays.
-    const affordable = div(view.cash(view.registry.region(view.self.region).ccy), price, 'what its cash buys');
+    const affordable = div(view.cash(view.registry.currencyOf(view.self.region)), price, 'what its cash buys');
     const qty = downTick(atMost(difference, affordable, 'it buys with the money it has'));
     return qty > 0 ? [{ party: view.self.id, side: 'buy', price, qty }] : [];
   }
@@ -127,7 +127,7 @@ function bookValue(
   basket: readonly { readonly instrument: InstrumentId; readonly price: number }[],
 ): number {
   const terms = basket.map((c) => mul(view.quantity(c.instrument), c.price, 'what it holds of this'));
-  const ccy = view.registry.region(view.self.region).ccy;
+  const ccy = view.registry.currencyOf(view.self.region);
   terms.push(view.cash(ccy));
   return sum(terms).value;
 }

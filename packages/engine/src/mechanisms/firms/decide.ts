@@ -271,7 +271,7 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<num
   const stock = view.quantity(output);
   if (!material(stock, 2, stock)) return [];
   const market = goodMarketId(tech.terms.subUnit, tech.terms.region);
-  const ccy = view.registry.region(view.self.region).ccy;
+  const ccy = view.registry.currencyOf(view.self.region);
   const short = sub(wagesDue(view), view.cash(ccy), 'cash it is short of');
   // A firm with no idea what its stock fetches cannot say how much of it covers a payroll, so what
   // it needs is all of it: it has bills and no view (Firm D1).
@@ -498,7 +498,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
  * E4.a); it is not spendable until the money is actually there.
  */
 function spendable(view: ParticipantView, orders: readonly PlannedOrder[]): number {
-  const ccy = view.registry.region(view.self.region).ccy;
+  const ccy = view.registry.currencyOf(view.self.region);
   const buying = sum(
     orders
       .filter((o) => o.side === 'buy' && o.price !== 'market')

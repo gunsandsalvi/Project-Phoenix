@@ -744,7 +744,7 @@ export function derivativeLayer(
     // is not created by a trade: it is an institution that exists before anybody clears through it,
     // and which currencies it clears in is which monies its members settle in.
     for (const ccy of ctx.registry.currencies.keys()) {
-      const region = [...ctx.registry.regions.values()].find((r) => r.ccy === ccy);
+      const region = [...ctx.registry.regions.values()].find((r) => ctx.registry.currencyOf(r.id) === ccy);
       if (region === undefined) continue;
       const bank = [...ctx.parties.all()].find(
         (p) => p.region === region.id && ctx.registry.issuesMoney(p.kind) && p.bank !== p.id,

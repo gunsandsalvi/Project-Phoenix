@@ -38,7 +38,7 @@ const STAYED_DAY_COUNT = 'ACT/365F';
 
 export function householdChoosesBank(view: ParticipantView): Option<BankChoice> {
   const self = view.self;
-  const ccy = view.registry.region(self.region).ccy;
+  const ccy = view.registry.currencyOf(self.region);
   const balance = view.quantity(moneyInstrumentId(self.bank, ccy));
   if (balance <= 0) return none();
   const cls = view.registry.partyKind(self.kind).depositClass;

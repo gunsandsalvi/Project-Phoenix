@@ -210,7 +210,7 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
  * the answer — which is the same case `revalueForeign` skips.
  */
 function intoOwnMoney(party: PartyId, ccy: CurrencyCode, at: Period, d: RevalueDeps): number {
-  const home = d.registry.region(d.parties.get(party).region).ccy;
+  const home = d.registry.currencyOf(d.parties.get(party).region);
   if (ccy === home) return 1;
   const struck = d.rateAt(ccy, home, at);
   return struck.some ? struck.value : d.valuation.rateInForce(ccy, home, at);
@@ -310,7 +310,7 @@ function toWhatTheKindSays(
 function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
   for (const h of d.register.allHoldings()) {
     const inst = d.instruments.get(h.instrument);
-    const home = d.registry.region(d.parties.get(h.holder).region).ccy;
+    const home = d.registry.currencyOf(d.parties.get(h.holder).region);
     if (inst.ccy === home) continue;
     // D3: the rate the period opened at, and the rate its own session struck. The marks have not
     // run yet, so `rateInForce` is still answering with the opening one — which is why the new one

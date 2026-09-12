@@ -336,7 +336,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
             name: `${o.name}, ${region.name}`,
             clearedBy: 'labour',
             unit: HOURS,
-            ccy: region.ccy,
+            ccy: ctx.registry.currencyOf(region.id),
             key: { region: region.id, occupation: o.id, skill: o.skill, sector: o.sector },
           });
         }

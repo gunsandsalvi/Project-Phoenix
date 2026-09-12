@@ -655,6 +655,7 @@ describe('a cell is keyed on what the registry declares, and on nothing else (XI
     return new Registry(
       {
         currencies: [...r.currencies.values()],
+        countries: [...r.countries.values()],
         regions: [...r.regions.values()],
         units: [...r.units.values()],
         cohorts: r.cohorts,

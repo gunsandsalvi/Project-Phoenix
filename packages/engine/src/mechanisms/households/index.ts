@@ -194,7 +194,7 @@ function consumptionIsBought(): Family {
             spec: 'Households C5',
             owner: cell,
             size: sub(took.value, money.value, 'goods against money'),
-            unit: view.registry.region(who.region).ccy,
+            unit: view.registry.currencyOf(who.region),
             period: view.period,
             message: `${cell} took ${took.value} of goods and paid ${money.value} for them`,
           });
@@ -333,7 +333,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   if (!decided.some) return;
   const goods = demandOf(view, rows, p, decided.value.spend);
   const spare = sparePerMember(
-    view.cash(view.registry.region(self.region).ccy),
+    view.cash(view.registry.currencyOf(self.region)),
     decided.value.spend,
     decided.value.buffer,
   );

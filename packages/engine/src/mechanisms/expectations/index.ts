@@ -133,7 +133,7 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
     push(earnings, party as PartyId, delta);
   }
   for (const [party, amounts] of income) {
-    const ccy = ctx.registry.region(ctx.parties.get(party).region).ccy;
+    const ccy = ctx.registry.currencyOf(ctx.parties.get(party).region);
     out.set(`${party}|income`, { value: sum(amounts).value, unit: ccy });
   }
   for (const [key, seen] of quantities) {
@@ -148,7 +148,7 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
   // expectation of and is then judged against, and it is a read of the account, never a statement.
   for (const [party, deltas] of earnings) {
     if (!ctx.parties.has(party)) continue;
-    const ccy = ctx.registry.region(ctx.parties.get(party).region).ccy;
+    const ccy = ctx.registry.currencyOf(ctx.parties.get(party).region);
     out.set(`${party}|earnings`, { value: sum(deltas).value, unit: ccy });
   }
   return out;

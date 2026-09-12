@@ -110,7 +110,7 @@ export function savingLines(
   horizonPeriods: number,
 ): { readonly paper: SavingLine[]; readonly shares: SavingLine[] } {
   const region = view.self.region;
-  const ccy = view.registry.region(region).ccy;
+  const ccy = view.registry.currencyOf(region);
   const on = view.calendar.startOf(view.period);
   // Money G3.a: a horizon is a DATE the calendar places, never a count of periods turned into years.
   const by = view.calendar.startOf(period(view.period + horizonPeriods));

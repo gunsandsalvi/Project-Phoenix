@@ -1009,7 +1009,7 @@ export class Settlement {
       this.d.valuation.inMoney(
         delta,
         ccy,
-        this.d.registry.region(this.d.parties.get(party).region).ccy,
+        this.d.registry.currencyOf(this.d.parties.get(party).region),
         ins.period,
       );
 

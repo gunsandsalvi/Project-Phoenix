@@ -145,7 +145,7 @@ export function vintage(
     kind: plantKindId(d.id),
     // A1: nobody issued a machine. It is a thing its holder owns, like a tonne of grain.
     issuer: none(),
-    ccy: ctx.registry.region(region).ccy,
+    ccy: ctx.registry.currencyOf(region),
     terms,
     market: some(market),
   });
@@ -153,7 +153,7 @@ export function vintage(
     id: market,
     name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
     instrument: id,
-    ccy: ctx.registry.region(region).ccy,
+    ccy: ctx.registry.currencyOf(region),
     // D3, Clearing C4: a dead firm's plant is sold to whoever will have it, and a shortage of it is
     // shared in the proportion each bidder asked for. It is the rule every market here states once.
     rationing: 'proRata',
@@ -171,7 +171,7 @@ export function seedVintage(
   const id = plantVintageId(d.id, region, serviceDate);
   if (ctx.instruments.has(id)) return id;
   const market = plantMarketId(d.id, region, serviceDate);
-  const ccy = ctx.registry.region(region).ccy;
+  const ccy = ctx.registry.currencyOf(region);
   const terms: PlantTerms = {
     kind: plantKindId(d.id),
     capitalKind: d.id,

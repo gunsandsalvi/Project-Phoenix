@@ -401,7 +401,7 @@ export function freight(
           for (const route of routes) {
             const region = ctx.registry.regions.get(route.from);
             if (region === undefined) continue;
-            sail(ctx, route, carriers, region.ccy, said);
+            sail(ctx, route, carriers, ctx.registry.currencyOf(region.id), said);
           }
           ctx.record(FREIGHT_SESSION, [...said.keys()], { byRoute: Object.fromEntries(said) }, true);
         },

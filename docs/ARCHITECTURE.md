@@ -739,8 +739,23 @@ the units of plant that let a line start one unit per period. Capacity is the sc
 
 ### 4.10 Registry and parameters (Law 2, Law 15, XI-14)
 
-All data lives in the **registry**: currencies (each naming its issuing central bank), regions (each
-naming its currency), units, party kinds, instrument kinds, cell-key dimensions, platforms. A
+All data lives in the **registry**: currencies (each naming its issuing central bank), **countries**
+(each naming its currency), **regions** (each naming its country), units, party kinds, instrument
+kinds, cell-key dimensions, platforms.
+
+**A country has the money; a region is a place** (13c.1). The two were one declaration until the map
+landed, and a map needs many places per currency. A country is one currency, one central bank, one
+treasury, one sovereign line, one FX pair and one equity index — it is what §39 Cross-Border and
+Indices D1 mean by "region". A region is where a thing IS: its own ground, its own plant, its own
+labour venue (one per `(region, occupation)`), its own goods prints. `RegionDecl.ccy` is gone and
+`registry.currencyOf(region)` reads through the country, so one fact has one writer (Law 4); Seed B3
+and Currency B1 stay literally true, because a region still determines its money uniquely. A region
+and a **sea area** are both `PlaceId`s — every tile of the world belongs to exactly one place,
+water included, because weather is published per place and a thing at sea has to be somewhere for
+the weather to reach it. `PlaceId` is the union of the two brands rather than a third, so a region
+goes wherever a place is wanted and narrowing back is a read against the registry, never a cast.
+The grid itself is `registry/geography.ts`: the kernel owns the name and the reads (4.9b), the seed
+owns the draw, and nothing in the period loop writes it. A
 module's own tables are its own registry, in `mechanisms/<system>/data.ts` — the treasury's maturity
 grid, the goods and their recipes — and the numbers in them are declared parameters generated from
 those tables, so a table row and a register entry are never two copies of one number. Behaviour that varies by kind lives in a **profile** behind a dispatch table keyed by kind,

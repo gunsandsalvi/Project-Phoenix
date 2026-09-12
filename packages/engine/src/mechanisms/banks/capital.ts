@@ -120,7 +120,7 @@ export function riskWeightOf(ctx: MechanismContext, i: Instrument, rules: Capita
   const issuer = ctx.parties.get(ctx.parties.resolve(i.issuer.value).id);
   const canFail = ctx.registry.partyKind(issuer.kind).fails ?? [];
   if (canFail.length > 0) return rules.weight;
-  return ctx.registry.region(issuer.region).ccy === i.ccy ? rules.sovereignWeight : rules.weight;
+  return ctx.registry.currencyOf(issuer.region) === i.ccy ? rules.sovereignWeight : rules.weight;
 }
 
 /**

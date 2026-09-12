@@ -126,7 +126,7 @@ function productionCosts(byName: ReadonlyMap<string, FirmDecl>): Family {
           spec: 'Goods F5.b',
           owner: firm,
           size: sub(effect.value, wages.value, 'value production moved'),
-          unit: view.registry.region(view.parties.get(firm).region).ccy,
+          unit: view.registry.currencyOf(view.parties.get(firm).region),
           period: view.period,
           message: `${firm}: its line moved ${effect.value} of value and the period paid ${wages.value} into it`,
         });
@@ -365,7 +365,7 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
  * them (Banks Lending C2, Equity D2.c).
  */
 function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned): void {
-  const ccy = ctx.registry.region(view.self.region).ccy;
+  const ccy = ctx.registry.currencyOf(view.self.region);
   const buying = sum(
     p.orders
       .filter((o: PlannedOrder) => o.side === 'buy' && o.price !== 'market')

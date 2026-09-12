@@ -74,7 +74,7 @@ export interface BalanceSheet {
 
 export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
   const p = view.parties.get(party);
-  const home = view.registry.region(p.region).ccy;
+  const home = view.registry.currencyOf(p.region);
   const assetTerms: number[] = [];
   // Law 7: the rounding the READ carries, which is the walk behind every money balance it is read
   // off, not the rounding of adding them up today.
@@ -241,7 +241,7 @@ export function equityLedgerFamily(): Family {
         if (!view.register.hasEquityAccount(p.id)) continue;
         const walk = view.register.equityWalk(p.id);
         const entries = view.register.equityEntries(p.id, 0 as Period, view.period);
-        const home = view.registry.region(p.region).ccy;
+        const home = view.registry.currencyOf(p.region);
         // One entry for the opening statement, one for every move since (Register E2.a: nothing is
         // edited and nothing is reversed, so the count only ever grows).
         if (entries.length !== walk.moves + 1) {

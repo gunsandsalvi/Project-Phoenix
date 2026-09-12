@@ -147,7 +147,7 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
  * applied to labour): what it owes its own staff is what its own rows say.
  */
 function mandatePerPeriod(ctx: MechanismContext, id: PartyId): number {
-  const money = currencyUnit(ctx.registry.region(ctx.parties.get(id).region).ccy);
+  const money = currencyUnit(ctx.registry.currencyOf(ctx.parties.get(id).region));
   const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, money);
   const terms: number[] = [
     ctx.params.amount(TREASURY_PARAMS.purchases, money),
@@ -450,7 +450,7 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
   const on = ctx.calendar.startOf(ctx.period);
   const horizonPeriods = ctx.params.periods(TREASURY_PARAMS.horizon);
   const horizon = period(ctx.period + horizonPeriods);
-  const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
   const service = debtService(ctx, id, on, horizon);
   const perPeriod = mandatePerPeriod(ctx, id);
   const mandate = mul(perPeriod, horizonPeriods, 'mandate over horizon');
@@ -655,7 +655,7 @@ function itsPeople(ctx: MechanismContext, id: PartyId): readonly CellParty[] {
  * module that owns those rows is the one writer of what they are paid (Labour F1, Law 4).
  */
 function runOutlays(ctx: MechanismContext, id: PartyId): void {
-  const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
   const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, currencyUnit(ccy));
   let paid = 0;
   let short = 0;
@@ -702,7 +702,7 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
  * taxed where it is received rather than twice over as income as well.
  */
 function runReceipts(ctx: MechanismContext, id: PartyId): void {
-  const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
   if (ctx.period === 0) return;
   const previous = period(ctx.period - 1);
   const onInterest = ctx.params.ratio(TREASURY_PARAMS.taxInterest);
@@ -801,7 +801,7 @@ function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const print = view.print(m.instrument);
   if (!print.some || print.value.price <= 0) return [];
   const spend = mul(budget, row.share, 'what it puts into this market');
-  const ccy = view.registry.region(view.self.region).ccy;
+  const ccy = view.registry.currencyOf(view.self.region);
   const cash = view.cash(ccy);
   // D1: it buys out of the balance it has, and an empty account buys nothing.
   const afford = atMost(spend, cash, 'it procures with the money in its account');
@@ -844,7 +844,7 @@ function sparePerProgramme(view: ParticipantView): number {
   if (!published.value.subjects.includes(view.self.id)) return 0;
   const need = published.value.data['need'];
   if (typeof need !== 'number' || need >= 0) return 0;
-  const ccy = view.registry.region(view.self.region).ccy;
+  const ccy = view.registry.currencyOf(view.self.region);
   const cash = view.cash(ccy);
   return atMost(-need, cash, 'it repays out of the money in its account');
 }

@@ -83,7 +83,7 @@ function foreignPositions(w: World): number {
   let n = 0;
   for (const h of w.register.allHoldings()) {
     const inst = w.instruments.get(h.instrument);
-    if (inst.ccy !== w.registry.region(w.parties.get(h.holder).region).ccy) n += 1;
+    if (inst.ccy !== w.registry.currencyOf(w.parties.get(h.holder).region)) n += 1;
   }
   return n;
 }

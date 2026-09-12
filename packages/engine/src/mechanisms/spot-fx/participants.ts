@@ -54,7 +54,7 @@ import { fxParam } from './data.js';
 export function needOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const pair = pairOf(m);
   if (pair === undefined || !view.self.status.alive) return [];
-  const home = view.registry.region(view.self.region).ccy;
+  const home = view.registry.currencyOf(view.self.region);
   if (pair.base === home) return ownMoneyIsTheBase(view, m, pair.quote);
   if (pair.quote === home) return ownMoneyIsTheQuote(view, pair.base);
   return [];
@@ -135,7 +135,7 @@ export function dealerOrders(
   // D1: what it will have behind a position in this pair — its own share of its own capital, which
   // is a read of its own account and is in its OWN money, carried across to the base at the rate
   // in force so the room is a size in the units this book trades in.
-  const home = view.registry.region(view.self.region).ccy;
+  const home = view.registry.currencyOf(view.self.region);
   const risk = mul(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk');
   const room = downTick(mul(risk, view.rateIn(home, pair.base), 'in the base'));
   if (room <= 0) return [];

@@ -97,7 +97,7 @@ function market(ctx: MechanismContext): Market {
 }
 
 const ccyOf = (ctx: MechanismContext, party: PartyId): CurrencyCode =>
-  ctx.registry.region(ctx.parties.get(party).region).ccy;
+  ctx.registry.currencyOf(ctx.parties.get(party).region);
 
 function corridor(ctx: MechanismContext): Corridor {
   return corridorOf(
@@ -828,7 +828,7 @@ export const moneyMarket: SystemModule = {
     const first = banks[0];
     if (first === undefined) return;
     const region = ctx.parties.get(first).region;
-    const ccy = ctx.registry.region(region).ccy;
+    const ccy = ctx.registry.currencyOf(region);
     for (const v of venuesOf(ccy, [...banks, ctx.registry.centralBankOf(ccy)])) ctx.openVenue(v);
     // D4: the fund exists from period zero and opens with NOTHING, because a fund that opened full
     // would be a seed deciding how much of a future failure the banking system had already paid
@@ -894,7 +894,7 @@ function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): Overdraft
   // that cannot does not pay. Without this the second currency arrives as an unlimited foreign
   // overdraft — money issued to a holder with no lender row behind it, which is Money B3.c's
   // finding and the reason a world with two moneys would never need an FX market at all.
-  if (ctx.registry.region(ctx.parties.get(o.holder).region).ccy !== o.ccy) {
+  if (ctx.registry.currencyOf(ctx.parties.get(o.holder).region) !== o.ccy) {
     ctx.record(
       'centralBank.refused',
       [o.issuer, o.holder],

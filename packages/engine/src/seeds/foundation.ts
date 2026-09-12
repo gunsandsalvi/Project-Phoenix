@@ -31,6 +31,8 @@ import {
 } from '../calendar/civil.js';
 import {
   cohortId,
+  countryId,
+  type CountryId,
   currencyCode,
   currencyUnit,
   type InstrumentId,
@@ -134,6 +136,8 @@ import type { World } from '../world/world.js';
 
 export const USD = currencyCode('USD');
 export const REGION = regionId('us');
+/** 13c.1: the country the home region is in — one money, one central bank, one treasury. */
+export const HOME = countryId('us');
 
 
 export const CB = partyId('fed');
@@ -157,7 +161,9 @@ export const TREASURY_US = partyId('treasury.us');
  *
  * The names are labels for clarity, not claims about the real places (Law 1 is about mechanism).
  */
-export interface CountryDecl {
+export interface AbroadDecl {
+  /** 13c.1: the country this row opens — what has the money, the central bank and the treasury. */
+  readonly country: CountryId;
   readonly region: RegionId;
   readonly name: string;
   readonly ccy: CurrencyCode;
@@ -172,8 +178,9 @@ export interface CountryDecl {
   readonly quoteTick: number;
 }
 
-export const ABROAD: readonly CountryDecl[] = [
+export const ABROAD: readonly AbroadDecl[] = [
   {
+    country: countryId('eu'),
     region: regionId('eu'),
     name: 'Europe',
     ccy: currencyCode('EUR'),
@@ -186,6 +193,7 @@ export const ABROAD: readonly CountryDecl[] = [
     paper: 'bund',
   },
   {
+    country: countryId('uk'),
     region: regionId('uk'),
     name: 'United Kingdom',
     ccy: currencyCode('GBP'),
@@ -198,6 +206,7 @@ export const ABROAD: readonly CountryDecl[] = [
     paper: 'gilt',
   },
   {
+    country: countryId('jp'),
     region: regionId('jp'),
     name: 'Japan',
     ccy: currencyCode('JPY'),
@@ -1786,9 +1795,15 @@ export function foundationSpec(
           quoteTick: c.quoteTick,
         })),
       ],
+      countries: [
+        { id: HOME, name: 'United States', ccy: USD },
+        ...ABROAD.map((c) => ({ id: c.country, name: c.name, ccy: c.ccy })),
+      ],
+      // 13c.1: one region per country until the map draws more. A region is a PLACE and its money
+      // is its country's, so this list gains rows and the currency list does not.
       regions: [
-        { id: REGION, name: 'United States', ccy: USD },
-        ...ABROAD.map((c) => ({ id: c.region, name: c.name, ccy: c.ccy })),
+        { id: REGION, name: 'United States', country: HOME },
+        ...ABROAD.map((c) => ({ id: c.region, name: c.name, country: c.country })),
       ],
       units: [
         // Money A2, Law 8: a USD is a hundred cents, like any real money, and the cent is the

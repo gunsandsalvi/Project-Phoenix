@@ -118,7 +118,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId)
     // rather than a cap is that the condition is somebody's holding: the moment one party holds
     // another's paper the book opens, and nothing closes it.
     if (ctx.register.holdersOf(i.id).every((h) => h === reference)) continue;
-    const ccy = ctx.registry.region(p.region).ccy;
+    const ccy = ctx.registry.currencyOf(p.region);
     // C2: this book clears, so it needs the house that clears it. A world with no house in this
     // money has no cleared book in it — which is a fact about that world and not a reason to write
     // a market naming a party that is not there (Money E4).

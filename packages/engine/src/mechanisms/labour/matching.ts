@@ -415,7 +415,7 @@ function payFrom(
   if (perMember <= 0) return true;
   const from = ctx.parties.get(payer);
   const to = ctx.parties.get(cell);
-  const ccy = ctx.registry.region(from.region).ccy;
+  const ccy = ctx.registry.currencyOf(from.region);
   // Law 8, E1: a wage is paid in whole pieces of the money, to each worker separately — the cell is
   // a count of people and every one of them is paid the same whole number of pieces. What the
   // fraction below one would have been is not paid, because there is no such coin.

@@ -14,7 +14,24 @@ export type MarketId = Brand<string, 'MarketId'>;
 export type VenueId = Brand<string, 'VenueId'>;
 export type CurrencyCode = Brand<string, 'CurrencyCode'>;
 export type UnitId = Brand<string, 'UnitId'>;
+/**
+ * 13c.1: WHERE A THING IS. Every tile of the world belongs to exactly one place, and a place is a
+ * land region or a sea area — the water is partitioned the same way the land is, because weather is
+ * published per place and a ship between two countries has to be somewhere for the weather to reach
+ * it.
+ *
+ * `PlaceId` is the UNION and not a third brand, which is what makes a `RegionId` usable wherever a
+ * place is wanted and a `PlaceId` refused where a region is required. Narrowing the other way is a
+ * READ of the registry (`regionAt`), never a cast: which places are economic regions is the
+ * registry's fact, not the grid's.
+ */
 export type RegionId = Brand<string, 'RegionId'>;
+export type SeaAreaId = Brand<string, 'SeaAreaId'>;
+export type PlaceId = RegionId | SeaAreaId;
+/** A country is what has a money, a central bank and a treasury; a region is where a thing is. */
+export type CountryId = Brand<string, 'CountryId'>;
+/** One cell of the grid, row-major. An index into the world and never a display name (Law 9). */
+export type TileIndex = Brand<number, 'TileIndex'>;
 export type CohortId = Brand<string, 'CohortId'>;
 export type PartyKindId = Brand<string, 'PartyKindId'>;
 export type InstrumentKindId = Brand<string, 'InstrumentKindId'>;
@@ -67,6 +84,8 @@ export const currencyCode = (s: string): CurrencyCode =>
   nonEmpty(s, 'CurrencyCode') as CurrencyCode;
 export const unitId = (s: string): UnitId => nonEmpty(s, 'UnitId') as UnitId;
 export const regionId = (s: string): RegionId => nonEmpty(s, 'RegionId') as RegionId;
+export const seaAreaId = (s: string): SeaAreaId => nonEmpty(s, 'SeaAreaId') as SeaAreaId;
+export const countryId = (s: string): CountryId => nonEmpty(s, 'CountryId') as CountryId;
 export const cohortId = (s: string): CohortId => nonEmpty(s, 'CohortId') as CohortId;
 export const partyKindId = (s: string): PartyKindId => nonEmpty(s, 'PartyKindId') as PartyKindId;
 export const instrumentKindId = (s: string): InstrumentKindId =>

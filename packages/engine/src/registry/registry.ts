@@ -13,6 +13,7 @@ import { downTick, piecesPerUnit, toTick, toTickOf } from '../core/tick.js';
 import { currencyUnit } from '../core/ids.js';
 import type {
   CohortId,
+  CountryId,
   CurrencyCode,
   CurveFamilyId,
   DerivativeKindId,
@@ -45,11 +46,27 @@ export interface CurrencyDecl {
   readonly quoteTick: number;
 }
 
+/**
+ * 13c.1: WHAT HAS A MONEY. A country is one currency, one central bank, one treasury, one sovereign
+ * line and one FX pair; it is what §39 Cross-Border and Indices D1 mean when they say "region".
+ */
+export interface CountryDecl {
+  readonly id: CountryId;
+  readonly name: string;
+  readonly ccy: CurrencyCode;
+}
+
+/**
+ * 13c.1: WHERE A THING IS. A region is a PLACE — its own ground, its own plant, its own labour
+ * venue, its own goods prints — and it carries no currency of its own: its money is its country's,
+ * read through `currencyOf`. Seed B3 and Currency B1 stay literally true, because a region still
+ * determines its money uniquely; what changed is that one money can now have many places, which is
+ * the whole point of a map (Law 4: one writer for one fact).
+ */
 export interface RegionDecl {
   readonly id: RegionId;
   readonly name: string;
-  /** The region determines its parties' money (Seed B3, Currency B1). */
-  readonly ccy: CurrencyCode;
+  readonly country: CountryId;
 }
 
 export interface UnitDecl {
@@ -86,6 +103,7 @@ export type CellKeyDimension = 'region' | 'cohort' | 'bank';
 
 export interface RegistryData {
   readonly currencies: readonly CurrencyDecl[];
+  readonly countries: readonly CountryDecl[];
   readonly regions: readonly RegionDecl[];
   readonly units: readonly UnitDecl[];
   readonly cohorts: readonly CohortDecl[];
@@ -111,6 +129,7 @@ export class Registry {
   readonly pieceShift: number;
   /** Law 2: what every declared price tick is DIVIDED by, which is the same test for the price grid. */
   readonly tickShift: number;
+  readonly countries: ReadonlyMap<CountryId, CountryDecl>;
   readonly regions: ReadonlyMap<RegionId, RegionDecl>;
   readonly units: ReadonlyMap<UnitId, UnitDecl>;
   readonly cohorts: readonly CohortDecl[];
@@ -142,6 +161,7 @@ export class Registry {
     this.pieceShift = pieceShift;
     this.tickShift = tickShift;
     this.currencies = unique(data.currencies, (c) => c.code, 'currency');
+    this.countries = unique(data.countries, (c) => c.id, 'country');
     this.regions = unique(data.regions, (r) => r.id, 'region');
     this.units = unique(data.units, (u) => u.id, 'unit');
     this.cohorts = [...data.cohorts];
@@ -152,12 +172,27 @@ export class Registry {
     this.derivativeKinds = unique(data.derivativeKinds, (k) => k.id, 'derivative kind');
     this.curveFamilies = unique(data.curveFamilies, (c) => c.id, 'curve family');
 
+    for (const c of this.countries.values()) {
+      if (!this.currencies.has(c.ccy)) {
+        throw new InvalidRegistry(
+          'Currency A2',
+          `country ${c.id} names currency ${c.ccy}, which does not exist`,
+        );
+      }
+    }
     for (const r of this.regions.values()) {
-      if (!this.currencies.has(r.ccy)) {
+      if (!this.countries.has(r.country)) {
         throw new InvalidRegistry(
           'Seed B3',
-          `region ${r.id} names currency ${r.ccy}, which does not exist`,
+          `region ${r.id} names country ${r.country}, which does not exist`,
         );
+      }
+    }
+    // A country with nowhere in it has a currency nobody can be paid in and a treasury with no
+    // taxpayers: it is a money without a place, which is the defect this split exists to prevent.
+    for (const c of this.countries.values()) {
+      if (![...this.regions.values()].some((r) => r.country === c.id)) {
+        throw new InvalidRegistry('Seed B3', `country ${c.id} has no regions`);
       }
     }
     for (const c of this.currencies.values()) {
@@ -399,6 +434,21 @@ export class Registry {
     const r = this.regions.get(id);
     if (r === undefined) throw new Missing('Seed B3', `region ${id} does not exist`, { id });
     return r;
+  }
+
+  country(id: CountryId): CountryDecl {
+    const c = this.countries.get(id);
+    if (c === undefined) throw new Missing('Seed B3', `country ${id} does not exist`, { id });
+    return c;
+  }
+
+  /**
+   * Seed B3, Currency B1: WHAT MONEY A PLACE IS IN. The one read, going through the country that
+   * holds it, so there is no second copy of a region's currency to go stale (Law 4). It replaced
+   * `RegionDecl.ccy` at 13c.1, when one money gained many places.
+   */
+  currencyOf(id: RegionId): CurrencyCode {
+    return this.country(this.region(id).country).ccy;
   }
 
   unit(id: UnitId): UnitDecl {

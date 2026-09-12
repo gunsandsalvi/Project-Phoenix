@@ -147,7 +147,7 @@ function publishCapital(rows: readonly BankDecl[], ctx: MechanismContext): void 
   for (const b of ctx.parties.ofKind(BANK)) {
     const decl = declOf(rows, b.id);
     if (!b.status.alive || decl === undefined) continue;
-    const ccy = ctx.registry.region(b.region).ccy;
+    const ccy = ctx.registry.currencyOf(b.region);
     const p = capitalOf(ctx, b.id, ccy, rulesFor(rows, ctx, b.id));
     publish(ctx, p);
     // XI-4, B3: and its treasury allots the room it has left between the lines that spend it, in
@@ -174,7 +174,7 @@ function runRaises(rows: readonly BankDecl[], ctx: MechanismContext): void {
     if (!p.status.alive || declOf(rows, p.id) === undefined) continue;
     const short = mustRaise(rows, ctx, p.id);
     if (short <= 0) continue;
-    const ccy = ctx.registry.region(p.region).ccy;
+    const ccy = ctx.registry.currencyOf(p.region);
     const bids: Order[] = [];
     for (const other of ctx.parties.ofKind(BANK)) {
       const decl = declOf(rows, other.id);
@@ -722,7 +722,7 @@ function tradingBookIsCapitalised(): Family {
           spec: 'Dealer Desks F2',
           owner: bank,
           size: sub(asked.value, rwa, 'weighted assets its dealing book asked for and did not get'),
-          unit: currencyUnit(view.registry.region(view.parties.get(self).region).ccy),
+          unit: currencyUnit(view.registry.currencyOf(view.parties.get(self).region)),
           period: view.period,
           message: `${bank}: its dealing book weighs ${asked.value} and it published ${rwa} of risk-weighted assets in total`,
         });
@@ -999,7 +999,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         if (classes.length === 0) return;
         for (const b of ctx.parties.ofKind(BANK)) {
           if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
-          const ccy = ctx.registry.region(b.region).ccy;
+          const ccy = ctx.registry.currencyOf(b.region);
           setBoard(ctx, b.id, ccy, classes, ownDeposits(ctx, b.id, ccy));
         }
       },
@@ -1056,7 +1056,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         const memory = ctx.state<ReserveMemory>('reserves', () => ({ moves: {} }));
         for (const b of ctx.parties.ofKind(BANK)) {
           if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
-          publishBuffer(ctx, b.id, ctx.registry.region(b.region).ccy, memory);
+          publishBuffer(ctx, b.id, ctx.registry.currencyOf(b.region), memory);
         }
       },
     },
@@ -1118,7 +1118,7 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // since ceased, and an estate is winding it up rather than borrowing: there is nobody left to
     // sign, so the request dies with the borrower.
     if (!party.status.alive) continue;
-    const ccy = ctx.registry.region(party.region).ccy;
+    const ccy = ctx.registry.currencyOf(party.region);
     const { best, lend } = shop(rows, ctx, borrower as PartyId, want, ccy);
     if (best === undefined || lend <= 0) continue;
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
@@ -1171,7 +1171,7 @@ function publishStandard(ctx: MechanismContext): void {
 function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const p of ctx.parties.all()) {
     if (!p.status.alive || !ctx.registry.partyKind(p.kind).borrows) continue;
-    const ccy = ctx.registry.region(p.region).ccy;
+    const ccy = ctx.registry.currencyOf(p.region);
     let best: Quote | undefined;
     let most = 0;
     for (const b of ctx.parties.ofKind(BANK)) {
@@ -1232,7 +1232,7 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
     const decl = declOf(rows, b.id);
     if (decl === undefined || !b.status.alive) continue;
     const view = ctx.participant(b.id);
-    const ccy = ctx.registry.region(b.region).ccy;
+    const ccy = ctx.registry.currencyOf(b.region);
     const funds = costOfFunds(ctx, b.id, ccy).perAnnum;
     const reg = { ...regulationOf(view), riskWeight: view.params.ratio(LENDING_PARAMS.sovereignWeight) };
     const required: Record<string, number> = {};
@@ -1279,7 +1279,7 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
 function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const b of ctx.parties.ofKind(BANK)) {
     if (declOf(rows, b.id) === undefined || !b.status.alive) continue;
-    const home = ctx.registry.region(b.region).ccy;
+    const home = ctx.registry.currencyOf(b.region);
     // Law 8, Currency A3: ONE PER CURRENCY IT OWES IN. What funding costs a bank is a number in a
     // money — it is what it paid on what it owes, and it owes in every money it has taken a
     // liability in. This published its HOME currency only, while `publishQuotes` prices a loan off

@@ -259,7 +259,7 @@ export class World {
     this.accountOf = accountResolver(
       this.parties,
       (ccy) => this.registry.centralBankOf(ccy),
-      (party) => this.registry.region(this.parties.get(party).region).ccy,
+      (party) => this.registry.currencyOf(this.parties.get(party).region),
     );
     this.settlement = new Settlement({
       registry: this.registry,
@@ -1349,7 +1349,7 @@ export class World {
   private moveBank(party: PartyId, to: PartyId, reason: string): boolean {
     const p = this.parties.get(party);
     if (p.bank === to) return false;
-    const ccy = this.registry.region(p.region).ccy;
+    const ccy = this.registry.currencyOf(p.region);
     const perMember = this.register.quantity(party, moneyInstrumentId(p.bank, ccy));
     if (perMember > 0) {
       const side = cellSide(p, perMember);

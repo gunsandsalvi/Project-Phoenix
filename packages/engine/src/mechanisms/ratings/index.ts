@@ -88,7 +88,7 @@ function assessAll(ctx: MechanismContext, rows: readonly AssessorDecl[]): void {
     if (!ctx.parties.has(me) || !ctx.parties.get(me).status.alive) continue;
     const forMe = (b[d.assessor] ??= {});
     for (const subject of subjectsOf(ctx)) {
-      const ccy = ctx.registry.region(ctx.parties.get(subject).region).ccy;
+      const ccy = ctx.registry.currencyOf(ctx.parties.get(subject).region);
       const measured = assess(ctx.blind(subject), d, ccy);
       publishIfMoved(ctx, d, forMe, String(subject), measured, [d.assessor, String(subject)], {
         assessor: d.assessor,
@@ -205,7 +205,7 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
     for (const subject of Object.keys(b[d.assessor] ?? {})) {
       const who = partyId(subject);
       if (!ctx.parties.has(who) || !ctx.parties.get(who).status.alive) continue;
-      const ccy: CurrencyCode = ctx.registry.region(ctx.parties.get(who).region).ccy;
+      const ccy: CurrencyCode = ctx.registry.currencyOf(ctx.parties.get(who).region);
       const worth = ctx.participant(who).equity();
       if (worth <= 0) continue;
       const due = ctx.registry.payable(ccy, mul(worth, rate, 'what the opinion costs the issuer'));

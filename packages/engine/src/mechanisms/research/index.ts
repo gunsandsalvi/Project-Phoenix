@@ -121,7 +121,7 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
   const cells = ctx.parties.ofKind(HOUSEHOLD).filter((c) => c.status.alive && c.bank === bank);
   const members = cells.reduce((t, c) => t + weightOf(c), 0);
   if (members <= 0) return;
-  const ccy = ctx.registry.region(ctx.parties.get(bank).region).ccy;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
   for (const cell of cells) {
     const share = ctx.registry.payable(ccy, div(owed, members, "one analyst's share"));
     if (share <= 0) continue;

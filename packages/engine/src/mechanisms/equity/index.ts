@@ -293,7 +293,7 @@ function declaredIsPaid(): Family {
           spec: 'Equity D3.a',
           owner: firm,
           size: sub(paid, moved.value, 'recorded paid against what left the firm'),
-          unit: view.registry.region(view.parties.get(firm as PartyId).region).ccy,
+          unit: view.registry.currencyOf(view.parties.get(firm as PartyId).region),
           period: view.period,
           message: `${line}: ${paid} of payout was recorded paid and ${moved.value} left ${firm}`,
         });
@@ -431,7 +431,7 @@ export function equity(rows: readonly ListedDecl[]): SystemModule {
     seed(ctx: SeedContext): void {
       for (const row of rows) {
         const firm = ctx.parties.get(row.firm as PartyId);
-        const ccy = ctx.registry.region(firm.region).ccy;
+        const ccy = ctx.registry.currencyOf(firm.region);
         // A5: one vote per share. It is a TERM of the instrument and not a parameter: what a share
         // of this line carries is its structure, fixed at issue (Seed C4.b), and a line with two
         // classes of vote is two lines (Register F1.a).

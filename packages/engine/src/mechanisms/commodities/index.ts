@@ -271,7 +271,7 @@ export function commodities(): SystemModule {
         anchor: { before: 'firms.decide' },
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
-          for (const r of ctx.registry.regions.values()) lease(ctx, r.id, r.ccy, said);
+          for (const r of ctx.registry.regions.values()) lease(ctx, r.id, ctx.registry.currencyOf(r.id), said);
           ctx.record(STORAGE_SESSION, [...said.keys()], { byRegion: Object.fromEntries(said) }, true);
         },
       },

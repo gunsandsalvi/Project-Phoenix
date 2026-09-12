@@ -106,7 +106,7 @@ export function liquidityPlan(view: ParticipantView, cushion: number): Option<Li
 export function liquidityLines(view: ParticipantView, d: BankDecl): readonly InstrumentId[] {
   const out: InstrumentId[] = [];
   const on = view.calendar.startOf(view.period);
-  const home = view.registry.region(view.self.region).ccy;
+  const home = view.registry.currencyOf(view.self.region);
   for (const m of view.markets) {
     const subject = delivers(m);
     if (!subject.some) continue;
@@ -247,7 +247,7 @@ export function priceAtYield(
 
 /** The money this bank settles in, off its own region (Law 8: a number carries its currency). */
 export function ccyOf(view: ParticipantView): CurrencyCode {
-  return view.registry.region(view.self.region).ccy;
+  return view.registry.currencyOf(view.self.region);
 }
 
 /* ------------------------------------------------------------------------------------------------
