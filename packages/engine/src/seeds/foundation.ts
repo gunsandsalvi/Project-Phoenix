@@ -100,6 +100,7 @@ import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
+import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
 import {
   drawCarriers,
@@ -258,6 +259,9 @@ export const ABROAD: readonly AbroadDecl[] = [
  * a carrier owns is still drawn; where it can sail them is the world's answer and not a list.
  */
 const CARRIER_COUNT = 6;
+
+/** 13c.2: the line whose firms trade rather than make. Named once, where the seed filters on it. */
+const WHOLESALE = 'wholesale';
 /** B2: hulls per unit of drawn size. The smallest carrier has one ship, which is what it means. */
 const HULLS_PER_UNIT_OF_SIZE = 1;
 
@@ -2019,6 +2023,16 @@ export function foundationSpec(
   const drawn = drawMap(mapSpec(), mapReads(), seed);
   // Seed B1.a: WHERE EACH FIRM OPENS, drawn once along the ground and read by everybody who needs it.
   const placed = placeFirms(drawn.geography, mapReads(), drawn.regions, firmRows, seed);
+  // 13c.2, Law 4: THE MERCHANTS ARE THE FIRMS ALREADY IN THE WHOLESALE LINE. They are drawn, placed,
+  // banked and funded by the ordinary firm machinery like everybody else; what this adds is the two
+  // preferences that make one of them buy a cargo it will never use and another one not. The filter
+  // is the SEED's, so the module never learns what a line is called (Law 15).
+  const merchantRows = drawMerchants(
+    firmRows
+      .filter((f) => f.subUnit === WHOLESALE)
+      .map((f) => ({ firm: f.firm, region: placed.get(f.firm) ?? REGION })),
+    seed,
+  );
   return {
     seed,
     epoch: civil(2026, 1, 5),
@@ -2169,6 +2183,11 @@ export function foundationSpec(
       // treasury and a bond line until 13i builds their economies. A session with nothing to carry
       // says `noDemand` and says so out loud, which is the honest state for it to be in.
       freight(carrierRows),
+      // 13c.2, Freight D3: the firms whose business is that a thing is worth more somewhere else.
+      // Until they existed the only shippers were producers holding stock they happened to have,
+      // which closes a basis by accident; a merchant is the party whose purpose is to close it and
+      // the one that loses money when the gap shuts before the cargo lands.
+      merchants(merchantRows),
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).

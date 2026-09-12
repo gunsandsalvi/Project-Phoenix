@@ -5,8 +5,10 @@
  * @spec Goods A1 Goods A2.a Goods C1 Goods C3 Households A2.a Households A2.b Households C3 Households C4 Commodities Spot A3 Freight A3 Law 2 Law 6
  */
 import { describe, expect, it } from 'vitest';
-import { downTick, rungsUpTo, sum } from '../src/index.js';
+import { FIRM, downTick, regionId, rungsUpTo, sum } from '../src/index.js';
 import { CONSUMPTION } from '../src/mechanisms/households/data.js';
+import { MERCHANT_SPREAD, drawMerchants, merchants } from '../src/mechanisms/merchants/index.js';
+
 import { GOODS, RETAIL, retailOf } from '../src/mechanisms/goods/data.js';
 import { OCCUPATION_OF } from '../src/mechanisms/firms/data.js';
 import { OCCUPATIONS } from '../src/mechanisms/labour/data.js';
@@ -223,5 +225,53 @@ describe('the shelf is a place (13c.2, Commodities Spot C6, Indices D4)', () => 
     // And it buys services, which is most of what people spend money on.
     const services = new Set(GOODS.filter((g) => !g.portable).map((g) => g.subUnit));
     expect([...lines].filter((l) => services.has(l)).length).toBeGreaterThanOrEqual(6);
+  });
+});
+
+describe('a firm whose business is the gap (13c.2, Freight D3)', () => {
+  const who = [
+    { firm: 'firm.1', region: regionId('us.1') },
+    { firm: 'firm.2', region: regionId('us.1') },
+  ];
+
+  it('draws two preferences per merchant and declares nothing else', () => {
+    const rows = drawMerchants(who, 'merchants-a');
+    expect(rows.length).toBe(2);
+    for (const r of rows) {
+      expect(r.margin).toBeGreaterThanOrEqual(MERCHANT_SPREAD.margin.low);
+      expect(r.margin).toBeLessThanOrEqual(MERCHANT_SPREAD.margin.high);
+      expect(r.appetite).toBeGreaterThanOrEqual(MERCHANT_SPREAD.appetite.low);
+      expect(r.appetite).toBeLessThanOrEqual(MERCHANT_SPREAD.appetite.high);
+    }
+    // Firm A3: two merchants facing one gap do not take the same position, which is why the basis is
+    // closed by somebody in particular rather than by arithmetic.
+    expect(rows[0]?.margin).not.toBe(rows[1]?.margin);
+  });
+
+  it('adds no party, no instrument, no market and no phase: the firms are already here', () => {
+    const m = merchants(drawMerchants(who, 'merchants-a'));
+    expect(m.phases).toEqual([]);
+    expect(m.instrumentKinds).toEqual([]);
+    expect(m.partyKinds).toEqual([]);
+    expect(m.seed).toBeUndefined();
+    // What it adds is a reason to buy something it will not use, and that is a participant.
+    expect(m.participants.length).toBe(1);
+    expect(m.participants[0]?.speculative).toBe(true);
+  });
+
+  it('declares preferences and never a rate, a fee or a mark-up (Law 3)', () => {
+    const m = merchants(drawMerchants(who, 'merchants-a'));
+    expect(m.params.length).toBe(4);
+    for (const d of m.params) {
+      expect(d.kind).toBe('preference');
+      for (const word of ['rate', 'fee', 'markup', 'spread', 'price']) {
+        expect(String(d.id).toLowerCase()).not.toContain(word);
+      }
+    }
+  });
+
+  it('is a FIRM, not a kind of its own (Law 15, the carrier precedent)', () => {
+    const m = merchants(drawMerchants(who, 'merchants-a'));
+    expect(m.participants[0]?.partyKind).toBe(FIRM);
   });
 });

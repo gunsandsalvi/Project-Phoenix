@@ -1720,6 +1720,38 @@ const MAKES: readonly GoodDecl[] = [
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
+  {
+    subUnit: 'wholesale',
+    unit: 'tonnes distributed',
+    name: 'wholesale distribution',
+    portable: false,
+    spoilagePerPeriod: 1,
+    spoilageWhy:
+      'Goods A3, E4: ALL OF IT. What a merchant does is get a thing from where it was made to the shop that sells it, in the week it is wanted; a week of that capacity nobody used is not waiting anywhere. The STOCK a merchant carries is a different thing and is on its own book (13c.2, the merchants module).',
+    inputs: [
+      { subUnit: 'logistics', qtyPerUnit: 1, why: 'A2.a, 13c.2: it is handled at the depot, and the handling is somebody else\u2019s line.' },
+      { subUnit: 'transport', qtyPerUnit: 0.35, why: 'A2.a, 13c.2: and trunked between depots, which is what makes a wholesaler feel a fuel price before a shop does.' },
+      { subUnit: 'power', qtyPerUnit: 0.002, why: 'A2.a: the depot, lit and cold.' },
+    ],
+    labourHoursPerUnit: 0.2,
+    labourWhy:
+      'A2.c: buying it, selling it on and keeping the books. It is a thin line per tonne, which is why the trade is volume and why a wholesaler that loses a customer loses a great deal.',
+    plant: [
+      { capitalKind: 'premises', unitsPerUnitPerPeriod: 0.004, why: 'Capital Programme A2: the depot and the offices over it.' },
+      { capitalKind: 'machinery', unitsPerUnitPerPeriod: 0.002, why: 'Capital Programme A2: what moves a pallet about inside it.' },
+    ],
+    yieldRate: 0.99,
+    yieldWhy: 'B4: what is lost, damaged or delivered to the wrong door.',
+    exposedTo: [],
+    standsOn: null,
+    standsOnWhy:
+      '13c.2: none of its own. The ground is under the depot and counting it again would be counting it twice (Law 4).',
+    storagePerUnit: null,
+    storageWhy:
+      'Commodities Spot A3: none. The SERVICE cannot be stored; the STOCK can, and a merchant rents room for it in the storage market like everybody else.',
+    leadTimePeriods: 0,
+    leadTimeWhy: 'B3: none. It is done in the week it is asked for, which is what a wholesaler is for.',
+  },
 ];
 
 
@@ -1797,6 +1829,7 @@ function shelfLine(d: RetailDecl, of: GoodDecl): GoodDecl {
   const inputs = [
     { subUnit: of.subUnit, qtyPerUnit: 1, why: 'A2.a: one unit in for one unit out. A shop makes nothing; it puts what somebody else made where somebody can buy it.' },
     { subUnit: 'logistics', qtyPerUnit: d.logistics, why: 'A2.a: picked, packed and put on the lorry, and then off it again at the other end.' },
+    { subUnit: 'wholesale', qtyPerUnit: d.logistics, why: 'A2.a, 13c.2: bought from a merchant rather than from the works, which is how a shop gets a hundred lines from a hundred makers without dealing with a hundred makers.' },
     { subUnit: 'transport', qtyPerUnit: d.transport, why: 'A2.a: the delivery round. It is why a shop feels a fuel price and a mill barely does.' },
     { subUnit: 'power', qtyPerUnit: d.power, why: 'A2.a: light, heat and the cold end, running the whole week whether anybody comes in or not.' },
   ];
