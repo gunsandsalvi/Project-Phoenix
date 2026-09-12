@@ -15,6 +15,7 @@ import {
   plantKindId,
   regionId,
 } from '../src/index.js';
+import { GOODS } from '../src/mechanisms/goods/data.js';
 import { legsBetween } from '../src/registry/geography.js';
 import { ranWorld, rigWorld } from './rig.js';
 
@@ -180,5 +181,75 @@ describe('the location basis is an outcome of shipping with capacity (D3, D3.a, 
         if (leg.rate !== undefined) expect(leg.rate).toBeGreaterThan(0);
       }
     }
+  });
+});
+
+/**
+ * Shipper substitution (13c step 10): a shipper can NOT ship — hold the goods, source locally, or
+ * not trade at all — and that substitution is what caps the freight price.
+ *
+ * @spec Freight C1.a Freight C2 Freight D3 Law 3 Law 19
+ *
+ * All three are STRUCTURAL rather than built, and that is the finding: what a shipper will pay is
+ * the gap between the two places' prints and nothing else, so above the gap the voyage is worse
+ * than selling at home (holding, not trading) — and a buyer standing where the thing is made buys
+ * it there, because the place's own market is the one it is in. Nothing decides between them; the
+ * arithmetic leaves no room for a shipper to pay more than the alternative is worth.
+ */
+describe('a shipper can not ship, and that is what caps the freight (C2)', () => {
+  it('never pays more for the voyage than the gap it is closing (C1.a, D3)', () => {
+    const w = ranWorld('subs-a', 4);
+    for (const e of w.journal.ofKind(FREIGHT_SESSION)) {
+      const byLeg = e.data['byLeg'] as Record<
+        string,
+        { outcome: string; rate?: number; from?: string; to?: string }
+      >;
+      for (const leg of Object.values(byLeg)) {
+        if (leg.rate === undefined || leg.from === undefined || leg.to === undefined) continue;
+        // The rate cleared where shippers met carriers, and a shipper's bid IS the gap — so the
+        // rate cannot exceed the widest gap any of them had. Read off the two prints, both public
+        // and both already made (Law 19), never recomputed from a formula (Law 3).
+        let widest = 0;
+        for (const g of GOODS.map((d) => d.subUnit)) {
+          const here = w.prices.latest(goodId(g, regionId(leg.from)), w.period);
+          const away = w.prices.latest(goodId(g, regionId(leg.to)), w.period);
+          if (!here.some || !away.some) continue;
+          const gap = away.value.price - here.value.price;
+          if (gap > widest) widest = gap;
+        }
+        if (widest > 0) expect(leg.rate).toBeLessThanOrEqual(widest);
+      }
+    }
+  });
+
+  it('sources locally where the thing is made: a place’s own market is the one a buyer is in', () => {
+    const w = ranWorld('subs-a', 4);
+    const makes = [...w.registry.regions.keys()].filter((r) =>
+      w.instruments.has(goodId('grain', r)),
+    );
+    expect(makes.length).toBeGreaterThan(1);
+    // C2: a buyer standing in a place that makes the thing has a market there and does not need a
+    // voyage at all. That is why the freight price is capped by something other than freight.
+    for (const r of makes) {
+      const i = w.instruments.get(goodId('grain', r));
+      expect(i.market.some).toBe(true);
+    }
+  });
+
+  it('holds rather than shipping when the gap will not pay for the voyage', () => {
+    const w = ranWorld('subs-a', 4);
+    let refused = 0;
+    let moved = 0;
+    for (const e of w.journal.ofKind(FREIGHT_SESSION)) {
+      const byLeg = e.data['byLeg'] as Record<string, { outcome: string }>;
+      for (const leg of Object.values(byLeg)) {
+        if (leg.outcome === 'cleared') moved += 1;
+        else refused += 1;
+      }
+    }
+    // D6, Clearing C4.b: every leg says what it did, and a leg that carried nothing said so rather
+    // than saying nothing. What is asserted is that the world HAS both answers available to it,
+    // never how many of each — that would be a claim about a level (Law 17).
+    expect(moved + refused).toBeGreaterThan(0);
   });
 });

@@ -33,8 +33,13 @@ export const HILL = terrainId('hill');
 export const MOUNTAIN = terrainId('mountain');
 
 export const ARABLE = resourceId('arable');
+export const PASTURE = resourceId('pasture');
 export const TIMBER = resourceId('timber');
 export const ORE = resourceId('ore');
+export const COAL = resourceId('coal');
+export const PETROLEUM = resourceId('petroleum');
+export const LIMESTONE = resourceId('limestone');
+export const BAUXITE = resourceId('bauxite');
 
 const terrainParam = (id: string, what: string): string => `terrain.${id}.${what}`;
 const resourceParam = (id: string, what: string): string => `resource.${id}.${what}`;
@@ -125,6 +130,46 @@ const RESOURCE_ROWS: readonly ResourceRow[] = [
     clumping: 3,
     inTerrain: { water: 0, plain: 1, forest: 0.5, hill: 0.35, mountain: 0.08 },
     why: 'Goods B4: what a crop stands on, and the reason one region grows grain more cheaply than the next.',
+  },
+  {
+    id: PASTURE,
+    name: 'grazing',
+    unit: 'hectare',
+    clumping: 3,
+    inTerrain: { water: 0, plain: 0.8, forest: 0.4, hill: 1, mountain: 0.3 },
+    why: 'What a herd eats. Hills graze better than they plough, which is why the two land uses do not sit in the same places.',
+  },
+  {
+    id: COAL,
+    name: 'coal',
+    unit: 'tonne',
+    clumping: 2,
+    inTerrain: { water: 0, plain: 0.3, forest: 0.3, hill: 1, mountain: 0.8 },
+    why: 'Under hills mostly. It is what this world burns for power, so where it is decides where power is cheap.',
+  },
+  {
+    id: PETROLEUM,
+    name: 'petroleum',
+    unit: 'barrel',
+    clumping: 1,
+    inTerrain: { water: 0, plain: 1, forest: 0.5, hill: 0.4, mountain: 0.1 },
+    why: 'In few, large fields — the coarsest draw of any resource, because oil is not spread about evenly and a world where it were would have no reason to trade it.',
+  },
+  {
+    id: LIMESTONE,
+    name: 'limestone',
+    unit: 'tonne',
+    clumping: 2,
+    inTerrain: { water: 0, plain: 0.4, forest: 0.3, hill: 1, mountain: 0.9 },
+    why: 'Quarried out of hills. Cement and glass both begin here.',
+  },
+  {
+    id: BAUXITE,
+    name: 'bauxite',
+    unit: 'tonne',
+    clumping: 2,
+    inTerrain: { water: 0, plain: 0.5, forest: 0.6, hill: 0.9, mountain: 1 },
+    why: 'Where the ground is high and old. Smelting it is mostly electricity, so it is worth nothing without power.',
   },
   {
     id: TIMBER,

@@ -18,14 +18,41 @@ export interface OccupationDecl {
   readonly sector: string;
 }
 
+/**
+ * A3: labour is heterogeneous by skill and by sector, and a job in one is not a job in another —
+ * which is why unemployment and vacancies can be high at once (A3.a). One trade per line this world
+ * makes, plus the state's, and nothing anywhere branches on which (Law 15).
+ */
 export const OCCUPATIONS: readonly OccupationDecl[] = [
   { id: 'field', name: 'field work', skill: 'manual', sector: 'agriculture' },
+  { id: 'herding', name: 'stock keeping', skill: 'manual', sector: 'agriculture' },
+  { id: 'forestry', name: 'forestry', skill: 'manual', sector: 'agriculture' },
+  { id: 'mining', name: 'mining', skill: 'manual', sector: 'extraction' },
+  { id: 'drilling', name: 'drilling', skill: 'machine operation', sector: 'extraction' },
+  { id: 'quarrying', name: 'quarrying', skill: 'manual', sector: 'extraction' },
+  { id: 'generation', name: 'power generation', skill: 'machine operation', sector: 'utilities' },
+  { id: 'refining', name: 'refining', skill: 'process', sector: 'energy' },
+  { id: 'smelting', name: 'smelting', skill: 'process', sector: 'metals' },
+  { id: 'sawing', name: 'sawmilling', skill: 'machine operation', sector: 'processing' },
+  { id: 'kiln', name: 'kiln work', skill: 'process', sector: 'minerals' },
+  { id: 'chemistry', name: 'process chemistry', skill: 'process', sector: 'chemicals' },
+  { id: 'pharmacy', name: 'pharmaceutical work', skill: 'laboratory', sector: 'pharmaceuticals' },
   { id: 'mill', name: 'milling', skill: 'machine operation', sector: 'processing' },
+  { id: 'butchery', name: 'meat processing', skill: 'craft', sector: 'food' },
+  { id: 'textile', name: 'textile work', skill: 'craft', sector: 'textiles' },
+  { id: 'garment', name: 'garment making', skill: 'craft', sector: 'textiles' },
+  { id: 'glassmaking', name: 'glassmaking', skill: 'craft', sector: 'minerals' },
+  { id: 'moulding', name: 'moulding', skill: 'machine operation', sector: 'chemicals' },
+  { id: 'papermaking', name: 'papermaking', skill: 'machine operation', sector: 'paper' },
   { id: 'bakery', name: 'baking', skill: 'craft', sector: 'food' },
-  // Capital Programme E2: investment employs people. Building the capital is a trade of its own,
-  // and it is the one whose hours are bought by somebody else's decision to expand.
+  { id: 'concreting', name: 'concreting', skill: 'manual', sector: 'construction' },
   { id: 'works', name: 'machine building', skill: 'engineering', sector: 'capital goods' },
-  // Labour F1: the state employs people too, and the wage leaves its account like anybody else's.
+  { id: 'shipyard', name: 'shipbuilding', skill: 'engineering', sector: 'capital goods' },
+  { id: 'assembly', name: 'vehicle assembly', skill: 'engineering', sector: 'transport equipment' },
+  { id: 'electronics', name: 'electronics assembly', skill: 'precision', sector: 'electronics' },
+  { id: 'joinery', name: 'joinery', skill: 'craft', sector: 'furniture' },
+  { id: 'converting', name: 'packaging converting', skill: 'machine operation', sector: 'packaging' },
+  { id: 'building', name: 'building trades', skill: 'manual', sector: 'construction' },
   { id: 'public', name: 'public service', skill: 'administration', sector: 'government' },
 ];
 

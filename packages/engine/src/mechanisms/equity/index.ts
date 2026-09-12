@@ -30,7 +30,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import { currencyUnit, type InstrumentId, type PartyId } from '../../core/ids.js';
+import { currencyUnit, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
 import { add, combineDust, div, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
@@ -414,6 +414,16 @@ export function equity(rows: readonly ListedDecl[]): SystemModule {
         // the party that has it, in that party's own module (Households D5): a module that wrote
         // other people's schedules would be handing the market its answer (Clearing A3, XI-13).
         partyKind: FIRM,
+        // Law 18: THE ONE BOOK IT COULD BE IN, which is its own. Without this every firm was asked
+        // about every market in the world — three thousand firms against two hundred and sixty
+        // books is three quarters of a million questions a cycle, and it was twenty-two of the
+        // twenty-five seconds a period cost. It is a TRAVERSAL and nothing else: the answer below
+        // already returns nothing for any other book, so the same firms post the same orders.
+        markets: (view: ParticipantView): readonly MarketId[] => {
+          const own = view.lastOwn('equity.plan');
+          if (!own.some || own.value.period !== view.period) return [];
+          return [equityMarketOf(view.self.id)];
+        },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           const own = view.lastOwn('equity.plan');
           if (!own.some || own.value.period !== view.period) return [];

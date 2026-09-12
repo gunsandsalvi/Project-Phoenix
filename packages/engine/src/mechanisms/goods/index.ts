@@ -84,8 +84,14 @@ function inputsOf(d: GoodDecl, rows: readonly GoodDecl[]): GoodDecl[] {
  * and what the weather does to it in store. None of them is a claim about an answer.
  */
 /** Law 8: how many pieces one named unit of a good is — a tonne is a million grams, a machine one. */
+const BULK: readonly string[] = [
+  'tonnes', 'barrels', 'litres', 'cubic metres', 'MWh',
+];
 function piecesOf(unit: string): number {
-  return unit === 'tonnes' ? TONNE_PIECES : WHOLE_PIECES;
+  // A bulk unit is divisible down to the same fine grid a tonne is: a litre of fuel and a
+  // megawatt-hour are both sold in fractions nobody would call a whole one. A thing counted in
+  // WHOLE things — a machine, a vehicle, a building, a head of livestock — has no piece below one.
+  return BULK.includes(unit) ? TONNE_PIECES : WHOLE_PIECES;
 }
 
 function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {

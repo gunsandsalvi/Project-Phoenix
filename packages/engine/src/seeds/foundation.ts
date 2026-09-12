@@ -439,33 +439,16 @@ const SEED_DAY_COUNT: DayCount = 'ACT/ACT';
  * chosen a single quantity anywhere.
  */
 const SEED_STOCK_BASIS = 0.8;
-/** Seed C4: the level each market opens at, which is the good's and not any one firm's. */
-const SEED_MARKETS: readonly {
-  readonly subUnit: string;
-  readonly opensAt: number;
-  readonly why: string;
-}[] = [
-  {
-    subUnit: 'grain',
-    opensAt: 400,
-    why: 'Grain takes two periods to grow, so a world that opens with an empty field produces nothing for two of them and the mill has nothing to buy. One crop in the barn and one in the ground is what a going concern looks like.',
-  },
-  {
-    subUnit: 'flour',
-    opensAt: 600,
-    why: 'Milling is inside the period, so there is nothing on the line; what a mill opens with is what it has already milled.',
-  },
-  {
-    subUnit: 'bread',
-    opensAt: 1200,
-    why: 'A week of bread in the shop. It goes stale at a quarter a period, so what is not sold is a real loss from the first period on.',
-  },
-  {
-    subUnit: 'machine',
-    opensAt: 2500,
-    why: 'A machine is sixty hours of engineering, and this is what sixty hours of it is worth at the level the rest of this world opens at — so a workshop bids for an hour somewhere between what a mill will pay and what a farm will, and the capital-goods line is neither the best nor the worst employer on the first morning.',
-  },
-];
+/**
+ * Seed C4: THE ONE LEVEL THIS WORLD OPENS AT, and everything else follows from the recipes.
+ *
+ * It used to be a level per good — four of them, and it would have been thirty-six once the chain
+ * got deep. Thirty-six stated levels is thirty-six claims about the answer, and most of them are
+ * not independent: what flour opens at is what the grain in it opens at plus the hours of milling.
+ * So ONE number is claimed — what an hour of work opens at — and every good's level is walked up
+ * its own recipe from there, which turns thirty-five shapes into arithmetic (Law 2).
+ */
+const OPENING_WAGE = 40;
 
 /**
  * Capital Programme A6, Seed C3: the vintages the world opens with, as ages in periods. Three of
@@ -513,15 +496,54 @@ const openingPrice = (subUnit: string): ParamId => paramId(`seed.openingPrice.${
  * needs a way to open a market without stating one.
  */
 function openingPrices(): ParamDecl[] {
-  return SEED_MARKETS.map((row) => ({
-    id: openingPrice(row.subUnit),
-    value: row.opensAt,
-    unit: `USD per unit of ${row.subUnit}`,
-    dimension: 'price',
-    kind: 'shape' as const,
-    owner: 'model' as const,
-    why: `Seed C4: ${row.why} It is the first clearing's input and not a permanent mark: the session in period one prints a price nobody stated and nothing reads this number again.`,
-  }));
+  const level = openingLevels();
+  return [
+    {
+      id: paramId('seed.openingWage'),
+      value: OPENING_WAGE,
+      unit: 'USD per hour of work',
+      dimension: 'price',
+      kind: 'shape' as const,
+      owner: 'model' as const,
+      why: "Seed C4: the ONE level this world opens at. Every good's opening level is walked up its own recipe from here — the hours it takes at this wage, plus the inputs at what they open at, over the yield — so what the seed claims is one number and not one per line. It is the first clearing's input and not a permanent mark: the session in period one prints a price nobody stated and nothing reads it again.",
+    },
+    ...GOODS.map((d) => ({
+      id: openingPrice(d.subUnit),
+      value: zeroIfNone(level.get(d.subUnit)),
+      unit: `USD per unit of ${d.subUnit}`,
+      dimension: 'price' as const,
+      kind: 'shape' as const,
+      owner: 'model' as const,
+      why: `Seed C4: what ${d.name} opens at, walked up its own recipe from the one wage this world states — ${d.labourHoursPerUnit} hours and its inputs, over a yield of ${d.yieldRate}. It is arithmetic on one claim rather than a claim of its own, and the first session replaces it.`,
+    })),
+  ];
+}
+
+/**
+ * Law 19: the level walks UP the chain, each good from what its own inputs opened at. Extraction
+ * stands on labour alone, so the walk has somewhere to start and cannot go round: a good is priced
+ * only once everything it is made of has been.
+ */
+function openingLevels(): ReadonlyMap<string, number> {
+  const out = new Map<string, number>();
+  const left = new Map(GOODS.map((d) => [d.subUnit, d]));
+  while (left.size > 0) {
+    let moved = false;
+    for (const [subUnit, d] of [...left]) {
+      if (!d.inputs.every((i) => out.has(i.subUnit))) continue;
+      const inputs = sum(
+        d.inputs.map((i) => mul(i.qtyPerUnit, zeroIfNone(out.get(i.subUnit)), 'the inputs in one')),
+      ).value;
+      const work = mul(d.labourHoursPerUnit, OPENING_WAGE, 'the work in one');
+      out.set(subUnit, div(add(work, inputs, 'what one takes'), d.yieldRate, 'over what survives'));
+      left.delete(subUnit);
+      moved = true;
+    }
+    if (!moved) {
+      throw new Missing('Goods A2', `the recipe chain does not resolve: ${[...left.keys()].join(', ')}`);
+    }
+  }
+  return out;
 }
 
 /**
@@ -1436,21 +1458,22 @@ export function foundationSeedFor(
       // the line already, so the first period is not the only one that produces nothing. What a
       // market has never traded has no price at all, and somebody must state the one it opens at;
       // that number is a placeholder and the market's own first session replaces it.
-      for (const row of SEED_MARKETS) {
-        if (!ctx.instruments.has(goodId(row.subUnit, REGION))) continue;
-        openedGoods.add(row.subUnit);
-        ctx.prices.write({
-          instrument: goodId(row.subUnit, REGION),
-          market: goodMarketId(row.subUnit, REGION),
-          period: ctx.period,
-          price: priced(
-            ctx,
-            goodId(row.subUnit, REGION),
-            ctx.params.price(openingPrice(row.subUnit)),
-          ),
-          ccy: USD,
-          provenance: { kind: 'opening' },
-        });
+      // 13c.1: every place that makes a line opens ITS market, not one place's. A world with three
+      // producing places and one opening print has two markets nobody can bid into.
+      for (const row of GOODS) {
+        for (const where of ctx.registry.regions.keys()) {
+          const id = goodId(row.subUnit, where);
+          if (!ctx.instruments.has(id)) continue;
+          openedGoods.add(row.subUnit);
+          ctx.prices.write({
+            instrument: id,
+            market: goodMarketId(row.subUnit, where),
+            period: ctx.period,
+            price: priced(ctx, id, ctx.params.price(openingPrice(row.subUnit))),
+            ccy: ctx.registry.currencyOf(where),
+            provenance: { kind: 'opening' },
+          });
+        }
       }
       for (const row of madeHere) {
         // A firm whose good this world does not make opens with nothing, because there is nothing
