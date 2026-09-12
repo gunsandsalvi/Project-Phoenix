@@ -828,3 +828,148 @@ restatement already scales by its ratio.
 `ownership`, `prices` and `units` are clean; `flows`'s split-restatement handling (compose two
 ratios in a period, read the ratio off the public event rather than exempting) is the right shape
 and is what the weight exemption should look like.
+
+---
+
+## `world/context.ts`
+
+The three contexts are the best-defended boundary in the codebase and the comments on each door
+(why `gather` exists, why `chooseBanks` is a door and not a loop inside the deposit market, why
+`accountOf` is the kernel's and not a module's read of `party.bank`) are doing real architectural
+work. `MechanismContext` genuinely has no register write, no price write and no weight write.
+
+**SEAM — `SeedContext` hands modules the raw stores.** `parties: Parties`, `instruments:
+Instruments`, `register: Register` — the write-capable classes, not the read facades that exist
+beside them (`PartiesReads`, `InstrumentsReads`, `RegisterReads`, and `registerReads()` which builds
+a real runtime-frozen facade). So a seed module can call `register.debit`, `register.moveEquity`,
+`register.pledge`, `parties.applyWeight` or `instruments.adjustIssued` directly, and the module
+contract's claim — "never holds a reference to a kernel store" — is false for this one context.
+`endowMoney` and `endowUnits` are the intended doors and are right there; `stateEquity` is
+deliberately NOT exposed (assembly does it, as the read of what the party turned out to hold),
+which shows the line was drawn on purpose in one place and not in the others.
+**Today's seed does not abuse it** — it uses `parties.add`, `instruments.add` and the two endow
+doors, and reads through `register.quantity` / `holdingsOf` — so this is a capability finding, not a
+behaviour one. **What it would take:** `SeedContext` exposes `parties: Pick<Parties, 'add' | ...>`
+and the reads facade for the register, which is a five-line change and makes the contract true.
+
+**MINOR — `blind(party)` is a kernel door built for one module,** and a negative one: a
+`ParticipantView` with the prices removed so an assessor cannot look at them. The argument is right
+(Ratings A2.a: an assessment is made from state BECAUSE the prices are unreachable, not because the
+code chose not to look) and it is still the kernel growing a shape for one caller — the same
+pattern as `clearingCapacity` and `admits`, in a fourth place.
+
+**MINOR — `ContractsRead.marginFor` takes an inline structural copy of most of `Contract`.** The
+thing it describes has a name — a contract that has not been written yet — and giving it one would
+let the same shape be reused by `validateContract`'s `asIfOpen` in settlement, which builds it too.
+
+## `rng/prng.ts`
+
+Clean, and used once in the whole engine: `expectations/index.ts` draws each party's MEMORY
+preference. That is exactly the right use — a drawn PREFERENCE, in the spirit of Seed B1.a's drawn
+world — and not a decision taken by a coin flip. Deriving streams by label so that a new mechanism's
+draws do not reshuffle an existing one's is the detail that makes `resolution.pieceShift` and the
+other invariance tests meaningful.
+
+---
+
+## `world/world.ts`
+
+**DEFECT — "one party shows one face to one book" is solved twice, differently, and only one of the
+two is structural.**
+
+For a CONTRACT book, item 13a's answer is: the layer declares ONE participant per party kind and
+dispatches to `DerivativeKindProfile.orders`, so a party's schedule in a book has exactly one
+author. For an ASSET market, the answer is: any number of modules may declare a `ParticipantDecl`
+for the same `partyKind` (`addParticipant` checks nothing), `runOne` collects orders from all of
+them, and a party that ends up on both sides at crossing prices is caught by a `forbid` throw inside
+`pairFills` — at settlement time, as a crash, naming the party rather than the two modules that
+spoke for it. Today `FIRM` has two participants (`equity`, `firms`), `BANK` has two (`banks`,
+`spot-fx`), `FUND` and `FUND_MANAGER` two each. They do not collide because each self-selects its
+markets by convention, and `ParticipantDecl.markets` is explicitly "a filter and not a claim".
+
+So the invariant holds by discipline in the older half of the engine and by construction in the
+newer half. Law 4 is about facts, but the same instinct applies: one problem should have one
+solution, and having two means the next module has to know which world it is in. **What it would
+take:** the asset side adopts the contract side's shape — one participant per party kind, owned by
+the module that owns the kind, dispatching to reasons the other modules register. That is a real
+piece of work and it is the single change that would most reduce the "everything touches everything"
+feeling, because it makes "who speaks for this party" a question with one answer.
+
+**GOOD — `addPhase`'s anchoring rule.** The asymmetry between `before` (insert AT the anchor, so
+later modules land in front of the anchor behind earlier ones) and `after` (skip past every phase
+already anchored to the same point) is subtle, correct, and explained. The monotonic-cycle
+re-validation after every insert is the right place for it.
+
+**GOOD — the `provide*` doors all `forbid(!this.sealed, 'Law 10', ...)`** and `requireCreditDeciders`
+runs at the seal, so a world that cannot answer a question it must answer never starts. That is the
+right shape for every single-answer hook and it is applied consistently.
+
+**MINOR — `reads()` recomputes `stalePrints`, `reserveOverdrafts` and `failedInstructions` by
+filtering the whole period's journal and ledger three times,** once per period. Free by Law 18 and
+worth noting only because the journal's own `byKind` index would answer two of the three directly.
+
+---
+
+# The mechanisms
+
+## THE HEADLINE FINDING — `phoenix/no-cross-module-import` does not fire, and six modules import each other
+
+**DEFECT — the lint rule that enforces the module boundary has a regex bug and has never caught
+anything.**
+
+`tools/eslint-rules/index.js`, `noCrossModuleImport`:
+
+```js
+const resolved = source.replace(/^(\.\.\/)+/, '').replace(/^\.\//, '');
+const sib = /^(mechanisms|seeds)\/([^/]+)/.exec(resolved);
+```
+
+A module importing a sibling writes `from '../goods/index.js'`. Stripping the leading `../` leaves
+`goods/index.js`, which does not begin with `mechanisms/`, so `sib` is `null` and nothing is
+reported. The only spelling the rule catches is `'../../mechanisms/goods/index.js'` — which nobody
+writes, because it is two directories up and back down again. Verified: `npx eslint
+packages/engine/src/mechanisms/firms/decide.ts` passes clean, and that file imports nine symbols
+from `capital-programme` and four from `goods`.
+
+**And the boundary has in fact been crossed, six times, including one cycle:**
+
+| module | imports from | what |
+| --- | --- | --- |
+| `firms` | `goods`, `capital-programme` | **values** — `goodId`, `goodMarketId`, `goodTerms`, `capacityFrom`, `capitalChargePerUnit`, `capitalKindOf`, `isPlant`, `lifeParam`, `plantTerms`, `serviceLeft`, `vintagesHeld`, `costOfDraw`, `dueFromLine`, `wipId`, `plantHeld`, `utilisation` |
+| `capital-programme` | `goods` | **values** — `costOfDraw`, `goodId`, `isGoodTerms` |
+| `households` | `goods` | **values** — `goodId`, `goodMarketId` |
+| `treasury` | `goods`, `sovereign-curve`, `sovereign-instruments` | **values** — `isGoodTerms`, `CURVE_DAY_COUNT`, terms constructors |
+| `banks` | `spot-fx` | **a value, and it is a parameter** — `FX_SPREAD` from `spot-fx/data.ts` |
+| `spot-fx` | `banks` | types — `BankDecl`, in four files |
+
+`banks → spot-fx → banks` is a **module cycle**. That is not a style point: an import cycle between
+two modules that both declare `const`s at module scope is precisely how a constant comes back
+`undefined` at initialisation, which cost an afternoon in this session's 13b work (`cds/contract.ts
+→ participants.ts → series.ts → contract.ts`, leaving `PROTECTED` undefined and surfacing as
+`unit undefined does not exist`). The same trap is armed between `banks` and `spot-fx` today.
+
+`banks/data.ts` importing `FX_SPREAD` from `spot-fx/data.ts` is the worst of the six on its own
+terms: a behaviour-shaping number declared by one module and read by another, which is Law 4's "one
+fact, one writer" broken at the parameter register, not at the code level. If a bank's dealing
+spread and the FX module's spread are one number, one module owns it and the other reads it through
+`params`; if they are two numbers, they are two declarations.
+
+**Why this is the answer to "why does everything touch everything".** ARCHITECTURE 4.9b's claim —
+"a module reaches the kernel only through `ParticipantView`, `MechanismContext`, `SeedContext`; it
+never imports another module (lint)" — is the load-bearing statement of the whole design, and the
+parenthesis is what makes it true. It has been false since the rule was written. So six modules are
+coupled directly, and the coupling is invisible: it does not show up in `requires`, it is not in the
+contexts, and nothing in a review would surface it because the lint says it is fine.
+
+**What it would take:** one character class. `const sib = /(?:^|\/)(mechanisms|seeds)\/([^/]+)/`
+applied to the FILE-RELATIVE resolution rather than the stripped string — or, more simply, resolve
+the import against the importing file's directory and compare real paths. Then fix the six. Some of
+them are genuinely shared vocabulary (`goodId`, `goodMarketId` are naming functions, exactly what
+`registry/naming.ts` is for) and belong in the kernel; `FX_SPREAD` belongs to one module and is read
+through `params` by the other; `BankDecl` in `spot-fx` is a type that should be a kernel read
+(`registry`/`ParticipantView`) rather than another module's declaration table.
+
+**Expect this to be a real piece of work, and expect it to shrink the tree.** Four of the six are
+`firms`/`households`/`capital-programme`/`treasury` reaching into `goods` for the same two naming
+functions — which means the goods naming grammar wants to be kernel data, and once it is, four
+modules stop knowing about a fifth.
