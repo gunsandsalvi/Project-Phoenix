@@ -152,6 +152,24 @@ describe('what a reader is shown (Observer A1, A3; CDS A1.d; IRS C1)', () => {
     }
   });
 
+  it('shows what a hedge does not cover, with its parts and beside what the rate did (E4, D2.a)', () => {
+    const w = ran(16);
+    const seen = snapshot(w, { kind: 'inspector' }, 0);
+    for (const h of seen.hedges) {
+      // E4: the residual is never netted away, and it arrives with the two numbers it is made of —
+      // the position and what has been fixed against it — because they are different objects: a
+      // price that keeps moving and a notional fixed on a date.
+      expect(h.residual).toBe(h.exposure - h.covered);
+      // A row is only here because the party is actually in this pair; a table of zeroes would
+      // bury the ones that mean something.
+      expect(h.exposure === 0 && h.covered === 0).toBe(false);
+      // D2.a, Law 19: what the rate DID is the engine's own journalled revaluation, and null is a
+      // real answer — the rate did nothing to this party this period — rather than nothing left
+      // over, which is what `residual` says.
+      if (h.revalued !== null) expect(Number.isFinite(h.revalued)).toBe(true);
+    }
+  });
+
   it('gathers them into curves in tenor order, with no point nobody paid for', () => {
     const w = ran(6);
     const seen = snapshot(w, { kind: 'inspector' }, 0);

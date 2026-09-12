@@ -181,12 +181,24 @@ export function basisOf(
  * The difference is the basis and the imperfection, and the only honest thing to do with it is
  * show it.
  */
+export interface HedgedResidual {
+  /** D1, B1, B2: what it is short of the BASE money — positive short, negative holding one. */
+  readonly exposure: number;
+  /** What it has already fixed forward in this pair, signed by the side it is on. */
+  readonly covered: number;
+  /** E4: the difference, and it is shown rather than netted away. */
+  readonly residual: number;
+}
+
 export function hedgedResidual(
   view: ParticipantView,
   base: CurrencyCode,
   quote: CurrencyCode,
-): number {
+): HedgedResidual {
   const exposure = positionIn(view, base);
   const covered = alreadyForward(view, base, quote);
-  return sub(exposure, covered, 'what the hedge does not cover');
+  // E4: its PARTS travel with it. A single number would say how big the gap is and not what it is
+  // made of, and what a reader has to be able to see is that the position and the hedge are two
+  // different objects — a price that moves and a notional fixed on a date.
+  return { exposure, covered, residual: sub(exposure, covered, 'what the hedge does not cover') };
 }

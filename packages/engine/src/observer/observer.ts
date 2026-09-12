@@ -6,9 +6,9 @@
  * @spec Sovereign D3 Sovereign D3.b Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
  */
 import { formatCivil } from '../calendar/civil.js';
-import { div, mul, sub } from '../core/num.js';
+import { add, div, mul, sub } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
-import { partyId, type PartyId } from '../core/ids.js';
+import { partyId, type CurrencyCode, type PartyId } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
 import { contractName, displayName } from '../registry/naming.js';
@@ -17,6 +17,7 @@ import type { AuditReport } from '../audit/audit.js';
 import type { ParamReport } from '../registry/params.js';
 import type { Event, EventKind } from '../journal/journal.js';
 import { consensusOf } from '../mechanisms/research/index.js';
+import { hedgedResidual } from '../mechanisms/fx-derivatives/index.js';
 
 /** A4: an inspector's full view and a participant's partial view are different products. */
 export type Scope =
@@ -228,6 +229,38 @@ export interface BankView {
  * against what the long way round says, as a share of the direct — a persistent one is a
  * measurement about this world (E3) and never a correction applied to a price.
  */
+/**
+ * Spot FX D2.a, E4, XI-12: WHAT A HEDGE DOES NOT COVER, per party and per pair, BESIDE what the
+ * rate actually did to the position it was hedging.
+ *
+ * The two do not cancel and they are not meant to. A forward is a notional fixed on a date; the
+ * asset it covers is a price that keeps moving, and what the rate does to a balance is measured on
+ * what the balance IS at the close. So the hedge's mark and the position's revaluation are two
+ * different objects, and the difference between them is the basis and the imperfection. E4 asks
+ * for it to be SHOWN rather than netted, which is why the two numbers travel together here and why
+ * the residual arrives with its parts.
+ *
+ * A4: a party's own book is its own. An inspector sees every row; a party sees the rows that name
+ * it, and nothing here is reachable about anybody else.
+ */
+export interface HedgeView {
+  readonly party: string;
+  readonly pair: string;
+  readonly base: string;
+  readonly quote: string;
+  /** B1, B2: positive is short of the base money and has to buy it; negative is holding it. */
+  readonly exposure: number;
+  readonly covered: number;
+  /** E4: never zeroed. */
+  readonly residual: number;
+  /**
+   * D2.a: what the rate did to what this party holds in the base money this period, in its OWN
+   * money — read off the revaluation the engine journalled, never recomputed here (Law 19). Null
+   * when the rate did nothing to it, which is a different answer from nothing left over.
+   */
+  readonly revalued: number | null;
+}
+
 export interface RateView {
   readonly pair: string;
   readonly base: string;
@@ -337,6 +370,8 @@ export interface Snapshot {
   readonly rates: readonly RateView[];
   /** Spot FX C3, E3: what the triangles say, as a standing measurement. */
   readonly triangles: readonly TriangleView[];
+  /** Spot FX E4: what a hedge leaves over, per party and per pair, with its parts. */
+  readonly hedges: readonly HedgeView[];
   /** Indices E1: every index this world declares, at what its own constituents make it. */
   readonly indices: readonly IndexView[];
   /** Ratings A1, E4: the published opinions, most recent last. */
@@ -626,6 +661,7 @@ export function snapshot(
     banks,
     rates: ratesOf(w),
     triangles: trianglesOf(w),
+    hedges: hedgesOf(w, visible),
     indices: indicesOf(w),
     ratings: ratingsOf(w, journalTail, sees),
     statements: statementsOf(w, sees),
@@ -650,6 +686,58 @@ export function snapshot(
 }
 
 /** Currency C5, D1: every pair's last print, with whether it was struck this period. */
+/**
+ * Spot FX E4, D2.a, Observer A4: every party's uncovered position in every pair this world quotes,
+ * beside what the rate did to it. Read where it is asked for and stored nowhere.
+ */
+function hedgesOf(w: World, visible: (party: PartyId) => boolean): readonly HedgeView[] {
+  const pairs: { base: string; quote: string }[] = [];
+  for (const m of w.markets) {
+    if (m.fx === undefined) continue;
+    pairs.push({ base: String(m.fx.base), quote: String(m.fx.quote) });
+  }
+  if (pairs.length === 0) return [];
+  // Law 19: what the rate DID is the engine's own record of it, per party and per money, not a
+  // second multiplication of a balance by a rate out here.
+  const moved = new Map<string, number>();
+  for (const e of w.journal.inPeriod(w.period)) {
+    if (e.kind !== 'revaluation.fx') continue;
+    const ccy = e.data['ccy'];
+    const delta = e.data['deltaPerMember'];
+    const who = e.subjects[0];
+    if (typeof ccy !== 'string' || typeof delta !== 'number' || who === undefined) continue;
+    const key = `${who}|${ccy}`;
+    const before = moved.get(key);
+    moved.set(key, before === undefined ? delta : add(before, delta, 'what the rate did'));
+  }
+  const out: HedgeView[] = [];
+  for (const p of w.parties.alive()) {
+    if (!visible(p.id)) continue;
+    for (const pair of pairs) {
+      const parts = hedgedResidual(
+        w.participantView(p.id),
+        pair.base as CurrencyCode,
+        pair.quote as CurrencyCode,
+      );
+      // A party with nothing in this pair and nothing fixed in it is not in it: showing a row of
+      // zeroes for every party against every pair would bury the ones that mean something.
+      if (parts.exposure === 0 && parts.covered === 0) continue;
+      const did = moved.get(`${String(p.id)}|${pair.base}`);
+      out.push({
+        party: String(p.id),
+        pair: `${pair.base}/${pair.quote}`,
+        base: pair.base,
+        quote: pair.quote,
+        exposure: parts.exposure,
+        covered: parts.covered,
+        residual: parts.residual,
+        revalued: did ?? null,
+      });
+    }
+  }
+  return out;
+}
+
 function ratesOf(w: World): readonly RateView[] {
   const out: RateView[] = [];
   for (const m of w.markets) {
