@@ -141,9 +141,11 @@ describe('the location basis is an outcome of shipping with capacity (D3, D3.a, 
     );
     for (const r of places) {
       const p = w.prices.latest(goodId('grain', r), w.period);
-      // A basis is a READ of two prints. Where a place has one, it came from its OWN market and
-      // never from another place's — a price from a formula is not a price (Law 3).
-      if (p.some) expect(String(p.value.provenance)).not.toContain('derived');
+      // A basis is a READ of two prints. Where a place has one, it was TRADED in its own market,
+      // is the opening it has not traded away yet, or is the last one carried and marked stale —
+      // never interpolated or extrapolated, which is what a price arrived at from other prices
+      // would be. A price from a formula is not a price (Law 3).
+      if (p.some) expect(['traded', 'opening', 'stale']).toContain(p.value.provenance.kind);
     }
   });
 
