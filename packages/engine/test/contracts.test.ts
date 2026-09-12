@@ -10,8 +10,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
+  Contracts,
   USD,
   assemble,
+  derivativeKindId,
   instrumentId,
   marketId,
   none,
@@ -456,5 +458,70 @@ describe('what the forward is (the test-only kind)', () => {
     expect(testForwardKind.premiumPerUnit(1, { kind: TEST_FORWARD })).toBe(0);
     expect(isForward({ kind: TEST_FORWARD })).toBe(false);
     expect(none<number>().some).toBe(false);
+  });
+});
+
+describe('the store guards the row it writes (Law 4, Law 8, D2, D12)', () => {
+  it('refuses a row whose terms belong to another kind', () => {
+    const w = world();
+    const [a, b] = twoBanks(w);
+    const bad = world(
+      forwards((ctx) => {
+        ctx.settle({
+          legs: [
+            {
+              kind: 'contract',
+              act: 'open',
+              a,
+              b,
+              derivative: TEST_FORWARD,
+              // D12: the terms say they belong to something else. Nothing at the wire compares the
+              // two — `validateContract` asks the profile to validate the terms, and a profile's
+              // guard is `if (!isForward(t)) throw`, which a DIFFERENT kind's terms would also
+              // fail — so what is caught here is the pair that no single profile can see: a kind
+              // and terms that are each well formed and are not each other's.
+              terms: { ...termsOn(w, 100, 8), kind: derivativeKindId('not.a.forward') },
+              ccy: USD,
+              notional: 100,
+              struckAt: 100,
+              book: instrumentId('contract:test.forward'),
+              value: 0,
+              house: null,
+            },
+          ],
+          cause: 'trade',
+          reason: 'a forward whose terms are not a forward',
+        });
+      }),
+    );
+    // Without the guard this row opens: every class's mark reads `if (!isX(c.terms)) return 0`, so
+    // it sits on two balance sheets marked zero on both sides and the zero-sum family passes it
+    // for the rest of the run, because two zeroes negate.
+    expect(() => bad.step()).toThrow(/cannot be written with/);
+  });
+
+  it('refuses a notional that is not a whole number of the kind\'s pieces', () => {
+    // Law 8, D2. The WIRE already grids a leg's notional before anything is applied, so this asks
+    // the STORE directly — which is the point of putting the question there: it is true of a row
+    // whoever writes it, and a second writer cannot forget it.
+    const w = world();
+    const [a, b] = twoBanks(w);
+    const store = new Contracts({ derivativeKind: () => testForwardKind });
+    expect(() =>
+      store.open(
+        {
+          kind: TEST_FORWARD,
+          a,
+          b,
+          terms: termsOn(w, 100, 8),
+          ccy: USD,
+          notional: 100.5,
+          struckAt: 100,
+          basis: 0,
+          house: null,
+        },
+        period(0),
+      ),
+    ).toThrow(/whole number/);
   });
 });

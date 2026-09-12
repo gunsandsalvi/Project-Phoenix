@@ -24,7 +24,7 @@ import {
   type PartyId,
   type PartyKindId,
 } from '../../core/ids.js';
-import { add, dustOf, sub, sum, withinDust } from '../../core/num.js';
+import { dustOf, sub, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -45,7 +45,6 @@ import {
 } from './kinds.js';
 import {
   callOn,
-  committed,
   marginLineId,
   marginPairsOf,
   moveMargin,
@@ -123,11 +122,13 @@ function params(): ParamDecl[] {
 /**
  * E1, E2, E3: WHAT A MEMBER MAY CARRY, and what it posts against a trade.
  *
- * E1 is read from its own liquid cash net of what it has already committed and of what it keeps
- * back. E3 is why "already committed" is in it: the second hedge of a period is sized against what
- * the first will post, so capacity is drawn down as it is consumed rather than measured fresh each
- * time. And E4 is why nothing here ever raises it: a member cut every period is a member living at
- * its limit, which is a measurement, not a problem with the limit.
+ * E1 is read from its own liquid cash, less what it keeps back, through the ONE expression the
+ * observer reads too (`capacityOf`) — two arithmetics for one capacity is how a member comes to be
+ * shown room the market will not give it (Law 4). E3's "drawn down as it is consumed" is what the
+ * cash balance already does: margin settles in the same instruction as the trade (C3.a), so the
+ * next trade in a session is admitted against an account that has already paid. And E4 is why
+ * nothing here ever raises it: a member cut every period is a member living at its limit, which is
+ * a measurement, not a problem with the limit.
  */
 function capacity(): ClearingCapacity {
   return {
@@ -144,10 +145,7 @@ function capacity(): ClearingCapacity {
         return 0;
       }
       const view = ctx.participant(party);
-      const buffer = ctx.params.get(LAYER_PARAMS.buffer);
-      const cash = view.cash(m.ccy);
-      const keep = cash * buffer;
-      const room = sub(sub(cash, keep, 'net of its buffer'), committed(view, m.ccy), 'left to commit');
+      const room = capacityOf(view, m.ccy, ctx.params.get(LAYER_PARAMS.buffer));
       if (room <= 0) return 0;
       // What this trade would ask of it, per unit of notional: the kind's own initial margin on one
       // unit at the level that cleared. A trade it cannot margin is a trade it cannot make, and the
@@ -656,10 +654,21 @@ export function refusedThisPeriod(ctx: MechanismContext): number {
   ).value;
 }
 
-/** What a member's own capacity comes to, for the observer and for a participant that wants it. */
+/**
+ * E1, E3: WHAT A MEMBER MAY CARRY — its own liquid cash, less what it keeps back. The observer
+ * shows this number and `admits` cuts a trade by it, and there is one of it (Law 4).
+ *
+ * IT DOES NOT SUBTRACT WHAT IT HAS ALREADY POSTED. Margin is an asset swap settled in the SAME
+ * instruction as the trade it covers (C3.a, E2: the cut happens at the strike), so by the time the
+ * next trade in a session is admitted the account has already paid — and subtracting the margin
+ * claims the member holds took the room down TWICE for every unit posted, which made every book
+ * half the size the mechanism says and made E4's refusal measurement wrong in the direction that
+ * looks like prudence. What E3 asks for is what the cash balance already is (Law 19: read the
+ * source, never a second number derived from it).
+ */
 export function capacityOf(view: ParticipantView, ccy: CurrencyCode, buffer: number): number {
   const cash = view.cash(ccy);
-  return add(sub(cash, cash * buffer, 'net of its buffer'), -committed(view, ccy), 'room to commit');
+  return sub(cash, cash * buffer, 'net of what it keeps back');
 }
 
 export function derivativeLayer(

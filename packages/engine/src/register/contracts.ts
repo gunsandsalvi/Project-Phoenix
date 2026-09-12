@@ -22,9 +22,10 @@ import { forbid } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import { contractId, type ContractId, type DerivativeKindId, type PartyId } from '../core/ids.js';
 import { finite } from '../core/num.js';
+import { asQty } from '../core/tick.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Period } from '../calendar/calendar.js';
-import type { Contract } from '../registry/derivatives.js';
+import type { Contract, DerivativeKindProfile } from '../registry/derivatives.js';
 
 export interface ContractDecl {
   readonly kind: DerivativeKindId;
@@ -37,6 +38,15 @@ export interface ContractDecl {
   /** Register D4: what it is worth to `a` at inception — the basis the equity account recognised. */
   readonly basis: number;
   readonly house: PartyId | null;
+}
+
+/**
+ * Law 15, Derivative X1: what the store needs of the registry to guard a row — the kind's own
+ * profile, asked and never branched on. It is the least of the registry this store can be given
+ * (`Instruments` takes the whole of it because it reads three tables; this reads one).
+ */
+export interface DerivativeKinds {
+  derivativeKind(id: DerivativeKindId): DerivativeKindProfile;
 }
 
 /** C1.a: what two named parties have with each other, and nothing wider (G3). */
@@ -53,17 +63,40 @@ export class Contracts {
   private readonly byPair = new Map<string, Set<ContractId>>();
   private next = 1;
 
+  constructor(private readonly kinds: DerivativeKinds) {}
+
   /**
    * D1, G1: open a row with two named sides. Settlement is the one caller (Money D4) — a contract
    * appearing on two balance sheets is a change of state and goes over the wire like every other.
    */
   open(decl: ContractDecl, at: Period): Contract {
     forbid(decl.a !== decl.b, 'Derivative D1', 'a contract has two counterparties, and they differ');
+    // Law 4, D12: THE TERMS ARE THE KIND'S OWN, and the store is where that is made true.
+    //
+    // `Instruments.add` asks the same question of an instrument and asks it here rather than at its
+    // writers, for the reason the register gives about its own grid: guarding the STORE is what
+    // makes a rule instead of a habit, because a new writer cannot forget it. The contract store
+    // was not asking it at all, and a mismatch is SILENT rather than loud: every class's mark opens
+    // `if (!isCds(c.terms)) return 0`, so a row written with one kind and another's terms sits open
+    // on two balance sheets, marked zero on both sides, and the zero-sum family passes it forever
+    // (D1.b is satisfied by two zeroes).
+    forbid(
+      decl.terms.kind === decl.kind,
+      'Law 4',
+      `a ${decl.kind} contract cannot be written with ${decl.terms.kind} terms`,
+    );
+    this.kinds.derivativeKind(decl.kind).validateTerms(decl.terms);
     forbid(
       finite(decl.notional, 'notional') > 0,
       'Derivative D2',
       'a contract has a notional and it is positive',
     );
+    // Law 8, D2: A NOTIONAL IS A COUNT OF THE KIND'S OWN PIECES, like everything else this world
+    // holds. `Instruments` routes every change to `issued` through the same question and says why:
+    // a fractional count is a fractional holding somewhere or an identity that cannot close. Here
+    // it would multiply into every mark, every call and every close-out, and the zero-sum family
+    // would still pass because both sides are equally fractional.
+    asQty(decl.notional, `the notional of a ${decl.kind}`);
     finite(decl.struckAt, 'the level it was struck at');
     const id = contractId(`contract.${decl.kind}.${this.next}`);
     this.next += 1;

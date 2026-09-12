@@ -19,12 +19,12 @@
  */
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
-import { add, div, mul, sub, sum, zeroIfNone } from '../../core/num.js';
+import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { MechanismContext } from '../../world/context.js';
 import type { Contract } from '../../registry/derivatives.js';
-import { isMarginTerms, MARGIN_CLAIM, type MarginTerms } from './kinds.js';
+import { MARGIN_CLAIM, type MarginTerms } from './kinds.js';
 
 /** One claim line per (poster, holder, money): a running balance of what is posted, not a row per trade. */
 export function marginLineId(poster: PartyId, holder: PartyId, ccy: CurrencyCode): InstrumentId {
@@ -129,19 +129,6 @@ export function moveMargin(
       toCell: none(),
     },
   ];
-}
-
-/** E1: what a member has committed at every house and counterparty, which its capacity is net of. */
-export function committed(view: ParticipantView, ccy: CurrencyCode): number {
-  return sum(
-    view
-      .holdings()
-      .filter((h) => {
-        const i = view.instruments.get(h.instrument);
-        return isMarginTerms(i.terms) && i.ccy === ccy;
-      })
-      .map((h) => zeroIfNone(h.lots.reduce((t, l) => t + l.qty, 0))),
-  ).value;
 }
 
 /** D4: what a call is, said out loud — who, to whom, how much, and against which rows. */

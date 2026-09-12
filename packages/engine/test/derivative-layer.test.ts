@@ -9,9 +9,11 @@
 import { describe, expect, it } from 'vitest';
 import {
   BANK,
+  LAYER_PARAMS,
   USD,
   assemble,
   asQty,
+  capacityOf,
   currencyUnit,
   houseIdFor,
   instrumentId,
@@ -413,6 +415,29 @@ describe('capacity (E1, E2, E4)', () => {
     const house = houseIdFor(USD);
     for (const m of membersOf(ctx, house, USD)) {
       expect(posted(ctx, m, house, USD)).toBeGreaterThan(0);
+    }
+  });
+
+  it('counts the cash a member has posted ONCE, not twice (E1, E3, Law 19)', () => {
+    const w = world(book({ cleared: true, strike: 1, size: 10 }));
+    for (let i = 0; i < 5; i += 1) w.step();
+    const ctx = w.mechanismContext('test');
+    const house = houseIdFor(USD);
+    const posters = membersOf(ctx, house, USD).filter((m) => posted(ctx, m, house, USD) > 0);
+    // A draw in which nothing was posted has no subject for this assertion; the test above is what
+    // says something was.
+    if (posters.length === 0) return;
+    const buffer = w.params.get(LAYER_PARAMS.buffer);
+    for (const m of posters) {
+      const view = w.participantView(m);
+      const cash = view.cash(USD);
+      // C3.a, E2: margin is an asset swap settled in the SAME instruction as the trade it covers,
+      // so this account is ALREADY net of everything this member has posted. Its capacity is that
+      // account less what it keeps back — and the margin claim it holds against the posting is not
+      // taken off a second time, which is what `posted(...) > 0` above makes this a test of. Under
+      // the double count the room fell by twice every unit posted, and every book was half the size
+      // the mechanism says.
+      expect(capacityOf(view, USD, buffer)).toBe(cash - cash * buffer);
     }
   });
 

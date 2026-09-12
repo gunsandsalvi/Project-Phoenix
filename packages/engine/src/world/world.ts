@@ -150,7 +150,7 @@ export class World {
    * Derivative X1: the second register. A contract is not a holding, so it is not in the one above:
    * it has no issuer and no issued amount, and what it enters is the zero-sum identity (D1.b).
    */
-  private readonly contractStore = new Contracts();
+  private readonly contractStore: Contracts;
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -240,6 +240,11 @@ export class World {
     this.parties = new Parties(this.registry);
     this.partyReads = partiesReads(this.parties);
     this.instruments = new Instruments(this.registry);
+    // Law 15: the store asks the kind's own profile to guard a row it is about to write,
+    // and asks the registry for it the way everything else does.
+    this.contractStore = new Contracts({
+      derivativeKind: (id) => this.registry.derivativeKind(id),
+    });
     this.store = new Register(this.parties);
     this.register = registerReads(this.store);
     this.valuation = new Valuation(this.registry, this.instruments, this.prices, this.register);
