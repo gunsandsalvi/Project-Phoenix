@@ -3252,6 +3252,15 @@ moving one needs a plant reseat the kernel does not have. A carrier serves the l
 is based, which keeps everything B2 and E2 ask for and loses one thing — a shortage on one leg
 cannot pull hulls off another.
 
+**Where it stands, and what it did not do.** Sixteen of seventeen steps. The close is open and the
+reason is named rather than skipped: the full suite was started and did not finish, so its failing
+files are not attributed and PLAN §5's "the run green or its expected red families named" is not
+satisfied. What IS known is in `docs/BUGS.md` — `capital`'s eleven are this item's and understood
+(good ground stopped plant binding), `labour`'s eleven pre-date it (verified by running that file at
+`a702c37`), and the rest are unattributed. Three of the four findings are positioned: the capital
+fixture to 13c.2, the hull that cannot be repositioned to 13g, and the twenty-five-second period —
+measured to PRE-DATE the map — to 16.
+
 **Forecast, with the measurement that would kill it (Law 17).** Industry should gather where the
 freight it saves is worth more than the ground it bids up, and hug the coast where it exports: the
 pull is a freight print, the push is a rent and a wage, and neither is a coefficient. Three

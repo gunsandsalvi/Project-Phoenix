@@ -28,9 +28,9 @@ single tile of `jp.2`, which is the dispersion the draw made.
 stopped binding in a fixture built to make it bind. The tests assert a TIGHTNESS that the new
 mechanism changed, and `tightWorld` is the fixture that sets it.
 
-**Not chased** (Law 11, PLAN §5): the item carries on. It is re-measured at 13c.1's own measurement
-step, against a world that also has voyages and a raised place resolution — and the fixture is
-re-tightened there if it is still what this says it is.
+**Not chased** (Law 11, PLAN §5), and POSITIONED to **13c.2 — where a firm builds**, which is the
+next item to touch this decision: it evaluates `project()` at every place a firm could operate, so
+the fixture that makes plant bind is rewritten there anyway and is re-tightened in the same change.
 
 ---
 
@@ -56,10 +56,10 @@ based in, and its capacity there is its free hulls. That keeps everything Freigh
 loses one thing: a shortage on one leg cannot pull hulls off another. So freight capacity does not
 reallocate between legs, and the price on a busy leg stays high longer than it should.
 
-**Positioned, not chased.** It wants a kernel read that moves plant between places, which is an
-inserted item of its own — it is the same door a firm would need to sell a working vintage to
-somebody in another region, which 13c.2's file already names as belonging with 13g. The record says
-where it lands when this item closes.
+**POSITIONED to 13g — corporate control and firm birth.** It wants a kernel read that moves plant
+between places, and that is the same door a firm needs to sell a working vintage to somebody in
+another region — which 13c.2's file already names as belonging with 13g, where entry and exit live
+together. Ballast and second-hand plant are one mechanism.
 
 ---
 
@@ -90,7 +90,38 @@ sweep every period. Goods are now declared where the firms that make them are (`
 seed, sharing one `bestGround` with the placement so there is one rule and not two), and the goods
 markets are back to four. It did not move the total, because the equity markets are the cost.
 
-**Positioned, not chased.** This is 12c.1's territory (*the suite that got slower every period*) and
-it is a traversal, not a mechanism — Law 18 says the economics may not change and the layout is
-free. It wants a market to ask only the parties that could participate rather than all of them.
-Named to **16**, where measurement lives.
+**POSITIONED to 16 — measure.** This is 12c.1's territory (*the suite that got slower every
+period*) and it is a traversal, not a mechanism — Law 18 says the economics may not change and the
+layout is free. It wants a market to ask only the parties that could participate rather than all of
+them.
+
+---
+
+## 13c.1-4 — the full suite, read PARTWAY and not attributed
+
+**Measured.** A full `vitest run` was started at the end of the item and had not finished when the
+session ended. What it had reported, by file:
+
+```
+capital        20 tests | 11 failed      research        9 tests |  2 failed
+run             5 tests |  4 failed      money-market   16 tests |  2 failed
+etf             9 tests |  3 failed      omo             6 tests |  2 failed
+funds          12 tests |  3 failed      credit-events  11 tests |  1 failed
+equity-anchor   4 tests |  2 failed      reporting      15 tests |  1 failed
+labour         11 tests | 11 failed      treasury       10 tests |  1 failed
+```
+
+**What is known about it.** `capital`'s eleven are `13c.1-1` above — good ground stopped plant
+binding — and that is measured and understood. `labour`'s eleven are PRE-EXISTING: they were red on
+the commit before this item started, verified by running that file at `a702c37`, and they are a
+phase-anchor from 13c (`commodities.storage` anchors to `firms.decide`, which does not exist in that
+fixture). The rest are NOT attributed, and the honest reading of the 13b.1 baseline — 47 failed of
+505 — is that most of them pre-date this item too. That is a belief and not a measurement.
+
+**Why the item did not close on it.** PLAN §5's definition of done asks for the run green or its
+expected red families NAMED. They are not named, so 13c.1 stands at sixteen of seventeen steps with
+the close open. Ticking it would have been a claim about a measurement that was not made.
+
+**What it needs.** One full run, then each failing file attributed to a cause: pre-existing, this
+item's, or new. The suite takes roughly fifteen minutes because a period costs twenty-five seconds
+(`13c.1-3`), which is itself the thing 16 is for.
