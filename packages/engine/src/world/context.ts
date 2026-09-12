@@ -31,7 +31,7 @@ import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
-import type { CurveRead } from '../prices/curve.js';
+import type { CurveFamilyDecl, CurveRead } from '../prices/curve.js';
 import type { IndexRead } from '../prices/index-read.js';
 import type { PriceStore, Print } from '../prices/price-store.js';
 import type { Valuation } from '../prices/value.js';
@@ -283,7 +283,48 @@ export interface CellEvents {
   ): void;
 }
 
-export interface MechanismContext extends KernelReads {
+/**
+ * Observer E3, Law 19: THE READ HALF OF A CONTEXT, and the only thing a DERIVED READ needs.
+ *
+ * A swap spread, a credit basis, a net notional, an implied move: each is a function of state and
+ * of nothing else, computed where it is asked for and stored nowhere. What such a function needs is
+ * the doors it reads through, and asking it for a `MechanismContext` hands it `settle`, `post`,
+ * `issue` and `record` as well — so the observer surface, which exists precisely because looking
+ * changes nothing, would be holding every door a phase acts through.
+ *
+ * `MechanismContext` and the world itself both satisfy this structurally, so a module's read is
+ * written once and called from a phase, from a participant and from the surface alike.
+ *
+ * It is not `registry/kinds.ts`'s `DerivedReads`, which is the narrower set a KIND may value one of
+ * its own instruments from. Two questions, two surfaces, and neither is the other's superset.
+ */
+export interface WorldReads extends KernelReads {
+  readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history'>;
+  readonly valuation: Pick<
+    Valuation,
+    'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust' | 'inMoney' | 'rateInForce'
+  >;
+  readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail'>;
+  readonly contracts: ContractsRead;
+  curve(family: CurveFamilyId): CurveRead;
+  index(id: string): Option<IndexRead>;
+  /**
+   * Sovereign A1, D3, Law 15: THE CURVE EVERY OTHER SPREAD IN THIS MONEY IS A SPREAD OVER, and
+   * whose paper it is made of.
+   *
+   * A state borrows on the state's own credit and its central bank issues the money its debt is
+   * in, so its curve is the one a credit spread, a swap spread or a net basis is measured against.
+   * It is a read of two things this world already declares — the curve families it has, and which
+   * party kinds borrow on a state's credit (`PartyKindProfile.sovereign`) — and never a party
+   * anybody names: a class holding `treasury.us` is right in one world and wrong in the next.
+   *
+   * Nothing when a money has no sovereign issuer with a curve of its own, which is the honest
+   * answer and is what a spread against nothing should be.
+   */
+  sovereignCurveIn(ccy: CurrencyCode): Option<CurveFamilyDecl>;
+}
+
+export interface MechanismContext extends WorldReads {
   /**
    * A module's own state, under a name of its choosing (Law 4: its module is the one writer). It is
    * keyed data the module needs between phases — a register of employment rows, a book of invoices,

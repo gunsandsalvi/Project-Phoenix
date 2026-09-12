@@ -65,7 +65,21 @@ function aSwap(w: World, a: string, b: string, tenorYears: number): Contract {
 
 describe('the books (A1, A1.c, C1, D3.a)', () => {
   it('opens one per money per tenor, and only where the overnight book has traded', () => {
-    const w = ran(3);
+    /**
+     * D3.a: THE GATE IS THE BENCHMARK, so the test waits for the benchmark and not for a period
+     * count. `irs.books` runs at the top of a period and the fixing is published at the bottom of
+     * one, so the books open the period AFTER the overnight market first trades — and how long
+     * that takes is a fact about a world where a bank has to be short of money before anybody
+     * lends any, not a number this test may assert. It used to say `ran(3)`, which was three
+     * periods of one particular draw (`13b-7`).
+     */
+    const w = rigWorld('irs');
+    let bench = 0;
+    for (let i = 0; i < 12 && (bench === 0 || swapBooks(w).length === 0); i += 1) {
+      w.step();
+      bench = w.journal.ofKind('index.benchmark').length;
+    }
+    expect(bench).toBeGreaterThan(0);
     const open = swapBooks(w);
     expect(open.length).toBeGreaterThan(0);
     for (const m of open) {

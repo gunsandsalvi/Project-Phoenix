@@ -31,6 +31,7 @@ import { CENT_TICK } from '../../registry/grid.js';
 import type {
   Contract,
   ContractPayment,
+  ContractMeasure,
   ContractReads,
   ContractTerms,
   DerivativeKindProfile,
@@ -170,6 +171,33 @@ export const optionKind: DerivativeKindProfile = {
   },
   // D11.a: closed out at what exercise would come to, which is the stated value of the position.
   orders: optionOrders,
+  /**
+   * D7.a: IMPLIED VOLATILITY AS A READ — the move this book's own cleared premium is paying for,
+   * taken back off the price the market made and never an input to it (Law 3). A book that has not
+   * printed has no premium, so it implies nothing, which is the honest answer.
+   */
+  measures: (m, reads): readonly ContractMeasure[] => {
+    const decl = m.contract;
+    if (decl === undefined || !isOption(decl.terms)) return [];
+    const t = decl.terms;
+    const premium = reads.prices.latest(t.book, reads.period);
+    if (!premium.some) return [];
+    const move = impliedMove(
+      premium.value.price,
+      t.multiplier,
+      yearFraction(OPTION_DAY_COUNT, reads.calendar.startOf(reads.period), reads.calendar.startOf(t.expiry)),
+    );
+    if (!move.some) return [];
+    return [
+      {
+        subject: String(t.underlying),
+        measure: 'the move its premium pays for',
+        tenorYears: null,
+        level: move.value,
+        unit: 'money',
+      },
+    ];
+  },
   closeOut: (c, at, reads) => (isOption(c.terms) && c.terms.holds ? intrinsic(c, at, reads) : -intrinsic(c, at, reads)),
   expires: (c, at): boolean => isOption(c.terms) && at >= c.terms.expiry,
 };

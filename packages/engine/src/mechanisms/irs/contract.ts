@@ -32,6 +32,7 @@ import type {
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
 import { irsOrders } from './participants.js';
+import { irsMeasures } from './measures.js';
 
 export const IRS = derivativeKindId('irs');
 /** D2: the notional is an amount of money the two legs accrue on, and never changes hands (E1). */
@@ -179,6 +180,7 @@ export const irsKind: DerivativeKindProfile = {
     );
   },
   orders: (view, m) => irsOrders(view, m),
+  measures: (m, reads) => irsMeasures(m, reads),
   closeOut: markOf,
   expires: (c, at): boolean => isIrs(c.terms) && at >= c.terms.maturity,
 };

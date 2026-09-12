@@ -55,7 +55,7 @@ import type { Leg } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
 import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
-import { type CurveRead, readCurve } from '../prices/curve.js';
+import { type CurveFamilyDecl, type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore, type Print } from '../prices/price-store.js';
 import { Valuation } from '../prices/value.js';
 import { Instruments } from '../register/instruments.js';
@@ -76,6 +76,7 @@ import { mergeCells, splitCell, weightEvent } from './cells.js';
 import type {
   ContractsRead,
   MechanismContext,
+  WorldReads,
   Outlook,
   OutlookVariable,
   ParticipantView,
@@ -1175,6 +1176,51 @@ export class World {
     return view as ParticipantView;
   }
 
+  /**
+   * Observer E3, Law 19: THE READ HALF, for anything that measures rather than acts.
+   *
+   * A derived read — a swap spread, a credit basis, a net notional, an implied move — is a function
+   * of state, so what it needs is the doors it reads through. The observer surface asks for this
+   * and never for a `mechanismContext`: a surface holding `settle`, `post` and `issue` would be a
+   * surface that could change the model, which is the one thing Appendix B says an observer is not.
+   */
+  get worldReads(): WorldReads {
+    return {
+      period: this.currentPeriod,
+      cycle: this.currentCycle,
+      calendar: this.calendar,
+      registry: this.registry,
+      params: this.params,
+      resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
+      instruments: this.instruments,
+      markets: this.marketList,
+      venues: this.venueList,
+      prices: this.prices,
+      valuation: this.valuation,
+      journal: this.journal,
+      contracts: this.contracts,
+      curve: (family) => this.curve(family),
+      index: (id) => this.index(id),
+      sovereignCurveIn: (ccy) => this.sovereignCurveIn(ccy),
+    };
+  }
+
+  /**
+   * Sovereign A1, D3: the curve family whose issuer borrows on a STATE's credit in this money. One
+   * writer of the question every spread in that money is measured against (Law 4), and it is asked
+   * of two declarations rather than of a party's name: which families this world has, and which
+   * party kinds are sovereign (`PartyKindProfile.sovereign`, Law 15).
+   */
+  private sovereignCurveIn(ccy: CurrencyCode): Option<CurveFamilyDecl> {
+    for (const family of this.registry.curveFamilies.values()) {
+      if (family.ccy !== ccy) continue;
+      if (!this.parties.has(family.issuer)) continue;
+      if (this.registry.partyKind(this.parties.get(family.issuer).kind).sovereign !== true) continue;
+      return some(family);
+    }
+    return none<CurveFamilyDecl>();
+  }
+
   mechanismContext(owner: string): MechanismContext {
     const cellDeps = { parties: this.parties, register: this.store, journal: this.journal };
     return {
@@ -1231,6 +1277,7 @@ export class World {
       posted: (venue) => this.posted(venue),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       curve: (family) => this.curve(family),
+      sovereignCurveIn: (ccy) => this.sovereignCurveIn(ccy),
       // XI-8, Firm Birth E1: somebody arrives after the seed. It is journalled, because a party
       // appearing is an event anybody watching the world should see.
       enter: (party) => {

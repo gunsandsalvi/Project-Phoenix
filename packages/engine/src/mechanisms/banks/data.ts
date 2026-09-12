@@ -26,6 +26,7 @@
  * has to be restated every time the world changes size, and a number restated to keep a result is a
  * result wearing a preference's name (Law 2).
  */
+import { Missing } from '../../core/errors.js';
 import { paramId, type ParamId } from '../../core/ids.js';
 import { prng } from '../../rng/prng.js';
 import { between, betweenWhole, drawSize, type Spread, type Tail } from '../../rng/spread.js';
@@ -70,13 +71,19 @@ export interface BankDecl {
    */
   readonly makes: readonly string[];
   /**
-   * Dealer Desks D1, F1: the most of its OWN CAPITAL it will have standing behind its dealing book —
-   * that book being what it is holding away from where its own treasury wants it, either way. Every
-   * capacity is finite and enumerable, and a book full of one thing stops bidding for everything,
-   * which is how one line's trouble reaches another. A dealer without a limit is a synthetic
-   * counterparty wearing a dealer's name (Clearing B3.a), and this is the number that makes it one.
+   * Dealer Desks D1, F1, XI-4: the most of its OWN CAPITAL it will have standing behind EACH OF ITS
+   * LINES OF BUSINESS, by the line's own name — a dealing book being what it is holding away from
+   * where its own treasury wants it. Every capacity is finite and enumerable, and a book full of one
+   * thing stops bidding for everything, which is how one line's trouble reaches another. A dealer
+   * without a limit is a synthetic counterparty wearing a dealer's name (Clearing B3.a), and this is
+   * the number that makes it one.
+   *
+   * AND EVERY LINE HAS ONE, which is what makes the treasury's allocation a decision. A line whose
+   * ask is "whatever is left" is not asking for anything: the first line served takes the whole
+   * headroom and the order that was meant to choose between them chooses nothing — measured as a
+   * dealing line allotted zero in every bank in every period of the world (`13b-7`).
    */
-  readonly capitalAtRisk: number;
+  readonly appetite: Readonly<Record<string, number>>;
   /**
    * Dealer Desks D1: the most of that book it will have in ONE line, as a share of the whole. A
    * share rather than a count of pieces, because a count means something different in a line quoted
@@ -109,9 +116,26 @@ export interface BankDecl {
 
 export const bankParam = (bank: string, what: string): ParamId => paramId(`bank.${what}.${bank}`);
 
-/** The dealing line's own numbers live under the bank, because the line IS the bank (A1, F2). */
-export const dealingParam = (bank: string, what: string): ParamId =>
-  paramId(`bank.dealing.${what}.${bank}`);
+/**
+ * The lines of business a bank's own room is allotted between. The liquidity book is not one: it is
+ * what the treasury must hold, not a line competing for room to grow.
+ *
+ * Law 15: they are DATA — a name, a spread to draw each one's appetite from (`BANK_SPREAD.appetite`)
+ * and a parameter per bank per line. Adding a line of business is a name here and a spread there,
+ * and no mechanism anywhere learns what the lines are called.
+ */
+export const LENDING = 'lending';
+export const DEALING = 'dealing';
+
+/**
+ * A LINE OF BUSINESS's own numbers, under the bank, because the line IS the bank (A1, F2).
+ *
+ * Law 15: the line names its own parameter, so a mechanism asks a row for its number instead of
+ * knowing which rows there are. Adding a line of business is then a row and a draw, and no loop
+ * anywhere learns its name.
+ */
+export const lineParam = (bank: string, line: string, what: string): ParamId =>
+  paramId(`bank.${line}.${what}.${bank}`);
 
 /** D2: the capital a trading position consumes, as a rule somebody wrote rather than a fact. */
 export const TRADING_BOOK_RISK_WEIGHT: ParamId = paramId('regulation.riskWeight.tradingBook');
@@ -147,7 +171,8 @@ export interface BankDispersion {
   readonly liquidityCushion: Spread;
   readonly limitPerBorrower: Spread;
   readonly depositMargin: Spread;
-  readonly capitalAtRisk: Spread;
+  /** One spread per line of business, by name: what each line's appetite is drawn from. */
+  readonly appetite: Readonly<Record<string, Spread>>;
   readonly concentration: Spread;
 }
 
@@ -186,10 +211,17 @@ export const BANK_SPREAD: BankDispersion = {
     high: 0.008,
     why: 'Banks Funding B1.a, B3: what it keeps for itself out of what money is worth to it. Two banks that keep the same margin are one bank; the gap between them is what a depositor is deciding about, and it has to be wider than what a wholesale account will sit still for and narrower than what an operational one will move for.',
   },
-  capitalAtRisk: {
-    low: 0.15,
-    high: 0.8,
-    why: 'Dealer Desks D1, F1: the most of its own capital it will have standing behind its dealing book. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything — which is how one line trouble reaches another. A dealer without a limit is a synthetic counterparty wearing a dealer name.',
+  appetite: {
+    [DEALING]: {
+      low: 0.15,
+      high: 0.8,
+      why: 'Dealer Desks D1, F1: the most of its own capital it will have standing behind its dealing book. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything — which is how one line trouble reaches another. A dealer without a limit is a synthetic counterparty wearing a dealer name.',
+    },
+    [LENDING]: {
+      low: 0.4,
+      high: 0.95,
+      why: 'Banks Lending A1, XI-4: the most of its own capital it will have standing behind its loan book. Higher than the dealing appetite because lending is what a bank IS and dealing is a line it chose to run, and wide because a conservative bank and an aggressive one differ here more than anywhere else. It has to be a number for the same reason the dealing one does: a line whose ask is whatever is left is not competing for anything, and the treasury that serves it first hands it the lot.',
+    },
   },
   concentration: {
     low: 0.25,
@@ -219,7 +251,12 @@ export function drawBanks(count: number, seed: string): readonly BankDecl[] {
   const rng = prng(seed, 'banks');
   const out: BankDecl[] = [];
   for (let n = 0; n < count; n += 1) {
-    const capitalAtRisk = between(rng, BANK_SPREAD.capitalAtRisk);
+    // Law 15: one draw per declared line, in the order the spreads declare them. A world with a
+    // third line of business draws three, here, and nothing else is touched.
+    const appetite: Record<string, number> = {};
+    for (const [line, spread] of Object.entries(BANK_SPREAD.appetite)) {
+      appetite[line] = between(rng, spread);
+    }
     out.push({
       bank: bankName(n),
       size: drawSize(rng, BANK_SPREAD.size),
@@ -240,10 +277,10 @@ export function drawBanks(count: number, seed: string): readonly BankDecl[] {
       // share is a claim on a business it has no view of and a bank that will not take a view does
       // not quote one. So `makes` is a consequence of a preference it already has (Law 2).
       makes:
-        capitalAtRisk > midpoint(BANK_SPREAD.capitalAtRisk)
+        appetiteOf(appetite, DEALING) > midpoint(spreadOf(BANK_SPREAD.appetite, DEALING))
           ? ['equity.share', 'fund.share', 'sovereign.bill', 'sovereign.bond']
           : ['sovereign.bill', 'sovereign.bond'],
-      capitalAtRisk,
+      appetite,
       concentration: between(rng, BANK_SPREAD.concentration),
       why: `Seed B4: drawn at the seed from the stated spread, like every other bank in this world. Nothing about it is stated one bank at a time, and what it is like is printed in the parameter register under its own name.`,
     });
@@ -252,6 +289,30 @@ export function drawBanks(count: number, seed: string): readonly BankDecl[] {
 }
 
 const midpoint = (s: Spread): number => s.low + (s.high - s.low) / 2;
+
+/**
+ * What this bank will put behind one of its lines. A line with no appetite is a defect and not a
+ * zero (Appendix A: missing is missing) — the draw walks the declared lines, so a name that is not
+ * in it is a name nothing declared.
+ */
+export function appetiteOf(appetite: Readonly<Record<string, number>>, line: string): number {
+  const share = appetite[line];
+  if (share === undefined) {
+    throw new Missing('Dealer Desks D1', `no appetite was drawn for the ${line} line`, { line });
+  }
+  return share;
+}
+
+/** The same read over the spreads, for the draw itself. */
+function spreadOf(spreads: Readonly<Record<string, Spread>>, line: string): Spread {
+  const s = spreads[line];
+  if (s === undefined) {
+    throw new Missing('Dealer Desks D1', `no appetite spread is declared for the ${line} line`, {
+      line,
+    });
+  }
+  return s;
+}
 
 /**
  * Law 9: what a bank is called. `bank.a` … `bank.z`, then `bank.aa` — a name a reader can say, for

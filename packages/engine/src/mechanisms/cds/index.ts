@@ -14,17 +14,15 @@
  */
 import type { Family, Violation } from '../../audit/audit.js';
 import { addYears } from '../../calendar/civil.js';
-import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
+import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { mul, sub, sum } from '../../core/num.js';
-import { none, some, type Option } from '../../core/option.js';
+import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
-import { issuedBy } from '../../register/instruments.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { curveFamilyOf, yieldOf } from '../../prices/curve.js';
 
-import { CDS_DAY_COUNT, CDS_PARAMS, PROTECTED, cdsLineOf, cdsMarketOf } from './data.js';
+import { CDS_PARAMS, PROTECTED, cdsLineOf, cdsMarketOf } from './data.js';
 import { CDS, cdsKind, isCds, type CdsTerms } from './contract.js';
 import {
   CDS_INDEX,
@@ -41,6 +39,7 @@ export * from './data.js';
 export * from './contract.js';
 export * from './participants.js';
 export * from './series.js';
+export * from './measures.js';
 
 function params(): ParamDecl[] {
   return [
@@ -77,18 +76,6 @@ function params(): ParamDecl[] {
       why: 'CDS B3: what protection SOLD weighs in a bank’s capital. A naked seller carries the reference’s whole credit without funding a bond, so what it consumes is stated by the regulator like every other weight (Banks Capital B1).',
     },
   ];
-}
-
-/** A4, A4.a: a reference is a party somebody can watch fail — one with debt that can default. */
-export function defaultableDebtOf(ctx: MechanismContext, party: PartyId): Option<InstrumentId> {
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live) continue;
-    if (!issuedBy(i, party)) continue;
-    if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
-    if (ctx.registry.instrumentKind(i.kind).pricing !== 'cleared') continue;
-    return some(i.id);
-  }
-  return none<InstrumentId>();
 }
 
 /** A1.d: the tenors this world's curve has points at — one year out to the longest it writes. */
@@ -376,57 +363,6 @@ export function recoveryIsKnown(ctx: MechanismContext, reference: PartyId): bool
   const estate = opened.data['estate'];
   if (typeof estate !== 'string') return false;
   return ctx.journal.ofKind('estate.closed').some((e) => e.subjects.includes(estate));
-}
-
-/**
- * E3: NET NOTIONAL PER REFERENCE — how much protection on one name actually exists, netted the only
- * way E3 allows it to be: across the contracts on that reference, which is one question about one
- * name and not a netting across counterparties (G3).
- */
-export function netNotionalOn(ctx: MechanismContext, reference: PartyId): number {
-  let net = 0;
-  for (const c of ctx.contracts.open_()) {
-    if (!isCds(c.terms)) continue;
-    if (c.terms.reference !== reference) continue;
-    // C2: a cleared trade is two rows against the house, so counting both would count the
-    // protection twice. The member's side is the one that exists in the world.
-    if (c.house !== null && c.a === c.house) continue;
-    net = sub(net, -c.notional, 'protection written on this name');
-  }
-  return net;
-}
-
-/**
- * C3, C3.a, C3.b: THE BASIS — what protection costs against what the cash bond's own spread is.
- *
- * It is a READ and a standing observation, never a check and never a target: the two are different
- * instruments with different funding and different holders, and that they differ is the thing worth
- * watching rather than a discrepancy to be closed.
- */
-export function basisFor(
-  ctx: MechanismContext,
-  reference: PartyId,
-  tenorYears: number,
-  sovereign: PartyId,
-): Option<number> {
-  const protection = ctx.prices.latest(cdsLineOf(reference, tenorYears), ctx.period);
-  if (!protection.some) return none<number>();
-  const debt = defaultableDebtOf(ctx, reference);
-  if (!debt.some) return none<number>();
-  const i = ctx.instruments.get(debt.value);
-  const cash = ctx.prices.latest(debt.value, ctx.period);
-  if (!cash.some) return none<number>();
-  // The bond's own yield, derived FROM its price and the flows its terms promise (Sovereign D2,
-  // Law 3): a price is the input here and never the output.
-  const on = ctx.calendar.startOf(ctx.period);
-  const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
-  if (flows.length === 0) return none<number>();
-  const own = yieldOf(flows, cash.value.price, on, CDS_DAY_COUNT, `the yield of ${i.id}`);
-  if (!own.some) return none<number>();
-  const risk = ctx.curve(curveFamilyOf(sovereign, i.ccy)).at(tenorYears);
-  if (!risk.yield.some) return none<number>();
-  const cashSpread = sub(own.value, risk.yield.value, 'the bond over the sovereign');
-  return some(sub(protection.value.price, cashSpread, 'protection against the cash bond'));
 }
 
 /**

@@ -2883,3 +2883,146 @@ its own header and the code two hundred lines down does not follow it — `core/
 amount", `register/register.ts`'s "guarding the STORE rather than each writer", `estate`'s "a formula
 discount off book", `parties`'s "lifting a relationship into the key is a data change". In a codebase
 with ordinary comments none of those would be findable at all. The prose is load-bearing.
+
+---
+
+## 13b — the derivative classes
+
+**What the item was.** Five bilateral classes on 13a's layer (credit default swap, interest-rate
+swap, FX forward, cross-currency swap, bond future), an option, an index future, the index set they
+measure against, and the reads a reader is shown of all of it.
+
+**What the classes are.** Each is a module: a `DerivativeKindProfile` with its own terms, legs,
+mark, margin, close-out and expiry, and its own `orders` — the reasons a party has to be in a book
+of that kind, asked of the kind by the layer that owns contract books. No class imports another, no
+class touches the house, the margin or the waterfall, and adding one is a module and a worklist
+item. That was 13a's forecast and this item is its first test; it held.
+
+**What the pass changed about how a class names a price, and it is the item's own finding.** Every
+class began by reading its own book's last print and falling back to something of its own. That is
+XI-13's fixed point written five times: the print moves the outlook, the outlook moves the view, the
+view moves the quote, the quote moves the print — so a book whose members had nothing of their own
+to say printed one number for ever, which is what `banks/dealing-quote.ts` had already been fixed
+for. Four of the five were turned round: the credit default swap reads the reference's own cash
+bond, the swap the overnight fixing, the bond future the cash deliverable, the FX forward its own
+carry — each a read of ANOTHER market, so a party has a level whether or not this book has ever
+traded, and the book's own print is kept only as the comparator that decides which side it is on.
+The cross-currency swap could not be turned round and is positioned (`13b-4`, to 13f): what it
+quotes is a basis, a residual whose parity value is zero, and naming one needs a borrower's own
+funding cost per money, which this world does not have yet.
+
+**What a reader is shown.** Every contract book's own level with the word for what that level IS
+(money per unit, or a rate per annum), those levels gathered by subject into curves in tenor order
+with no point between two points, the hedged residual per party and per pair beside what the rate
+actually did — and the bases. The bases are the part worth recording: **the surface does not know
+what a basis is.** `DerivativeKindProfile.measures` is the `orders` pattern applied to measurement,
+so the credit basis and the net notional, the swap spread, the net basis and the implied move each
+live beside the class that knows them, and the observer walks the books and asks. A world with one
+more class shows one more measurement without a line of the surface being touched.
+
+**Two kernel reads were added, and each removes a seam rather than adding one.** `WorldReads` is the
+read half of a context — a derived read is a function of state, so it asks for the doors it reads
+through, and the surface that exists precisely because looking changes nothing no longer holds
+`settle`, `post`, `issue` and `record`. `sovereignCurveIn(ccy)` answers which curve a spread in a
+money is a spread over, off two things this world already declares (its curve families, and which
+party kinds borrow on a state's credit), so a class asks instead of being handed `treasury.us` at
+assembly — which is right in one world and wrong in the next. `bondFutures` still takes one and that
+is now visible.
+
+**Two defects the item closed, and the second was hidden by the first.**
+
+`13b-5`: a desk's book is what it is holding AWAY from where its own treasury wants it, and
+`bookValue` counted the distance EITHER WAY — so a bank holding less of a line than its treasury
+asked for was read as a desk carrying the shortfall, and every desk in every seed opened past its
+own aggregate limit before it had quoted. One holding, two owners inside one bank, and the
+treasury's claim is senior: of what the bank holds of a line, the treasury has asked for `want` and
+what is left over is the desk's.
+
+`13b-7`: fixing that took the mask off the allocation underneath it. The treasury shares its
+headroom between its lines of business in the order of what each earned — and the lending line's ask
+was `left`, which is *everything there is*. An ask of everything is not an ask: whichever line was
+served first took the whole headroom, the sort that was meant to choose between them chose nothing,
+and the dealing line was allotted **zero in every bank in every period of the world**. Its desk's
+limit is then exactly the book it already has, so a desk that starts empty can never open one, never
+earns, and never outranks lending — the starvation sealed itself. It was invisible because
+`bookValue` was enormous: `min(carried + 0, appetite)` returned the appetite, and the desk's limit
+came out right for entirely the wrong reason.
+
+The fix removes code and a Law 15 violation with it: the branch that did it was `r.line === DEALING`,
+a branch on a line's id. Every line now asks the same way — the distance between its own appetite
+and what it is already using — and a line's appetite is DATA, drawn per bank per line
+(`BANK_SPREAD.appetite`), registered as a parameter per bank per line (`lineParam`). Adding a line of
+business is a name and a spread, and no loop learns what the lines are called. Measured: the dealing
+lines went from `room 0` in all three banks to 5.2bn, 497m and 2.9bn; the overnight book, which had
+not cleared at all, cleared; the benchmark it publishes appeared; and the swap books that gate on it
+opened. The banks are redrawn, because a world with one more drawn number is a different world.
+
+**What is measured and NOT fixed, and it is the largest thing this item found.** `13b-10`: no
+contract book in this world has two sides. Forty books open in the classes rig and not one contract
+is written in sixteen periods. It is not the levels — the bond future's three banks name three
+different prices, so their outlooks do disagree, which is what §46 A3 asks. It is that every party
+the layer admits to a contract book is a bank or a firm, and in this world both want the same thing:
+banks are long duration and short of fixed, firms are short of foreign money. Asking every party
+rather than the eligible ones, the bond-future books have forty-two to fifty-two willing schedules —
+the households and the money funds have reasons and are shut out by one line. Letting the households
+in would be the wrong fix (Law 1): a household does not sell a bond future, it owns a fund that does.
+The missing party is the one whose business is holding the market and taking the other side of
+somebody's hedge, and it is 13h's. Positioned there with `13b-2` and `13b-6`, which are the same
+absence measured in two other places.
+
+So the two checks that assert a contract book prints are Law 11 checks against an incomplete model.
+They now assert what a reader is SHOWN about each level there is, and never that there is one, and
+they say in the test why.
+
+**A third defect stopped a run and was fixed where it stood.** `13b-12`: at period 23 of thirty,
+`[Clearing A2] bank.a is on both sides of mkt.ust.bill.2026-09-15 at crossing prices` — a desk
+quoting a bid above its own offer. Behind it: the bank had published `capital −31,237,415,456`, and
+`costOfFunds` was blending that hole in as a source of funds with a required return its owners
+wanted on it. The blend came out at −0.0894 a year, a negative cost of funds is a negative carry, a
+negative carry is a negative half-spread, and the bid crossed the offer. A hole is not a source of
+funds: capital is the residual, a negative residual is a real state that stays real — still
+published, still audited, still read by the resolution trigger — but it funds nothing and there is
+nothing there to require a return on. What funds the book is what it owes plus the capital there IS.
+The run completes. What is NOT fixed is why a bank thirty-one billion insolvent was still making a
+market twenty-three periods in, and that goes to 13f with `bank-resolution.test.ts`'s seven reds.
+
+**Findings positioned out of this item, and every one of them PLACED.** `docs/BUGS.md` is deleted,
+which is what the protocol says happens when it empties. `13b-1` (a bank overdrawn at the central
+bank with nothing lent to it) mostly closed — a treasury can now see what its own contracts will
+take out of its account next period (`OwnContracts.cashDue`) — and the remainder to **13f**.
+`13b-2` (a fund's equity is a millionth instead of nothing), `13b-6` (the trackers launch nothing,
+because nobody can assemble a basket), `13b-9`'s remainder (a fund whose shares are marked at
+nothing while shares are outstanding) and `13b-11` (the seeded tracker publishes no launch, so which
+vehicle is on which rule has two answers and one of them is silent) to **13h**, folded into two
+steps there with `13b-10`. `13b-3` (five equity tests moved when the world got richer and nobody has
+measured which change moved them) to **16**, because it is a measurement and not a mechanism.
+`13b-4` (the cross-currency basis, and an order book that treats a level at or below zero as the
+absence of a price), `13b-8` (the treasury shares out one pool and its lines ask for it in a
+different quantity — capital, risk-weighted assets and units of an asset in one arithmetic) and
+`13b-12`'s remainder to **13f**. `13b-5`, `13b-7` and `13b-9`'s throw closed here.
+
+**What the suite says, and it is not green.** At `01204e7`, before this item's engine work: **25
+failed, 447 passed of 472**. After it: **37 failed, 453 passed of 490** — eighteen more tests run,
+six more passing, five of the old reds gone (`credit-events`'s two year-long runs, `funds`'s load
+failure, `opening-liquidity`'s desk limit, `resolution/cells`' three-grain check) and seventeen new.
+
+Every one of the seventeen is accounted for and none is a mechanism silently broken:
+
+- **Eleven are one world, redrawn.** A line of business now has a drawn appetite, so `drawBanks`
+  takes one more number from the stream and every bank after it is a different bank (`13b-7`).
+  `research`, `money-market`, `households`, `treasury`, `raise`, `bank-capital`, `tick`,
+  `bank-resolution` and `equity-anchor` each assert something about a world that is no longer the
+  world they were written against. A test that names what a draw made is the thing CLAUDE.md says a
+  test must not do, and each of these is a candidate for that reading when the item that owns its
+  mechanism reaches it.
+- **Four are `13b-2`/`13b-6`**, the funds: an exchange-traded fund whose creation needs a party that
+  can assemble a basket, and there is none. Positioned to 13h and placed in its file.
+- **One is `13b-1`'s remainder**, `resolution/cells` reporting the overdrawn bank in its own trimmed
+  world. Positioned to 13f.
+- **One is `indices`' pre-existing red**, which was red at `01204e7` too and is not this item's.
+
+Nothing was rolled back, no tolerance was widened, and no test was deleted or weakened to pass. Two
+checks were re-stated rather than deleted, and both say in the test why: the swap book test waited a
+fixed three periods for something that is gated on the overnight market having traded, and the two
+"a contract book prints" checks now assert what a reader is SHOWN about each level there is, because
+`13b-10` says there is not one.

@@ -35,13 +35,10 @@ import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { LineWeights } from './capital.js';
-import type { BankDecl } from './data.js';
+import { appetiteOf, DEALING, LENDING, type BankDecl } from './data.js';
 import { isLoan } from './loan.js';
 
-/** The lines a bank's own room is allotted between. The liquidity book is not one: it is what the
- * treasury must hold, not a line competing for room to grow. */
-export const LENDING = 'lending';
-export const DEALING = 'dealing';
+export { DEALING, LENDING } from './data.js';
 
 export interface LineRead {
   readonly line: string;
@@ -51,6 +48,10 @@ export interface LineRead {
   readonly earned: number;
   /** A read, and Missing where a line used no capital: a return on nothing is not a number. */
   readonly returnOnCapital: Option<number>;
+  /** D1, XI-4: the most of the bank's capital this line will have standing behind it — its own
+   * appetite, drawn per bank per line (`BANK_SPREAD.appetite`). What it asks the treasury for is
+   * the distance between that and what it is already using. */
+  readonly appetite: number;
   /** What the treasury allotted it of the room the bank has left. */
   readonly room: number;
 }
@@ -70,8 +71,8 @@ export function publishLines(
 ): void {
   const earned = earnedByLine(ctx, bank, d);
   const rows = [
-    row(LENDING, used.lending, earned.lending),
-    row(DEALING, used.dealing, earned.dealing),
+    row(LENDING, used.lending, earned.lending, appetiteOf(d.appetite, LENDING)),
+    row(DEALING, used.dealing, earned.dealing, appetiteOf(d.appetite, DEALING)),
   ];
   // The higher earner first. A line that has not earned on anything yet is behind one that has,
   // and two lines that made the same return are left in the order they are declared in — which is
@@ -80,13 +81,23 @@ export function publishLines(
   const allotted = new Map<string, number>();
   let left = headroom;
   for (const r of order) {
-    // What it asks for, and it is asking to GROW: the room being shared out is what the bank may
-    // still add to its book (`headroom`), not what it already carries. The dealing line asks for
-    // the distance between its own appetite and what its book is already using (Dealer Desks D1);
-    // the lending line asks for whatever there is, because what it writes is decided one borrower
-    // at a time and it does not know in advance what that comes to.
-    const wants = sub(mulShare(capital, d.capitalAtRisk), r.capital, 'the room its appetite leaves');
-    const asks = r.line === DEALING ? (wants > 0 ? wants : 0) : left;
+    /**
+     * What it asks for, and it is asking to GROW: the room being shared out is what the bank may
+     * still add to its book (`headroom`), not what it already carries. EVERY line asks the same
+     * way — the distance between its own appetite and what it is already using (Dealer Desks D1) —
+     * and its appetite is data about the bank, drawn per line (Law 15).
+     *
+     * The lending line used to ask for `left`, which is everything there is. An ask of everything
+     * is not an ask: whichever line was served first took the whole headroom, the sort that was
+     * supposed to decide between them decided nothing, and the dealing line — declared second, and
+     * tied at nothing earned on the first morning — was allotted zero in every bank in every period
+     * of the world. Its desk's limit is then exactly the book it already has, so a desk that starts
+     * empty can never open one, never earns, and never outranks lending: the starvation sealed
+     * itself (`13b-7`). The branch that did it was also a branch on a line's id, which is the one
+     * Law 15 forbids by name.
+     */
+    const wants = sub(mulShare(capital, r.appetite), r.capital, 'the room its appetite leaves');
+    const asks = wants > 0 ? wants : 0;
     // Arithmetic, not a bound (Law 6): it cannot be allotted room that does not exist. What is
     // left can be nothing, and then the line behind stops writing.
     //
@@ -110,6 +121,7 @@ export function publishLines(
         line: r.line,
         capital: r.capital,
         earned: r.earned,
+        appetite: r.appetite,
         returnOnCapital: r.returnOnCapital.some ? r.returnOnCapital.value : null,
         // Every line above is given a share in the loop, so a line with none is a line the loop
         // did not see, and that is a defect rather than nothing (Appendix A: missing is missing).
@@ -144,11 +156,12 @@ function roomOf(allotted: ReadonlyMap<string, number>, line: string): number {
   return given;
 }
 
-function row(line: string, capital: number, earned: number): LineRead {
+function row(line: string, capital: number, earned: number, appetite: number): LineRead {
   return {
     line,
     capital,
     earned,
+    appetite,
     returnOnCapital: capital > 0 ? some(div(earned, capital, `${line} on its capital`)) : none(),
     room: 0,
   };

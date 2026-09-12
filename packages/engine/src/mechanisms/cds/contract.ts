@@ -31,6 +31,7 @@ import type {
 } from '../../registry/derivatives.js';
 import { BASIS_POINT, CDS_DAY_COUNT, PROTECTED } from './data.js';
 import { cdsOrders } from './participants.js';
+import { cdsMeasures } from './measures.js';
 
 export const CDS = derivativeKindId('cds');
 
@@ -179,6 +180,7 @@ export const cdsKind: DerivativeKindProfile = {
   },
   // D11.a: the stated close-out value is what it is worth now.
   orders: (view, m) => cdsOrders(view, m),
+  measures: (m, reads) => cdsMeasures(m, reads),
   closeOut: markOf,
   /**
    * D11, D2.b: the term runs out — UNLESS the reference has defaulted and its estate has not

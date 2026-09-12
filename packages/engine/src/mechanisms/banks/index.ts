@@ -38,7 +38,8 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { SystemModule } from '../../world/module.js';
 import {
   bankParam,
-  dealingParam,
+  lineParam,
+  DEALING,
   TRADING_BOOK_RISK_WEIGHT,
   type BankDecl,
 } from './data.js';
@@ -239,18 +240,36 @@ export interface FundingCost {
   readonly perAnnum: number;
   /** B2.b: what it ACTUALLY PAID on what it owes last period, annualised. Read off the wire. */
   readonly interest: number;
-  /** XI-4: what its owners require on the part of the book they fund. */
+  /** XI-4: what its owners require on the part of the book they fund. Nothing where they fund none. */
   readonly onCapital: number;
   readonly owed: number;
+  /** A1: the RESIDUAL, as it stands — negative for a bank that is insolvent, and said so. */
   readonly capital: number;
 }
 
 function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): FundingCost {
   const owed = owedBy(ctx, bank, ccy);
   const capital = ctx.participant(bank).equity();
-  const funding = add(owed, capital, 'what funds its book');
+  /**
+   * Banks Capital A1, XI-4: A HOLE IS NOT A SOURCE OF FUNDS.
+   *
+   * Capital is the residual (A1), and a bank whose residual is negative is insolvent — a real state
+   * that stays real: it is published under the bank's own name below, the audit sees it and the
+   * resolution trigger reads it. What a negative residual is NOT is money funding the book with a
+   * return its owners require on it: there is nothing there for them to require one on. So what
+   * funds the book is what it owes plus the capital there IS, and a bank with none funds itself
+   * entirely with debt.
+   *
+   * Blending the hole in made `perAnnum` NEGATIVE — measured at −0.0894 for a bank 31bn short —
+   * and a negative cost of funds reaches the dealing quote as a negative EDGE, which is a bid above
+   * the desk's own offer. Twenty-three periods into a thirty-period run the market refused it at
+   * the site: `[Clearing A2] bank.a is on both sides of mkt.ust.bill.2026-09-15 at crossing prices`
+   * (`13b-12`). The crossing was arithmetic that had lost its meaning, not a decision anybody took.
+   */
+  const funded = capital > 0 ? capital : 0;
+  const funding = add(owed, funded, 'what funds its book');
   const required = ctx.params.get(bankParam(bank, 'returnOnCapital'));
-  const onCapital = mul(capital, required, 'what its own capital costs it');
+  const onCapital = mul(funded, required, 'what its own capital costs it');
   const blend = (interest: number): FundingCost => ({
     perAnnum:
       funding <= 0 ? 0 : div(add(interest, onCapital, 'what its funding costs it'), funding, 'per annum'),
@@ -773,16 +792,21 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       why: 'Banks Funding C2: the liquid assets a bank must hold against the money that could leave it. ONE, because that is what the rule says in the world this one imports it from — cover the outflow, not a part of it — and Law 2 allows a real-world primitive to be imported where a real-world equilibrium may not. It is a rule somebody wrote and not a fact about the world, which is why it is the kind of number a polity can change (worklist 14) and why a bank holds sovereign paper instead of lending the money out (Sovereign E2.a, E5).',
     },
     ...rows.flatMap((r): ParamDecl[] => [
+      // Law 15: ONE DECLARATION PER LINE THIS BANK RUNS, walked rather than named. A world with a
+      // third line of business registers a third row here without this loop being touched.
+      ...Object.entries(r.appetite).map((entry): ParamDecl => {
+        const [line, share] = entry;
+        return {
+          id: lineParam(r.bank, line, 'capitalAtRisk'),
+          value: share,
+          unit: 'ratio of its own capital',
+          kind: 'preference',
+          owner: 'model',
+          why: `Dealer Desks D1, F1, XI-4: the most of its own capital ${r.bank} will have standing behind its ${line} line. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything, which is how one line's trouble reaches another. It is what this line ASKS ITS OWN TREASURY FOR each period, which is why every line needs one: a line whose ask is whatever is left is not competing for anything, and the treasury that serves it first hands it the lot (\`13b-7\`). It is a share of CAPITAL and not an amount of money: an amount would have to be restated every time this world changed size, and a number restated to keep a result is a result wearing a preference's name.`,
+        };
+      }),
       {
-        id: dealingParam(r.bank, 'capitalAtRisk'),
-        value: r.capitalAtRisk,
-        unit: 'ratio of its own capital',
-        kind: 'preference',
-        owner: 'model',
-        why: `Dealer Desks D1, F1: the most of its own capital ${r.bank} will have standing behind its dealing book — that book being what it holds away from where its own treasury wants it, either way. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything, which is how one line's trouble reaches another. It is a share of CAPITAL and not an amount of money: an amount would have to be restated every time this world changed size, and a number restated to keep a result is a result wearing a preference's name.`,
-      },
-      {
-        id: dealingParam(r.bank, 'concentration'),
+        id: lineParam(r.bank, DEALING, 'concentration'),
         value: r.concentration,
         unit: 'ratio of its own dealing book',
         kind: 'preference',

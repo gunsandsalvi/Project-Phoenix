@@ -358,7 +358,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign H4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H5` | MISSING |  |
 | `Sovereign I1` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (a named deliverable line, per unit of face, delivered against cash in one instruction) |
-| `Sovereign I1.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`bondCarryOf`, `netBasis`: the coupon and the financing, both read; measured, never set) |
+| `Sovereign I1.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`bondCarryOf`, `netBasis`: the coupon and the financing, both read; measured, never set; published through the kind's own `measures` so a reader sees it beside every other basis) |
 | `Sovereign I2` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`futureOrders`: a holder short of the future, a party without duration long of it) |
 | `Sovereign I3` | MISSING |  |
 | `Sovereign I3.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (cut on a drawdown against its own tolerance, with nothing making it whole) |
@@ -634,7 +634,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `CDS B5` | MISSING |  |
 | `CDS C1` | MISSING |  |
 | `CDS C2` | MET | packages/engine/src/mechanisms/cds/contract.ts (`impliedDefaultRate`: derived from the spread and the recovery, stored nowhere) |
-| `CDS C3` | MISSING |  |
+| `CDS C3` | MET | packages/engine/src/mechanisms/cds/measures.ts (`basisFor`: protection against the same name's own cash spread over the sovereign curve, a read at the read; surfaced through `DerivativeKindProfile.measures`, so the class that knows it is the one that computes it) |
 | `CDS C4` | MISSING |  |
 | `CDS D1` | MET | packages/engine/src/mechanisms/cds/contract.ts (`creditState`: item 5’s `credit.default` for the reference) |
 | `CDS D2` | MET | packages/engine/src/mechanisms/cds/index.ts (`settleEvents`: settled at the estate’s realised recovery) |
@@ -644,7 +644,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `CDS D5` | MISSING |  |
 | `CDS E1` | MISSING |  |
 | `CDS E2` | MISSING |  |
-| `CDS E3` | MET | packages/engine/src/mechanisms/cds/index.ts (`netNotionalOn`: one question about one name, never a netting across counterparties) |
+| `CDS E3` | MET | packages/engine/src/mechanisms/cds/measures.ts (`netNotionalOn`: one question about one name, never a netting across counterparties; shown once per name however many tenors carry a book on it) |
 | `CDS E4` | MISSING |  |
 
 ## IRS
@@ -656,13 +656,13 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `IRS A3` | MET | packages/engine/src/mechanisms/irs/contract.ts (the floating leg fixes on what the book actually paid) |
 | `IRS A4` | MET | packages/engine/src/mechanisms/irs/contract.ts (only the net moves, so only the net is in anybody’s cash) |
 | `IRS B1` | MET | packages/engine/src/mechanisms/irs/participants.ts (`fixedDebtOf`: what it owes at a rate its terms fixed) |
-| `IRS B2` | MISSING |  |
+| `IRS B2` | PARTIAL | The reason is stated and no party in this world has it: a pension whose liabilities are long and whose assets are not does not exist until 13h. Measured — every schedule in every contract book is on the same side, because every party the layer admits is a bank or a firm (13b's record; carried into `docs/plan/13h-insurers-hedge-pe.md` as `13b-10`). B2.a's one-way demand is what 13h's parties bring |
 | `IRS B3` | MET | packages/engine/src/mechanisms/irs/participants.ts (a bank managing its own gap) |
 | `IRS B4` | MET | packages/engine/src/mechanisms/irs/participants.ts (a view on the rate path, from its own outlook) |
-| `IRS B5` | MISSING |  |
+| `IRS B5` | MET | packages/engine/src/mechanisms/banks/dealing.ts (a bank quotes out of its own inventory against its own capital and funding), packages/engine/src/mechanisms/irs/participants.ts (`swapped`: its net position in the book is what it is hedging) |
 | `IRS C1` | MET | packages/engine/src/mechanisms/irs/index.ts (`swapCurve`: the set of cleared fixed rates) |
 | `IRS C2` | MET | packages/engine/src/mechanisms/irs/index.ts (`forwardRate`: derived from two cleared points) |
-| `IRS C3` | MET | packages/engine/src/mechanisms/irs/index.ts (`swapSpread`: the cleared rate against the sovereign’s own yield, a read) |
+| `IRS C3` | MET | packages/engine/src/mechanisms/irs/measures.ts (`swapSpread`: the cleared rate against the sovereign’s own yield, a read at the read; the sovereign is `WorldReads.sovereignCurveIn`, never a party named at assembly) |
 | `IRS C4` | MISSING |  |
 | `IRS D1` | MISSING |  |
 | `IRS D2` | MISSING |  |
@@ -757,7 +757,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | requirement | status | where / why |
 |---|---|---|
 | `Indices A1` | MET | packages/engine/src/mechanisms/indices/baskets.ts, packages/engine/src/prices/index-read.ts (an index is a stated rule over constituents, and the rule is data) |
-| `Indices A2` | MET | packages/engine/src/prices/index-read.ts (the level is applied where it is asked for; nothing stores one), packages/engine/src/world/world.ts (`walkIndices`: the step is taken ONCE, at the close of the period, so no reader ever re-derives a past step against a basket that period never had) |
+| `Indices A2` | MET | packages/engine/src/prices/index-read.ts (the level is applied where it is asked for; nothing stores one), packages/engine/src/world/world.ts (`walkIndices`: the step is taken ONCE, at the close of the period, so no reader ever re-derives a past step against a basket that period never had), packages/engine/src/observer/observer.ts (`IndexView.from`: what each rule was read from, so a size boundary is where the list stops rather than a number anybody keeps) |
 | `Indices A3` | MET | packages/engine/src/prices/index-read.ts (the level is chained, so a rebalance moves nothing) |
 | `Indices A4` | MET | packages/engine/src/mechanisms/indices/index.ts (the base is a declared resolution: doubling it doubles every level and changes nothing) |
 | `Indices B1` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a weight is a COUNT of the line — shares in issue, par outstanding, units bought — never a share of the index) |

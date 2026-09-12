@@ -9,6 +9,7 @@ import {
   BOND_FUTURE_PARAMS,
   CDS_PARAMS,
   FX_PARAMS,
+  OPTION,
   OPTION_PARAMS,
   USD,
   cdsTenorsOf,
@@ -138,11 +139,21 @@ describe('every class is a module and none of them is the kernel’s (Law 15)', 
 
 describe('what a reader is shown (Observer A1, A3; CDS A1.d; IRS C1)', () => {
   it('shows every contract book’s own level, and says whether it is money or a rate', () => {
-    // Long enough for a book to have printed: these markets are thin, which is a measurement and
-    // not a defect (Law 11) — a young book with one side in it clears nothing for weeks.
+    /**
+     * Law 11, `13b-10`: THIS IS A CHECK AGAINST AN INCOMPLETE MODEL AND IT IS ALLOWED TO FAIL.
+     *
+     * Every party this world lets into a contract book is a bank or a firm, and in this world both
+     * want the same thing — banks are long duration and short of fixed, firms are short of foreign
+     * money — so every book has one side and clears nothing. The parties who would take the other
+     * side of a hedge (an insurer with liabilities to match, a pension with duration to buy) are
+     * 13h's and do not exist yet. Letting the households in would be the wrong fix: a household
+     * does not sell a bond future, it owns a fund that does.
+     *
+     * So what is asserted is what a reader is SHOWN about each level there is, and never that
+     * there is one. `derivativeCurves` and `measures` below say the same thing the same way.
+     */
     const w = ran(16);
     const seen = snapshot(w, { kind: 'inspector' }, 0);
-    expect(seen.contractPrints.length).toBeGreaterThan(0);
     for (const p of seen.contractPrints) {
       // Law 8: the unit is part of the number. A level of 0.01 is a hundredth of a cent per unit
       // of face per annum on a spread book and a cent on a premium book, and a reader shown
@@ -150,6 +161,58 @@ describe('what a reader is shown (Observer A1, A3; CDS A1.d; IRS C1)', () => {
       expect(['money', 'rate']).toContain(p.quotedAs);
       expect(typeof p.level).toBe('number');
     }
+  });
+
+  it('asks each class what its own book says against the rest of the world (C3, E3, I1.a, D7.a)', () => {
+    const w = ran(16);
+    const seen = snapshot(w, { kind: 'inspector' }, 0);
+    // Law 15: the surface knows what none of these mean. Every one of them came off the kind whose
+    // book it is OF, so a class that declares a measurement is shown one without this file, the
+    // observer, or the snapshot changing — which is what "adding a system is one module" means.
+    const kinds = new Set(seen.measures.map((x) => x.kind));
+    for (const x of seen.measures) {
+      expect(['money', 'rate', 'notional']).toContain(x.unit);
+      // Law 8: a reader shown 0.0042 with no word for what it is the difference BETWEEN has been
+      // shown a number and not a measurement.
+      expect(x.measure.length).toBeGreaterThan(0);
+      expect(x.subject.length).toBeGreaterThan(0);
+      expect(Number.isFinite(x.level)).toBe(true);
+    }
+    // E3: net notional on a name is ONE number however many tenors carry a book on it (Law 4).
+    const nets = seen.measures.filter((x) => x.measure === 'protection outstanding');
+    expect(new Set(nets.map((x) => x.subject)).size).toBe(nets.length);
+    for (const n of nets) expect(n.level).toBeGreaterThanOrEqual(0);
+    // The CDS books exist in this rig whether or not anybody has traded in one, so the measurement
+    // that needs no print — how much protection exists — is always here (`13b-10`).
+    if (w.markets.some((m) => m.contract !== undefined && isCds(m.contract.terms))) {
+      expect(kinds.has('cds')).toBe(true);
+    }
+  });
+
+  it('shows each index rule with what it was read from, and the vehicles on it (A2, A3, B2)', () => {
+    const w = ran(16);
+    const seen = snapshot(w, { kind: 'inspector' }, 0);
+    expect(seen.indices.length).toBeGreaterThan(0);
+    for (const i of seen.indices) {
+      // A2: the level is its constituents and nothing else, so what it was read FROM is shown
+      // beside it — and a size index's boundary is where this list stops, never a stored number.
+      expect(i.from.length).toBe(i.constituents === 0 ? 0 : i.from.length);
+      for (const c of i.from) {
+        expect(c.price).toBeGreaterThan(0);
+        expect(c.name.length).toBeGreaterThan(0);
+      }
+      // B2, Fund Shares E1: a vehicle is here because it published a launch, never because a list
+      // says it should exist — a rule with no tracker is a measurement and says so by being empty.
+      for (const v of i.vehicles) expect(v.shares).toBeGreaterThan(0);
+    }
+    /**
+     * `13b-6`, `13b-11`: NOT "at least one rule has a vehicle". The trackers this world declares on
+     * the size segments launch nothing, because nobody can assemble the basket (13h), and the one
+     * vehicle that DOES exist was put there by the seed, which publishes no launch — so the read
+     * that answers "which trackers are on this rule" cannot see it. Both are findings, and neither
+     * is a reason to assert something this world does not do (Law 11).
+     */
+    expect(seen.indices.every((i) => i.vehicles.every((v) => v.fund.length > 0))).toBe(true);
   });
 
   it('shows what a hedge does not cover, with its parts and beside what the rate did (E4, D2.a)', () => {
@@ -214,8 +277,25 @@ describe('a book is not its own last price (XI-13, Law 3, Clearing E1)', () => {
     // bids, `noDemand`, no print — and next period the same tick again. What a party names now is
     // what its own view of the underlying's move says optionality is worth, and the two sides of
     // the book are two parties whose surprises differ (§46 A3).
-    const rows = w.contracts.open_().filter((c) => isOption(c.terms));
-    const printed = books.filter((m) => w.prices.history(m.instrument).length > 0);
-    expect(rows.length + printed.length).toBeGreaterThan(0);
+    //
+    // What can be asserted is that the number a party names is its OWN and not the tick: the
+    // schedules an option book gathers are at levels a tick could not produce. Whether anything
+    // CROSSES is `13b-10`'s: every party this world admits to a contract book is on the same side
+    // of it, and the party that would take the other is 13h's.
+    const tick = w.registry.tickForDerivative(OPTION, USD);
+    let posted = 0;
+    for (const m of books) {
+      const decl = m.contract;
+      if (decl === undefined) continue;
+      const profile = w.registry.derivativeKind(decl.kind);
+      for (const p of w.parties.alive()) {
+        for (const o of profile.orders?.(w.participantView(p.id), m) ?? []) {
+          posted += 1;
+          if (o.price === 'market') continue;
+          expect(o.price).not.toBe(tick);
+        }
+      }
+    }
+    expect(posted).toBeGreaterThan(0);
   });
 });

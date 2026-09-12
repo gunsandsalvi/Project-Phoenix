@@ -215,11 +215,16 @@ describe('the seed (Seed A2)', () => {
     // their reason and both were declared shapes, so the field guards passed and the honest measure
     // read zero. A shape with a scheduled death IS a placeholder (Law 2), and the register now
     // refuses the other way round.
-    // FOUR, and the one that went is the point of counting them: `seed.centralBank.
+    // SIX, and it went UP for an honest reason: 13b declares a TRACKER PER INDEX RULE (Indices B2),
+    // so this world has four exchange-traded funds where it had one — and each of them carries a
+    // management fee standing in for the same mechanism at the same item. A count that stayed at
+    // four while the world grew three more fees would be the register not counting.
+    //
+    // The one that went earlier is still the point of counting them: `seed.centralBank.
     // openingHoldingShare` named 11.5 as the item that would kill it, 11.5 came, and it is a POLICY
     // the central bank takes now rather than a share somebody stated. A placeholder that dies on
     // the item it named is the register working exactly as XI-14 asks.
-    expect(report?.reads.placeholders).toBe(4);
+    expect(report?.reads.placeholders).toBe(6);
     // PLAN §7: what each stands in for and which item kills it, never the id — a fund's own id
     // carries the bank it was launched at, and WHICH bank is an outcome of the draw (Seed B1.a).
     expect(
@@ -228,6 +233,8 @@ describe('the seed (Seed A2)', () => {
         .sort(),
     ).toEqual([
       'Central Bank F4 at 13h',
+      'Fund Shares F3 at 13h',
+      'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',
       'Households A5 at 13f',

@@ -151,6 +151,27 @@ export interface DerivativeCurveView {
   readonly points: readonly { readonly tenorYears: number; readonly level: number }[];
 }
 
+/**
+ * A standing MEASUREMENT of a contract book, as the class that owns the book computes it.
+ *
+ * @spec CDS C3 CDS C3.a CDS E3 IRS C3 Sovereign I1.a Sovereign I2 Derivative D7.a Observer A1 Law 8 Law 15
+ *
+ * The surface does not know what a basis is for any class: it walks the books and asks each kind
+ * (`DerivativeKindProfile.measures`). A world with one more class shows one more measurement
+ * without a line here being touched, and every one of these is a read that nothing acts on — that
+ * the two prices differ is the thing worth watching, never a discrepancy anything closes.
+ */
+export interface MeasureView {
+  readonly subject: string;
+  /** WHICH difference this is. A reader shown a number with no word for it has been shown nothing. */
+  readonly measure: string;
+  readonly kind: string;
+  readonly tenorYears: number | null;
+  readonly level: number;
+  readonly unit: 'money' | 'rate' | 'notional';
+  readonly ccy: string;
+}
+
 export interface OutlookView {
   readonly party: string;
   readonly variable: string;
@@ -287,6 +308,23 @@ export interface IndexView {
   readonly level: number;
   readonly periods: number;
   readonly constituents: number;
+  /**
+   * A2, A3: WHAT IT WAS READ FROM — each line, what it printed and what it weighs. A size index's
+   * boundary is not a number anybody stores: it is where this list stops, and a reader who can see
+   * the constituents and their capitalisations can see the firm that is about to cross it.
+   */
+  readonly from: readonly {
+    readonly instrument: string;
+    readonly name: string;
+    readonly price: number;
+    readonly weight: number;
+  }[];
+  /**
+   * B2, C1, Fund Shares E1: THE VEHICLES ON IT — the trackers this world actually launched against
+   * this rule, read off the launch each of them published. An index with no vehicle is a
+   * measurement; an index with one is a thing that has to be traded when its membership changes.
+   */
+  readonly vehicles: readonly { readonly fund: string; readonly shares: number }[];
 }
 
 /** Ratings A1, E4: WHOSE OPINION, ABOUT WHOM, AND WHAT IT WAS. Three assessors, three answers. */
@@ -372,6 +410,8 @@ export interface Snapshot {
   readonly triangles: readonly TriangleView[];
   /** Spot FX E4: what a hedge leaves over, per party and per pair, with its parts. */
   readonly hedges: readonly HedgeView[];
+  /** The bases, spreads and implied moves, each computed by the class whose book it is OF. */
+  readonly measures: readonly MeasureView[];
   /** Indices E1: every index this world declares, at what its own constituents make it. */
   readonly indices: readonly IndexView[];
   /** Ratings A1, E4: the published opinions, most recent last. */
@@ -662,6 +702,7 @@ export function snapshot(
     rates: ratesOf(w),
     triangles: trianglesOf(w),
     hedges: hedgesOf(w, visible),
+    measures: measuresOf(w),
     indices: indicesOf(w),
     ratings: ratingsOf(w, journalTail, sees),
     statements: statementsOf(w, sees),
@@ -793,6 +834,18 @@ function trianglesOf(w: World): readonly TriangleView[] {
 
 /** Indices A2, E2: the level applied where it is asked for — the same read every module gets. */
 function indicesOf(w: World): readonly IndexView[] {
+  // Fund Shares E1, Indices B2: which trackers were launched on which rule, as each of them
+  // published it at the moment it was launched (Law 19: never a list this surface maintains).
+  const vehicles = new Map<string, { fund: string; shares: number }[]>();
+  for (const e of w.journal.ofKind('etf.launched')) {
+    const tracks = e.data['tracks'];
+    const fund = e.data['fund'];
+    const shares = e.data['shares'];
+    if (typeof tracks !== 'string' || typeof fund !== 'string' || typeof shares !== 'number') continue;
+    const held = vehicles.get(tracks) ?? [];
+    held.push({ fund, shares });
+    vehicles.set(tracks, held);
+  }
   const out: IndexView[] = [];
   for (const decl of w.indexRules()) {
     const read = w.index(decl.id);
@@ -802,7 +855,39 @@ function indicesOf(w: World): readonly IndexView[] {
       level: read.value.level,
       periods: read.value.periods,
       constituents: read.value.basket.length,
+      from: read.value.from.map((c) => ({
+        instrument: String(c.instrument),
+        name: displayName(w.instruments.get(c.instrument), w.parties, w.registry),
+        price: c.price,
+        weight: c.weight,
+      })),
+      vehicles: vehicles.get(decl.id) ?? [],
     });
+  }
+  return out;
+}
+
+/**
+ * CDS C3, E3; IRS C3; Sovereign I1.a; Derivative D7.a: THE BASES, asked of the classes that own
+ * them (Law 15). The surface walks the contract books and asks each book's own kind what its level
+ * says against the rest of the world; it knows what none of them mean, which is why adding a class
+ * adds its measurement here without this function changing.
+ */
+function measuresOf(w: World): readonly MeasureView[] {
+  const reads = w.worldReads;
+  const out: MeasureView[] = [];
+  const seen = new Set<string>();
+  for (const m of w.markets) {
+    const decl = m.contract;
+    if (decl === undefined) continue;
+    for (const x of w.registry.derivativeKind(decl.kind).measures?.(m, reads) ?? []) {
+      // A measurement of one name at one tenor is one measurement, however many books carry it:
+      // net notional on a reference is the same number in every tenor's book (Law 4).
+      const key = `${String(decl.kind)}|${x.subject}|${x.measure}|${String(x.tenorYears)}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      out.push({ ...x, kind: String(decl.kind), ccy: String(m.ccy) });
+    }
   }
   return out;
 }

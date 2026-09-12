@@ -27,7 +27,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import {
   bankOf,
   bankParam,
-  dealingParam,
+  lineParam,
   TRADING_BOOK_CAPITAL_RATIO,
   TRADING_BOOK_RISK_WEIGHT,
   type BankDecl,
@@ -200,12 +200,12 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
       view,
       mul(
         capitalOf(view),
-        view.params.get(dealingParam(view.self.id, 'capitalAtRisk')),
+        view.params.get(lineParam(view.self.id, DEALING, 'capitalAtRisk')),
         'what it will put behind its dealing book',
       ),
       bookValue(view, targets),
     ),
-    concentration: view.params.get(dealingParam(view.self.id, 'concentration')),
+    concentration: view.params.get(lineParam(view.self.id, DEALING, 'concentration')),
     ratePerPeriod: rate,
     rateIn: (money) => carryRate(view, money),
     bookValue: bookValue(view, targets),

@@ -15,14 +15,14 @@ import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { addYears } from '../../calendar/civil.js';
 import { sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { curveFamilyOf } from '../../prices/curve.js';
 import type { ParamDecl } from '../../registry/params.js';
-import type { MechanismContext } from '../../world/context.js';
+import type { MechanismContext, WorldReads } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { IRS, irsKind, isIrs, NOTIONAL, type IrsTerms } from './contract.js';
 import { irsMarketOf, irsLineOf, IRS_PARAMS } from './data.js';
 
 export * from './contract.js';
+export * from './measures.js';
 export * from './data.js';
 export * from './participants.js';
 
@@ -125,7 +125,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId)
 
 /** C1, C1.a: the curve — the set of cleared fixed rates, in tenor order. Built at the read. */
 export function swapCurve(
-  ctx: MechanismContext,
+  ctx: WorldReads,
   ccy: CurrencyCode,
 ): readonly { readonly tenorYears: number; readonly rate: number }[] {
   const out: { tenorYears: number; rate: number }[] = [];
@@ -153,20 +153,6 @@ export function forwardRate(
   if (near === undefined || far === undefined || to <= from) return none<number>();
   const grown = Math.pow(1 + far.rate, to) / Math.pow(1 + near.rate, from);
   return some(sub(Math.pow(grown, 1 / (to - from)), 1, 'the forward rate between the two'));
-}
-
-/** C3, C3.a: the swap spread — the cleared fixed rate against the sovereign's own yield. A READ. */
-export function swapSpread(
-  ctx: MechanismContext,
-  ccy: CurrencyCode,
-  tenorYears: number,
-  sovereign: PartyId,
-): Option<number> {
-  const swap = ctx.prices.latest(irsLineOf(ccy, tenorYears), ctx.period);
-  if (!swap.some) return none<number>();
-  const risk = ctx.curve(curveFamilyOf(sovereign, ccy)).at(tenorYears);
-  if (!risk.yield.some) return none<number>();
-  return some(sub(swap.value.price, risk.yield.value, 'the swap against the sovereign'));
 }
 
 export function irs(house: (ccy: CurrencyCode) => PartyId): SystemModule {

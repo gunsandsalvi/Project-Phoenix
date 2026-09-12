@@ -554,10 +554,21 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       fund: d.fund,
       perShare,
       shares: share.issued,
-      // D2, D2.a: what it actually returned over the period that closed — a read of two values it
-      // published, not a series it keeps. It is what a saver compares against a deposit, and it is
-      // published because the competition D2 names cannot happen against a number nobody can see.
-      returned: previous === undefined ? 0 : div(sub(perShare, previous, 'what it made'), previous, 'per share it returned'),
+      /**
+       * D2, D2.a: what it actually returned over the period that closed — a read of two values it
+       * published, not a series it keeps. It is what a saver compares against a deposit, and it is
+       * published because the competition D2 names cannot happen against a number nobody can see.
+       *
+       * A RETURN ON NOTHING IS NOT A NUMBER (Appendix A). A fund in its first period has no
+       * previous value to have returned over, and one whose shares were marked at nothing has no
+       * denominator — and `0 / 0` is NaN, which stopped a year-long run dead at the wire (Law 7's
+       * `finite`). Zero would have been worse than the throw: it says the fund made nothing, which
+       * is a statement about a period that did not happen.
+       */
+      returned:
+        previous === undefined || previous <= 0
+          ? null
+          : div(sub(perShare, previous, 'what it made'), previous, 'per share it returned'),
       // C2.a: what it must find, and what it has spare. Its orders read these and nothing else,
       // so the decision and the schedule are one decision (Law 4).
       shortfall: owed,

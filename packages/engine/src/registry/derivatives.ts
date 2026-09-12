@@ -34,7 +34,7 @@ import type { IndexRead } from '../prices/index-read.js';
 import type { Print } from '../prices/price-store.js';
 import type { MarketDecl } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
-import type { ParticipantView } from '../world/context.js';
+import type { ParticipantView, WorldReads } from '../world/context.js';
 import type { Namer } from './naming.js';
 import type { ParamRegister } from './params.js';
 
@@ -216,6 +216,41 @@ export interface DerivativeKindProfile {
    * a test-only kind, or one whose rows are written by a mechanism rather than a session.
    */
   readonly orders?: (view: ParticipantView, m: MarketDecl) => readonly Order[];
+  /**
+   * Observer A1, Law 19: WHAT THIS BOOK'S LEVEL SAYS AGAINST THE REST OF THE WORLD, asked of the
+   * kind that knows.
+   *
+   * A basis is a class's own question — protection against the same name's cash bond (CDS C3), a
+   * cleared fixed rate against the sovereign's own yield (IRS C3), a future against the carry on
+   * what it delivers (Sovereign I2), how much protection on one name exists at all (CDS E3). Each
+   * is a difference between two prices somebody paid, computed where it is asked for and stored
+   * nowhere, and NONE of them is a target: that the two differ is the thing worth watching, never
+   * a discrepancy anything closes (C3.a).
+   *
+   * It is on the kind and not on the surface for the reason `orders` is: a reader shown these has
+   * to be shown every class's, and a surface that knew which classes exist would have to be edited
+   * every time one is added (Law 15). Absent means this kind has nothing to say beyond its own
+   * print, which is most of them.
+   */
+  readonly measures?: (m: MarketDecl, reads: WorldReads) => readonly ContractMeasure[];
+}
+
+/**
+ * One standing measurement of a contract book: two prices, their difference, and the word for what
+ * that difference IS.
+ *
+ * @spec CDS C3 CDS C3.a CDS E3 IRS C3 IRS C3.a Sovereign I2 Derivative D7.a Observer A1 Law 8
+ */
+export interface ContractMeasure {
+  /** What it is OF, named as the market names it (Law 9): a reference, a money, a deliverable. */
+  readonly subject: string;
+  /** WHICH difference this is, so a reader is never shown a number without the word for it. */
+  readonly measure: string;
+  /** The tenor it was measured at, where the measurement has one. */
+  readonly tenorYears: number | null;
+  readonly level: number;
+  /** Law 8: the unit is part of the number — money per unit, a rate per annum, or a face amount. */
+  readonly unit: 'money' | 'rate' | 'notional';
 }
 
 /**

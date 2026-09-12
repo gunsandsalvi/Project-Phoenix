@@ -31,6 +31,7 @@ import { issuedBy } from '../../register/instruments.js';
 import type {
   Contract,
   ContractPayment,
+  ContractMeasure,
   ContractReads,
   ContractTerms,
   DerivativeKindProfile,
@@ -39,7 +40,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Leg } from '../../ledger/instruction.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { MechanismContext, ParticipantView, WorldReads } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
 export const BOND_FUTURE = derivativeKindId('bond.future');
@@ -127,6 +128,27 @@ export const bondFutureKind: DerivativeKindProfile = {
   },
   orders: futureOrders,
   /**
+   * I1.a, I2: the two measurements this book carries — the carry on what it delivers, and the net
+   * basis against it. Both are reads (`netBasis`, `bondCarryOf`) and neither is a target: that the
+   * future is not exactly the cash price less the carry is the trade, not a discrepancy.
+   */
+  measures: (m, reads): readonly ContractMeasure[] => {
+    const decl = m.contract;
+    if (decl === undefined || !isBondFuture(decl.terms)) return [];
+    const t = decl.terms;
+    const basis = netBasis(reads, t.deliverable, t.expiry);
+    if (!basis.some) return [];
+    return [
+      {
+        subject: String(t.deliverable),
+        measure: 'the future against cash less carry',
+        tenorYears: null,
+        level: basis.value,
+        unit: 'money',
+      },
+    ];
+  },
+  /**
    * I1, Money Market A2: WHAT TAKING DELIVERY COSTS, said in advance so a treasury can fund it.
    *
    * The long pays the whole face at the deliverable's own cash price on the delivery date. It is
@@ -194,7 +216,7 @@ function params(): ParamDecl[] {
  * parameter: what this function does is subtract two things this world published.
  */
 export function bondCarryOf(
-  ctx: MechanismContext,
+  ctx: WorldReads,
   deliverable: InstrumentId,
   to: Period,
 ): Option<number> {
@@ -226,7 +248,7 @@ export function bondCarryOf(
  * set: there is no parameter here and nothing anywhere reads this back into a price.
  */
 export function netBasis(
-  ctx: MechanismContext,
+  ctx: WorldReads,
   deliverable: InstrumentId,
   expiry: Period,
 ): Option<number> {
