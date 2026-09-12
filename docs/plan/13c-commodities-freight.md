@@ -23,6 +23,18 @@ G1.c; Indices D4, D4.a (PARTIAL → MET).
 
 ---
 
+### One dependency, from the review
+
+**A second FINAL good waits for 13d.** `ConsumptionDecl.share` is a share of what a household spends,
+so spending on a good never responds to its price and a price change never moves spending BETWEEN
+goods — unit-elastic demand, which is exactly what `phoenix/no-value-recipe` refuses on the
+production side. It is inert today because there is one final good at `share: 1`, and it becomes the
+strongest substitution assumption in the model the day there are two. 13d restates a cohort's
+preference as a quantity it wants per period; until that lands, anything this item adds to the
+consumption basket carries that assumption. Commodities that are INTERMEDIATE are unaffected — the
+recipes they feed are already physical (Goods A2.a).
+
+
 ## Design
 
 ### Module `commodities`

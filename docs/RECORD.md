@@ -2792,3 +2792,94 @@ so the kernel's `pledge` door is built and unexercised (`13a-2`).
 MODULE and nothing in the kernel changes for it: 13b adds four kinds, a rate-quoted book and a
 credit event, and if any of them needs a new leg, a new store or a new door, this forecast is wrong
 and 13b's record says which.
+
+## During 13b — an independent review of the code, and where its findings landed
+
+**What.** A full reading of `packages/engine/src` — 160 files, 43,342 lines — against the laws in
+`CLAUDE.md` rather than against the plan, asked for as an independent review: rule compliance,
+whether the modelling is real rather than asserted, whether money is created and destroyed only in
+the right places, and whether a module can be added without touching a hundred files. 83 findings
+were written to `docs/REVIEW.md` as they were found, file by file. They are now positioned and the
+file is deleted, because a finding leaves a holding pen only by being placed.
+
+**Three answers, because they were the questions asked.**
+
+- **Money is created and destroyed only in the right places.** Checked exhaustively. Two ops — `issue`
+  and `redeem` in `ledger/settlement.ts` — reachable from `expandMoney` and `expandAsset` and nowhere
+  else. Six module sites: a bank lending (its own deposit into the borrower's account, no reserve
+  leaving, B1.a), a drawing on a line, the central bank remitting income in reserves it issues, a
+  bail-in extinguishing a depositor's claim, and an acquirer taking over an account — the failed
+  bank's deposit destroyed and the acquirer's created in **one instruction, two legs**. The hard case
+  falls out of the wire rather than being coded anywhere: a loan repayment crosses issuers, so
+  settlement redeems the borrower's deposit, credits the bank's reserves and debits them again, and
+  the deposit is destroyed with no reserve moved. `adjustIssued` has three call sites, all inside
+  settlement.
+- **The modelling is honest, with three asserted numbers.** The estate's `print × left/(left+1)`
+  reservation (a written price path in the module that forbids one); consumption as a fixed share of
+  MONEY spending (unit-elastic demand, which `phoenix/no-value-recipe` refuses on the production
+  side); and the own-credit gain — a firm's equity RISES as its own bonds fall, which fights XI-3
+  because a firm cannot become insolvent if its own distress is a revenue line. All three positioned.
+- **The architecture is plug-and-play for INSTANCES and costly for SHAPES**, measured on the three
+  commits that built item 13: 13a, a new shape of state, cost **24 kernel files to 7 module files**;
+  13b, seven classes of that shape, cost **6 to 24**. Most of the difference is irreducible — new
+  state means a store, a leg, an op, a value and an audit family — and four causes were avoidable.
+
+**What the review actually found, and it was not what was expected.** The laws are followed, largely
+out of discipline. **The machinery built so that discipline would not be needed is the weakest part
+of the tree.** `phoenix/no-cross-module-import` strips `../` and then tests for a leading
+`mechanisms/`, so the only spelling it catches is the one nobody writes: it has never reported
+anything, and six modules import each other — `firms`, `households`, `capital-programme` and
+`treasury` all reach into `goods` for values, `banks` reads a parameter constant out of
+`spot-fx/data.ts`, and `banks ↔ spot-fx` is a cycle, which is the shape that left a constant
+undefined at module-init during this same item. ARCHITECTURE 4.9b's central claim rested on that
+parenthesis. `phoenix/no-bounds` forbids `Math.min`/`Math.max` and the engine writes the same
+operation as a ternary thirty-one times, most of them correctly. `Audit.run` marks a family built
+when ANY contribution is — so `crossMarket` reads green while its kernel contribution is an unbuilt
+stub that vanishes from the report. The flows family exempts a party's whole position for a period
+because one weight event named it. And `register/register.ts` still carries the floating-point
+tolerance Law 8 retired, including a branch that deletes a positive holding with no instruction and
+no counterparty.
+
+Two live defects were found by reading a file against its own header: `Instruments.restate` does not
+invalidate the `all()` cache, so a share split leaves a stale `issued` in front of every reader for
+the rest of the run; and `Contracts.open` validates neither its terms nor their kind, so a mis-kinded
+row marks zero on both books and passes the zero-sum family forever.
+
+**Two further readings, asked for after the first.** How a party names a level: the older half of the
+engine is fair-value-first — a dealing desk prices a dated claim off its own required yield, a saver
+off published accounts, a firm off its own book — and the seven derivative classes written in 13b are
+print-first, so a party with no outlook posts AT the last print and the outlook that would move it
+was formed from the prints. `banks/dealing-quote.ts` had already diagnosed that fixed point, cured it,
+and written the incident down. And how clever a party is: the engine differentiates parties by what
+they see, hold, owe and prefer, and in no way by what they can WORK OUT — the same household cell
+prices bread off its own adaptive outlook and prices a bond by discounting its cash flows. The
+consequence that matters is that XI-2 has no retail door: a household never sells because a price
+fell, so a market shock produces no redemption wave.
+
+**Where each landed.**
+
+| finding | item |
+| --- | --- |
+| the guards, lint rules and audit families that do not fire; the Law 8 dust; the store guards; `Qty` on the wire; the declarations that are not true (`loan.operatingCost`, `ParamDecl.unit`, `cellKey`); the four avoidable kernel seams | **13b.1**, inserted |
+| every class quotes the book's own print and the option book cannot open; `parLevel`; the contract store's missing validation; the layer's double-counted capacity | 13b |
+| a second final good waits for 13d | 13c |
+| the household that runs analyst's models; XI-2's retail door; consumption as a share of money; wealth as a key dimension; a bank that employs nobody, and `loan.operatingCost`'s death | 13d |
+| the own-credit gain — a decision reserved to the owner | 13f |
+| the estate's formula discount off book; an asset manager that decides nothing | 13h |
+| what a module may extend and what is closed to it | ARCHITECTURE.md §4.9b |
+
+**One item inserted: 13b.1**, after 13b because Law 10 finishes the open item first and two findings
+are 13b's own, and before 13c because everything from there on adds modules and the rule meant to
+keep them apart is the thing that does not work. Most of it removes code.
+
+**Forecast, with its killer.** The claim is that 13b.1 changes no mechanism, no economic outcome and
+no boundary (Law 18): the year-long run's audit totals and money stock should be identical before and
+after. If they are not, the difference is a defect the item exposed — it goes in `docs/BUGS.md` and
+13b.1's record says what it was, rather than being absorbed into the change.
+
+**One thing worth writing down about the method.** Almost every finding was found by reading what a
+file SAYS it does against what it does, and four of them are cases where a file states the rule in
+its own header and the code two hundred lines down does not follow it — `core/tick.ts`'s "a leg's
+amount", `register/register.ts`'s "guarding the STORE rather than each writer", `estate`'s "a formula
+discount off book", `parties`'s "lifting a relationship into the key is a data change". In a codebase
+with ordinary comments none of those would be findable at all. The prose is load-bearing.

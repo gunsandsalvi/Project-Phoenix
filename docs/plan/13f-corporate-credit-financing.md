@@ -81,6 +81,42 @@ funding** rather than a friction anybody wrote down. Seen at
 
 ---
 
+### An issuer books a PROFIT when its own debt falls in price (from the review — a decision the owner must take)
+
+`ledger/settlement.ts`, on every holder-to-holder trade of a claim:
+
+```ts
+if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
+  bump(issuerOf(inst), mul(op.totalQty, carryingOf(op.fromDebit) - basis, 'issuer re-mark'), inst.id);
+}
+```
+
+The issuer's equity moves by `qty × (what the seller carried it at − what the buyer paid)`. So when a
+firm's bonds trade DOWN — which is what happens as it approaches distress — `carrying − basis` is
+positive and **the issuer's equity RISES**. `world/revalue.ts` does the same in `issuerMoves` for the
+period's re-marking, so it is one modelling choice made consistently in two places, which means
+fixing it is one decision and not two.
+
+This is the own-credit gain, and it is famous because it is perverse: a firm on its way to insolvency
+books profits from the market's growing doubt that it will pay. It fights XI-3 directly — a firm
+cannot become insolvent if its own distress is a revenue line — and it fights §31/Banks Capital the
+same way for a bank whose subordinated paper is falling. The citation given is Register B3, "a
+liability is the same number read from the other side", which is true about the BALANCE SHEET and
+does not settle where the change GOES.
+
+**It belongs here** because this is the item where an issuer's own paper trades in volume against a
+real credit assessment, and where a name walking towards default is the subject rather than an edge
+case. Real accounting sends own-credit movements to other comprehensive income precisely so they do
+not flow through profit, and this world has the machinery: the revaluation account
+(`Register.moveRevaluation`) already demonstrates the pattern of a second equity-like account moved
+by exactly one thing, built for the central bank's foreign reserves (Currency D2.a, §31 A2.c), and
+§48's reporting can hold the distinction.
+
+**What the owner decides** is whether the own-credit component lands in a named account of its own or
+stays in the line that says what the issuer earned. The spec reserves neither answer, so it is stated
+in the record either way and the code carries one citation for it.
+
+
 ## Design
 
 ### Sub-item 13f.1 Kernel: commitment markets
@@ -379,6 +415,7 @@ packages/engine/test/{commitment-market,corporate-bond,capital-structure,covenan
 
 ## Steps
 
+- [ ] The own-credit decision taken and implemented: the component of an issuer's re-mark that comes from its own credit lands where the decision says — a named account of its own, on the revaluation account's pattern, or the equity line — in `ledger/settlement.ts` and `world/revalue.ts` together, one citation, one writer; tests: a name walking towards default does not book a profit on the way down unless the decision says it does (Register B3, XI-3, §48)
 - [ ] 13f.1 Kernel: commitment markets (one point of demand, commitment schedules, one clearing fee/margin, pro-rata at the margin, `filled < size` reported, ordered before the deal's primary); tests
 - [ ] `bond` corporate kind: coupon forms, seniority honoured by the waterfall, call regime stamped at issuance by dispatch, covenants as terms, display name; tests (A1, A2.a, B1, B3, B4, N11–N13.a)
 - [ ] The capital-structure decision: management's own target from the covenant line and its risk aversion at its own pace; issuance and refinancing as decisions; the structure as an outcome; tests (A2, A2.b, A2.c, A3, F5)

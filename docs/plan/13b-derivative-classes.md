@@ -125,6 +125,76 @@ unexercised, and a door nothing has ever opened is a door nobody has tested.
 
 ---
 
+### Every class quotes the book's own last print, and one of them cannot start (from the review)
+
+All five bilateral classes have this shape (`irs/participants.ts:81`, `bond-futures/index.ts:260`,
+`fx-derivatives/participants.ts:91`, `options/index.ts:247`, `cds/participants.ts:44`):
+
+```ts
+const last = view.print(t.book);
+const level = last.some ? last.value.price : /* bootstrap */;
+let price = level;                       // the order, before any view
+if (outlook.some && expects > level + tick) { price = expects; }
+```
+
+**A party with no outlook posts exactly the last print.** `outlook('price.<book>')` exists only for a
+party that has traded in this book (Expectations A2), so a borrower hedging its own coupon or a
+holder buying its first put posts a limit AT the print. A book whose participants are all in that
+state is a crowd of orders at one level: it clears there, prints that level, and prints it again.
+And when a party does have an outlook, `observations()` formed it from that party's own fills in
+that book — so `expects` lands inside `level ± tick`, the nudge never fires, and the book is frozen
+at whatever it first printed. That is XI-13's fixed point, closed.
+
+**`banks/dealing-quote.ts` already diagnosed this and cured it**, and the incident is in the file:
+"the print moves the outlook, the outlook moves the view, the view moves the quote, the quote moves
+the print — and in the one market this model funds itself through it walked a bill that pays 1.00 in
+seven days to a print of 3.3337, at which no representable yield discounts its own payments to what
+somebody paid, so the curve threw and the world stopped." `viewOf` asks its own required yield FIRST
+and the print-derived outlook second. These seven classes were written afterwards and do the
+opposite.
+
+**The option book cannot open at all.** `options/index.ts:247`: with no print the level is
+`tickForDerivative(...)` — one tick. Every party's own `asks` is then above it, `if (asks > level)`
+fires for everybody, every party subtracts room from `want`, so **every party in the first session is
+a writer**: all sells, no buys, `noDemand`, no print, and next period the bootstrap is one tick
+again. It is also a declared number standing in for a mechanism, written in code rather than in the
+parameter register.
+
+**The other four bootstraps are real values used exactly once.** CDS off the reference's own bond
+below par, IRS off the overnight fixing, FX forward off spot, bond future off the cash deliverable —
+each genuinely print-independent, each correctly argued, and each reachable only while the book has
+NEVER printed. From the second session the print displaces them permanently, including when it is
+stale and the underlying has moved: a forward whose spot moved five per cent and whose own book did
+not trade has every party posting the old number, so the cash-and-carry relationship the class exists
+to express is live in period one and dead from period two.
+
+### The contract store validates neither its terms nor their kind (from the review)
+
+`Instruments.add` checks `terms.kind === decl.kind` (cited Law 4) and calls
+`profile.validateTerms(decl.terms)`. `Contracts.open` checks only that the two sides differ and that
+the notional is positive. `world.ts` validates a contract MARKET's template terms at assembly, which
+is a different object from the row settlement later opens. So a row can be written with `kind: 'cds'`
+and IRS terms and the failure is silent rather than loud: every class's mark begins
+`if (!isCds(c.terms)) return 0`, so the contract sits open on two balance sheets, marked zero on both
+sides, passing the zero-sum family forever. And the notional never passes `onTheGrid`, while
+`Instruments` routes every change to `issued` through it and explains why — a fractional notional
+multiplies into every mark, margin call and close-out, and the zero-sum family still passes because
+both sides are equally fractional.
+
+### A member's clearing capacity is reduced twice for every unit of margin it posts (from the review)
+
+`derivative-layer/index.ts` `admits`:
+`sub(sub(cash, keep, 'net of its buffer'), committed(view, m.ccy), 'left to commit')`. `committed`
+sums the margin CLAIMS the party holds, and a party holds one because it posted cash for it —
+`moveMargin` moves the claim to the poster and the money to the holder in one instruction, settled
+before the next trade is admitted. So `view.cash(ccy)` is already net of everything posted, and
+subtracting `committed` takes it off a second time: a member that has posted 100 has its room cut by
+200. The intent (E3: capacity drawn down as it is consumed) is right and `cash` alone already does
+it. The effect is conservative, which is why nothing caught it; it makes every derivative book
+thinner than the mechanism says and E4's refusal measurement wrong in the direction that looks like
+prudence.
+
+
 ## Design
 
 ### Rate-priced markets
@@ -419,6 +489,11 @@ packages/engine/test/{rate-markets,cds,cds-event,cds-index,irs,swap-curve,fx-for
 - [ ] A VEHICLE per index, launched in a phase and not by the seed: a size segment's membership is read from its constituents' own prints (A3), which at period zero do not exist — so a tracker on one is launched the period its index first has a level, with a share of the float the trackers hold BETWEEN them (three vehicles each taking the whole of it is a market owned three times, measured: `etf.us` and `etf.equity.large.us` both opened with negative equity). Then the vehicle's own market drafts the trades it clears (`12d-4`); tests (Indices B2, B2.a, C1, C2, C2.a, E2; Fund Shares E1–E4, G1.a)
 - [ ] Observer, the rest of it: bases, net notional per reference, hedged residuals, implied volatility as a derived read, the index set with its boundaries and its vehicles; year-long run green in two currencies; determinism; scenario test: swap spread and CDS basis behave differently calm and stressed (direction only). DONE so far: every contract book's own level with the word for what that level IS (`ContractPrintView.quotedAs` — money per unit, or a rate per annum), and those prints gathered by subject into curves in tenor order (`DerivativeCurveView`), each point a print somebody paid and no point between two of them
 - [x] Coverage re-marked: fifty rows across CDS, IRS, FX Forwards, Sovereign I, Indices C3 and Dealer Desks, each citing the file that meets it
+- [ ] Every class prices from its OWN value first and reads the book's print only as the comparator that decides which side it is on: the `else` branch each class already has becomes the primary, and the order is posted at that number. `banks/dealing-quote.ts`'s `viewOf` is the pattern and its comment is the reason. Tests: a book whose every participant has no outlook does not print the same level twice; a forward whose spot moved and whose book did not trade quotes the new number (XI-13, Law 3)
+- [ ] The option's bootstrap is its own arithmetic and not a tick: what the party's own view of the move says optionality is worth is already computed three lines below (`moves = expected × confidence`), so the fallback and the view become one expression and the branch goes. Test: an option book opens with buyers and sellers in its first session
+- [ ] `DerivativeKindProfile.parLevel(terms, at, reads)` — the level at which a new contract on these terms is worth nothing to either side (D7.b, which is the definition already in the file), one function per class, the same shape as `mark` and `marginFor`. Every participant then has a number of its own without reading the book; tests per class
+- [ ] `Contracts.open` validates `terms.kind === decl.kind` and calls `profile.validateTerms`, as `Instruments.add` does, and puts the notional `onTheGrid`; tests: a mis-kinded row is refused at the wire and not marked zero forever
+- [ ] The layer's `admits` drops the `committed` term — the cash balance is the source and `committed` re-derives what it already carries (Law 19); test: a member that has posted margin has its room cut once
 - [ ] PARTIAL rows for IRS B2/B2.a named to 13h; record entry
 - [ ] Delete this file; worklist row 13b → done; commit and push
 

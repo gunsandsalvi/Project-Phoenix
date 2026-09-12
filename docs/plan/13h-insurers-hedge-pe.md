@@ -123,6 +123,45 @@ sentence: claims resolve, never freeze.
 
 ---
 
+### The estate's reservation is a formula discount off book (from the review)
+
+`estate/index.ts`:
+
+```ts
+const total = sub(closesAfter, view.period, 'left') + 1;
+price: mul(print.value.price, div(left, total, 'how much of its patience is left'), 'reservation')
+```
+
+`print × left/(left+1)` — 1/2, 2/3, 3/4, 4/5 as the programme runs down. The inline comment says
+"There is no discount curve here — the number is how long is left", and the module's own header says
+"ASSETS ARE SOLD, not valued... **a formula discount off book is a stated price with no buyer**". It
+is a discount curve, and it is derived from nothing the estate knows about the asset, the bidders, or
+what it has to raise — only from the calendar and a parameter. It is also a written price path
+(Appendix B), in the one module whose whole purpose is that a forced sale realises what a market
+pays, and the schedule is PUBLIC (`estate.opened` journals `closesAfter`), so any bidder can compute
+the period the estate capitulates and wait.
+
+**The codebase already contains the right answer**, one module over: `funds/index.ts:861`, the other
+forced seller, posts `price: 'market'` with "XI-2: at whatever the market gives. A forced seller that
+named a price would not be one." Two modules, one problem — a seller under time pressure — and two
+answers, one of which is a reason and one of which is a curve.
+
+**It belongs here** because this is the item that carries the vehicle that must wind up
+(`12b.1-1`) and where marks that are not prices are the subject: a liquidator's reservation, a
+gate, and a wind-up are one question asked three ways. The fix is either the fund's answer (an estate
+that must sell names no price) or a reason: what it expects to get by waiting — its own outlook of
+that line, which XI-16 already gives every party — against the chance its programme ends first.
+
+### An asset manager that takes a fee and decides nothing (from the review)
+
+`FUND_MANAGER` is a registered party kind. It is seeded, it chooses a bank, it receives the fee, and
+it makes no decision anywhere. So "a household gives its money to somebody to manage" has a name in
+this world and no mechanism, which matters because delegation is how a household gets a professional
+view without having one (13d gives the household its own naive reasons, and the two together are the
+real distribution). Wealth is the other half and is a cell key dimension at 13d, itself blocked on
+13b.1: a manager for rich households needs rich households to exist.
+
+
 ## Design
 
 ### Module `insurers`
@@ -282,6 +321,8 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 
 ## Steps
 
+- [ ] The estate names no price it cannot defend: either the fund's answer (a forced seller posts size and no level) or its own outlook of that line against the chance its programme ends first; the `left/(left+1)` curve deleted; tests: what an estate realises is what a market paid, and a bidder cannot compute the period it capitulates (XI-2, XI-8, Appendix B)
+- [ ] `FUND_MANAGER` decides: a household with wealth above its own threshold delegates, the manager runs a mandate on its behalf and is paid for it, and what the household holds is then the manager's decisions and not its own; depends on 13d's wealth dimension; tests (Fund Shares A4, Households D5)
 - [ ] **From item 11 (XI-2 door three, Prime Brokerage C3.b)**: a broker cuts a leveraged client's line below what it has drawn, and the client's own module posts the sales that repay it, at whatever the book gives. Item 11 built this door for a BANK (a bank refused by the session sells its own paper) and published the line a bank will fund for one name (Banks Lending F3), but it has no client to cut: this world's only leveraged holder of marketable assets is a desk, and a desk is its own bank's arm. A hedge fund with a prime broker is the party. Test: `limit − exposure` is negative with no floor in the path, the sale moves the print, and the print reaches other holders
 - [ ] `insurer` and `pension` kinds; `policy` and `pensionClaim` liabilities to named beneficiaries valued at the swap curve read each time; no stored or fixed-rate value can exist; tests (A1–A3, B1, B2, B2.a, B2.b, E1, E3)
 - [ ] The cover market: quotes from own experience and capital, sized by surplus; policy to the lower quote; unplaced cover; premiums and claims as instructions; an insurer with no surplus writes nothing; tests (A4, A4.a–A4.c)

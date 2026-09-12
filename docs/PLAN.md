@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 68.9%** (414 of 601 steps across 41 items).
+**Plan completion: 65.3%** (414 of 634 steps across 42 items).
 **Requirement coverage: 54.2%** (738 MET, 82 PARTIAL, 0 OUT OF SCOPE of 1362 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -48,13 +48,14 @@ The plan has two parts:
 | 12c.1 — The suite that got slower every period | 5 | 5 | closed |
 | 12d — The tests catch up with the world | 8 | 8 | closed |
 | 13a — The derivative layer | 17 | 17 | closed |
-| [13b — The derivative classes](plan/13b-derivative-classes.md) | 32 | 26 | in progress |
+| [13b — The derivative classes](plan/13b-derivative-classes.md) | 37 | 26 | in progress |
+| [13b.1 — The checks that do not check](plan/13b.1-checks-that-do-not-check.md) | 17 | 0 | open |
 | [13c — Commodities and freight](plan/13c-commodities-freight.md) | 16 | 0 | open |
-| [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 18 | 0 | open |
+| [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 26 | 0 | open |
 | [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 20 | 0 | open |
-| [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 28 | 0 | open |
+| [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 29 | 0 | open |
 | [13g — Corporate control and firm birth](plan/13g-mna-birth.md) | 15 | 0 | open |
-| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 22 | 0 | open |
+| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 24 | 0 | open |
 | [13i — Cross-border](plan/13i-cross-border.md) | 17 | 0 | open |
 | [14 — The polity](plan/14-polity.md) | 13 | 0 | open |
 | [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |

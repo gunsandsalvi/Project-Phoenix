@@ -479,6 +479,38 @@ parameters, phases anchored to kernel phases, participants evaluated per party o
 contributions, and a seed contribution. Assembly (`world/assemble.ts`) merges these in dependency
 order (`requires`), seeds, states equity as the read, and seals the world with the audit.
 
+#### What a module may extend, and what is closed to it (13b.1)
+
+`SystemModule` has grown a single-answer hook every time a module needed the kernel to ask a question
+it had not asked before: `curveFamilies` (sovereign curves), `indices?`, `outlooks?` (XI-16),
+`marks?` (Banks Lending D1), `creditDecisions?` (Money B3.a), `bankChoices?` (Banks Funding E1),
+`venueParticipants?` (the labour venue), `resolves?` (bank resolution), `derivativeKinds?` and
+`clearingCapacity?` (13a), `seed?`. Every one is argued correctly in place and the argument is the
+same each time: the answer belongs to the module that owns the party or the instrument, exactly one
+module may answer, and a world where nobody answers must not seal. The problem is not any one hook —
+it is that inventing a hook was the only way a module could teach the kernel a new question, and
+inventing one is a kernel change that nothing said was allowed.
+
+Measured on the three commits that built item 13: **13a — a new SHAPE of state — cost 24 kernel files
+to 7 module files; 13b — seven CLASSES of that shape — cost 6 to 24.** The architecture is
+plug-and-play for instances and costly for shapes, and that is largely irreducible: a contract
+genuinely is new state, and new state means a store, a leg, an op, a value and an audit family. What
+was avoidable is stated at 13b.1.
+
+**The rule, taken as a decision rather than drifted into:**
+
+- **Open to module extension**, under the single-answer rule assembly already enforces: `SystemModule`
+  hooks, kind profiles a module registers, params, units, phases, participants, venues, audit
+  contributions, index rules, curve families. A module adds a row; the kernel collects and never
+  branches (Law 15).
+- **Closed**: `core/ids.ts` (a module brands its own key rather than adding a kernel brand),
+  `registry/kinds.ts`'s profile shapes, `MarketRunDeps`, and the contexts in `world/context.ts`.
+  A module that needs something one of these does not have raises it as an inserted worklist item with
+  the argument, the way 11.6 and 13b.1 were.
+- **`registry/` is data.** It may not import `world/` or `clearing/`. A profile field that needs a
+  party's private view belongs on a module the owning layer collects at assembly, not on a registry
+  profile — which is what `DerivativeKindProfile.orders` got wrong and 13b.1 corrects.
+
 Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else:
 
 | Context            | Who gets it                                                 | Can                                                                                                                                                                            | Cannot                                                                       |
