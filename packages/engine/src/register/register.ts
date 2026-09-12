@@ -16,7 +16,6 @@ import { Missing } from '../core/errors.js';
 import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
 import {
   atMost,
-  dustOf,
   finite,
   moved,
   mul,
@@ -279,7 +278,7 @@ export class Register {
    * simply starts where its own arithmetic left it (`openedFrom`), instead of pretending a number
    * somebody worked out was a number somebody stated.
    */
-  stateEquity(party: PartyId, value: number, dust: number): void {
+  stateEquity(party: PartyId, value: number, dust: number, period: Period, cycle: Cycle): void {
     forbid(
       !this.equityAccount.has(party),
       'Audit B5.b',
@@ -294,11 +293,18 @@ export class Register {
     // the read). With it in the ledger the two records are comparable without an argument about
     // where each starts — Σ every entry is the balance, exactly, and a missing entry is a
     // difference rather than a difference-plus-an-opening-nobody-recorded.
+    /**
+     * Reporting G2, G3.b: AT THE PERIOD IT OPENED IN, which is not always period zero. A firm
+     * incorporated in period 40 and an estate opened mid-run both had their opening entry dated to
+     * the beginning of the world, so `equityEntries(party, from, to)` over any later span left it
+     * out — and G2's "Σ every entry is the balance" held only for a reader who asked for the whole
+     * history (item 13b.1). Every caller knows when it is; none of them had been asked.
+     */
     this.equityLedger.set(party, [
       {
         party,
-        period: 0 as Period,
-        cycle: 0 as Cycle,
+        period,
+        cycle,
         delta: value,
         cause: `equity of ${party} stated at the opening`,
       },
@@ -424,18 +430,19 @@ export class Register {
   /**
    * C4: whether this holder can deliver these units — the one place that question is answered, so
    * that whoever asks before an instruction settles and the walk that settles it cannot disagree
-   * about it (Law 4). The tolerance is the dust of the walk itself: a quantity that was summed over
-   * these lots, matched against them one at a time, and against a free quantity summed the same way.
+   * about it (Law 4).
+   *
+   * Law 8: IT IS EXACT, and it has to be. Every quantity that reaches a lot passes `onTheGrid` at
+   * every door of this file, so a holding is a count of whole pieces and so is a delivery; two
+   * integers compare exactly and a residue is one piece or none. The dust this used to carry —
+   * `dustOf(lots + 2, |qty| + |free|)`, about 3e-16 of the magnitude — is below one piece for any
+   * magnitude under ~1e15, so it was unreachable in this world and, where it became reachable, it
+   * let a holder deliver units that were not there. `core/tick.ts` says it outright: integers add,
+   * subtract and compare EXACTLY, and the checks that compare them need no tolerance at all rather
+   * than a derived one (item 13b.1).
    */
   deliverable(holder: PartyId, instrument: InstrumentId, qty: number): boolean {
-    const free = this.free(holder, instrument);
-    return qty <= free || qty - free <= this.deliveryDust(holder, instrument, qty);
-  }
-
-  private deliveryDust(holder: PartyId, instrument: InstrumentId, qty: number): number {
-    const h = this.holding(holder, instrument);
-    const lots = h.some ? h.value.lots.length : 0;
-    return dustOf(lots + 2, Math.abs(qty) + Math.abs(this.free(holder, instrument)));
+    return qty <= this.free(holder, instrument);
   }
 
   /**
@@ -450,23 +457,19 @@ export class Register {
     this.onTheGrid(qty, `what ${holder} delivers of ${instrument}`);
     const freeNow = this.free(holder, instrument);
     const h = this.mutable(holder, instrument);
-    // Law 7: one dust for the whole walk, derived from the arithmetic that produces it — a quantity
-    // asked for that was itself summed over these lots, matched against the lots one at a time. The
-    // same tolerance decides whether the holder can deliver and whether the walk finished, because
-    // it is the same comparison made twice, by the same reader (Law 4).
-    const dust = this.deliveryDust(holder, instrument, qty);
     forbid(
       this.deliverable(holder, instrument, qty),
       'Register C4',
       `${holder} cannot deliver ${qty} of ${instrument}: free ${freeNow}`,
-      { holder, instrument, qty, free: freeNow, dust },
+      { holder, instrument, qty, free: freeNow },
     );
     const drawn: DrawnLot[] = [];
     let remaining = qty;
     while (remaining > 0 && h.lots.length > 0) {
       const lot = h.lots[0];
       if (lot === undefined) break;
-      const take = lot.qty <= remaining || lot.qty - remaining <= dust ? lot.qty : remaining;
+      // Law 8: whole pieces meeting whole pieces. A lot is taken whole or it is split exactly.
+      const take = atMost(lot.qty, remaining, 'this lot has no more in it than it has');
       drawn.push({
         lot: lot.id,
         qty: take,
@@ -476,16 +479,14 @@ export class Register {
       remaining = finite(remaining - take, 'debit remaining');
       if (take === lot.qty) h.lots.shift();
       else h.lots[0] = Object.freeze({ ...lot, qty: finite(lot.qty - take, 'lot qty') });
-      if (remaining <= dust) remaining = 0;
     }
-    if (remaining <= dust) remaining = 0;
-    // What a full debit leaves behind, when it is smaller than the dust of the walk, is nothing:
-    // dropping it is arithmetic, not a transfer. A residue larger than that stays and the ownership
-    // family reports it (Appendix B: no residual with no holder).
-    if (remaining === 0 && h.lots.length > 0) {
-      const left = sum(h.lots.map((l) => l.qty));
-      if (left.value <= dust) h.lots.length = 0;
-    }
+    /**
+     * Appendix B, Law 5, Law 8: AND WHAT IS LEFT IS LEFT. This used to clear the whole lot book
+     * when what remained summed below the walk's dust — units deleted with no instruction and no
+     * counterparty, which is a residual with no holder and a one-sided flow at once. It was true
+     * when quantities were continuous; every lot quantity now passes `onTheGrid`, so the smallest
+     * residue there can be is one whole piece, and one piece of something belongs to somebody.
+     */
     impossible(
       remaining === 0,
       'Register C4',
@@ -504,13 +505,7 @@ export class Register {
    * negative only when the issuer's overdraft decision allowed it (Money B3). Returns the balance
    * after the move.
    */
-  moneyDelta(
-    holder: PartyId,
-    instrument: InstrumentId,
-    delta: number,
-    period: Period,
-    allowNegative: boolean,
-  ): number {
+  moneyDelta(holder: PartyId, instrument: InstrumentId, delta: number, period: Period): number {
     finite(delta, `money delta on ${holder}`);
     this.onTheGrid(delta, `what moves on ${holder}'s ${instrument}`);
     this.parties.get(holder);
@@ -523,15 +518,18 @@ export class Register {
     const current = h.lots[0];
     const before = current === undefined ? 0 : current.qty;
     const after = finite(before + delta, `balance of ${holder}/${instrument}`);
-    const encumbered = sum(h.liens.map((l) => l.qty)).value;
-    forbid(
-      allowNegative ||
-        after - encumbered >= 0 ||
-        encumbered - after <= dustOf(2, Math.abs(before) + Math.abs(delta)),
-      'Money B3.c',
-      `${holder} would be overdrawn ${after} on ${instrument} with no lender and no recorded refusal`,
-      { holder, instrument, before, delta },
-    );
+    /**
+     * Money B3.c is SETTLEMENT'S QUESTION, and it was asked here too — with a tolerance beside the
+     * one settlement uses, which is the second computation of one question this file's own comment
+     * said it was not (Law 4, item 13b.1). Worse, its only real caller disabled it: settlement
+     * passed `allowNegative: true` at both money sites unconditionally, because the legs of one
+     * instruction may land in an order that takes an account through zero and come back — and
+     * whether an account is overdrawn is a fact about the instruction, not about one leg of it.
+     * So the check that ran was the seed's, on an endowment that is always positive.
+     *
+     * The real one is `Settlement.precheck`, which nets the whole instruction first and refuses it
+     * whole. What is left here is the arithmetic: the balance moves, and the walk records it.
+     */
     const key = moneyKey(holder, instrument);
     const walk = this.moneyAccount.get(key);
     this.moneyAccount.set(key, moved(walk ?? opened(before, key), delta, `balance of ${key}`));
@@ -668,13 +666,60 @@ export class Register {
       );
   }
 
-  /** Remove every trace of a party that has merged away; the caller has verified identical state. */
-  forget(party: PartyId): void {
+  /**
+   * XI-15: remove every trace of a cell that has merged INTO another — and GUARD THE STORE.
+   *
+   * What makes this legitimate is not that the cell is empty: it is that its per-member state is
+   * IDENTICAL to the cell it merged into, so the members and what each of them holds are still
+   * there, under one name, with the absorbing cell's weight grown by exactly theirs. Nothing is
+   * dropped, because every member's holding survives in the cell that now counts them.
+   *
+   * It used to take the caller's word for that on a comment — the one door in this file that
+   * trusted its caller instead of guarding the store — while the check itself lived in
+   * `world/cells.ts`, a second reader of this register's own lots (item 13b.1). It is asked here,
+   * where the deletion happens and where the state is, and asked once (Law 4). A caller that got
+   * it wrong deleted units and an equity account with nothing on either side (Law 5, Appendix B).
+   */
+  forget(party: PartyId, into: PartyId): void {
+    forbid(
+      this.sameState(party, into),
+      'XI-15',
+      `${party} cannot be forgotten into ${into}: their per-member state differs`,
+      { party, into },
+    );
     const m = this.byHolder.get(party);
     if (m !== undefined) for (const inst of m.keys()) this.index(inst).delete(party);
     this.byHolder.delete(party);
     this.equityAccount.delete(party);
     this.equityLedger.delete(party);
+  }
+
+  /**
+   * XI-15: whether two cells hold exactly the same thing per member — the same lines, the same
+   * lots in the same order at the same basis and the same age, the same liens, the same equity.
+   * It is what makes a merge a renaming rather than a transfer, and it is the register's question
+   * because the lots are the register's.
+   */
+  sameState(a: PartyId, b: PartyId): boolean {
+    const ha = this.holdingsOf(a);
+    const hb = this.holdingsOf(b);
+    if (ha.length !== hb.length) return false;
+    for (const x of ha) {
+      const y = hb.find((h) => h.instrument === x.instrument);
+      if (y === undefined) return false;
+      if (x.lots.length !== y.lots.length || x.liens.length !== y.liens.length) return false;
+      for (let i = 0; i < x.lots.length; i += 1) {
+        const p = x.lots[i];
+        const q = y.lots[i];
+        if (p === undefined || q === undefined) return false;
+        if (p.qty !== q.qty || p.basisPerUnit !== q.basisPerUnit || p.acquired !== q.acquired) {
+          return false;
+        }
+      }
+    }
+    const ea = this.hasEquityAccount(a) ? this.equity(a) : undefined;
+    const eb = this.hasEquityAccount(b) ? this.equity(b) : undefined;
+    return ea === eb;
   }
 
   // ---- internals ---------------------------------------------------------------------------

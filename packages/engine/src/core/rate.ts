@@ -6,6 +6,7 @@
  * Periodicities are placed on the calendar by date (Money G3.a); converting a rate between
  * periodicities is an explicit call through a day count (calendar/daycount.ts), never a constant.
  */
+import { Impossible } from './errors.js';
 import { finite } from './num.js';
 
 /** How often something pays or is quoted. Nothing finer than the period exists (Money G3.b). */
@@ -20,8 +21,19 @@ export const SEMI_ANNUAL: Periodicity = Object.freeze({ kind: 'months', n: 6 });
 export const QUARTERLY: Periodicity = Object.freeze({ kind: 'months', n: 3 });
 export const MONTHLY: Periodicity = Object.freeze({ kind: 'months', n: 1 });
 
-/** A periodicity of n months, for a schedule whose spacing is itself a declared number. */
-export const months = (n: number): Periodicity => Object.freeze({ kind: 'months', n });
+/**
+ * A periodicity of n months, for a schedule whose spacing is itself a declared number.
+ *
+ * Money G3.a: n IS A POSITIVE WHOLE NUMBER OF MONTHS. A schedule advances by `n × k` months for
+ * k = 1, 2, 3…, so `months(0)` never advances and `Calendar.schedule` loops for ever — a HANG,
+ * which is the worst failure this engine can have because it reports nothing at all (item 13b.1).
+ */
+export const months = (n: number): Periodicity => {
+  if (!Number.isSafeInteger(n) || n <= 0) {
+    throw new Impossible('Money G3.a', `a periodicity of ${n} months is not a spacing`);
+  }
+  return Object.freeze({ kind: 'months', n });
+};
 
 export interface Rate {
   readonly amount: number;

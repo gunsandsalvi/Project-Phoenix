@@ -248,6 +248,12 @@ export class Instruments {
         issuedDust: finite(i.issuedDust * ratio + moveDust(issued, 0), `issued dust of ${id}`),
       }),
     );
+    // Law 4, Law 19: AND THE MEMO IS NOT A SECOND REGISTER. Every other mutator in this file ends
+    // here; this one did not, so after a split `all()` handed back frozen records carrying the
+    // PRE-split count for the rest of the run — to the ownership family, to the observer and to
+    // every derived value (item 13b.1). A memo that can disagree with the map is the index this
+    // file's own comment says an index must never be.
+    this.everything = undefined;
   }
 
   /** B4: an instrument ceases, and every holding in it has already resolved to something else, named. */

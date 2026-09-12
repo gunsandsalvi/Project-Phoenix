@@ -99,11 +99,11 @@ export function moneyFamily(memory: AuditMemory): Family {
       for (const h of view.register.allHoldings()) {
         if (!moneyInstruments.has(h.instrument)) continue;
         const qty = sum(h.lots.map((l) => l.qty)).value;
-        // Law 7: the balance is a walk, not a reading — every leg that ever moved this account is
-        // entitled to its rounding, and a negative that small is that rounding rather than credit
-        // anybody extended. It is the same tolerance settlement uses when it decides whether the
-        // account is short enough to ask the issuer for an overdraft, because it is one fact (Law 4).
-        if (qty < 0 && !withinDust(qty, 0, view.register.moneyWalk(h.holder, h.instrument).dust)) {
+        // Law 8: a money balance is a count of the money's own smallest piece, so a negative one is
+        // negative by at least a whole piece. The walk's dust this used to allow was a band under
+        // integer arithmetic — and it was the same band settlement used, so the two agreed about
+        // an overdraft neither of them could actually see (item 13b.1).
+        if (qty < 0) {
           out.push({
             family: 'money',
             spec: 'Money B3.c',

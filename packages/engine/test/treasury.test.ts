@@ -200,7 +200,7 @@ describe('the funding constraint (Treasury D3, Sovereign A3.b, XI-9)', () => {
               // Take the buffer away: the account is empty when the first outlay falls due.
               const account = moneyInstrumentId(CB, USD);
               const held = ctx.register.quantity(TREASURY_US, account);
-              ctx.register.moneyDelta(TREASURY_US, account, negQty(held), ctx.period, false);
+              ctx.register.moneyDelta(TREASURY_US, account, negQty(held), ctx.period);
               ctx.instruments.adjustIssued(account, negQty(held));
             },
           }

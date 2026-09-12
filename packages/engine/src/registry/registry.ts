@@ -130,6 +130,15 @@ export class Registry {
    * by declaring the same world finer and showing its path does not turn on the number.
    */
   constructor(data: RegistryData, pieceShift: number, tickShift: number) {
+    // Law 2: both are RESOLUTIONS — how many times finer than the stated grid this world is — and
+    // a resolution of zero is not a coarser world, it is no grid at all: every tick becomes
+    // `Infinity` and every quantity is off it. Refused where it is declared (item 13b.1).
+    if (!Number.isSafeInteger(pieceShift) || pieceShift < 0) {
+      throw new InvalidRegistry('Law 2', `pieceShift is ${pieceShift}; it is a count of halvings`);
+    }
+    if (!Number.isSafeInteger(tickShift) || tickShift < 0) {
+      throw new InvalidRegistry('Law 2', `tickShift is ${tickShift}; it is a count of halvings`);
+    }
     this.pieceShift = pieceShift;
     this.tickShift = tickShift;
     this.currencies = unique(data.currencies, (c) => c.code, 'currency');
@@ -220,6 +229,29 @@ export class Registry {
       }
       if (k.priceTick !== undefined && !(k.priceTick > 0)) {
         throw new InvalidRegistry('Law 8', `instrument kind ${k.id} has a price tick of ${k.priceTick}`);
+      }
+    }
+    /**
+     * Law 8, Derivative D2, D7: A DERIVATIVE KIND IS VALIDATED LIKE AN INSTRUMENT KIND.
+     *
+     * The instrument kinds are checked six ways here and the derivative kinds were checked in no
+     * way at all, so a module registering a kind whose `unit` nothing declared failed much later,
+     * inside `subdivision`, with `unit undefined does not exist` and no word about which kind had
+     * asked. A `tickShift` of zero made every tick `Infinity`. Both are assembly facts and both
+     * are refused at assembly now, by name (item 13b.1).
+     */
+    for (const k of this.derivativeKinds.values()) {
+      if (!this.units.has(k.unit)) {
+        throw new InvalidRegistry(
+          'Derivative D2',
+          `derivative kind ${k.id} counts its notional in ${k.unit}, which is not a declared unit`,
+        );
+      }
+      if (!(k.priceTick > 0)) {
+        throw new InvalidRegistry(
+          'Law 8',
+          `derivative kind ${k.id} has a price tick of ${k.priceTick}; a book quotes on a grid`,
+        );
       }
     }
     for (const f of this.curveFamilies.values()) {

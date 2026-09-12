@@ -10,6 +10,7 @@
  * and is never green by omission.
  */
 import type { Period } from '../calendar/calendar.js';
+import { InvalidRegistry } from '../core/errors.js';
 import { finite, positiveCount } from '../core/num.js';
 import type { AuditView } from './view.js';
 
@@ -50,9 +51,21 @@ export interface Violation {
 export interface FamilyReport {
   readonly family: FamilyName;
   readonly spec: string;
+  /**
+   * Audit C2: BUILT MEANS EVERY CONTRIBUTION IS BUILT, not that one of them is.
+   *
+   * It used to be `some`, and the report then listed only the contributions that ran — so a family
+   * with one built contribution and three stubs read green and the stubs vanished from the report
+   * entirely. Confirmed instance: the kernel registered a `crossMarket` stub declaring itself
+   * unbuilt beside the modules that actually check it, and the family read green with the stub
+   * invisible. C2 says an unbuilt family says so and is never green by omission; at the
+   * CONTRIBUTION level, which is what modules contribute at, it was green by omission (item 13b.1).
+   */
   readonly built: boolean;
   /** Which contributions ran. */
   readonly contributions: readonly string[];
+  /** C2: and which did NOT, by name, so what is not checked is readable rather than absent. */
+  readonly unbuilt: readonly string[];
   readonly count: number;
   /** The worst instances by size (D2). */
   readonly worst: readonly Violation[];
@@ -98,9 +111,16 @@ export class Audit {
     for (const name of FAMILY_NAMES) map.set(name, []);
     for (const f of families) {
       const list = map.get(f.name);
-      if (list === undefined) throw new Error(`unknown audit family ${f.name}`);
+      // Audit A2: EVERY FINDING NAMES ITS CLAUSE — in the one file whose subject is that rule, two
+      // assembly failures were bare `Error`s with no citation at all (item 13b.1).
+      if (list === undefined) {
+        throw new InvalidRegistry('Audit B1', `${f.contributor} contributes to no such family: ${f.name}`);
+      }
       if (list.some((x) => x.contributor === f.contributor)) {
-        throw new Error(`audit family ${f.name}: contribution ${f.contributor} registered twice`);
+        throw new InvalidRegistry(
+          'Audit C2',
+          `audit family ${f.name}: contribution ${f.contributor} registered twice`,
+        );
       }
       list.push(f);
     }
@@ -112,7 +132,8 @@ export class Audit {
     let total = 0;
     for (const name of FAMILY_NAMES) {
       const contributions = this.byFamily.get(name) ?? [];
-      const built = contributions.some((c) => c.built);
+      // A family nobody contributes to is not built either: there is nothing behind it to be.
+      const built = contributions.length > 0 && contributions.every((c) => c.built);
       const violations: Violation[] = [];
       for (const c of contributions) {
         if (!c.built) continue;
@@ -129,6 +150,7 @@ export class Audit {
         spec: contributions.length === 0 ? 'Part XII' : contributions.map((c) => c.spec).join(' '),
         built,
         contributions: contributions.filter((c) => c.built).map((c) => c.contributor),
+        unbuilt: contributions.filter((c) => !c.built).map((c) => c.contributor),
         count: violations.length,
         worst,
         violations,

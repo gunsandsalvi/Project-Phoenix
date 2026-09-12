@@ -195,7 +195,7 @@ function seedContext(w: World): SeedContext {
       forbid(w.instruments.has(inst), 'Money A1', `${p.bank} issues no money in ${ccy}`);
       const held = w.registry.payable(ccy, perMember);
       if (held <= 0) return;
-      store.moneyDelta(p.id, inst, held, w.period, false);
+      store.moneyDelta(p.id, inst, held, w.period);
       w.instruments.adjustIssued(inst, held * weightOf(p));
     },
     endowUnits: (
@@ -248,6 +248,8 @@ function stateEquityAsRead(w: World): void {
       p.id,
       read.value,
       combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked,
+      w.period,
+      w.cycle,
     );
   }
 }

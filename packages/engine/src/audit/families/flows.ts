@@ -58,13 +58,29 @@ export function flowsFamily(memory: AuditMemory): Family {
         restated.set(instrument, mul(ratioOf(instrument), ratio, 'the restatement this period'));
       }
 
-      // Weight events copy state without an instruction (a split); those parties are exempt this period.
-      const weightSubjects = new Set(
-        view.journal
-          .inPeriod(view.period)
-          .filter((e) => e.kind === 'weight')
-          .flatMap((e) => e.subjects),
-      );
+      /**
+       * XI-15, Audit C3: THE ONE CELL WHOSE BOOK REALLY DID APPEAR OR VANISH, and no other.
+       *
+       * Every quantity compared here is PER MEMBER, so a weight event that only changes how many
+       * members there are changes nothing this family is looking at: an entry, a death and a
+       * promotion are checked exactly like any other period. Two of the five copy a book without
+       * an instruction — a split gives the NEW cell its parent's per-member state, and a merge
+       * forgets the absorbed one — and it is those two cells, named on the event itself, that have
+       * a holding with no leg behind it.
+       *
+       * It used to exempt every SUBJECT of every weight event, which is both cells of a split or a
+       * merge and the cell itself for the other three — so a household cell that gained a member
+       * had Money D3 switched off across every line it held, for that period, and households are
+       * cells whose weights move constantly (item 13b.1). C3 says every family runs the same checks
+       * every period.
+       */
+      const copied = new Set<string>();
+      for (const e of view.journal.inPeriod(view.period)) {
+        if (e.kind !== 'weight') continue;
+        const kind = e.data['kind'];
+        const who = kind === 'split' ? e.data['to'] : kind === 'merge' ? e.data['from'] : undefined;
+        if (typeof who === 'string') copied.add(who);
+      }
 
       const keys = new Set<string>([...memory.holdings.keys(), ...holdingDeltas.keys()]);
       for (const h of view.register.allHoldings()) keys.add(holdingKey(h.holder, h.instrument));
@@ -73,7 +89,7 @@ export function flowsFamily(memory: AuditMemory): Family {
         const holder = parts[0];
         const instrument = parts[1];
         if (holder === undefined || instrument === undefined) continue;
-        if (weightSubjects.has(holder)) continue;
+        if (copied.has(holder)) continue;
         if (!view.parties.has(holder as never) || !view.instruments.has(instrument as never))
           continue;
         const remembered = memory.holdings.get(key);

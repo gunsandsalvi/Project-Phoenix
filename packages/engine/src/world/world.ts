@@ -1288,7 +1288,7 @@ export class World {
         // Everything from here moves it by a named event (Audit B5.b).
         // Law 7: no arithmetic produced this, so it carries none of it — a party that has just
         // arrived holds nothing and owes nothing, exactly.
-        this.store.stateEquity(party.id, 0, 0);
+        this.store.stateEquity(party.id, 0, 0, this.currentPeriod, this.currentCycle);
         this.journal.record(
           this.currentPeriod,
           this.currentCycle,

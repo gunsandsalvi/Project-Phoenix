@@ -79,11 +79,6 @@ export function mergeCells(
   const cb = d.parties.cell(b);
   forbid(a !== b, 'XI-15', 'a cell cannot merge with itself');
   forbid(sameKey(ca, cb), 'XI-15', `cells ${a} and ${b} have different keys and cannot merge`);
-  forbid(
-    sameState(a, b, d.register),
-    'XI-15',
-    `cells ${a} and ${b} differ in state and cannot merge`,
-  );
   d.parties.applyWeight({
     kind: 'merge',
     party: a,
@@ -92,7 +87,8 @@ export function mergeCells(
     period,
     cause,
   });
-  d.register.forget(b);
+  // XI-15: the register guards its own store, and it refuses a merge of two cells that differ.
+  d.register.forget(b, a);
   d.parties.cease(b, period, a);
   d.journal.record(
     period,
@@ -152,27 +148,6 @@ function sameKey(a: CellParty, b: CellParty): boolean {
     a.key.bank === b.key.bank &&
     a.kind === b.kind
   );
-}
-
-function sameState(a: PartyId, b: PartyId, r: Register): boolean {
-  const ha = r.holdingsOf(a);
-  const hb = r.holdingsOf(b);
-  if (ha.length !== hb.length) return false;
-  for (const x of ha) {
-    const y = hb.find((h) => h.instrument === x.instrument);
-    if (y === undefined) return false;
-    if (x.lots.length !== y.lots.length || x.liens.length !== y.liens.length) return false;
-    for (let i = 0; i < x.lots.length; i += 1) {
-      const p = x.lots[i];
-      const q = y.lots[i];
-      if (p === undefined || q === undefined) return false;
-      if (p.qty !== q.qty || p.basisPerUnit !== q.basisPerUnit || p.acquired !== q.acquired)
-        return false;
-    }
-  }
-  const ea = r.hasEquityAccount(a) ? r.equity(a) : undefined;
-  const eb = r.hasEquityAccount(b) ? r.equity(b) : undefined;
-  return ea === eb;
 }
 
 function nextSplitId(c: CellParty, parties: Parties): PartyId {

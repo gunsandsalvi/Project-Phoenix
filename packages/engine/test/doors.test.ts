@@ -578,3 +578,60 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
     expect(() => w.step()).toThrow(/pledge to itself/);
   });
 });
+
+describe('the delivery check is exact, because a quantity is a count of pieces (Law 8, Register C4)', () => {
+  it('refuses one piece more than is free, and lets exactly what is free go', () => {
+    const seen: { over: string; exact: string; left: number; lots: number } = {
+      over: '',
+      exact: '',
+      left: -1,
+      lots: -1,
+    };
+    const w = world(
+      pledgeModule((ctx) => {
+        if (ctx.period !== 1) return;
+        const free = ctx.register.free(BANK_A, GOV);
+        const move = (qty: number): string => {
+          const r = ctx.settle({
+            legs: [
+              {
+                kind: 'asset',
+                from: BANK_A,
+                to: BANK_B,
+                instrument: GOV,
+                qty,
+                pricePerUnit: none(),
+                accruedPerUnit: none(),
+                fromCell: none(),
+                toCell: none(),
+              },
+            ],
+            cause: 'transfer',
+            reason: `bank.a delivers ${qty} of the gov line`,
+          });
+          return r.outcome === 'failed' ? r.reason.kind : 'settled';
+        };
+        /**
+         * The register used to allow a delivery over `free` by the dust of the walk —
+         * `dustOf(lots + 2, |qty| + |free|)`, about 3e-16 of the magnitude. Every quantity that
+         * reaches a lot passes `onTheGrid`, so the smallest excess there can be is ONE WHOLE
+         * PIECE, and a piece more than somebody holds is a short position nobody borrowed
+         * (Register C4). The band was unreachable here and destroyed units where it was reachable.
+         */
+        seen.over = move(free + 1);
+        seen.exact = move(free);
+        seen.left = ctx.register.quantity(BANK_A, GOV);
+        const h = ctx.register.holding(BANK_A, GOV);
+        seen.lots = h.some ? h.value.lots.length : 0;
+      }),
+    );
+    w.step();
+    expect(seen.over).toBe('insufficientUnits');
+    expect(seen.exact).toBe('settled');
+    // Appendix B, Law 5: a full delivery leaves NOTHING, and it leaves it by having moved every
+    // piece to a named holder — never by a branch that cleared the lot book because what was left
+    // summed below a tolerance, which is units deleted with no instruction behind them.
+    expect(seen.left).toBe(0);
+    expect(seen.lots).toBe(0);
+  });
+});

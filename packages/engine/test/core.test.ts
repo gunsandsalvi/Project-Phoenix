@@ -3,6 +3,8 @@ import fc from 'fast-check';
 import {
   ANNUAL,
   Calendar,
+  asQty,
+  downTick,
   Impossible,
   NonFinite,
   SEMI_ANNUAL,
@@ -13,10 +15,15 @@ import {
   finite,
   formatCivil,
   fromDayNumber,
+  months,
   period,
   prng,
   rate,
+  scaleQty,
+  splitOnTick,
   sum,
+  toTick,
+  upTick,
   withinDust,
   yearFraction,
 } from '../src/index.js';
@@ -126,5 +133,51 @@ describe('prng (Seed A5)', () => {
     expect(x.next()).not.toBe(y.next());
     const again = prng('seed-1').derive('households');
     expect(again.next()).toBe(prng('seed-1').derive('households').next());
+  });
+});
+
+describe('the doors that let something through without looking (item 13b.1)', () => {
+  it('refuses a quantity that is not a whole number of pieces, at every rounding door', () => {
+    // `asQty` and `onTick` checked it; `toTick`, `downTick` and `upTick` cast straight to `Qty`,
+    // so a magnitude past the safe-integer range came back branded as a count of pieces and threw
+    // later at a site that had not made the error (Law 8).
+    for (const door of [toTick, downTick, upTick]) {
+      expect(() => door(2 ** 60)).toThrow(/whole number/);
+      expect(() => door(Number.MAX_SAFE_INTEGER + 10)).toThrow(/whole number/);
+    }
+    expect(toTick(2.5)).toBe(3);
+    expect(downTick(2.9)).toBe(2);
+    expect(upTick(2.1)).toBe(3);
+  });
+
+  it('scales a count by a whole number of them and refuses a fraction', () => {
+    // Clearing C3, Law 8: a per-member amount times a headcount is a count. Multiplying by a
+    // fraction is a rounding, and a rounding is a decision somebody makes by name.
+    expect(scaleQty(asQty(7), 3)).toBe(21);
+    expect(() => scaleQty(asQty(7), 0.5)).toThrow(/whole number/);
+  });
+
+  it('splits a total into parts that sum to exactly the total, and never loses a piece', () => {
+    // The loop that hands out the remainders used to `break` on an index it had built itself,
+    // which would have left the parts summing to LESS than the total with nothing saying so —
+    // a residual with no holder, in the function written to prevent exactly that.
+    for (const [total, weights] of [
+      [100, [1, 1, 1]],
+      [7, [5, 3, 1]],
+      [-11, [2, 2, 2, 2]],
+      [1, [1, 1, 1, 1, 1]],
+    ] as const) {
+      const parts = splitOnTick(total, [...weights]);
+      expect(parts.reduce<number>((a, b) => a + b, 0)).toBe(total);
+      for (const p of parts) expect(Number.isSafeInteger(p)).toBe(true);
+    }
+  });
+
+  it('refuses a periodicity of no months, which a schedule would loop on for ever', () => {
+    // Money G3.a. A hang is the worst failure this engine can have: it reports nothing at all.
+    expect(() => months(0)).toThrow(/spacing/);
+    expect(() => months(-1)).toThrow(/spacing/);
+    expect(() => months(1.5)).toThrow(/spacing/);
+    expect(months(3).kind).toBe('months');
   });
 });

@@ -127,7 +127,7 @@ m.id !== 'central-bank-omo');
                 const account = moneyInstrumentId(party.bank, USD);
                 const held = ctx.register.quantity(party.id, account);
                 if (held <= 0) continue;
-                ctx.register.moneyDelta(party.id, account, negQty(held), ctx.period, false);
+                ctx.register.moneyDelta(party.id, account, negQty(held), ctx.period);
                 ctx.instruments.adjustIssued(account, negQty(held));
               }
             },

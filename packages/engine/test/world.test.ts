@@ -215,16 +215,18 @@ describe('the seed (Seed A2)', () => {
     // their reason and both were declared shapes, so the field guards passed and the honest measure
     // read zero. A shape with a scheduled death IS a placeholder (Law 2), and the register now
     // refuses the other way round.
-    // SIX, and it went UP for an honest reason: 13b declares a TRACKER PER INDEX RULE (Indices B2),
-    // so this world has four exchange-traded funds where it had one — and each of them carries a
-    // management fee standing in for the same mechanism at the same item. A count that stayed at
-    // four while the world grew three more fees would be the register not counting.
+    // SEVEN, and it goes up and down for honest reasons: 13b declares a TRACKER PER INDEX RULE
+    // (Indices B2), so this world has four exchange-traded funds where it had one, and each of them
+    // carries a management fee standing in for the same mechanism at the same item; the seventh is
+    // the money fund's, and WHICH bank it was launched at is an outcome of the draw (Seed B1.a), so
+    // a world redrawn is a world with a differently named fee. A count that stayed put while the
+    // world grew more fees would be the register not counting.
     //
     // The one that went earlier is still the point of counting them: `seed.centralBank.
     // openingHoldingShare` named 11.5 as the item that would kill it, 11.5 came, and it is a POLICY
     // the central bank takes now rather than a share somebody stated. A placeholder that dies on
     // the item it named is the register working exactly as XI-14 asks.
-    expect(report?.reads.placeholders).toBe(6);
+    expect(report?.reads.placeholders).toBe(7);
     // PLAN §7: what each stands in for and which item kills it, never the id — a fund's own id
     // carries the bank it was launched at, and WHICH bank is an outcome of the draw (Seed B1.a).
     expect(
@@ -233,6 +235,7 @@ describe('the seed (Seed A2)', () => {
         .sort(),
     ).toEqual([
       'Central Bank F4 at 13h',
+      'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',
@@ -598,7 +601,10 @@ describe('a market with reasons on both sides', () => {
     expect(offered, 'the sellers hold less than the buyer can pay for, so nothing would fail').toBeGreaterThan(had / 1.2);
     const r = w.step();
     const gov = r.markets.find((m) => m.market === GOV_MARKET);
-    expect(gov?.failedTrades).toBe(1);
+    // HOW MANY fail is an outcome of the draw — how many sellers the buyer's money runs out
+    // against — and a test that names it is a test naming a party (CLAUDE.md). What the clause is
+    // about is that at least one did, and that each one moved NOTHING.
+    expect(gov?.failedTrades).toBeGreaterThan(0);
     // C3.b: THE WHOLE TRADE, NOT HALF OF IT. The buyer is matched against several sellers now —
     // one bank's holding is not necessarily bigger than a firm's money, so the whole banking system
     // offers — and it settles the ones its money covers and fails the one that does not. What the
@@ -611,8 +617,14 @@ describe('a market with reasons on both sides', () => {
     expect(w.cash(partyId('firm.2'), USD)).toBeLessThan(had);
     expect(w.cash(partyId('firm.2'), USD)).toBeGreaterThanOrEqual(0);
     const failed = w.ledger.all().filter((x) => x.outcome === 'failed');
-    expect(failed).toHaveLength(1);
-    expect(failed[0]?.outcome === 'failed' && failed[0].reason.kind).toBe('overdraftRefused');
+    expect(failed.length).toBe(gov?.failedTrades);
+    for (const f of failed) {
+      expect(f.reason.kind).toBe('overdraftRefused');
+      // C3.b: not a leg of it anywhere. A failed instruction is a recorded state, not a partial
+      // one — a failed record carries no deltas at all, which is a different thing from carrying
+      // an empty list of them.
+      expect('deltas' in f).toBe(false);
+    }
     expect(violations(w)).toEqual([]);
   });
 });

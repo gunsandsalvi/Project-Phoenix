@@ -55,3 +55,21 @@ source, do not re-derive it), not that the band is too narrow.
 flows family exempts, and this is the same question one family over. Whether the fix is that the
 family reads the published figure instead of re-walking, or that the dust is derived from the walk
 that produced it rather than from the comparison, is decided when that step is taken.
+
+---
+
+## 13b.1-3 — Two tests named an outcome of the draw — FIXED
+
+**Measured.** `world.test.ts`, after 13b.1 redrew the world: `expected 2 to be 1` on
+`gov?.failedTrades`, and `expected 7 to be 6` on the placeholder count.
+
+**What it is, and it is the rule CLAUDE.md states.** A test never names a party, and neither of
+these was naming one on purpose — but `failedTrades === 1` is a statement about how many sellers
+the buyer's money ran out against, which is an outcome of which banks the draw gave which holdings.
+And the placeholder count moved because WHICH bank the money fund is launched at is an outcome too,
+so a redrawn world has a differently named fee.
+
+**Fixed in the tests, not the engine.** The first now asserts what Register C3.b is about: at least
+one trade failed, every failed one carries no deltas at all, and the buyer holds exactly the settled
+volume and paid exactly for it. The second asserts the count the world actually declares, with the
+reason it moves written beside it.

@@ -34,7 +34,7 @@ import {
   type PartyId,
   type UnitId,
 } from '../core/ids.js';
-import { addTo, atMost, dustOf, finite, mul, sum, zeroIfNone } from '../core/num.js';
+import { addTo, atMost, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
 import { onTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
@@ -570,9 +570,13 @@ export class Settlement {
         'XI-15',
         `instruction ${ins.id}: cell ${party} weight is ${p.weight}, leg struck at ${cs.weight}`,
       );
+      // Law 8, XI-15: EXACTLY. A per-member amount is a count of pieces and a weight is a count
+      // of people, so the product is a count of pieces and the leg's total is the same count —
+      // two integers, which agree bit for bit or name two different amounts. The dust this
+      // carried was a band under a multiplication that cannot round (item 13b.1).
       const expected = mul(cs.perMember, cs.weight, 'cell total');
       forbid(
-        Math.abs(expected - total) <= dustOf(2, Math.abs(total) + Math.abs(expected)),
+        expected === total,
         'XI-15',
         `instruction ${ins.id}: cell ${party} per-member ${cs.perMember} x ${cs.weight} is not ${total}`,
       );
@@ -883,8 +887,9 @@ export class Settlement {
           short: -after,
         };
       }
-      if (after >= 0 || Math.abs(after) <= dustOf(ops.length, Math.abs(free) + Math.abs(n.delta)))
-        continue;
+      // Law 8: a balance is a count of the money's own smallest piece, and so is every delta that
+      // reaches it. An account is overdrawn by a whole piece or it is not overdrawn (item 13b.1).
+      if (after >= 0) continue;
       const inst = this.d.instruments.get(n.instrument);
       const issuerId = issuerOf(inst);
       const issuer = this.d.parties.get(issuerId);
@@ -1004,7 +1009,7 @@ export class Settlement {
       switch (op.op) {
         case 'debit': {
           if (op.money) {
-            this.d.register.moneyDelta(op.party, op.instrument, -op.qty, ins.period, true);
+            this.d.register.moneyDelta(op.party, op.instrument, -op.qty, ins.period);
             drawnByOp.set(index, [
               { lot: 0 as never, qty: op.qty, basisPerUnit: 1, acquired: ins.period },
             ]);
@@ -1035,7 +1040,7 @@ export class Settlement {
         case 'credit': {
           const basis = op.basis === 'carrying' ? carryingOf(op.fromDebit) : op.basis;
           if (op.money)
-            this.d.register.moneyDelta(op.party, op.instrument, op.qty, ins.period, true);
+            this.d.register.moneyDelta(op.party, op.instrument, op.qty, ins.period);
           else this.d.register.credit(op.party, op.instrument, op.qty, basis, ins.period);
           bump(op.party, mul(op.qty, basis, 'credit value'), op.instrument);
           deltas.push({

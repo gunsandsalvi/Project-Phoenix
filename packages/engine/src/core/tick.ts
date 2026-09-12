@@ -86,6 +86,11 @@ export function subQty(a: Qty, b: Qty, what = 'quantity'): Qty {
 
 /** So is multiplying a count by a whole number of them — a cell's per-member amount by its weight. */
 export function scaleQty(a: Qty, times: number, what = 'quantity'): Qty {
+  // A count times a COUNT. Multiplying by a fraction is a rounding, and a rounding is a decision
+  // somebody has to make by name (`toTick`, `downTick`, `upTick`) — never one this door makes.
+  if (!Number.isSafeInteger(finite(times, what))) {
+    throw new Impossible('Law 8', `${what} is scaled by ${times}, which is not a whole number`);
+  }
   return asQty(finite(a * times, what), what);
 }
 
@@ -131,7 +136,7 @@ export function onTick(value: number): boolean {
  */
 export function toTick(value: number): Qty {
   const n = finite(value, 'quantity');
-  return (n < 0 ? -Math.round(-n) : Math.round(n)) as Qty;
+  return asQty(n < 0 ? -Math.round(-n) : Math.round(n), 'the nearest whole piece');
 }
 
 /**
@@ -140,7 +145,7 @@ export function toTick(value: number): Qty {
  */
 export function downTick(value: number): Qty {
   const n = finite(value, 'quantity');
-  return (n < 0 ? -Math.floor(-n) : Math.floor(n)) as Qty;
+  return asQty(n < 0 ? -Math.floor(-n) : Math.floor(n), 'the whole piece below');
 }
 
 /**
@@ -150,7 +155,7 @@ export function downTick(value: number): Qty {
  */
 export function upTick(value: number): Qty {
   const n = finite(value, 'quantity');
-  return (n < 0 ? -Math.ceil(-n) : Math.ceil(n)) as Qty;
+  return asQty(n < 0 ? -Math.ceil(-n) : Math.ceil(n), 'the whole piece above');
 }
 
 /**
@@ -191,11 +196,21 @@ export function splitOnTick(total: number, weights: readonly number[]): readonly
   for (let i = 0; given < whole; i += 1) {
     const next = remainders[i % remainders.length];
     const has = next === undefined ? undefined : parts[next.at];
-    if (next === undefined || has === undefined) break;
+    // Clearing C3, Law 5: THE LAST PIECE HAS A HOLDER OR NOTHING DOES. Both lookups are inside
+    // arrays this function built and indexed itself, so neither can be missing — and a `break`
+    // here would leave the parts summing to LESS than the total with nothing saying so, which is
+    // the residual with no holder this function exists to prevent. It was a silent failure written
+    // to appease `noUncheckedIndexedAccess` (item 13b.1).
+    if (next === undefined || has === undefined) {
+      throw new Impossible(
+        'Clearing C3',
+        `splitting ${total} over ${weights.length} weights lost a piece at ${i}`,
+      );
+    }
     parts[next.at] = has + 1;
     given += 1;
   }
-  return parts.map((n) => (negative ? -n : n) as Qty);
+  return parts.map((n) => asQty(negative ? -n : n, 'a share of the split'));
 }
 
 /**
@@ -237,16 +252,16 @@ function gcd(a: number, b: number): number {
  * XI-15, Law 8: the most of a quantity that is a whole number of GRAINS, where a grain is what two
  * parties can actually exchange (`commonGrain`). Both are counts of pieces, so this is exact.
  */
-export function downToGrain(value: number, grain: number): number {
-  return Math.floor(finite(value, 'quantity') / whole(grain)) * grain;
+export function downToGrain(value: number, grain: number): Qty {
+  return asQty(Math.floor(finite(value, 'quantity') / whole(grain)) * grain, 'whole grains below');
 }
 
 /** The same on the nearest grain, for a value that BECOMES a payment rather than a delivery. */
-export function toGrain(value: number, grain: number): number {
+export function toGrain(value: number, grain: number): Qty {
   // Rounded to the grain ONCE. Rounding to a piece first and to the grain after would move the
   // answer by half a piece more than the grain, and the check that compares the two sides of the
   // trade would then be reporting the second rounding as a discrepancy (Law 7).
-  return Math.round(finite(value, 'quantity') / whole(grain)) * grain;
+  return asQty(Math.round(finite(value, 'quantity') / whole(grain)) * grain, 'the nearest grain');
 }
 
 /**
