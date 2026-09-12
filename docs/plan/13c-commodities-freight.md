@@ -35,6 +35,21 @@ consumption basket carries that assumption. Commodities that are INTERMEDIATE ar
 recipes they feed are already physical (Goods A2.a).
 
 
+### The rest of this item waits for the map (13c.1)
+
+**Inserted before step 9.** Steps 1–8 are done and needed nothing from geography. Steps 9, 10 and 14
+all measure DISTANCE, and until 13c.1 lands this world has one producing place and four legs whose
+technology is declared identical on every one of them (`transitPeriods: 4,
+unitsPerVesselPerPeriod: 25000, sailsIn: 4`, `seeds/foundation.ts:222`) — so a basis test has one
+location, a "source locally" test has nowhere else to source from, and the indices have a freight
+cost that does not vary with anything. Freight A4 says capacity on one route is not capacity on
+another; today it is one route wearing four labels. 13c.1 draws the map, splits `RegionDecl` into a
+country that has the money and a region that is a place, and derives every leg's kilometres, days and
+carrier cost from the ground it crosses. This item resumes at step 9 against a world with two
+producing places and legs of different lengths; steps 11–13 (the `commodity.future` kind, its
+participants and the curve) need nothing from it and are unchanged.
+
+
 ## Design
 
 ### Module `commodities`
@@ -209,8 +224,8 @@ packages/engine/test/{environment,commodity-spot,inventory,storage,disruption,fr
 - [x] **Carriers are FIRMS, and capacity is hulls.** A carrier is a named party that owns plant, banks somewhere and can fail — which is what a firm is — so a party kind of its own would be a second kind behaving identically and every rule written for one would have to be written again (Law 15, Law 4; Small-Business Pools A6.b: the boundary between sectors is a SIZE). What makes it a carrier is its business: hulls, and a leg to sail them on. Vessels are the third kind of capital, with a life of twenty-five years and a build lag of half of one — which is why freight capacity answers a shortage slowly and a blocked leg stays dear longer than the block does. A fleet is drawn from a heavy-tailed width (Seed B4: shipping is a few large owners and a long tail), so two carriers on one leg do not cost the same and one of them is marginal. **The blocked route is the same one event**: what can sail is `exp(-(wind / sailsIn) ^ hardness)`, the route's own technology because a strait closes whatever the hull stands, and a storm takes the hulls that were in it through `capital.weathered`. Four technologies per leg, all declared, and **there is no freight rate anywhere** — the test greps the register for one
 - [x] **The session, before the goods markets it feeds.** One book per leg, cleared by the same solver every market uses: carriers post the room their hulls have at what the voyage costs THEM — the wear on the hull a unit uses, times their own crews' scale — and shippers post what they hold at what moving it is worth to them, which is the gap between the two places' prints and nothing else (C1.a: never a series, C3: read off two prints both already made). Capacity rations quantity and nothing else does: a shipper is paired with named carriers down a walk of the two books, so every unit moved has somebody on each side of it, and what is not carried stays where it is — which is what being unable to ship means (D6). The session publishes what it did per leg including when it did not clear and why (Clearing C4.b). **THE LEGS ARE REAL AND IDLE**: this world makes its goods in the one region that has firms in it and the three abroad are a central bank, a treasury and a bond line until 13i builds their economies, so every leg says `noDemand` and says it out loud. The mechanism is built and tested; what it needs is somewhere to carry to
 - [x] **A cargo is somewhere while it is neither here nor there.** What is shipped leaves the origin and becomes units at a place of its own — one instrument per good per leg — on the SHIPPER'S own book, which is A3.a's working capital: a shipper that has paid for a cargo and not yet got it is short of both. After the transit the kernel's own corporate-action phase reseats it at the destination, at what it cost INCLUDING the voyage (D2), so the delivered price is the origin price plus the freight by construction and nothing adds them up a second time (Law 19). Nothing teleports, nothing is in two places, and every unit in transit has an owner the whole time (E3)
-- [ ] Location basis as an outcome of shipping with capacity; scenario test: a blocked route widens the gap and it stays (D3, D3.a, D5 direction)
-- [ ] Shipper substitution: hold, source locally, or not trade, from delivered prices in its own view; test (C2)
+- [ ] Location basis as an outcome of shipping with capacity, **between two regions of one country over a drawn leg** (13c.1): the gap between two prints is what it cost somebody to actually move the thing, and nothing computes it. Scenario test: a blocked pass widens the gap and it stays wide while the pass is shut (D3, D3.a, D5 direction)
+- [ ] Shipper substitution: hold, **source locally** — which needs a second place that makes the thing, and 13c.1 is what gives it one — or not trade at all, from delivered prices in its own view; test (C2)
 - [ ] `commodity.future` kind on the layer: series of expiries, size in contracts, margined; physical delivery as DvP at expiry or cash against the spot print; failed delivery as a recorded state; tests (A1–A4, D1–D4)
 - [ ] Futures participants: producer and consumer hedges from their own plans, investors that roll with the roll cost landing in P&L, the storage arbitrageur that needs storage and a loan quote, desks; tests (B1–B5, E3)
 - [ ] The curve as an outcome: contango bounded by carry only through the arbitrageur, backwardation unbounded, convergence because delivery is possible, open interest vs deliverable supply as a read; tests assert mechanism, not level (C1–C4, E1, E2)

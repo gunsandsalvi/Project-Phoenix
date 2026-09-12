@@ -192,6 +192,12 @@
     "steps": 16
   },
   {
+    "id": "13c.1",
+    "title": "The map",
+    "file": "13c.1-the-map.md",
+    "steps": 12
+  },
+  {
     "id": "13d",
     "title": "Labour mobility, housing, household life cycle",
     "file": "13d-labour-housing-lifecycle.md",
