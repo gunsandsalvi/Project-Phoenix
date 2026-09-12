@@ -64,24 +64,33 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   const t = decl.terms;
   const fixing = floatingRate(t, { lastEvent: (kind, subject) => view.lastPublicAbout(kind, subject) });
   /**
-   * A1.c, E2, Law 3: WHAT A SIDE NAMES WHEN THE BOOK HAS NEVER PRINTED.
+   * A1.c, E2, Law 3, XI-13: WHAT THIS PARTY NAMES, and it is never read off this book.
    *
-   * A market that only quotes off its own last print never has a first one. What breaks it here is
-   * the FLOATING LEG: what the overnight book actually paid this period is a transacted rate both
-   * sides can see, and a fixed rate is what somebody will swap it for. So the first reservation is
-   * the fixing, and every one after it is this book's own print — which is E2 satisfied rather than
-   * dodged: nothing here turns a discount curve into a par rate, because there is no discount curve
-   * in this module to turn.
+   * The FLOATING LEG is the anchor: what the overnight book actually paid this period is a
+   * transacted rate both sides can see — a read of ANOTHER market — and a fixed rate is what
+   * somebody will swap it for. That is a number this party has whether or not this book has ever
+   * printed. E2 is satisfied rather than dodged: nothing here turns a discount curve into a par
+   * rate, because there is no discount curve in this module to turn.
+   *
+   * IT USED TO BE THE FALLBACK, behind this book's own last print. That is XI-13's fixed point —
+   * the print moves the outlook, the outlook moves the view, the view moves the quote — and it is
+   * the order `banks/dealing-quote.ts` reversed after it walked a bill to a price no yield could
+   * discount. A party with nothing of its own to say posted AT the print, so a book whose members
+   * had never traded in it printed one number for ever.
    */
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
-  const printed = view.print(irsLineOf(t.ccy, t.tenorYears));
-  if (!printed.some && !fixing.some) return [];
+  const outlook = view.outlook(`price.${String(irsLineOf(t.ccy, t.tenorYears))}`);
   // Law 8: a level is held in MONEY PIECES PER PIECE OF THE THING. Two per cent a year on a unit
   // of notional is two cents, and a schedule posted at 0.02 is below this book's own tick.
-  const level = printed.some
-    ? printed.value.price
-    : view.registry.priceOf(m.ccy, unit, fixing.some ? fixing.value : 0);
-  if (level <= 0) return [];
+  const mine = fixing.some
+    ? view.registry.priceOf(m.ccy, unit, fixing.value)
+    : outlook.some
+      ? outlook.value.expected
+      : 0;
+  if (mine <= 0) return [];
+  // Clearing E1: WHERE THE MARKET IS — the comparator that decides which side this party is on and
+  // how hard, and never the level it posts.
+  const at = view.print(irsLineOf(t.ccy, t.tenorYears));
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
   const held = swapped(view, t);
   /**
@@ -95,18 +104,14 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
    * pulls the other way, and how hard is what its own capital will carry.
    */
   let want = -fixedDebtOf(view, t);
-  let price = level;
-  // A2: the variable it has observed — the fixed rate THIS book struck when it was in it.
-  const outlook = view.outlook(`price.${String(irsLineOf(t.ccy, t.tenorYears))}`);
-  if (outlook.some && fixing.some) {
-    const expects = outlook.value.expected;
-    const conviction = sizeOf(view, unit, level);
-    if (expects > add(level, tick, 'above the book by a tick it can act on')) {
+  const price = mine;
+  if (at.some) {
+    const book = at.value.price;
+    const conviction = sizeOf(view, unit, mine);
+    if (mine > add(book, tick, 'above the book by a tick it can act on')) {
       want = add(want, conviction, 'and the fixed it would pay on its own view');
-      price = expects;
-    } else if (expects < sub(level, tick, 'below the book by a tick it can act on')) {
+    } else if (mine < sub(book, tick, 'below the book by a tick it can act on')) {
       want = sub(want, conviction, 'and the fixed it would receive on its own view');
-      price = expects;
     }
   }
   const move = sub(want, held, 'from the fixed it pays to the fixed it wants to pay');

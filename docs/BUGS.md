@@ -112,3 +112,43 @@ What is NOT established is that these five are that, rather than one of them bei
 test turns on, one at a time. That is a measurement (Part XII) and not a mechanism, so it waits for
 an item that is measuring rather than building — unless one of them turns out to be a defect, in
 which case it goes to whichever item owns the mechanism it is in.
+
+---
+
+## 13b-4 — The cross-currency swap has no number of its own, and its book's natural level cannot be posted
+
+**Measured.** `fx-derivatives/participants.ts` `xccyOrders`, while swapping the other four classes
+onto their own values (13b, "every class prices from its OWN value first"). Four had one already, as
+the fallback: the CDS reads the reference's cash bond, the IRS the overnight fixing, the bond future
+the cash deliverable, the FX forward its own carry. **The cross-currency swap has none.** It reads
+`view.print(t.book)` and returns `[]` when the book has never printed — so it is the one class that
+cannot open its own book at all, and once open it posts where the market already is, for ever.
+
+**Why the swap could not be made.** What an xccy book quotes is a BASIS — `quotedAs: 'rate'`,
+"what clears is the BASIS on one leg, per annum — a rate, not a price of anything" (C4). A basis is
+a RESIDUAL: the two legs already pay each other's own rates, so the covered-parity basis is **zero**
+and what trades is the deviation, driven by who needs which money. To name a level of its own a
+borrower needs what it would pay to raise the money it needs DIRECTLY — its own funding cost in each
+money — and this world has no corporate funding curve per currency. `carryOf` is the forward
+exchange rate and is the wrong unit entirely; using it here would be a unit error wearing a
+reservation's clothes.
+
+**And there is a second thing, which is structural.** Even with a number, **the parity level cannot
+be posted**: `clearing/market.ts`'s `onTheGrid` drops any limit at or below zero ("a price of zero
+is not a cheap price, it is the absence of one"), and a basis of zero — or a negative one, which is
+the normal state of a real cross-currency basis — is a level a party genuinely means. This book's
+natural quoting range straddles a boundary the order book treats as the absence of a price. It is
+the same shape as the option's one-tick bootstrap and it is not the same cause: the option has a
+number and posts a placeholder, this one has a level the grid refuses.
+
+**What is ruled out.** It is not the fixed point the other four had — there is no outlook standing
+in front of a better number, because there is no better number. It is not a missing read: every
+print it could want, it already has.
+
+**Positioned to 13f** (corporate credit, short-term debt, lending and financing), which is where a
+borrower acquires a funding cost in a named money against a real credit assessment — the one input a
+basis reservation needs. The grid question travels with it: either a contract kind declares that its
+levels may be signed (a basis, a spread, anything quoted as a deviation), or a book quoted as a rate
+is posted as an offset from a stated reference so what reaches the grid is positive. That is a
+kernel decision about `MarketDecl`/`onTheGrid` and it is stated where the class that needs it is
+built, not guessed here.

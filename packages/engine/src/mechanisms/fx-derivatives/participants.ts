@@ -87,10 +87,22 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   const t = decl.terms;
   const spot = view.print(t.spot);
   if (!spot.some) return [];
-  const last = view.print(t.book);
-  const level = last.some ? last.value.price : spot.value.price;
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
+  /**
+   * B2, XI-13: ITS OWN NUMBER — what carrying one money against the other for this term costs IT,
+   * out of its own funding, and spot when it cannot say. Both are reads of OTHER markets (the
+   * overnight books, the spot session), so this party has a level whether or not this book has
+   * ever printed.
+   *
+   * The HEDGER used to post at this book's own last price, which is XI-13's fixed point: a party
+   * with a position to cover and nothing of its own to say posted where the market already was, so
+   * a book whose members were all hedgers printed one number for ever and the cash-and-carry
+   * relationship this class exists to express was live in period one and dead from period two.
+   * `banks/dealing-quote.ts` reversed the same order for the same reason.
+   */
+  const carry = carryOf(view, spot.value.price, t.base, t.quote, t.tenorYears);
+  const mine = carry.some ? carry.value : spot.value.price;
   const covered = alreadyForward(view, t.base, t.quote);
   // D1, D2: what it is short of the BASE money, less what it has already fixed. A party with a
   // position to cover is a HEDGER and posts one order for it — one party, one position, and the
@@ -99,15 +111,18 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   if (short !== 0) {
     const qty = view.registry.deliverable(unit, short > 0 ? short : -short);
     if (qty <= 0) return [];
-    return [{ party: view.self.id, side: short > 0 ? 'buy' : 'sell', price: level, qty: asQty(qty) }];
+    return [{ party: view.self.id, side: short > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) }];
   }
   /**
    * B1, B2, B2.b: THE ARBITRAGE, and a party with nothing to hedge is the one that takes it. It
    * quotes BOTH WAYS around its own carry — a bid a tick below and an ask a tick above, which is
    * a spread and not a crossing — and the size is what its own balance sheet has room for. B2.b
    * is why it is not free: that room is its capital, and nothing raises it.
+   *
+   * It needs the carry ITSELF and not the hedger's fallback: a two-way quote around spot is a
+   * quote around a number that is not what a forward is worth, and B3.b forbids a parity formula
+   * setting a level rather than a party's own reservation naming one.
    */
-  const carry = carryOf(view, spot.value.price, t.base, t.quote, t.tenorYears);
   if (!carry.some) return [];
   const room = view.equity();
   if (room <= 0) return [];

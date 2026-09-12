@@ -28,21 +28,25 @@ import { cdsLineOf } from './data.js';
 import { isCdsIndex, seriesLineOf } from './series.js';
 
 /**
- * A1.c, C3, Law 3: WHAT A SIDE NAMES WHEN THE BOOK HAS NEVER PRINTED.
+ * A1.c, C3, Law 3, XI-13: WHAT THIS PARTY THINKS PROTECTION ON THIS NAME IS WORTH, and it is never
+ * read off this book.
  *
- * A market that only quotes off its own last print never has a first one: no order, no print; no
- * print, no order. What breaks it is that protection on a name is not the only price of that name
- * — its own debt is already trading, and what that debt is worth against par over the years it has
- * left is what the CASH market is charging for the same credit. So the first reservation is read
- * off the reference's own bond, and from the moment this book prints, the difference between the
- * two is C3's basis: a READ, and a real one, because the two sides were never the same number.
+ * Protection on a name is not the only price of that name: its own debt is already trading, and
+ * what that debt is worth against par over the years it has left is what the CASH market is
+ * charging for the same credit. That is a read of ANOTHER market — the reference's own bond — so it
+ * is a number this party has whether or not this book has ever printed, and the difference between
+ * the two is C3's basis: a READ, and a real one, because the two sides were never the same number.
  *
- * A reference whose debt has never printed either has no anchor and no book — which is the honest
- * answer for a name nobody has ever put a price on.
+ * IT USED TO BE THE LAST RESORT and the book's own print stood in front of it, which is XI-13's
+ * fixed point written out — the print moves the outlook, the outlook moves the view, the view moves
+ * the quote, the quote moves the print. `banks/dealing-quote.ts` records what that did to a bill
+ * and why its own `viewOf` asks the cash-flow number FIRST. This is the same order, for the same
+ * reason: what somebody else paid is where the market is, and where the market is, is not a view.
+ *
+ * A reference whose debt has never printed either has no anchor here — which is the honest answer
+ * for a name nobody has ever put a price on, and the party falls back to its own outlook below.
  */
 function levelFor(view: ParticipantView, m: MarketDecl, t: CdsTerms): number | undefined {
-  const printed = view.print(cdsLineOf(t.reference, t.tenorYears));
-  if (printed.some) return printed.value.price;
   const cash = view.print(t.obligation);
   if (!cash.some || t.tenorYears <= 0) return undefined;
   const belowPar = sub(1, cash.value.price, 'what the cash market discounts this credit by');
@@ -139,14 +143,21 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   if (decl === undefined || !isCds(decl.terms)) return [];
   const t = decl.terms;
   if (view.self.id === t.reference) return [];
-  const level = levelFor(view, m, t);
-  if (level === undefined) return [];
+  // XI-13: its OWN number — the cash market's charge for this credit, and its own outlook of this
+  // book only when the reference's debt has never printed. Neither is this book's own last price.
+  const anchor = levelFor(view, m, t);
+  const expects = ownView(view, t);
+  const mine = anchor ?? expects;
+  if (mine === undefined) return [];
   const held = coverHeld(view, t);
   const facing = decl.house === null ? 'the other side' : String(decl.house);
   const term = counterpartyTerm(view, held > 0 ? held : -held, facing);
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
   const unit = view.registry.derivativeKind(decl.kind).unit;
-  const expects = ownView(view, t);
+  // Clearing E1: WHERE THE MARKET IS. It decides which side this party is on and how hard, and it
+  // is never the level posted: a party that posted where the market last was would be agreeing with
+  // it rather than saying anything, and a book of those prints one number for ever.
+  const at = view.print(cdsLineOf(t.reference, t.tenorYears));
   /**
    * ONE PARTY, ONE POSITION (Law 4). A party that both covered a holding and wrote protection
    * on the same name in the same session would be two opinions wearing one name — and the
@@ -157,17 +168,18 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
    * party that thinks the spread should be wider wants more cover than its holding alone.
    */
   let want = exposureTo(view, t);
-  let price = mul(level, term, 'what cover is worth facing this side');
-  if (expects !== undefined) {
-    const conviction = sizeOf(view, unit, view.equity(), level);
-    if (expects > add(level, tick, 'wider than the book by a tick it can act on')) {
+  let price = mul(mine, term, 'what cover is worth facing this side');
+  if (at.some) {
+    const book = at.value.price;
+    const conviction = sizeOf(view, unit, view.equity(), mine);
+    if (mine > add(book, tick, 'wider than the book by a tick it can act on')) {
       want = add(want, conviction, 'and what its own view is worth to it');
-      price = mul(expects, term, 'discounted for who is writing it');
-    } else if (expects < sub(level, tick, 'tighter than the book by a tick it can act on')) {
+    } else if (mine < sub(book, tick, 'tighter than the book by a tick it can act on')) {
       // B2, B3: it would rather WRITE this credit than hold cover on it — the same one position,
-      // the other way. A naked seller is capitalised (B3), which is what `conviction` reads.
+      // the other way. A naked seller is capitalised (B3), which is what `conviction` reads, and it
+      // does not discount its own offer for the counterparty it is writing TO.
       want = sub(want, conviction, 'against what it would rather write');
-      price = expects;
+      price = mine;
     }
   }
   const move = sub(want, held, 'from the protection it has to the protection it wants');

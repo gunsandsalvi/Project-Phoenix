@@ -166,3 +166,38 @@ describe('what a reader is shown (Observer A1, A3; CDS A1.d; IRS C1)', () => {
     }
   });
 });
+
+describe('a book is not its own last price (XI-13, Law 3, Clearing E1)', () => {
+  it('does not freeze a contract book at the first level it printed', () => {
+    const w = ran(12);
+    const books = w.markets.filter((m) => m.contract !== undefined);
+    expect(books.length).toBeGreaterThan(0);
+    // Every class now names a level of its OWN — the reference's cash bond, the overnight fixing,
+    // the cash deliverable, its own carry, its own view of the move — and reads this book's print
+    // only to decide which side it is on. Under the order that stood before, a party with nothing
+    // of its own to say posted AT the print, so a book whose members were all in that state
+    // printed one number for the rest of the run: the print moved the outlook, the outlook moved
+    // the view, the view moved the quote, the quote moved the print (`banks/dealing-quote.ts`
+    // records what that did to a bill). So a book that printed more than once has moved.
+    const printedTwice = books.filter((m) => w.prices.history(m.instrument).length > 1);
+    if (printedTwice.length === 0) return;
+    const moved = printedTwice.filter(
+      (m) => new Set(w.prices.history(m.instrument).map((x) => x.price)).size > 1,
+    );
+    expect(moved.length).toBeGreaterThan(0);
+  });
+
+  it('opens an option book, which a bootstrap of one tick could not (D7.b, D4)', () => {
+    const w = ran(12);
+    const books = w.markets.filter((m) => m.contract !== undefined && isOption(m.contract.terms));
+    if (books.length === 0) return;
+    // The fallback used to be `tickForDerivative`, the smallest increment the kind quotes in. Every
+    // party's own arithmetic was above it, so every party took the writer's side: all offers, no
+    // bids, `noDemand`, no print — and next period the same tick again. What a party names now is
+    // what its own view of the underlying's move says optionality is worth, and the two sides of
+    // the book are two parties whose surprises differ (§46 A3).
+    const rows = w.contracts.open_().filter((c) => isOption(c.terms));
+    const printed = books.filter((m) => w.prices.history(m.instrument).length > 0);
+    expect(rows.length + printed.length).toBeGreaterThan(0);
+  });
+});

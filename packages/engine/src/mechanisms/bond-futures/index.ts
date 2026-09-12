@@ -256,9 +256,19 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const t = decl.terms;
   const cash = view.print(t.deliverable);
   if (!cash.some) return [];
-  const last = view.print(t.book);
-  const level = last.some ? last.value.price : cash.value.price;
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
+  /**
+   * XI-13, Clearing E1: ITS OWN NUMBER, and it is about the DELIVERABLE rather than about this
+   * book — its own outlook of that line where it has one, and what the line last printed
+   * otherwise. Both are reads of the cash market, which is where a future's value comes from; a
+   * party that posted where THIS book last was would be agreeing with it rather than saying
+   * anything, and a book of those prints one number for ever (`banks/dealing-quote.ts` records
+   * what that did to a bill, and reversed the same order for the same reason).
+   */
+  const outlook = view.outlook(`price.${String(t.deliverable)}`);
+  const mine = outlook.some ? outlook.value.expected : cash.value.price;
+  /** Where the market is: the comparator that decides the side and the size, never the level. */
+  const at = view.print(t.book);
   let position = 0;
   let worth = 0;
   for (const c of view.contracts.mine()) {
@@ -277,7 +287,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   if (position !== 0 && own > 0 && worth < 0 && -worth > mul(own, tolerance, 'what it will stand')) {
     const qty = view.registry.deliverable(unit, position > 0 ? position : -position);
     if (qty <= 0) return [];
-    return [{ party: view.self.id, side: position > 0 ? 'sell' : 'buy', price: level, qty: asQty(qty) }];
+    return [{ party: view.self.id, side: position > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) }];
   }
   /**
    * I2: ONE PARTY, ONE POSITION. A holder of the line wants to be SHORT the future by what it
@@ -287,19 +297,17 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    */
   const held = view.free(t.deliverable);
   let want = -div(held, t.contractSize, 'what its holding comes to in contracts');
-  let price = level;
-  const outlook = view.outlook(`price.${String(t.deliverable)}`);
-  if (outlook.some && own > 0) {
+  const price = mine;
+  if (at.some && own > 0) {
+    const book = at.value.price;
     const conviction = view.registry.deliverable(
       unit,
       div(own, mul(cash.value.price, t.contractSize, 'what one contract commits'), 'what it can carry'),
     );
-    if (outlook.value.expected > level) {
+    if (mine > book) {
       want = add(want, conviction, 'and the duration its own view wants');
-      price = outlook.value.expected;
-    } else if (outlook.value.expected < level) {
+    } else if (mine < book) {
       want = sub(want, conviction, 'and the duration its own view would shed');
-      price = outlook.value.expected;
     }
   }
   const move = sub(want, position, 'from the position it has to the one it wants');

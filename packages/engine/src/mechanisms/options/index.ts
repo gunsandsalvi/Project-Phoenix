@@ -243,52 +243,63 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     const iAmA = c.a === view.self.id;
     covered = add(covered, iAmA === c.terms.holds ? c.notional : -c.notional, 'cover it has');
   }
-  const last = view.print(t.book);
-  const level = last.some ? last.value.price : view.registry.tickForDerivative(decl.kind, m.ccy);
+  /**
+   * Expectations A3, XI-13, §46's second dimension: WHAT THIS PARTY THINKS OPTIONALITY IS WORTH,
+   * and it is never read off this book.
+   *
+   * What it thinks the thing MOVES is its own outlook's CONFIDENCE and not its level: an outlook
+   * carries how wide that party's own surprises about the UNDERLYING have been, which is a view of
+   * dispersion formed the same adaptive way as the view of the level, and it is exactly what an
+   * option is a price of. Two parties whose prices agree and whose surprises differ disagree about
+   * what optionality is worth, which is the disagreement this instrument exists to clear. On top of
+   * it is what this party's own capital wants for carrying the position.
+   *
+   * THE FALLBACK USED TO BE ONE TICK, and it meant the book could never open. With no print the
+   * level was the smallest increment the kind quotes in, so every party's own number was above it,
+   * every party took the writer's side, and the session was all offers and no bids: `noDemand`, no
+   * print, and next period the same tick again. It was also a declared number standing in for a
+   * mechanism, written in code rather than in the parameter register (Law 2). There is no fallback
+   * now because there is nothing to fall back FROM: the party's own arithmetic is the level, and a
+   * party with no view of how much the underlying moves has no view of what optionality on it is
+   * worth — which is a real answer (D4) and not a gap to fill with somebody else's number.
+   */
+  const outlook = view.outlook(`price.${String(t.underlying)}`);
+  const own = view.equity();
+  const moves = outlook.some
+    ? mul(outlook.value.expected, outlook.value.confidence, 'what it thinks it moves')
+    : 0;
+  const mine = moves > 0 ? add(moves, mul(moves, aversion, 'what its capital wants'), 'its quote') : 0;
+  if (mine <= 0) return [];
+  /** Clearing E1: where the market is — the comparator that decides the side, never the level. */
+  const at = view.print(t.book);
   /**
    * ONE PARTY, ONE POSITION (Clearing A2). Demand with a reason: a holder of the line wants a PUT
    * over the part of its book its own management will not carry — its own holding and its own
    * preference, never a hedge ratio. Supply with a reason: a party with capital and a view on how
-   * much the thing MOVES writes out of the same balance sheet it runs everything else on, at what
-   * it expects plus what its capital wants for the position.
+   * much the thing MOVES writes out of the same balance sheet it runs everything else on.
    */
   const held = view.free(t.underlying);
   let want = t.right === 'put' && held > 0
     ? div(mul(held, aversion, 'the part it will not carry'), t.multiplier, 'in contracts')
     : 0;
-  let price = level;
-  /**
-   * Expectations A3, §46's second dimension: WHAT IT THINKS THE THING MOVES, which is its own
-   * outlook's CONFIDENCE and not its level. A party's outlook carries how wide its own surprises
-   * have been — that is a view of dispersion, formed the same adaptive way as the view of the
-   * level, and it is exactly what an option is a price of. Two parties whose prices agree and
-   * whose surprises differ disagree about what optionality is worth, which is the disagreement
-   * this instrument exists to clear.
-   */
-  const outlook = view.outlook(`price.${String(t.underlying)}`);
-  const own = view.equity();
-  if (outlook.some && own > 0) {
-    const moves = mul(outlook.value.expected, outlook.value.confidence, 'what it thinks it moves');
-    const asks = add(moves, mul(moves, aversion, 'what its capital wants'), 'its quote');
-    if (asks > 0) {
-      const room = view.registry.deliverable(
-        unit,
-        div(own, mul(asks, t.multiplier, 'per contract'), 'what it can write'),
-      );
-      if (asks > level) {
-        // It thinks these are dear: it would rather be the writer.
-        want = sub(want, room, 'and what it would write at its own price');
-        price = asks;
-      } else if (asks < level) {
-        want = add(want, room, 'and what it would buy at its own price');
-        price = asks;
-      }
+  const price = mine;
+  if (at.some && own > 0) {
+    const book = at.value.price;
+    const room = view.registry.deliverable(
+      unit,
+      div(own, mul(mine, t.multiplier, 'per contract'), 'what it can write'),
+    );
+    if (mine > book) {
+      // It thinks these are dear against what the market last paid: it would rather be the writer.
+      want = sub(want, room, 'and what it would write at its own price');
+    } else if (mine < book) {
+      want = add(want, room, 'and what it would buy at its own price');
     }
   }
   const move = sub(want, covered, 'from the cover it has to the cover it wants');
   if (move === 0) return [];
   const qty = view.registry.deliverable(unit, move > 0 ? move : -move);
-  if (qty <= 0 || price <= 0) return [];
+  if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
 
