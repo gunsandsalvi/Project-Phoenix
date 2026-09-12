@@ -1239,3 +1239,187 @@ writer", `estate`'s "a formula discount off book", `parties`'s "lifting a relati
 is a data change" — are cases where a file states the rule in its own header and the code two
 hundred lines down does not follow it. In a codebase with ordinary comments none of those would be
 findable at all.
+
+---
+
+# Addendum: how parties name a level, and what happens when nothing printed
+
+Asked after the review: things lose their price when there was no print the period before, and every
+party should be running its own fair value rather than quoting off the last print. Both halves are
+right, and the codebase has already diagnosed and cured this once — in one file, which the seven
+newest modules then did not follow.
+
+## What each party actually posts
+
+| party / book | the level it names | reads this book's own print? |
+| --- | --- | --- |
+| bank dealing desk — **dated claim** | `priceAtYield(own flows, requiredYieldOf(issuer))` | **no, deliberately** |
+| bank dealing desk — share | own outlook of the price, then what it carries one at | yes |
+| household — sovereign paper | `priceAt(flows, its own required yield)` | **no** |
+| household — share | `bookPerShare + earnedPerShare ÷ year ÷ required` | **no** (published accounts) |
+| household — fund share | the NAV (`view.mark`) | **no** (arithmetic on a book) |
+| household — goods | own outlook of the price, spread over own confidence | via its outlook |
+| firm — its output | own outlook × (1 − spoilage) | via its outlook |
+| firm — plant | `worth − rest of the bundle`, from expected contribution | **no** |
+| firm — its own shares | `equity ÷ issued` | **no** (print only decides cheap/dear) |
+| fund — buying | `priceAt(flows, what its investors require)` | **no** |
+| fund — forced sale | `market` | n/a, and correct |
+| index future | the index level | **no** (the index is a read of constituents) |
+| money market | the corridor's floor / ceiling | n/a, administered |
+| labour | the firm's own wage bid; the cell's own outside option | **no** |
+| estate | `print × left/(left+1)` | yes — already a finding above |
+| **cds** | this book's print, else the reference's cash bond below par | **yes** |
+| **irs** | this book's print, else the overnight fixing | **yes** |
+| **fx.forward / xccy** | this book's print, else spot | **yes** |
+| **bond.future** | this book's print, else the cash bond | **yes** |
+| **option** | this book's print, else **one tick** | **yes** |
+
+The older half of the engine is fair-value-first. The seven derivative classes built in 13b are
+print-first with a bootstrap behind them. That split is the whole of the problem.
+
+## The cure is already written down, in `banks/dealing-quote.ts`
+
+`viewOf` asks `requiredYieldOf` → `priceAtYield` **first**, and falls back to the print-derived
+outlook only for a claim that promises nothing. The comment says why, and it is an incident report:
+
+> It used to be the last resort... and what stood in front of it was `outlook('price.<instrument>')`:
+> the desk's own adaptive expectation OF THE PRICE, formed from the prints. That is XI-13's fixed
+> point written out — **the print moves the outlook, the outlook moves the view, the view moves the
+> quote, the quote moves the print** — and in the one market this model funds itself through it
+> walked a bill that pays 1.00 in seven days to a print of 3.3337, at which no representable yield
+> discounts its own payments to what somebody paid, so the curve threw and the world stopped.
+
+That is exactly the failure mode, named, with the fix. **The seven classes written afterwards do the
+thing it describes.**
+
+## DEFECT — the derivative classes post AT the last print when the party has no view
+
+Every one of the five bilateral classes has this shape (`irs/participants.ts:81`,
+`bond-futures/index.ts:260`, `fx-derivatives/participants.ts:91`, `options/index.ts:247`,
+`cds/participants.ts:44`):
+
+```ts
+const last = view.print(t.book);
+const level = last.some ? last.value.price : /* bootstrap */;
+...
+let price = level;                       // <- the party's order, before any view
+const outlook = view.outlook(`price.${book}`);
+if (outlook.some && ...) {
+  if (expects > level + tick)  { want += conviction; price = expects; }
+  else if (expects < level - tick) { want -= conviction; price = expects; }
+}
+```
+
+Three consequences, in order of how much they matter:
+
+**1. A party with no outlook posts exactly the last print.** `outlook('price.<book>')` exists only
+for a party that has traded in this book (Expectations A2: a party that never observed a variable has
+no outlook of it). So a borrower hedging its own coupon, a holder buying a put, a bank taking the
+other side for the first time — each posts a limit at the last print, on whichever side its own
+position puts it. A book whose participants are all in that state is a crowd of orders at one level:
+it clears at that level, prints that level, and prints it again next period. **The book is frozen at
+whatever it first printed**, and nothing in it is a price in Law 3's sense — real supply met real
+demand, but neither side named a number of its own.
+
+**2. When somebody does have an outlook, the outlook was formed from the prints.** `observations()`
+in the expectations module writes `price.<book>` from that party's own fills in that book. So the
+outlook converges on the print it came from, `expects` lands inside `level ± tick`, the nudge never
+fires, and `price = level` again. That is the fixed point the dealer's comment describes, closed.
+
+**3. The print is doing two different jobs and only one of them is legitimate.** Deciding whether a
+party is a buyer or a seller by comparing its own value to where the market is, is what a trader
+does and is right. Using the market's last number AS the party's own limit is not a view — it is the
+absence of one. The option participant gets this half-right and is worth reading as the pattern: it
+computes `asks = moves + moves × aversion` from its own outlook's CONFIDENCE (a real, independent
+view of dispersion, which is what an option is a price of) and posts `price = asks` whenever that
+differs from `level` — so `level` is the comparator and the party's own number is the order. The
+other four never do that.
+
+## DEFECT — the option book cannot start, and the reason is a placeholder standing in for a value
+
+`options/index.ts:247`:
+
+```ts
+const level = last.some ? last.value.price : view.registry.tickForDerivative(decl.kind, m.ccy);
+```
+
+With no print, the level is **one tick**. Every party's own `asks` is then above it, so
+`if (asks > level)` fires for everybody, every party subtracts `room` from `want`, and **every party
+in the first session of an option book is a writer.** All sells, no buys, `noDemand`, no print — and
+next period the bootstrap is one tick again. The book can never open.
+
+It is also a declared number standing in for a mechanism, written in code rather than in the
+parameter register: Law 2 would call it a placeholder and ask it to name the item that kills it. The
+value it is standing in for is computable from what the participant already reads three lines below:
+the underlying's own measured move (`ContractReads.measuredMove`, which `initialMargin` already uses
+for exactly this kind) and the strike. **What it would take:** the bootstrap is the same arithmetic
+as `asks` — what the party's own view of the move says optionality is worth — which means the
+fallback and the view are one expression and the whole branch disappears. That is Law 12's shape: the
+fix removes code.
+
+## RISK — the four other bootstraps are real values that are only ever used once
+
+`cds` (the reference's own bond below par, per year of term), `irs` (the overnight fixing),
+`fx.forward` (spot), `bond.future` (the cash deliverable) are each a genuine, print-independent fair
+value for that contract, and each is correctly argued in its own comment. They are reachable only
+when the book has NEVER printed. From the second session on, the book's own print displaces them
+permanently — including when the print is stale, days old, and the underlying has moved.
+
+That is backwards, and the asymmetry shows it: `fx.forward` bootstraps from spot, then stops reading
+spot; but a forward whose spot has moved five per cent and whose own book did not trade is worth a
+different number, and every party posts the old one. The cash-and-carry relationship the class exists
+to express is live in period one and dead from period two.
+
+**What it would take, for all five:** the swap `dealing-quote.ts` already made. The bootstrap becomes
+the party's own value, computed every period; the book's print becomes the comparator that decides
+which side the party is on and how hard. Concretely:
+
+```ts
+const mine  = ownValue(view, t);          // what this class's bootstrap already computes, always
+const level = view.print(t.book);         // where the market is, or none
+// side and conviction from mine vs level; the ORDER is posted at `mine`
+```
+
+Nothing new has to be invented — every class already has `ownValue`; it is the `else` branch. And
+`DerivativeKindProfile` already has the machinery in the right shape: `mark(c, at, reads)` says what
+an open row is worth from public state, and `ContractsRead.marginFor` already asks the "what if this
+existed" question about a row that does not. A `parLevel(terms, at, reads)` on the profile — the
+level at which a new contract on these terms is worth nothing to either side (D7.b, which is the
+definition already in the file) — is the same shape as both, would be one function per class, and
+would give every participant a number of its own without any of them reading the book.
+
+## On the symptom: "no price because there was no price the tick before"
+
+Tracing it precisely, because the mechanism is not quite what it looks like.
+
+`clearing/market.ts` `carryLast` writes a **stale print** whenever `prices.latest` finds any earlier
+one, so after a line's first print it has one in every subsequent period. A line loses its price
+entirely only if it has **never** printed, or if its market did not run (`world.ts` filters out
+markets whose instrument has ceased). So the live failure is not "did not print last tick" — it is
+**"has never printed"**, and it is self-sustaining exactly where the level is read off the book:
+
+- an **option book** — never, per the finding above;
+- a **new line with no seeded opening print**, where the only parties who could price it read the
+  print. A mid-run corporate bond is the case to watch: the household buys sovereign paper only
+  (`portfolio.ts:124` `if (!sovereigns.has(i.issuer.value)) continue;`), and the dealer needs
+  `requiredYieldOf`, which is the bank's own published reservation for that issuer — so if no bank
+  has published a reservation for a new name, nobody in the world can name a level for its paper.
+
+Everything else bootstraps: the seed writes opening prints (Seed C4), sovereign lines come up through
+a primary auction where the treasury names a reservation and bidders price off the curve, and the
+curve survives on `prices.latest` rather than this period's print.
+
+**Two things follow.** First, `Valuation.markPerUnit` calling `printOrThrow` (already a finding above,
+under `prices/`) is what turns "never printed" into a thrown `Unpriced`/`NotYetProduced` at a reader
+far from the cause — which is likely what was actually observed. Second, the honest answer for a line
+nobody has priced is the one `cds/participants.ts` already gives: *"A reference whose debt has never
+printed either has no anchor and no book — which is the honest answer for a name nobody has ever put
+a price on."* That is right, and it is only right when the parties who COULD price it have genuinely
+tried. Today, for four of the five bilateral classes, they have not tried since period one.
+
+## Where this belongs
+
+Not a new worklist item. The five class fixes are one bounded change each and belong in **13b**'s
+remaining steps, which are still open; the option bootstrap is the same change and is the one that is
+currently load-bearing. The `parLevel` profile function, if it is taken, is a change to the derivative
+kind contract and so belongs with them, in 13b, not after.
