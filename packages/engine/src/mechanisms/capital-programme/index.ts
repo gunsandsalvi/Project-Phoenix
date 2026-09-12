@@ -45,7 +45,12 @@ import { goodId, isGoodTerms } from '../../registry/physical.js';
 import { costOfDraw } from '../../register/register.js';
 import { CAPITAL_KINDS, type CapitalKindDecl } from './data.js';
 import { conditionsFor, WIND } from '../../registry/environment.js';
-import { capitalKindOf, standsWindParam, windHardnessParam } from '../../registry/physical.js';
+import {
+  capitalKindOf,
+  landPerUnitParam,
+  standsWindParam,
+  windHardnessParam,
+} from '../../registry/physical.js';
 import {
   isPlant,
   plantKindId,
@@ -67,6 +72,19 @@ import { buildLagParam, lifeParam } from '../../registry/physical.js';
 /** A4, Law 2: the numbers a kind of capital states about itself, declared with their units. */
 function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
   return rows.flatMap((d): ParamDecl[] => [
+    ...(d.landPerUnit === null
+      ? []
+      : [
+          {
+            id: landPerUnitParam(d.id),
+            value: d.landPerUnit,
+            unit: 'square kilometres a unit stands on',
+            dimension: 'ratio' as const,
+            kind: 'technology' as const,
+            owner: 'model' as const,
+            why: `Goods B4 (13c.1): the ground a unit of ${d.name} stands on. It is what makes a place fill up — the more plant a region carries, the poorer the ground the next unit of it stands on — and it is why a rent emerges instead of a cap being needed (Law 6).`,
+          },
+        ]),
     {
       id: lifeParam(d.id),
       value: d.usefulLifePeriods,

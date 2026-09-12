@@ -42,6 +42,8 @@ export const VESSEL_KIND: CapitalKindDecl = {
   // A vessel is at sea and is built for far more weather than a shed on land; what takes one is a
   // storm it could not run from (B4, Commodities Spot B3).
   standsWind: 5,
+  // 13c.1: A hull is at sea: it stands on no ground, which is part of why shipping capacity is never a claim on a place.
+  landPerUnit: null,
   windHardness: 8,
   why: 'Freight A4, B2: capacity is a stock of hulls with a life, and a route is served by the hulls that sail it. It is what makes freight a real limit on how much of a thing can be where it is wanted, rather than a fee on moving it.',
 };

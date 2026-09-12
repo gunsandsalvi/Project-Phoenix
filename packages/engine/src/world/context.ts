@@ -497,7 +497,7 @@ export interface SeedContext {
   readonly period: Period;
   readonly calendar: Calendar;
   readonly registry: Registry;
-  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'decl'>;
+  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'km' | 'kmPerDay' | 'decl'>;
   readonly rng: Prng;
   /**
    * ARCHITECTURE 4.9b, Law 4: THE SEED GETS FACADES LIKE EVERY OTHER CONTEXT. It was handed the

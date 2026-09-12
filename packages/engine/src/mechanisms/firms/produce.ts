@@ -22,14 +22,23 @@
  * that starts a small batch puts the whole period's cost on it (B5.b), which is what running a line
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
-import type { InstrumentId, PartyId } from '../../core/ids.js';
+import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { div, finite, material, mul, sub, sum } from '../../core/num.js';
 import { asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { conditionsFor } from '../../registry/environment.js';
-import { goodId, wipId } from '../../registry/physical.js';
+import { groundFor, resourceId } from '../../registry/geography.js';
+import {
+  CAPITAL_KINDS,
+  capitalKindOf,
+  goodId,
+  isPlantTerms,
+  landPerUnitParam,
+  plantUnitId,
+  wipId,
+} from '../../registry/physical.js';
 import { costOfDraw, dueFromLine } from '../../register/register.js';
 import { capacityFrom, utilisation, vintagesHeld } from '../../registry/physical.js';
 import type { FirmDecl } from './data.js';
@@ -219,7 +228,15 @@ function yieldBatch(
   // And it moves a QUANTITY at the point the thing is made, which is where the loss actually is.
   // Nothing here touches a price: a shortage reaches one by there being less of the thing (Law 3).
   const season = conditionsFor(ctx, tech.terms.region, tech.terms.recipe.exposedTo);
-  const survived = finite(Math.pow(tech.yieldRate, 1 / season), 'what this season left of the line');
+  // 13c.1: AND THE GROUND IT STANDS ON, into the same exponent and at the same site — one formula
+  // for what a line got out of what it put in, so there is no second place a yield can be decided
+  // (Law 4). Poor ground is adversity the same way a poor season is, and a line made indoors stands
+  // on nothing and reads one.
+  const ground = groundUnder(ctx, tech);
+  const survived = finite(
+    Math.pow(tech.yieldRate, 1 / (season * ground)),
+    'what this season and this ground left of the line',
+  );
   const finished = ctx.registry.deliverable(
     ctx.instruments.get(good).unit,
     mul(due, survived, 'what came off the line'),
@@ -280,4 +297,54 @@ export function publishExpectation(ctx: MechanismContext, firm: PartyId): void {
     },
     true,
   );
+}
+
+/**
+ * Goods B4: what the ground a line stands on does for it, as a multiple of ordinary ground.
+ *
+ * The MARGINAL hectare, at the area this place already has under the plough — read over the
+ * register where it is used and never stored, like the season beside it. A line that stands on
+ * nothing reads one, which is a real answer and not a quality of one.
+ */
+function groundUnder(ctx: MechanismContext, tech: Technology): number {
+  const standsOn = tech.terms.recipe.standsOn;
+  if (standsOn === null) return 1;
+  const used = areaUnderUse(ctx, tech.terms.region);
+  return groundFor(
+    ctx.registry.geography,
+    ctx.params,
+    tech.terms.region,
+    resourceId(standsOn),
+    used,
+  );
+}
+
+/**
+ * How much of a place is already worked: the plant standing in it, at the ground a unit of each kind
+ * takes. A read over the instruments and the register at the site (Law 19), never a number anybody
+ * keeps — and it is EVERY holder's plant, not this firm's, because the ground of a place is a
+ * commons and the next farm stands on what the last one left.
+ */
+function areaUnderUse(ctx: MechanismContext, region: RegionId): number {
+  let area = 0;
+  for (const i of ctx.instruments.all()) {
+    const terms = i.terms;
+    if (!isPlantTerms(terms) || terms.region !== region) continue;
+    const kind = capitalKindOf(CAPITAL_KINDS, terms.capitalKind);
+    if (kind?.landPerUnit === undefined || kind.landPerUnit === null) continue;
+    // Law 19: the register already has one function for the sum of holdings; summing it again
+    // here would be a second derivation of one quantity.
+    //
+    // Law 8 TWICE OVER: the register counts PIECES and the ground a unit stands on is declared per
+    // NAMED unit, so the conversion happens where the ratio is read. Multiplying pieces by it would
+    // put a farm on a thousand times the land it stands on and take every yield in the world to
+    // nothing — which is exactly what it did before this line said so.
+    const units = div(
+      ctx.register.heldTotal(i.id).value,
+      ctx.registry.subdivision(plantUnitId(kind.id)),
+      'the plant standing here, in its own named unit',
+    );
+    area += mul(units, ctx.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on');
+  }
+  return area;
 }

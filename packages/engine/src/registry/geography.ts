@@ -113,8 +113,11 @@ export interface GeographyDecl {
  * apart because Law 8 says the dimension is part of the number: a speed read as a ratio is the
  * defect 13b.1 found in the money market, and the register is where it is caught.
  */
-export interface TerrainReads {
+export interface RatioReads {
   ratio(id: ParamId): number;
+}
+
+export interface TerrainReads extends RatioReads {
   kmPerDay(id: ParamId): number;
 }
 
@@ -158,7 +161,7 @@ export const depositAt = (g: GeographyDecl, r: ResourceId, t: TileIndex): number
  */
 export function tileYield(
   g: GeographyDecl,
-  reads: TerrainReads,
+  reads: RatioReads,
   r: ResourceId,
   t: TileIndex,
 ): number {
@@ -198,7 +201,7 @@ export function daysAcross(
 }
 
 /** Capital Programme C1: what putting plant on this tile takes, share-weighted over its mix. */
-export function buildOn(g: GeographyDecl, reads: TerrainReads, t: TileIndex): number {
+export function buildOn(g: GeographyDecl, reads: RatioReads, t: TileIndex): number {
   return sum(g.terrains.map((x) => shareOf(g, x.id, t) * reads.ratio(x.buildKm2))).value;
 }
 
@@ -207,7 +210,7 @@ export function buildOn(g: GeographyDecl, reads: TerrainReads, t: TileIndex): nu
  * least of what its mix stands rather than an average of it — an average would let a mile of open
  * plain excuse the pass above it (`largest` in core/num.ts is the one place a comparison lives).
  */
-export function standsIn(g: GeographyDecl, reads: TerrainReads, t: TileIndex): number {
+export function standsIn(g: GeographyDecl, reads: RatioReads, t: TileIndex): number {
   const present = g.terrains.filter((x) => shareOf(g, x.id, t) > 0);
   if (present.length === 0) {
     throw new InvalidRegistry('Freight B4', `tile ${t} is made of nothing`);
@@ -577,4 +580,60 @@ export function heartOf(g: GeographyDecl, place: PlaceId): TileIndex {
     }
   }
   return nearest;
+}
+
+/**
+ * How much ground of one kind a place has ALTOGETHER, in square kilometres of ordinary ground.
+ *
+ * It is a SUM over the tiles and never a mean (Law 2: no decision at an average): what a line
+ * choosing where to stand cares about is how much there IS, so one excellent tile on a small island
+ * does not beat a large region of decent ground — which is what picking by the best tile alone did,
+ * and it put a farm on twelve tiles of rock.
+ */
+export function groundIn(
+  g: GeographyDecl,
+  reads: RatioReads,
+  place: PlaceId,
+  resource: ResourceId,
+): number {
+  const perTile = g.tileKm * g.tileKm;
+  return sum(tilesOf(g, place).map((t) => tileYield(g, reads, resource, t) * perTile)).value;
+}
+
+/**
+ * Goods B4: WHAT THE NEXT HECTARE OF A PLACE YIELDS, once this much of it is already worked.
+ *
+ * The tiles are walked BEST FIRST, because that is the order anybody would work them, and the
+ * answer is the MARGINAL one: what the ground still to be had is worth, not what the place holds on
+ * average (Law 2 forbids a decision at an average, and a rent is about the margin anyway).
+ *
+ * PAST THE LAST TILE the same decline continues, by the ratio the last two set. That is what working
+ * the same ground harder means, and it is why there is no cap on what a place can hold (Law 6): the
+ * return from the next unit falls continuously and never reaches zero, so what stops an expansion is
+ * a firm's hurdle refusing the project — a decision somebody makes — and never a refusal by the map.
+ */
+export function groundFor(
+  g: GeographyDecl,
+  reads: RatioReads,
+  place: PlaceId,
+  resource: ResourceId,
+  areaKm2InUse: number,
+): number {
+  const perTile = g.tileKm * g.tileKm;
+  const sorted = tilesOf(g, place)
+    .map((t) => tileYield(g, reads, resource, t))
+    .sort((a, b) => b - a);
+  const last = sorted[sorted.length - 1];
+  if (last === undefined) {
+    throw new InvalidRegistry('Goods B4', `${place} has no ground to stand a line on`);
+  }
+  let covered = 0;
+  for (const y of sorted) {
+    covered += perTile;
+    if (covered >= areaKm2InUse) return y;
+  }
+  const before = sorted[sorted.length - 2];
+  const decline = before === undefined || before <= 0 ? 1 : last / before;
+  const over = Math.ceil((areaKm2InUse - covered) / perTile);
+  return last * Math.pow(decline, over);
 }

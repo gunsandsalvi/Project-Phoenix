@@ -97,6 +97,14 @@ export interface Recipe {
    * that owns the recipe, and a name is how a module says a thing it does not own (4.9b).
    */
   readonly exposedTo: readonly string[];
+  /**
+   * 13c.1, Goods B4: THE GROUND THIS LINE STANDS ON, by the name the map declares it under, or null
+   * for a line made indoors — a mill and an oven stand on nothing, and that is a real answer rather
+   * than a quality of one (Law 16).
+   *
+   * It is a NAME and not an import, which is how a module says a thing it does not own (4.9b).
+   */
+  readonly standsOn: string | null;
 }
 
 /**
@@ -502,6 +510,12 @@ export interface CapitalKindDecl {
    * more than twice the loss, because what fails is what the load exceeded. Technology.
    */
   readonly windHardness: number;
+  /**
+   * 13c.1, Goods B4: THE GROUND A UNIT OF IT STANDS ON, in square kilometres. It is what makes a
+   * place fill up — the more plant a region carries, the poorer the ground the next unit stands on —
+   * and null is plant that takes no ground worth counting, which is what a hull at sea is.
+   */
+  readonly landPerUnit: number | null;
   readonly why: string;
 }
 
@@ -526,6 +540,8 @@ export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
     // wind, and what fails above that fails quickly (13c, Commodities Spot B3).
     standsWind: 3,
     windHardness: 6,
+    // 13c.1: a machine and the yard around it. Small, but it is what makes a place fill up.
+    landPerUnit: 0.02,
     why: 'A machine works for three years and then it is scrap. Three years is short enough that a firm which stops investing loses its capacity inside a run, and long enough that the spend and the capacity it buys are separated by more than a cycle — which is what makes investment a commitment rather than a purchase.',
   },
 ];
@@ -580,6 +596,9 @@ export function storageRateIn(reads: SessionReads, region: RegionId): number | u
 
 export const standsWindParam = (capitalKind: string): ParamId =>
   paramId(`plant.standsWind.${capitalKind}`);
+/** 13c.1: the ground a unit of this kind stands on, under its own name (XI-14). */
+export const landPerUnitParam = (capitalKind: string): ParamId =>
+  paramId(`capital.${capitalKind}.landPerUnit`);
 export const windHardnessParam = (capitalKind: string): ParamId =>
   paramId(`plant.windHardness.${capitalKind}`);
 export const lifeParam = (capitalKind: string): ParamId =>

@@ -77,6 +77,8 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
       yieldRate: yieldParam(d.subUnit),
       // B4: the facts this line's yield stands in, carried as the names the environment publishes.
       exposedTo: d.exposedTo,
+      // 13c.1: and the ground it stands on, which is where the region stops being a label.
+      standsOn: d.standsOn,
       leadTimePeriods: leadTimeParam(d.subUnit),
     },
   };

@@ -426,7 +426,18 @@ export function drawMap(spec: MapSpec, reads: TerrainReads, seed: string): Drawn
   const deposit = new Map<ResourceId, Float64Array>();
   for (const d of spec.resources) {
     const clump = reads.ratio(d.clumping);
-    deposit.set(d.id, field(rng.derive(d.id), cols, rows, Math.round(clump), spec.octaves));
+    const layer = field(rng.derive(d.id), cols, rows, Math.round(clump), spec.octaves);
+    // Law 8: A DEPOSIT IS A MULTIPLE OF WHAT ORDINARY GROUND HOLDS, which is the unit it is in and
+    // not a normalisation of an outcome — it is how much of the thing is here, said the way anybody
+    // says it. Without it the number would be whatever the noise happened to average, and what a
+    // hectare yields would depend on the generator rather than on the ground.
+    let total = 0;
+    for (const v of layer) total += v;
+    const ordinary = total / layer.length;
+    if (ordinary > 0) {
+      for (let i = 0; i < layer.length; i += 1) put(layer, i, cell(layer, i, 'a deposit') / ordinary);
+    }
+    deposit.set(d.id, layer);
   }
 
   // 5. PLACES. Countries are grown over the land first, so each is in one piece; then each country's

@@ -30,7 +30,13 @@ import {
   WORLD,
   mapParams,
 } from './map-data.js';
-import { type TerrainReads, terrainId } from '../registry/geography.js';
+import {
+  type TerrainReads,
+  areaKm2,
+  groundIn,
+  resourceId,
+  terrainId,
+} from '../registry/geography.js';
 import { PIP, PIP_YEN } from '../registry/grid.js';
 import {
   addDays,
@@ -678,10 +684,11 @@ export function foundationSeedFor(
         kind: NamedParty['kind'],
         name: string,
         bank: PartyId,
+        where: RegionId = REGION,
       ): NamedParty => ({
         id,
         kind,
-        region: REGION,
+        region: where,
         name,
         bank,
         representation: 'named',
@@ -717,10 +724,18 @@ export function foundationSeedFor(
       // Seed B1, B3: the firms this world drew, spread across the banks that exist so that no bank's
       // customers all sit on one side of the payment chain — a bank whose do has a structural reserve
       // drain, which is a flow this world would be opening with rather than producing.
+      // 13c.1, Firm A2: AND WHERE EACH OF THEM IS. A line stands on ground, so a firm opens in the
+      // home place whose ground is best for what it makes — read off the map, not typed. A line made
+      // indoors stands on nothing and opens in the place with the most room to work in. It is the
+      // seed STATING an opening (Seed C4) and not a decision: choosing where to BUILD is 13c.2's,
+      // and that is what turns this literal from a fact about the world into an outcome.
+      const homeGround = bestGroundAt(ctx);
       firmRows.forEach((f, n) => {
         const bank = banks[n % banks.length];
         if (bank === undefined) return;
-        ctx.parties.add(named(partyId(f.firm), FIRM, f.name, bank.id));
+        ctx.parties.add(
+          named(partyId(f.firm), FIRM, f.name, bank.id, homeGround(standsOnOf(f.subUnit))),
+        );
       });
 
       // Money instruments: one per issuer (Money A1, D2). Each central bank issues its own region's
@@ -1827,6 +1842,35 @@ function mapSpec(): MapSpec {
   };
 }
 
+
+/** Which resource a line stands on, read off the one table that says so (Law 4). */
+function standsOnOf(subUnit: string): string | null {
+  const d = GOODS.find((g) => g.subUnit === subUnit);
+  return d === undefined ? null : d.standsOn;
+}
+
+/**
+ * 13c.1: WHERE THE GROUND IS BEST FOR A LINE, among the home country's places. The walk is the same
+ * one the yield makes, at nothing worked yet, so the seed and the mechanism agree about what ground
+ * is worth (Law 4). A line that stands on nothing goes where there is most room to work.
+ */
+function bestGroundAt(ctx: SeedContext): (standsOn: string | null) => RegionId {
+  const home = [...ctx.registry.regions.values()].filter((r) => r.country === HOME).map((r) => r.id);
+  const first = home[0];
+  if (first === undefined) throw new Missing('Seed B3', 'the home country has nowhere in it');
+  const g = ctx.registry.geography;
+  const widest = home.reduce((a, b) => (areaKm2(g, b) > areaKm2(g, a) ? b : a), first);
+  return (standsOn) => {
+    if (standsOn === null) return widest;
+    const resource = resourceId(standsOn);
+    // HOW MUCH THERE IS, not how good the best tile is: one excellent tile on a small island does
+    // not make it a place to farm, and picking by the best tile put a farm on twelve tiles of rock.
+    return home.reduce((a, b) =>
+      groundIn(g, ctx.params, b, resource) > groundIn(g, ctx.params, a, resource) ? b : a,
+    );
+  };
+}
+
 export function foundationSpec(
   seed: string,
   /**
@@ -1974,7 +2018,11 @@ export function foundationSpec(
       // Goods A1: the goods of THIS world are made in the one region that has firms in it. The
       // three abroad are a central bank, a treasury and a bond line (13i builds their economies),
       // so opening grain markets there would be three books nobody is ever on either side of.
-      goods(GOODS, [REGION]),
+      // 13c.1: A GOOD EXISTS WHERE IT CAN BE MADE OR SOLD, which is every place of the home
+      // country — a firm is placed by the ground now, so declaring the lines in one place only
+      // would throw the first time a draw put a farm somewhere else. Places with nobody in them
+      // print `noDemand` and say so, which is what an empty place is.
+      goods(GOODS, drawn.regions.filter((r) => r.country === HOME).map((r) => r.id)),
       // Capital Programme: the kind of thing plant is, and the schedule it wears out on. Before the
       // firms, because a firm decides what to make against the plant it holds (A2) and what to
       // invest against what a machine costs (B1) — and a kind has to be registered to be held.

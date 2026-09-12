@@ -67,6 +67,9 @@ export interface GoodDecl {
    * environment publishes them under. Empty is a line made indoors, which is most of them.
    */
   readonly exposedTo: readonly string[];
+  /** 13c.1: the resource in the ground this line stands on, or null for a line made indoors. */
+  readonly standsOn: string | null;
+  readonly standsOnWhy: string;
   /**
    * Commodities Spot A3, D3: how much covered space one unit takes for a period. Null is a line
    * nobody stores in bulk, and it is a real answer: a loaf does not wait for a silo, which is what
@@ -103,6 +106,9 @@ export const GOODS: readonly GoodDecl[] = [
     yieldWhy:
       'Pests and handling take part of every crop between the sowing and the barn, in a season that behaves. It is the largest yield loss in the chain, which is why a farmer commits labour for a tonnage it does not get. THE WEATHER IS NOT IN THIS NUMBER (13c): a crop stands in the growing conditions the environment publishes, so a bad season is a real loss of tonnes and this is what an ordinary one leaves.',
     exposedTo: ['growing'],
+    standsOn: 'arable',
+    standsOnWhy:
+      'A crop stands on arable ground, so where it is grown is part of what it costs to grow: the same labour and the same machine on poorer ground bring in fewer tonnes.',
     storagePerUnit: 0.0002,
     storageWhy:
       'A silo holds five thousand tonnes, so a tonne takes two ten-thousandths of one, and it keeps there between the harvest and the mill. Grain is the one line in this world held in bulk across periods, which is why it is the one with a silo — and why what it costs to hold is a price somebody pays somebody (D3), never free.',
@@ -135,6 +141,8 @@ export const GOODS: readonly GoodDecl[] = [
     yieldRate: 0.98,
     yieldWhy: 'A little of every batch is lost to the machinery and to sweeping up.',
     exposedTo: [],
+    standsOn: null,
+    standsOnWhy: 'Made indoors: a mill, an oven and a machine shop stand on no particular ground.',
     storagePerUnit: null,
     storageWhy: null,
     leadTimePeriods: 0,
@@ -166,6 +174,8 @@ export const GOODS: readonly GoodDecl[] = [
     yieldRate: 0.97,
     yieldWhy: 'Loaves come out of the oven wrong, and the ones that do are a loss of units, not of margin.',
     exposedTo: [],
+    standsOn: null,
+    standsOnWhy: 'Made indoors: a mill, an oven and a machine shop stand on no particular ground.',
     storagePerUnit: null,
     storageWhy: null,
     leadTimePeriods: 0,
@@ -188,6 +198,8 @@ export const GOODS: readonly GoodDecl[] = [
     yieldRate: 0.98,
     yieldWhy: 'A machine that comes off the bench wrong is scrapped; most do not.',
     exposedTo: [],
+    standsOn: null,
+    standsOnWhy: 'Made indoors: a mill, an oven and a machine shop stand on no particular ground.',
     storagePerUnit: null,
     storageWhy: null,
     leadTimePeriods: 1,
