@@ -37,18 +37,27 @@ recipes they feed are already physical (Goods A2.a).
 
 ### The rest of this item waits for the map (13c.1)
 
-**Inserted before step 9.** Steps 1–8 are done and needed nothing from geography. Steps 9, 10 and 14
-all measure DISTANCE, and until 13c.1 lands this world has one producing place and four legs whose
+**Inserted before step 9.** Steps 1–8 are done and needed no geography. Steps 9, 10 and 14 all
+measure DISTANCE, and until 13c.1 lands this world has one producing place and four legs whose
 technology is declared identical on every one of them (`transitPeriods: 4,
 unitsPerVesselPerPeriod: 25000, sailsIn: 4`, `seeds/foundation.ts:222`) — so a basis test has one
 location, a "source locally" test has nowhere else to source from, and the indices have a freight
 cost that does not vary with anything. Freight A4 says capacity on one route is not capacity on
-another; today it is one route wearing four labels. 13c.1 draws the map, splits `RegionDecl` into a
-country that has the money and a region that is a place, and derives every leg's kilometres, days and
-carrier cost from the ground it crosses. This item resumes at step 9 against a world with two
-producing places and legs of different lengths; steps 11–13 (the `commodity.future` kind, its
-participants and the curve) need nothing from it and are unchanged.
+another; today it is one route wearing four labels.
 
+13c.1 draws the map, makes every tile belong to exactly one PLACE (a land region or a sea area),
+splits `RegionDecl` into a country that has the money and a region that is a place, and puts the
+things that move onto it: a voyage is a row with a tile path and a distance travelled, its hulls held
+by a lien, advancing each period by what the weather AT THE PLACE IT IS IN allowed — so a gale slows
+the ships in that sea area, sinks some of them with their cargo, and leaves the next session short
+of hulls. `RouteDecl` and its four declared numbers die with it: capacity becomes what a carrier has
+free at an origin.
+
+**This item resumes at step 9** against a world with several producing places, voyages that are
+somewhere, and legs of different lengths. Steps 11–13 (the `commodity.future` kind, its participants
+and the curve) need nothing from it and are unchanged. **13c.2 — where a firm builds — comes after
+this item**, because it moves production between places and the steps below measure prices, so each
+measurement stays about one thing (Law 14).
 
 ## Design
 

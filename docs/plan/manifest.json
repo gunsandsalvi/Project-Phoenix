@@ -193,9 +193,15 @@
   },
   {
     "id": "13c.1",
-    "title": "The map",
+    "title": "The map, and the things that move on it",
     "file": "13c.1-the-map.md",
-    "steps": 12
+    "steps": 16
+  },
+  {
+    "id": "13c.2",
+    "title": "Where a firm builds",
+    "file": "13c.2-where-a-firm-builds.md",
+    "steps": 9
   },
   {
     "id": "13d",
