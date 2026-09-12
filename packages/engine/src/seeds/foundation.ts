@@ -75,6 +75,7 @@ import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
+import { environment } from '../mechanisms/environment/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { FIRM_COUNT, drawFirms, type FirmDecl } from '../mechanisms/firms/data.js';
@@ -1782,6 +1783,10 @@ export function foundationSpec(
       },
     ],
     modules: [
+      // The physical world, first and depending on nothing (13c): it is not an economic outcome
+      // and does not wait for one. Every region this world has stands in weather of its own, and
+      // the producer, the carrier, the insurer and the household all read the same fact.
+      environment([REGION, ...ABROAD.map((c) => c.region)], seed),
       // The order matters at one anchor: three phases sit before the revaluation, and they must run
       // in this order — a drawing becomes a loan row, then anything that cannot pay dies, then the
       // people it employed are released. Assembly keeps declaration order for modules that do not

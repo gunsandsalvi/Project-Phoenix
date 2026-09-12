@@ -43,6 +43,12 @@ const FORBIDS: readonly Forbid[] = [
     pattern: /'research\.surprise'/,
   },
   {
+    spec: 'Commodities Spot B3, Goods B4, Freight B4, Insurers B4, Law 4',
+    why: 'ONE PHYSICAL EVENT HAS ONE REPRESENTATION. A storm is a producer’s lost crop, a blocked passage and every policy in the region at once; a module that drew its own hazard, frequency or severity would be a second draw for one real thing, and the two would disagree about an event they are both supposed to be about. The physical state is `mechanisms/environment`’s and crosses as a public event (13c). This is the same refusal 13h makes of `catastrophe.probability` as a primitive, seen from the other side — and it breaks silently, because a world with two hazards runs, balances and looks exactly like one with none',
+    applies: (p) => !p.includes(join('mechanisms', 'environment')),
+    pattern: /\b(hazard|catastrophe|disaster)(Rate|Probability|Frequency|Severity|PerPeriod)?\s*[:=(]|['"`][a-zA-Z.]*\.(hazard|catastrophe|disaster)[a-zA-Z.]*['"`]/,
+  },
+  {
     spec: 'Reporting E2, E3',
     why: 'there is no variable in this world called the market’s expectation (§46 A2.b); a party may observe the consensus as one more published statistic, but nothing may read it AS its outlook',
     // The OBSERVER is the one exception and it is the one §45 B2.a names: a surface decides
