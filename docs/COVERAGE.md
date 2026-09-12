@@ -1408,7 +1408,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Households D2` | MISSING |  |
 | `Households D3` | MET | packages/engine/src/audit/families/accounts.ts |
 | `Households D4` | MISSING |  |
-| `Households D5` | PARTIAL | packages/engine/src/mechanisms/households/portfolio.ts weighs yield against liquidity — what a saver requires of paper for giving up access, against what a deposit returns; risk needs something that prices it (worklist 9) |
+| `Households D5` | MET | packages/engine/src/mechanisms/households/portfolio.ts (13d: a household prices every line the same way it prices a loaf — its own outlook of that line's price where it has one, the last print where it has not, and NOTHING where the line has never printed. The three valuation branches are deleted: a cell that discounted a bond's cash flows on a curve family's day count and capitalised a company's published earnings over its book was a securities analyst, which is one analytical technology handed to everybody and the representative agent one level up. What it will pay is the bottom of the range it thinks the price could be in — its expectation less how wrong it has recently been (§46 B3) — so two cells looking at one print want different prices for it, which is what gives the book two sides. The liquidity premium and the horizon still decide WHERE its money can go: it will not tie it up past its own horizon, and a fund's offer is compared against what it requires) |
 | `Households D6` | MET | packages/engine/src/mechanisms/households/index.ts (a cell bids in the markets it is in and is nobody residual holder) |
 | `Households E1` | MISSING |  |
 | `Households E2` | MISSING |  |

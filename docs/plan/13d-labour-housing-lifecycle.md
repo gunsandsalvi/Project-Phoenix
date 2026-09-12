@@ -26,6 +26,27 @@ F1.a, F1.b, F2, F2.a, F3, F3.a (the claim at 13h: PARTIAL until then), F4; Firm 
 ---
 
 ## Findings this item carries (folded in from the review)
+### Two more findings, both measured both ways
+
+**The life cycle cannot be built on the weight events this kernel has, and here is exactly why.** A
+cell carries its holdings PER MEMBER, in whole pieces (Law 8), so a transfer between two cells of
+different weights has no quantity both sides can denominate: the leg's `qty` must equal
+`perMember × weight` on each side at once, and two weights in the millions share no such number
+worth moving. `merge` cannot help — it refuses two cells whose per-member state differs, which is
+exactly what handing the estate over makes true — and a weight event alone destroys units, because
+per-member state stays put while the total falls. So ageing, mortality and inheritance need one of
+two things: a re-striking read on a weight event (which cannot be exact in whole pieces either), or
+an AGE on the cell's key so that crossing a boundary is a split and nothing moves at all. The second
+is right and it is the same key work as **step 22** (wealth and tenure as key dimensions, after
+13b.1's key data). Steps 12–16 are positioned there. Written down rather than attempted: a half-built
+life cycle that loses people or loses units is worse than none.
+
+**`funds.test.ts`: "breaks the buck" goes red on step 19's change, and it is a finding rather than a
+regression.** Measured both ways: four reds in `households` + `funds` before, five after, and the
+new one is the money fund's NAV. A household that prices paper off its own outlook rather than by
+discounting cash flows bids differently for bills, so the fund's assets reprice differently — which
+is the change doing what it is for. It belongs with **13h**, which is where funds are worked on next.
+
 ### A finding this item picked up, measured both ways
 
 **`loans.test.ts`: two reds that pre-date this item.** "gets dearer for a borrower that has failed
@@ -337,7 +358,7 @@ packages/engine/test/{mobility,participation,release,dwellings,housing-market,mo
 - [ ] Retirement as a cohort crossing; income switches to drawdown; the pension claim declared PARTIAL to 13h; tests (F3, F3.a)
 - [ ] Households E1–E4: borrowing for a house, consumption and shortfalls as decisions; the lender's affordability decision; default from the distribution; tests
 - [ ] Observer: dwellings by location, prices, volumes, LTV distribution per lender, foreclosures, cohorts; year-long run green with a rate-rise scenario: consumption reached through floating mortgages and through prices with different lags (D5, direction only); determinism
-- [ ] A household prices a financial claim off its own `outlook('price.<line>')` spread by its own confidence, through the same schedule its consumption uses; `savingLines`'s curve and accounts branches deleted; tests: a cell that has never seen a line print posts nothing for it; two cells with different memories bid different levels (C1, §46 B1, B3, B6)
+- [x] A household prices a financial claim off its own `outlook('price.<line>')` spread by its own confidence, through the same schedule its consumption uses; `savingLines`'s curve and accounts branches deleted; tests: a cell that has never seen a line print posts nothing for it; two cells with different memories bid different levels (C1, §46 B1, B3, B6)
 - [ ] The retail door into XI-2: a cell surprised downward bids lower AND wants more cash in one read, so a price shock produces redemptions and the fund's forced sale fires on a market shock and not only an income shock; no coefficient added; tests (XI-2, Fund Shares C2.b)
 - [ ] Preferring the market to the names: a cell's saving goes to a tracker rather than single lines at its own declared preference; retail flow is undifferentiated across names; tests (D5, Fund Shares A4, Indices C2)
 - [x] `ConsumptionDecl` states a quantity per period in the good's own unit, not a share of money; what is bought is the want meeting a price; tests: a dearer loaf is fewer loaves and less spent on bread (C3)

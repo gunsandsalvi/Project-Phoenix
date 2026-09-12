@@ -26,20 +26,9 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import {
-  add,
-  atMost,
-  div,
-  material,
-  mul,
-  sub,
-  sum,
-} from '../../core/num.js';
-import { none, some, type Option } from '../../core/option.js';
+import { add, atMost, div, material, mul, sub, sum } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
-import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
-import { TREASURY } from '../../registry/profiles.js';
 import type { ParticipantView } from '../../world/context.js';
 import { levelsBelow, rungsOver } from './demand.js';
 import type { Qty } from '../../core/tick.js';
@@ -59,54 +48,42 @@ export interface SavingLine {
 }
 
 /**
- * D5, D5.a, Equity B3: everywhere this cell's savings could go, in one pass over the lines that
- * exist, with what it thinks each is worth.
+ * D5, D5.a, §46 B1, B3, B6 (13d): everywhere this cell's savings could go, in one pass over the
+ * lines that exist, with what IT thinks each is worth.
  *
- * TWO KINDS OF CLAIM and one traversal, because a line is one or the other by what it promises and
- * the cell has to look at it once to find out (Law 4: one decision, one pass, one budget):
+ * WHAT A HOUSEHOLD KNOWS HOW TO DO IS WATCH A PRICE. This function used to run three different
+ * epistemologies in one loop: it discounted a bond's own cash flows on the curve family's declared
+ * day count, it capitalised a company's published earnings per share over its book value, and it
+ * marked a fund at its book. In the same period, for the same cell, that is a securities analyst —
+ * and the engine differentiates parties by what they may SEE, what they HOLD, what they OWE and
+ * what they PREFER, and in no way at all by what they are able to WORK OUT. One analytical
+ * technology distributed to everybody is the representative agent one level up.
  *
- * - **Paper.** It promises dated payments (Bond N5), so the cell prices it at the level that makes
- *   those payments return what it requires: its liquidity premium, what it wants for giving up
- *   access to its money. It will only tie its money up for its own horizon, so anything that comes
- *   back later is not somewhere its money can go.
- * - **A share.** It promises NOTHING (Equity A4), so nothing about it can be discounted. What it IS
- *   is a claim on the residual (A1) — on what the issuer EARNS, which is what B3 says a saver holds
- *   it for — and since §48 every public company PUBLISHES what it earned, on its own fiscal
- *   calendar, to everybody at once (`reporting.report`). So that is what the cell goes on: a public,
- *   dated fact about the thing it is buying a piece of, capitalised at what it requires of a claim
- *   that promises nothing — its liquidity premium PLUS how wrong its own income has recently been
- *   (§46 B3). Two cells with different histories therefore want different prices for the same firm,
- *   and that disagreement is what gives the book two sides (§46 A3, XI-13).
+ * Three things followed from it, and the third is load-bearing:
  *
- *   IT USED TO BE WHAT THE ISSUER HAD PAID (`payout.declared`), and that was the best a saver could
- *   do before there were reports — but it left the book without an anchor, which is worklist 12c's
- *   whole finding: two firms in forty declared a payout, so thirty-eight listed lines had no party
- *   in them with a reason that was not the last print, and `market.noView` said so every period. A
- *   distribution is management's choice about what to do with the residual; the residual is what the
- *   claim IS. One fact, read once, for every listed line (Law 4, Law 19).
+ *  - XI-16's disagreement was doing half its work. Parties disagreed only because they had observed
+ *    different things at speeds drawn apart, and adaptive learning from a common set of prints
+ *    converges. A household that EXTRAPOLATES and a desk that discounts cash flows disagree
+ *    structurally and permanently, and hardest right after a large move (§46 A3).
+ *  - There was no unsophisticated money. A dealing desk charges for one-sided flow because it was
+ *    "facing somebody who knew more"; in a world where every counterparty knows as much as the
+ *    desk, that term measures noise and market-making has no customers.
+ *  - And it was two representations of one thing (Law 4): what a claim is worth to a saver was
+ *    computed here AND printed by the market, and the two never had to agree.
  *
- *   AND THE RESIDUAL HAS TWO PARTS, because the balance sheet and the income statement are both in
- *   that report and they answer different halves of one question. What a share IS, is a piece of
- *   what the company owns net of what it owes (A1) — its published `assets - liabilities`, over the
- *   register's count of shares. What holding it EARNS is the residual the company adds to that each
- *   period, which is worth what this cell requires of a claim that promises nothing. So:
+ * SO IT IS THE SAME LADDER A LOAF IS BOUGHT ON (`consume.ts`): its own outlook of that line's price
+ * where it has one, the last print where it has not, and NOTHING where the line has never printed
+ * — a cell that has never seen a price for a thing cannot name one, and that is the absence of a
+ * reason rather than a floor (B6). Two cells with different memories therefore bid different levels
+ * for the same line, which is what gives the book two sides.
  *
- *       worth = the book it is a piece of  +  what it earns a year / what this cell requires
- *
- *   Nothing is discounted, nothing is forecast and no multiple is imposed: both terms are figures
- *   the company itself published, and the only thing that is this cell's own is what it requires,
- *   which differs between cells and is why they disagree (§46 A3). A company LOSING money is worth
- *   less than its book to a saver and the second term is negative — and if it is negative enough the
- *   whole is, and this cell simply names no price. That is the absence of a reason, never a floor
- *   (Law 6): nobody is stopped from bidding, there is just nothing to bid for.
- *
- * This is the "yield against risk" D5 names, and it is the reason the horizon comment above pointed
- * at worklist 9: until something in this world priced risk, a cell had only liquidity to weigh.
+ * WHAT IS STILL TWO KINDS IS THE HORIZON, and that is a fact about the instrument rather than an
+ * opinion about it: paper promises dated payments and a cell will not tie its money up past its own
+ * horizon (D5), so a line that does not come back inside it is not somewhere its money can go.
+ * Nothing is discounted to find that out — the question is WHEN, and the calendar answers it.
  */
 export function savingLines(
   view: ParticipantView,
-  required: number,
-  uncertainty: number,
   horizonPeriods: number,
 ): { readonly paper: SavingLine[]; readonly shares: SavingLine[] } {
   const region = view.self.region;
@@ -114,109 +91,52 @@ export function savingLines(
   const on = view.calendar.startOf(view.period);
   // Money G3.a: a horizon is a DATE the calendar places, never a count of periods turned into years.
   const by = view.calendar.startOf(period(view.period + horizonPeriods));
-  const year = yearFraction('ACT/365F', on, view.calendar.startOf(nextPeriod(view.period)));
-  const forShares = add(required, uncertainty, 'what it requires of a claim that promises nothing');
-  const sovereigns = new Set(
-    view.parties.ofKind(TREASURY).filter((t) => t.region === region && t.status.alive).map((t) => t.id),
-  );
   const paper: SavingLine[] = [];
   const shares: SavingLine[] = [];
   for (const i of view.instruments.all()) {
     if (!i.status.live || !i.market.some || i.ccy !== ccy || !i.issuer.some) continue;
     const profile = view.registry.instrumentKind(i.kind);
     if (profile.physical === true) continue;
+    /**
+     * §46 B1, B3: WHAT THIS CELL THINKS THE LINE IS WORTH, and it is the only valuation in here.
+     * Its own outlook where it has formed one — which it forms from what it has actually paid, at
+     * its own speed — and the last print where it has not, because a print is public (Clearing E1)
+     * and a saver reading the tape is not a saver reading accounts. A line neither of those answers
+     * for is one this cell posts nothing in.
+     */
+    const outlook = view.outlook(`price.${String(i.id)}`);
+    const print = view.print(i.id);
+    const expected = outlook.some
+      ? outlook.value.expected
+      : print.some
+        ? print.value.price
+        : undefined;
+    if (expected === undefined || expected <= 0) continue;
+    /**
+     * §46 B3, Equity B3: AND WHAT IT WILL PAY IS THE BOTTOM OF THE RANGE IT THINKS THE PRICE COULD
+     * BE IN — its own expectation less how wrong it has recently been. It is the same widening
+     * `consume.ts` posts a loaf's demand curve across, used here in one direction rather than two,
+     * because a saver buying a claim that promises it nothing wants the margin on its side.
+     *
+     * It is also where the disagreement lives (§46 A3, XI-13). Two cells looking at one print want
+     * different prices for it because one of them has been surprised and the other has not, and a
+     * book whose two sides agreed on a number would not be a market.
+     */
+    const price = sub(expected, outlook.some ? outlook.value.confidence : 0, 'what it will pay');
+    if (price <= 0) continue;
     const flows = profile.cashFlows(i, on, view.calendar);
     const last = flows[flows.length - 1];
     if (last !== undefined) {
-      // Paper. It has to be somebody's whose paper this cell can price off a public curve, and it
-      // has to come back inside its own horizon (D5).
-      if (!sovereigns.has(i.issuer.value)) continue;
+      // D5: it promises dated payments, so the question is whether the money comes back in time.
       if (compareCivil(last.date, by) > 0) continue;
-      const family = view.registry.curveFamily(curveFamilyOf(i.issuer.value, ccy));
-      const price = priceAt(flows, required, on, family.dayCount, `what ${i.id} is worth to a saver`);
-      if (price > 0) paper.push({ instrument: i, price });
+      paper.push({ instrument: i, price });
       continue;
     }
-    // A CLAIM ON A BOOK IS WORTH THE BOOK (Fund Shares B1), and that is a different question from
-    // what a residual claim on a COMPANY is worth. A fund publishes no report — it is not a public
-    // company, it is a vehicle — so a saver that only knew how to read accounts had no reason to
-    // hold a fund share at all, and the exchange-traded fund's book showed it: `noDemand` every
-    // period, nobody on either side, from the moment 12c gave the saver its reason.
-    //
-    // Law 15: this is the kind's own declared PRICING, the same dispatch key the kernel values
-    // every instrument through, and not a branch on what sort of thing it is.
-    if (view.registry.instrumentKind(i.kind).pricing === 'derived') {
-      const worth = view.mark(i.id);
-      if (worth.some && worth.value > 0) shares.push({ instrument: i, price: worth.value });
-      continue;
-    }
-    // A share: the book it is a piece of, plus what it earns on that book (A1, B3, §48).
-    if (forShares <= 0 || year <= 0 || i.issued <= 0) continue;
-    const said = publishedBy(view, i);
-    if (!said.some) continue;
-    // Law 8: what it earns is per period and what the cell requires is per annum, so the period is
-    // turned into the fraction of a year the calendar says it is.
-    const onTheBook = div(
-      div(said.value.earnedPerShare, year, 'what it earns a share, per annum'),
-      forShares,
-      'what earning that is worth',
-    );
-    const value = add(said.value.bookPerShare, onTheBook, 'what the claim is worth to it');
-    // A company far enough under water is one this cell will not name a price for. That is not a
-    // floor: it is the absence of a reason to bid, and a saver with no reason posts nothing (B6).
-    if (value > 0) shares.push({ instrument: i, price: value });
+    shares.push({ instrument: i, price });
   }
   return { paper, shares };
 }
 
-/**
- * Equity B3, Reporting A1, A2, Law 19: WHAT THIS COMPANY LAST TOLD EVERYBODY IT EARNED, per share
- * and per period.
- *
- * It is a READ of a public event and nothing else: the company published a figure for a span of
- * periods it named (§48), and how many shares that residual is divided between is the register's own
- * count of them (Equity A2). Nothing is estimated here and nothing is stored — a saver that had its
- * own idea of what a company earned would be holding a second set of that company's books (Law 4),
- * and what a BANK thinks it will earn next is a different object with a different owner, published
- * under its own name (`research.estimate`) and deliberately not consulted here: a saver reading the
- * analysts would be one more party with no reason of its own (Reporting E2).
- */
-function publishedBy(
-  view: ParticipantView,
-  i: Instrument,
-): Option<{ readonly bookPerShare: number; readonly earnedPerShare: number }> {
-  if (!i.issuer.some) return none();
-  const said = view.lastPublicAbout('reporting.report', i.issuer.value);
-  if (!said.some) return none();
-  const earned = said.value.data['earned'];
-  const assets = said.value.data['assets'];
-  const liabilities = said.value.data['liabilities'];
-  const from = said.value.data['from'];
-  const to = said.value.data['to'];
-  if (
-    typeof earned !== 'number' ||
-    typeof assets !== 'number' ||
-    typeof liabilities !== 'number' ||
-    typeof from !== 'number' ||
-    typeof to !== 'number'
-  ) {
-    return none();
-  }
-  const periods = to - from + 1;
-  if (periods <= 0) return none();
-  return some({
-    bookPerShare: div(
-      sub(assets, liabilities, 'the residual its shares are a claim on'),
-      i.issued,
-      'what that is a share',
-    ),
-    earnedPerShare: div(
-      div(earned, periods, 'what it earned a period'),
-      i.issued,
-      'what that is a share',
-    ),
-  });
-}
 
 /**
  * D5, D5.a: the bids for paper, one per line, for the money the cell decided this line gets.

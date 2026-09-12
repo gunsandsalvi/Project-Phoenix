@@ -300,33 +300,43 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
     for (const held of liquid) expect(held).toBeGreaterThan(0);
   });
 
-  it('is drawn into paper when paper pays it enough, and not when it does not (D5.a)', () => {
-    // The one thing that differs between the two runs is what a saver requires of paper for
-    // giving up access to its money. A saver that wants little bids a price paper trades at and
-    // fills; one that wants a great deal bids far below the market and stays in its deposit.
-    // That is the substitution D5.a is about, and it is the channel a deposit rate would reach.
-    const bought = (premium: number): number => {
-      const spec = rigSpec('premium');
+  it('will not tie its money up past its own horizon, which is what draws it in or not (D5, D5.a)', () => {
+    /**
+     * 13d: THE SUBSTITUTION IS THE HORIZON NOW, not a required yield. A household prices a line off
+     * its own outlook of that line's price and off nothing else (`portfolio.ts`) — it does not
+     * discount anybody's cash flows at a rate of its own, because that is a securities analyst and
+     * not a saver — so what decides whether paper is somewhere its money can go is WHEN the money
+     * comes back. A saver that will not look past a few weeks holds none of what matures after
+     * them; one that will look further holds it.
+     *
+     * That is D5's "it will not tie its money up past its own horizon" doing the work D5.a's
+     * substitution asks for, and it is a fact about the instrument's own dates rather than an
+     * opinion about its value.
+     */
+    const bought = (horizonPeriods: number): number => {
+      const spec = rigSpec('horizon');
       const modules = spec.modules.map((m) =>
         m.id === 'households'
           ? {
               ...m,
               params: m.params.map((p) =>
-                p.id === 'households.liquidityPremium' ? { ...p, value: premium } : p,
+                p.id === 'households.horizon.periods' ? { ...p, value: horizonPeriods } : p,
               ),
             }
           : m,
       );
       const w = assemble({ ...spec, modules });
-      // Long enough for a household that opened with nothing to have something over its cushion:
-      // what it saves is what it did not spend, and that takes the periods it takes.
       for (let i = 0; i < 14; i += 1) {
         const r = w.step();
         expect(unexpected(r.audit)).toEqual([]);
       }
       const cells = new Set(w.parties.ofKind(HOUSEHOLD).map((c) => c.id));
       const paper = new Set(
-        w.instruments.all().filter((i) => i.issuer.some).map((i) => i.id),
+        w.instruments
+          .all()
+          .filter((i) => i.issuer.some && i.market.some)
+          .filter((i) => w.registry.instrumentKind(i.kind).physical !== true)
+          .map((i) => i.id),
       );
       return w.ledger
         .all()
@@ -335,15 +345,12 @@ describe('what it does with what is left (Households D5, D5.a, C2)', () => {
         .filter((leg) => leg.kind === 'asset' && cells.has(leg.to) && paper.has(leg.instrument))
         .reduce((a, leg) => a + (leg.kind === 'asset' ? leg.qty : 0), 0);
     };
-    // FOUND (worklist 9): a saver that requires a great deal is no longer driven into its deposit.
-    // It is driven into EQUITY — a claim that promises nothing and pays a dividend that clears a
-    // requirement no bill could (Equity A4, B3) — which is D5's third reason, risk, arriving. So
-    // what the substitution says is that the one that wants less for giving up access gives it up
-    // more, and it says it about everything it could hold rather than about one thing it could not.
-    const dear = bought(0.5);
-    const keen = bought(0.001);
-    expect(keen).toBeGreaterThan(0);
-    expect(dear).toBeLessThan(keen);
+    const patient = bought(260);
+    const impatient = bought(2);
+    // Direction only, never a level (Law 17): a saver that will look five years out has more places
+    // its money can go than one that will look a fortnight.
+    expect(patient).toBeGreaterThan(0);
+    expect(impatient).toBeLessThan(patient);
   });
 
   it('counts what it owns and not only what it holds, so an asset price reaches demand (C1.b)', () => {

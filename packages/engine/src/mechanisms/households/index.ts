@@ -39,7 +39,6 @@ import {
   cushionForFund,
   fundOrders,
   fundPositions,
-  ownUncertainty,
   paperBids,
   savingLines,
   shareOrders,
@@ -337,19 +336,16 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     decided.value.spend,
     decided.value.buffer,
   );
-  // D5.a: what it requires of paper is what its deposit pays it plus what giving up access costs
-  // it. A deposit pays nothing until a bank decides to pay for one (Banks Funding B1, worklist
-  // 11), so what it requires now is the premium alone, and that comparison becomes a real one
-  // the period a bank starts bidding for deposits.
+  // D5.a: what it requires of a claim is what its deposit pays it plus what giving up access costs
+  // it. It is what it posts DOWN from its own opinion, and what it compares a fund's offer against
+  // — never what it works the opinion out with (13d).
   const required = view.params.perAnnum(HOUSEHOLD_PARAMS.liquidityPremium);
-  // D5: everywhere its savings could go, in one pass, with what it thinks each is worth — paper it
-  // can price off a public curve, and shares it can only price off what they have been paying.
-  const { paper, shares } = savingLines(
-    view,
-    required,
-    ownUncertainty(view),
-    view.params.periods(HOUSEHOLD_PARAMS.horizon),
-  );
+  // D5, §46 B1 (13d): everywhere its savings could go, in one pass, with what IT thinks each is
+  // worth — its own outlook of that line where it has one and the last print where it has not,
+  // which is the same ladder it buys a loaf on. What it will not do is work out a price from
+  // somebody's accounts or somebody's cash flows: a household watches a price, and a world where
+  // it did not was a world with one analytical technology handed to everybody.
+  const { paper, shares } = savingLines(view, view.params.periods(HOUSEHOLD_PARAMS.horizon));
   // D5: one budget, spread over every place its money could go this period. Deciding it once and
   // dividing it is what stops the same money being committed twice (Law 4) and what stops a rule
   // nobody stated from preferring one class of thing to another.
