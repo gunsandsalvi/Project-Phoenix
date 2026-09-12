@@ -20,6 +20,7 @@
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
 import { toTickOf } from '../core/tick.js';
+import { prng } from '../rng/prng.js';
 import type { RegionDecl } from '../registry/registry.js';
 import { drawMap, type MapSpec } from './map.js';
 import {
@@ -534,6 +535,12 @@ export function foundationSeedFor(
   bankRows: readonly BankDecl[],
   firmRows: readonly FirmDecl[],
   carrierRows: readonly CarrierDecl[] = [],
+  /**
+   * 13c.1: where each firm opens, drawn once in `foundationSpec` and handed here. One draw, read by
+   * the seed that places the firms and by the assembly that declares the lines — a second call
+   * would be a second world (Law 4).
+   */
+  placed: ReadonlyMap<string, RegionId> = new Map(),
 ): SystemModule {
   return {
     id: 'seed.foundation',
@@ -722,16 +729,11 @@ export function foundationSeedFor(
       // indoors stands on nothing and opens in the place with the most room to work in. It is the
       // seed STATING an opening (Seed C4) and not a decision: choosing where to BUILD is 13c.2's,
       // and that is what turns this literal from a fact about the world into an outcome.
-      const homeGround = bestGround(
-        ctx.registry.geography,
-        ctx.params,
-        homePlaces([...ctx.registry.regions.values()]),
-      );
       firmRows.forEach((f, n) => {
         const bank = banks[n % banks.length];
         if (bank === undefined) return;
         ctx.parties.add(
-          named(partyId(f.firm), FIRM, f.name, bank.id, homeGround(standsOnOf(f.subUnit))),
+          named(partyId(f.firm), FIRM, f.name, bank.id, placed.get(f.firm) ?? REGION),
         );
       });
 
@@ -1847,52 +1849,65 @@ function standsOnOf(subUnit: string): string | null {
 }
 
 /**
- * 13c.1: WHERE THE GROUND IS BEST FOR A LINE, among the home country's places. The walk is the same
- * one the yield makes, at nothing worked yet, so the seed and the mechanism agree about what ground
- * is worth (Law 4). A line that stands on nothing goes where there is most room to work.
+ * 13c.1, Seed B1.a: WHERE EACH FIRM OPENS — DRAWN, weighted by how much ground there is for what it
+ * makes. Not every farmer is on the best land, and a rule that put them all there would state an
+ * equilibrium rather than an opening (Law 2): one place would make everything, there would be no
+ * second print of a good anywhere, and the location basis this world exists to have could not be
+ * measured because there would be nothing to measure it between.
  *
- * It takes the map and the reads rather than a context, because TWO callers need the same answer:
- * the seed that places the firms, and the assembly that declares the lines they will make. A second
- * rule would be a second world (Law 4).
+ * The weight IS the ground, so good land gets more farms — which is the pull, stated as a draw and
+ * not as a certainty. A line made indoors is drawn on room to work in instead.
+ *
+ * It is PURE and takes the seed, because two callers need the same answer: the seed that places the
+ * firms and the assembly that declares the lines they will make. A second rule would be a second
+ * world (Law 4).
  */
-function bestGround(
-  g: GeographyDecl,
-  reads: RatioReads,
-  home: readonly RegionId[],
-): (standsOn: string | null) => RegionId {
-  const first = home[0];
-  if (first === undefined) throw new Missing('Seed B3', 'the home country has nowhere in it');
-  const widest = home.reduce((a, b) => (areaKm2(g, b) > areaKm2(g, a) ? b : a), first);
-  return (standsOn) => {
-    if (standsOn === null) return widest;
-    const resource = resourceId(standsOn);
-    // HOW MUCH THERE IS, not how good the best tile is: one excellent tile on a small island does
-    // not make it a place to farm, and picking by the best tile put a farm on twelve tiles of rock.
-    return home.reduce((a, b) =>
-      groundIn(g, reads, b, resource) > groundIn(g, reads, a, resource) ? b : a,
-    );
-  };
-}
-
-/** The home country's places, in the order the draw made them. */
-const homePlaces = (regions: readonly RegionDecl[]): RegionId[] =>
-  regions.filter((r) => r.country === HOME).map((r) => r.id);
-
-/**
- * 13c.1: WHERE A LINE IS MADE, which is where the firms that make it are. Declaring a good in a
- * place with nobody in it costs a full sweep of every party, every period, for a market that cannot
- * clear — eight such markets were twenty seconds of a twenty-six second period (Law 18: the
- * traversal is free, and this one was not).
- */
-function settled(
+function placeFirms(
   g: GeographyDecl,
   reads: RatioReads,
   regions: readonly RegionDecl[],
   firms: readonly FirmDecl[],
-): RegionId[] {
-  const where = bestGround(g, reads, homePlaces(regions));
-  return [...new Set(firms.map((f) => where(standsOnOf(f.subUnit))))];
+  seed: string,
+): ReadonlyMap<string, RegionId> {
+  const home = regions.filter((r) => r.country === HOME).map((r) => r.id);
+  const first = home[0];
+  if (first === undefined) throw new Missing('Seed B3', 'the home country has nowhere in it');
+  const rng = prng(seed, 'siting');
+  const weightsFor = (standsOn: string | null): number[] =>
+    home.map((r) =>
+      standsOn === null ? areaKm2(g, r) : groundIn(g, reads, r, resourceId(standsOn)),
+    );
+  const held = new Map<string, number[]>();
+  const out = new Map<string, RegionId>();
+  for (const f of firms) {
+    const standsOn = standsOnOf(f.subUnit);
+    const key = standsOn ?? '';
+    const weights = held.get(key) ?? weightsFor(standsOn);
+    held.set(key, weights);
+    const total = sum(weights).value;
+    // One draw per firm, along the ground: the better a place, the more of a line lands on it.
+    let want = rng.next() * total;
+    let at = 0;
+    for (let k = 0; k < weights.length; k += 1) {
+      const w = weights[k];
+      if (w === undefined) break;
+      want -= w;
+      if (want <= 0) {
+        at = k;
+        break;
+      }
+    }
+    out.set(f.firm, home[at] ?? first);
+  }
+  return out;
 }
+
+/**
+ * 13c.1: WHERE A LINE IS MADE, which is where the firms that make it are. Declaring a good in a
+ * place with nobody in it is a market that cannot clear paying a full sweep of every party, every
+ * period (Law 18).
+ */
+const settled = (placed: ReadonlyMap<string, RegionId>): RegionId[] => [...new Set(placed.values())];
 
 export function foundationSpec(
   seed: string,
@@ -1919,6 +1934,8 @@ export function foundationSpec(
   // by the yield, the weather and every journey. Its own stream, so adding a terrain never
   // reshuffles the banks (Seed A5).
   const drawn = drawMap(mapSpec(), mapReads(), seed);
+  // Seed B1.a: WHERE EACH FIRM OPENS, drawn once along the ground and read by everybody who needs it.
+  const placed = placeFirms(drawn.geography, mapReads(), drawn.regions, firmRows, seed);
   return {
     seed,
     epoch: civil(2026, 1, 5),
@@ -2049,7 +2066,7 @@ export function foundationSpec(
       // country — a firm is placed by the ground now, so declaring the lines in one place only
       // would throw the first time a draw put a farm somewhere else. Places with nobody in them
       // print `noDemand` and say so, which is what an empty place is.
-      goods(GOODS, settled(drawn.geography, mapReads(), drawn.regions, firmRows)),
+      goods(GOODS, settled(placed)),
       // Capital Programme: the kind of thing plant is, and the schedule it wears out on. Before the
       // firms, because a firm decides what to make against the plant it holds (A2) and what to
       // invest against what a machine costs (B1) — and a kind has to be registered to be held.
@@ -2164,7 +2181,7 @@ export function foundationSpec(
       // Research: after `reporting`, because what a bank estimates is the report a company will
       // publish and what settles its estimate is the one it just did (Reporting C1, F1).
       research(seed),
-      foundationSeedFor(drew.banks, drew.firms, carrierRows),
+      foundationSeedFor(drew.banks, drew.firms, carrierRows, placed),
       foundationFundingFor(drew.banks),
     ],
   };

@@ -161,9 +161,13 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
     expect(bid * perPiece).toBeLessThan(typeof expected === 'number' ? expected : 0);
     const hired = last(w, 'labour.hire', FIRM_1);
     expect(hired).toBeDefined();
-    // B1.a: in a slack market the print falls to what the seekers will work for, and no further.
+    // B1.a: the print is what the marginal filled bid was, so a firm never pays MORE than it bid —
+    // which is the property the clause asks and what the comment above states. It is not strictly
+    // less: a place where this firm is the only employer has nobody to compete the wage down, and
+    // the print lands on its own bid. That became reachable at 13c.1, when firms were drawn across
+    // places along the ground instead of all opening in one (Seed B1.a).
     const paid = hired?.data['wagePerHour'];
-    expect(typeof paid === 'number' ? paid : 1).toBeLessThan(bid);
+    expect(typeof paid === 'number' ? paid : 1).toBeLessThanOrEqual(bid);
   });
 
   it('publishes what it expects to deliver, and is then surprised by what it did (Firm E7)', () => {

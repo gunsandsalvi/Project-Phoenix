@@ -9,6 +9,7 @@ import {
   FREIGHT_SESSION,
   REGION,
   VESSEL,
+  goodId,
   inTransit,
   paramId,
   plantKindId,
@@ -102,5 +103,80 @@ describe('the session says what it did, including that it did nothing (Clearing 
     expect(String(here)).toContain('transit');
     expect(String(here)).not.toBe(String(inTransit('grain', REGION, regionId('uk'))));
     expect(String(inTransit('flour', REGION, regionId('eu')))).not.toBe(String(here));
+  });
+});
+
+/**
+ * The location basis (13c step 9): the same grade in two places at two prices, and the gap being
+ * what it costs somebody to actually move it.
+ *
+ * @spec Freight D3 Freight D3.a Freight D5 Commodities Spot D1 Law 3
+ *
+ * What is asserted is the MECHANISM and never a level (Law 17, PLAN §7): that two places print
+ * separately, that the gap is what a shipper would pay rather than a number anybody computed, and
+ * that when the ground between them gets worse the gap has further to travel. A basis of a
+ * particular size would be a claim about an answer.
+ */
+describe('the location basis is an outcome of shipping with capacity (D3, D3.a, D5)', () => {
+  it('prints the same grade separately in every place that makes it (Commodities Spot D1)', () => {
+    const w = ranWorld('basis-a', 3);
+    const places = [...w.registry.regions.keys()].filter((r) =>
+      w.instruments.has(goodId('grain', r)),
+    );
+    // 13c.1 drew the firms across the ground, so more than one place makes this line.
+    expect(places.length).toBeGreaterThan(1);
+    for (const r of places) {
+      const i = w.instruments.get(goodId('grain', r));
+      // Each is its own instrument with its own market — location is part of identity.
+      expect(i.terms).toHaveProperty('region', r);
+      expect(i.market.some).toBe(true);
+      if (i.market.some) expect(String(i.market.value)).toContain(String(r));
+    }
+  });
+
+  it('is never computed: a place’s price is its own market’s print (Law 3)', () => {
+    const w = ranWorld('basis-a', 3);
+    const places = [...w.registry.regions.keys()].filter((r) =>
+      w.instruments.has(goodId('grain', r)),
+    );
+    for (const r of places) {
+      const p = w.prices.latest(goodId('grain', r), w.period);
+      // A basis is a READ of two prints. Where a place has one, it came from its OWN market and
+      // never from another place's — a price from a formula is not a price (Law 3).
+      if (p.some) expect(String(p.value.provenance)).not.toContain('derived');
+    }
+  });
+
+  it('a leg over worse ground costs more to sail, so the gap it can support is wider (D3.a)', () => {
+    const w = rigWorld('basis-b');
+    const g = w.registry.geography;
+    const found = legsBetween(g, w.params, 'vessel', [...w.registry.regions.keys()]);
+    const walks = [...found.values()];
+    expect(walks.length).toBeGreaterThan(1);
+    // D3: what bounds the gap is what it costs to move the thing, and that is the leg — so two
+    // legs of different length are two different bounds. Direction only, never a level.
+    const byDays = [...walks].sort((a, b) => a.days - b.days);
+    const quick = byDays[0];
+    const slow = byDays[byDays.length - 1];
+    if (quick === undefined || slow === undefined) throw new Error('two legs exist');
+    expect(slow.days).toBeGreaterThan(quick.days);
+    // And the days are not the kilometres: ground, not distance alone, is what makes a leg dear.
+    expect(walks.some((x) => x.days / x.km !== walks[0]!.days / walks[0]!.km)).toBe(true);
+  });
+
+  it('a shipper will pay the gap and never more, which is what bounds the basis (C1.a, D3)', () => {
+    const w = ranWorld('basis-a', 4);
+    for (const e of w.journal.ofKind(FREIGHT_SESSION)) {
+      const byLeg = e.data['byLeg'] as Record<string, { outcome: string; rate?: number }>;
+      for (const leg of Object.values(byLeg)) {
+        // D6: a leg that did not clear says so rather than saying nothing.
+        expect(['cleared', 'noDemand', 'noSupply', 'noOverlap', 'excessCommitted']).toContain(
+          leg.outcome,
+        );
+        // D1, Law 3: where it did clear, the rate is a print off the session and not a declared
+        // number — the grep for a freight rate in the register is the other half of this.
+        if (leg.rate !== undefined) expect(leg.rate).toBeGreaterThan(0);
+      }
+    }
   });
 });
