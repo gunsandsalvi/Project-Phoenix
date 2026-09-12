@@ -486,6 +486,21 @@ export interface CapitalKindDecl {
   readonly usefulLifePeriods: number;
   /** C3: periods between the good arriving and the plant working. The asset is built, then it works. */
   readonly buildLagPeriods: number;
+  /**
+   * Commodities Spot B3, Freight B4: WHAT THIS KIND OF STRUCTURE IS BUILT FOR, as a multiple of the
+   * wind an ordinary period brings. A shed and a silo are not built to the same standard, and what
+   * a storm takes down is the difference between what stood over it and what it was built for.
+   *
+   * It is TECHNOLOGY — a fact about how the thing is made — and it is not a threshold: nothing
+   * happens AT it. What survives is `exp(-(wind / standard) ^ hardness)`, which is positive at
+   * every wind and never one, so an ordinary period takes a little and a storm takes most (Law 6).
+   */
+  readonly standsWind: number;
+  /**
+   * How sharply the loss grows with the wind. Wind damage is not linear in wind: doubling it is far
+   * more than twice the loss, because what fails is what the load exceeded. Technology.
+   */
+  readonly windHardness: number;
   readonly why: string;
 }
 
@@ -506,6 +521,10 @@ export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
     madeFrom: 'machine',
     usefulLifePeriods: 156,
     buildLagPeriods: 2,
+    // Machinery lives in a shed and moves about: built for about three times an ordinary week's
+    // wind, and what fails above that fails quickly (13c, Commodities Spot B3).
+    standsWind: 3,
+    windHardness: 6,
     why: 'A machine works for three years and then it is scrap. Three years is short enough that a firm which stops investing loses its capacity inside a run, and long enough that the spend and the capacity it buys are separated by more than a cycle — which is what makes investment a commitment rather than a purchase.',
   },
 ];
@@ -523,6 +542,10 @@ export function capitalKindOf(
  * project reads the life of what it would buy and the capital programme reads the same number to
  * wear it out — one parameter, one spelling, and neither module learns the other's (Law 4).
  */
+export const standsWindParam = (capitalKind: string): ParamId =>
+  paramId(`plant.standsWind.${capitalKind}`);
+export const windHardnessParam = (capitalKind: string): ParamId =>
+  paramId(`plant.windHardness.${capitalKind}`);
 export const lifeParam = (capitalKind: string): ParamId =>
   paramId(`plant.usefulLife.${capitalKind}`);
 export const buildLagParam = (capitalKind: string): ParamId =>

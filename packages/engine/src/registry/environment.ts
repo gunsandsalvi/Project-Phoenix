@@ -21,6 +21,16 @@ import type { Event } from '../journal/journal.js';
 /** The public event the physical state crosses on, published once per region per period. */
 export const ENVIRONMENT_STATE = 'environment.state';
 
+/**
+ * THE NAMES OF THE FACTS. A crop's recipe names one, a structure's kind names one, a policy will
+ * name one — and none of those modules may import the one that publishes them (4.9b), so the names
+ * are here with the event they arrive on. What each fact IS, how wide it runs and how it carries is
+ * the environment module's (`mechanisms/environment/data.ts`), and it re-exports these.
+ */
+export const GROWING = 'growing';
+export const WIND = 'wind';
+export const WARMTH = 'warmth';
+
 /** What a reader needs of the journal: this period's events of a kind, and nothing else. */
 export interface EnvironmentReads {
   readonly period: Period;

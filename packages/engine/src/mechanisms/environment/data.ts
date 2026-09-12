@@ -18,14 +18,19 @@
 import { moduleKey, type ModuleKey, type RegionId } from '../../core/ids.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
+import { GROWING, WARMTH, WIND } from '../../registry/environment.js';
 
 /** This module's own identifier, branded here rather than in the kernel (ARCHITECTURE 4.9b). */
 export type FactId = ModuleKey<'EnvironmentFact'>;
 export const factId = (s: string): FactId => moduleKey(s, 'EnvironmentFact');
 
-export const GROWING = factId('growing');
-export const WIND = factId('wind');
-export const WARMTH = factId('warmth');
+/**
+ * The facts this world has, branded. The NAMES are the kernel's, because four modules have to spell
+ * them and none may import this one (4.9b); what a fact IS and how wide it runs is here.
+ */
+export const GROWING_FACT = factId(GROWING);
+export const WIND_FACT = factId(WIND);
+export const WARMTH_FACT = factId(WARMTH);
 
 export interface FactDecl {
   readonly id: FactId;
@@ -50,21 +55,21 @@ export interface FactDecl {
  */
 export const FACTS: readonly FactDecl[] = [
   {
-    id: GROWING,
+    id: GROWING_FACT,
     name: 'growing conditions',
     persistence: { low: 0.45, high: 0.75, why: 'a season carries; soil moisture and snowpack are months deep' },
     swing: { low: 0.18, high: 0.4, why: 'how far a growing season departs from normal where this region is' },
     why: 'Goods B4, Commodities Spot B3: what is started is not all finished, and a bad season is the reason.',
   },
   {
-    id: WIND,
+    id: WIND_FACT,
     name: 'the strongest wind standing over the region',
     persistence: { low: 0.05, high: 0.2, why: 'a storm is this period and gone; it does not carry' },
     swing: { low: 0.25, high: 0.6, why: 'how violent this region gets, which is a fact about where it is' },
     why: 'Freight B4, Commodities Spot B3, Insurers B4: it blocks a passage, flattens a crop and hits every policy in the region at once.',
   },
   {
-    id: WARMTH,
+    id: WARMTH_FACT,
     name: 'warmth over the period',
     persistence: { low: 0.3, high: 0.6, why: 'weather runs in spells' },
     swing: { low: 0.1, high: 0.25, why: 'how far a spell departs where this region is' },

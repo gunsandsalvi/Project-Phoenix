@@ -4,7 +4,15 @@
  * @spec Commodities Spot B3 Goods B4 Freight B4 Insurers B4 Law 2 Law 4 Law 6 Observer A3
  */
 import { describe, expect, it } from 'vitest';
-import { ENVIRONMENT_STATE, FACTS, REGION, conditionsIn, paramId, regionId } from '../src/index.js';
+import {
+  ENVIRONMENT_STATE,
+  FACTS,
+  REGION,
+  conditionsIn,
+  factId,
+  paramId,
+  regionId,
+} from '../src/index.js';
 import { drawClimate } from '../src/mechanisms/environment/data.js';
 import { moveOn } from '../src/mechanisms/environment/state.js';
 import { prng } from '../src/rng/prng.js';
@@ -165,3 +173,44 @@ function num(e: { readonly data: Readonly<Record<string, unknown>> }, key: strin
   if (typeof v !== 'number') throw new Error(`${key} is not a number`);
   return v;
 }
+
+describe('a storm takes down what it stood over (Commodities Spot B3, Freight B4)', () => {
+  it('is a real loss of plant where it stood, and it grows with the wind and nowhere jumps', () => {
+    const w = ranWorld('environment-storm', 10);
+    const taken = w.journal.ofKind('capital.weathered');
+    expect(taken.length).toBeGreaterThan(0);
+    for (const e of taken) {
+      const wind = num(e, 'wind');
+      const survived = num(e, 'survived');
+      expect(num(e, 'units')).toBeGreaterThan(0);
+      // Law 6: `exp(-(wind / standard) ^ hardness)` is positive at every wind and never reaches
+      // one, so there is no level at which anything starts and no level at which it stops. A
+      // threshold would show up as a survival of exactly one below it, and there is none.
+      expect(survived).toBeGreaterThan(0);
+      expect(survived).toBeLessThan(1);
+      expect(wind).toBeGreaterThan(0);
+      // It is the SAME wind the environment published for that region in that period: one fact.
+      const published = conditionsIn({ period: e.period, journal: w.journal }, REGION);
+      expect(published?.get(factId('wind'))).toBe(wind);
+      expect(e.public).toBe(true);
+    }
+    // The harder it blew, the less stood: monotone, with no step in it.
+    const pairs = taken
+      .map((e) => ({ wind: num(e, 'wind'), survived: num(e, 'survived') }))
+      .sort((a, b) => a.wind - b.wind);
+    for (let i = 1; i < pairs.length; i += 1) {
+      const before = pairs[i - 1];
+      const now = pairs[i];
+      if (before === undefined || now === undefined) continue;
+      if (now.wind === before.wind) continue;
+      expect(now.survived).toBeLessThanOrEqual(before.survived);
+    }
+    // And it lands as UNITS on a named party, never as a write-down of what they are worth.
+    const legs = w.ledger
+      .all()
+      .filter((r) => r.outcome === 'settled' && r.instruction.reason.includes('to the weather'))
+      .flatMap((r) => r.instruction.legs);
+    expect(legs.length).toBeGreaterThan(0);
+    for (const l of legs) expect(l.kind).toBe('destroy');
+  });
+});

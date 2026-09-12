@@ -31,6 +31,10 @@ export const STORAGE_KIND: CapitalKindDecl = {
   // a world short of it stays short for a long time and why the carry it charges is worth watching.
   usefulLifePeriods: 1040,
   buildLagPeriods: 4,
+  // A silo is a heavier structure than a machine shed and is built to stand more, which is part of
+  // why it lasts twenty years and a machine lasts three (13c, Commodities Spot B3).
+  standsWind: 4,
+  windHardness: 6,
   why: 'Commodities Spot A3, D3: a silo is a stock of productive asset with a life, and holding a tonne in somebody else s is a service they charge for. It is the plant that makes carry real: a world where space is free is a world where a commodity curve is arithmetic rather than a market. ONE SILO IS ONE MACHINE OF BUILDING (A4.b: a kind of capital is made from a good, one for one) and it holds five thousand tonnes, which is what makes the carry it charges a fraction of what is in it rather than a multiple.',
 };
 

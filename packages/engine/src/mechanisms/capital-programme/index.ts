@@ -27,17 +27,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import { negQty } from '../../core/tick.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import {
-  addTo,
-  atMost,
-  div,
-  dustOf,
-  material,
-  sub,
-  sum,
-  withinDust,
-  zeroIfNone,
-} from '../../core/num.js';
+import { addTo, atMost, div, dustOf, finite, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
@@ -54,6 +44,8 @@ import type { SystemModule } from '../../world/module.js';
 import { goodId, isGoodTerms } from '../../registry/physical.js';
 import { costOfDraw } from '../../register/register.js';
 import { CAPITAL_KINDS, type CapitalKindDecl } from './data.js';
+import { conditionsFor, WIND } from '../../registry/environment.js';
+import { capitalKindOf, standsWindParam, windHardnessParam } from '../../registry/physical.js';
 import {
   isPlant,
   plantKindId,
@@ -71,7 +63,8 @@ export * from './plant.js';
 import { buildLagParam, lifeParam } from '../../registry/physical.js';
 
 
-/** A4, Law 2: the two numbers a kind of capital states about itself, declared with their units. */
+
+/** A4, Law 2: the numbers a kind of capital states about itself, declared with their units. */
 function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
   return rows.flatMap((d): ParamDecl[] => [
     {
@@ -91,6 +84,24 @@ function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
       kind: 'technology',
       owner: 'model',
       why: `Capital Programme C3, C1.a: periods between the ${d.madeFrom} arriving and the plant working. It is why investment is demand now and capacity later, and why a firm cannot answer this week's demand by spending this week.`,
+    },
+    {
+      id: standsWindParam(d.id),
+      value: d.standsWind,
+      unit: "multiples of an ordinary period's wind",
+      dimension: 'ratio',
+      kind: 'technology',
+      owner: 'model',
+      why: `Commodities Spot B3, Freight B4 (13c): what a structure of ${d.name} is built for. It is NOT a threshold — nothing happens at it — and what survives a period is exp(-(wind / this) ^ hardness), which is positive at every wind and never one, so an ordinary week takes a little and a storm takes most (Law 6).`,
+    },
+    {
+      id: windHardnessParam(d.id),
+      value: d.windHardness,
+      unit: 'exponent',
+      dimension: 'ratio',
+      kind: 'technology',
+      owner: 'model',
+      why: `Commodities Spot B3: how sharply ${d.name} fails above what it was built for. Wind damage is not linear in wind — doubling it is far more than twice the loss, because what fails is what the load exceeded — and this is the shape of that.`,
     },
   ]);
 }
@@ -222,6 +233,64 @@ function retire(ctx: MechanismContext): void {
       [h.holder, i.id],
       { holder: h.holder, vintage: i.id, capitalKind: terms.capitalKind, units, why: 'retired' },
       false,
+    );
+  }
+}
+
+/**
+ * Commodities Spot B3, Freight B4, Law 6: WHAT THE WEATHER TAKES DOWN, where it stood.
+ *
+ * A storm is one of the physical facts the environment publishes (13c), and this is one of the
+ * several consequences of that one event: a real destruction of units of plant, on the named party
+ * that owned them, at the site they were at. Nothing here multiplies a price and nothing writes
+ * anything down — the loss is that the machines are gone, and what that costs their owner is what
+ * settlement charged its equity (A3, Goods E3).
+ *
+ * WHAT SURVIVES IS `exp(-(wind / standsWind) ^ hardness)`, and there is no threshold in it. The
+ * quantity is positive at every wind and never reaches one, so an ordinary week takes a little and
+ * a storm takes most — continuously, with nothing happening AT any level and nothing clamped
+ * (Law 6). Two technologies per kind say it: what the structure is built for, and how sharply what
+ * it was not built for fails.
+ */
+function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void {
+  for (const h of ctx.register.allHoldings()) {
+    const i = ctx.instruments.get(h.instrument);
+    if (!i.status.live || !isPlant(i)) continue;
+    const terms = plantTerms(i);
+    if (capitalKindOf(rows, terms.capitalKind) === undefined) continue;
+    const wind = conditionsFor(ctx, terms.region, [WIND]);
+    const standard = ctx.params.ratio(standsWindParam(terms.capitalKind));
+    const hardness = ctx.params.ratio(windHardnessParam(terms.capitalKind));
+    if (standard <= 0) continue;
+    const survived = finite(
+      Math.exp(-Math.pow(wind / standard, hardness)),
+      'what the weather left standing',
+    );
+    const units = ctx.register.free(h.holder, i.id);
+    const lost = ctx.registry.deliverable(i.unit, mul(units, 1 - survived, 'what the wind took'));
+    if (!material(lost, 2, units) || lost <= 0) continue;
+    const party = ctx.parties.get(h.holder);
+    const side = cellSide(party, lost);
+    const record = ctx.settle({
+      legs: [
+        {
+          kind: 'destroy',
+          party: h.holder,
+          instrument: i.id,
+          qty: totalFor(party, lost),
+          why: 'scrapped',
+          fromCell: side === undefined ? none() : some(side),
+        },
+      ],
+      cause: 'corporateAction',
+      reason: `${h.holder} lost ${lost} of ${i.id} to the weather`,
+    });
+    if (record.outcome !== 'settled') continue;
+    ctx.record(
+      'capital.weathered',
+      [h.holder, i.id],
+      { holder: h.holder, vintage: i.id, capitalKind: terms.capitalKind, units: lost, wind, survived },
+      true,
     );
   }
 }
@@ -454,6 +523,9 @@ export function capitalProgramme(rows: readonly CapitalKindDecl[] = CAPITAL_KIND
         anchor: { after: 'corporateActions' },
         run: (ctx: MechanismContext) => {
           retire(ctx);
+          // B3: and what the weather took, before anybody decides what it can make with what is
+          // left. A storm is not a surprise a firm hears about later: it is standing in it.
+          weather(ctx, rows);
         },
       },
       {
