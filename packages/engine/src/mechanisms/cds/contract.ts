@@ -17,6 +17,7 @@
  * is DERIVED: nothing here computes one, and nothing here needs one.
  */
 import type { Calendar, Period } from '../../calendar/calendar.js';
+import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { derivativeKindId } from '../../core/ids.js';
@@ -106,6 +107,13 @@ function markOf(c: Contract, at: Period, reads: ContractReads): number {
   return t.buysProtection ? worth : -worth;
 }
 
+/** C1, C3, E3: why a party is in this book, and what its level says against the cash market. */
+export const cdsClass: DerivativeClassDecl = {
+  kind: CDS,
+  orders: (view, m) => cdsOrders(view, m),
+  measures: (m, reads) => cdsMeasures(m, reads),
+};
+
 export const cdsKind: DerivativeKindProfile = {
   id: CDS,
   unit: PROTECTED,
@@ -179,8 +187,6 @@ export const cdsKind: DerivativeKindProfile = {
     );
   },
   // D11.a: the stated close-out value is what it is worth now.
-  orders: (view, m) => cdsOrders(view, m),
-  measures: (m, reads) => cdsMeasures(m, reads),
   closeOut: markOf,
   /**
    * D11, D2.b: the term runs out — UNLESS the reference has defaulted and its estate has not

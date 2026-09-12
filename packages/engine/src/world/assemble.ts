@@ -96,6 +96,7 @@ export function assemble(spec: AssemblySpec): World {
     for (const k of m.resolves ?? []) world.provideResolution(m.id, k);
     const capacity = m.clearingCapacity;
     if (capacity !== undefined) world.provideCapacity(m.id, capacity);
+    for (const c of m.derivativeClasses ?? []) world.addDerivativeClass(c, m.id);
     for (const i of m.indices?.(world.params) ?? []) world.addIndex(i, m.id);
     for (const v of m.marks ?? []) world.provideMark(m.id, v.instrumentKind, v.value);
     requireBankChoices(m);

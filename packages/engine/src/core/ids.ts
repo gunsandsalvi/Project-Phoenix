@@ -33,6 +33,26 @@ export type EventId = Brand<number, 'EventId'>;
 export type ContractId = Brand<string, 'ContractId'>;
 export type DerivativeKindId = Brand<string, 'DerivativeKindId'>;
 
+/**
+ * ARCHITECTURE 4.9b, Law 15: A MODULE'S OWN IDENTIFIER, branded in the module's own file.
+ *
+ * Every brand above is the kernel's, for a thing the kernel owns. A module that names a thing of
+ * its own — a job, a route, a tranche — had no way to brand it without a line here, and that is
+ * measurably the largest of the four causes of kernel churn: item 13a cost twenty-four kernel files
+ * to seven module files, and five of the twenty-four were this file growing a brand per module.
+ *
+ * `ModuleKey<'Employment'>` is a distinct type from `ModuleKey<'Route'>` and from every kernel
+ * brand, so the type system says the same thing it says about a `PartyId` — and the kernel never
+ * hears about either. A module declares its own constructor:
+ *
+ *     export type EmploymentId = ModuleKey<'Employment'>;
+ *     export const employmentId = (s: string): EmploymentId => moduleKey(s, 'Employment');
+ */
+export type ModuleKey<B extends string> = Brand<string, B>;
+
+export const moduleKey = <B extends string>(s: string, what: B): ModuleKey<B> =>
+  nonEmpty(s, what) as ModuleKey<B>;
+
 function nonEmpty(s: string, what: string): string {
   if (s.length === 0) throw new Missing('Law 9', `${what} is empty`);
   return s;

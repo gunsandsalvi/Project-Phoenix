@@ -18,7 +18,7 @@
  * B2, B2.a — the pension fund matching a long liability — is DECLARED PARTIAL here and built at
  * 13h, where there is a pension fund to have one.
  */
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
 import { add, div, sub } from '../../core/num.js';
@@ -59,7 +59,7 @@ function swapped(view: ParticipantView, t: IrsTerms): number {
 }
 
 export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isIrs(decl.terms)) return [];
   const t = decl.terms;
   const fixing = floatingRate(t, { lastEvent: (kind, subject) => view.lastPublicAbout(kind, subject) });

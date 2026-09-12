@@ -37,10 +37,10 @@ import type {
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
-import type { SystemModule } from '../../world/module.js';
+import type { SystemModule, DerivativeClassDecl } from '../../world/module.js';
 
 export const OPTION = derivativeKindId('option');
 export const OPTION_CONTRACTS = unitId('optionContracts');
@@ -170,34 +170,6 @@ export const optionKind: DerivativeKindProfile = {
     );
   },
   // D11.a: closed out at what exercise would come to, which is the stated value of the position.
-  orders: optionOrders,
-  /**
-   * D7.a: IMPLIED VOLATILITY AS A READ — the move this book's own cleared premium is paying for,
-   * taken back off the price the market made and never an input to it (Law 3). A book that has not
-   * printed has no premium, so it implies nothing, which is the honest answer.
-   */
-  measures: (m, reads): readonly ContractMeasure[] => {
-    const decl = m.contract;
-    if (decl === undefined || !isOption(decl.terms)) return [];
-    const t = decl.terms;
-    const premium = reads.prices.latest(t.book, reads.period);
-    if (!premium.some) return [];
-    const move = impliedMove(
-      premium.value.price,
-      t.multiplier,
-      yearFraction(OPTION_DAY_COUNT, reads.calendar.startOf(reads.period), reads.calendar.startOf(t.expiry)),
-    );
-    if (!move.some) return [];
-    return [
-      {
-        subject: String(t.underlying),
-        measure: 'the move its premium pays for',
-        tenorYears: null,
-        level: move.value,
-        unit: 'money',
-      },
-    ];
-  },
   closeOut: (c, at, reads) => (isOption(c.terms) && c.terms.holds ? intrinsic(c, at, reads) : -intrinsic(c, at, reads)),
   expires: (c, at): boolean => isOption(c.terms) && at >= c.terms.expiry,
 };
@@ -219,6 +191,42 @@ export function impliedMove(
   if (!(years > 0) || !(multiplier > 0)) return none<number>();
   return some(div(premium, mul(multiplier, Math.sqrt(years), 'what it buys, over root time'), 'the move it implies'));
 }
+
+/**
+ * D7.a: why a party writes or buys optionality, and IMPLIED VOLATILITY AS A READ — the move this
+ * book's own cleared premium is paying for, taken back off the price the market made and never an
+ * input to it (Law 3). A book that has not printed has no premium, so it implies nothing, which is
+ * the honest answer.
+ */
+const optionClass: DerivativeClassDecl = {
+  kind: OPTION,
+  orders: optionOrders,
+  measures: (m, reads): readonly ContractMeasure[] => {
+    const t = m.contract.terms;
+    if (!isOption(t)) return [];
+    const premium = reads.prices.latest(t.book, reads.period);
+    if (!premium.some) return [];
+    const move = impliedMove(
+      premium.value.price,
+      t.multiplier,
+      yearFraction(
+        OPTION_DAY_COUNT,
+        reads.calendar.startOf(reads.period),
+        reads.calendar.startOf(t.expiry),
+      ),
+    );
+    if (!move.some) return [];
+    return [
+      {
+        subject: String(t.underlying),
+        measure: 'the move its premium pays for',
+        tenorYears: null,
+        level: move.value,
+        unit: 'money',
+      },
+    ];
+  },
+};
 
 function params(): ParamDecl[] {
   return [
@@ -261,7 +269,7 @@ function params(): ParamDecl[] {
  * everything else on, and quotes the move it EXPECTS plus what its capital wants for the position.
  */
 function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isOption(decl.terms)) return [];
   const t = decl.terms;
   const print = view.print(t.underlying);
@@ -350,7 +358,7 @@ function openBooks(
   for (const underlying of lines) {
     if (!ctx.instruments.has(underlying)) continue;
     const i = ctx.instruments.get(underlying);
-    const market = ctx.markets.find((m) => m.instrument === underlying && m.contract === undefined);
+    const market = ctx.markets.find((m) => m.instrument === underlying && contractOf(m) === undefined);
     if (market === undefined) continue;
     // A LADDER, not a new book every period: everything written between two dates on the cycle
     // settles on the same one, into the same book (`nextCycle`).
@@ -405,6 +413,7 @@ export function options(
     requires: ['derivative-layer', 'equity', 'indices'],
     instrumentKinds: [],
     derivativeKinds: [optionKind],
+    derivativeClasses: [optionClass],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: OPTION_CONTRACTS, name: 'option contracts', perUnit: 1 }],

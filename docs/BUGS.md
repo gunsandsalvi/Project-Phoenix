@@ -162,3 +162,60 @@ measurement to take.
 **Where it goes.** Not this item's: 13b.1 changes no economic outcome, and the dispersion of what
 households hold is 13d's (Households E/F, the life cycle) or 16's (Part XII, measure). Positioned
 when the item closes.
+
+---
+
+## 13b.1-7 — No spot FX trade happens at all in the rig's world
+
+**Measured.** `spot-fx.test.ts`, "moves one money against another, both on their own grids, or
+neither moves": `expected 0 to be greater than 0` at the count of two-legged money instructions
+seen. Confirmed identical at `7cb266c`, before the market-shape change that was being made when it
+was seen.
+
+**What it is.** The test walks the journal for an instruction with two money legs in two currencies
+and finds none: the pair market exists and nobody trades in it. Every other assertion in the file
+passes, so the venue, the pair naming and the triangle read are all there — what is missing is a
+party with a reason to convert. A world where nobody needs a foreign money is a world whose FX
+market prints nothing, and that is a mechanism nobody has built rather than a number behaving badly
+(Law 11): what makes somebody buy a currency is an import, a foreign asset or a foreign liability,
+and item 12's currency layer is the first of those.
+
+**Where it goes.** 12 or 13c (trade in goods across a border gives the first real reason). Not
+this item's: 13b.1 changes no economic outcome.
+
+---
+
+## 13b.1-8 — The clearing house is not flat by nine hundredths
+
+**Measured.** `derivative-layer.test.ts`, "the house is flat by construction: what it holds on one
+side it owes on the other": `expected -0.09600000000000719 to be +0`. Confirmed identical at
+`7cb266c`.
+
+**What it is, and it is not dust.** C2 says the house is buyer to the seller and seller to the
+buyer at the same level in the same instruction, so its own position is nothing BY CONSTRUCTION —
+not to within a tolerance, exactly. Nine hundredths on a position of zero is not a last-bit
+disagreement: something is writing one side of a cleared pair at a level or a size the other side
+does not have. The two candidates are the margin legs (posted per side, against different
+counterparties) and a contract cut by `admits` after one of the two legs was already priced.
+
+**Where it goes.** Derivative Layer C2 is item 13a's clause and the layer is its module; the house
+being flat is the property that makes a central counterparty a central counterparty, so this is a
+mechanism finding and not a measurement one. Positioned to 13h, which owns what is left of the
+derivative layer's counterparties.
+
+---
+
+## 13b.1-9 — Nobody posts a schedule into an option book
+
+**Measured.** `derivative-classes.test.ts`, "opens an option book, which a bootstrap of one tick
+could not (D7.b, D4)": `expected 0 to be greater than 0` at the count of orders any living party
+posts into any option book. Confirmed identical at `7cb266c`.
+
+**What it is.** The books are there and the class has an `orders` of its own; what comes back is
+empty for every party. The test's own comment already names the family this belongs to: `13b-10` —
+every party this world admits to a contract book is on the same side of it, because
+`TRADES_CONTRACTS` is banks and firms and in this world both want the same thing. This is the same
+finding one class over, and it is stronger: here not one party wants either side.
+
+**Where it goes.** 13h, with `13b-10`: the counterparty that would take the other side of an
+option — an insurer, a pension fund — is that item's to build.

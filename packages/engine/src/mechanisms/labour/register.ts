@@ -14,11 +14,19 @@
  * checkable rather than approximate (B5).
  */
 import type { Period } from '../../calendar/calendar.js';
-import type { PartyId, RegionId } from '../../core/ids.js';
+import { moduleKey, type ModuleKey, type PartyId, type RegionId } from '../../core/ids.js';
 import { div, mul, sum } from '../../core/num.js';
 
+/**
+ * Labour A4, XI-10: the identity of one employment RELATIONSHIP. It is the labour module's own —
+ * nothing outside labour names a job — so it is branded here rather than in `core/ids.ts`, which
+ * is what `ModuleKey` is for (ARCHITECTURE 4.9b).
+ */
+export type EmploymentId = ModuleKey<'Employment'>;
+export const employmentId = (s: string): EmploymentId => moduleKey(s, 'Employment');
+
 export interface EmploymentRow {
-  readonly id: string;
+  readonly id: EmploymentId;
   /** F1: the named firm the job is at, and whose account the wage leaves. */
   readonly employer: PartyId;
   /** The named household cell whose members hold the job (A4.b: a cohort that can be told). */

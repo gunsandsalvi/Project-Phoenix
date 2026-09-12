@@ -37,11 +37,11 @@ import type {
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, kindOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView, WorldReads } from '../../world/context.js';
-import type { SystemModule } from '../../world/module.js';
+import type { DerivativeClassDecl, SystemModule } from '../../world/module.js';
 
 export const BOND_FUTURE = derivativeKindId('bond.future');
 /** I1: the notional is a count of CONTRACTS, each for a stated amount of face. */
@@ -126,28 +126,6 @@ export const bondFutureKind: DerivativeKindProfile = {
       ),
     );
   },
-  orders: futureOrders,
-  /**
-   * I1.a, I2: the two measurements this book carries — the carry on what it delivers, and the net
-   * basis against it. Both are reads (`netBasis`, `bondCarryOf`) and neither is a target: that the
-   * future is not exactly the cash price less the carry is the trade, not a discrepancy.
-   */
-  measures: (m, reads): readonly ContractMeasure[] => {
-    const decl = m.contract;
-    if (decl === undefined || !isBondFuture(decl.terms)) return [];
-    const t = decl.terms;
-    const basis = netBasis(reads, t.deliverable, t.expiry);
-    if (!basis.some) return [];
-    return [
-      {
-        subject: String(t.deliverable),
-        measure: 'the future against cash less carry',
-        tenorYears: null,
-        level: basis.value,
-        unit: 'money',
-      },
-    ];
-  },
   /**
    * I1, Money Market A2: WHAT TAKING DELIVERY COSTS, said in advance so a treasury can fund it.
    *
@@ -169,6 +147,32 @@ export const bondFutureKind: DerivativeKindProfile = {
   // D11: the term runs out when the module has DELIVERED it. Until then it is open, and the layer's
   // own resolution must not tear it up and pay a cash difference for a contract that delivers.
   expires: () => false,
+};
+
+/**
+ * I1.a, I2: why a party is in this book, and the two measurements it carries — the carry on what it
+ * delivers, and the net basis against it. Both are reads (`netBasis`, `bondCarryOf`) and neither is
+ * a target: that the future is not exactly the cash price less the carry is the trade, not a
+ * discrepancy.
+ */
+const bondFutureClass: DerivativeClassDecl = {
+  kind: BOND_FUTURE,
+  orders: futureOrders,
+  measures: (m, reads): readonly ContractMeasure[] => {
+    const t = m.contract.terms;
+    if (!isBondFuture(t)) return [];
+    const basis = netBasis(reads, t.deliverable, t.expiry);
+    if (!basis.some) return [];
+    return [
+      {
+        subject: String(t.deliverable),
+        measure: 'the future against cash less carry',
+        tenorYears: null,
+        level: basis.value,
+        unit: 'money',
+      },
+    ];
+  },
 };
 
 function params(): ParamDecl[] {
@@ -277,7 +281,7 @@ export function netBasis(
  * stops it: its own drawdown tolerance, read from its own equity, with nothing making it whole.
  */
 function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isBondFuture(decl.terms)) return [];
   const t = decl.terms;
   const cash = view.print(t.deliverable);
@@ -350,7 +354,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId,
   const life = ctx.params.periods(BOND_FUTURE_PARAMS.life);
   const contractSize = ctx.params.price(BOND_FUTURE_PARAMS.size);
   for (const market of ctx.markets) {
-    if (market.contract !== undefined || market.fx !== undefined) continue;
+    if (kindOf(market) !== 'asset') continue;
     if (!ctx.instruments.has(market.instrument)) continue;
     const i = ctx.instruments.get(market.instrument);
     if (!i.status.live || !issuedBy(i, issuer)) continue;
@@ -521,6 +525,7 @@ export function bondFutures(
     requires: ['derivative-layer', 'sovereign-curve', 'money-market', 'indices'],
     instrumentKinds: [],
     derivativeKinds: [bondFutureKind],
+    derivativeClasses: [bondFutureClass],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: FUTURE_CONTRACTS, name: 'future contracts', perUnit: 1 }],

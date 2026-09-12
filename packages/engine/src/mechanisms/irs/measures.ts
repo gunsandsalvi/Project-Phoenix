@@ -15,7 +15,7 @@ import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { curveFamilyOf } from '../../prices/curve.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { ContractMeasure } from '../../registry/derivatives.js';
 import type { WorldReads } from '../../world/context.js';
 import { irsLineOf } from './data.js';
@@ -40,7 +40,7 @@ export function swapSpread(
  * no sovereign curve has a spread against nothing, which is Missing and not a zero.
  */
 export function irsMeasures(m: MarketDecl, reads: WorldReads): readonly ContractMeasure[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isIrs(decl.terms)) return [];
   const t = decl.terms;
   const sovereign = reads.sovereignCurveIn(t.ccy);

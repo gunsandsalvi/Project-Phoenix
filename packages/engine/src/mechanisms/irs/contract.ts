@@ -18,6 +18,7 @@
  * test that reads every leg of a year of swaps checks.
  */
 import type { Period } from '../../calendar/calendar.js';
+import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
 import { derivativeKindId, unitId } from '../../core/ids.js';
@@ -93,6 +94,13 @@ function markOf(c: Contract, at: Period, reads: ContractReads): number {
   );
   return t.paysFixed ? worth : -worth;
 }
+
+/** B2, C3: why a party swaps, and what the cleared fixed rate says against the sovereign's own. */
+export const irsClass: DerivativeClassDecl = {
+  kind: IRS,
+  orders: (view, m) => irsOrders(view, m),
+  measures: (m, reads) => irsMeasures(m, reads),
+};
 
 export const irsKind: DerivativeKindProfile = {
   id: IRS,
@@ -179,8 +187,6 @@ export const irsKind: DerivativeKindProfile = {
       ),
     );
   },
-  orders: (view, m) => irsOrders(view, m),
-  measures: (m, reads) => irsMeasures(m, reads),
   closeOut: markOf,
   expires: (c, at): boolean => isIrs(c.terms) && at >= c.terms.maturity,
 };

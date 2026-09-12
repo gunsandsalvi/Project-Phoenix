@@ -14,7 +14,7 @@ import { sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { issuedBy } from '../../register/instruments.js';
 import { curveFamilyOf, yieldOf } from '../../prices/curve.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { ContractMeasure } from '../../registry/derivatives.js';
 import type { WorldReads } from '../../world/context.js';
 import { CDS_DAY_COUNT, cdsLineOf } from './data.js';
@@ -89,7 +89,7 @@ export function basisFor(
  * basis against nothing — which is Missing and not a zero.
  */
 export function cdsMeasures(m: MarketDecl, reads: WorldReads): readonly ContractMeasure[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isCds(decl.terms)) return [];
   const t = decl.terms;
   const out: ContractMeasure[] = [

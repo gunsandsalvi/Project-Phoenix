@@ -28,6 +28,7 @@ import {
   type MechanismContext,
   type SystemModule,
   type World,
+  pairOf,
 } from '../src/index.js';
 import { rigWorld, rigSpec, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
@@ -287,7 +288,7 @@ function atTickShift(
     if (!last.some) continue;
     prints += 1;
     printed += last.value.price;
-    const pair = m.fx;
+    const pair = pairOf(m);
     const tick =
       pair === undefined
         ? w.registry.tickFor(w.instruments.get(m.instrument).kind, m.ccy)

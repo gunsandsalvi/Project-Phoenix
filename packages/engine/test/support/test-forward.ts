@@ -21,6 +21,7 @@ import {
   type ContractPayment,
   type ContractReads,
   type ContractTerms,
+  type DerivativeClassDecl,
   type DerivativeKindProfile,
   type Option,
   type InstrumentId,
@@ -103,21 +104,35 @@ export const testForwardKind: DerivativeKindProfile = {
       ),
     );
   },
-  /**
-   * Clearing A2, Law 4: THE KIND CARRIES ITS OWN REASONS, because the layer declares the one
-   * participant a contract book asks (`DerivativeKindProfile.orders`). The fixture's two banks and
-   * its own movers say what they want here rather than in a second participant of their own, which
-   * would be two modules speaking for one party in one book.
-   */
+  // D11.a: the stated close-out value is what it is worth now. A forward's payoff is its mark.
+  closeOut: markOf,
+  expires: (c, at): boolean => isForward(c.terms) && at >= c.terms.expiry,
+};
+
+/**
+ * Clearing A2, Law 4: THE CLASS CARRIES ITS OWN REASONS, because the layer declares the one
+ * participant a contract book asks. The fixture's two banks and its own movers say what they want
+ * here rather than in a second participant of their own, which would be two modules speaking for
+ * one party in one book.
+ */
+export const testForwardClass: DerivativeClassDecl = {
+  kind: TEST_FORWARD,
   orders: (view, m) => {
-    const t = m.contract?.terms;
-    if (t === undefined || !isForward(t)) return [];
+    const t = m.contract.terms;
+    if (!isForward(t)) return [];
     const me = String(view.self.id);
     if (t.movers.includes(me)) {
       const first = t.movers[0];
       return first === undefined
         ? []
-        : [{ party: view.self.id, side: me === first ? 'buy' : 'sell', price: t.strike, qty: asQty(t.size) }];
+        : [
+            {
+              party: view.self.id,
+              side: me === first ? 'buy' : 'sell',
+              price: t.strike,
+              qty: asQty(t.size),
+            },
+          ];
     }
     const banks = view.parties
       .ofKind(partyKindId('bank'))
@@ -127,7 +142,4 @@ export const testForwardKind: DerivativeKindProfile = {
     if (banks[1] === me) return [{ party: view.self.id, side: 'sell', price: t.strike, qty: asQty(t.size) }];
     return [];
   },
-  // D11.a: the stated close-out value is what it is worth now. A forward's payoff is its mark.
-  closeOut: markOf,
-  expires: (c, at): boolean => isForward(c.terms) && at >= c.terms.expiry,
 };

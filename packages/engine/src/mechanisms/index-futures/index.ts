@@ -27,10 +27,10 @@ import type {
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
-import type { SystemModule } from '../../world/module.js';
+import type { SystemModule, DerivativeClassDecl } from '../../world/module.js';
 
 export const INDEX_FUTURE = derivativeKindId('index.future');
 export const INDEX_CONTRACTS = unitId('indexContracts');
@@ -100,9 +100,14 @@ export const indexFutureKind: DerivativeKindProfile = {
       ),
     );
   },
-  orders: futureOrders,
   closeOut: markOf,
   expires: (c, at): boolean => isIndexFuture(c.terms) && at >= c.terms.expiry,
+};
+
+/** D3: why a party is long or short the index, with a future it can actually settle. */
+const indexFutureClass: DerivativeClassDecl = {
+  kind: INDEX_FUTURE,
+  orders: futureOrders,
 };
 
 function params(): ParamDecl[] {
@@ -136,7 +141,7 @@ function params(): ParamDecl[] {
  * a ratio. What it has already hedged comes off, so a desk that is covered posts nothing.
  */
 function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isIndexFuture(decl.terms)) return [];
   const t = decl.terms;
   const level = view.index(t.index);
@@ -225,6 +230,7 @@ export function indexFutures(
     requires: ['derivative-layer', 'indices', 'equity'],
     instrumentKinds: [],
     derivativeKinds: [indexFutureKind],
+    derivativeClasses: [indexFutureClass],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: INDEX_CONTRACTS, name: 'index contracts', perUnit: 1 }],

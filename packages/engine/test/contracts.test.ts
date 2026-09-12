@@ -27,7 +27,13 @@ import {
 } from '../src/index.js';
 import { mergeModules, rigSpec, withDependencies } from './rig.js';
 import { notDealing } from './no-dealing.js';
-import { isForward, testForwardKind, TEST_FORWARD, type ForwardTerms } from './support/test-forward.js';
+import {
+  isForward,
+  testForwardClass,
+  testForwardKind,
+  TEST_FORWARD,
+  type ForwardTerms,
+} from './support/test-forward.js';
 
 /** A module that owns the test-only kind and writes rows on demand, through the wire. */
 function forwards(plan: (ctx: MechanismContext) => void): SystemModule {
@@ -37,6 +43,7 @@ function forwards(plan: (ctx: MechanismContext) => void): SystemModule {
     requires: ['derivative-layer'],
     instrumentKinds: [],
     derivativeKinds: [testForwardKind],
+    derivativeClasses: [testForwardClass],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: testForwardKind.unit, name: 'contracts', perUnit: 1 }],

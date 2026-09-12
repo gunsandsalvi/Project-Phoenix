@@ -16,7 +16,7 @@
  *
  * And then B5, the dealer, which quotes both ways and is the reason the first two find anybody.
  */
-import type { MarketDecl } from '../../clearing/market.js';
+import { pairOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode } from '../../core/ids.js';
 import {
@@ -52,7 +52,7 @@ import { fxParam } from './data.js';
  * due in that money less what it holds of it: positive it must buy, negative it has too much.
  */
 export function needOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const pair = m.fx;
+  const pair = pairOf(m);
   if (pair === undefined || !view.self.status.alive) return [];
   const home = view.registry.region(view.self.region).ccy;
   if (pair.base === home) return ownMoneyIsTheBase(view, m, pair.quote);
@@ -84,7 +84,7 @@ function ownMoneyIsTheBase(
   m: MarketDecl,
   foreign: CurrencyCode,
 ): readonly Order[] {
-  const pair = m.fx;
+  const pair = pairOf(m);
   if (pair === undefined) return [];
   const print = view.print(m.instrument);
   if (!print.some || print.value.price <= 0) return [];
@@ -126,7 +126,7 @@ export function dealerOrders(
   m: MarketDecl,
   d: FxDeskDecl | undefined,
 ): readonly Order[] {
-  const pair = m.fx;
+  const pair = pairOf(m);
   if (pair === undefined || d === undefined || !view.self.status.alive) return [];
   const print = view.print(m.instrument);
   if (!print.some || print.value.price <= 0) return [];

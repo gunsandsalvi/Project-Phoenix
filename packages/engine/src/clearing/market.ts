@@ -41,7 +41,6 @@ import type { Registry } from '../registry/registry.js';
 import { clear, type Fill, type Order, type Rationing } from './solver.js';
 import type { DerivativeKindId } from '../core/ids.js';
 import type { ContractTerms, DerivativeKindProfile } from '../registry/derivatives.js';
-import { Missing } from '../core/errors.js';
 
 /**
  * Spot FX A1, C1; Law 15: WHAT KIND OF THING THIS MARKET MOVES, as a dispatch key and never a
@@ -60,7 +59,7 @@ import { Missing } from '../core/errors.js';
  */
 export type MarketKind = 'asset' | 'fx' | 'contract';
 
-export interface MarketDecl {
+interface MarketBase {
   readonly id: MarketId;
   readonly name: string;
   /**
@@ -72,24 +71,6 @@ export interface MarketDecl {
   /** What the price is IN: the quote currency of a pair, the money an asset is paid for in. */
   readonly ccy: CurrencyCode;
   readonly rationing: Rationing;
-  readonly kind?: MarketKind;
-  /**
-   * Derivative D12, Derivative Layer B1: what a fill in THIS book becomes. A book is one contract
-   * shape — one underlying, one term, one strike (D12) — so the terms are the book's and what
-   * varies per trade is who, how much, and the level it cleared at. The BUYER is `a`, which is the
-   * side the terms are stated from and the mark is written for (A3).
-   */
-  readonly contract?: {
-    readonly kind: DerivativeKindId;
-    readonly terms: ContractTerms;
-    /** C2: the central counterparty both sides face here, or null for a bilateral book. */
-    readonly house: PartyId | null;
-  };
-  /**
-   * Spot FX A1, A3: the two moneys, when this is a pair. The price is what one unit of `base` costs
-   * in `quote`, so a BUY takes base and gives quote — which is the same convention a market uses.
-   */
-  readonly fx?: { readonly base: CurrencyCode; readonly quote: CurrencyCode };
   /**
    * Spot FX F1.a, Clearing F1: WHERE IN THE PERIOD THIS MARKET RUNS. Markets clear in ascending
    * order, so a payer short of a money can buy it before the market that needs it — which is F1.a's
@@ -98,6 +79,80 @@ export interface MarketDecl {
    * market that does not care sits.
    */
   readonly order?: number;
+}
+
+/** An instrument against money: what a market is, and what every market here was until FX. */
+export interface AssetMarketDecl extends MarketBase {
+  readonly kind?: 'asset';
+}
+
+/**
+ * Spot FX A1, A3: the two moneys. The price is what one unit of `base` costs in `quote`, so a BUY
+ * takes base and gives quote — which is the same convention a market uses.
+ */
+export interface CurrencyPair {
+  readonly base: CurrencyCode;
+  readonly quote: CurrencyCode;
+}
+
+export interface FxMarketDecl extends MarketBase {
+  readonly kind: 'fx';
+  readonly fx: CurrencyPair;
+}
+
+/**
+ * Derivative D12, Derivative Layer B1: what a fill in THIS book becomes. A book is one contract
+ * shape — one underlying, one term, one strike (D12) — so the terms are the book's and what varies
+ * per trade is who, how much, and the level it cleared at. The BUYER is `a`, which is the side the
+ * terms are stated from and the mark is written for (A3).
+ */
+export interface ContractBook {
+  readonly kind: DerivativeKindId;
+  readonly terms: ContractTerms;
+  /** C2: the central counterparty both sides face here, or null for a bilateral book. */
+  readonly house: PartyId | null;
+}
+
+export interface ContractMarketDecl extends MarketBase {
+  readonly kind: 'contract';
+  readonly contract: ContractBook;
+}
+
+/**
+ * Law 15: THREE KINDS OF MARKET AS THREE SHAPES, discriminated on `kind`. It was one shape with
+ * three optional bags (`kind?`, `contract?`, `fx?`), so a contract book naming no contract and a
+ * pair market naming no pair were both states the type allowed and two runtime `throw`s forbade.
+ * A state the type can forbid is not a state to check for.
+ */
+export type MarketDecl = AssetMarketDecl | FxMarketDecl | ContractMarketDecl;
+
+/** An asset market need not say what it is, because it is what a market is (Clearing A1). */
+export function kindOf(m: MarketDecl): MarketKind {
+  return m.kind ?? 'asset';
+}
+
+/**
+ * Derivative Layer B1, Law 19: THE CONTRACT THIS BOOK STRIKES, or nothing because this market is
+ * not a contract book. A module walking every market asks what KIND a market is, which is the
+ * question it means; it used to test a field for absence and infer the kind from that.
+ */
+export function contractOf(m: MarketDecl | undefined): ContractBook | undefined {
+  return m?.kind === 'contract' ? m.contract : undefined;
+}
+
+/**
+ * Derivative Layer B1: THE CONTRACT BOOK THIS MARKET IS, or nothing because it is not one. The same
+ * question as `contractOf` with the market kept, for a caller that has to hand the market on to
+ * something only a contract book has — and it is here, in the kernel, so that no module writes the
+ * discriminant test itself (Law 15: `phoenix/no-kind-branch` refuses it there, and is right to).
+ */
+export function asContractMarket(m: MarketDecl | undefined): ContractMarketDecl | undefined {
+  return m?.kind === 'contract' ? m : undefined;
+}
+
+/** Spot FX A3: the pair this market prices, or nothing because this market is not a pair. */
+export function pairOf(m: MarketDecl | undefined): CurrencyPair | undefined {
+  return m?.kind === 'fx' ? m.fx : undefined;
 }
 
 /**
@@ -138,6 +193,21 @@ export interface MarketRunDeps {
    * a pair's is are two registry rows and this file is not where either lives (Law 15).
    */
   readonly tickOf: (m: MarketDecl) => number;
+  /**
+   * Law 15: WHAT A KIND OF MARKET NEEDS BEYOND THE BOOK, one row per kind that needs anything.
+   * `admits` and `marginLegs` were two fields here, on the deps every market ever run is handed,
+   * for the one kind that uses them — and a fourth kind with needs of its own would have been two
+   * more. Asset and fx markets need nothing beyond the book, and the absence of their rows says so.
+   */
+  readonly kinds: MarketKindDeps;
+}
+
+export interface MarketKindDeps {
+  readonly contract: ContractMarketDeps;
+}
+
+/** What a contract book needs that the kernel cannot answer (Derivative Layer E1, E2, D9). */
+export interface ContractMarketDeps {
   /** Law 15: what a kind of contract is, asked of its profile and never branched on. */
   readonly derivativeKind: (kind: DerivativeKindId) => DerivativeKindProfile;
   /**
@@ -148,7 +218,12 @@ export interface MarketRunDeps {
    * what it has already committed this period is its own module's record. So the module that owns
    * the layer answers, and the market cuts the trade to the smaller of the two sides' answers.
    */
-  readonly admits: (party: PartyId, wanted: number, m: MarketDecl, struck: number) => number;
+  readonly admits: (
+    party: PartyId,
+    wanted: number,
+    m: ContractMarketDecl,
+    struck: number,
+  ) => number;
   /**
    * D9, C3.a: the legs that post what this trade requires — an ASSET SWAP, money out and a claim
    * in, never an expense. They are the module's because the claim is the module's instrument, and
@@ -159,7 +234,7 @@ export interface MarketRunDeps {
     party: PartyId,
     against: PartyId,
     size: number,
-    m: MarketDecl,
+    m: ContractMarketDecl,
     struck: number,
   ) => readonly Leg[];
 }
@@ -484,38 +559,52 @@ function tradeInstruction(
   period: Period,
   cycle: Cycle,
 ): Option<InstructionDraft> {
-  return MARKET_KINDS[m.kind ?? 'asset'](m, t, price, accruedPerUnit, deps, period, cycle);
+  return MARKET_KINDS[kindOf(m)].trade(m, t, price, accruedPerUnit, deps, period, cycle);
 }
 
 /**
  * Spot FX A1, Clearing D1, Law 4: WHAT A MARKET DELIVERS — the instrument that changes hands in it,
- * when what it moves is a thing somebody holds. A pair delivers nothing: its two legs are money,
- * and the id it prints under names a price rather than an instrument anybody could be handed. One
- * writer of that, because every reader that walks the market list and asks the instrument store
- * about the subject would otherwise have to know what a pair is.
+ * when what it moves is a thing somebody holds. One writer of that, because every reader that walks
+ * the market list and asks the instrument store about the subject would otherwise have to know what
+ * a pair is. It reads the market's declared KIND, where it used to test two optional bags for
+ * absence and re-derive the kind from them (Law 19: read the source, do not re-derive it).
  */
 export function delivers(m: MarketDecl): Option<InstrumentId> {
-  // A pair delivers nothing, and neither does a contract book: what a derivative trade produces is
-  // an obligation on two balance sheets (Derivative X1), not a thing anybody is handed. Both print
-  // under an id with no instrument behind it, which is why one reader answers for both.
-  return m.fx === undefined && m.contract === undefined ? some(m.instrument) : none<InstrumentId>();
+  return MARKET_KINDS[kindOf(m)].delivers(m);
 }
 
-/** Law 15: one row per kind of market, and nothing anywhere branches on which (`MarketKind`). */
-const MARKET_KINDS: Readonly<
-  Record<
-    MarketKind,
-    (
-      m: MarketDecl,
-      t: Trade,
-      price: number,
-      accruedPerUnit: number,
-      deps: MarketRunDeps,
-      period: Period,
-      cycle: Cycle,
-    ) => Option<InstructionDraft>
-  >
-> = Object.freeze({ asset: assetTrade, fx: fxTrade, contract: contractTrade });
+/**
+ * Law 15: one row per kind of market, and nothing anywhere branches on which (`MarketKind`).
+ *
+ * The row's members are METHODS on purpose. A method's parameters are checked bivariantly, and that
+ * is what lets the `contract` row hold a function taking a `ContractMarketDecl` — sound HERE, and
+ * only here, because this table is keyed by the very field the union is discriminated on: the row
+ * reached by `kindOf(m)` is the row written for `m`'s own variant. That is what deletes the two
+ * runtime `throw`s, where each handler took the whole union and asked which variant it had.
+ */
+interface MarketKindTerms<M extends MarketDecl> {
+  trade(
+    m: M,
+    t: Trade,
+    price: number,
+    accruedPerUnit: number,
+    deps: MarketRunDeps,
+    period: Period,
+    cycle: Cycle,
+  ): Option<InstructionDraft>;
+  /**
+   * A pair delivers nothing: its two legs are money, and the id it prints under names a price
+   * rather than an instrument anybody could be handed. A contract book delivers nothing either:
+   * what a derivative trade produces is an obligation on two balance sheets (Derivative X1).
+   */
+  delivers(m: M): Option<InstrumentId>;
+}
+
+const MARKET_KINDS: Readonly<Record<MarketKind, MarketKindTerms<MarketDecl>>> = Object.freeze({
+  asset: { trade: assetTrade, delivers: (m: AssetMarketDecl) => some(m.instrument) },
+  fx: { trade: fxTrade, delivers: () => none<InstrumentId>() },
+  contract: { trade: contractTrade, delivers: () => none<InstrumentId>() },
+});
 
 /**
  * Derivative D1, D7, D9, X1; Derivative Layer B1, B2, C2, E2: A FILL IN A CONTRACT BOOK IS A ROW ON
@@ -533,7 +622,7 @@ const MARKET_KINDS: Readonly<
  * measured (E4), and nothing anywhere raises the limit.
  */
 function contractTrade(
-  m: MarketDecl,
+  m: ContractMarketDecl,
   t: Trade,
   price: number,
   _accruedPerUnit: number,
@@ -542,18 +631,13 @@ function contractTrade(
   cycle: Cycle,
 ): Option<InstructionDraft> {
   const decl = m.contract;
-  if (decl === undefined) {
-    throw new Missing('Derivative Layer B1', `${m.id} is a contract book and names no contract`, {
-      market: m.id,
-    });
-  }
-  const profile = deps.derivativeKind(decl.kind);
+  const profile = deps.kinds.contract.derivativeKind(decl.kind);
   let size = t.qty;
   for (const side of [t.buyer, t.seller]) {
     // Law 8: what the layer will admit is money over a margin requirement, so it lands between two
     // contracts — and the one below is what this side can actually carry. A contract is whole or it
     // is not one (item 13b.1).
-    const room = downTick(deps.admits(side, size, m, price));
+    const room = downTick(deps.kinds.contract.admits(side, size, m, price));
     if (room < size) size = room;
   }
   if (size < t.qty) {
@@ -612,8 +696,8 @@ function contractTrade(
     else legs.push(pay(t.buyer, house), pay(house, t.seller));
   }
   legs.push(
-    ...deps.marginLegs(t.buyer, house ?? t.seller, size, m, price),
-    ...deps.marginLegs(t.seller, house ?? t.buyer, size, m, price),
+    ...deps.kinds.contract.marginLegs(t.buyer, house ?? t.seller, size, m, price),
+    ...deps.kinds.contract.marginLegs(t.seller, house ?? t.buyer, size, m, price),
   );
   return some({
     legs,
@@ -637,16 +721,13 @@ function contractTrade(
  * cash does, and for the same reason.
  */
 function fxTrade(
-  m: MarketDecl,
+  m: FxMarketDecl,
   t: Trade,
   price: number,
   _accruedPerUnit: number,
   deps: MarketRunDeps,
 ): Option<InstructionDraft> {
   const pair = m.fx;
-  if (pair === undefined) {
-    throw new Missing('Spot FX A3', `${m.id} is a pair market and names no pair`, { market: m.id });
-  }
   const buyer = deps.parties.get(t.buyer);
   const seller = deps.parties.get(t.seller);
   const grain = commonGrain(weightOf(buyer), weightOf(seller));
@@ -680,7 +761,7 @@ function fxTrade(
 }
 
 function assetTrade(
-  m: MarketDecl,
+  m: AssetMarketDecl,
   t: Trade,
   price: number,
   accruedPerUnit: number,

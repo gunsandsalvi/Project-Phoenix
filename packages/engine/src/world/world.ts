@@ -28,6 +28,7 @@ import {
   contractId,
   type CurrencyCode,
   type CurveFamilyId,
+  type DerivativeKindId,
   type InstrumentId,
   type InstrumentKindId,
   type MarketId,
@@ -42,8 +43,11 @@ import {
 import { add, addTo, div, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
+  contractOf,
   delivers,
+  pairOf,
   runMarket,
+  type ContractMarketDecl,
   type MarketDecl,
   type MarketResult,
   type PrimaryOffer,
@@ -81,6 +85,7 @@ import type {
   OutlookVariable,
   ParticipantView,
 } from './context.js';
+import type { DerivativeClassDecl } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
 import type {
   BankChoice,
@@ -192,6 +197,7 @@ export class World {
   private readonly asks = new Map<number, Map<MarketId, PartyId[]>>();
   private asksAt = '';
   /** Indices A1, D5: the rules this world's modules declared. One list, read by `index`. */
+  private readonly derivativeClasses = new Map<DerivativeKindId, DerivativeClassDecl>();
   private readonly indexList = new Map<string, IndexDecl>();
   /** Law 18: this reader's own memory of the levels it has walked (prices/index-read.ts). */
   private readonly indexLevels = indexCache();
@@ -397,7 +403,7 @@ export class World {
 
   addMarket(m: MarketDecl): void {
     forbid(!this.marketList.some((x) => x.id === m.id), 'Law 4', `market ${m.id} declared twice`);
-    const pair = m.fx;
+    const pair = pairOf(m);
     if (pair !== undefined) {
       // Spot FX A1, A3: a PAIR market moves money against money, so there is no instrument behind
       // it to ask about — nobody issues a pair and nobody holds one. What is checked instead is
@@ -420,7 +426,7 @@ export class World {
       this.marketList.push(m);
       return;
     }
-    const contract = m.contract;
+    const contract = contractOf(m);
     if (contract !== undefined) {
       // Derivative X1, D3, G4: a CONTRACT book has no instrument behind it either. Nobody issues a
       // forward and nobody holds one: what changes hands is an obligation on two balance sheets,
@@ -763,7 +769,12 @@ export class World {
     this.capacity = { owner, capacity };
   }
 
-  private capacityOf(party: PartyId, wanted: number, m: MarketDecl, struck: number): number {
+  private capacityOf(
+    party: PartyId,
+    wanted: number,
+    m: ContractMarketDecl,
+    struck: number,
+  ): number {
     const held = this.capacity;
     if (held === undefined) {
       throw new InvalidRegistry(
@@ -781,7 +792,7 @@ export class World {
     party: PartyId,
     against: PartyId,
     size: number,
-    m: MarketDecl,
+    m: ContractMarketDecl,
     struck: number,
   ): readonly Leg[] {
     const held = this.capacity;
@@ -1061,6 +1072,7 @@ export class World {
       registry: this.registry,
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
+      derivativeClass: (kind) => this.derivativeClass(kind),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
@@ -1192,6 +1204,7 @@ export class World {
       registry: this.registry,
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
+      derivativeClass: (kind) => this.derivativeClass(kind),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
@@ -1230,6 +1243,7 @@ export class World {
       registry: this.registry,
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
+      derivativeClass: (kind) => this.derivativeClass(kind),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
@@ -1566,6 +1580,27 @@ export class World {
     this.indexList.set(decl.id, decl);
   }
 
+  /**
+   * Derivative D1, Law 4, Law 15: register what a CLASS of derivative knows — why a party would be
+   * in a book of it, and what its level says against the rest of the world. One module owns a kind
+   * (the registry already refuses a second profile for it) and one module speaks for it here too.
+   */
+  addDerivativeClass(decl: DerivativeClassDecl, owner: string): void {
+    forbid(!this.sealed, 'Derivative D1', 'a derivative class is declared at assembly');
+    forbid(
+      !this.derivativeClasses.has(decl.kind),
+      'Law 4',
+      `derivative class ${decl.kind} is declared twice; ${owner} is the second`,
+    );
+    this.registry.derivativeKind(decl.kind);
+    this.derivativeClasses.set(decl.kind, decl);
+  }
+
+  /** What the class that owns this kind knows, or nothing because no module said (Law 15). */
+  derivativeClass(kind: DerivativeKindId): DerivativeClassDecl | undefined {
+    return this.derivativeClasses.get(kind);
+  }
+
   post(venue: VenueId, order: Order): void {
     forbid(this.sealed, 'Seed A2', 'a posting is made inside a period, not at assembly');
     this.venue(venue);
@@ -1686,9 +1721,9 @@ export class World {
       // what the market PRICES — a pair's grid belongs to the money it is quoted in, an asset's to
       // the kind of thing it is. Both are declarations, and neither is a branch on a kind id.
       tickOf: (decl) => {
-        const pair = decl.fx;
+        const pair = pairOf(decl);
         if (pair !== undefined) return this.registry.rateTickFor(pair.base, pair.quote);
-        const contract = decl.contract;
+        const contract = contractOf(decl);
         // Derivative X1: a contract book prints under an id with no instrument behind it, the way a
         // pair does — what it names is the subject of the price, and what it is quoted in is the
         // derivative kind's own grid.
@@ -1701,10 +1736,14 @@ export class World {
       accountOf: this.accountOf,
       accruedPerUnit: (instrument, at) => this.accruedPerUnit(instrument, at),
       instrumentIssuer: (instrument) => this.instruments.get(instrument).issuer,
-      derivativeKind: (kind) => this.registry.derivativeKind(kind),
-      admits: (party, wanted, m, struck) => this.capacityOf(party, wanted, m, struck),
-      marginLegs: (party, against, size, m, struck) =>
-        this.marginLegsOf(party, against, size, m, struck),
+      kinds: {
+        contract: {
+          derivativeKind: (kind) => this.registry.derivativeKind(kind),
+          admits: (party, wanted, m, struck) => this.capacityOf(party, wanted, m, struck),
+          marginLegs: (party, against, size, m, struck) =>
+            this.marginLegsOf(party, against, size, m, struck),
+        },
+      },
     });
   }
 

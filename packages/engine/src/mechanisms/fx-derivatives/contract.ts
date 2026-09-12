@@ -16,6 +16,7 @@
  * of those legs (C4) — which is a level that clears, not a number backed out of a parity formula.
  */
 import type { Period } from '../../calendar/calendar.js';
+import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
 import { derivativeKindId, unitId } from '../../core/ids.js';
@@ -94,6 +95,12 @@ function forwardMark(c: Contract, at: Period, reads: ContractReads): number {
   return c.terms.buysBase ? worth : -worth;
 }
 
+/** B1: why a party buys a money forward — an exposure it has, never a view it was given. */
+export const fxForwardClass: DerivativeClassDecl = {
+  kind: FX_FORWARD,
+  orders: (view, m) => fxForwardOrders(view, m),
+};
+
 export const fxForwardKind: DerivativeKindProfile = {
   id: FX_FORWARD,
   unit: BASE_MONEY,
@@ -145,7 +152,6 @@ export const fxForwardKind: DerivativeKindProfile = {
     if (!move.some) return none();
     return some(mul(move.value, c.notional, 'over the base it takes'));
   },
-  orders: (view, m) => fxForwardOrders(view, m),
   closeOut: forwardMark,
   expires: (c, at): boolean => isFxForward(c.terms) && at >= c.terms.maturity,
 };
@@ -163,6 +169,12 @@ function xccyMark(c: Contract, at: Period, reads: ContractReads): number {
   );
   return c.terms.paysBase ? -worth : worth;
 }
+
+/** D1: why a party swaps one money's funding for another's. */
+export const xccyClass: DerivativeClassDecl = {
+  kind: XCCY,
+  orders: (view, m) => xccyOrders(view, m),
+};
 
 export const xccyKind: DerivativeKindProfile = {
   id: XCCY,
@@ -245,7 +257,6 @@ export const xccyKind: DerivativeKindProfile = {
       ),
     );
   },
-  orders: (view, m) => xccyOrders(view, m),
   closeOut: xccyMark,
   expires: (c, at): boolean => isXccy(c.terms) && at >= c.terms.maturity,
 };

@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 68.5%** (439 of 641 steps across 42 items).
+**Plan completion: 68.6%** (440 of 641 steps across 42 items).
 **Requirement coverage: 54.3%** (740 MET, 83 PARTIAL, 0 OUT OF SCOPE of 1362 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -49,7 +49,7 @@ The plan has two parts:
 | 12d — The tests catch up with the world | 8 | 8 | closed |
 | 13a — The derivative layer | 17 | 17 | closed |
 | 13b — The derivative classes | 37 | 37 | closed |
-| [13b.1 — The checks that do not check](plan/13b.1-checks-that-do-not-check.md) | 17 | 14 | in progress |
+| [13b.1 — The checks that do not check](plan/13b.1-checks-that-do-not-check.md) | 17 | 15 | in progress |
 | [13c — Commodities and freight](plan/13c-commodities-freight.md) | 16 | 0 | open |
 | [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 26 | 0 | open |
 | [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 20 | 0 | open |

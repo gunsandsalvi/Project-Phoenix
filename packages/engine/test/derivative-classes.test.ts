@@ -5,8 +5,7 @@
  * @spec CDS B1.a CDS B3 CDS E1 CDS E2 CDS E3 CDS E4 FX Forwards A4 FX Forwards B3 FX Forwards B3.b FX Forwards D3 FX Forwards E4 Dealer Desks E1 Dealer Desks E2 Sovereign I1.a Sovereign I2 Sovereign I3 Sovereign I3.a Derivative D10 Derivative D10.a Law 3 Law 19
  */
 import { describe, expect, it } from 'vitest';
-import {
-  BOND_FUTURE_PARAMS,
+import {asContractMarket, contractOf, pairOf, BOND_FUTURE_PARAMS,
   CDS_PARAMS,
   FX_PARAMS,
   OPTION,
@@ -21,8 +20,7 @@ import {
   isOption,
   netNotionalOn,
   snapshot,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 function ran(periods: number): World {
@@ -37,7 +35,7 @@ describe('who you face is part of what it is worth (D10, D10.a, CDS E1, E2)', ()
     const ctx = w.mechanismContext('test');
     const references = new Set(
       w.markets
-        .map((m) => m.contract?.terms)
+        .map((m) => contractOf(m)?.terms)
         .filter((t) => t !== undefined && isCds(t))
         .map((t) => (isCds(t) ? String(t.reference) : '')),
     );
@@ -61,8 +59,11 @@ describe('the swap that funds a foreign book (A4, D3, 12d-14)', () => {
     // A4: an FX swap is not a kind. It is what a party does — spot one way and forward back — so
     // what exists in this world is a pair market and a forward book, and no `fx.swap` anywhere.
     expect(w.registry.derivativeKinds.has('fx.swap' as never)).toBe(false);
-    const forwards = w.markets.filter((m) => m.contract !== undefined && isFxForward(m.contract.terms));
-    const pairs = w.markets.filter((m) => m.fx !== undefined);
+    const forwards = w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isFxForward(t);
+    });
+    const pairs = w.markets.filter((m) => pairOf(m) !== undefined);
     if (pairs.length === 0) return;
     expect(forwards.length).toBeGreaterThan(0);
     // B3.b: one basis, and it is read from prints. No parameter names one.
@@ -84,10 +85,13 @@ describe('the swap that funds a foreign book (A4, D3, 12d-14)', () => {
 describe('the hedge is a contract with a counterparty (Dealer Desks E1, E2)', () => {
   it('exists as a book a desk can lay a share position off into', () => {
     const w = ran(3);
-    const futures = w.markets.filter((m) => m.contract !== undefined && isIndexFuture(m.contract.terms));
+    const futures = w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isIndexFuture(t);
+    });
     expect(futures.length).toBeGreaterThan(0);
     for (const m of futures) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isIndexFuture(t)) continue;
       // E2: a hedge with a counterparty and its own margin — not a coefficient that makes the
       // position disappear from a report.
@@ -184,7 +188,10 @@ describe('what a reader is shown (Observer A1, A3; CDS A1.d; IRS C1)', () => {
     for (const n of nets) expect(n.level).toBeGreaterThanOrEqual(0);
     // The CDS books exist in this rig whether or not anybody has traded in one, so the measurement
     // that needs no print — how much protection exists — is always here (`13b-10`).
-    if (w.markets.some((m) => m.contract !== undefined && isCds(m.contract.terms))) {
+    if (w.markets.some((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isCds(t);
+    })) {
       expect(kinds.has('cds')).toBe(true);
     }
   });
@@ -251,7 +258,7 @@ describe('what a reader is shown (Observer A1, A3; CDS A1.d; IRS C1)', () => {
 describe('a book is not its own last price (XI-13, Law 3, Clearing E1)', () => {
   it('does not freeze a contract book at the first level it printed', () => {
     const w = ran(12);
-    const books = w.markets.filter((m) => m.contract !== undefined);
+    const books = w.markets.filter((m) => contractOf(m) !== undefined);
     expect(books.length).toBeGreaterThan(0);
     // Every class now names a level of its OWN — the reference's cash bond, the overnight fixing,
     // the cash deliverable, its own carry, its own view of the move — and reads this book's print
@@ -270,7 +277,10 @@ describe('a book is not its own last price (XI-13, Law 3, Clearing E1)', () => {
 
   it('opens an option book, which a bootstrap of one tick could not (D7.b, D4)', () => {
     const w = ran(12);
-    const books = w.markets.filter((m) => m.contract !== undefined && isOption(m.contract.terms));
+    const books = w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isOption(t);
+    });
     if (books.length === 0) return;
     // The fallback used to be `tickForDerivative`, the smallest increment the kind quotes in. Every
     // party's own arithmetic was above it, so every party took the writer's side: all offers, no
@@ -285,11 +295,11 @@ describe('a book is not its own last price (XI-13, Law 3, Clearing E1)', () => {
     const tick = w.registry.tickForDerivative(OPTION, USD);
     let posted = 0;
     for (const m of books) {
-      const decl = m.contract;
-      if (decl === undefined) continue;
-      const profile = w.registry.derivativeKind(decl.kind);
+      const book = asContractMarket(m);
+      if (book === undefined) continue;
+      const cls = w.derivativeClass(book.contract.kind);
       for (const p of w.parties.alive()) {
-        for (const o of profile.orders?.(w.participantView(p.id), m) ?? []) {
+        for (const o of cls?.orders?.(w.participantView(p.id), book) ?? []) {
           posted += 1;
           if (o.price === 'market') continue;
           expect(o.price).not.toBe(tick);

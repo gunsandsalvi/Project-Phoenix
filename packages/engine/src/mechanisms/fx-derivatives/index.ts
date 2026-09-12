@@ -9,6 +9,7 @@
  * funding a book in a money it has not raised, which is the mechanism 12d's finding was waiting on.
  */
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
+import { pairOf } from '../../clearing/market.js';
 import { fxPairId } from '../../core/ids.js';
 import { addYears } from '../../calendar/civil.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -22,7 +23,8 @@ import {
   xccyKind,
   type FxForwardTerms,
   type XccyTerms,
-} from './contract.js';
+  fxForwardClass,
+  xccyClass,} from './contract.js';
 import {
   FX_PARAMS,
   forwardLineOf,
@@ -80,8 +82,9 @@ export function fxTenorsOf(ctx: Pick<MechanismContext, 'params'>): readonly numb
 function pairsHere(ctx: MechanismContext): readonly { base: CurrencyCode; quote: CurrencyCode }[] {
   const out: { base: CurrencyCode; quote: CurrencyCode }[] = [];
   for (const m of ctx.markets) {
-    if (m.fx === undefined) continue;
-    out.push({ base: m.fx.base, quote: m.fx.quote });
+    const pair = pairOf(m);
+    if (pair === undefined) continue;
+    out.push({ base: pair.base, quote: pair.quote });
   }
   return out;
 }
@@ -175,6 +178,7 @@ export function fxDerivatives(house: (ccy: CurrencyCode) => PartyId): SystemModu
     requires: ['derivative-layer', 'spot-fx', 'money-market', 'indices'],
     instrumentKinds: [],
     derivativeKinds: [fxForwardKind, xccyKind],
+    derivativeClasses: [fxForwardClass, xccyClass],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: BASE_MONEY, name: 'of the base money', perUnit: 1 }],

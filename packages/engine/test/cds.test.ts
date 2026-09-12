@@ -7,8 +7,7 @@
  * banks actually hold paper of (`rig.ts`), not "the big firm".
  */
 import { describe, expect, it } from 'vitest';
-import {
-  CDS,
+import {contractOf, CDS,
   CDS_PARAMS,
   USD,
   cdsKind,
@@ -26,8 +25,7 @@ import {
   type ContractReads,
   type MarketDecl,
   type PartyId,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 function ranWorld(periods: number): World {
@@ -37,7 +35,10 @@ function ranWorld(periods: number): World {
 }
 
 function books(w: World): readonly MarketDecl[] {
-  return w.markets.filter((m) => m.contract !== undefined && isCds(m.contract.terms));
+  return w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isCds(t);
+    });
 }
 
 describe('the books (A1, A1.d, A4, A4.a, C2)', () => {
@@ -47,7 +48,7 @@ describe('the books (A1, A1.d, A4, A4.a, C2)', () => {
     expect(open.length).toBeGreaterThan(0);
     const tenors = cdsTenorsOf({ params: w.params });
     for (const m of open) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isCds(t)) continue;
       // A1.d: the term structure is a SET OF BOOKS. A reference with one has all of them.
       for (const y of tenors) {
@@ -59,7 +60,7 @@ describe('the books (A1, A1.d, A4, A4.a, C2)', () => {
       // B1.a: and somebody other than the issuer is holding it, which is why the book exists.
       expect(w.register.holdersOf(t.obligation).some((h) => h !== t.reference)).toBe(true);
       // C2: cleared, through the house that clears this money.
-      expect(m.contract?.house).not.toBe(null);
+      expect(contractOf(m)?.house).not.toBe(null);
     }
   });
 
@@ -105,7 +106,7 @@ describe('what the contract IS (A2, A3, D1.b)', () => {
 
   function someReference(w: World): PartyId | undefined {
     const m = books(w)[0];
-    const t = m?.contract?.terms;
+    const t = contractOf(m)?.terms;
     return t !== undefined && isCds(t) ? t.reference : undefined;
   }
 
@@ -161,7 +162,7 @@ describe('what is derived and what is stored (C2, E3, Law 3)', () => {
 
   it('nets notional per reference and offers no wider netting (E3, G3)', () => {
     const w = ranWorld(4);
-    const reference = books(w)[0]?.contract?.terms;
+    const reference = contractOf(books(w)[0])?.terms;
     if (reference === undefined || !isCds(reference)) return;
     const net = netNotionalOn(w.mechanismContext('test'), reference.reference);
     expect(net).toBeGreaterThanOrEqual(0);

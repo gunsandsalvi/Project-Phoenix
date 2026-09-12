@@ -7,8 +7,7 @@
  * two balance sheets, cut to what its two sides can margin, with the margin in the same instruction.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  BANK,
+import {pairOf, BANK,
   LAYER_PARAMS,
   USD,
   assemble,
@@ -37,11 +36,15 @@ import {
   type PartyKindProfile,
   type SeedContext,
   type SystemModule,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { runWaterfall } from '../src/index.js';
 import { mergeModules, rigSpec, withDependencies } from './rig.js';
-import { testForwardKind, TEST_FORWARD, type ForwardTerms } from './support/test-forward.js';
+import {
+  testForwardClass,
+  testForwardKind,
+  TEST_FORWARD,
+  type ForwardTerms,
+} from './support/test-forward.js';
 
 const BOOK = marketId('mkt.forward.test');
 /** A size two parties can trade without either of them running out of the line (Law 8: a count). */
@@ -80,7 +83,7 @@ function tradableLine(
   markets: readonly MarketDecl[],
   held: (instrument: MarketDecl['instrument']) => number,
 ): MarketDecl | undefined {
-  return markets.find((x) => x.kind === undefined && x.fx === undefined && held(x.instrument) > 0);
+  return markets.find((x) => x.kind === undefined && pairOf(x) === undefined && held(x.instrument) > 0);
 }
 
 function underlying(w: World): MarketDecl {
@@ -110,6 +113,7 @@ function book(opts: {
     requires: ['derivative-layer'],
     instrumentKinds: [],
     derivativeKinds: [testForwardKind],
+    derivativeClasses: [testForwardClass],
     partyKinds: [moverKind],
     curveFamilies: [],
     units: [{ id: testForwardKind.unit, name: 'contracts', perUnit: 1 }],

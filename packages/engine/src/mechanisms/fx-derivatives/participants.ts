@@ -24,7 +24,7 @@
  * arithmetic on the two rates is a RESERVATION — the most this bank will pay — and a reservation
  * is a reason somebody has, which is what every schedule in this world is made of.
  */
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode, UnitId } from '../../core/ids.js';
 import { add, div, mul, sub } from '../../core/num.js';
@@ -82,7 +82,7 @@ function alreadyForward(view: ParticipantView, base: CurrencyCode, quote: Curren
 }
 
 export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isFxForward(decl.terms)) return [];
   const t = decl.terms;
   const spot = view.print(t.spot);
@@ -142,7 +142,7 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
  * reservation is the basis it will pay to turn one into the other for the life of what it raised.
  */
 export function xccyOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isXccy(decl.terms)) return [];
   const t = decl.terms;
   const last = view.print(t.book);

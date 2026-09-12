@@ -13,12 +13,13 @@
  */
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { Periodicity } from '../core/rate.js';
-import type { MarketDecl, PrimaryOffer } from '../clearing/market.js';
+import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import type {
   CurrencyCode,
   CurveFamilyId,
+  DerivativeKindId,
   InstrumentId,
   MarketId,
   PartyId,
@@ -47,9 +48,50 @@ import type { Registry } from '../registry/registry.js';
 import type { Prng } from '../rng/prng.js';
 import type { Qty } from '../core/tick.js';
 import type { ContractReadsFacade } from '../register/contracts.js';
-import type { Contract, ContractPayment, Underlying } from '../registry/derivatives.js';
+import type {
+  Contract,
+  ContractMeasure,
+  ContractPayment,
+  Underlying,
+} from '../registry/derivatives.js';
 
 /** Reads every context shares. Every method here is a read; nothing mutates. */
+/**
+ * Clearing B2, Observer A1, Law 15: WHAT A CLASS OF DERIVATIVE KNOWS THAT THE KERNEL DOES NOT —
+ * why a party would be in a book of this class, and what this class's level says against the rest
+ * of the world. Declared by the module that owns the kind and collected at assembly.
+ *
+ * It was two optional members on `DerivativeKindProfile`, which put PARTICIPATION and a READ OF THE
+ * WHOLE WORLD in the registry: `registry/derivatives.ts` had to import `world/context.js` and
+ * `clearing/`, and it contradicted its own argument two interfaces up, where `ContractReads` is
+ * documented as public reads and "no view of anybody". A registry row is DATA. Behaviour that needs
+ * a participant's own view or the world's prints is a module's, and this is where a module says it.
+ *
+ * The dispatch is unchanged and so is the reason for it: every book needs reasons on both sides,
+ * the reasons to be in a credit default swap are not the reasons to be in a bond future, and ONE
+ * PARTY SHOWS ONE FACE TO ONE BOOK (Clearing A2) — so the layer declares the participant once, per
+ * party kind, and asks the class the book carries. The reasons stay with the class that has them.
+ */
+export interface DerivativeClassDecl {
+  readonly kind: DerivativeKindId;
+  /**
+   * Absent means no party of any kind has a reason to be in this kind of book of its own accord —
+   * a test-only kind, or one whose rows are written by a mechanism rather than a session.
+   */
+  readonly orders?: (view: ParticipantView, m: ContractMarketDecl) => readonly Order[];
+  /**
+   * Observer A1, Law 19: a basis is a class's own question — protection against the same name's
+   * cash bond (CDS C3), a cleared fixed rate against the sovereign's own yield (IRS C3), a future
+   * against the carry on what it delivers (Sovereign I2), how much protection on one name exists at
+   * all (CDS E3). Each is a difference between two prices somebody paid, computed where it is asked
+   * for and stored nowhere, and NONE of them is a target: that the two differ is the thing worth
+   * watching, never a discrepancy anything closes (C3.a).
+   *
+   * Absent means this class has nothing to say beyond its own print, which is most of them.
+   */
+  readonly measures?: (m: ContractMarketDecl, reads: WorldReads) => readonly ContractMeasure[];
+}
+
 export interface KernelReads {
   readonly period: Period;
   readonly cycle: Cycle;
@@ -57,6 +99,12 @@ export interface KernelReads {
   readonly registry: Registry;
   readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'decl' | 'report' | 'all'>;
   readonly instruments: InstrumentsReads;
+  /**
+   * Derivative D1, Law 15: what the module that owns a CLASS of derivative knows — why a party
+   * would be in a book of it, what its level says against the rest of the world. Asked here rather
+   * than read off the kind's registry profile, because a registry row is data (ARCHITECTURE 4.9b).
+   */
+  readonly derivativeClass: (kind: DerivativeKindId) => DerivativeClassDecl | undefined;
   readonly markets: readonly MarketDecl[];
   /** Clearing B2: the venues modules clear themselves; declared and public, like a market. */
   readonly venues: readonly VenueDecl[];
@@ -451,9 +499,38 @@ export interface SeedContext {
   readonly registry: Registry;
   readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'decl'>;
   readonly rng: Prng;
-  readonly parties: Parties;
-  readonly instruments: Instruments;
-  readonly register: Register;
+  /**
+   * ARCHITECTURE 4.9b, Law 4: THE SEED GETS FACADES LIKE EVERY OTHER CONTEXT. It was handed the
+   * write-capable classes themselves — `Parties`, `Instruments`, `Register` — so the module
+   * contract's "a module never holds a reference to a kernel store" was false for this one context,
+   * and a seed could have applied a weight event, restated a line or moved units with no
+   * instruction behind them. What a seed legitimately does is STATE the opening (Seed A2, C4):
+   * it names parties and instruments and says what each party holds. Those writes are here; the
+   * rest of each store is not.
+   */
+  readonly parties: Pick<Parties, 'add' | 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'cell' | 'resolve'>;
+  readonly instruments: Pick<Instruments, 'add' | 'get' | 'has' | 'all' | 'issuedBy' | 'adjustIssued'>;
+  /**
+   * `moneyDelta` and `adjustIssued` are here because they are what STATING an opening balance IS:
+   * `endowMoney` is the two of them together, and a seed that says who holds what has to say the
+   * issued amount that matches (Money C1). What holds them is not their absence but the ownership
+   * family, which compares `Σ holdings` against `issued` in period zero and every period after.
+   */
+  readonly register: Pick<
+    Register,
+    | 'credit'
+    | 'debit'
+    | 'moneyDelta'
+    | 'quantity'
+    | 'totalQuantity'
+    | 'free'
+    | 'encumbered'
+    | 'holding'
+    | 'holdingsOf'
+    | 'holdersOf'
+    | 'allHoldings'
+    | 'moneyWalk'
+  >;
   readonly prices: Pick<PriceStore, 'write' | 'latest'>;
   /**
    * XI-6, Law 4: what a party's holding COMES TO at the opening, asked of the kernel's one valuer.

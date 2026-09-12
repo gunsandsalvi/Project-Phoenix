@@ -17,7 +17,7 @@
  * it is writing on. A buyer facing a house prices the house; a buyer facing a seller whose own
  * spread widens with the reference's pays less for the cover, because it is worth less.
  */
-import type { MarketDecl } from '../../clearing/market.js';
+import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
 import { asQty } from '../../core/tick.js';
@@ -46,7 +46,12 @@ import { isCdsIndex, seriesLineOf } from './series.js';
  * A reference whose debt has never printed either has no anchor here — which is the honest answer
  * for a name nobody has ever put a price on, and the party falls back to its own outlook below.
  */
-function levelFor(view: ParticipantView, m: MarketDecl, t: CdsTerms): number | undefined {
+function levelFor(
+  view: ParticipantView,
+  m: MarketDecl,
+  book: ContractBook,
+  t: CdsTerms,
+): number | undefined {
   const cash = view.print(t.obligation);
   if (!cash.some || t.tenorYears <= 0) return undefined;
   const belowPar = sub(1, cash.value.price, 'what the cash market discounts this credit by');
@@ -56,7 +61,11 @@ function levelFor(view: ParticipantView, m: MarketDecl, t: CdsTerms): number | u
   // the rate a person says out loud. Three basis points a year on a unit of face is three
   // hundredths of a cent, and a schedule posted at 0.0003 is a schedule below this book's own tick
   // — dropped at the grid, which is how a book with orders in it came to print nothing at all.
-  return view.registry.priceOf(m.ccy, view.registry.derivativeKind(m.contract?.kind ?? ('' as never)).unit, perAnnum);
+  return view.registry.priceOf(
+    m.ccy,
+    view.registry.derivativeKind(book.kind).unit,
+    perAnnum,
+  );
 }
 
 /**
@@ -139,13 +148,13 @@ function counterpartyTerm(view: ParticipantView, facing: number, against: string
  * parties with different books and different outlooks (§46 A3), not a coefficient.
  */
 export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isCds(decl.terms)) return [];
   const t = decl.terms;
   if (view.self.id === t.reference) return [];
   // XI-13: its OWN number — the cash market's charge for this credit, and its own outlook of this
   // book only when the reference's debt has never printed. Neither is this book's own last price.
-  const anchor = levelFor(view, m, t);
+  const anchor = levelFor(view, m, decl, t);
   const expects = ownView(view, t);
   const mine = anchor ?? expects;
   if (mine === undefined) return [];
@@ -214,7 +223,7 @@ function sizeOf(view: ParticipantView, unit: UnitId, own: number, spread: number
  * between that and name-by-name cover is the basis A5.b says is a read.
  */
 export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const decl = m.contract;
+  const decl = contractOf(m);
   if (decl === undefined || !isCdsIndex(decl.terms)) return [];
   const t = decl.terms;
   const last = view.print(seriesLineOf(t.series, t.tenorYears));
@@ -255,7 +264,7 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
  * which one this book is, is a fact the book itself carries.
  */
 export function cdsBookOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const t = m.contract?.terms;
+  const t = contractOf(m)?.terms;
   if (t === undefined) return [];
   if (isCds(t)) return cdsOrders(view, m);
   if (isCdsIndex(t)) return cdsIndexOrders(view, m);

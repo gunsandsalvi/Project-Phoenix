@@ -17,7 +17,7 @@
  * Law 6: nothing here bounds a rate. What is bounded is one desk's willingness, by its own capital
  * and its own stated edge, and both are its own.
  */
-import type { MarketDecl } from '../../clearing/market.js';
+import { pairOf, type MarketDecl } from '../../clearing/market.js';
 import type { CurrencyCode } from '../../core/ids.js';
 import { div, mul, sub } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
@@ -42,21 +42,23 @@ export interface Triangle {
  * the inverse (Currency C3.a), and that is one market read two ways rather than an arbitrage.
  */
 export function triangles(markets: readonly MarketDecl[]): readonly Triangle[] {
-  // What makes a market a pair is that it NAMES one. Asking `m.fx` rather than `m.kind` is the
-  // same question asked of the data instead of the label (Law 15), and it is the field this
-  // function actually needs — a pair with no pair on it is nothing to triangulate.
-  const pairs = markets.filter((m) => m.fx !== undefined);
+  // What makes a market a pair is that it IS one: `pairOf` reads the market's declared kind and
+  // hands back the two moneys, so a pair with no pair on it is a state the type no longer has
+  // (item 13b.1). Nothing here asks a field for its absence.
+  const pairs = markets.filter((m) => pairOf(m) !== undefined);
   const find = (base: CurrencyCode, quote: CurrencyCode): MarketDecl | undefined =>
-    pairs.find((m) => m.fx?.base === base && m.fx.quote === quote);
+    pairs.find((m) => pairOf(m)?.base === base && pairOf(m)?.quote === quote);
   const out: Triangle[] = [];
   const seen = new Set<string>();
   for (const ab of pairs) {
     for (const bc of pairs) {
-      const a = ab.fx?.base;
-      const b = ab.fx?.quote;
-      const c = bc.fx?.quote;
-      if (a === undefined || b === undefined || c === undefined) continue;
-      if (bc.fx?.base !== b || c === a) continue;
+      const first = pairOf(ab);
+      const second = pairOf(bc);
+      if (first === undefined || second === undefined) continue;
+      const a = first.base;
+      const b = first.quote;
+      const c = second.quote;
+      if (second.base !== b || c === a) continue;
       const ac = find(a, c);
       if (ac === undefined) continue;
       const key = [a, b, c].sort().join('|');

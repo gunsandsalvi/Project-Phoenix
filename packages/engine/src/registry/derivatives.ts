@@ -32,9 +32,6 @@ import type { Event, EventKind } from '../journal/journal.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { IndexRead } from '../prices/index-read.js';
 import type { Print } from '../prices/price-store.js';
-import type { MarketDecl } from '../clearing/market.js';
-import type { Order } from '../clearing/solver.js';
-import type { ParticipantView, WorldReads } from '../world/context.js';
 import type { Namer } from './naming.js';
 import type { ParamRegister } from './params.js';
 
@@ -202,37 +199,6 @@ export interface DerivativeKindProfile {
    * not a bank failing, it is a bank nobody told (worklist 13b, finding `13b-1`).
    */
   readonly cashDue?: (c: Contract, at: Period, reads: ContractReads, party: PartyId) => number;
-  /**
-   * Clearing B2, Law 4, Law 15: WHY A PARTY IS IN THIS KIND OF BOOK, asked of the kind.
-   *
-   * Every book in this world needs reasons on both sides of it, and the reasons to be in a credit
-   * default swap are not the reasons to be in a bond future. But ONE PARTY SHOWS ONE FACE TO ONE
-   * BOOK (Clearing A2: nobody crosses themselves), and a party whose schedule came from six
-   * modules would be six opinions wearing one name — so the layer declares the participant once,
-   * per party kind, and asks the kind of contract the book carries. The dispatch is the table
-   * Law 15 asks for; the reasons stay with the class that has them.
-   *
-   * Absent means no party of any kind has a reason to be in this kind of book of its own accord —
-   * a test-only kind, or one whose rows are written by a mechanism rather than a session.
-   */
-  readonly orders?: (view: ParticipantView, m: MarketDecl) => readonly Order[];
-  /**
-   * Observer A1, Law 19: WHAT THIS BOOK'S LEVEL SAYS AGAINST THE REST OF THE WORLD, asked of the
-   * kind that knows.
-   *
-   * A basis is a class's own question — protection against the same name's cash bond (CDS C3), a
-   * cleared fixed rate against the sovereign's own yield (IRS C3), a future against the carry on
-   * what it delivers (Sovereign I2), how much protection on one name exists at all (CDS E3). Each
-   * is a difference between two prices somebody paid, computed where it is asked for and stored
-   * nowhere, and NONE of them is a target: that the two differ is the thing worth watching, never
-   * a discrepancy anything closes (C3.a).
-   *
-   * It is on the kind and not on the surface for the reason `orders` is: a reader shown these has
-   * to be shown every class's, and a surface that knew which classes exist would have to be edited
-   * every time one is added (Law 15). Absent means this kind has nothing to say beyond its own
-   * print, which is most of them.
-   */
-  readonly measures?: (m: MarketDecl, reads: WorldReads) => readonly ContractMeasure[];
 }
 
 /**

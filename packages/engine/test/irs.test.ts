@@ -4,8 +4,7 @@
  * @spec IRS A1 IRS A1.b IRS A1.c IRS A2 IRS A3 IRS A4 IRS C1 IRS C1.a IRS C2 IRS C3 IRS E1 IRS E2 IRS E3 Derivative D1.b Derivative D3.a Derivative D7.b Law 3 Law 19
  */
 import { describe, expect, it } from 'vitest';
-import {
-  IRS,
+import {contractOf, IRS,
   IRS_PARAMS,
   USD,
   benchmarkOf,
@@ -20,8 +19,7 @@ import {
   swapCurve,
   type Contract,
   type MarketDecl,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 function ran(periods: number): World {
@@ -31,7 +29,10 @@ function ran(periods: number): World {
 }
 
 function swapBooks(w: World): readonly MarketDecl[] {
-  return w.markets.filter((m) => m.contract !== undefined && isIrs(m.contract.terms));
+  return w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isIrs(t);
+    });
 }
 
 function aSwap(w: World, a: string, b: string, tenorYears: number): Contract {
@@ -83,13 +84,13 @@ describe('the books (A1, A1.c, C1, D3.a)', () => {
     const open = swapBooks(w);
     expect(open.length).toBeGreaterThan(0);
     for (const m of open) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isIrs(t)) continue;
       // E3, D3.a: it fixes on a book that transacted. The world published that fixing, by name.
       expect(
         w.journal.ofKind('index.benchmark').some((e) => e.subjects.includes(t.benchmark)),
       ).toBe(true);
-      expect(m.contract?.house).not.toBe(null);
+      expect(contractOf(m)?.house).not.toBe(null);
     }
     // A1.c, D7.b: what clears is the fixed RATE that makes it worth nothing today.
     expect(irsKind.quotedAs).toBe('rate');

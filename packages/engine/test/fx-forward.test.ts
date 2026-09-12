@@ -4,8 +4,7 @@
  * @spec FX Forwards A1 FX Forwards A1.b FX Forwards A1.d FX Forwards A2 FX Forwards A3 FX Forwards A4 FX Forwards B1 FX Forwards B2 FX Forwards B3 FX Forwards B3.b FX Forwards C1 FX Forwards C3 FX Forwards C4 FX Forwards E1 FX Forwards E3 FX Forwards E4 Derivative D1.b XI-5 Law 3
  */
 import { describe, expect, it } from 'vitest';
-import {
-  FX_FORWARD,
+import {contractOf, pairOf, FX_FORWARD,
   USD,
   XCCY,
   forwardLineOf,
@@ -19,8 +18,7 @@ import {
   xccyLineOf,
   type Contract,
   type MarketDecl,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 function ran(periods: number): World {
@@ -30,16 +28,22 @@ function ran(periods: number): World {
 }
 
 const forwardBooks = (w: World): readonly MarketDecl[] =>
-  w.markets.filter((m) => m.contract !== undefined && isFxForward(m.contract.terms));
+  w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isFxForward(t);
+    });
 
 const basisBooks = (w: World): readonly MarketDecl[] =>
-  w.markets.filter((m) => m.contract !== undefined && isXccy(m.contract.terms));
+  w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isXccy(t);
+    });
 
 describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
   it('settles both notionals, each in its own money, on the one date', () => {
     const w = ran(3);
     const m = forwardBooks(w)[0];
-    const t = m?.contract?.terms;
+    const t = contractOf(m)?.terms;
     if (m === undefined || t === undefined || !isFxForward(t)) return;
     const parties = w.parties.all().filter((p) => p.status.alive);
     const a = parties[0]?.id;
@@ -78,7 +82,7 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
 
   it('is one number and its negation, whichever side states it (D1.b)', () => {
     const w = ran(3);
-    const t = forwardBooks(w)[0]?.contract?.terms;
+    const t = contractOf(forwardBooks(w)[0])?.terms;
     if (t === undefined || !isFxForward(t)) return;
     const parties = w.parties.all().filter((p) => p.status.alive);
     const a = parties[0]?.id;
@@ -108,7 +112,7 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
     // the forward's own line — rather than `terms.spot`. A forward struck at the market is worth
     // nothing the day it is struck, and marking it against spot would book its carry on day one.
     const w = ran(3);
-    const t = forwardBooks(w)[0]?.contract?.terms;
+    const t = contractOf(forwardBooks(w)[0])?.terms;
     if (t === undefined || !isFxForward(t)) return;
     expect(String(t.book)).toContain('fx.forward');
     expect(String(t.spot)).not.toBe(String(t.book));
@@ -118,16 +122,16 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
 describe('the books (A1, B1, C1, C4)', () => {
   it('opens a forward and a basis book per pair per tenor, cleared', () => {
     const w = ran(3);
-    const pairs = w.markets.filter((m) => m.fx !== undefined);
+    const pairs = w.markets.filter((m) => pairOf(m) !== undefined);
     if (pairs.length === 0) return;
     expect(forwardBooks(w).length).toBeGreaterThan(0);
     for (const m of forwardBooks(w)) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isFxForward(t)) continue;
       expect(m.instrument).toBe(forwardLineOf(t.base, t.quote, t.tenorYears));
     }
     for (const m of basisBooks(w)) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isXccy(t)) continue;
       // C4: what clears on a basis book is a RATE — the basis on one leg, per annum.
       expect(xccyKind.quotedAs).toBe('rate');
@@ -140,7 +144,7 @@ describe('the books (A1, B1, C1, C4)', () => {
 describe('the cross-currency swap (C1, C1.a, C3)', () => {
   it('exchanges the notionals at the start and back at the ORIGINAL rate', () => {
     const w = ran(4);
-    const t = basisBooks(w)[0]?.contract?.terms;
+    const t = contractOf(basisBooks(w)[0])?.terms;
     if (t === undefined || !isXccy(t)) return;
     const parties = w.parties.all().filter((p) => p.status.alive);
     const a = parties[0]?.id;

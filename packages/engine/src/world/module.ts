@@ -12,7 +12,7 @@
 import type { Family } from '../audit/audit.js';
 import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
-import type { MarketDecl, MarketKind } from '../clearing/market.js';
+import type { ContractMarketDecl, MarketDecl, MarketKind } from '../clearing/market.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import type { InstrumentKindId, MarketId, PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
@@ -31,12 +31,15 @@ import type { Period } from '../calendar/calendar.js';
 import type { Instrument } from '../register/instruments.js';
 import type { Leg } from '../ledger/instruction.js';
 import type {
+  DerivativeClassDecl,
   MechanismContext,
   Outlook,
   OutlookVariable,
   ParticipantView,
   SeedContext,
 } from './context.js';
+
+export type { DerivativeClassDecl } from './context.js';
 
 /** The kernel's own phases, which a module's phase is anchored to (Clearing F1: a stated point). */
 export type KernelPhase = 'corporateActions' | 'markets' | 'revaluation';
@@ -219,9 +222,13 @@ export interface ClearingCapacity {
   ): readonly Leg[];
 }
 
-/** What a market is asking about: the book, the level it cleared at, and the kind of contract. */
+/**
+ * What a market is asking about: the book, the level it cleared at, and the kind of contract. The
+ * market is a CONTRACT market, because only a contract market asks — so the terms and the kind are
+ * on it and the layer has nothing to narrow (item 13b.1).
+ */
 export interface ContractAsk {
-  readonly market: MarketDecl;
+  readonly market: ContractMarketDecl;
   readonly struck: number;
 }
 
@@ -239,6 +246,8 @@ export interface SystemModule {
    * through one profile, like everything else the kernel must not branch on.
    */
   readonly derivativeKinds?: readonly DerivativeKindProfile[];
+  /** What the classes this module owns know that the kernel does not (`DerivativeClassDecl`). */
+  readonly derivativeClasses?: readonly DerivativeClassDecl[];
   readonly partyKinds: readonly PartyKindProfile[];
   /** Curve families this module owns (Sovereign D3.a: one owner, one convention). */
   readonly curveFamilies: readonly CurveFamilyDecl[];

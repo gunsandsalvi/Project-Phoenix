@@ -4,7 +4,7 @@
  * @spec Spot FX A1 Spot FX B1 Spot FX B2 Spot FX B5 Spot FX B6 Spot FX C1 Spot FX C3 Spot FX C4 Spot FX D1 Spot FX D2 Spot FX D4 Spot FX E3 Currency C1 Currency C2 XI-12 XI-13 Law 3 Law 5 Law 8
  */
 import { describe, expect, it } from 'vitest';
-import { ABROAD, USD, currencyUnit, fxMarketOf, fxPairId, triangles } from '../src/index.js';
+import { ABROAD, USD, currencyUnit, fxMarketOf, fxPairId, pairOf, triangles } from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 describe('a spot trade is two money legs (Spot FX A1, C4; Currency C1, C2; Law 5)', () => {
@@ -46,8 +46,8 @@ describe('the triangle (Spot FX C3, E3; XI-12)', () => {
     expect(tris.length).toBe((n * (n - 1) * (n - 2)) / 6);
     for (const t of tris) {
       expect(new Set([t.a, t.b, t.c]).size).toBe(3);
-      expect(t.ab.fx).toEqual({ base: t.a, quote: t.b });
-      expect(t.ac.fx).toEqual({ base: t.a, quote: t.c });
+      expect(pairOf(t.ab)).toEqual({ base: t.a, quote: t.b });
+      expect(pairOf(t.ac)).toEqual({ base: t.a, quote: t.c });
     }
   });
 
@@ -69,7 +69,7 @@ describe('who is in a pair and why (Spot FX B1, B2, B5, B6; XI-13)', () => {
     // XI-12: nothing is routed. A party with a euro need is in the pair that has euros and its own
     // money in it, so one balance is never committed in three books at once.
     for (const m of w.markets) {
-      const fx = m.fx;
+      const fx = pairOf(m);
       if (fx === undefined) continue;
       expect([fx.base, fx.quote]).toContain(fx.base);
     }

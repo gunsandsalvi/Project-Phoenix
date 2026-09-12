@@ -40,9 +40,22 @@ import type { Calendar } from '../calendar/calendar.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
 import { div, mul, sub, sum } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
-import type { Instrument, Terms } from '../register/instruments.js';
-import type { ParticipantView } from '../world/context.js';
+import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
+import type { Holding } from '../register/register.js';
 import type { ParamRegister } from './params.js';
+
+/**
+ * What reading somebody's plant needs OF them: where they are, what they hold, and the calendar
+ * the dates on it are read against. Stated here as a shape rather than taken as a
+ * `ParticipantView`, so that `registry/` imports no `world/` — a registry row is data and a read
+ * over data is arithmetic (ARCHITECTURE 4.9b). Every `ParticipantView` satisfies it.
+ */
+export interface PlantHolder {
+  readonly self: { readonly region: RegionId };
+  readonly calendar: Calendar;
+  readonly instruments: InstrumentsReads;
+  holdings(): readonly Holding[];
+}
 
 /** A2.a: one input, in physical units per unit of output, at the number the register declares. */
 export interface RecipeInput {
@@ -290,7 +303,7 @@ export interface HeldVintage {
 }
 
 /** A6, D2: every vintage of plant this party holds in its own region, with what is left of each. */
-export function vintagesHeld(view: ParticipantView, on: Civil): HeldVintage[] {
+export function vintagesHeld(view: PlantHolder, on: Civil): HeldVintage[] {
   const out: HeldVintage[] = [];
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);

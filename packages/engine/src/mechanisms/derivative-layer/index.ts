@@ -29,7 +29,7 @@ import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
-import type { MarketDecl } from '../../clearing/market.js';
+import { asContractMarket, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { BANK, FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -137,7 +137,6 @@ function capacity(): ClearingCapacity {
     admits(ctx, party, wanted, about): number {
       const m = about.market;
       const decl = m.contract;
-      if (decl === undefined) return 0;
       // C5, Money E4: A HOUSE THAT HAS CEASED CLEARS NOTHING. Running past the end of the waterfall
       // is a real event (C5) and a house is not exempt from XI-3, so the book it cleared can outlive
       // it — and every fill in it would be a contract naming a party that no longer exists (G1,
@@ -194,7 +193,6 @@ function capacity(): ClearingCapacity {
     margin(ctx, party, against, size, about): readonly Leg[] {
       const m = about.market;
       const decl = m.contract;
-      if (decl === undefined) return [];
       const need = ctx.contracts.marginFor(
         {
           kind: decl.kind,
@@ -735,10 +733,9 @@ export function derivativeLayer(
     in: 'contract' as const,
     speculative: true,
     orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-      const decl = m.contract;
-      if (decl === undefined) return [];
-      const profile = view.registry.derivativeKind(decl.kind);
-      return profile.orders?.(view, m) ?? [];
+      const book = asContractMarket(m);
+      if (book === undefined) return [];
+      return view.derivativeClass(book.contract.kind)?.orders?.(view, book) ?? [];
     },
   })),
   families: [marginIsHeld(), contractsNameTheLiving()],

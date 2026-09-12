@@ -7,15 +7,13 @@
  * a world with four moneys in it and then a party of a kind, which is what the rig is for.
  */
 import { describe, expect, it } from 'vitest';
-import {
-  ABROAD,
+import {pairOf, ABROAD,
   USD,
   currencyUnit,
   fxPairId,
   moneyInstrumentId,
   partyId,
-  type CurrencyCode,
-} from '../src/index.js';
+  type CurrencyCode,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 const FOREIGN = ABROAD.map((c) => c.ccy);
@@ -44,13 +42,13 @@ describe('the currencies a world has (Currency A1, A3, A5)', () => {
 describe('the pairs (Spot FX A1, A3, C1, F1; XI-12)', () => {
   it('opens a market for every pair, prices it in the quote, and clears it before anything else', () => {
     const w = rigWorld('ccy-B');
-    const pairs = w.markets.filter((m) => m.fx !== undefined);
+    const pairs = w.markets.filter((m) => pairOf(m) !== undefined);
     const n = 1 + FOREIGN.length;
     // A3: every unordered pair of moneys, once. Six for four moneys — including the three that are
     // not the dollar's, which is what makes a triangle exist at all (XI-12).
     expect(pairs.length).toBe((n * (n - 1)) / 2);
     for (const m of pairs) {
-      const fx = m.fx;
+      const fx = pairOf(m);
       if (fx === undefined) throw new Error('a pair market with no pair');
       expect(fx.base).not.toBe(fx.quote);
       // C1: the price is what one unit of the base costs in the quote, so the market is in the quote.
@@ -67,7 +65,7 @@ describe('the pairs (Spot FX A1, A3, C1, F1; XI-12)', () => {
     const w = rigWorld('ccy-C');
     w.step();
     for (const m of w.markets) {
-      if (m.fx === undefined) continue;
+      if (pairOf(m) === undefined) continue;
       const p = w.prices.latest(m.instrument, w.period);
       expect(p.some).toBe(true);
       if (!p.some) continue;

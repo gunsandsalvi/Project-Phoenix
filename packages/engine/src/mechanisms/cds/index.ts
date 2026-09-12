@@ -23,7 +23,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 
 import { CDS_PARAMS, PROTECTED, cdsLineOf, cdsMarketOf } from './data.js';
-import { CDS, cdsKind, isCds, type CdsTerms } from './contract.js';
+import { CDS, cdsKind, isCds, type CdsTerms, cdsClass } from './contract.js';
 import {
   CDS_INDEX,
   cdsIndexKind,
@@ -32,7 +32,7 @@ import {
   seriesMarketOf,
   type CdsIndexTerms,
   type SeriesName,
-} from './series.js';
+  cdsIndexClass,} from './series.js';
 import { middleGrade, rankOf } from '../../registry/grades.js';
 
 export * from './data.js';
@@ -410,6 +410,7 @@ export function cds(house: (ccy: CurrencyCode) => PartyId): SystemModule {
     requires: ['derivative-layer', 'ratings', 'credit-events', 'estate'],
     instrumentKinds: [],
     derivativeKinds: [cdsKind, cdsIndexKind],
+    derivativeClasses: [cdsClass, cdsIndexClass],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: PROTECTED, name: 'of face protected', perUnit: 1 }],

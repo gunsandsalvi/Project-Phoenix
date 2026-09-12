@@ -4,16 +4,14 @@
  * @spec Indices C3 Dealer Desks E1 Dealer Desks E2 Derivative D1.b Derivative D3 Derivative D3.a Law 3
  */
 import { describe, expect, it } from 'vitest';
-import {
-  INDEX_FUTURE,
+import {contractOf, INDEX_FUTURE,
   futureLineOf,
   indexFutureKind,
   isIndexFuture,
   mirrored,
   type Contract,
   type MarketDecl,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 function ran(periods: number): World {
@@ -23,7 +21,10 @@ function ran(periods: number): World {
 }
 
 const books = (w: World): readonly MarketDecl[] =>
-  w.markets.filter((m) => m.contract !== undefined && isIndexFuture(m.contract.terms));
+  w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isIndexFuture(t);
+    });
 
 describe('the contract (C3, D3, D3.a)', () => {
   it('settles against an index READ, not a level anybody stored', () => {
@@ -31,7 +32,7 @@ describe('the contract (C3, D3, D3.a)', () => {
     const open = books(w);
     expect(open.length).toBeGreaterThan(0);
     for (const m of open) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isIndexFuture(t)) continue;
       // D3, C3: the underlying is the index, and the index has a level because its constituents
       // printed — there is no stored level anywhere for this to settle against (Indices A2).
@@ -45,7 +46,7 @@ describe('the contract (C3, D3, D3.a)', () => {
   it('is one number and its negation, whichever side states it (D1.b)', () => {
     const w = ran(3);
     const m = books(w)[0];
-    const t = m?.contract?.terms;
+    const t = contractOf(m)?.terms;
     if (m === undefined || t === undefined || !isIndexFuture(t)) return;
     const parties = w.parties.all().filter((p) => p.status.alive);
     const a = parties[0]?.id;
@@ -75,7 +76,7 @@ describe('the contract (C3, D3, D3.a)', () => {
   it('pays nothing until it settles: what moves in between is the margin (D4, D9)', () => {
     const w = ran(3);
     const m = books(w)[0];
-    const t = m?.contract?.terms;
+    const t = contractOf(m)?.terms;
     if (m === undefined || t === undefined || !isIndexFuture(t)) return;
     expect(indexFutureKind.legs({} as Contract, w.period, w.contractReads(w.period)).length).toBe(0);
   });

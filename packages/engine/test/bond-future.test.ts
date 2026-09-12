@@ -4,8 +4,7 @@
  * @spec Sovereign I1 Sovereign I1.a Sovereign I2 Sovereign I3 Sovereign I3.a Derivative D1.b Derivative D3 XI-5 Law 3 Law 19
  */
 import { describe, expect, it } from 'vitest';
-import {
-  BOND_FUTURE,
+import {contractOf, BOND_FUTURE,
   BOND_FUTURE_PARAMS,
   bondCarryOf,
   bondFutureKind,
@@ -14,8 +13,7 @@ import {
   netBasis,
   type Contract,
   type MarketDecl,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 function ran(periods: number): World {
@@ -25,7 +23,10 @@ function ran(periods: number): World {
 }
 
 const futureBooks = (w: World): readonly MarketDecl[] =>
-  w.markets.filter((m) => m.contract !== undefined && isBondFuture(m.contract.terms));
+  w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isBondFuture(t);
+    });
 
 describe('the contract (I1, D3)', () => {
   it('names a real deliverable line and quotes per unit of face', () => {
@@ -33,7 +34,7 @@ describe('the contract (I1, D3)', () => {
     const books = futureBooks(w);
     expect(books.length).toBeGreaterThan(0);
     for (const m of books) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isBondFuture(t)) continue;
       // I1: a NAMED benchmark line, not a notional bond nobody issued.
       expect(w.instruments.has(t.deliverable)).toBe(true);
@@ -45,7 +46,7 @@ describe('the contract (I1, D3)', () => {
   it('is one number and its negation, whichever side states it (D1.b)', () => {
     const w = ran(3);
     const m = futureBooks(w)[0];
-    const t = m?.contract?.terms;
+    const t = contractOf(m)?.terms;
     if (m === undefined || t === undefined || !isBondFuture(t)) return;
     const parties = w.parties.all().filter((p) => p.status.alive);
     const a = parties[0]?.id;
@@ -74,7 +75,7 @@ describe('the contract (I1, D3)', () => {
 describe('the carry and the basis (I1.a, Law 3, Law 19)', () => {
   it('reads the coupon from the terms and the financing from what the book printed', () => {
     const w = ran(4);
-    const t = futureBooks(w)[0]?.contract?.terms;
+    const t = contractOf(futureBooks(w)[0])?.terms;
     if (t === undefined || !isBondFuture(t)) return;
     const ctx = w.mechanismContext('test');
     const carry = bondCarryOf(ctx, t.deliverable, t.expiry);

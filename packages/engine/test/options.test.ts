@@ -4,8 +4,7 @@
  * @spec Derivative D1 Derivative D1.b Derivative D2 Derivative D3 Derivative D3.a Derivative D7 Derivative D7.a Derivative D7.b Derivative D8 Derivative D8.a Derivative D9 Derivative D11 Derivative D11.a Bond N7.b Law 3 Law 6 §46 A3
  */
 import { describe, expect, it } from 'vitest';
-import {
-  OPTION,
+import {contractOf, OPTION,
   OPTION_PARAMS,
   impliedMove,
   intrinsic,
@@ -15,8 +14,7 @@ import {
   period,
   type Contract,
   type MarketDecl,
-  type World,
-} from '../src/index.js';
+  type World,} from '../src/index.js';
 import { rigWorld } from './rig.js';
 
 function ran(periods: number): World {
@@ -26,7 +24,10 @@ function ran(periods: number): World {
 }
 
 const optionBooks = (w: World): readonly MarketDecl[] =>
-  w.markets.filter((m) => m.contract !== undefined && isOption(m.contract.terms));
+  w.markets.filter((m) => {
+      const t = contractOf(m)?.terms;
+      return t !== undefined && isOption(t);
+    });
 
 function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: number): Contract {
   return {
@@ -34,7 +35,7 @@ function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: number):
     kind: OPTION,
     a: a as never,
     b: b as never,
-    terms: m.contract?.terms as never,
+    terms: contractOf(m)?.terms as never,
     ccy: m.ccy,
     notional,
     struckAt: 1,
@@ -52,7 +53,7 @@ describe('the books (D7, D7.a, D3.a)', () => {
     const books = optionBooks(w);
     expect(books.length).toBeGreaterThan(0);
     for (const m of books) {
-      const t = m.contract?.terms;
+      const t = contractOf(m)?.terms;
       if (t === undefined || !isOption(t)) continue;
       // D3.a: the underlying exists outside the derivative — it is a line with its own market.
       expect(w.instruments.has(t.underlying)).toBe(true);
@@ -61,7 +62,7 @@ describe('the books (D7, D7.a, D3.a)', () => {
     }
     // D7, D7.a: unlike every par-struck contract in this tree, an option is BOUGHT — the cleared
     // price IS the premium, and it is what the holder pays the writer when the row is written.
-    const some = books[0]?.contract?.terms;
+    const some = contractOf(books[0])?.terms;
     if (some === undefined || !isOption(some)) return;
     expect(optionKind.premiumPerUnit(3, some)).toBe(3 * some.multiplier);
   });
@@ -71,10 +72,10 @@ describe('exercise is a decision, not a clamp (Law 6, D11)', () => {
   it('pays what exercising came to, and nothing when nobody would', () => {
     const w = ran(3);
     const m = optionBooks(w).find((x) => {
-      const t = x.contract?.terms;
+      const t = contractOf(x)?.terms;
       return t !== undefined && isOption(t) && t.right === 'call';
     });
-    const t = m?.contract?.terms;
+    const t = contractOf(m)?.terms;
     if (m === undefined || t === undefined || !isOption(t)) return;
     const parties = w.parties.all().filter((p) => p.status.alive);
     const a = parties[0]?.id;
@@ -92,7 +93,7 @@ describe('exercise is a decision, not a clamp (Law 6, D11)', () => {
   it('is one number and its negation, whichever side states it (D1.b, D8.a)', () => {
     const w = ran(3);
     const m = optionBooks(w)[0];
-    const t = m?.contract?.terms;
+    const t = contractOf(m)?.terms;
     if (m === undefined || t === undefined || !isOption(t)) return;
     const parties = w.parties.all().filter((p) => p.status.alive);
     const a = parties[0]?.id;

@@ -6,6 +6,7 @@
  * @spec Sovereign D3 Sovereign D3.b Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
  */
 import { formatCivil } from '../calendar/civil.js';
+import { asContractMarket, contractOf, pairOf } from '../clearing/market.js';
 import { add, div, mul, sub } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
 import { partyId, type CurrencyCode, type PartyId } from '../core/ids.js';
@@ -561,7 +562,7 @@ export function snapshot(
   // read off the store rather than rebuilt, and a book that has never traded is simply not here.
   const contractPrints: ContractPrintView[] = [];
   for (const m of w.markets) {
-    const decl = m.contract;
+    const decl = contractOf(m);
     if (decl === undefined) continue;
     const print = w.prices.latest(m.instrument, w.period);
     if (!print.some) continue;
@@ -734,8 +735,9 @@ export function snapshot(
 function hedgesOf(w: World, visible: (party: PartyId) => boolean): readonly HedgeView[] {
   const pairs: { base: string; quote: string }[] = [];
   for (const m of w.markets) {
-    if (m.fx === undefined) continue;
-    pairs.push({ base: String(m.fx.base), quote: String(m.fx.quote) });
+    const pair = pairOf(m);
+    if (pair === undefined) continue;
+    pairs.push({ base: String(pair.base), quote: String(pair.quote) });
   }
   if (pairs.length === 0) return [];
   // Law 19: what the rate DID is the engine's own record of it, per party and per money, not a
@@ -782,7 +784,7 @@ function hedgesOf(w: World, visible: (party: PartyId) => boolean): readonly Hedg
 function ratesOf(w: World): readonly RateView[] {
   const out: RateView[] = [];
   for (const m of w.markets) {
-    const pair = m.fx;
+    const pair = pairOf(m);
     if (pair === undefined) continue;
     const p = w.prices.latest(m.instrument, w.period);
     out.push({
@@ -803,7 +805,10 @@ function ratesOf(w: World): readonly RateView[] {
  */
 function trianglesOf(w: World): readonly TriangleView[] {
   const rate = (base: string, quote: string): number | null => {
-    const m = w.markets.find((x) => x.fx?.base === base && x.fx.quote === quote);
+    const m = w.markets.find((x) => {
+      const p = pairOf(x);
+      return p !== undefined && String(p.base) === base && String(p.quote) === quote;
+    });
     if (m === undefined) return null;
     const p = w.prices.latest(m.instrument, w.period);
     return p.some ? p.value.price : null;
@@ -878,9 +883,10 @@ function measuresOf(w: World): readonly MeasureView[] {
   const out: MeasureView[] = [];
   const seen = new Set<string>();
   for (const m of w.markets) {
-    const decl = m.contract;
-    if (decl === undefined) continue;
-    for (const x of w.registry.derivativeKind(decl.kind).measures?.(m, reads) ?? []) {
+    const book = asContractMarket(m);
+    if (book === undefined) continue;
+    const decl = book.contract;
+    for (const x of w.derivativeClass(decl.kind)?.measures?.(book, reads) ?? []) {
       // A measurement of one name at one tenor is one measurement, however many books carry it:
       // net notional on a reference is the same number in every tenor's book (Law 4).
       const key = `${String(decl.kind)}|${x.subject}|${x.measure}|${String(x.tenorYears)}`;

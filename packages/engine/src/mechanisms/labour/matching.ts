@@ -48,6 +48,7 @@ import {
   wagePerMember,
   type EmploymentBook,
   type EmploymentRow,
+  employmentId,
 } from './register.js';
 import { asQty, scaleQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
@@ -250,7 +251,7 @@ function hire(
   const whole = members >= weightOf(cell);
   const hired = whole ? worker : ctx.cells.split(worker, members, `hired by ${employer}`);
   const row: EmploymentRow = {
-    id: `row.${book.next}`,
+    id: employmentId(`row.${book.next}`),
     employer,
     worker: hired,
     occupation,

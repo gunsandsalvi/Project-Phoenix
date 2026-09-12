@@ -18,6 +18,7 @@
  * edit: the terms still list it, the payoff already happened, and what is left is the survivors.
  */
 import type { Period } from '../../calendar/calendar.js';
+import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId } from '../../core/ids.js';
@@ -131,6 +132,12 @@ function markOf(c: Contract, at: Period, reads: ContractReads): number {
   return t.buysProtection ? worth : -worth;
 }
 
+/** D2, E1: why a party is in the series. The index itself is priced by its own book (Law 3). */
+export const cdsIndexClass: DerivativeClassDecl = {
+  kind: CDS_INDEX,
+  orders: (view, m) => cdsIndexOrders(view, m),
+};
+
 export const cdsIndexKind: DerivativeKindProfile = {
   id: CDS_INDEX,
   unit: PROTECTED,
@@ -189,7 +196,6 @@ export const cdsIndexKind: DerivativeKindProfile = {
       ),
     );
   },
-  orders: (view, m) => cdsIndexOrders(view, m),
   closeOut: markOf,
   expires: (c, at): boolean => isCdsIndex(c.terms) && at >= c.terms.maturity,
 };

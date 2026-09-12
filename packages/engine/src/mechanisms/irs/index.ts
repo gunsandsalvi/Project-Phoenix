@@ -18,7 +18,7 @@ import { none, some, type Option } from '../../core/option.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, WorldReads } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { IRS, irsKind, isIrs, NOTIONAL, type IrsTerms } from './contract.js';
+import { IRS, irsKind, isIrs, NOTIONAL, type IrsTerms, irsClass } from './contract.js';
 import { irsMarketOf, irsLineOf, IRS_PARAMS } from './data.js';
 
 export * from './contract.js';
@@ -166,6 +166,7 @@ export function irs(house: (ccy: CurrencyCode) => PartyId): SystemModule {
     requires: ['derivative-layer', 'indices', 'money-market'],
     instrumentKinds: [],
     derivativeKinds: [irsKind],
+    derivativeClasses: [irsClass],
     partyKinds: [],
     curveFamilies: [],
     units: [{ id: NOTIONAL, name: 'of notional', perUnit: 1 }],
