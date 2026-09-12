@@ -36,6 +36,7 @@ import {
   tileYield,
   touches,
 } from '../src/index.js';
+import { type MapSpec, drawMap } from '../src/seeds/map.js';
 import { rigWorld } from './rig.js';
 
 const WATER = terrainId('water');
@@ -394,5 +395,131 @@ describe('a country has the money; a region is a place (Seed B3, Currency B1, La
     expect([...w.registry.countries.values()].map((c) => c.ccy)).not.toContain(
       currencyCode('XXX'),
     );
+  });
+});
+
+/**
+ * The draw (13c.1, step 3). What is under test is that the world comes out of the seed and comes out
+ * WHOLE: the guards assembly would refuse find nothing, the same seed gives the same world, and the
+ * shares the spec asked for are the shares it got.
+ */
+
+const DRAW_READS: TerrainReads = { ratio: () => 2 };
+
+function spec(over: Partial<MapSpec> = {}): MapSpec {
+  return {
+    worldWidthKm: 1600,
+    worldHeightKm: 900,
+    tileKm: TILE_KM,
+    subdivide: 3,
+    oceanShare: 0.6,
+    channels: 2,
+    reliefM: 4000,
+    landCells: 3,
+    octaves: 4,
+    seaAreas: 3,
+    water: WATER,
+    bands: [
+      { id: PLAIN, share: 0.7 },
+      { id: MOUNTAIN, share: 0.3 },
+    ],
+    countries: [
+      { id: countryId('one'), name: 'One', regions: 3 },
+      { id: countryId('two'), name: 'Two', regions: 2 },
+    ],
+    terrains: TERRAINS,
+    resources: RESOURCES,
+    syllables: ['ar', 'bel', 'cas', 'dor', 'en', 'fal', 'gar', 'hel'],
+    ...over,
+  };
+}
+
+const shareOfWorld = (g: GeographyDecl, k: TerrainId): number => {
+  let s = 0;
+  for (let t = 0; t < g.cols * g.rows; t += 1) s += shareOf(g, k, t as never);
+  return s / (g.cols * g.rows);
+};
+
+describe('the draw: a world out of a seed, and it comes out whole', () => {
+  it('draws a world assembly finds nothing wrong with', () => {
+    const { geography, regions } = drawMap(spec(), DRAW_READS, 'draw-whole');
+    expect(geographyFaults(geography, new Set(regions.map((r) => r.id)))).toEqual([]);
+  });
+
+  it('the same seed draws the same world, sample for sample', () => {
+    const a = drawMap(spec(), DRAW_READS, 'twice');
+    const b = drawMap(spec(), DRAW_READS, 'twice');
+    expect([...b.geography.place]).toEqual([...a.geography.place]);
+    expect([...b.geography.elevation]).toEqual([...a.geography.elevation]);
+    expect([...(b.geography.mix.get(PLAIN) ?? [])]).toEqual([...(a.geography.mix.get(PLAIN) ?? [])]);
+    expect([...(b.geography.deposit.get(OIL) ?? [])]).toEqual([
+      ...(a.geography.deposit.get(OIL) ?? []),
+    ]);
+    expect(b.regions.map((r) => r.name)).toEqual(a.regions.map((r) => r.name));
+  });
+
+  it('a different seed draws a different world', () => {
+    const a = drawMap(spec(), DRAW_READS, 'one-world');
+    const b = drawMap(spec(), DRAW_READS, 'another');
+    expect([...b.geography.place]).not.toEqual([...a.geography.place]);
+  });
+
+  it('the water is the share that was asked for, because the shore is a quantile of the ground', () => {
+    const { geography } = drawMap(spec({ oceanShare: 0.55 }), DRAW_READS, 'shore');
+    expect(shareOfWorld(geography, WATER)).toBeCloseTo(0.55, 2);
+  });
+
+  it('each band takes the share of the LAND its row declares', () => {
+    const { geography } = drawMap(spec(), DRAW_READS, 'bands');
+    const land = 1 - shareOfWorld(geography, WATER);
+    expect(shareOfWorld(geography, PLAIN) / land).toBeCloseTo(0.7, 2);
+    expect(shareOfWorld(geography, MOUNTAIN) / land).toBeCloseTo(0.3, 2);
+  });
+
+  it('nothing runs off the edge: the frame is water', () => {
+    const { geography: g } = drawMap(spec(), DRAW_READS, 'frame');
+    for (let c = 0; c < g.cols; c += 1) {
+      expect(shareOf(g, WATER, tileAt(g, c, 0))).toBe(1);
+      expect(shareOf(g, WATER, tileAt(g, c, g.rows - 1))).toBe(1);
+    }
+  });
+
+  it('every declared resource gets a layer, including one nothing consumes', () => {
+    const { geography } = drawMap(spec(), DRAW_READS, 'deposits');
+    for (const r of RESOURCES) expect(geography.deposit.get(r.id)?.length).toBe(
+      geography.cols * geography.rows,
+    );
+  });
+
+  it('a place is ONE PIECE, so a country cut off by water gets a place per island', () => {
+    const { geography, regions } = drawMap(spec({ channels: 6 }), DRAW_READS, 'islands');
+    // The faults include the contiguity walk, so this is the assertion that every drawn place
+    // survived being broken up — and a country may come out with more places than it asked for.
+    expect(geographyFaults(geography, new Set(regions.map((r) => r.id)))).toEqual([]);
+    for (const c of spec().countries) {
+      const mine = regions.filter((r) => r.country === c.id);
+      expect(mine.length).toBeGreaterThanOrEqual(c.regions);
+    }
+  });
+
+  it('every region belongs to a country the spec named, and every country has somewhere', () => {
+    const { regions } = drawMap(spec(), DRAW_READS, 'countries');
+    const named = new Set(spec().countries.map((c) => c.id));
+    for (const r of regions) expect(named.has(r.country)).toBe(true);
+    for (const c of spec().countries) {
+      expect(regions.some((r) => r.country === c.id)).toBe(true);
+    }
+  });
+
+  it('a place is named, and its name is never its id (Law 9)', () => {
+    const { regions } = drawMap(spec(), DRAW_READS, 'names');
+    for (const r of regions) {
+      expect(r.name.length).toBeGreaterThan(0);
+      expect(r.name).not.toBe(String(r.id));
+    }
+  });
+
+  it('refuses a world with no land to put a country on', () => {
+    expect(() => drawMap(spec({ oceanShare: 1 }), DRAW_READS, 'drowned')).toThrow(/no land/);
   });
 });
