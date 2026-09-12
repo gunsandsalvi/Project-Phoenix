@@ -114,7 +114,7 @@ export interface GoodDecl {
 }
 
 /** A period is a week (docs/ARCHITECTURE.md 4.7), so every rate below is per week. */
-export const GOODS: readonly GoodDecl[] = [
+const MAKES: readonly GoodDecl[] = [
   {
     subUnit: 'grain',
     unit: 'tonnes',
@@ -1720,4 +1720,130 @@ export const GOODS: readonly GoodDecl[] = [
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
+];
+
+
+/* ------------------------------------------------------------------------------------------------
+ * THE SHELF IS A PLACE (13c.2).
+ *
+ * @spec Goods A1 Goods A2.a Goods C6 Commodities Spot C6 Indices D4 Law 3 Law 4
+ *
+ * A tonne of bread at a bakery and a loaf in a shop near where somebody lives are not the same
+ * thing. Between them is a firm with premises, staff, a delivery round, refrigeration and a bin at
+ * the back — and until this world had one, a household bought bread from a bakery at the bakery's
+ * own cleared price, which is not how anybody has ever bought bread.
+ *
+ * So a retail line is a LINE: one unit of the wholesale good in, one unit on the shelf out, plus
+ * the hours, the premises, the power, the packaging, the handling and the haulage that putting it
+ * there takes. It is its own instrument with its own market in each region, exactly as a tonne in
+ * transit is (13c step 8), and for the same reason — location is part of identity (C6).
+ *
+ * THE DISTRIBUTION MARGIN IS THEN AN OUTCOME, which is the whole point: it is the gap between two
+ * prints, one of which is what the shop paid and the other what it got, less what its own staff and
+ * premises cost it. Nothing declares a mark-up, because a declared mark-up would be a price from a
+ * formula (Law 3) and a spread table (Appendix B), and because what a shop earns is exactly the
+ * thing a reader of this model would want to have come out rather than gone in.
+ * ---------------------------------------------------------------------------------------------- */
+
+/** What a shop does to one unit of a thing. The line itself is built from this and the good. */
+interface RetailDecl {
+  /** The wholesale line it puts on a shelf. One unit in, one unit out — a shop makes nothing. */
+  readonly of: string;
+  /** A2.c: hours of shop work per unit sold. Most of what a shop costs is people. */
+  readonly hours: number;
+  /** A2.c: premises per unit a period, which is what the customer is really paying for. */
+  readonly premises: number;
+  readonly power: number;
+  readonly packaging: number;
+  readonly logistics: number;
+  readonly transport: number;
+  /** A3, E4: what is thrown out at the back. It is high, and in life it is high. */
+  readonly spoilage: number;
+  readonly yieldRate: number;
+  readonly why: string;
+}
+
+/** Law 9: what a market calls the retailed line. `bread` wholesale, `retailBread` on the shelf. */
+export const retailOf = (subUnit: string): string =>
+  `retail${subUnit.slice(0, 1).toUpperCase()}${subUnit.slice(1)}`;
+
+export const RETAIL: readonly RetailDecl[] = [
+  { of: 'bread', hours: 18, premises: 0.5, power: 0.5, packaging: 25, logistics: 1.05, transport: 0.4, spoilage: 0.3, yieldRate: 0.98,
+    why: 'A tonne of bread is a thousand loaves sold one at a time, out of a shop that is lit and heated all week and throws away what it has not sold by Sunday.' },
+  { of: 'meat', hours: 25, premises: 0.7, power: 1.2, packaging: 35, logistics: 1.05, transport: 0.4, spoilage: 0.22, yieldRate: 0.97,
+    why: 'The same again and colder: refrigeration runs the whole week and is most of why a butcher’s power bill is not a baker’s.' },
+  { of: 'clothing', hours: 0.08, premises: 0.002, power: 0.002, packaging: 0.05, logistics: 0.002, transport: 0.001, spoilage: 0.01, yieldRate: 0.99,
+    why: 'A garment sits on a rail until somebody buys it. What it costs to sell is the rail, the room and the person at the till.' },
+  { of: 'medicine', hours: 250, premises: 5, power: 5, packaging: 300, logistics: 1.1, transport: 0.5, spoilage: 0.02, yieldRate: 0.99,
+    why: 'Dispensed by somebody qualified, a dose at a time. It is the most labour a tonne of anything takes to sell in this world.' },
+  { of: 'furniture', hours: 0.6, premises: 0.03, power: 0.02, packaging: 0.3, logistics: 0.05, transport: 0.05, spoilage: 0.004, yieldRate: 0.99,
+    why: 'Bulky for its weight: the showroom is the cost, and so is getting it to the door.' },
+  { of: 'appliance', hours: 0.5, premises: 0.02, power: 0.02, packaging: 0.2, logistics: 0.06, transport: 0.05, spoilage: 0.003, yieldRate: 0.99,
+    why: 'Sold by somebody who explains it, delivered by somebody who carries it up the stairs.' },
+  { of: 'electronics', hours: 0.03, premises: 0.001, power: 0.001, packaging: 0.05, logistics: 0.002, transport: 0.002, spoilage: 0.004, yieldRate: 0.99,
+    why: 'Small, dense and sold in quantity, which is why the shop that sells it is small beside the one that sells furniture.' },
+  { of: 'fuel', hours: 0.0006, premises: 0.00002, power: 0.00002, packaging: 0, logistics: 0.0009, transport: 0.0002, spoilage: 0.0005, yieldRate: 0.999,
+    why: 'A forecourt: a great deal of it through a very small amount of labour, which is why the margin on a litre is pennies and the business is volume.' },
+  { of: 'vehicle', hours: 8, premises: 0.25, power: 0.3, packaging: 0, logistics: 1.5, transport: 0.6, spoilage: 0.001, yieldRate: 0.995,
+    why: 'A forecourt with four cars on it and somebody to sell them, and the stock is worth more than the building.' },
+];
+
+/**
+ * A2.a: the line a shop runs. ONE unit in for one unit out — a shop transforms nothing and that is
+ * the honest statement of what it does: what it adds is being somewhere, in small quantities, at
+ * an hour a person can get there, and all of that is in the hours and the premises below.
+ */
+function shelfLine(d: RetailDecl, of: GoodDecl): GoodDecl {
+  const inputs = [
+    { subUnit: of.subUnit, qtyPerUnit: 1, why: 'A2.a: one unit in for one unit out. A shop makes nothing; it puts what somebody else made where somebody can buy it.' },
+    { subUnit: 'logistics', qtyPerUnit: d.logistics, why: 'A2.a: picked, packed and put on the lorry, and then off it again at the other end.' },
+    { subUnit: 'transport', qtyPerUnit: d.transport, why: 'A2.a: the delivery round. It is why a shop feels a fuel price and a mill barely does.' },
+    { subUnit: 'power', qtyPerUnit: d.power, why: 'A2.a: light, heat and the cold end, running the whole week whether anybody comes in or not.' },
+  ];
+  if (d.packaging > 0) {
+    inputs.push({ subUnit: 'packaging', qtyPerUnit: d.packaging, why: 'A2.a: the bag, the box and the label, which is a real line in a real shop’s costs.' });
+  }
+  return {
+    subUnit: retailOf(of.subUnit),
+    unit: of.unit,
+    name: `${of.name}, retail`,
+    // It can be loaded: a pallet of packaged goods is a pallet. What a shop adds is being somewhere,
+    // and a shop somewhere else is a different shop — but the stock itself is stock.
+    portable: true,
+    spoilagePerPeriod: d.spoilage,
+    spoilageWhy: `Goods A3, E4: what goes in the bin at the back. ${d.why}`,
+    inputs,
+    labourHoursPerUnit: d.hours,
+    labourWhy: `A2.c: shop hours per unit sold. Most of what a shop costs is people, and this is them. ${d.why}`,
+    plant: [
+      { capitalKind: 'premises', unitsPerUnitPerPeriod: d.premises, why: 'Capital Programme A2: the shop. A service is made where it is bought and so, very nearly, is a sale.' },
+    ],
+    yieldRate: d.yieldRate,
+    yieldWhy: 'B4: breakage, theft and what is damaged getting it onto the shelf.',
+    exposedTo: [],
+    standsOn: null,
+    standsOnWhy: '13c.2: none of its own. The ground is under the premises and counting it again would be counting it twice (Law 4).',
+    // Commodities Spot A3: the shelf IS the store, and the shelf is the premises. A shop that wanted
+    // more room would buy more premises, which is the plant above; renting it a second time in the
+    // storage market would charge it twice for one thing.
+    storagePerUnit: null,
+    storageWhy: 'Commodities Spot A3: none. The shelf is the store and the shelf is the premises; charging for the room twice would be charging twice (Law 4).',
+    leadTimePeriods: 0,
+    leadTimeWhy: 'B3: none. A shop restocks inside the week, which is what a delivery round is.',
+  };
+}
+
+/**
+ * Every line this world has: what it makes, and what a shop does to the nine of them a household
+ * buys in a shop. The retail rows are BUILT rather than written out, because the only thing that
+ * differs between them is the table above — nine copies of twenty fields would be one fact written
+ * nine times, and the ninth would be the one that went stale (Law 4, Law 16).
+ */
+export const GOODS: readonly GoodDecl[] = [
+  ...MAKES,
+  ...RETAIL.map((d) => {
+    const of = MAKES.find((g) => g.subUnit === d.of);
+    if (of === undefined) throw new Error(`13c.2: no line called ${d.of} for a shop to sell`);
+    return shelfLine(d, of);
+  }),
 ];

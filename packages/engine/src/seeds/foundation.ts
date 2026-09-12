@@ -100,6 +100,7 @@ import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
+import { CONSUMPTION } from '../mechanisms/households/data.js';
 import {
   drawCarriers,
   freight,
@@ -879,7 +880,11 @@ export function foundationSeedFor(
           drawnBy.set(input.subUnit, [...(drawnBy.get(input.subUnit) ?? []), subUnit]);
         }
       }
-      const madeInto = new Set(CAPITAL_KINDS.map((k) => k.madeFrom));
+      // A4.b: EVERY kind of plant, not just the kernel's. A good that is what a hull or a silo is
+      // made of is a capital good, and a world that counted only machinery called a hull a thing
+      // this economy makes for its households (Law 4: one list of what plant is made of).
+      const plantKinds = [...CAPITAL_KINDS, STORAGE_KIND, VESSEL_KIND];
+      const madeInto = new Set(plantKinds.map((k) => k.madeFrom));
       const finalGoods = [...sizeOfLine.keys()]
         .filter((g) => (drawnBy.get(g) ?? []).length === 0 && !madeInto.has(g))
         .sort();
@@ -915,8 +920,48 @@ export function foundationSeedFor(
           'the hours there are',
         );
       }
+      // ------------------------------------------------------------------------------------------
+      // 13c.2: WHAT THIS WORLD OPENS MAKING IS WHAT ITS PEOPLE WANT.
+      //
+      // It used to be ONE UNIT OF EACH final good, which was harmless while there was one of them
+      // and a claim about an answer the moment there were fifteen: a world opening with as many
+      // vehicles as tonnes of bread is a world whose entire industrial composition was set by the
+      // number 1. Since the basket is a preference in physical quantities (`households/data.ts`),
+      // the proportions are there to be read — so the bundle is what the cohorts alive in this world
+      // take in a period, each at its own rate, summed over the weights (XI-15, never an average).
+      //
+      // The scale below is unchanged and still does the work: this pass fixes the MIX, the hours
+      // fix the SIZE. A world whose people want more than their hours can make opens making the
+      // same basket smaller, in proportion, and the shortage is then a price.
+      // ------------------------------------------------------------------------------------------
+      const wantedInAPeriod = new Map<string, number>();
+      for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
+        if (cell.representation !== 'cell') continue;
+        const cohort = keyOf(cell, 'cohort');
+        for (const row of CONSUMPTION) {
+          if (row.cohort !== cohort) continue;
+          wantedInAPeriod.set(
+            row.subUnit,
+            add(
+              zeroIfNone(wantedInAPeriod.get(row.subUnit)),
+              mul(
+                weightOf(cell),
+                add(row.neededPerMember, row.wantedPerMember, 'what a member takes in a period'),
+                'what this cell takes',
+              ),
+              'what this world wants in a period',
+            ),
+          );
+        }
+      }
+      const asked = sum(finalGoods.map((g) => zeroIfNone(wantedInAPeriod.get(g)))).value;
       for (const g of finalGoods) {
-        started.set(g, div(1, recipeOf(g).yieldRate, 'started for one of it'));
+        // A world whose basket names none of what it makes is a SCALE MODEL (`test/rig.ts`): it has
+        // three lines and no shops, and there is nothing to read the mix off. It opens as it always
+        // did, one unit-scale of each, and says so here rather than dividing by nothing.
+        let want = 1;
+        if (asked > 0) want = zeroIfNone(wantedInAPeriod.get(g));
+        started.set(g, div(want, recipeOf(g).yieldRate, 'started for what is wanted of it'));
       }
       // Down the chain, deepest first: a line starts what everything it feeds draws from it.
       const upstream = [...sizeOfLine.keys()].filter(
@@ -954,7 +999,7 @@ export function foundationSeedFor(
       };
       // A4.b: and the capital-goods line starts what REPLACES the plant that wears out — one life's
       // worth of it a life, which is what a stock of machines with a life in it demands every period.
-      for (const kind of CAPITAL_KINDS) {
+      for (const kind of plantKinds) {
         if (!sizeOfLine.has(kind.madeFrom)) continue;
         const inService = sum([...sizeOfLine.keys()].map((g) => plantOf(g, kind.id))).value;
         const wearing = div(inService, kind.usefulLifePeriods, 'what wears out in a period');
@@ -1896,16 +1941,31 @@ function placeFirms(
   const first = home[0];
   if (first === undefined) throw new Missing('Seed B3', 'the home country has nowhere in it');
   const rng = prng(seed, 'siting');
-  const weightsFor = (standsOn: string | null): number[] =>
-    home.map((r) =>
-      standsOn === null ? areaKm2(g, r) : groundIn(g, reads, r, resourceId(standsOn)),
-    );
+  /**
+   * 13c.2: WHERE THE PEOPLE ARE, which is where a shop is. Today every cell this seed makes lives
+   * in `REGION`, so that is the whole of it; when the population spreads (worklist 13d) this read
+   * follows it and the shops and the surgeries follow with it, because a shop is built next to its
+   * customers and a mine is built on the ore, and neither of those is a rule anybody has to write.
+   */
+  const peopleIn = (r: RegionId): number => (r === REGION ? 1 : 0);
+  /**
+   * Law 15: WHICH LINES GO WHERE THE PEOPLE ARE is read off the basket — the lines a household
+   * takes — and never off what kind of line it is. Add a line to the basket and its firms move to
+   * where the customers are; nothing here learns the name of an industry.
+   */
+  const toHouseholds = new Set(CONSUMPTION.map((c) => c.subUnit));
+  const weightsFor = (subUnit: string, standsOn: string | null): number[] =>
+    home.map((r) => {
+      if (toHouseholds.has(subUnit)) return peopleIn(r);
+      if (standsOn === null) return areaKm2(g, r);
+      return groundIn(g, reads, r, resourceId(standsOn));
+    });
   const held = new Map<string, number[]>();
   const out = new Map<string, RegionId>();
   for (const f of firms) {
     const standsOn = standsOnOf(f.subUnit);
-    const key = standsOn ?? '';
-    const weights = held.get(key) ?? weightsFor(standsOn);
+    const key = toHouseholds.has(f.subUnit) ? 'people' : (standsOn ?? '');
+    const weights = held.get(key) ?? weightsFor(f.subUnit, standsOn);
     held.set(key, weights);
     const total = sum(weights).value;
     // One draw per firm, along the ground: the better a place, the more of a line lands on it.

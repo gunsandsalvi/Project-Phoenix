@@ -24,9 +24,10 @@ export const STORAGE_KIND: CapitalKindDecl = {
   id: STORAGE,
   name: 'grain silos',
   unit: 'silos',
-  // A4.b, C1: built out of the one capital good this world makes. A silo is a made thing and
-  // somebody sold it; what it is made of is that producer's business (Capital Programme A4.a).
-  madeFrom: 'machine',
+  // A4.b, C1: a silo is BUILT. It was 'machine' while a machine was the only capital good this
+  // world made (item 10); since the real economy landed there is a construction line, and a silo
+  // coming off a machine works was a fact with the wrong writer (Law 19, Law 4).
+  madeFrom: 'building',
   // Twenty years. Space outlives the machinery that fills it by an order of magnitude, which is why
   // a world short of it stays short for a long time and why the carry it charges is worth watching.
   usefulLifePeriods: 1040,
@@ -37,7 +38,7 @@ export const STORAGE_KIND: CapitalKindDecl = {
   // 13c.1: A silo holding five thousand tonnes stands on a real yard, which is why covered space competes with everything else for a place.
   landPerUnit: 0.15,
   windHardness: 6,
-  why: 'Commodities Spot A3, D3: a silo is a stock of productive asset with a life, and holding a tonne in somebody else s is a service they charge for. It is the plant that makes carry real: a world where space is free is a world where a commodity curve is arithmetic rather than a market. ONE SILO IS ONE MACHINE OF BUILDING (A4.b: a kind of capital is made from a good, one for one) and it holds five thousand tonnes, which is what makes the carry it charges a fraction of what is in it rather than a multiple.',
+  why: 'Commodities Spot A3, D3: a silo is a stock of productive asset with a life, and holding a tonne in somebody else s is a service they charge for. It is the plant that makes carry real: a world where space is free is a world where a commodity curve is arithmetic rather than a market. ONE SILO IS ONE BUILDING (A4.b: a kind of capital is made from a good, one for one) and it holds five thousand tonnes, which is what makes the carry it charges a fraction of what is in it rather than a multiple.',
 };
 
 /** D3: one book per region, because space in one place is not space in another (A1.a). */

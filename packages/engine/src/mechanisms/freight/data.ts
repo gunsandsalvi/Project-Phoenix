@@ -36,8 +36,11 @@ export const VESSEL_KIND: CapitalKindDecl = {
   id: VESSEL,
   name: 'vessels',
   unit: 'vessels',
-  // A4.b, C1: built out of the one capital good this world makes, like every other kind of plant.
-  madeFrom: 'machine',
+  // A4.b, C1: a hull comes out of a SHIPYARD. It was 'machine' while a machine was the only capital
+  // good this world made; since the real economy landed there is a `vessel` line with a six-month
+  // lead time and a shipyard trade, and a hull coming off a machine works was a fact with the wrong
+  // writer (Law 19, Law 4) — and the reason freight capacity answers a shortage slowly.
+  madeFrom: 'vessel',
   // Twenty-five years, which is what a hull lasts. It is why freight capacity answers a shortage
   // slowly and why a blocked route stays expensive for longer than the block does (B4, D3.a).
   usefulLifePeriods: 1300,

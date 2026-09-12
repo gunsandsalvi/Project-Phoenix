@@ -7,7 +7,7 @@
 import { describe, expect, it } from 'vitest';
 import { downTick, rungsUpTo, sum } from '../src/index.js';
 import { CONSUMPTION } from '../src/mechanisms/households/data.js';
-import { GOODS } from '../src/mechanisms/goods/data.js';
+import { GOODS, RETAIL, retailOf } from '../src/mechanisms/goods/data.js';
 import { OCCUPATION_OF } from '../src/mechanisms/firms/data.js';
 import { OCCUPATIONS } from '../src/mechanisms/labour/data.js';
 
@@ -159,5 +159,69 @@ describe('the sixteen lines that cannot be put in a box (13c.2)', () => {
     // A nurse out of work is not a bricklayer's vacancy filled, and a world where every service was
     // one trade would answer a shortage of clinicians by sending it a security guard.
     expect(new Set(trades).size).toBe(trades.length);
+  });
+});
+
+describe('the shelf is a place (13c.2, Commodities Spot C6, Indices D4)', () => {
+  const byName = new Map(GOODS.map((g) => [g.subUnit, g]));
+
+  it('turns one unit of the wholesale line into one unit on the shelf and nothing else', () => {
+    for (const d of RETAIL) {
+      const line = byName.get(retailOf(d.of));
+      expect(line).toBeDefined();
+      if (line === undefined) continue;
+      const one = line.inputs.find((i) => i.subUnit === d.of);
+      // A shop transforms nothing: what it adds is being somewhere, in small quantities, at an hour
+      // a person can get there — and all of that is in its hours and its premises.
+      expect(one?.qtyPerUnit).toBe(1);
+      expect(line.unit).toBe(byName.get(d.of)?.unit);
+    }
+  });
+
+  it('pays for staff, a shop, a delivery round and a bin at the back', () => {
+    for (const d of RETAIL) {
+      const line = byName.get(retailOf(d.of));
+      if (line === undefined) continue;
+      expect(line.labourHoursPerUnit).toBeGreaterThan(0);
+      expect(line.plant.some((q) => q.capitalKind === 'premises')).toBe(true);
+      expect(line.inputs.some((i) => i.subUnit === 'transport')).toBe(true);
+      expect(line.inputs.some((i) => i.subUnit === 'logistics')).toBe(true);
+      expect(line.spoilagePerPeriod).toBeGreaterThan(0);
+      // The shelf IS the store and the shelf is the premises; renting the room again would be
+      // charging twice for one thing (Law 4).
+      expect(line.storagePerUnit).toBeNull();
+    }
+  });
+
+  it('declares no mark-up anywhere, because a margin is two prints (Law 3)', () => {
+    // What a shop DECLARES is what it does — hours, a shop, a round, a bin — and never what it
+    // earns. A declared mark-up would be a price from a formula (Law 3) and a spread table
+    // (Appendix B); the margin is the gap between two prints less those costs, or it is nothing.
+    const fields = new Set(RETAIL.flatMap((d) => Object.keys(d)));
+    for (const f of fields) {
+      expect(f.toLowerCase()).not.toContain('markup');
+      expect(f.toLowerCase()).not.toContain('margin');
+      expect(f.toLowerCase()).not.toContain('price');
+    }
+  });
+
+  it('is what a household buys: never the line at the gate (Goods G1.a, G1.b)', () => {
+    const retailed = new Set(RETAIL.map((d) => d.of));
+    for (const row of CONSUMPTION) {
+      // A household never buys bread from a bakery at the bakery's own price. Where this world has
+      // a shop for a thing, the shop is where the household is.
+      expect(retailed.has(row.subUnit)).toBe(false);
+    }
+    for (const d of RETAIL) {
+      expect(CONSUMPTION.some((c) => c.subUnit === retailOf(d.of))).toBe(true);
+    }
+  });
+
+  it('gives a household a basket rather than a loaf', () => {
+    const lines = new Set(CONSUMPTION.map((c) => c.subUnit));
+    expect(lines.size).toBeGreaterThanOrEqual(18);
+    // And it buys services, which is most of what people spend money on.
+    const services = new Set(GOODS.filter((g) => !g.portable).map((g) => g.subUnit));
+    expect([...lines].filter((l) => services.has(l)).length).toBeGreaterThanOrEqual(6);
   });
 });
