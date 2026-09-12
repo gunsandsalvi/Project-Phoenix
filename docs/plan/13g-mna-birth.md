@@ -181,6 +181,25 @@ packages/engine/test/{merge-door,intent,tender,competing-bids,resistance,conside
 
 ---
 
+---
+
+## Carried in from 13c.1 — a hull cannot be repositioned, so ballast is not built
+
+Freight's capacity is the hulls a carrier has FREE, read through the lien a voyage binds them with.
+But `vintagesHeld` reads a party's plant in its OWN region (`registry/physical.ts`:
+`if (terms.region !== view.self.region) continue`) and a plant vintage is an instrument per
+`(kind, region, serviceDate)` — so a hull that lands elsewhere is still an instrument of the region
+it was built in. Moving one needs a plant reseat the kernel does not have: `Instruments.reseat`
+changes an issuer, not a place.
+
+What 13c.1 built instead is a carrier serving the legs out of where it is based. That keeps
+everything Freight B2 and E2 ask for — capacity fixed in the short run, none of it without an owner,
+none counted twice — and loses one thing: a shortage on one leg cannot pull hulls off another, so
+freight capacity does not reallocate and a busy leg stays dear longer than it should.
+
+It lands HERE because it is the same door a firm needs to sell a working vintage to somebody in
+another place, which this item already owns: ballast and second-hand plant are one mechanism.
+
 ## Steps
 
 - [ ] **From item 11 (Banks Capital A3, C2.a, B3)**: a bank raises EQUITY, and breaching its buffer restricts what it distributes. Item 11 built the subordinated layer and the raise that can fail (C2.b), but a bank here has no share line and no owners: who owns a bank at the seed is what Seed E1/E2 refuse to invent, and a party comes to own one by funding its entry — which is this item. Test: an issue dilutes the holders there are, a failed one leaves the bank where it was, and a bank below its own line pays nothing out

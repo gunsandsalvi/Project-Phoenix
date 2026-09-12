@@ -185,6 +185,20 @@ docs/measure/<run>/
 
 ---
 
+---
+
+## Carried in from 13c.1 — a period costs twenty-five seconds, and `markets` is twenty-one of them
+
+One period of the foundation world, by phase: `markets` 22,614ms of 25,817ms, with everything else
+under 650ms and the freight session at 131ms. **Measured to PRE-DATE the map**: the same profile at
+`a702c37`, before any map code, gives 24,575ms with `markets` at 21,493ms. There are 256 markets and
+231 of them are equity, one per listed line, and each sweeps all 3,185 parties for participation.
+
+This is 12c.1's territory (*the suite that got slower every period*) and it is a traversal, not a
+mechanism — Law 18 says the economics may not change and the layout is free. It wants a market to
+ask only the parties that could participate rather than all of them. It matters here because the
+suite takes roughly a quarter of an hour, which is what makes a full measurement expensive to run.
+
 ## Steps
 
 - [ ] Fault-injection harness and the independence test: each of the injected defects lights exactly one family with the right owner and size; overlaps narrowed; tests
