@@ -15,7 +15,7 @@
  * — and re-exports these so there is one spelling.
  */
 import type { Period } from '../calendar/calendar.js';
-import type { RegionId } from '../core/ids.js';
+import type { PlaceId } from '../core/ids.js';
 import type { Event } from '../journal/journal.js';
 
 /** The public event the physical state crosses on, published once per region per period. */
@@ -45,7 +45,7 @@ export interface EnvironmentReads {
  */
 export function conditionsIn(
   reads: EnvironmentReads,
-  region: RegionId,
+  region: PlaceId,
 ): ReadonlyMap<string, number> | undefined {
   for (const e of reads.journal.ofKind(ENVIRONMENT_STATE)) {
     if (e.period !== reads.period || e.subjects[0] !== String(region)) continue;
@@ -72,7 +72,7 @@ export function conditionsIn(
  */
 export function conditionsFor(
   reads: EnvironmentReads,
-  region: RegionId,
+  region: PlaceId,
   facts: readonly string[],
 ): number {
   if (facts.length === 0) return 1;

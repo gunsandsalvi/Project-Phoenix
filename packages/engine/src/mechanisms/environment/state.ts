@@ -12,7 +12,7 @@
  * what a bad season DOES — each consumer reads the condition and applies it to its own normal.
  */
 import type { Period } from '../../calendar/calendar.js';
-import type { RegionId } from '../../core/ids.js';
+import type { PlaceId } from '../../core/ids.js';
 import { add, finite, mul } from '../../core/num.js';
 import type { Prng } from '../../rng/prng.js';
 import type { ClimateDecl, FactId } from './data.js';
@@ -20,7 +20,7 @@ import type { ClimateDecl, FactId } from './data.js';
 /** What this period is, for one fact in one region. */
 export interface Condition {
   readonly fact: FactId;
-  readonly region: RegionId;
+  readonly region: PlaceId;
   /** How far this period stands from normal, in log space: 0 is an ordinary period. */
   readonly departure: number;
   /** What that comes to as a multiple of what this region normally has. Positive by arithmetic. */
@@ -34,7 +34,7 @@ export interface Weather {
   written: Period | undefined;
 }
 
-export const keyOf = (fact: FactId, region: RegionId): string => `${fact}|${region}`;
+export const keyOf = (fact: FactId, region: PlaceId): string => `${fact}|${region}`;
 
 /**
  * B3, B4: the period's draw. `persistence` of what stood last period still stands, and the rest is

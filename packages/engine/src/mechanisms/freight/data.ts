@@ -1,24 +1,27 @@
 /**
- * CARRIERS AND ROUTES: who moves things, between which two places, and how much they can move.
+ * CARRIERS: who moves things, and with what.
  *
  * @spec Freight A1 Freight A2 Freight A3 Freight A4 Freight B1 Freight B2 Freight B3 Freight B4 Capital Programme A4 Law 2 Law 15 Seed B1.a
  *
  * Moving a thing costs money and takes time, and a world where it does neither has one price
  * everywhere by construction — no location basis, no reason for a thing to be dearer where it is
- * short, and nothing for an arbitrageur to close. So a route is a real thing with a real limit: a
- * named carrier's plant, a capacity per period that is ITS OWN and not anybody else's (A4: capacity
- * on one route is not capacity on another), and a transit that takes periods.
+ * short, and nothing for an arbitrageur to close.
  *
- * WHAT IS DECLARED IS A ROUTE AND A WIDTH (Law 2). How much a carrier can move is its PLANT, drawn
- * per carrier from the width below (Seed B1.a), and what it charges is cleared (D1) — there is no
- * freight rate anywhere in this file.
+ * THERE IS NO ROUTE DECLARED ANYWHERE (13c.1). A leg is every ordered pair of places a carrier of
+ * this kind can actually get between, read off the map with its kilometres and its days, so how
+ * long a voyage takes and what it is exposed to come out of the ground and the weather rather than
+ * out of four numbers on a row. `transitPeriods`, `unitsPerVesselPerPeriod`, `sailsIn` and
+ * `sailsHardness` are deleted and each names its read (Law 19).
+ *
+ * WHAT IS STILL DECLARED IS A CARRIER AND A WIDTH (Law 2): how much a carrier can move is its
+ * PLANT, drawn per carrier from the width below (Seed B1.a), what a hull holds and what it is used
+ * up by are technology, and what it charges is cleared (D1) — there is no freight rate here.
  */
 import {
   marketId,
   paramId,
   venueId,
   type MarketId,
-  type ParamId,
   type RegionId,
   type VenueId,
 } from '../../core/ids.js';
@@ -48,30 +51,17 @@ export const VESSEL_KIND: CapitalKindDecl = {
   why: 'Freight A4, B2: capacity is a stock of hulls with a life, and a route is served by the hulls that sail it. It is what makes freight a real limit on how much of a thing can be where it is wanted, rather than a fee on moving it.',
 };
 
-/** A4: a route is a PAIR OF PLACES and a time. Capacity on one is not capacity on another. */
-export interface RouteDecl {
-  readonly from: RegionId;
-  readonly to: RegionId;
-  /** A3: periods a thing spends in transit. It is on somebody's book the whole time (A3.a). */
-  readonly transitPeriods: number;
-  /** How many units of the thing one vessel moves per period on this leg. Technology. */
-  readonly unitsPerVesselPerPeriod: number;
-  /**
-   * B4: what this PASSAGE is sailable in, as a multiple of an ordinary period's wind, and how
-   * sharply it stops being. It is about the strait and not about the hull — a vessel that stands a
-   * gale still does not sail a closed channel — so it is the route's own technology.
-   *
-   * Not a threshold: what sails is `exp(-(wind / this) ^ hardness)`, positive at every wind and
-   * never one, so an ordinary week loses a little and a storm closes the leg (Law 6).
-   */
-  readonly sailsIn: number;
-  readonly sailsHardness: number;
-  readonly why: string;
-}
+/**
+ * B2, B3: WHAT A HULL IS, beyond being plant with a life. Both are read per KILOMETRE and per DAY
+ * rather than per period on a route, so a long leg costs more in both and neither is declared per
+ * leg (Law 19: these are the reads that replaced `unitsPerVesselPerPeriod`).
+ */
+export const HOLD_UNITS = paramId('capital.vessel.holdUnits');
+export const WEAR_PER_UNIT_KM = paramId('capital.vessel.wearPerUnitKm');
 
-/** The parameter a route declares about itself, under its own two places (XI-14). */
-export const routeParam = (from: RegionId, to: RegionId, what: string): ParamId =>
-  paramId(`freight.${from}.${to}.${what}`);
+/** How much one hull carries on one voyage, and what carrying a unit a kilometre uses it up by. */
+export const VESSEL_HOLD = 25000;
+export const VESSEL_WEAR_PER_UNIT_KM = 0.0000002;
 
 /** B1: a named carrier, with hulls of its own. A weight of one is a firm; these are firms. */
 export interface CarrierDecl {

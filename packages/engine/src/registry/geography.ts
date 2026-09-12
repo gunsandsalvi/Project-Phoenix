@@ -178,6 +178,17 @@ export function tileYield(
 }
 
 /**
+ * Whether a carrier of this kind can be on a tile at all: every ground the tile is made of has to
+ * carry it, because you cross ALL of a tile. A hull cannot put half of itself on a beach.
+ */
+export function crossable(g: GeographyDecl, t: TileIndex, by: string): boolean {
+  for (const x of g.terrains) {
+    if (shareOf(g, x.id, t) > 0 && !x.carries.includes(by)) return false;
+  }
+  return true;
+}
+
+/**
  * How many days crossing a tile costs a carrier of this kind: `sum(share / kmPerDay)` over the mix,
  * because you have to cross ALL of it. A tile that is part marsh is slow for a lorry and a tile that
  * is part shallow is slow for a hull, continuously and with nothing stepping at a boundary (Law 6).
@@ -636,4 +647,77 @@ export function groundFor(
   const decline = before === undefined || before <= 0 ? 1 : last / before;
   const over = Math.ceil((areaKm2InUse - covered) / perTile);
   return last * Math.pow(decline, over);
+}
+
+/**
+ * Freight A4: THE LEGS THIS WORLD HAS, for a carrier of one kind — every ordered pair of places it
+ * can actually get between, with the path, the kilometres and the days out of the ground itself.
+ *
+ * There is no declared route anywhere. Two places with no path for this kind are simply not
+ * connected, which is a real answer and the reason a leg can be long, dear or missing without
+ * anybody saying so.
+ *
+ * It is computed once per map and held, because the map never moves: the draw is its one writer and
+ * `path()` is the only thing that can produce a leg, so this is memoisation of a pure function and
+ * not a second copy of anything (Law 4, Law 18).
+ */
+const legCache = new WeakMap<GeographyDecl, Map<string, ReadonlyMap<string, Path>>>();
+
+export const legKey = (from: PlaceId, to: PlaceId): string => `${from}|${to}`;
+
+/**
+ * Freight A1: WHERE A CARRIER OF THIS KIND BOARDS AT A PLACE — the tile nearest its middle that
+ * this kind can actually be on, which for a hull is the water off its coast and for a lorry is the
+ * place itself. A port is not declared anywhere: it is where the ground a hull crosses meets the
+ * ground a lorry does, and a landlocked place simply has none (`undefined`, which is why an inland
+ * exporter needs two legs where a coastal one needs one).
+ */
+export function boardingTile(
+  g: GeographyDecl,
+  place: PlaceId,
+  by: string,
+): TileIndex | undefined {
+  const mine = tilesOf(g, place);
+  if (mine.length === 0) return undefined;
+  const middle = heartOf(g, place);
+  let nearest: TileIndex | undefined;
+  let gap = Number.POSITIVE_INFINITY;
+  const consider = (t: TileIndex): void => {
+    if (!crossable(g, t, by)) return;
+    const d = (colOf(g, t) - colOf(g, middle)) ** 2 + (rowOf(g, t) - rowOf(g, middle)) ** 2;
+    if (d < gap) {
+      gap = d;
+      nearest = t;
+    }
+  };
+  for (const t of mine) {
+    consider(t);
+    for (const n of edgeNeighbours(g, t)) consider(n);
+  }
+  return nearest;
+}
+
+export function legsBetween(
+  g: GeographyDecl,
+  reads: TerrainReads,
+  by: string,
+  places: readonly PlaceId[],
+): ReadonlyMap<string, Path> {
+  const forMap = legCache.get(g) ?? new Map<string, ReadonlyMap<string, Path>>();
+  const held = forMap.get(by);
+  if (held !== undefined) return held;
+  const out = new Map<string, Path>();
+  for (const from of places) {
+    for (const to of places) {
+      if (from === to) continue;
+      const board = boardingTile(g, from, by);
+      const land = boardingTile(g, to, by);
+      if (board === undefined || land === undefined) continue;
+      const walk = path(g, reads, board, land, by);
+      if (walk !== undefined) out.set(legKey(from, to), walk);
+    }
+  }
+  forMap.set(by, out);
+  legCache.set(g, forMap);
+  return out;
 }

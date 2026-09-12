@@ -15,7 +15,7 @@
  * from them. A region's climate is a fact about that region, so both are drawn per region from the
  * widths below (Seed B1.a: nothing in the world is typed where it could be drawn).
  */
-import { moduleKey, type ModuleKey, type RegionId } from '../../core/ids.js';
+import { moduleKey, type ModuleKey, type PlaceId } from '../../core/ids.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
 import { GROWING, WARMTH, WIND } from '../../registry/environment.js';
@@ -80,7 +80,7 @@ export const FACTS: readonly FactDecl[] = [
 /** One region's own climate: the two technologies, drawn under the region's and the fact's names. */
 export interface ClimateDecl {
   readonly fact: FactId;
-  readonly region: RegionId;
+  readonly region: PlaceId;
   readonly persistence: number;
   readonly swing: number;
 }
@@ -89,7 +89,7 @@ export interface ClimateDecl {
  * Seed A5, Audit D3: the module's own labelled stream, so that adding a fact never reshuffles
  * another module's draws. One draw per declared number, in the order the table declares them.
  */
-export function drawClimate(regions: readonly RegionId[], seed: string): readonly ClimateDecl[] {
+export function drawClimate(regions: readonly PlaceId[], seed: string): readonly ClimateDecl[] {
   const rng = prng(seed, 'environment');
   const out: ClimateDecl[] = [];
   for (const fact of FACTS) {

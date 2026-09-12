@@ -9,61 +9,70 @@ import {
   FREIGHT_SESSION,
   REGION,
   VESSEL,
-  drawCarriers,
   inTransit,
   paramId,
-  partyId,
   plantKindId,
   regionId,
 } from '../src/index.js';
-import { ranWorld, rigDraw, rigWorld } from './rig.js';
+import { legsBetween } from '../src/registry/geography.js';
+import { ranWorld, rigWorld } from './rig.js';
 
-describe('a route is a real leg with a real limit (A4, B2)', () => {
-  it('declares its four technologies, and every one of them is one', () => {
+describe('a leg is read off the ground, not declared (A4, B2, 13c.1)', () => {
+  it('declares what a HULL is and nothing about any leg', () => {
     const w = rigWorld('freight-a');
-    const legs = [...w.registry.regions.keys()].filter((r) => r !== REGION);
-    expect(legs.length).toBeGreaterThan(0);
-    for (const to of legs) {
-      for (const [what, dimension] of [
-        ['transit', 'periods'],
-        ['perVessel', 'ratio'],
-        ['sailsIn', 'ratio'],
-        ['sailsHardness', 'ratio'],
-      ] as const) {
-        const d = w.params.decl(paramId(`freight.${REGION}.${to}.${what}`));
-        // Law 2: a fact about the world — how long the crossing takes, what a hull carries, what
-        // the passage is sailable in. None of them is a claim about an answer, so none has a death.
-        expect(d.kind).toBe('technology');
-        expect(d.dimension).toBe(dimension);
-        expect(d.value).toBeGreaterThan(0);
+    // Law 19: the four numbers a route used to declare are gone, and each names its read —
+    // transit is the voyage's own progress, capacity is what free hulls hold, and what a passage
+    // is sailable in is the ground the voyage is actually crossing.
+    for (const what of ['transit', 'perVessel', 'sailsIn', 'sailsHardness']) {
+      for (const to of w.registry.regions.keys()) {
+        expect(() => w.params.decl(paramId(`freight.${REGION}.${to}.${what}`))).toThrow();
       }
     }
-    // Law 6: and there is no freight RATE anywhere. What it costs to move a tonne is cleared.
-    const rates = [...w.params.all()].filter((d) => String(d.id).startsWith('freight.'));
-    expect(rates.length).toBeGreaterThan(0);
-    for (const d of rates) expect(String(d.id)).not.toContain('rate');
+    // What IS declared is a fact about the ship: what it holds and what carrying wears it out by.
+    for (const [id, dimension] of [
+      ['capital.vessel.holdUnits', 'count'],
+      ['capital.vessel.wearPerUnitKm', 'ratio'],
+    ] as const) {
+      const d = w.params.decl(paramId(id));
+      expect(d.kind).toBe('technology');
+      expect(d.dimension).toBe(dimension);
+      expect(d.value).toBeGreaterThan(0);
+    }
   });
 
-  it('gives the hulls to named carriers, and a carrier is a firm (B1)', () => {
-    const w = rigWorld('freight-b');
-    const carriers = drawCarriers(6, [REGION], rigDraw('freight-b').banks.map((b) => b.bank), 'freight-b');
-    expect(carriers.length).toBeGreaterThan(0);
-    let withHulls = 0;
-    for (const c of carriers) {
-      const id = partyId(c.carrier);
-      expect(w.parties.has(id)).toBe(true);
-      // Small-Business Pools A6.b, Law 15: it is a FIRM. A party kind of its own would be a second
-      // kind behaving identically, so every rule written for one would be written again.
-      expect(w.parties.get(id).kind).toBe(FIRM);
-      const view = w.participantView(id);
-      const hulls = view
-        .holdings()
-        .filter((h) => w.instruments.get(h.instrument).kind === plantKindId(VESSEL))
-        .reduce((a, h) => a + view.quantity(h.instrument), 0);
-      if (hulls > 0) withHulls += 1;
+  it('has no freight RATE anywhere, because what it costs to move a tonne is cleared (Law 3)', () => {
+    const w = rigWorld('freight-a');
+    for (const d of w.params.all()) {
+      expect(String(d.id)).not.toContain('freightRate');
+      if (String(d.id).startsWith('freight.')) expect(String(d.id)).not.toContain('rate');
     }
-    // B2: a carrier without a ship is not a carrier, and how many it has is its own drawn size.
-    expect(withHulls).toBeGreaterThan(0);
+  });
+
+  it('a carrier is a FIRM with hulls, not a kind of its own (B1, Law 15)', () => {
+    const w = rigWorld('freight-a');
+    // A test never names a party: the carriers are whoever came out of the draw holding hulls.
+    const sailing = w.parties
+      .alive()
+      .filter((p) =>
+        w.register
+          .holdingsOf(p.id)
+          .some((h) => w.instruments.get(h.instrument).kind === plantKindId(VESSEL)),
+      );
+    expect(sailing.length).toBeGreaterThan(0);
+    for (const p of sailing) expect(p.kind).toBe(FIRM);
+  });
+
+  it('can get between two places only when the ground allows it', () => {
+    const w = rigWorld('freight-a');
+    const g = w.registry.geography;
+    const found = legsBetween(g, w.params, 'vessel', [...w.registry.regions.keys()]);
+    for (const [key, leg] of found) {
+      expect(leg.km).toBeGreaterThan(0);
+      expect(leg.days).toBeGreaterThan(0);
+      expect(leg.tiles.length).toBeGreaterThan(0);
+      // A4: distinct legs, because they are different lengths over different ground.
+      expect(key).toContain('|');
+    }
   });
 });
 
@@ -74,9 +83,9 @@ describe('the session says what it did, including that it did nothing (Clearing 
     expect(sessions.length).toBe(4);
     for (const e of sessions) {
       expect(e.public).toBe(true);
-      const byRoute = e.data['byRoute'] as Record<string, { outcome?: string; carriers?: number }>;
-      expect(Object.keys(byRoute).length).toBeGreaterThan(0);
-      for (const leg of Object.values(byRoute)) {
+      const byLeg = e.data['byLeg'] as Record<string, { outcome?: string; carriers?: number }>;
+      expect(Object.keys(byLeg).length).toBeGreaterThan(0);
+      for (const leg of Object.values(byLeg)) {
         // A leg with hulls on it and nothing to carry says `noDemand` and says so out loud. This
         // world makes its goods in the one region that has firms in it, and the three abroad are a
         // central bank, a treasury and a bond line until 13i builds their economies — so the legs

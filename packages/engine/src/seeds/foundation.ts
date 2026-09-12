@@ -101,7 +101,6 @@ import {
   VESSEL,
   VESSEL_KIND,
   type CarrierDecl,
-  type RouteDecl,
 } from '../mechanisms/freight/index.js';
 import { environment } from '../mechanisms/environment/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
@@ -249,23 +248,13 @@ export const ABROAD: readonly AbroadDecl[] = [
   },
 ];
 /**
- * Freight A4, B1 (13c): THE LEGS THIS WORLD HAS, and how many owners sail them. A route is a pair
- * of places and a time; capacity on one is not capacity on another, which is what makes a blocked
- * leg stay blocked. Transit is four weeks each way because that is what an ocean crossing takes,
- * and it is why a shipper's working capital is tied up for a month on every cargo (A3.a).
+ * 13c.1: THE LEGS ARE READ OFF THE MAP, so there is no route table here any more. How many hulls
+ * a carrier owns is still drawn; where it can sail them is the world's answer and not a list.
  */
 const CARRIER_COUNT = 6;
 /** B2: hulls per unit of drawn size. The smallest carrier has one ship, which is what it means. */
 const HULLS_PER_UNIT_OF_SIZE = 1;
-const ROUTES: readonly RouteDecl[] = ABROAD.map((c) => ({
-  from: REGION,
-  to: c.region,
-  transitPeriods: 4,
-  unitsPerVesselPerPeriod: 25000,
-  sailsIn: 4,
-  sailsHardness: 8,
-  why: `The ocean leg between ${REGION} and ${c.region}.`,
-}));
+
 
 /**
  * Seed B1, B4: WHICH BANKS THIS WORLD HAS is the table the banks module declares, and the seed is
@@ -2000,7 +1989,8 @@ export function foundationSpec(
       // The physical world, first and depending on nothing (13c): it is not an economic outcome
       // and does not wait for one. Every region this world has stands in weather of its own, and
       // the producer, the carrier, the insurer and the household all read the same fact.
-      environment([REGION, ...ABROAD.map((c) => c.region)], seed),
+      // 13c.1: EVERY PLACE, sea areas included — a ship has to be somewhere for a gale to reach it.
+      environment(drawn.geography.places, seed),
       // The order matters at one anchor: three phases sit before the revaluation, and they must run
       // in this order — a drawing becomes a loan row, then anything that cannot pay dies, then the
       // people it employed are released. Assembly keeps declaration order for modules that do not
@@ -2041,7 +2031,7 @@ export function foundationSpec(
       // its goods in the one region that has firms, and the three abroad are a central bank, a
       // treasury and a bond line until 13i builds their economies. A session with nothing to carry
       // says `noDemand` and says so out loud, which is the honest state for it to be in.
-      freight(carrierRows, ROUTES),
+      freight(carrierRows),
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).

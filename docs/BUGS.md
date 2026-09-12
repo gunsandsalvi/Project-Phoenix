@@ -31,3 +31,32 @@ mechanism changed, and `tightWorld` is the fixture that sets it.
 **Not chased** (Law 11, PLAN §5): the item carries on. It is re-measured at 13c.1's own measurement
 step, against a world that also has voyages and a raised place resolution — and the fixture is
 re-tightened there if it is still what this says it is.
+
+---
+
+## 13c.1-2 — a hull cannot be repositioned, so ballast is not buildable
+
+**Measured.** Freight's capacity is now the hulls a carrier has FREE, read off the register through
+the lien a voyage binds them with. But `vintagesHeld` reads a party's plant **in its own region**
+(`registry/physical.ts`: `if (terms.region !== view.self.region) continue`), and a plant vintage is
+an instrument per `(kind, region, serviceDate)`. So a hull that lands somewhere else is still an
+instrument of the region it was built in.
+
+**What is ruled out.** Not the lien: it binds and releases correctly, and a hull on a voyage is
+genuinely unavailable. Not the leg: a hull boards at its port and the path is real.
+
+**Why it stops step 10.** Ballast is a carrier sailing a hull empty to where it is worth most, and
+that means the hull's PLACE changes. Moving it needs either a plant reseat the kernel does not have
+(`Instruments.reseat` changes an issuer, not a region) or the destination vintage instrument to
+exist, and creating an instrument is a seed-only door. Either is a kernel change of real size.
+
+**What was built instead, and what it costs.** A carrier serves the legs out of the place it is
+based in, and its capacity there is its free hulls. That keeps everything Freight B2 and E2 ask for
+— capacity fixed in the short run, none of it without an owner, none of it counted twice — and
+loses one thing: a shortage on one leg cannot pull hulls off another. So freight capacity does not
+reallocate between legs, and the price on a busy leg stays high longer than it should.
+
+**Positioned, not chased.** It wants a kernel read that moves plant between places, which is an
+inserted item of its own — it is the same door a firm would need to sell a working vintage to
+somebody in another region, which 13c.2's file already names as belonging with 13g. The record says
+where it lands when this item closes.

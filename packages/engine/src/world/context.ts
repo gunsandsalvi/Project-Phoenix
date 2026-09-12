@@ -109,7 +109,7 @@ export interface KernelReads {
   readonly cycle: Cycle;
   readonly calendar: Calendar;
   readonly registry: Registry;
-  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'decl' | 'report' | 'all'>;
+  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'km' | 'kmPerDay' | 'decl' | 'report' | 'all'>;
   readonly instruments: InstrumentsReads;
   /**
    * Derivative D1, Law 15: what the module that owns a CLASS of derivative knows — why a party

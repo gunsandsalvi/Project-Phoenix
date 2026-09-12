@@ -20,7 +20,7 @@
  * to the recipe that was started, a blocked passage to the route, a claim to the policy — each
  * applies this condition to its own declared normal, at its own site, where the loss actually is.
  */
-import type { RegionId } from '../../core/ids.js';
+import type { PlaceId } from '../../core/ids.js';
 import { paramId, type ParamId } from '../../core/ids.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -73,7 +73,7 @@ function paramsOf(climate: readonly ClimateDecl[]): ParamDecl[] {
  * The module. It is built from the regions this world has, because a climate is a region's and
  * there is no second list of them (Law 4).
  */
-export function environment(regions: readonly RegionId[], seed: string): SystemModule {
+export function environment(regions: readonly PlaceId[], seed: string): SystemModule {
   const climate = drawClimate(regions, seed);
   return {
     id: 'environment',
