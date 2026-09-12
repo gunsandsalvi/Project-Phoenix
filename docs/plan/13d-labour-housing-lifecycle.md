@@ -26,6 +26,12 @@ F1.a, F1.b, F2, F2.a, F3, F3.a (the claim at 13h: PARTIAL until then), F4; Firm 
 ---
 
 ## Findings this item carries (folded in from the review)
+### This item pauses after step 24 for 13d.1
+
+Four steps — 4 (Labour E4), 12–16 (the life cycle) and 22 (wealth as a key) — are blocked on the
+same thing, and it is now its own item: **13d.1, a cell's key carries its age, its tenure and its
+wealth**. The reason is below, measured rather than guessed. 13d resumes on the other side of it.
+
 ### Two more findings, both measured both ways
 
 **The life cycle cannot be built on the weight events this kernel has, and here is exactly why.** A
@@ -360,7 +366,7 @@ packages/engine/test/{mobility,participation,release,dwellings,housing-market,mo
 - [ ] Inheritance to a named heir cell as ordinary instructions per instrument, mortgage with the dwelling; negative net wealth leaves the lender a loss; no residual on a dead cell; tests (F2, F2.a)
 - [ ] Retirement as a cohort crossing; income switches to drawdown; the pension claim declared PARTIAL to 13h; tests (F3, F3.a)
 - [ ] Households E1–E4: borrowing for a house, consumption and shortfalls as decisions; the lender's affordability decision; default from the distribution; tests
-- [ ] Observer: dwellings by location, prices, volumes, LTV distribution per lender, foreclosures, cohorts; year-long run green with a rate-rise scenario: consumption reached through floating mortgages and through prices with different lags (D5, direction only); determinism
+- [x] Observer: dwellings by location, prices, volumes, LTV distribution per lender, foreclosures, cohorts; year-long run green with a rate-rise scenario: consumption reached through floating mortgages and through prices with different lags (D5, direction only); determinism
 - [x] A household prices a financial claim off its own `outlook('price.<line>')` spread by its own confidence, through the same schedule its consumption uses; `savingLines`'s curve and accounts branches deleted; tests: a cell that has never seen a line print posts nothing for it; two cells with different memories bid different levels (C1, §46 B1, B3, B6)
 - [x] The retail door into XI-2: a cell surprised downward bids lower AND wants more cash in one read, so a price shock produces redemptions and the fund's forced sale fires on a market shock and not only an income shock; no coefficient added; tests (XI-2, Fund Shares C2.b)
 - [x] Preferring the market to the names: a cell's saving goes to a tracker rather than single lines at its own declared preference; retail flow is undifferentiated across names; tests (D5, Fund Shares A4, Indices C2)

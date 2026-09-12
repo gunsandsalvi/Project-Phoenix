@@ -604,6 +604,7 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   root.append(journal);
 
   root.append(sectorsOf(s));
+  root.append(housingOf(s));
   root.append(mapOf(s));
 
   root.append(
@@ -611,6 +612,30 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   );
 }
 
+
+
+/**
+ * §45, 13d: HOUSING. What is standing in each place, what one last changed hands at, what it lets
+ * for, and what a lender has taken. Reads, and the page writes nothing back.
+ */
+function housingOf(s: Snapshot): HTMLElement {
+  const section = el('section', { id: 'housing' }, el('h2', {}, 'Housing'));
+  const ul = el('ul', {});
+  for (const h of s.housing) {
+    ul.append(
+      el(
+        'li',
+        {},
+        `${h.region}: ${num(h.dwellings, 0)} dwellings, ` +
+          `price ${h.price === null ? '—' : num(h.price, 2)}, ` +
+          `rent ${h.rent === null ? '— (nothing let)' : num(h.rent, 2)} on ${num(h.let, 2)}` +
+          (h.foreclosed > 0 ? `, ${num(h.foreclosed, 0)} taken by a lender` : ''),
+      ),
+    );
+  }
+  section.append(ul);
+  return section;
+}
 
 /**
  * §45, 13c.2: WHAT KIND OF ECONOMY THIS IS. Every line employs a trade and every trade is in a

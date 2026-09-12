@@ -11,7 +11,7 @@ import { add, div, mul, sub } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
 import { partyId, type CurrencyCode, type PartyId, type RegionId } from '../core/ids.js';
 import { placeAt, tilesOf } from '../registry/geography.js';
-import { isGoodTerms } from '../registry/physical.js';
+import { goodId, isGoodTerms } from '../registry/physical.js';
 import { isCreateLeg } from '../ledger/instruction.js';
 import { OCCUPATION_OF } from '../mechanisms/firms/data.js';
 import { OCCUPATIONS } from '../mechanisms/labour/data.js';
@@ -434,6 +434,25 @@ export interface SectorView {
   readonly portable: boolean;
 }
 
+/**
+ * 13d, §45: HOUSING, as a viewer sees it. What is standing in each place, what it last let for, and
+ * what a lender has taken. Reads, all of them: the register's own count of dwellings, the letting
+ * session's own print, and the journal's own record of a foreclosure.
+ */
+export interface HousingView {
+  readonly region: string;
+  /** A1: dwellings standing in this place. The register's count, never a stored total. */
+  readonly dwellings: number;
+  /** B1: what one last changed hands at, or null because nothing has printed there. */
+  readonly price: number | null;
+  /** A2: what the last letting session struck, or null because it did not clear. */
+  readonly rent: number | null;
+  /** A2: how much occupancy the last session let. */
+  readonly let: number;
+  /** C4: dwellings a lender has taken this period, at what the market said. */
+  readonly foreclosed: number;
+}
+
 export interface Snapshot {
   readonly seed: string;
   readonly period: number;
@@ -460,6 +479,8 @@ export interface Snapshot {
   readonly map: MapView;
   /** 13c.2: the economy by sector — what each vertical made, what is standing in it, as reads. */
   readonly sectors: readonly SectorView[];
+  /** 13d: what is standing in each place, what it lets for, and what a lender has taken. */
+  readonly housing: readonly HousingView[];
   readonly prints: readonly PrintView[];
   readonly curves: readonly CurveView[];
   readonly yields: readonly YieldView[];
@@ -801,11 +822,42 @@ export function snapshot(
     .map(([sector, r]) => ({ sector, lines: [...r.lines].sort(), made: r.made, held: r.held, portable: r.portable }))
     .sort((a, b) => a.sector.localeCompare(b.sector));
 
+
+  // 13d: housing, as reads. The stock is the register's; the price is the market's; the rent is the
+  // letting session's own print; the foreclosures are the journal's. Nothing here is stored.
+  const housing: HousingView[] = [];
+  for (const region of w.registry.regions.keys()) {
+    const id = goodId('dwelling', region);
+    if (!w.instruments.has(id)) continue;
+    const print = w.prices.latest(id, w.period);
+    const said = w.journal
+      .ofKind('housing.rent')
+      .filter((e) => e.period === w.period && e.subjects.includes(`rent.${String(region)}`))
+      .at(-1);
+    const rent = said?.data['rentPerDwelling'];
+    const letting = said?.data['dwellings'];
+    let taken = 0;
+    for (const e of w.journal.ofKind('housing.foreclosed')) {
+      if (e.period !== w.period) continue;
+      const n = e.data['dwellings'];
+      if (typeof n === 'number') taken = add(taken, n, 'dwellings taken this period');
+    }
+    housing.push({
+      region: String(region),
+      dwellings: w.register.heldTotal(id).value,
+      price: print.some ? print.value.price : null,
+      rent: typeof rent === 'number' ? rent : null,
+      let: typeof letting === 'number' ? letting : 0,
+      foreclosed: taken,
+    });
+  }
+
   return {
     seed: w.seed,
     period: w.period,
     map,
     sectors: sectorViews,
+    housing,
     date: formatCivil(w.calendar.startOf(w.period)),
     scope,
     parties: w.parties.all().map((p) => ({
