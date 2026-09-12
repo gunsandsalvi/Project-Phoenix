@@ -1,41 +1,50 @@
 /**
- * The map: a grid of tiles, and the places they make up.
+ * The map: what every tile of the world is made of, and the places they make up.
  *
- * @spec Freight A1 Freight A4 Freight B4 Freight E1 Commodities Spot A1 Commodities Spot D1 Goods B4 Law 2 Law 4 Law 6 Law 15 Law 19
+ * @spec Freight A1 Freight A4 Freight B4 Freight E1 Commodities Spot A1 Commodities Spot D1 Goods B4 Capital Programme C1 Law 2 Law 4 Law 6 Law 15 Law 19
  *
- * THE NAME AND THE READS ARE THE KERNEL'S (ARCHITECTURE 4.9b). Four modules need the map — freight
- * for where a voyage goes, firms for what the ground yields, the environment for where a climate is
- * drawn, the observer for the picture — and four parsers would be four ways to misread one world.
- * The DRAW is the seed's (`seeds/map.ts`); nothing in the period loop writes any of this.
+ * A TILE'S CHARACTERISTICS ARE PRIMITIVES. Law 2 admits exactly five kinds of declared number and
+ * says real-world PRIMITIVES may be imported — it is real-world equilibria that may not — and the
+ * physical world is the thing that clause exists to let in. So a tile carries its place, a MIX of
+ * terrain, its elevation and a deposit of every declared resource; all of them drawn, none of them
+ * derived from another, one writer (the draw) and many readers.
  *
- * EVERY TILE BELONGS TO EXACTLY ONE PLACE, water included. That is not tidiness: weather is
- * published per place, so a thing at sea has to be IN somewhere or nothing can happen to it, which
- * is the whole reason a ship between two countries used to be immune to storms.
+ * A MIX RATHER THAN A TYPE, because a fifty-kilometre square is not one thing and because the mix
+ * takes every threshold out of what follows: crossing a tile costs `sum(share / kmPerDay)` — you
+ * have to cross all of it — what gets through a gale is the share-weighted survival, and what a
+ * hectare yields is the share-weighted quality. Nothing steps at a boundary (Law 6). Water is a
+ * terrain kind like the others: a part-water tile is a marsh to a lorry and a shallow to a hull,
+ * and both are slow, which is what a coast is.
  *
- * LAND AND WATER ARE NOT A FLAG. What separates them is data already needed for something else: a
- * terrain declares the capital kind that moves over it, so a coast is where that kind changes, and
- * `path` walks tiles that share one. Nothing asks `isWater` (Law 15). Which places are economic
- * REGIONS is the registry's fact and not the grid's, so narrowing a place to a region is a read
- * against the registry and never a cast.
+ * EVERY DECLARED RESOURCE IS ON EVERY TILE, consumed or not, because THE MAP MUST BE STABLE: if
+ * adding a line that smelts ore re-drew the world, one seed would mean a different place every time
+ * the economy grew and no two runs would compare. Oil is under the ground before anybody drills it.
+ *
+ * FAVOURABILITY IS NOT HERE. What a hectare yields, what building costs, how fast a voyage crosses
+ * and what gets through a gale are READS over these primitives, computed where they are used and
+ * never stored; which industry sits where is a firm's own decision reading them (13c.2), never a
+ * score and never a weighted coefficient.
+ *
+ * The name and the reads are the kernel's (ARCHITECTURE 4.9b): four modules need the map and four
+ * parsers would be four ways to misread one world. The draw is the seed's (`seeds/map.ts`).
  */
 import { InvalidRegistry } from '../core/errors.js';
+import { div, largest, sum } from '../core/num.js';
 import type { Brand, ParamId, PlaceId, RegionId, TileIndex } from '../core/ids.js';
 
-/** What grows in or is dug out of a tile. Exactly the kinds a recipe names (Law 16). */
-export type GroundKind = Brand<string, 'GroundKind'>;
 export type TerrainId = Brand<string, 'TerrainId'>;
-export const groundKind = (s: string): GroundKind => s as GroundKind;
+export type ResourceId = Brand<string, 'ResourceId'>;
 export const terrainId = (s: string): TerrainId => s as TerrainId;
+export const resourceId = (s: string): ResourceId => s as ResourceId;
 
-/**
- * What a tile is made of. DATA (Law 15): every number on it is a parameter the registry declares,
- * and no mechanism branches on which terrain a tile has — it reads these.
- */
+/** What the ground is like to cross, to build on and to be caught out in. Registry DATA (Law 15). */
 export interface TerrainDecl {
   readonly id: TerrainId;
   readonly name: string;
-  /** TECHNOLOGY: how far a loaded carrier gets across this ground in a day. */
+  /** TECHNOLOGY: how far a loaded carrier gets across ground like this in a day. */
   readonly kmPerDay: ParamId;
+  /** Capital Programme C1: what putting up a unit of plant on ground like this takes, per km². */
+  readonly buildKm2: ParamId;
   /**
    * Freight B4: what a passage over this ground stands, as a multiple of an ordinary period's wind,
    * and how sharply it stops standing it. Not a threshold: what gets through is
@@ -43,27 +52,40 @@ export interface TerrainDecl {
    */
   readonly standsWind: ParamId;
   readonly windHardness: ParamId;
-  /**
-   * The capital kind that moves over this ground — hulls over water, vehicles over land. This is
-   * the ONLY thing that distinguishes sea from land in the grid, and it is here because a path is
-   * a walk of tiles that share one (Law 15).
-   */
-  readonly carriedBy: string;
-  /** How good this ground is for each kind, as a multiple of ordinary ground. One per declared kind. */
-  readonly ground: Readonly<Record<string, ParamId>>;
+  /** The capital kinds that move over it — hulls over water, vehicles over land, both over neither. */
+  readonly carries: readonly string[];
+  readonly why: string;
 }
 
-/** A stretch of water. It has no ground, no plant, no people and no money — a place, and only that. */
+/**
+ * What is in or on the ground. Registry DATA, and ADDING ONE IS ONE ROW: an assembly fault requires
+ * an `inTerrain` entry for every declared terrain, so a resource added without saying where it is
+ * found is refused here rather than discovered later as a hole.
+ */
+export interface ResourceDecl {
+  readonly id: ResourceId;
+  readonly name: string;
+  /** What a tile's endowment of it is counted in (Law 8: the unit is part of the number). */
+  readonly unit: string;
+  /** TECHNOLOGY: deposits or spread — how correlated across neighbouring tiles the draw is. */
+  readonly clumping: ParamId;
+  /** TECHNOLOGY: how much ground of each declared terrain tends to hold. One entry per terrain. */
+  readonly inTerrain: Readonly<Record<string, ParamId>>;
+  readonly why: string;
+}
+
+/** A stretch of water: a place, and only that — it has no ground, no plant, no people and no money. */
 export interface SeaAreaDecl {
   readonly id: PlaceId;
   readonly name: string;
 }
 
 /**
- * The drawn world. The three arrays are index-aligned with the tile grid, row-major, and `places`
- * is index-aligned with what `place` holds.
+ * The drawn world. Written once, by the draw, and read for the rest of the run.
  *
- * Law 18: the layout is free. These are typed arrays because the grid is read on every voyage of
+ * `mix` and `deposit` are keyed by the DECLARED ID rather than held as parallel arrays, so adding a
+ * terrain or a resource is one table row and one layer and nothing can silently mis-index (Law 4).
+ * Law 18: the layout is free — these are typed arrays because the grid is walked on every voyage of
  * every period and never written after the draw.
  */
 export interface GeographyDecl {
@@ -72,16 +94,23 @@ export interface GeographyDecl {
   readonly cols: number;
   readonly rows: number;
   readonly terrains: readonly TerrainDecl[];
-  readonly groundKinds: readonly GroundKind[];
+  readonly resources: readonly ResourceDecl[];
   readonly seaAreas: readonly SeaAreaDecl[];
   /** Every place in the world, land and water, in the order `place` indexes them. */
   readonly places: readonly PlaceId[];
-  /** Per tile: an index into `terrains`. */
-  readonly terrain: Int8Array;
-  /** Per tile: an index into `places`. Every tile has one. */
+  /** Per tile: an index into `places`. Every tile is somewhere. */
   readonly place: Int16Array;
-  /** Per declared ground kind, per tile: how good that ground is here. Strictly positive on land. */
-  readonly ground: readonly Float64Array[];
+  /** Per tile: metres above the water. Negative is how deep it is. */
+  readonly elevation: Float64Array;
+  /** Per terrain, per tile: the share of the tile that is that. The shares sum to one. */
+  readonly mix: ReadonlyMap<TerrainId, Float64Array>;
+  /** Per resource, per tile: how much of it is here, in the resource's own unit. */
+  readonly deposit: ReadonlyMap<ResourceId, Float64Array>;
+}
+
+/** What a number on a terrain is worth, for the reads that weigh a tile's mix. */
+export interface TerrainReads {
+  ratio(id: ParamId): number;
 }
 
 export const tileCount = (g: GeographyDecl): number => g.cols * g.rows;
@@ -93,37 +122,95 @@ export function tileAt(g: GeographyDecl, col: number, row: number): TileIndex {
 export const colOf = (g: GeographyDecl, t: TileIndex): number => t % g.cols;
 export const rowOf = (g: GeographyDecl, t: TileIndex): number => Math.floor(t / g.cols);
 
-function placeIndex(g: GeographyDecl, t: TileIndex): number {
-  const i = g.place[t];
-  if (i === undefined) throw new InvalidRegistry('Freight A1', `tile ${t} is off the world`);
-  return i;
+function at(row: Float64Array | undefined, t: TileIndex, what: string): number {
+  const v = row?.[t];
+  if (v === undefined) throw new InvalidRegistry('Freight A1', `tile ${t} has no ${what}`);
+  return v;
 }
 
 /** Where a tile is. Every tile is somewhere, which is what lets weather reach a thing at sea. */
 export function placeAt(g: GeographyDecl, t: TileIndex): PlaceId {
-  const p = g.places[placeIndex(g, t)];
+  const i = g.place[t];
+  const p = i === undefined ? undefined : g.places[i];
   if (p === undefined) throw new InvalidRegistry('Freight A1', `tile ${t} belongs to no place`);
   return p;
 }
 
-export function terrainAt(g: GeographyDecl, t: TileIndex): TerrainDecl {
-  const i = g.terrain[t];
-  const d = i === undefined ? undefined : g.terrains[i];
-  if (d === undefined) throw new InvalidRegistry('Freight A1', `tile ${t} has no terrain`);
-  return d;
+export const elevationAt = (g: GeographyDecl, t: TileIndex): number =>
+  at(g.elevation, t, 'elevation');
+
+/** How much of a tile is ground of this kind. A share, and the shares of a tile sum to one. */
+export const shareOf = (g: GeographyDecl, kind: TerrainId, t: TileIndex): number =>
+  at(g.mix.get(kind), t, `a share of ${kind}`);
+
+/** How much of a resource is in a tile, in that resource's own unit (Law 8). */
+export const depositAt = (g: GeographyDecl, r: ResourceId, t: TileIndex): number =>
+  at(g.deposit.get(r), t, `a deposit of ${r}`);
+
+/**
+ * What a tile yields of a resource: what is in it, times what ground of this mix does for it.
+ * A READ over primitives, computed where it is used and never stored (Law 19).
+ */
+export function tileYield(
+  g: GeographyDecl,
+  reads: TerrainReads,
+  r: ResourceId,
+  t: TileIndex,
+): number {
+  const d = g.resources.find((x) => x.id === r);
+  if (d === undefined) throw new InvalidRegistry('Goods B4', `resource ${r} is not declared`);
+  const terms = g.terrains.map((x) => {
+    const p = d.inTerrain[x.id];
+    if (p === undefined) {
+      throw new InvalidRegistry('Goods B4', `${r} says nothing about ${x.id} ground`);
+    }
+    return shareOf(g, x.id, t) * reads.ratio(p);
+  });
+  return depositAt(g, r, t) * sum(terms).value;
 }
 
-/** What moves over a tile. The only thing that separates sea from land, and it is data (Law 15). */
-export const carriedOver = (g: GeographyDecl, t: TileIndex): string => terrainAt(g, t).carriedBy;
-
-export function groundAt(g: GeographyDecl, kind: GroundKind, t: TileIndex): number {
-  const k = g.groundKinds.indexOf(kind);
-  const row = k < 0 ? undefined : g.ground[k];
-  const v = row?.[t];
-  if (v === undefined) {
-    throw new InvalidRegistry('Goods B4', `tile ${t} has no ${kind} ground declared`);
+/**
+ * How many days crossing a tile costs a carrier of this kind: `sum(share / kmPerDay)` over the mix,
+ * because you have to cross ALL of it. A tile that is part marsh is slow for a lorry and a tile that
+ * is part shallow is slow for a hull, continuously and with nothing stepping at a boundary (Law 6).
+ * `undefined` is ground this kind does not cross at all, which is a real answer and not a zero.
+ */
+export function daysAcross(
+  g: GeographyDecl,
+  reads: TerrainReads,
+  t: TileIndex,
+  by: string,
+  km: number,
+): number | undefined {
+  const terms: number[] = [];
+  for (const x of g.terrains) {
+    const share = shareOf(g, x.id, t);
+    if (share === 0) continue;
+    if (!x.carries.includes(by)) return undefined;
+    terms.push(div(share * km, reads.ratio(x.kmPerDay), `days over ${x.id}`));
   }
-  return v;
+  return sum(terms).value;
+}
+
+/** Capital Programme C1: what putting plant on this tile takes, share-weighted over its mix. */
+export function buildOn(g: GeographyDecl, reads: TerrainReads, t: TileIndex): number {
+  return sum(g.terrains.map((x) => shareOf(g, x.id, t) * reads.ratio(x.buildKm2))).value;
+}
+
+/**
+ * Freight B4: what a passage over a tile stands. A leg is as open as its WORST point, so this is the
+ * least of what its mix stands rather than an average of it — an average would let a mile of open
+ * plain excuse the pass above it (`largest` in core/num.ts is the one place a comparison lives).
+ */
+export function standsIn(g: GeographyDecl, reads: TerrainReads, t: TileIndex): number {
+  const present = g.terrains.filter((x) => shareOf(g, x.id, t) > 0);
+  if (present.length === 0) {
+    throw new InvalidRegistry('Freight B4', `tile ${t} is made of nothing`);
+  }
+  return -largest(
+    present.map((x) => -reads.ratio(x.standsWind)),
+    'what the weakest ground on this tile stands',
+  );
 }
 
 /** The four tiles that share an EDGE with this one. A shared corner is not a border. */
@@ -180,14 +267,20 @@ export function touches(g: GeographyDecl, a: PlaceId, b: PlaceId): boolean {
   return false;
 }
 
-/** A place's tiles that touch ground something else moves over — where a port can be (Freight A1). */
+/**
+ * A region's tiles that touch a sea area's — where a port can be. Read off the PLACES, which are
+ * drawn primitives, rather than off a flag that could disagree with them (Law 4).
+ */
 export function coastOf(g: GeographyDecl, place: PlaceId): TileIndex[] {
-  const out: TileIndex[] = [];
-  for (const t of tilesOf(g, place)) {
-    const here = carriedOver(g, t);
-    if (edgeNeighbours(g, t).some((n) => carriedOver(g, n) !== here)) out.push(t);
-  }
-  return out;
+  const water = new Set(g.seaAreas.map((s) => g.places.indexOf(s.id)));
+  const here = g.places.indexOf(place);
+  if (water.has(here)) return [];
+  return tilesOf(g, place).filter((t) =>
+    edgeNeighbours(g, t).some((n) => {
+      const i = g.place[n];
+      return i !== undefined && water.has(i);
+    }),
+  );
 }
 
 /**
@@ -208,17 +301,34 @@ export function geographyFaults(
     return faults;
   }
   if (!(g.tileKm > 0) || !Number.isFinite(g.tileKm)) faults.push(`a tile is ${g.tileKm} km across`);
-  if (g.terrain.length !== n) faults.push(`${g.terrain.length} terrains for ${n} tiles`);
   if (g.place.length !== n) faults.push(`${g.place.length} places for ${n} tiles`);
-  for (const row of g.ground) {
-    if (row.length !== n) faults.push(`${row.length} ground readings for ${n} tiles`);
+  if (g.elevation.length !== n) faults.push(`${g.elevation.length} elevations for ${n} tiles`);
+  if (g.terrains.length === 0) faults.push('a world made of no kind of ground');
+  // ADDING A RESOURCE IS ONE ROW, and this is what makes that safe: a row that does not say where
+  // the thing is found is refused here rather than found later as a hole in a yield.
+  for (const r of g.resources) {
+    for (const x of g.terrains) {
+      if (r.inTerrain[x.id] === undefined) faults.push(`${r.id} says nothing about ${x.id} ground`);
+    }
+    const layer = g.deposit.get(r.id);
+    if (layer === undefined) faults.push(`${r.id} is declared and drawn nowhere`);
+    else if (layer.length !== n) faults.push(`${layer.length} ${r.id} readings for ${n} tiles`);
   }
-  if (g.ground.length !== g.groundKinds.length) {
-    faults.push(`${g.ground.length} ground layers for ${g.groundKinds.length} kinds`);
+  for (const x of g.terrains) {
+    const layer = g.mix.get(x.id);
+    if (layer === undefined) faults.push(`${x.id} is declared and is nowhere in the mix`);
+    else if (layer.length !== n) faults.push(`${layer.length} ${x.id} shares for ${n} tiles`);
+    if (x.carries.length === 0) faults.push(`nothing at all crosses ${x.id}`);
   }
-  for (const t of g.terrains) {
-    for (const k of g.groundKinds) {
-      if (t.ground[k] === undefined) faults.push(`terrain ${t.id} declares no ${k} ground`);
+  if (faults.length > 0) return [...new Set(faults)];
+  // A tile is made of its ground and of nothing else: the shares are what it IS, so they come to
+  // one exactly, to the dust of the terms that made them (Law 7).
+  for (let t = 0; t < n; t += 1) {
+    const shares = g.terrains.map((x) => shareOf(g, x.id, t as TileIndex));
+    const s = sum(shares);
+    if (Math.abs(s.value - 1) > s.dust) {
+      faults.push(`tile ${t} is made of ${s.value} of a tile`);
+      break;
     }
   }
   const seaIds = new Set<PlaceId>(g.seaAreas.map((s) => s.id));
@@ -231,13 +341,12 @@ export function geographyFaults(
   for (const r of regions) {
     if (!g.places.includes(r)) faults.push(`region ${r} is on no tile`);
   }
-  // Every tile names a place that exists, and every place has at least one tile.
   const seen = new Set<number>();
   for (let t = 0; t < n; t += 1) {
     const i = g.place[t];
     if (i === undefined || i < 0 || i >= g.places.length) {
       faults.push(`tile ${t} names place ${String(i)}, which does not exist`);
-      return faults;
+      return [...new Set(faults)];
     }
     seen.add(i);
   }

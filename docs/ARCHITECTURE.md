@@ -755,7 +755,24 @@ water included, because weather is published per place and a thing at sea has to
 the weather to reach it. `PlaceId` is the union of the two brands rather than a third, so a region
 goes wherever a place is wanted and narrowing back is a read against the registry, never a cast.
 The grid itself is `registry/geography.ts`: the kernel owns the name and the reads (4.9b), the seed
-owns the draw, and nothing in the period loop writes it. A
+owns the draw, and nothing in the period loop writes it.
+
+**A tile's characteristics are Law 2 TECHNOLOGY primitives**, not derivations. Every tile carries
+its place, a MIX of terrain shares summing to one, its elevation in metres, and a deposit of every
+declared resource — all drawn, one writer, many readers. A mix rather than a type because a
+fifty-kilometre square is not one thing, and because the mix takes every threshold out of what
+follows: crossing costs `Σ share / kmPerDay` (you cross all of it), what gets through a gale is the
+worst ground on the tile, what a hectare yields is the share-weighted quality. Water is a terrain
+kind like any other. `TerrainDecl` and `ResourceDecl` are registry tables and **adding a row is the
+whole of adding a terrain or a resource** — an assembly fault requires every resource to say what it
+does on every terrain, so an incomplete row is refused rather than discovered later as a hole.
+Every declared resource is drawn on every tile whether or not a recipe consumes it, because the map
+must be STABLE: a world that re-draws when a line is added is not a world.
+
+**Favourability is a read, never a stored score.** What a hectare yields, what plant costs to erect
+here, how fast a voyage crosses and what survives a gale are arithmetic over those primitives,
+computed where used. Which industry sits where is a firm's own decision reading them, never a
+weighted coefficient. A
 module's own tables are its own registry, in `mechanisms/<system>/data.ts` — the treasury's maturity
 grid, the goods and their recipes — and the numbers in them are declared parameters generated from
 those tables, so a table row and a register entry are never two copies of one number. Behaviour that varies by kind lives in a **profile** behind a dispatch table keyed by kind,
