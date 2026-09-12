@@ -221,6 +221,26 @@ function refuseValueRecipes(ctx: SeedContext, rows: readonly GoodDecl[]): void {
 }
 
 /**
+ * 13c.2, Commodities Spot A3: A THING THAT CANNOT BE MOVED CANNOT BE WAREHOUSED EITHER, so a line
+ * declaring both is a contradiction and it throws where it is declared rather than being noticed
+ * later by a session with nothing to clear. A store is somewhere a thing waits that is not where it
+ * will be used, and getting it there is the move the line has just said is impossible.
+ *
+ * It is a FORBID rather than a derivation (Part II): `portable` and `storagePerUnit` are separate
+ * technology facts about separate things — whether it can be loaded, and how much room it takes —
+ * and one is not the other. What is checked is that the pair a line declares is a pair that exists.
+ */
+function refuseUnmovableStores(rows: readonly GoodDecl[]): void {
+  for (const d of rows) {
+    forbid(
+      d.portable || d.storagePerUnit === null,
+      'Commodities Spot A3',
+      `${d.subUnit} cannot be moved and declares ${d.storagePerUnit} of covered space a unit: a store is somewhere a thing waits that is not where it will be used`,
+    );
+  }
+}
+
+/**
  * Part XII, Commodities Spot D5: what exists now is what existed, plus what was made, less what was
  * used up — per good and region, every period. The two records are independent: the register's own walk over every
  * holding, and the create and destroy legs that said why units appeared or left. The kernel checks
@@ -446,6 +466,7 @@ export function goods(
     families: [unitsIdentity(physical), recipeIdentity()],
     seed(ctx: SeedContext): void {
       refuseValueRecipes(ctx, rows);
+      refuseUnmovableStores(rows);
       const where = regions ?? [...ctx.registry.regions.values()].map((r) => r.id);
       for (const id0 of where) {
         const region = ctx.registry.region(id0);

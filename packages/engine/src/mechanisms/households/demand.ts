@@ -17,7 +17,7 @@
  * expects to be charged (§46 B3) against what a saver thinks a claim is worth (Equity B3) — and the
  * levels come from each of those separately. What they share is this, and it lives in one place.
  */
-import { div, material, mul, sub } from '../../core/num.js';
+import { atMost, div, material, mul, sub } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 
 /** One limit order of a curve: a level, and the extra this level adds to what the cell wants. */
@@ -44,6 +44,37 @@ export function rungsOver(levels: readonly number[], budget: number): Rung[] {
     const extra = sub(wants, taken, 'the extra this level adds');
     taken = wants;
     // Law 7: an increment that is the rounding of the subtraction is not a size it asked for.
+    if (!material(extra, 2, wants)) continue;
+    out.push({ price, qty: extra });
+  }
+  return out;
+}
+
+
+/**
+ * 13c.2, Goods C1: THE SAME CURVE, UNDER A WANT.
+ *
+ * A household does not buy grain by the lorry-load because it is cheap: it buys what it eats. So
+ * the size at a level is what the money it set aside would take there, or what it wanted, whichever
+ * runs out first — `money / price` while the money binds, flat at the want once the price has
+ * fallen far enough that it does not. What it does not spend it keeps, and that is a saving nobody
+ * decided on separately: it is what happens when a thing costs less than the cell thought it would.
+ *
+ * Law 6: there is no bound in it. Both terms are quantities the cell itself named — one from its
+ * budget, one from its preference — and which is smaller at a level is arithmetic, not a cap.
+ */
+export function rungsUpTo(levels: readonly number[], money: number, want: number): Rung[] {
+  if (money <= 0 || want <= 0) return [];
+  const out: Rung[] = [];
+  let taken = 0;
+  // Law 8, XI-15: whole pieces per member, and DOWN, for the reason `rungsOver` rounds down.
+  const ceiling = downTick(want);
+  for (const price of [...levels].sort((a, b) => b - a)) {
+    if (price <= 0) continue;
+    const afford = downTick(div(money, price, 'units the money it set aside would take'));
+    const wants = atMost(afford, ceiling, 'it buys what it wanted, not what happened to be cheap');
+    const extra = sub(wants, taken, 'the extra this level adds');
+    taken = wants;
     if (!material(extra, 2, wants)) continue;
     out.push({ price, qty: extra });
   }

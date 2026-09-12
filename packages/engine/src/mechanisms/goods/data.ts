@@ -53,6 +53,19 @@ export interface GoodDecl {
   /** A3, E4: the fraction of what is in store that perishes each period. */
   readonly spoilagePerPeriod: number;
   readonly spoilageWhy: string;
+  /**
+   * A1, Freight A3, 13c.2: WHETHER A UNIT OF THIS CAN BE SOMEWHERE OTHER THAN WHERE IT WAS MADE.
+   *
+   * Technology, and the one fact that divides a manufacture from a service. A tonne can be loaded;
+   * a diagnosis, a lesson, a night's lodging and a haircut cannot, at any price. It is declared on
+   * the GOOD and never on the holder, because whether a thing can be moved is a fact about the
+   * thing, and freight reads it to decide what it can carry.
+   *
+   * There is no `portableWhy` beside it, deliberately (Law 16): for a physical good the value is
+   * the whole of the statement and thirty-six copies of "it is a thing and things can be loaded"
+   * would say nothing. Why a SERVICE is not portable is stated once, where the services are.
+   */
+  readonly portable: boolean;
   /** A2: what one unit is made from. Empty means it is drawn from labour and nature alone. */
   readonly inputs: readonly RecipeInputDecl[];
   /** A2.c: hours of labour per unit of output. */
@@ -98,6 +111,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'grain',
     unit: 'tonnes',
     name: 'grain',
+    portable: true,
     spoilagePerPeriod: 0.004,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Grown. What a bad season takes, it takes here first.',
     inputs: [
@@ -126,6 +140,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'livestock',
     unit: 'head',
     name: 'livestock',
+    portable: true,
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Grazed and finished on grain.',
     inputs: [
@@ -154,6 +169,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'timberLog',
     unit: 'cubic metres',
     name: 'timber logs',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Felled. Slow to grow and slow to cut.',
     inputs: [
@@ -181,6 +197,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'ironOre',
     unit: 'tonnes',
     name: 'iron ore',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dug. Drawn from the ground and labour alone, so nothing upstream of it can be short.',
     inputs: [
@@ -208,6 +225,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'coalRaw',
     unit: 'tonnes',
     name: 'coal',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dug. What this world burns for power and smelts with.',
     inputs: [
@@ -235,6 +253,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'crude',
     unit: 'barrels',
     name: 'crude oil',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Pumped. Fuel and chemicals both start here.',
     inputs: [
@@ -262,6 +281,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'limestoneRaw',
     unit: 'tonnes',
     name: 'limestone',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Quarried. Cement and glass both start here.',
     inputs: [
@@ -289,6 +309,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'bauxite',
     unit: 'tonnes',
     name: 'bauxite',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dug. The light metal begins here.',
     inputs: [
@@ -316,6 +337,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'power',
     unit: 'MWh',
     name: 'electric power',
+    portable: true,
     spoilagePerPeriod: 1,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Generated and consumed in the same period: nobody stores a megawatt-hour, which is why an outage is a real shortage rather than a dearer price.',
     inputs: [
@@ -344,6 +366,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'fuel',
     unit: 'litres',
     name: 'refined fuel',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Refined. What moves what is not moved by hand.',
     inputs: [
@@ -372,6 +395,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'steel',
     unit: 'tonnes',
     name: 'steel',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Smelted. Most made things are built on it or out of it.',
     inputs: [
@@ -402,6 +426,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'aluminium',
     unit: 'tonnes',
     name: 'aluminium',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Smelted, and it is mostly electricity: a power shortage is an aluminium shortage a period later.',
     inputs: [
@@ -431,6 +456,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'lumber',
     unit: 'cubic metres',
     name: 'sawn lumber',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Sawn.',
     inputs: [
@@ -460,6 +486,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'cement',
     unit: 'tonnes',
     name: 'cement',
+    portable: true,
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Burned. Dear to move, so it is made near where it is poured.',
     inputs: [
@@ -490,6 +517,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'chemicals',
     unit: 'tonnes',
     name: 'industrial chemicals',
+    portable: true,
     spoilagePerPeriod: 0.003,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Cracked from crude.',
     inputs: [
@@ -519,6 +547,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'fertiliser',
     unit: 'tonnes',
     name: 'fertiliser',
+    portable: true,
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Made of chemicals and power, and it goes back into the field — so an energy shock reaches the price of bread by two paths.',
     inputs: [
@@ -548,6 +577,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'medicine',
     unit: 'tonnes',
     name: 'medicines',
+    portable: true,
     spoilagePerPeriod: 0.01,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Synthesised. Low yield, because most of a batch fails its test.',
     inputs: [
@@ -577,6 +607,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'flour',
     unit: 'tonnes',
     name: 'flour',
+    portable: true,
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Milled. The intermediate nobody eats.',
     inputs: [
@@ -606,6 +637,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'meat',
     unit: 'tonnes',
     name: 'meat',
+    portable: true,
     spoilagePerPeriod: 0.04,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dressed. It keeps badly, so it moves fast or not at all.',
     inputs: [
@@ -635,6 +667,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'wool',
     unit: 'tonnes',
     name: 'wool',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Clipped. The other thing a herd gives.',
     inputs: [
@@ -663,6 +696,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'cloth',
     unit: 'tonnes',
     name: 'cloth',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Spun and woven.',
     inputs: [
@@ -693,6 +727,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'clothing',
     unit: 'units',
     name: 'clothing',
+    portable: true,
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Cut and sewn.',
     inputs: [
@@ -722,6 +757,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'glass',
     unit: 'tonnes',
     name: 'glass',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Melted. Fragile and heavy, and wanted everywhere.',
     inputs: [
@@ -751,6 +787,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'plastic',
     unit: 'tonnes',
     name: 'plastics',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Moulded. Light, which is why it travels.',
     inputs: [
@@ -780,6 +817,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'rubber',
     unit: 'tonnes',
     name: 'rubber',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Compounded. Nothing rolls without it.',
     inputs: [
@@ -809,6 +847,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'paper',
     unit: 'tonnes',
     name: 'paper',
+    portable: true,
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Pulped and pressed.',
     inputs: [
@@ -839,6 +878,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'bread',
     unit: 'tonnes',
     name: 'bread',
+    portable: true,
     spoilagePerPeriod: 0.25,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Baked. It goes stale in days, so it is made near where it is eaten.',
     inputs: [
@@ -868,6 +908,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'concrete',
     unit: 'cubic metres',
     name: 'concrete',
+    portable: true,
     spoilagePerPeriod: 0.3,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Mixed and poured the same period: nobody stores it, which is what its spoilage says.',
     inputs: [
@@ -897,6 +938,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'machine',
     unit: 'machines',
     name: 'machinery',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. The capital good: what every line\'s capacity is made of, including its own.',
     inputs: [
@@ -927,6 +969,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'vessel',
     unit: 'vessels',
     name: 'vessels',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Built in a yard over half a year, which is why freight capacity answers a shortage slowly.',
     inputs: [
@@ -957,6 +1000,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'vehicle',
     unit: 'vehicles',
     name: 'vehicles',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Assembled out of six industries at once.',
     inputs: [
@@ -990,6 +1034,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'electronics',
     unit: 'units',
     name: 'electronics',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Assembled from very little of a great many things. Most of what is started fails a test.',
     inputs: [
@@ -1021,6 +1066,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'appliance',
     unit: 'units',
     name: 'appliances',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Assembled. What a household replaces rather than repairs.',
     inputs: [
@@ -1052,6 +1098,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'furniture',
     unit: 'units',
     name: 'furniture',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Made from lumber. Bulky, so it is made near its market.',
     inputs: [
@@ -1082,6 +1129,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'packaging',
     unit: 'units',
     name: 'packaging',
+    portable: true,
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. What everything else moves in. Nobody buys it for itself.',
     inputs: [
@@ -1112,6 +1160,7 @@ export const GOODS: readonly GoodDecl[] = [
     subUnit: 'building',
     unit: 'buildings',
     name: 'buildings',
+    portable: true,
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Built on site over six periods: the longest lead time in this world.',
     inputs: [

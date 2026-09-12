@@ -1,7 +1,7 @@
 /**
  * What a household decides to spend, and the demand it takes to market with it.
  *
- * @spec Households A2.f Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households D6 Goods C1 Expectations B3 Expectations C1 XI-15 XI-16 Law 2 Law 6
+ * @spec Households A2.a Households A2.b Households A2.f Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households D6 Goods A2.a Goods C1 Expectations B3 Expectations C1 XI-15 XI-16 Law 2 Law 6
  *
  * EVERY NUMBER HERE IS PER MEMBER of the cell that decided it (A2.f, XI-15). A cell is one possible
  * household carried with a multiplicity, so what it decides is what one household decides, and the
@@ -20,11 +20,18 @@
  * it does not buy. That is not a bound on the decision — it is what a budget is — and when credit
  * exists (worklist 6) the constraint becomes a decision somebody else takes.
  *
- * WHAT IT WILL PAY is a schedule, not a point (Goods C1, Clearing A2). It has decided what to spend
- * on a good; how much of the good that is depends on the price, and the curve through those pairs
- * IS its demand. It posts that curve over the range of prices it thinks are possible — its own
- * expectation, widened by its own surprises about that price — so a cell that has seen prices move
- * bids across a wider range than one that has not.
+ * WHAT IT BUYS IS A BASKET (13c.2). Its cohort declares two physical quantities per good — what a
+ * member has before anything else, and what it takes on top when the money reaches — so what it
+ * takes to market is those quantities, not a division of its money. It fills the needs first and
+ * spreads what is left over the wants, at the prices IT expects; what share of its income ends up
+ * going on food is an outcome of that meeting the prices it actually meets.
+ *
+ * WHAT IT WILL PAY is a schedule, not a point (Goods C1, Clearing A2). How much of a good it can
+ * have depends on the price, and the curve through those pairs IS its demand: the money it set
+ * aside divided by the price while the money binds, flat at what it wanted once it does not. It
+ * posts that curve over the range of prices it thinks are possible — its own expectation, widened
+ * by its own surprises about that price — so a cell that has seen prices move bids across a wider
+ * range than one that has not.
  */
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { add, atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
@@ -33,7 +40,7 @@ import { keyOf, type CellParty } from '../../parties/party.js';
 import type { ParticipantView } from '../../world/context.js';
 import { goodId, goodMarketId } from '../../registry/physical.js';
 import type { ConsumptionDecl } from './data.js';
-import { rungsOver } from './demand.js';
+import { rungsUpTo } from './demand.js';
 
 /** One line of a cell's demand: a size at a level, in the market it is posted in. */
 export interface DemandStep {
@@ -61,7 +68,11 @@ export interface HouseholdParams {
  * holds in the account alone is `cash` and has not been the whole of it since money funds existed.
  */
 export interface Spending {
-  /** What it will actually spend, per member. */
+  /**
+   * The MOST it will spend, per member. What it actually spends is what its basket cost it, and
+   * since 13c.2 that can be less: a cell whose needs and wants are covered for less than this keeps
+   * the difference, which is a saving nobody decided on separately (`demandOf`).
+   */
   readonly spend: number;
   /** What it wanted to spend before its own budget had a say (C1.d). */
   readonly wanted: number;
@@ -153,9 +164,28 @@ function wealthOf(view: ParticipantView, cash: number): number {
 }
 
 /**
- * C3, C4: what it takes to market. The share of its spending that goes on a good is its cohort's
- * preference; what it will actually pay for the units is that share less the tax it will owe on
- * them (C4: it buys at a price it pays, and the tax is part of what a purchase costs it).
+ * C3, C4, 13c.2: WHAT IT TAKES TO MARKET, which is a basket and not a division of its money.
+ *
+ * Its cohort's preference is two quantities per good (`data.ts`): what it will have before anything
+ * else, and what it takes on top when the money reaches. So it fills its NEEDS first out of what it
+ * decided to spend, and spreads what is left over its WANTS in the proportion it wanted them — and
+ * if what is left will not cover them it takes the same fraction of each, because nothing here
+ * knows which of two wants it would give up first and inventing an order would be inventing a
+ * preference nobody declared.
+ *
+ * WHAT COSTS WHAT is the cell's own expectation of each price (§46 B3), never a print it has not
+ * seen and never a level stated anywhere. So the split is made at the prices it EXPECTS, and the
+ * prices it MEETS are the market's business: a cell whose expectations were wrong buys less of a
+ * thing that turned out dear and keeps the change on one that turned out cheap. That is the whole
+ * of the income effect, and there is no elasticity anywhere in it.
+ *
+ * The share of its income that goes on food is therefore an OUTCOME of two declared quantities
+ * meeting two prices, and it falls as income rises with nothing stating that it does: a cell whose
+ * needs are covered puts everything further into wants, and a cell whose needs are not covered puts
+ * everything into needs. Engel's law as arithmetic (A2.a).
+ *
+ * C4: the tax is part of what a purchase costs it, so it is in what it works the basket out
+ * against, and out of the price it posts — what it bids is what reaches the seller.
  */
 export function demandOf(
   view: ParticipantView,
@@ -165,35 +195,76 @@ export function demandOf(
 ): DemandStep[] {
   const self = view.self;
   if (self.representation !== 'cell') return [];
-  const out: DemandStep[] = [];
+  const lines: Line[] = [];
   for (const row of rows) {
     if (row.cohort !== keyOf(self, 'cohort')) continue;
-    const budget = div(
-      mul(spend, row.share, 'what it spends on this good'),
-      add(1, p.consumptionTax, 'with the tax it will owe on it'),
-      'what reaches the seller',
+    const line = lineFor(view, self, row, p);
+    if (line !== undefined) lines.push(line);
+  }
+  const needCost = sum(lines.map((l) => mul(l.row.neededPerMember, l.perUnit, 'what it must have costs'))).value;
+  const wantCost = sum(lines.map((l) => mul(l.row.wantedPerMember, l.perUnit, 'what it wants on top costs'))).value;
+  // C1.d: it eats before it does anything else, and it eats out of money it has.
+  const toNeeds = atMost(spend, needCost, 'it needs what it needs and pays with what it has');
+  const left = sub(spend, toNeeds, 'what is left when it has had what it must have');
+  let needScale = 0;
+  if (needCost > 0) needScale = div(toNeeds, needCost, 'the fraction of what it must have it can pay for');
+  let wantScale = 0;
+  if (wantCost > 0) {
+    wantScale = atMost(
+      div(left, wantCost, 'the fraction of what it wants on top it can pay for'),
+      1,
+      'it takes what it wanted and not more because it could afford more',
     );
-    if (!material(budget, 2, spend)) continue;
-    out.push(...schedule(view, self, row.subUnit, budget, p.steps));
+  }
+  const out: DemandStep[] = [];
+  for (const l of lines) {
+    const qty = add(
+      mul(l.row.neededPerMember, needScale, 'of what it must have'),
+      mul(l.row.wantedPerMember, wantScale, 'of what it wants on top'),
+      'what one member takes this period',
+    );
+    if (qty <= 0) continue;
+    // C4: what it set aside is what the units cost it INCLUDING the tax; what reaches the seller is
+    // that less the tax, and that is the money the curve is drawn against.
+    const set = mul(qty, l.perUnit, 'what it set aside for this line');
+    const net = div(set, add(1, p.consumptionTax, 'with the tax it will owe on it'), 'what reaches the seller');
+    if (!material(net, 2, spend)) continue;
+    for (const r of rungsUpTo(pricesOver(l.expected, l.width, p.steps), net, qty)) {
+      out.push({
+        market: l.market,
+        instrument: l.instrument,
+        price: r.price,
+        qty: mul(r.qty, self.weight, 'what the cell asks for'),
+      });
+    }
   }
   return out;
 }
 
+/** One line of a cell's basket: the good, where it would buy it, and what it expects to be charged. */
+interface Line {
+  readonly row: ConsumptionDecl;
+  readonly instrument: InstrumentId;
+  readonly market: MarketId;
+  /** C4: what ONE unit costs it, tax and all, at the price it expects. What the basket is priced at. */
+  readonly perUnit: number;
+  /** §46 B3: the price it expects, and how wrong it has been about this one. */
+  readonly expected: number;
+  readonly width: number;
+}
+
 /**
- * Goods C1, Clearing A2: the demand curve, posted as the step function a book takes (demand.ts).
- *
- * The range is the cell's OWN uncertainty about that price (§46 B3): a cell that has never been
- * surprised posts one point at what it expects, and one that has seen the price move posts across
- * the width of its own surprises. Nothing states a range.
+ * Goods C1, §46 B3: what the cell thinks this line costs, or nothing — a good whose price it has
+ * never seen and has no outlook for is one it cannot put in a basket, and that is a real answer
+ * rather than a guess at a level (Law 3).
  */
-function schedule(
+function lineFor(
   view: ParticipantView,
   self: CellParty,
-  subUnit: string,
-  budget: number,
-  steps: number,
-): DemandStep[] {
-  const instrument = goodId(subUnit, self.region);
+  row: ConsumptionDecl,
+  p: HouseholdParams,
+): Line | undefined {
+  const instrument = goodId(row.subUnit, self.region);
   const outlook = view.outlook(`price.${instrument}`);
   const print = view.print(instrument);
   const expected = outlook.some
@@ -201,14 +272,15 @@ function schedule(
     : print.some
       ? print.value.price
       : undefined;
-  if (expected === undefined || expected <= 0) return [];
-  const width = outlook.some ? outlook.value.confidence : 0;
-  return rungsOver(pricesOver(expected, width, steps), budget).map((r) => ({
-    market: goodMarketId(subUnit, self.region),
+  if (expected === undefined || expected <= 0) return undefined;
+  return {
+    row,
     instrument,
-    price: r.price,
-    qty: mul(r.qty, self.weight, 'what the cell asks for'),
-  }));
+    market: goodMarketId(row.subUnit, self.region),
+    perUnit: mul(expected, add(1, p.consumptionTax, 'and the tax on it'), 'what a unit costs it'),
+    expected,
+    width: outlook.some ? outlook.value.confidence : 0,
+  };
 }
 
 /** The levels a cell posts over, highest first: what it expects, spread by its own surprises. */

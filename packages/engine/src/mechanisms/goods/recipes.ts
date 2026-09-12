@@ -64,6 +64,8 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
     spoilage: spoilageParam(d.subUnit),
     // A3, D3: what a unit of it takes up while it waits, or nothing because nobody stores it.
     storagePerUnit: d.storagePerUnit === null ? null : storageParam(d.subUnit),
+    // 13c.2: whether it can be loaded at all. A service is made where it is bought.
+    portable: d.portable,
     recipe: {
       inputs: inputs.map((i) => ({
         subUnit: i.subUnit,

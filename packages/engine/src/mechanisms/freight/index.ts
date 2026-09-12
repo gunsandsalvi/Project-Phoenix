@@ -142,6 +142,10 @@ function toShip(ctx: MechanismContext, from: RegionId): readonly Shippable[] {
     for (const h of view.holdings()) {
       const i = ctx.instruments.get(h.instrument);
       if (!i.status.live || !isGoodTerms(i.terms) || i.terms.region !== from) continue;
+      // 13c.2, A3: a hold takes what can be loaded. A service is made where it is bought and there
+      // is nothing to put aboard, which is why its price is local and no voyage can close a gap in
+      // it — the technology of the thing says so, and nothing here decides it.
+      if (!i.terms.portable) continue;
       const here = view.print(i.id);
       if (!here.some) continue;
       const units = view.free(i.id);

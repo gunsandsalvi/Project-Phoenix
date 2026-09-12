@@ -138,6 +138,12 @@ export interface GoodTerms extends Terms {
    * the tonne. What a holder has room for is a fact about the holder, and it is plant.
    */
   readonly storagePerUnit: ParamId | null;
+  /**
+   * A1, Freight A3, 13c.2: whether a unit of this can be somewhere other than where it was made.
+   * Freight reads it: what cannot be loaded is never offered a hold and never reaches a transit
+   * instrument, so a service price is LOCAL by the technology of the thing rather than by a rule.
+   */
+  readonly portable: boolean;
   readonly recipe: Recipe;
 }
 
