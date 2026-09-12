@@ -58,3 +58,36 @@ describe('what changing trade costs (A3.b, XI-10)', () => {
     }
   });
 });
+
+describe('a bank employs people, and the borrower pays them (13d, Banks Lending C1.d)', () => {
+  it('has no operating cost parameter anywhere: it was a wage bill paid to nobody (XI-14, Law 5)', () => {
+    const w = rigWorld('mobility-a');
+    // It was half a per cent a year on every principal, added into every quote and landing nowhere.
+    expect(() => w.params.decl(paramId('loan.operatingCost'))).toThrow();
+    for (const d of w.params.all()) {
+      expect(String(d.id)).not.toContain('operatingCost');
+    }
+  });
+
+  it('declares instead what ONE LOAN takes, in hours somebody is paid for', () => {
+    const w = rigWorld('mobility-a');
+    const d = w.params.decl(paramId('bank.hoursPerLoanPeriod'));
+    expect(d.kind).toBe('technology');
+    expect(d.dimension).toBe('count');
+    expect(d.value).toBeGreaterThan(0);
+    // Per LOAN, because a loan costs about the same to make whatever its size — which is why the
+    // cost per unit of principal now falls as the loan gets bigger, out of the arithmetic.
+    expect(d.unit).toContain('per loan');
+  });
+
+  it('hires in a trade of its own, in the same venue everybody else does (Labour A3)', () => {
+    const w = rigWorld('mobility-a');
+    const trades = OCCUPATIONS.filter((o) => o.sector === 'finance').map((o) => o.id);
+    expect(trades.length).toBeGreaterThan(0);
+    for (const t of trades) {
+      const venues = w.venues.filter((v) => v.key['occupation'] === t);
+      // A lending officer is not a baker, and the venue says so.
+      expect(venues.length).toBeGreaterThan(0);
+    }
+  });
+});

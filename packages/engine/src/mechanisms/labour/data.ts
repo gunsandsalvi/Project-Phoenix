@@ -77,6 +77,14 @@ export const OCCUPATIONS: readonly OccupationDecl[] = [
   { id: 'warehousing', name: 'warehouse handling', skill: 'manual', sector: 'logistics' },
   { id: 'retail', name: 'shop work', skill: 'service', sector: 'retail' },
   { id: 'wholesale', name: 'merchant trading', skill: 'service', sector: 'wholesale' },
+  // ----------------------------------------------------------------------------------------------
+  // 13d: THE TRADES A BANK EMPLOYS. A bank's costs were a number added to every borrower's rate and
+  // paid to nobody (`loan.operatingCost`), which is margin wearing the clothes of a cost. These are
+  // the people that number stood in for, and now somebody is paid it.
+  // ----------------------------------------------------------------------------------------------
+  { id: 'banking', name: 'lending and branch work', skill: 'administration', sector: 'finance' },
+  { id: 'dealing', name: 'market making', skill: 'professional', sector: 'finance' },
+  { id: 'analysis', name: 'research and credit analysis', skill: 'professional', sector: 'finance' },
   { id: 'public', name: 'public service', skill: 'administration', sector: 'government' },
 ];
 

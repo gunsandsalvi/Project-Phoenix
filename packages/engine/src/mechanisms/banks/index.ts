@@ -63,6 +63,7 @@ import {
   subordinatedKind,
   SUB_PARAMS,
 } from './subordinated.js';
+import { operatingCostOf, staffOrders, STAFF_PARAMS } from './staff.js';
 import { publishLines } from './lines.js';
 import { LOAN, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import {
@@ -91,7 +92,7 @@ export const LENDING_PARAMS = {
   riskWeight: paramId('regulation.riskWeight.loan'),
   sovereignWeight: paramId('regulation.riskWeight.sovereign'),
   leverageRatio: paramId('regulation.leverageRatio'),
-  operatingCost: paramId('loan.operatingCost'),
+  hoursPerLoanPeriod: STAFF_PARAMS.hoursPerLoanPeriod,
 } as const;
 
 /** What a bank was asked for, by whom, and what it said (C3.a: a decline is an answer). */
@@ -109,7 +110,10 @@ function regulationOf(view: ParticipantView): Regulation {
   return {
     capitalRatio: view.params.ratio(LENDING_PARAMS.capitalRatio),
     riskWeight: view.params.ratio(LENDING_PARAMS.riskWeight),
-    operatingCost: view.params.perAnnum(LENDING_PARAMS.operatingCost),
+    // C1.d (13d): what servicing costs is what this bank's own staff cost it over the book they
+    // service — a read, and it replaces `loan.operatingCost`, which was a wage bill charged to
+    // every borrower and paid to nobody (XI-14, Law 5).
+    operatingCost: operatingCostOf(view),
   };
 }
 
@@ -858,31 +862,13 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       why: 'Banks Capital B1.b: the BACKSTOP — capital against everything it holds, with no weights in it at all. It exists because B1 weights, and a rule that weights can be gamed by holding what the rule calls safe: a bank stuffed with zero-weighted paper passes the weighted test at any size. Which of the two binds is an outcome and differs by bank (B1.c), which is the whole reason to have both.',
     },
     {
-      id: LENDING_PARAMS.operatingCost,
-      value: 0.005,
-      unit: 'per annum on the principal',
-      dimension: 'perAnnum',
-      /**
-       * XI-14, Law 2, Appendix B: IT IS A PLACEHOLDER AND IT WAS DECLARED A TECHNOLOGY.
-       *
-       * Its own reason says what it stands in for — "the people, the assessment, the collecting" —
-       * and this world has no such people: the number is added into the rate a bank quotes
-       * (`quote.ts`) and PAID TO NOBODY. A wage bill charged and never paid is margin wearing the
-       * clothes of a cost (Law 5: every flow has two sides), and stating it as a share of the
-       * principal is a cost expressed as a share of money, which is what `phoenix/no-value-recipe`
-       * refuses on the production side.
-       *
-       * 13d is where a bank employs people, and the day it does, this dies and the cost is hours
-       * somebody was paid for. Until then it is a claim about the answer with a scheduled death,
-       * which is precisely what Law 2 calls a placeholder (item 13b.1).
-       */
-      kind: 'placeholder',
-      standsInFor: {
-        mechanism: "Banks Lending C1.d — the credit officer's hours, paid to a named person",
-        worklistItem: '13d',
-      },
+      id: LENDING_PARAMS.hoursPerLoanPeriod,
+      value: 0.6,
+      unit: 'hours of a lending officer per loan per period',
+      dimension: 'count',
+      kind: 'technology',
       owner: 'model',
-      why: 'Banks Lending C1.d: what it costs a bank to make and keep a loan — the people, the assessment, the collecting. Nobody is paid it: it is added into the rate the bank quotes and lands nowhere, so it is a shape standing in for an employment relationship this world does not have yet (worklist 13d).',
+      why: 'Banks Lending C1.d (13d): what it takes to keep ONE loan — the assessment, the monitoring, the collecting — in hours of somebody who is paid for them. It replaces `loan.operatingCost`, which was half a per cent a year on every principal added into every quote and paid to nobody: a wage bill charged and never paid is margin wearing the clothes of a cost (Law 5), and stating it as a share of the principal made a small loan and a large one cost the same to service, which is the opposite of true. It is per LOAN because a loan costs about the same to make whatever its size, and that is why the cost per unit of principal now falls as the loan gets bigger — out of the arithmetic rather than out of a table.',
     },
     ...rows.flatMap((b) => [
       {
@@ -1071,7 +1057,14 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
   ],
   // Money Market A3, B1: and the same one face in a VENUE. Its schedule for a session reaches the
   // book through the kernel's door (Clearing B2), so the market that clears it decides nothing.
-  venueParticipants: [{ partyKind: BANK, orders: sessionOrders }],
+  venueParticipants: [
+    { partyKind: BANK, orders: sessionOrders },
+    // Labour A1, A3, Banks Lending C1.d (13d): a bank wants the hours its book takes, in a trade of
+    // its own, at what an hour is worth to it — and it is matched by the same rule as every other
+    // employer. A bank whose book earns nothing bids nothing and hires nobody, which is how a
+    // shrinking bank sheds staff without anybody writing a rule for it.
+    { partyKind: BANK, orders: staffOrders },
+  ],
   // Law 4, Dealer Desks A1: ONE face. Every order a bank posts into any market comes from here.
   participants: [
     {
