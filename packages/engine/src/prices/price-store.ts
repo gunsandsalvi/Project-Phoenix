@@ -74,6 +74,38 @@ export function wasTraded(p: Print): boolean {
   return p.provenance.kind === 'traded';
 }
 
+/**
+ * Law 18, Clearing F2: WHERE A PERIOD SITS IN A LINE'S PRINTS, by halving rather than by walking.
+ *
+ * `write` refuses a print whose period is not strictly after the last one, so a line's prints are
+ * strictly ascending by period and this is exact — it is the same answer `find` gave, reached in
+ * `log n` steps instead of `n`. Layout and traversal only: no mechanism, no economics and no
+ * boundary moves (Law 18), and nothing is stored twice (Law 4) — there is no index beside the list,
+ * only a different way of walking the one list there is.
+ *
+ * Returns where the period IS, or where it WOULD go: `at` is the print for that period when there
+ * is one, and `before` is the last print at or before it, which is what a reader asking for the
+ * price in force wants.
+ */
+function locate(list: readonly Print[], period: Period): { at?: Print; before?: Print } {
+  let lo = 0;
+  let hi = list.length - 1;
+  let before: Print | undefined;
+  while (lo <= hi) {
+    const mid = (lo + hi) >> 1;
+    const p = list[mid];
+    if (p === undefined) break;
+    if (p.period === period) return { at: p, before: p };
+    if (p.period < period) {
+      before = p;
+      lo = mid + 1;
+    } else {
+      hi = mid - 1;
+    }
+  }
+  return before === undefined ? {} : { before };
+}
+
 export class PriceStore {
   private readonly byInstrument = new Map<InstrumentId, Print[]>();
 
@@ -120,7 +152,7 @@ export class PriceStore {
   read(instrument: InstrumentId, period: Period): Option<Print> {
     const list = this.byInstrument.get(instrument);
     if (list === undefined) return none();
-    const p = list.find((x) => x.period === period);
+    const p = locate(list, period).at;
     return p === undefined ? none() : some(p);
   }
 
@@ -130,7 +162,7 @@ export class PriceStore {
     if (list === undefined || list.length === 0) {
       throw new Unpriced('XI-6', `${instrument} has never printed`, { instrument });
     }
-    const p = list.find((x) => x.period === period);
+    const p = locate(list, period).at;
     if (p === undefined) {
       throw new NotYetProduced(
         'Clearing F1.a',
@@ -149,11 +181,8 @@ export class PriceStore {
   latest(instrument: InstrumentId, upTo: Period): Option<Print> {
     const list = this.byInstrument.get(instrument);
     if (list === undefined) return none();
-    for (let i = list.length - 1; i >= 0; i -= 1) {
-      const p = list[i];
-      if (p !== undefined && p.period <= upTo) return some(p);
-    }
-    return none();
+    const p = locate(list, upTo).before;
+    return p === undefined ? none() : some(p);
   }
 
   history(instrument: InstrumentId): readonly Print[] {

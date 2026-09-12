@@ -551,7 +551,7 @@ export function snapshot(
       house: c.house === null ? null : String(c.house),
       notional: c.notional,
       struckAt: c.struckAt,
-      struckAs: w.registry.derivativeKind(c.kind).quotedAs ?? 'money',
+      struckAs: w.registry.derivativeKind(c.kind).quotedAs,
       markToA: w.contractMark(c, w.period),
       initialMargin: margin.some ? margin.value : null,
       opened: c.opened,
@@ -571,7 +571,7 @@ export function snapshot(
       name: m.name,
       kind: String(decl.kind),
       level: print.value.price,
-      quotedAs: w.registry.derivativeKind(decl.kind).quotedAs ?? 'money',
+      quotedAs: w.registry.derivativeKind(decl.kind).quotedAs,
       ccy: String(m.ccy),
       traded: print.value.period === w.period,
     });

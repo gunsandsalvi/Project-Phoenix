@@ -15,6 +15,7 @@
  */
 import type { Period } from '../calendar/calendar.js';
 import type { PartyId } from '../core/ids.js';
+import { Forbidden } from '../core/errors.js';
 import { sub } from '../core/num.js';
 import type {
   Contract,
@@ -35,15 +36,27 @@ export function markOfContract(c: Contract, at: Period, d: ContractValueDeps): n
   return d.profile(c.kind).mark(c, at, d.reads(at));
 }
 
-/** D1: an asset to one side and a liability to the other, at every instant. */
+/**
+ * D1: an asset to one side and a liability to the other, at every instant.
+ *
+ * A contract has exactly TWO sides, so a third party asking what it is worth to it is a caller
+ * that has gone wrong, not a party worth nothing: it returned 0, which is a real answer to a
+ * different question and is indistinguishable from a contract at par. Refused at the site.
+ */
 export function contractValueTo(
   c: Contract,
   party: PartyId,
   at: Period,
   d: ContractValueDeps,
 ): number {
+  if (party !== c.a && party !== c.b) {
+    throw new Forbidden('Derivative D1', `${party} is on neither side of contract ${c.id}`, {
+      contract: c.id,
+      party,
+    });
+  }
   const mark = markOfContract(c, at, d);
-  return party === c.a ? mark : party === c.b ? -mark : 0;
+  return party === c.a ? mark : -mark;
 }
 
 /**

@@ -69,6 +69,7 @@ function markOf(c: Contract, at: Period, reads: ContractReads): number {
 export const testForwardKind: DerivativeKindProfile = {
   id: TEST_FORWARD,
   unit: CONTRACTS,
+  quotedAs: 'money',
   // Law 8: quoted in cents a contract, like a share (`registry/grid.ts` CENT_TICK). A tick is
   // declared in NAMED money per named unit of the thing, the way `UnitDecl.perUnit` is.
   priceTick: CENT_TICK,

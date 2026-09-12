@@ -2,7 +2,7 @@
  * Branded identifiers. An identifier is an identifier and never a display name (Law 9).
  * The brands make it a type error to pass a PartyId where an InstrumentId is expected.
  */
-import { Missing } from './errors.js';
+import { Forbidden, Missing } from './errors.js';
 
 declare const brand: unique symbol;
 export type Brand<T, B extends string> = T & { readonly [brand]: B };
@@ -78,12 +78,29 @@ export const contractId = (s: string): ContractId => nonEmpty(s, 'ContractId') a
 export const derivativeKindId = (s: string): DerivativeKindId =>
   nonEmpty(s, 'DerivativeKindId') as DerivativeKindId;
 
+/**
+ * Law 9, Law 4: A COMPOSITE ID IS ONLY AN ID IF IT READS BACK. `money:<issuer>:<ccy>` names one
+ * instrument only while no issuer's own name carries the separator — otherwise two different
+ * (issuer, currency) pairs spell the same id, and two instruments collide in a store keyed by it.
+ *
+ * Refused where it is built rather than escaped, because escaping makes an id that is not the name
+ * anybody reads: a party whose id has a colon in it is a naming mistake at the party, not something
+ * for the instrument's name to work around.
+ */
+function noSeparator(part: string, sep: string, what: string): string {
+  if (part.includes(sep)) {
+    throw new Forbidden('Law 9', `${what} "${part}" carries "${sep}", which separates the parts`);
+  }
+  return part;
+}
+
 /** The unit in which a currency's money is counted: `ccy:<code>` (Appendix A, Units). */
-export const currencyUnit = (ccy: CurrencyCode): UnitId => `ccy:${ccy}` as UnitId;
+export const currencyUnit = (ccy: CurrencyCode): UnitId =>
+  `ccy:${noSeparator(ccy, ':', 'currency')}` as UnitId;
 
 /** The instrument that is `issuer`'s money in `ccy` (Money A1, D2). */
 export const moneyInstrumentId = (issuer: PartyId, ccy: CurrencyCode): InstrumentId =>
-  `money:${issuer}:${ccy}` as InstrumentId;
+  `money:${noSeparator(issuer, ':', 'issuer')}:${noSeparator(ccy, ':', 'currency')}` as InstrumentId;
 
 /**
  * Spot FX A3, C1, Law 9: A CURRENCY PAIR, named the way a market names one — `USD/SOU`, the base
@@ -96,4 +113,4 @@ export const moneyInstrumentId = (issuer: PartyId, ccy: CurrencyCode): Instrumen
  * second store for rates would be a second answer to "what did this market say" (Law 4).
  */
 export const fxPairId = (base: CurrencyCode, quote: CurrencyCode): InstrumentId =>
-  `fx:${base}/${quote}` as InstrumentId;
+  `fx:${noSeparator(base, '/', 'base currency')}/${noSeparator(quote, '/', 'quote currency')}` as InstrumentId;

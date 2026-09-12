@@ -140,9 +140,11 @@ export interface DerivativeKindProfile {
    *
    * It belongs to the KIND and not to the book: what a credit default swap is quoted in is a fact
    * about credit default swaps, and a second copy of it on every market that opens one would be a
-   * fact with two writers (Law 4). Absent means money, which is what every kind before rates was.
+   * fact with two writers (Law 4). Every kind SAYS which it is — "absent means money" was a numeric
+   * default wearing a type (`?? 'money'` at two reading sites), and what a book is quoted in is not
+   * a thing to be assumed about a kind whose author did not think about it.
    */
-  readonly quotedAs?: 'money' | 'rate';
+  readonly quotedAs: 'money' | 'rate';
   /** D3, G4: what it settles against. Checked against the world when a contract is opened. */
   readonly underlying: (c: Contract) => Underlying;
   readonly validateTerms: (terms: ContractTerms) => void;

@@ -92,6 +92,8 @@ export const bondFutureKind: DerivativeKindProfile = {
   unit: FUTURE_CONTRACTS,
   // I1: quoted per unit of FACE, to the same ten-thousandth of par a bond is quoted to.
   priceTick: FACE_TICK,
+  // I1: a price of face, so the level a reader sees is money and not a rate.
+  quotedAs: 'money',
   underlying: (c) => ({
     kind: 'print',
     market: isBondFuture(c.terms) ? c.terms.market : ('' as MarketId),

@@ -306,13 +306,22 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
  * are read where they are asked for, because both move inside a period as loans settle.
  */
 interface CouponsPaid {
-  readonly period: number;
+  /**
+   * Which period this walk is about, or NONE because nothing has been walked yet. It was a
+   * `readonly number` initialised to -1 and written through a cast — a sentinel standing for
+   * "missing" in a field whose type said it could not be missing, and a lie about the field being
+   * readonly in the one function whose job is to move it (item 13b.1).
+   */
+  walked: Option<number>;
   readonly byBank: Map<string, number>;
 }
 
 function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
-  const held = ctx.state<CouponsPaid>('banks.couponsPaid', () => ({ period: -1, byBank: new Map() }));
-  if (held.period !== ctx.period) {
+  const held = ctx.state<CouponsPaid>('banks.couponsPaid', () => ({
+    walked: none<number>(),
+    byBank: new Map(),
+  }));
+  if (!held.walked.some || held.walked.value !== ctx.period) {
     held.byBank.clear();
     for (const r of ctx.ledger.inPeriod(period(ctx.period - 1))) {
       if (r.outcome !== 'settled' || r.instruction.cause !== 'coupon') continue;
@@ -326,7 +335,7 @@ function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): n
         );
       }
     }
-    (held as { period: number }).period = ctx.period;
+    held.walked = some(ctx.period);
   }
   // A bank that paid no coupon in that period paid nothing, and nothing is a number: the walk
   // above visited every settled instruction of it, so an absence here is an answer and not a gap.

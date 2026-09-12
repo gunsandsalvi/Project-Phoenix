@@ -106,6 +106,8 @@ export const fxForwardKind: DerivativeKindProfile = {
   unit: BASE_MONEY,
   // Law 8: a forward on a pair is quoted to the pip, like the spot pair it settles against.
   priceTick: PIP,
+  // A3: a rate is a price of one money in another, and a reader reads it as money per unit.
+  quotedAs: 'money',
   underlying: (c) => ({
     kind: 'print',
     market: '' as never,

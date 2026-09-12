@@ -3,7 +3,16 @@ import fc from 'fast-check';
 import {
   ANNUAL,
   Calendar,
+  PriceStore,
   asQty,
+  currencyCode,
+  currencyUnit,
+  fxPairId,
+  instrumentId,
+  marketId,
+  moneyInstrumentId,
+  partyId,
+  percent,
   downTick,
   Impossible,
   NonFinite,
@@ -179,5 +188,72 @@ describe('the doors that let something through without looking (item 13b.1)', ()
     expect(() => months(-1)).toThrow(/spacing/);
     expect(() => months(1.5)).toThrow(/spacing/);
     expect(months(3).kind).toBe('months');
+  });
+
+  it('shows a rate of nothing as nothing, not as a percent sign with no number in front of it', () => {
+    // Law 9, Observer A1: a zero coupon is a real coupon and a reader has to be able to see it.
+    // The trim ran over the whole string, so "0.000" lost its zeros, then its point, then all of
+    // it — and a zero-coupon line was named "US Treasury % 2027-03-01".
+    expect(percent(0)).toBe('0%');
+    expect(percent(0.02)).toBe('2%');
+    expect(percent(0.02125)).toBe('2.125%');
+    expect(percent(0.021)).toBe('2.1%');
+    expect(percent(1)).toBe('100%');
+    expect(percent(0.1)).toBe('10%');
+  });
+
+  it('refuses a name that carries the separator its own composite id is built from', () => {
+    // Law 9, Law 4: `money:<issuer>:<ccy>` is only an id while no issuer's name carries a colon.
+    // Otherwise two different (issuer, currency) pairs spell one id and two instruments collide in
+    // every store keyed by it — silently, because nothing reads a composite id back.
+    expect(moneyInstrumentId(partyId('bank.a'), currencyCode('USD'))).toBe('money:bank.a:USD');
+    expect(() => moneyInstrumentId(partyId('bank:a'), currencyCode('USD'))).toThrow(/separates/);
+    expect(() => moneyInstrumentId(partyId('bank.a'), currencyCode('US:D'))).toThrow(/separates/);
+    expect(() => currencyUnit(currencyCode('US:D'))).toThrow(/separates/);
+    expect(fxPairId(currencyCode('USD'), currencyCode('SOU'))).toBe('fx:USD/SOU');
+    expect(() => fxPairId(currencyCode('US/D'), currencyCode('SOU'))).toThrow(/separates/);
+  });
+
+  it('finds a print by halving and gives the answer a walk gave, at every period (Law 18)', () => {
+    // The store's reads walked the whole of a line's history for one period's print. `write`
+    // already refuses a print that is not strictly after the last, so the list is ascending and a
+    // binary search is exact — the SAME answer, which is what Law 18 says to gate on.
+    fc.assert(
+      fc.property(
+        fc.uniqueArray(fc.integer({ min: 0, max: 60 }), { minLength: 1, maxLength: 25 }),
+        (periods) => {
+          const ascending = [...periods].sort((a, b) => a - b);
+          const store = new PriceStore();
+          const line = instrumentId('line.under.test');
+          for (const at of ascending) {
+            store.write({
+              market: marketId('mkt.under.test'),
+              instrument: line,
+              ccy: currencyCode('USD'),
+              period: period(at),
+              price: at + 1,
+              provenance: { kind: 'traded', qty: 1, trades: 1 },
+            });
+          }
+          const history = store.history(line);
+          for (let at = 0; at <= 61; at += 1) {
+            const walkedRead = history.find((x) => x.period === at);
+            const read = store.read(line, period(at));
+            expect(read.some ? read.value.period : undefined).toBe(walkedRead?.period);
+
+            let walkedLatest: number | undefined;
+            for (let i = history.length - 1; i >= 0; i -= 1) {
+              const p = history[i];
+              if (p !== undefined && p.period <= at) {
+                walkedLatest = p.period;
+                break;
+              }
+            }
+            const latest = store.latest(line, period(at));
+            expect(latest.some ? latest.value.period : undefined).toBe(walkedLatest);
+          }
+        },
+      ),
+    );
   });
 });

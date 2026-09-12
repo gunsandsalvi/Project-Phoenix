@@ -72,6 +72,8 @@ export const indexFutureKind: DerivativeKindProfile = {
   id: INDEX_FUTURE,
   unit: INDEX_CONTRACTS,
   priceTick: CENT_TICK,
+  // D3: a level of the index in money, times the multiplier — a price and not a rate.
+  quotedAs: 'money',
   underlying: (c) => ({ kind: 'index', index: isIndexFuture(c.terms) ? c.terms.index : '' }),
   validateTerms: (t) => {
     if (!isIndexFuture(t)) throw new Error('not index future terms');

@@ -129,6 +129,8 @@ export const optionKind: DerivativeKindProfile = {
   id: OPTION,
   unit: OPTION_CONTRACTS,
   priceTick: CENT_TICK,
+  // D7.b: what clears is the PREMIUM, which is money a buyer hands over.
+  quotedAs: 'money',
   underlying: (c) => ({
     kind: 'print',
     market: isOption(c.terms) ? c.terms.market : ('' as MarketId),

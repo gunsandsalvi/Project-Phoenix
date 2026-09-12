@@ -249,3 +249,50 @@ per module and not one change. The central bank's is **14** (the polity: what th
 and may not do to a price is that item's subject, and its administered rate arrives there). The
 other eight are read together at **16**, where Part XII measures what the market shapes actually
 are. Not this item's: 13b.1 changes no economic outcome, and every one of these changes a price.
+
+---
+
+## 13b.1-11 — An index publishes a level and then cannot answer for it
+
+**Measured.** `indices.test.ts`, "records what each rule came to, and the rule still answers for
+itself": `expected false to be true` at `w.index(id).some`, for an id read off the module's own
+published `indices.level` event. Confirmed identical at `0ae9b7f`.
+
+**What it is.** Indices E1/E2: what is published is an OBSERVATION of a rule, never a stored level
+(Appendix B: no stored index level), so the published number and the read must be the same rule
+asked twice. Here a rule published a level in a period and the read of that same id came back
+Missing — so either the rule's constituents stopped answering between the publication and the read,
+or the two are not asking the same rule. The first is the likely one and is the interesting one: a
+constituent that de-listed, or a line whose print was not there when the read ran, leaves the index
+with nothing to compute from, and "the index says nothing" is then the honest answer while
+"something published a number for it this period" is not.
+
+**Where it goes.** Indices is item 12's, and what makes a constituent stop answering mid-period is
+a phase-order question (Clearing F1.a). Positioned to 16 with the other measurements, unless the
+read turns out to be asking a different rule — in which case it is Law 4 and belongs where the
+publication is written.
+
+---
+
+## 13b.1-12 — Only some of the three deposit classes ever moves bank
+
+**Measured.** `deposits.test.ts`, "gives each kind a reason of its own, and all three of them fire":
+`expected false to be true` on one of the three `kinds.has(...)` assertions. Confirmed identical at
+`0ae9b7f`.
+
+**What it is.** Banks Funding A1.a/A1.b/A1.c give three deposit classes three different reasons to
+leave a bank: a household moves for the rate it is not being paid, a firm moves off a bank that drew
+the window, a fund leaves one whose session refused it. The test asserts all three doors fire over
+the run, because A1.d's whole point is that a bank's funding is not one substance — and a world
+where only one class ever moves is a world with one deposit type in it, which is the thing A1.d
+says a bank's liability side is not.
+
+At least one of the three never fires. Which one, and whether its reason is unreachable or merely
+never reached in this draw, is the measurement to take: a reason that cannot fire is a mechanism
+finding (the door is wired to a condition nothing produces), and a reason that could fire but did
+not in thirty periods of one seed is a draw.
+
+**Where it goes.** Banks Funding A1 is item 11's and the deposit market is built; what is missing
+is either a condition or the run length to reach it. Positioned to 16, where Part XII measures what
+actually happens over a long run, unless the first look shows a door wired to nothing — in which
+case it is 13d's, with the household life cycle that gives a household its reason.
