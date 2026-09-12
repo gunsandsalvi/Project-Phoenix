@@ -283,5 +283,33 @@ export function drawFunds(
       why: 'Fund Shares D1, D2: a fund of short government paper, which is what a saver holds instead of a deposit. It is the vehicle XI-2 door 2 runs through: a redemption it cannot meet out of its buffer is a sale into the bill market at whatever that market gives.',
     });
   }
+  // Commodities Spot C3 (13c): ONE FUND THAT HOLDS THE THING ITSELF, sponsored by the largest bank
+  // that sponsors anything. It is the party the storage market was missing: every producer opens
+  // with room for exactly what it holds, so nobody is short and nobody has spare, and an investor
+  // wanting to hold what it did not make is short of room by construction. Its reason is its own
+  // outlook against the carry (B4), so what it will pay is a number nobody wrote down.
+  const sponsor = banks.find((b) => b.size >= MONEY_FUND_SPONSOR_SIZE);
+  if (sponsor !== undefined) {
+    out.push({
+      fund: `fund.physical.${sponsor.bank}`,
+      name: `${sponsor.bank} Commodity Fund`,
+      // F3: its own manager, and a separate party. Two funds at one bank are not one
+      // business: the fee is this manager's income and the fund's cost, and a shared name would
+      // be two funds' fees arriving in one account nobody could take apart (Law 4).
+      manager: `manager.physical.${sponsor.bank}`,
+      managerName: 'North Real Assets',
+      bank: sponsor.bank,
+      // A4: a mandate of PHYSICAL things and nothing else. What makes it a commodity fund is that
+      // every kind it may hold is one nobody issued, which is structural rather than a flag.
+      eligible: ['good.grain'],
+      // A thing has no maturity, so there is no tenor to be inside: what it is holding for is a
+      // price, and what it is up against is the carry rather than a date.
+      maxTenorPeriods: 0,
+      buffer: between(rng, FUND_SPREAD.buffer),
+      fee: between(rng, FUND_SPREAD.fee),
+      requiredYield: between(rng, FUND_SPREAD.requiredYield),
+      why: 'Commodities Spot C3, B4: an investor that buys to hold the thing itself, pays for the room it waits in, and is on the other side of every producer deciding whether to sell now. It is what makes a stock a market rather than an accident of who made what.',
+    });
+  }
   return out;
 }

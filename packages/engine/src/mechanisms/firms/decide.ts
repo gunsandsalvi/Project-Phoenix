@@ -47,6 +47,7 @@ import {
   goodTerms,
   spacePerPiece,
   STORAGE,
+  storageRateIn,
   type GoodTerms,
 } from '../../registry/physical.js';
 import {
@@ -97,6 +98,8 @@ export interface Offering {
   readonly planned: false;
   readonly output: InstrumentId;
   readonly orders: readonly PlannedOrder[];
+  /** Commodities Spot B4: what a period of waiting cost a piece, at the rate the room let for. */
+  readonly carry: number;
 }
 
 /** What a firm decided when it had everything it needed to decide with. */
@@ -130,6 +133,8 @@ export interface Planned {
   /** Labour C1: the most it will pay for an hour, which is what an hour is worth to it. */
   readonly wageBid: number;
   readonly orders: readonly PlannedOrder[];
+  /** Commodities Spot B4: what a period of waiting cost a piece, at the rate the room let for. */
+  readonly carry: number;
 }
 
 /** The numbers a line's own technology states, read from the good's terms (Goods A2). */
@@ -288,12 +293,39 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<num
     out.push({
       market,
       side: 'sell',
-      // What holding it is worth: what it expects to get, less the part that will not survive.
-      price: mul(price.value, sub(1, tech.spoilage, 'what survives'), 'the value of holding'),
+      // Commodities Spot B4: WHAT HOLDING IT IS WORTH — what it expects to get, less the part that
+      // will not survive the wait, less WHAT THE WAIT COSTS. The carry is not a number anybody
+      // wrote down: it is the rate the room cleared at this period (13c), read off the session's
+      // own print, so a world where room is scarce is a world where holding is dear and more of
+      // every stock comes to market. A world with no session that cleared has no rate to read, and
+      // then the reservation is what it always was — which is an answer and not a zero.
+      price: sub(
+        mul(price.value, sub(1, tech.spoilage, 'what survives'), 'the value of holding'),
+        carryPerPiece(view, tech),
+        'less what the wait costs it',
+      ),
       qty: rest,
     });
   }
   return out;
+}
+
+/**
+ * Commodities Spot B4, D3: what holding one piece for one period costs, at the rate the room let
+ * for. Nothing for a line nobody stores in bulk, and nothing where no room changed hands — in both
+ * cases because there is no such cost, not because a number was missing (Appendix A).
+ */
+function carryPerPiece(view: ParticipantView, tech: Technology): number {
+  const per = tech.terms.storagePerUnit;
+  if (per === null) return 0;
+  const rate = storageRateIn(view, tech.terms.region);
+  if (rate === undefined) return 0;
+  const unit = view.instruments.get(goodId(tech.terms.subUnit, tech.terms.region)).unit;
+  return mul(
+    rate,
+    spacePerPiece(view, unit, view.params.ratio(per)),
+    'what a period under cover costs a piece',
+  );
 }
 
 /**
@@ -315,7 +347,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   if (!price.some || !sales.some || inputPrices.some((p) => !p.some)) {
     return selling.length === 0
       ? none<Plan>()
-      : some<Plan>({ planned: false, output, orders: selling });
+      : some<Plan>({ planned: false, output, orders: selling, carry: carryPerPiece(view, tech) });
   }
   const inputCost = sum(
     tech.inputs.map((i, n) => mul(i.qtyPerUnit, priceOf(inputPrices, n), 'input cost')),
@@ -437,6 +469,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     planned: true,
     output,
     expectedPrice: price.value,
+    carry: carryPerPiece(view, tech),
     unitCost,
     batch,
     bound,

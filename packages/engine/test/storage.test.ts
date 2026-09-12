@@ -6,6 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   GOODS,
+  drawFunds,
   REGION,
   STORAGE,
   addDays,
@@ -14,6 +15,8 @@ import {
   none,
   paramId,
   plantKindId,
+  instrumentKindId,
+  partyId,
   plantVintageId,
   spaceFor,
   spacePerPiece,
@@ -22,7 +25,7 @@ import {
   type World,
 } from '../src/index.js';
 import { assemble } from '../src/index.js';
-import { mergeModules, rigSpec } from './rig.js';
+import { mergeModules, rigDraw, rigSpec } from './rig.js';
 
 /** The one line in this world that is held in bulk between periods, and the one with a silo. */
 const STORED = GOODS.filter((g) => g.storagePerUnit !== null);
@@ -108,10 +111,16 @@ describe('the room is rented from somebody, and they are paid (D3, Law 5)', () =
     const seen = { grain: 0, space: 0 };
     const w = rig('storage-market', [gift(seen)]);
     for (let i = 0; i < 3; i += 1) w.step();
+    // Clearing C4.b: the session says what it did, per region, including when it did not clear.
+    // One event for the period keyed by place, which is how a going wage is published: a reader
+    // asks for the last of its kind and looks up where it is (Observer A3).
     const sessions = w.journal.ofKind('commodities.storage');
-    // Clearing C4.b: the session says what it did, including when it did not clear and why.
     expect(sessions.length).toBeGreaterThan(0);
-    expect(sessions.some((e) => e.data['outcome'] === 'cleared')).toBe(true);
+    const cleared = sessions.some((e) => {
+      const byRegion = e.data['byRegion'] as Record<string, { outcome?: string }> | undefined;
+      return byRegion?.[String(REGION)]?.outcome === 'cleared';
+    });
+    expect(cleared).toBe(true);
     const leases = w.journal.ofKind('commodities.leased');
     expect(seen.grain).toBeGreaterThan(0);
     expect(seen.space).toBeGreaterThan(0);
@@ -218,3 +227,49 @@ function gift(seen: { grain: number; space: number }): SystemModule {
     ],
   };
 }
+
+describe('what the wait costs reaches the decision to hold (B4, C3)', () => {
+  it('takes the carry out of what a producer will hold for, at the rate the room let for', () => {
+    // Commodities Spot B4: a producer parts with stock only above what HOLDING it is worth — what
+    // it expects to get, less what will not survive the wait, LESS WHAT THE WAIT COSTS. Before 13c
+    // the last term did not exist, so holding was free and nothing ever had to come to market.
+    // The carry is not a number anybody wrote down: it is the rate the room cleared at.
+    const seen = { grain: 0, space: 0 };
+    const w = rig('storage-carry', [gift(seen)]);
+    for (let i = 0; i < 4; i += 1) w.step();
+    const plans = w.journal
+      .ofKind('firms.plan')
+      .filter((e) => String(e.data['output']).includes('grain'));
+    expect(plans.length).toBeGreaterThan(0);
+    // Every grain plan says what a period of waiting cost it, and where a session cleared it is
+    // a real cost rather than nothing.
+    const charged = plans.filter((e) => Number(e.data['carry']) > 0);
+    expect(charged.length).toBeGreaterThan(0);
+    for (const e of plans) expect(Number(e.data['carry'])).toBeGreaterThanOrEqual(0);
+    // And a line nobody stores in bulk is charged nothing for waiting, which is an answer: a loaf
+    // does not wait for a silo, and its own spoilage already says what waiting costs it.
+    const indoors = w.journal
+      .ofKind('firms.plan')
+      .filter((e) => String(e.data['output']).includes('bread'));
+    expect(indoors.length).toBeGreaterThan(0);
+    for (const e of indoors) expect(Number(e.data['carry'])).toBe(0);
+  });
+
+  it('has a party on the other side of it: a fund that holds the thing itself (C3)', () => {
+    const w = rig('storage-investor');
+    const funds = drawFunds(rigDraw('storage-investor').banks, 'storage-investor');
+    const physical = funds.filter((d) => d.eligible.every((k) => k.startsWith('good.')));
+    // A4, Law 15: what makes it a commodity fund is its MANDATE — every kind it may hold is one
+    // nobody issued (Goods A1) — and never a flag on the row.
+    expect(physical.length).toBeGreaterThan(0);
+    for (const d of physical) {
+      expect(w.parties.has(partyId(d.fund))).toBe(true);
+      // F3: its own manager, a separate party, whose income is the fund's cost.
+      expect(w.parties.has(partyId(d.manager))).toBe(true);
+      expect(d.manager).not.toBe(`manager.${d.bank}`);
+      for (const kind of d.eligible) {
+        expect(w.registry.instrumentKind(instrumentKindId(kind)).physical).toBe(true);
+      }
+    }
+  });
+});

@@ -37,6 +37,7 @@ import {
   type UnitId,
 } from '../core/ids.js';
 import type { Calendar } from '../calendar/calendar.js';
+import type { Event } from '../journal/journal.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
 import { div, mul, sub, sum } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
@@ -542,6 +543,41 @@ export function capitalKindOf(
  * project reads the life of what it would buy and the capital programme reads the same number to
  * wear it out — one parameter, one spelling, and neither module learns the other's (Law 4).
  */
+/**
+ * Commodities Spot D3, B4: THE SESSION THE ROOM CLEARED IN, and what it cleared at.
+ *
+ * The name and the read are the kernel's for the same reason every other crossing name is: a firm
+ * deciding whether to hold a tonne or sell it needs what holding costs, and the module that runs
+ * the storage session is not the module that owns the firm (4.9b). The commodities module owns the
+ * session; this is how anybody else reads what it said.
+ */
+export const STORAGE_SESSION = 'commodities.storage';
+
+/**
+ * What reading a session needs: this period, and the public events the reader may see. A party
+ * reads it through its own view's public door (Observer A3) and a module through the journal, and
+ * both satisfy this — which is what keeps the read one read (Law 4).
+ */
+export interface SessionReads {
+  lastPublic(kind: string): Option<Event>;
+}
+
+/**
+ * What a piece of room cost for a period in this region, or none because no session cleared — which
+ * is a real answer and not a zero: a world where nobody let any room is not a world where room is
+ * free, it is one where a holder who needed room did not get it (Law 6, Appendix A).
+ */
+export function storageRateIn(reads: SessionReads, region: RegionId): number | undefined {
+  const said = reads.lastPublic(STORAGE_SESSION);
+  if (!said.some) return undefined;
+  const byRegion = said.value.data['byRegion'];
+  if (typeof byRegion !== 'object' || byRegion === null) return undefined;
+  const here = (byRegion as Record<string, unknown>)[String(region)];
+  if (typeof here !== 'object' || here === null) return undefined;
+  const rate = (here as Record<string, unknown>)['rate'];
+  return typeof rate === 'number' ? rate : undefined;
+}
+
 export const standsWindParam = (capitalKind: string): ParamId =>
   paramId(`plant.standsWind.${capitalKind}`);
 export const windHardnessParam = (capitalKind: string): ParamId =>

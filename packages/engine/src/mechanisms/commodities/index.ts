@@ -33,6 +33,7 @@ import {
   spaceFor,
   spacePerPiece,
   STORAGE,
+  STORAGE_SESSION,
   vintagesHeld,
   wearPerPlantUnit,
 } from '../../registry/physical.js';
@@ -150,25 +151,29 @@ function perUnitWorth(
  * by — so every unit of space let has one party on each side of it and the sum of what the takers
  * pay is the sum of what the letters receive, exactly (Law 5).
  */
-function lease(ctx: MechanismContext, region: RegionId, ccy: CurrencyCode): void {
+function lease(
+  ctx: MechanismContext,
+  region: RegionId,
+  ccy: CurrencyCode,
+  said: Map<string, Record<string, unknown>>,
+): void {
   const orders = schedules(ctx, region);
   if (orders.length === 0) return;
   const outcome = clear(orders, 'proRata', 'sellersCompete');
   // Clearing C4.b: WHAT THE SESSION DID, said out loud — including that it did not clear and why.
   // A market in space that never clears is a finding about the world (nobody is short, or nobody
   // has spare, or the two do not overlap), and a session that reported nothing would hide it.
-  ctx.record(
-    'commodities.storage',
-    [String(region)],
-    {
-      region,
-      outcome: outcome.kind,
-      takers: orders.filter((o) => o.side === 'buy').length,
-      letters: orders.filter((o) => o.side === 'sell').length,
-      ...(isCleared(outcome) ? { rate: outcome.price, space: outcome.volume } : {}),
-    },
-    true,
-  );
+  //
+  // ONE EVENT FOR THE PERIOD, keyed by region, which is how the labour venue publishes a going
+  // wage: a reader asks for the last one of its kind and looks up the place it is in (Observer A3),
+  // and a reader that had to walk back through every region's would be counting on how many there
+  // are (Law 4).
+  said.set(String(region), {
+    outcome: outcome.kind,
+    takers: orders.filter((o) => o.side === 'buy').length,
+    letters: orders.filter((o) => o.side === 'sell').length,
+    ...(isCleared(outcome) ? { rate: outcome.price, space: outcome.volume } : {}),
+  });
   if (!isCleared(outcome)) return;
   const rate = outcome.price;
   const held = ctx.state<Leases>('commodities.leases', () => ({ byParty: new Map() }));
@@ -265,7 +270,9 @@ export function commodities(): SystemModule {
         cycle: 0,
         anchor: { before: 'firms.decide' },
         run: (ctx: MechanismContext): void => {
-          for (const r of ctx.registry.regions.values()) lease(ctx, r.id, r.ccy);
+          const said = new Map<string, Record<string, unknown>>();
+          for (const r of ctx.registry.regions.values()) lease(ctx, r.id, r.ccy, said);
+          ctx.record(STORAGE_SESSION, [...said.keys()], { byRegion: Object.fromEntries(said) }, true);
         },
       },
     ],

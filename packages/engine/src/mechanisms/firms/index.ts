@@ -293,7 +293,12 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
   if (!p.planned) {
     // Labour C5: it posts no opening at all, which is different from posting an empty one — an
     // empty opening is an employer that has decided it wants nobody. It still offers its stock.
-    ctx.record('firms.plan', [firm], { planned: false, output: p.output, orders: orderData(p.orders) }, false);
+    ctx.record(
+      'firms.plan',
+      [firm],
+      { planned: false, output: p.output, carry: p.carry, orders: orderData(p.orders) },
+      false,
+    );
     return;
   }
   const venue = venueOf(view, line);
@@ -341,6 +346,7 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
       programme: p.project === null ? 0 : p.project.programme,
       hours: p.hours,
       wageBid: p.wageBid,
+      carry: p.carry,
       orders: orderData(p.orders),
     },
     false,

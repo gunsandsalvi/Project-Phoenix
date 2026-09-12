@@ -74,6 +74,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
+import { physicalOrders } from './physical.js';
 import { FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
 import { trackerOrders } from './tracker.js';
@@ -81,6 +82,7 @@ import { navOf } from './nav.js';
 
 export * from './data.js';
 export { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
+export { holdsPhysical, physicalOrders } from './physical.js';
 export * from './etf.js';
 export { navOf } from './nav.js';
 export type { NavRead } from './nav.js';
@@ -350,6 +352,16 @@ function subscribe(
   sharesAsked: number,
   perShare: number,
 ): void {
+  // Fund Shares B1, C1: A SUBSCRIPTION IS AT THE NAV, AND THERE HAS TO BE ONE. A fund whose share
+  // is worth nothing has no price for anybody to buy a claim at — there is nothing to have a claim
+  // ON — and dividing a budget by it is `0/0`, which is how this was found: a fund declared with a
+  // mandate it opens holding none of arrives at its first session with no book and no shares, and
+  // the first party to ask for one asked for NaN of them.
+  //
+  // Refused where it is, because a NaN stops the world (ARCHITECTURE 5) — and it is a REAL refusal
+  // and not a guard: nobody can buy a share of nothing. WHY a fund's share can be worth nothing
+  // while shares are outstanding is a different question and it is `13b-9`'s, positioned to 13h.
+  if (perShare <= 0) return;
   const party = ctx.parties.get(holder);
   const fund = ctx.parties.get(d.fund as PartyId);
   const ccy = ctx.registry.region(fund.region).ccy;
@@ -1481,13 +1493,15 @@ export function funds(
     participants: [
       {
         partyKind: FUND,
-        // Two mandates, two reasons, and a fund has exactly one of them: a money fund puts its
+        // Three mandates, three reasons, and a fund has exactly one of them: a money fund puts its
         // spare cash to work at a yield it requires (D2), a tracker holds the index whatever it
-        // costs (Indices C2). Neither answers for a fund that is not its own, so the two never
-        // both speak for one party (Law 4).
+        // costs (Indices C2), and a commodity fund holds the thing itself because it expects to be
+        // paid more for it than the wait costs (Commodities Spot C3). None answers for a fund that
+        // is not its own, so no two ever speak for one party (Law 4).
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => [
           ...ordersOf(decls, view, m),
           ...trackerOrders(etfs, view, m),
+          ...physicalOrders(decls, view, m),
         ],
       },
     ],
