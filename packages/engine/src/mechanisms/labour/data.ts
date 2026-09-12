@@ -53,6 +53,30 @@ export const OCCUPATIONS: readonly OccupationDecl[] = [
   { id: 'joinery', name: 'joinery', skill: 'craft', sector: 'furniture' },
   { id: 'converting', name: 'packaging converting', skill: 'machine operation', sector: 'packaging' },
   { id: 'building', name: 'building trades', skill: 'manual', sector: 'construction' },
+  // ----------------------------------------------------------------------------------------------
+  // 13c.2: the trades of the lines that cannot be put in a box. A3.a is the whole reason they are
+  // here as sixteen rows rather than one: a nurse out of work is not a bricklayer's vacancy filled,
+  // and a world where every service was one trade would answer a shortage of clinicians by sending
+  // it a security guard.
+  // ----------------------------------------------------------------------------------------------
+  { id: 'clinical', name: 'clinical work', skill: 'professional', sector: 'health' },
+  { id: 'teaching', name: 'teaching', skill: 'professional', sector: 'education' },
+  { id: 'catering', name: 'catering and hospitality', skill: 'craft', sector: 'hospitality' },
+  { id: 'telecoms', name: 'network engineering', skill: 'engineering', sector: 'communications' },
+  { id: 'software', name: 'software and support', skill: 'technical', sector: 'information' },
+  { id: 'professional', name: 'professional practice', skill: 'professional', sector: 'business services' },
+  { id: 'design', name: 'design and engineering', skill: 'professional', sector: 'business services' },
+  { id: 'media', name: 'media production', skill: 'creative', sector: 'media' },
+  { id: 'driving', name: 'driving', skill: 'machine operation', sector: 'transport' },
+  { id: 'maintenance', name: 'repair and maintenance', skill: 'craft', sector: 'repair' },
+  { id: 'facilities', name: 'facilities work', skill: 'manual', sector: 'support services' },
+  { id: 'grooming', name: 'personal care', skill: 'craft', sector: 'personal services' },
+  { id: 'entertainment', name: 'performance and recreation', skill: 'creative', sector: 'recreation' },
+  { id: 'security', name: 'security work', skill: 'manual', sector: 'support services' },
+  { id: 'sanitation', name: 'waste collection', skill: 'manual', sector: 'utilities' },
+  { id: 'warehousing', name: 'warehouse handling', skill: 'manual', sector: 'logistics' },
+  { id: 'retail', name: 'shop work', skill: 'service', sector: 'retail' },
+  { id: 'wholesale', name: 'merchant trading', skill: 'service', sector: 'wholesale' },
   { id: 'public', name: 'public service', skill: 'administration', sector: 'government' },
 ];
 

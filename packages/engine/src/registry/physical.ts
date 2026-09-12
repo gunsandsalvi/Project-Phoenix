@@ -528,11 +528,11 @@ export interface CapitalKindDecl {
 /**
  * A period is a week (docs/ARCHITECTURE.md 4.7), so a life below is a count of weeks.
  *
- * ONE KIND, and it is stated rather than hidden: this world makes one thing that has a life, and
- * every line that needs plant needs that one. The mechanism takes the SCARCEST of the kinds a
- * recipe names (A4) and is tested with two; a second kind arrives with the dwellings of Housing
- * (worklist 13d) and the storage of Commodities (13c), each of which is a stock of productive
- * assets with a life of its own.
+ * THE KINDS EVERY LINE MIGHT NEED. Storage (13c) and hulls (13c step 5) are declared by the modules
+ * whose behaviour they are; these three are not any module's — a works, a surgery, a classroom and a
+ * shop are one kind of structure to the arithmetic that wears it out, and declaring one per trade
+ * would be one fact written out many times (Law 2). The mechanism takes the SCARCEST of the kinds a
+ * recipe names (A4) and never asks what a kind is for.
  */
 export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
   {
@@ -549,6 +549,40 @@ export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
     // 13c.1: a machine and the yard around it. Small, but it is what makes a place fill up.
     landPerUnit: 0.02,
     why: 'A machine works for three years and then it is scrap. Three years is short enough that a firm which stops investing loses its capacity inside a run, and long enough that the spend and the capacity it buys are separated by more than a cycle — which is what makes investment a commitment rather than a purchase.',
+  },
+  {
+    id: 'premises',
+    name: 'premises',
+    unit: 'premises in use',
+    // 13c.2: built, not manufactured, which is why a shop cannot be ordered from a machine works
+    // and why a town that wants more of them has to wait for a building to go up.
+    madeFrom: 'building',
+    // Forty years. It is the longest life this world has, and it is why the cost of being in a place
+    // is so much slower to answer a shortage than the cost of making anything in it.
+    usefulLifePeriods: 2080,
+    buildLagPeriods: 12,
+    // A building stands up to far more than a machine shed, and what takes one down is rare.
+    standsWind: 8,
+    windHardness: 7,
+    // 13c.2, 13c.1: the ground a shop, a surgery or a restaurant stands on. It is small per unit and
+    // there are a great many of them, which is what makes a town fill up before a coalfield does.
+    landPerUnit: 0.004,
+    why: 'Freight A4 for a building rather than a hull: a service is made where it is bought, so being somewhere is the capital a service business has. It is the same arithmetic for a shop, a surgery, a classroom and an office, and five kinds would be five copies of one fact (Law 2, Law 15).',
+  },
+  {
+    id: 'fleet',
+    name: 'road fleet',
+    unit: 'vehicles in service',
+    madeFrom: 'vehicle',
+    // Ten years, and a lorry is worked hard for every one of them.
+    usefulLifePeriods: 520,
+    buildLagPeriods: 2,
+    // Out in the weather the whole time, and light: a gale takes more of these than of a building.
+    standsWind: 4,
+    windHardness: 6,
+    // 13c.2: a yard and a parking space. Small, and there are many.
+    landPerUnit: 0.0004,
+    why: 'What carries a thing the last few miles and what carries a person to work. It is the plant of the lines that move things WITHIN a place, and it is not a hull: a voyage is freight’s, it is built (13c.1), and a second writer of the same fact would be a Law 4 defect.',
   },
 ];
 
