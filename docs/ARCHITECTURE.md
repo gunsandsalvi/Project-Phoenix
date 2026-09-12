@@ -772,7 +772,25 @@ must be STABLE: a world that re-draws when a line is added is not a world.
 **Favourability is a read, never a stored score.** What a hectare yields, what plant costs to erect
 here, how fast a voyage crosses and what survives a gale are arithmetic over those primitives,
 computed where used. Which industry sits where is a firm's own decision reading them, never a
-weighted coefficient. A
+weighted coefficient.
+
+**The voyage store** (`register/voyages.ts`) is the second thing the map made necessary. What is on a
+voyage IS a holding — units of an in-transit instrument on the shipper's own book, Freight A3.a's
+working capital — and the register owns that. What the register cannot say is WHERE those units have
+got to, because a holding is a quantity and not a position. Two facts, two writers (Law 4). A
+voyage's position is `kmTravelled` along its tile path, so the tile it has reached is a read and the
+place that tile is in is what the weather searches. Its hulls are held by a LIEN rather than moved:
+the register already refuses to move encumbered units, so the lien is the whole of "a hull cannot be
+sold, sent on a second voyage, or counted as capacity twice" with no rule written (Freight E2,
+Law 12). It is written only by settlement, through one `VoyageLeg` with four acts, like the
+contract store.
+
+**Nothing about a leg is declared.** A leg is every ordered pair of places a carrier of one kind can
+get between, read off the map with its kilometres and its days and held per map (the draw is the
+map's one writer, so that is memoisation and not a copy). A carrier boards at a PORT, which is not
+declared either: it is where the ground a hull crosses meets the ground a lorry does, so a landlocked
+place simply has none. `RouteDecl`'s `transitPeriods`, `unitsPerVesselPerPeriod`, `sailsIn` and
+`sailsHardness` are deleted and each names its read. A
 module's own tables are its own registry, in `mechanisms/<system>/data.ts` — the treasury's maturity
 grid, the goods and their recipes — and the numbers in them are declared parameters generated from
 those tables, so a table row and a register entry are never two copies of one number. Behaviour that varies by kind lives in a **profile** behind a dispatch table keyed by kind,

@@ -60,3 +60,37 @@ reallocate between legs, and the price on a busy leg stays high longer than it s
 inserted item of its own — it is the same door a firm would need to sell a working vintage to
 somebody in another region, which 13c.2's file already names as belonging with 13g. The record says
 where it lands when this item closes.
+
+---
+
+## 13c.1-3 — a period costs twenty-five seconds, and `markets` is twenty-one of them
+
+**Measured.** One period of the foundation world, by phase:
+
+```
+one period: 25,817ms
+  markets          22,614ms
+  lending.write        630ms
+  ratings.assess       363ms
+  ... everything else under 250ms each
+  freight.session      131ms
+```
+
+**What is ruled out — and this matters, because the map is the obvious suspect.** The same profile
+run on `a702c37`, the commit before any map code, gives **24,575ms with `markets` at 21,493ms**. So
+the cost is not the map, not the drawn places, not the sail phase and not the freight session: it is
+what `markets` already cost.
+
+There are 256 markets and **231 of them are equity**, one per listed line. Each sweeps every one of
+the 3,185 parties for participation.
+
+**What the map did add, and what was fixed.** Declaring goods in every home place put four lines
+into two places with nobody in them — eight markets that cannot clear, each paying a full party
+sweep every period. Goods are now declared where the firms that make them are (`settled()` in the
+seed, sharing one `bestGround` with the placement so there is one rule and not two), and the goods
+markets are back to four. It did not move the total, because the equity markets are the cost.
+
+**Positioned, not chased.** This is 12c.1's territory (*the suite that got slower every period*) and
+it is a traversal, not a mechanism — Law 18 says the economics may not change and the layout is
+free. It wants a market to ask only the parties that could participate rather than all of them.
+Named to **16**, where measurement lives.

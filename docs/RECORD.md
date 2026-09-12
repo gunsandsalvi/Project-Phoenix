@@ -3180,3 +3180,82 @@ as an independent walk, `raise`'s real refusal, `research`'s coverage costing re
 `tick`'s structural invariants at every subdivision.
 
 Nothing was rolled back, no tolerance was widened, and no test was deleted or weakened to pass.
+
+## 13c.1 — the map, and the things that move on it
+
+**What.** A drawn world under the economy. Every tile of a rectangular grid carries its own
+characteristics — the place it is in, a MIX of terrain shares summing to one, its elevation, and a
+deposit of every declared resource — and all of them are drawn, none derived from another. Every
+tile belongs to exactly one PLACE, a land region or a sea area, and places group into countries. A
+vehicle is somewhere: a voyage is a kernel row with a tile path and a distance travelled, its hulls
+held by a lien, advancing each period by what the weather AT THE PLACE IT IS IN allowed.
+
+**Why.** 13c built freight against four legs declared identical (`transitPeriods: 4,
+unitsPerVesselPerPeriod: 25000, sailsIn: 4` on every one). Freight A4 says capacity on one route is
+not capacity on another; it was one route wearing four labels, so the location basis, "source
+locally" and the price indices with freight in them would each have measured nothing. Inserted
+before the rest of 13c because the dependency runs one way.
+
+**The decisions.**
+
+*A country has the money; a region is a place.* `RegionDecl` did two jobs and the map needs many
+places per currency. `CountryDecl` takes the currency, the central bank and the treasury;
+`RegionDecl.ccy` is deleted for `registry.currencyOf(region)`. Measured before taking: the economy
+is already written per region — `goodId`, `plantVintageId`, the cell key, `PartyBase.region`, one
+labour venue per (region, occupation) — so making regions smaller made all of it per-place with no
+renaming. 176 `.region` sites did not move; 80 `.ccy` reads did. §39 Cross-Border and Indices D1 say
+"region" and mean currency area; they are re-read as country and named to 13i.
+
+*A tile's characteristics are primitives.* The first draft treated the physical world as something
+to minimise — terrain as a thin index, water as a derivation, "declare only the ground a recipe
+names". That is a rule applied where it does not bite: Law 2 admits real-world PRIMITIVES and the
+physical world is what that clause exists to let in. A mix rather than a type because a
+fifty-kilometre square is not one thing, and because the mix removes every threshold from what
+follows. Every declared resource is drawn on every tile whether or not a recipe eats it, because
+THE MAP MUST BE STABLE: a world that re-draws when a line is added makes no two runs comparable.
+
+*Nothing about a leg is declared.* `RouteDecl` and its four numbers are gone, each naming its read:
+transit → a voyage's own progress; capacity → what free hulls hold; sailsIn/sailsHardness → the
+ground the voyage is crossing. A leg is every ordered pair of places a kind can get between, boarded
+at a PORT — which is not declared either: it is where the ground a hull crosses meets the ground a
+lorry does.
+
+*Favourability is a read.* What a hectare yields, what building costs, how fast a voyage crosses and
+what survives a gale are arithmetic over the primitives, computed where used. `groundFor` walks a
+place's tiles best first and answers with the MARGINAL hectare; past the last tile the decline
+continues by the ratio the last two set. So there is no cap on what a place holds, the return from
+the next unit falls continuously and never reaches zero, and a rent emerges instead of being
+assumed (Law 6).
+
+**Law 8 gained two dimensions.** The map brings length into this world, so `km` and `kmPerDay` join
+the closed vocabulary with reads of their own — kept apart for the reason the four durations are.
+
+**Found on the way.** A tile made of 1.0000000000000002 of a tile (a ninth added nine times; the
+sub-cells are counted as integers and divided once). Land the country seeds could not reach (a place
+is ONE PIECE, so an archipelago has one per island). The first country taking the whole continent
+(seeds now spread over the land WORTH a country). Picking a place by its best tile putting a farm on
+twelve tiles of rock (`groundIn` sums; a sum, never a mean). A farm standing on a thousand times its
+land (the register counts pieces and `landPerUnit` is per named unit — the same Law 8 defect storage
+had at 13c). And no sea leg existing at all, because a hull cannot start from a land tile.
+
+**The guards earned their keep.** `no-bounds` caught three ternaries and each is now arithmetic
+impossibility saying so through `atMost`/`atLeast` with its reason. `no-numeric-default` caught every
+`?? 0` in the draw's array reads; they throw now. The Law 8 dimension check refused a clumping
+declared in `count` and read as `ratio` — exactly the defect 13b.1 built it for.
+
+**Deleted.** `RouteDecl`, `ROUTES`, `routeParam` and the four route parameters; `RegionDecl.ccy`.
+Each names the read that replaced it.
+
+**Not built, and it says so.** Ballast. A hull cannot be repositioned: `vintagesHeld` reads a
+party's plant in its OWN region and a vintage is an instrument per (kind, region, serviceDate), so
+moving one needs a plant reseat the kernel does not have. A carrier serves the legs out of where it
+is based, which keeps everything B2 and E2 ask for and loses one thing — a shortage on one leg
+cannot pull hulls off another.
+
+**Forecast, with the measurement that would kill it (Law 17).** Industry should gather where the
+freight it saves is worth more than the ground it bids up, and hug the coast where it exports: the
+pull is a freight print, the push is a rent and a wage, and neither is a coefficient. Three
+scenarios would falsify it, and each is 16's to run: flatten the freight and the clustering should
+go; flatten the ground and firms should stop piling into one place; landlock the exporter and the
+coastal premium should fall to nothing. If the world does not cluster, that is a finding about a
+missing mechanism and never a licence to add a term that makes it.

@@ -120,26 +120,59 @@ function costOf(ctx: MechanismContext, view: ParticipantView, c: CarrierDecl, le
  * thing fetches where it is going and what it fetches where it is — read off two prints, both
  * public and both already made (Law 19, Law 3) — and what it will pay is that gap, because above it
  * the voyage is worse than selling at home.
+ *
+ * WHAT A PLACE HAS TO SHIP is read ONCE per origin and offered on every leg out of it (Law 18:
+ * the traversal is free, the mechanism is not). Walking every party for every destination cost
+ * thirty seconds a period in a world with seven places and forty-two legs, and it was the same walk
+ * forty-two times: the holdings and the price at home do not depend on where the thing is going.
  */
-function shippers(ctx: MechanismContext, from: RegionId, to: RegionId): readonly Order[] {
-  const out: Order[] = [];
+interface Shippable {
+  readonly party: PartyId;
+  readonly instrument: InstrumentId;
+  readonly subUnit: string;
+  readonly units: number;
+  readonly here: number;
+}
+
+function toShip(ctx: MechanismContext, from: RegionId): readonly Shippable[] {
+  const out: Shippable[] = [];
   for (const p of ctx.parties.alive()) {
     if (p.region !== from) continue;
     const view = ctx.participant(p.id);
     for (const h of view.holdings()) {
       const i = ctx.instruments.get(h.instrument);
       if (!i.status.live || !isGoodTerms(i.terms) || i.terms.region !== from) continue;
-      const there = goodId(i.terms.subUnit, to);
-      if (!ctx.instruments.has(there)) continue;
       const here = view.print(i.id);
-      const away = view.print(there);
-      if (!here.some || !away.some) continue;
-      const gap = sub(away.value.price, here.value.price, 'what the voyage is worth a unit');
-      if (gap <= 0) continue;
+      if (!here.some) continue;
       const units = view.free(i.id);
       if (units <= 0) continue;
-      out.push({ party: p.id, side: 'buy', price: gap, qty: asQty(units) });
+      out.push({
+        party: p.id,
+        instrument: i.id,
+        subUnit: i.terms.subUnit,
+        units,
+        here: here.value.price,
+      });
     }
+  }
+  return out;
+}
+
+/** What that becomes on one leg: the gap to where it is going, which is what a shipper will pay. */
+function shippers(
+  ctx: MechanismContext,
+  have: readonly Shippable[],
+  to: RegionId,
+): readonly Order[] {
+  const out: Order[] = [];
+  for (const s of have) {
+    const there = goodId(s.subUnit, to);
+    if (!ctx.instruments.has(there)) continue;
+    const away = ctx.participant(s.party).print(there);
+    if (!away.some) continue;
+    const gap = sub(away.value.price, s.here, 'what the voyage is worth a unit');
+    if (gap <= 0) continue;
+    out.push({ party: s.party, side: 'buy', price: gap, qty: asQty(s.units) });
   }
   return out;
 }
@@ -151,6 +184,7 @@ function session(
   from: RegionId,
   to: RegionId,
   leg: Path,
+  have: readonly Shippable[],
   ccy: CurrencyCode,
   said: Map<string, Record<string, unknown>>,
 ): void {
@@ -175,7 +209,7 @@ function session(
     });
     orders.push({ party: party.id, side: 'sell', price: perUnit, qty: asQty(offered) });
   }
-  orders.push(...shippers(ctx, from, to));
+  orders.push(...shippers(ctx, have, to));
   if (orders.length === 0) return;
   const outcome = clear(orders, 'proRata', 'sellersCompete');
   said.set(legKey(from, to), {
@@ -486,11 +520,15 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
         anchor: { before: 'markets' },
         run: (ctx: MechanismContext): void => {
           const said = new Map<string, Record<string, unknown>>();
-          const reachable = legs(ctx);
-          for (const [key, leg] of reachable) {
+          // Law 18: one walk of each origin, offered on every leg out of it.
+          const have = new Map<RegionId, readonly Shippable[]>();
+          for (const [key, leg] of legs(ctx)) {
             const [from, to] = key.split('|') as [RegionId, RegionId];
             if (!ctx.registry.regions.has(from) || !ctx.registry.regions.has(to)) continue;
-            session(ctx, carriers, from, to, leg, ctx.registry.currencyOf(from), said);
+            const mine = have.get(from) ?? toShip(ctx, from);
+            have.set(from, mine);
+            if (mine.length === 0) continue;
+            session(ctx, carriers, from, to, leg, mine, ctx.registry.currencyOf(from), said);
           }
           ctx.record(FREIGHT_SESSION, [...said.keys()], { byLeg: Object.fromEntries(said) }, true);
         },

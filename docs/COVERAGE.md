@@ -739,7 +739,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Commodities Spot C2` | MISSING |  |
 | `Commodities Spot C3` | MISSING |  |
 | `Commodities Spot C4` | MISSING |  |
-| `Commodities Spot D1` | MISSING |  |
+| `Commodities Spot D1` | MET | packages/engine/src/mechanisms/goods/index.ts (the same grade in two places is two instruments with two prints; 13c.1 made the places real) |
 | `Commodities Spot D2` | MISSING |  |
 | `Commodities Spot D3` | MISSING |  |
 | `Commodities Spot D4` | MISSING |  |
@@ -1152,7 +1152,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Capital Programme B3` | MET | packages/engine/src/mechanisms/firms/invest.ts (the gap is the rate it would run at against what its plant will still let it run at next period; a firm running empty has none) |
 | `Capital Programme B4` | MET | packages/engine/src/mechanisms/firms/invest.ts (what it commits to is what it would run at LESS the width of its own recent surprises, so a firm whose expectation is inside its own dispersion waits) |
 | `Capital Programme B5` | MET | packages/engine/src/mechanisms/firms/invest.ts (no fraction of profit or output anywhere: the only reason anything is bought is that a unit of capacity was worth more than the plant that makes one), packages/engine/test/capital.test.ts (asserted over the module’s declared numbers) |
-| `Capital Programme C1` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (what a firm BOUGHT of a capital good becomes plant; the seller is a named capital-goods producer and it is that seller’s revenue) |
+| `Capital Programme C1` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (what a firm BOUGHT of a capital good becomes plant; the seller is a named capital-goods producer and it is that seller’s revenue). 13c.1 adds `buildOn`: what erecting plant on a place takes, share-weighted over its ground — read and waiting for 13c.2's project to ask it |
 | `Capital Programme C2` | MET | packages/engine/src/mechanisms/firms/invest.ts (a purchase order in the capital good’s market, paid out of its account in a currency like any other trade) |
 | `Capital Programme C3` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (a build lag between the machines arriving and the vintage going into service, declared as the capital kind’s own technology) |
 | `Capital Programme C4` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (the good is destroyed into the plant in the same instruction: the money went to the producer and nothing can turn it back) |
@@ -1263,7 +1263,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Goods B1.d` | MET | packages/engine/src/mechanisms/capital-programme/capacity.ts, packages/engine/src/mechanisms/firms/produce.ts (utilisation is a read of the outcome against capacity, taken where the outcome is; no decision reads it) |
 | `Goods B2` | MET | packages/engine/src/mechanisms/firms/produce.ts, packages/engine/src/mechanisms/goods/index.ts (the audit contribution: what a batch consumed IS its recipe) |
 | `Goods B3` | MET | packages/engine/src/mechanisms/goods/inventory.ts (work in progress is a kind of its own, carried at what it has cost), packages/engine/src/mechanisms/firms/produce.ts |
-| `Goods B4` | MET | packages/engine/src/mechanisms/firms/produce.ts (what is started is not what is finished; the scrap is units and the whole batch cost lands on the survivors) |
+| `Goods B4` | MET | packages/engine/src/mechanisms/firms/produce.ts (what is started is not what is finished; the scrap is units and the whole batch cost lands on the survivors — and 13c.1 put the GROUND into the same exponent the season enters, so where a line stands is part of what it yields) |
 | `Goods B5` | MET | packages/engine/src/mechanisms/firms/produce.ts (inputs consumed plus the period wage bill), packages/engine/src/mechanisms/capital-programme/capacity.ts (plus a capital charge: the plant a unit takes times what a unit of that plant wears out by, which is the same schedule the stock is written down on) |
 | `Goods C1` | MET | packages/engine/src/mechanisms/firms/decide.ts (a seller offers what it holds in steps with a reason behind each; a buyer posts what the thing is worth to it) |
 | `Goods C2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/prices/price-store.ts, packages/engine/src/mechanisms/goods/index.ts |
@@ -1298,26 +1298,26 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Freight A1` | MISSING |  |
-| `Freight A2` | MISSING |  |
-| `Freight A3` | MISSING |  |
-| `Freight A4` | MISSING |  |
-| `Freight B1` | MISSING |  |
-| `Freight B2` | MISSING |  |
-| `Freight B3` | MISSING |  |
-| `Freight B4` | MISSING |  |
-| `Freight C1` | MISSING |  |
-| `Freight C2` | MISSING |  |
-| `Freight C3` | MISSING |  |
-| `Freight D1` | MISSING |  |
-| `Freight D2` | MISSING |  |
-| `Freight D3` | MISSING |  |
-| `Freight D4` | MISSING |  |
-| `Freight D5` | MISSING |  |
-| `Freight D6` | MISSING |  |
-| `Freight E1` | MISSING |  |
-| `Freight E2` | MISSING |  |
-| `Freight E3` | MISSING |  |
+| `Freight A1` | MET | packages/engine/src/mechanisms/freight/index.ts (a service: moving a quantity from one place to another over a time; the leg is read off the map, packages/engine/src/registry/geography.ts) |
+| `Freight A2` | MET | packages/engine/src/mechanisms/freight/index.ts (bought by a named shipper from a named carrier, at a price, in a currency) |
+| `Freight A3` | MET | packages/engine/src/register/voyages.ts (a voyage is a row with a position; the cargo is on the shipper’s own book the whole way — A3.a’s working capital) |
+| `Freight A4` | MET | packages/engine/src/registry/geography.ts (legsBetween: every leg is a different length over different ground, so capacity on one is not capacity on another — the four declared route numbers are deleted) |
+| `Freight B1` | MET | packages/engine/src/mechanisms/freight/index.ts (a carrier is a named FIRM owning hulls, which are plant with a life) |
+| `Freight B2` | MET | packages/engine/src/mechanisms/freight/index.ts (roomOf: what a carrier offers is the hulls it has FREE — a hull on a voyage is liened and the register refuses to move encumbered units) |
+| `Freight B3` | MET | packages/engine/src/mechanisms/freight/index.ts (costOf: the hull used up per unit-kilometre and the crew paid per day, out of the leg the map gave) |
+| `Freight B4` | MET | packages/engine/src/mechanisms/freight/index.ts (the sail phase: a voyage comes as far as the weather AT THE PLACE IT IS IN let it, exp(-(wind/what that ground stands)^hardness), never a threshold) |
+| `Freight C1` | MET | packages/engine/src/mechanisms/freight/index.ts (demand is derived: a shipper wants room because it holds something worth more elsewhere) |
+| `Freight C2` | PARTIAL | the shipper holds or does not trade; SOURCE LOCALLY needs a second place that makes the thing — 13c step 10 |
+| `Freight C3` | MET | packages/engine/src/mechanisms/freight/index.ts (toShip/shippers: read off two prints both already made, never a series) |
+| `Freight D1` | MET | packages/engine/src/mechanisms/freight/index.ts (it clears per leg, one solver, like every market) |
+| `Freight D2` | MET | packages/engine/src/mechanisms/freight/index.ts (the freight is part of what the cargo lands costing: the create leg carries it in the basis) |
+| `Freight D3` | PARTIAL | the mechanism is here — two places, two prints, a real cost to move between them — but the BASIS is measured at 13c step 9 |
+| `Freight D4` | MET | packages/engine/src/register/voyages.ts (transit is a real lag and it is not a number: kmTravelled against the weather the voyage met) |
+| `Freight D5` | PARTIAL | measured at 13c step 9, which is what this item was inserted before |
+| `Freight D6` | MET | packages/engine/src/mechanisms/freight/index.ts (capacity rations quantity: what is not carried stays where it is, and the session says so) |
+| `Freight E1` | MET | packages/engine/src/register/voyages.ts (a voyage covers a real distance and takes real time; settlement refuses one that does not) |
+| `Freight E2` | MET | packages/engine/src/register/voyages.ts (no shipment without capacity, and none without a carrier that owns it: the lien is what enforces it) |
+| `Freight E3` | MET | packages/engine/src/mechanisms/freight/index.ts (every unit in transit is the shipper’s, the whole way; what a storm takes leaves its book by the same instruction) |
 
 ## Labour
 
