@@ -219,3 +219,33 @@ finding one class over, and it is stronger: here not one party wants either side
 
 **Where it goes.** 13h, with `13b-10`: the counterparty that would take the other side of an
 option — an insurer, a pension fund — is that item's to build.
+
+---
+
+## 13b.1-10 — Seventeen participants post a quantity with no level, and one of them is the central bank
+
+**Measured.** Read, not run: `grep "price: 'market'"` over `src/mechanisms` gives seventeen sites in
+nine modules — funds, the tracker, the central bank's open-market desk, estates, subordinated debt,
+the dealing desk, spot FX, firms and households.
+
+**What it is, and Clearing A2.a said it in advance.** "Each participant posts a **schedule**, not a
+point... A market expressed as 'here is the quantity I want' has no level, only a shape, and forces
+every venue to invent its own rule." `resolveMarketOrders` is that invented rule. It now says so
+where it lives and states the choice deliberately — the worst level the other side actually posted,
+because the level taken is then one somebody really asked for and the price still comes out of
+posted supply meeting posted demand (Law 3).
+
+**The consequential one is the central bank.** A bidder with no level is a price-taker of a price
+this mechanism has not yet produced (Clearing A4), and a big enough one is the marginal order that
+sets it. `central-bank-omo` closes a gap towards a 25%-of-line target, so in every sovereign session
+where it has a gap it bids at the top of the book for a quarter of the line. The quantity limit is
+real policy (Central Bank C1) and the module correctly refuses to stand in any other market, so this
+is not Appendix B's buyer of last resort — but it makes the central bank the marginal price-setter
+in the sovereign book rather than a large participant in it, which is more aggressive than any real
+open-market operation and is a price the polity is setting by another route.
+
+**Where it goes.** Each poster needs the level at which its own reason stops, which is a mechanism
+per module and not one change. The central bank's is **14** (the polity: what the central bank may
+and may not do to a price is that item's subject, and its administered rate arrives there). The
+other eight are read together at **16**, where Part XII measures what the market shapes actually
+are. Not this item's: 13b.1 changes no economic outcome, and every one of these changes a price.

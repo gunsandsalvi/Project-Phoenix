@@ -95,6 +95,25 @@ export type PriceRule = 'sellersCompete' | 'marginalBid';
 /**
  * Resolve every 'market' order against the levels the other side posted (C3, C4.c). Orders that
  * find no level are dropped: nobody posted a price for them to take.
+ *
+ * **THE RULE IS STATED DELIBERATELY, AND A2.a ALREADY SAID WHAT IT IS.** "A market expressed as
+ * 'here is the quantity I want' has no level, only a shape, and forces every venue to invent its
+ * own rule." This is that invented rule, in one place rather than one per venue, and naming it is
+ * the point: a market order is not a schedule (A2), and the participant that posts one has answered
+ * "how much" without answering *"and if it were cheaper?"* — which is the only question the
+ * mechanism asks.
+ *
+ * Given that it exists, it resolves to the WORST level the other side actually posted: a market buy
+ * to the highest ask, a market sell to the lowest bid. That is the least-bad invention available,
+ * because the level it takes is one somebody really asked for — the price still comes out of posted
+ * supply meeting posted demand (Law 3), and nothing here invents a level to clear at. Resolving to
+ * the BEST level instead would make an order with no limit into a price-sensitive one, which is a
+ * different order from the one that was posted.
+ *
+ * What it costs is A4: an order with no level is a price-taker of a price this mechanism has not
+ * yet produced, and a large enough one is the marginal order that sets it. Seventeen sites post one
+ * today and the consequential one is `central-bank-omo` (`13b.1-10`). The fix is at the POSTER, not
+ * here: a participant with a reason to be in the room has a level at which its reason stops.
  */
 export function resolveMarketOrders(orders: readonly Order[]): {
   readonly resolved: readonly LimitOrder[];
