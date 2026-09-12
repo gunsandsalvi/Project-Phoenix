@@ -388,3 +388,188 @@ export function geographyFaults(
   }
   return [...new Set(faults)];
 }
+
+/**
+ * A journey over the ground: which tiles it crosses, how far that is in kilometres, and how many
+ * days it takes the kind of carrier that is making it.
+ *
+ * `km` and `days` are two different facts and both are needed: the kilometres are what a hull is
+ * used up by, the days are what a crew is paid for, and the same distance over a pass and over a
+ * plain is not the same voyage (Freight A1, A3).
+ */
+export interface Path {
+  readonly tiles: readonly TileIndex[];
+  readonly km: number;
+  readonly days: number;
+  /** The places it passes through, in order and without repeats — where the weather will find it. */
+  readonly places: readonly PlaceId[];
+}
+
+interface Step {
+  readonly tile: TileIndex;
+  readonly cost: number;
+}
+
+/** A heap, so the walk takes the cheapest open tile next rather than sorting the whole frontier. */
+class Cheapest {
+  private readonly items: Step[] = [];
+
+  get size(): number {
+    return this.items.length;
+  }
+
+  /** An index off the end is this heap being wrong about itself, so it says so rather than reads 0. */
+  private slot(i: number): Step {
+    const s = this.items[i];
+    if (s === undefined) throw new InvalidRegistry('Freight A1', `no step at ${i}`);
+    return s;
+  }
+
+  push(tile: TileIndex, cost: number): void {
+    this.items.push({ tile, cost });
+    let i = this.items.length - 1;
+    while (i > 0) {
+      const up = Math.floor((i - 1) / 2);
+      if (this.slot(up).cost <= this.slot(i).cost) break;
+      this.swap(i, up);
+      i = up;
+    }
+  }
+
+  pop(): Step | undefined {
+    const top = this.items[0];
+    if (top === undefined) return undefined;
+    const last = this.items.pop();
+    if (this.items.length > 0 && last !== undefined) {
+      this.items[0] = last;
+      let i = 0;
+      for (;;) {
+        const left = 2 * i + 1;
+        const right = left + 1;
+        let small = i;
+        if (left < this.items.length && this.slot(left).cost < this.slot(small).cost) small = left;
+        if (right < this.items.length && this.slot(right).cost < this.slot(small).cost) small = right;
+        if (small === i) break;
+        this.swap(i, small);
+        i = small;
+      }
+    }
+    return top;
+  }
+
+  private swap(a: number, b: number): void {
+    const sa = this.slot(a);
+    this.items[a] = this.slot(b);
+    this.items[b] = sa;
+  }
+}
+
+/**
+ * The least-DAY walk from one tile to another for a carrier of this kind, or `undefined` when this
+ * kind cannot get there at all — which is a real answer and the reason two places can be
+ * unreachable from each other without anybody declaring them so (Freight A4).
+ *
+ * It is the least DAY and not the least kilometre, because what a shipper is buying is the time as
+ * much as the distance: a longer way round open plain beats a short way over a pass, and which it
+ * is comes out of the ground rather than out of a rule.
+ *
+ * A step costs half of what it takes to cross the tile it leaves and half of the one it enters —
+ * you cross half of each — and a corner step is `sqrt(2)` tiles long, because a journey may cut a
+ * corner even though a border may not.
+ */
+export function path(
+  g: GeographyDecl,
+  reads: TerrainReads,
+  from: TileIndex,
+  to: TileIndex,
+  by: string,
+): Path | undefined {
+  const n = tileCount(g);
+  const best = new Float64Array(n).fill(Number.POSITIVE_INFINITY);
+  const cameFrom = new Int32Array(n).fill(-1);
+  const settled = new Uint8Array(n);
+  const open = new Cheapest();
+  const half = (t: TileIndex, km: number): number | undefined => daysAcross(g, reads, t, by, km / 2);
+  if (half(from, g.tileKm) === undefined) return undefined;
+  best[from] = 0;
+  open.push(from, 0);
+  while (open.size > 0) {
+    const next = open.pop();
+    if (next === undefined) break;
+    const here = next.tile;
+    if (settled[here] === 1) continue;
+    settled[here] = 1;
+    if (here === to) break;
+    const sofar = next.cost;
+    const c = colOf(g, here);
+    const r = rowOf(g, here);
+    for (const there of stepNeighbours(g, here)) {
+      if (settled[there] === 1) continue;
+      const straight = colOf(g, there) === c || rowOf(g, there) === r;
+      const km = straight ? g.tileKm : g.tileKm * Math.SQRT2;
+      const out = half(here, km);
+      const into = half(there, km);
+      if (out === undefined || into === undefined) continue;
+      const cost = sofar + out + into;
+      const known = best[there];
+      if (known === undefined || cost >= known) continue;
+      best[there] = cost;
+      cameFrom[there] = here;
+      open.push(there, cost);
+    }
+  }
+  if (settled[to] !== 1) return undefined;
+  const tiles: TileIndex[] = [];
+  for (let t: number = to; ; ) {
+    tiles.push(t as TileIndex);
+    if (t === from) break;
+    const back = cameFrom[t];
+    if (back === undefined || back === -1) break;
+    t = back;
+  }
+  tiles.reverse();
+  let km = 0;
+  const places: PlaceId[] = [];
+  for (let i = 0; i < tiles.length; i += 1) {
+    const t = tiles[i];
+    if (t === undefined) continue;
+    const where = placeAt(g, t);
+    if (places[places.length - 1] !== where) places.push(where);
+    if (i === 0) continue;
+    const prev = tiles[i - 1];
+    if (prev === undefined) continue;
+    const straight = colOf(g, t) === colOf(g, prev) || rowOf(g, t) === rowOf(g, prev);
+    km += straight ? g.tileKm : g.tileKm * Math.SQRT2;
+  }
+  const days = best[to];
+  if (days === undefined) throw new InvalidRegistry('Freight A1', `no cost reached ${to}`);
+  return { tiles, km, days, places };
+}
+
+/**
+ * The tile of a place a journey starts from: the one nearest its middle, so a leg is measured from
+ * somewhere in the place rather than from whichever corner happened to be indexed first.
+ */
+export function heartOf(g: GeographyDecl, place: PlaceId): TileIndex {
+  const tiles = tilesOf(g, place);
+  const first = tiles[0];
+  if (first === undefined) throw new InvalidRegistry('Freight A1', `${place} has no tiles`);
+  let x = 0;
+  let y = 0;
+  for (const t of tiles) {
+    x += colOf(g, t);
+    y += rowOf(g, t);
+  }
+  x /= tiles.length;
+  y /= tiles.length;
+  let nearest = first;
+  let gap = Number.POSITIVE_INFINITY;
+  for (const t of tiles) {
+    const d = (colOf(g, t) - x) ** 2 + (rowOf(g, t) - y) ** 2;
+    if (d < gap) {
+      gap = d;
+      nearest = t;
+    }
+  }
+  return nearest;
+}

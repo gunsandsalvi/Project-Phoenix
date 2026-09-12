@@ -24,6 +24,8 @@ import {
   daysAcross,
   depositAt,
   geographyFaults,
+  heartOf,
+  path,
   paramId,
   placeAt,
   regionId,
@@ -34,6 +36,7 @@ import {
   terrainId,
   tileAt,
   tileYield,
+  tilesOf,
   touches,
 } from '../src/index.js';
 import { type MapSpec, drawMap } from '../src/seeds/map.js';
@@ -521,5 +524,131 @@ describe('the draw: a world out of a seed, and it comes out whole', () => {
 
   it('refuses a world with no land to put a country on', () => {
     expect(() => drawMap(spec({ oceanShare: 1 }), DRAW_READS, 'drowned')).toThrow(/no land/);
+  });
+});
+
+/**
+ * Kilometres and days (13c.1, step 4). What is under test is that a journey is measured off the
+ * ground rather than declared, and that `tileKm` is a RESOLUTION: cutting the same world finer must
+ * not move a distance in kilometres, which is what Law 2 means by "tested by invariance".
+ */
+
+/** A world of open plain `km` across, inside a ring of water, cut at whatever tile size is asked. */
+function corridor(acrossKm: number, downKm: number, tileKm: number): GeographyDecl {
+  const cols = Math.round(acrossKm / tileKm);
+  const rows = Math.round(downKm / tileKm);
+  const n = cols * rows;
+  const place = new Int16Array(n);
+  const mix = new Map<TerrainId, Float64Array>(
+    TERRAINS.map((x) => [x.id, new Float64Array(n)] as const),
+  );
+  for (let r = 0; r < rows; r += 1) {
+    for (let c = 0; c < cols; c += 1) {
+      const i = r * cols + c;
+      const edge = r === 0 || c === 0 || r === rows - 1 || c === cols - 1;
+      mix.get(WATER)?.set([edge ? 1 : 0], i);
+      mix.get(PLAIN)?.set([edge ? 0 : 1], i);
+      place[i] = edge ? 0 : 1;
+    }
+  }
+  return {
+    tileKm,
+    cols,
+    rows,
+    terrains: TERRAINS,
+    resources: RESOURCES,
+    seaAreas: [{ id: SEA, name: 'the sea' }],
+    places: [SEA, A],
+    place,
+    elevation: new Float64Array(n),
+    mix,
+    deposit: new Map(RESOURCES.map((d) => [d.id, new Float64Array(n)] as const)),
+  };
+}
+
+describe('a journey is measured off the ground (Freight A1, A3)', () => {
+  it('a walk over open plain costs the distance divided by the speed, and nothing else', () => {
+    const g = corridor(600, 200, TILE_KM);
+    const walk = path(g, READS, tileAt(g, 1, 1), tileAt(g, 9, 1), LORRY);
+    if (walk === undefined) throw new Error('a lorry crosses plain');
+    expect(walk.km).toBeCloseTo(8 * TILE_KM, 9);
+    expect(walk.days).toBeCloseTo((8 * TILE_KM) / 400, 9);
+  });
+
+  it('the same distance takes longer over a pass than over a plain', () => {
+    const g = world(['.....', '.aaa.', '.aaa.', '.....', '.....']);
+    const rough = world(['.....', '.AAA.', '.AAA.', '.....', '.....']);
+    const flat = path(g, READS, tileAt(g, 1, 1), tileAt(g, 3, 1), LORRY);
+    const hard = path(rough, READS, tileAt(rough, 1, 1), tileAt(rough, 3, 1), LORRY);
+    if (flat === undefined || hard === undefined) throw new Error('a lorry crosses both');
+    expect(hard.km).toBeCloseTo(flat.km, 9);
+    expect(hard.days).toBeGreaterThan(flat.days);
+  });
+
+  it('a journey is the least DAY and not the least kilometre, so it goes round a pass', () => {
+    // A wall of mountain across the middle with one gap in it: the way round is longer in km.
+    const g = world(['.....', '.aaa.', '.AAa.', '.aaa.', '.....'], ['sea', 'a']);
+    const walk = path(g, READS, tileAt(g, 1, 2), tileAt(g, 3, 2), LORRY);
+    if (walk === undefined) throw new Error('a lorry gets there');
+    expect(walk.km).toBeGreaterThan(2 * TILE_KM);
+  });
+
+  it('a kind that cannot cross the ground cannot get there at all — a real answer, not a slow one', () => {
+    const g = corridor(600, 200, TILE_KM);
+    expect(path(g, READS, tileAt(g, 1, 1), tileAt(g, 9, 1), HULL)).toBeUndefined();
+    expect(path(g, READS, tileAt(g, 0, 0), tileAt(g, 1, 1), HULL)).toBeUndefined();
+  });
+
+  it('a journey and its return are the same journey', () => {
+    const g = corridor(600, 300, TILE_KM);
+    const there = path(g, READS, tileAt(g, 1, 1), tileAt(g, 9, 4), LORRY);
+    const back = path(g, READS, tileAt(g, 9, 4), tileAt(g, 1, 1), LORRY);
+    if (there === undefined || back === undefined) throw new Error('both ways exist');
+    expect(back.km).toBeCloseTo(there.km, 9);
+    expect(back.days).toBeCloseTo(there.days, 9);
+  });
+
+  it('going by way of somewhere else is never quicker than going straight', () => {
+    const g = corridor(600, 300, TILE_KM);
+    const [a, b, c] = [tileAt(g, 1, 1), tileAt(g, 5, 3), tileAt(g, 9, 1)];
+    const direct = path(g, READS, a, c, LORRY);
+    const first = path(g, READS, a, b, LORRY);
+    const second = path(g, READS, b, c, LORRY);
+    if (direct === undefined || first === undefined || second === undefined) {
+      throw new Error('all three legs exist');
+    }
+    expect(direct.days).toBeLessThanOrEqual(first.days + second.days + Number.EPSILON);
+  });
+
+  it('names the places it passes through, in order and without repeats', () => {
+    const g = world(['.....', '.aaB.', '.aaB.', '.....', '.....']);
+    const walk = path(g, READS, tileAt(g, 1, 1), tileAt(g, 3, 2), LORRY);
+    if (walk === undefined) throw new Error('a lorry crosses');
+    expect(walk.places[0]).toBe(A);
+    expect(walk.places[walk.places.length - 1]).toBe(B);
+    expect(new Set(walk.places).size).toBe(walk.places.length);
+  });
+
+  it('the heart of a place is one of its own tiles, near its middle', () => {
+    const g = world(NEIGHBOURS);
+    expect(tilesOf(g, A)).toContain(heartOf(g, A));
+  });
+
+  /**
+   * Law 2: a RESOLUTION is tested by invariance. Cutting the same world into tiles half the size
+   * must not move the distance across it. The allowance is the GRID'S OWN STEP — a walk on a
+   * lattice cannot land between tiles — and it is derived from the coarse tile rather than being a
+   * percentage anybody chose (Law 7).
+   */
+  it('halving the tile does not move a distance in kilometres', () => {
+    const acrossKm = 1200;
+    const downKm = 400;
+    const coarse = corridor(acrossKm, downKm, TILE_KM);
+    const fine = corridor(acrossKm, downKm, TILE_KM / 2);
+    const a = path(coarse, READS, tileAt(coarse, 1, 1), tileAt(coarse, coarse.cols - 2, 1), LORRY);
+    const b = path(fine, READS, tileAt(fine, 2, 2), tileAt(fine, fine.cols - 3, 2), LORRY);
+    if (a === undefined || b === undefined) throw new Error('both worlds are crossable');
+    expect(Math.abs(b.km - a.km)).toBeLessThanOrEqual(TILE_KM * Math.SQRT2);
+    expect(Math.abs(b.days - a.days)).toBeLessThanOrEqual((TILE_KM * Math.SQRT2) / 400);
   });
 });
