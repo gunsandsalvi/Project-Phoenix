@@ -9,7 +9,9 @@ import { formatCivil } from '../calendar/civil.js';
 import { asContractMarket, contractOf, pairOf } from '../clearing/market.js';
 import { add, div, mul, sub } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
-import { partyId, type CurrencyCode, type PartyId } from '../core/ids.js';
+import { partyId, type CurrencyCode, type PartyId, type RegionId } from '../core/ids.js';
+import { placeAt, tilesOf } from '../registry/geography.js';
+import { tileReached } from '../register/voyages.js';
 import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
 import { contractName, displayName } from '../registry/naming.js';
@@ -375,6 +377,38 @@ export interface StatementsView {
   readonly surprises: readonly { readonly bank: string; readonly surprise: number }[];
 }
 
+/** What a place is, for a viewer: where it is, what it is made of, and whose it is. */
+export interface MapView {
+  readonly cols: number;
+  readonly rows: number;
+  readonly tileKm: number;
+  /** Per tile, row-major: the index of the place it is in. Every tile is somewhere. */
+  readonly place: readonly number[];
+  /** Per tile: how high it stands, in kilometres above the water. */
+  readonly elevation: readonly number[];
+  /** Per terrain, per tile: the share of the tile that is that. The shares come to one. */
+  readonly mix: readonly { readonly terrain: string; readonly share: readonly number[] }[];
+  readonly places: readonly {
+    readonly id: string;
+    readonly name: string;
+    /** The country it is in, or null for a stretch of water, which is in nobody's. */
+    readonly country: string | null;
+    readonly tiles: number;
+  }[];
+  /** Freight A3: every voyage under way, at the tile it has actually reached. */
+  readonly voyages: readonly {
+    readonly id: number;
+    readonly carrier: string;
+    readonly shipper: string;
+    readonly cargo: string;
+    readonly aboard: number;
+    readonly tile: number;
+    readonly place: string;
+    readonly km: number;
+    readonly travelled: number;
+  }[];
+}
+
 export interface Snapshot {
   readonly seed: string;
   readonly period: number;
@@ -393,6 +427,12 @@ export interface Snapshot {
     /** Banks Lending E2: false once a payment it promised was missed; null once it has ceased. */
     performing: boolean | null;
   }[];
+  /**
+   * 13c.1, §45: THE MAP, as a viewer sees it. Reads only, and nothing about it changes because it
+   * is being looked at — the grid is drawn once by the seed and written by nothing afterwards, so
+   * painting it is a read of a load-bearing thing and never a display-only number (Appendix B).
+   */
+  readonly map: MapView;
   readonly prints: readonly PrintView[];
   readonly curves: readonly CurveView[];
   readonly yields: readonly YieldView[];
@@ -661,9 +701,44 @@ export function snapshot(
       });
     }
   }
+  // 13c.1, §45: the map as it stands. It is READ here and nothing writes it, which is why looking
+  // at it cannot change the model — the one thing a surface must never do (Appendix B, Observer).
+  const g = w.registry.geography;
+  const map: MapView = {
+    cols: g.cols,
+    rows: g.rows,
+    tileKm: g.tileKm,
+    place: [...g.place],
+    elevation: [...g.elevation],
+    mix: g.terrains.map((x) => ({ terrain: String(x.id), share: [...(g.mix.get(x.id) ?? [])] })),
+    places: g.places.map((id) => ({
+      id: String(id),
+      name: w.registry.regions.get(id as RegionId)?.name ??
+        g.seaAreas.find((s) => s.id === id)?.name ??
+        String(id),
+      country: w.registry.regions.get(id as RegionId)?.country ?? null,
+      tiles: tilesOf(g, id).length,
+    })),
+    voyages: w.voyages.underWay().map((v) => {
+      const tile = tileReached(v);
+      return {
+        id: v.id,
+        carrier: v.carrier,
+        shipper: v.shipper,
+        cargo: v.cargo,
+        aboard: v.aboard,
+        tile,
+        place: String(placeAt(g, tile)),
+        km: v.km,
+        travelled: v.kmTravelled,
+      };
+    }),
+  };
+
   return {
     seed: w.seed,
     period: w.period,
+    map,
     date: formatCivil(w.calendar.startOf(w.period)),
     scope,
     parties: w.parties.all().map((p) => ({

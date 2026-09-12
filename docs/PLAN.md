@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 68.3%** (463 of 678 steps across 44 items).
+**Plan completion: 68.4%** (464 of 678 steps across 44 items).
 **Requirement coverage: 54.2%** (738 MET, 85 PARTIAL, 0 OUT OF SCOPE of 1362 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -51,7 +51,7 @@ The plan has two parts:
 | 13b — The derivative classes | 37 | 37 | closed |
 | 13b.1 — The checks that do not check | 17 | 17 | closed |
 | [13c — Commodities and freight](plan/13c-commodities-freight.md) | 16 | 8 | in progress |
-| [13c.1 — The map, and the things that move on it](plan/13c.1-the-map.md) | 17 | 13 | in progress |
+| [13c.1 — The map, and the things that move on it](plan/13c.1-the-map.md) | 17 | 14 | in progress |
 | [13c.2 — Where a firm builds](plan/13c.2-where-a-firm-builds.md) | 9 | 0 | open |
 | [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 26 | 0 | open |
 | [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 20 | 0 | open |

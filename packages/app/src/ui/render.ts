@@ -603,7 +603,71 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   journal.append(ul);
   root.append(journal);
 
+  root.append(mapOf(s));
+
   root.append(
     el('footer', {}, `phases: ${s.phases.map((p) => `${p.name}@c${p.cycle}`).join(' → ')}`),
   );
+}
+
+/**
+ * §45, 13c.1: THE MAP. Places by country, the ground shaded by what it is made of, and every voyage
+ * drawn at the tile it has actually reached. It READS the snapshot and writes nothing — the grid is
+ * drawn once by the seed and written by nothing afterwards, so looking at it cannot move the model.
+ */
+function mapOf(s: Snapshot): HTMLElement {
+  const m = s.map;
+  const section = el('section', { id: 'map' }, el('h2', {}, `The world (${m.cols}x${m.rows} tiles, ${m.tileKm} km a side)`));
+  const water = m.mix.find((x) => x.terrain === 'water');
+  const rough = m.mix.filter((x) => x.terrain === 'hill' || x.terrain === 'mountain');
+  const countries = [...new Set(m.places.map((p) => p.country).filter((c) => c !== null))];
+  const at = new Map<number, string>();
+  for (const v of m.voyages) at.set(v.tile, v.aboard > 0 ? '@' : 'o');
+  const rows: string[] = [];
+  for (let r = 0; r < m.rows; r += 1) {
+    let line = '';
+    for (let c = 0; c < m.cols; c += 1) {
+      const t = r * m.cols + c;
+      const ship = at.get(t);
+      if (ship !== undefined) {
+        line += ship;
+        continue;
+      }
+      const place = m.places[m.place[t] ?? 0];
+      const country = place?.country;
+      if (country === undefined || country === null) {
+        line += (water?.share[t] ?? 1) >= 1 ? '.' : ',';
+        continue;
+      }
+      const steep = rough.reduce((sum, x) => sum + (x.share[t] ?? 0), 0);
+      const owner = countries.indexOf(country);
+      const letter = String.fromCharCode(65 + (owner < 0 ? 26 : owner));
+      line += steep > 0.5 ? letter : letter.toLowerCase();
+    }
+    rows.push(line);
+  }
+  section.append(el('pre', { class: 'map' }, rows.join('\n')));
+  const legend = el('ul', { class: 'map-legend' });
+  for (const country of countries) {
+    const mine = m.places.filter((p) => p.country === country);
+    legend.append(
+      el(
+        'li',
+        {},
+        `${String.fromCharCode(65 + countries.indexOf(country))} = ${country}: ${mine.length} places, ${mine.reduce((n, p) => n + p.tiles, 0)} tiles (upper case is hill and mountain)`,
+      ),
+    );
+  }
+  legend.append(el('li', {}, `. open water, , coast — ${m.places.filter((p) => p.country === null).length} sea areas`));
+  for (const v of m.voyages) {
+    legend.append(
+      el(
+        'li',
+        {},
+        `@ voyage ${v.id}: ${v.shipper} -> ${v.cargo} with ${v.carrier}, ${Math.round(v.travelled)} of ${Math.round(v.km)} km, in ${v.place}`,
+      ),
+    );
+  }
+  section.append(legend);
+  return section;
 }
