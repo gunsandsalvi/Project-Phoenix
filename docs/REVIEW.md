@@ -1575,3 +1575,172 @@ Per Law 10, inserted at its dependency position rather than appended:
   thing that makes the fund's door fire on a price shock rather than only on an income shock.
 
 Nothing here is a new system. It is one module's reasons being those of a different profession.
+
+---
+
+# Addendum: a firm needs people to make anything; a bank makes everything out of nothing
+
+Raised after the sophistication pass: firms need workers and hours to produce, banks get their
+output for free — you need traders, and enough of them, to quote; bankers to advise and syndicate;
+credit officers to write loans. Checked, and it is worse than "not modelled yet": **one bank desk
+already does it correctly, and the lending desk charges borrowers for staff it does not have.**
+
+## What employs anybody today
+
+`ctx.post(venue, ...)` into a labour venue is called from exactly two places in the engine:
+
+```
+firms/index.ts:302      a firm's opening, at the wage it offers
+treasury/index.ts:756   the state's opening
+```
+
+And `OCCUPATIONS` (`labour/data.ts`) is five rows: `field`, `mill`, `bakery`, `works`, `public`.
+There is no financial occupation, and **no bank, fund, fund manager, assessor, clearing house or
+central bank posts an opening anywhere.** Every one of them produces its output out of capital and
+nothing else.
+
+## The three tiers that exist now
+
+**Tier 1 — a firm and the treasury.** Post openings into the venue for their region and occupation;
+the match is a relationship that persists (Labour A4, XI-10); hiring has a lag, firing costs
+severance, and the asymmetry between them is stated as "where the cycle in employment comes from".
+This is right.
+
+**Tier 2 — a bank's RESEARCH desk, and it is half right in an instructive way.**
+`research/index.ts:105` `pay()` is a real instruction, in the bank's own money, to the household
+cells whose members do the work, split per member as a wage is (XI-15). The hours are declared
+TECHNOLOGY (`research.hoursPerName`) — "covering a name takes a person a stated amount of time,
+which is a fact about the work" — and what the time costs is read off the wage this world's own
+labour market printed, "never a research budget somebody wrote down, which would be the cost stated
+instead of paid". There is even an audit contribution checking the payment settled, because "a
+research cost with no payee is a one-sided flow even when nothing failed".
+
+Every word of that is correct, and it is the template. What it is missing is the *relationship*: it
+reads `wagePrinted` and pays it, so nobody is employed. There is no headcount, no venue, no
+matching, no vacancy that cannot be filled, no severance, and — the part that matters — **no
+capacity**: `hoursPerName × names` is computed with no check that enough people exist to work those
+hours. Research pays the wage BILL without the EMPLOYMENT.
+
+**Tier 3 — everything else a bank does.** Lending, dealing, and the advisory and syndication desks
+arriving at 13f and 13g: nothing at all.
+
+## DEFECT — `loan.operatingCost` is a wage bill that is charged and never paid
+
+```ts
+id: LENDING_PARAMS.operatingCost,
+value: 0.005,
+unit: 'per annum on the principal',
+kind: 'technology',
+why: 'Banks Lending C1.d: what it costs a bank to make and keep a loan — the people, the
+      assessment, the collecting. It is a real cost of doing the thing, which is what technology means.'
+```
+
+It is read in exactly one place — `quote.ts:146`, added into the rate the bank quotes:
+
+```ts
+rate: add(add(funds, expectedLoss, 'funds and loss'),
+          add(capitalCharge, reg.operatingCost, 'capital and running it'), 'the rate it quotes')
+```
+
+**The borrower pays it and nobody receives it.** There is no money leg anywhere behind this number.
+Three separate problems, in ascending order:
+
+1. **It is margin wearing the clothes of a cost.** The bank charges half a per cent a year for
+   "the people", and the half per cent lands in its own income. Law 5 is about legs and this has
+   none, so it does not trip anything — which is the file's own point about a one-sided flow being
+   a defect *even when nothing fails*. The research module's audit family was built for precisely
+   this failure and it does not cover this parameter.
+
+2. **It is a placeholder declared as a technology.** Its own `why` says the number stands in for
+   people the bank does not employ. Law 2: a shape with a scheduled death IS a placeholder and must
+   name the item that kills it. And `ParamRegister`'s guard cannot catch it — `namesAnItem` is
+   checked only when `kind === 'shape'`, so a placeholder mislabelled `technology` sails through.
+   (That extends the `namesAnItem` finding above: the guard polices the honest mistake and misses
+   the one that matters.)
+
+3. **It is a cost expressed as a share of money, which is the defect `phoenix/no-value-recipe`
+   exists to refuse.** That rule's own message: *"a recipe in money. A price that doubles would halve
+   the physical draw, which is the strongest substitution assumption there is, sitting where the
+   model chose none. State the quantity in the input's own units."* A bank's cost of making a loan is
+   **hours of a credit officer's time** — assessing a borrower takes about as long whether the loan
+   is for a hundred or a million — and here it is a percentage of the principal, so doubling the
+   loan doubles the assessment. `research.hoursPerName` gets the identical question right, one
+   module over.
+
+## RISK — a dealing desk's capacity is entirely financial, so liquidity cannot cycle
+
+`dealing-quote.ts` sizes a quote by three constraints and names them: its own position limit, the
+room left in its whole book, and `cash ÷ linesQuoted`. All three are balance-sheet constraints.
+`linesQuoted` is how many lines the desk *chose* to quote, and nothing decides that but its own
+targets.
+
+So **a desk can make a market in every line in the world at once, for free.** The user's point is
+exactly this: you need enough traders to quote, and a desk covers N names because it has N traders,
+not because it has the capital. With headcount the coverage becomes
+`hoursEmployed ÷ hoursPerLine` — a real constraint, in hours, behind a real employment relationship
+— and what follows is the mechanism the model currently cannot express at all:
+
+> Dealing earns → the desk hires → it covers more lines → spreads narrow. Dealing loses → it fires →
+> coverage falls → the lines it dropped lose their last participant with a view → spreads widen or
+> the book stops printing.
+
+That is the procyclicality of market liquidity, and it is the single most important cyclical fact
+about real market-making. The engine already has the observable that would show it: `market.noView`
+is journalled every period for a book with orders and nobody in it who has a view (XI-13). Today
+that can only happen because of what desks *hold*; with headcount it can happen because of what they
+*cut*, which is how it actually happens.
+
+## Three more consequences of banks having no payroll
+
+**Financial-sector wages never reach households.** A bank's profit goes to capital and stops there.
+In a world whose household income is wages plus coupons plus the state's mandate, an entire sector's
+compensation is missing from the income side — and it is the sector whose income is most cyclical.
+
+**A bank cannot be squeezed on earnings.** XI-3 gives a bank two failure modes, cash and solvency.
+Both are financial. Today every cost a bank has is variable and proportional to what it does, so a
+bank with no business has no costs: it shrinks to nothing and survives. A bank with a payroll due
+every period, and severance owed to shrink it (`LABOUR_NUMBERS.severancePeriods` is already 4), has
+an operating leverage that turns a revenue fall into a capital fall — which is how banks actually
+get into trouble before anything defaults.
+
+**Nothing else in finance has staff either.** A fund's manager takes a fee and employs nobody; an
+assessor's parameter comment says its account is where "its salaries leave from" and it pays no
+salaries; the clearing house in `derivative-layer/house.ts` runs a default fund and a waterfall with
+no operating cost at all.
+
+## What it would take
+
+The template exists and the shape is already agreed — `research.hoursPerName` is a TECHNOLOGY in
+hours, and the wage is read off what the labour market printed. Extend that, and route it through
+the venue so it is employment rather than a payment:
+
+- **Financial occupations are data** (Law 15), one row each in `labour/data.ts` beside `field` and
+  `works`: a trading desk, a credit desk, an advisory desk. Skill-based matching already exists, so a
+  bank competing with a machine-builder for engineering hours, or with nobody for finance hours,
+  falls out.
+- **A bank posts openings like a firm**, through `venueParticipants` — the door already exists and
+  the banks module already uses it for the money-market session, so this is one more declaration
+  rather than a new mechanism.
+- **Each desk's recipe is hours per unit of what it does, never a share of money**: hours per loan
+  per period (Banks Lending C1.d), hours per line quoted (Dealer Desks), hours per mandate (13g),
+  hours per deal (13f). Each is TECHNOLOGY in the sense `goods/data.ts` means it.
+- **`loan.operatingCost` then dies**, and the rate the bank quotes carries its real wage bill per
+  loan instead. Law 12: the fix removes the parameter.
+
+**Do one thing now, before any of that:** re-declare `loan.operatingCost` as
+`kind: 'placeholder'` with `standsInFor: { mechanism: "Banks Lending C1.d — the credit officer's
+hours", worklistItem: '13d' }`. It is one line, it is what Law 2 requires of a number whose own
+reason names a mechanism nobody built, and it makes the count of placeholders honest — which is the
+number `ParamRegister.report()` exists to produce.
+
+## Where this belongs
+
+**13d** — "Labour mobility, housing, the household life cycle (Labour A3.b/B1/C4/E–F...)". It is the
+open labour item, this is a labour change (new occupations, a second class of employer), and it
+lands **before 13f and 13g**, which is exactly when it is needed: syndication and M&A arrive there,
+and a desk that advises on a merger should be staffed in the item that builds it rather than
+retrofitted after. The dealing desk's headcount constraint belongs there too, because it is the same
+change — a bank hiring — seen from a different desk.
+
+The one piece that does not wait is the placeholder re-declaration, which is a correction to a
+number that is wrong today.
