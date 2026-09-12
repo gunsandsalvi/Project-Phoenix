@@ -556,3 +556,275 @@ is never derived from a yield" is being carefully argued.
 correct and correctly implemented — each step compares this period's basket against itself a period
 ago, so a line entering has no "then" and contributes nothing. The reader-owned cache is the right
 shape: it holds only periods that are over, and two readers never read each other.
+
+---
+
+## `clearing/solver.ts`
+
+Clean, and the right things are stated rather than assumed: the tie rule is a named venue rule
+(`sellersCompete` / `marginalBid`), rationing is a profile in a table, a market order is resolved to
+a level somebody actually posted, and pro rata at the marginal level goes through `splitOnTick` with
+the comment explaining why multiplying by a share was wrong. `validate` deliberately does NOT
+re-check Law 8, with the reason (the type already did) — that is Law 12 applied to a check.
+
+**MINOR — `Outcome.volume` is declared `number` while every quantity feeding it is `Qty`.**
+`best.volume` is a `Qty`, `Fill.qty` is a `Qty`, and the field between them is not. Same for
+`demandAtPrice` / `supplyAtPrice`.
+
+## `clearing/market.ts`
+
+**SEAM — `MarketDecl` is three market kinds in one optional-field bag, and two of the kernel's
+hooks exist for exactly one module.** `MARKET_KINDS` is a genuine dispatch table and the right
+shape. What is around it is not: `MarketDecl` carries `kind?`, `contract?` and `fx?` as independent
+optionals, so `contractTrade` opens with `if (decl === undefined) throw new Missing(...)` and
+`fxTrade` with the same, guarding at runtime against a state the type could forbid. `delivers(m)`
+then has to know about both module shapes to answer one question. **What it would take:**
+`MarketDecl` as a discriminated union on `kind` — `{kind:'asset'} | {kind:'fx', fx: ...} |
+{kind:'contract', contract: ...}`. Every payload is then present by construction, both throws go,
+`delivers` becomes a field, and a fourth kind really is a row.
+
+And `MarketRunDeps` now carries `admits` and `marginLegs`, which exist solely for the derivative
+layer: an asset market has no equivalent question ("how much of this can you actually take") even
+though the question is just as real there — a buyer short of cash is refused at settlement instead.
+So the kernel has two module-shaped holes in it, and the module that made them is the newest one.
+This is the same growth as `PartyKindProfile`'s, in a second place. It is worth deciding, once,
+whether the kernel's interfaces may grow per module or whether a module extends them from outside;
+right now the answer is "yes, quietly", four times over.
+
+**RISK — `admits` is a pure-looking callback with state behind it.** `runMarket` calls it once per
+trade per side and the doc says the module draws the room down as it is consumed (E3). So the order
+in which `pairFills` happened to pair buyers and sellers decides who gets the room, and the same book
+re-run in a different pairing order gives different parties different fills. That may be exactly
+right — it is a queue, and a real one has an order — but it is not stated anywhere as the rule, and
+Clearing C5 says the session is a pure function of the orders. **What it would take:** say which it
+is. If the room is consumed in fill order, that is a stated venue rule like rationing and belongs
+beside it.
+
+**MINOR — `pairFills` silently abandons the remainder below the common grain.** When `bLeft < step`
+the buyer steps aside with `bLeft` unfilled: the solver said it bought that much and the market did
+not deliver it. `settledVolume` records the difference in aggregate, but the party is never told
+which of its fills evaporated, and the journal's `print` record carries `settledVolume` without the
+grain reason. In a world with cells of different weights this is the normal case, not an edge one.
+
+**GOOD — the cleared-house arithmetic is right.** `open(buyer, house)` + `open(house, seller)` with
+the same terms means the house is `b` of one and `a` of the other, so its two marks negate exactly
+and it is flat by construction rather than by a check. The premium legs net to zero on all three
+books. This is the kind of thing that is easy to get subtly wrong and is not.
+
+---
+
+## `parties/party.ts`
+
+**DEFECT — `cellKey` is declared as data, validated as data, and then never used.** The registry
+takes `cellKey: readonly CellKeyDimension[]`, checks it has no repeats and includes `region`, and
+its comment says "the cell key dimensions are registry data (XI-15): lifting a relationship into the
+key is a data change". Nothing else in the engine reads it. `CellKey` in `party.ts` is a fixed
+interface with all three dimensions required, and `Parties.add` validates all three unconditionally.
+So lifting a dimension into or out of the key is a TYPE change in the kernel plus edits everywhere a
+key is built — the opposite of what the registry declares. The declaration is decoration. **What it
+would take:** either read it (`add` validates the dimensions the registry declares, `CellKey`
+becomes `Readonly<Record<CellKeyDimension, string>>`) or delete it and say the key is fixed. Leaving
+it is worse than either, because it tells the next person a change is cheap that is not.
+
+**MINOR — `ofKind` rebuilds the whole party list on every call** (`all()` spreads the map, `alive()`
+filters it, `ofKind` filters again). It is called by every participant of every module in every
+phase. The journal and the ledger both built kind-indices for exactly this pattern and wrote a
+paragraph about why; the party store, which is asked more often than either, did not.
+
+## `journal/journal.ts`
+
+Clean. The three indices are written where the event is written, so there is one writer and nothing
+to go stale, and `lastBySubject` uses a NUL separator so a subject containing the delimiter cannot
+collide.
+
+**MINOR — `EventKind` ends in `` `${string}.${string}` ``, so the named kinds above it are
+documentation rather than a type.** Any dotted string typechecks, `'print'` (no dot) is only valid
+because it is listed, and a misspelled kind in a `lastOf` or `ofKind` call returns empty rather than
+failing. Modules do need to add kinds — but they could register them the way they register
+everything else, and then `ofKind` on an unregistered kind could throw instead of answering "never
+happened".
+
+---
+
+## `world/module.ts` — and the answer to "why does adding one thing touch a thousand files"
+
+This is where the question is settled, so it gets a section rather than a list of findings.
+
+`SystemModule` has twenty-four fields. Eleven of them are optional single-answer hooks, and each one
+was added when a module needed the kernel to ask a question it had not asked before:
+
+| hook | added for |
+| --- | --- |
+| `curveFamilies` | sovereign curves |
+| `indices?` | the index system |
+| `outlooks?` | expectations (XI-16) |
+| `marks?` | loans with no market (Banks Lending D1) |
+| `creditDecisions?` | overdrafts (Money B3.a) |
+| `bankChoices?` | depositors moving (Banks Funding E1) |
+| `venueParticipants?` | the labour venue |
+| `resolves?` | bank resolution instead of an estate |
+| `derivativeKinds?` | 13a |
+| `clearingCapacity?` | 13a |
+| `seed?` | the seed |
+
+Every one of them is argued correctly in place, and the argument is the same each time and it is
+right: the answer belongs to the module that owns the party or the instrument, exactly one module
+may answer, and a world where nobody answers must not seal. **The problem is not any one hook. It
+is that inventing a hook is the only way a module can teach the kernel a new question, and
+inventing one is a kernel change.**
+
+Measured on the three commits that built item 13:
+
+| commit | kernel files | module files |
+| --- | --- | --- |
+| 13a — the derivative LAYER (a new category of thing) | **24** | 7 |
+| 13b part 1 — seven CLASSES on that layer | 6 | **24** |
+| 13b part 2 — the classes trade | 10 | 16 |
+
+That is the whole answer, and it is better news than it feels like from inside the work. **Adding an
+instance of a shape the kernel already knows is genuinely plug-and-play** — seven derivative classes
+cost six kernel files, and most of those six were one field each. **Adding a new SHAPE costs
+twenty-four kernel files**, because a contract needed: two new branded ids (`core/ids.ts`), a store
+(`register/contracts.ts`), a profile type (`registry/derivatives.ts`), registration
+(`registry/registry.ts`), a leg (`ledger/instruction.ts`), an op and its arithmetic
+(`ledger/settlement.ts`), a value read (`prices/contract-value.ts`), a market kind
+(`clearing/market.ts`), two `MarketRunDeps` callbacks, an audit family (`audit/families/zero-sum.ts`),
+two `SystemModule` hooks, context reads (`world/context.ts`), assembly checks (`world/world.ts`),
+revaluation (`world/revalue.ts`) and observer views.
+
+**Was any of that avoidable?** Mostly not, and the parts that were are worth naming:
+
+1. **The two ids in `core/ids.ts`.** A module cannot brand its own identifier type. One
+   `Brand<string, 'ModuleKey'>` the owning module re-brands would have removed this and every
+   future one.
+2. **`MarketRunDeps.admits` / `marginLegs`.** Two callbacks threaded through the kernel's market
+   runner for one module. A market kind that carries its own "what does a fill become, and what
+   does the venue need answered" would have kept them in the layer.
+3. **`MarketDecl.contract?` / `fx?` as optional fields** rather than a discriminated union (see
+   `clearing/market.ts` above) — this forced two runtime throws and a `delivers()` helper that has
+   to know both shapes.
+4. **`DerivativeKindProfile.orders`** put a participant's behaviour in the registry (see
+   `registry/derivatives.ts` above), which is why `registry/` now imports `world/context.ts`.
+
+Points 1–3 together are most of the difference between twenty-four kernel files and about twelve.
+The remaining twelve are real: a contract genuinely is a new kind of state, and new state means a
+store, a leg, an op, a value and an audit family. **No architecture makes that free, and an
+architecture that did would be hiding it.**
+
+**The real cost is not the count, it is that nothing says where the line is.** There is no written
+rule for when a module may add a field to a kernel type and when it must not, so each hook was
+decided on its own and the tenth looked like the ninth. ARCHITECTURE.md 4.9b describes the module
+contract; it does not describe how the contract itself is allowed to grow. **What it would take:**
+one paragraph in ARCHITECTURE.md saying which kernel types are open to module extension
+(`SystemModule` hooks: yes, with the single-answer rule that is already enforced), which are closed
+(`core/ids.ts`, `registry/kinds.ts` profiles, `MarketRunDeps`), and what a module does instead when
+it needs something a closed type does not have. Then the next 13a is a decision rather than a drift.
+
+---
+
+## `world/revalue.ts`
+
+The FX decomposition is the best piece of arithmetic in the engine and is correct:
+`v(t)r(t) − v(t−1)r(t−1) = r(t)(v(t)−v(t−1)) + v(t−1)(r(t)−r(t−1))`, with the rate step running
+first on the carried value at the OLD rate and the mark step converting at the NEW one, so nothing
+is left over and neither half is an approximation of the other. The central-bank exception is keyed
+on `registry.centralBankOf(home) === h.holder` — the party that IS the issuer of that money, not a
+party kind — which is Law 15 done right.
+
+**RISK — an issuer of a liability in a money that is not its own never books the exchange-rate
+movement on it.** `revalueForeign` walks `register.allHoldings()` and moves `h.holder`'s account.
+The issuer side is handled only in the main loop, and only for the MARK move (`toTheMark`'s delta
+converted at `toIssuer`) — never for the rate. So for a bond issued in SOU by a firm whose home is
+USD: the holder books the FX gain and the issuer books no FX loss. That is a one-sided flow in the
+equity accounts (Law 5), and the `accounts` family would report it against the issuer, because
+`balanceSheet` re-reads that liability through `inMoney` at this period's rate while the equity
+account was never moved by it.
+
+**It does not fire today**, and the reason is worth stating: nothing in this world issues in a money
+that is not its own. Central banks hold FOREIGN government paper as reserves, but that paper's
+issuer is a treasury whose home money it is. The moment anything issues abroad — which is where
+XI-12 and "no sovereign immortal in foreign money" go — this becomes live, and it will present as an
+`accounts` violation against the issuer with no obvious cause. **What it would take:** the same walk
+over `instruments.all()` that the main loop already does for `liabilityOfIssuer`, applied to the
+rate step. Ten lines, and much cheaper now than as a mystery later.
+
+**Cross-reference:** the own-credit sign problem recorded under `ledger/settlement.ts` appears here
+too, in `issuerMoves`: a fall in a bond's mark is `delta < 0` to holders and `-delta > 0` to the
+issuer. It is the same modelling choice made consistently in two places, which is good — it means
+fixing it is one decision, not two.
+
+**MINOR — `toWhatTheKindSays` returns `carried: units === 0 ? 0 : ...`** and `carryingOf` in
+settlement does the same; two undefended zeros for "there was nothing to average".
+
+## `audit/families/accounts.ts`
+
+Exemplary, and the two-family split is the right idea: `accountsFamily` checks the read against the
+walk, and `equityLedgerFamily` checks the itemisation against the walk BY COUNT as well as by sum —
+"a sum can be made to agree by two errors, a count cannot". That is a real falsification test, and
+the note explaining why it is never done the other way round (summing entries to produce the
+balance would make the check a tautology) is exactly the discipline Law 17 asks for.
+
+`balanceSheet` being one function shared by the audit and by the §48 report — rather than the report
+having its own — is the single best structural decision in the tree.
+
+**Cross-reference:** `equityLedgerFamily` compares `equityEntries(p.id, 0, view.period)` against the
+whole walk, which is why the `stateEquity` period-0 defect recorded under `register/register.ts`
+does not show here: this family always asks from zero. It will show the moment anything asks for a
+SPAN, which is what Reporting G2 exists for.
+
+---
+
+## `audit/`
+
+**DEFECT — a partly-built family reports as built, and its unbuilt contributions disappear.**
+`Audit.run` sets `built = contributions.some((c) => c.built)` and then lists
+`contributions.filter((c) => c.built)`. So a family with one real check and three stubs reports
+`built: true` with three contributors invisible — no count, no name, nothing. Audit C2 and this
+file's own header say an unbuilt family "says so and is never green by omission"; at the
+CONTRIBUTION level it is green by omission, and that is the level modules contribute at. **What it
+would take:** report `contributions` and `unbuilt` separately, and let `built` mean every
+contribution is built. The honest number is the one the whole audit exists to produce.
+
+**MINOR — money's C4.c check is skipped in the first period** (`memory.period !== undefined &&
+memory.period !== view.period`), so the money created by the seed is the one issuance nothing
+verifies. It is also the largest.
+
+**MINOR — the `Audit` constructor throws bare `Error`** for an unknown family and a duplicate
+contributor, in the one file whose subject is that every finding names its clause. Both are
+`InvalidRegistry` conditions with citations available (Audit B8).
+
+**MINOR — the B3.c negative-balance check tolerates `moneyWalk(...).dust`,** which is the same dead
+integer tolerance recorded under `register/register.ts`. Money is a count of cents; a negative
+balance is at least one cent; the dust is ~1e-13 of one.
+
+`zero-sum` is right and is the model for how a family should be built: it compares the profile's own
+answer for the contract as EACH side states it (`flip`, then ask again) rather than comparing a
+number against its own negation, and the per-contract check is EXACT with the tolerance appearing
+only in the per-currency aggregate, where a real sum happens. The note explaining why the tautology
+was avoided is the kind of thing that should be in more of these files.
+
+**DEFECT (confirmed instance) — `crossMarket` reports built while its kernel contribution is an
+unbuilt stub that vanishes from the report.** `standardFamilies` registers `crossMarketFamily()`
+from `unbuilt.ts` with `built: false`; the derivative layer registers a second contribution from
+`cross-market.ts` with `built: true`. `Audit.run`'s `some()` makes the family green, and
+`contributions.filter(c => c.built)` drops the unbuilt one, so the report shows one contributor and
+says nothing about the kernel check that was never written. Audit B4's original subject — the same
+economic thing in two venues — is now silently unmeasured behind a family that reads as built.
+
+**DEFECT — the flows family exempts a party's ENTIRE position for a period because one weight event
+named it.** `weightSubjects` is built from every `'weight'` event's subjects, and then
+`if (weightSubjects.has(holder)) continue` skips every (holder, instrument) pair that party has. The
+untracked change is narrow — `copyMemberState` copies per-member state to a NEW cell without an
+instruction — and the exemption is total: an entry, a death or a promotion, which move a weight and
+copy nothing, exempt the cell from Money D3 for the whole period on every line it holds. Households
+are cells and their weights move constantly, so in a populated world this is not an edge case.
+Audit C3 says every family runs the same checks every period; this one runs fewer checks in exactly
+the periods when something happened. **What it would take:** exempt the pair, not the party — the
+split event already names `from`, `to` and `members`, so the exemption can be the two cells' shared
+instruments for that one event, and an entry or a death (which do not copy state) can be checked
+normally by scaling `before` by the weight ratio the event records, the same way the split
+restatement already scales by its ratio.
+
+`ownership`, `prices` and `units` are clean; `flows`'s split-restatement handling (compose two
+ratios in a period, read the ratio off the public event rather than exempting) is the right shape
+and is what the weight exemption should look like.
