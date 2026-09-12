@@ -1423,3 +1423,155 @@ Not a new worklist item. The five class fixes are one bounded change each and be
 remaining steps, which are still open; the option bootstrap is the same change and is the one that is
 currently load-bearing. The `parLevel` profile function, if it is taken, is a change to the derivative
 kind contract and so belongs with them, in 13b, not after.
+
+---
+
+# Addendum: every party in this world is equally clever, and that is a modelling defect
+
+Raised after the price-formation pass: households run discounted cash flow models, and real ones do
+not. The example is right and it generalises — so this section is about the general thing, with the
+household as the case that shows it.
+
+## The principle that is missing
+
+This world differentiates parties four ways: **what they may see** (`ParticipantView`, Observer A4),
+**what they hold** (the register), **what they owe** (their liabilities), and **what they prefer**
+(their own declared preferences and their own drawn memory). It differentiates them in no way at all
+by **what they are able to work out**.
+
+There is one analytical technology in this engine and every party has it. A cell of retired
+households reads an issuer's published accounts, divides the residual by the share count,
+capitalises the earnings at its own required return, and posts the answer as a limit. It discounts a
+bond's own cash flows at its own liquidity-adjusted yield to the day count the curve family
+declares. A bank's dealing desk does the same class of work with more inputs.
+
+That is a **representative analyst**: one set of skills, distributed to everybody, differing only in
+the data it is fed. Appendix B forbids the representative agent where decisions are thresholds, and
+this is the same defect one level up — the threshold ("is this cheap?") is crossed by everybody with
+the same arithmetic, so the only thing that can ever put two parties on opposite sides of a book is
+that they saw different numbers.
+
+## The evidence: the same cell prices bread and a bond by two different epistemologies
+
+Within `mechanisms/households/`, in the same period, for the same cell:
+
+**Bread** (`consume.ts:197`) — the cell posts a demand curve centred on
+`view.outlook('price.<bread>')`, its own adaptive expectation formed from what it actually paid,
+spread over `outlook.confidence`, its own read of how wrong it has recently been. It knows nothing
+about the bakery's cost base. This is exactly right, and it is what a household is.
+
+**A government bond** (`portfolio.ts:127`) —
+`priceAt(flows, required, on, family.dayCount, ...)`: the instrument's own cash flows, discounted at
+the cell's own required yield, on the curve family's declared day count.
+
+**A share** (`portfolio.ts:152`) — `bookPerShare + earnedPerShare ÷ year ÷ (required + uncertainty)`:
+the issuer's last published accounts, per share, plus capitalised earnings at a risk-adjusted
+discount rate.
+
+`portfolio.ts` never once calls `view.outlook('price.<line>')`. Grep confirms it: the only outlook
+that file reads is `income`. **So the household is a naive adaptive learner about the price of bread
+and a securities analyst about the price of everything else**, and nothing in the module explains why
+those are different questions for it — because they are not.
+
+## Four consequences, and one of them is load-bearing
+
+**1. XI-16's disagreement is doing half the work it should.** §46 A3: outlooks disagree, and the
+disagreement is what gives a market two sides. Today parties disagree for exactly one reason — they
+observed different things, at different speeds, because their memories were drawn apart. They never
+disagree because they *think differently*. That source of two-sidedness is weak and it decays: every
+party is learning adaptively from a common set of prints, so the outlooks converge, and the
+addendum above shows what converged outlooks do to a book. A household that extrapolates last
+period's return and a desk that discounts cash flows disagree **structurally and permanently**, and
+they disagree hardest exactly when it matters — after a large move. That is the strong form of A3
+and it is not built.
+
+**2. There is no unsophisticated money, so market-making has no customers.** `dealing-quote.ts`'s
+`adverseOf` charges for one-sided flow on the reasoning that "a desk that only ever got hit on one
+side was facing somebody who knew more". In a world where every counterparty knows exactly as much
+as the desk, that term is measuring noise, and the desk's whole business — buying from parties who
+sell for reasons other than value and selling to parties who buy for reasons other than value — has
+nobody on the other side of it.
+
+**3. XI-2 has no retail door, and that is the biggest gap.** The model's central purpose is that a
+price shock is absorbed by somebody and made worse by it. There are two forced sellers: a fund
+meeting redemptions (Fund Shares C2.b) and an estate liquidating. **A household never sells because
+a price fell.** `shareOrders` sells only when `short > 0` — it needs the cash — and its opinion of
+the line comes from published accounts, which do not move when the print does. And it redeems from a
+money fund only "when its own cushion is short", which is an *income* shock. So a pure market shock
+produces no redemption wave, the fund's door never opens, and the contagion channel the model was
+built to measure is missing its most common real-world trigger. The user's sentence — *"they like big
+gains, then they get scared when the equity market goes down and they go into cash"* — is precisely
+the missing mechanism, and it is the one that drives door 2.
+
+**4. Nothing in the world can be sold to a household that a household should not buy.** Mis-selling,
+fee drag, the gap between what an investor gets and what the asset returned — none of it is
+expressible while the buyer is as clever as the seller.
+
+## Extending it: who should be how clever
+
+The direction of error is not uniform. Almost everything else is right; the household is the outlier,
+and the estate is wrong in a different way.
+
+| party | what it can really work out | today | verdict |
+| --- | --- | --- | --- |
+| **household** | what it paid last time; what it has; that its account is short; a *published* number someone hands it (a fund's NAV, a fund's return, a rate on a board) | full fixed-income and equity analysis, bottom-up, across the entire universe of lines | **far too clever** |
+| firm — its own business | its own recipe, its own capacity, its own cost of capital, its own project appraisal | exactly that (`invest.ts` — a genuine reservation from expected contribution) | right |
+| firm — securities | it is not a securities house; it has a treasurer, not a desk | it prices only plant and its own shares (`equity ÷ issued`), which is a treasurer's job | right |
+| bank dealing desk | everything: own required yield, own risk read, own adverse-selection read | exactly that | right |
+| bank treasury | its own funding cost, its own board, the corridor it has seen | exactly that | right |
+| fund — active | its mandate and a required return | `priceAt(flows, required)` | right |
+| fund — tracker | *nothing* — it is not an investor | "A TRACKER DOES NOT PRICE... posts a size and no level" | **exemplary, and the model for what a naive participant looks like** |
+| estate | what it must raise and by when | `print × left/(left+1)`, a formula discount | wrong differently — see the estate finding above |
+| insurer / pension | full, and liability-driven | does not exist (13h) | — |
+| asset manager | full, on a household's behalf | `FUND_MANAGER` exists as a **fee recipient only**: it is seeded, it picks a bank, it takes a fee, it decides nothing | **a party kind with no decisions** |
+
+## What it would take — and most of it removes code
+
+**The household already has the machinery for a naive investor and does not use it.** Its outlook of
+a price is adaptive by construction (Expectations B1) — *extrapolation is what an adaptive outlook
+is* — and `ownUncertainty` is already its read of how wrong it has been. So:
+
+- **Price a share and a bond the way it already prices bread**: `outlook('price.<line>')`, spread by
+  that outlook's own confidence, exactly as `consume.ts` does. This deletes `savingLines`'s two
+  valuation branches — the DCF and the accounts read — which is Law 12's shape (the fix removes
+  code), and it removes `households`'s dependency on `curveFamilyOf`/`priceAt` entirely.
+- **Selling into a fall then falls out for free**, with no new number: an outlook that has just been
+  surprised downward expects less and trusts itself less, so the cell's bid falls *and* its cushion
+  (`bufferPeriods × (expected + confidence)`, already built) rises, so it wants more cash. That is
+  the panic, derived, with no sentiment coefficient anywhere — which matters, because Appendix B
+  forbids one and a "fear parameter" would be exactly that.
+- **Hold the market, not the names.** A household buying a tracker rather than picking lines is both
+  realistic and structurally important: retail flow becomes undifferentiated across names, so a
+  retail wave moves everything together. The tracker exists and already refuses to price; what is
+  missing is the household preferring it, which is a real PREFERENCE (a cost of choosing) and not a
+  rule.
+- **Delegation needs two things that do not exist.** First, a wealth dimension: `cellKey` is
+  `['region', 'cohort', 'bank']`, so **households cannot differ by wealth at all** — and adding a
+  dimension is currently a kernel type change, because `CellKey` hard-codes all three fields and
+  `registry.cellKey` is read by nothing (the defect recorded under `parties/party.ts` above). That
+  defect is a prerequisite here, which is the clearest argument yet for fixing it. Second, a manager
+  that decides: `FUND_MANAGER` is a party kind that takes a fee and makes no decision.
+
+**And the general rule worth writing into `ARCHITECTURE.md`:** how a party forms a view is
+kind-varying behaviour, so by Law 15 it belongs in that kind's own module — which it already does.
+Nothing structural has to change. What has to change is the habit: when a module gives a party a
+reason, the question "could this party actually work this out?" is not currently asked anywhere, and
+it is the question that separates a model of an economy from a model of an economics department.
+
+## Where this belongs
+
+Per Law 10, inserted at its dependency position rather than appended:
+
+- **The household's own reasons** (extrapolative pricing of financial assets; the buffer rising after
+  a bad surprise; preferring the tracker to picking names) → **13d**, which already owns Households
+  E/F and the household life cycle, and is the first open item that touches the module. It is a
+  bounded change to one module's participants and it deletes more than it adds.
+- **Wealth as a cell key dimension** → also **13d** ("cohorts by exact split" is the machinery), and
+  **blocked on** the `cellKey` defect above, which should be fixed first and is three lines.
+- **Delegation to an asset manager** → **13h**, which is where pensions, insurers and Households F3
+  already sit, and is the first item in which a party that manages money for households exists.
+- **A retail redemption wave as XI-2's third door** → falls out of 13d for free once the household's
+  outlook drives its portfolio; worth naming explicitly in 13d's exit criteria, because it is the
+  thing that makes the fund's door fire on a price shock rather than only on an income shock.
+
+Nothing here is a new system. It is one module's reasons being those of a different profession.
