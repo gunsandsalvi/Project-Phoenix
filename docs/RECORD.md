@@ -3026,3 +3026,157 @@ checks were re-stated rather than deleted, and both say in the test why: the swa
 fixed three periods for something that is gated on the overnight market having traded, and the two
 "a contract book prints" checks now assert what a reader is SHOWN about each level there is, because
 `13b-10` says there is not one.
+
+## 13b.1 — the checks that do not check
+
+**What.** The guards, the lint rules and the audit families written so the laws would not depend on
+anybody remembering them — and which did not fire. Nothing here changes a mechanism, an economic
+outcome, a price or a boundary (the item's own guard); every change makes a rule that was written
+down into a rule that is enforced, and the diff is net negative in the places that matter.
+
+**The boundary.** `phoenix/no-cross-module-import` stripped `../` from a specifier and tested for a
+prefix, so it had never reported anything. It now resolves the import against the importing file's
+directory, and it fired on all fifteen crossings in six modules. The crossings went with it: a
+PHYSICAL LINE (`registry/physical.ts`) and a SOVEREIGN CLAIM (`registry/claims.ts`) are kernel data,
+because four modules have to name a good and two have to name a bill — the same decision §4.9b took
+for party kind ids. The FX desk draws its own numbers, so `BankDecl` loses three fields and the
+`banks ↔ spot-fx` cycle goes in both directions. `tools/test/eslint-rules.test.ts` is the fixture
+suite the rules never had.
+
+**The bounds.** `atMost` and `atLeast` in `core/num.ts`, generic over the `Qty` brand, with the
+REASON as the third argument — the thing that is not there. `no-bounds` now refuses the
+comparison-ternary shape as well as `Math.min`/`Math.max`. The item expected thirty-one sites and
+found **fifty-three**: the rule as written caught `a < b ? a : b`, and once it was running it also
+caught `y > 0 ? y : 0`, which is "not less than zero" — the spelling Law 6 names in so many words —
+in seventeen more places nobody had counted.
+
+**The dust Law 8 retired.** `deliveryDust` and every use of it, including the lot-clearing branch
+that destroyed units with no instruction behind them; `deliverable`'s second clause; `debit`'s two
+`remaining <= dust` lines; `moneyDelta`'s Money B3.c guard **and its `allowNegative` parameter**,
+which settlement passed `true` at both money sites unconditionally; `precheck`'s money tolerance;
+`validateCellSide`'s comparison; the money family's B3.c walk. About forty lines, and with them the
+one branch in the engine that could delete units.
+
+**`Qty` is on the wire.** All eight fields `core/tick.ts` names, plus `Lien.qty`, `DrawnLot.qty`,
+the settlement `Op` union, `Trade.qty`, `Pledged.qty`, a fund's `sharesPerMember`, a money-market
+row's amount and an estate claim's units. About a hundred and ten sites followed the compiler, and
+each made a decision the type forced into the open: a premium is money and lands on the money grid;
+what the layer admits is money over a margin requirement and lands on the contract below; a
+per-member share THROWS if the division did not come out whole. `-x` on a count is now a lint error.
+
+**The audit that says what it does not check.** `built` means every contribution is built, and a
+family nobody contributes to is not built either; `unbuilt` is reported beside `contributions` with
+the names. `crossMarket`'s kernel stub was DELETED rather than built — Audit B4 is about two venues
+for one economic thing and the kernel has no example of one. The flows family exempts THE ONE CELL
+whose book really did appear or vanish, named on the split or merge event itself, and nothing else.
+
+**A declared number says what it is in.** `ParamDecl.dimension` is a closed vocabulary of nine and
+`ParamRegister.get` is gone, replaced by nine typed reads that each name what the caller expects; a
+read naming a different dimension throws with both quoted. `unit` stays, because it is the sentence
+a human reads and the dimension is the part a machine can check. 134 declarations, 176 read sites.
+
+**A cell is keyed on what the registry declares.** XI-15 had already taken the decision — "at any
+time the cell key is what the registry declares it to be, and lifting a relationship from a row into
+the key is a data change ... never a change to a mechanism" — and the kernel was not reading the
+list: `CellKey` named three dimensions and `Parties.add` checked all three unconditionally, so 13d's
+wealth dimension was a kernel type change. `CellKey` is now the map of the declared dimensions,
+`keyOf` its one reader, and `KEY_DIMENSIONS` the single table saying what a dimension MEANS — where
+the same fact also lives on the party so the copies must agree, and what the value must name. A
+dimension with neither is the key's own, and having nowhere else to live is precisely why it is a
+dimension. `cellKeyFaults` is one writer of the rule with two readers at opposite postures: the door
+throws, the names family reports.
+
+**The four seams** (the measured causes of kernel churn: 13a cost 24 kernel files to 7 module files).
+`ModuleKey<B>` lets a module brand its own identifier in its own file — five of those 24 were
+`core/ids.ts` growing a brand per module. `MarketDecl` is a discriminated union, so both runtime
+throws are deleted and `delivers` is a row in the kind table instead of testing two optional bags for
+absence; 91 sites moved onto three kernel reads so that no module writes the discriminant test.
+`admits`, `marginLegs` and `derivativeKind` moved into the contract kind's own deps row.
+`DerivativeKindProfile.orders` and `.measures` became `DerivativeClassDecl`, collected at assembly —
+`registry/` now imports no `world/` and no `clearing/` anywhere. And `SeedContext` hands out
+facades, where it had held the write-capable stores themselves.
+
+**The doors that let something through.** `quotedAs` is required, where "absent means money" was a
+default wearing a type. `contractValueTo` throws for a party on neither side, where it returned 0 —
+a real answer to a different question. `percent` trims trailing zeros only after the decimal point,
+so `percent(0)` is "0%" and not "%", which had been naming a zero-coupon line "US Treasury %
+2027-03-01". `moneyInstrumentId`, `currencyUnit` and `fxPairId` refuse a part carrying the separator
+their id is built from. `couponsPaid` loses its `readonly` cast and the -1 sentinel it wrote through.
+`PriceStore`'s three linear scans are one binary search, exact because `write` already refuses a
+print that is not strictly after the last, and held to the walk's answer by a property test.
+
+**The one question settled, and Clearing A2.a had settled it.** "A market expressed as 'here is the
+quantity I want' has no level, only a shape, and forces every venue to invent its own rule."
+`resolveMarketOrders` IS that invented rule and now says so where it lives. It stays as it is — the
+worst level the other side actually posted — because the level taken is then one somebody really
+asked for, so the price still comes out of posted supply meeting posted demand (Law 3); resolving to
+the best level would turn an order with no limit into a price-sensitive one, which is a different
+order. `Clearing A2` and `A4` are re-marked PARTIAL for what that costs.
+
+**Two steps of this item were wrong on the arriving world's terms and both were changed** (PLAN
+§5.2). `namesAnItem` on every kind refused the world at assembly: eleven policies and preferences
+legitimately cite a future item, because what changes is who sets them. It asks a SHAPE and a
+TECHNOLOGY instead — a technology is a fact about the world and a fact about the world has no
+scheduled death. And `worthOf` and `markPerUnit` do not answer the same question: the first is "what
+is this worth and HOW OLD is that", which is what makes a stale mark visibly stale; the second is
+"what is a unit marked at NOW", asked inside a period whose phases are ordered, where a print that
+is not there yet means a phase in the wrong place. Merging them turned the seed's own valuation into
+a throw.
+
+**Found, and where each went.** Twelve findings. Two were fixed where they were because they stop
+the build (`13b.1-1`, a fund redeeming shares whose cash rounds to nothing, refused at the wire; and
+`13b.1-3`, two tests naming an outcome of the draw). `13b.1-4` is the §5.2 note above. The rest are
+positioned: **13h** takes `13b.1-5` (a resolution bid charging a year of required return for one
+week — found by the dimension vocabulary on its first world), `13b.1-8` (the clearing house is not
+flat, by nine hundredths, where C2 says it is nothing by construction), `13b.1-9` (not one party
+posts into any option book, which is `13b-10` one class over and stronger) and `13b.1-1`'s open
+half. **14** takes the central bank's market order. **13i** takes `13b.1-7` (no spot FX trade happens
+at all: the venue is there and nobody has a reason). **16** takes `13b.1-2` (two publications of one
+bank's book compared across two different moments — the gap is 2^-19, two thousand ulps, and the
+derived dust is right to refuse it), `13b.1-6` (a mean-preserving spread moves what the household
+sector decides by nineteen pieces a member), `13b.1-10`'s other eight posters, `13b.1-11` (an index
+publishes a level it cannot then answer for) and `13b.1-12` (only some of the three deposit classes
+ever moves bank). `docs/BUGS.md` is empty and gone.
+
+**What the suite says, and it is not green.** Measured at the 13b close commit `9a22e76`: **37
+failed, 453 passed of 490** — the figure that entry recorded, reproduced. At this item's close:
+**47 failed, 458 passed of 505**. Fifteen more tests run, five more passing, twenty newly red and
+eleven of the old reds gone. Every one of the twenty is accounted for.
+
+- **Six are ONE FINDING, and it is the largest single cause of red in the suite.** A fund's share is
+  worth nearly nothing, so every quantity computed by dividing money by it explodes — and the guards
+  this item put on the rounding doors turned that from a wrong number into a refusal at the site. A
+  household cell asks for `scaleQty(sharesPerMember, weight)` = **1.33e16 shares**, past the
+  safe-integer range; a dealer's creation-unit arithmetic computes `money / nav` = **1.72e16**. The
+  first takes both `equity-anchor` tests, the second takes `omo`'s remittance, `raise`'s
+  subordinated raise and `resolution/cells`' three-grain check. Law 6 in so many words: a number
+  that explodes means the compensating mechanism is missing. It is `13b-9`'s open half, positioned
+  to **13h** and restated there with all three sites, because what a fund IS and what stands behind
+  its shares is that item's.
+- **Four were already found, written down and positioned** during the item: `derivative-layer`'s
+  house that is not flat (`13b.1-8`), `derivative-classes`' option book nobody posts into
+  (`13b.1-9`), `deposits`' three classes of which not all move (`13b.1-12`), and `bank-capital`,
+  which is `13b.1-2` — the risk-weighted-assets comparison across two moments — now firing in the
+  file's own setup rather than in one test.
+- **Nine are the world, redrawn.** The FX desk draws its own numbers now, so `drawBanks` takes one
+  number fewer and `drawFxDesks` one more, and every bank after that point in the stream is a
+  different bank. `auction`, `credit-events`, `etf` (twice), `lines`, `money-market`, `reporting`
+  (twice) and `run` each assert that something happens in a world that no longer happens in this
+  one — "expected 0 to be greater than 0", "expected false to be true", `firm.8 reported with no
+  listed line`, `[ 'corporate', 'wholesale' ] to include 'retail'`. A test that names what a draw
+  made is the thing CLAUDE.md says a test must not do, and each is a candidate for that reading when
+  the item that owns its mechanism reaches it.
+- **One is `ratings`**, asking for a coverage measure above zero and getting -3.6e10 — the same
+  magnitude family as the first bullet, one module over.
+- **One was this item's own and is fixed here**: `world.test.ts`'s placeholder count moved from
+  seven to eight, because `loan.operatingCost` is now honestly a placeholder. The test asserts
+  eight, with the reason beside it.
+
+Eleven of the old reds went green, and they are the item's own work rather than a redraw: the
+window that refuses a bank with nothing to pledge, the corridor moving the market rate, the
+acquirer bidding from its own view, the guarantee making the insured whole, `deposits` and
+`resolution/cells` loading at all where the whole file had failed, the index reading the same level
+as an independent walk, `raise`'s real refusal, `research`'s coverage costing real money, and
+`tick`'s structural invariants at every subdivision.
+
+Nothing was rolled back, no tolerance was widened, and no test was deleted or weakened to pass.

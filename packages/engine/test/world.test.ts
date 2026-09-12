@@ -227,7 +227,11 @@ describe('the seed (Seed A2)', () => {
     // openingHoldingShare` named 11.5 as the item that would kill it, 11.5 came, and it is a POLICY
     // the central bank takes now rather than a share somebody stated. A placeholder that dies on
     // the item it named is the register working exactly as XI-14 asks.
-    expect(report?.reads.placeholders).toBe(7);
+    // EIGHT from 13b.1: `loan.operatingCost` was declared a TECHNOLOGY and is a wage bill added
+    // into every quoted rate and paid to nobody (Law 5) — margin wearing the clothes of a cost. It
+    // is a placeholder for the credit officer's hours and it names the item that gives them a
+    // person to be paid to, which is what makes the count honest rather than flattering.
+    expect(report?.reads.placeholders).toBe(8);
     // PLAN §7: what each stands in for and which item kills it, never the id — a fund's own id
     // carries the bank it was launched at, and WHICH bank is an outcome of the draw (Seed B1.a).
     expect(
@@ -235,6 +239,7 @@ describe('the seed (Seed A2)', () => {
         .params.placeholders.map((p) => `${p.mechanism} at ${p.worklistItem}`)
         .sort(),
     ).toEqual([
+      "Banks Lending C1.d — the credit officer's hours, paid to a named person at 13d",
       'Central Bank F4 at 13h',
       'Fund Shares F3 at 13h',
       'Fund Shares F3 at 13h',

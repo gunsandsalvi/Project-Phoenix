@@ -83,9 +83,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | requirement | status | where / why |
 |---|---|---|
 | `Clearing A1` | MET | packages/engine/src/clearing/market.ts |
-| `Clearing A2` | MET | packages/engine/src/clearing/solver.ts |
+| `Clearing A2` | PARTIAL | packages/engine/src/clearing/solver.ts (the solver takes schedules and every venue posts them). What is missing is on the PARTICIPANT side: A2.a says a market expressed as "here is the quantity I want" has no level, only a shape, and forces every venue to invent its own rule — and seventeen sites across nine modules post exactly that. `resolveMarketOrders` IS the invented rule and now says so where it lives (13b.1-10, positioned to 14 and 16) |
 | `Clearing A3` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/world/context.ts, packages/engine/src/world/module.ts |
-| `Clearing A4` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/world/context.ts |
+| `Clearing A4` | PARTIAL | packages/engine/src/clearing/solver.ts, packages/engine/src/world/context.ts (no schedule is written against the clearing price, and a phase reading a print not yet produced throws). But an order with NO level is a price-taker of a price this mechanism has not yet produced, and a big enough one is the marginal order that sets it — the central bank bidding at the top of a sovereign book for a quarter of the line (13b.1-10, positioned to 14) |
 | `Clearing B1` | MET | packages/engine/src/clearing/market.ts |
 | `Clearing B2` | MET | packages/engine/src/clearing/market.ts, packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/src/mechanisms/sovereign-curve/index.ts, packages/engine/src/world/module.ts |
 | `Clearing B3` | PARTIAL | no dealer exists yet (worklist 9) |
@@ -220,7 +220,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Derivative D1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts, packages/engine/src/ledger/settlement.ts (a contract opens on two named books in one numbered instruction), packages/engine/src/audit/families/accounts.ts (an asset to one side and a liability to the other, at every instant) |
+| `Derivative D1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts, packages/engine/src/ledger/settlement.ts (a contract opens on two named books in one numbered instruction), packages/engine/src/audit/families/accounts.ts (an asset to one side and a liability to the other, at every instant), packages/engine/src/prices/contract-value.ts (a contract has exactly two sides, so a third party asking what it is worth to it is refused at the site — it used to be answered with 0, which is indistinguishable from a contract at par) |
 | `Derivative D1.a` | MET | packages/engine/src/ledger/settlement.ts (a leg naming one side, or the same party twice, is refused at the site), packages/engine/src/audit/families/zero-sum.ts |
 | `Derivative D1.b` | MET | packages/engine/src/audit/families/zero-sum.ts (the profile is asked for the contract as EACH side states it — `flip` — and the two must negate exactly; a negation the kernel performed itself would be checking a minus sign) |
 | `Derivative D2` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (a notional in the kind’s own unit, positive, on the grid) |

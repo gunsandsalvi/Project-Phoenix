@@ -528,15 +528,46 @@ was avoidable is stated at 13b.1.
   the argument, the way 11.6 and 13b.1 were.
 - **`registry/` is data.** It may not import `world/` or `clearing/`. A profile field that needs a
   party's private view belongs on a module the owning layer collects at assembly, not on a registry
-  profile — which is what `DerivativeKindProfile.orders` got wrong and 13b.1 corrects.
+  profile — which is what `DerivativeKindProfile.orders` got wrong and 13b.1 corrected.
 
-Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else:
+**What 13b.1 did to each of the four, and each one is the rule made true rather than restated.**
+
+- **`core/ids.ts` is closed, so a module brands its own.** `ModuleKey<B>` and `moduleKey(s, what)`
+  give a module a distinct branded string in its own file: `ModuleKey<'Employment'>` is a different
+  type from `ModuleKey<'Route'>` and from every kernel brand, and the kernel never hears about
+  either. Labour's `EmploymentId` is the first. Five of the twenty-four kernel files item 13a cost
+  were this file growing a brand per module.
+- **`MarketRunDeps` is closed, so what a kind of market needs goes in the kind's own row.** `admits`,
+  `marginLegs` and `derivativeKind` were three fields on the deps every market ever run is handed,
+  for the one kind that uses them; they are `MarketRunDeps.kinds.contract` now. Asset and fx markets
+  need nothing beyond the book, and the absence of their rows says so.
+- **`MarketDecl` is a discriminated union**, `AssetMarketDecl | FxMarketDecl | ContractMarketDecl`,
+  where it was one shape with three optional bags. A contract book naming no contract and a pair
+  market naming no pair were states the type allowed and two runtime `throw`s forbade; a state the
+  type can forbid is not a state to check for. `delivers` joined `trade` as a row in `MARKET_KINDS`,
+  because it had been testing the two bags for ABSENCE and inferring the kind from that (Law 19).
+  Modules ask `contractOf`, `pairOf` or `asContractMarket` — kernel reads, one each, so that no
+  mechanism writes the discriminant test itself (`phoenix/no-kind-branch` refuses it there).
+- **`registry/` imports no `world/` and no `clearing/`, anywhere.** `DerivativeKindProfile.orders`
+  and `.measures` became `DerivativeClassDecl`, declared by the module that owns the kind and
+  collected at assembly into a table the world exposes as `derivativeClass(kind)`. The dispatch is
+  unchanged and so is its reason — one party shows one face to one book (Clearing A2), so the layer
+  declares the participant once and asks the class the book carries. `registry/physical.ts` went the
+  same way: the plant read states the shape it needs OF a holder (`PlantHolder`) instead of taking a
+  participant's whole view.
+
+Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else — and a
+context hands out **facades, never a store**. `SeedContext` was the exception until 13b.1: it held
+`Parties`, `Instruments` and `Register` themselves, so a seed could have applied a weight event,
+restated a line or moved units with no instruction behind them. What a seed legitimately does is
+STATE the opening (Seed A2, C4), so `add`, `credit`, `debit` and the money pair `endowMoney` is
+built from are in its `Pick<>`s and the rest of each store is not.
 
 | Context            | Who gets it                                                 | Can                                                                                                                                                                            | Cannot                                                                       |
 | ------------------ | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- |
 | `ParticipantView`  | a party, when a participant declaration is evaluated for it | read its own holdings, cash, equity; who anybody IS (kind, region, bank, weight); public prints, public instrument terms, public events, its own record; its own random stream | see any other party's private state (Observer A4, Expectations D1)           |
 | `MechanismContext` | a module phase                                              | read public state and any party's own view; settle instructions; register instruments and markets; apply cell events; cease a party; journal                                   | write the register, write a print, write a weight, reach the world container |
-| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | anything after the seal                                                      |
+| `SeedContext`      | a seed module at period zero                                | add parties and instruments; endow money and units; write opening prints; open markets; ask the kernel's one valuer what a holding comes to                                    | hold a kernel store; apply a weight, restate a line, pledge; anything after the seal |
 
 **The opening world is TWO seed modules, and the second one is why** (Seed A4, C1; item 12). Who
 exists and what each party is endowed with is one question; **what stands behind a bank** is another,
