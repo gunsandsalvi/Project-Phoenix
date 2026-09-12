@@ -72,7 +72,24 @@ export function bookValue(
     const mark = view.mark(id);
     if (!mark.some) continue;
     const held = mul(view.quantity(id), mark.value, 'what this line is worth');
-    terms.push(Math.abs(sub(held, want, 'how far from the target it is')));
+    /**
+     * D1, D4: ONE HOLDING, TWO OWNERS, AND THE TREASURY'S CLAIM ON IT COMES FIRST.
+     *
+     * The register cannot say which lots the dealing line bought, so what separates them is the
+     * treasury's stated want: of what the bank holds of this line, the treasury has asked for
+     * `want`, and what is left over is the position the DESK took. It is not the distance either
+     * way — a bank holding LESS of a line than its treasury asked for has a treasury with a
+     * purchase to make, not a desk carrying anything, and reading that gap as dealing risk put
+     * every desk in every seed past its own aggregate limit before it had quoted (`12d-12`,
+     * `13b-5`).
+     *
+     * Law 6: the treasury cannot claim more of a line than there is of it, so its claim is the
+     * smaller of what it wants and what is there — arithmetic, not a floor under a decision. What
+     * that leaves is the desk's, and it cannot be negative because the bank cannot be short a line
+     * it has not borrowed (Register C4).
+     */
+    const treasurys = want < held ? want : held;
+    terms.push(sub(held, treasurys, 'what the desk is carrying of it'));
   }
   return sum(terms).value;
 }

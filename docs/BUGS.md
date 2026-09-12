@@ -155,7 +155,7 @@ built, not guessed here.
 
 ---
 
-## 13b-5 — A desk still opens past its own aggregate limit, and the even split was only half of it
+## 13b-5 — A desk still opens past its own aggregate limit, and the even split was only half of it — CLOSED
 
 **Measured.** `opening-liquidity.test.ts`, "leaves every desk inside its own limit on the first
 morning" (Dealer Desks D1, D4), `rigWorld('float', 6, 40)` after three periods. Before this item's
@@ -183,6 +183,18 @@ desk holding a large unexplained position: the bank's sovereign paper matches it
 five per cent. Its other large holdings are `interbank` (51.4bn) and `repo` rows, which are not
 dealing lines and are not in `targets` at all.
 
-**Not positioned yet.** It belongs with whatever the second cause turns out to be. The step in 13b
-stays OPEN and says so; if the cause is the plan's own volatility it is item 11's mechanism and the
-finding moves there, and if it is the staleness of the read it is this item's.
+**CLOSED, and the second cause was neither candidate.** It was not the stale read and not the plan's
+volatility: `bookValue` counted the distance from the target EITHER WAY, so a bank holding LESS of a
+line than its treasury asked for was read as a desk carrying the shortfall. Measured at the worst
+bank: three bills held at ~52bn each against targets of ~76bn each, and two bonds at ~31bn against
+~50bn — 122bn of "book" that was entirely the treasury being short of paper it had not bought yet.
+A treasury below its own target has a purchase to make; the desk is carrying nothing.
+
+One holding, two owners, and the treasury's claim is senior: of what the bank holds of a line, the
+treasury has asked for `want` and what is left over is the desk's. Its claim is the smaller of what
+it wants and what is there, which is arithmetic (it cannot claim more of a line than there is) and
+not a floor under a decision — and what that leaves cannot be negative, because the bank cannot be
+short a line it has not borrowed (Register C4).
+
+`opening-liquidity.test.ts` is green: every desk opens inside its own limit. `dealing.test.ts` and
+`lines.test.ts` green (19 tests).
