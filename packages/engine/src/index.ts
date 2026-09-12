@@ -50,6 +50,7 @@ export * from './mechanisms/sovereign-curve/index.js';
 export * from './mechanisms/treasury/index.js';
 export * from './mechanisms/central-bank-omo/index.js';
 export * from './mechanisms/environment/index.js';
+export * from './mechanisms/freight/index.js';
 export * from './mechanisms/expectations/index.js';
 export * from './mechanisms/banks/index.js';
 export * from './mechanisms/credit-events/index.js';

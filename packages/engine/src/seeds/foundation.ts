@@ -76,6 +76,14 @@ import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
+import {
+  drawCarriers,
+  freight,
+  VESSEL,
+  VESSEL_KIND,
+  type CarrierDecl,
+  type RouteDecl,
+} from '../mechanisms/freight/index.js';
 import { environment } from '../mechanisms/environment/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
@@ -126,6 +134,8 @@ import type { World } from '../world/world.js';
 
 export const USD = currencyCode('USD');
 export const REGION = regionId('us');
+
+
 export const CB = partyId('fed');
 export const TREASURY_US = partyId('treasury.us');
 
@@ -200,6 +210,25 @@ export const ABROAD: readonly CountryDecl[] = [
     paper: 'jgb',
   },
 ];
+/**
+ * Freight A4, B1 (13c): THE LEGS THIS WORLD HAS, and how many owners sail them. A route is a pair
+ * of places and a time; capacity on one is not capacity on another, which is what makes a blocked
+ * leg stay blocked. Transit is four weeks each way because that is what an ocean crossing takes,
+ * and it is why a shipper's working capital is tied up for a month on every cargo (A3.a).
+ */
+const CARRIER_COUNT = 6;
+/** B2: hulls per unit of drawn size. The smallest carrier has one ship, which is what it means. */
+const HULLS_PER_UNIT_OF_SIZE = 1;
+const ROUTES: readonly RouteDecl[] = ABROAD.map((c) => ({
+  from: REGION,
+  to: c.region,
+  transitPeriods: 4,
+  unitsPerVesselPerPeriod: 25000,
+  sailsIn: 4,
+  sailsHardness: 8,
+  why: `The ocean leg between ${REGION} and ${c.region}.`,
+}));
+
 /**
  * Seed B1, B4: WHICH BANKS THIS WORLD HAS is the table the banks module declares, and the seed is
  * built from the same one — there is no count beside it and no second list (Law 4). `BANK_A` and
@@ -473,6 +502,7 @@ function openingPrices(): ParamDecl[] {
 export function foundationSeedFor(
   bankRows: readonly BankDecl[],
   firmRows: readonly FirmDecl[],
+  carrierRows: readonly CarrierDecl[] = [],
 ): SystemModule {
   return {
     id: 'seed.foundation',
@@ -1482,6 +1512,22 @@ export function foundationSeedFor(
           );
         }
       }
+      // Freight B1, B2, Seed C4 (13c): THE HULLS THE CARRIERS OPEN WITH. A carrier without a ship
+      // is not a carrier, and how many it has is its own size drawn from the fleet's width (Seed
+      // B1.a) — never a number typed here. The capacity that makes freight a real limit is this.
+      if (ctx.registry.instrumentKinds.has(plantKindId(VESSEL))) {
+        const newPrice = ctx.params.price(openingPrice(VESSEL_KIND.madeFrom));
+        const life = ctx.params.periods(paramId(`plant.usefulLife.${VESSEL}`));
+        for (const c of carrierRows) {
+          const who = partyId(c.carrier);
+          if (!ctx.parties.has(who)) continue;
+          const serviceDate = addDays(ctx.calendar.epoch, -ctx.calendar.periodDays);
+          const id = seedVintage(ctx, VESSEL_KIND, c.region, serviceDate);
+          const hulls = held(ctx, id, downTick(mul(c.size, HULLS_PER_UNIT_OF_SIZE, 'its fleet')));
+          if (hulls <= 0) continue;
+          ctx.endowUnits(who, id, hulls, priced(ctx, id, (newPrice * (life - 1)) / life));
+        }
+      }
     },
   };
 }
@@ -1719,6 +1765,14 @@ export function foundationSpec(
 ): AssemblySpec {
   // Seed B1.a: WHAT THIS WORLD IS MADE OF — one draw, reaching every module that needs it.
   const drew = foundationDraw(seed, bankRows, firmRows);
+  // Law 4: ONE DRAW OF THE CARRIERS, read by the module that sails them and by the seed that gives
+  // them their hulls. A second draw would be a second fleet wearing this one's name.
+  const carrierRows = drawCarriers(
+    CARRIER_COUNT,
+    [REGION],
+    drew.banks.map((b) => b.bank),
+    seed,
+  );
   return {
     seed,
     epoch: civil(2026, 1, 5),
@@ -1842,13 +1896,19 @@ export function foundationSpec(
       // Commodities Spot A3, A4 (13c): covered space is the second kind of capital this world has,
       // and it is what makes holding a thing cost something. The capital programme owns what a kind
       // of plant IS; the commodities module owns the market in the space it provides.
-      capitalProgramme([...CAPITAL_KINDS, STORAGE_KIND]),
+      capitalProgramme([...CAPITAL_KINDS, STORAGE_KIND, VESSEL_KIND]),
       labour(),
       firms(drew.firms),
       households(),
       // Commodities Spot A3, D3: the market in covered space. After the firms, because who is short
       // of room and who has spare is read off what they hold (Law 19).
       commodities(),
+      // Freight A4, D1 (13c): the routes this world has and the carriers that sail them. THE LEGS
+      // ARE REAL AND IDLE until there is more than one place with goods in it: this world makes
+      // its goods in the one region that has firms, and the three abroad are a central bank, a
+      // treasury and a bond line until 13i builds their economies. A session with nothing to carry
+      // says `noDemand` and says so out loud, which is the honest state for it to be in.
+      freight(carrierRows, ROUTES),
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
@@ -1944,7 +2004,7 @@ export function foundationSpec(
       // Research: after `reporting`, because what a bank estimates is the report a company will
       // publish and what settles its estimate is the one it just did (Reporting C1, F1).
       research(seed),
-      foundationSeedFor(drew.banks, drew.firms),
+      foundationSeedFor(drew.banks, drew.firms, carrierRows),
       foundationFundingFor(drew.banks),
     ],
   };
