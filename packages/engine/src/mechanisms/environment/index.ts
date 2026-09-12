@@ -29,7 +29,7 @@ import { drawClimate, FACTS, type ClimateDecl } from './data.js';
 import { ENVIRONMENT_STATE } from './events.js';
 import { keyOf, moveOn, type Weather } from './state.js';
 
-export { conditionOf, conditionsIn, ENVIRONMENT_STATE } from './events.js';
+export { ENVIRONMENT_STATE, conditionsFor, conditionsIn } from './events.js';
 export { FACTS, GROWING, WARMTH, WIND, factId, type FactId } from './data.js';
 
 const persistenceParam = (c: ClimateDecl): ParamId =>

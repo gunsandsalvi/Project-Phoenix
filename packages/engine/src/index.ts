@@ -17,6 +17,7 @@ export * from './registry/registry.js';
 export * from './registry/params.js';
 export * from './registry/profiles.js';
 export * from './registry/grid.js';
+export * from './registry/environment.js';
 export * from './registry/grades.js';
 export * from './registry/naming.js';
 export * from './parties/party.js';

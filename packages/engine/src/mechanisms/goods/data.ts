@@ -54,9 +54,19 @@ export interface GoodDecl {
    * so is different from saying its capacity is large (Law 6).
    */
   readonly plant: readonly RecipePlantDecl[];
-  /** B4: the fraction of what is started that is finished. The rest is scrap, at the point it would have been made. */
+  /**
+   * B4: the fraction of what is started that is finished IN AN ORDINARY PERIOD. The rest is scrap,
+   * at the point it would have been made. What this period actually yields is this times the
+   * conditions the line stood in (`exposedTo`), so a bad season is a real loss of units and never
+   * a number anybody wrote down for it.
+   */
   readonly yieldRate: number;
   readonly yieldWhy: string;
+  /**
+   * B4, Commodities Spot B3: the physical facts this line's yield stands in, by the name the
+   * environment publishes them under. Empty is a line made indoors, which is most of them.
+   */
+  readonly exposedTo: readonly string[];
   /** B3, B4: periods a batch spends in work in progress before it yields. */
   readonly leadTimePeriods: number;
   readonly leadTimeWhy: string;
@@ -84,7 +94,8 @@ export const GOODS: readonly GoodDecl[] = [
     ],
     yieldRate: 0.92,
     yieldWhy:
-      'Weather, pests and handling take part of every crop between the sowing and the barn. It is the largest yield loss in the chain, which is why a farmer commits labour for a tonnage it does not get.',
+      'Pests and handling take part of every crop between the sowing and the barn, in a season that behaves. It is the largest yield loss in the chain, which is why a farmer commits labour for a tonnage it does not get. THE WEATHER IS NOT IN THIS NUMBER (13c): a crop stands in the growing conditions the environment publishes, so a bad season is a real loss of tonnes and this is what an ordinary one leaves.',
+    exposedTo: ['growing'],
     leadTimePeriods: 2,
     leadTimeWhy:
       'Two periods between committing the labour and having the tonne, so a decision taken on a stale view of demand cannot be unwound.',
@@ -113,6 +124,7 @@ export const GOODS: readonly GoodDecl[] = [
     ],
     yieldRate: 0.98,
     yieldWhy: 'A little of every batch is lost to the machinery and to sweeping up.',
+    exposedTo: [],
     leadTimePeriods: 0,
     leadTimeWhy: 'Milling is within the period: grain in at the start is flour by the end.',
   },
@@ -141,6 +153,7 @@ export const GOODS: readonly GoodDecl[] = [
     ],
     yieldRate: 0.97,
     yieldWhy: 'Loaves come out of the oven wrong, and the ones that do are a loss of units, not of margin.',
+    exposedTo: [],
     leadTimePeriods: 0,
     leadTimeWhy: 'Baked and sold inside the week.',
   },
@@ -160,6 +173,7 @@ export const GOODS: readonly GoodDecl[] = [
     plant: [],
     yieldRate: 0.98,
     yieldWhy: 'A machine that comes off the bench wrong is scrapped; most do not.',
+    exposedTo: [],
     leadTimePeriods: 1,
     leadTimeWhy:
       'A machine takes longer to build than a loaf takes to bake, and the gap between ordering one and having it working is the other half of Capital Programme C3.',

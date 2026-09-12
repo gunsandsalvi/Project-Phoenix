@@ -23,11 +23,12 @@
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
 import type { InstrumentId, PartyId } from '../../core/ids.js';
-import { div, material, mul, sub, sum } from '../../core/num.js';
+import { div, finite, material, mul, sub, sum } from '../../core/num.js';
 import { asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import { conditionsFor } from '../../registry/environment.js';
 import { goodId, wipId } from '../../registry/physical.js';
 import { costOfDraw, dueFromLine } from '../../register/register.js';
 import { capacityFrom, utilisation, vintagesHeld } from '../../registry/physical.js';
@@ -202,9 +203,26 @@ function yieldBatch(
   // The yield takes a batch to a quantity between two pieces more often than not, and what exists
   // is the piece below — a part-finished unit is scrap, not stock.
   const good = goodId(tech.terms.subUnit, tech.terms.region);
+  // B4, Commodities Spot B3: THE SEASON THIS BATCH STOOD IN, read off the environment's public
+  // event (`registry/environment.ts`). A line exposed to nothing, and a world with no environment
+  // in it, stand at one — and neither is a default: the first is a line made indoors and the second
+  // is a scale model with no weather to stand in.
+  //
+  // B4 IS ONE-DIRECTIONAL — "not everything started is finished" — so a good season cannot make
+  // more tonnes than went onto the line, and the season moves the SURVIVAL RATE rather than
+  // multiplying the batch. `yield ^ (1 / season)` is that: a fraction between nothing and all of it
+  // raised to a positive power stays between nothing and all of it, so the result is inside its own
+  // range BY ARITHMETIC and not by a clamp (Law 6). A halved season is adversity applied twice over
+  // and takes much more than half again; a season twice as kind takes the loss towards none without
+  // ever reaching past it. Nothing anywhere is capped, floored or rescaled.
+  //
+  // And it moves a QUANTITY at the point the thing is made, which is where the loss actually is.
+  // Nothing here touches a price: a shortage reaches one by there being less of the thing (Law 3).
+  const season = conditionsFor(ctx, tech.terms.region, tech.terms.recipe.exposedTo);
+  const survived = finite(Math.pow(tech.yieldRate, 1 / season), 'what this season left of the line');
   const finished = ctx.registry.deliverable(
     ctx.instruments.get(good).unit,
-    mul(due, tech.yieldRate, 'what came off the line'),
+    mul(due, survived, 'what came off the line'),
   );
   if (!material(finished, 2, due) || finished <= 0) return;
   const record = ctx.settle({
@@ -233,6 +251,11 @@ function yieldBatch(
       finished,
       // B4: units, at the point they would have been made. Not a rate and not a write-down.
       scrapped: sub(due, finished, 'scrap'),
+      // B3, B4: what the season did and what it left, published so a shortfall has a cause
+      // anybody can read — and so that the ordinary yield beside it says how much of the gap is
+      // the weather and how much is the line.
+      season,
+      survived,
       costPerUnit: div(cost, finished, 'what a finished unit cost'),
     },
     false,

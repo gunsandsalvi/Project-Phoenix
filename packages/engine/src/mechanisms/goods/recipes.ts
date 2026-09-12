@@ -71,6 +71,8 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
         unitsPerUnitPerPeriod: plantParam(d.subUnit, r.capitalKind),
       })),
       yieldRate: yieldParam(d.subUnit),
+      // B4: the facts this line's yield stands in, carried as the names the environment publishes.
+      exposedTo: d.exposedTo,
       leadTimePeriods: leadTimeParam(d.subUnit),
     },
   };

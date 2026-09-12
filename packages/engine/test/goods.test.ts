@@ -57,6 +57,7 @@ const STONE: GoodDecl = {
   plant: [],
   yieldRate: 1,
   yieldWhy: 'Nothing is lost cutting stone, so a batch test says what the batch did and nothing else.',
+  exposedTo: [],
   leadTimePeriods: 0,
   leadTimeWhy: 'Cut and stacked inside the week.',
 };
@@ -73,6 +74,7 @@ const GRAVEL: GoodDecl = {
   plant: [],
   yieldRate: 1,
   yieldWhy: 'Nor crushing it.',
+  exposedTo: [],
   leadTimePeriods: 0,
   leadTimeWhy: 'Crushed inside the week.',
 };

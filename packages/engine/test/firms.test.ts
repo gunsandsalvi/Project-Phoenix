@@ -203,7 +203,14 @@ describe('the line (Goods B2, B3, B4, B5)', () => {
     // B4: not everything started is finished, and the scrap is units, at the point they would
     // have been made — never a rate applied to a value.
     // Law 8: and what came off the line is that, down to a whole piece of the good.
-    sameQuantity(finished, startedUnits * 0.92);
+    //
+    // WHAT SURVIVED IS READ OFF THE EVENT (13c). The ordinary yield is 0.92 and a crop stands in
+    // the season, so the rate this batch actually met is `0.92 ^ (1 / season)` — published beside
+    // the tonnes so the shortfall has a cause. Re-deriving it here from 0.92 would be asserting
+    // that the weather does nothing, which is the thing the environment module exists to stop.
+    sameQuantity(finished, startedUnits * Number(made?.data['survived']));
+    expect(Number(made?.data['survived'])).toBeLessThanOrEqual(1);
+    expect(Number(made?.data['survived'])).toBeGreaterThan(0);
     expect(Number(made?.data['scrapped'])).toBeGreaterThan(0);
     // B4: what survives carries the whole batch, so a survivor is dearer than a unit started.
     expect(Number(made?.data['costPerUnit'])).toBeGreaterThan(0);

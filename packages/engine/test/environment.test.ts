@@ -108,3 +108,60 @@ describe('the physical world is state, not a schedule (Law 2, Appendix B)', () =
     expect(facts('environment-e')).not.toBe(facts('environment-f'));
   });
 });
+
+describe('one event, several consequences (Law 4)', () => {
+  it('takes a real crop out of a bad season, at the point the tonnes would have been made', () => {
+    // Goods B4, Commodities Spot B3. The declared yield is what an ORDINARY period leaves; what a
+    // period actually leaves is that times the conditions the line stood in. So a shortfall is
+    // tonnes that were never made, published with the season that took them — never a write-down
+    // and never a multiplier on a price (Law 3: a shortage reaches a price by there being less).
+    const w = ranWorld('environment-yield', 8);
+    const produced = w.journal.ofKind('firms.produced');
+    expect(produced.length).toBeGreaterThan(0);
+    const exposed = produced.filter((e) => num(e, 'season') !== 1);
+    // At least one line in this world stands in the weather, and it did not stand at normal in
+    // every one of eight periods — which is the whole of "the world produces its own shocks".
+    expect(exposed.length).toBeGreaterThan(0);
+    for (const e of produced) {
+      const season = num(e, 'season');
+      const started = num(e, 'started');
+      const finished = num(e, 'finished');
+      const scrapped = num(e, 'scrapped');
+      const survived = num(e, 'survived');
+      expect(season).toBeGreaterThan(0);
+      // Law 5, Goods B4: what was started is what came off plus what did not. Exactly, in units.
+      expect(finished + scrapped).toBe(started);
+      // B4 is ONE-DIRECTIONAL: not everything started is finished, and no season makes more tonnes
+      // than went onto the line. The survival rate is a fraction raised to a positive power, so it
+      // stays inside its own range by arithmetic — there is no clamp anywhere to find (Law 6).
+      expect(survived).toBeGreaterThan(0);
+      expect(survived).toBeLessThanOrEqual(1);
+      expect(scrapped).toBeGreaterThanOrEqual(0);
+      expect(finished).toBeLessThanOrEqual(started);
+    }
+    // The same season reaches every line of that good in that region in that period: one fact.
+    const byPeriod = new Map<string, Set<number>>();
+    for (const e of produced) {
+      const key = `${e.period}|${String(e.data['good'])}`;
+      byPeriod.set(key, (byPeriod.get(key) ?? new Set()).add(num(e, 'season')));
+    }
+    for (const seasons of byPeriod.values()) expect(seasons.size).toBe(1);
+  });
+
+  it('is a multiple of one for a line made indoors, and that is an answer rather than a default', () => {
+    const w = ranWorld('environment-indoors', 5);
+    const indoors = w.journal
+      .ofKind('firms.produced')
+      .filter((e) => String(e.data['good']) !== 'grain');
+    expect(indoors.length).toBeGreaterThan(0);
+    // A mill and an oven do not stand in the weather, and their declaration says so with an empty
+    // list — which is different from saying their yield is high (Law 6, Law 16).
+    for (const e of indoors) expect(num(e, 'season')).toBe(1);
+  });
+});
+
+function num(e: { readonly data: Readonly<Record<string, unknown>> }, key: string): number {
+  const v = e.data[key];
+  if (typeof v !== 'number') throw new Error(`${key} is not a number`);
+  return v;
+}

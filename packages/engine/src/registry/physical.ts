@@ -85,6 +85,16 @@ export interface Recipe {
   readonly yieldRate: ParamId;
   /** B3: periods a batch is work in progress before it yields. */
   readonly leadTimePeriods: ParamId;
+  /**
+   * Goods B4, Commodities Spot B3: THE PHYSICAL FACTS THIS LINE'S YIELD STANDS IN, by the name the
+   * environment publishes them under (`registry/environment.ts`). A crop stands in the weather; a
+   * mill and an oven do not, and saying so is different from saying their yield is high. Empty is a
+   * real answer — a line made indoors — and it is the answer for most of them.
+   *
+   * It is a list of NAMES and not an import: the module that owns the weather is not the module
+   * that owns the recipe, and a name is how a module says a thing it does not own (4.9b).
+   */
+  readonly exposedTo: readonly string[];
 }
 
 /**
