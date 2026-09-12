@@ -727,7 +727,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Commodities Spot A1` | MISSING |  |
+| `Commodities Spot A1` | MET | packages/engine/src/registry/physical.ts, packages/engine/src/mechanisms/goods/data.ts (a grade, at a location, in a quantity unit; 13c.1 made the locations real and 13c.2 added the shelf as one of them) |
 | `Commodities Spot A2` | MISSING |  |
 | `Commodities Spot A3` | MISSING |  |
 | `Commodities Spot A4` | MISSING |  |
@@ -773,7 +773,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Indices D2` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a credit index per currency, over the dated claims somebody other than the state promised — empty, and therefore Missing, until 13f issues some) |
 | `Indices D3` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (the volume-weighted rate of the overnight lending that SETTLED, per book; a book that did not trade has no fixing) |
 | `Indices D3.b` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (nothing here reads the corridor: what the central bank administers is not what the market paid) |
-| `Indices D4` | PARTIAL | packages/engine/src/mechanisms/indices/baskets.ts — producer and consumer indices over the same goods weighed by what this region’s sellers sold and what its cells bought. What will part the two levels is the wedge between the gate and the counter, which is 13c’s freight and distribution margin |
+| `Indices D4` | PARTIAL | packages/engine/src/mechanisms/indices/baskets.ts — producer and consumer indices over the same goods weighed by what this region's sellers sold and what its cells bought. 13c.2 built the WEDGE the two levels part on: the shelf is its own instrument with its own market, so the distribution margin is the gap between two prints less what the shop's staff and premises cost it. What remains is 13c step 14 — putting freight and that margin into the index read itself |
 | `Indices D5` | MET | packages/engine/src/world/world.ts (one system: a second module declaring the same id is refused at assembly) |
 | `Indices E1` | MET | packages/engine/src/mechanisms/indices/index.ts, packages/engine/src/observer/observer.ts (published as an observation, with what it was read from) |
 | `Indices E2` | MET | packages/engine/src/prices/index-read.ts (no stored level, so it cannot be stale and cannot be revised) |
@@ -1152,7 +1152,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Capital Programme B3` | MET | packages/engine/src/mechanisms/firms/invest.ts (the gap is the rate it would run at against what its plant will still let it run at next period; a firm running empty has none) |
 | `Capital Programme B4` | MET | packages/engine/src/mechanisms/firms/invest.ts (what it commits to is what it would run at LESS the width of its own recent surprises, so a firm whose expectation is inside its own dispersion waits) |
 | `Capital Programme B5` | MET | packages/engine/src/mechanisms/firms/invest.ts (no fraction of profit or output anywhere: the only reason anything is bought is that a unit of capacity was worth more than the plant that makes one), packages/engine/test/capital.test.ts (asserted over the module’s declared numbers) |
-| `Capital Programme C1` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (what a firm BOUGHT of a capital good becomes plant; the seller is a named capital-goods producer and it is that seller’s revenue). 13c.1 adds `buildOn`: what erecting plant on a place takes, share-weighted over its ground — read and waiting for 13c.2's project to ask it |
+| `Capital Programme C1` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (what a firm BOUGHT of a capital good becomes plant; the seller is a named capital-goods producer and it is that seller’s revenue). 13c.1 adds `buildOn`: what erecting plant on a place takes, share-weighted over its ground — read and waiting for 13g's project to ask it |
 | `Capital Programme C2` | MET | packages/engine/src/mechanisms/firms/invest.ts (a purchase order in the capital good’s market, paid out of its account in a currency like any other trade) |
 | `Capital Programme C3` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (a build lag between the machines arriving and the vintage going into service, declared as the capital kind’s own technology) |
 | `Capital Programme C4` | MET | packages/engine/src/mechanisms/capital-programme/index.ts (the good is destroyed into the plant in the same instruction: the money went to the producer and nothing can turn it back) |
@@ -1288,7 +1288,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Goods F4` | MISSING |  |
 | `Goods F5` | MET | packages/engine/src/clearing/market.ts (recognised on delivery), packages/engine/src/mechanisms/goods/inventory.ts (cost of what left, at what it cost) |
 | `Goods F5.b` | MET | packages/engine/src/mechanisms/firms/produce.ts (the wage is paid once and capitalised once: a period that starts nothing capitalises nothing) |
-| `Goods G1` | MISSING |  |
+| `Goods G1` | MET | packages/engine/src/mechanisms/goods/data.ts, packages/engine/src/mechanisms/households/data.ts (13c.2: a household buys the RETAIL line and never the one at the gate — nine shelf lines with their own instruments and their own markets, and the basket names those. An intermediate price is one no household pays, and that is now a structural fact rather than an absence of buyers) |
 | `Goods G1.c` | MISSING |  |
 | `Goods G2` | MISSING |  |
 | `Goods G3` | MISSING |  |
@@ -1325,7 +1325,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Labour A1` | MET | packages/engine/src/mechanisms/labour/index.ts, packages/engine/src/mechanisms/labour/matching.ts (hours of a person time, supplied by a named cell to a named firm) |
 | `Labour A2` | MET | packages/engine/src/mechanisms/labour/index.ts (the venue prices hours in the money of its region) |
-| `Labour A3` | MET | packages/engine/src/mechanisms/labour/data.ts, packages/engine/src/mechanisms/labour/index.ts (one venue per region and occupation; a trade is what a seeker looks for) |
+| `Labour A3` | MET | packages/engine/src/mechanisms/labour/data.ts, packages/engine/src/mechanisms/labour/index.ts (one venue per region and occupation; a trade is what a seeker looks for. 13c.2 took it to thirty-eight trades across twenty-odd sectors: a nurse out of work is not a bricklayer's vacancy filled) |
 | `Labour A4` | MET | packages/engine/src/mechanisms/labour/register.ts (a relationship with a firm, a worker, a wage and a start date) |
 | `Labour B1` | MET | packages/engine/src/mechanisms/labour/matching.ts (each cell decides from its own view whether to offer its hours) |
 | `Labour B2` | MET | packages/engine/src/mechanisms/labour/matching.ts (supply is the cells weights times the hours a person has) |
@@ -1401,7 +1401,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Households B5` | MET | packages/engine/src/mechanisms/households/index.ts (the sector income is published as a sum of what named payers paid, read from the ledger and causing nothing) |
 | `Households C1` | MET | packages/engine/src/mechanisms/households/consume.ts (its own expected income, what it owns, its own recent surprises and the cash it can actually pay with) |
 | `Households C2` | MET | packages/engine/src/mechanisms/households/portfolio.ts (what it neither spends nor puts into paper stays in its account) |
-| `Households C3` | MET | packages/engine/src/mechanisms/households/data.ts (the shares are a cohort preference), packages/engine/src/mechanisms/households/consume.ts (what that buys is the price business) |
+| `Households C3` | MET | packages/engine/src/mechanisms/households/data.ts (13c.2: the preference is two PHYSICAL quantities per member per period — what it has before anything else and what it takes on top — and never a share of spending), packages/engine/src/mechanisms/households/consume.ts (needs first, wants in proportion, at the prices it expects; what share of its income goes on food is an outcome) |
 | `Households C4` | MET | packages/engine/src/mechanisms/households/consume.ts (it finds the consumption tax on top of the price when it decides what to spend) |
 | `Households C5` | MET | packages/engine/src/mechanisms/households/index.ts (the audit contribution: what a household took is what it paid a named seller for) |
 | `Households D1` | PARTIAL | deposits and securities held directly, in the register (packages/engine/src/mechanisms/households/portfolio.ts); fund shares arrive at worklist 8, pensions at 13h and housing at 13d |

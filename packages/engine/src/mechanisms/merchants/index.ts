@@ -1,7 +1,7 @@
 /**
  * What a merchant does: buy here, carry it, sell there.
  *
- * @spec Freight C1 Freight C1.a Freight C2 Freight D3 Commodities Spot C6 Commodities Spot D1 Goods C1 Clearing A2 Clearing B2 Law 2 Law 3 Law 15 Law 19
+ * @spec Freight C1 Freight C1.a Freight C2 Freight D3 Commodities Spot A1.a Commodities Spot D1 Goods C1 Clearing A2 Clearing B2 Law 2 Law 3 Law 15 Law 19
  *
  * ITS BID IS TWO PRINTS AND NOTHING ELSE (Law 3, Law 19). What a thing is worth to a merchant
  * standing here is what it fetches THERE — a print the market made, not a number this module works
@@ -138,7 +138,7 @@ export function merchants(rows: readonly MerchantDecl[]): SystemModule {
   const mine = (who: PartyId): MerchantDecl | undefined => index.get(String(who));
   return {
     id: 'merchants',
-    spec: 'Freight C1 Freight D3 Commodities Spot C6',
+    spec: 'Freight C1 Freight D3 Commodities Spot A1.a',
     // Law 15: it needs the lines to exist and the places to be places, and nothing else. It adds no
     // party, no instrument and no market: the firms are already here and so are the books.
     requires: ['goods', 'firms'],

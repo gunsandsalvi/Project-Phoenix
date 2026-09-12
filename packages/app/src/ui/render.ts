@@ -603,11 +603,41 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   journal.append(ul);
   root.append(journal);
 
+  root.append(sectorsOf(s));
   root.append(mapOf(s));
 
   root.append(
     el('footer', {}, `phases: ${s.phases.map((p) => `${p.name}@c${p.cycle}`).join(' → ')}`),
   );
+}
+
+
+/**
+ * §45, 13c.2: WHAT KIND OF ECONOMY THIS IS. Every line employs a trade and every trade is in a
+ * sector, so this is the twenty-odd verticals with what each of them made this period and what is
+ * standing in it. It reads the snapshot and writes nothing; the shares are worked out here from the
+ * numbers the snapshot carries, because a share of a total is what a reader wants and a total is
+ * what a model may not store (Appendix B).
+ */
+function sectorsOf(s: Snapshot): HTMLElement {
+  const section = el('section', { id: 'sectors' }, el('h2', {}, 'The economy, by sector'));
+  const made = s.sectors.reduce((t, x) => t + x.made, 0);
+  const held = s.sectors.reduce((t, x) => t + x.held, 0);
+  const ul = el('ul', {});
+  for (const x of [...s.sectors].sort((a, b) => b.made - a.made)) {
+    const ofOutput = made > 0 ? `${((x.made / made) * 100).toFixed(1)}%` : '—';
+    const ofStock = held > 0 ? `${((x.held / held) * 100).toFixed(1)}%` : '—';
+    ul.append(
+      el(
+        'li',
+        {},
+        `${x.sector}${x.portable ? '' : ' (made where it is bought)'}: ${ofOutput} of what was made, ` +
+          `${ofStock} of what is standing — ${x.lines.length} line${x.lines.length === 1 ? '' : 's'}: ${x.lines.join(', ')}`,
+      ),
+    );
+  }
+  section.append(ul);
+  return section;
 }
 
 /**

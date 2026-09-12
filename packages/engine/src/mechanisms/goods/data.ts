@@ -1758,7 +1758,7 @@ const MAKES: readonly GoodDecl[] = [
 /* ------------------------------------------------------------------------------------------------
  * THE SHELF IS A PLACE (13c.2).
  *
- * @spec Goods A1 Goods A2.a Goods C6 Commodities Spot C6 Indices D4 Law 3 Law 4
+ * @spec Goods A1 Goods A2.a Goods C6 Commodities Spot A1.a Indices D4 Law 3 Law 4
  *
  * A tonne of bread at a bakery and a loaf in a shop near where somebody lives are not the same
  * thing. Between them is a firm with premises, staff, a delivery round, refrigeration and a bin at

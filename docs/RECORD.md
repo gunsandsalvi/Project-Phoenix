@@ -3266,3 +3266,81 @@ scenarios would falsify it, and each is 16's to run: flatten the freight and the
 go; flatten the ground and firms should stop piling into one place; landlock the exporter and the
 coastal premium should fall to nothing. If the world does not cluster, that is a finding about a
 missing mechanism and never a licence to add a term that makes it.
+
+---
+
+## 13c.2 — The rest of the economy: services, distribution and retail
+
+**What was wrong.** This world MADE things and did nothing else. Thirty-six physical lines, nine
+thousand firms, and every one of them a farm, a mine, a mill or a works — about a quarter of what an
+economy is. Nobody treated a patient, taught a child, served a meal, carried a passenger, repaired a
+machine or answered a telephone. Between the factory gate and the household there was nothing at
+all: no wholesaler, no lorry, no shop. A household bought bread from a bakery at the bakery's own
+cleared price, which is not how anybody has ever bought bread.
+
+**Three structures, not a list of rows.**
+
+**A thing that cannot be put in a box.** `GoodDecl.portable` — whether a unit of a line can be
+somewhere other than where it was made. It is the one fact that divides a manufacture from a
+service, and freight reads it, so a service price is LOCAL by the technology of the thing rather
+than by a rule and no voyage can ever close a gap in one. Sixteen service lines stand on it: care,
+teaching, hospitality, telecoms, software and support, professional practice, design, media, road
+transport, repair, facilities, personal care, entertainment, security, waste and handling — each
+made to order (`leadTime: 0`), keeping nothing (`spoilage: 1`, because an hour nobody bought was
+still paid for, which is the whole of why a service business has operating leverage), and standing
+on no ground of its own. A seventeenth, `wholesale`, arrived with the merchants.
+
+**The distance between the gate and the shelf.** Nine retail lines, each one unit of the wholesale
+line in and one on the shelf out, plus the hours, the premises, the power, the packaging, the
+handling, the haulage and the merchant's margin that putting it there takes. Each is its own
+instrument with its own market in each region, exactly as a tonne in transit is, and for the same
+reason (Commodities Spot A1.a). **The distribution margin is therefore an outcome**: two prints,
+less what the shop's staff and premises cost it. Nothing declares a mark-up, and a test walks the
+declaration to say so.
+
+**A basket whose preference is a quantity.** `ConsumptionDecl.share` is DELETED. A share of what a
+cohort spends is the strongest substitution assumption there is — spending on a thing never responds
+to that thing's price — and it is exactly what `phoenix/no-value-recipe` refuses on the production
+side. What a cohort declares now is two physical quantities per good per member per period: what it
+has before anything else, and what it takes on top when the money reaches. Eighteen lines, two
+cohorts, and the differences are load-bearing: a retired household needs three times the care and a
+tenth of the teaching, is at home more so wants more power, and makes a third of the journeys. The
+share of income that goes on food is an outcome of two declared quantities meeting two prices and
+falls as income rises with nothing stating that it does.
+
+**And what a merchant is.** The firms in the wholesale line get a reason to buy something they will
+never use: bid where you stand for what the thing fetches where it is DEAR, less what this
+management wants for the wait; offer what you hold elsewhere at what those lots cost you plus the
+same margin, read off the register where a basis already lives. It never estimates a freight cost to
+subtract — what the voyage costs is cleared against carriers that have hulls, and a merchant that
+bid too much finds it cannot pay for the passage. Two drawn preferences, margin and appetite, and no
+schedule of margins by distance anywhere.
+
+**What was deleted, and what replaced it.** `ConsumptionDecl.share` → two quantities and
+`rungsUpTo`. The opening bundle's "one unit of each final good" → the basket, weighted over the
+cohorts and never averaged: with fifteen final goods that 1 was setting this world's entire
+industrial composition. `STORAGE_KIND.madeFrom: 'machine'` → `'building'` and
+`VESSEL_KIND.madeFrom: 'machine'` → `'vessel'`: both were true when a machine was the only capital
+good this world made and false since the real economy landed with a construction line and a
+shipyard in it, and the seed now counts every kind of plant rather than the kernel's one.
+
+**Two guards.** A line that cannot be moved cannot be warehoused either, so declaring both throws
+where it is declared. And the chain runs ONE WAY through the services — a service consumes goods and
+the goods that consume services are the made ones at the top — so the input-output graph is still a
+graph; a test walks every service's inputs to their roots and refuses a world where the engineer's
+week bought the machine that built it.
+
+**Siting became a data read.** Which lines go where the people are is read off the BASKET and never
+off what kind of line it is, so adding a line to the basket moves its firms and nothing learns the
+name of an industry (Law 15). A shop is built next to its customers; a mine is built on the ore.
+
+**The observer gained a sector view** — what each of the twenty-odd verticals made this period and
+what is standing in it, both reads, neither stored.
+
+**Forecast, with the measurement that would kill it (Law 17).** Service prices should diverge
+between places further and for longer than goods prices do, because nothing can arbitrage them: a
+region whose wages rise has no import of haircuts. Two falsifications, both 16's to run: make two
+regions' tradeable prices converge and the service gap should stay open; raise one region's wage and
+its service prices should move with it while its tradeable prices do not. If services track goods
+prices place for place, something is closing a gap that has no mechanism to close it, and that is a
+finding rather than a licence to add a term.

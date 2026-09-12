@@ -11,6 +11,10 @@ import { add, div, mul, sub } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
 import { partyId, type CurrencyCode, type PartyId, type RegionId } from '../core/ids.js';
 import { placeAt, tilesOf } from '../registry/geography.js';
+import { isGoodTerms } from '../registry/physical.js';
+import { isCreateLeg } from '../ledger/instruction.js';
+import { OCCUPATION_OF } from '../mechanisms/firms/data.js';
+import { OCCUPATIONS } from '../mechanisms/labour/data.js';
 import { tileReached } from '../register/voyages.js';
 import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
@@ -409,6 +413,27 @@ export interface MapView {
   }[];
 }
 
+/**
+ * 13c.2, §45: WHAT KIND OF ECONOMY THIS IS — output and stock by sector, as a read.
+ *
+ * Every line employs a trade and every trade is in a sector (Labour A3), so grouping the lines by
+ * the sector their trade is in says how much of this world is farming, how much is making things
+ * and how much is the two thirds of it that cannot be put in a box. Nothing is stored: the flow is
+ * the create legs this period, at what a unit of the line last printed, and the stock is what the
+ * register holds at the same print. A reader that wanted either from a stored total would be
+ * reading a second copy (Law 19, Appendix B: no stored aggregate).
+ */
+export interface SectorView {
+  readonly sector: string;
+  readonly lines: readonly string[];
+  /** What its lines MADE this period, at what a unit of each last printed. A flow. */
+  readonly made: number;
+  /** What is standing in them: units held, at the same prints. A stock, and a different question. */
+  readonly held: number;
+  /** Whether every line in it can be put in a box. False is a sector made where it is bought. */
+  readonly portable: boolean;
+}
+
 export interface Snapshot {
   readonly seed: string;
   readonly period: number;
@@ -433,6 +458,8 @@ export interface Snapshot {
    * painting it is a read of a load-bearing thing and never a display-only number (Appendix B).
    */
   readonly map: MapView;
+  /** 13c.2: the economy by sector — what each vertical made, what is standing in it, as reads. */
+  readonly sectors: readonly SectorView[];
   readonly prints: readonly PrintView[];
   readonly curves: readonly CurveView[];
   readonly yields: readonly YieldView[];
@@ -735,10 +762,50 @@ export function snapshot(
     }),
   };
 
+
+  // 13c.2: the economy by sector. One walk of this period's create legs and one of the register,
+  // both at the prints the markets made (Law 19: never a stored total, never a re-derived price).
+  const sectorOf = new Map(OCCUPATIONS.map((o) => [o.id, o.sector]));
+  const sectors = new Map<string, { lines: Set<string>; made: number; held: number; portable: boolean }>();
+  const lineOfInstrument = new Map<string, { sector: string; subUnit: string; portable: boolean }>();
+  for (const i of w.instruments.all()) {
+    if (!isGoodTerms(i.terms)) continue;
+    const trade = OCCUPATION_OF[i.terms.subUnit];
+    if (trade === undefined) continue;
+    const sector = sectorOf.get(trade);
+    if (sector === undefined) continue;
+    lineOfInstrument.set(String(i.id), { sector, subUnit: i.terms.subUnit, portable: i.terms.portable });
+    const row = sectors.get(sector) ?? { lines: new Set<string>(), made: 0, held: 0, portable: true };
+    row.lines.add(i.terms.subUnit);
+    if (!i.terms.portable) row.portable = false;
+    const print = w.prices.latest(i.id, w.period);
+    if (print.some) {
+      row.held = add(row.held, mul(w.register.heldTotal(i.id).value, print.value.price, 'what is standing in it'), 'the sector’s stock');
+    }
+    sectors.set(sector, row);
+  }
+  for (const r of w.ledger.inPeriod(w.period)) {
+    if (r.outcome !== 'settled') continue;
+    for (const leg of r.instruction.legs) {
+      if (!isCreateLeg(leg)) continue;
+      const line = lineOfInstrument.get(String(leg.instrument));
+      if (line === undefined) continue;
+      const print = w.prices.latest(leg.instrument, w.period);
+      if (!print.some) continue;
+      const row = sectors.get(line.sector);
+      if (row === undefined) continue;
+      row.made = add(row.made, mul(leg.qty, print.value.price, 'what it made'), 'the sector’s output');
+    }
+  }
+  const sectorViews: SectorView[] = [...sectors.entries()]
+    .map(([sector, r]) => ({ sector, lines: [...r.lines].sort(), made: r.made, held: r.held, portable: r.portable }))
+    .sort((a, b) => a.sector.localeCompare(b.sector));
+
   return {
     seed: w.seed,
     period: w.period,
     map,
+    sectors: sectorViews,
     date: formatCivil(w.calendar.startOf(w.period)),
     scope,
     parties: w.parties.all().map((p) => ({

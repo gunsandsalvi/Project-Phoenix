@@ -1,7 +1,7 @@
 /**
  * MERCHANTS: the firms whose business is that a thing is worth more somewhere else.
  *
- * @spec Freight C1 Freight C1.a Freight D3 Commodities Spot C6 Firm A1 Firm A3 Seed B1.a Law 2 Law 15
+ * @spec Freight C1 Freight C1.a Freight D3 Commodities Spot A1.a Firm A1 Firm A3 Seed B1.a Law 2 Law 15
  *
  * A merchant makes nothing. It buys a thing in the place it is standing in, pays somebody to carry
  * it, and sells it where it is dear — and what it earns is the gap between two prints less the

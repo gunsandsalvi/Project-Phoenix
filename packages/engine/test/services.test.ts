@@ -253,7 +253,7 @@ describe('a firm whose business is the gap (13c.2, Freight D3)', () => {
     expect(m.phases).toEqual([]);
     expect(m.instrumentKinds).toEqual([]);
     expect(m.partyKinds).toEqual([]);
-    expect(m.seed).toBeUndefined();
+    expect(typeof m.seed).toBe('undefined');
     // What it adds is a reason to buy something it will not use, and that is a participant.
     expect(m.participants.length).toBe(1);
     expect(m.participants[0]?.speculative).toBe(true);
