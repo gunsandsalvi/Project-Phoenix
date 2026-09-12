@@ -12,6 +12,9 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  STORAGE,
+  isGoodTerms,
+  spacePerPiece,
   CAPITAL_KINDS,
   FIRM,
   USD,
@@ -156,11 +159,15 @@ describe('what capital is (Capital Programme A)', () => {
     expect(String(kind.unit(USD))).toContain(MACHINERY);
     const vintages = w.instruments.all().filter(isPlant);
     expect(vintages.length).toBeGreaterThan(1);
+    const kinds = new Set([...w.registry.instrumentKinds.keys()].map(String));
     for (const v of vintages) {
       expect(v.issuer.some).toBe(false);
       const terms = plantTerms(v);
       // A6: a service date and a life of its own, both DATES the calendar placed (Money G3.a).
-      expect(terms.capitalKind).toBe(MACHINERY);
+      // A4: and a kind of its own — this world has two of them since 13c, the machinery a line
+      // works with and the room its output waits in, and a vintage is one or the other and never
+      // both. Naming MACHINERY here would be asserting that this world has one kind of capital.
+      expect(kinds.has(plantKindId(terms.capitalKind))).toBe(true);
       expect(serviceLeft(terms, w.calendar.startOf(w.period), w.calendar)).toBeGreaterThan(0);
     }
     // A6, Law 9: no two vintages are the same thing, and a market names one by when it went in.
@@ -381,11 +388,24 @@ describe('what the stock lets it make (Capital Programme A2, D4, Goods B1.a, B1.
     // B5: it is the plant a unit takes times what a unit of that plant wears out by — the SAME
     // number the stock is written down by, read from the same vintages (Law 4). The plan is taken
     // at the top of a period, so the vintages it read are the ones standing before that period ran.
+    // 13c: a grain line now takes TWO kinds — the machinery it works with and the room the tonnes
+    // wait in — and the charge is what both cost it (Goods B5: a capital charge, all of it). The
+    // room's ratio is a ratio between two counts and is not on the grid the count is on (Law 8).
+    const grain = w.instruments.get(goodId('grain', REGION));
+    const terms = grain.terms;
     const needs = [
       {
         capitalKind: MACHINERY,
         unitsPerUnitPerPeriod: w.params.ratio('goods.grain.plant.machinery' as never),
       },
+      ...(isGoodTerms(terms) && terms.storagePerUnit !== null
+        ? [
+            {
+              capitalKind: STORAGE,
+              unitsPerUnitPerPeriod: spacePerPiece(w, grain.unit, w.params.ratio(terms.storagePerUnit)),
+            },
+          ]
+        : []),
     ];
     const read = capitalChargePerUnit(
       needs,

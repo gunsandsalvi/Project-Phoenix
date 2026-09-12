@@ -22,6 +22,7 @@ export {
   plantParam,
   recipeParam,
   spoilageParam,
+  storageParam,
   wipId,
   wipKindId,
   wipTerms,
@@ -42,6 +43,7 @@ import {
   plantParam,
   recipeParam,
   spoilageParam,
+  storageParam,
   wipKindId,
   yieldParam,
   type GoodTerms,
@@ -60,6 +62,8 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
     subUnit: d.subUnit,
     region,
     spoilage: spoilageParam(d.subUnit),
+    // A3, D3: what a unit of it takes up while it waits, or nothing because nobody stores it.
+    storagePerUnit: d.storagePerUnit === null ? null : storageParam(d.subUnit),
     recipe: {
       inputs: inputs.map((i) => ({
         subUnit: i.subUnit,

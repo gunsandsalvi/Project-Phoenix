@@ -41,7 +41,14 @@ import type { Order, OrderPrice } from '../../clearing/solver.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Event } from '../../journal/journal.js';
 import type { ParticipantView } from '../../world/context.js';
-import { goodId, goodMarketId, goodTerms, type GoodTerms } from '../../registry/physical.js';
+import {
+  goodId,
+  goodMarketId,
+  goodTerms,
+  spacePerPiece,
+  STORAGE,
+  type GoodTerms,
+} from '../../registry/physical.js';
 import {
   CAPITAL_KINDS,
   capacityFrom,
@@ -158,10 +165,32 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
       instrument: goodId(i.subUnit, terms.region),
       qtyPerUnit: view.params.ratio(i.qtyPerUnit),
     })),
-    plant: terms.recipe.plant.map((r) => ({
-      capitalKind: r.capitalKind,
-      unitsPerUnitPerPeriod: view.params.ratio(r.unitsPerUnitPerPeriod),
-    })),
+    plant: [
+      ...terms.recipe.plant.map((r) => ({
+        capitalKind: r.capitalKind,
+        unitsPerUnitPerPeriod: view.params.ratio(r.unitsPerUnitPerPeriod),
+      })),
+      // Commodities Spot A3, Capital Programme A2, A4 (13c): ROOM IS PLANT AND IT BINDS LIKE PLANT.
+      // A thing that takes covered space needs somewhere to be when the period ends, and the space
+      // a line has is one more kind whose stock divides into what it can have — taken by the same
+      // arithmetic that already takes the scarcest kind, so nothing here branches and nothing is
+      // capped. A good that takes no space names none, and its capacity is what it always was.
+      //
+      // Law 8: the ratio is declared per NAMED unit on both sides and the capacity arithmetic runs
+      // in pieces, so the conversion is done here, once, where the declared number is read.
+      ...(terms.storagePerUnit === null
+        ? []
+        : [
+            {
+              capitalKind: STORAGE,
+              unitsPerUnitPerPeriod: spacePerPiece(
+                view,
+                view.instruments.get(goodId(terms.subUnit, terms.region)).unit,
+                view.params.ratio(terms.storagePerUnit),
+              ),
+            },
+          ]),
+    ],
   };
 }
 

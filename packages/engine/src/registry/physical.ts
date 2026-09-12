@@ -43,6 +43,7 @@ import { none, some, type Option } from '../core/option.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { ParamRegister } from './params.js';
+import type { Registry } from './registry.js';
 
 /**
  * What reading somebody's plant needs OF them: where they are, what they hold, and the calendar
@@ -118,6 +119,16 @@ export interface GoodTerms extends Terms {
   readonly region: RegionId;
   /** A3, E4: the declared fraction of the stock that perishes each period. */
   readonly spoilage: ParamId;
+  /**
+   * Commodities Spot A3, D3: HOW MUCH COVERED SPACE ONE UNIT OF THIS TAKES UP FOR A PERIOD, as the
+   * parameter that says it. Null is a line nobody stores in bulk — one that turns over inside the
+   * period it is made in, which its own spoilage already says — and that is a real answer rather
+   * than a capacity somebody set to a large number (Law 6).
+   *
+   * It is on the GOOD and not on the holder, because how much room a tonne takes is a fact about
+   * the tonne. What a holder has room for is a fact about the holder, and it is plant.
+   */
+  readonly storagePerUnit: ParamId | null;
   readonly recipe: Recipe;
 }
 
@@ -140,6 +151,8 @@ export const leadTimeParam = (subUnit: string): ParamId => paramId(`goods.${subU
 export const plantParam = (subUnit: string, capitalKind: string): ParamId =>
   paramId(`goods.${subUnit}.plant.${capitalKind}`);
 export const yieldParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.yield`);
+export const storageParam = (subUnit: string): ParamId =>
+  paramId(`goods.${subUnit}.storagePerUnit`);
 
 /** Whether these terms are a batch's: it says what it will become, and a good never does. */
 export function isWipTerms(t: Terms): t is WipTerms {
@@ -200,6 +213,47 @@ export interface PlantTerms extends Terms {
 export const plantKindId = (capitalKind: string): InstrumentKindId =>
   instrumentKindId(`plant.${capitalKind}`);
 export const plantUnitId = (capitalKind: string): UnitId => unitId(`plant.${capitalKind}`);
+
+/**
+ * Commodities Spot A3, A4: THE KIND OF PLANT COVERED SPACE IS. The id is a NAME and the kernel owns
+ * it, for the same reason it owns a good's: the commodities module owns the MECHANISM — what a silo
+ * costs, how long it stands, the market in what it lets — and the firm that has to know whether its
+ * line needs room still has to spell it (ARCHITECTURE 4.9b).
+ */
+export const STORAGE = 'storage';
+
+/**
+ * Law 8: THE CONVERSION IS AT THE BOUNDARY AND IT IS STATED ONCE. `storagePerUnit` is declared in
+ * NAMED units on both sides — units of covered space per tonne of grain — and the register counts
+ * both in PIECES, a thousand to the tonne and one to the space unit. So a count of pieces of the
+ * thing is taken back to the tonnes it is, multiplied by the declared ratio, and put back into
+ * pieces of space. Any other spelling is off by whatever the two subdivisions differ by, silently —
+ * and two spellings of it would differ by whatever their rounding differed by, which is a holder
+ * short of room through arithmetic alone (Law 4).
+ */
+export interface SpaceReads {
+  readonly registry: Pick<Registry, 'subdivision' | 'pieces'>;
+}
+
+export function spaceFor(reads: SpaceReads, unit: UnitId, pieces: number, perUnit: number): number {
+  const named = div(pieces, reads.registry.subdivision(unit), 'what it holds, in its own named unit');
+  return reads.registry.pieces(plantUnitId(STORAGE), mul(named, perUnit, 'the space that takes'));
+}
+
+/**
+ * The same ratio, UNROUNDED, for the arithmetic that divides rather than totals: how many pieces of
+ * space one piece of the thing takes. It is a ratio and not a quantity, so it is not on any grid —
+ * a kilo of grain takes a thousandth of a unit of space, and rounding that to a whole piece of
+ * space makes it nothing and makes room bind nothing (Law 8: what is a COUNT lands on the grid;
+ * what is a RATIO between two counts does not).
+ */
+export function spacePerPiece(reads: SpaceReads, unit: UnitId, perUnit: number): number {
+  return div(
+    mul(perUnit, reads.registry.subdivision(plantUnitId(STORAGE)), 'in pieces of space'),
+    reads.registry.subdivision(unit),
+    'per piece of the thing',
+  );
+}
 export const plantVintageId = (
   capitalKind: string,
   region: RegionId,

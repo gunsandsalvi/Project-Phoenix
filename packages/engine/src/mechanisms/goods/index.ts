@@ -50,6 +50,7 @@ import {
   recipeParam,
   recipeUnit,
   spoilageParam,
+  storageParam,
   wipId,
   wipKindId,
   wipTermsOf,
@@ -140,6 +141,17 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       owner: 'model',
       why: `Goods B3: ${d.leadTimeWhy}`,
     });
+    if (d.storagePerUnit !== null) {
+      out.push({
+        id: storageParam(d.subUnit),
+        value: d.storagePerUnit,
+        unit: `units of covered space per ${d.unit} of ${d.subUnit}, per period`,
+        dimension: 'ratio',
+        kind: 'technology',
+        owner: 'model',
+        why: `Commodities Spot A3, D3: ${d.storageWhy ?? ''}`,
+      });
+    }
     for (const input of inputsOf(d, rows)) {
       const decl = d.inputs.find((i) => i.subUnit === input.subUnit);
       if (decl === undefined) throw new Missing('Goods A2', `${d.subUnit}: input vanished`);

@@ -75,11 +75,13 @@ import { centralBankOmo } from '../mechanisms/central-bank-omo/index.js';
 import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
+import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { environment } from '../mechanisms/environment/index.js';
 import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { FIRM_COUNT, drawFirms, type FirmDecl } from '../mechanisms/firms/data.js';
-import { goodId, goodMarketId, goods, wipId } from '../mechanisms/goods/index.js';
+import { goodId, goodMarketId, goods, isGoodTerms, wipId } from '../mechanisms/goods/index.js';
+import { spaceFor, STORAGE } from '../registry/physical.js';
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
@@ -1450,6 +1452,35 @@ export function foundationSeedFor(
             );
           });
         }
+        // Commodities Spot A3, Seed C4 (13c): NOBODY OPENS HOLDING GRAIN WITHOUT A BARN. The space
+        // a holder opens with is the space what it opens holding takes up — an opening CONDITION,
+        // read off the good's own terms (Law 19) rather than a number stated here. It is exactly
+        // what it holds and no headroom: whether a line that produces more than its barn keeps can
+        // rent one, build one or must sell is a MARKET question from the first period (D3), and
+        // headroom would be the seed answering it.
+        // A3: room for EVERYTHING it opens holding that needs room — what it made and what its
+        // recipe drew. A mill holds grain it did not grow, and it keeps that under cover too.
+        const space = [
+          spaceOf(ctx, row.subUnit, held(ctx, goodId(row.subUnit, REGION), finished)),
+          ...recipeOf(row.subUnit).inputs.map((input) => {
+            const line = goodId(input.subUnit, REGION);
+            if (!ctx.instruments.has(line)) return 0;
+            const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
+            return spaceOf(ctx, input.subUnit, held(ctx, line, drawn));
+          }),
+        ].reduce((a, b) => a + b, 0);
+        if (space > 0 && ctx.registry.instrumentKinds.has(plantKindId(STORAGE))) {
+          const serviceDate = addDays(ctx.calendar.epoch, -ctx.calendar.periodDays);
+          const id = seedVintage(ctx, STORAGE_KIND, REGION, serviceDate);
+          const newPrice = ctx.params.price(openingPrice(STORAGE_KIND.madeFrom));
+          const life = ctx.params.periods(paramId(`plant.usefulLife.${STORAGE}`));
+          ctx.endowUnits(
+            ctx.parties.get(firm).id,
+            id,
+            space,
+            priced(ctx, id, (newPrice * (life - 1)) / life),
+          );
+        }
       }
     },
   };
@@ -1808,10 +1839,16 @@ export function foundationSpec(
       // Capital Programme: the kind of thing plant is, and the schedule it wears out on. Before the
       // firms, because a firm decides what to make against the plant it holds (A2) and what to
       // invest against what a machine costs (B1) — and a kind has to be registered to be held.
-      capitalProgramme(),
+      // Commodities Spot A3, A4 (13c): covered space is the second kind of capital this world has,
+      // and it is what makes holding a thing cost something. The capital programme owns what a kind
+      // of plant IS; the commodities module owns the market in the space it provides.
+      capitalProgramme([...CAPITAL_KINDS, STORAGE_KIND]),
       labour(),
       firms(drew.firms),
       households(),
+      // Commodities Spot A3, D3: the market in covered space. After the firms, because who is short
+      // of room and who has spare is read off what they hold (Law 19).
+      commodities(),
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
@@ -1919,3 +1956,18 @@ export function foundationWorld(seed: string): World {
 }
 
 export { PAR };
+
+/**
+ * Commodities Spot A3: HOW MUCH COVERED SPACE A HOLDING TAKES UP, computed by the SAME function the
+ * commodities module checks with (Law 4). Two spellings of one conversion would differ by whatever
+ * their rounding differed by, and a holder short by one unit of space through rounding alone would
+ * lose real tonnes at the close for nothing that happened.
+ */
+function spaceOf(ctx: SeedContext, subUnit: string, pieces: number): number {
+  const id = goodId(subUnit, REGION);
+  if (pieces <= 0 || !ctx.instruments.has(id)) return 0;
+  const instrument = ctx.instruments.get(id);
+  const good = instrument.terms;
+  if (!isGoodTerms(good) || good.storagePerUnit === null) return 0;
+  return spaceFor(ctx, instrument.unit, pieces, ctx.params.ratio(good.storagePerUnit));
+}
