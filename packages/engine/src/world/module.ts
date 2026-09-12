@@ -25,7 +25,7 @@ import type {
 import type { DerivativeKindProfile } from '../registry/derivatives.js';
 import type { ParamDecl, ParamRegister } from '../registry/params.js';
 import type { UnitDecl } from '../registry/registry.js';
-import type { PartyId } from '../core/ids.js';
+import type { CurrencyCode, PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
 import type { Period } from '../calendar/calendar.js';
 import type { Instrument } from '../register/instruments.js';
@@ -199,6 +199,16 @@ export interface OutlookProvider {
 export interface ClearingCapacity {
   /** E1, E3: how much of `wanted` this party can carry, in the kind's own unit. */
   admits(ctx: MechanismContext, party: PartyId, wanted: number, about: ContractAsk): number;
+  /**
+   * D2, D9, Money Market A2: WHAT THIS PARTY'S OPEN ROWS WILL ASK IT TO POST, in one money.
+   *
+   * Margin is an asset swap and not an expense (C3.a), but the money still leaves the account — so
+   * a treasury that cannot see it coming funds itself for everything except the one call it is
+   * about to get. The kernel cannot work it out: what a margin claim IS, is this module's
+   * instrument (Law 15). So the module that owns the layer answers, and the party reads it through
+   * its own view like everything else it knows about its own book.
+   */
+  readonly dueNext?: (ctx: MechanismContext, party: PartyId, ccy: CurrencyCode, at: Period) => number;
   /** D9, C3.a: the legs that post it — money out, a claim in, never an expense. */
   margin(
     ctx: MechanismContext,

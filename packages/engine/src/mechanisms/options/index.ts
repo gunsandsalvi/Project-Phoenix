@@ -20,7 +20,7 @@
  * when it does not; what comes out is never "the payoff, floored at zero" — it is the payoff of the
  * choice it made, and the choice is the mechanism.
  */
-import type { Period } from '../../calendar/calendar.js';
+import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
@@ -257,14 +257,19 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     ? div(mul(held, aversion, 'the part it will not carry'), t.multiplier, 'in contracts')
     : 0;
   let price = level;
-  const outlook = view.outlook(`move.${String(t.underlying)}`);
+  /**
+   * Expectations A3, §46's second dimension: WHAT IT THINKS THE THING MOVES, which is its own
+   * outlook's CONFIDENCE and not its level. A party's outlook carries how wide its own surprises
+   * have been — that is a view of dispersion, formed the same adaptive way as the view of the
+   * level, and it is exactly what an option is a price of. Two parties whose prices agree and
+   * whose surprises differ disagree about what optionality is worth, which is the disagreement
+   * this instrument exists to clear.
+   */
+  const outlook = view.outlook(`price.${String(t.underlying)}`);
   const own = view.equity();
   if (outlook.some && own > 0) {
-    const asks = add(
-      outlook.value.expected,
-      mul(outlook.value.expected, aversion, 'what its capital wants'),
-      'its quote',
-    );
+    const moves = mul(outlook.value.expected, outlook.value.confidence, 'what it thinks it moves');
+    const asks = add(moves, mul(moves, aversion, 'what its capital wants'), 'its quote');
     if (asks > 0) {
       const room = view.registry.deliverable(
         unit,
@@ -303,12 +308,18 @@ function openBooks(
   for (const underlying of lines) {
     if (!ctx.instruments.has(underlying)) continue;
     const i = ctx.instruments.get(underlying);
-    const print = ctx.prices.latest(underlying, ctx.period);
-    if (!print.some) continue;
     const market = ctx.markets.find((m) => m.instrument === underlying && m.contract === undefined);
     if (market === undefined) continue;
+    // A LADDER, not a new book every period: everything written between two dates on the cycle
+    // settles on the same one, into the same book (`nextCycle`).
+    const expiry = nextCycle(ctx.period, life);
+    // AND THE STRIKE IS SET WHEN THE BOOK OPENS, from what the line was worth then. An exchange
+    // lists strikes around the price and leaves them there; one recomputed every period would put
+    // a new book on the ladder every week and leave the last with one trade in it.
+    const opened = expiry - life;
+    const print = ctx.prices.latest(underlying, (opened > 0 ? opened : 0) as Period);
+    if (!print.some) continue;
     const strike = ctx.registry.onQuoteGrid(i.kind, i.ccy, print.value.price);
-    const expiry = (ctx.period + life) as Period;
     const clearer =
       ctx.parties.has(house(i.ccy)) && ctx.parties.get(house(i.ccy)).status.alive ? house(i.ccy) : null;
     for (const right of ['call', 'put'] as const) {

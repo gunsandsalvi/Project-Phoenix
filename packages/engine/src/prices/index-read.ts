@@ -20,7 +20,7 @@
  */
 import type { Calendar, Period } from '../calendar/calendar.js';
 import { Missing } from '../core/errors.js';
-import type { InstrumentId } from '../core/ids.js';
+import type { CurrencyCode, InstrumentId } from '../core/ids.js';
 import { add, div, mul, sum } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Ledger } from '../ledger/ledger.js';
@@ -43,6 +43,22 @@ export interface IndexWorld {
   readonly parties: PartiesReads;
   readonly instruments: InstrumentsReads;
   readonly ledger: Pick<Ledger, 'inPeriod'>;
+  /**
+   * A3, A1.a: WHAT A CONSTITUENT'S OWN MARKET SAID, for a rule whose membership turns on size.
+   *
+   * A size segment is a real thing a market is organised by, and what puts a firm on one side of
+   * the boundary is its own capitalisation — its own print times its own count. That is a read of
+   * the CONSTITUENT and not of the index: A1.a forbids an index that inputs to its own members,
+   * and a rule that selected by the index's level would be exactly that. A line that did not print
+   * has no capitalisation to compare and is on neither side.
+   */
+  price(instrument: InstrumentId, at: Period): Option<number>;
+  /**
+   * XI-12, Spot FX: WHAT ONE MONEY BUYS OF ANOTHER, for the one index that crosses regions. It is
+   * the pair's own last print, read through the kernel, so the money a global line is stated in is
+   * a label on the read rather than a table of rates this file keeps.
+   */
+  rate(from: CurrencyCode, to: CurrencyCode, at: Period): number;
 }
 
 /** A1: one constituent of an index, and what it counts for. */

@@ -115,13 +115,30 @@ function linesQuoted(view: ParticipantView, d: BankDecl): number {
  * dealing line with its own cost of funds would be a second answer to what money costs this bank,
  * and one with its own required return would be a second answer to what its capital costs.
  */
-export function carryRate(view: ParticipantView): number | undefined {
-  // Law 8, Currency A3: IN ITS OWN MONEY, which is what the event carries at the top level — what
-  // it costs this bank in the other moneys it lends in is beside it, under `alsoIn`. Which money a
-  // desk funds a FOREIGN line in is a question this does not yet ask (worklist 13b, where the FX swap
-  // that funds a foreign book clears).
+export function carryRate(view: ParticipantView, ccy: CurrencyCode): number | undefined {
+  /**
+   * Law 8, Currency A3, XI-12: IN THE MONEY THE LINE IS IN, which is not always this bank's own.
+   *
+   * A desk quoting a line denominated in another money funds that position in that money — it buys
+   * it spot and fixes what it costs forward (the FX swap: 13b's `fx-derivatives`), or it borrows
+   * it. What that comes to is what the bank itself published for that money, beside its own, under
+   * `alsoIn`. Charging its home cost of funds against a foreign line was a bank quoting a euro
+   * position at the price of dollars — and adding a euro interest cost to a dollar capital charge
+   * was two currencies in one sum (Appendix B). Measured at 0.0887 against 0.0044 for the same
+   * bank's own money (worklist 13b, finding `12d-14`).
+   *
+   * A money it has NOT funded and cannot say what costs it has no rate here, and its desk does not
+   * quote that line — which is the honest answer and the refusal Money B3.c is about.
+   */
   const said = view.lastOwn('bank.costOfFunds');
-  const perAnnum = said.some ? said.value.data['perAnnum'] : undefined;
+  if (!said.some) return undefined;
+  const home = said.value.data['ccy'];
+  const perAnnum =
+    home === String(ccy)
+      ? said.value.data['perAnnum']
+      : ((said.value.data['alsoIn'] as Record<string, { perAnnum?: unknown }> | undefined)?.[
+          String(ccy)
+        ]?.perAnnum ?? undefined);
   if (typeof perAnnum !== 'number') return undefined;
   return rateOf(
     perAnnum,
@@ -134,7 +151,7 @@ export function carryRate(view: ParticipantView): number | undefined {
 
 /** The state the quote is priced from: all of it the bank's own, read at the moment it quotes. */
 export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefined {
-  const rate = carryRate(view);
+  const rate = carryRate(view, ccyOf(view));
   if (rate === undefined) return undefined;
   const ccy = ccyOf(view);
   const targets = liquidityTargets(
@@ -173,6 +190,7 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
     ),
     concentration: view.params.get(dealingParam(view.self.id, 'concentration')),
     ratePerPeriod: rate,
+    rateIn: (money) => carryRate(view, money),
     bookValue: bookValue(view, targets),
     // F1: what it could actually pay for one more unit. For a DESK that was the cash in its own
     // account; for a bank it is its LIQUID ASSETS — the account, what comes back tomorrow, and what

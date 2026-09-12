@@ -22,7 +22,7 @@ import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
-import { isAssetLeg, isMoneyLeg, type CellSide } from '../../ledger/instruction.js';
+import { isAssetLeg, isContractLeg, isMoneyLeg, type CellSide } from '../../ledger/instruction.js';
 import { issuedBy } from '../../register/instruments.js';
 import type { MechanismContext, Outlook, OutlookVariable } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -109,6 +109,18 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
         // book, which it cannot see, and never the demand it did not win.
         traded(quantities, leg.from, 'sold', leg.instrument, perMemberOf(leg.fromCell, leg.qty));
         traded(quantities, leg.to, 'bought', leg.instrument, perMemberOf(leg.toCell, leg.qty));
+      } else if (isContractLeg(leg) && leg.act === 'open') {
+        /**
+         * A2, Derivative D7: A FILL IN A CONTRACT BOOK IS A PRICE THIS PARTY TRADED AT, like any
+         * other. It is not an asset leg — nothing is delivered — but the two sides agreed a level
+         * and both of them saw it, which is the whole of what makes an observation.
+         *
+         * Without it a party could be in a swap book every week and form no view of what a swap
+         * costs, so the only side of a derivative book with a reason would be the side hedging
+         * something — one opinion, and a market needs two (Expectations A3, XI-13).
+         */
+        const line = `price.${String(leg.book)}`;
+        for (const p of [leg.a, leg.b]) out.set(`${p}|${line}`, { value: leg.struckAt, unit: leg.ccy });
       }
     }
   }

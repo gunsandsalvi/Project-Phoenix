@@ -44,7 +44,7 @@
  */
 import { yearFraction } from '../../calendar/daycount.js';
 import { nextPeriod, type Calendar, type Period } from '../../calendar/calendar.js';
-import type { InstrumentId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
 import { add, div, material, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -92,6 +92,13 @@ export interface DeskState {
   readonly concentration: number;
   /** D3, D2: what a unit of value costs it to carry for one period — funding plus capital charge. */
   readonly ratePerPeriod: number;
+  /**
+   * Currency A3, XI-12: WHAT CARRYING A UNIT COSTS IT IN THE MONEY THE LINE IS IN. A desk quoting
+   * a foreign line funds that position in that money — by swap or by borrowing — and what that
+   * costs is what the bank itself published for it. A money it has not funded and cannot price has
+   * no rate, and its desk does not quote that line (worklist 13b, finding `12d-14`).
+   */
+  rateIn(ccy: CurrencyCode): number | undefined;
   /** What its whole book is worth at the last marks, so the aggregate limit is a real constraint. */
   readonly bookValue: number;
   /** F1: the money it actually has. A desk cannot pay for what it bid with money it has not got. */
@@ -214,7 +221,11 @@ export function quoteFor(
   // ties up and the capital it consumes, at the rate its own bank charged it this morning. How
   // long it ends up holding it is not a number it has to guess: it pays this again next period,
   // and the skew below is what a position it has not shed does to what it will pay for the next.
-  const carry = mul(mine, state.ratePerPeriod, 'what a unit costs it for a period');
+  const rate = state.rateIn(view.instruments.get(instrument).ccy);
+  // A line in a money this bank cannot say what costs it is a line it does not quote: the bid
+  // would be priced off somebody else's money (Law 8: the unit is part of the number).
+  if (rate === undefined) return none();
+  const carry = mul(mine, rate, 'what a unit costs it for a period');
   const edge = add(add(carry, risk, 'what it must earn on a unit'), adverse, 'and for who it faces');
   // C2, C2.a: how far the book is from where it should be, as a share of the room it has. ABOVE
   // the target it bids lower AND offers lower, because it wants to sell; BELOW it, both sides go

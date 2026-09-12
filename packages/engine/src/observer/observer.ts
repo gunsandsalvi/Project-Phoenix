@@ -132,6 +132,24 @@ export interface ContractPrintView {
   readonly traded: boolean;
 }
 
+/**
+ * A CURVE, as the set of levels its books cleared — and never a fit.
+ *
+ * @spec CDS A1.d CDS C1 IRS C1 IRS C1.a FX Forwards C1 Sovereign D3 Law 3 Law 19
+ *
+ * Every class this world has that clears at more than one tenor has one of these: a reference's
+ * protection, a money's swap rate, a pair's forward. A tenor nobody traded is simply not on the
+ * list — there is no point between two points, because nobody paid one.
+ */
+export interface DerivativeCurveView {
+  /** What the curve is OF: a reference, a money, a pair — named as the book names it (Law 9). */
+  readonly subject: string;
+  readonly kind: string;
+  readonly quotedAs: 'money' | 'rate';
+  readonly ccy: string;
+  readonly points: readonly { readonly tenorYears: number; readonly level: number }[];
+}
+
 export interface OutlookView {
   readonly party: string;
   readonly variable: string;
@@ -311,6 +329,8 @@ export interface Snapshot {
   readonly contracts: readonly ContractView[];
   /** What every contract book last printed — the curves, the premiums and the bases, as reads. */
   readonly contractPrints: readonly ContractPrintView[];
+  /** The same prints gathered by what they are OF, in tenor order: the curves (CDS A1.d, IRS C1). */
+  readonly derivativeCurves: readonly DerivativeCurveView[];
   /** F1, F2, F4, B3.a: what each bank last published about its funding and its capital. */
   readonly banks: readonly BankView[];
   /** Currency C5: what each pair last printed, and whether that was this period (D1). */
@@ -480,6 +500,32 @@ export function snapshot(
       traded: print.value.period === w.period,
     });
   }
+  /**
+   * CDS A1.d, IRS C1, FX Forwards C1: THE CURVES, gathered from the prints above and nothing else.
+   *
+   * A book's own id says what it is of and at what tenor (`cds:<reference>:5y`), because that is
+   * how Law 9 says a thing is named — so the curve is a grouping of prints by subject, taken at
+   * the read, stored nowhere, and a tenor with no print has no point on it (Law 3, Law 19).
+   */
+  const bookCurves = new Map<string, { kind: string; quotedAs: 'money' | 'rate'; ccy: string; points: { tenorYears: number; level: number }[] }>();
+  for (const p of contractPrints) {
+    const parts = p.market.split('.');
+    const tail = parts[parts.length - 1] ?? '';
+    if (!tail.endsWith('y')) continue;
+    const tenorYears = Number(tail.slice(0, -1));
+    if (!Number.isFinite(tenorYears) || tenorYears <= 0) continue;
+    const subject = parts.slice(0, -1).join('.');
+    const held = bookCurves.get(subject) ?? { kind: p.kind, quotedAs: p.quotedAs, ccy: p.ccy, points: [] };
+    held.points.push({ tenorYears, level: p.level });
+    bookCurves.set(subject, held);
+  }
+  const derivativeCurves: DerivativeCurveView[] = [...bookCurves.entries()].map(([subject, c]) => ({
+    subject,
+    kind: c.kind,
+    quotedAs: c.quotedAs,
+    ccy: c.ccy,
+    points: [...c.points].sort((a, b) => a.tenorYears - b.tenorYears),
+  }));
   const banks: BankView[] = [];
   for (const p of w.parties.all()) {
     const liquidity = w.journal.lastOf('bank.liquidity', p.id);
@@ -576,6 +622,7 @@ export function snapshot(
     positions,
     contracts,
     contractPrints,
+    derivativeCurves,
     banks,
     rates: ratesOf(w),
     triangles: trianglesOf(w),

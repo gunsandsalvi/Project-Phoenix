@@ -189,6 +189,20 @@ export interface DerivativeKindProfile {
   /** D6, D11: whether the term has run out at `at`, so the contract expires this period. */
   readonly expires: (c: Contract, at: Period, calendar: Calendar) => boolean;
   /**
+   * D4, D9, Money Market A2: WHAT THIS ROW WILL COST A NAMED SIDE IN CASH AT `at`.
+   *
+   * A treasury funds what it knows it owes. Most of that is `legs` — a premium, the net of two
+   * accruals — and for those this needs no answer of its own. What it exists for is the row whose
+   * term ENDS at `at` and settles in something other than a payment: a deliverable future takes
+   * the whole face in cash against a bond, which is nowhere in `legs` because a payment cannot
+   * carry a thing being handed over.
+   *
+   * Without it a bank that must take delivery next week has no way to know, funds itself for the
+   * week it can see, and closes overdrawn at the central bank with nothing lent to it — which is
+   * not a bank failing, it is a bank nobody told (worklist 13b, finding `13b-1`).
+   */
+  readonly cashDue?: (c: Contract, at: Period, reads: ContractReads, party: PartyId) => number;
+  /**
    * Clearing B2, Law 4, Law 15: WHY A PARTY IS IN THIS KIND OF BOOK, asked of the kind.
    *
    * Every book in this world needs reasons on both sides of it, and the reasons to be in a credit

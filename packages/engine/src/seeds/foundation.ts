@@ -82,7 +82,7 @@ import { goodId, goodMarketId, goods, wipId } from '../mechanisms/goods/index.js
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
-import { funds, FUND } from '../mechanisms/funds/index.js';
+import { funds } from '../mechanisms/funds/index.js';
 import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
@@ -1635,7 +1635,14 @@ export function foundationDraw(
       listed.map((r) => String(equityLineOf(r.firm))),
       names,
       seed,
-      EQUITY_INDEX(REGION),
+      // M9, Indices C2: ONE VEHICLE, AND THE REST ARE NOT THE SEED'S TO LAUNCH. A tracker on a size
+      // segment holds whatever that segment's rule says is in it — and that rule reads the
+      // constituents' own prints (A3), which at period zero do not exist. A seed that launched one
+      // anyway would be handing it a basket nobody could have said was right, and three vehicles
+      // each taking their share of the same float is a market owned more than once. The vehicles on
+      // the segments are launched when their index first HAS a level, which is a phase and not a
+      // seed (13b, the remaining half of the index-set step).
+      [EQUITY_INDEX(REGION)],
     ),
   };
 }
@@ -1796,10 +1803,20 @@ export function foundationSpec(
       // member funds there, and after the estate, because a default resolves into one (XI-8). It
       // brings no class of contract with it (13b does that): what it brings is the house, the
       // margin, the fund and the waterfall every class then runs on.
-      // XI-3, Clearing B2: the layer, and WHO TRADES CONTRACTS in this world — its banks and its
-      // firms, and the funds the funds module declares. A module cannot name a kind this world
-      // never registered, so the world that assembles both says which kinds there are.
-      derivativeLayer([...TRADES_CONTRACTS, FUND]),
+      /**
+       * XI-3, Clearing B2: the layer, and WHO TRADES CONTRACTS in this world.
+       *
+       * Its banks and its firms. NOT its funds, and the reason is Fund Shares A3: a fund's equity
+       * is zero by construction because its own claim on itself absorbs whatever its book comes
+       * to — and the pass that re-marks that claim reads the register, where a contract is not
+       * (Derivative X1). A tracker that took a derivative position would carry a mark its own
+       * share value had never been told about, which is a fund with equity: measured at 83,247,864
+       * on `etf.us` the first time funds were let in here.
+       *
+       * 13h is where a fund holds derivatives on purpose — and where the one pass that re-marks a
+       * fund's claim on itself is next opened (`docs/BUGS.md`, finding `13b-2`).
+       */
+      derivativeLayer([...TRADES_CONTRACTS]),
       // CDS: the first class on the layer (13b). After it, because a book clears through the house
       // it opened; before the indices, because a default index is an index OF these books.
       cds(houseIdFor),

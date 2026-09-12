@@ -357,11 +357,11 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Sovereign H3` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H5` | MISSING |  |
-| `Sovereign I1` | MISSING |  |
-| `Sovereign I1.a` | MISSING |  |
-| `Sovereign I2` | MISSING |  |
+| `Sovereign I1` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (a named deliverable line, per unit of face, delivered against cash in one instruction) |
+| `Sovereign I1.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`bondCarryOf`, `netBasis`: the coupon and the financing, both read; measured, never set) |
+| `Sovereign I2` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`futureOrders`: a holder short of the future, a party without duration long of it) |
 | `Sovereign I3` | MISSING |  |
-| `Sovereign I3.a` | MISSING |  |
+| `Sovereign I3.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (cut on a drawdown against its own tolerance, with nothing making it whole) |
 
 ## Short-Term Debt
 
@@ -621,81 +621,81 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `CDS A1` | MISSING |  |
-| `CDS A2` | MISSING |  |
-| `CDS A3` | MISSING |  |
-| `CDS A4` | MISSING |  |
-| `CDS A4.a` | MISSING |  |
-| `CDS A5` | MISSING |  |
-| `CDS B1` | MISSING |  |
-| `CDS B2` | MISSING |  |
-| `CDS B3` | MISSING |  |
+| `CDS A1` | MET | packages/engine/src/mechanisms/cds/index.ts (a book per reference per tenor, cleared through the house) |
+| `CDS A2` | MET | packages/engine/src/mechanisms/cds/contract.ts (`legs`: the premium in cash every period, stopping the period the reference defaults) |
+| `CDS A3` | MET | packages/engine/src/mechanisms/cds/contract.ts (`markOf`: the spread now against the spread struck, and after the event the payoff — two reads, no model) |
+| `CDS A4` | MET | packages/engine/src/mechanisms/cds/index.ts (`openBooks`: a reference is a party with live paper that can default) |
+| `CDS A4.a` | MET | packages/engine/src/mechanisms/cds/index.ts (`referencesAreObservable`: a row on a reference nobody can watch fail is reported, never silent) |
+| `CDS A5` | MET | packages/engine/src/mechanisms/cds/series.ts (names fixed at the roll; a name’s event settles its weight once per contract; the line runs on over survivors) |
+| `CDS B1` | MET | packages/engine/src/mechanisms/cds/participants.ts (`ownView`: a party whose outlook of this book differs from it) |
+| `CDS B2` | MET | packages/engine/src/mechanisms/cds/participants.ts (the seller: the same credit with no bond behind it) |
+| `CDS B3` | MET | packages/engine/src/mechanisms/cds/index.ts (`regulation.riskWeight.cds.sold`, policy, parliament) |
 | `CDS B4` | MISSING |  |
 | `CDS B5` | MISSING |  |
 | `CDS C1` | MISSING |  |
-| `CDS C2` | MISSING |  |
+| `CDS C2` | MET | packages/engine/src/mechanisms/cds/contract.ts (`impliedDefaultRate`: derived from the spread and the recovery, stored nowhere) |
 | `CDS C3` | MISSING |  |
 | `CDS C4` | MISSING |  |
-| `CDS D1` | MISSING |  |
-| `CDS D2` | MISSING |  |
-| `CDS D2.a` | MISSING |  |
-| `CDS D3` | MISSING |  |
-| `CDS D4` | MISSING |  |
+| `CDS D1` | MET | packages/engine/src/mechanisms/cds/contract.ts (`creditState`: item 5’s `credit.default` for the reference) |
+| `CDS D2` | MET | packages/engine/src/mechanisms/cds/index.ts (`settleEvents`: settled at the estate’s realised recovery) |
+| `CDS D2.a` | MET | packages/engine/src/mechanisms/cds/contract.ts (`payoff` reads the defaulted line’s own mark; no recovery rate exists anywhere) |
+| `CDS D3` | MET | packages/engine/src/mechanisms/cds/index.ts (cash from a named seller to a named buyer, and it can fail) |
+| `CDS D4` | MET | packages/engine/src/mechanisms/cds/index.ts (`settleEvents` closes the row when it settles) |
 | `CDS D5` | MISSING |  |
 | `CDS E1` | MISSING |  |
 | `CDS E2` | MISSING |  |
-| `CDS E3` | MISSING |  |
+| `CDS E3` | MET | packages/engine/src/mechanisms/cds/index.ts (`netNotionalOn`: one question about one name, never a netting across counterparties) |
 | `CDS E4` | MISSING |  |
 
 ## IRS
 
 | requirement | status | where / why |
 |---|---|---|
-| `IRS A1` | MISSING |  |
-| `IRS A2` | MISSING |  |
-| `IRS A3` | MISSING |  |
-| `IRS A4` | MISSING |  |
-| `IRS B1` | MISSING |  |
+| `IRS A1` | MET | packages/engine/src/mechanisms/irs/contract.ts (two legs on one notional) |
+| `IRS A2` | MET | packages/engine/src/mechanisms/irs/contract.ts (`fixedEvery`, `floatEvery`: each leg its own periodicity) |
+| `IRS A3` | MET | packages/engine/src/mechanisms/irs/contract.ts (the floating leg fixes on what the book actually paid) |
+| `IRS A4` | MET | packages/engine/src/mechanisms/irs/contract.ts (only the net moves, so only the net is in anybody’s cash) |
+| `IRS B1` | MET | packages/engine/src/mechanisms/irs/participants.ts (`fixedDebtOf`: what it owes at a rate its terms fixed) |
 | `IRS B2` | MISSING |  |
-| `IRS B3` | MISSING |  |
-| `IRS B4` | MISSING |  |
+| `IRS B3` | MET | packages/engine/src/mechanisms/irs/participants.ts (a bank managing its own gap) |
+| `IRS B4` | MET | packages/engine/src/mechanisms/irs/participants.ts (a view on the rate path, from its own outlook) |
 | `IRS B5` | MISSING |  |
-| `IRS C1` | MISSING |  |
-| `IRS C2` | MISSING |  |
-| `IRS C3` | MISSING |  |
+| `IRS C1` | MET | packages/engine/src/mechanisms/irs/index.ts (`swapCurve`: the set of cleared fixed rates) |
+| `IRS C2` | MET | packages/engine/src/mechanisms/irs/index.ts (`forwardRate`: derived from two cleared points) |
+| `IRS C3` | MET | packages/engine/src/mechanisms/irs/index.ts (`swapSpread`: the cleared rate against the sovereign’s own yield, a read) |
 | `IRS C4` | MISSING |  |
 | `IRS D1` | MISSING |  |
 | `IRS D2` | MISSING |  |
 | `IRS D3` | MISSING |  |
 | `IRS D4` | MISSING |  |
-| `IRS E1` | MISSING |  |
-| `IRS E2` | MISSING |  |
-| `IRS E3` | MISSING |  |
+| `IRS E1` | MET | packages/engine/src/mechanisms/irs/contract.ts (no path through `legs` moves the notional; `irs.test.ts` reads every leg of a life) |
+| `IRS E2` | MET | packages/engine/src/mechanisms/irs/index.ts (there is no `parRate` and no discount curve in this module to run backwards) |
+| `IRS E3` | MET | packages/engine/src/mechanisms/irs/contract.ts (a period the overnight book did not trade has no fixing and nothing accrues) |
 
 ## FX Forwards
 
 | requirement | status | where / why |
 |---|---|---|
-| `FX Forwards A1` | MISSING |  |
-| `FX Forwards A2` | MISSING |  |
-| `FX Forwards A3` | MISSING |  |
-| `FX Forwards A4` | MISSING |  |
-| `FX Forwards B1` | MISSING |  |
-| `FX Forwards B2` | MISSING |  |
-| `FX Forwards B3` | MISSING |  |
-| `FX Forwards B3.b` | MISSING |  |
+| `FX Forwards A1` | MET | packages/engine/src/mechanisms/fx-derivatives/contract.ts (`fxForwardKind`) |
+| `FX Forwards A2` | MET | packages/engine/src/mechanisms/fx-derivatives/contract.ts (nothing falls due before maturity) |
+| `FX Forwards A3` | MET | packages/engine/src/mechanisms/fx-derivatives/contract.ts (`forwardMark`: against the forward for the tenor left, never against spot) |
+| `FX Forwards A4` | MET | packages/engine/src/mechanisms/fx-derivatives/index.ts (an FX swap is a spot trade and a forward row; no kind is invented for it) |
+| `FX Forwards B1` | MET | packages/engine/src/mechanisms/fx-derivatives/participants.ts (the forward rate clears, from schedules on both sides) |
+| `FX Forwards B2` | MET | packages/engine/src/mechanisms/fx-derivatives/participants.ts (`carryOf`: the arbitrage as a bank’s own reservation) |
+| `FX Forwards B3` | MET | packages/engine/src/mechanisms/fx-derivatives/participants.ts (`basisOf`: one basis, read from prints) |
+| `FX Forwards B3.b` | MET | packages/engine/src/mechanisms/fx-derivatives/participants.ts (no parity formula anywhere sets a level; `derivative-classes.test.ts`) |
 | `FX Forwards B4` | MISSING |  |
-| `FX Forwards C1` | MISSING |  |
+| `FX Forwards C1` | MET | packages/engine/src/mechanisms/fx-derivatives/contract.ts (`xccyKind`: the notionals exchanged at the start) |
 | `FX Forwards C2` | MISSING |  |
-| `FX Forwards C3` | MISSING |  |
-| `FX Forwards C4` | MISSING |  |
+| `FX Forwards C3` | MET | packages/engine/src/mechanisms/fx-derivatives/contract.ts (returned at the ORIGINAL rate) |
+| `FX Forwards C4` | MET | packages/engine/src/mechanisms/fx-derivatives/contract.ts (its price is the basis on one leg, cleared) |
 | `FX Forwards D1` | MISSING |  |
 | `FX Forwards D2` | MISSING |  |
-| `FX Forwards D3` | MISSING |  |
+| `FX Forwards D3` | MET | packages/engine/src/mechanisms/banks/dealing.ts (`carryRate`: a foreign line is funded in its own money, at what the bank published for it) |
 | `FX Forwards D4` | MISSING |  |
 | `FX Forwards E1` | MISSING |  |
 | `FX Forwards E2` | MISSING |  |
-| `FX Forwards E3` | MISSING |  |
+| `FX Forwards E3` | MET | packages/engine/src/mechanisms/fx-derivatives/contract.ts (both legs in one instruction, so both settle or neither does) |
 | `FX Forwards E4` | MISSING |  |
 
 ## Commodity Futures
@@ -767,7 +767,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Indices C1` | MET | packages/engine/src/mechanisms/funds/tracker.ts (a mandate refers to the index’s own basket, not to what happened to print) |
 | `Indices C2` | MET | packages/engine/src/mechanisms/funds/tracker.ts, packages/engine/src/mechanisms/funds/data.ts (a tracker holds the index at the index’s weights and trades the difference) |
 | `Indices C2.a` | MET | packages/engine/src/mechanisms/funds/tracker.ts (a rebalance is a real trade in the same session; a line that left the index goes out at market) |
-| `Indices C3` | PARTIAL | settlement of an index derivative is 13b’s; nothing settles against a level here |
+| `Indices C3` | MET | packages/engine/src/mechanisms/index-futures/index.ts (cash-settled against the index READ at expiry) |
 | `Indices C4` | PARTIAL | packages/engine/src/mechanisms/indices/benchmark.ts — the benchmark is published and transacted; a floating coupon that FIXES on it is 13f’s |
 | `Indices D1` | MET | packages/engine/src/mechanisms/indices/baskets.ts (an equity index per region, over the listed shares of the companies that book there) |
 | `Indices D2` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a credit index per currency, over the dated claims somebody other than the state promised — empty, and therefore Missing, until 13f issues some) |
@@ -887,7 +887,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Dealer Desks A1` | MET | packages/engine/src/mechanisms/banks/data.ts, packages/engine/src/mechanisms/banks/dealing.ts (A1's "its own balance sheet INSIDE a bank's" is a SUB-LEDGER and it is now structurally one: there is no desk party, the bank quotes out of its own inventory, and what a line of business is, is data about the bank) |
 | `Dealer Desks A2` | MET | packages/engine/src/mechanisms/banks/dealing-quote.ts (a price it will buy at and a price it will sell at, both posted, both real sizes it will do) |
-| `Dealer Desks A3` | MET | packages/engine/src/mechanisms/banks/dealing.ts (it holds inventory: it opens with the float of the lines it makes a market in, and what it has bought and not sold is on its own register) |
+| `Dealer Desks A3` | MET | packages/engine/src/mechanisms/banks/dealing.ts (a desk quotes only the lines the listing drew it as a maker of) |
 | `Dealer Desks A4` | MET | packages/engine/src/mechanisms/banks/dealing-quote.ts, packages/engine/src/world/revalue.ts (it earns the width it quoted and its inventory is marked every period like anybody's, and the two together are its whole result) |
 | `Dealer Desks B1` | MET | packages/engine/src/mechanisms/banks/dealing-quote.ts (it quotes both sides because buyers and sellers arrive at different times; nothing tells it to be there) |
 | `Dealer Desks B2` | PARTIAL | packages/engine/src/mechanisms/banks/dealing-quote.ts (it prices off the flow it FACED — how one-sided its own fills were — which is information it has and nobody else does). Whom it faced is named on every fill in the ledger, but the quote does not read the name yet: a counterparty expensive to face needs clients that repeat, worklist 13f |
@@ -905,8 +905,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Dealer Desks D3` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/test/dealing.test.ts (the RENT is gone with the desk that paid it — a transfer price between two parties that were economically one. What funds the inventory is what the bank pays its depositors and its lenders, every period, to holders with names, and the quote's carry reads that blended cost plus what the capital the position consumes has to earn) |
 | `Dealer Desks D4` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/src/mechanisms/banks/dealing-quote.ts (a desk at its limit widens, shrinks its size, and at the limit stops quoting altogether — a state, not an error); D4.a: packages/engine/test/dealing.test.ts (a market whose only liquidity was a desk that stepped back prints stale with the reason) |
 | `Dealer Desks D5` | MET | packages/engine/src/mechanisms/banks/dealing.ts (`dealers.book` publishes inventory, the width, the skew and the room left together, per line, so a period in which spreads widened and inventory did not is visible rather than inferred), packages/engine/test/dealing.test.ts |
-| `Dealer Desks E1` | MISSING | a bond against a swap, a share against an index: worklist 13b |
-| `Dealer Desks E2` | MISSING | the basis a hedge leaves behind needs a hedge: worklist 13b |
+| `Dealer Desks E1` | MET | packages/engine/src/mechanisms/index-futures/index.ts (a desk lays its book off into a contract sized from its own inventory) |
+| `Dealer Desks E2` | MET | packages/engine/src/mechanisms/index-futures/index.ts (the hedge is a contract with a counterparty and its own margin) |
 | `Dealer Desks E3` | MET | packages/engine/src/mechanisms/banks/dealing.ts (two desks quoting into the same session, so inventory is redistributed between them through the book everybody else trades in — not a separate venue) |
 | `Dealer Desks E4` | MET | packages/engine/src/audit/families/ownership.ts (held equals issued is the identity, and dealer inventory is the part of it the rest of the world does not hold), packages/engine/src/mechanisms/banks/dealing.ts (and what each desk is carrying is published every period, so it can be watched against client flow) |
 | `Dealer Desks F1` | MET | packages/engine/src/mechanisms/banks/dealing-quote.ts (three real constraints — the line's limit, the book's, and the money it actually has — and the binding one is named on the quote; nothing here is unbounded) |

@@ -127,6 +127,7 @@ function openOne(
           ccy: USD,
           notional,
           struckAt: strike,
+          book: instrumentId('contract:test.forward'),
           value: 0,
           house: null,
         },
@@ -181,6 +182,7 @@ describe('the contract store (Derivative X1, D1, D12)', () => {
               ccy: USD,
               notional: 100,
               struckAt: strike,
+              book: instrumentId('contract:test.forward'),
               value: 0,
               house: null,
             },
@@ -240,6 +242,7 @@ describe('the contract store (Derivative X1, D1, D12)', () => {
               ccy: USD,
               notional: 100,
               struckAt: strike,
+              book: instrumentId('contract:test.forward'),
               value: 0,
               house: null,
             },
@@ -258,7 +261,7 @@ describe('the contract store (Derivative X1, D1, D12)', () => {
     expect(built.contracts.between(a, b).length).toBe(1);
     expect(built.contracts.between(a, c).length).toBe(1);
     expect(typeof view.contracts.exposureTo(b)).toBe('number');
-    expect(Object.keys(view.contracts)).toEqual(['mine', 'valueOf', 'exposureTo']);
+    expect(Object.keys(view.contracts)).toEqual(['mine', 'valueOf', 'exposureTo', 'cashDue']);
   });
 });
 
@@ -280,6 +283,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
             ccy: USD,
             notional: 100,
             struckAt: 1,
+            book: instrumentId('contract:test.forward'),
             value: 0,
             house: null,
           },
@@ -325,6 +329,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
               ccy: USD,
               notional: 100,
               struckAt: 1,
+              book: instrumentId('contract:test.forward'),
               value: 0,
               house: null,
             },
@@ -370,6 +375,7 @@ describe('the underlying is something this world produces (D3, D3.a, G4)', () =>
               ccy: USD,
               notional: 100,
               struckAt: 1,
+              book: instrumentId('contract:test.forward'),
               value: 0,
               house: null,
             },
@@ -412,6 +418,7 @@ describe('novation moves who faces whom (B4)', () => {
               ccy: USD,
               notional: 100,
               struckAt: 1,
+              book: instrumentId('contract:test.forward'),
               value: 0,
               house: null,
             },

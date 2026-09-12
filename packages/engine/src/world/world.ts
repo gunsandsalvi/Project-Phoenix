@@ -1129,6 +1129,35 @@ export class World {
               .between(party, counterparty)
               .map((c) => this.contractValue(c, party, this.currentPeriod)),
           ).value,
+        // D4, Money Market A2: what its own rows will take out of its account at `at`, in one
+        // money — the kind's own answer, so a class that settles in something other than a payment
+        // can say what taking delivery of it costs (Derivative `cashDue`).
+        cashDue: (ccy, at) => {
+          const reads = this.contractReads(at);
+          // D2, D9: and what the LAYER will ask it to post against those rows. Margin is an asset
+          // swap, but the money leaves the account all the same, and what a margin claim is, is the
+          // layer's own instrument (Law 15) — so the layer answers and this adds it.
+          const held = this.capacity;
+          const margining =
+            held?.capacity.dueNext === undefined
+              ? 0
+              : held.capacity.dueNext(this.mechanismContext(held.owner), party, ccy, at);
+          return add(margining, sum(
+            this.contractStore
+              .openOf(party)
+              .filter((c) => c.ccy === ccy)
+              .map((c) => {
+                const profile = this.registry.derivativeKind(c.kind);
+                if (profile.cashDue !== undefined) return profile.cashDue(c, at, reads, party);
+                return sum(
+                  profile
+                    .legs(c, at, reads)
+                    .filter((l) => l.from === party && l.ccy === ccy)
+                    .map((l) => l.amount),
+                ).value;
+              }),
+          ).value, 'what its book will take');
+        },
       },
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
     } as Omit<ParticipantView, 'self'>;
@@ -1425,6 +1454,14 @@ export class World {
         parties: this.parties,
         instruments: this.instruments,
         ledger: this.ledger,
+        // A3: a rule whose membership turns on size reads what a constituent's OWN market said —
+        // the same read the level is built from, so there is one answer to "what did this print".
+        price: (instrument, at) => {
+          const p = this.prices.latest(instrument, at);
+          return p.some && p.value.period === at ? some(p.value.price) : none<number>();
+        },
+        // XI-12: and what one money buys of another, for the one line that crosses regions.
+        rate: (from, to, at) => this.valuation.rateInForce(from, to, at),
       },
       price: (instrument, at) => {
         const p = this.prices.latest(instrument, at);

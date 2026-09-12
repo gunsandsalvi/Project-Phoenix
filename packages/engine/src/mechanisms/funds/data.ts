@@ -9,6 +9,7 @@
  * what the mandate allows and nothing else. That is what makes a fund a transmission channel.
  */
 import { paramId, type ParamId } from '../../core/ids.js';
+import { div } from '../../core/num.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
 
@@ -66,6 +67,14 @@ export interface EtfDecl {
    * own rather than a thing the last creator chose.
    */
   readonly basket: Readonly<Record<string, number>>;
+  /**
+   * E3.a, Seed A3: THE SHARE OF EACH LINE'S FLOAT THIS VEHICLE IS LAUNCHED WITH.
+   *
+   * Index funds hold a share of the market between them, and that share does not double because
+   * somebody launched a second fund — it is divided among the funds there are. A world whose three
+   * trackers each took the whole of it would be a world whose listed lines were owned twice.
+   */
+  readonly launchShare: number;
   /**
    * Indices C2, C2.a, Equity C2.c: THE INDEX IT TRACKS, by id. A tracker's mandate is not a list of
    * lines somebody typed — it is a rule, and the rule is the index's. So what it should hold is
@@ -155,9 +164,15 @@ export function drawEtfs(
   lines: readonly string[],
   banks: readonly string[],
   seed: string,
-  tracks: string,
+  /**
+   * M9, Indices C1, C2: THE INDICES A VEHICLE IS LAUNCHED ON — one each, because a tracker is how
+   * an index reaches a market at all. With one vehicle on one line, `C2`'s simultaneity (every
+   * tracker, at the same time) is a market of one, and a firm crossing a size boundary is a
+   * rebalance nobody has to trade.
+   */
+  tracks: readonly string[],
 ): readonly EtfDecl[] {
-  if (lines.length === 0) return [];
+  if (lines.length === 0 || tracks.length === 0) return [];
   const rng = prng(seed, 'etf');
   const basket: Record<string, number> = {};
   for (const line of lines) basket[line] = 1;
@@ -179,21 +194,25 @@ export function drawEtfs(
   const rest = 1 - ETF_SPONSOR_SHARE;
   for (const bank of [...chosen].sort()) launchedBy[bank] = rest / chosen.length;
   const home = chosen[0];
-  return [
-    {
-      fund: 'etf.us',
-      name: 'US Listed Equity Fund',
-      manager,
-      managerName: 'American Index Managers',
-      bank: home ?? manager,
-      basket,
-      tracks,
-      launchedBy,
-      needs: ['equity', 'banks'],
-      fee: 0.001,
-      why: 'Fund Shares E1-E4: the vehicle that has TWO values. Its shares trade, so a session prices them; its book is every listed line in this world, so a read prices them too; and the gap between the two is what somebody has to want to close for it to close at all (E3.a).',
-    },
-  ];
+  /**
+   * M9: ONE VEHICLE PER INDEX, each holding that index's own basket by mandate. They share the
+   * sponsor, the participants and the fee — what makes them different funds is the RULE each one
+   * tracks, which is the only thing that should differ between two index funds.
+   */
+  return tracks.map((index, n) => ({
+    fund: n === 0 ? 'etf.us' : `etf.${index}`,
+    launchShare: div(ETF_LAUNCH_SHARE, tracks.length, 'the float the trackers hold between them'),
+    name: `${index} tracker`,
+    manager,
+    managerName: 'American Index Managers',
+    bank: home ?? manager,
+    basket,
+    tracks: index,
+    launchedBy,
+    needs: ['equity', 'banks'],
+    fee: 0.001,
+    why: 'Fund Shares E1-E4: the vehicle that has TWO values. Its shares trade, so a session prices them; its book is the index it tracks, so a read prices them too; and the gap between the two is what somebody has to want to close for it to close at all (E3.a).',
+  }));
 }
 
 /**

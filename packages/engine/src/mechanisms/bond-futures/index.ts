@@ -18,7 +18,7 @@
  * repo demand it creates is the largest single source of real demand in a secured market, and here
  * it is a read of that market's own rows rather than a number anybody set.
  */
-import type { Period } from '../../calendar/calendar.js';
+import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
@@ -126,6 +126,23 @@ export const bondFutureKind: DerivativeKindProfile = {
     );
   },
   orders: futureOrders,
+  /**
+   * I1, Money Market A2: WHAT TAKING DELIVERY COSTS, said in advance so a treasury can fund it.
+   *
+   * The long pays the whole face at the deliverable's own cash price on the delivery date. It is
+   * nowhere in `legs`, because what settles here is a bond against money and a payment cannot
+   * carry a thing being handed over — so the kind says it here, and a bank that must take a
+   * hundred thousand of face next week knows this week.
+   */
+  cashDue: (c, at, reads, party): number => {
+    const t = c.terms;
+    if (!isBondFuture(t) || at < t.expiry) return 0;
+    const long = t.long ? c.a : c.b;
+    if (long !== party) return 0;
+    const price = reads.print(t.deliverable, at);
+    if (!price.some) return 0;
+    return mul(mul(c.notional, t.contractSize, 'the face it takes'), price.value.price, 'at its price');
+  },
   closeOut: markOf,
   // D11: the term runs out when the module has DELIVERED it. Until then it is open, and the layer's
   // own resolution must not tear it up and pay a cash difference for a contract that delivers.
@@ -304,11 +321,22 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId,
     const i = ctx.instruments.get(market.instrument);
     if (!i.status.live || !issuedBy(i, issuer)) continue;
     if (!ctx.prices.latest(i.id, ctx.period).some) continue;
-    const expiry = (ctx.period + life) as Period;
+    // A LADDER, not a new book every period: everything written between two dates on the
+    // cycle settles on the same one, into the same book (`nextCycle`).
+    const expiry = nextCycle(ctx.period, life);
     const id = bondFutureMarketOf(i.id, expiry);
     if (open.has(String(id))) continue;
-    // I1: the deliverable must still be alive on the delivery date. A line that redeems before it
-    // could be handed over is not a deliverable, and a future on one delivers nothing.
+    /**
+     * I1: THE DELIVERABLE MUST STILL BE THERE ON THE DELIVERY DATE. A line that redeems before it
+     * could be handed over is not a deliverable — what would settle is a claim that has ceased,
+     * and the register says so (Register B4). What its own terms promise is where the answer is:
+     * the last payment it makes is the last day anybody could deliver it.
+     */
+    const on = ctx.calendar.startOf(ctx.period);
+    const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
+    const last = flows[flows.length - 1];
+    if (last === undefined) continue;
+    if (compareCivil(last.date, ctx.calendar.endOf(expiry)) <= 0) continue;
     const clearer =
       ctx.parties.has(house(i.ccy)) && ctx.parties.get(house(i.ccy)).status.alive ? house(i.ccy) : null;
     const terms: BondFutureTerms = {
@@ -347,6 +375,9 @@ function deliver(ctx: MechanismContext): void {
     if (ctx.period < t.expiry) continue;
     const price = ctx.prices.latest(t.deliverable, ctx.period);
     if (!price.some) continue;
+    // Register B4: and a line that has ceased since cannot be delivered at all. The row is left to
+    // the layer's own resolution, which closes it at its stated value (D11.a).
+    if (!ctx.instruments.has(t.deliverable) || !ctx.instruments.get(t.deliverable).status.live) continue;
     /**
      * C2, XI-5: A CLEARED DELIVERY IS ONE INSTRUCTION. The house is buyer to the seller and seller
      * to the buyer, which is two rows — and settling them one at a time leaves the house holding a

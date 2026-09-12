@@ -27,9 +27,52 @@ import { isCds, type CdsTerms } from './contract.js';
 import { cdsLineOf } from './data.js';
 import { isCdsIndex, seriesLineOf } from './series.js';
 
-/** What this party holds of the reference's own paper, per member: B1.a's read of its own book. */
+/**
+ * A1.c, C3, Law 3: WHAT A SIDE NAMES WHEN THE BOOK HAS NEVER PRINTED.
+ *
+ * A market that only quotes off its own last print never has a first one: no order, no print; no
+ * print, no order. What breaks it is that protection on a name is not the only price of that name
+ * — its own debt is already trading, and what that debt is worth against par over the years it has
+ * left is what the CASH market is charging for the same credit. So the first reservation is read
+ * off the reference's own bond, and from the moment this book prints, the difference between the
+ * two is C3's basis: a READ, and a real one, because the two sides were never the same number.
+ *
+ * A reference whose debt has never printed either has no anchor and no book — which is the honest
+ * answer for a name nobody has ever put a price on.
+ */
+function levelFor(view: ParticipantView, m: MarketDecl, t: CdsTerms): number | undefined {
+  const printed = view.print(cdsLineOf(t.reference, t.tenorYears));
+  if (printed.some) return printed.value.price;
+  const cash = view.print(t.obligation);
+  if (!cash.some || t.tenorYears <= 0) return undefined;
+  const belowPar = sub(1, cash.value.price, 'what the cash market discounts this credit by');
+  if (belowPar <= 0) return undefined;
+  const perAnnum = div(belowPar, t.tenorYears, 'per year of the term it has');
+  // Law 8: A LEVEL IS HELD IN MONEY PIECES PER PIECE OF THE THING, which is not the same number as
+  // the rate a person says out loud. Three basis points a year on a unit of face is three
+  // hundredths of a cent, and a schedule posted at 0.0003 is a schedule below this book's own tick
+  // — dropped at the grid, which is how a book with orders in it came to print nothing at all.
+  return view.registry.priceOf(m.ccy, view.registry.derivativeKind(m.contract?.kind ?? ('' as never)).unit, perAnnum);
+}
+
+/**
+ * B1.a, A4: WHAT THIS PARTY IS EXPOSED TO ON THIS NAME — everything the reference owes it, per
+ * member, read off its own book.
+ *
+ * Protection is on a NAME and not on a line. A bank that holds one of a borrower's bonds and buys
+ * cover has covered that borrower, and one that holds three and reads only the line the book was
+ * written on has measured a third of its own exposure — which is the read being wrong rather than
+ * the hedge being small.
+ */
 function exposureTo(view: ParticipantView, t: CdsTerms): number {
-  return view.quantity(t.obligation);
+  let held = 0;
+  for (const h of view.holdings()) {
+    const i = view.instruments.get(h.instrument);
+    if (!i.status.live || !i.issuer.some || i.issuer.value !== t.reference) continue;
+    if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+    held = add(held, view.quantity(h.instrument), 'what this name owes it');
+  }
+  return held;
 }
 
 /**
@@ -59,7 +102,10 @@ function coverHeld(view: ParticipantView, t: CdsTerms): number {
  * a book opens with the parties that are exposed in it and acquires its speculators later.
  */
 function ownView(view: ParticipantView, t: CdsTerms): number | undefined {
-  const o = view.outlook(`cds.spread.${t.reference}.${t.tenorYears}`);
+  // A2: THE VARIABLE IT HAS ACTUALLY OBSERVED. A party forms a view of a thing by watching it, and
+  // what it has watched here is the level THIS BOOK struck when it was in it — which the
+  // expectations system records from the fill like any other price it traded at.
+  const o = view.outlook(`price.${String(cdsLineOf(t.reference, t.tenorYears))}`);
   return o.some ? o.value.expected : undefined;
 }
 
@@ -93,9 +139,8 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   if (decl === undefined || !isCds(decl.terms)) return [];
   const t = decl.terms;
   if (view.self.id === t.reference) return [];
-  const last = view.print(cdsLineOf(t.reference, t.tenorYears));
-  if (!last.some) return [];
-  const level = last.value.price;
+  const level = levelFor(view, m, t);
+  if (level === undefined) return [];
   const held = coverHeld(view, t);
   const facing = decl.house === null ? 'the other side' : String(decl.house);
   const term = counterpartyTerm(view, held > 0 ? held : -held, facing);

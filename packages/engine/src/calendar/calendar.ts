@@ -24,6 +24,20 @@ export function period(n: number): Period {
   return n as Period;
 }
 
+/**
+ * The next date on a stated CYCLE: the first period at or after `at` that is a whole number of
+ * `every` from the epoch.
+ *
+ * An exchange lists a ladder — March, June, September — and everything written between two of them
+ * settles on the same date into the same book. A contract dated `at + life` instead would open a
+ * new book every period and leave the last one with one trade in it, which is not a market: it is
+ * a queue of private agreements wearing a market's name.
+ */
+export function nextCycle(at: Period, every: number): Period {
+  if (!(every > 0)) throw new Impossible('Law 8', `a contract cycle of ${every} periods`);
+  return period(Math.ceil((at + 1) / every) * every);
+}
+
 export function nextPeriod(p: Period): Period {
   return period(p + 1);
 }

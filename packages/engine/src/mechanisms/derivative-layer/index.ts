@@ -174,6 +174,23 @@ function capacity(): ClearingCapacity {
       const affordable = ctx.registry.deliverable(profile.unit, room / one.value);
       return affordable < wanted ? affordable : wanted;
     },
+    /**
+     * D2, Money Market A2: WHAT THIS MEMBER'S OPEN ROWS WILL ASK IT FOR, per money.
+     *
+     * Its requirement with each counterparty, against what it has already posted with that one —
+     * the same pair-by-pair read the call itself makes (C1.a), so a treasury funding for it is
+     * funding for the number it will actually be asked. It never nets across counterparties (G3):
+     * what it will get back from one is not cash it can post to another.
+     */
+    dueNext(ctx, party, ccy): number {
+      const terms: number[] = [];
+      for (const pair of marginPairsOf(ctx, party)) {
+        if (pair.ccy !== ccy) continue;
+        const by = sub(requirement(ctx, party, pair.other, ccy), posted(ctx, party, pair.other, ccy), 'the top-up');
+        if (by > 0) terms.push(by);
+      }
+      return sum(terms).value;
+    },
     margin(ctx, party, against, size, about): readonly Leg[] {
       const m = about.market;
       const decl = m.contract;

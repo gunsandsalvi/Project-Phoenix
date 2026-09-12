@@ -568,6 +568,9 @@ function contractTrade(
     ccy: m.ccy,
     notional: size,
     struckAt: price,
+    // Clearing E1: the same line this session's print is written against, so a party that struck
+    // the contract has observed the price of this book (Expectations A2).
+    book: m.instrument,
     value,
     house,
   });

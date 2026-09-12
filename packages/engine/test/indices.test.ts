@@ -5,6 +5,8 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  none,
+  some,
   ABROAD,
   CONSUMER_INDEX,
   CREDIT_INDEX,
@@ -82,6 +84,11 @@ describe('an index of nothing is not a number (Indices A1, D5.a)', () => {
       parties: w.parties,
       instruments: w.instruments,
       ledger: w.ledger,
+      price: (instrument, at) => {
+        const p = w.prices.latest(instrument, at);
+        return p.some ? some(p.value.price) : none<number>();
+      },
+      rate: () => 1,
     });
     expect(basket.length).toBe(0);
     expect(credit.some).toBe(false);

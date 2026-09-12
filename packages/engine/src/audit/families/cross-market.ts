@@ -86,6 +86,13 @@ function depsOf(view: AuditView, cache: IndexCache): IndexDeps {
       parties: view.parties,
       instruments: view.instruments,
       ledger: view.ledger,
+      // A3, E3: the same two reads the kernel gives the rule, taken independently here — the two
+      // paths share the prints and nothing else, which is what makes this a check.
+      price: (instrument, at): Option<number> => {
+        const p = view.prices.latest(instrument, at);
+        return p.some && p.value.period === at ? some(p.value.price) : none<number>();
+      },
+      rate: (from, to, at): number => view.valuation.rateInForce(from, to, at),
     },
     price: (instrument, at): Option<number> => {
       const p = view.prices.latest(instrument, at);

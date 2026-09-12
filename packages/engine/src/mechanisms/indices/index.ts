@@ -23,11 +23,25 @@ import type { IndexDecl } from '../../prices/index-read.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { benchmark } from './benchmark.js';
-import { creditOf, equityOf, goodsBoughtIn } from './baskets.js';
+import { creditOf, equityOf, globalEquity, goodsBoughtIn, sizeSegmentOf, type SizeSegment } from './baskets.js';
 
-export const INDEX_PARAMS = { base: paramId('index.base') } as const;
+export const INDEX_PARAMS = {
+  base: paramId('index.base'),
+  /**
+   * M9, Indices A1.a, D5: WHERE THE SIZE BOUNDARY IS — the share of a region's whole listed market
+   * the large-cap line covers. It is DATA, stated once, publicly and in advance, and no mechanism
+   * branches on which segment it is looking at. A firm crosses it both ways by its own
+   * capitalisation moving, which is the whole point of having a boundary at all (A3).
+   */
+  largeCap: paramId('index.largeCap.share'),
+} as const;
 
 export const EQUITY_INDEX = (region: RegionId): string => `equity.${String(region)}`;
+/** M9: the size segments of a region's listed market, each its own line (Indices A1, D5). */
+export const SIZE_INDEX = (region: RegionId, segment: SizeSegment): string =>
+  `equity.${segment}.${String(region)}`;
+/** M9, XI-12: the one line that crosses regions, stated in one money at cleared rates. */
+export const GLOBAL_INDEX = (ccy: CurrencyCode): string => `equity.global.${String(ccy)}`;
 export const CREDIT_INDEX = (ccy: CurrencyCode): string => `credit.${String(ccy)}`;
 export const PRODUCER_INDEX = (region: RegionId): string => `producer.${String(region)}`;
 export const CONSUMER_INDEX = (region: RegionId): string => `consumer.${String(region)}`;
@@ -57,7 +71,57 @@ export function indexRules(
   return out;
 }
 
-export function indices(regions: readonly RegionId[], currencies: readonly CurrencyCode[]): SystemModule {
+/**
+ * M9, Indices A1, A1.a, A3, C1, C2, C2.a, D5: THE SET A REAL MARKET IS ORGANISED BY.
+ *
+ * Three more lines per region — large, small and all — and one that crosses them. What they add is
+ * not more indices for their own sake: it is a boundary a firm can CROSS, which is the only thing
+ * that makes `C1`'s "a manager is measured against it, and that measurement drives flows" and
+ * `C2.a`'s "inclusion should be visible in the constituent's price" mean anything. With one basket
+ * per region a constituent set changes only when a firm is born or dies.
+ *
+ * The share that divides them is a registry row (`index.largeCap.share`), the boundary is read from
+ * the constituents' own prints (A3), and no mechanism anywhere branches on which segment it has.
+ */
+export function sizeRules(
+  regions: readonly RegionId[],
+  statedIn: CurrencyCode,
+  share: number,
+  from: Period,
+  base: number,
+): readonly IndexDecl[] {
+  const out: IndexDecl[] = [];
+  for (const region of regions) {
+    for (const segment of ['large', 'small', 'all'] as const) {
+      out.push({
+        id: SIZE_INDEX(region, segment),
+        name: `${String(region)} ${segment}-cap equities`,
+        constituents: sizeSegmentOf(region, segment, share),
+        base,
+        from,
+      });
+    }
+  }
+  out.push({
+    id: GLOBAL_INDEX(statedIn),
+    name: `global equities in ${String(statedIn)}`,
+    constituents: globalEquity(regions, statedIn),
+    base,
+    from,
+  });
+  return out;
+}
+
+export function indices(
+  regions: readonly RegionId[],
+  currencies: readonly CurrencyCode[],
+  /**
+   * XI-12: the money the ONE line that crosses regions is stated in. It is data on the assembly,
+   * not a fact about the model: stating a level in a money must not make that money the vehicle
+   * currency of the world by construction, and the level is a read through the period's own rates.
+   */
+  statedIn: CurrencyCode = currencies[0] ?? ('USD' as CurrencyCode),
+): SystemModule {
   return {
     id: 'indices',
     spec: 'Indices',
@@ -80,8 +144,25 @@ export function indices(regions: readonly RegionId[], currencies: readonly Curre
         owner: 'model',
         why: "Indices A4: what every index in this world starts at. A base is a UNIT and not a claim — doubling it doubles every level and changes nothing anybody does, which is exactly what makes it a resolution rather than a number to be justified. A hundred, because that is what a base is called everywhere and because a reader who sees 103 knows what it means without being told. Tested by invariance: declare it at 1000 and every ratio between two levels, every beta and every mandate boundary is the number it was.",
       },
+      {
+        id: INDEX_PARAMS.largeCap,
+        value: 0.7,
+        unit: 'of a region’s listed capitalisation',
+        kind: 'technology',
+        owner: 'standardSetter',
+        why: 'Indices A1.a, A3, D5: WHERE THE SIZE BOUNDARY IS — the share of a region’s whole listed market the large-cap line covers, stated publicly and in advance by whoever publishes the rule. It is a convention of the index business and not a choice anybody in the market makes, and a firm crosses it both ways by its own capitalisation moving, which is what makes inclusion a real event with a real price effect (C2.a).',
+      },
     ],
-    indices: (params) => indexRules(regions, currencies, asPeriod(0), params.get(INDEX_PARAMS.base)),
+    indices: (params) => [
+      ...indexRules(regions, currencies, asPeriod(0), params.get(INDEX_PARAMS.base)),
+      ...sizeRules(
+        regions,
+        statedIn,
+        params.get(INDEX_PARAMS.largeCap),
+        asPeriod(0),
+        params.get(INDEX_PARAMS.base),
+      ),
+    ],
     phases: [
       {
         name: 'indices.publish',
@@ -93,7 +174,7 @@ export function indices(regions: readonly RegionId[], currencies: readonly Curre
         cycle: 'anchor',
         anchor: { before: 'revaluation' },
         run: (ctx: MechanismContext): void => {
-          publish(ctx, regions, currencies);
+          publish(ctx, regions, currencies, statedIn);
         },
       },
     ],
@@ -119,8 +200,18 @@ function publish(
   ctx: MechanismContext,
   regions: readonly RegionId[],
   currencies: readonly CurrencyCode[],
+  statedIn: CurrencyCode,
 ): void {
-  for (const decl of indexRules(regions, currencies, asPeriod(0), ctx.params.get(INDEX_PARAMS.base))) {
+  for (const decl of [
+    ...indexRules(regions, currencies, asPeriod(0), ctx.params.get(INDEX_PARAMS.base)),
+    ...sizeRules(
+      regions,
+      statedIn,
+      ctx.params.get(INDEX_PARAMS.largeCap),
+      asPeriod(0),
+      ctx.params.get(INDEX_PARAMS.base),
+    ),
+  ]) {
     const read = ctx.index(decl.id);
     // D5.a: an index whose basket is empty has no level, and that is published as nothing at all
     // rather than as a base carried over nothing.

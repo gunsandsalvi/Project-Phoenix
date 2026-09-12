@@ -169,6 +169,12 @@ export interface OpenContractLeg {
   readonly notional: number;
   /** D7: the rate, spread or strike the two sides cleared at. */
   readonly struckAt: number;
+  /**
+   * Clearing E1, Expectations A2: WHAT THE LEVEL IS A LEVEL OF — the book's own line, which is the
+   * subject its print is written against. A party that struck a contract saw this price, and that
+   * is one more thing it has observed about this book.
+   */
+  readonly book: InstrumentId;
   /** What it is worth to `a` at inception, in `ccy`. */
   readonly value: number;
   /** C2: the house both sides face when it is cleared; null bilaterally. */

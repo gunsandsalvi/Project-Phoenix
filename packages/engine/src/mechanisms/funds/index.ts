@@ -62,7 +62,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
-import { ETF_LAUNCH_SHARE, FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
+import { FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
 import { trackerOrders } from './tracker.js';
 import { navOf } from './nav.js';
@@ -1015,6 +1015,10 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     [e.fund, FUND, e.name],
     [e.manager, FUND_MANAGER, e.managerName],
   ] as const) {
+    // Seed B2, Law 4: ONE PARTY, NAMED ONCE. A manager runs more than one fund — that is what a
+    // fund manager IS — so the second vehicle it launches finds it already here and does not make
+    // a second one. The FUND is its own party either way: two funds are two balance sheets.
+    if (ctx.parties.has(id as PartyId)) continue;
     ctx.parties.add({
       id: id as PartyId,
       kind,
@@ -1065,7 +1069,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   );
   if (holders.length === 0) return;
   // Law 19, E3.a: HOW BIG THE LAUNCH IS, read off the lines it tracks rather than stated
-  // (`ETF_LAUNCH_SHARE`). A share of the fund is `perShare` of each line, so what each line can
+  // (`EtfDecl.launchShare`). A share of the fund is `perShare` of each line, so what each line can
   // back is its own float over that, and the SMALLEST of them is as far as all of them reach.
   const backs: number[] = [];
   for (const [line, perShare] of Object.entries(e.basket)) {
@@ -1073,7 +1077,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
     backs.push(
       div(
-        mul(ctx.instruments.get(id).issued, ETF_LAUNCH_SHARE, 'the share of this line it holds'),
+        mul(ctx.instruments.get(id).issued, e.launchShare, 'the share of this line it holds'),
         perShare,
         'the shares of the fund this line backs',
       ),

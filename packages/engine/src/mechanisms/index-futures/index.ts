@@ -12,7 +12,7 @@
  * direction, and the honest way to lay that off is a contract with a named counterparty and its own
  * margin — not a coefficient that makes the position disappear from a report.
  */
-import type { Period } from '../../calendar/calendar.js';
+import { nextCycle, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { add, div, mul, sub } from '../../core/num.js';
@@ -188,7 +188,8 @@ function openBooks(
     const terms: IndexFutureTerms = {
       kind: INDEX_FUTURE,
       index: line.id,
-      expiry: (ctx.period + life) as Period,
+      // A LADDER, not a new book every period (`nextCycle`).
+      expiry: nextCycle(ctx.period, life),
       multiplier: 1,
       book: futureLineOf(line.id),
       long: true,

@@ -221,6 +221,15 @@ export interface OwnContracts {
    * know which instrument a margin claim is, and would be guessing (Law 15).
    */
   exposureTo(counterparty: PartyId): number;
+  /**
+   * D4, Money Market A2: WHAT ITS OWN ROWS WILL COST IT IN CASH AT `at`, in one money.
+   *
+   * A treasury funds what it knows it owes, and a contract's term is a date its own terms carry —
+   * so what falls due next period is knowable now, by the party that owes it, from its own book.
+   * It is the sum of what each kind says this row will take (`cashDue`, defaulting to its legs),
+   * and nothing about anybody else's position is reachable through it.
+   */
+  cashDue(ccy: CurrencyCode, at: Period): number;
 }
 
 /** What a phase may read of the contract store: everything public, and no writer (Law 4). */

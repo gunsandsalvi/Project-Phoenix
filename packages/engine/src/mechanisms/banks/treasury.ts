@@ -23,6 +23,7 @@
  * is how a real treasury sells a liquidity portfolio — through its own desk, whose quote then skews
  * — and it is what keeps one bank showing one face to one market.
  */
+import { nextPeriod } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
 import { delivers } from '../../clearing/market.js';
@@ -134,7 +135,30 @@ export function liquidityTargets(
     const i = view.instruments.get(subject.value);
     if (i.status.live && d.makes.includes(String(i.kind))) out.set(i.id, 0);
   }
-  if (!plan.some || plan.value.paper <= 0 || lines.length === 0) return out;
+  /**
+   * Seed C1, Dealer Desks D1, D4: BEFORE IT HAS A PLAN, THE TREASURY WANTS WHAT IT HAS.
+   *
+   * A bank that has published nothing has not yet had a week, so it does not know what a bad one
+   * costs — and until it does it holds what it was given. A target of NOTHING would say the
+   * opposite: that every bond the seed handed this bank is a position its DEALING line took, which
+   * is how a desk came to open over its own aggregate limit in every seed before it had quoted
+   * anything (worklist 13b, finding `12d-12`). One holding, two owners inside one bank, and at
+   * period zero the state is the read: the portfolio is the treasury's.
+   *
+   * It is the liquidity lines only. A share this desk makes a market in was never the treasury's,
+   * plan or no plan, and its target stays nothing.
+   */
+  if (!plan.some) {
+    for (const id of lines) {
+      const mark = view.mark(id);
+      // XI-6: a line nobody prices cannot be valued, so what the treasury wants of it cannot be
+      // stated either. It keeps the answer it already has rather than being given a number.
+      if (!mark.some) continue;
+      out.set(id, mul(view.quantity(id), mark.value, 'what it is holding of this line'));
+    }
+    return out;
+  }
+  if (plan.value.paper <= 0 || lines.length === 0) return out;
   const each = div(plan.value.paper, lines.length, 'the target in one line');
   for (const id of lines) out.set(id, each);
   return out;
@@ -482,7 +506,18 @@ export function sessionOrders(view: ParticipantView, venue: VenueDecl): readonly
   const self = view.self.id;
   const p = positionOf(view, ccy);
   if (String(self) === borrower) {
-    const need = downTick(add(-p.gap, fallsDueNext(view, ccy), 'what it has to raise'));
+    // Money Market A2, Derivative D4: WHAT IT HAS TO RAISE — the gap it is running, what its own
+    // liabilities put on it next period, AND what its own contracts will take out of its account.
+    // A bank that must take delivery of a bond next week, or pay a premium, owes that as surely as
+    // it owes a depositor, and a treasury that could not see it funded itself for the week it could
+    // see and closed overdrawn with nothing lent to it (worklist 13b, finding `13b-1`).
+    const need = downTick(
+      add(
+        add(-p.gap, fallsDueNext(view, ccy), 'its gap and what falls due'),
+        view.contracts.cashDue(ccy, nextPeriod(view.period)),
+        'and what its own book will take',
+      ),
+    );
     if (need <= 0) return [];
     const power = secured ? pledgeable(view) : need;
     // Law 8: what it can pledge is a valuation and the money it wants is a count of cents, so the

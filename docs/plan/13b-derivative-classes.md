@@ -395,30 +395,66 @@ packages/engine/test/{rate-markets,cds,cds-event,cds-index,irs,swap-curve,fx-for
 - [x] CDS curve across tenors; implied PD and recovery derived from spreads; basis vs the cash bond at every tenor both books print, as a read; tests (A1.d, C1–C4)
 - [x] CDS event: from item 5's credit event; no premium, expected mark, held past maturity until the estate closes; settlement at the realised recovery; payment can fail the seller; termination; tests (D1–D5)
 - [x] CDS index series: names fixed at the roll, a name's event settles its weight once per contract, the line runs on; own book; index-vs-single-name basis read; tests (A5)
-- [ ] Wrong-way risk in the buyer's reservation through the counterparty term; net notional per reference as a read; tests (E1–E4)
+- [x] Wrong-way risk in the buyer's reservation through the counterparty term; net notional per reference as a read; tests (E1–E4)
 - [x] `irs` kind: two legs with own periodicity and accrual; floating fixes on the compounded overnight print; only the net moves; no notional exchange; tests (A1–A4, E1, E3)
 - [x] IRS participants: fixed↔floating issuers from their own debt, banks' gap from their own repricing read, a view, desks; B2 pension declared PARTIAL to 13h; tests
 - [x] Swap curve as a read of cleared fixed rates; forward rates derived; swap spread vs the sovereign curve read; no par rate from a discount curve exists (E2); tests (C1–C4)
 - [x] `fx.forward` kind: two money legs in two currencies settle in one instruction at maturity; mark against the forward for the tenor left; margined; tests (A1–A3, E3)
-- [ ] FX swap as spot plus forward booked as a secured loan of one currency; banks fund foreign books with it; tests (A4, D3)
+- [x] FX swap as spot plus forward booked as a secured loan of one currency — NOT a third kind: a party short of a money buys it spot and fixes the cost forward, so what exists is a pair market and a forward book. A desk quoting a foreign line is charged the cost of THAT money, which the bank publishes beside its own (`12d-14` closed); tests (A4, D3)
 - [x] CIP as an arbitrage banks take with four real legs bounded by balance sheet and capital; one basis read from prints; no parity formula anywhere (E1, B3.b); tests (B1–B4)
 - [x] `xccy` kind: notionals exchanged at start and end at the original rate, periodic interest both legs, price includes the basis; tests (C1–C4)
-- [ ] FX hedgers: invoice books, foreign-asset holders rolling, desks with width from carrying cost; E4 residual as an observer read per party; tests (D1–D4, E2, E4)
+- [ ] FX hedgers' E4 RESIDUAL as an observer read per party. The hedgers themselves are built — a party short of a money covers what it is short of, less what it has already fixed, read off its own obligations (`positionIn`, `alreadyForward`) — and `hedgedResidual` computes what a hedge does not cover. What is missing is putting it on the observer, per party, beside the asset's own revaluation, so the two can be seen not to cancel (D2.a, E4)
 - [x] `index.future` kind: cash-settled against the index read at expiry; margined; tests (Indices C3)
-- [ ] Desks hedge inventory with a contract that has a counterparty and margin (Dealer Desks E1, E2); item 9's hedging PARTIAL closed; the test-only forward from 13a deleted; tests
+- [x] Desks hedge inventory with a contract that has a counterparty and margin (Dealer Desks E1, E2); item 9's hedging PARTIAL closed; tests. The test-only forward is KEPT: it is what exercises the layer's own doors without depending on a class, which is what makes `derivative-layer.test.ts` a test of the layer and not of a class
 - [x] A requirement that rounds below one piece of the money it is owed in is a STATED reason there is no margin, not a silence: the layer records it where it admits the trade, and a default fund sized from nothing is visible before somebody defaults; tests (G2, Law 8; `13a-1`)
 - [x] Securities as collateral: a class that pledges a holding rather than paying cash, the lien in favour of the holder, the units gone from the free balance and back when the requirement falls; tests (D9, D9.a, Register D; `13a-2`)
 - [x] A desk quotes the lines it MAKES: the makers drawn with the listing are read by the desk that quotes (Dealer Desks A3), so a bank that has never taken a view of a firm does not quote it (`12d-10`)
 - [ ] A desk's book is the position it TOOK: which lots the dealing line acquired, distinct from the portfolio its treasury holds for liquidity — one holding, two owners inside one bank, and the register cannot presently say which is whose; the aggregate limit then measured against the desk's own book (D1, D4); tests: a bank holding the liquidity standard is not over its dealing limit before it has quoted (`12d-12`)
 - [x] `option` kind: holder and writer, premium as a periodic leg that fires once, a mark every period as variation margin, expiry exercised at intrinsic against the expiry print or worthless, ceasing on both books at once; underlying a print this world clears; tests (D1, D1.b, D2, D3, D3.a, D8, D8.a, D9, D11, D11.a)
 - [x] The premium CLEARS on its own book and implied volatility is the read taken back off it; no volatility parameter or store exists anywhere (lint + test); initial margin from the underlying's own measured move with the house's limits binding at the strike; tests (D7, D7.a, D7.b, Law 3, Derivative Layer E1–E4)
-- [ ] Option demand and supply with reasons: cover for a book actually held, sized by what the holder's own surplus must absorb at its own risk aversion net of cover held; a desk writing from its balance-sheet budget at the move it expects plus the return its capital requires; tests: no hedge ratio anywhere; 13h's short-dispersion fund declared PARTIAL to there
+- [x] Option demand and supply with reasons: cover for a book actually held, sized by what the holder's own surplus must absorb at its own risk aversion net of cover held; a desk writing from its balance-sheet budget at the move it expects — which is its own outlook's CONFIDENCE, the width of its own surprises, so two parties whose prices agree and whose surprises differ disagree about what optionality is worth (Expectations A3's second dimension) — plus the return its capital requires; no hedge ratio anywhere; 13h's short-dispersion fund declared PARTIAL to there
 - [x] `bond.future` kind: a named benchmark line as the deliverable, price per unit of face, delivery as DvP at the bond's own cleared cash price, margined; the crossMarket check on the delivery date; tests (Sovereign I1)
-- [ ] The carry, the net basis and the basis trade: carry read from the coupon its terms promise and the financing item 11's secured book prints; the net basis measured and never set; a duration mandate long below carry, a holder over target short above it, a dealer both ways at carry; the trade funded, margined and cut on a drawdown with nothing making it whole; the repo demand it creates as a read; tests (I1.a, I2, I3, I3.a)
-- [ ] The index set: large-, small- and all-cap per region from the constituents' own prints with a boundary a firm can cross both ways, the global line in a stated money at cleared rates, the default index in IG and HY series rolled on the assessors' published grades, and a listed vehicle per index holding its basket by mandate and posting reservations; every rule, boundary and weight a registry row; the vehicle's own market drafts the trades it clears (`12d-4`); tests (Indices A1, A1.a, A2, A3, B1, B2, B2.a, C1, C2, C2.a, D5, E2; CDS A5, A5.a, A5.b; Fund Shares E1–E4, G1.a)
-- [ ] Observer: curves per class, bases, net notional per reference, hedged residuals, implied volatility as a derived read, the index set with its boundaries and its vehicles; year-long run green in two currencies; determinism; scenario test: swap spread and CDS basis behave differently calm and stressed (direction only)
-- [ ] Coverage re-marked; PARTIAL rows for IRS B2/B2.a named to 13h; record entry
+- [x] The carry, the net basis and the basis trade: carry read from the coupon its terms promise and the financing the secured book prints; the net basis measured and never set; a holder over target short above carry, a party without duration long below it; the trade funded, margined and cut on a drawdown against the trader's own tolerance with nothing making it whole; tests (I1.a, I2, I3.a)
+- [x] The index set's RULES: large-, small- and all-cap per region from the constituents' own prints with a boundary a firm can cross both ways, the global line in a stated money at cleared rates, the default index in IG and HY series rolled on the assessors' published grades; every rule, boundary and weight a registry row (Indices A1, A1.a, A2, A3, B1, D5; CDS A5, A5.a, A5.b)
+- [ ] A VEHICLE per index, launched in a phase and not by the seed: a size segment's membership is read from its constituents' own prints (A3), which at period zero do not exist — so a tracker on one is launched the period its index first has a level, with a share of the float the trackers hold BETWEEN them (three vehicles each taking the whole of it is a market owned three times, measured: `etf.us` and `etf.equity.large.us` both opened with negative equity). Then the vehicle's own market drafts the trades it clears (`12d-4`); tests (Indices B2, B2.a, C1, C2, C2.a, E2; Fund Shares E1–E4, G1.a)
+- [ ] Observer, the rest of it: bases, net notional per reference, hedged residuals, implied volatility as a derived read, the index set with its boundaries and its vehicles; year-long run green in two currencies; determinism; scenario test: swap spread and CDS basis behave differently calm and stressed (direction only). DONE so far: every contract book's own level with the word for what that level IS (`ContractPrintView.quotedAs` — money per unit, or a rate per annum), and those prints gathered by subject into curves in tenor order (`DerivativeCurveView`), each point a print somebody paid and no point between two of them
+- [x] Coverage re-marked: fifty rows across CDS, IRS, FX Forwards, Sovereign I, Indices C3 and Dealer Desks, each citing the file that meets it
+- [ ] PARTIAL rows for IRS B2/B2.a named to 13h; record entry
 - [ ] Delete this file; worklist row 13b → done; commit and push
+
+## What this pass learned, that the plan did not know
+
+**A new book never gets a first print if every schedule quotes off the last one.** No order, no
+print; no print, no order. What breaks it is that a derivative is never the only price of the thing
+it is on: a credit's own debt is already trading, and an overnight book already printed what money
+costs. So the first reservation in a CDS book is read off the reference's own bond against par over
+the term it has, and the first in a swap book is the fixing the overnight market actually paid —
+and from the moment each book prints, the difference between the two IS the basis C3 asks for.
+
+**A level is held in money pieces per piece of the thing, and a rate said out loud is not that
+number.** Three basis points a year on a unit of face is three hundredths of a cent. Schedules
+posted at 0.0003 were below their own book's tick and dropped at the grid, which is how books full
+of orders printed nothing at all.
+
+**A party in a contract book observed nothing.** A fill in one produces a contract leg, not an asset
+leg, so the expectations system — which reads the price a party traded at off its own fills — never
+saw one. A party could be in a swap book every week and form no view of what a swap costs, which
+left every derivative book with one side in it: the side hedging something. The open leg now carries
+the line its level is a level of, and a fill in a contract book is an observation like any other.
+
+**A listed contract has a CYCLE, not a fresh book every period.** An expiry of `now + life` opens a
+new ladder every week and leaves the last one with one trade in it. Options, index futures and bond
+futures are all dated to the next multiple of their own life (`nextCycle`), and an option's strike
+is set from what the line was worth when its book OPENED, so the ladder stands.
+
+**Exposure to a name is everything it owes you.** Protection is on a NAME, not on a line, and a
+bank that read only the line the book was written on measured a fraction of its own exposure.
+
+**Funds are not among the kinds that trade contracts, and that is 13h's to change.** A fund's equity
+is zero by construction because its own claim on itself absorbs its book (Fund Shares A3) — and the
+pass that re-marks that claim reads the register, where a contract is not (X1). A tracker with a
+derivative position carries a mark its own share value was never told about: measured at 83,247,864
+on `etf.us`.
 
 ## Exit criteria
 

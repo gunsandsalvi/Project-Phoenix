@@ -62,10 +62,26 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   const decl = m.contract;
   if (decl === undefined || !isIrs(decl.terms)) return [];
   const t = decl.terms;
-  const last = view.print(irsLineOf(t.ccy, t.tenorYears));
-  if (!last.some) return [];
-  const level = last.value.price;
+  const fixing = floatingRate(t, { lastEvent: (kind, subject) => view.lastPublicAbout(kind, subject) });
+  /**
+   * A1.c, E2, Law 3: WHAT A SIDE NAMES WHEN THE BOOK HAS NEVER PRINTED.
+   *
+   * A market that only quotes off its own last print never has a first one. What breaks it here is
+   * the FLOATING LEG: what the overnight book actually paid this period is a transacted rate both
+   * sides can see, and a fixed rate is what somebody will swap it for. So the first reservation is
+   * the fixing, and every one after it is this book's own print — which is E2 satisfied rather than
+   * dodged: nothing here turns a discount curve into a par rate, because there is no discount curve
+   * in this module to turn.
+   */
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
+  const printed = view.print(irsLineOf(t.ccy, t.tenorYears));
+  if (!printed.some && !fixing.some) return [];
+  // Law 8: a level is held in MONEY PIECES PER PIECE OF THE THING. Two per cent a year on a unit
+  // of notional is two cents, and a schedule posted at 0.02 is below this book's own tick.
+  const level = printed.some
+    ? printed.value.price
+    : view.registry.priceOf(m.ccy, unit, fixing.some ? fixing.value : 0);
+  if (level <= 0) return [];
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
   const held = swapped(view, t);
   /**
@@ -80,8 +96,8 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
    */
   let want = -fixedDebtOf(view, t);
   let price = level;
-  const outlook = view.outlook(`rate.${t.ccy}`);
-  const fixing = floatingRate(t, { lastEvent: (kind, subject) => view.lastPublicAbout(kind, subject) });
+  // A2: the variable it has observed — the fixed rate THIS book struck when it was in it.
+  const outlook = view.outlook(`price.${String(irsLineOf(t.ccy, t.tenorYears))}`);
   if (outlook.some && fixing.some) {
     const expects = outlook.value.expected;
     const conviction = sizeOf(view, unit, level);

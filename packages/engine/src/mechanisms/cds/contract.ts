@@ -161,7 +161,16 @@ export const cdsKind: DerivativeKindProfile = {
    */
   initialMargin: (c, at, reads): Option<number> => {
     if (!isCds(c.terms)) return none();
-    const move = reads.measuredMove(c.terms.book, c.terms.window);
+    /**
+     * Derivative Layer D1, G2: THE MOVE OF THIS CREDIT, measured wherever this world has a record
+     * of it. A protection book that has not printed yet has no record of its own — but the credit
+     * has been trading all along, in the reference's own debt, and what that line has done IS what
+     * a position in this name could do. It is the same credit and the same read (Law 19), not a
+     * number stood in for a missing one: a name whose debt has not moved either has no honest
+     * margin and the layer refuses the trade (G2).
+     */
+    const own = reads.measuredMove(c.terms.book, c.terms.window);
+    const move = own.some ? own : reads.measuredMove(c.terms.obligation, c.terms.window);
     if (!move.some) return none();
     const life = yearsLeft(c.terms, at, reads.calendar);
     return some(
