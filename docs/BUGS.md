@@ -152,3 +152,37 @@ levels may be signed (a basis, a spread, anything quoted as a deviation), or a b
 is posted as an offset from a stated reference so what reaches the grid is positive. That is a
 kernel decision about `MarketDecl`/`onTheGrid` and it is stated where the class that needs it is
 built, not guessed here.
+
+---
+
+## 13b-5 — A desk still opens past its own aggregate limit, and the even split was only half of it
+
+**Measured.** `opening-liquidity.test.ts`, "leaves every desk inside its own limit on the first
+morning" (Dealer Desks D1, D4), `rigWorld('float', 6, 40)` after three periods. Before this item's
+change: `roomLeft −89,065,956,626` at `bank.c`, on a book of 98.2bn. After it: **−31,290,407,012**.
+
+**What was found and fixed.** `liquidityTargets` split the treasury's paper requirement EVENLY over
+every liquidity line (`each = plan.paper / lines.length`). The measurement: `bank.c` held its whole
+paper requirement in two bills (8.6bn + 2.0bn ≈ 10.6bn, against a plan asking for 10.1bn — the bank
+was holding almost exactly its standard) and was told it wanted **18.1bn of each line**. `bookValue`
+sums `|held − want|` in both directions, so the desk was read as carrying the distance to an
+allocation its treasury had never made. The target is now the treasury's own proportions — its share
+of what it actually holds, totalling what its plan asked for — which is a read (Law 19) rather than
+a portfolio nobody decided (Law 2).
+
+**What is left, and it is a second cause.** 31.3bn of book remains. The likely candidate, not yet
+confirmed: the dealing phase reads the plan the treasury published LAST period, and `plan.paper`
+moves a long way between periods — the same bank's plan showed `paper` at roughly 36bn one period
+and 10.1bn the next, which on its own would read as ~26bn of "short of where it is supposed to be".
+If that is it, the fix is not in the target at all but in what makes a liquidity plan swing by a
+factor of three and a half in one period, and that is a measurement about the plan rather than about
+the desk.
+
+**What is ruled out.** It is not the even split (fixed, and the number moved by 58bn). It is not the
+desk holding a large unexplained position: the bank's sovereign paper matches its plan to within
+five per cent. Its other large holdings are `interbank` (51.4bn) and `repo` rows, which are not
+dealing lines and are not in `targets` at all.
+
+**Not positioned yet.** It belongs with whatever the second cause turns out to be. The step in 13b
+stays OPEN and says so; if the cause is the plan's own volatility it is item 11's mechanism and the
+finding moves there, and if it is the staleness of the read it is this item's.

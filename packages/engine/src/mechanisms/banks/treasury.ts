@@ -159,8 +159,41 @@ export function liquidityTargets(
     return out;
   }
   if (plan.value.paper <= 0 || lines.length === 0) return out;
-  const each = div(plan.value.paper, lines.length, 'the target in one line');
-  for (const id of lines) out.set(id, each);
+  /**
+   * Dealer Desks D1, D4, Law 2, Law 19: WHAT THE TREASURY WANTS OF ONE LINE IS ITS SHARE OF WHAT
+   * THE TREASURY HOLDS, and never an even slice of the lines that exist.
+   *
+   * A treasury decides how much PAPER to hold (C1's liquidity standard is an amount, not a
+   * portfolio); WHICH lines it is in is an outcome of what it bought. Splitting the amount evenly
+   * over every liquidity line states an allocation nobody decided — and it is measurable rather
+   * than arguable: a bank holding its whole paper requirement in two bills was told it wanted
+   * 18.1bn of EACH of them, so `bookValue`'s distance-from-target read the desk as 98bn long and
+   * short of lines its treasury had never been in, and every desk in every seed opened past its own
+   * aggregate limit before it had quoted anything (`12d-12`). One holding, two owners inside one
+   * bank, and the read that separates them has to be of something the treasury actually did.
+   *
+   * So the proportions are the ones it is already in, and the total is the one its plan asked for.
+   * A treasury that holds nothing of a line wants nothing of it, which is the answer that makes a
+   * position in it the DESK's.
+   */
+  const held = new Map<InstrumentId, number>();
+  const worth: number[] = [];
+  for (const id of lines) {
+    const mark = view.mark(id);
+    // XI-6: a line nobody prices cannot be valued, so what the treasury wants of it cannot be
+    // stated either. It keeps the answer it already has (nothing) rather than being given a number.
+    if (!mark.some) continue;
+    const value = mul(view.quantity(id), mark.value, 'what it is holding of this line');
+    held.set(id, value);
+    worth.push(value);
+  }
+  const total = sum(worth).value;
+  // A treasury that holds no paper at all wants none of any particular line: the plan says it
+  // should buy some, and what it buys is where it will be. Until then nothing here is the desk's.
+  if (total <= 0) return out;
+  for (const [id, value] of held) {
+    out.set(id, mul(plan.value.paper, div(value, total, 'its share of the paper it holds'), 'of the plan'));
+  }
   return out;
 }
 
