@@ -314,8 +314,8 @@ packages/engine/test/{mobility,participation,release,dwellings,housing-market,mo
 - [x] Participation as a decision with the wage and the outside option in it; entry and exit from the workforce as split events; tests (B1, B3)
 - [x] Release on death and merger through `labour.separate` for the whole headcount; severance ranks in the estate; tests (C4, Firm Birth D4.a)
 - [ ] Labour E4: a cell that lost its earner misses its mortgage service through item 5's event; test
-- [ ] `dwelling` kind: indivisible, per location, owner in the register; maintenance and depreciation; builders produce dwellings with a lag and sell at completion; no dwelling from nowhere; tests (A1–A5, E1)
-- [ ] Occupancy: owner-occupiers, leases with rent by instruction, landlords with dwellings behind them; rental market per location; yield as a read; tests (A2, A3, B5)
+- [x] `dwelling` kind: indivisible, per location, owner in the register; maintenance and depreciation; builders produce dwellings with a lag and sell at completion; no dwelling from nowhere; tests (A1–A5, E1)
+- [x] Occupancy: owner-occupiers, leases with rent by instruction, landlords with dwellings behind them; rental market per location; yield as a read; tests (A2, A3, B5)
 - [ ] The housing market: offers from tenure endings at the seller's own reservation, bids from what buyers can borrow plus cash, a cross where unreached offers do not clear; tests (B1–B4, E2)
 - [ ] Mortgage as a secured loan row with a lien, fixed or floating, amortising; LTV as a read; tests (C1–C3, E3)
 - [ ] The lender's standard as a read of its own book's LTV cross-section, hurdle and headroom; no constant exists; tests: a widened tail tightens the next quote (C5, C5.a)

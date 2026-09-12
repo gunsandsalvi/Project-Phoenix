@@ -102,6 +102,7 @@ import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
+import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
 import {
   drawCarriers,
@@ -2189,6 +2190,11 @@ export function foundationSpec(
       // which closes a basis by accident; a merchant is the party whose purpose is to close it and
       // the one that loses money when the gap shuts before the cargo lands.
       merchants(merchantRows),
+      // 13d, Housing A1-A3: a dwelling is a good that is built, stands where it was built and
+      // wears out; a tenancy is a venue, because what changes hands is the right to be in it for a
+      // period and not the thing itself. Rent clears between what letting WEARS the owner and what
+      // a household can pay rather than have nowhere, and nothing in either is a coefficient.
+      housing(),
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).

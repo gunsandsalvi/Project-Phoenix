@@ -1752,6 +1752,48 @@ const MAKES: readonly GoodDecl[] = [
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is done in the week it is asked for, which is what a wholesaler is for.',
   },
+  {
+    subUnit: 'dwelling',
+    unit: 'dwellings',
+    name: 'dwellings',
+    // 13d, Housing A1: a house cannot be somewhere other than where it was built, at any price.
+    // It is the oldest reason a price is local, and it is why a shortage in one place is not
+    // relieved by a surplus in another however large that surplus is.
+    portable: false,
+    spoilagePerPeriod: 0.0002,
+    spoilageWhy:
+      'Goods A3, E4, Housing A4: what falls out of the stock each period if nobody keeps it up. About one per cent a year, which is why a dwelling is maintained rather than merely owned, and why a stock nobody spends on shrinks.',
+    inputs: [
+      { subUnit: 'concrete', qtyPerUnit: 60, why: 'A2.a: foundations, floors and frame.' },
+      { subUnit: 'lumber', qtyPerUnit: 25, why: 'A2.a: roof, joists and second fix.' },
+      { subUnit: 'steel', qtyPerUnit: 6, why: 'A2.a: reinforcement and fixings.' },
+      { subUnit: 'glass', qtyPerUnit: 1.2, why: 'A2.a: it has windows in it.' },
+      { subUnit: 'power', qtyPerUnit: 8, why: 'A2.a: the site, for the months it takes.' },
+      { subUnit: 'design', qtyPerUnit: 0.6, why: 'A2.a, 13c.2: it was drawn before it was dug.' },
+      { subUnit: 'professional', qtyPerUnit: 0.2, why: 'A2.a, 13c.2: consents, contracts and the survey.' },
+      { subUnit: 'transport', qtyPerUnit: 12, why: 'A2.a, 13c.2: every load arrived on something.' },
+      { subUnit: 'logistics', qtyPerUnit: 90, why: 'A2.a, 13c.2: and every tonne was handled at both ends.' },
+      { subUnit: 'waste', qtyPerUnit: 6, why: 'A2.a, 13c.2: a building site is mostly skips.' },
+    ],
+    labourHoursPerUnit: 1800,
+    labourWhy:
+      'A2.c: building trades. About a year of one person\u2019s time per dwelling, which is why the thing that limits how many a place builds is the people who can build them.',
+    plant: [
+      { capitalKind: 'machinery', unitsPerUnitPerPeriod: 3, why: 'Capital Programme A2: plant on the site.' },
+    ],
+    yieldRate: 0.97,
+    yieldWhy: 'B4: what is started and does not finish — a scheme abandoned, a plot that would not take it.',
+    exposedTo: ['wind'],
+    standsOn: null,
+    standsOnWhy:
+      '13d: none YET, and it is the biggest thing missing from this line. A dwelling stands on a PLOT, and what a plot costs is most of what a house costs in the places where houses are dear. The ground reads exist (13c.1 `groundFor`, `buildOn`) and what is not built is the thing that asks them for a dwelling rather than for a piece of plant — worklist 13g, where siting is decided.',
+    storagePerUnit: null,
+    storageWhy:
+      'Commodities Spot A3: none. Nobody warehouses houses; a house waiting for a buyer is standing where it was built, which is what `portable: false` already said.',
+    leadTimePeriods: 26,
+    leadTimeWhy:
+      'B3, Housing B2: half a year from breaking ground to a set of keys. It is why housing supply answers a price slowly and why a shortage lasts longer than the thing that caused it.',
+  },
 ];
 
 
