@@ -702,8 +702,8 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Commodity Futures A1` | MISSING |  |
-| `Commodity Futures A2` | MISSING |  |
+| `Commodity Futures A1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (the short hands over units of the grade at the place the contract names and the long pays at that place's own cleared spot price, in one instruction — XI-5, never a cash difference dressed up as a delivery) |
+| `Commodity Futures A2` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (a ladder of four delivery dates a quarter apart on every deliverable grade, which is what makes the book a curve rather than a price) |
 | `Commodity Futures A3` | MISSING |  |
 | `Commodity Futures A4` | MISSING |  |
 | `Commodity Futures B1` | MISSING |  |
@@ -711,10 +711,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Commodity Futures B3` | MISSING |  |
 | `Commodity Futures B4` | MISSING |  |
 | `Commodity Futures B5` | MISSING |  |
-| `Commodity Futures C1` | MISSING |  |
+| `Commodity Futures C1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `commodityCarryOf` — the room at the rate the storage session printed, the spoilage at the rate the good declares, and the money at the secured benchmark. Three reads and a subtraction; no convenience yield anywhere |
 | `Commodity Futures C2` | MISSING |  |
-| `Commodity Futures C3` | MISSING |  |
-| `Commodity Futures C4` | MISSING |  |
+| `Commodity Futures C3` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (contango is bounded ONLY by somebody who can find room selling it; backwardation is unbounded, because you cannot borrow a tonne that does not exist) |
+| `Commodity Futures C4` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (convergence is not enforced: it happens because delivery is possible, and a short with nothing in the shed FAILS rather than settling in cash) |
 | `Commodity Futures D1` | MISSING |  |
 | `Commodity Futures D2` | MISSING |  |
 | `Commodity Futures D3` | MISSING |  |
@@ -773,7 +773,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Indices D2` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a credit index per currency, over the dated claims somebody other than the state promised — empty, and therefore Missing, until 13f issues some) |
 | `Indices D3` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (the volume-weighted rate of the overnight lending that SETTLED, per book; a book that did not trade has no fixing) |
 | `Indices D3.b` | MET | packages/engine/src/mechanisms/indices/benchmark.ts (nothing here reads the corridor: what the central bank administers is not what the market paid) |
-| `Indices D4` | PARTIAL | packages/engine/src/mechanisms/indices/baskets.ts — producer and consumer indices over the same goods weighed by what this region's sellers sold and what its cells bought. 13c.2 built the WEDGE the two levels part on: the shelf is its own instrument with its own market, so the distribution margin is the gap between two prints less what the shop's staff and premises cost it. What remains is 13c step 14 — putting freight and that margin into the index read itself |
+| `Indices D4` | MET | packages/engine/src/mechanisms/indices/baskets.ts — producer and consumer indices are now DIFFERENT BASKETS and not only different weights: a household buys the shelf line and a firm sells the one at the gate, so the two levels part on the shop's staff, its premises, its round and its bin, plus the freight and the merchant's margin behind it (13c.2). D4.a's margin story is legible: output prices rising faster than input prices is the distribution margin widening |
 | `Indices D5` | MET | packages/engine/src/world/world.ts (one system: a second module declaring the same id is refused at assembly) |
 | `Indices E1` | MET | packages/engine/src/mechanisms/indices/index.ts, packages/engine/src/observer/observer.ts (published as an observation, with what it was read from) |
 | `Indices E2` | MET | packages/engine/src/prices/index-read.ts (no stored level, so it cannot be stale and cannot be revised) |

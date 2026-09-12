@@ -87,10 +87,16 @@ export function creditOf(ccy: CurrencyCode) {
  *
  * PRODUCER weighs by everything that was made and sold: every unit of a physical thing that changed
  * hands in the period, whoever took it. CONSUMER weighs by what the people bought: only the units a
- * cell of households ended up with. They are the same prints — this world has one market per good
- * and one price in it — so today they differ only by their weights, and what will separate the two
- * levels is the wedge between the gate and the counter: freight, the distribution margin and the
- * tax on what a household pays, which is 13c's (D4.a, PARTIAL until then, and stated so).
+ * cell of households ended up with.
+ *
+ * THEY ARE NOW DIFFERENT BASKETS AND NOT ONLY DIFFERENT WEIGHTS (13c.2). A household buys the shelf
+ * line and never the one at the gate — `good.retailBread.<place>` is a different instrument with a
+ * different market and a different print from `good.bread.<place>` — so the consumer basket is made
+ * of the things households actually take delivery of and the producer basket of the things firms
+ * actually sell. What parts the two levels is real work by real firms: the shop's staff, its
+ * premises, its delivery round and its bin, plus the freight and the merchant's margin behind it.
+ * D4.a's margin story is then legible in exactly the way the clause wants — output prices rising
+ * faster than input prices IS the distribution margin widening, and nothing collapses the two.
  *
  * Law 19: both weights are read off the ledger's own settled instructions — what was actually
  * delivered — and never off a production plan or a consumption function.

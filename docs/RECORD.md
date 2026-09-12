@@ -3344,3 +3344,50 @@ regions' tradeable prices converge and the service gap should stay open; raise o
 its service prices should move with it while its tradeable prices do not. If services track goods
 prices place for place, something is closing a gap that has no mechanism to close it, and that is a
 finding rather than a licence to add a term.
+
+---
+
+## 13c — Commodities and freight (closed)
+
+Paused twice and finished: steps 1–8 before the map, step 9 after it (13c.1), and steps 10–16 after
+the economy had somewhere to sell to (13c.2).
+
+**Step 10 — shipper substitution, and the finding is that all three are STRUCTURAL.** A shipper can
+hold, source locally, or not trade at all, and none of the three needed building: what a shipper will
+pay for a voyage is the gap between the two places' prints and nothing else, so above the gap the
+voyage is worse than selling at home; and a buyer standing where the thing is made is already in that
+place's own market. The arithmetic leaves no room for a shipper to pay more than the alternative is
+worth, so there is nothing to decide between them and no mechanism to write. The tests say it from
+three sides (`test/freight.test.ts`), and 13c.1's dispersed placement is what gave the second one a
+second place to source from.
+
+**Steps 11–13 — the commodity future.** A lot is a silo's worth, READ off the good's own
+`storagePerUnit`, so there is no contract-size parameter anywhere. Four delivery dates a quarter
+apart on every grade that can actually be handed over — portable, storable, and with a spot print to
+converge to. The carry is three reads and a subtraction: the room at the rate the storage session
+printed in that place, the spoilage at the rate the good declares, and the money at the secured
+benchmark, put into the same unit by the calendar's own day count. **There is no convenience yield**:
+the gap between the future and spot-plus-carry is the measurement. Contango is bounded only through
+somebody with room doing the trade; backwardation is unbounded, because you cannot borrow a tonne
+that does not exist. Convergence is not enforced — at expiry the short hands over the units and the
+long pays at the grade's own cleared spot price in one instruction, and a short with nothing in the
+shed FAILS, recorded, with nothing paying a difference instead. Three reasons on the line and all
+three in one target, so nothing branches: short by what it holds, long or short on its own view
+against where the book stands, and short the contango when it has somewhere to put the thing.
+
+**Step 14 — the two price indices can now move apart, and for a reason.** They were the same prints
+weighed two ways. Since 13c.2 they are DIFFERENT BASKETS: a household buys the shelf line and a firm
+sells the one at the gate, so what parts the two levels is real work by real firms — the shop's
+staff, its premises, its round and its bin, plus the freight and the merchant's margin behind it.
+D4.a's margin story is legible in exactly the way the clause wants, and nothing collapses the two.
+`Indices D4` and `D4.a` → MET.
+
+**What was NOT run, and it is said rather than implied.** The year-long run and the determinism
+sweep in step 14 are a measurement over a world that now costs about a minute a period, and this
+session did not run them. They belong where every measurement belongs (Law 11, worklist 16), and
+nothing here claims a result it did not get.
+
+**Not built, and it says so.** Ballast (13c.1's finding, positioned to 13g: a hull cannot be
+repositioned without a plant reseat the kernel does not have). E2 — households buying energy
+directly — is MET since 13c.2 put `power` in the basket, which is what its dependency note was
+waiting for.

@@ -5,7 +5,8 @@
  * @spec Goods A1 Goods A2.a Goods C1 Goods C3 Households A2.a Households A2.b Households C3 Households C4 Commodities Spot A3 Freight A3 Law 2 Law 6
  */
 import { describe, expect, it } from 'vitest';
-import { FIRM, downTick, regionId, rungsUpTo, sum } from '../src/index.js';
+import { FIRM, downTick, paramId, regionId, rungsUpTo, sum } from '../src/index.js';
+import { rigWorld } from './rig.js';
 import { CONSUMPTION } from '../src/mechanisms/households/data.js';
 import { MERCHANT_SPREAD, drawMerchants, merchants } from '../src/mechanisms/merchants/index.js';
 
@@ -273,5 +274,53 @@ describe('a firm whose business is the gap (13c.2, Freight D3)', () => {
   it('is a FIRM, not a kind of its own (Law 15, the carrier precedent)', () => {
     const m = merchants(drawMerchants(who, 'merchants-a'));
     expect(m.participants[0]?.partyKind).toBe(FIRM);
+  });
+});
+
+describe('the commodity future (13c steps 11-13, Commodity Futures A1-A4, C1-C4)', () => {
+  it('measures a lot off the good’s own storage and declares no contract size (A1.a, Law 19)', () => {
+    const w = rigWorld('futures-a');
+    for (const d of w.params.all()) {
+      const id = String(d.id);
+      if (!id.startsWith('commodity.future.')) continue;
+      // A world that changes how much room a tonne takes changes the lot, which is what a lot is.
+      expect(id).not.toContain('contractSize');
+      expect(id).not.toContain('lot');
+    }
+    // What IS declared is a convention of the exchange: how many dates and how far apart.
+    for (const [id, kind] of [
+      ['commodity.future.series', 'technology'],
+      ['commodity.future.spacing.periods', 'technology'],
+      ['commodity.future.margin.window', 'resolution'],
+    ] as const) {
+      expect(w.params.decl(paramId(id)).kind).toBe(kind);
+    }
+  });
+
+  it('declares no convenience yield, no basis target and no curve shape (Law 3)', () => {
+    const w = rigWorld('futures-a');
+    for (const d of w.params.all()) {
+      const id = String(d.id).toLowerCase();
+      expect(id).not.toContain('convenience');
+      if (id.startsWith('commodity.future')) {
+        expect(id).not.toContain('basis');
+        expect(id).not.toContain('contango');
+        expect(id).not.toContain('curve');
+      }
+    }
+  });
+
+  it('lists only grades that can actually be handed over', () => {
+    const w = rigWorld('futures-a');
+    const deliverable = new Set(
+      GOODS.filter((g) => g.portable && g.storagePerUnit !== null).map((g) => g.subUnit),
+    );
+    for (const m of w.markets) {
+      const id = String(m.id);
+      if (!id.includes('commodity.future')) continue;
+      // A contract to deliver a thing nobody can hold to the date is not a contract anybody can be
+      // short of, and a thing that cannot be moved cannot be handed over where it was not made.
+      expect([...deliverable].some((g) => id.includes(`good.${g}.`))).toBe(true);
+    }
   });
 });
