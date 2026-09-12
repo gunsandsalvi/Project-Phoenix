@@ -101,6 +101,7 @@ import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
+import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
 import {
   drawCarriers,
@@ -2263,6 +2264,11 @@ export function foundationSpec(
       // hole in the plan (Appendix C). After the curve and the money market, because the carry it
       // is measured against is a coupon and a financing rate both of them already print.
       bondFutures(houseIdFor, TREASURY_US),
+      // 13c steps 11-13, Commodity Futures A1-A4, C1-C4: a ladder of delivery dates on every grade
+      // that can actually be handed over, converging because delivery is possible rather than
+      // because anything enforces it. The carry it is measured against is three reads — the room,
+      // the spoilage and the money — and there is no convenience yield anywhere.
+      commodityFutures(houseIdFor),
       indexFutures(houseIdFor, [
         { id: EQUITY_INDEX(REGION), ccy: USD },
         ...ABROAD.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy })),
