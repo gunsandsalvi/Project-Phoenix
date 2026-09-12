@@ -94,7 +94,7 @@ import { fxDerivatives } from '../mechanisms/fx-derivatives/index.js';
 import { indexFutures } from '../mechanisms/index-futures/index.js';
 import { options } from '../mechanisms/options/index.js';
 import { bondFutures } from '../mechanisms/bond-futures/index.js';
-import { EQUITY_INDEX, indices } from '../mechanisms/indices/index.js';
+import { EQUITY_INDEX, GLOBAL_INDEX, SIZE_INDEX, indices } from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { reporting } from '../mechanisms/reporting/index.js';
 import { research } from '../mechanisms/research/index.js';
@@ -1635,14 +1635,28 @@ export function foundationDraw(
       listed.map((r) => String(equityLineOf(r.firm))),
       names,
       seed,
-      // M9, Indices C2: ONE VEHICLE, AND THE REST ARE NOT THE SEED'S TO LAUNCH. A tracker on a size
-      // segment holds whatever that segment's rule says is in it — and that rule reads the
-      // constituents' own prints (A3), which at period zero do not exist. A seed that launched one
-      // anyway would be handing it a basket nobody could have said was right, and three vehicles
-      // each taking their share of the same float is a market owned more than once. The vehicles on
-      // the segments are launched when their index first HAS a level, which is a phase and not a
-      // seed (13b, the remaining half of the index-set step).
-      [EQUITY_INDEX(REGION)],
+      /**
+       * M9, Indices C2, C2.a, Fund Shares E3.a: A VEHICLE ON EVERY INDEX A TRACKER SHOULD FOLLOW,
+       * and only the first of them is the SEED's to launch.
+       *
+       * A tracker on a size segment holds whatever that segment's rule says is in it, and that rule
+       * reads the constituents' own prints (A3) — which at period zero do not exist. So the seed
+       * declares the vehicles and launches one: the broad line, whose rule answers from the moment
+       * the lines are listed. The rest are launched by `funds.etf`'s own phase the period their own
+       * index first HAS a level, in kind, out of what the participants actually hold — a transfer,
+       * which is why two vehicles cannot own the same float (`12d-4`, where `etf.us` and
+       * `etf.equity.large.us` both opened with negative equity because both were endowed with it).
+       *
+       * C2's simultaneity needs more than one of them: with a single vehicle on a single line,
+       * "every tracker rebalances at once" is a market of one, and a firm crossing a size boundary
+       * is a rebalance nobody has to trade.
+       */
+      [
+        EQUITY_INDEX(REGION),
+        SIZE_INDEX(REGION, 'large'),
+        SIZE_INDEX(REGION, 'small'),
+        GLOBAL_INDEX(USD),
+      ],
     ),
   };
 }

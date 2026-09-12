@@ -650,6 +650,168 @@ function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
  * because the difference is worth more than what the trade costs them (E3.a), and what happens when
  * nobody will is that the gap stays and this read says so (E4).
  */
+/**
+ * M9, Indices C2, Fund Shares E1, E3, E3.a: A VEHICLE IS LAUNCHED THE PERIOD ITS INDEX FIRST
+ * ANSWERS, and what puts the basket in is the participants delivering it.
+ *
+ * A tracker on a size segment holds whatever that segment's rule says is in it, and the rule reads
+ * its constituents' own prints (Indices A3) — which at period zero do not exist. So the seed cannot
+ * launch one: it would be handing the fund a basket nobody could have said was right, and three
+ * vehicles each endowed with their share of the same float is a market owned three times (measured:
+ * `etf.us` and `etf.equity.large.us` both opened with NEGATIVE equity, `12d-4`). What can launch one
+ * is the period the index first HAS a level.
+ *
+ * E3.a: AND THE FLOAT CANNOT BE OWNED TWICE, because nothing here is endowed. A launch is the
+ * authorised participants handing in a basket they actually hold and taking the shares it is worth
+ * — ordinary instructions, over the wire, refused if they do not hold it. So a second tracker's
+ * basket comes out of somebody's book and not out of thin air, which is what the seed could not
+ * promise and this does not have to.
+ *
+ * A world where nobody can deliver the basket launches nothing, and says so. That is a real answer:
+ * a tracker needs somebody to put the market in, and until a party holds the market there is
+ * nobody to do it.
+ */
+function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
+  const fund = e.fund as PartyId;
+  if (ctx.parties.has(fund)) return;
+  // Indices D5.a: before its own rule has answered there is no index, and a tracker on one is a
+  // mandate with nothing in it.
+  if (!ctx.index(e.tracks).some) return;
+  const bank = e.bank as PartyId;
+  if (!ctx.parties.has(bank) || !ctx.parties.get(bank).status.alive) return;
+  /**
+   * E3, A3: NOTHING IS OPENED UNTIL SOMEBODY CAN PUT THE BASKET IN. How big the launch would be is
+   * read off what the participants actually hold, BEFORE there is a fund — and a world where none
+   * of them can deliver it launches nothing at all rather than a share line with no shares behind
+   * it, a market nobody can trade in and a venue nobody can create at. A fund's equity is zero by
+   * construction (A3); an empty shell is not a fund with nothing in it, it is not a fund.
+   */
+  const size = launchSize(ctx, e);
+  if (size <= 0) return;
+  const region = ctx.registry.region(ctx.parties.get(bank).region);
+  const manager = e.manager as PartyId;
+  for (const [id, kind, name] of [
+    [manager, FUND_MANAGER, e.managerName],
+    [fund, FUND, e.name],
+  ] as const) {
+    if (ctx.parties.has(id)) continue;
+    ctx.enter({
+      id,
+      kind,
+      region: region.id,
+      name,
+      bank,
+      representation: 'named',
+      status: { alive: true },
+    });
+  }
+  const share = shareLineOf(e.fund);
+  const market = etfMarketOf(e.fund);
+  const terms: FundShareTerms = { kind: FUND_SHARE, fund };
+  ctx.issue({
+    id: share,
+    kind: FUND_SHARE,
+    issuer: some(fund),
+    ccy: region.ccy,
+    terms,
+    // E1: its shares TRADE, which is what makes it an exchange-traded fund — the same claim on the
+    // same kind of book as any other fund's, with a session in it as well (E2).
+    market: some(market),
+  });
+  ctx.openMarket({
+    id: market,
+    name: `${e.name} shares`,
+    instrument: share,
+    ccy: region.ccy,
+    rationing: 'proRata',
+  });
+  // G1.a: where it is created and redeemed IN KIND — not a market and it does not clear, so the
+  // module that owns it runs it itself (Clearing B2).
+  ctx.openVenue({
+    id: etfVenue(e.fund),
+    name: `${e.name} creations and redemptions`,
+    clearedBy: 'funds',
+    unit: SHARES,
+    ccy: region.ccy,
+    key: { kind: 'etf', fund: e.fund, share },
+  });
+  const launched = firstCreation(ctx, e, share, size);
+  ctx.record(
+    'etf.launched',
+    [e.fund, e.tracks, String(share)],
+    { fund: e.fund, tracks: e.tracks, shares: launched },
+    true,
+  );
+}
+
+/**
+ * E3.a: HOW BIG A LAUNCH WOULD BE — the smallest of what each launching party's own slice reaches,
+ * out of what it actually holds. It is asked before anything is opened, so a launch nobody can
+ * back does not leave a fund behind it.
+ *
+ * Law 6: the smallest of them is how far all of them reach. It is arithmetic on what parties hold,
+ * not a size anybody chose, and the proportions are what makes them the holders they said they
+ * would be.
+ */
+function launchSize(ctx: MechanismContext, e: EtfDecl): number {
+  let full: number | undefined;
+  for (const [holder, slice] of launchers(ctx, e)) {
+    const reaches = div(couldCreate(ctx, e, holder), slice, 'the launch its slice reaches');
+    if (full === undefined || reaches < full) full = reaches;
+  }
+  if (full === undefined) return 0;
+  return full;
+}
+
+/** Seed A3, E3.a: who is putting the basket in, of those this world actually has. */
+function launchers(ctx: MechanismContext, e: EtfDecl): readonly (readonly [PartyId, number])[] {
+  const out: (readonly [PartyId, number])[] = [];
+  for (const [holder, slice] of Object.entries(e.launchedBy)) {
+    if (slice > 0 && ctx.parties.has(holder as PartyId)) out.push([holder as PartyId, slice]);
+  }
+  return out;
+}
+
+/**
+ * E3, E3.a: THE FIRST CREATION, and it is the ordinary one. Each launching party hands in the
+ * basket and takes the shares it is worth, in its declared share of the launch — and how big the
+ * launch is, is read off whoever can deliver LEAST of it, because the proportions are what makes
+ * them the holders they said they would be. Nothing is endowed and nothing is bounded: a party that
+ * cannot deliver its slice launches a smaller fund, and a world where none of them can launches
+ * none.
+ */
+function firstCreation(
+  ctx: MechanismContext,
+  e: EtfDecl,
+  share: InstrumentId,
+  full: number,
+): number {
+  let made = 0;
+  for (const [holder, slice] of launchers(ctx, e)) {
+    const wanted = downTick(mul(full, slice, "this holder's slice of the launch"));
+    if (wanted <= 0) continue;
+    if (create(ctx, e, share, holder, wanted)) made = add(made, wanted, 'shares created');
+  }
+  return made;
+}
+
+/** E3: the most shares this party could create out of what it actually holds, line by line. */
+function couldCreate(ctx: MechanismContext, e: EtfDecl, party: PartyId): number {
+  const weight = weightOf(ctx.parties.get(party));
+  let most: number | undefined;
+  for (const [line, perShare] of Object.entries(e.basket)) {
+    const id = instrumentId(line);
+    if (!ctx.instruments.has(id) || perShare <= 0) continue;
+    const free = mul(ctx.register.free(party, id), weight, 'what it holds free of this line');
+    const backs = downTick(div(free, perShare, 'shares this line of its basket backs'));
+    if (most === undefined || backs < most) most = backs;
+  }
+  // A basket naming no line this world has is not a basket, and nothing backs a share of it. That
+  // is a COUNT of shares it could create and not a missing number (Appendix A).
+  if (most === undefined) return 0;
+  return most;
+}
+
 function runEtf(ctx: MechanismContext, d: EtfDecl): void {
   const fund = d.fund as PartyId;
   if (!ctx.parties.get(fund).status.alive) return;
@@ -1256,7 +1418,10 @@ export function funds(
         // revaluation that closes it carries the claim at what the book then comes to (A3).
         anchor: { after: 'funds.strike' },
         run: (ctx: MechanismContext) => {
-          for (const d of etfs) runEtf(ctx, d);
+          for (const d of etfs) launchTracker(ctx, d);
+          // E3.a: a vehicle whose index has not answered yet has not been launched, and there is
+          // nothing of it to run. It is not absent — it is declared and waiting for its own rule.
+          for (const d of etfs) if (ctx.parties.has(d.fund as PartyId)) runEtf(ctx, d);
         },
       },
       {
@@ -1267,7 +1432,7 @@ export function funds(
         // premium is a read of that NAV against what the session printed (Clearing F1.a).
         anchor: { after: 'revaluation' },
         run: (ctx: MechanismContext) => {
-          for (const d of etfs) readEtf(ctx, d);
+          for (const d of etfs) if (ctx.parties.has(d.fund as PartyId)) readEtf(ctx, d);
         },
       },
     ],
@@ -1334,7 +1499,8 @@ export function funds(
         // household takes, at the unit its shares are counted in (FUND_PARAMS.openingShare).
         ctx.openVenue(venue);
       }
-      for (const e of etfs) seedEtf(ctx, e);
+      // E3.a: only the vehicle whose index the seed can see; the rest are a phase's.
+      for (const e of etfs) if (e.seeded) seedEtf(ctx, e);
     },
   };
 }

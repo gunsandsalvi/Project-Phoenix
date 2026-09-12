@@ -9,7 +9,6 @@
  * what the mandate allows and nothing else. That is what makes a fund a transmission channel.
  */
 import { paramId, type ParamId } from '../../core/ids.js';
-import { div } from '../../core/num.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
 
@@ -68,11 +67,15 @@ export interface EtfDecl {
    */
   readonly basket: Readonly<Record<string, number>>;
   /**
-   * E3.a, Seed A3: THE SHARE OF EACH LINE'S FLOAT THIS VEHICLE IS LAUNCHED WITH.
+   * E3.a, Seed A3: THE SHARE OF EACH LINE'S FLOAT THIS VEHICLE IS LAUNCHED WITH — and only the
+   * SEEDED vehicle is launched out of the float at all.
    *
-   * Index funds hold a share of the market between them, and that share does not double because
-   * somebody launched a second fund — it is divided among the funds there are. A world whose three
-   * trackers each took the whole of it would be a world whose listed lines were owned twice.
+   * It used to be divided among the trackers, because a world whose three trackers were each
+   * endowed with the whole of it would be a world whose listed lines were owned twice. They are no
+   * longer endowed: one is seeded and the rest are launched by a phase, in kind, out of what the
+   * participants actually hold (`launchTracker`). A transfer cannot own a float twice, so there is
+   * nothing left to divide — and dividing it anyway made the one vehicle the seed DOES launch four
+   * times smaller than the market it is supposed to be a tracker of.
    */
   readonly launchShare: number;
   /**
@@ -98,6 +101,8 @@ export interface EtfDecl {
    * the basket names, which only the seed can see (`ETF_LAUNCH_SHARE`).
    */
   readonly launchedBy: Readonly<Record<string, number>>;
+  /** E3.a: whether the SEED launches it, or the phase does when its index first answers. */
+  readonly seeded: boolean;
   /**
    * Law 15, Part XIII: the modules whose parties and lines this launch NAMES. It is data about
    * this world's fund rather than about funds, so the module reads its dependencies off it instead
@@ -201,7 +206,17 @@ export function drawEtfs(
    */
   return tracks.map((index, n) => ({
     fund: n === 0 ? 'etf.us' : `etf.${index}`,
-    launchShare: div(ETF_LAUNCH_SHARE, tracks.length, 'the float the trackers hold between them'),
+    /**
+     * Fund Shares E3.a, Indices A3, D5.a: WHICH VEHICLE THE SEED CAN LAUNCH, and it is the one
+     * whose index answers at period zero. A tracker on a size segment holds whatever that segment's
+     * rule says is in it, and the rule reads its constituents' own prints — so a seed that launched
+     * one would be handing it a basket nobody could have said was right, and two vehicles each
+     * endowed with their share of the same float is a market owned twice (`12d-4`). The rest are
+     * launched by a phase the period their own index first HAS a level, in kind, out of what the
+     * participants actually hold — which is a transfer and cannot own a float twice.
+     */
+    seeded: n === 0,
+    launchShare: ETF_LAUNCH_SHARE,
     name: `${index} tracker`,
     manager,
     managerName: 'American Index Managers',

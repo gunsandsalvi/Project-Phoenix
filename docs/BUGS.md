@@ -198,3 +198,34 @@ short a line it has not borrowed (Register C4).
 
 `opening-liquidity.test.ts` is green: every desk opens inside its own limit. `dealing.test.ts` and
 `lines.test.ts` green (19 tests).
+
+---
+
+## 13b-6 — The trackers on the size segments launch nothing, because nobody can assemble the basket
+
+**Measured.** `rigWorld('etf')`, four periods, after building the launch phase (13b, "a VEHICLE per
+index"). The three declared vehicles — `etf.equity.large.us`, `etf.equity.small.us`,
+`etf.equity.global.USD` — each reach their index's first level and each compute a launch size of
+**zero**, so none of them opens.
+
+**Why, and it is not the phase.** A launch is the authorised participants handing in the basket and
+taking the shares it is worth (E3) — a real transfer, which is the whole reason a second tracker
+cannot own a float the first one already owns. The participants are the sponsor and the banks whose
+dealing lines make the fund's market, and **none of them holds the listed lines**: item 11.5 moved
+the equity float onto the household cells that save, precisely because a dealer's inventory is a
+position it takes by trading and seeding it was seeding an outcome. So the parties who would launch
+a tracker hold none of what a tracker holds.
+
+**What is right about this.** The phase refuses to open a shell: no party, no share line, no market,
+no venue, until somebody can actually back it. A fund's equity is zero by construction (A3), and a
+share line with no shares behind it is not a fund with nothing in it — it is not a fund. Verified:
+with the shells suppressed, `etf.test.ts`, `funds.test.ts` and `indices.test.ts` are bit-identical
+to the baseline (3 failed, 14 passed, the pre-existing `13b-3` family).
+
+**What is missing is a party that can assemble a basket.** Buying one is a portfolio decision — what
+a party holds, in what, and why — and that is **13h**'s (insurers, pensions, hedge funds), which is
+where a party whose business is holding the market first exists. Until then Indices C2's
+simultaneity is exercised by one tracker, which is a market of one.
+
+**Positioned to 13h.** The launch mechanism stays where it is and needs nothing further: the day a
+party holds the market, the phase launches the vehicle the period its index answers.
