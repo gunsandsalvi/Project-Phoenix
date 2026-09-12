@@ -55,9 +55,9 @@ free at an origin.
 
 **This item resumes at step 9** against a world with several producing places, voyages that are
 somewhere, and legs of different lengths. Steps 11–13 (the `commodity.future` kind, its participants
-and the curve) need nothing from it and are unchanged. **13c.2 — where a firm builds — comes after
-this item**, because it moves production between places and the steps below measure prices, so each
-measurement stays about one thing (Law 14).
+and the curve) need nothing from it and are unchanged. **Where a firm builds is folded into 13g**, with the rest of what a management decides — build or
+buy, which lines to be in, margin against share. It is the same comparison reaching three markets,
+and splitting it across two items would have split one decision.
 
 ## Design
 

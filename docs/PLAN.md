@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 68.9%** (467 of 678 steps across 44 items).
+**Plan completion: 68.9%** (467 of 678 steps across 43 items).
 **Requirement coverage: 55.5%** (756 MET, 88 PARTIAL, 0 OUT OF SCOPE of 1362 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -52,11 +52,10 @@ The plan has two parts:
 | 13b.1 — The checks that do not check | 17 | 17 | closed |
 | [13c — Commodities and freight](plan/13c-commodities-freight.md) | 16 | 8 | in progress |
 | 13c.1 — The map, and the things that move on it | 17 | 17 | closed |
-| [13c.2 — Where a firm builds](plan/13c.2-where-a-firm-builds.md) | 9 | 0 | open |
 | [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 26 | 0 | open |
 | [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 20 | 0 | open |
 | [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 33 | 0 | open |
-| [13g — Corporate control and firm birth](plan/13g-mna-birth.md) | 15 | 0 | open |
+| [13g — Corporate development: where a firm builds, what it buys, and what it is in](plan/13g-mna-birth.md) | 24 | 0 | open |
 | [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 30 | 0 | open |
 | [13i — Cross-border](plan/13i-cross-border.md) | 18 | 0 | open |
 | [14 — The polity](plan/14-polity.md) | 14 | 0 | open |

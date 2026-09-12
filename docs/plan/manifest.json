@@ -198,12 +198,6 @@
     "steps": 17
   },
   {
-    "id": "13c.2",
-    "title": "Where a firm builds",
-    "file": "13c.2-where-a-firm-builds.md",
-    "steps": 9
-  },
-  {
     "id": "13d",
     "title": "Labour mobility, housing, household life cycle",
     "file": "13d-labour-housing-lifecycle.md",
@@ -223,9 +217,9 @@
   },
   {
     "id": "13g",
-    "title": "Corporate control and firm birth",
+    "title": "Corporate development: where a firm builds, what it buys, and what it is in",
     "file": "13g-mna-birth.md",
-    "steps": 15
+    "steps": 24
   },
   {
     "id": "13h",

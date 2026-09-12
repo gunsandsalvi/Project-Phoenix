@@ -1,6 +1,20 @@
-# Item 13g — Corporate control and firm birth
+# Item 13g — Corporate development: where a firm builds, what it buys, and what it is in
 
-**Objective.** The market for control: an acquirer with its own valuation bids for a target's shares
+**Objective.** WHAT A MANAGEMENT ACTUALLY DECIDES, which is one family and not three: where to put
+new plant, whether to build it or buy somebody who already has it, which lines to be in at all, and
+whether to take the margin or the share. They belong together because they are the same comparison —
+what a unit of capacity is worth against what it costs to get — reaching three different markets:
+the plant market, the market for control, and the decision to open or close a line.
+
+Siting comes in from 13c.1, which drew the ground: `mechanisms/firms/invest.ts`'s `project()`
+already takes every place-specific term as an argument and was called once only because there was
+one place. Evaluating it at every place a firm can operate IS the siting decision; comparing its
+answer against the price of a going concern IS build-versus-buy; and a line whose best project earns
+less than the hurdle anywhere is a line to leave. Margin against share is the same number seen from
+the other end: a firm that prices to fill its plant takes share and gives up margin, and which it
+does is an outcome of its own cost and its own hurdle, never a strategy anybody declared.
+
+The market for control: an acquirer with its own valuation bids for a target's shares
 in a tender that the target's dispersed owners accept or refuse each from their own valuation, so
 the premium clears; funding by cash (a loan or bond the credit market decides) or shares (dilution);
 competing bidders; management resistance; on completion the two balance sheets combine in the
@@ -10,7 +24,7 @@ its lenders put up. Firm birth: entry as a founder cell's decision from sector m
 can fund, with a new identity, a balance sheet that balances, plant bought from a producer, and an
 age that the things that price it read. Placed before 13h because a buyout bids through this market.
 
-**Read first.** §35 M&A (all); §34 Firm Birth A, B2, E3, E4; Equity F3 (votes), C1.b (free float),
+**Read first.** §29 Capital Programme B1, B1.a–B1.d, C1, C2 and `mechanisms/firms/invest.ts` (the decision siting widens); Firm A2, A3; §39 Cross-Border B1 and **M6** (the group and consolidation); §35 M&A (all); §34 Firm Birth A, B2, E3, E4; Equity F3 (votes), C1.b (free float),
 D1 (issuance for consideration); Indices B2 (constituent changes); Labour C4; XI-15 (a founder cell
 splits); Part XII (a firm trading cheap attracts bids). Code: item 9's `equity` and votes read,
 item 7's estate and `reseat`, item 10's investment decision, item 12's ratings and indices, 13d's
@@ -200,6 +214,105 @@ freight capacity does not reallocate and a busy leg stays dear longer than it sh
 It lands HERE because it is the same door a firm needs to sell a working vintage to somebody in
 another place, which this item already owns: ballast and second-hand plant are one mechanism.
 
+---
+
+# Where a firm builds, and whether to build at all (folded in from 13c.2)
+
+## The decision
+
+### What is place-specific, and what is not
+
+| | place-specific | why |
+| --- | --- | --- |
+| `offers` (what a unit of plant costs) | **yes** | the plant market is per region, and plant bought elsewhere must be shipped in |
+| the wage inside `contributionPerUnit` | **yes** | one labour venue per (region, occupation), each clearing its own |
+| the ground inside the yield | **yes** | 13c.1's `groundFor` |
+| input costs inside `contributionPerUnit` | **yes** | the input's price where it is made, plus freight to here |
+| what the output fetches | **yes** | the price where it is sold, less freight from here to there |
+| `hurdle`, `horizonPeriods`, `cost`, `spendable` | no | a management's patience and a firm's cost of capital are the firm's, not the place's |
+| `gap`, `capacityNext`, `surpriseWidth` | no | they are about this firm's own demand and its own plant, wherever they stand |
+
+So the loop is: for each candidate place, build the place-specific arguments and call `project()`.
+Take the project with the **highest return over what it requires** — a comparison of two numbers the
+function already returns, never a weighting of factors.
+
+### The delivered margin
+
+A project at place P for a firm whose buyers are at H earns the price at **H**, less the freight from
+P to H, less what it costs to make at P (ground, wage, inputs delivered to P). Every term is a print
+or a read that 13c.1 supplies. **Nothing is estimated and nothing is discounted by a distance
+factor**: the freight is what the session charged on that route, and if the route has never cleared
+there is no freight print, so the place is not a candidate — which is a real answer, not a gap to
+fill (Missing is Missing).
+
+### Where a firm may look
+
+A place is a candidate when the firm can actually operate there, and every condition is a read that
+answers `Missing` when it cannot:
+
+- a labour venue for the occupations the recipe needs, with a wage that has cleared;
+- a plant market with an offer for every kind the recipe needs (`project()` already returns `none`
+  otherwise);
+- a route from P to where it sells, with a freight print;
+- for a foreign place, an account in that country's money and a rate to convert the comparison at.
+
+**A place with no wage is not rejected — it is not a candidate**, because the firm has nothing to
+compute with. As the world fills in, the choice set widens by itself. No stub, no default, no
+special case.
+
+### Across a border: a branch now, the group at 13i
+
+A firm building in another country holds foreign plant, hires at a foreign venue, sells in foreign
+money and funds itself at home. Every mechanism that needs exists after 12's currency layer and
+13c.1's places — so what it builds is a **branch**: foreign plant owned directly, on the firm's own
+balance sheet, with a real FX trade against a named counterparty for every foreign payment and no
+netting across them.
+
+**What it is not, and this is named rather than skipped**: a **subsidiary** — a separate legal party
+with its own balance sheet, its own creditors and its own failure — and **consolidation as a read**.
+That is M6, already positioned at 13i, and the COVERAGE row says so. Comparing a foreign project
+against a domestic one converts at a **cleared FX print** (never a parity formula), and the record
+states that a comparison at a rate is a read while a commitment at a rate is a trade with a
+counterparty.
+
+### The literal dies
+
+`TechnologyDecl.terms.region` was a bare literal — a SHAPE with no scheduled death. 13c.1 gave it a
+reason (the seed draws a line onto ground that suits it). **This item is its death**: where a line
+is becomes an outcome of a decision, and the seed's placement becomes an opening position like every
+other endowment rather than permanent structure.
+
+### What this item does NOT do
+
+- **It does not close a plant.** Exit is a firm deciding a line is not worth running, which is
+  XI-3/Firm D's territory and reachable only once a place can be unprofitable for long enough to
+  matter. Named to 13g with firm birth, where entry and exit belong together.
+- **It does not move existing plant.** Plant is built where it is built; a firm that wants capacity
+  elsewhere builds it elsewhere. Relocating a working vintage is a sale to somebody who wants it
+  there, which needs a second-hand market across places — named to 13g.
+
+---
+
+---
+
+
+## Carried in from 13c.1 — good ground stopped the capital programme binding
+
+`test/capital.test.ts` went 12 green to 11 red when the ground reached the yield, and every failure
+is the same shape: `capital.commissioned` is empty where the test expects one. Measured on
+`ranWorld('cap-c', 4)`: plant standing on 4,894 km2 of `us.1`, whose arable walk gives
+`groundFor(..., 4894) = 1.3986`, so survival is `pow(0.92, 1 / (season x 1.3986))` — about 0.942
+against 0.920 — and the same plant and the same hours bring in more tonnes.
+
+Not a defect but a consequence: the world got more productive, so plant stopped binding in a fixture
+built to make it bind. It lands HERE because this item rewrites the decision those tests are about —
+`project()` is evaluated at every place a firm could operate — so `tightWorld` is rebuilt in the same
+change and re-tightened then. Ruled out already: the piece-to-named-unit conversion (fixed at the
+site) and the ground read itself (1.649 on the best tile of `us.1`, 0.109 on the single tile of
+`jp.2`, which is the dispersion the draw made).
+
+
+
 ## Steps
 
 - [ ] **From item 11 (Banks Capital A3, C2.a, B3)**: a bank raises EQUITY, and breaching its buffer restricts what it distributes. Item 11 built the subordinated layer and the raise that can fail (C2.b), but a bank here has no share line and no owners: who owns a bank at the seed is what Seed E1/E2 refuse to invent, and a party comes to own one by funding its entry — which is this item. Test: an issue dilutes the holders there are, a failed one leaves the bank where it was, and a bank below its own line pays nothing out
@@ -217,6 +330,15 @@ another place, which this item already owns: ballast and second-hand plant are o
 - [ ] A name that has gone is gone everywhere (`12c-1`, `12b-6`): a ceased issuer's line stops trading and its market closes with the claim extinguished at the estate, and the desks that covered it drop coverage; the names family holds over both; tests (XI-8, §48 D3, Reporting C2)
 - [ ] Productivity that improves with cumulative output: TECHNOLOGY keyed to the units a firm has actually made, read off the journal's own production legs, landing in unit cost and therefore in the offer, the wage bid and the margin; an entrant can out-learn an incumbent and the crossing is an outcome; tests: no written path, no stored cumulative aggregate (Firm A3, Firm Birth A4, A5, Goods B5, Law 2)
 - [ ] Observer: bids, tenders, premiums, completed deals, births, cumulative output and unit cost per firm; year-long run green; determinism; coverage re-marked; Equity E1–E3 closed; record entry
+- [ ] **A project has a place.** `Project` gains the place it would stand in; `project()` takes its
+- [ ] **The candidate set is what the firm can read.** A place is a candidate when it has a cleared
+- [ ] **The delivered margin.** `contributionPerUnit` at P is the price where it sells less the
+- [ ] **The choice.** The best project by return over what it requires, and it is a comparison of two
+- [ ] **The plant is bought where it is made and shipped to where it will stand.** The order lands on
+- [ ] **Across a border, as a branch.** A foreign project pays in that country's money through real
+- [ ] **The literal dies.** `TechnologyDecl.terms.region` becomes an opening position rather than
+- [ ] **Measure.** A year-long run; everything it reports goes in `docs/BUGS.md` before anything is
+- [ ] **The documents.** `ARCHITECTURE.md` on the project's place; `COVERAGE.md` — Capital Programme
 - [ ] Delete this file; worklist row 13g → done; commit and push
 
 ## Exit criteria
