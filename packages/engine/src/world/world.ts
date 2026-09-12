@@ -65,6 +65,7 @@ import { Valuation } from '../prices/value.js';
 import { Instruments } from '../register/instruments.js';
 import { Register, type RegisterReads, registerReads } from '../register/register.js';
 import { Contracts } from '../register/contracts.js';
+import { Voyages } from '../register/voyages.js';
 import {
   carryingOfContract,
   contractValueTo,
@@ -84,6 +85,7 @@ import type {
   Outlook,
   OutlookVariable,
   ParticipantView,
+  VoyagesRead,
 } from './context.js';
 import type { DerivativeClassDecl } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
@@ -157,6 +159,8 @@ export class World {
    * it has no issuer and no issued amount, and what it enters is the zero-sum identity (D1.b).
    */
   private readonly contractStore: Contracts;
+  /** 13c.1, Freight A3: where what is on its way has got to. */
+  private readonly voyageStore = new Voyages();
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -273,6 +277,7 @@ export class World {
       journal: this.journal,
       creditDecision: (kind) => (o) => this.creditDecisionOf(kind)(o),
       contracts: this.contractStore,
+      voyages: this.voyageStore,
       contractCarrying: (c, at) => carryingOfContract(c, at, this.contractValueDeps()),
       derivativeKind: (kind) => this.registry.derivativeKind(kind),
       underlyingExists: (u) => this.missingUnderlying(u),
@@ -618,6 +623,20 @@ export class World {
    * store with its `open`, `close` and `novate` reaches settlement and nothing else, the same way
    * the register's writes do.
    */
+  /**
+   * The voyage store as everything outside settlement sees it: every read, no writer (Law 4). Its
+   * `open`, `advance`, `lose` and `land` reach settlement and nothing else.
+   */
+  get voyages(): VoyagesRead {
+    return {
+      get: (id) => this.voyageStore.get(id),
+      has: (id) => this.voyageStore.has(id),
+      of: (party) => this.voyageStore.of(party),
+      underWay: () => this.voyageStore.underWay(),
+      all: () => this.voyageStore.all(),
+    };
+  }
+
   get contracts(): ContractsRead {
     return {
       has: (id) => this.contractStore.has(id),
@@ -1212,6 +1231,7 @@ export class World {
       valuation: this.valuation,
       journal: this.journal,
       contracts: this.contracts,
+      voyages: this.voyages,
       curve: (family) => this.curve(family),
       index: (id) => this.index(id),
       sovereignCurveIn: (ccy) => this.sovereignCurveIn(ccy),
@@ -1267,6 +1287,7 @@ export class World {
         },
       },
       contracts: this.contracts,
+      voyages: this.voyages,
       rng: this.root.derive(`module/${owner}/${this.currentPeriod}`),
       state: <T extends object>(name: string, initial: () => T): T => this.slot(owner, name, initial),
       participant: (party) => this.participantView(party),
@@ -1443,6 +1464,7 @@ export class World {
       instruments: this.instruments,
       register: this.register,
       contracts: this.contracts,
+      voyages: this.voyages,
       prices: this.prices,
       valuation: this.valuation,
       ledger: this.ledger,

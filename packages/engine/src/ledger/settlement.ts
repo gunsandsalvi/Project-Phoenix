@@ -66,10 +66,12 @@ import type {
   ReleaseLeg,
   ReserveLeg,
   SettlementRecord,
+  VoyageLeg,
 } from './instruction.js';
 import { subjectsOf } from './instruction.js';
 import type { Ledger } from './ledger.js';
 import type { Contracts } from '../register/contracts.js';
+import type { Voyages } from '../register/voyages.js';
 import type { Contract, DerivativeKindProfile, Underlying } from '../registry/derivatives.js';
 
 export interface SettlementDeps {
@@ -94,6 +96,8 @@ export interface SettlementDeps {
    * change of state and goes over the wire (Money D1, D4).
    */
   readonly contracts: Contracts;
+  /** 13c.1: where what is on its way has got to (Freight A3). */
+  readonly voyages: Voyages;
   contractCarrying(c: Contract, at: Period): number;
   derivativeKind(kind: DerivativeKindId): DerivativeKindProfile;
   /**
@@ -181,6 +185,11 @@ type Op =
       readonly op: 'tearUpContract';
       readonly contract: ContractId;
       readonly why: string;
+    }
+  /** Freight A1, A3: a journey opens, gets on, loses something or arrives. */
+  | {
+      readonly op: 'voyage';
+      readonly leg: VoyageLeg;
     }
   /** Derivative Layer B4: the obligation leaves one balance sheet and lands on another. */
   | {
@@ -281,10 +290,41 @@ export class Settlement {
         case 'contract':
           this.validateContract(leg, ins);
           break;
+        case 'voyage':
+          this.validateVoyage(leg);
+          break;
         default:
           assertNever(leg, 'Leg');
       }
     }
+  }
+
+  /**
+   * Freight A1, E1: what a voyage leg has to be true about before anything is applied. The rest —
+   * that a voyage exists, that it has not already landed, that it does not lose more than it is
+   * carrying — the store itself refuses at its own door.
+   */
+  /** Law 19: which plant a voyage bound is read off the lien it holds, never restated on the row. */
+  private hullsOf(row: { readonly carrier: PartyId; readonly hulls: LienId }): InstrumentId {
+    for (const holding of this.d.register.holdingsOf(row.carrier)) {
+      if (holding.liens.some((l) => l.id === row.hulls)) return holding.instrument;
+    }
+    throw new Missing('Freight E2', `voyage lien ${row.hulls} binds nothing`);
+  }
+
+  private validateVoyage(leg: VoyageLeg): void {
+    if (leg.act !== 'sail') return;
+    impossible(
+      finite(leg.km, 'the distance of a voyage') > 0,
+      'Freight E1',
+      'no instantaneous transport: a voyage covers a real distance',
+    );
+    impossible(leg.tiles.length > 0, 'Freight A1', 'a voyage has a path over real ground');
+    impossible(
+      leg.hulls > 0,
+      'Freight E2',
+      'no shipment without capacity: a voyage commits hulls somebody owns',
+    );
   }
 
   private validateMoney(leg: MoneyLeg, ins: Instruction): void {
@@ -667,6 +707,9 @@ export class Settlement {
             instrument: leg.instrument,
             lien: leg.lien,
           });
+          break;
+        case 'voyage':
+          ops.push({ op: 'voyage', leg });
           break;
         case 'contract':
           ops.push(
@@ -1187,6 +1230,48 @@ export class Settlement {
           written.push(row.id);
           bumpIn(leg.a, leg.value, leg.ccy);
           bumpIn(leg.b, -leg.value, leg.ccy);
+          break;
+        }
+        case 'voyage': {
+          // Freight A3: a journey opening, getting on, losing something or arriving. NOTHING HERE
+          // MOVES VALUE — the cargo leaving, the freight being paid and what a storm destroyed are
+          // ordinary legs of the same instruction, drafted beside this one. What this writes is
+          // WHERE the thing is, which is a fact the register has no room for (Law 4).
+          const leg = op.leg;
+          if (leg.act === 'sail') {
+            // E2: the hulls are bound where they stand. The register already refuses to move
+            // encumbered units, so this IS "a hull cannot be in two trades at once" (Law 12).
+            const lien = this.d.register.pledge(
+              leg.carrier,
+              leg.hullInstrument,
+              leg.hulls,
+              leg.shipper,
+              `voyage of ${leg.qty} ${leg.cargo}`,
+              ins.period,
+            );
+            this.d.voyages.open(
+              {
+                carrier: leg.carrier,
+                shipper: leg.shipper,
+                by: leg.by,
+                tiles: leg.tiles,
+                km: leg.km,
+                cargo: leg.cargo,
+                qty: leg.qty,
+                hulls: lien.id,
+                freight: leg.freight,
+              },
+              ins.period,
+            );
+          } else if (leg.act === 'advance') {
+            this.d.voyages.advance(leg.voyage, leg.km);
+          } else if (leg.act === 'lose') {
+            this.d.voyages.lose(leg.voyage, leg.units);
+          } else {
+            const row = this.d.voyages.get(leg.voyage);
+            this.d.voyages.land(leg.voyage);
+            this.d.register.release(row.carrier, this.hullsOf(row), row.hulls);
+          }
           break;
         }
         case 'novateContract': {

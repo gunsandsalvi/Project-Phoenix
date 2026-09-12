@@ -17,6 +17,8 @@ import type {
   InstrumentId,
   LienId,
   PartyId,
+  TileIndex,
+  VoyageId,
 } from '../core/ids.js';
 import type { Option } from '../core/option.js';
 import type { ContractTerms } from '../registry/derivatives.js';
@@ -215,6 +217,58 @@ export interface NovateContractLeg {
 
 export type ContractLeg = OpenContractLeg | CloseContractLeg | NovateContractLeg;
 
+/**
+ * Freight A1, A3, B2, E2: A JOURNEY OPENING, GETTING ON, LOSING SOMETHING OR ARRIVING.
+ *
+ * A voyage is a change of state on two books — the shipper's goods leave where they were and its
+ * working capital is tied up in them (A3.a), the carrier's hulls stop being available for anything
+ * else — so it goes over the wire like everything else. `sail` binds the hulls with a lien of its
+ * own, which is what makes "no capacity without a carrier that owns it" (E2) a thing the register
+ * enforces rather than a rule somebody remembers.
+ */
+export interface SailLeg {
+  readonly kind: 'voyage';
+  readonly act: 'sail';
+  readonly carrier: PartyId;
+  readonly shipper: PartyId;
+  /** The capital kind carrying it, and the plant of that kind this carrier is committing. */
+  readonly by: string;
+  readonly hullInstrument: InstrumentId;
+  readonly hulls: Qty;
+  /** Read off the map: the tiles it crosses and how far that is. */
+  readonly tiles: readonly TileIndex[];
+  readonly km: number;
+  readonly cargo: InstrumentId;
+  readonly qty: Qty;
+  /** D2: what the shipper agreed to pay, which is part of what the cargo lands costing. */
+  readonly freight: number;
+}
+
+/** D4: what a period let it do. Nothing moves between parties — a position is not a flow. */
+export interface ProgressLeg {
+  readonly kind: 'voyage';
+  readonly act: 'advance';
+  readonly voyage: VoyageId;
+  readonly km: number;
+}
+
+/** B4, E3: what a storm took, on its way. The units leave the shipper's book by the same instruction. */
+export interface LostAtSeaLeg {
+  readonly kind: 'voyage';
+  readonly act: 'lose';
+  readonly voyage: VoyageId;
+  readonly units: Qty;
+}
+
+/** A3, E3: it is there. The lien on the hulls releases and they are free where they now are. */
+export interface LandLeg {
+  readonly kind: 'voyage';
+  readonly act: 'land';
+  readonly voyage: VoyageId;
+}
+
+export type VoyageLeg = SailLeg | ProgressLeg | LostAtSeaLeg | LandLeg;
+
 export type Leg =
   | MoneyLeg
   | AssetLeg
@@ -223,13 +277,15 @@ export type Leg =
   | AssumeLeg
   | PledgeLeg
   | ReleaseLeg
-  | ContractLeg;
+  | ContractLeg
+  | VoyageLeg;
 
 /** Which side of the wire a leg is, for readers that must tell them apart (Law 15's dispatch). */
 export const isMoneyLeg = (leg: Leg): leg is MoneyLeg => leg.kind === 'money';
 export const isAssetLeg = (leg: Leg): leg is AssetLeg => leg.kind === 'asset';
 export const isCreateLeg = (leg: Leg): leg is CreateLeg => leg.kind === 'create';
 export const isDestroyLeg = (leg: Leg): leg is DestroyLeg => leg.kind === 'destroy';
+export const isVoyageLeg = (leg: Leg): leg is VoyageLeg => leg.kind === 'voyage';
 export const isAssumeLeg = (leg: Leg): leg is AssumeLeg => leg.kind === 'assume';
 export const isPledgeLeg = (leg: Leg): leg is PledgeLeg => leg.kind === 'pledge';
 export const isReleaseLeg = (leg: Leg): leg is ReleaseLeg => leg.kind === 'release';
@@ -394,6 +450,15 @@ export function subjectsOf(ins: Instruction): string[] {
           s.add(leg.from);
           s.add(leg.to);
         }
+      }
+    } else if (leg.kind === 'voyage') {
+      if (leg.act === 'sail') {
+        s.add(leg.carrier);
+        s.add(leg.shipper);
+        s.add(leg.cargo);
+        s.add(leg.hullInstrument);
+      } else {
+        s.add(String(leg.voyage));
       }
     } else {
       s.add(leg.party);

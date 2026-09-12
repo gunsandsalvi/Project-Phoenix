@@ -5,6 +5,7 @@
  * @spec Audit A1 Audit C4
  */
 import type { Calendar, Period } from '../calendar/calendar.js';
+import type { VoyagesRead } from '../world/context.js';
 import type { InstrumentId, PartyId } from '../core/ids.js';
 import { withinDust } from '../core/num.js';
 import type { Journal } from '../journal/journal.js';
@@ -25,6 +26,8 @@ export interface AuditView {
   readonly period: Period;
   readonly calendar: Calendar;
   readonly registry: Registry;
+  /** 13c.1, Freight A3, E3: what is on the water, so an audit can say every unit of it has an owner. */
+  readonly voyages: VoyagesRead;
   readonly params: Pick<ParamRegister, 'report' | 'all' | 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount'>;
   readonly parties: Pick<Parties, 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve' | 'cell'>;
   readonly instruments: Pick<Instruments, 'get' | 'has' | 'all' | 'issuedBy'>;

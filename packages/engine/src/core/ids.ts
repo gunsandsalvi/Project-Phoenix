@@ -40,6 +40,8 @@ export type CurveFamilyId = Brand<string, 'CurveFamilyId'>;
 export type InstructionId = Brand<number, 'InstructionId'>;
 export type LotId = Brand<number, 'LotId'>;
 export type LienId = Brand<number, 'LienId'>;
+/** 13c.1: a journey somebody's goods are on, with a carrier at one end and a shipper at the other. */
+export type VoyageId = Brand<number, 'VoyageId'>;
 export type EventId = Brand<number, 'EventId'>;
 /**
  * Derivative X1: a contract is NOT a holding, so it is not an instrument and does not get an

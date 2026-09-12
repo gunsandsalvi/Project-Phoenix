@@ -37,6 +37,18 @@ import type { IndexRead } from '../prices/index-read.js';
 import type { PriceStore, Print } from '../prices/price-store.js';
 import type { Valuation } from '../prices/value.js';
 import type { Holding, Register, RegisterReads } from '../register/register.js';
+import type { Voyage } from '../register/voyages.js';
+import type { PartyId as VoyagePartyId, VoyageId } from '../core/ids.js';
+
+/** Law 4: every read of the voyage store and no writer. The writes reach settlement and nothing else. */
+export interface VoyagesRead {
+  get(id: VoyageId): Voyage;
+  has(id: VoyageId): boolean;
+  of(party: VoyagePartyId): readonly Voyage[];
+  underWay(): readonly Voyage[];
+  all(): readonly Voyage[];
+}
+
 import type {
   Instrument,
   InstrumentDecl,
@@ -354,6 +366,8 @@ export interface WorldReads extends KernelReads {
   >;
   readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail'>;
   readonly contracts: ContractsRead;
+  /** 13c.1, Freight A3: what is on its way somewhere and where it has got to. */
+  readonly voyages: VoyagesRead;
   curve(family: CurveFamilyId): CurveRead;
   index(id: string): Option<IndexRead>;
   /**
@@ -395,6 +409,8 @@ export interface MechanismContext extends WorldReads {
    * no `open` door here and no way for a phase to write one without the wire.
    */
   readonly contracts: ContractsRead;
+  /** 13c.1, Freight A3: what is on its way somewhere and where it has got to. */
+  readonly voyages: VoyagesRead;
   /** A random stream that is this module's own, deterministic in (seed, module, period). */
   readonly rng: Prng;
   participant(party: PartyId): ParticipantView;
