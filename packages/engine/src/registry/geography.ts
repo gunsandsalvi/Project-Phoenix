@@ -108,9 +108,14 @@ export interface GeographyDecl {
   readonly deposit: ReadonlyMap<ResourceId, Float64Array>;
 }
 
-/** What a number on a terrain is worth, for the reads that weigh a tile's mix. */
+/**
+ * What a number on a terrain is worth, for the reads that weigh a tile's mix. The two are named
+ * apart because Law 8 says the dimension is part of the number: a speed read as a ratio is the
+ * defect 13b.1 found in the money market, and the register is where it is caught.
+ */
 export interface TerrainReads {
   ratio(id: ParamId): number;
+  kmPerDay(id: ParamId): number;
 }
 
 export const tileCount = (g: GeographyDecl): number => g.cols * g.rows;
@@ -187,7 +192,7 @@ export function daysAcross(
     const share = shareOf(g, x.id, t);
     if (share === 0) continue;
     if (!x.carries.includes(by)) return undefined;
-    terms.push(div(share * km, reads.ratio(x.kmPerDay), `days over ${x.id}`));
+    terms.push(div(share * km, reads.kmPerDay(x.kmPerDay), `days over ${x.id}`));
   }
   return sum(terms).value;
 }

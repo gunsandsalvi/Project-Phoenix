@@ -20,6 +20,17 @@
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
 import { toTickOf } from '../core/tick.js';
+import { drawMap, type MapSpec } from './map.js';
+import {
+  BANDS,
+  RESOURCES,
+  SYLLABLES,
+  TERRAINS,
+  WATER,
+  WORLD,
+  mapParams,
+} from './map-data.js';
+import { type TerrainReads, terrainId } from '../registry/geography.js';
 import { PIP, PIP_YEN } from '../registry/grid.js';
 import {
   addDays,
@@ -135,9 +146,21 @@ import type { SystemModule } from '../world/module.js';
 import type { World } from '../world/world.js';
 
 export const USD = currencyCode('USD');
-export const REGION = regionId('us');
+/**
+ * 13c.1: THE HOME COUNTRY'S FIRST PLACE. Regions are drawn now, named `<country>.<n>`, and a
+ * country's first is on its largest piece of land — so this is a stable name for somewhere real
+ * rather than a region anybody typed.
+ */
+export const REGION = regionId('us.1');
 /** 13c.1: the country the home region is in — one money, one central bank, one treasury. */
 export const HOME = countryId('us');
+/**
+ * RESOLUTION (13c.1): how many places each country is cut into, at least. It opens at one apiece so
+ * the map lands inert — every mechanism reads the ground and nothing about the world moves — and
+ * rises in its own step, where what it multiplies is the thing being measured (Law 2).
+ */
+const HOME_PLACES = 1;
+const ABROAD_PLACES = 1;
 
 
 export const CB = partyId('fed');
@@ -181,7 +204,7 @@ export interface AbroadDecl {
 export const ABROAD: readonly AbroadDecl[] = [
   {
     country: countryId('eu'),
-    region: regionId('eu'),
+    region: regionId('eu.1'),
     name: 'Europe',
     ccy: currencyCode('EUR'),
     quoteTick: PIP,
@@ -194,7 +217,7 @@ export const ABROAD: readonly AbroadDecl[] = [
   },
   {
     country: countryId('uk'),
-    region: regionId('uk'),
+    region: regionId('uk.1'),
     name: 'United Kingdom',
     ccy: currencyCode('GBP'),
     quoteTick: PIP,
@@ -207,7 +230,7 @@ export const ABROAD: readonly AbroadDecl[] = [
   },
   {
     country: countryId('jp'),
-    region: regionId('jp'),
+    region: regionId('jp.1'),
     name: 'Japan',
     ccy: currencyCode('JPY'),
     quoteTick: PIP_YEN,
@@ -1761,6 +1784,49 @@ export function foundationDraw(
   };
 }
 
+
+/**
+ * 13c.1: WHAT WORLD TO DRAW. The numbers are the map's own declared parameters, read back here
+ * because the ground has to exist before the registry that holds it does — so there is still one
+ * writer for each of them and no second copy (Law 4).
+ */
+function mapReads(): TerrainReads {
+  const values = new Map<string, number>(mapParams().map((p) => [String(p.id), p.value]));
+  const read = (id: ParamId, what: string): number => {
+    const v = values.get(String(id));
+    if (v === undefined) throw new Missing('XI-14', `${what} ${id} is not declared`);
+    return v;
+  };
+  return {
+    ratio: (id) => read(id, 'the ratio'),
+    kmPerDay: (id) => read(id, 'the speed over'),
+  };
+}
+
+function mapSpec(): MapSpec {
+  return {
+    worldWidthKm: WORLD.widthKm,
+    worldHeightKm: WORLD.heightKm,
+    tileKm: WORLD.tileKm,
+    subdivide: WORLD.subdivide,
+    oceanShare: WORLD.oceanShare,
+    channels: WORLD.channels,
+    reliefKm: WORLD.reliefKm,
+    landCells: WORLD.landCells,
+    octaves: WORLD.octaves,
+    seaAreas: WORLD.seaAreas,
+    water: WATER,
+    bands: BANDS.map((b) => ({ id: terrainId(b.id), share: b.share })),
+    countries: [
+      { id: HOME, name: 'United States', regions: HOME_PLACES },
+      ...ABROAD.map((c) => ({ id: c.country, name: c.name, regions: ABROAD_PLACES })),
+    ],
+    terrains: TERRAINS,
+    resources: RESOURCES,
+    syllables: SYLLABLES,
+  };
+}
+
 export function foundationSpec(
   seed: string,
   /**
@@ -1782,6 +1848,10 @@ export function foundationSpec(
     drew.banks.map((b) => b.bank),
     seed,
   );
+  // 13c.1: THE GROUND THIS WORLD STANDS ON, drawn from the same seed as everything else and read
+  // by the yield, the weather and every journey. Its own stream, so adding a terrain never
+  // reshuffles the banks (Seed A5).
+  const drawn = drawMap(mapSpec(), mapReads(), seed);
   return {
     seed,
     epoch: civil(2026, 1, 5),
@@ -1799,12 +1869,10 @@ export function foundationSpec(
         { id: HOME, name: 'United States', ccy: USD },
         ...ABROAD.map((c) => ({ id: c.country, name: c.name, ccy: c.ccy })),
       ],
-      // 13c.1: one region per country until the map draws more. A region is a PLACE and its money
-      // is its country's, so this list gains rows and the currency list does not.
-      regions: [
-        { id: REGION, name: 'United States', country: HOME },
-        ...ABROAD.map((c) => ({ id: c.region, name: c.name, country: c.country })),
-      ],
+      // 13c.1: THE PLACES ARE DRAWN. A region is where a thing is and its money is its country's,
+      // so this list grows with the map and the currency list does not.
+      regions: drawn.regions,
+      geography: drawn.geography,
       units: [
         // Money A2, Law 8: a USD is a hundred cents, like any real money, and the cent is the
         // smallest amount of it that exists. Every balance in this world is a whole number of them,
@@ -1836,6 +1904,8 @@ export function foundationSpec(
       curveFamilies: [],
     },
     params: [
+      // 13c.1: the ground, and every number that says what it is like (XI-14).
+      ...mapParams(),
       {
         id: KERNEL_PARAMS.periodDays,
         value: 7,

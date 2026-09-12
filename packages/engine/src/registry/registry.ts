@@ -24,6 +24,7 @@ import type {
   UnitId,
 } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
+import { type GeographyDecl, geographyFaults } from './geography.js';
 import type { DerivativeKindProfile } from './derivatives.js';
 import type { InstrumentKindProfile, LotFlow, PartyKindProfile } from './kinds.js';
 import type { Qty } from '../core/tick.js';
@@ -105,6 +106,8 @@ export interface RegistryData {
   readonly currencies: readonly CurrencyDecl[];
   readonly countries: readonly CountryDecl[];
   readonly regions: readonly RegionDecl[];
+  /** 13c.1: the ground every place stands on, drawn by the seed and written by nothing after. */
+  readonly geography: GeographyDecl;
   readonly units: readonly UnitDecl[];
   readonly cohorts: readonly CohortDecl[];
   readonly cellKey: readonly CellKeyDimension[];
@@ -131,6 +134,7 @@ export class Registry {
   readonly tickShift: number;
   readonly countries: ReadonlyMap<CountryId, CountryDecl>;
   readonly regions: ReadonlyMap<RegionId, RegionDecl>;
+  readonly geography: GeographyDecl;
   readonly units: ReadonlyMap<UnitId, UnitDecl>;
   readonly cohorts: readonly CohortDecl[];
   readonly cellKey: readonly CellKeyDimension[];
@@ -163,6 +167,7 @@ export class Registry {
     this.currencies = unique(data.currencies, (c) => c.code, 'currency');
     this.countries = unique(data.countries, (c) => c.id, 'country');
     this.regions = unique(data.regions, (r) => r.id, 'region');
+    this.geography = data.geography;
     this.units = unique(data.units, (u) => u.id, 'unit');
     this.cohorts = [...data.cohorts];
     this.cellKey = [...data.cellKey];
@@ -200,6 +205,12 @@ export class Registry {
       if (!this.units.has(unit)) {
         throw new InvalidRegistry('Appendix A', `currency ${c.code} has no unit ${unit} declared`);
       }
+    }
+    // 13c.1: a world whose geometry is broken cannot run, so the grid's own faults are refused
+    // here rather than reported by an audit later (CLAUDE.md, Error discipline).
+    const broken = geographyFaults(this.geography, new Set(this.regions.keys()));
+    if (broken.length > 0) {
+      throw new InvalidRegistry('Freight A1', `the map is not whole: ${broken.join('; ')}`);
     }
     // Law 8: a subdivision that is not a whole number of pieces is refused at assembly rather
     // than discovered later in a balance that will not add up.

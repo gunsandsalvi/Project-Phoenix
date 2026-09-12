@@ -656,6 +656,7 @@ describe('a cell is keyed on what the registry declares, and on nothing else (XI
       {
         currencies: [...r.currencies.values()],
         countries: [...r.countries.values()],
+        geography: r.geography,
         regions: [...r.regions.values()],
         units: [...r.units.values()],
         cohorts: r.cohorts,

@@ -174,8 +174,12 @@ describe('what a good is (Goods A)', () => {
     expect(market.instrument).toBe(STONE_ID);
     expect(market.ccy).toBe(USD);
     expect(market.rationing).toBe('proRata');
-    // Law 9: named as a market names it — what it is and where — never by its identifier.
-    expect(displayName(stone, w.parties, w.registry)).toBe('stone, United States');
+    // Law 9: named as a market names it — what it is and WHERE — never by its identifier. The
+    // place's name is DRAWN like everything else in this world (13c.1), so the test asks the
+    // registry what it is called rather than naming it.
+    expect(displayName(stone, w.parties, w.registry)).toBe(
+      `stone, ${w.registry.region(REGION).name}`,
+    );
   });
 
   it('is made from fixed physical quantities, declared in physical units (A2.a, A2.b)', () => {

@@ -71,8 +71,8 @@ export interface MapSpec {
   /** TECHNOLOGY: how much of the world is under water, and how broken up the land is. */
   readonly oceanShare: number;
   readonly channels: number;
-  /** TECHNOLOGY: metres from the deepest water to the highest ground. */
-  readonly reliefM: number;
+  /** TECHNOLOGY: kilometres from the deepest water to the highest ground. */
+  readonly reliefKm: number;
   /** TECHNOLOGY: how large the features of the land are — fewer cells is a coarser world. */
   readonly landCells: number;
   readonly octaves: number;
@@ -417,7 +417,7 @@ export function drawMap(spec: MapSpec, reads: TerrainReads, seed: string): Drawn
       layers.forEach((layer, k) => {
         put(layer, t, nth(tally, k, 'a tally') / perTile);
       });
-      put(elevation, t, (total / perTile - shore) * spec.reliefM);
+      put(elevation, t, (total / perTile - shore) * spec.reliefKm);
     }
   }
 

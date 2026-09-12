@@ -51,6 +51,13 @@ export type Dimension =
   | 'ratio'
   /** A rate per year. */
   | 'perAnnum'
+  /**
+   * 13c.1, Law 8: A DISTANCE OVER THE GROUND, and a speed over it. The map is what brings length
+   * into this world, and the two are kept apart for the reason the four durations are: a distance
+   * multiplied by a speed is not a distance, and the register is where that is caught.
+   */
+  | 'km'
+  | 'kmPerDay'
   /** Money for one unit of something: a wage per hour, a level, a price per share. */
   | 'price'
   /** A declared AMOUNT of a unit the reader names (`denominated`), read through `amount`. */
@@ -251,6 +258,16 @@ export class ParamRegister {
   /** A rate per year. */
   perAnnum(id: ParamId): number {
     return this.read(id, 'perAnnum');
+  }
+
+  /** A distance over the ground (13c.1). */
+  km(id: ParamId): number {
+    return this.read(id, 'km');
+  }
+
+  /** How far a loaded carrier gets over ground like this in a day (13c.1). */
+  kmPerDay(id: ParamId): number {
+    return this.read(id, 'kmPerDay');
   }
 
   /** Money for one unit of something: a wage per hour, a level, a price per share. */

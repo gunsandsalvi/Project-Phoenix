@@ -97,6 +97,9 @@ const VALUES = new Map<string, number>([
 ]);
 
 const READS: TerrainReads = {
+  kmPerDay(id) {
+    return this.ratio(id);
+  },
   ratio(id) {
     const v = VALUES.get(id);
     if (v === undefined) throw new Error(`no value for ${id}`);
@@ -407,7 +410,7 @@ describe('a country has the money; a region is a place (Seed B3, Currency B1, La
  * shares the spec asked for are the shares it got.
  */
 
-const DRAW_READS: TerrainReads = { ratio: () => 2 };
+const DRAW_READS: TerrainReads = { ratio: () => 2, kmPerDay: () => 300 };
 
 function spec(over: Partial<MapSpec> = {}): MapSpec {
   return {
@@ -417,7 +420,7 @@ function spec(over: Partial<MapSpec> = {}): MapSpec {
     subdivide: 3,
     oceanShare: 0.6,
     channels: 2,
-    reliefM: 4000,
+    reliefKm: 4,
     landCells: 3,
     octaves: 4,
     seaAreas: 3,
