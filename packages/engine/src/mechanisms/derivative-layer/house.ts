@@ -16,7 +16,15 @@
  */
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
-import { add, div, mul, sub, sum, zeroIfNone } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  mul,
+  sub,
+  sum,
+  zeroIfNone,
+} from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { splitOnTick } from '../../core/tick.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -175,7 +183,7 @@ export function runWaterfall(
   let left = loss;
   const take = (line: Round['line'], from: PartyId, instrument: InstrumentId, most: number): void => {
     if (left <= 0 || most <= 0) return;
-    const paid = ctx.registry.cashFor(ccy, left < most ? left : most);
+    const paid = ctx.registry.cashFor(ccy, atMost(left, most, 'a claim takes no more than is left of the hole'));
     if (paid <= 0) return;
     // The claim is extinguished without payment: the holder loses it and the issuer stops owing it,
     // which is one instruction with two named sides and no money leg (Register E5 says why not).
@@ -207,7 +215,7 @@ export function runWaterfall(
   // residual (C3), and it has already fallen by whatever the house paid out and did not recover.
   const capital = ctx.participant(house).equity();
   if (left > 0 && capital > 0) {
-    const paid = left < capital ? left : capital;
+    const paid = atMost(left, capital, 'the layer has no more capital than it has');
     left = sub(left, paid, 'after the house own capital');
     rounds.push({ line: 'houseCapital', paid, left });
   }
@@ -221,7 +229,7 @@ export function runWaterfall(
       // Law 8: WHAT IS SPLIT IS A COUNT OF PIECES. The loss arrived as a mark and the lines above
       // paid it in whole pieces, so what is left carries the dust of those subtractions — and a
       // residue smaller than one piece is not a loss anybody can be allocated a share of.
-      const share = ctx.registry.cashFor(ccy, left < pool ? left : pool);
+      const share = ctx.registry.cashFor(ccy, atMost(left, pool, 'the fund pays out of what is in it'));
       const shares = splitOnTick(share, held);
       survivors.forEach((m, i) => {
         take('survivors', m, fundLineId(m, house, ccy), zeroIfNone(shares[i]));

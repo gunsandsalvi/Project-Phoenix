@@ -23,7 +23,7 @@ import type { Civil } from '../../calendar/civil.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type PartyId } from '../../core/ids.js';
-import { add, material, mul, sub, sum } from '../../core/num.js';
+import { add, atMost, material, mul, sub, sum } from '../../core/num.js';
 import { none } from '../../core/option.js';
 import { months } from '../../core/rate.js';
 import type { Order } from '../../clearing/solver.js';
@@ -120,7 +120,7 @@ export const centralBankOmo: SystemModule = {
           return want > 0 ? [{ party: view.self.id, side: 'buy', price: 'market', qty: want }] : [];
         }
         const free = view.free(i.id);
-        const size = downTick(-gap < free ? -gap : free);
+        const size = downTick(atMost(-gap, free, 'it sells what it holds unencumbered and no more'));
         return size > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: size }] : [];
       },
     },

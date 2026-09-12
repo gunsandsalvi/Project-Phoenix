@@ -18,7 +18,13 @@
  */
 import type { PartyId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { add, div, mul, sub } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  mul,
+  sub,
+} from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
@@ -107,7 +113,7 @@ export function probabilityOfDefault(
   const memory = view.params.get(bankParam(decl.bank, 'credit.memory'));
   const from = view.period - memory;
   const seen = defaults.filter((e) => e.period >= from && e.subjects.includes(borrower));
-  const periods = view.period < memory ? view.period : memory;
+  const periods = atMost(view.period, memory, 'a world cannot remember before it began');
   if (periods <= 0) return 0;
   const failures = new Set(seen.map((e) => e.period)).size;
   return div(failures, periods, 'how often this borrower has failed');
@@ -220,7 +226,11 @@ export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): 
   const limit = mul(capital, view.params.get(bankParam(decl.bank, 'limitPerBorrower')), 'its limit for one name');
   const byAppetite = sub(limit, exposureTo(view, borrower), 'room under its limit');
   const byFunding = fundingRoom(view);
-  const least = (a: number, b: Option<number>): number => (b.some && b.value < a ? b.value : a);
+  // F3, B2.b: three real constraints and the tightest is the one that binds. A constraint this
+  // bank has not published a position for is not a constraint it has (Appendix A), so it is skipped
+  // rather than treated as zero.
+  const least = (a: number, b: Option<number>): number =>
+    b.some ? atMost(a, b.value, 'it lends no more than the tightest of its own limits allows') : a;
   const most = least(least(byAppetite, byCapital), byFunding);
   return {
     capital: byCapital,

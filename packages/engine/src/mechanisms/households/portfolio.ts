@@ -26,7 +26,15 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  material,
+  mul,
+  sub,
+  sum,
+} from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { downTick } from '../../core/tick.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -327,7 +335,7 @@ export function shareOrders(
     const exist = line.instrument.issued;
     for (const rung of rungsOver(levelsBelow(line.price, steps), perLine)) {
       const wanted = mul(rung.qty, weight, 'what the cell puts in');
-      const qty = downTick(wanted < exist ? wanted : exist);
+      const qty = downTick(atMost(wanted, exist, 'there are no more units of it than were issued'));
       if (qty <= 0) continue;
       out.push({ market, instrument: id, side: 'buy', price: rung.price, qty });
     }
@@ -432,7 +440,7 @@ export function fundOrders(
       out.push({
         venue: p.venue,
         side: 'sell',
-        sharesPerMember: want > p.sharesPerMember ? p.sharesPerMember : want,
+        sharesPerMember: atMost(want, p.sharesPerMember, 'it cannot hand back more than the position it holds'),
       });
       continue;
     }

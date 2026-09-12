@@ -11,55 +11,25 @@ import type { Calendar } from '../../calendar/calendar.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
-import { yearFraction, type DayCount } from '../../calendar/daycount.js';
+import { yearFraction } from '../../calendar/daycount.js';
 import { InvalidRegistry } from '../../core/errors.js';
-import { instrumentKindId, unitId } from '../../core/ids.js';
 import { add, mul } from '../../core/num.js';
 import { percent } from '../../core/format.js';
-import type { Periodicity, Rate } from '../../core/rate.js';
-import { issuerOf, type Terms } from '../../register/instruments.js';
+import { issuerOf } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import { issuerName } from '../../registry/naming.js';
 import type { SystemModule } from '../../world/module.js';
 
-export const SOVEREIGN_BOND = instrumentKindId('sovereign.bond');
-export const SOVEREIGN_BILL = instrumentKindId('sovereign.bill');
-export const PAR = unitId('par');
-
-export interface SovereignBondTerms extends Terms {
-  readonly kind: typeof SOVEREIGN_BOND;
-  /** N5.a: fixed, locked at issuance, quoted per annum. */
-  readonly coupon: Rate;
-  /** N6: how often it pays. */
-  readonly couponPeriodicity: Periodicity;
-  /** N6: how interest accrues between payments. */
-  readonly dayCount: DayCount;
-  readonly issueDate: Civil;
-  /** N4: the date the principal is due. */
-  readonly maturity: Civil;
-}
-
-export interface SovereignBillTerms extends Terms {
-  readonly kind: typeof SOVEREIGN_BILL;
-  readonly issueDate: Civil;
-  readonly maturity: Civil;
-}
-
-function isBond(t: Terms): t is SovereignBondTerms {
-  // eslint-disable-next-line phoenix/no-kind-branch -- a profile's own type guard, the edge of the dispatch table
-  return t.kind === SOVEREIGN_BOND;
-}
-
-function isBill(t: Terms): t is SovereignBillTerms {
-  // eslint-disable-next-line phoenix/no-kind-branch -- a profile's own type guard, the edge of the dispatch table
-  return t.kind === SOVEREIGN_BILL;
-}
-
-function validateDates(issue: Civil, maturity: Civil, what: string): void {
-  if (compareCivil(maturity, issue) <= 0) {
-    throw new InvalidRegistry('Bond N4', `${what}: maturity must be after the issue date`);
-  }
-}
+export * from '../../registry/claims.js';
+import {
+  isBill,
+  isBond,
+  PAR,
+  SOVEREIGN_BILL,
+  SOVEREIGN_BOND,
+  validateDates,
+  type SovereignBondTerms,
+} from '../../registry/claims.js';
 
 export const sovereignBond: InstrumentKindProfile = {
   id: SOVEREIGN_BOND,

@@ -32,7 +32,15 @@ import type { VenueDecl } from '../../clearing/venue.js';
 import type { Instrument } from '../../register/instruments.js';
 import { downTick } from '../../core/tick.js';
 import { paramId, type ParamId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import {
+  add,
+  atLeast,
+  atMost,
+  div,
+  mul,
+  sub,
+  sum,
+} from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -78,7 +86,12 @@ export function liquidityPlan(view: ParticipantView, cushion: number): Option<Li
   // A bank whose own worst week is bigger than the coverage asks of it holds no portfolio: the cash
   // is already the answer. Nothing is bounded here — a holding of less than nothing is not a
   // smaller target, it is a short position, and it takes a borrow this bank has not made.
-  return some({ couldLeave, wanted, cash: buffer, paper: above > 0 ? above : 0 });
+  return some({
+    couldLeave,
+    wanted,
+    cash: buffer,
+    paper: atLeast(above, 0, 'a holding of less than nothing is a short position, not a smaller target'),
+  });
 }
 
 /**
@@ -361,7 +374,7 @@ export function worthOfMoney(
   const total = sum(weights).value;
   if (total <= 0) return c.floor;
   const paid = div(sum(weighted).value, total, 'what its funding has been costing it');
-  return paid > c.floor ? paid : c.floor;
+  return atLeast(paid, c.floor, 'it would park at the floor rather than lend below it');
 }
 
 /**
@@ -555,7 +568,7 @@ export function sessionOrders(view: ParticipantView, venue: VenueDecl): readonly
     const power = secured ? pledgeable(view) : need;
     // Law 8: what it can pledge is a valuation and the money it wants is a count of cents, so the
     // smaller of them is brought back onto the grid. Down, because it is what this bank CAN raise.
-    const size = downTick(power < need ? power : need);
+    const size = downTick(atMost(power, need, 'it can pledge no more than it holds'));
     return size > 0 ? [{ party: self, side: 'buy', price: c.ceiling, qty: size }] : [];
   }
   if (p.gap <= 0) return [];

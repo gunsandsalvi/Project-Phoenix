@@ -87,6 +87,7 @@ import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
+import { drawFxDesks } from '../mechanisms/spot-fx/data.js';
 import { derivativeLayer, houseIdFor, TRADES_CONTRACTS } from '../mechanisms/derivative-layer/index.js';
 import { cds } from '../mechanisms/cds/index.js';
 import { irs } from '../mechanisms/irs/index.js';
@@ -1812,7 +1813,10 @@ export function foundationSpec(
       moneyMarket,
       // Currency, Spot FX: the pairs, after the banks whose desks quote them and the money market
       // whose overnight book they fund a position in.
-      spotFx(drew.banks),
+      // Spot FX D1, D3, C2.a: the desks draw their OWN numbers, from this world's own seed value
+      // (`13b.1`). The banks module no longer carries them and this one no longer reads `BankDecl`:
+      // the cycle between the two is gone, and what crosses is a bank's NAME, which is public.
+      spotFx(drawFxDesks(drew.banks.map((b) => b.bank), seed)),
       // The derivative layer: after the money market, because a margin call is met out of cash a
       // member funds there, and after the estate, because a default resolves into one (XI-8). It
       // brings no class of contract with it (13b does that): what it brings is the house, the

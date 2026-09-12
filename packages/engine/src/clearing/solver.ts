@@ -12,7 +12,12 @@
  */
 import { impossible } from '../core/assert.js';
 import type { PartyId } from '../core/ids.js';
-import { finite, sum, zeroIfNone } from '../core/num.js';
+import {
+  atMost,
+  finite,
+  sum,
+  zeroIfNone,
+} from '../core/num.js';
 import { asQty, splitOnTick, type Qty } from '../core/tick.js';
 
 export type Side = 'buy' | 'sell';
@@ -137,7 +142,7 @@ function validate(orders: readonly LimitOrder[]): void {
 
 /** The executable volume at a price is bounded by whichever side posted less: arithmetic, not a decision. */
 function executable(demand: Qty, supply: Qty): Qty {
-  return demand < supply ? demand : supply;
+  return atMost(demand, supply, 'what is not offered cannot be bought');
 }
 
 export function clear(

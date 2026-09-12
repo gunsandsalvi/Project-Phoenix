@@ -19,7 +19,16 @@
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
 import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
-import { add, div, finite, mul, sub, sum, zeroIfNone } from '../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  finite,
+  mul,
+  sub,
+  sum,
+  zeroIfNone,
+} from '../core/num.js';
 import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
 import { commonGrain, downToGrain, downToTick, toGrain, upToTick } from '../core/tick.js';
@@ -435,7 +444,7 @@ function pairFills(
       `${buyer.party} is on both sides of ${m.id} at crossing prices`,
       { party: buyer.party, market: m.id },
     );
-    const want = bLeft < sLeft ? bLeft : sLeft;
+    const want = atMost(bLeft, sLeft, 'neither side can exchange what the other has not got');
     // Law 8, XI-15: what these two can actually exchange. Between named parties that is the unit's
     // own smallest piece; where one side is a population it is that piece for every member of it,
     // because each member is a real holder and none of them can hold a fraction of one.

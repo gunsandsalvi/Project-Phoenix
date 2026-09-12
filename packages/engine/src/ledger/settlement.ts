@@ -34,7 +34,7 @@ import {
   type PartyId,
   type UnitId,
 } from '../core/ids.js';
-import { addTo, dustOf, finite, mul, sum, zeroIfNone } from '../core/num.js';
+import { addTo, atMost, dustOf, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
 import { onTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
@@ -851,7 +851,8 @@ export class Settlement {
       const per = leg.pledgorCell.some ? leg.pledgorCell.value.perMember : leg.qty;
       const moving = zeroIfNone(net.get(`${leg.pledgor}|${leg.instrument}`)?.delta);
       const free = finite(
-        this.d.register.free(leg.pledgor, leg.instrument) + (moving < 0 ? moving : 0),
+        this.d.register.free(leg.pledgor, leg.instrument) +
+          atMost(moving, 0, 'units this instruction ADDS are not there to pledge until it settles'),
         'free to pledge',
       );
       // The comparison is EXACT and against the register's own read, because the register asks it

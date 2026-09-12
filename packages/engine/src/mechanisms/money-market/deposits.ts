@@ -34,7 +34,15 @@ import { period as asPeriod } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId } from '../../core/ids.js';
-import { add, div, mul, sub, sum, zeroIfNone } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  mul,
+  sub,
+  sum,
+  zeroIfNone,
+} from '../../core/num.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
@@ -85,7 +93,7 @@ function coveredPerMember(
 /** A1.a: the split itself, on one balance — the one place it is drawn, for whoever is asking. */
 function covered(cls: DepositClassDecl | undefined, perMember: number, limit: number): number {
   if (cls?.insured !== true) return 0;
-  return perMember < limit ? perMember : limit;
+  return atMost(perMember, limit, 'the guarantee covers no more than it says it covers');
 }
 
 /** A1.a, D4: what this world insures, per member, of what a depositor holds at a bank (XI-15). */

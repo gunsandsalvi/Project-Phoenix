@@ -212,6 +212,42 @@ export function sub(a: number, b: number, what: string): number {
   return finite(finite(a, what) - finite(b, what), what);
 }
 
+/**
+ * LAW 6'S ONE ADMISSIBLE CASE, SAID OUT LOUD: what a party CAN do, not what it is allowed to want.
+ *
+ * A bank can only sell paper it holds; a firm can only hire the hours there are; a member can only
+ * post margin out of the money in its account. Each of those is arithmetic impossibility — the
+ * thing on the other side does not exist — and Law 6 admits exactly that and nothing else.
+ *
+ * The engine wrote it thirty-one times as `a < b ? a : b`, which `phoenix/no-bounds` cannot tell
+ * from a cap somebody chose (it forbade `Math.min`, a spelling, and the ternary is the same
+ * operation in different clothes). So a reviewer grepping for bounds found nothing and a reviewer
+ * grepping for ternaries found thirty-one with no way to sort them. **The third argument is the
+ * point of these two functions**: it names the thing that is not there, so a bound with a weak
+ * reason reads as one, and the rule can forbid the bare comparison-ternary shape entirely.
+ *
+ * They are NOT a place to put a cap. If the reason cannot be written as "there is no more of it",
+ * the number is a decision or a missing mechanism and Law 6 says so.
+ */
+/**
+ * Law 8: IT IS GENERIC SO THE GRID SURVIVES IT. Two counts of whole pieces meeting each other give
+ * a count of whole pieces — neither of them was rounded to get here, so nothing has left the grid,
+ * and a caller that had a `Qty` still has one. A caller mixing a `Qty` with a plain number is
+ * refused by the compiler, which is the question the brand exists to ask.
+ */
+export function atMost<T extends number>(value: T, limit: T, becauseThereIsNoMore: string): T {
+  finite(value, becauseThereIsNoMore);
+  finite(limit, becauseThereIsNoMore);
+  return value < limit ? value : limit;
+}
+
+/** The same, the other way: what it cannot go below because there is nothing below it. */
+export function atLeast<T extends number>(value: T, floor: T, becauseThereIsNoLess: string): T {
+  finite(value, becauseThereIsNoLess);
+  finite(floor, becauseThereIsNoLess);
+  return value > floor ? value : floor;
+}
+
 /** Largest of a non-empty list — arithmetic, used for reporting worst instances (Audit D2). */
 export function largest(values: readonly number[], what: string): number {
   let m: number | undefined;

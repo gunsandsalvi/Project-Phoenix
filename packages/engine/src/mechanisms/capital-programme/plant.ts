@@ -22,118 +22,20 @@
  * set it: a second-hand price is what one estate's plant fetched on one day and is not evidence
  * about what everybody else's is still able to make.
  */
-import type { Calendar } from '../../calendar/calendar.js';
 import { WHOLE_MONEY_TICK } from '../../registry/grid.js';
-import { compareCivil, dayNumber, formatCivil, type Civil } from '../../calendar/civil.js';
-import { InvalidRegistry, Missing } from '../../core/errors.js';
-import {
-  instrumentId,
-  instrumentKindId,
-  marketId,
-  unitId,
-  type InstrumentId,
-  type InstrumentKindId,
-  type MarketId,
-  type RegionId,
-  type UnitId,
-} from '../../core/ids.js';
-import { div, mul, sub } from '../../core/num.js';
-import { none, some, type Option } from '../../core/option.js';
-import type { Instrument, Terms } from '../../register/instruments.js';
+import { compareCivil, formatCivil } from '../../calendar/civil.js';
+import { InvalidRegistry } from '../../core/errors.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
-import type { CapitalKindDecl } from './data.js';
 
-/** A6: what a vintage is. Its own kind, its own place, its own service date and its own life. */
-export interface PlantTerms extends Terms {
-  readonly capitalKind: string;
-  readonly region: RegionId;
-  /** A6: the date this vintage went into service and started producing. */
-  readonly serviceDate: Civil;
-  /** A4.b, A6: the date it is worn out; the charge stops because the plant is gone. */
-  readonly retires: Civil;
-}
-
-export const plantKindId = (capitalKind: string): InstrumentKindId =>
-  instrumentKindId(`plant.${capitalKind}`);
-export const plantUnitId = (capitalKind: string): UnitId => unitId(`plant.${capitalKind}`);
-export const plantVintageId = (
-  capitalKind: string,
-  region: RegionId,
-  serviceDate: Civil,
-): InstrumentId => instrumentId(`plant.${capitalKind}.${region}.${formatCivil(serviceDate)}`);
-export const plantMarketId = (
-  capitalKind: string,
-  region: RegionId,
-  serviceDate: Civil,
-): MarketId => marketId(`mkt.plant.${capitalKind}.${region}.${formatCivil(serviceDate)}`);
-
-export function isPlantTerms(t: Terms): t is PlantTerms {
-  return 'capitalKind' in t && 'serviceDate' in t && 'retires' in t;
-}
-
-/** The terms of a vintage; asking anything else for them is a defect in the caller. */
-export function plantTerms(i: Instrument): PlantTerms {
-  if (!isPlantTerms(i.terms)) {
-    throw new Missing('Capital Programme A6', `${i.id} is not a vintage of plant`, {
-      instrument: i.id,
-    });
-  }
-  return i.terms;
-}
-
-/** Whether this instrument is a vintage of plant at all, without asking it for terms it may not have. */
-export function isPlant(i: Instrument): boolean {
-  return isPlantTerms(i.terms);
-}
-
-/**
- * A6, A4.b: how many periods of service this vintage has left on a date, on the one calendar. It is
- * a count of periods derived from two DATES (Money G3.a), never a counter anybody decrements.
- */
-export function serviceLeft(terms: PlantTerms, on: Civil, calendar: Calendar): number {
-  const days = sub(dayNumber(terms.retires), dayNumber(on), 'days of service left');
-  return div(days, calendar.periodDays, 'periods of service left');
-}
-
-/**
- * A3, A5: what a lot of a vintage is carried at after this period's wear.
- *
- * Straight line over what is LEFT: a lot with n periods of service ahead of it gives up one of them
- * this period, so it keeps (n-1)/n of what it was carried at. A lot bought second-hand starts from
- * what its buyer paid and runs out at the same date as the rest of the vintage, which is what makes
- * this per-lot rather than per-line (A6: its own cost, one service date). The last period of a
- * vintage's life takes it to nothing, so the charge stops when the plant is gone.
- */
-export function carriedAfterWear(
-  terms: PlantTerms,
-  basisPerUnit: number,
-  on: Civil,
-  calendar: Calendar,
-): Option<number> {
-  if (basisPerUnit === 0) return none<number>();
-  const left = serviceLeft(terms, on, calendar);
-  if (left <= 1) return some(0);
-  return some(mul(basisPerUnit, div(sub(left, 1, 'periods after this one'), left, 'what is left of its life'), 'what it is carried at now'));
-}
-
-/**
- * A3, A6: what one unit of a vintage costs its holder in wear this period — the charge that follows
- * from the same schedule the carrying value falls on. It is a read of the two, never a third number.
- */
-export function wearPerUnit(
-  terms: PlantTerms,
-  basisPerUnit: number,
-  on: Civil,
-  calendar: Calendar,
-): number {
-  const after = carriedAfterWear(terms, basisPerUnit, on, calendar);
-  return after.some ? sub(basisPerUnit, after.value, 'what a unit of it wears out by') : 0;
-}
-
-/** A6: whether this vintage is worn out on a date, and so leaves the register. */
-export function wornOut(terms: PlantTerms, on: Civil): boolean {
-  return compareCivil(on, terms.retires) >= 0;
-}
+export * from '../../registry/physical.js';
+import {
+  carriedAfterWear,
+  isPlantTerms,
+  plantKindId,
+  plantTerms,
+  plantUnitId,
+  type CapitalKindDecl,
+} from '../../registry/physical.js';
 
 /**
  * The kind profile of one kind of capital: everything that varies by kind, in one place (Law 15).

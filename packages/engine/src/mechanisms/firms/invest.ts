@@ -38,10 +38,10 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { Missing } from '../../core/errors.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { period } from '../../calendar/calendar.js';
-import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import { add, atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
-import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../capital-programme/index.js';
+import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../../registry/physical.js';
 import type { PlannedOrder } from './decide.js';
 import { downTick, upTick } from '../../core/tick.js';
 
@@ -314,13 +314,17 @@ export function project(
     if (x.asking <= 0) continue;
     // Its money is spread over the places the plant could come from, in the proportions those
     // places are asking for — one stated rule, applied the same way to each of them (Law 4).
-    const purse = mul(spendable <= 0 ? 0 : spendable, div(x.outlay, spend, 'this line\u2019s share'), 'what it can put here');
+    const purse = mul(
+      atLeast(spendable, 0, 'a firm with nothing spare has nothing to spread'),
+      div(x.outlay, spend, 'this line\u2019s share'),
+      'what it can put here',
+    );
     // How many it can pay for is a question about the PRICE IT EXPECTS TO PAY, not about the most
     // it would pay: a firm that values a machine highly does not thereby buy fewer of them.
     // Law 8: a machine is a whole machine, and this is what its money REACHES — down, because a
     // firm that can pay for four and two thirds of one can pay for four.
     const canPay = downTick(div(purse, x.asking, 'units it can pay for'));
-    const qty = canPay < x.order.qty ? canPay : x.order.qty;
+    const qty = atMost(canPay, x.order.qty, 'it buys with the money it has, and only what is offered');
     if (qty <= 0 || !material(qty, wanted.length + 1, x.order.qty)) continue;
     orders.push({ ...x.order, qty });
     funded.push(mul(qty, x.asking, 'what it expects to pay for them'));
@@ -360,7 +364,7 @@ function countedYears(
   periodsOfService: number,
   horizonPeriods: number,
 ): number {
-  const counted = periodsOfService < horizonPeriods ? periodsOfService : horizonPeriods;
+  const counted = atMost(periodsOfService, horizonPeriods, 'there is no service beyond the life the plant has');
   if (counted <= 0) return 0;
   return yearFraction(
     'ACT/365F',

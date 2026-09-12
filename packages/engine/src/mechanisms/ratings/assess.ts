@@ -19,7 +19,7 @@
  * balance sheet, and every mandate that refers to it churns with it (C1.a).
  */
 import { period as asPeriod } from '../../calendar/calendar.js';
-import { div, mul } from '../../core/num.js';
+import { atLeast, atMost, div, mul } from '../../core/num.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import type { ParticipantView } from '../../world/context.js';
 import { GRADES, WORST, type AssessorDecl, type Grade } from './data.js';
@@ -59,11 +59,11 @@ export function assess(blind: ParticipantView, d: AssessorDecl, ccy: CurrencyCod
   // payment ages out of it, which is what makes a grade a judgement about a party's state NOW
   // rather than a mark that never comes off (§44 A2, A3).
   const window = GRADES.length;
-  const since = asPeriod(blind.period > window ? blind.period - window : 0);
+  const since = asPeriod(atLeast(blind.period - window, 0, 'there is no period before the world began'));
   const missed = blind.failedPayments(since).length;
   const takesIn = blind.earned(window);
   if (missed > 0 || takesIn <= 0) {
-    return { strain: missed > 0 ? missed : 0, missed, grade: WORST };
+    return { strain: atLeast(missed, 0, 'nobody misses fewer payments than none'), missed, grade: WORST };
   }
   const strain = div(blind.owedIn(ccy), takesIn, 'what falls due against what it takes in');
   return { strain, missed, grade: bandOf(strain, d) };
@@ -91,8 +91,10 @@ export function forInstrument(issuer: Grade, seniority: number, secured: boolean
   // Secured lifts it a step; ranking behind the most senior claim drops it one per step down the
   // queue. Both are the queue itself (Bond N13), read rather than judged.
   const moved = at - (secured ? 1 : 0) + (seniority < 0 ? -seniority : 0);
-  const bounded = moved < 0 ? 0 : moved;
-  return GRADES[bounded < GRADES.length ? bounded : GRADES.length - 1] ?? WORST;
+  // The queue is as long as it is: a step past either end of the scale lands on the end of it,
+  // because there is no grade beyond the best and none beyond the worst (Ratings A2).
+  const step = atMost(atLeast(moved, 0, 'there is no grade above the best one'), GRADES.length - 1, 'there is no grade below the worst one');
+  return GRADES[step] ?? WORST;
 }
 
 /** A4, E4: who this assessor has an opinion about — everything it is paid to have one about. */

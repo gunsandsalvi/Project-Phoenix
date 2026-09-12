@@ -19,7 +19,7 @@ import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../core/ids.js';
 import { impossible } from '../core/assert.js';
 import { none, type Option } from '../core/option.js';
-import { addTo, div, finite, mul, sub, zeroIfNone } from '../core/num.js';
+import { addTo, atLeast, div, finite, mul, sub, zeroIfNone } from '../core/num.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -168,7 +168,7 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
     const carried = d.contracts.carrying(c, period);
     const delta = finite(now - carried, 'what the contract mark moved by');
     if (delta === 0) continue;
-    const through = Math.abs(now) > Math.abs(delta) ? Math.abs(now) : Math.abs(delta);
+    const through = atLeast(Math.abs(now), Math.abs(delta), 'the dust of a move is charged at the larger magnitude it passed through');
     for (const [party, sign] of [
       [c.a, 1],
       [c.b, -1],

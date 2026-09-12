@@ -23,7 +23,7 @@ import { div, mul, sub } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
-import type { BankDecl } from '../banks/data.js';
+import type { FxDeskDecl } from './data.js';
 import { fxParam } from './data.js';
 
 /** Three pairs that close on themselves: A/B, B/C and A/C, with the markets that trade them. */
@@ -76,7 +76,7 @@ export function triangles(markets: readonly MarketDecl[]): readonly Triangle[] {
  * everybody else is in, at levels it is content with — so the arbitrage is a participant and never
  * a correction applied to a print (Law 3).
  */
-export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, BankDecl>): void {
+export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDeskDecl>): void {
   const tris = triangles(ctx.markets);
   if (tris.length === 0) return;
   for (const bank of ctx.parties.ofKind(BANK)) {

@@ -19,7 +19,14 @@
  */
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  mul,
+  sub,
+  sum,
+} from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -201,7 +208,7 @@ export function pledgeInstead(
     if (!print.some || print.value.price <= 0) continue;
     const per = print.value.price;
     const want = ctx.registry.deliverable(i.unit, div(left, per, 'units this line would cover'));
-    const units = want < free ? want : free;
+    const units = atMost(want, free, 'it can pledge no more than it holds unencumbered');
     if (units <= 0) continue;
     legs.push({
       kind: 'pledge',

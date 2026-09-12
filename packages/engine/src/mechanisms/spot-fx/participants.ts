@@ -19,10 +19,16 @@
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode } from '../../core/ids.js';
-import { add, div, mul, sub } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  mul,
+  sub,
+} from '../../core/num.js';
 import { asQty, downTick, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
-import type { BankDecl } from '../banks/data.js';
+import type { FxDeskDecl } from './data.js';
 import { fxParam } from './data.js';
 
 /**
@@ -118,7 +124,7 @@ function ownMoneyIsTheBase(
 export function dealerOrders(
   view: ParticipantView,
   m: MarketDecl,
-  d: BankDecl | undefined,
+  d: FxDeskDecl | undefined,
 ): readonly Order[] {
   const pair = m.fx;
   if (pair === undefined || d === undefined || !view.self.status.alive) return [];
@@ -190,7 +196,7 @@ function positionIn(view: ParticipantView, ccy: CurrencyCode, home: CurrencyCode
 
 /** Law 8, Law 6: the smaller of two sizes, on the grid. Arithmetic of delivery, not a limit. */
 function least(a: number, b: number): Qty {
-  return downTick(a < b ? a : b);
+  return downTick(atMost(a, b, 'the smaller of the two is how far both reach'));
 }
 
 

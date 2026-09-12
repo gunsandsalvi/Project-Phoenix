@@ -57,7 +57,10 @@ import {
 
 export * from './data.js';
 export * from './recipes.js';
-export { costOfDraw, dueFromLine, goodProfile, wipProfile } from './inventory.js';
+export { goodProfile, wipProfile } from './inventory.js';
+// Register D4, Law 19: the two reads of a lot book live with the lots (item 13b.1). Re-exported so
+// a caller that has this module in hand still has one spelling for them.
+export { costOfDraw, dueFromLine } from '../../register/register.js';
 
 /** The declaration of an input this recipe names, or a defect: a recipe cannot name a non-good. */
 function inputsOf(d: GoodDecl, rows: readonly GoodDecl[]): GoodDecl[] {

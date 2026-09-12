@@ -27,13 +27,21 @@
 import { Missing } from '../../core/errors.js';
 import { marketId, type MarketId, type PartyId } from '../../core/ids.js';
 import type { InstrumentId } from '../../core/ids.js';
-import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  material,
+  mul,
+  sub,
+  sum,
+} from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Order, OrderPrice } from '../../clearing/solver.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Event } from '../../journal/journal.js';
 import type { ParticipantView } from '../../world/context.js';
-import { goodId, goodMarketId, goodTerms, type GoodTerms } from '../goods/index.js';
+import { goodId, goodMarketId, goodTerms, type GoodTerms } from '../../registry/physical.js';
 import {
   CAPITAL_KINDS,
   capacityFrom,
@@ -45,7 +53,7 @@ import {
   serviceLeft,
   vintagesHeld,
   type PlantNeed,
-} from '../capital-programme/index.js';
+} from '../../registry/physical.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
 import {
   costOfCapital,
@@ -241,7 +249,7 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<num
   const cannotKeep = upTick(
     add(mul(stock, tech.spoilage, 'what will perish'), forced, 'what it cannot keep'),
   );
-  const atMarket = cannotKeep < stock ? cannotKeep : stock;
+  const atMarket = atMost(cannotKeep, stock, 'it cannot sell stock it does not hold');
   const out: PlannedOrder[] = [];
   if (material(atMarket, 2, stock)) {
     out.push({ market, side: 'sell', price: 'market', qty: atMarket });

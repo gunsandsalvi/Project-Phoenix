@@ -29,7 +29,7 @@ import { BANK, FIRM, HOUSEHOLD, TREASURY } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import type { BankDecl } from '../banks/data.js';
+import type { FxDeskDecl } from './data.js';
 import { FX_SPREAD, fxParam } from './data.js';
 import { arbitrage } from './arbitrage.js';
 import { arbitrageOrders, dealerOrders, needOrders } from './participants.js';
@@ -68,7 +68,7 @@ export function pairsOf(currencies: readonly CurrencyCode[]): readonly { base: C
  */
 export const FX_MARKET_ORDER = 0;
 
-export function spotFx(rows: readonly BankDecl[]): SystemModule {
+export function spotFx(rows: readonly FxDeskDecl[]): SystemModule {
   const byName = new Map(rows.map((r) => [r.bank, r]));
   return {
     id: 'spot-fx',
@@ -83,7 +83,7 @@ export function spotFx(rows: readonly BankDecl[]): SystemModule {
     params: rows.flatMap((r): ParamDecl[] => [
       {
         id: fxParam(r.bank, 'inventoryLimit'),
-        value: r.fxInventoryLimit,
+        value: r.inventoryLimit,
         unit: 'share of its own capital behind a position in one currency',
         kind: 'preference',
         owner: 'model',
@@ -91,7 +91,7 @@ export function spotFx(rows: readonly BankDecl[]): SystemModule {
       },
       {
         id: fxParam(r.bank, 'edge'),
-        value: r.fxEdge,
+        value: r.edge,
         unit: 'share of the rate, per period',
         kind: 'preference',
         owner: 'model',
@@ -99,7 +99,7 @@ export function spotFx(rows: readonly BankDecl[]): SystemModule {
       },
       {
         id: fxParam(r.bank, 'arbitrageEdge'),
-        value: r.fxArbitrageEdge,
+        value: r.arbitrageEdge,
         unit: 'share of the rate',
         kind: 'preference',
         owner: 'model',

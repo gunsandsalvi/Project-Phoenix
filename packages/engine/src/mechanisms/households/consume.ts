@@ -27,11 +27,11 @@
  * bids across a wider range than one that has not.
  */
 import type { InstrumentId, MarketId } from '../../core/ids.js';
-import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import { add, atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { CellParty } from '../../parties/party.js';
 import type { ParticipantView } from '../../world/context.js';
-import { goodId, goodMarketId } from '../goods/index.js';
+import { goodId, goodMarketId } from '../../registry/physical.js';
 import type { ConsumptionDecl } from './data.js';
 import { rungsOver } from './demand.js';
 
@@ -118,13 +118,13 @@ export function spendPerMember(
   // cannot be multiplied back by the weight to give the total again — below the smallest normal
   // number there is no relative precision left, so dust itself underflows to zero and every
   // identity in the wire becomes exact. A spend that is dust of what it has is nothing.
-  const affordable = wanted > budget ? budget : wanted;
+  const affordable = atMost(wanted, budget, 'it buys with the money it has');
   const scale = sum([budget, Math.abs(wanted)]);
   const afforded = material(affordable, scale.terms + 1, scale.value)
     ? affordable
     : 0;
   return some({
-    spend: afforded > 0 ? afforded : 0,
+    spend: atLeast(afforded, 0, 'there is no less to spend than nothing'),
     wanted,
     buffer,
     expected: income.value.expected,

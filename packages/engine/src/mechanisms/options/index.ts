@@ -24,7 +24,7 @@ import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
-import { add, div, mul, sub } from '../../core/num.js';
+import { add, atLeast, div, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { asQty } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
@@ -356,7 +356,7 @@ function openBooks(
     // lists strikes around the price and leaves them there; one recomputed every period would put
     // a new book on the ladder every week and leave the last with one trade in it.
     const opened = expiry - life;
-    const print = ctx.prices.latest(underlying, (opened > 0 ? opened : 0) as Period);
+    const print = ctx.prices.latest(underlying, atLeast(opened, 0, 'there is no period before the world began') as Period);
     if (!print.some) continue;
     const strike = ctx.registry.onQuoteGrid(i.kind, i.ccy, print.value.price);
     const clearer =

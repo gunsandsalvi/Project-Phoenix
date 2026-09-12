@@ -30,7 +30,7 @@
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { add, div, sub } from '../../core/num.js';
+import { add, atLeast, atMost, div, sub } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -97,7 +97,7 @@ export function publishLines(
      * Law 15 forbids by name.
      */
     const wants = sub(mulShare(capital, r.appetite), r.capital, 'the room its appetite leaves');
-    const asks = wants > 0 ? wants : 0;
+    const asks = atLeast(wants, 0, 'a line already past its own appetite is asking for nothing');
     // Arithmetic, not a bound (Law 6): it cannot be allotted room that does not exist. What is
     // left can be nothing, and then the line behind stops writing.
     //
@@ -105,8 +105,8 @@ export function publishLines(
     // it. Both numbers above are a capital position over a risk weight, so both land between two
     // pieces; a line cannot be given a fraction of a cent to lend, and the treasury keeps whatever
     // the rounding leaves rather than handing it to a line that did not ask for it.
-    const give = downTick(left < asks ? left : asks);
-    allotted.set(r.line, give > 0 ? give : 0);
+    const give = downTick(atMost(left, asks, 'the room that is left is all the room there is'));
+    allotted.set(r.line, atLeast<number>(give, 0, 'there is no less room to give than none'));
     left = left - give;
   }
   ctx.record(

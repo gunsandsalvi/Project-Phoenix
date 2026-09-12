@@ -24,7 +24,7 @@ import {
   type PartyId,
   type PartyKindId,
 } from '../../core/ids.js';
-import { dustOf, sub, sum, withinDust } from '../../core/num.js';
+import { atLeast, atMost, dustOf, sub, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -170,7 +170,7 @@ function capacity(): ClearingCapacity {
       if (!one.some) return 0;
       if (one.value <= 0) return wanted;
       const affordable = ctx.registry.deliverable(profile.unit, room / one.value);
-      return affordable < wanted ? affordable : wanted;
+      return atMost(affordable, wanted, 'it posts out of the money in its account');
     },
     /**
      * D2, Money Market A2: WHAT THIS MEMBER'S OPEN ROWS WILL ASK IT FOR, per money.
@@ -502,7 +502,7 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
   // gone is two defaults and not one — and the house's own is its estate's business now. Every
   // line of a waterfall is an instruction naming the house, and it is not there to be named.
   if (house !== null && survivor === house && ctx.parties.get(house).status.alive) {
-    runWaterfall(ctx, house, dead, before.ccy, claim > 0 ? claim : 0);
+    runWaterfall(ctx, house, dead, before.ccy, atLeast(claim, 0, 'a position that was in the defaulter\u2019s favour leaves the house no hole'));
   }
 }
 

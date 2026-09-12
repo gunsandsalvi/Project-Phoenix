@@ -35,7 +35,12 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { add, mul, sum } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  mul,
+  sum,
+} from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -169,7 +174,7 @@ export function bidsFor(
 ): readonly Order[] {
   if (required === undefined) return [];
   const cash = lender.cash(ccy);
-  const most = appetite < cash ? appetite : cash;
+  const most = atMost(appetite, cash, 'it subscribes out of the money it has');
   const qty = downTick(most);
   if (qty <= 0) return [];
   return [{ party: lender.self.id, side: 'sell', price: required, qty }];

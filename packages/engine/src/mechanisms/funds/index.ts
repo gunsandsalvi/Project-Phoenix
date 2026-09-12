@@ -43,7 +43,19 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { add, addTo, div, dustOf, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import {
+  add,
+  addTo,
+  atMost,
+  div,
+  dustOf,
+  material,
+  mul,
+  sub,
+  sum,
+  withinDust,
+  zeroIfNone,
+} from '../../core/num.js';
 import { asQty, downTick, subQty, upTick, type Qty } from '../../core/tick.js';
 
 /** Law 8: one piece — the smallest step there is, and the only literal a count of them can have. */
@@ -337,7 +349,7 @@ function subscribe(
   // for it does not buy. That is a budget, not a bound on the decision.
   const cash = ctx.participant(holder).cash(ccy);
   const wanted = mul(sharesAsked, perShare, 'what it asked to put in');
-  const budget = wanted > cash ? cash : wanted;
+  const budget = atMost(wanted, cash, 'it cannot spend money it does not hold');
   // Law 8: SHARES ARE ISSUED IN WHOLE PIECES and paid for in whole pieces of money, per member of a
   // cell (XI-15). The shares are struck first, because they are the thing being bought, and what
   // is paid is what they come to at the NAV — the nearest piece, so the fund is not shaved by a
@@ -400,17 +412,27 @@ function redeem(
   // XI-15: the register holds a cell's position PER MEMBER, which is the unit a request is in.
   const held = ctx.register.quantity(holder, share.id);
   const weight = weightOf(party);
-  const asked = sharesAsked > held ? held : sharesAsked;
+  const asked = atMost(sharesAsked, held, 'it cannot hand back shares it does not hold');
   if (asked <= 0) return 0;
   // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
   const owedNow = mul(totalFor(party, asked), perShare, 'what it owes this holder');
-  const paying = owedNow > cash ? cash : owedNow;
+  const paying = atMost(owedNow, cash, 'it pays out of the money there is');
   // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
   // NAV — the nearest piece of money. What cannot be paid for stays in the queue (C2.b).
   const sharesNow = downTick(div(div(paying, perShare, 'shares it can pay for'), weight, 'per member'));
-  if (material(sharesNow, 2, asked) && sharesNow > 0) {
-    const perMemberCash = ctx.registry.cashFor(ccy, mul(sharesNow, perShare, 'what a member is paid'));
+  const perMemberCash = ctx.registry.cashFor(ccy, mul(sharesNow, perShare, 'what a member is paid'));
+  /**
+   * Law 8, C2.b: A PAYMENT BELOW ONE PIECE OF MONEY IS NOT A PAYMENT.
+   *
+   * Shares come back in whole pieces and the cash goes out in whole pieces, and the two grids are
+   * not the same grid: a share worth less than a cent gives a whole number of shares whose cash
+   * value rounds to nothing. Handing the shares back for nothing would be a one-sided flow (Law 5),
+   * and the wire says so — `[Money C1] money leg amount must be positive, got 0`, which stopped a
+   * year-long run in `balance-identity.test.ts` (`13b.1-1`). What it cannot pay stays on the book
+   * under its own name and the fund is gated, which is the answer C2.b already has for this.
+   */
+  if (material(sharesNow, 2, asked) && sharesNow > 0 && perMemberCash > 0) {
     const side = cellSide(party, sharesNow);
     const money = cellSide(party, perMemberCash);
     const legs: Leg[] = [
@@ -512,7 +534,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
         b.queued.filter((q) => q.fund === d.fund && q.holder === o.party).map((q) => q.sharesPerMember),
       ).value;
       const room = sub(held, already, 'shares it has not already asked back');
-      const taking = asked > room ? room : asked;
+      const taking = atMost(asked, room, 'it cannot ask back shares it has already asked back');
       if (taking <= 0) continue;
       // C2.b: the request goes on the book under its own name at the NAV of the day it asked. What
       // happens to it after that is a question of cash, never of whether it counts.
@@ -643,7 +665,7 @@ function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
       fund: d.fund,
       requests: left.length,
       sharesOwed: sum(left.map((q) => totalFor(ctx.parties.get(q.holder), q.sharesPerMember))).value,
-      oldest: left.reduce<number>((at, q) => (q.since < at ? q.since : at), ctx.period),
+      oldest: left.reduce<number>((at, q) => atMost(q.since, at, 'the oldest of them is as old as the oldest'), ctx.period),
     },
     true,
   );
@@ -1029,7 +1051,7 @@ function ordersOf(
     // UP because this is a redemption it has to MEET — selling all but a fraction of what covers it
     // leaves the investor short — and it can never be more than what it holds.
     const wants = fraction >= 1 ? units : upTick(mul(units, fraction, 'units it must sell'));
-    const qty = wants < units ? wants : units;
+    const qty = atMost(wants, units, 'there are no more units of it than there are');
     if (!material(qty, 2, units)) return [];
     // XI-2: at whatever the market gives. A forced seller that named a price would not be one.
     return [{ party: view.self.id, side: 'sell', price: 'market', qty }];
@@ -1260,7 +1282,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   // Law 8: whole shares. Each holder puts in ITS OWN slice, so a world missing the desks that would
   // have made its market launches a fund short by exactly their slices — which is Seed A3's "only
   // what somebody who EXISTS actually took" and is why this is not one split of one total.
-  const full = downTick(backs.reduce((a, b) => (b < a ? b : a)));
+  const full = downTick(backs.reduce((a, b) => atMost(b, a, 'the launch reaches as far as the shortest line backs it')));
   if (full <= 0) return;
   const taken = holders.map(([, share]) =>
     downTick(mul(full, share, "this holder's slice of the launch")),

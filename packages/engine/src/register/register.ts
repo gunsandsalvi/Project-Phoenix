@@ -15,11 +15,14 @@ import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
 import {
+  atMost,
   dustOf,
   finite,
   moved,
+  mul,
   opened,
   openedFrom,
+  sub,
   sum,
   type Running,
   type Sum,
@@ -767,4 +770,41 @@ export function registerReads(store: Register): RegisterReads {
     revaluation: (party: PartyId) => store.revaluation(party),
     revaluationWalk: (party: PartyId) => store.revaluationWalk(party),
   });
+}
+
+/**
+ * THE TWO READS OF A LOT BOOK THAT NOBODY OWNS ALONE.
+ *
+ * A lot is where the cost of a holding lives (Register D4, XI-5), and both of these are reads of it
+ * and nothing else — no store, no re-derivation, no second copy (Law 19). They are here with the
+ * lots rather than in the module that first needed them because three modules ask: the goods module
+ * that draws a batch, the firm that puts one on the line, and the capital programme that builds out
+ * of one. A module importing another to learn how to read a kernel structure is the crossing
+ * `phoenix/no-cross-module-import` exists to forbid (item 13b.1).
+ */
+/**
+ * E5: what giving up `qty` units costs the holder, under the one lot flow this registry states —
+ * first in, first out. It is a read of the lots themselves, which are where the cost lives (E1);
+ * nothing here stores or re-derives a value beside them (Law 19).
+ */
+export function costOfDraw(lots: readonly Lot[], qty: number): number {
+  const terms: number[] = [];
+  let left = qty;
+  for (const lot of lots) {
+    if (left <= 0) break;
+    const take = atMost(lot.qty, left, 'this lot has no more in it than it has');
+    terms.push(mul(take, lot.basisPerUnit, 'cost of the units drawn'));
+    left = sub(left, take, 'units left to draw');
+  }
+  return sum(terms).value;
+}
+
+/**
+ * B3, B4: the units of a batch that are due off the line — started at or before the period the
+ * lead time names. The lots are the batch book, so this is a read of when each was started; with
+ * one lead time per good the oldest lots are exactly the ones due, which is the order they are
+ * drawn in anyway (E5).
+ */
+export function dueFromLine(lots: readonly Lot[], startedBy: number): number {
+  return sum(lots.filter((l) => l.acquired <= startedBy).map((l) => l.qty)).value;
 }

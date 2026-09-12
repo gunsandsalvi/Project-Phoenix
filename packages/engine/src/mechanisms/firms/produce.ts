@@ -28,8 +28,9 @@ import { upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
-import { costOfDraw, dueFromLine, goodId, wipId } from '../goods/index.js';
-import { capacityFrom, utilisation, vintagesHeld } from '../capital-programme/index.js';
+import { goodId, wipId } from '../../registry/physical.js';
+import { costOfDraw, dueFromLine } from '../../register/register.js';
+import { capacityFrom, utilisation, vintagesHeld } from '../../registry/physical.js';
 import type { FirmDecl } from './data.js';
 import { technologyOf } from './decide.js';
 

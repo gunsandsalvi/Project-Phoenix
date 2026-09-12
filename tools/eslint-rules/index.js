@@ -1,19 +1,47 @@
 // Project-specific ESLint rules. Each rule names the law it enforces (docs/ARCHITECTURE.md §9).
 // Plain ESM JavaScript so ESLint can load them without a build step.
 
-/** Law 6 / App B 22 — no bound standing in for a decision. */
+/**
+ * Law 6 / App B 22 — no bound standing in for a decision.
+ *
+ * It used to forbid a SPELLING — `Math.min`, `Math.max`, an identifier called `clamp` — and the
+ * engine wrote the same operation thirty-one times as `a < b ? a : b`, which is not a spelling this
+ * rule had heard of. So a reviewer grepping for bounds found nothing (item 13b.1). The ternary is
+ * forbidden here too, and the admissible case has a name: `atMost`/`atLeast` in `core/num.ts`,
+ * whose third argument is the reason — the thing that is not there. A bound that cannot be written
+ * as "there is no more of it" is a decision or a missing mechanism, and Law 6 says which.
+ */
 const noBounds = {
   meta: {
     type: 'problem',
-    docs: { description: 'Law 6: no Math.min/Math.max/clamp outside core/num.ts' },
+    docs: { description: 'Law 6: no Math.min/Math.max/clamp and no comparison-ternary bound outside core/num.ts' },
     schema: [],
     messages: {
       bound:
         'Law 6: "{{name}}" is a bound. Build the compensating mechanism; only arithmetic impossibility is admissible (core/num.ts).',
+      ternary:
+        'Law 6: `{{code}}` is a bound written as a ternary — the same operation Math.min is. If it is arithmetic impossibility, say so: atMost/atLeast in core/num.ts take the reason as their third argument. If it is not, build the compensating mechanism.',
     },
   },
   create(context) {
+    /** Both branches are the two sides of the test, either way round: that IS min or max. */
+    const isBound = (node) => {
+      const t = node.test;
+      if (t.type !== 'BinaryExpression' || !['<', '<=', '>', '>='].includes(t.operator)) return false;
+      const text = (n) => context.sourceCode.getText(n);
+      const [l, r] = [text(t.left), text(t.right)];
+      const [a, b] = [text(node.consequent), text(node.alternate)];
+      return (a === l && b === r) || (a === r && b === l);
+    };
     return {
+      ConditionalExpression(node) {
+        if (!isBound(node)) return;
+        context.report({
+          node,
+          messageId: 'ternary',
+          data: { code: context.sourceCode.getText(node).slice(0, 60) },
+        });
+      },
       CallExpression(node) {
         const callee = node.callee;
         let name = null;
@@ -234,16 +262,30 @@ const noCrossModuleImport = {
     const m = /\/src\/(mechanisms|seeds)\/([^/]+)\//.exec(file);
     if (m === null) return {};
     const own = `${m[1]}/${m[2]}`;
+    // The importing file's own directory, so a relative specifier can be walked against it. The
+    // rule used to strip the leading `../`s and test the remainder for a `mechanisms/` prefix —
+    // which is true of exactly one spelling nobody writes. `'../goods/index.js'` became
+    // `'goods/index.js'`, matched nothing, and the rule reported nothing in its whole life while
+    // six modules imported each other, including a cycle (item 13b.1).
+    const here = file.slice(0, file.lastIndexOf('/'));
     return {
       ImportDeclaration(node) {
         const source = String(node.source.value);
-        const resolved = source.replace(/^(\.\.\/)+/, '').replace(/^\.\//, '');
-        const sib = /^(mechanisms|seeds)\/([^/]+)/.exec(resolved);
+        if (!source.startsWith('.')) return;
+        const parts = `${here}/${source}`.split('/');
+        const walked = [];
+        for (const part of parts) {
+          if (part === '.' || part === '') continue;
+          if (part === '..') walked.pop();
+          else walked.push(part);
+        }
+        const resolved = walked.join('/');
+        const sib = /\/src\/(mechanisms|seeds)\/([^/]+)/.exec(`/${resolved}`);
         if (sib !== null && `${sib[1]}/${sib[2]}` !== own) {
           context.report({ node, messageId: 'sibling', data: { target: `${sib[1]}/${sib[2]}` } });
         }
         if (
-          /world\/world\.js$/.test(resolved) &&
+          /\/world\/world\.js$/.test(`/${resolved}`) &&
           !/^import type/.test(context.sourceCode.getText(node))
         ) {
           context.report({ node, messageId: 'world' });

@@ -17,7 +17,7 @@
  */
 import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
-import { yearFraction } from '../../calendar/daycount.js';
+import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
@@ -31,7 +31,7 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
-import { add, addTo, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
+import { add, addTo, atLeast, atMost, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -52,10 +52,9 @@ import {
   SOVEREIGN_BOND,
   type SovereignBillTerms,
   type SovereignBondTerms,
-} from '../sovereign-instruments/index.js';
-import { CURVE_DAY_COUNT } from '../sovereign-curve/index.js';
+} from '../../registry/claims.js';
 import { findVenue } from '../../clearing/venue.js';
-import { isGoodTerms } from '../goods/index.js';
+import { isGoodTerms } from '../../registry/physical.js';
 import {
   GRID_DAY,
   GRID_MONTHS,
@@ -92,6 +91,23 @@ interface Line {
   readonly short: boolean;
 }
 
+/**
+ * Sovereign D3, D3.c, Law 4, Law 19: THE CONVENTION ITS OWN CURVE IS BUILT ON.
+ *
+ * Every consumer of a curve compounds and counts days the way that curve family says (D3.c), and a
+ * treasury that pricing its own paper on a different one would be two conventions for one promise.
+ * It is read off the family this issuer's own paper makes, which is where the declaration lives —
+ * so this module no longer imports the module that declares it (`13b.1`), and an issuer whose
+ * curve is a different convention gets that one without a line changing.
+ */
+function dayCountOn(
+  reads: Pick<MechanismContext, 'registry'>,
+  issuer: PartyId,
+  ccy: CurrencyCode,
+): DayCount {
+  return reads.registry.curveFamily(curveFamilyOf(issuer, ccy)).dayCount;
+}
+
 /** Every live line this issuer has out, with what it owes on it (E1: read from the register). */
 function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
   const out: Line[] = [];
@@ -100,7 +116,7 @@ function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
     const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
     const last = flows[flows.length - 1];
     if (last === undefined) continue;
-    const tenorYears = yearFraction(CURVE_DAY_COUNT, on, last.date);
+    const tenorYears = yearFraction(dayCountOn(ctx, issuer, i.ccy), on, last.date);
     out.push({
       id: i.id,
       maturity: last.date,
@@ -487,7 +503,8 @@ function announce(
   }
   const maturity = gridDate(addMonths(on, monthsOf(target)));
   const curve = ctx.curve(curveFamilyOf(id, ccy));
-  const reading = curve.at(yearFraction(CURVE_DAY_COUNT, on, maturity));
+  const dayCount = dayCountOn(ctx, id, ccy);
+  const reading = curve.at(yearFraction(dayCount, on, maturity));
   if (!reading.yield.some) {
     // Nothing has printed anywhere on this curve, so there is no level to walk away from. The
     // treasury does not invent one: it brings nothing this period and says so.
@@ -506,7 +523,7 @@ function announce(
     flows,
     add(y, ctx.params.get(TREASURY_PARAMS.concession), 'walk-away yield'),
     on,
-    CURVE_DAY_COUNT,
+    dayCount,
     'reservation',
   );
   // Law 8: it needs to raise a sum of money and it raises it by selling UNITS of a line, which are
@@ -557,15 +574,16 @@ function openLine(
   y: number,
   short: boolean,
 ): InstrumentId {
+  const dayCount = dayCountOn(ctx, issuer, ccy);
   const on = ctx.calendar.startOf(ctx.period);
   const id = instrumentId(`${issuer}.${short ? 'bill.' : ''}${formatCivil(maturity)}`);
   const terms: SovereignBondTerms | SovereignBillTerms = short
     ? { kind: SOVEREIGN_BILL, issueDate: on, maturity }
     : {
         kind: SOVEREIGN_BOND,
-        coupon: rate(y > 0 ? y : 0, ANNUAL),
+        coupon: rate(atLeast(y, 0, 'an issuer cannot promise to be paid for borrowing'), ANNUAL),
         couponPeriodicity: SEMI_ANNUAL,
-        dayCount: CURVE_DAY_COUNT,
+        dayCount,
         issueDate: on,
         maturity,
       };
@@ -773,7 +791,7 @@ function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const ccy = view.registry.region(view.self.region).ccy;
   const cash = view.cash(ccy);
   // D1: it buys out of the balance it has, and an empty account buys nothing.
-  const afford = spend < cash ? spend : cash;
+  const afford = atMost(spend, cash, 'it procures with the money in its account');
   // Law 8: a budget divided by a price is a fraction of a unit, and the state buys whole ones like
   // everybody else. Down: what it can afford never rounds up past the money it has.
   const qty = downTick(div(afford, print.value.price, 'what the budget buys'));
@@ -815,5 +833,5 @@ function sparePerProgramme(view: ParticipantView): number {
   if (typeof need !== 'number' || need >= 0) return 0;
   const ccy = view.registry.region(view.self.region).ccy;
   const cash = view.cash(ccy);
-  return -need < cash ? -need : cash;
+  return atMost(-need, cash, 'it repays out of the money in its account');
 }

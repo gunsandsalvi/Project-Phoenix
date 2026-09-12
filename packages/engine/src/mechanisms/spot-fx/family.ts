@@ -20,9 +20,9 @@ import { fxPairId } from '../../core/ids.js';
 import { sub } from '../../core/num.js';
 import { fxParam } from './data.js';
 import { triangles } from './arbitrage.js';
-import type { BankDecl } from '../banks/data.js';
+import type { FxDeskDecl } from './data.js';
 
-export function triangularConsistency(rows: readonly BankDecl[]): Family {
+export function triangularConsistency(rows: readonly FxDeskDecl[]): Family {
   return {
     name: 'crossMarket',
     contributor: 'spot-fx',
@@ -60,7 +60,7 @@ export function triangularConsistency(rows: readonly BankDecl[]): Family {
 }
 
 /** What the keenest desk in the world would need to make the round trip worth taking (C2.a). */
-function cheapestRoundTrip(view: AuditView, rows: readonly BankDecl[]): number | undefined {
+function cheapestRoundTrip(view: AuditView, rows: readonly FxDeskDecl[]): number | undefined {
   let best: number | undefined;
   for (const d of rows) {
     const cost = view.params.get(fxParam(d.bank, 'arbitrageEdge'));

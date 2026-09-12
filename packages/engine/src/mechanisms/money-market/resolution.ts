@@ -44,7 +44,14 @@
 import type { CurrencyCode, InstrumentId, ParamId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId } from '../../core/ids.js';
 import { forbid } from '../../core/assert.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  mul,
+  sub,
+  sum,
+} from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { CellSide } from '../../ledger/instruction.js';
 import { cellSide } from '../../ledger/settlement.js';
@@ -315,7 +322,7 @@ function allocate(
     const layer = exposed.filter((e) => e.rank === rank);
     const pool = sum(layer.map((e) => e.owed)).value;
     if (pool <= 0) continue;
-    const cut = left > pool ? pool : left;
+    const cut = atMost(left, pool, 'a layer absorbs no more than there is of it');
     for (const e of layer) {
       // Clearing C3: pro rata, in whole pieces, and the odd piece has a named holder.
       const share = ctx.registry.payable(ccy, mul(div(e.owed, pool, 'its share'), cut, 'its loss'));
@@ -478,7 +485,7 @@ function payFrom(
   const payer = ctx.parties.get(from);
   if (!payer.status.alive) return 0;
   const has = ctx.register.quantity(from, moneyInstrumentId(ctx.accountOf(from, ccy).issuer, ccy));
-  const amount = ctx.registry.payable(ccy, wanted > has ? has : wanted);
+  const amount = ctx.registry.payable(ccy, atMost(wanted, has, 'it pays out of the money there is'));
   if (amount <= 0) return 0;
   const r = ctx.settle({
     legs: [

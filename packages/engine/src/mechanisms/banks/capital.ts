@@ -21,7 +21,15 @@
  * depositor, a rival and a lender all read, and the bank's own credit decision has less room in it.
  */
 import { currencyUnit, moneyInstrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import {
+  add,
+  atLeast,
+  atMost,
+  div,
+  mul,
+  sub,
+  sum,
+} from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -146,7 +154,7 @@ export function capitalOf(
     // Only the part ABOVE. A line it is SHORT of its target is a position too — it will have to
     // buy — but it is not an asset it holds, and capital stands against what a bank owns.
     const want = rules.targets.get(h.instrument);
-    const banking = want === undefined || value < want ? value : want;
+    const banking = want === undefined ? value : atMost(value, want, 'the treasury cannot claim more of a line than there is of it');
     const trading = sub(value, banking, 'the part it is running as a position');
     const asBanking = mul(
       banking,
@@ -201,7 +209,7 @@ export function capitalOf(
     minLeverage: rules.minLeverage,
     buffer: rules.buffer,
     binds,
-    headroom: byLeverage < inUnits ? byLeverage : inUnits,
+    headroom: atMost(byLeverage, inUnits, 'the rule that leaves it less is the room there is'),
     limitPerName: mul(capital, rules.limitPerName, 'the most it will fund for one name'),
     byLine,
     breach: capital < mul(rwa, askedWeighted, 'what the line asks') ||
@@ -264,7 +272,7 @@ export function publish(ctx: MechanismContext, p: CapitalPosition): void {
       bank: p.bank,
       // What it would have to raise to be above BOTH lines, which is the bigger of the two — a
       // plan that answered only the rule it happened to breach first would leave it in breach.
-      short: shortWeighted > shortLeverage ? shortWeighted : shortLeverage,
+      short: atLeast(shortWeighted, shortLeverage, 'the rule it is further under is what it must find'),
       binds: p.binds,
       belowRequirement: p.belowRequirement,
     },

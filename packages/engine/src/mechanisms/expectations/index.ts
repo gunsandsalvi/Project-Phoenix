@@ -19,7 +19,7 @@
  */
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import { add, atLeast, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
 import { isAssetLeg, isContractLeg, isMoneyLeg, type CellSide } from '../../ledger/instruction.js';
@@ -59,7 +59,7 @@ function memoryOf(ctx: MechanismContext, party: PartyId): number {
   const draw = ctx.rng.derive(`memory/${party}`).next();
   const drawn = add(mean, mul(mean, mul(spread, sub(mul(2, draw, 'draw'), 1, 'centred'), 'width'), 'spread'), 'memory');
   // A memory shorter than one period is not a memory: it would be this period's observation itself.
-  return drawn < 1 ? 1 : drawn;
+  return atLeast(drawn, 1, 'there is no memory shorter than one period: it would be this period itself');
 }
 
 /**
@@ -262,7 +262,7 @@ export const expectations: SystemModule = {
           if (surprise !== 0) {
             h.surprises.push(surprise);
             const rounded = Math.round(h.memory);
-            const keep = rounded < 1 ? 1 : rounded;
+            const keep = atLeast(rounded, 1, 'there is no window shorter than the one surprise it just had');
             if (h.surprises.length > keep) h.surprises.splice(0, h.surprises.length - keep);
             // B2: a surprise is a real event, recorded. It is the party's own, so it is private.
             ctx.record('expectations.surprise', [party], { variable, observed: seen.value, expected: h.expected, surprise }, false);

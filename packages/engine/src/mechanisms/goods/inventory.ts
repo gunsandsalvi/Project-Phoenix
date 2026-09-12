@@ -16,13 +16,12 @@
 import { InvalidRegistry } from '../../core/errors.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type { InstrumentKindId } from '../../core/ids.js';
-import { material, mul, sub, sum } from '../../core/num.js';
+import { material, mul, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { GoodDecl } from './data.js';
-import type { Lot } from '../../register/register.js';
 import {
   goodKindId,
   goodTerms,
@@ -122,32 +121,6 @@ export function wipProfile(d: GoodDecl): InstrumentKindProfile {
   };
 }
 
-/**
- * E5: what giving up `qty` units costs the holder, under the one lot flow this registry states —
- * first in, first out. It is a read of the lots themselves, which are where the cost lives (E1);
- * nothing here stores or re-derives a value beside them (Law 19).
- */
-export function costOfDraw(lots: readonly Lot[], qty: number): number {
-  const terms: number[] = [];
-  let left = qty;
-  for (const lot of lots) {
-    if (left <= 0) break;
-    const take = lot.qty < left ? lot.qty : left;
-    terms.push(mul(take, lot.basisPerUnit, 'cost of the units drawn'));
-    left = sub(left, take, 'units left to draw');
-  }
-  return sum(terms).value;
-}
-
-/**
- * B3, B4: the units of a batch that are due off the line — started at or before the period the
- * lead time names. The lots are the batch book, so this is a read of when each was started; with
- * one lead time per good the oldest lots are exactly the ones due, which is the order they are
- * drawn in anyway (E5).
- */
-export function dueFromLine(lots: readonly Lot[], startedBy: number): number {
-  return sum(lots.filter((l) => l.acquired <= startedBy).map((l) => l.qty)).value;
-}
 
 /**
  * E4: what perished this period leaves the world at the lot's own cost per unit, on the book of

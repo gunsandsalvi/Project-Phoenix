@@ -21,7 +21,17 @@ import {
   type InstrumentId,
   type PartyId,
 } from '../../core/ids.js';
-import { add, div, dustOf, material, mul, sub, sum, withinDust } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  dustOf,
+  material,
+  mul,
+  sub,
+  sum,
+  withinDust,
+} from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { downTick } from '../../core/tick.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
@@ -324,7 +334,7 @@ function upTo(orders: readonly Order[], borrower: PartyId, need: Qty): readonly 
     }
     // Both are counts of money pieces — what it bid and what it still needs — so the smaller of
     // them is one too, and nothing was rounded to get it.
-    const qty = o.qty < need ? o.qty : need;
+    const qty = atMost(o.qty, need, 'what it still needs is all it is still bidding for');
     if (qty > 0) out.push({ ...o, qty });
   }
   return out;
@@ -381,7 +391,7 @@ function clearBook(
       // Less than it asked for is the constraint biting, not a failure of the session — and what
       // it gets is a whole number of pieces of money (Law 8), because that is what is lent.
       const covered = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
-      amount = ctx.registry.payable(ccy, covered > s.amount ? s.amount : covered);
+      amount = ctx.registry.payable(ccy, atMost(covered, s.amount, 'a guarantee pays no more than was owed'));
       if (amount <= 0) continue;
       cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), amount);
     }
@@ -938,7 +948,7 @@ function bookOverdrafts(ctx: MechanismContext): void {
     const rate = add(c.ceiling, ctx.params.get(MM_PARAMS.overdraftPenalty), 'the penalty rate');
     const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), need);
     const covered = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
-    const amount = ctx.registry.payable(ccy, covered > need ? need : covered);
+    const amount = ctx.registry.payable(ccy, atMost(covered, need, 'a guarantee pays no more than was owed'));
     if (amount <= 0) continue;
     const n = m.next;
     m.next += 1;

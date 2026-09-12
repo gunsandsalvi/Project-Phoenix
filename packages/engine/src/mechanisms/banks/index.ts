@@ -27,7 +27,7 @@ import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId } from '../../core/ids.js';
-import { add, div, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { add, atLeast, atMost, div, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -266,7 +266,7 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
    * the site: `[Clearing A2] bank.a is on both sides of mkt.ust.bill.2026-09-15 at crossing prices`
    * (`13b-12`). The crossing was arithmetic that had lost its meaning, not a decision anybody took.
    */
-  const funded = capital > 0 ? capital : 0;
+  const funded = atLeast(capital, 0, 'a hole funds nothing: there is no less capital than none');
   const funding = add(owed, funded, 'what funds its book');
   const required = ctx.params.get(bankParam(bank, 'returnOnCapital'));
   const onCapital = mul(funded, required, 'what its own capital costs it');
@@ -385,7 +385,7 @@ function shop(rows: readonly BankDecl[], ctx: MechanismContext, borrower: PartyI
       continue;
     }
     const q = quote(view, decl, borrower, reg, costOfFunds(ctx, b.id, ccy).perAnnum, seenDefaults(ctx));
-    const takeable = r.most < want ? r.most : want;
+    const takeable = atMost(r.most, want, 'nobody lends more than the borrower asked for');
     if (best === undefined || q.rate < best.rate) {
       best = q;
       lend = takeable;

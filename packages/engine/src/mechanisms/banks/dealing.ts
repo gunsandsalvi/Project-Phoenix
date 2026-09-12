@@ -18,7 +18,16 @@
  */
 import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
-import { add, div, material, mul, sub, sum } from '../../core/num.js';
+import {
+  add,
+  atLeast,
+  atMost,
+  div,
+  material,
+  mul,
+  sub,
+  sum,
+} from '../../core/num.js';
 import { upTick } from '../../core/tick.js';
 import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -50,7 +59,7 @@ function allotted(view: ParticipantView, appetite: number, carried: number): num
   const room = roomFor(view, DEALING);
   if (!room.some) return appetite;
   const may = add(carried, room.value, 'what it carries plus the room it was given');
-  return may < appetite ? may : appetite;
+  return atMost(may, appetite, 'a line cannot spend room that does not exist');
 }
 
 /**
@@ -88,7 +97,7 @@ export function bookValue(
      * that leaves is the desk's, and it cannot be negative because the bank cannot be short a line
      * it has not borrowed (Register C4).
      */
-    const treasurys = want < held ? want : held;
+    const treasurys = atMost(want, held, 'the treasury cannot claim more of a line than there is of it');
     terms.push(sub(held, treasurys, 'what the desk is carrying of it'));
   }
   return sum(terms).value;
@@ -320,7 +329,7 @@ function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty
   const share = mul(owed, div(mine, total, 'what this line carries'), 'raised here');
   const want = upTick(div(share, mark.value, 'units to sell'));
   const free = view.free(line);
-  return want < free ? want : free;
+  return atMost(want, free, 'it sells what it holds unencumbered and no more');
 }
 
 /**
@@ -355,13 +364,13 @@ function primaryBid(
     view.free(instrument),
     'units it is short of that',
   );
-  const wanted = obliged > gap ? obliged : gap;
+  const wanted = atLeast(obliged, gap, 'its dealership obligation is a floor under its own need');
   // C3.a: it bids out of the money it has. A bank with none bids nothing, and that is how an
   // auction fails: not because a rule allowed it to, but because nobody could pay.
   const affordable = div(state.cash, q.bid, 'what it could pay for');
   // Law 8: both of those are money over a price, so both are fractions of a unit of the paper. It
   // bids for whole ones, and down, because a bid it cannot pay for is not a bid (C3.a).
-  const qty = downTick(wanted < affordable ? wanted : affordable);
+  const qty = downTick(atMost(wanted, affordable, 'a bid it cannot pay for is not a bid'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: q.bid, qty }];
 }

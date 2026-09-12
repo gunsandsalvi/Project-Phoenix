@@ -15,27 +15,8 @@
  * recipe decides whether what it bought is an input or plant (A4.c).
  */
 
-export interface CapitalKindDecl {
-  /** A4: the kind. Plant of one kind is not plant of another, at any price. */
-  readonly id: string;
-  readonly name: string;
-  /** A1, A4: the unit its stock is counted in. Never added to the stock of another kind. */
-  readonly unit: string;
-  /**
-   * A4.b, A4.c, C1: the good a unit of it is made from. Investment is a purchase from a named
-   * capital-goods producer, and this is the line that produces it.
-   */
-  readonly madeFrom: string;
-  /**
-   * A4.b, A6: how many periods a vintage of it works before it is worn out and leaves the register.
-   * It is the life that makes the good a capital good, and it is technology.
-   */
-  readonly usefulLifePeriods: number;
-  /** C3: periods between the good arriving and the plant working. The asset is built, then it works. */
-  readonly buildLagPeriods: number;
-  readonly why: string;
-}
-
+export * from '../../registry/physical.js';
+import type { CapitalKindDecl } from '../../registry/physical.js';
 /**
  * A period is a week (docs/ARCHITECTURE.md 4.7), so a life below is a count of weeks.
  *
@@ -56,11 +37,3 @@ export const CAPITAL_KINDS: readonly CapitalKindDecl[] = [
     why: 'A machine works for three years and then it is scrap. Three years is short enough that a firm which stops investing loses its capacity inside a run, and long enough that the spend and the capacity it buys are separated by more than a cycle — which is what makes investment a commitment rather than a purchase.',
   },
 ];
-
-/** The declaration of a capital kind by id; asking for one this world does not have is a defect. */
-export function capitalKindOf(
-  rows: readonly CapitalKindDecl[],
-  id: string,
-): CapitalKindDecl | undefined {
-  return rows.find((r) => r.id === id);
-}

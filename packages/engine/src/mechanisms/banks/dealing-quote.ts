@@ -45,7 +45,7 @@
 import { yearFraction } from '../../calendar/daycount.js';
 import { nextPeriod, type Calendar, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
-import { add, div, material, mul, sub } from '../../core/num.js';
+import { add, atMost, div, material, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { priceAtYield, requiredYieldOf } from './treasury.js';
@@ -110,8 +110,10 @@ export interface DeskState {
 /** Which of a desk's three real constraints bound its bid (D4: it shrinks, and this says why). */
 export type QuoteBinding = 'position' | 'book' | 'money' | 'none';
 
-/** The smaller of two quantities: arithmetic, and the smaller one is the constraint that binds. */
-const least = (a: number, b: number): number => (a < b ? a : b);
+/** D4, D5: of three real constraints the SMALLEST is the one that binds, and it is the one that
+ * decides the size. `atMost` says why at each site; here the reason is the same for all three. */
+const least = (a: number, b: number): number =>
+  atMost(a, b, 'a desk can take on no more than the tightest of its own three constraints');
 
 /**
  * C1, XI-13: the desk's own view of what a unit is worth.

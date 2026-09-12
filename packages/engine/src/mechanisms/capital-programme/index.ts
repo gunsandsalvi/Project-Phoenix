@@ -26,9 +26,18 @@
 import type { Family, Violation } from '../../audit/audit.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { addTo, div, dustOf, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import {
+  addTo,
+  atMost,
+  div,
+  dustOf,
+  material,
+  sub,
+  sum,
+  withinDust,
+  zeroIfNone,
+} from '../../core/num.js';
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
-import { paramId, type ParamId } from '../../core/ids.js';
 import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
@@ -41,7 +50,8 @@ import type { SystemModule } from '../../world/module.js';
 // Law 15, docs/PLAN.md 3.2: a typed accessor for another kind's TERMS, from the module that owns
 // the kind. What a good is and what a lot of it cost are the goods module's to say; this module
 // asks it rather than keeping a second copy of the answer (Law 4, Law 19).
-import { costOfDraw, goodId, isGoodTerms } from '../goods/index.js';
+import { goodId, isGoodTerms } from '../../registry/physical.js';
+import { costOfDraw } from '../../register/register.js';
 import { CAPITAL_KINDS, type CapitalKindDecl } from './data.js';
 import {
   isPlant,
@@ -57,12 +67,8 @@ import {
 
 export * from './data.js';
 export * from './plant.js';
-export * from './capacity.js';
+import { buildLagParam, lifeParam } from '../../registry/physical.js';
 
-export const lifeParam = (capitalKind: string): ParamId =>
-  paramId(`plant.usefulLife.${capitalKind}`);
-export const buildLagParam = (capitalKind: string): ParamId =>
-  paramId(`plant.buildLag.${capitalKind}`);
 
 /** A4, Law 2: the two numbers a kind of capital states about itself, declared with their units. */
 function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
@@ -277,7 +283,7 @@ function commissionOne(
   const free = ctx.register.free(buyer, good);
   // It commissions what it bought, and it cannot commission what it no longer has: a firm that
   // sold the machine on before it was installed installed nothing.
-  const qty = free < bought ? free : bought;
+  const qty = atMost(free, bought, 'only what is unencumbered can be built into plant');
   if (!material(qty, holding.value.lots.length + 1, bought)) return;
   const cost = costOfDraw(holding.value.lots, qty);
   const serviceDate = ctx.calendar.startOf(ctx.period);

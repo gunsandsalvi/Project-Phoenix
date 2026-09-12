@@ -9,7 +9,8 @@
  * because two desks that quote the same rate are one desk and a pair with one quote has no market.
  */
 import { paramId, type ParamId } from '../../core/ids.js';
-import type { Spread } from '../../rng/spread.js';
+import { prng } from '../../rng/prng.js';
+import { between, type Spread } from '../../rng/spread.js';
 
 /** A desk's own numbers, under its own name (XI-14: declared, never a literal). */
 export const fxParam = (bank: string, what: string): ParamId => paramId(`fx.${what}.${bank}`);
@@ -38,3 +39,35 @@ export const FX_SPREAD: FxDispersion = {
     why: 'Spot FX C2.a, E3: what a three-legged trade must beat before this desk does it — its own cost of doing three trades at once and carrying all three overnight. It is what makes triangular consistency an OUTCOME with a width rather than an identity the kernel enforces (Currency C3.b): the gap closes to somebody’s cost and no further, and the desk with the lowest cost is the one that closes it.',
   },
 };
+
+/**
+ * ONE CURRENCY DESK, and the numbers it quotes with are its own.
+ *
+ * @spec Spot FX D1 Spot FX D3 Spot FX C2.a Seed B4 Law 4 Law 15
+ *
+ * They are drawn HERE and not in the banks module. A desk's edge, its inventory limit and what a
+ * three-legged trade must beat it are facts about a currency desk, and the module that owns the
+ * currency market is the one module that owns them (Law 4). Declaring them on `BankDecl` meant the
+ * banks module imported this file for the widths and this module imported `BankDecl` for the draws
+ * — a cycle between two modules, which is the shape that left a constant undefined at module-init
+ * during 13b and is the crossing `phoenix/no-cross-module-import` exists to forbid (item 13b.1).
+ *
+ * What this module needs of a bank is its NAME, which is public and comes through the kernel.
+ */
+export interface FxDeskDecl {
+  readonly bank: string;
+  readonly inventoryLimit: number;
+  readonly edge: number;
+  readonly arbitrageEdge: number;
+}
+
+/** Deterministic in the world's seed value and in nothing else (Seed A5, Audit D3). */
+export function drawFxDesks(banks: readonly string[], seed: string): readonly FxDeskDecl[] {
+  const rng = prng(seed, 'fx.desks');
+  return banks.map((bank) => ({
+    bank,
+    inventoryLimit: between(rng, FX_SPREAD.inventoryLimit),
+    edge: between(rng, FX_SPREAD.edge),
+    arbitrageEdge: between(rng, FX_SPREAD.arbitrageEdge),
+  }));
+}

@@ -23,7 +23,7 @@
 import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { InstrumentId } from '../../core/ids.js';
-import { div, material, mul, sub, sum } from '../../core/num.js';
+import { atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { EtfDecl } from './data.js';
@@ -62,7 +62,7 @@ export function trackerOrders(
   const difference = sub(target, held, 'what it is away from its own mandate');
   // Law 7: a difference below what one session could have made is not a rebalance, it is the
   // rounding of the last one. `material` is the same test every other order in this world takes.
-  if (!material(difference < 0 ? -difference : difference, 2, target > held ? target : held)) return [];
+  if (!material(Math.abs(difference), 2, atLeast(target, held, 'the larger of the two is what the difference is measured against'))) return [];
   // C2, Appendix B: AT WHAT THE LINE IS WORTH. A tracker does not decide a price — it pays what the
   // market last said and takes what the market last said — but it does not pay ANYTHING either: an
   // order with no level on the buy side is a buyer of last resort, and one of those in a thin book
@@ -75,11 +75,11 @@ export function trackerOrders(
     // bidder for anything — that is arithmetic, not a limit, and a bid it could not have paid for
     // is a trade that fails to settle every session and a level nobody pays.
     const affordable = div(view.cash(view.registry.region(view.self.region).ccy), price, 'what its cash buys');
-    const qty = downTick(difference < affordable ? difference : affordable);
+    const qty = downTick(atMost(difference, affordable, 'it buys with the money it has'));
     return qty > 0 ? [{ party: view.self.id, side: 'buy', price, qty }] : [];
   }
   const wants = downTick(-difference);
-  const qty: Qty = wants < held ? wants : held;
+  const qty: Qty = atMost(wants, held, 'it cannot sell what it does not hold');
   return qty > 0 ? [{ party: view.self.id, side: 'sell', price, qty }] : [];
 }
 

@@ -25,7 +25,14 @@ import { clear, isCleared, type Cleared, type Order } from '../../clearing/solve
 import type { VenueDecl } from '../../clearing/venue.js';
 import { currencyUnit } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
-import { add, div, material, mul, sub } from '../../core/num.js';
+import {
+  add,
+  atMost,
+  div,
+  material,
+  mul,
+  sub,
+} from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
@@ -218,7 +225,7 @@ function match(
         next += 1;
         continue;
       }
-      const taken = people < available ? people : available;
+      const taken = atMost(people, available, 'there are no more people in the cell than there are');
       hire(ctx, book, f.party, cell, taken, struck, occupation, region, p);
       people = sub(people, taken, 'people left to hire');
       if (taken === available) next += 1;
@@ -292,7 +299,7 @@ function shed(
     if (left <= 0) break;
     const members = Math.floor(div(left, row.hoursPerMember, 'members to separate'));
     if (members <= 0) break;
-    const taken = members >= row.headcount ? row.headcount : members;
+    const taken = atMost(members, row.headcount, 'the row employs no more than it employs');
     separate(ctx, book, row, taken, `${employer} cut its hours`, p);
     left = sub(left, mul(taken, row.hoursPerMember, 'hours shed'), 'hours left to shed');
   }

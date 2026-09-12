@@ -3,6 +3,7 @@
  * Algorithms after Howard Hinnant's days_from_civil / civil_from_days (proleptic Gregorian).
  */
 import { Impossible } from '../core/errors.js';
+import { atMost } from '../core/num.js';
 
 export interface Civil {
   readonly y: number;
@@ -79,7 +80,7 @@ export function addMonths(c: Civil, months: number): Civil {
   const dim = daysInMonth(y, m);
   // This is a calendar convention (the 31st of a month advanced to a 30-day month lands on the 30th),
   // not a bound covering a decision: the target day does not exist.
-  return civil(y, m, c.d > dim ? dim : c.d);
+  return civil(y, m, atMost(c.d, dim, 'the month has no more days in it than it has'));
 }
 
 /** The same day of the month, `years` later — twelve months at a time, on the same arithmetic. */
