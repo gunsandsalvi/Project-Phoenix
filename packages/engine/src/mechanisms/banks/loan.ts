@@ -15,55 +15,27 @@
  */
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
-import { yearFraction, type DayCount } from '../../calendar/daycount.js';
-import { InvalidRegistry } from '../../core/errors.js';
+import { yearFraction } from '../../calendar/daycount.js';
 import { percent } from '../../core/format.js';
-import {
-  currencyUnit,
-  instrumentId,
-  instrumentKindId,
-  type InstrumentId,
-  type PartyId,
-} from '../../core/ids.js';
+import { currencyUnit, instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
+import { InvalidRegistry } from '../../core/errors.js';
+import { LOAN, isLoan, type LoanTerms } from '../../registry/credit.js';
 import { mul } from '../../core/num.js';
-import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
+import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Namer } from '../../registry/naming.js';
 
-export const LOAN = instrumentKindId('loan');
+/**
+ * Law 4, ARCHITECTURE 4.9b: THE SHAPE IS THE KERNEL'S AND THE MECHANISM IS THIS MODULE'S. What a
+ * loan IS — who lent, who owes, and what it is secured on — is named in `registry/credit.ts`
+ * because more than one module has to read it: housing has to ask whether a row is secured on the
+ * roof it is foreclosing, and a module may not import another module to find out. Everything else
+ * about a loan is here, and this re-export is what keeps one spelling.
+ */
+export { LOAN, isLoan, loanTerms, type LoanTerms } from '../../registry/credit.js';
 
 /** The period after this one; the calendar counts, this only names the next index (Money G3.a). */
 const next = (p: Period): Period => asPeriod(p + 1);
-
-/** A2: fixed at origination — principal, maturity, rate, currency; and A4: secured or not. */
-export interface LoanTerms extends Terms {
-  readonly kind: typeof LOAN;
-  /** A1: the bank of record. The borrower is the instrument's issuer (it owes the money). */
-  readonly lender: PartyId;
-  readonly borrower: PartyId;
-  /** A2: the rate struck at origination, per annum. It is what the negotiation produced (C2.a). */
-  readonly rate: number;
-  readonly drawn: Civil;
-  readonly maturity: Civil;
-  readonly dayCount: DayCount;
-  /** A4: what it is secured on, which is nothing for an unsecured loan — stated either way. */
-  readonly security: readonly { readonly instrument: InstrumentId; readonly qty: number }[];
-}
-
-/**
- * Whether these terms are a loan's. Structural, not a kind comparison: what makes a loan a loan is
- * that it names a lender and a borrower and says what it is secured on (Law 15, A1, A4).
- */
-export function isLoan(t: Terms): t is LoanTerms {
-  return 'lender' in t && 'borrower' in t && 'security' in t;
-}
-
-export function loanTerms(i: Instrument): LoanTerms {
-  if (!isLoan(i.terms)) {
-    throw new InvalidRegistry('Banks Lending A1', `${i.id} is not a loan`);
-  }
-  return i.terms;
-}
 
 /** F1.a: one row per (lender, borrower, drawing), named so a reader can see whose it is. */
 export function loanId(lender: PartyId, borrower: PartyId, n: number): InstrumentId {

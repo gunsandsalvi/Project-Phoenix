@@ -43,7 +43,7 @@ describe('what a household needs a roof for (Households E1, Law 2)', () => {
       expect(d.value).toBeGreaterThan(0);
       // A share of income spent on rent is an outcome of a quantity meeting a price; writing the
       // share down would be writing down the answer.
-      expect(String(d.unit)).toContain('dwellings');
+      expect(d.unit).toContain('dwellings');
     }
   });
 

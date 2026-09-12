@@ -26,6 +26,16 @@ F1.a, F1.b, F2, F2.a, F3, F3.a (the claim at 13h: PARTIAL until then), F4; Firm 
 ---
 
 ## Findings this item carries (folded in from the review)
+### A finding this item picked up, measured both ways
+
+**`loans.test.ts`: two reds that pre-date this item.** "gets dearer for a borrower that has failed
+to pay" and "carries the loan at what its lender expects to recover" both fail, and they fail
+IDENTICALLY with this item's changes stashed — measured, not assumed. The provision does not move
+the lot's basis off par and the repriced quote comes back below the clean one, which is the
+provision machinery (item 6, item 12's D2/D2.a) and not the secured-lending door this item opened.
+It is written here so it leaves by being positioned rather than by being forgotten; it belongs with
+**13f**, which is corporate credit and rewrites what a bank does with a borrower that has missed.
+
 
 Three subjects, and the first two are the same defect read twice: a party doing work it could not do.
 
@@ -316,10 +326,10 @@ packages/engine/test/{mobility,participation,release,dwellings,housing-market,mo
 - [ ] Labour E4: a cell that lost its earner misses its mortgage service through item 5's event; test
 - [x] `dwelling` kind: indivisible, per location, owner in the register; maintenance and depreciation; builders produce dwellings with a lag and sell at completion; no dwelling from nowhere; tests (A1–A5, E1)
 - [x] Occupancy: owner-occupiers, leases with rent by instruction, landlords with dwellings behind them; rental market per location; yield as a read; tests (A2, A3, B5)
-- [ ] The housing market: offers from tenure endings at the seller's own reservation, bids from what buyers can borrow plus cash, a cross where unreached offers do not clear; tests (B1–B4, E2)
-- [ ] Mortgage as a secured loan row with a lien, fixed or floating, amortising; LTV as a read; tests (C1–C3, E3)
+- [x] The housing market: offers from tenure endings at the seller's own reservation, bids from what buyers can borrow plus cash, a cross where unreached offers do not clear; tests (B1–B4, E2)
+- [x] Mortgage as a secured loan row with a lien, fixed or floating, amortising; LTV as a read; tests (C1–C3, E3)
 - [ ] The lender's standard as a read of its own book's LTV cross-section, hurdle and headroom; no constant exists; tests: a widened tail tightens the next quote (C5, C5.a)
-- [ ] Foreclosure: the dwelling moves to the lender and is sold as a forced sale into the next session; the recovery is what it fetched; the loss lands on the lender; tests (C4, C4.a, XI-2)
+- [x] Foreclosure: the dwelling moves to the lender and is sold as a forced sale into the next session; the recovery is what it fetched; the loss lands on the lender; tests (C4, C4.a, XI-2)
 - [ ] Housing E4 and units contributions; net worth includes the dwelling; consumption reads it; rent in the consumer index; service in the debt-service burden read; tests (D1–D4, Households E5)
 - [ ] Cohorts as a key dimension; ageing as an exact split by date at the boundary; tests (F1, F1.a)
 - [ ] Formation and dissolution as weight events with causes; mortality as a declared technology primitive per cohort; tests (F1.b)

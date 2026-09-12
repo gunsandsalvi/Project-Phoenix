@@ -424,6 +424,13 @@ function write(
    * the borrower's exposure a thing you have to add up rather than a thing you can look at.
    */
   onTheLine = false,
+  /**
+   * A4 (13d): WHAT IT IS SECURED ON, in the words of whoever asked. A bank does not know what a
+   * dwelling is and must not: what it knows is that the request named an instrument and a quantity
+   * it could take and realise, which is what security IS. Empty is unsecured and is stated either
+   * way, and `lossGivenDefault` is the one place the difference is priced.
+   */
+  security: readonly { readonly instrument: InstrumentId; readonly qty: number }[] = [],
 ): InstrumentId | undefined {
   const b = book(ctx);
   // Law 8, B1: money is created in whole pieces of itself, so a loan is drawn in whole pieces. What
@@ -443,9 +450,10 @@ function write(
     // A2: a year, placed by date like every other maturity in this world (Money G3.a).
     maturity: civil(drawn.y + 1, drawn.m, drawn.d),
     dayCount: 'ACT/365F',
-    // A4: unsecured, and it is stated. There is nothing in this world a bank could take security
-    // over that it could realise (worklist 7 gives an estate, 13d a dwelling).
-    security: [],
+    // A4: what the request named, and nothing is inferred. It was always empty until 13d gave this
+    // world a thing a bank could take and realise; a request that names none is still unsecured,
+    // and that is a statement rather than an absence.
+    security,
   };
   ctx.issue({ id, kind: LOAN, issuer: some(borrower), ccy, terms, market: none() });
   const legs: Leg[] = [
@@ -1104,15 +1112,37 @@ function worthToItsLender(rows: readonly BankDecl[], ctx: MechanismContext, i: I
   return some(sub(1, loss, 'what a unit is worth to it'));
 }
 
+/**
+ * A4 (13d): what a funding request said it was secured on, read out of the event that asked. It is
+ * data crossing the 4.9b door and it is checked here rather than trusted: an instrument this world
+ * does not have, or a quantity that is not one, is not security.
+ */
+function securityIn(said: unknown): readonly { readonly instrument: InstrumentId; readonly qty: number }[] {
+  if (!Array.isArray(said)) return [];
+  const out: { instrument: InstrumentId; qty: number }[] = [];
+  for (const row of said as unknown[]) {
+    if (typeof row !== 'object' || row === null) continue;
+    const instrument = (row as Record<string, unknown>)['instrument'];
+    const qty = (row as Record<string, unknown>)['qty'];
+    if (typeof instrument !== 'string' || typeof qty !== 'number' || !(qty > 0)) continue;
+    out.push({ instrument: instrument as InstrumentId, qty });
+  }
+  return out;
+}
+
 /** C2: a borrower that said what it is short of gets quotes, and takes the keenest that will have it. */
 function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
   if (ctx.period === 0) return;
   const said = period(ctx.period - 1);
-  for (const e of ctx.journal.ofKind('firms.funding')) {
+  for (const e of [...ctx.journal.ofKind('firms.funding'), ...ctx.journal.ofKind('housing.funding')]) {
     if (e.period !== said) continue;
     const borrower = e.subjects[0];
     const want = e.data['short'];
     if (borrower === undefined || typeof want !== 'number' || want <= 0) continue;
+    // A4 (13d): the request may name what it is secured on. A bank reading this does not learn
+    // what the thing IS — it learns that there is an instrument it could take and realise, which
+    // is the whole of what security means to a lender (Law 15).
+    const security = securityIn(e.data['security']);
     const party = ctx.parties.get(borrower as PartyId);
     // XI-8, Firm Birth D5: what it asked for last period it asked for as a going concern. It has
     // since ceased, and an estate is winding it up rather than borrowing: there is nobody left to
@@ -1124,7 +1154,7 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
     // drawing on what it already has there, not taking a new loan every week — and the margin it
     // draws at is the one that was struck when the line was agreed (A2, A3).
-    write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, true);
+    write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, security.length === 0, security);
   }
 }
 
