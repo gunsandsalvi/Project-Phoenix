@@ -34,6 +34,7 @@ import {
   type TerrainReads,
   areaKm2,
   groundIn,
+  heartOf,
   resourceId,
   terrainId,
 } from '../registry/geography.js';
@@ -1990,7 +1991,10 @@ export function foundationSpec(
       // and does not wait for one. Every region this world has stands in weather of its own, and
       // the producer, the carrier, the insurer and the household all read the same fact.
       // 13c.1: EVERY PLACE, sea areas included — a ship has to be somewhere for a gale to reach it.
-      environment(drawn.geography.places, seed),
+      environment(drawn.geography.places, seed, {
+        g: drawn.geography,
+        heart: (p) => heartOf(drawn.geography, p),
+      }),
       // The order matters at one anchor: three phases sit before the revaluation, and they must run
       // in this order — a drawing becomes a loan row, then anything that cannot pay dies, then the
       // people it employed are released. Assembly keeps declaration order for modules that do not

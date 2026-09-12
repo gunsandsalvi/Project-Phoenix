@@ -18,6 +18,7 @@ import {
   type TerrainReads,
   areaKm2,
   buildOn,
+  legsBetween,
   coastOf,
   countryId,
   currencyCode,
@@ -40,6 +41,7 @@ import {
   touches,
 } from '../src/index.js';
 import { type MapSpec, drawMap } from '../src/seeds/map.js';
+import type { PlaceId } from '../src/core/ids.js';
 import { rigWorld } from './rig.js';
 
 const WATER = terrainId('water');
@@ -653,5 +655,91 @@ describe('a journey is measured off the ground (Freight A1, A3)', () => {
     if (a === undefined || b === undefined) throw new Error('both worlds are crossable');
     expect(Math.abs(b.km - a.km)).toBeLessThanOrEqual(TILE_KM * Math.SQRT2);
     expect(Math.abs(b.days - a.days)).toBeLessThanOrEqual((TILE_KM * Math.SQRT2) / 400);
+  });
+});
+
+/**
+ * The climate is drawn ON the map (13c.1, step 12), and every field of the map is REACHABLE
+ * (step 13). The second is the guard that keeps a kept map honest as it grows: Appendix B forbids a
+ * SURFACE that changes the model and a number the picture shows that nothing could consume — not a
+ * world being larger than the economy standing on it. So what is asserted is that every declared
+ * field has a read that WOULD consume it, and a resource no recipe names yet passes, and must.
+ */
+describe('the climate is drawn on the map, so neighbours are alike', () => {
+  it('gives two places that share a border closer weather than two far apart', () => {
+    const w = rigWorld('climate-map');
+    const g = w.registry.geography;
+    // Direction only: the mean gap in a fact's climate between neighbours is smaller than between
+    // places picked without regard to where they are. Nothing here asserts a level.
+    const places = g.places;
+    const gapBetween = (a: PlaceId, b: PlaceId): number => {
+      const pa = w.params.ratio(paramId(`environment.growing.${a}.persistence`));
+      const pb = w.params.ratio(paramId(`environment.growing.${b}.persistence`));
+      return Math.abs(pa - pb);
+    };
+    const near: number[] = [];
+    const far: number[] = [];
+    for (const a of places) {
+      for (const b of places) {
+        if (a === b) continue;
+        (touches(g, a, b) ? near : far).push(gapBetween(a, b));
+      }
+    }
+    if (near.length === 0) return;
+    const mean = (xs: readonly number[]): number => xs.reduce((s, x) => s + x, 0) / xs.length;
+    expect(mean(near)).toBeLessThan(mean(far));
+  });
+
+  it('draws a climate for every place, sea areas included — a ship must be somewhere', () => {
+    const w = rigWorld('climate-map');
+    for (const p of w.registry.geography.places) {
+      expect(() => w.params.ratio(paramId(`environment.wind.${p}.persistence`))).not.toThrow();
+    }
+  });
+});
+
+describe('every field of the map is reachable by a mechanism (Appendix B, Observer)', () => {
+  const w = rigWorld('reach');
+  const g = w.registry.geography;
+  const some = tileAt(g, Math.floor(g.cols / 2), Math.floor(g.rows / 2));
+
+  it('a terrain declares nothing a read cannot consume', () => {
+    for (const x of g.terrains) {
+      // kmPerDay -> daysAcross (the sail phase); buildKm2 -> buildOn (13c.2's project);
+      // standsWind/windHardness -> standsIn (the sail phase); carries -> crossable (every path).
+      expect(w.params.kmPerDay(x.kmPerDay)).toBeGreaterThan(0);
+      expect(w.params.ratio(x.buildKm2)).toBeGreaterThan(0);
+      expect(w.params.ratio(x.standsWind)).toBeGreaterThan(0);
+      expect(w.params.ratio(x.windHardness)).toBeGreaterThan(0);
+      expect(x.carries.length).toBeGreaterThan(0);
+    }
+    expect(buildOn(g, w.params, some)).toBeGreaterThan(0);
+    expect(standsIn(g, w.params, some)).toBeGreaterThan(0);
+  });
+
+  it('every resource has a layer and a read, including one no recipe names', () => {
+    expect(g.resources.length).toBeGreaterThan(1);
+    for (const r of g.resources) {
+      expect(g.deposit.get(r.id)?.length).toBe(g.cols * g.rows);
+      expect(w.params.count(r.clumping)).toBeGreaterThan(0);
+      for (const x of g.terrains) {
+        const p = r.inTerrain[x.id];
+        expect(p).toBeDefined();
+        if (p !== undefined) expect(w.params.ratio(p)).toBeGreaterThanOrEqual(0);
+      }
+      // tileYield and groundIn are the reads that consume a layer; a resource nothing eats yet
+      // passes, and must, because the map has to be stable or no two runs compare.
+      expect(Number.isFinite(tileYield(g, w.params, r.id, some))).toBe(true);
+    }
+  });
+
+  it('the grid itself is consumed: place, elevation, mix and tileKm all have readers', () => {
+    expect(placeAt(g, some)).toBeDefined();
+    expect(Number.isFinite(Number(g.elevation[some]))).toBe(true);
+    expect(shareOf(g, g.terrains[0]?.id ?? WATER, some)).toBeGreaterThanOrEqual(0);
+    expect(areaKm2(g, placeAt(g, some))).toBeGreaterThan(0);
+    // And the legs, which are what the whole map exists to produce.
+    const found = legsBetween(g, w.params, 'vessel', [...w.registry.regions.keys()]);
+    expect(found.size).toBeGreaterThan(0);
   });
 });

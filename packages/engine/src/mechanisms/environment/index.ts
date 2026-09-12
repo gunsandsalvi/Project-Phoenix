@@ -26,6 +26,8 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { drawClimate, FACTS, type ClimateDecl } from './data.js';
+import type { GeographyDecl } from '../../registry/geography.js';
+import type { TileIndex } from '../../core/ids.js';
 import { ENVIRONMENT_STATE } from './events.js';
 import { keyOf, moveOn, type Weather } from './state.js';
 
@@ -73,8 +75,13 @@ function paramsOf(climate: readonly ClimateDecl[]): ParamDecl[] {
  * The module. It is built from the regions this world has, because a climate is a region's and
  * there is no second list of them (Law 4).
  */
-export function environment(regions: readonly PlaceId[], seed: string): SystemModule {
-  const climate = drawClimate(regions, seed);
+export function environment(
+  regions: readonly PlaceId[],
+  seed: string,
+  /** 13c.1: the ground, so a climate is drawn ON THE MAP and neighbours are alike. */
+  ground?: { readonly g: GeographyDecl; readonly heart: (p: PlaceId) => TileIndex },
+): SystemModule {
+  const climate = drawClimate(regions, seed, ground);
   return {
     id: 'environment',
     spec: 'Commodities Spot B3, Goods B4, Freight B4, Insurers B4',
