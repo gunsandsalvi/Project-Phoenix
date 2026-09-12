@@ -202,10 +202,12 @@ describe('the seed (Seed A2)', () => {
     const report = w.last?.audit;
     expect(report?.total).toBe(0);
     expect(report?.families.map((f) => f.family)).toHaveLength(9);
-    // Audit A3: an unbuilt family reports "not built" and NEVER green. `crossMarket` is built now —
-    // item 12 gave it its two contributions, the triangular gap and the index against its own
-    // constituents — so the one family this world still has nobody for is `zeroSum`.
-    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual(['zeroSum']);
+    // Audit A3: an unbuilt family reports "not built" and NEVER green — and THERE ARE NONE LEFT.
+    // `crossMarket` was built at item 12 (the triangular gap and an index against its own
+    // constituents); `zeroSum` is built at 13a, because the contract store is a kernel store from
+    // there on and the identity that the two sides of a contract negate is checkable in any world,
+    // including one with no contracts in it.
+    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual([]);
     // XI-14: TWO PLACEHOLDERS STAND, and they are the two management fees. The bank's liquidity
     // buffer was the last one anybody counted — a stated share of the money it had issued, standing
     // in for a decision nobody had built — and 11.2 built the decision (Banks Funding C2). The fees
@@ -340,10 +342,11 @@ describe('the period loop', () => {
     // whole year is clean: every family the world has built, every period, no exceptions.
     for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const report = w.last?.audit;
-    // EIGHT families are built and green, named so a green run says what it checked; ONE says it is
-    // NOT BUILT rather than green by omission (Audit C2.a) — zero-sum needs the derivative layer
-    // (13a). `crossMarket` joined them when item 12 gave it its two contributions, the triangular
-    // gap and an index against its own constituents, and this list had not been re-read since.
+    // ALL NINE are built and green, named so a green run says what it checked. `crossMarket`
+    // joined them at item 12 (the triangular gap and an index against its own constituents) and
+    // `zeroSum` at 13a: the contract store is a kernel store from there on, so the identity that
+    // the two sides of a contract negate is checkable in any world — including this one, which has
+    // no contracts in it and says so by holding vacuously rather than by not being built.
     expect(report?.families.filter((f) => f.built).map((f) => f.family)).toEqual([
       'money',
       'ownership',
@@ -352,12 +355,10 @@ describe('the period loop', () => {
       'accounts',
       'names',
       'flows',
+      'zeroSum',
       'units',
     ]);
-    // Audit A3: an unbuilt family reports "not built" and NEVER green. `crossMarket` is built now —
-    // item 12 gave it its two contributions, the triangular gap and the index against its own
-    // constituents — so the one family this world still has nobody for is `zeroSum`.
-    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual(['zeroSum']);
+    expect(report?.families.filter((f) => !f.built).map((f) => f.family)).toEqual([]);
     // And the chain really ran the whole way: batches were started out of a recipe, people were
     // hired and paid, and households bought the finished good from a named seller.
     expect(w.journal.ofKind('firms.started').length).toBeGreaterThan(0);

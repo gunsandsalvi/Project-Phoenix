@@ -13,6 +13,7 @@ import type { RegionId } from '../core/ids.js';
 import { none, some, type Option } from '../core/option.js';
 import type { PartiesReads } from '../parties/party.js';
 import type { Instrument } from '../register/instruments.js';
+import type { Contract } from './derivatives.js';
 import type { Registry } from './registry.js';
 
 /** The named parts of the world a profile may put in a display name. */
@@ -26,6 +27,18 @@ export interface Namer {
 export function displayName(i: Instrument, parties: PartiesReads, registry: Registry): string {
   return registry.instrumentKind(i.kind).displayName(i, {
     issuer: i.issuer.some ? some(parties.get(i.issuer.value).name) : none<string>(),
+    region: (id) => registry.region(id).name,
+  });
+}
+
+/**
+ * Law 9, Derivative D12: the same grammar for a CONTRACT. It has no issuer — nobody promised it,
+ * two parties agreed it — so the profile is handed none, and what it names itself by is its own
+ * identity: what it settles against, its term and its strike.
+ */
+export function contractName(c: Contract, registry: Registry): string {
+  return registry.derivativeKind(c.kind).displayName(c, {
+    issuer: none<string>(),
     region: (id) => registry.region(id).name,
   });
 }

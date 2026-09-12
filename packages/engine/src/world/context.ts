@@ -46,6 +46,8 @@ import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import type { Prng } from '../rng/prng.js';
 import type { Qty } from '../core/tick.js';
+import type { ContractReadsFacade } from '../register/contracts.js';
+import type { Contract, ContractPayment, Underlying } from '../registry/derivatives.js';
 
 /** Reads every context shares. Every method here is a read; nothing mutates. */
 export interface KernelReads {
@@ -194,8 +196,71 @@ export interface ParticipantView extends KernelReads {
    * instead of computing it again.
    */
   lastOwn(kind: EventKind): Option<Event>;
+  /** Derivative Layer C1, G3, Observer A4: its own side of the contract store, and no wider read. */
+  readonly contracts: OwnContracts;
   /** A random stream that is this party's own, deterministic in (seed, party, period). */
   readonly rng: Prng;
+}
+
+/**
+ * Derivative D1, D10.a, Derivative Layer C1, C1.a, G3, Observer A4: WHAT A PARTY MAY SEE OF THE
+ * CONTRACT STORE — its own side, and its exposure to one named counterparty at a time.
+ *
+ * There is no door that nets across counterparties, because G3 forbids the number: exposure to one
+ * does not offset exposure to another, and treating it as if it does is how a book looks flat until
+ * one of them fails. A store that offered the total would make the forbidden read the easy one.
+ */
+export interface OwnContracts {
+  /** A4: the rows this party is a side of, open ones only. */
+  mine(): readonly Contract[];
+  /** D1: what one of them is worth to this party — an asset to one side, a liability to the other. */
+  valueOf(contract: Contract): number;
+  /**
+   * C1, C1.a: the net of the marks on the rows this party has with ONE named counterparty. What it
+   * holds of that counterparty's collateral is its own module's to subtract: the kernel does not
+   * know which instrument a margin claim is, and would be guessing (Law 15).
+   */
+  exposureTo(counterparty: PartyId): number;
+}
+
+/** What a phase may read of the contract store: everything public, and no writer (Law 4). */
+export interface ContractsRead extends ContractReadsFacade {
+  /** D8: what a row is worth to its `a` side at a period; `b`'s is the negation (A3). */
+  mark(contract: Contract, at: Period): number;
+  /** D1: to a named party, signed by the side it is on. */
+  valueTo(contract: Contract, party: PartyId, at: Period): number;
+  /** Clearing D4: what the two equity accounts have recognised, to `a`. */
+  carrying(contract: Contract, at: Period): number;
+  /** D1 (layer): what the kind says must be posted against this row, or none when it cannot say. */
+  initialMargin(contract: Contract, at: Period): Option<number>;
+  /**
+   * E1, E2: the same question about a row that DOES NOT EXIST YET — what this kind would require
+   * against a notional of this size struck at this level. It is what a member sizing a trade has to
+   * know before it makes one, and it is the kind's own answer rather than the asker's estimate of
+   * it (Law 4: two arithmetics for one requirement is how a trade comes to be admitted at one
+   * number and margined at another).
+   */
+  marginFor(
+    about: {
+      readonly kind: Contract['kind'];
+      readonly terms: Contract['terms'];
+      readonly ccy: Contract['ccy'];
+      readonly notional: number;
+      readonly struckAt: number;
+      readonly house: PartyId | null;
+      readonly a: PartyId;
+      readonly b: PartyId;
+    },
+    at: Period,
+  ): Option<number>;
+  /** D4, D6: the payments the terms put in this period, both ways. */
+  legsDue(contract: Contract, at: Period): readonly ContractPayment[];
+  /** D11.a: the stated close-out value, to `a`. */
+  closeOut(contract: Contract, at: Period): number;
+  /** D6, D11: whether the term has run out this period. */
+  expires(contract: Contract, at: Period): boolean;
+  /** D3: what this row settles against, which this world produces somewhere else. */
+  underlying(contract: Contract): Underlying;
 }
 
 export interface CellEvents {
@@ -226,6 +291,12 @@ export interface MechanismContext extends KernelReads {
   readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail'>;
   readonly ledger: Pick<Ledger, 'inPeriod' | 'length'>;
   readonly cells: CellEvents;
+  /**
+   * Derivative X1: the contract store, read-only. It is written by settlement like the register —
+   * a contract leg in an instruction opens, novates or tears up a row (Money D1, D4) — so there is
+   * no `open` door here and no way for a phase to write one without the wire.
+   */
+  readonly contracts: ContractsRead;
   /** A random stream that is this module's own, deterministic in (seed, module, period). */
   readonly rng: Prng;
   participant(party: PartyId): ParticipantView;

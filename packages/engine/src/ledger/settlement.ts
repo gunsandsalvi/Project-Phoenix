@@ -24,8 +24,10 @@ import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid, impossible } from '../core/assert.js';
 import { Forbidden, Missing } from '../core/errors.js';
 import {
+  type ContractId,
   currencyUnit,
   type CurrencyCode,
+  type DerivativeKindId,
   type InstrumentId,
   type LienId,
   moneyInstrumentId,
@@ -33,6 +35,7 @@ import {
   type UnitId,
 } from '../core/ids.js';
 import { addTo, dustOf, finite, mul, sum, zeroIfNone } from '../core/num.js';
+import { none } from '../core/option.js';
 import { onTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties, Party } from '../parties/party.js';
@@ -55,7 +58,9 @@ import type {
   FailReason,
   Instruction,
   InstructionDraft,
+  ContractLeg,
   MoneyLeg,
+  OpenContractLeg,
   PledgeLeg,
   RegisterDelta,
   ReleaseLeg,
@@ -64,6 +69,8 @@ import type {
 } from './instruction.js';
 import { subjectsOf } from './instruction.js';
 import type { Ledger } from './ledger.js';
+import type { Contracts } from '../register/contracts.js';
+import type { Contract, DerivativeKindProfile, Underlying } from '../registry/derivatives.js';
 
 export interface SettlementDeps {
   readonly registry: Registry;
@@ -81,6 +88,21 @@ export interface SettlementDeps {
    * decision — the bank's — and every bank of a kind decides the same way from its own state.
    */
   creditDecision(kind: PartyKindId): (ctx: OverdraftContext) => OverdraftDecision;
+  /**
+   * Derivative X1, D1, D11: the contract store and what a row is carried at. Settlement is its one
+   * writer, as it is the register's: a position opening or closing on two balance sheets is a
+   * change of state and goes over the wire (Money D1, D4).
+   */
+  readonly contracts: Contracts;
+  contractCarrying(c: Contract, at: Period): number;
+  derivativeKind(kind: DerivativeKindId): DerivativeKindProfile;
+  /**
+   * Derivative D3.a, Derivative Layer G4: whether this world actually produces the thing a contract
+   * settles against — a market that clears it, an index that reads it, a party whose events it
+   * records. A derivative on a price nothing clears prices itself, and the refusal is at the site
+   * the contract is written rather than at the first mark nobody can take.
+   */
+  underlyingExists(u: Underlying): string | undefined;
 }
 
 /** One register-level operation an instruction expands into; quantities are per member for cells. */
@@ -149,6 +171,23 @@ type Op =
       readonly pledgor: PartyId;
       readonly instrument: InstrumentId;
       readonly lien: LienId;
+    }
+  /** Derivative D1, D11: a contract appears on two books at its struck value, or leaves them. */
+  | {
+      readonly op: 'writeContract';
+      readonly leg: OpenContractLeg;
+    }
+  | {
+      readonly op: 'tearUpContract';
+      readonly contract: ContractId;
+      readonly why: string;
+    }
+  /** Derivative Layer B4: the obligation leaves one balance sheet and lands on another. */
+  | {
+      readonly op: 'novateContract';
+      readonly contract: ContractId;
+      readonly from: PartyId;
+      readonly to: PartyId;
     };
 
 export class Settlement {
@@ -196,6 +235,7 @@ export class Settlement {
       instruction,
       deltas: applied.deltas,
       equity: applied.equity,
+      contracts: applied.contracts,
       reserveLegs,
     };
     this.d.ledger.append(record);
@@ -237,6 +277,9 @@ export class Settlement {
         case 'pledge':
         case 'release':
           this.validateLien(leg, ins);
+          break;
+        case 'contract':
+          this.validateContract(leg, ins);
           break;
         default:
           assertNever(leg, 'Leg');
@@ -375,6 +418,85 @@ export class Settlement {
     this.validateCellSide(leg.pledgor, leg.pledgorCell, leg.qty, ins);
     this.onTheGrid(leg.qty, inst.unit, ins);
     if (leg.pledgorCell.some) this.onTheGrid(leg.pledgorCell.value.perMember, inst.unit, ins);
+  }
+
+  /**
+   * Derivative D1, D1.a, D2, D5, G1, G4: A CONTRACT HAS TWO NAMED LIVE SIDES, a notional in a unit,
+   * a money its legs move in, and an underlying this world produces somewhere else.
+   *
+   * Every one of these is a contract violation and not an outcome: a payoff received from nobody is
+   * invented money (D1.a), and a derivative settling against a price nothing clears is a contract
+   * that prices itself (G4, D3.a). None of them is something a participant could legitimately have
+   * tried, so none of them is a `Failed` record.
+   */
+  private validateContract(leg: ContractLeg, ins: Instruction): void {
+    if (leg.act !== 'open') {
+      forbid(
+        this.d.contracts.has(leg.contract),
+        'Derivative D11',
+        `instruction ${ins.id}: no contract ${leg.contract}`,
+      );
+      const row = this.d.contracts.get(leg.contract);
+      forbid(
+        row.state === 'open',
+        'Derivative D11',
+        `instruction ${ins.id}: ${leg.contract} is already terminated`,
+      );
+      if (leg.act === 'close') {
+        forbid(leg.why.length > 0, 'Money C1.b', `instruction ${ins.id}: a termination says why`);
+        return;
+      }
+      forbid(
+        row.a === leg.from || row.b === leg.from,
+        'Derivative Layer B4',
+        `instruction ${ins.id}: ${leg.from} is not a side of ${leg.contract}`,
+      );
+      this.alive(leg.to, ins);
+      return;
+    }
+    forbid(
+      leg.a !== leg.b,
+      'Derivative D1',
+      `instruction ${ins.id}: a contract has two counterparties, and they differ`,
+    );
+    this.alive(leg.a, ins);
+    this.alive(leg.b, ins);
+    if (leg.house !== null) this.alive(leg.house, ins);
+    impossible(
+      finite(leg.notional, 'contract notional') > 0,
+      'Derivative D2',
+      `a contract has a notional and it is positive, got ${leg.notional}`,
+    );
+    finite(leg.value, 'what the contract is worth at inception');
+    finite(leg.struckAt, 'the level it was struck at');
+    this.d.registry.currency(leg.ccy);
+    const profile = this.d.derivativeKind(leg.derivative);
+    profile.validateTerms(leg.terms);
+    this.onTheGrid(leg.notional, profile.unit, ins);
+    // G4, D3.a: the underlying is asked of the profile against the contract as it will be, so a
+    // kind whose underlying is read off its terms is checked on the terms it is being written with.
+    const asIfOpen: Contract = {
+      id: 'unwritten' as Contract['id'],
+      kind: leg.derivative,
+      a: leg.a,
+      b: leg.b,
+      terms: leg.terms,
+      ccy: leg.ccy,
+      notional: leg.notional,
+      struckAt: leg.struckAt,
+      basis: leg.value,
+      opened: ins.period,
+      state: 'open',
+      terminated: none(),
+      house: leg.house,
+    };
+    const missing = this.d.underlyingExists(profile.underlying(asIfOpen));
+    if (missing !== undefined) {
+      throw new Forbidden(
+        'Derivative Layer G4',
+        `instruction ${ins.id}: ${leg.derivative} settles against ${missing}, which this world does not produce`,
+      );
+    }
   }
 
   private validateAsset(leg: AssetLeg, ins: Instruction): void {
@@ -541,6 +663,15 @@ export class Settlement {
             instrument: leg.instrument,
             lien: leg.lien,
           });
+          break;
+        case 'contract':
+          ops.push(
+            leg.act === 'open'
+              ? { op: 'writeContract', leg }
+              : leg.act === 'close'
+                ? { op: 'tearUpContract', contract: leg.contract, why: leg.why }
+                : { op: 'novateContract', contract: leg.contract, from: leg.from, to: leg.to },
+          );
           break;
         default:
           assertNever(leg, 'Leg');
@@ -816,9 +947,11 @@ export class Settlement {
   private apply(
     ins: Instruction,
     ops: readonly Op[],
-  ): { deltas: RegisterDelta[]; equity: EquityEffect[] } {
+  ): { deltas: RegisterDelta[]; equity: EquityEffect[]; contracts: ContractId[] } {
     const deltas: RegisterDelta[] = [];
     const equity = new Map<PartyId, number>();
+    /** Derivative D1: the rows this instruction wrote, so its drafter can name what it opened. */
+    const written: ContractId[] = [];
     const drawnByOp = new Map<number, DrawnLot[]>();
     const carryingOf = (opIndex: number): number => {
       const drawn = drawnByOp.get(opIndex);
@@ -838,7 +971,14 @@ export class Settlement {
     // rounding that leaves behind is the price's, not the difference's.
     const gross = new Map<PartyId, number>();
     const bump = (party: PartyId, delta: number, instrument: InstrumentId): void => {
-      const own = inOwn(party, delta, this.d.instruments.get(instrument).ccy);
+      bumpIn(party, delta, this.d.instruments.get(instrument).ccy);
+    };
+    /**
+     * The same, for a value that belongs to no instrument: a contract's, which is a bilateral
+     * obligation and not a holding (Derivative X1), so its money is the contract's own (D5).
+     */
+    const bumpIn = (party: PartyId, delta: number, ccy: CurrencyCode): void => {
+      const own = inOwn(party, delta, ccy);
       addTo(equity, party, own);
       addTo(gross, party, Math.abs(own));
     };
@@ -1011,6 +1151,51 @@ export class Settlement {
           bump(op.to, -owed, op.instrument);
           break;
         }
+        case 'writeContract': {
+          // D1: the row exists from this instruction on, and it is an asset to one side and a
+          // liability to the other at every instant from now — including this one, which is why
+          // the value lands on both equity accounts here rather than waiting for a revaluation.
+          const leg = op.leg;
+          const row = this.d.contracts.open(
+            {
+              kind: leg.derivative,
+              a: leg.a,
+              b: leg.b,
+              terms: leg.terms,
+              ccy: leg.ccy,
+              notional: leg.notional,
+              struckAt: leg.struckAt,
+              basis: leg.value,
+              house: leg.house,
+            },
+            ins.period,
+          );
+          written.push(row.id);
+          bumpIn(leg.a, leg.value, leg.ccy);
+          bumpIn(leg.b, -leg.value, leg.ccy);
+          break;
+        }
+        case 'novateContract': {
+          const row = this.d.contracts.get(op.contract);
+          const carrying = this.d.contractCarrying(row, ins.period);
+          // B4: what the leaving side was carrying goes off its book and onto the new one. The sign
+          // is the side it was on: `a` holds +mark, `b` holds −mark (D1).
+          const held = row.a === op.from ? carrying : -carrying;
+          this.d.contracts.novate(op.contract, op.from, op.to);
+          bumpIn(op.from, -held, row.ccy);
+          bumpIn(op.to, held, row.ccy);
+          break;
+        }
+        case 'tearUpContract': {
+          // D11: it ceases to exist on both books at once, and what leaves each book is what that
+          // book was carrying it at (Law 19: the kernel reads it rather than being told).
+          const row = this.d.contracts.get(op.contract);
+          const carrying = this.d.contractCarrying(row, ins.period);
+          this.d.contracts.close(op.contract, ins.period);
+          bumpIn(row.a, -carrying, row.ccy);
+          bumpIn(row.b, carrying, row.ccy);
+          break;
+        }
         default:
           assertNever(op, 'Op');
       }
@@ -1034,7 +1219,7 @@ export class Settlement {
       });
       effects.push({ party, delta });
     }
-    return { deltas, equity: effects };
+    return { deltas, equity: effects, contracts: written };
   }
 
   /**

@@ -87,6 +87,7 @@ import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
+import { derivativeLayer } from '../mechanisms/derivative-layer/index.js';
 import { EQUITY_INDEX, indices } from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { reporting } from '../mechanisms/reporting/index.js';
@@ -1779,6 +1780,11 @@ export function foundationSpec(
       // Currency, Spot FX: the pairs, after the banks whose desks quote them and the money market
       // whose overnight book they fund a position in.
       spotFx(drew.banks),
+      // The derivative layer: after the money market, because a margin call is met out of cash a
+      // member funds there, and after the estate, because a default resolves into one (XI-8). It
+      // brings no class of contract with it (13b does that): what it brings is the house, the
+      // margin, the fund and the waterfall every class then runs on.
+      derivativeLayer,
       // Indices: after everything that prints, because an index is what its constituents printed
       // and the benchmark is what the overnight book settled at (Indices D3.a, E1).
       indices([REGION, ...ABROAD.map((c) => c.region)], [USD, ...ABROAD.map((c) => c.ccy)]),

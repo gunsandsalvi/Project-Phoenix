@@ -220,24 +220,24 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Derivative D1` | MISSING |  |
-| `Derivative D1.a` | MISSING |  |
-| `Derivative D1.b` | MET | packages/engine/src/audit/families/unbuilt.ts |
-| `Derivative D2` | MISSING |  |
-| `Derivative D3` | MISSING |  |
-| `Derivative D3.a` | MISSING |  |
-| `Derivative D4` | MISSING |  |
-| `Derivative D5` | MISSING |  |
-| `Derivative D6` | MISSING |  |
-| `Derivative D7` | MISSING |  |
-| `Derivative D8` | MISSING |  |
-| `Derivative D9` | MISSING |  |
-| `Derivative D10` | MISSING |  |
-| `Derivative D11` | MISSING |  |
-| `Derivative D12` | MISSING |  |
-| `Derivative X1` | MISSING |  |
-| `Derivative X2` | MISSING |  |
-| `Derivative X3` | MISSING |  |
+| `Derivative D1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts, packages/engine/src/ledger/settlement.ts (a contract opens on two named books in one numbered instruction), packages/engine/src/audit/families/accounts.ts (an asset to one side and a liability to the other, at every instant) |
+| `Derivative D1.a` | MET | packages/engine/src/ledger/settlement.ts (a leg naming one side, or the same party twice, is refused at the site), packages/engine/src/audit/families/zero-sum.ts |
+| `Derivative D1.b` | MET | packages/engine/src/audit/families/zero-sum.ts (the profile is asked for the contract as EACH side states it — `flip` — and the two must negate exactly; a negation the kernel performed itself would be checking a minus sign) |
+| `Derivative D2` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (a notional in the kind’s own unit, positive, on the grid) |
+| `Derivative D3` | MET | packages/engine/src/registry/derivatives.ts (a print this world clears, an index it reads, or a public event it records), packages/engine/src/world/world.ts (`missingUnderlying`) |
+| `Derivative D3.a` | MET | packages/engine/src/world/world.ts, packages/engine/src/ledger/settlement.ts (a contract on something this world does not produce is refused when it is written) |
+| `Derivative D4` | MET | packages/engine/src/registry/derivatives.ts (`legs`: what the terms put in this period, both directions) |
+| `Derivative D5` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (the money its legs move in is the contract’s own; the equity effect converts at the rate in force) |
+| `Derivative D6` | MET | packages/engine/src/registry/derivatives.ts (`expires`: the term runs out and the kind says when) |
+| `Derivative D7` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (`struckAt`: the level the session cleared at), packages/engine/src/clearing/market.ts |
+| `Derivative D8` | MET | packages/engine/src/prices/contract-value.ts (read at every ask, stored nowhere) |
+| `Derivative D9` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (posted as a claim, not spent) |
+| `Derivative D10` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (a side can fail before the term ends; what the survivor then has is a claim on an estate, not a payoff) |
+| `Derivative D11` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`settleAndTearUp`: it ceases on both books at once), packages/engine/src/ledger/settlement.ts |
+| `Derivative D12` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (counterparties + underlying + term + strike; two strikes are two rows and an offsetting trade with somebody else is a third) |
+| `Derivative X1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (a second register: no issuer, no issued amount, no ownership check) |
+| `Derivative X2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (the premium and the margin are real money out of a real account, and a payment that cannot be made fails) |
+| `Derivative X3` | MET | packages/engine/src/registry/derivatives.ts (a mark reads prints the rest of the world cleared; nothing prices the underlying off the contract) |
 
 ## Corporate Credit
 
@@ -584,38 +584,38 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Derivative Layer A1` | MISSING |  |
-| `Derivative Layer A2` | MISSING |  |
-| `Derivative Layer A3` | MISSING |  |
-| `Derivative Layer A4` | MET | packages/engine/src/audit/families/unbuilt.ts |
-| `Derivative Layer B1` | MISSING |  |
-| `Derivative Layer B2` | MISSING |  |
-| `Derivative Layer B3` | MISSING |  |
-| `Derivative Layer B4` | MISSING |  |
-| `Derivative Layer C1` | MISSING |  |
-| `Derivative Layer C2` | MISSING |  |
-| `Derivative Layer C3` | MISSING |  |
-| `Derivative Layer C4` | MISSING |  |
-| `Derivative Layer C5` | MISSING |  |
-| `Derivative Layer D1` | MISSING |  |
-| `Derivative Layer D2` | MISSING |  |
-| `Derivative Layer D2.b` | MET | packages/engine/src/audit/families/unbuilt.ts |
-| `Derivative Layer D2.c` | MISSING |  |
-| `Derivative Layer D3` | MISSING |  |
-| `Derivative Layer D4` | MISSING |  |
-| `Derivative Layer D5` | MISSING |  |
-| `Derivative Layer E1` | MISSING |  |
-| `Derivative Layer E2` | MISSING |  |
-| `Derivative Layer E3` | MISSING |  |
-| `Derivative Layer E4` | MISSING |  |
-| `Derivative Layer F1` | MISSING |  |
-| `Derivative Layer F2` | MISSING |  |
-| `Derivative Layer F3` | MISSING |  |
-| `Derivative Layer F4` | MISSING |  |
-| `Derivative Layer G1` | MISSING |  |
-| `Derivative Layer G2` | MISSING |  |
-| `Derivative Layer G3` | MISSING |  |
-| `Derivative Layer G4` | MISSING |  |
+| `Derivative Layer A1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (a row lives until it is terminated, and both sides stay exposed to each other meanwhile) |
+| `Derivative Layer A2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts |
+| `Derivative Layer A3` | MET | packages/engine/src/prices/contract-value.ts (one number, read from two sides) |
+| `Derivative Layer A4` | MET | packages/engine/src/audit/families/zero-sum.ts (per contract, exactly; in aggregate per money, at the dust of the sum) |
+| `Derivative Layer B1` | MET | packages/engine/src/clearing/market.ts (a `contract` book: the solver over posted schedules, and the fill becomes a row) |
+| `Derivative Layer B2` | MET | packages/engine/src/ledger/settlement.ts (one contract, recorded on both books in one instruction) |
+| `Derivative Layer B3` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (closed by an offsetting close, an early termination or expiry) |
+| `Derivative Layer B4` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (`novate`), packages/engine/src/ledger/settlement.ts (the obligation leaves one balance sheet at what it was carried at and lands on another) |
+| `Derivative Layer C1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (`between`: the rows two named parties have with each other) |
+| `Derivative Layer C2` | MET | packages/engine/src/clearing/market.ts (one trade becomes two rows, member to house and house to member, so no member pays another) |
+| `Derivative Layer C3` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (the margin it holds, the fund it owes, and its own capital as the residual read) |
+| `Derivative Layer C4` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (`runWaterfall`, in order) |
+| `Derivative Layer C5` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (`waterfall.unfunded`: past the end is an event and the house’s own equity carries it; nothing tops it up) |
+| `Derivative Layer D1` | MET | packages/engine/src/world/world.ts (`measuredMove`: the underlying’s own record), packages/engine/src/registry/derivatives.ts (and no rate per class exists) |
+| `Derivative Layer D2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (the requirement re-measured after the marks moved, met in cash) |
+| `Derivative Layer D2.b` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`marginIsHeld`: what every poster holds against what every holder issued, read from both ends) |
+| `Derivative Layer D2.c` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (it goes through settlement; a party that cannot pay fails the instruction and is in Money E1’s state) |
+| `Derivative Layer D3` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (held, not consumed: when the requirement falls the claim is redeemed and the cash comes back) |
+| `Derivative Layer D4` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`margin.call`, journaled with what was asked and whether it was met) |
+| `Derivative Layer D5` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (it rises with the measured move, which is procyclical by construction and is measured rather than smoothed) |
+| `Derivative Layer E1` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (own liquid cash net of what it has already committed and of its own buffer) |
+| `Derivative Layer E2` | MET | packages/engine/src/clearing/market.ts (cut to the smaller of the two sides’ admitted shares, at the strike, in the same pass as the margin) |
+| `Derivative Layer E3` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (`committed`: capacity is drawn down as it is consumed) |
+| `Derivative Layer E4` | MET | packages/engine/src/clearing/market.ts (`derivatives.refused`, with the size), packages/engine/src/mechanisms/derivative-layer/index.ts (`refusedThisPeriod`) |
+| `Derivative Layer F1` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (a party fails with open rows and they are resolved rather than forgotten) |
+| `Derivative Layer F2` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (closed out at the stated value; the in-the-money side has a claim on the estate) |
+| `Derivative Layer F3` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (the loss is the mark less the collateral held, and it lands on named survivors) |
+| `Derivative Layer F4` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`contractsNameTheLiving`) and the journal’s `waterfall.round` and `contract.closed` |
+| `Derivative Layer G1` | MET | packages/engine/src/audit/families/zero-sum.ts, packages/engine/src/ledger/settlement.ts |
+| `Derivative Layer G2` | MET | packages/engine/src/registry/derivatives.ts (a kind that cannot say what a position could do answers Missing and the layer refuses the trade) |
+| `Derivative Layer G3` | MET | packages/engine/src/world/context.ts (there is no door that nets across counterparties) |
+| `Derivative Layer G4` | MET | packages/engine/src/world/world.ts (`missingUnderlying`, asked when the book opens and again when a row is written) |
 
 ## CDS
 

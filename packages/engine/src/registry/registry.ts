@@ -15,6 +15,7 @@ import type {
   CohortId,
   CurrencyCode,
   CurveFamilyId,
+  DerivativeKindId,
   InstrumentKindId,
   PartyId,
   PartyKindId,
@@ -22,6 +23,7 @@ import type {
   UnitId,
 } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
+import type { DerivativeKindProfile } from './derivatives.js';
 import type { InstrumentKindProfile, LotFlow, PartyKindProfile } from './kinds.js';
 import type { Qty } from '../core/tick.js';
 
@@ -93,6 +95,12 @@ export interface RegistryData {
   /** The kind profiles the kernel and the assembled modules register (Law 15). */
   readonly instrumentKinds: readonly InstrumentKindProfile[];
   readonly partyKinds: readonly PartyKindProfile[];
+  /**
+   * Derivative X1, Law 15: the derivative kinds their owning modules register. A contract is not a
+   * holding, so it is not an instrument kind — and it is asked the same way, through one profile,
+   * because "the kernel never branches on a kind" is the same rule for both.
+   */
+  readonly derivativeKinds: readonly DerivativeKindProfile[];
   /** The curve families their owning modules declare (Sovereign D3.a: one owner each). */
   readonly curveFamilies: readonly CurveFamilyDecl[];
 }
@@ -111,6 +119,7 @@ export class Registry {
   readonly curveFamilies: ReadonlyMap<CurveFamilyId, CurveFamilyDecl>;
   readonly instrumentKinds: ReadonlyMap<InstrumentKindId, InstrumentKindProfile>;
   readonly partyKinds: ReadonlyMap<PartyKindId, PartyKindProfile>;
+  readonly derivativeKinds: ReadonlyMap<DerivativeKindId, DerivativeKindProfile>;
 
   private readonly subdivisions = new Map<UnitId, number>();
 
@@ -131,6 +140,7 @@ export class Registry {
     this.lotFlow = data.lotFlow;
     this.instrumentKinds = unique(data.instrumentKinds, (k) => k.id, 'instrument kind');
     this.partyKinds = unique(data.partyKinds, (k) => k.id, 'party kind');
+    this.derivativeKinds = unique(data.derivativeKinds, (k) => k.id, 'derivative kind');
     this.curveFamilies = unique(data.curveFamilies, (c) => c.id, 'curve family');
 
     for (const r of this.regions.values()) {
@@ -270,6 +280,17 @@ export class Registry {
   }
 
   /**
+   * Law 8, Derivative D7: the same question for a CONTRACT book. What it quotes is a premium per
+   * unit of notional or a rate the contract is struck at, and either way it has a smallest
+   * increment for the same reason everything else does: a level finer than the tick is not a level
+   * anybody can hit.
+   */
+  tickForDerivative(kind: DerivativeKindId, ccy: CurrencyCode): number {
+    const k = this.derivativeKind(kind);
+    return this.priceOf(ccy, k.unit, k.priceTick / this.tickShift);
+  }
+
+  /**
    * Law 8: a stated level, put on this kind's quote grid where it HAS one.
    *
    * A kind that is never quoted has no quote grid and this passes its number through: what is
@@ -370,6 +391,15 @@ export class Registry {
     const k = this.instrumentKinds.get(id);
     if (k === undefined) {
       throw new Missing('Law 15', `instrument kind ${id} has no profile registered`, { id });
+    }
+    return k;
+  }
+
+  /** Derivative X1, Law 15: the profile of a kind of contract, asked and never branched on. */
+  derivativeKind(id: DerivativeKindId): DerivativeKindProfile {
+    const k = this.derivativeKinds.get(id);
+    if (k === undefined) {
+      throw new Missing('Law 15', `derivative kind ${id} has no profile registered`, { id });
     }
     return k;
   }

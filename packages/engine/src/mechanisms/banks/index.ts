@@ -671,18 +671,31 @@ function tradingBookIsCapitalised(): Family {
           if (typeof want !== 'number' || typeof value !== 'number' || value <= want) continue;
           terms.push(mul(sub(value, want, `${id} above its target`), weight, 'weighted'));
         }
-        const asked = sum(terms).value;
+        const asked = sum(terms);
         // Law 7: both sides are walks over the same holdings at the same marks, so what separates
-        // them is the dust of adding them up and nothing else.
-        if (rwa + dustOf(terms.length + 2, Math.abs(rwa) + Math.abs(asked)) >= asked) continue;
+        // them is the dust of the two walks. THE OTHER SIDE'S IS THE OTHER SIDE'S: `rwa` is the
+        // bank's weighting of its WHOLE book, a sum over far more terms than this check can see, so
+        // it publishes the count and the magnitude its own sum had and the dust is derived from
+        // both (worklist 13a, finding 12b-5: a gap of 2^-12 on 5.0e10 was the missing half).
+        const theirTerms = e.data['weightedTerms'];
+        const theirMagnitude = e.data['weightedMagnitude'];
+        // A publication without its count cannot be compared against: the reader would be deriving
+        // a dust of zero for a walk it knows is not free, which is the defect, not the fix. Skip
+        // the bank, as this check already skips one whose weighting it cannot read at all.
+        if (typeof theirTerms !== 'number' || typeof theirMagnitude !== 'number') continue;
+        const dust =
+          asked.dust +
+          dustOf(theirTerms, theirMagnitude) +
+          dustOf(2, Math.abs(rwa) + Math.abs(asked.value));
+        if (rwa + dust >= asked.value) continue;
         out.push({
           family: 'accounts',
           spec: 'Dealer Desks F2',
           owner: bank,
-          size: sub(asked, rwa, 'weighted assets its dealing book asked for and did not get'),
+          size: sub(asked.value, rwa, 'weighted assets its dealing book asked for and did not get'),
           unit: currencyUnit(view.registry.region(view.parties.get(self).region).ccy),
           period: view.period,
-          message: `${bank}: its dealing book weighs ${asked} and it published ${rwa} of risk-weighted assets in total`,
+          message: `${bank}: its dealing book weighs ${asked.value} and it published ${rwa} of risk-weighted assets in total`,
         });
       }
       return out;

@@ -25,6 +25,7 @@ import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
 import type { Period } from '../../calendar/calendar.js';
+import type { Contract } from '../../registry/derivatives.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
@@ -51,6 +52,15 @@ export interface BalanceReads {
     'holdingsOf' | 'holdersOf' | 'holding' | 'moneyWalk'
   >;
   readonly valuation: Pick<AuditView['valuation'], 'valueOfLots' | 'inMoney'>;
+  /**
+   * Derivative D1, X1: the rows this party is a side of, and what each is worth to it. A contract
+   * is not a holding and is not in the register, and it IS on the balance sheet — an asset to one
+   * side and a liability to the other, at every instant — so the sheet reads it from its own store.
+   */
+  readonly contracts: {
+    openOf(party: PartyId): readonly Contract[];
+    valueTo(contract: Contract, party: PartyId, at: Period): number;
+  };
 }
 
 /** The two sides and the rounding the read carries, per member of the party (XI-15). */
@@ -87,6 +97,23 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
     }
   }
   const liabilityTerms: number[] = [];
+  /**
+   * D1: an open contract is an asset to one side and a liability to the other, at every instant.
+   * It is kept apart from the liabilities the register holds because those are read from the OTHER
+   * side — held by other parties in total, and divided by this one's weight below — while a
+   * contract's value is already per member, the way the leg that opened it booked it (XI-15).
+   */
+  const contractLiabilities: number[] = [];
+  for (const c of view.contracts.openOf(party)) {
+    const worth = view.valuation.inMoney(
+      view.contracts.valueTo(c, party, view.period),
+      c.ccy,
+      home,
+      view.period,
+    );
+    if (worth >= 0) assetTerms.push(worth);
+    else contractLiabilities.push(-worth);
+  }
   for (const inst of view.instruments.all()) {
     if (!issuedBy(inst, party) || !view.registry.instrumentKind(inst.kind).liabilityOfIssuer)
       continue;
@@ -109,11 +136,12 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
     }
   }
   // Per member of the party (XI-15): holdings are per member; liabilities are held by others in
-  // total and are divided by the party's own weight.
+  // total and are divided by the party's own weight. A contract's value is already per member and
+  // is on the asset side, so it is not in the division below.
   const w = weightOf(p);
   return {
     assets: sum(assetTerms),
-    liabilities: sum(liabilityTerms.map((t) => t / w)),
+    liabilities: sum([...liabilityTerms.map((t) => t / w), ...contractLiabilities]),
     walked: walked / w,
     ccy: home,
   };

@@ -18,6 +18,7 @@ import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import type { MarketDecl } from '../clearing/market.js';
 import type { IndexDecl, IndexRead } from '../prices/index-read.js';
+import type { ContractsRead } from '../world/context.js';
 import type { Option } from '../core/option.js';
 
 export interface AuditView {
@@ -54,6 +55,11 @@ export interface AuditView {
   readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length'>;
   readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'tail'>;
   readonly markets: readonly MarketDecl[];
+  /**
+   * Derivative X1, D1.b: the second register. A contract enters no ownership check and it does
+   * enter the zero-sum one, and it is on both sides' balance sheets — so the audit reads it.
+   */
+  readonly contracts: ContractsRead;
   /**
    * Indices E3, D5: the index rules this world declares, and what each of them reads as. Both, so a
    * check can put the level against the constituents that made it — which is the one thing an index

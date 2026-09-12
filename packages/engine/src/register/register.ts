@@ -14,7 +14,16 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
-import { dustOf, finite, moved, opened, sum, type Running, type Sum } from '../core/num.js';
+import {
+  dustOf,
+  finite,
+  moved,
+  opened,
+  openedFrom,
+  sum,
+  type Running,
+  type Sum,
+} from '../core/num.js';
 import { NO_QTY, asQty, onTick, scaleQty, subQty, type Qty } from '../core/tick.js';
 import { type Option, none, some } from '../core/option.js';
 import type { Parties } from '../parties/party.js';
@@ -259,14 +268,25 @@ export class Register {
   // ---- writes (settlement, seed, cell events only) ------------------------------------------
 
   /** State the equity account once (Seed C1: at period zero the equity is the read). */
-  stateEquity(party: PartyId, value: number): void {
+  /**
+   * Audit B5.b, Law 7: state the account once, with the dust the arithmetic that produced it
+   * earned. `dust` is what the terms behind `value` cost in rounding — zero for a party that has
+   * just arrived and holds nothing, and the rounding of a whole balance sheet for one opened as the
+   * read of what it holds against what it owes. It is not a band and nothing is widened: the walk
+   * simply starts where its own arithmetic left it (`openedFrom`), instead of pretending a number
+   * somebody worked out was a number somebody stated.
+   */
+  stateEquity(party: PartyId, value: number, dust: number): void {
     forbid(
       !this.equityAccount.has(party),
       'Audit B5.b',
       `equity of ${party} already stated; move it by events`,
     );
     this.parties.get(party);
-    this.equityAccount.set(party, opened(value, `equity of ${party}`));
+    this.equityAccount.set(
+      party,
+      openedFrom({ value, dust, terms: 1, magnitude: Math.abs(value) }, `equity of ${party}`),
+    );
     // Reporting A2, G2: the opening is an itemised fact too (Seed C1: at period zero the equity IS
     // the read). With it in the ledger the two records are comparable without an argument about
     // where each starts — Σ every entry is the balance, exactly, and a missing entry is a

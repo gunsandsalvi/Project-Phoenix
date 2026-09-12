@@ -84,6 +84,24 @@ export function opened(value: number, what: string): Running {
 }
 
 /**
+ * State a balance that was COMPUTED, carrying the dust its arithmetic earned (Law 7).
+ *
+ * `opened` is right for a balance somebody stated — the one rounding is the statement of it. It is
+ * wrong for a balance somebody worked out, because Law 7's dust is the dust of the TERMS, never of
+ * the answer: a fund's equity is zero by construction (Fund Shares A3) and that zero is a
+ * contribution of four hundred billion minus a book of four hundred billion, so `opened(0)` charges
+ * it ε × 0 and the first check against it reports the real residue of the subtraction — measured at
+ * 0.00008869, which is ε × 4e11 to the digit — as a violation of an identity nothing is wrong with.
+ *
+ * Widening anything is forbidden and nothing here is widened: the balance opens with what its own
+ * arithmetic did, which is the same rule `moved` applies to every step after it.
+ */
+export function openedFrom(terms: Sum, what: string): Running {
+  const v = finite(terms.value, what);
+  return { value: v, dust: terms.dust + moveDust(v, 0), moves: 0 };
+}
+
+/**
  * Move a balance by one event; the rounding lands at the magnitude the addition passed through.
  *
  * `through` is that magnitude when it is BIGGER than the move itself: an instruction that takes a

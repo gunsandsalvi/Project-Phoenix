@@ -142,6 +142,17 @@ export class Valuation {
   }
 
   /**
+   * Clearing D4: WHICH PERIOD'S MARKS THE EQUITY ACCOUNTS HAVE RECOGNISED, for a reader at `now`.
+   *
+   * It is the switch `carryingPerUnit` turns on, read out loud so that a contract's carrying value
+   * (prices/contract-value.ts) turns on the same one. Two answers to "which moment is it" is how a
+   * book comes to be valued at a new mark against an account still carrying the old (Law 4).
+   */
+  recognisedFor(now: Period): Period {
+    return this.recognisedThrough >= now || now === 0 ? now : period(now - 1);
+  }
+
+  /**
    * Currency C5, D1, D3: THE RATE IN FORCE — what one unit of `from` costs in `to`, for `at`.
    *
    * There is ONE rate for a period and everything uses it: what a payment settles at and what a

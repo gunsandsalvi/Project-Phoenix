@@ -38,6 +38,15 @@ export interface CapitalPosition {
   readonly capital: number;
   /** B1: what its book weighs, asset by asset. */
   readonly weighted: number;
+  /**
+   * Law 7: HOW MANY TERMS THAT SUM HAD and what magnitude it passed through. A reader comparing
+   * something against this number is comparing against a walk over the bank's whole book, and the
+   * dust it is entitled to is the dust of THAT arithmetic — not of the handful of terms the reader
+   * itself could see. Published with the number, because a tolerance derived from one side of a
+   * comparison is a tolerance derived from the wrong thing (worklist 13a, finding 12b-5).
+   */
+  readonly weightedTerms: number;
+  readonly weightedMagnitude: number;
   /** B1.b: and what it comes to with no weights at all. */
   readonly assets: number;
   readonly weightedRatio: Option<number>;
@@ -166,7 +175,8 @@ export function capitalOf(
     'what stands in front of its creditors',
   );
   const assets = sum(held).value;
-  const rwa = sum(weighted).value;
+  const weightedSum = sum(weighted);
+  const rwa = weightedSum.value;
   const askedWeighted = add(rules.minWeighted, rules.buffer, 'the line it runs to');
   const askedLeverage = add(rules.minLeverage, rules.buffer, 'the backstop it runs to');
   // What each rule leaves it, in units of the asset it would add: the weighted rule counts that
@@ -182,6 +192,8 @@ export function capitalOf(
     ccy,
     capital,
     weighted: rwa,
+    weightedTerms: weightedSum.terms,
+    weightedMagnitude: weightedSum.magnitude,
     assets,
     weightedRatio: rwa > 0 ? some(div(capital, rwa, 'its weighted ratio')) : none<number>(),
     leverageRatio: assets > 0 ? some(div(capital, assets, 'its leverage ratio')) : none<number>(),
@@ -210,6 +222,8 @@ export function publish(ctx: MechanismContext, p: CapitalPosition): void {
       ccy: p.ccy,
       capital: p.capital,
       weighted: p.weighted,
+      weightedTerms: p.weightedTerms,
+      weightedMagnitude: p.weightedMagnitude,
       assets: p.assets,
       weightedRatio: p.weightedRatio.some ? p.weightedRatio.value : null,
       leverageRatio: p.leverageRatio.some ? p.leverageRatio.value : null,

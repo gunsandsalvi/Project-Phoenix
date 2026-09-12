@@ -14,6 +14,7 @@ import { Calendar } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import { forbid } from '../core/assert.js';
 import { InvalidRegistry } from '../core/errors.js';
+import { combineDust, sum } from '../core/num.js';
 import {
   type CurrencyCode,
   type InstrumentId,
@@ -34,7 +35,7 @@ export interface AssemblySpec {
   readonly seed: string;
   readonly epoch: Civil;
   /** Registry data without kinds: kinds come from the kernel and the modules. */
-  readonly registry: Omit<RegistryData, 'instrumentKinds' | 'partyKinds'>;
+  readonly registry: Omit<RegistryData, 'instrumentKinds' | 'partyKinds' | 'derivativeKinds'>;
   /** Kernel parameters: calendar and audit resolution. */
   readonly params: readonly ParamDecl[];
   readonly modules: readonly SystemModule[];
@@ -64,6 +65,7 @@ export function assemble(spec: AssemblySpec): World {
       instrumentKinds: [moneyKind, ...modules.flatMap((m) => m.instrumentKinds)],
       partyKinds: [...KERNEL_PARTY_KINDS, ...modules.flatMap((m) => m.partyKinds)],
       curveFamilies: modules.flatMap((m) => m.curveFamilies),
+      derivativeKinds: modules.flatMap((m) => m.derivativeKinds ?? []),
     },
     new ParamRegister(declared).get(KERNEL_PARAMS.pieceShift),
     new ParamRegister(declared).get(KERNEL_PARAMS.tickShift),
@@ -92,6 +94,8 @@ export function assemble(spec: AssemblySpec): World {
       world.provideBankChoice(m.id, d.partyKind, (view) => d.chooses(view));
     }
     for (const k of m.resolves ?? []) world.provideResolution(m.id, k);
+    const capacity = m.clearingCapacity;
+    if (capacity !== undefined) world.provideCapacity(m.id, capacity);
     for (const i of m.indices?.(world.params) ?? []) world.addIndex(i, m.id);
     for (const v of m.marks ?? []) world.provideMark(m.id, v.instrumentKind, v.value);
     requireBankChoices(m);
@@ -231,9 +235,19 @@ function stateEquityAsRead(w: World): void {
     instruments: w.instruments,
     register: store,
     valuation: w.valuation,
+    contracts: w.contracts,
   };
   for (const p of w.parties.all()) {
     const sheet = balanceSheet(reads, p.id);
-    store.stateEquity(p.id, sheet.assets.value - sheet.liabilities.value);
+    const read = sum([sheet.assets.value, -sheet.liabilities.value]);
+    // Law 7: the account opens with the dust its own arithmetic earned — the two sides, the
+    // subtraction between them, and the walk behind every money balance they were read off. A
+    // party whose equity is zero BY CONSTRUCTION (a fund, Fund Shares A3) is nothing but that
+    // residue, and `opened(0)` charged it the rounding of stating a zero (worklist 13a).
+    store.stateEquity(
+      p.id,
+      read.value,
+      combineDust(sheet.assets, sheet.liabilities, read) + sheet.walked,
+    );
   }
 }

@@ -22,9 +22,10 @@ import {
   nextPeriod,
   period,
 } from '../calendar/calendar.js';
-import { forbid } from '../core/assert.js';
+import { assertNever, forbid } from '../core/assert.js';
 import { InvalidRegistry, Missing, Unpriced } from '../core/errors.js';
 import {
+  contractId,
   type CurrencyCode,
   type CurveFamilyId,
   type InstrumentId,
@@ -38,7 +39,7 @@ import {
   fxPairId,
 } from '../core/ids.js';
 
-import { add, addTo, mul, sub, sum } from '../core/num.js';
+import { add, addTo, div, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
   delivers,
@@ -50,6 +51,7 @@ import {
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
 import { Journal } from '../journal/journal.js';
+import type { Leg } from '../ledger/instruction.js';
 import { Ledger } from '../ledger/ledger.js';
 import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
@@ -58,12 +60,21 @@ import { PriceStore, type Print } from '../prices/price-store.js';
 import { Valuation } from '../prices/value.js';
 import { Instruments } from '../register/instruments.js';
 import { Register, type RegisterReads, registerReads } from '../register/register.js';
+import { Contracts } from '../register/contracts.js';
+import {
+  carryingOfContract,
+  contractValueTo,
+  markOfContract,
+  type ContractValueDeps,
+} from '../prices/contract-value.js';
+import type { Contract, ContractReads, Underlying } from '../registry/derivatives.js';
 import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
 import { mergeCells, splitCell, weightEvent } from './cells.js';
 import type {
+  ContractsRead,
   MechanismContext,
   Outlook,
   OutlookVariable,
@@ -78,6 +89,7 @@ import type {
   VenueParticipantDecl,
   PhaseDecl,
   Valuer,
+  ClearingCapacity,
 } from './module.js';
 import { revalue } from './revalue.js';
 import type { Qty } from '../core/tick.js';
@@ -134,6 +146,11 @@ export class World {
   readonly settlement: Settlement;
   readonly accountOf: ReturnType<typeof accountResolver>;
   private readonly store: Register;
+  /**
+   * Derivative X1: the second register. A contract is not a holding, so it is not in the one above:
+   * it has no issuer and no issued amount, and what it enters is the zero-sum identity (D1.b).
+   */
+  private readonly contractStore = new Contracts();
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -149,6 +166,8 @@ export class World {
   private readonly slots = new Map<string, object>();
   /** Expectations A2: the one module that answers what a party expects. */
   private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
+  /** Derivative Layer E1: the one module that says what a clearing member may carry. */
+  private capacity: { owner: string; capacity: ClearingCapacity } | undefined;
   private readonly creditDeciders = new Map<PartyKindId, { owner: string; decide: CreditDecision }>();
   /** Banks Funding E1: the one module that answers where a depositor of a kind wants to bank. */
   private readonly bankChoosers = new Map<
@@ -241,6 +260,10 @@ export class World {
       ledger: this.ledger,
       journal: this.journal,
       creditDecision: (kind) => (o) => this.creditDecisionOf(kind)(o),
+      contracts: this.contractStore,
+      contractCarrying: (c, at) => carryingOfContract(c, at, this.contractValueDeps()),
+      derivativeKind: (kind) => this.registry.derivativeKind(kind),
+      underlyingExists: (u) => this.missingUnderlying(u),
     });
     this.currentCycle = this.calendar.cycle(0);
     this.audit = new Audit(
@@ -320,6 +343,7 @@ export class World {
             register: w.store,
             valuation: w.valuation,
             journal: w.journal,
+            contracts: w.contracts,
           });
           // From here to the end of the period, what a lot is carried at is THIS period's mark: the
           // resolution slot moves a dead party's whole book, and it moves it at what the book says.
@@ -387,6 +411,20 @@ export class World {
         'Law 9',
         `${m.id} names ${m.instrument}, which is not ${pair.base}/${pair.quote}`,
       );
+      this.marketList.push(m);
+      return;
+    }
+    const contract = m.contract;
+    if (contract !== undefined) {
+      // Derivative X1, D3, G4: a CONTRACT book has no instrument behind it either. Nobody issues a
+      // forward and nobody holds one: what changes hands is an obligation on two balance sheets,
+      // and the id it prints under names the subject of the price. What IS checked is that the kind
+      // is registered, that the terms are its own, and that what the contracts it strikes will
+      // settle against is something this world produces (G4) — asked here so a book that could
+      // never write a row is refused when it opens rather than at the first trade.
+      const profile = this.registry.derivativeKind(contract.kind);
+      profile.validateTerms(contract.terms);
+      if (contract.house !== null) this.parties.get(contract.house);
       this.marketList.push(m);
       return;
     }
@@ -559,6 +597,198 @@ export class World {
     const held = this.valuers.get(i.kind);
     if (held === undefined) return none<number>();
     return held.value(this.mechanismContext(held.owner), i, at);
+  }
+
+  // ---- contracts (Derivative X1: the second register) ------------------------------------------
+
+  /**
+   * The contract store as everything outside settlement sees it: every read, no writer (Law 4). The
+   * store with its `open`, `close` and `novate` reaches settlement and nothing else, the same way
+   * the register's writes do.
+   */
+  get contracts(): ContractsRead {
+    return {
+      has: (id) => this.contractStore.has(id),
+      get: (id) => this.contractStore.get(id),
+      all: () => this.contractStore.all(),
+      open_: () => this.contractStore.open_(),
+      of: (p) => this.contractStore.of(p),
+      openOf: (p) => this.contractStore.openOf(p),
+      between: (a, b) => this.contractStore.between(a, b),
+      sideOf: (c, p) => this.contractStore.sideOf(c, p),
+      mark: (c, at) => this.contractMark(c, at),
+      valueTo: (c, p, at) => this.contractValue(c, p, at),
+      carrying: (c, at) => this.contractCarrying(c, at),
+      initialMargin: (c, at) =>
+        this.registry.derivativeKind(c.kind).initialMargin(c, at, this.contractReads(at)),
+      marginFor: (about, at) =>
+        this.registry.derivativeKind(about.kind).initialMargin(
+          {
+            ...about,
+            // Derivative Layer E2: a row that has not been written has no identity yet, and the
+            // margin does not depend on one — what it depends on is the underlying, the size and
+            // the level, all of which are here.
+            id: contractId('unwritten'),
+            basis: 0,
+            opened: at,
+            state: 'open',
+            terminated: none(),
+          },
+          at,
+          this.contractReads(at),
+        ),
+      legsDue: (c, at) => this.registry.derivativeKind(c.kind).legs(c, at, this.contractReads(at)),
+      closeOut: (c, at) =>
+        this.registry.derivativeKind(c.kind).closeOut(c, at, this.contractReads(at)),
+      expires: (c, at) => this.registry.derivativeKind(c.kind).expires(c, at, this.calendar),
+      underlying: (c) => this.registry.derivativeKind(c.kind).underlying(c),
+    };
+  }
+
+  /**
+   * Derivative D3, Law 4: the public reads a mark, a margin or a close-out is given. It is the
+   * KERNEL's own state and no party's view, because one contract has one mark read from two sides
+   * (Derivative Layer A3) — a mark that could see either party's own state would answer two
+   * different things and D1.b would be checking a coincidence rather than an identity.
+   */
+  contractReads(at: Period): ContractReads {
+    return {
+      period: at,
+      calendar: this.calendar,
+      params: this.params,
+      print: (instrument, on) => this.prices.latest(instrument, on),
+      mark: (instrument, on) => this.markOf(instrument, on),
+      index: (id) => this.index(id),
+      curve: (family) => this.curve(family),
+      measuredMove: (instrument, periods) => this.measuredMove(instrument, periods, at),
+      lastEvent: (kind, subject) => {
+        const e = this.journal.lastOf(kind, subject);
+        return e?.public === true ? some(e) : none();
+      },
+    };
+  }
+
+  /**
+   * Derivative Layer D1: WHAT THE UNDERLYING ITSELF HAS DONE — the standard deviation of the change
+   * between consecutive prints over the last `periods` of them, in the price's own unit.
+   *
+   * D1 says initial margin is sized from the risk of the position and is not a stated rate per
+   * class, and the only honest source of that risk in this world is the line's own record. A line
+   * with fewer than two prints has no record, and the answer is that there is none — which is what
+   * makes a margin on a line nobody has traded impossible to compute rather than zero.
+   */
+  measuredMove(instrument: InstrumentId, periods: number, at: Period): Option<number> {
+    const history = this.prices.history(instrument).filter((p) => p.period <= at);
+    const window = history.slice(history.length > periods + 1 ? history.length - periods - 1 : 0);
+    if (window.length < 2) return none();
+    const moves: number[] = [];
+    for (let i = 1; i < window.length; i += 1) {
+      const now = window[i];
+      const before = window[i - 1];
+      if (now === undefined || before === undefined) continue;
+      moves.push(sub(now.price, before.price, 'what the print moved by'));
+    }
+    if (moves.length === 0) return none();
+    const mean = div(sum(moves).value, moves.length, 'the mean move');
+    const squares = sum(moves.map((m) => mul(m - mean, m - mean, 'squared move')));
+    return some(Math.sqrt(div(squares.value, moves.length, 'the variance of the move')));
+  }
+
+  /**
+   * Derivative D3.a, Derivative Layer G4: what a contract would settle against that this world does
+   * not produce, or nothing when it produces all of it. It answers with the NAME of the missing
+   * thing rather than a boolean, because a refusal that cannot say what was missing sends whoever
+   * wrote the contract looking through three possibilities.
+   */
+  private missingUnderlying(u: Underlying): string | undefined {
+    switch (u.kind) {
+      case 'print': {
+        const m = this.marketList.find((x) => x.id === u.market);
+        if (m === undefined) return `the market ${u.market}`;
+        if (!this.instruments.has(u.instrument)) return `the line ${u.instrument}`;
+        if (m.instrument !== u.instrument) return `${u.instrument} in ${u.market}, which is not its book`;
+        return undefined;
+      }
+      case 'index':
+        return this.indexList.has(u.index) ? undefined : `the index ${u.index}`;
+      case 'event':
+        return this.parties.has(u.party) ? undefined : `events of ${u.party}`;
+      default:
+        return assertNever(u, 'Underlying');
+    }
+  }
+
+  /** What the contract valuation reads: the profiles, the public reads, and which marks are in. */
+  private contractValueDeps(): ContractValueDeps {
+    return {
+      profile: (kind) => this.registry.derivativeKind(kind),
+      reads: (at) => this.contractReads(at),
+      recognisedFor: (now) => this.valuation.recognisedFor(now),
+    };
+  }
+
+  /** D8: what a contract is worth to `a` at a period; `b`'s is the negation (A3). */
+  contractMark(c: Contract, at: Period): number {
+    return markOfContract(c, at, this.contractValueDeps());
+  }
+
+  /** D1: an asset to one side and a liability to the other, at every instant. */
+  contractValue(c: Contract, party: PartyId, at: Period): number {
+    return contractValueTo(c, party, at, this.contractValueDeps());
+  }
+
+  /** Clearing D4: what the two equity accounts have recognised, to `a`. */
+  contractCarrying(c: Contract, at: Period): number {
+    return carryingOfContract(c, at, this.contractValueDeps());
+  }
+
+  /**
+   * Derivative Layer E1-E3: exactly one module answers what a member may carry (Law 4). A world
+   * with a contract book and nobody answering cannot be sealed, because a defaulted-to "as much as
+   * you like" is E4's limit raised by omission.
+   */
+  provideCapacity(owner: string, capacity: ClearingCapacity): void {
+    forbid(!this.sealed, 'Law 10', 'the clearing capacity is declared at assembly');
+    forbid(
+      this.capacity === undefined,
+      'Law 4',
+      `${owner} would be the second module to say what a clearing member may carry (${this.capacity?.owner ?? ''})`,
+    );
+    this.capacity = { owner, capacity };
+  }
+
+  private capacityOf(party: PartyId, wanted: number, m: MarketDecl, struck: number): number {
+    const held = this.capacity;
+    if (held === undefined) {
+      throw new InvalidRegistry(
+        'Derivative Layer E1',
+        `${m.id} is a contract book and no module says what a member may carry`,
+      );
+    }
+    return held.capacity.admits(this.mechanismContext(held.owner), party, wanted, {
+      market: m,
+      struck,
+    });
+  }
+
+  private marginLegsOf(
+    party: PartyId,
+    against: PartyId,
+    size: number,
+    m: MarketDecl,
+    struck: number,
+  ): readonly Leg[] {
+    const held = this.capacity;
+    if (held === undefined) {
+      throw new InvalidRegistry(
+        'Derivative Layer D9',
+        `${m.id} is a contract book and no module says what is posted against a trade in it`,
+      );
+    }
+    return held.capacity.margin(this.mechanismContext(held.owner), party, against, size, {
+      market: m,
+      struck,
+    });
   }
 
   /** Expectations A2: exactly one module answers what a party expects (Law 4). */
@@ -887,6 +1117,19 @@ export class World {
       },
       rateIn: (from: CurrencyCode, to: CurrencyCode) =>
         this.valuation.rateInForce(from, to, this.currentPeriod),
+      contracts: {
+        mine: () => this.contractStore.openOf(party),
+        valueOf: (c) => this.contractValue(c, party, this.currentPeriod),
+        // C1.a, G3: netted with ONE named counterparty, and there is no door that adds those nets
+        // up. The party's own module subtracts the collateral it holds, because which instrument a
+        // margin claim is, is the module's fact and not the kernel's (Law 15).
+        exposureTo: (counterparty) =>
+          sum(
+            this.contractStore
+              .between(party, counterparty)
+              .map((c) => this.contractValue(c, party, this.currentPeriod)),
+          ).value,
+      },
       rng: this.root.derive(`party/${party}/${this.currentPeriod}`),
     } as Omit<ParticipantView, 'self'>;
     // The party record itself is replaced when it ceases, changes weight or moves its bank, so it
@@ -929,6 +1172,7 @@ export class World {
           weightEvent(cell, kind, members, cause, this.currentPeriod, this.currentCycle, cellDeps);
         },
       },
+      contracts: this.contracts,
       rng: this.root.derive(`module/${owner}/${this.currentPeriod}`),
       state: <T extends object>(name: string, initial: () => T): T => this.slot(owner, name, initial),
       participant: (party) => this.participantView(party),
@@ -961,7 +1205,9 @@ export class World {
         // Seed C1's rule, applied wherever a party begins: its equity is the READ of what it holds
         // against what it owes, and a party that has just arrived holds nothing and owes nothing.
         // Everything from here moves it by a named event (Audit B5.b).
-        this.store.stateEquity(party.id, 0);
+        // Law 7: no arithmetic produced this, so it carries none of it — a party that has just
+        // arrived holds nothing and owes nothing, exactly.
+        this.store.stateEquity(party.id, 0, 0);
         this.journal.record(
           this.currentPeriod,
           this.currentCycle,
@@ -1101,6 +1347,7 @@ export class World {
       parties: this.parties,
       instruments: this.instruments,
       register: this.register,
+      contracts: this.contracts,
       prices: this.prices,
       valuation: this.valuation,
       ledger: this.ledger,
@@ -1351,9 +1598,13 @@ export class World {
       // the kind of thing it is. Both are declarations, and neither is a branch on a kind id.
       tickOf: (decl) => {
         const pair = decl.fx;
-        return pair === undefined
-          ? this.registry.tickFor(this.instruments.get(decl.instrument).kind, decl.ccy)
-          : this.registry.rateTickFor(pair.base, pair.quote);
+        if (pair !== undefined) return this.registry.rateTickFor(pair.base, pair.quote);
+        const contract = decl.contract;
+        // Derivative X1: a contract book prints under an id with no instrument behind it, the way a
+        // pair does — what it names is the subject of the price, and what it is quoted in is the
+        // derivative kind's own grid.
+        if (contract !== undefined) return this.registry.tickForDerivative(contract.kind, decl.ccy);
+        return this.registry.tickFor(this.instruments.get(decl.instrument).kind, decl.ccy);
       },
       prices: this.prices,
       settlement: this.settlement,
@@ -1361,6 +1612,10 @@ export class World {
       accountOf: this.accountOf,
       accruedPerUnit: (instrument, at) => this.accruedPerUnit(instrument, at),
       instrumentIssuer: (instrument) => this.instruments.get(instrument).issuer,
+      derivativeKind: (kind) => this.registry.derivativeKind(kind),
+      admits: (party, wanted, m, struck) => this.capacityOf(party, wanted, m, struck),
+      marginLegs: (party, against, size, m, struck) =>
+        this.marginLegsOf(party, against, size, m, struck),
     });
   }
 

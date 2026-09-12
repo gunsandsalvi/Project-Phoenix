@@ -235,6 +235,55 @@ second-hand carries what its buyer paid. A rise is refused unless the kind decla
 `fairValueThroughIncome` (E2.c), in that one place. The mark is handed in as an `Option` and a kind
 may ignore it: a thing that wears out has no print and does not want one.
 
+### 4.5b Contracts: the second register (Derivative X1, D1, D1.b)
+
+**A derivative is not a holding, so it is not in the register.** Nobody issued it, it has no issued
+amount and no holders, and a row that nobody issued sitting in the ownership identity would be a
+defect in every period it existed (X1). It lives in `register/contracts.ts`: `Contract { id, kind,
+a, b, terms, ccy, notional, struckAt, basis, opened, state, house }`, indexed by party AND by pair —
+because `C1.a` nets per counterparty pair and `G3` forbids any wider number, so the read a party is
+entitled to is "what I have with you" and there is no door that adds those up. Nothing ever
+collapses two rows: an offsetting trade with a different counterparty is a third row, the market
+risk is flat and the credit risk has doubled (`B3.a`), and two strikes on one underlying are two
+contracts (`D12`).
+
+**What it enters instead is the zero-sum identity**, and `D1.b` says EXACTLY: not dust, the same
+number negated. So the family (`audit/families/zero-sum.ts`) cannot compare the kernel's own two
+answers — `b`'s value is minus `a`'s by construction, and comparing them would check that a minus
+sign works. It asks the PROFILE for the contract as each side states it: `flip(terms)` is the terms
+as the other side wrote them, the profile marks that, and the two must negate. A kind whose mark is
+not antisymmetric in its own terms lights this family and no other (Audit B8).
+
+**A kind of contract has a profile like a kind of instrument** (`registry/derivatives.ts`,
+`DerivativeKindProfile`): `underlying` (a print this world clears, an index it reads, or a public
+event it records — `D3.a` and `G4` are checked when the book opens and again when a row is written),
+`mark` and `flip`, `legs` (what the terms put in this period), `premiumPerUnit` (`D7.b`: zero for a
+contract struck at par, and then the cleared price IS the rate that makes it so), `initialMargin`,
+`closeOut`, `expires`, a `unit` and a `priceTick`. The mark is a function of PUBLIC state only
+(`ContractReads`: prints, marks, indices, curves, the measured move, public events) — one contract
+has one mark read from two sides (`A3`), and a mark that could see either party's own state would
+answer two different things.
+
+**Opening, closing and novating are LEGS** (`ledger/instruction.ts`, `ContractLeg`). Each is a
+change of two balance sheets — a row is an asset to one side and a liability to the other from the
+instant it exists — and Money D1 says a change of balance sheet goes over the wire. So settlement is
+the contract store's one writer as it is the register's, a premium and the row it buys are in one
+numbered instruction (Law 5), and `Settled.contracts` hands the drafter back the rows it wrote. The
+value at inception is the row's **basis** in Register D4's sense (what the position cost); what the
+equity accounts have recognised after that is `prices/contract-value.ts`, on the same
+`recognisedFor` switch a lot's carrying value turns on (§4.5), and `world/revalue.ts` books the
+change to both sides in the same step as every other mark.
+
+**A `contract` market is the third market kind** (`clearing/market.ts`): same solver, same book, same
+print, and what a fill becomes is a row rather than a delivery. Cleared, one trade becomes two rows
+— member to house and house to member — so no member ever faces another and the house is flat by
+construction (`C2`). The trade is **cut at the strike** to the smaller of the two sides' admitted
+shares, with the margin in the same pass (`E2`), and what was refused is journaled
+(`derivatives.refused`) and measured, never accommodated (`E4`). Neither the cut nor the margin is
+the kernel's to compute: **exactly one module declares `clearingCapacity`** (`world/module.ts`),
+because what a member keeps back is its own preference and what a margin claim IS is that module's
+instrument. A world with a contract book and nobody answering cannot clear one.
+
 ### 4.6 The clearing engine (Clearing A–F)
 
 One solver for every market. A participant posts a `Schedule`: a monotone step function from price to

@@ -25,7 +25,9 @@ Dealer Desks E1, E2; Corporate Credit H4, H4.a; Equity (hedging) from item 9's P
 ## Findings this item carries
 
 Three are one thing: **a desk's book is not the bank's book**, and nothing in this item may hedge,
-quote or margin off a position read wrong. The fourth is a currency a bank never funded.
+quote or margin off a position read wrong. The fourth is a currency a bank never funded. The last
+two come from 13a, and both are about what the layer does not SAY: a margin of nothing, and a door
+nothing has opened.
 
 ### A line's makers are drawn and nobody reads them (`12d-10`)
 
@@ -75,6 +77,32 @@ than being refused. Four of `etf.test.ts`'s reds are this one thing (a market th
 taken against shares, a mark nobody traded at, a book somebody would close). It lands here because
 this item puts a **listed vehicle on every index** and every one of them would inherit it. Seen at
 `packages/engine/src/mechanisms/funds/etf.ts`.
+
+### A requirement below one piece of cash posts nothing, and G2's "stated reason" is silent (`13a-1`)
+
+The layer's capacity door admits a trade at its full size whenever the kind can say what the
+underlying's measured move is, and the margin leg then converts the requirement to cash. On a
+forward on a bill moving a tick, a five-contract book asks for **four hundredths of a cent** of
+margin — which is zero pieces (Law 8: a payment is a count of pieces), so nothing is posted, the
+default fund is sized from nothing, and a member that then defaults leaves the whole loss unfunded.
+Measured in 13a's own layer tests: `waterfall.unfunded` for the entire close-out value, three
+periods running, with every line of the waterfall paying zero.
+
+Nothing is arithmetically wrong with it — the requirement really is below a cent. What is missing is
+G2: an exposure is admitted with no margin against it and the layer says nothing, where G2 allows
+that only with a STATED reason. The reason exists ("the requirement rounds below the smallest piece
+of this money") and it is not written down. The classes are where it bites, because a class with a
+real notional is where the difference between "too small to post" and "nobody measured it" stops
+being invisible.
+
+### Collateral is cash, and a lien has no user yet (`13a-2`)
+
+D9.a says posted collateral leaves the poster's free balance, is still owned, and comes back. The
+layer meets it in CASH — money out, a claim on the holder in, an asset swap (C3.a) — and the
+kernel's lien (Register D, `pledge`/`release` legs, the encumbrance check) is built and unused by
+it. Securities posted as collateral is the other half of D9 and it has no user until a class posts
+them: a CDS seller pledging a bond, a repo'd future. It is not missing from the kernel; it is
+unexercised, and a door nothing has ever opened is a door nobody has tested.
 
 ---
 
@@ -359,6 +387,8 @@ packages/engine/test/{rate-markets,cds,cds-event,cds-index,irs,swap-curve,fx-for
 - [ ] FX hedgers: invoice books, foreign-asset holders rolling, desks with width from carrying cost; E4 residual as an observer read per party; tests (D1–D4, E2, E4)
 - [ ] `index.future` kind: cash-settled against the index read at expiry; margined; tests (Indices C3)
 - [ ] Desks hedge inventory with a contract that has a counterparty and margin (Dealer Desks E1, E2); item 9's hedging PARTIAL closed; the test-only forward from 13a deleted; tests
+- [ ] A requirement that rounds below one piece of the money it is owed in is a STATED reason there is no margin, not a silence: the layer records it where it admits the trade, and a default fund sized from nothing is visible before somebody defaults; tests (G2, Law 8; `13a-1`)
+- [ ] Securities as collateral: a class that pledges a holding rather than paying cash, the lien in favour of the holder, the units gone from the free balance and back when the requirement falls; tests (D9, D9.a, Register D; `13a-2`)
 - [ ] A desk's book is the position it TOOK, before anything hedges off it: quoting per line from the makers drawn for that line (Dealer Desks A3), and the aggregate limit measured net of what the treasury holds for liquidity (D1, D4); tests: a bank holding the liquidity standard is not over its dealing limit before it has quoted (`12d-10`, `12d-12`)
 - [ ] `option` kind: holder and writer, premium as a periodic leg that fires once, a mark every period as variation margin, expiry exercised at intrinsic against the expiry print or worthless, ceasing on both books at once; underlying a print this world clears; tests (D1, D1.b, D2, D3, D3.a, D8, D8.a, D9, D11, D11.a)
 - [ ] The premium CLEARS on its own book and implied volatility is the read taken back off it; no volatility parameter or store exists anywhere (lint + test); initial margin from the underlying's own measured move with the house's limits binding at the strike; tests (D7, D7.a, D7.b, Law 3, Derivative Layer E1–E4)

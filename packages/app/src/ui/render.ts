@@ -451,6 +451,55 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   positions.append(xt);
   root.append(positions);
 
+  // Derivative X1, D1: the contracts, apart from the positions because they ARE apart — nobody
+  // issued one and nobody holds one. What each row says is who is on it, what it settles against,
+  // and what it is worth to the side the terms are written from; the other side's is the negation.
+  if (s.contracts.length > 0) {
+    const contracts = el('section', { id: 'contracts' }, el('h2', {}, 'Contracts'));
+    const ct = el(
+      'table',
+      {},
+      el(
+        'thead',
+        {},
+        el(
+          'tr',
+          {},
+          el('th', {}, 'contract'),
+          el('th', {}, 'a'),
+          el('th', {}, 'b'),
+          el('th', {}, 'house'),
+          el('th', {}, 'notional'),
+          el('th', {}, 'struck'),
+          el('th', {}, 'mark to a'),
+          el('th', {}, 'initial margin'),
+        ),
+      ),
+    );
+    const cb = el('tbody');
+    for (const c of s.contracts) {
+      cb.append(
+        el(
+          'tr',
+          {},
+          el('td', {}, c.name),
+          el('td', {}, c.a),
+          el('td', {}, c.b),
+          el('td', {}, c.house ?? '—'),
+          el('td', {}, String(c.notional)),
+          el('td', {}, money(s, c.ccy, c.struckAt)),
+          el('td', {}, money(s, c.ccy, c.markToA)),
+          // D1 (layer), G2: a line whose own move nobody can measure has no margin anybody can
+          // state, and the surface says so rather than showing a zero.
+          el('td', {}, c.initialMargin === null ? 'not measurable' : money(s, c.ccy, c.initialMargin)),
+        ),
+      );
+    }
+    ct.append(cb);
+    contracts.append(ct);
+    root.append(contracts);
+  }
+
   // The sovereign's own state: what it published, and what its auctions did (Sovereign C1.a, C4).
   const programmes = followed(s, 'treasury.programme');
   const latest = programmes[programmes.length - 1];

@@ -22,12 +22,14 @@ import type {
   OverdraftDecision,
   PartyKindProfile,
 } from '../registry/kinds.js';
+import type { DerivativeKindProfile } from '../registry/derivatives.js';
 import type { ParamDecl, ParamRegister } from '../registry/params.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
 import type { Period } from '../calendar/calendar.js';
 import type { Instrument } from '../register/instruments.js';
+import type { Leg } from '../ledger/instruction.js';
 import type {
   MechanismContext,
   Outlook,
@@ -182,6 +184,37 @@ export interface OutlookProvider {
   variables(ctx: MechanismContext, party: PartyId): readonly OutlookVariable[];
 }
 
+/**
+ * Derivative Layer E1, E2, E3, D9, C3.a: WHO SAYS HOW MUCH A MEMBER CAN TAKE, and what it posts.
+ *
+ * Both are the layer's and neither is the kernel's. What a member holds back as a buffer is its own
+ * preference; what it has already committed this period is the layer's own record; and what a
+ * margin claim IS, is the layer's instrument. So the module that owns the layer answers, exactly
+ * one of them per world, and the market cuts a trade to the smaller of the two sides' answers and
+ * puts the margin in the same instruction (E2: the cut happens at the strike).
+ *
+ * A world with a contract book and nobody answering cannot be sealed: a defaulted-to "as much as
+ * you like" is E4's limit raised by omission, which is the one thing that clause forbids.
+ */
+export interface ClearingCapacity {
+  /** E1, E3: how much of `wanted` this party can carry, in the kind's own unit. */
+  admits(ctx: MechanismContext, party: PartyId, wanted: number, about: ContractAsk): number;
+  /** D9, C3.a: the legs that post it — money out, a claim in, never an expense. */
+  margin(
+    ctx: MechanismContext,
+    party: PartyId,
+    against: PartyId,
+    size: number,
+    about: ContractAsk,
+  ): readonly Leg[];
+}
+
+/** What a market is asking about: the book, the level it cleared at, and the kind of contract. */
+export interface ContractAsk {
+  readonly market: MarketDecl;
+  readonly struck: number;
+}
+
 export interface SystemModule {
   /** Stable id, also the directory name under src/mechanisms or src/seeds. */
   readonly id: string;
@@ -190,6 +223,12 @@ export interface SystemModule {
   /** Module ids that must be assembled before this one (Part XIII dependency order). */
   readonly requires: readonly string[];
   readonly instrumentKinds: readonly InstrumentKindProfile[];
+  /**
+   * Derivative X1, Law 15: kinds of CONTRACT this module owns. A derivative is not a holding and
+   * not an instrument, so it is declared apart — and it is owned by exactly one module and asked
+   * through one profile, like everything else the kernel must not branch on.
+   */
+  readonly derivativeKinds?: readonly DerivativeKindProfile[];
   readonly partyKinds: readonly PartyKindProfile[];
   /** Curve families this module owns (Sovereign D3.a: one owner, one convention). */
   readonly curveFamilies: readonly CurveFamilyDecl[];
@@ -245,6 +284,11 @@ export interface SystemModule {
    * estate leave a kind alone without knowing which kind it is (Law 15: nothing branches).
    */
   readonly resolves?: readonly PartyKindId[];
+  /**
+   * Derivative Layer E1-E3, D9: what a member may carry and what it posts against it. Exactly one
+   * module may answer, and a world with a contract market and no answer cannot be sealed.
+   */
+  readonly clearingCapacity?: ClearingCapacity;
   /** Opening state this module contributes (Seed A1); runs in assembly order before the seed audit. */
   seed?(ctx: SeedContext): void;
 }

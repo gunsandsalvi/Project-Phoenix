@@ -11,7 +11,7 @@ import { periodicityLabel } from '../core/rate.js';
 import { partyId, type PartyId } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
 import { struckIn, type Print } from '../prices/price-store.js';
-import { displayName } from '../registry/naming.js';
+import { contractName, displayName } from '../registry/naming.js';
 import type { World } from '../world/world.js';
 import type { AuditReport } from '../audit/audit.js';
 import type { ParamReport } from '../registry/params.js';
@@ -79,6 +79,30 @@ export interface PositionView {
  * There is no sector outlook and no consensus here, because there is none in the model (A2.b), and
  * a viewer that is a party sees its own and nobody else's (Observer A2: no private state).
  */
+/**
+ * Derivative D1, D8, X1; Observer A4: an open contract, shown to whoever is a side of it.
+ *
+ * It is not a position and it is not in the register (X1): what a viewer is shown is the row, the
+ * two names on it, and what it is worth TO THE SIDE READING IT — an asset to one and a liability to
+ * the other (D1). A party scope sees its own rows; the inspector sees every row, once.
+ */
+export interface ContractView {
+  readonly id: string;
+  readonly kind: string;
+  readonly name: string;
+  readonly a: string;
+  readonly b: string;
+  readonly house: string | null;
+  readonly notional: number;
+  readonly struckAt: number;
+  /** D8: what it is worth to `a`; `b`'s is the negation (Derivative Layer A3). */
+  readonly markToA: number;
+  /** D1 (layer): what the kind requires against it, or null when the underlying has no record. */
+  readonly initialMargin: number | null;
+  readonly opened: number;
+  readonly ccy: string;
+}
+
 export interface OutlookView {
   readonly party: string;
   readonly variable: string;
@@ -254,6 +278,8 @@ export interface Snapshot {
   readonly curves: readonly CurveView[];
   readonly yields: readonly YieldView[];
   readonly positions: readonly PositionView[];
+  /** Derivative X1, D1: the open contracts a viewer is a side of, with what each is worth to `a`. */
+  readonly contracts: readonly ContractView[];
   /** F1, F2, F4, B3.a: what each bank last published about its funding and its capital. */
   readonly banks: readonly BankView[];
   /** Currency C5: what each pair last printed, and whether that was this period (D1). */
@@ -383,6 +409,27 @@ export function snapshot(
       ccy: i.ccy,
     });
   }
+  const contracts: ContractView[] = [];
+  for (const c of w.contracts.open_()) {
+    // A4: a contract is private between its two sides, so a party scope sees the rows it is on and
+    // no others. Nothing here nets anything (G3): every row is its own line.
+    if (!visible(c.a) && !visible(c.b)) continue;
+    const margin = w.contracts.initialMargin(c, w.period);
+    contracts.push({
+      id: String(c.id),
+      kind: String(c.kind),
+      name: contractName(c, w.registry),
+      a: String(c.a),
+      b: String(c.b),
+      house: c.house === null ? null : String(c.house),
+      notional: c.notional,
+      struckAt: c.struckAt,
+      markToA: w.contractMark(c, w.period),
+      initialMargin: margin.some ? margin.value : null,
+      opened: c.opened,
+      ccy: String(c.ccy),
+    });
+  }
   const banks: BankView[] = [];
   for (const p of w.parties.all()) {
     const liquidity = w.journal.lastOf('bank.liquidity', p.id);
@@ -477,6 +524,7 @@ export function snapshot(
     curves,
     yields,
     positions,
+    contracts,
     banks,
     rates: ratesOf(w),
     triangles: trianglesOf(w),

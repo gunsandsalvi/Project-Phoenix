@@ -24,6 +24,14 @@ export type InstructionId = Brand<number, 'InstructionId'>;
 export type LotId = Brand<number, 'LotId'>;
 export type LienId = Brand<number, 'LienId'>;
 export type EventId = Brand<number, 'EventId'>;
+/**
+ * Derivative X1: a contract is NOT a holding, so it is not an instrument and does not get an
+ * InstrumentId. It is a row in its own store with its own identity (D12: counterparties +
+ * underlying + term + strike), and the brand is what stops one being passed where the other is
+ * expected — which is the type system saying the thing the clause says.
+ */
+export type ContractId = Brand<string, 'ContractId'>;
+export type DerivativeKindId = Brand<string, 'DerivativeKindId'>;
 
 function nonEmpty(s: string, what: string): string {
   if (s.length === 0) throw new Missing('Law 9', `${what} is empty`);
@@ -46,6 +54,9 @@ export const instrumentKindId = (s: string): InstrumentKindId =>
 export const paramId = (s: string): ParamId => nonEmpty(s, 'ParamId') as ParamId;
 export const curveFamilyId = (s: string): CurveFamilyId =>
   nonEmpty(s, 'CurveFamilyId') as CurveFamilyId;
+export const contractId = (s: string): ContractId => nonEmpty(s, 'ContractId') as ContractId;
+export const derivativeKindId = (s: string): DerivativeKindId =>
+  nonEmpty(s, 'DerivativeKindId') as DerivativeKindId;
 
 /** The unit in which a currency's money is counted: `ccy:<code>` (Appendix A, Units). */
 export const currencyUnit = (ccy: CurrencyCode): UnitId => `ccy:${ccy}` as UnitId;

@@ -27,6 +27,7 @@ import type { Valuation } from '../prices/value.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Holding, Register } from '../register/register.js';
 import type { Registry } from '../registry/registry.js';
+import type { Contract } from '../registry/derivatives.js';
 
 export interface RevalueDeps {
   /** What a market last said a unit is worth, for a kind whose lots are carried at cost. */
@@ -45,6 +46,16 @@ export interface RevalueDeps {
   readonly register: Register;
   readonly valuation: Valuation;
   readonly journal: Journal;
+  /**
+   * Derivative D8, D8.a: the open contracts and what each is worth now against what its two equity
+   * accounts have recognised. A mark that moves is a real gain to one side and a real loss to the
+   * other, and it lands in the same step as every other mark, at the same moment (Clearing D4).
+   */
+  readonly contracts: {
+    open_(): readonly Contract[];
+    mark(c: Contract, at: Period): number;
+    carrying(c: Contract, at: Period): number;
+  };
 }
 
 export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
@@ -117,6 +128,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       );
     }
   }
+  revalueContracts(period, cycle, d);
   for (const [issuer, delta] of issuerMoves) {
     if (delta === 0) continue;
     d.register.moveEquity({
@@ -136,6 +148,47 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
         deltaPerMember: delta,
         liabilities: true,
       },
+      false,
+    );
+  }
+}
+
+/**
+ * Derivative D8, D8.a, Derivative Layer A3, A4: a contract's mark moves, and what it moves is a
+ * real gain to one side and a real loss to the other — the same number, twice, with a sign.
+ *
+ * It runs with the holdings' marks and not after them, because it is the same moment: a book
+ * valued at a new mark against an account still carrying the old is the defect Currency D3 names,
+ * and a contract is on both parties' balance sheets from the instant it is written (D1). Nothing
+ * about it is netted across counterparties on the way (G3): each row moves its own two accounts.
+ */
+function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
+  for (const c of d.contracts.open_()) {
+    const now = d.contracts.mark(c, period);
+    const carried = d.contracts.carrying(c, period);
+    const delta = finite(now - carried, 'what the contract mark moved by');
+    if (delta === 0) continue;
+    const through = Math.abs(now) > Math.abs(delta) ? Math.abs(now) : Math.abs(delta);
+    for (const [party, sign] of [
+      [c.a, 1],
+      [c.b, -1],
+    ] as const) {
+      const rate = intoOwnMoney(party, c.ccy, period, d);
+      d.register.moveEquity({
+        party,
+        period,
+        cycle,
+        delta: mul(mul(delta, sign, 'to this side'), rate, 'in its own money'),
+        cause: `revaluation of ${c.id} in period ${period}`,
+        through: mul(through, rate, 'what the re-marking passed through'),
+      });
+    }
+    d.journal.record(
+      period,
+      cycle,
+      'revaluation',
+      [c.a, c.b, String(c.id)],
+      { contract: String(c.id), mark: now, markedIn: c.ccy, moved: delta },
       false,
     );
   }

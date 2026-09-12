@@ -2705,3 +2705,90 @@ rather than an item of its own. The killer is the work: if any of them cannot be
 host item as one bounded change (Law 14), it is an item and the record of that item says so when it
 is split out.
 
+## 13a — The derivative layer
+
+**What.** The kernel gained a SECOND REGISTER (`register/contracts.ts`) and the module that runs on
+it (`mechanisms/derivative-layer/`). A contract is not a holding (Derivative X1): nobody issued it,
+it has no issued amount, and it enters no ownership check — what it enters is the identity that the
+marks across its two sides come to nothing, exactly (D1.b), which is the `zeroSum` family, built
+here. Around that: a `DerivativeKindProfile` registered like an instrument kind's; a `contract`
+market kind whose fills become rows; margin as a claim that is held rather than spent; a clearing
+house that is a party with a balance sheet, a default fund sized cover-one and a waterfall it can
+run past the end of; capacity that cuts a trade at the strike to what its two members can margin;
+and a resolution slot where a term that ran out, a call that went unmet and a side that ceased are
+three ways to the same close-out.
+
+**Four decisions worth the record.**
+
+1. **Open, close and novate are LEGS, not doors.** The item file said doors on `MechanismContext`.
+   Every one of them is a change of two balance sheets — a row is an asset to one side and a
+   liability to the other from the instant it exists (D1) — and Money D1 says a change of balance
+   sheet goes over the wire. So `ContractLeg` joins `AssumeLeg` and `PledgeLeg` as a leg that moves
+   an obligation rather than a holding, settlement is the contract store's one writer as it is the
+   register's, and a premium and the row it buys are in the same numbered instruction (Law 5).
+
+2. **The zero-sum family asks the PROFILE twice.** `b`'s value is `−a`'s, so comparing those two
+   would be checking that a minus sign works. What is compared is the profile's own answer for the
+   contract AS EACH SIDE STATES IT: `flip` gives the terms as the other side wrote them (a forward's
+   direction, a swap's payer and receiver), the profile is asked again, and the two must negate
+   EXACTLY — D1.b says exactly, and it is the one check in this tree with no tolerance in it at all.
+   A kind whose mark is not antisymmetric in its own terms lights this family and no other, which is
+   what Audit B8 asks of one.
+
+3. **Margin is held, not consumed, and that is why the balance sheet still adds up** (D3, C3.a).
+   Posting is an asset swap — money out, a claim on the holder in, one instruction, two legs — so a
+   member that has posted margin has not spent anything and the variation margin is not a second
+   flow bolted onto the mark: it is the same requirement per counterparty PAIR (C1.a), re-measured
+   after the marks moved. There is no door anywhere that nets across counterparties (G3).
+
+4. **A kind that cannot say what a position could do answers Missing** (G2, D1). Initial margin is
+   the underlying's own measured move over its own prints, and a line that has printed once has not
+   moved: there is no honest number, and G2 admits an exposure with no margin only with a STATED
+   reason. "Nobody can say" is not one, so the trade is refused at the strike and the refusal is
+   journaled (E2, E4). The alternative — admitting it at nothing — is E4's limit raised by omission.
+
+**Also in this change, because 13a is the item that carries them:**
+
+- **`12d-21`, a stated balance charged the dust of its answer.** `opened(0)` charged a fund's equity
+  ε × 0 when that zero was a contribution of 4e11 minus a book of 4e11, and the seed audit reported
+  the real residue of the subtraction as a violation. `openedFrom` takes the TERMS, and
+  `stateEquity` now takes the dust its arithmetic earned; nothing is widened — the walk starts where
+  its own arithmetic left it. It belongs here because D1.b is an exact identity and a family whose
+  subject is exactness cannot sit on a door that mis-states what one costs.
+- **`12b-5`, the trading-book check's dust counting its own terms and not the other side's.** The
+  `bank.capital` event publishes the count and the magnitude its own sum had, and the check derives
+  the tolerance from both walks. The 2^-12 gap on 5.0e10 was the missing half.
+
+**Found on the way.** `carryingOfContract` first read `c.opened >= recognised`, which carried every
+contract at its basis for ever and re-booked the whole mark each period; the accounts family put it
+at 48 on each side of one pair, equal and opposite, within two periods of the first trade. It is the
+same `>` a lot's `acquired < now` already had (`prices/value.ts`) and is now written the same way.
+
+**And three more, found by the tests that close the item.**
+
+- **A world whose clearing members are all banks has no member that can miss a call.** A bank pays
+  what it owes by issuing its own deposit (Money A1), so there is no sum it cannot post and D2.c's
+  cash test can never fire. The layer's tests bring two parties of their own — not banks, not money
+  issuers, holding what they trade — and one of them duly fails a call, is closed out at its stated
+  value and lands on the house. It is a fact about the model worth writing down: the cash test is
+  real for everybody except the parties that make the cash.
+- **A close-out claim smaller than one piece of its money threw.** `issueCloseOutClaim` sized the
+  leg with `cashFor` after deciding to issue it, so a residue of half a cent became an asset leg of
+  zero units and `Register C1` stopped the world. Law 8 says what it is: a claim is a count of
+  pieces, and a residue below one piece is the dust of the close-out's own subtraction, not a claim
+  anybody could be paid. Rounded before the instrument exists.
+- **A contract market kept clearing into a house that had ceased.** The house ran past its waterfall
+  and failed — C5 and XI-3 working, unprompted, in a scale model — and its book outlived it, so the
+  next session wrote fills naming a party that no longer existed (Money E4 caught it at settlement).
+  The capacity door now refuses the whole size when the named house is not alive, which is E4's
+  "refused by name" and E4's measurement in one place.
+
+**Carried forward, positioned in 13b.** A requirement below one piece of cash posts nothing and the
+layer does not say so, where G2 allows an unmargined exposure only with a stated reason (`13a-1`);
+and securities as collateral — the lien half of D9 — has no user until a class pledges a holding,
+so the kernel's `pledge` door is built and unexercised (`13a-2`).
+
+**Forecast, with its killer.** The claim is that the layer is complete enough that a class is a
+MODULE and nothing in the kernel changes for it: 13b adds four kinds, a rate-quoted book and a
+credit event, and if any of them needs a new leg, a new store or a new door, this forecast is wrong
+and 13b's record says which.

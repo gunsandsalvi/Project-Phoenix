@@ -8,8 +8,17 @@
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
-import type { CurrencyCode, InstructionId, InstrumentId, LienId, PartyId } from '../core/ids.js';
+import type {
+  ContractId,
+  CurrencyCode,
+  DerivativeKindId,
+  InstructionId,
+  InstrumentId,
+  LienId,
+  PartyId,
+} from '../core/ids.js';
 import type { Option } from '../core/option.js';
+import type { ContractTerms } from '../registry/derivatives.js';
 
 /** Money B1: an account is (holder, issuer, currency). The currency is on the amount. */
 export interface AccountRef {
@@ -132,6 +141,64 @@ export interface ReleaseLeg {
   readonly lien: LienId;
 }
 
+/**
+ * Derivative D1, D11, X1, Derivative Layer B2: A POSITION OPENING OR CLOSING ON TWO BOOKS AT ONCE.
+ *
+ * A contract is not a holding, so nothing about it is an asset leg — and it is not nothing either:
+ * the moment two parties agree terms, one of them has an asset and the other a liability of the
+ * same size (D1), and on termination it ceases to exist on both books at once (D11). Both are
+ * changes of balance sheet, and a change of balance sheet that does not go over the wire is exactly
+ * what Money D1 exists to prevent. So it is a leg, in the same numbered instruction as the premium
+ * or the close-out payment it comes with (Law 5), and settlement is the one writer of the contract
+ * store as it is of the register.
+ *
+ * `value` is what the contract is worth TO `a` at the moment it is written — zero for a contract
+ * struck at par (D7.b), the premium for one bought outright. It is the position's BASIS in the
+ * sense Register D4 means: what it cost, which is what the equity account has recognised until a
+ * mark moves it. On a CLOSE nothing states it: what leaves the two books is what they were carrying
+ * it at, which the kernel reads for itself (Law 19).
+ */
+export interface OpenContractLeg {
+  readonly kind: 'contract';
+  readonly act: 'open';
+  readonly a: PartyId;
+  readonly b: PartyId;
+  readonly derivative: DerivativeKindId;
+  readonly terms: ContractTerms;
+  readonly ccy: CurrencyCode;
+  readonly notional: number;
+  /** D7: the rate, spread or strike the two sides cleared at. */
+  readonly struckAt: number;
+  /** What it is worth to `a` at inception, in `ccy`. */
+  readonly value: number;
+  /** C2: the house both sides face when it is cleared; null bilaterally. */
+  readonly house: PartyId | null;
+}
+
+export interface CloseContractLeg {
+  readonly kind: 'contract';
+  readonly act: 'close';
+  readonly contract: ContractId;
+  readonly why: string;
+}
+
+/**
+ * Derivative Layer B4: a position moves to a new counterparty, with the old one's consent, and it
+ * is a real change of who faces whom. The consent is a decision the leaving party's own module
+ * takes before the leg is drafted; what happens here is that the obligation leaves one balance
+ * sheet at what it was carried at and lands on another — which is the same shape as an `assume`,
+ * and it is a leg for the same reason (Law 5: both ends in one numbered instruction).
+ */
+export interface NovateContractLeg {
+  readonly kind: 'contract';
+  readonly act: 'novate';
+  readonly contract: ContractId;
+  readonly from: PartyId;
+  readonly to: PartyId;
+}
+
+export type ContractLeg = OpenContractLeg | CloseContractLeg | NovateContractLeg;
+
 export type Leg =
   | MoneyLeg
   | AssetLeg
@@ -139,7 +206,8 @@ export type Leg =
   | DestroyLeg
   | AssumeLeg
   | PledgeLeg
-  | ReleaseLeg;
+  | ReleaseLeg
+  | ContractLeg;
 
 /** Which side of the wire a leg is, for readers that must tell them apart (Law 15's dispatch). */
 export const isMoneyLeg = (leg: Leg): leg is MoneyLeg => leg.kind === 'money';
@@ -149,6 +217,7 @@ export const isDestroyLeg = (leg: Leg): leg is DestroyLeg => leg.kind === 'destr
 export const isAssumeLeg = (leg: Leg): leg is AssumeLeg => leg.kind === 'assume';
 export const isPledgeLeg = (leg: Leg): leg is PledgeLeg => leg.kind === 'pledge';
 export const isReleaseLeg = (leg: Leg): leg is ReleaseLeg => leg.kind === 'release';
+export const isContractLeg = (leg: Leg): leg is ContractLeg => leg.kind === 'contract';
 
 /** C1.b / Register C2: why the units moved. */
 export type Cause =
@@ -188,6 +257,12 @@ export interface Settled {
   /** Register deltas actually applied, per member for cells: replayable (D1.a). */
   readonly deltas: readonly RegisterDelta[];
   readonly equity: readonly EquityEffect[];
+  /**
+   * Derivative D1, Law 19: the contract rows this instruction opened, in leg order. A module that
+   * drafted a trade needs to know which row it now has a side of, and reading it back off the
+   * store by guessing at the identity would be re-deriving what settlement already knows.
+   */
+  readonly contracts: readonly ContractId[];
   /** Interbank reserve legs settlement generated (Money C2.a). */
   readonly reserveLegs: readonly ReserveLeg[];
 }
@@ -293,6 +368,17 @@ export function subjectsOf(ins: Instruction): string[] {
       s.add(leg.pledgor);
       s.add(leg.beneficiary);
       s.add(leg.instrument);
+    } else if (isContractLeg(leg)) {
+      if (leg.act === 'open') {
+        s.add(leg.a);
+        s.add(leg.b);
+      } else {
+        s.add(leg.contract);
+        if (leg.act === 'novate') {
+          s.add(leg.from);
+          s.add(leg.to);
+        }
+      }
     } else {
       s.add(leg.party);
       s.add(leg.instrument);

@@ -30,6 +30,8 @@ import { weightOf, type Parties } from '../parties/party.js';
 import { struckIn, type PriceStore, type StaleReason } from '../prices/price-store.js';
 import type { Registry } from '../registry/registry.js';
 import { clear, type Fill, type Order, type Rationing } from './solver.js';
+import type { DerivativeKindId } from '../core/ids.js';
+import type { ContractTerms, DerivativeKindProfile } from '../registry/derivatives.js';
 import { Missing } from '../core/errors.js';
 
 /**
@@ -38,11 +40,16 @@ import { Missing } from '../core/errors.js';
  * until now. An `fx` market moves MONEY AGAINST MONEY: a spot trade is two money legs in two
  * currencies at a rate (A1), so there is no instrument to deliver and no issuer to ask about.
  *
- * What the two share is everything else — one solver, one book, one print, one rationing rule — and
- * what differs is the instruction a fill becomes. That difference lives in one table
- * (`MARKET_KINDS`) so a third kind is a row rather than an `if`.
+ * A `contract` market strikes a DERIVATIVE: two named parties agree terms at the level the session
+ * cleared (Derivative Layer B1) and what comes of it is a row in the contract store, not a delivery
+ * — nobody hands anything over, and what moves in cash is the premium if the kind has one and the
+ * margin both sides put up (D9).
+ *
+ * What the three share is everything else — one solver, one book, one print, one rationing rule —
+ * and what differs is the instruction a fill becomes. That difference lives in one table
+ * (`MARKET_KINDS`) so a fourth kind is a row rather than an `if`.
  */
-export type MarketKind = 'asset' | 'fx';
+export type MarketKind = 'asset' | 'fx' | 'contract';
 
 export interface MarketDecl {
   readonly id: MarketId;
@@ -57,6 +64,18 @@ export interface MarketDecl {
   readonly ccy: CurrencyCode;
   readonly rationing: Rationing;
   readonly kind?: MarketKind;
+  /**
+   * Derivative D12, Derivative Layer B1: what a fill in THIS book becomes. A book is one contract
+   * shape — one underlying, one term, one strike (D12) — so the terms are the book's and what
+   * varies per trade is who, how much, and the level it cleared at. The BUYER is `a`, which is the
+   * side the terms are stated from and the mark is written for (A3).
+   */
+  readonly contract?: {
+    readonly kind: DerivativeKindId;
+    readonly terms: ContractTerms;
+    /** C2: the central counterparty both sides face here, or null for a bilateral book. */
+    readonly house: PartyId | null;
+  };
   /**
    * Spot FX A1, A3: the two moneys, when this is a pair. The price is what one unit of `base` costs
    * in `quote`, so a BUY takes base and gives quote — which is the same convention a market uses.
@@ -110,6 +129,30 @@ export interface MarketRunDeps {
    * a pair's is are two registry rows and this file is not where either lives (Law 15).
    */
   readonly tickOf: (m: MarketDecl) => number;
+  /** Law 15: what a kind of contract is, asked of its profile and never branched on. */
+  readonly derivativeKind: (kind: DerivativeKindId) => DerivativeKindProfile;
+  /**
+   * Derivative Layer E1, E2: HOW MUCH OF THIS ONE MEMBER CAN TAKE, read once per period from its
+   * own liquid cash net of what it has already committed, and drawn down as it is consumed (E3).
+   *
+   * The kernel cannot answer it: what a member holds back as a buffer is its own preference, and
+   * what it has already committed this period is its own module's record. So the module that owns
+   * the layer answers, and the market cuts the trade to the smaller of the two sides' answers.
+   */
+  readonly admits: (party: PartyId, wanted: number, m: MarketDecl, struck: number) => number;
+  /**
+   * D9, C3.a: the legs that post what this trade requires — an ASSET SWAP, money out and a claim
+   * in, never an expense. They are the module's because the claim is the module's instrument, and
+   * they are in the SAME instruction as the contract because a contract admitted and margined in
+   * two passes was briefly unmargined (E2: the cut happens at the strike).
+   */
+  readonly marginLegs: (
+    party: PartyId,
+    against: PartyId,
+    size: number,
+    m: MarketDecl,
+    struck: number,
+  ) => readonly Leg[];
 }
 
 export interface MarketResult {
@@ -220,13 +263,16 @@ export function runMarket(
   switch (outcome.kind) {
     case 'cleared': {
       const trades = pairFills(m, outcome.fills, (p) => weightOf(deps.parties.get(p)));
-      // A pair has no coupon and no instrument to ask about: what accrues on money is nothing.
-      const accrued = (m.kind ?? 'asset') === 'fx' ? 0 : deps.accruedPerUnit(m.instrument, period);
+      // A pair has no coupon and no instrument to ask about, and neither has a contract book: what
+      // accrues on money is nothing, and what accrues on an obligation is what its own terms say
+      // falls due (D4), which is the kind's business rather than the kernel's.
+      const subject = delivers(m);
+      const accrued = subject.some ? deps.accruedPerUnit(subject.value, period) : 0;
       let settledVolume = 0;
       let allotted = 0;
       let failed = 0;
       for (const t of trades) {
-        const draft = tradeInstruction(m, t, outcome.price, accrued, deps);
+        const draft = tradeInstruction(m, t, outcome.price, accrued, deps, period, cycle);
         // Law 8: a quantity so small that what it comes to is less than half a piece of money is
         // not a trade — there is nothing to pay for it. It does not fill, which is a real outcome
         // of a real book and is what `settledVolume` says against the cleared volume.
@@ -415,8 +461,10 @@ function tradeInstruction(
   price: number,
   accruedPerUnit: number,
   deps: MarketRunDeps,
+  period: Period,
+  cycle: Cycle,
 ): Option<InstructionDraft> {
-  return MARKET_KINDS[m.kind ?? 'asset'](m, t, price, accruedPerUnit, deps);
+  return MARKET_KINDS[m.kind ?? 'asset'](m, t, price, accruedPerUnit, deps, period, cycle);
 }
 
 /**
@@ -427,7 +475,10 @@ function tradeInstruction(
  * about the subject would otherwise have to know what a pair is.
  */
 export function delivers(m: MarketDecl): Option<InstrumentId> {
-  return m.fx === undefined ? some(m.instrument) : none<InstrumentId>();
+  // A pair delivers nothing, and neither does a contract book: what a derivative trade produces is
+  // an obligation on two balance sheets (Derivative X1), not a thing anybody is handed. Both print
+  // under an id with no instrument behind it, which is why one reader answers for both.
+  return m.fx === undefined && m.contract === undefined ? some(m.instrument) : none<InstrumentId>();
 }
 
 /** Law 15: one row per kind of market, and nothing anywhere branches on which (`MarketKind`). */
@@ -440,9 +491,106 @@ const MARKET_KINDS: Readonly<
       price: number,
       accruedPerUnit: number,
       deps: MarketRunDeps,
+      period: Period,
+      cycle: Cycle,
     ) => Option<InstructionDraft>
   >
-> = Object.freeze({ asset: assetTrade, fx: fxTrade });
+> = Object.freeze({ asset: assetTrade, fx: fxTrade, contract: contractTrade });
+
+/**
+ * Derivative D1, D7, D9, X1; Derivative Layer B1, B2, C2, E2: A FILL IN A CONTRACT BOOK IS A ROW ON
+ * TWO BALANCE SHEETS, cut to what its two sides can margin, with the margin in the same pass.
+ *
+ * Bilaterally it is ONE contract, buyer as `a`. Cleared it is TWO — member to house and house to
+ * member (C2) — so no member ever faces another, and the house is flat by construction because it
+ * holds both sides of the same terms at the same level. Either way nothing is delivered: what the
+ * trade produces is an obligation, and the only cash that moves now is the premium the kind states
+ * (D7.b: none at all for a contract struck at par) and the margin (D9).
+ *
+ * THE CUT IS ARITHMETIC AND NOT A BOUND (Law 6, E2, E4). A member's admitted share is a quantity it
+ * HAS — liquid cash it has not already committed — so a trade larger than it is a trade one side
+ * cannot make, in the way that selling units nobody holds is. What is refused is journaled and
+ * measured (E4), and nothing anywhere raises the limit.
+ */
+function contractTrade(
+  m: MarketDecl,
+  t: Trade,
+  price: number,
+  _accruedPerUnit: number,
+  deps: MarketRunDeps,
+  period: Period,
+  cycle: Cycle,
+): Option<InstructionDraft> {
+  const decl = m.contract;
+  if (decl === undefined) {
+    throw new Missing('Derivative Layer B1', `${m.id} is a contract book and names no contract`, {
+      market: m.id,
+    });
+  }
+  const profile = deps.derivativeKind(decl.kind);
+  let size = t.qty;
+  for (const side of [t.buyer, t.seller]) {
+    const room = deps.admits(side, size, m, price);
+    if (room < size) size = room;
+  }
+  if (size < t.qty) {
+    // E4: what the market struck BEYOND what its members could margin is a measurable quantity, and
+    // this is where it is measured. Nothing anywhere raises the limit in response to it.
+    deps.journal.record(
+      period,
+      cycle,
+      'derivatives.refused',
+      [m.id, t.buyer, t.seller],
+      { market: m.id, wanted: t.qty, admitted: size, cut: sub(t.qty, size, 'refused') },
+      true,
+    );
+  }
+  if (size <= 0) return none<InstructionDraft>();
+  const premium = mul(profile.premiumPerUnit(price, decl.terms), size, 'the premium at inception');
+  const house = decl.house;
+  const legs: Leg[] = [];
+  const open = (a: PartyId, b: PartyId, value: number): Leg => ({
+    kind: 'contract',
+    act: 'open',
+    a,
+    b,
+    derivative: decl.kind,
+    terms: decl.terms,
+    ccy: m.ccy,
+    notional: size,
+    struckAt: price,
+    value,
+    house,
+  });
+  if (house === null) {
+    legs.push(open(t.buyer, t.seller, premium));
+  } else {
+    // C2: the house is buyer to the seller and seller to the buyer, and no member pays another.
+    legs.push(open(t.buyer, house, premium), open(house, t.seller, premium));
+  }
+  if (premium > 0) {
+    const pay = (from: PartyId, to: PartyId): Leg => ({
+      kind: 'money',
+      from: deps.accountOf(from, m.ccy),
+      to: deps.accountOf(to, m.ccy),
+      ccy: m.ccy,
+      amount: premium,
+      fromCell: none(),
+      toCell: none(),
+    });
+    if (house === null) legs.push(pay(t.buyer, t.seller));
+    else legs.push(pay(t.buyer, house), pay(house, t.seller));
+  }
+  legs.push(
+    ...deps.marginLegs(t.buyer, house ?? t.seller, size, m, price),
+    ...deps.marginLegs(t.seller, house ?? t.buyer, size, m, price),
+  );
+  return some({
+    legs,
+    cause: 'trade',
+    reason: `${m.name}: ${size} @ ${price}${size < t.qty ? ` (cut from ${t.qty})` : ''}`,
+  });
+}
 
 /**
  * Spot FX A1, C1, XI-5: A SPOT TRADE IS TWO MONEY LEGS, and both settle or neither does.
