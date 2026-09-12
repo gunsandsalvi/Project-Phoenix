@@ -90,4 +90,10 @@ export const LABOUR_NUMBERS = {
   hiringLagPeriods: 1,
   /** C3: periods of pay a firing costs the employer, paid to the worker it separates. */
   severancePeriods: 4,
+  /**
+   * A3.b, XI-10 (13d): periods a person who changes trade takes to become productive in the new
+   * one, on TOP of the hiring lag. A quarter, which is what learning a trade takes, and it is why
+   * an employer fills from its own trade first and why a mover is a real cost to somebody.
+   */
+  retrainingPeriods: 13,
 } as const;

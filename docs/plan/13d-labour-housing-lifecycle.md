@@ -310,9 +310,9 @@ packages/engine/test/{mobility,participation,release,dwellings,housing-market,mo
 
 ## Steps
 
-- [ ] Mobility: unmatched seekers to other occupations' unfilled vacancies through the same matching function, capped both sides; movers split and enter at the entry wage with a retraining cost; tests: a flow of people, no coefficient (A3.b, XI-10)
-- [ ] Participation as a decision with the wage and the outside option in it; entry and exit from the workforce as split events; tests (B1, B3)
-- [ ] Release on death and merger through `labour.separate` for the whole headcount; severance ranks in the estate; tests (C4, Firm Birth D4.a)
+- [x] Mobility: unmatched seekers to other occupations' unfilled vacancies through the same matching function, capped both sides; movers split and enter at the entry wage with a retraining cost; tests: a flow of people, no coefficient (A3.b, XI-10)
+- [x] Participation as a decision with the wage and the outside option in it; entry and exit from the workforce as split events; tests (B1, B3)
+- [x] Release on death and merger through `labour.separate` for the whole headcount; severance ranks in the estate; tests (C4, Firm Birth D4.a)
 - [ ] Labour E4: a cell that lost its earner misses its mortgage service through item 5's event; test
 - [ ] `dwelling` kind: indivisible, per location, owner in the register; maintenance and depreciation; builders produce dwellings with a lag and sell at completion; no dwelling from nowhere; tests (A1–A5, E1)
 - [ ] Occupancy: owner-occupiers, leases with rent by instruction, landlords with dwellings behind them; rental market per location; yield as a read; tests (A2, A3, B5)
@@ -330,7 +330,7 @@ packages/engine/test/{mobility,participation,release,dwellings,housing-market,mo
 - [ ] A household prices a financial claim off its own `outlook('price.<line>')` spread by its own confidence, through the same schedule its consumption uses; `savingLines`'s curve and accounts branches deleted; tests: a cell that has never seen a line print posts nothing for it; two cells with different memories bid different levels (C1, §46 B1, B3, B6)
 - [ ] The retail door into XI-2: a cell surprised downward bids lower AND wants more cash in one read, so a price shock produces redemptions and the fund's forced sale fires on a market shock and not only an income shock; no coefficient added; tests (XI-2, Fund Shares C2.b)
 - [ ] Preferring the market to the names: a cell's saving goes to a tracker rather than single lines at its own declared preference; retail flow is undifferentiated across names; tests (D5, Fund Shares A4, Indices C2)
-- [ ] `ConsumptionDecl` states a quantity per period in the good's own unit, not a share of money; what is bought is the want meeting a price; tests: a dearer loaf is fewer loaves and less spent on bread (C3)
+- [x] `ConsumptionDecl` states a quantity per period in the good's own unit, not a share of money; what is bought is the want meeting a price; tests: a dearer loaf is fewer loaves and less spent on bread (C3)
 - [ ] Wealth as a cell key dimension, once 13b.1 has made the key data; cohorts and wealth split by the same exact-split machinery; tests (A2, A2.b, XI-15)
 - [ ] Financial occupations in `labour/data.ts`; a bank posts openings through `venueParticipants` with the hiring lag and the severance the venue already has; tests: a bank competes for hours and can fail to fill a vacancy (Labour A1–A4)
 - [ ] Each bank desk's recipe is hours per unit of what it does — per loan per period, per line quoted — declared TECHNOLOGY; `loan.operatingCost` deleted and the quote carries the real wage bill; tests: the rate a bank quotes moves when the wage it pays moves, and the borrower's payment has a named payee behind it (Banks Lending C1.d, Law 5)

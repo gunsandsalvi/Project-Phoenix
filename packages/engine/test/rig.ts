@@ -288,7 +288,12 @@ export function quiet(m: SystemModule): SystemModule {
   /* eslint-enable @typescript-eslint/no-unused-vars */
   return {
     ...rest,
-    phases: [],
+    // A quiet module KEEPS ITS PLACES IN THE PERIOD and does nothing in them (13d). Emptying the
+    // list took the anchors with it: `commodities.storage` says it runs before `firms.decide`, and
+    // a world that quieted `firms` was refused at assembly for anchoring to a phase that no longer
+    // existed — which is a fact about the test rig and not about the world. A phase that runs and
+    // does nothing is what "does not act" means; a phase that is not there is a different world.
+    phases: m.phases.map((ph) => ({ ...ph, run: () => undefined })),
     participants: [],
     venueParticipants: [],
     // Banks Funding A1.d, E1: WHERE A KIND BANKS IS PART OF DECLARING IT, not part of acting. This

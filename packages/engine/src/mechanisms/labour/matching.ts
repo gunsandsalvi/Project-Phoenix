@@ -60,7 +60,23 @@ export interface LabourParams {
   readonly retirementAge: number;
   readonly hiringLagPeriods: number;
   readonly severancePeriods: number;
+  /**
+   * A3.b, XI-10 (13d): periods a person who CHANGES TRADE takes to become productive in the new
+   * one, on top of the ordinary hiring lag. It is what moving between occupations costs, and it is
+   * TIME rather than money on purpose: a retraining fee would be a flow with no payee (Law 5), and
+   * what a new trade actually costs an employer is weeks of wages for work it does not yet get.
+   */
+  readonly retrainingPeriods: number;
 }
+
+/**
+ * A3.b (13d): WHICH SEEKERS A ROUND IS FOR. The venues run twice: once for the people who have the
+ * trade, and once for the people who do not and are still looking. It is not a kind branch — every
+ * seeker goes through the same matching function, the same book and the same print — it is the
+ * ORDER a labour market actually fills in: an employer takes somebody who can already do the job
+ * before it takes somebody it has to teach, and it does that because teaching costs it weeks.
+ */
+export type Round = 'trade' | 'anywhere';
 
 /** B3: whether a cohort's members are in the workforce at all, or out of it by age. */
 function participates(ctx: MechanismContext, p: Party, retirementAge: number): boolean {
@@ -81,8 +97,22 @@ function reservation(ctx: MechanismContext, cell: PartyId, hours: number): numbe
   return div(outlook.value.expected, hours, 'reservation wage');
 }
 
-/** B1, B4: every cell that is not working offers its members' hours, at its own reservation. */
-function supply(ctx: MechanismContext, book: EmploymentBook, v: VenueDecl, p: LabourParams): Order[] {
+/**
+ * B1, B4: every cell that is not working offers its members' hours, at its own reservation.
+ *
+ * A3.b, XI-10 (13d): AND IN THE SECOND ROUND, THE ONES WHOSE OWN TRADE DID NOT TAKE THEM. A person
+ * whose trade has no vacancy left is not out of the labour market — they look at the next trade, and
+ * an employer will take them if the wage still works once it has taught them. Nothing here is a flow
+ * rate between occupations: who moves is who was left over, and whether they are taken is the same
+ * book clearing at the same marginal bid.
+ */
+function supply(
+  ctx: MechanismContext,
+  book: EmploymentBook,
+  v: VenueDecl,
+  p: LabourParams,
+  round: Round,
+): Order[] {
   const out: Order[] = [];
   const occupation = v.key['occupation'];
   const region = v.key['region'];
@@ -92,14 +122,30 @@ function supply(ctx: MechanismContext, book: EmploymentBook, v: VenueDecl, p: La
     if (rowOfWorker(book, cell.id) !== undefined) continue;
     const skill = book.skill[cell.id];
     // A3: a job in one occupation is not a job in another. Somebody who has worked looks for the
-    // trade they have; somebody who never has can start anywhere.
-    if (skill !== undefined && skill !== occupation) continue;
+    // trade they have; somebody who never has can start anywhere. In the second round it is the
+    // other way about: the people this trade did not take are the ones looking at another (A3.b).
+    const hasTrade = skill === undefined || skill === occupation;
+    if (round === 'trade' && !hasTrade) continue;
+    if (round === 'anywhere' && hasTrade) continue;
+    /**
+     * B1, B3 (13d): PARTICIPATION IS A DECISION WITH THE WAGE IN IT. A cell can see what this trade
+     * actually pays — the going rate is published every period and it is public (D1.c, C5) — and it
+     * does not offer its members' hours into a trade paying less than it lives on without the job.
+     * That is what being out of the workforce IS, and it is reversible: the going rate is
+     * employment-weighted actual pay, so employers bidding up brings the discouraged back.
+     *
+     * A trade NOBODY is employed in has no going rate, and then there is nothing to be discouraged
+     * by: a new trade is open to anybody, which is how a trade gets its first worker at all.
+     */
+    const going = goingRate(book, occupation, region as RegionId);
+    const mine = reservation(ctx, cell.id, p.hoursPerMember);
+    if (mine === undefined) continue;
+    if (going !== undefined && going < mine) continue;
     // XI-15, Law 8: whole hours for every member the cell stands for. `hoursPerMember` is
     // declared as an amount in the venue's own unit (`params.amount`), so it is already a count.
     const hours = scaleQty(p.hoursPerMember, weightOf(cell), 'hours offered');
-    const wage = reservation(ctx, cell.id, p.hoursPerMember);
-    if (wage === undefined || hours <= 0) continue;
-    out.push({ party: cell.id, side: 'sell', price: wage, qty: hours });
+    if (hours <= 0) continue;
+    out.push({ party: cell.id, side: 'sell', price: mine, qty: hours });
   }
   return out;
 }
@@ -113,6 +159,7 @@ export function runVenue(
   book: EmploymentBook,
   v: VenueDecl,
   p: LabourParams,
+  round: Round = 'trade',
 ): void {
   const occupation = v.key['occupation'];
   const region = v.key['region'];
@@ -128,9 +175,12 @@ export function runVenue(
     if (gap > 0) bids.push({ party: posting.party, side: 'buy', price: posting.price, qty: asQty(gap, 'the hours it is short') });
     // C3, C4: the employer wants fewer hours than it has under contract, so it separates the
     // difference and pays for doing it. It is the employer's decision; this is the mechanism.
-    else shed(ctx, book, posting.party, occupation, region as RegionId, -gap, p);
+    // C3: and only once. An employer posts its desired employment for the period, so the round
+    // that follows it is the same posting still being filled — separating twice against one
+    // posting would be paying severance for a decision it took once.
+    else if (round === 'trade') shed(ctx, book, posting.party, occupation, region as RegionId, -gap, p);
   }
-  const offers = supply(ctx, book, v, p);
+  const offers = supply(ctx, book, v, p, round);
   // D1: the highest bids fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT. That is the
   // clause, and it is `marginalBid`: the lowest employer still allotted sets the wage, so one that
   // bid above it fills and keeps the difference (D1.a) and the marginal one earns nothing on the
@@ -154,7 +204,7 @@ export function runVenue(
   // nothing. The `prices` family checks the print against the bids for exactly this reason.
   const struck = marginalBid(outcome);
   if (struck === undefined) return;
-  match(ctx, book, outcome, offers, struck, occupation, region as RegionId, p);
+  match(ctx, book, outcome, offers, struck, occupation, region as RegionId, p, round);
   // D1: the occupation's print. It is a wage, not an instrument's price, so it is an event and not
   // a mark: nothing is valued at it (Law 8: the unit is money per hour).
   ctx.record(
@@ -171,6 +221,9 @@ export function runVenue(
       // them rather than taken on trust (Part XII: no posted benchmark, in the one market whose
       // price is not an instrument's). It is public because every bid in this venue is (C5).
       bids: bids.map((b) => b.price),
+      // A3.b: which round this print came out of, so a reader can tell a market that filled from
+      // its own trade from one that filled by teaching somebody a new one.
+      round,
     },
     true,
   );
@@ -207,6 +260,7 @@ function match(
   occupation: string,
   region: RegionId,
   p: LabourParams,
+  round: Round,
 ): void {
   const queue = offers
     .filter((o) => o.price !== 'market' && o.price <= struck)
@@ -227,7 +281,7 @@ function match(
         continue;
       }
       const taken = atMost(people, available, 'there are no more people in the cell than there are');
-      hire(ctx, book, f.party, cell, taken, struck, occupation, region, p);
+      hire(ctx, book, f.party, cell, taken, struck, occupation, region, p, round);
       people = sub(people, taken, 'people left to hire');
       if (taken === available) next += 1;
     }
@@ -245,6 +299,7 @@ function hire(
   occupation: string,
   region: RegionId,
   p: LabourParams,
+  round: Round,
 ): void {
   const cell = ctx.parties.get(worker);
   if (members <= 0) return;
@@ -259,8 +314,16 @@ function hire(
     wagePerHour,
     hoursPerMember: p.hoursPerMember,
     start: ctx.period,
-    // C2: finding somebody is not having them; the person is productive after the hiring lag.
-    productiveFrom: periodOf(ctx.period + p.hiringLagPeriods),
+    // C2: finding somebody is not having them; the person is productive after the hiring lag —
+    // and after the retraining on top of it when they are changing trade (A3.b). That is what
+    // mobility costs, it costs the EMPLOYER, and it is weeks of wages for work it does not get.
+    productiveFrom: periodOf(
+      add(
+        ctx.period + p.hiringLagPeriods,
+        round === 'anywhere' ? p.retrainingPeriods : 0,
+        'and what teaching them takes',
+      ),
+    ),
     headcount: weightOf(ctx.parties.get(hired)),
   };
   book.next += 1;
@@ -277,6 +340,8 @@ function hire(
       headcount: row.headcount,
       wagePerHour,
       productiveFrom: row.productiveFrom,
+      // A3.b: whether this person changed trade to take it, which is what XI-10 is about.
+      moved: round === 'anywhere',
     },
     true,
   );

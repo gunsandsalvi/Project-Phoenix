@@ -43,6 +43,7 @@ export const LABOUR_PARAMS = {
   retirementAge: paramId('labour.retirementAge'),
   hiringLag: paramId('labour.hiring.lagPeriods'),
   severance: paramId('labour.severance.periods'),
+  retraining: paramId('labour.retraining.periods'),
 } as const;
 
 /** The venue where one occupation's jobs in one region are struck (Labour D1). */
@@ -55,6 +56,7 @@ function numbers(ctx: MechanismContext): LabourParams {
     retirementAge: ctx.params.years(LABOUR_PARAMS.retirementAge),
     hiringLagPeriods: ctx.params.periods(LABOUR_PARAMS.hiringLag),
     severancePeriods: ctx.params.periods(LABOUR_PARAMS.severance),
+    retrainingPeriods: ctx.params.periods(LABOUR_PARAMS.retraining),
   };
 }
 
@@ -96,6 +98,15 @@ function paramsOf(): ParamDecl[] {
       kind: 'policy',
       owner: 'parliament',
       why: 'Labour C3: what a firing costs, paid to the person separated. It is the cost that makes a firm hold labour through a soft patch and shed it when it is sure, and the asymmetry with hiring is where the employment cycle comes from. A pair of adjustment speeds is not this.',
+    },
+    {
+      id: LABOUR_PARAMS.retraining,
+      value: LABOUR_NUMBERS.retrainingPeriods,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'technology',
+      owner: 'model',
+      why: 'Labour A3.b, XI-10 (13d): what CHANGING TRADE costs, and it is time rather than money on purpose. A retraining fee would be a flow with no payee (Law 5); what a new trade actually costs is weeks of wages for work the employer does not yet get, which is why an employer takes somebody who can already do the job first and why unemployment and vacancies can be high at the same time. A transition rate between occupations is not this: who moves is whoever the first round left over.',
     },
   ];
 }
@@ -299,8 +310,15 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
         run: (ctx: MechanismContext) => {
           const b = bookOf(ctx);
           const p = numbers(ctx);
-          publishGoingRate(ctx, b, ctx.venues.filter(mine), ctx.period);
-          for (const v of ctx.venues.filter(mine)) runVenue(ctx, b, v, p);
+          const venues = ctx.venues.filter(mine);
+          publishGoingRate(ctx, b, venues, ctx.period);
+          // A3.b, XI-10 (13d): TWO ROUNDS, ONE MATCHING FUNCTION. First every seeker offers in the
+          // trade it has; then the ones nobody took offer in the trades they have not, and an
+          // employer that takes one of those waits longer for the work. It is the order a labour
+          // market actually fills in, and nothing about it is a flow rate between occupations —
+          // who moves is whoever the first round left over.
+          for (const v of venues) runVenue(ctx, b, v, p, 'trade');
+          for (const v of venues) runVenue(ctx, b, v, p, 'anywhere');
         },
       },
       {
