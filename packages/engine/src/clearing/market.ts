@@ -31,7 +31,7 @@ import {
 } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
-import { commonGrain, downToGrain, downToTick, toGrain, upToTick } from '../core/tick.js';
+import { asQty, commonGrain, downTick, downToGrain, downToTick, toGrain, upToTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { AccountRef, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
@@ -192,7 +192,9 @@ export interface AuctionResult {
 interface Trade {
   readonly buyer: PartyId;
   readonly seller: PartyId;
-  readonly qty: number;
+  /** Law 8: what crossed, as a count of the unit's own smallest piece — on the common grain of
+   * the two sides, so each side's share per member is a whole number of pieces too (XI-15). */
+  readonly qty: Qty;
 }
 
 /**
@@ -548,7 +550,10 @@ function contractTrade(
   const profile = deps.derivativeKind(decl.kind);
   let size = t.qty;
   for (const side of [t.buyer, t.seller]) {
-    const room = deps.admits(side, size, m, price);
+    // Law 8: what the layer will admit is money over a margin requirement, so it lands between two
+    // contracts — and the one below is what this side can actually carry. A contract is whole or it
+    // is not one (item 13b.1).
+    const room = downTick(deps.admits(side, size, m, price));
     if (room < size) size = room;
   }
   if (size < t.qty) {
@@ -564,7 +569,11 @@ function contractTrade(
     );
   }
   if (size <= 0) return none<InstructionDraft>();
-  const premium = mul(profile.premiumPerUnit(price, decl.terms), size, 'the premium at inception');
+  // Law 8: a premium is MONEY, so it is a whole number of the money's own smallest piece.
+  const premium = deps.registry.cashFor(
+    m.ccy,
+    mul(profile.premiumPerUnit(price, decl.terms), size, 'the premium at inception'),
+  );
   const house = decl.house;
   const legs: Leg[] = [];
   const open = (a: PartyId, b: PartyId, value: number): Leg => ({
@@ -643,10 +652,10 @@ function fxTrade(
   const grain = commonGrain(weightOf(buyer), weightOf(seller));
   const quote = toGrain(mul(t.qty, price, 'what the base costs in quote'), grain);
   if (quote <= 0) return none<InstructionDraft>();
-  const baseOut = cellSide(seller, t.qty / weightOf(seller));
-  const baseIn = cellSide(buyer, t.qty / weightOf(buyer));
-  const quoteOut = cellSide(buyer, quote / weightOf(buyer));
-  const quoteIn = cellSide(seller, quote / weightOf(seller));
+  const baseOut = cellSide(seller, asQty(t.qty / weightOf(seller), 'its share per member'));
+  const baseIn = cellSide(buyer, asQty(t.qty / weightOf(buyer), 'its share per member'));
+  const quoteOut = cellSide(buyer, asQty(quote / weightOf(buyer), 'its share per member'));
+  const quoteIn = cellSide(seller, asQty(quote / weightOf(seller), 'its share per member'));
   const legs: Leg[] = [
     {
       kind: 'money',
@@ -688,10 +697,10 @@ function assetTrade(
   const cashGrain = commonGrain(weightOf(buyer), weightOf(seller));
   const cash = toGrain(mul(t.qty, add(price, accruedPerUnit, 'dirty price'), 'trade cash'), cashGrain);
   if (cash <= 0) return none<InstructionDraft>();
-  const buyerCell = cellSide(buyer, t.qty / weightOf(buyer));
-  const sellerCell = cellSide(seller, t.qty / weightOf(seller));
-  const buyerCashCell = cellSide(buyer, cash / weightOf(buyer));
-  const sellerCashCell = cellSide(seller, cash / weightOf(seller));
+  const buyerCell = cellSide(buyer, asQty(t.qty / weightOf(buyer), 'its share per member'));
+  const sellerCell = cellSide(seller, asQty(t.qty / weightOf(seller), 'its share per member'));
+  const buyerCashCell = cellSide(buyer, asQty(cash / weightOf(buyer), 'its share per member'));
+  const sellerCashCell = cellSide(seller, asQty(cash / weightOf(seller), 'its share per member'));
   const legs: Leg[] = [
     {
       kind: 'asset',

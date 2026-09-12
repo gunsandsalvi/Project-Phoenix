@@ -112,7 +112,8 @@ export function moveMargin(
     ctx.issue({ id, kind: MARGIN_CLAIM, issuer: some(holder), ccy, terms, market: none() });
   }
   const up = by > 0;
-  const qty = up ? by : -by;
+  // Law 8: margin is money, so what is posted is a whole number of the money's own pieces.
+  const qty = ctx.registry.payable(ccy, up ? by : -by);
   return [
     {
       kind: 'asset',

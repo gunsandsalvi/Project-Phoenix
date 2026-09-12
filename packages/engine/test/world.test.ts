@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  asQty,
   type ParticipantView,
   div,
   mul,
@@ -741,7 +742,7 @@ describe('settlement contracts', () => {
           from: { holder: partyId('firm.1'), issuer: BANK_A },
           to: { holder: cell.id, issuer: cell.bank },
           ccy: USD,
-          amount: 10,
+          amount: asQty(10),
           fromCell: none(),
           toCell: none(),
         },
@@ -804,7 +805,7 @@ describe('settlement contracts', () => {
               from: { holder: payer, issuer: BANK_A },
               to: { holder: payee, issuer: BANK_A },
               ccy: USD,
-              amount: 5,
+              amount: asQty(5),
               fromCell: none(),
               toCell: none(),
             },

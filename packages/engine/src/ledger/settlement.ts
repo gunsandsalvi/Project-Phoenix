@@ -36,7 +36,7 @@ import {
 } from '../core/ids.js';
 import { addTo, atMost, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
-import { onTick } from '../core/tick.js';
+import { negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties, Party } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -111,14 +111,14 @@ type Op =
       readonly op: 'debit';
       readonly party: PartyId;
       readonly instrument: InstrumentId;
-      readonly qty: number;
+      readonly qty: Qty;
       readonly money: boolean;
     }
   | {
       readonly op: 'credit';
       readonly party: PartyId;
       readonly instrument: InstrumentId;
-      readonly qty: number;
+      readonly qty: Qty;
       /** Total units on the leg (weight x per member for a cell), for the issuer's side. */
       readonly totalQty: number;
       readonly money: boolean;
@@ -131,7 +131,7 @@ type Op =
       readonly op: 'issue';
       readonly issuer: PartyId;
       readonly instrument: InstrumentId;
-      readonly qty: number;
+      readonly qty: Qty;
       readonly valuePerUnit: number | 'carrying';
       readonly fromDebit: number;
     }
@@ -139,7 +139,7 @@ type Op =
       readonly op: 'redeem';
       readonly issuer: PartyId;
       readonly instrument: InstrumentId;
-      readonly qty: number;
+      readonly qty: Qty;
       readonly valuePerUnit: number | 'carrying';
       readonly fromDebit: number;
     }
@@ -148,7 +148,7 @@ type Op =
       readonly op: 'exist';
       readonly holder: PartyId;
       readonly instrument: InstrumentId;
-      readonly qty: number;
+      readonly qty: Qty;
     }
   /** XI-8: the issuer of record changes; the holders and the units do not. */
   | {
@@ -163,7 +163,7 @@ type Op =
       readonly pledgor: PartyId;
       readonly beneficiary: PartyId;
       readonly instrument: InstrumentId;
-      readonly qty: number;
+      readonly qty: Qty;
       readonly secures: string;
     }
   | {
@@ -639,7 +639,7 @@ export class Settlement {
             qty: leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty,
             money: false,
           });
-          ops.push({ op: 'exist', holder: leg.party, instrument: leg.instrument, qty: -leg.qty });
+          ops.push({ op: 'exist', holder: leg.party, instrument: leg.instrument, qty: negQty(leg.qty, 'what leaves the world') });
           break;
         }
         case 'assume':
@@ -774,7 +774,12 @@ export class Settlement {
       if (leg.kind !== 'money' || leg.from.issuer === leg.to.issuer) continue;
       const cb = this.d.registry.centralBankOf(leg.ccy);
       if (leg.from.issuer !== cb)
-        out.push({ bank: leg.from.issuer, centralBank: cb, ccy: leg.ccy, amount: -leg.amount });
+        out.push({
+          bank: leg.from.issuer,
+          centralBank: cb,
+          ccy: leg.ccy,
+          amount: negQty(leg.amount, 'what left this bank'),
+        });
       if (leg.to.issuer !== cb)
         out.push({ bank: leg.to.issuer, centralBank: cb, ccy: leg.ccy, amount: leg.amount });
     }
@@ -844,7 +849,10 @@ export class Settlement {
         delta: 0,
         money: op.money,
       };
-      cur.delta = finite(cur.delta + (op.op === 'debit' ? -op.qty : op.qty), 'net delta');
+      cur.delta = finite(
+        cur.delta + (op.op === 'debit' ? negQty(op.qty, 'what leaves') : op.qty),
+        'net delta',
+      );
       net.set(key, cur);
     }
     // Money Market B3.c: what is already bound cannot be bound again, and what this instruction is
@@ -1009,11 +1017,11 @@ export class Settlement {
       switch (op.op) {
         case 'debit': {
           if (op.money) {
-            this.d.register.moneyDelta(op.party, op.instrument, -op.qty, ins.period);
+            this.d.register.moneyDelta(op.party, op.instrument, negQty(op.qty, 'what leaves'), ins.period);
             drawnByOp.set(index, [
               { lot: 0 as never, qty: op.qty, basisPerUnit: 1, acquired: ins.period },
             ]);
-            bump(op.party, -op.qty, op.instrument);
+            bump(op.party, negQty(op.qty, 'what leaves'), op.instrument);
           } else {
             const drawn = this.d.register.debit(op.party, op.instrument, op.qty);
             drawnByOp.set(index, drawn);
@@ -1031,7 +1039,7 @@ export class Settlement {
           deltas.push({
             party: op.party,
             instrument: op.instrument,
-            qty: -op.qty,
+            qty: negQty(op.qty, 'the other way'),
             weight: weightOf(this.d.parties.get(op.party)),
             target: 'holding',
           });
@@ -1095,11 +1103,11 @@ export class Settlement {
           break;
         }
         case 'redeem': {
-          this.d.instruments.adjustIssued(op.instrument, -op.qty);
+          this.d.instruments.adjustIssued(op.instrument, negQty(op.qty, 'what ceased to exist'));
           deltas.push({
             party: op.issuer,
             instrument: op.instrument,
-            qty: -op.qty,
+            qty: negQty(op.qty, 'the other way'),
             weight: 1,
             target: 'issued',
           });
@@ -1248,7 +1256,7 @@ export class Settlement {
 
 
 /** Helpers for mechanisms building legs (XI-15: a cell side is per member). */
-export function cellSide(p: Party, perMember: number): CellSide | undefined {
+export function cellSide(p: Party, perMember: Qty): CellSide | undefined {
   if (p.representation !== 'cell') return undefined;
   return { perMember, weight: p.weight };
 }
@@ -1266,12 +1274,18 @@ export function shareFor(
   party: Party,
   unit: UnitId,
   perMemberWanted: number,
-): { readonly perMember: number; readonly total: number } {
+): { readonly perMember: Qty; readonly total: Qty } {
   const perMember = registry.deliverable(unit, perMemberWanted);
-  return { perMember, total: mul(perMember, weightOf(party), `total for ${party.id}`) };
+  return { perMember, total: totalFor(party, perMember) };
 }
 
-/** Total moved on a party's side: weight x per member for a cell. */
-export function totalFor(p: Party, perMember: number): number {
-  return mul(perMember, weightOf(p), `total for ${p.id}`);
+/**
+ * Total moved on a party's side: weight × per member for a cell.
+ *
+ * Law 8: a count of pieces times a count of PEOPLE is a count of pieces, and `scaleQty` is where
+ * that is said — it refuses a fractional multiplier, which is the one way this could stop being
+ * true (item 13b.1).
+ */
+export function totalFor(p: Party, perMember: Qty): Qty {
+  return scaleQty(perMember, weightOf(p), `total for ${p.id}`);
 }

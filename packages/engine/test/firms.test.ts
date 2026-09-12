@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  asQty,
   FIRM,
   FIRM_SWITCHING_COST,
   USD,
@@ -323,7 +324,7 @@ describe('the audit of a line (Goods B5, F5.b)', () => {
                   kind: 'create',
                   party: FIRM_1,
                   instrument: GRAIN,
-                  qty: 5,
+                  qty: asQty(5),
                   costPerUnit: perTonne(40),
                   toCell: none(),
                 },

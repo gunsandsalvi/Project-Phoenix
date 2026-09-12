@@ -18,7 +18,6 @@ import {
   moneyInstrumentId,
   partyId,
   type CurrencyCode,
-  type InstrumentId,
   type PartyId,
 } from '../../core/ids.js';
 import {
@@ -56,7 +55,7 @@ import {
   liquidityMetric,
   payDepositInterest,
 } from './deposits.js';
-import { interbankKind, isRow, repoKind, rowTerms, securesAnything, INTERBANK, REPO } from './rows.js';
+import { INTERBANK, REPO, interbankKind, isRow, repoKind, rowTerms, securesAnything, type Pledged } from './rows.js';
 import {
   averageRate,
   banksOf,
@@ -383,7 +382,7 @@ function clearBook(
     const room = capacityOf(ctx, s.lender, ccy);
     if (room <= 0) continue;
     if (s.amount > room) s = { ...s, amount: ctx.registry.payable(ccy, room) };
-    let cover: readonly { instrument: InstrumentId; qty: number; valuedAt: number }[] = [];
+    let cover: readonly Pledged[] = [];
     let amount = s.amount;
     if (book.secured) {
       cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), s.amount);
@@ -507,7 +506,7 @@ function lentThisPeriod(ctx: MechanismContext, lender: PartyId): number {
   const terms: number[] = [];
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !isRow(i.terms) || i.terms.lender !== lender) continue;
-    if (ctx.calendar.place(i.terms.drawn) !== ctx.period) continue;
+    if (ctx.calendar.periodOf(i.terms.drawn) !== ctx.period) continue;
     terms.push(ctx.register.quantity(lender, i.id));
   }
   return sum(terms).value;

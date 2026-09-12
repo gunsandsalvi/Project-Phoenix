@@ -10,6 +10,7 @@
  * neither of them but what the session made of both.
  */
 import { describe, expect, it } from 'vitest';
+import { asQty } from '../src/core/tick.js';
 import {
   FIRM,
   HOUSEHOLD,
@@ -83,9 +84,9 @@ function pays(
                   from: { holder: BANK_A, issuer: BANK_A },
                   to: { holder, issuer: party.bank },
                   ccy: USD,
-                  amount: row.amount * party.weight,
+                  amount: asQty(row.amount * party.weight),
                   fromCell: { some: false },
-                  toCell: { some: true, value: { perMember: row.amount, weight: party.weight } },
+                  toCell: { some: true, value: { perMember: asQty(row.amount), weight: party.weight } },
                 },
               ],
               cause: 'transfer',

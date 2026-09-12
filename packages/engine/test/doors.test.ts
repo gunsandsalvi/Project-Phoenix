@@ -32,7 +32,7 @@ import { CENT_TICK } from '../src/registry/grid.js';
 import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTo } from './expected.js';
 import { notDealing } from './no-dealing.js';
-import { asQty } from '../src/core/tick.js';
+import { asQty, type Qty } from '../src/core/tick.js';
 
 const WHEAT = instrumentKindId('good.wheat');
 const TONNES = unitId('tonnes');
@@ -238,7 +238,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: 10, costPerUnit: 2, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: 2, toCell: none() },
           ],
           cause: 'seed',
           reason: 'the opening harvest',
@@ -261,7 +261,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period === 1) {
           ctx.settle({
             legs: [
-              { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: 10, costPerUnit: 2, toCell: none() },
+              { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: 2, toCell: none() },
             ],
             cause: 'seed',
             reason: 'the opening harvest',
@@ -270,7 +270,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period === 2) {
           ctx.settle({
             legs: [
-              { kind: 'destroy', party: FIRM_1, instrument: WHEAT_ID, qty: 4, why: 'perished', fromCell: none() },
+              { kind: 'destroy', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(4), why: 'perished', fromCell: none() },
             ],
             cause: 'production',
             reason: 'a batch that spoiled',
@@ -292,7 +292,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: 1, costPerUnit: 1, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(1), costPerUnit: 1, toCell: none() },
           ],
           // A trade moves units that exist; it does not make them.
           cause: 'trade',
@@ -313,7 +313,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: 3, costPerUnit: 1, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(3), costPerUnit: 1, toCell: none() },
           ],
           cause: 'production',
           reason: 'the harvest',
@@ -333,7 +333,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (line === undefined) throw new Error('no claim in the world');
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: line.id, qty: 1, costPerUnit: 1, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: line.id, qty: asQty(1), costPerUnit: 1, toCell: none() },
           ],
           cause: 'seed',
           reason: 'a bond from nowhere',
@@ -371,7 +371,7 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
         });
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: 10, costPerUnit: 2, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: 2, toCell: none() },
           ],
           cause: 'seed',
           reason: 'the opening harvest',
@@ -428,7 +428,7 @@ function pledgeModule(run: (ctx: MechanismContext) => void): SystemModule {
 }
 
 /** What a bank pledging `qty` of its own sovereign paper to the other bank posts on the wire. */
-function pledgeLeg(qty: number, secures: string): Leg {
+function pledgeLeg(qty: Qty, secures: string): Leg {
   return {
     kind: 'pledge',
     pledgor: BANK_A,
@@ -446,7 +446,7 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
       pledgeModule((ctx) => {
         if (ctx.period !== 1) return;
         ctx.settle({
-          legs: [pledgeLeg(100, 'repo.test.1')],
+          legs: [pledgeLeg(asQty(100), 'repo.test.1')],
           cause: 'transfer',
           reason: 'bank.a pledges paper to bank.b',
         });
@@ -476,13 +476,13 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
         const free = ctx.register.free(BANK_A, GOV);
         const r = ctx.settle({
           legs: [
-            pledgeLeg(free + 1, 'repo.test.2'),
+            pledgeLeg(asQty(free + 1), 'repo.test.2'),
             {
               kind: 'money',
               from: { holder: BANK_B, issuer: BANK_B },
               to: { holder: BANK_A, issuer: BANK_B },
               ccy: USD,
-              amount: 10,
+              amount: asQty(10),
               fromCell: none(),
               toCell: none(),
             },
@@ -510,7 +510,7 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
         const free = ctx.register.free(BANK_A, GOV);
         for (const n of [1, 2]) {
           const r = ctx.settle({
-            legs: [pledgeLeg(free, `repo.test.twice.${n}`)],
+            legs: [pledgeLeg(asQty(free), `repo.test.twice.${n}`)],
             cause: 'transfer',
             reason: `bank.a pledges everything it has free, attempt ${n}`,
           });
@@ -528,7 +528,7 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
       pledgeModule((ctx) => {
         if (ctx.period === 1) {
           ctx.settle({
-            legs: [pledgeLeg(100, 'repo.test.3')],
+            legs: [pledgeLeg(asQty(100), 'repo.test.3')],
             cause: 'transfer',
             reason: 'bank.a pledges paper to bank.b',
           });
@@ -569,7 +569,7 @@ describe('collateral is bound and freed by the wire (Register D5, Money Market B
       pledgeModule((ctx) => {
         if (ctx.period !== 1) return;
         ctx.settle({
-          legs: [{ ...pledgeLeg(1, 'repo.test.self'), beneficiary: BANK_A } as Leg],
+          legs: [{ ...pledgeLeg(asQty(1), 'repo.test.self'), beneficiary: BANK_A } as Leg],
           cause: 'transfer',
           reason: 'bank.a pledges to itself',
         });
@@ -591,7 +591,7 @@ describe('the delivery check is exact, because a quantity is a count of pieces (
       pledgeModule((ctx) => {
         if (ctx.period !== 1) return;
         const free = ctx.register.free(BANK_A, GOV);
-        const move = (qty: number): string => {
+        const move = (qty: Qty): string => {
           const r = ctx.settle({
             legs: [
               {
@@ -618,7 +618,7 @@ describe('the delivery check is exact, because a quantity is a count of pieces (
          * PIECE, and a piece more than somebody holds is a short position nobody borrowed
          * (Register C4). The band was unreachable here and destroyed units where it was reachable.
          */
-        seen.over = move(free + 1);
+        seen.over = move(asQty(free + 1));
         seen.exact = move(free);
         seen.left = ctx.register.quantity(BANK_A, GOV);
         const h = ctx.register.holding(BANK_A, GOV);

@@ -6,7 +6,7 @@
  * @spec Part XII Commodities Spot D5 Commodities Spot F1 Goods E4 Appendix A Small-Business Pools E5 XI-15 Law 6
  */
 import { combineDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
-import { onTick } from '../../core/tick.js';
+import { negQty, onTick } from '../../core/tick.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditMemory } from '../memory.js';
 import type { AuditView } from '../view.js';
@@ -43,7 +43,7 @@ export function unitsFamily(memory: AuditMemory): Family {
           for (const leg of r.instruction.legs) {
             if (leg.kind !== 'create' && leg.kind !== 'destroy') continue;
             const list = made.get(leg.instrument) ?? [];
-            list.push(leg.kind === 'create' ? leg.qty : -leg.qty);
+            list.push(leg.kind === 'create' ? leg.qty : negQty(leg.qty, 'what left the world'));
             made.set(leg.instrument, list);
           }
         }

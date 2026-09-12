@@ -19,6 +19,7 @@
  * is not its choice, though — the recipe is the good's own technology, and the audit says so.
  */
 import type { Family, Violation } from '../../audit/audit.js';
+import { negQty } from '../../core/tick.js';
 import { forbid } from '../../core/assert.js';
 import type { Period } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
@@ -220,7 +221,7 @@ function unitsIdentity(kinds: ReadonlySet<InstrumentKindId>): Family {
         for (const leg of r.instruction.legs) {
           if (!isCreateLeg(leg) && !isDestroyLeg(leg)) continue;
           const list = moved.get(leg.instrument) ?? [];
-          list.push(isCreateLeg(leg) ? leg.qty : -leg.qty);
+          list.push(isCreateLeg(leg) ? leg.qty : negQty(leg.qty, 'what left the world'));
           moved.set(leg.instrument, list);
         }
       }

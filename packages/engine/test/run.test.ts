@@ -16,6 +16,7 @@
  * stated.
  */
 import { describe, expect, it } from 'vitest';
+import { negQty } from '../src/core/tick.js';
 import {
   CB,
   MM_PARAMS,
@@ -75,7 +76,7 @@ describe('a depositor leaving (Banks Funding E1, E3, E3.a)', () => {
       const out = rec.reserveLegs.find((x) => x.bank === leg.from.issuer);
       const into = rec.reserveLegs.find((x) => x.bank === leg.to.issuer);
       expect(out).toBeDefined();
-      expect(out?.amount).toBe(-leg.amount);
+      expect(out?.amount).toBe(negQty(leg.amount, 'what left this bank'));
       expect(into?.amount).toBe(leg.amount);
       checked += 1;
     }

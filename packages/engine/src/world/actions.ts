@@ -13,6 +13,7 @@
  * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Bond N12 Bond N13 Money C1.c Money E1 Money E1.a Money G3.a Banks Lending E1 Banks Lending E2 Firm Birth C1 Firm Birth C3 XI-1 Law 15
  */
 import { issuedBy, issuerOf } from '../register/instruments.js';
+import { negQty } from '../core/tick.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever } from '../core/assert.js';
 import { currencyUnit, type CurrencyCode, type PartyId } from '../core/ids.js';
@@ -220,7 +221,9 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
   }
   const still = d.instruments.get(i.id);
   if (still.issued === 0 || Math.abs(still.issued) <= d.register.heldTotal(i.id).dust) {
-    if (still.issued !== 0) d.instruments.adjustIssued(i.id, -still.issued);
+    if (still.issued !== 0) {
+      d.instruments.adjustIssued(i.id, negQty(still.issued, 'what ceased with the line'));
+    }
     d.instruments.cease(i.id, period);
     d.journal.record(period, cycle, 'instrument.ceased', [i.id], { reason: 'maturity' }, true);
   }

@@ -32,8 +32,8 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
-import { downTick, upTick } from '../../core/tick.js';
+import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
+import { downTick, upTick, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { BANK } from '../../registry/profiles.js';
@@ -41,7 +41,6 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import { advances, borrowingPower, windowAdvances, type Advance } from './collateral.js';
 import { BOOKS, type BookDecl } from './data.js';
 import { INTERBANK, isRow, REPO, rowId, type Pledged, type RowTerms } from './rows.js';
-import type { Qty } from '../../core/tick.js';
 
 /** Clearing B2, C5: one book for one name, declared like a market and public like one. */
 export function sessionVenue(book: BookDecl, borrower: PartyId): VenueId {
@@ -89,7 +88,7 @@ export function fallsDueToIt(ctx: MechanismContext, lender: PartyId, ccy: Curren
   const terms: number[] = [];
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !isRow(i.terms) || i.terms.lender !== lender || i.ccy !== ccy) continue;
-    if (ctx.calendar.place(i.terms.maturity) !== next) continue;
+    if (ctx.calendar.periodOf(i.terms.maturity) !== next) continue;
     const held = ctx.register.quantity(lender, i.id);
     if (held <= 0) continue;
     const profile = ctx.registry.instrumentKind(i.kind);
@@ -155,7 +154,8 @@ export function windowOffer(
 export interface Struck {
   readonly lender: PartyId;
   readonly borrower: PartyId;
-  readonly amount: number;
+  /** Law 8: money, as a count of the money's own smallest piece. */
+  readonly amount: Qty;
   readonly rate: number;
   readonly book: BookDecl;
 }
@@ -194,7 +194,7 @@ export function coverFor(available: readonly Advance[], amount: number): readonl
     if (left <= 0) break;
     const want = div(left, a.valuePerUnit, 'units to cover');
     const enough = upTick(want);
-    const units = enough > a.free ? downTick(a.free) : enough;
+    const units = atMost(enough, downTick(a.free), 'it binds no more of a parcel than there is of it');
     if (units <= 0) continue;
     out.push({ instrument: a.instrument, qty: units, valuedAt: a.valuePerUnit });
     left = sub(left, mul(units, a.valuePerUnit, 'covered'), 'left to cover');

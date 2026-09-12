@@ -180,7 +180,7 @@ function dueThisPeriod(ctx: MechanismContext): boolean {
   for (let k = 0; k < ctx.period + 1; k += 1) {
     date = ctx.calendar.advance(date, months(every));
     if (compareCivil(date, end) > 0) return false;
-    if (ctx.calendar.place(date) === ctx.period) return true;
+    if (ctx.calendar.periodOf(date) === ctx.period) return true;
   }
   return false;
 }

@@ -37,7 +37,7 @@ import {
 } from '../src/index.js';
 import { firmIn, rigDraw, rigSpec, withDependencies, mergeModules } from './rig.js';
 import { notDealing } from './no-dealing.js';
-import { asQty } from '../src/core/tick.js';
+import { asQty, type Qty } from '../src/core/tick.js';
 import { negQty } from '../src/core/tick.js';
 
 const FIRM_1 = partyId('firm.1');
@@ -123,7 +123,7 @@ function acts(run: (ctx: MechanismContext) => void, participants: SystemModule['
 }
 
 /** Units of a good on somebody's book, at what they cost (Goods E1). */
-function make(ctx: MechanismContext, holder: string, id: string, qty: number, cost: number): void {
+function make(ctx: MechanismContext, holder: string, id: string, qty: Qty, cost: number): void {
   ctx.settle({
     legs: [
       {
@@ -223,7 +223,7 @@ m.id === 'sovereign-instruments' ||
                 kind: 'create',
                 party: FIRM_1,
                 instrument: GRAVEL_ID,
-                qty: 1,
+                qty: asQty(1),
                 costPerUnit: 3,
                 toCell: none(),
               },
@@ -482,7 +482,7 @@ m.id === 'sovereign-instruments' ||
                     kind: 'destroy',
                     party: FIRM_1,
                     instrument: BREAD_ID,
-                    qty: 1,
+                    qty: asQty(1),
                     why: 'consumed',
                     fromCell: none(),
                   },

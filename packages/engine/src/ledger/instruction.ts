@@ -8,6 +8,7 @@
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
  */
 import type { Cycle, Period } from '../calendar/calendar.js';
+import type { Qty } from '../core/tick.js';
 import type {
   ContractId,
   CurrencyCode,
@@ -27,9 +28,18 @@ export interface AccountRef {
   readonly issuer: PartyId;
 }
 
-/** XI-15: how a cell side is denominated. */
+/**
+ * XI-15, Law 8: how a cell side is denominated.
+ *
+ * A per-member amount is a COUNT of the unit's own smallest piece, like every other quantity in
+ * this world, and a weight is a count of people — so the total is a count too, and neither
+ * multiplication nor comparison rounds. `core/tick.ts` names this type's call sites and a leg's
+ * amount is one of them; three of the five were plain `number` until item 13b.1, so the guarantee
+ * advertised as compiler-checked was enforced at one door and caught at the far end by a runtime
+ * check in the register — which is the guard the brand exists to replace.
+ */
 export interface CellSide {
-  readonly perMember: number;
+  readonly perMember: Qty;
   readonly weight: number;
 }
 
@@ -38,8 +48,8 @@ export interface MoneyLeg {
   readonly from: AccountRef;
   readonly to: AccountRef;
   readonly ccy: CurrencyCode;
-  /** Total amount that moves. */
-  readonly amount: number;
+  /** Law 8: total amount that moves, as a count of the money's own smallest piece. */
+  readonly amount: Qty;
   readonly fromCell: Option<CellSide>;
   readonly toCell: Option<CellSide>;
 }
@@ -49,8 +59,8 @@ export interface AssetLeg {
   readonly from: PartyId;
   readonly to: PartyId;
   readonly instrument: InstrumentId;
-  /** Total units that move, in the instrument's unit. */
-  readonly qty: number;
+  /** Law 8: total units that move, as a count of the instrument's own smallest piece. */
+  readonly qty: Qty;
   /** C2.a: the print if it is a trade, per unit in the instrument's currency; none for a transfer at carrying value. */
   readonly pricePerUnit: Option<number>;
   /**
@@ -75,7 +85,7 @@ export interface CreateLeg {
   readonly kind: 'create';
   readonly party: PartyId;
   readonly instrument: InstrumentId;
-  readonly qty: number;
+  readonly qty: Qty;
   /** What the units cost to make, per unit: the basis the lot carries (Goods E1). */
   readonly costPerUnit: number;
   readonly toCell: Option<CellSide>;
@@ -85,7 +95,7 @@ export interface DestroyLeg {
   readonly kind: 'destroy';
   readonly party: PartyId;
   readonly instrument: InstrumentId;
-  readonly qty: number;
+  readonly qty: Qty;
   /** Why the units left: consumed into something else, perished, scrapped. */
   readonly why: 'consumed' | 'perished' | 'scrapped';
   readonly fromCell: Option<CellSide>;
@@ -126,8 +136,8 @@ export interface PledgeLeg {
   readonly pledgor: PartyId;
   readonly beneficiary: PartyId;
   readonly instrument: InstrumentId;
-  /** Total units bound, in the instrument's unit. */
-  readonly qty: number;
+  /** Law 8: total units bound, as a count of the instrument's own smallest piece. */
+  readonly qty: Qty;
   readonly secures: string;
   readonly pledgorCell: Option<CellSide>;
 }

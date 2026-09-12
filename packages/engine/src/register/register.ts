@@ -33,8 +33,8 @@ import { weightOf } from '../parties/party.js';
 
 export interface Lot {
   readonly id: LotId;
-  /** Units, per member for a cell. */
-  readonly qty: number;
+  /** Law 8: units, per member for a cell — a count of the unit's own smallest piece. */
+  readonly qty: Qty;
   /** What those units cost, per unit, in the instrument's currency (Register D4). */
   readonly basisPerUnit: number;
   readonly acquired: Period;
@@ -42,8 +42,8 @@ export interface Lot {
 
 export interface Lien {
   readonly id: LienId;
-  /** Units encumbered, per member for a cell. */
-  readonly qty: number;
+  /** Law 8: units encumbered, per member for a cell — a count of pieces. */
+  readonly qty: Qty;
   /** Who the units are bound to (D5.b: the chain is traceable). */
   readonly beneficiary: PartyId;
   readonly reason: string;
@@ -60,7 +60,7 @@ export interface Holding {
 /** Units drawn from a lot by a debit, with the basis they carried. */
 export interface DrawnLot {
   readonly lot: LotId;
-  readonly qty: number;
+  readonly qty: Qty;
   readonly basisPerUnit: number;
   readonly acquired: Period;
 }
@@ -373,9 +373,9 @@ export class Register {
    * whoever computed it (`registry.deliverable`, `registry.payable`, `core/tick.ts`), and a store
    * that rounded for them would be deciding what they held.
    */
-  private onTheGrid(qty: number, what: string): number {
+  private onTheGrid(qty: number, what: string): Qty {
     impossible(onTick(qty), 'Law 8', `${what} is ${qty}, which is not a whole number of pieces`);
-    return qty;
+    return asQty(qty, what);
   }
 
   credit(
@@ -389,13 +389,13 @@ export class Register {
       holder,
       instrument,
     });
-    this.onTheGrid(qty, `what ${holder} is credited of ${instrument}`);
+    const pieces = this.onTheGrid(qty, `what ${holder} is credited of ${instrument}`);
     finite(basisPerUnit, 'basis');
     this.parties.get(holder);
     const h = this.mutable(holder, instrument);
     const lot: Lot = Object.freeze({
       id: this.nextLot as LotId,
-      qty,
+      qty: pieces,
       basisPerUnit,
       acquired: period,
     });
@@ -469,7 +469,7 @@ export class Register {
       const lot = h.lots[0];
       if (lot === undefined) break;
       // Law 8: whole pieces meeting whole pieces. A lot is taken whole or it is split exactly.
-      const take = atMost(lot.qty, remaining, 'this lot has no more in it than it has');
+      const take = atMost(lot.qty, asQty(remaining, 'what is left to draw'), 'this lot has no more in it than it has');
       drawn.push({
         lot: lot.id,
         qty: take,
@@ -478,7 +478,7 @@ export class Register {
       });
       remaining = finite(remaining - take, 'debit remaining');
       if (take === lot.qty) h.lots.shift();
-      else h.lots[0] = Object.freeze({ ...lot, qty: finite(lot.qty - take, 'lot qty') });
+      else h.lots[0] = Object.freeze({ ...lot, qty: subQty(lot.qty, take, 'what is left of the lot') });
     }
     /**
      * Appendix B, Law 5, Law 8: AND WHAT IS LEFT IS LEFT. This used to clear the whole lot book
@@ -540,7 +540,7 @@ export class Register {
     const acquired = current === undefined ? period : current.acquired;
     const lot: Lot = Object.freeze({
       id: current === undefined ? (this.nextLot as LotId) : current.id,
-      qty: after,
+      qty: asQty(after, `balance of ${holder}/${instrument}`),
       basisPerUnit: 1,
       acquired,
     });
@@ -570,7 +570,7 @@ export class Register {
     const h = this.mutable(holder, instrument);
     const lien: Lien = Object.freeze({
       id: this.nextLien as LienId,
-      qty,
+      qty: asQty(qty, `the units of ${instrument} ${holder} pledges`),
       beneficiary,
       reason,
       created: period,

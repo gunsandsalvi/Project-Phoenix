@@ -24,6 +24,7 @@
  * out of nowhere.
  */
 import type { Family, Violation } from '../../audit/audit.js';
+import { negQty } from '../../core/tick.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import {
@@ -283,7 +284,7 @@ function commissionOne(
   const free = ctx.register.free(buyer, good);
   // It commissions what it bought, and it cannot commission what it no longer has: a firm that
   // sold the machine on before it was installed installed nothing.
-  const qty = atMost(free, bought, 'only what is unencumbered can be built into plant');
+  const qty = atMost(free, ctx.registry.deliverable(ctx.instruments.get(good).unit, bought), 'only what is unencumbered can be built into plant');
   if (!material(qty, holding.value.lots.length + 1, bought)) return;
   const cost = costOfDraw(holding.value.lots, qty);
   const serviceDate = ctx.calendar.startOf(ctx.period);
@@ -354,14 +355,14 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
         for (const leg of r.instruction.legs) {
           if (isCreateLeg(leg) || isDestroyLeg(leg)) {
             const list = moved.get(key(leg.party, leg.instrument)) ?? [];
-            list.push(isCreateLeg(leg) ? leg.qty : -leg.qty);
+            list.push(isCreateLeg(leg) ? leg.qty : negQty(leg.qty, 'what left the world'));
             moved.set(key(leg.party, leg.instrument), list);
           } else if (isAssetLeg(leg)) {
             const into = moved.get(key(leg.to, leg.instrument)) ?? [];
             into.push(leg.toCell.some ? leg.toCell.value.perMember : leg.qty);
             moved.set(key(leg.to, leg.instrument), into);
             const from = moved.get(key(leg.from, leg.instrument)) ?? [];
-            from.push(-(leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty));
+            from.push(negQty(leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty, 'what left'));
             moved.set(key(leg.from, leg.instrument), from);
           }
         }

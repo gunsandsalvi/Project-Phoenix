@@ -5,6 +5,7 @@
  * @spec Households A2 Households A2.a Households A2.e Households A2.f Households A2.g Households B4 Households B5 Households C1 Households C1.a Households C1.c Households C1.d Households C2 Households C3 Households C4 Households C5 Households D5 Households D5.a Households D6 Goods C1 Treasury C1 Treasury C1.a Treasury C2 Treasury C3 Expectations C1 XI-15
  */
 import { describe, expect, it } from 'vitest';
+import { asQty } from '../src/core/tick.js';
 import {
   FIRM,
   HOUSEHOLD,
@@ -133,9 +134,9 @@ function payer(spreadShare: number): SystemModule {
                   from: { holder: PAYER, issuer: BANK_A },
                   to: { holder: cell.id, issuer: cell.bank },
                   ccy: USD,
-                  amount: paid * cell.weight,
+                  amount: asQty(paid * cell.weight),
                   fromCell: { some: false },
-                  toCell: { some: true, value: { perMember: paid, weight: cell.weight } },
+                  toCell: { some: true, value: { perMember: asQty(paid), weight: cell.weight } },
                 },
               ],
               cause: 'transfer',

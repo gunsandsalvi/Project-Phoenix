@@ -77,16 +77,18 @@ export class Calendar {
     return fromDayNumber(this.epochDay + (p + 1) * this.periodDays - 1);
   }
 
-  /** The period containing a date; a date before the epoch is not on the grid. */
+  /**
+   * The period containing a date; a date before the epoch is not on the grid.
+   *
+   * G3.a: a dated obligation lands in the period that contains it, and this is the one function
+   * that says so. `place` was the same function under a second name, with a doc describing a rule
+   * ("the first period on or after its date") that it did not compute — two names for one fact, so
+   * a reader could not tell whether they were two questions (Law 4, item 13b.1).
+   */
   periodOf(c: Civil): Period {
     const d = dayNumber(c) - this.epochDay;
     if (d < 0) throw new Impossible('Money G3', 'date before the epoch', { date: c });
     return period(Math.floor(d / this.periodDays));
-  }
-
-  /** A dated obligation lands in the first period on or after its date (G3.a): the one containing it. */
-  place(c: Civil): Period {
-    return this.periodOf(c);
   }
 
   cycle(n: number): Cycle {

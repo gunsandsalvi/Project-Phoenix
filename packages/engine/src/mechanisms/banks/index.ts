@@ -19,6 +19,7 @@
  * loan and never a silent hole (B3.c).
  */
 import type { Family, Violation } from '../../audit/audit.js';
+import { type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
@@ -501,7 +502,7 @@ function lineOf(ctx: MechanismContext, bank: PartyId, borrower: PartyId): Instru
 function draw(
   ctx: MechanismContext,
   line: Instrument,
-  amount: number,
+  amount: Qty,
   ccy: CurrencyCode,
 ): InstrumentId | undefined {
   if (!isLoan(line.terms)) return undefined;
@@ -834,9 +835,27 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: LENDING_PARAMS.operatingCost,
       value: 0.005,
       unit: 'per annum on the principal',
-      kind: 'technology',
+      /**
+       * XI-14, Law 2, Appendix B: IT IS A PLACEHOLDER AND IT WAS DECLARED A TECHNOLOGY.
+       *
+       * Its own reason says what it stands in for — "the people, the assessment, the collecting" —
+       * and this world has no such people: the number is added into the rate a bank quotes
+       * (`quote.ts`) and PAID TO NOBODY. A wage bill charged and never paid is margin wearing the
+       * clothes of a cost (Law 5: every flow has two sides), and stating it as a share of the
+       * principal is a cost expressed as a share of money, which is what `phoenix/no-value-recipe`
+       * refuses on the production side.
+       *
+       * 13d is where a bank employs people, and the day it does, this dies and the cost is hours
+       * somebody was paid for. Until then it is a claim about the answer with a scheduled death,
+       * which is precisely what Law 2 calls a placeholder (item 13b.1).
+       */
+      kind: 'placeholder',
+      standsInFor: {
+        mechanism: "Banks Lending C1.d — the credit officer's hours, paid to a named person",
+        worklistItem: '13d',
+      },
       owner: 'model',
-      why: 'Banks Lending C1.d: what it costs a bank to make and keep a loan — the people, the assessment, the collecting. It is a real cost of doing the thing, which is what technology means.',
+      why: 'Banks Lending C1.d: what it costs a bank to make and keep a loan — the people, the assessment, the collecting. Nobody is paid it: it is added into the rate the bank quotes and lands nowhere, so it is a shape standing in for an employment relationship this world does not have yet (worklist 13d).',
     },
     ...rows.flatMap((b) => [
       {

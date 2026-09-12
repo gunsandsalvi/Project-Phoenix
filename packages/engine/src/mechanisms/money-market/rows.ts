@@ -14,6 +14,7 @@
  * number of days, and A2.a's roll is what happens when the day arrives and the row is not renewed.
  */
 import type { Period } from '../../calendar/calendar.js';
+import { type Qty } from '../../core/tick.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -37,8 +38,8 @@ export const REPO = instrumentKindId('repo');
 /** What one unit of collateral stands behind, and how much of it (Register D5.b). */
 export interface Pledged {
   readonly instrument: InstrumentId;
-  /** Total units bound. */
-  readonly qty: number;
+  /** Law 8: total units bound, as a count of the instrument's own smallest piece. */
+  readonly qty: Qty;
   /** B3.b: what the lender valued a unit at when it lent — its own number, not the market's. */
   readonly valuedAt: number;
 }
@@ -115,11 +116,11 @@ function interestTo(t: RowTerms, from: Civil, to: Civil): number {
 function dueOn(
   i: Instrument,
   period: Period,
-  cal: { startOf: (p: Period) => Civil; place: (c: Civil) => Period },
+  cal: { startOf: (p: Period) => Civil; periodOf: (c: Civil) => Period },
 ): readonly DueAction[] {
   if (!isRow(i.terms)) return [];
   const t = i.terms;
-  if (cal.place(t.maturity) !== period) return [];
+  if (cal.periodOf(t.maturity) !== period) return [];
   const out: DueAction[] = [];
   const amountPerUnit = interestTo(t, t.drawn, t.maturity);
   if (amountPerUnit > 0) out.push({ kind: 'coupon', date: t.maturity, amountPerUnit });

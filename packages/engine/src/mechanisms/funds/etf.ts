@@ -23,10 +23,11 @@
  * would need some other vehicle to carry it. That vehicle is the money fund (item 8), and it does.
  */
 import type { Period } from '../../calendar/calendar.js';
+import { type Qty } from '../../core/tick.js';
 import { instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import type { Leg } from '../../ledger/instruction.js';
+import type { CellSide, Leg } from '../../ledger/instruction.js';
 import { shareFor } from '../../ledger/settlement.js';
 import { weightOf, type Party } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -110,7 +111,7 @@ function onGrid(
   holder: Party,
   instrument: InstrumentId,
   total: number,
-): { readonly perMember: number; readonly total: number } {
+): { readonly perMember: Qty; readonly total: Qty } {
   const unit = ctx.instruments.get(instrument).unit;
   return shareFor(ctx.registry, holder, unit, div(total, weightOf(holder), 'per member'));
 }
@@ -257,7 +258,10 @@ export function redeemInKind(
 }
 
 /** XI-15: a cell side carries the per-member amount; a named party carries none. */
-function cellOf(holder: { readonly representation: string; readonly weight?: number }, perMember: number): Option<{ readonly perMember: number; readonly weight: number }> {
+function cellOf(
+  holder: { readonly representation: string; readonly weight?: number },
+  perMember: Qty,
+): Option<CellSide> {
   if (holder.representation !== 'cell' || holder.weight === undefined) return none();
   return some({ perMember, weight: holder.weight });
 }

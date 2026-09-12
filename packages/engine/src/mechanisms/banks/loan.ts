@@ -115,7 +115,7 @@ export const loanKind: InstrumentKindProfile = {
     const amountPerUnit = interestTo(t, from, to);
     if (amountPerUnit > 0) out.push({ kind: 'coupon', date: to, amountPerUnit });
     // A bullet: the principal falls due once, on the day the terms say (A2).
-    if (cal.place(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
+    if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
     return out.sort((a, b) => compareCivil(a.date, b.date));
   },
   // Interest is settled every period it accrues, so nothing is ever outstanding between payments.
@@ -125,7 +125,7 @@ export const loanKind: InstrumentKindProfile = {
     const t = i.terms;
     const out: CashFlow[] = [];
     let from = compareCivil(t.drawn, after) > 0 ? t.drawn : after;
-    for (let p = cal.place(from); ; p = next(p)) {
+    for (let p = cal.periodOf(from); ; p = next(p)) {
       const end = cal.startOf(next(p));
       const to = compareCivil(t.maturity, end) < 0 ? t.maturity : end;
       if (compareCivil(from, to) >= 0) break;

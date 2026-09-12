@@ -86,6 +86,20 @@ export class Valuation {
       case 'money':
         return some({ value: qty, from: at });
       case 'cleared': {
+        /**
+         * Observer A1.a, XI-6: `latest` HERE AND `printOrThrow` IN `markPerUnit`, and they are two
+         * questions rather than two readers of one (item 13b.1 measured this and the measurement
+         * is the answer).
+         *
+         * This read is "what is the position worth, and HOW OLD is that" — it hands back the period
+         * the print came from, which is what makes a stale mark visibly stale, and a line that has
+         * never printed is honestly nothing rather than an error. `markPerUnit` is "what is a unit
+         * marked at NOW", asked inside a period whose phases are ordered, where a print that is not
+         * there yet means a phase in the wrong place (Clearing F1.a) and throwing is the point.
+         *
+         * Merging them was tried and is wrong: it turned every read of a line before its first
+         * session — the seed's own valuation among them — into a throw.
+         */
         const p = this.prices.latest(instrument, at);
         return p.some
           ? some({ value: mul(qty, p.value.price, `what ${instrument} is worth`), from: struckIn(p.value) })
@@ -282,11 +296,15 @@ export class Valuation {
   valueOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): number {
     const i = this.instruments.get(instrument);
     const carry = this.registry.instrumentKind(i.kind).carry;
-    let v = 0;
-    for (const lot of lots) {
-      const per = carry === 'cost' ? lot.basisPerUnit : this.markPerUnit(instrument, at);
-      v += mul(lot.qty, per, `value of ${instrument}`);
-    }
-    return v;
+    /**
+     * Law 7: THROUGH `sum`, in the one class whose `equityDust` claims to derive a tolerance from
+     * the arithmetic that produced the number. A `+=` accumulation drops the dust of every step it
+     * takes, so what this returned was a number with a rounding history nobody could read back
+     * (item 13b.1).
+     */
+    const terms = lots.map((lot) =>
+      mul(lot.qty, carry === 'cost' ? lot.basisPerUnit : this.markPerUnit(instrument, at), `value of ${instrument}`),
+    );
+    return sum(terms).value;
   }
 }

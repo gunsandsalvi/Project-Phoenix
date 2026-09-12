@@ -134,7 +134,7 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
   for (const i of ctx.instruments.all()) {
     if (!issuedBy(i, issuer) || !i.status.live) continue;
     for (const f of ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar)) {
-      if (ctx.calendar.place(f.date) <= horizon) terms.push(mul(f.perUnit, i.issued, 'service'));
+      if (ctx.calendar.periodOf(f.date) <= horizon) terms.push(mul(f.perUnit, i.issued, 'service'));
     }
   }
   return sum(terms).value;

@@ -11,6 +11,7 @@
  * it gives a borrower.
  */
 import { describe, expect, it } from 'vitest';
+import { asQty } from '../src/core/tick.js';
 import {
   BANK,
   CB,
@@ -474,7 +475,7 @@ function paysMoreThanItHas(from: PartyId, to: PartyId, at: number): SystemModule
                 from: { holder: from, issuer: cb },
                 to: { holder: to, issuer: cb },
                 ccy: USD,
-                amount: has + phx(50_000),
+                amount: asQty(has + phx(50_000)),
                 fromCell: { some: false },
                 toCell: { some: false },
               },

@@ -17,7 +17,7 @@ import type {
   UnitId,
 } from '../core/ids.js';
 import { finite, moveDust } from '../core/num.js';
-import { onTick } from '../core/tick.js';
+import { NO_QTY, asQty, onTick, type Qty } from '../core/tick.js';
 import { some, type Option } from '../core/option.js';
 import type { Registry } from '../registry/registry.js';
 
@@ -57,7 +57,8 @@ export interface Instrument extends InstrumentDecl {
   /** The unit its quantity is counted in (Register A1.c): par, shares, ccy:XXX ... */
   readonly unit: UnitId;
   /** B1: set at issuance, changed only by issuance, re-opening, buyback, amortisation, maturity. */
-  readonly issued: number;
+  /** Law 8: how many pieces of it exist — a count, restated only by a split (Register E4). */
+  readonly issued: Qty;
   /**
    * Law 7: the arithmetic dust `issued` has accumulated. It is a running total over every issuance
    * and redemption this line has seen, so the tolerance any comparison against it may use grows
@@ -130,7 +131,7 @@ export class Instruments {
     // is the other's approximation and neither is invented: the gap between them is a read (E4),
     // and it is the reason an exchange-traded fund has an arbitrageur at all (E3).
     const status: InstrumentStatus = { live: true, performing: true };
-    const i: Instrument = Object.freeze({ ...decl, unit, issued: 0, issuedDust: 0, status });
+    const i: Instrument = Object.freeze({ ...decl, unit, issued: NO_QTY, issuedDust: 0, status });
     this.map.set(i.id, i);
     this.everything = undefined;
     if (i.issuer.some) {
@@ -283,7 +284,7 @@ export type InstrumentsReads = Pick<Instruments, 'has' | 'get' | 'all' | 'issued
  * holding somewhere or an identity that cannot close. Both doors that move it are guarded here
  * rather than at their callers, so a new one cannot forget (Law 4).
  */
-function onTheGrid(qty: number, what: string): number {
+function onTheGrid(qty: number, what: string): Qty {
   impossible(onTick(qty), 'Law 8', `${what} is ${qty}, which is not a whole number of pieces`);
-  return qty;
+  return asQty(qty, what);
 }

@@ -8,6 +8,7 @@
  * no probability of default, no loss given default, no recovery rate. That absence is the clause.
  */
 import { describe, expect, it } from 'vitest';
+import { asQty } from '../src/core/tick.js';
 import {
   moneyInstrumentId,
   mul,
@@ -82,7 +83,7 @@ function overpromise(amount: number): SystemModule {
             from: { holder: PAYER, issuer: ctx.parties.get(PAYER).bank },
             to: { holder: PAYEE, issuer: ctx.parties.get(PAYEE).bank },
             ccy: USD,
-            amount: owed,
+            amount: asQty(owed),
             fromCell: none(),
             toCell: none(),
           };

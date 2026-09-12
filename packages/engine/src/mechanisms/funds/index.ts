@@ -177,7 +177,8 @@ interface Queued {
   readonly fund: string;
   readonly holder: PartyId;
   /** Shares still to redeem, per member of the holder if it is a cell (XI-15). */
-  sharesPerMember: number;
+  /** Law 8: shares are indivisible, so what one member asked back is a whole number of them. */
+  sharesPerMember: Qty;
   /** C4: the NAV of the day it asked, which is what it is owed at. */
   readonly navStruck: number;
   readonly since: number;
@@ -311,7 +312,7 @@ function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): num
  * paying whatever cash was lying there and writing off the rest — was income appearing at one end
  * with nothing to match it at the other, and a shortfall nobody held (Law 2, Law 5).
  */
-function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amount: number): void {
+function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amount: Qty): void {
   if (amount <= 0) return;
   const fund = ctx.parties.get(d.fund as PartyId);
   const manager = ctx.parties.get(d.manager as PartyId);
@@ -412,11 +413,11 @@ function redeem(
   // XI-15: the register holds a cell's position PER MEMBER, which is the unit a request is in.
   const held = ctx.register.quantity(holder, share.id);
   const weight = weightOf(party);
-  const asked = atMost(sharesAsked, held, 'it cannot hand back shares it does not hold');
+  const asked = atMost(ctx.registry.deliverable(share.unit, sharesAsked), held, 'it cannot hand back shares it does not hold');
   if (asked <= 0) return 0;
   // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
-  const owedNow = mul(totalFor(party, asked), perShare, 'what it owes this holder');
+  const owedNow = ctx.registry.payable(ccy, mul(totalFor(party, asked), perShare, 'what it owes this holder'));
   const paying = atMost(owedNow, cash, 'it pays out of the money there is');
   // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
   // NAV — the nearest piece of money. What cannot be paid for stays in the queue (C2.b).
@@ -452,7 +453,7 @@ function redeem(
         from: ctx.accountOf(fund.id, ccy),
         to: ctx.accountOf(holder, ccy),
         ccy,
-        amount: mul(perMemberCash, weight, 'what it is paid'),
+        amount: totalFor(party, perMemberCash),
         fromCell: none(),
         toCell: money === undefined ? none() : some(money),
       },
@@ -492,7 +493,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   const previous = b.previous[d.fund];
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
   // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
-  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
+  if (share.issued > 0) payFee(ctx, d, ctx.registry.payable(ccy, feeAccrued(ctx, d.fund, share)));
   const perShare = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
   b.struck[d.fund] = perShare;
   // B2.a: how old the oldest mark behind it is. A stale mark makes a stale NAV and somebody
@@ -541,7 +542,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       b.queued.push({
         fund: d.fund,
         holder: o.party,
-        sharesPerMember: taking,
+        sharesPerMember: asQty(taking, 'shares it asked back per member'),
         navStruck: perShare,
         since: ctx.period,
       });
@@ -654,7 +655,7 @@ function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
   const left: Queued[] = [];
   for (const q of mine) {
     const unpaid = redeem(ctx, d, share, q.holder, q.sharesPerMember, q.navStruck);
-    if (unpaid > 0) left.push({ ...q, sharesPerMember: unpaid });
+    if (unpaid > 0) left.push({ ...q, sharesPerMember: asQty(unpaid, 'shares still owed per member') });
   }
   b.queued = [...b.queued.filter((q) => q.fund !== d.fund), ...left];
   if (left.length === 0) return;
@@ -855,7 +856,8 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
   // the same convention as every other fund (Law 4): what it owes goes to the wire whole, and a
   // fund without the money has a refused payment rather than a discount nobody granted it.
   const money = moneyOf(ctx, fund, ctx.registry.region(ctx.parties.get(fund).region).ccy);
-  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
+  const ccy = ctx.registry.region(ctx.parties.get(fund).region).ccy;
+  if (share.issued > 0) payFee(ctx, d, ctx.registry.payable(ccy, feeAccrued(ctx, d.fund, share)));
   // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
   // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
   for (const o of ctx.posted(etfVenue(d.fund))) {
@@ -1194,7 +1196,7 @@ function totalAsked(view: AuditView, data: Record<string, unknown>): number {
   const per = data['sharesPerMember'];
   const holder = data['holder'];
   if (typeof per !== 'number' || typeof holder !== 'string') return 0;
-  return totalFor(view.parties.get(holder as PartyId), per);
+  return totalFor(view.parties.get(holder as PartyId), asQty(per, 'shares asked back per member'));
 }
 
 /**

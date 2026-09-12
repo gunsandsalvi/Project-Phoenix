@@ -41,7 +41,7 @@ import {
   mul,
   sum,
 } from '../../core/num.js';
-import { downTick } from '../../core/tick.js';
+import { downTick, type Qty } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
@@ -81,11 +81,11 @@ const interestTo = (t: SubTerms, from: Civil, to: Civil): number =>
 function dueOn(
   i: Instrument,
   period: number,
-  cal: { startOf: (p: never) => Civil; place: (c: Civil) => number },
+  cal: { startOf: (p: never) => Civil; periodOf: (c: Civil) => number },
 ): readonly DueAction[] {
   if (!isSub(i.terms)) return [];
   const t = i.terms;
-  if (cal.place(t.maturity) !== period) return [];
+  if (cal.periodOf(t.maturity) !== period) return [];
   const out: DueAction[] = [];
   const amountPerUnit = interestTo(t, t.drawn, t.maturity);
   if (amountPerUnit > 0) out.push({ kind: 'coupon', date: t.maturity, amountPerUnit });
@@ -253,7 +253,7 @@ function writeSub(
   ctx: MechanismContext,
   bank: PartyId,
   lender: PartyId,
-  amount: number,
+  amount: Qty,
   rate: number,
   ccy: CurrencyCode,
   n: number,

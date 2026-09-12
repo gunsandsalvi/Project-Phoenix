@@ -482,7 +482,7 @@ function dueNext(
     if (n <= 0) continue;
     const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
     const perUnit = sum(
-      flows.filter((f) => view.calendar.place(f.date) === next).map((f) => f.perUnit),
+      flows.filter((f) => view.calendar.periodOf(f.date) === next).map((f) => f.perUnit),
     ).value;
     if (perUnit === 0) continue;
     terms.push(mul(n, perUnit, 'what falls due next period'));

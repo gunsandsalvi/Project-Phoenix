@@ -54,7 +54,7 @@ import {
 } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { CellSide } from '../../ledger/instruction.js';
-import { cellSide } from '../../ledger/settlement.js';
+import { cellSide, totalFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
 import { BANK, TREASURY } from '../../registry/profiles.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -389,7 +389,7 @@ function writeDownDeposit(
   const p = ctx.parties.get(holder);
   const perMember = ctx.registry.payable(ccy, div(share, weightOf(p), 'per member'));
   if (perMember <= 0) return 0;
-  const total = mul(perMember, weightOf(p), 'written off');
+  const total = totalFor(p, perMember);
   // XI-15: a cell's side is denominated per member, whatever its weight — every member of it is a
   // real holder with a real account, and one of them is not an exception to that.
   const per = cellSide(p, perMember);
@@ -440,7 +440,7 @@ function writeDownRow(
     div(wiped, weightOf(p), 'per member'),
   );
   if (perMember <= 0) return 0;
-  const moved = mul(perMember, weightOf(p), 'units written off');
+  const moved = totalFor(p, perMember);
   const per = cellSide(p, perMember);
   const r = ctx.settle({
     legs: [
@@ -531,7 +531,7 @@ function moveBook(
     if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
     const mine = ctx.register.quantity(acquirer, i.id);
     if (mine > 0) {
-      const units = mul(mine, weightOf(ctx.parties.get(acquirer)), 'its own claim');
+      const units = totalFor(ctx.parties.get(acquirer), mine);
       const gone = ctx.settle({
         legs: [
           {
@@ -752,10 +752,9 @@ function moveBook(
     const p = ctx.parties.get(holder);
     const perMember = ctx.register.quantity(holder, own);
     if (perMember <= 0) continue;
-    const weight = weightOf(p);
     const held = cellSide(p, perMember);
     const side = held === undefined ? none<CellSide>() : some(held);
-    const total = mul(perMember, weight, 'the balance that moves');
+    const total = totalFor(ctx.parties.get(holder), perMember);
     const r = ctx.settle({
       legs: [
         {

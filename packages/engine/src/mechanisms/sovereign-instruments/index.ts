@@ -77,7 +77,7 @@ export const sovereignBond: InstrumentKindProfile = {
     const out: DueAction[] = [];
     let prev = t.issueDate;
     for (const date of couponDates(t, cal)) {
-      if (cal.place(date) === period) {
+      if (cal.periodOf(date) === period) {
         // N6: the coupon for the accrual period, by the instrument's own day count (G3.c).
         const frac = yearFraction(t.dayCount, prev, date);
         const amountPerUnit = mul(t.coupon.amount, frac, 'coupon');
@@ -88,7 +88,7 @@ export const sovereignBond: InstrumentKindProfile = {
       }
       prev = date;
     }
-    if (cal.place(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
+    if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
     return out.sort((a, b) => compareCivil(a.date, b.date));
   },
   // N9.b: what the buyer owes the seller on top of the clean price, from the last coupon date to
@@ -167,7 +167,7 @@ export const sovereignBill: InstrumentKindProfile = {
       : `${issuerName(namer, i.id)} bill`,
   // N5.c: no coupon; the return is the discount to par, and the bill accretes against its own print.
   due: (i, period, cal) =>
-    isBill(i.terms) && cal.place(i.terms.maturity) === period
+    isBill(i.terms) && cal.periodOf(i.terms.maturity) === period
       ? [{ kind: 'maturity', date: i.terms.maturity }]
       : [],
   // F2: a bill accretes against its own cleared price; nothing accrues on the paper itself, so

@@ -16,6 +16,7 @@
  * payment does, and the model does the rest.
  */
 import { describe, expect, it } from 'vitest';
+import { asQty } from '../src/core/tick.js';
 import {
   INSURER,
   INSURER_PARAMS,
@@ -99,7 +100,7 @@ function penalty(at: number, share: number): SystemModule {
                 from: { holder: BANK_A, issuer: ctx.parties.get(BANK_A).bank },
                 to: { holder: TREASURY_US, issuer: ctx.parties.get(TREASURY_US).bank },
                 ccy: USD,
-                amount: each,
+                amount: asQty(each),
                 fromCell: none(),
                 toCell: none(),
               },

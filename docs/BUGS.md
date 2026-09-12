@@ -73,3 +73,26 @@ so a redrawn world has a differently named fee.
 one trade failed, every failed one carries no deltas at all, and the buyer holds exactly the settled
 volume and paid exactly for it. The second asserts the count the world actually declares, with the
 reason it moves written beside it.
+
+---
+
+## 13b.1-4 — Two steps of this item were wrong on the arriving world's terms — BOTH CHANGED, PLAN §5.2
+
+Written down because §5.2 says the reason goes in the record, and because both were tried, measured
+and undone rather than reasoned away.
+
+**"`namesAnItem` runs on every kind."** Turned on, the world would not assemble: eleven policies and
+preferences cite a future worklist item in their reason, and `params.ts`'s own comment says why they
+may — a rate parliament owns from 14, a comparison that becomes real at 11. They are still there
+afterwards; what changes is who sets them. The guard now asks a SHAPE and a TECHNOLOGY, which is
+where the real hole was: a technology is a fact about the world and a fact about the world has no
+scheduled death.
+
+**"`worthOf` and `markPerUnit` answer the same question the same way."** They do not answer the same
+question. `worthOf` is "what is this worth and HOW OLD is that" — it hands back the print's own
+period, which is what makes a stale mark visibly stale (Observer A1.a), and a line that never printed
+is honestly nothing. `markPerUnit` is "what is a unit marked at NOW", asked inside a period whose
+phases are ordered, where a print that is not there yet means a phase in the wrong place and throwing
+is the point (Clearing F1.a). Merging them turned every read of a line before its first session —
+including the seed's own valuation — into `NotYetProduced`, measured in `tick.test.ts` at four tests.
+Both functions now state the difference where they are.

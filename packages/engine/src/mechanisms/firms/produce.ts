@@ -24,7 +24,7 @@
  */
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { div, material, mul, sub, sum } from '../../core/num.js';
-import { upTick } from '../../core/tick.js';
+import { asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -209,7 +209,7 @@ function yieldBatch(
   if (!material(finished, 2, due) || finished <= 0) return;
   const record = ctx.settle({
     legs: [
-      { kind: 'destroy', party: firm, instrument: wip, qty: due, why: 'consumed', fromCell: none() },
+      { kind: 'destroy', party: firm, instrument: wip, qty: asQty(due, 'the batch that came off the line'), why: 'consumed', fromCell: none() },
       {
         kind: 'create',
         party: firm,

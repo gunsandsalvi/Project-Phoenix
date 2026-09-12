@@ -124,10 +124,28 @@ export class ParamRegister {
           `${d.id} names a scheduled death but is declared ${d.kind}`,
         );
       }
-      if (d.kind === 'shape' && namesAnItem(d.why)) {
+      /**
+       * Law 2, XI-14: ASKED OF A SHAPE **AND OF A TECHNOLOGY**, and of nothing else.
+       *
+       * Firing on `shape` alone polices the honest mistake and misses the one that matters: a
+       * placeholder mislabelled sails through both field guards above while its own prose says
+       * which item kills it. `loan.operatingCost` was exactly that — a wage bill charged to every
+       * borrower and paid to nobody, declared a technology, naming 13d in its reason (item 13b.1).
+       *
+       * It is NOT asked of a policy or a preference, and that is a decision rather than an
+       * oversight: the eleven of those that cite a future item cite it for something else — a rate
+       * parliament owns from 14, a comparison that becomes real at 11 — and they are still there
+       * afterwards, with somebody else setting them. A TECHNOLOGY is different in kind: it is a
+       * fact about the world, and a fact about the world does not have a scheduled death. If an
+       * item kills it, it was a claim about the answer all along.
+       *
+       * A placeholder is exempt because naming the item is what a placeholder DOES; it names it in
+       * `standsInFor`, which the guard above already requires.
+       */
+      if ((d.kind === 'shape' || d.kind === 'technology') && namesAnItem(d.why)) {
         throw new InvalidRegistry(
           'Law 2',
-          `shape ${d.id} names a worklist item in its reason: a shape with a scheduled death IS a placeholder. Declare kind 'placeholder' with standsInFor { mechanism, worklistItem }`,
+          `${d.kind} ${d.id} names a worklist item in its reason: a ${d.kind} with a scheduled death IS a placeholder. Declare kind 'placeholder' with standsInFor { mechanism, worklistItem }`,
           { id: d.id },
         );
       }

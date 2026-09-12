@@ -5,6 +5,7 @@
  * @spec Law 1 Law 2 Law 7 Law 8 Money A2 Money C1 Register A1.c Clearing C3 XI-15
  */
 import { describe, expect, it } from 'vitest';
+import { asQty } from '../src/core/tick.js';
 import {
   BANK_A,
   KERNEL_PARAMS,
@@ -125,7 +126,7 @@ function payer(amount: number): SystemModule {
             from: { holder: BANK_A, issuer: BANK_A },
             to: { holder: partyId('firm.1'), issuer: BANK_A },
             ccy: USD,
-            amount,
+            amount: asQty(amount),
             fromCell: none(),
             toCell: none(),
           };
@@ -146,7 +147,7 @@ describe('the wire refuses what does not exist (Law 8, Money C1)', () => {
   it('throws on half a cent, and settles a whole one', () => {
     const spec = rigSpec('offgrid');
     const bad = assemble({ ...spec, modules: mergeModules(spec.modules, [payer(0.5)]) });
-    expect(() => bad.step()).toThrow(/not a whole number of pieces/);
+    expect(() => bad.step()).toThrow(/not a whole number/);
     const good = assemble({ ...spec, modules: mergeModules(spec.modules, [payer(1)]) });
     expect(() => good.step()).not.toThrow();
   });

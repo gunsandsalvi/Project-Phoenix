@@ -125,7 +125,8 @@ export function moveFund(
     ctx.issue({ id, kind: FUND_CONTRIBUTION, issuer: some(house), ccy, terms, market: none() });
   }
   const up = by > 0;
-  const qty = up ? by : -by;
+  // Law 8: a contribution to the fund is money, so it is a whole number of the money's own pieces.
+  const qty = ctx.registry.payable(ccy, up ? by : -by);
   const legs: Leg[] = [
     {
       kind: 'asset',

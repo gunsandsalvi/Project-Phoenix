@@ -23,7 +23,7 @@ import { div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { BANK, HOUSEHOLD } from '../../registry/profiles.js';
 import { weightOf } from '../../parties/party.js';
-import { cellSide } from '../../ledger/settlement.js';
+import { cellSide, totalFor } from '../../ledger/settlement.js';
 import type { MechanismContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Family, Violation } from '../../audit/audit.js';
@@ -134,7 +134,7 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
           from: ctx.accountOf(bank, ccy),
           to: ctx.accountOf(cell.id, ccy),
           ccy,
-          amount: mul(share, weightOf(cell), 'what this cell is paid'),
+          amount: totalFor(cell, share),
           fromCell: none(),
           toCell: some(side),
         },

@@ -11,6 +11,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import {
+  asQty,
   moneyInstrumentId,
   mul,
   period,
@@ -252,7 +253,7 @@ function paysAStranger(): SystemModule {
                 from: { holder: ESTATE_OF_DEBTOR, issuer: estate.bank },
                 to: { holder: JUNIOR_HOLDER, issuer: stranger.bank },
                 ccy: USD,
-                amount: 1,
+                amount: asQty(1),
                 fromCell: none(),
                 toCell: none(),
               },

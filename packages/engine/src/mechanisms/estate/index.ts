@@ -41,7 +41,7 @@ import { failedWhy } from '../../world/failure.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
-import { splitOnTick, subQty } from '../../core/tick.js';
+import { splitOnTick, subQty, type Qty } from '../../core/tick.js';
 import { asQty } from '../../core/tick.js';
 import { negQty } from '../../core/tick.js';
 
@@ -199,7 +199,8 @@ function offers(view: ParticipantView, m: MarketDecl, closesAfter: number): read
 interface Claim {
   readonly holder: PartyId;
   readonly instrument: InstrumentId;
-  readonly units: number;
+  /** Law 8: what the whole party holds of it, as a count of the unit's own smallest piece. */
+  readonly units: Qty;
   readonly seniority: number;
 }
 
@@ -390,7 +391,10 @@ function close(ctx: MechanismContext, estate: PartyId, w: Winding, ccy: Currency
   }
   for (const c of claimsOn(ctx, estate)) {
     const holder = ctx.parties.get(c.holder);
-    const perMember = holder.representation === 'cell' ? div(c.units, holder.weight, 'per member') : c.units;
+    const perMember = ctx.registry.deliverable(
+      ctx.instruments.get(c.instrument).unit,
+      holder.representation === 'cell' ? div(c.units, holder.weight, 'per member') : c.units,
+    );
     const leg: Leg = {
       kind: 'asset',
       from: c.holder,

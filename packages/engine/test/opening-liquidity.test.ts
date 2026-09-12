@@ -16,6 +16,7 @@
  * every seed opens above the line, at two banks and at twenty.
  */
 import { describe, expect, it } from 'vitest';
+import { asQty } from '../src/core/tick.js';
 import {
   BANK,
   FUND,
@@ -189,7 +190,7 @@ function penalty(at: number, weeks: number, share: number): SystemModule {
                 from: { holder: bank, issuer: cb },
                 to: { holder: partyId('treasury.us'), issuer: cb },
                 ccy: USD,
-                amount: each,
+                amount: asQty(each),
                 fromCell: none(),
                 toCell: none(),
               },

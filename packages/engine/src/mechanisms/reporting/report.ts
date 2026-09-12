@@ -10,6 +10,7 @@
  * if a figure needs one, the equity ledger is missing a writer and not the report a calculation.
  */
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
+import { negQty } from '../../core/tick.js';
 import {
   moneyInstrumentId,
   type InstructionId,
@@ -153,7 +154,7 @@ export function cashOf(ctx: MechanismContext, firm: PartyId, from: Period, to: P
         // Money A2.b: WHICH money it was. A payment in a money the firm does not book in is a
         // different line of its cash statement, not the same one with a different number in it.
         const instrument = moneyInstrumentId(side.issuer, leg.ccy);
-        const amount = outgoing ? -leg.amount : leg.amount;
+        const amount = outgoing ? negQty(leg.amount, 'what this party paid out') : leg.amount;
         const key = `${counterparty}|${instrument}|${r.instruction.cause}`;
         const at = by.get(key);
         if (at === undefined) {
