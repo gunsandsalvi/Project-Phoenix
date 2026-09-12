@@ -174,6 +174,12 @@
     "steps": 17
   },
   {
+    "id": "13b",
+    "title": "The derivative classes",
+    "file": "13b-derivative-classes.md",
+    "steps": 37
+  },
+  {
     "id": "13b.1",
     "title": "The checks that do not check",
     "file": "13b.1-checks-that-do-not-check.md",
