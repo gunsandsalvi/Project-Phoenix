@@ -41,11 +41,14 @@ is right and it is the same key work as **step 22** (wealth and tenure as key di
 13b.1's key data). Steps 12–16 are positioned there. Written down rather than attempted: a half-built
 life cycle that loses people or loses units is worse than none.
 
-**`funds.test.ts`: "breaks the buck" goes red on step 19's change, and it is a finding rather than a
-regression.** Measured both ways: four reds in `households` + `funds` before, five after, and the
-new one is the money fund's NAV. A household that prices paper off its own outlook rather than by
-discounting cash flows bids differently for bills, so the fund's assets reprice differently — which
-is the change doing what it is for. It belongs with **13h**, which is where funds are worked on next.
+**`funds.test.ts`: "breaks the buck" is red, and it is a finding rather than a regression.**
+Measured three ways on `households` + `funds`: four reds at the baseline, five after step 19, four
+again once step 20's XI-2 door landed — the door FIXED it — and five again after step 21. The test
+wants the money fund's NAV to move off the price it opened at, and what moves it is retail flow into
+bills; both steps change where retail money goes, step 21 by sending most of what a household saves
+into something that holds the market instead. The mechanism is right and the level the test measures
+is a level (Law 17), so it belongs with **13h**, where funds are worked on next, alongside the
+question of what a money fund is FOR in a world whose savers prefer the market to the names.
 
 ### A finding this item picked up, measured both ways
 
@@ -359,8 +362,8 @@ packages/engine/test/{mobility,participation,release,dwellings,housing-market,mo
 - [ ] Households E1–E4: borrowing for a house, consumption and shortfalls as decisions; the lender's affordability decision; default from the distribution; tests
 - [ ] Observer: dwellings by location, prices, volumes, LTV distribution per lender, foreclosures, cohorts; year-long run green with a rate-rise scenario: consumption reached through floating mortgages and through prices with different lags (D5, direction only); determinism
 - [x] A household prices a financial claim off its own `outlook('price.<line>')` spread by its own confidence, through the same schedule its consumption uses; `savingLines`'s curve and accounts branches deleted; tests: a cell that has never seen a line print posts nothing for it; two cells with different memories bid different levels (C1, §46 B1, B3, B6)
-- [ ] The retail door into XI-2: a cell surprised downward bids lower AND wants more cash in one read, so a price shock produces redemptions and the fund's forced sale fires on a market shock and not only an income shock; no coefficient added; tests (XI-2, Fund Shares C2.b)
-- [ ] Preferring the market to the names: a cell's saving goes to a tracker rather than single lines at its own declared preference; retail flow is undifferentiated across names; tests (D5, Fund Shares A4, Indices C2)
+- [x] The retail door into XI-2: a cell surprised downward bids lower AND wants more cash in one read, so a price shock produces redemptions and the fund's forced sale fires on a market shock and not only an income shock; no coefficient added; tests (XI-2, Fund Shares C2.b)
+- [x] Preferring the market to the names: a cell's saving goes to a tracker rather than single lines at its own declared preference; retail flow is undifferentiated across names; tests (D5, Fund Shares A4, Indices C2)
 - [x] `ConsumptionDecl` states a quantity per period in the good's own unit, not a share of money; what is bought is the want meeting a price; tests: a dearer loaf is fewer loaves and less spent on bread (C3)
 - [ ] Wealth as a cell key dimension, once 13b.1 has made the key data; cohorts and wealth split by the same exact-split machinery; tests (A2, A2.b, XI-15)
 - [ ] Financial occupations in `labour/data.ts`; a bank posts openings through `venueParticipants` with the hiring lag and the severance the venue already has; tests: a bank competes for hours and can fail to fill a vacancy (Labour A1–A4)

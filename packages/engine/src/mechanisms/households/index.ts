@@ -71,6 +71,7 @@ export const HOUSEHOLD_PARAMS = {
   buffer: paramId('households.buffer.periods'),
   liquidityPremium: paramId('households.liquidityPremium'),
   horizon: paramId('households.horizon.periods'),
+  toTheMarket: paramId('households.toTheMarket'),
   steps: paramId('households.demand.steps'),
 } as const;
 
@@ -114,6 +115,15 @@ function paramsOf(): ParamDecl[] {
       kind: 'preference',
       owner: 'model',
       why: 'Households D5: how long a household will tie its money up. Paper that comes back inside it is a substitute for its deposit; anything longer it would have to sell at a price nobody can tell it, which is D5 other two reasons — yield against risk — and it cannot weigh those until something in this world prices risk (worklist 9).',
+    },
+    {
+      id: HOUSEHOLD_PARAMS.toTheMarket,
+      value: 0.6,
+      unit: 'of what it saves',
+      dimension: 'ratio',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Households D5, Fund Shares A4, Indices C2 (13d): how much of what it saves goes into something that HOLDS THE MARKET rather than into lines it picked. A household with no view on any particular company still wants to be invested, and that is what an index fund is for — so this is what makes retail flow undifferentiated across names, which is what a tracker\u2019s simultaneity is actually made of. It is a share of a BUDGET and not of a price: what either half buys is a quantity meeting a price in a book, and neither half is sheltered from the other, which is the whole difference between this and the substitution assumption `ConsumptionDecl` used to make.',
     },
     {
       id: HOUSEHOLD_SWITCHING_COST,
@@ -349,9 +359,28 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // D5: one budget, spread over every place its money could go this period. Deciding it once and
   // dividing it is what stops the same money being committed twice (Law 4) and what stops a rule
   // nobody stated from preferring one class of thing to another.
+  /**
+   * D5, Fund Shares A4, Indices C2 (13d): AND IT WOULD RATHER OWN THE MARKET THAN PICK NAMES. How
+   * much of what it saves goes to something that holds the market instead of to lines it chose is a
+   * PREFERENCE — a household with no view on any particular company still wants to be invested —
+   * and it is what makes retail flow undifferentiated across names, which is what a tracker's
+   * simultaneity (C2) is actually made of. A world where every saver picked lines one at a time had
+   * no such flow, and an index fund had nobody to be for.
+   *
+   * It is a share of a BUDGET and not of a price, which is what makes it a preference rather than
+   * the substitution assumption `ConsumptionDecl` was: what it buys with either half is a quantity
+   * meeting a price in a book, and neither half is protected from the other.
+   */
+  const toTheMarket = view.params.ratio(HOUSEHOLD_PARAMS.toTheMarket);
+  const tracking = [...paper, ...shares].filter((l) => l.tracks).length;
+  const picked = paper.length + shares.length - tracking;
+  const forTracking = mul(spare, toTheMarket, 'what it puts into the market as a whole');
+  const forPicked = sub(spare, forTracking, 'what is left for lines it picked');
+  const perTracked = tracking > 0 ? div(forTracking, tracking, 'into one of them') : 0;
+  const perPicked = picked > 0 ? div(forPicked, picked, 'into one line it picked') : 0;
+  const budgetFor = (l: { readonly tracks: boolean }): number => (l.tracks ? perTracked : perPicked);
   const lines = paper.length + shares.length;
-  const perLine = lines > 0 ? div(spare, lines, 'what it puts into one line') : 0;
-  const paperOrders = paperBids(view, paper, perLine, lines, weightOf(self));
+  const paperOrders = paperBids(view, paper, budgetFor, lines, weightOf(self));
   // D2, D5: the third thing it can do with its money, and the reason it asks for it back. What the
   // fund published is public (Clearing F1: it acts on what it has already been told), and what it
   // offers is compared against the same requirement a bill is.
@@ -390,14 +419,17 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       sparePerMember: spare,
       // D5: the places its money could go this period, and what goes into one of them.
       linesItMayHold: lines,
-      perLinePerMember: perLine,
+      // D5, Fund Shares A4 (13d): and how it split them — what goes into one line it picked, and
+      // what goes into one that holds the market instead.
+      perPickedLinePerMember: perPicked,
+      perTrackingLinePerMember: perTracked,
       shortForSpendingPerMember: short,
       toFundPerMember: toFund,
       // C2: what it does not spend and does not put into paper is saved where it already is.
       orders: [
         ...goods.map((g) => ({ market: g.market, side: 'buy', price: g.price, qty: g.qty })),
         ...paperOrders.map((b) => ({ market: b.market, side: 'buy', price: b.price, qty: b.qty })),
-        ...shareOrders(view, shares, perLine, short, p.steps).map((o) => ({
+        ...shareOrders(view, shares, budgetFor, short, p.steps).map((o) => ({
           market: o.market,
           side: o.side,
           price: o.price,

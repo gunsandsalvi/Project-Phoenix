@@ -1,7 +1,7 @@
 /**
  * What a household decides to spend, and the demand it takes to market with it.
  *
- * @spec Households A2.a Households A2.b Households A2.f Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households D6 Goods A2.a Goods C1 Expectations B3 Expectations C1 XI-15 XI-16 Law 2 Law 6
+ * @spec Households A2.a Households A2.b Households A2.f Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households D6 Goods A2.a Goods C1 Expectations B3 Expectations C1 Fund Shares C2.b XI-2 XI-15 XI-16 Law 2 Law 6
  *
  * EVERY NUMBER HERE IS PER MEMBER of the cell that decided it (A2.f, XI-15). A cell is one possible
  * household carried with a multiplicity, so what it decides is what one household decides, and the
@@ -115,10 +115,20 @@ export function spendPerMember(
   // C1.c, §46 B3: the cushion is so many periods of what it expects, widened by how wrong that
   // expectation has recently been. Confidence is in the same unit as the variable, so a cell whose
   // income has been unpredictable by a given amount wants that much more in hand per period.
-  const buffer = mul(
-    p.bufferPeriods,
-    add(income.value.expected, income.value.confidence, 'what a period could cost it'),
-    'the cushion it wants',
+  const buffer = add(
+    mul(
+      p.bufferPeriods,
+      add(income.value.expected, income.value.confidence, 'what a period could cost it'),
+      'the cushion it wants against its income',
+    ),
+    // XI-2, §46 B3, Fund Shares C2.b (13d): AND AGAINST ITS SAVINGS. What it holds can move, and how
+    // far it thinks it can move is its own uncertainty about those very prices — the same outlooks
+    // it buys and sells with, read here for what they say about risk rather than about level. So a
+    // cell that has been surprised BY A PRICE wants more cash in hand and bids lower in the same
+    // read, which is how a market shock reaches consumption and how it reaches a money fund: the
+    // redemption is a household wanting its cushion, not a coefficient anybody added.
+    atRisk(view),
+    'the cushion it wants altogether',
   );
   const gap = div(sub(wealth, buffer, 'what it owns over its cushion'), p.patience, 'closed at its own patience');
   const wanted = add(income.value.expected, gap, 'what it decides to spend');
@@ -145,6 +155,28 @@ export function spendPerMember(
     constrained: wanted > budget,
   });
 }
+
+/**
+ * §46 B3, XI-2: WHAT ITS OWN SAVINGS COULD MOVE BY, per member, by its own reckoning. Its holdings
+ * at what it holds of them, times how wrong it has been about each of those prices. A cell that has
+ * never been surprised by a price wants nothing extra; one that has just watched a market move
+ * wants that much more in hand, and it wants it the same period it bids lower for the same reason.
+ *
+ * Law 19: every term is a read — the register's units and this cell's own outlooks — and there is
+ * no risk aversion parameter anywhere. What it will not risk is what it has seen happen.
+ */
+function atRisk(view: ParticipantView): number {
+  const terms: number[] = [];
+  for (const h of view.holdings()) {
+    const outlook = view.outlook(`price.${String(h.instrument)}`);
+    if (!outlook.some || outlook.value.confidence <= 0) continue;
+    const units = sum(h.lots.map((l) => l.qty));
+    if (units.value <= 0) continue;
+    terms.push(mul(units.value, outlook.value.confidence, 'what this line could move by'));
+  }
+  return sum(terms).value;
+}
+
 
 /**
  * C1.b, D1, D3: what a household owns, per member: its money, and what the market last said its

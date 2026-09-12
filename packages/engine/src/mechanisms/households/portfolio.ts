@@ -45,6 +45,13 @@ export interface PaperBid {
 export interface SavingLine {
   readonly instrument: Instrument;
   readonly price: number;
+  /**
+   * Indices C2, Fund Shares A4, D5 (13d): whether this line is a CLAIM ON A BOOK rather than on an
+   * issuer — a vehicle that holds the market instead of a company that is part of it. It is the
+   * kind's own declared pricing answering (`pricing: 'derived'`), never a list of fund ids, and it
+   * is what tells retail money that would rather own the market from a name it picked.
+   */
+  readonly tracks: boolean;
 }
 
 /**
@@ -129,10 +136,10 @@ export function savingLines(
     if (last !== undefined) {
       // D5: it promises dated payments, so the question is whether the money comes back in time.
       if (compareCivil(last.date, by) > 0) continue;
-      paper.push({ instrument: i, price });
+      paper.push({ instrument: i, price, tracks: profile.pricing === 'derived' });
       continue;
     }
-    shares.push({ instrument: i, price });
+    shares.push({ instrument: i, price, tracks: profile.pricing === 'derived' });
   }
   return { paper, shares };
 }
@@ -146,14 +153,19 @@ export function savingLines(
 export function paperBids(
   view: ParticipantView,
   eligible: readonly SavingLine[],
-  /** XI-15: what ONE MEMBER puts into one line. The cell's order is that, times how many there are. */
-  perLine: number,
+  /**
+   * XI-15: what ONE MEMBER puts into one line. The cell's order is that, times how many there are.
+   * It is asked PER LINE (13d) because a saver that would rather own the market than pick names
+   * puts a different amount behind the two, and which of them a line is, is the line's own answer.
+   */
+  budgetFor: (line: SavingLine) => number,
   lines: number,
   weight: number,
 ): PaperBid[] {
-  if (perLine <= 0) return [];
   const out: PaperBid[] = [];
   for (const e of eligible) {
+    const perLine = budgetFor(e);
+    if (perLine <= 0) continue;
     // Bond N9.b: what it must find is the clean price plus what has accrued and travels with it.
     const dirty = add(e.price, view.accrued(e.instrument.id), 'what a unit costs it');
     // Law 8, XI-15: EVERY MEMBER holds whole units, so what one of them bids for is a whole number
@@ -226,13 +238,14 @@ export interface ShareOrder {
 export function shareOrders(
   view: ParticipantView,
   lines: readonly SavingLine[],
-  perLine: number,
+  budgetFor: (line: SavingLine) => number,
   short: number,
   steps: number,
 ): ShareOrder[] {
   const out: ShareOrder[] = [];
   const weight = view.self.representation === 'cell' ? view.self.weight : 1;
   for (const line of lines) {
+    const perLine = budgetFor(line);
     if (!line.instrument.market.some) continue;
     const market = line.instrument.market.value;
     const id = line.instrument.id;
