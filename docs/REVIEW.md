@@ -973,3 +973,109 @@ through `params` by the other; `BankDecl` in `spot-fx` is a type that should be 
 `firms`/`households`/`capital-programme`/`treasury` reaching into `goods` for the same two naming
 functions — which means the goods naming grammar wants to be kernel data, and once it is, four
 modules stop knowing about a fifth.
+
+## The lint rules generally — they enforce spellings, not laws
+
+**DEFECT — `phoenix/no-bounds` forbids `Math.min`/`Math.max` and the engine writes the same
+operation as a ternary thirty-one times.** A sample:
+
+```
+labour/matching.ts:221      const taken = people < available ? people : available;
+funds/index.ts:340          const budget = wanted > cash ? cash : wanted;
+banks/dealing.ts:306        return want < free ? want : free;
+derivative-layer/index.ts:175  return affordable < wanted ? affordable : wanted;
+firms/invest.ts:323         const qty = canPay < x.order.qty ? canPay : x.order.qty;
+households/consume.ts:121   const affordable = wanted > budget ? budget : wanted;
+```
+
+**Most of these are correct** — "you cannot deliver more than you hold", "you cannot pay more than
+you have", "you cannot hire more people than there are" — which is Law 6's one admissible case,
+arithmetic impossibility. Two I checked closely (`banks/treasury.ts`'s `c.floor` and `defended`'s
+`stopAt`) are real alternatives a bank has, argued at length and correctly. **That is exactly the
+problem:** the rule cannot tell them apart, so it bans a spelling, everyone writes the other
+spelling, and the law goes unchecked either way. A reviewer grepping for bounds finds nothing; a
+reviewer grepping for ternaries finds thirty-one and no way to sort them.
+
+**What it would take:** `core/num.ts` gets `atMost(value, limit, because)` and `atLeast(...)` whose
+third argument is the REASON — "what it holds", "what the corridor pays" — and `no-bounds` forbids
+the bare ternary shape as well as `Math.min`/`Math.max`. Then every bound in the engine is a call
+with a stated reason, the thirty-one become greppable and readable, and a bound with a weak reason
+is visible as one. The law asks for the compensating mechanism; naming it at the site is the
+cheapest possible enforcement of that.
+
+**MINOR — `phoenix/no-kind-branch` sees only `===`, `!==` and `switch`.** `d.eligible.includes(i.kind)`
+(`funds/index.ts:898`) passes, and is fine — a mandate naming the kinds it may hold is data about
+the fund. But the rule would not catch `['a','b'].includes(x.kind)` written inside a mechanism
+either, which is not.
+
+## `households/`
+
+The design claim in the header — "no representative household, no propensity applied to an
+aggregate, no average anybody could have crossed a threshold at" — holds. Every number in
+`consume.ts` is per member of the cell that decided it; the cushion is the cell's own outlook
+widened by the cell's own surprises; the demand curve is posted as a step function over the cell's
+own uncertainty, so a cell that has seen prices move bids over a wider range than one that has not.
+`constrained` is published as a flag precisely because it is a THRESHOLD a mean-preserving spread
+moves cells across, which is A2.g taken seriously.
+
+**SHAPE — consumption is a fixed share of MONEY spending, which is the assumption `no-value-recipe`
+exists to forbid on the production side.** `ConsumptionDecl.share` is "the share of what it spends
+that goes on this good", and `data.ts` states the consequence plainly: "a household facing a dearer
+loaf buys fewer of them and spends the same on bread". That is unit-elastic demand — spending on a
+good never responds to its price, and a price change never moves spending BETWEEN goods. The
+`phoenix/no-value-recipe` rule refuses exactly this on the input side, with the argument written out
+in `tools/eslint-rules/index.js`: "A price that doubles would halve the physical draw, which is the
+strongest substitution assumption there is, sitting where the model chose none."
+
+**It is harmless today** — there is one final good and both cohorts' share is 1, so the share does
+nothing — and it becomes the strongest substitution assumption in the model on the day a second
+final good exists. **What it would take:** the same answer the production side got. A cohort's
+preference over goods is a real PREFERENCE primitive and may be declared; what it may not be is a
+share of money. Declare it as a quantity a household wants per period (a basket), and what it
+actually buys is then the outcome of that want meeting a price, which is what the demand schedule
+is already shaped to express.
+
+## `mechanisms/derivative-layer/`
+
+**DEFECT — a member's clearing capacity is reduced twice for every unit of margin it posts.**
+
+```ts
+const room = sub(sub(cash, keep, 'net of its buffer'), committed(view, m.ccy), 'left to commit');
+```
+
+`committed` sums the margin CLAIMS the party holds (`margin.ts`), and a party holds a margin claim
+because it posted cash for it: `moveMargin` moves the claim to the poster and the money to the
+holder, in one instruction, settled before the next trade in the session is admitted. So by the
+time `admits` runs again, `view.cash(ccy)` is ALREADY net of everything posted — and subtracting
+`committed` takes it off a second time. A member that has posted 100 has its room cut by 200.
+
+The intent is stated and is right (E3: "the second hedge of a period is sized against what the first
+will post, so capacity is drawn down as it is consumed rather than measured fresh each time") — and
+`cash` alone already does exactly that, because the margin settles inside the trade's own
+instruction. The effect is conservative (the layer refuses more than it should, never less), which
+is why nothing has caught it; it makes every derivative book thinner than the mechanism says, and it
+makes E4's refusal measurement wrong in the direction that looks like prudence. **What it would
+take:** delete the `committed` term. It is Law 19 in miniature — the cash balance is the source, and
+`committed` re-derives from a second read something the source already carries.
+
+**MINOR — `admits` returns `0` when the market names no contract; `contractTrade` throws `Missing`
+for the same condition.** One impossible state, two answers, and the quiet one is in the module.
+
+**MINOR — the waterfall records an extinguishment as a trade at a price of zero.**
+`pricePerUnit: some(0)` on the asset leg, while the equity effect actually uses the estate's
+carrying value (settlement's `redeem` takes `carryingOf(fromDebit)` whenever the from-side was
+debited). So the arithmetic is right and the LEDGER RECORD is false: a reader of that instruction
+sees a claim that changed hands at nothing. `none()` — "a transfer at carrying value", which is what
+`AssetLeg.pricePerUnit`'s own doc says none means — is both correct and true.
+
+**MINOR — `Round.paid` means two different things.** For `defaulterMargin`, `defaulterFund` and
+`survivors` it is an amount that moved in this call; for `houseCapital` it is an amount that moved
+EARLIER (the house's equity fell when it paid the survivors, which is argued correctly). A reader
+summing `paid` across the rounds counts the house's capital twice. Naming the line's field
+`absorbed` and noting which lines settle would fix it.
+
+**GOOD — the capacity refusal is genuinely a refusal.** `admits` returning 0 on a ceased house, on
+`initialMargin` being `none` ("the underlying has not moved yet, so nobody can say" is refused
+rather than admitted at zero), and on a requirement below one piece of money — with every one of
+them journaled and measured (E4) and nothing anywhere raising the limit — is Law 6 done properly:
+the constraint is a quantity somebody HAS, not a number somebody chose.
