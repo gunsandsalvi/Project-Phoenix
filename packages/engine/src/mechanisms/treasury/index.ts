@@ -219,6 +219,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.bufferPeriods,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Treasury D4.b: it holds a cash buffer because the alternative is dependence on every single auction clearing. How many periods of known outlays it wants in hand is its own patience with that risk.',
@@ -227,6 +228,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.horizon,
       value: 26,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Treasury D4, D4.a: how far ahead the programme looks at what it must pay, so a wall is foreseeable and pre-funded rather than met on the day.',
@@ -235,6 +237,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.tenorMixShort,
       value: 0.35,
       unit: 'ratio of debt outstanding',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'model',
       why: 'Treasury E1, Sovereign A2.c: the maturity mix is a real choice with a real cost - short is cheaper when the curve slopes up and rolls more often. This is the share it manages towards.',
@@ -243,6 +246,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.auctionEvery,
       value: 4,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'policy',
       owner: 'model',
       why: 'Sovereign C1, C1.a: issuance is announced before it happens on a calendar the market can see. How often it comes is the issuer own choice.',
@@ -252,6 +256,7 @@ export const treasury: SystemModule = {
       value: 12,
       denominated: true,
       unit: 'of its own money, per member per period',
+      dimension: 'amount',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1, B3: transfers to households. Until the polity exists this is the standing mandate declared at the seed, and the register prints parliament as its owner (Polity D5, XI-17).',
@@ -261,6 +266,7 @@ export const treasury: SystemModule = {
       value: 7000,
       denominated: true,
       unit: 'of the venue own time, per period',
+      dimension: 'amount',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1, Labour F1: how big a public service the state keeps. It is a size, not a wage: the state posts these hours in the same venue everybody else posts in, at what the market has been paying, and what it ends up paying is what the venue cleared at. A state that stated the wage would be setting a price, which is not something a parliament does (Polity D5).',
@@ -270,6 +276,7 @@ export const treasury: SystemModule = {
       value: 30_000,
       denominated: true,
       unit: 'of its own money, per period',
+      dimension: 'amount',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury B1: what the state puts aside to buy real things with. It is a budget and not a quantity: how much that buys is the market\'s business, and the state is rationed in it like any other buyer (Goods C4).',
@@ -278,6 +285,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.taxInterest,
       value: 0.2,
       unit: 'ratio of interest received',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury C1, C1.a: a rate on a real base with a named payer who remits it. Interest received is the only base that exists before firms and households earn anything (worklist 4).',
@@ -286,6 +294,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.taxIncome,
       value: 0.15,
       unit: 'ratio of what a household was paid',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury C1, C1.a: a tax on income, on the base the payer own statement gives — what actually reached a household from somebody other than the state. Its own transfers are not taxed back out of it, and interest is taxed where it is received by anybody, so no base carries two rates.',
@@ -294,6 +303,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.taxConsumption,
       value: 0.1,
       unit: 'ratio of what a household paid for goods',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'parliament',
       why: 'Treasury C1: a tax on consumption, on what a household actually paid a seller for real things. A household finds it on top of the price when it decides what to spend (Households C4), and it is remitted out of its own account.',
@@ -302,6 +312,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.concession,
       value: 0.004,
       unit: 'per annum over the curve',
+      dimension: 'perAnnum',
       kind: 'preference',
       owner: 'model',
       why: 'Sovereign C5, C7: the issuer walk-away. How much worse than the curve it will still take before it withdraws the paper is its own patience, and it is what makes a failed auction reachable.',
@@ -310,6 +321,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.dealershipShare,
       value: 0.34,
       unit: 'ratio of the size offered',
+      dimension: 'ratio',
       kind: 'policy',
       // The ISSUER's own term, and it is declared in the issuer's module and announced by it. The
       // owner enum has no treasury in it, and adding one is a kernel change this item may not make.
@@ -320,6 +332,7 @@ export const treasury: SystemModule = {
       id: TREASURY_PARAMS.buybackStale,
       value: 12,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Sovereign F5: the issuer manages its own curve by buying in an illiquid old line. How long a line must have gone without a trade before it counts as illiquid is its own judgement.',
@@ -435,17 +448,17 @@ function allotmentReconciles(): Family {
 /** D1, D4: the need, then the announcement (C1). Everything here is a read. */
 function runProgramme(ctx: MechanismContext, id: PartyId): void {
   const on = ctx.calendar.startOf(ctx.period);
-  const horizonPeriods = ctx.params.get(TREASURY_PARAMS.horizon);
+  const horizonPeriods = ctx.params.periods(TREASURY_PARAMS.horizon);
   const horizon = period(ctx.period + horizonPeriods);
   const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
   const service = debtService(ctx, id, on, horizon);
   const perPeriod = mandatePerPeriod(ctx, id);
   const mandate = mul(perPeriod, horizonPeriods, 'mandate over horizon');
   const receipts = mul(lastReceipts(ctx), horizonPeriods, 'receipts over horizon');
-  const buffer = mul(perPeriod, ctx.params.get(TREASURY_PARAMS.bufferPeriods), 'buffer');
+  const buffer = mul(perPeriod, ctx.params.periods(TREASURY_PARAMS.bufferPeriods), 'buffer');
   const cash = ctx.register.quantity(id, accountOf(ctx, id, ccy));
   const need = sub(add(add(service, mandate, 'outlays'), buffer, 'with buffer'), add(receipts, cash, 'resources'), 'need');
-  const auctionEvery = ctx.params.get(TREASURY_PARAMS.auctionEvery);
+  const auctionEvery = ctx.params.periods(TREASURY_PARAMS.auctionEvery);
   const isAuctionPeriod = ctx.period % auctionEvery === 0;
   const auctions = Math.floor(horizonPeriods / auctionEvery);
   const size = auctions > 0 && need > 0 ? div(need, auctions, 'auction size') : 0;
@@ -481,7 +494,7 @@ function announce(
   const lines = linesOf(ctx, id, on);
   const shortOut = sum(lines.filter((l) => l.short).map((l) => l.issued)).value;
   const total = sum(lines.map((l) => l.issued)).value;
-  const wantShort = total === 0 || div(shortOut, total, 'short share') < ctx.params.get(TREASURY_PARAMS.tenorMixShort);
+  const wantShort = total === 0 || div(shortOut, total, 'short share') < ctx.params.ratio(TREASURY_PARAMS.tenorMixShort);
   const tenors = wantShort ? SHORT_TENORS : LONG_TENORS;
   // Within the bucket it brings the tenor it has least of, which is how a maturity profile stays
   // spread instead of piling into one date (D4.a).
@@ -521,7 +534,7 @@ function announce(
   const flows = ctx.registry.instrumentKind(inst.kind).cashFlows(inst, on, ctx.calendar);
   const reservation = priceAt(
     flows,
-    add(y, ctx.params.get(TREASURY_PARAMS.concession), 'walk-away yield'),
+    add(y, ctx.params.perAnnum(TREASURY_PARAMS.concession), 'walk-away yield'),
     on,
     dayCount,
     'reservation',
@@ -546,7 +559,7 @@ function announce(
     {
       line: instrument,
       size: units,
-      dealershipShare: ctx.params.get(TREASURY_PARAMS.dealershipShare),
+      dealershipShare: ctx.params.ratio(TREASURY_PARAMS.dealershipShare),
     },
     true,
   );
@@ -692,9 +705,9 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.region(ctx.parties.get(id).region).ccy;
   if (ctx.period === 0) return;
   const previous = period(ctx.period - 1);
-  const onInterest = ctx.params.get(TREASURY_PARAMS.taxInterest);
-  const onIncome = ctx.params.get(TREASURY_PARAMS.taxIncome);
-  const onConsumption = ctx.params.get(TREASURY_PARAMS.taxConsumption);
+  const onInterest = ctx.params.ratio(TREASURY_PARAMS.taxInterest);
+  const onIncome = ctx.params.ratio(TREASURY_PARAMS.taxIncome);
+  const onConsumption = ctx.params.ratio(TREASURY_PARAMS.taxConsumption);
   const cells = new Set(itsPeople(ctx, id).map((p) => p.id));
   const due = new Map<PartyId, number>();
   const bases = { interest: 0, income: 0, consumption: 0 };
@@ -811,7 +824,7 @@ function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const print = view.print(inst.id);
   if (!print.some) return [];
   const since = struckIn(print.value);
-  if (sub(view.period, since, 'periods since a trade') < view.params.get(TREASURY_PARAMS.buybackStale)) return [];
+  if (sub(view.period, since, 'periods since a trade') < view.params.periods(TREASURY_PARAMS.buybackStale)) return [];
   // It buys in with money it does not need: the programme it published this period says whether it
   // has any. A treasury that is short does not buy its own paper back (A2, D4).
   const spare = sparePerProgramme(view);

@@ -84,6 +84,7 @@ function paramsOf(): ParamDecl[] {
       id: HOUSEHOLD_PARAMS.patience,
       value: 6,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Households C1: over how many of its own periods a household closes the gap between the cash it holds and the cushion it wants. It is the whole of its patience: a windfall it means to keep reaches its spending over this many weeks, and a hole it has fallen into is refilled over the same.',
@@ -92,6 +93,7 @@ function paramsOf(): ParamDecl[] {
       id: HOUSEHOLD_PARAMS.buffer,
       value: 4,
       unit: 'periods of its own income',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Households C1.d, §46 B3: how many periods of what it expects a household wants to be sitting on. It is widened by how wrong its own income has recently been, which is a read of its own surprises and not a second number.',
@@ -100,6 +102,7 @@ function paramsOf(): ParamDecl[] {
       id: HOUSEHOLD_PARAMS.liquidityPremium,
       value: 0.005,
       unit: 'per annum over what a deposit returns',
+      dimension: 'perAnnum',
       kind: 'preference',
       owner: 'model',
       why: 'Households D5, D5.a: what a saver wants for giving up instant access to its money. It is the whole of the substitution between a deposit and paper held directly, and it is what makes a rate reach a saver at all.',
@@ -108,6 +111,7 @@ function paramsOf(): ParamDecl[] {
       id: HOUSEHOLD_PARAMS.horizon,
       value: 52,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Households D5: how long a household will tie its money up. Paper that comes back inside it is a substitute for its deposit; anything longer it would have to sell at a price nobody can tell it, which is D5 other two reasons — yield against risk — and it cannot weigh those until something in this world prices risk (worklist 9).',
@@ -117,6 +121,7 @@ function paramsOf(): ParamDecl[] {
       value: 40,
       denominated: true,
       unit: 'of the money the account is in, per move, per member',
+      dimension: 'amount',
       kind: 'preference',
       owner: 'model',
       why: 'Banks Funding A1.d, E1: what it costs one household to move its account, ONCE, as an amount of its own money. It is weighed against what staying has already cost it — its own balance times the gap between the boards over as long as it has stayed — so a bigger balance moves for a smaller gap and the class drains instead of crossing at one instant. Retail money is the stickiest because the amount is large beside what a household holds, and that is A1.a arriving as a cost somebody bears rather than as a stated stickiness.',
@@ -125,6 +130,7 @@ function paramsOf(): ParamDecl[] {
       id: HOUSEHOLD_PARAMS.steps,
       value: 5,
       unit: 'count',
+      dimension: 'count',
       kind: 'resolution',
       owner: 'model',
       why: 'Goods C1, Clearing A2: how finely a household posts its own demand curve into the book. Its shape is the cell own — what it spends divided by the price — and this is only how many levels of it the book sees; change it and the answer must not move.',
@@ -134,10 +140,10 @@ function paramsOf(): ParamDecl[] {
 
 function numbers(view: ParticipantView): HouseholdParams {
   return {
-    patience: view.params.get(HOUSEHOLD_PARAMS.patience),
-    bufferPeriods: view.params.get(HOUSEHOLD_PARAMS.buffer),
-    steps: view.params.get(HOUSEHOLD_PARAMS.steps),
-    consumptionTax: view.params.get(CONSUMPTION_TAX),
+    patience: view.params.periods(HOUSEHOLD_PARAMS.patience),
+    bufferPeriods: view.params.periods(HOUSEHOLD_PARAMS.buffer),
+    steps: view.params.count(HOUSEHOLD_PARAMS.steps),
+    consumptionTax: view.params.ratio(CONSUMPTION_TAX),
   };
 }
 
@@ -335,14 +341,14 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // it. A deposit pays nothing until a bank decides to pay for one (Banks Funding B1, worklist
   // 11), so what it requires now is the premium alone, and that comparison becomes a real one
   // the period a bank starts bidding for deposits.
-  const required = view.params.get(HOUSEHOLD_PARAMS.liquidityPremium);
+  const required = view.params.perAnnum(HOUSEHOLD_PARAMS.liquidityPremium);
   // D5: everywhere its savings could go, in one pass, with what it thinks each is worth — paper it
   // can price off a public curve, and shares it can only price off what they have been paying.
   const { paper, shares } = savingLines(
     view,
     required,
     ownUncertainty(view),
-    view.params.get(HOUSEHOLD_PARAMS.horizon),
+    view.params.periods(HOUSEHOLD_PARAMS.horizon),
   );
   // D5: one budget, spread over every place its money could go this period. Deciding it once and
   // dividing it is what stops the same money being committed twice (Law 4) and what stops a rule

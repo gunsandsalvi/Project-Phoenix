@@ -79,7 +79,7 @@ export function liquidityPlan(view: ParticipantView, cushion: number): Option<Li
   if (typeof couldLeave !== 'number' || typeof buffer !== 'number') return none<LiquidityPlan>();
   const wanted = mul(
     couldLeave,
-    add(view.params.get(P_COVERAGE), cushion, 'the rule and its own cushion'),
+    add(view.params.ratio(P_COVERAGE), cushion, 'the rule and its own cushion'),
     'the liquid assets it wants',
   );
   const above = sub(wanted, buffer, 'what is left for the portfolio');
@@ -359,7 +359,7 @@ export function worthOfMoney(
 ): number {
   const short = refusedLastSession(ctx, bank);
   if (short.some && short.value > base) return c.ceiling;
-  const memory = ctx.params.get(bankParam(bank, 'bufferMemory'));
+  const memory = ctx.params.periods(bankParam(bank, 'bufferMemory'));
   const from = ctx.period > memory ? ctx.period - memory : 0;
   const weights: number[] = [];
   const weighted: number[] = [];
@@ -633,7 +633,7 @@ export function setBoard(
   const seen = corridorSeen(ctx.participant(bank));
   if (!seen.some) return;
   const worth = worthOfMoney(ctx, bank, seen.value, base);
-  const margin = ctx.params.get(bankParam(bank, 'depositMargin'));
+  const margin = ctx.params.perAnnum(bankParam(bank, 'depositMargin'));
   // B1.a, B3: what it will pay is what the money is worth to it, less what it keeps and less what
   // the money costs it besides the rate. IT DOES NOT SUBTRACT ANYBODY'S STICKINESS: what it costs a
   // depositor to move is an amount of that depositor's money, weighed against that depositor's
@@ -687,7 +687,7 @@ export function publishBuffer(
   memory: ReserveMemory,
 ): void {
   const move = reserveFlow(ctx, bank, ccy);
-  remember(memory, bank, move, ctx.params.get(bankParam(bank, 'bufferMemory')));
+  remember(memory, bank, move, ctx.params.periods(bankParam(bank, 'bufferMemory')));
   ctx.record(
     'bank.buffer',
     [bank],

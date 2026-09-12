@@ -11,19 +11,96 @@
 import { forbid } from '../core/assert.js';
 import type { Period } from '../calendar/calendar.js';
 import { Forbidden, Missing } from '../core/errors.js';
-import type { CohortId, PartyId, PartyKindId, RegionId } from '../core/ids.js';
+import { cohortId, type PartyId, type PartyKindId, regionId, type RegionId } from '../core/ids.js';
 import { positiveCount } from '../core/num.js';
-import type { Registry } from '../registry/registry.js';
+import type { CellKeyDimension, Registry } from '../registry/registry.js';
 
 export type PartyStatus =
   | { readonly alive: true }
   | { readonly alive: false; readonly ceasedIn: Period; readonly successor: PartyId };
 
-/** The declared key dimensions (XI-15): region, cohort, and the member's bank. */
-export interface CellKey {
-  readonly region: RegionId;
-  readonly cohort: CohortId;
-  readonly bank: PartyId;
+/**
+ * XI-15: a cell's key is the value of every dimension the REGISTRY declares, and of nothing else.
+ * It is a map and not a shape on purpose: the dimensions are registry data, so lifting a
+ * relationship from a register row into the key is a data change and a re-stratification event,
+ * never a change to a mechanism. A key shaped as an interface made that claim false — it said
+ * region, cohort and bank in the kernel, and a world that wanted a fourth had to change this file.
+ */
+export type CellKey = Readonly<Partial<Record<CellKeyDimension, string>>>;
+
+/** XI-15: what one declared dimension of a cell's key says. Absent means the world does not key on it. */
+export function keyOf(p: CellParty, dim: CellKeyDimension): string {
+  const v = p.key[dim];
+  if (v === undefined) {
+    throw new Missing('XI-15', `cell ${p.id} has no ${dim}: this world does not key cells on it`, {
+      id: p.id,
+    });
+  }
+  return v;
+}
+
+/** What a key dimension MEANS, which is the part that cannot be data (Law 15: one dispatch table). */
+interface KeyDimensionTerms {
+  /**
+   * Where the same fact ALSO lives on the party, when it lives twice: the two copies must agree,
+   * which is Law 4 held at the door. A dimension with nowhere else to live — a wealth band, a
+   * tenure — has none, and having nowhere else to live is precisely why it is a dimension.
+   */
+  readonly alsoOn?: (p: PartyBase) => string;
+  /** Whether the value names something the registry declares, asked without throwing. */
+  readonly declared?: (r: Registry, value: string) => boolean;
+}
+
+/**
+ * XI-15: the one place that says how a key dimension is checked. Which dimensions a world keys its
+ * cells on is registry data; what each one means is here, so adding one is a row in the registry
+ * and an entry in this table, and never a branch in a mechanism.
+ */
+const KEY_DIMENSIONS: Readonly<Record<CellKeyDimension, KeyDimensionTerms>> = {
+  region: { alsoOn: (p) => p.region, declared: (r, v) => r.regions.has(regionId(v)) },
+  cohort: { declared: (r, v) => r.cohorts.some((c) => c.id === cohortId(v)) },
+  bank: { alsoOn: (p) => p.bank },
+};
+
+/**
+ * XI-15: everything wrong with a cell's key, or nothing. One writer of the rule and two readers
+ * with different postures: the door throws on the first fault, the names family reports each as a
+ * finding — because `add` is not the only writer of a party (`bankAt` rewrites the key) and a rule
+ * enforced at one door and nowhere after it is a rule that holds until something else writes.
+ */
+export function cellKeyFaults(registry: Registry, p: CellParty): readonly string[] {
+  const faults: string[] = [];
+  const declared = new Set<string>(registry.cellKey);
+  for (const dim of registry.cellKey) {
+    const value = p.key[dim];
+    if (value === undefined) {
+      faults.push(`cell ${p.id} has no ${dim}, and this world keys its cells on ${dim}`);
+      continue;
+    }
+    const terms = KEY_DIMENSIONS[dim];
+    const also = terms.alsoOn?.(p);
+    if (also !== undefined && also !== value) {
+      faults.push(`cell ${p.id} keys on ${dim} ${value} but is ${also}`);
+    }
+    if (terms.declared !== undefined && !terms.declared(registry, value)) {
+      faults.push(`cell ${p.id} keys on ${dim} ${value}, which the registry does not declare`);
+    }
+  }
+  for (const dim of Object.keys(p.key)) {
+    if (!declared.has(dim)) {
+      faults.push(`cell ${p.id} carries ${dim} in its key, which this world does not key cells on`);
+    }
+  }
+  return faults;
+}
+
+/**
+ * XI-15: change one dimension of a key, and only where this world keys on it. A world that does
+ * not stratify on where a cell banks does not acquire the dimension because a cell moved bank.
+ */
+function rekey(registry: Registry, key: CellKey, dim: CellKeyDimension, value: string): CellKey {
+  if (!registry.cellKey.includes(dim)) return key;
+  return { ...key, [dim]: value };
 }
 
 interface PartyBase {
@@ -86,23 +163,23 @@ export class Parties {
     this.registry.region(p.region);
     if (p.representation === 'cell') {
       positiveCount(p.weight, `weight of ${p.id}`);
-      forbid(
-        p.key.bank === p.bank,
-        'XI-15',
-        `cell ${p.id} banks at ${p.bank} but its key says ${p.key.bank}`,
-      );
-      forbid(
-        p.key.region === p.region,
-        'XI-15',
-        `cell ${p.id} is in ${p.region} but its key says ${p.key.region}`,
-      );
-      this.registry.cohort(p.key.cohort);
+      const faults = cellKeyFaults(this.registry, p);
+      forbid(faults.length === 0, 'XI-15', faults.join('; '), { id: p.id });
     }
     this.map.set(p.id, Object.freeze({ ...p }));
   }
 
   has(id: PartyId): boolean {
     return this.map.has(id);
+  }
+
+  /**
+   * XI-15: two cells have the same key when every dimension THIS WORLD declares agrees. Read off
+   * the declared list, because a world that keys on a fourth dimension and merged on three would
+   * merge two populations that differ on the thing it stratified them by.
+   */
+  sameKey(a: CellParty, b: CellParty): boolean {
+    return this.registry.cellKey.every((dim) => a.key[dim] === b.key[dim]);
   }
 
   get(id: PartyId): Party {
@@ -196,7 +273,7 @@ export class Parties {
       id,
       Object.freeze(
         p.representation === 'cell'
-          ? { ...p, bank: to, key: { ...p.key, bank: to } }
+          ? { ...p, bank: to, key: rekey(this.registry, p.key, 'bank', to) }
           : { ...p, bank: to },
       ),
     );

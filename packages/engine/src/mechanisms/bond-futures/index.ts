@@ -115,8 +115,8 @@ export const bondFutureKind: DerivativeKindProfile = {
     const move = reads.measuredMove(c.terms.deliverable, c.terms.window);
     if (!move.some) return none();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
-    const horizon = reads.params.get(
-      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['get']>[0],
+    const horizon = reads.params.periods(
+      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
       mul(
@@ -177,6 +177,7 @@ function params(): ParamDecl[] {
       id: BOND_FUTURE_PARAMS.size,
       value: 100_000,
       unit: 'of face per contract',
+      dimension: 'price',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'Sovereign I1: how much face one contract delivers. A convention of the exchange, stated with the contract, and what makes a quoted price per unit of face into a size somebody can trade.',
@@ -185,6 +186,7 @@ function params(): ParamDecl[] {
       id: BOND_FUTURE_PARAMS.life,
       value: 13,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'Sovereign I1: how long a contract runs to its delivery date. A convention of the exchange.',
@@ -193,6 +195,7 @@ function params(): ParamDecl[] {
       id: BOND_FUTURE_PARAMS.window,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'resolution',
       owner: 'model',
       why: "Derivative Layer D1: how much of the deliverable's own record the initial margin is measured over. A resolution: the answer must not turn on it.",
@@ -201,6 +204,7 @@ function params(): ParamDecl[] {
       id: BOND_FUTURE_PARAMS.tolerance,
       value: 0.2,
       unit: 'of its own capital',
+      dimension: 'ratio',
       kind: 'preference',
       owner: 'model',
       why: 'Sovereign I3.a: how far a trader lets a position go against it before it closes it. A PREFERENCE — what this party will stand — and it is what makes the basis trade a real position that can be cut rather than one that is carried whatever happens.',
@@ -305,7 +309,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * against it past what it will stand is closed — its own equity, its own tolerance, and nothing
    * anywhere makes it whole.
    */
-  const tolerance = view.params.get(BOND_FUTURE_PARAMS.tolerance);
+  const tolerance = view.params.ratio(BOND_FUTURE_PARAMS.tolerance);
   if (position !== 0 && own > 0 && worth < 0 && -worth > mul(own, tolerance, 'what it will stand')) {
     const qty = view.registry.deliverable(unit, position > 0 ? position : -position);
     if (qty <= 0) return [];
@@ -342,9 +346,9 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
 /** I1: a book on each benchmark line this world prints, cleared where there is a house. */
 function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId, issuer: PartyId): void {
   const open = new Set(ctx.markets.map((m) => String(m.id)));
-  const window = ctx.params.get(BOND_FUTURE_PARAMS.window);
-  const life = ctx.params.get(BOND_FUTURE_PARAMS.life);
-  const contractSize = ctx.params.get(BOND_FUTURE_PARAMS.size);
+  const window = ctx.params.periods(BOND_FUTURE_PARAMS.window);
+  const life = ctx.params.periods(BOND_FUTURE_PARAMS.life);
+  const contractSize = ctx.params.price(BOND_FUTURE_PARAMS.size);
   for (const market of ctx.markets) {
     if (market.contract !== undefined || market.fx !== undefined) continue;
     if (!ctx.instruments.has(market.instrument)) continue;

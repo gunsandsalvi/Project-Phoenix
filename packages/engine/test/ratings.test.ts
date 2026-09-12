@@ -70,7 +70,7 @@ describe('the assessors of a world (Ratings A1, A5, D5)', () => {
       expect(a.representation).toBe('named');
       // A5: it banks somewhere, because it is paid and it pays.
       expect(w.parties.has(a.bank)).toBe(true);
-      boundaries.add(w.params.get(`rating.firstBoundary.${a.id}` as never));
+      boundaries.add(w.params.ratio(`rating.firstBoundary.${a.id}` as never));
     }
     // D5, XI-13: three opinions and not one — and they are actually different opinions.
     expect(boundaries.size).toBeGreaterThan(1);
@@ -107,7 +107,7 @@ describe('the assessors of a world (Ratings A1, A5, D5)', () => {
       if (typeof assessor !== 'string') continue;
       // A3: it waited its own patience. A world of assessors that all moved at once would have
       // every mandated holder acting on one event (C1.a), and that is what the spread prevents.
-      expect(w.params.get(`rating.patience.${assessor}` as never)).toBeGreaterThanOrEqual(1);
+      expect(w.params.periods(`rating.patience.${assessor}` as never)).toBeGreaterThanOrEqual(1);
       expect(e.period).toBeGreaterThan(0);
     }
   });

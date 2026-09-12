@@ -121,7 +121,7 @@ describe('the base is a resolution (Indices A4, Law 2)', () => {
     expect(hundred).toBeDefined();
     // A4: the declared base is what the world's own rule was built with; doubling it doubles the
     // level and leaves every ratio between two levels exactly where it was.
-    expect(w.params.get('index.base' as never)).toBe(100);
+    expect(w.params.price('index.base' as never)).toBe(100);
   });
 });
 

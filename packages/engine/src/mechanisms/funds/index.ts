@@ -207,6 +207,7 @@ function etfParamsOf(etfs: readonly EtfDecl[]): ParamDecl[] {
     id: fundParam(e.fund, 'fee'),
     value: e.fee,
     unit: 'per annum on net assets',
+    dimension: 'perAnnum' as const,
     kind: 'placeholder' as const,
     owner: 'model' as const,
     why: `Fund Shares B3, F3: what ${e.managerName} charges for running ${e.name}. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be.`,
@@ -221,6 +222,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
       value: 900,
       denominated: true,
       unit: 'of the money the account is in, per move',
+      dimension: 'amount',
       kind: 'preference',
       owner: 'model',
       why: 'Banks Funding A1.c, A1.d, E1: what it costs a fund to move its account, ONCE, as an amount of its own money. It is the largest of the three because a fund moves the most money at once and has the most to redirect — and it holds it back the least, because the balance it is weighed against is larger still. That is what "rate-sensitive" IS when the test is an amount against an amount: what a quarter point has already cost this depositor passes the cost in a week, where a household waits a year and never gets there.',
@@ -229,6 +231,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
       id: FUND_PARAMS.openingShare,
       value: MONEY_PIECES,
       unit: 'pieces of money per share at the first subscription (one USD)',
+      dimension: 'price',
       kind: 'resolution',
       owner: 'model',
       why: 'Fund Shares B1: a fund with no shares has nothing to divide by, so the first subscription fixes the unit its shares are counted in. Double it and every share count halves and no value, flow or decision moves — which is what makes it a resolution and not a price (Law 2).',
@@ -238,6 +241,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
         id: fundParam(f.fund, 'buffer'),
         value: f.buffer,
         unit: 'share of net assets held as cash',
+        dimension: 'ratio',
         kind: 'preference',
         owner: 'model',
         why: `Fund Shares C2.a: how much of ${f.fund} sits in cash so an ordinary redemption needs no sale. It is the whole of the difference between a redemption that is invisible and one that reaches a market, and a fund that held none would sell on every request.`,
@@ -246,6 +250,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
         id: fundParam(f.fund, 'fee'),
         value: f.fee,
         unit: 'per annum on net assets',
+        dimension: 'perAnnum',
         kind: 'placeholder',
         owner: 'model',
         why: `Fund Shares B3, F3: what ${f.managerName} charges. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be.`,
@@ -255,6 +260,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
         id: fundParam(f.fund, 'requiredYield'),
         value: f.requiredYield,
         unit: 'per annum over what a deposit returns',
+        dimension: 'perAnnum',
         kind: 'preference',
         owner: 'model',
         why: `Fund Shares D2, D2.a: what ${f.fund}'s investors require of it over a deposit, and therefore what it will pay for paper. A deposit returns nothing until a bank decides to pay for one (Banks Funding B1, worklist 11), and this becomes a comparison rather than a level the period one does.`,
@@ -263,6 +269,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
         id: fundParam(f.fund, 'maxTenorPeriods'),
         value: f.maxTenorPeriods,
         unit: 'periods',
+        dimension: 'periods',
         kind: 'policy',
         owner: 'model',
         why: `Fund Shares A4, D1: the longest anything ${f.fund} holds may still have to run. A mandate is a rule somebody wrote in a prospectus, and it is a real constraint on what the fund buys rather than a label on it.`,
@@ -288,7 +295,7 @@ function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): num
     mul(
       mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
       mul(
-        ctx.params.get(fundParam(fund, 'fee')),
+        ctx.params.perAnnum(fundParam(fund, 'fee')),
         yearFraction(
           FEE_DAY_COUNT,
           ctx.calendar.startOf(ctx.period),
@@ -488,7 +495,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   // through its estate like anybody else's (Firm Birth D5).
   if (!ctx.parties.get(d.fund as PartyId).status.alive) return;
   const share = ctx.instruments.get(shareLineOf(d.fund));
-  const opening = ctx.params.get(FUND_PARAMS.openingShare);
+  const opening = ctx.params.price(FUND_PARAMS.openingShare);
   const ccy = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region).ccy;
   const previous = b.previous[d.fund];
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
@@ -565,7 +572,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   // rather than by a rounding somewhere further down.
   const buffer = upTick(
     mul(
-      ctx.params.get(fundParam(d.fund, 'buffer')),
+      ctx.params.ratio(fundParam(d.fund, 'buffer')),
       mul(perShare, share.issued, 'net assets'),
       'the cash it keeps back',
     ),
@@ -613,8 +620,8 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
  */
 function offeredYield(ctx: MechanismContext, d: FundDecl): number {
   const region = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region);
-  const fee = ctx.params.get(fundParam(d.fund, 'fee'));
-  const tenor = ctx.params.get(fundParam(d.fund, 'maxTenorPeriods'));
+  const fee = ctx.params.perAnnum(fundParam(d.fund, 'fee'));
+  const tenor = ctx.params.periods(fundParam(d.fund, 'maxTenorPeriods'));
   const on = ctx.calendar.startOf(ctx.period);
   const by = ctx.calendar.startOf(periodOf(ctx.period + tenor));
   let best = 0;
@@ -886,7 +893,7 @@ function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
   const ccy = ctx.registry.region(fund.region).ccy;
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
-  const buffer = mul(cash, ctx.params.get(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
+  const buffer = mul(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
   const spare = ctx.registry.payable(ccy, sub(cash, buffer, 'what it can place'));
   if (spare <= 0) return;
   const floor = floorRate(ctx);
@@ -1065,7 +1072,7 @@ function ordersOf(
   const family = view.registry.curveFamily(curveFamilyOf(issuerOf(i), i.ccy));
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
   if (flows.length === 0) return [];
-  const required = view.params.get(fundParam(d.fund, 'requiredYield'));
+  const required = view.params.perAnnum(fundParam(d.fund, 'requiredYield'));
   const price = priceAt(flows, required, on, family.dayCount, `what ${i.id} is worth to ${d.fund}`);
   if (price <= 0) return [];
   const lines = eligibleLines(view, d);
@@ -1098,7 +1105,7 @@ function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
   const last = flows[flows.length - 1];
   if (last === undefined) return false;
   const by = view.calendar.startOf(
-    periodOf(view.period + view.params.get(fundParam(d.fund, 'maxTenorPeriods'))),
+    periodOf(view.period + view.params.periods(fundParam(d.fund, 'maxTenorPeriods'))),
   );
   return compareCivil(last.date, by) <= 0;
 }

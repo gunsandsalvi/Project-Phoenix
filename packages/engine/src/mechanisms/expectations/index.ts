@@ -54,8 +54,8 @@ function book(ctx: MechanismContext): Book {
 
 /** B1.a: a party's memory, drawn once when it is first seen and kept from then on. */
 function memoryOf(ctx: MechanismContext, party: PartyId): number {
-  const mean = ctx.params.get(EXPECTATION_PARAMS.memoryMean);
-  const spread = ctx.params.get(EXPECTATION_PARAMS.memoryDispersion);
+  const mean = ctx.params.periods(EXPECTATION_PARAMS.memoryMean);
+  const spread = ctx.params.ratio(EXPECTATION_PARAMS.memoryDispersion);
   const draw = ctx.rng.derive(`memory/${party}`).next();
   const drawn = add(mean, mul(mean, mul(spread, sub(mul(2, draw, 'draw'), 1, 'centred'), 'width'), 'spread'), 'memory');
   // A memory shorter than one period is not a memory: it would be this period's observation itself.
@@ -200,6 +200,7 @@ export const expectations: SystemModule = {
       id: EXPECTATION_PARAMS.memoryMean,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Expectations B1.a: the one preference this system admits — how many of its own periods a party weighs when it corrects its outlook towards what happened. Everything else here is a read.',
@@ -208,6 +209,7 @@ export const expectations: SystemModule = {
       id: EXPECTATION_PARAMS.memoryDispersion,
       value: 0.5,
       unit: 'ratio of the mean',
+      dimension: 'ratio',
       kind: 'shape',
       owner: 'model',
       why: 'B1.a, A3: memories are dispersed across parties, or a sector whose members all remembered the same way would move as one and the heterogeneity that gives a market two sides would be gone. How wide that dispersion is, is a claim about the answer until something produces it.',

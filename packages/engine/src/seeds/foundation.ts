@@ -51,7 +51,7 @@ import { Missing } from '../core/errors.js';
 import type { DayCount } from '../calendar/daycount.js';
 import { priceAt } from '../prices/curve.js';
 import { forbid } from '../core/assert.js';
-import { weightOf } from '../parties/party.js';
+import { keyOf, weightOf } from '../parties/party.js';
 import { add, div, mul, positiveCount, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
@@ -453,6 +453,7 @@ function openingPrices(): ParamDecl[] {
     id: openingPrice(row.subUnit),
     value: row.opensAt,
     unit: `USD per unit of ${row.subUnit}`,
+    dimension: 'price',
     kind: 'shape' as const,
     owner: 'model' as const,
     why: `Seed C4: ${row.why} It is the first clearing's input and not a permanent mark: the session in period one prints a price nobody stated and nothing reads this number again.`,
@@ -494,6 +495,7 @@ export function foundationSeedFor(
         id: P.cbOpeningShare,
         value: 0.2,
         unit: 'ratio of a line outstanding',
+        dimension: 'ratio',
         kind: 'policy',
         owner: 'centralBank',
         why: 'Central Bank C1, C1.a: WHAT THE CENTRAL BANK OPENS HOLDING OF EVERY SOVEREIGN LINE, and therefore how big its balance sheet is — every reserve it has issued was issued to buy this paper (A2). C1.a says it plainly: the size is set by POLICY, and that is what this is. It is stated BELOW the open-market target so the central bank opens short of what its policy wants and its first session has something to do: a seed that opened it at its target would be seeding the outcome of the mechanism it is about to run (Seed E1). It was declared a PLACEHOLDER standing for a derivation from the liquidity standard the banks are held to, and item 11.5 measured that and found there is none to make: `liquid ≥ couldLeave` reduces to `paperShare × haircut \u2264 a bank own capital line`, which at a haircut of 0.05 and lines of 0.038 to 0.068 is slack from a paper share of 0 to one of about 0.77 — an inequality over most of the range, not an equation with one root. What actually put banks below the standard was not the mix at all but the equity float sitting on the desks that made its market, which raises nothing at the window; with the float where its holders are, every bank in every seed opens at 1.04 to 1.08 at two banks and at twenty.',
@@ -502,6 +504,7 @@ export function foundationSeedFor(
         id: P.treasuryBufferShare,
         value: 0.4,
         unit: "ratio of the central bank's balance sheet",
+        dimension: 'ratio',
         kind: 'shape',
         owner: 'model',
         why: "Treasury D4.b, Seed E2: how much of the central bank's money the treasury opens holding, with the banks holding the rest as reserves. It is a share and not an amount because the amount is not free: every unit of central-bank money was issued to buy the paper above, so what is stated is how it is divided and never how much of it there is. The mechanism that replaces it is the treasury's own funding programme, which decides its balance from period one.",
@@ -510,6 +513,7 @@ export function foundationSeedFor(
         id: P.cellsPerKey,
         value: 2,
         unit: 'count',
+        dimension: 'count',
         kind: 'resolution',
         owner: 'model',
         why: 'XI-15: how many cells stand for each (region, cohort, bank) population; change it and the answer must not move.',
@@ -518,6 +522,7 @@ export function foundationSeedFor(
         id: P.membersPerCohort,
         value: 15_000_000,
         unit: 'count',
+        dimension: 'count',
         kind: 'placeholder',
         owner: 'model',
         standsInFor: { mechanism: 'Households A5', worklistItem: '13f' },
@@ -527,6 +532,7 @@ export function foundationSeedFor(
         id: P.debtPeriods,
         value: 21,
         unit: "periods of the economy's own output",
+        dimension: 'periods',
         kind: 'shape',
         owner: 'model',
         why: "Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER IS OUTSTANDING, as periods of what this world TURNS OVER. A stock against a flow, which is the ratio a sovereign's debt is actually spoken of in. It is not per head: a treasury that has borrowed is a treasury that spent, and what it spent it on is an economy rather than a queue of people, so a world whose people can make forty times as much has forty times the debt and the same ratio — stated per head it did not scale with the real economy at all, and the banks could not carry their own depositors' accounts. TWENTY-ONE AND NOT FIFTY-TWO, because turnover is not output: this walk values every stage of the chain, so a tonne of bread is counted again as the flour and again as the grain, and gross turnover comes to something over twice what the world actually makes. A debt of a year of output is therefore a third of a year of turnover, which is what this is. From period one the treasury's own funding programme decides its stock and nothing reads this again (Treasury D4).",
@@ -535,6 +541,7 @@ export function foundationSeedFor(
         id: P.householdDebtShare,
         value: 1 / 3,
         unit: 'share of the debt outstanding',
+        dimension: 'ratio',
         kind: 'shape',
         owner: 'model',
         why: 'Sovereign E2.f, Seed E2: the part of the sovereign debt households hold DIRECTLY, with the banking system holding the rest. Two holders and two reasons: a bank holds it because its own liquidity rule asks for a liquid asset, a household because it is saving, and a line held by only one of them has one side to its market. What replaces it is who actually bids in the auctions and the secondary sessions, which happens from period one.',
@@ -543,6 +550,7 @@ export function foundationSeedFor(
         id: P.firmCashPeriods,
         value: 3,
         unit: 'periods of turnover',
+        dimension: 'periods',
         kind: 'shape',
         owner: 'model',
         why: 'Seed C1, D1: how many periods of its own turnover a firm opens holding as money. It pays its wage bill and buys its inputs before it is paid for what it sells, so a firm that opens with nothing fails in its first period on a timing gap and not on its economics — which is a statement about the seed and not about the firm (Firm D1). Three periods, because the chain is three deep and the money has to get from the end of it back to the start. From period one what a firm holds is what it was paid less what it spent, and nothing reads this again.',
@@ -551,6 +559,7 @@ export function foundationSeedFor(
         id: P.plantHeadroom,
         value: 1.5,
         unit: 'multiple of what the line currently starts',
+        dimension: 'ratio',
         kind: 'shape',
         owner: 'model',
         why: 'Capital Programme A2, Seed D1: how much plant a firm opens with over what its current output needs. A going concern is not running at its ceiling — a firm with no headroom cannot answer a good week at all, and a world of them would show a supply response of exactly zero from the first period. From period one investment decides the stock and nothing reads this again (Capital Programme B1).',
@@ -559,6 +568,7 @@ export function foundationSeedFor(
         id: P.openingRate,
         value: 1,
         unit: 'units of the quote money per unit of the base',
+        dimension: 'price',
         kind: 'shape',
         owner: 'model',
         why: "Spot FX C1, Seed C4: what one unit of one money costs in another, before any pair has ever traded. A market that has never traded has no price (XI-6) and a world that opens with holdings in four moneys has to say what they are worth in each other, so ONE level is claimed and each pair's own first session replaces it. One, and the same one for every pair, because a level of one asserts less than any other number would: it says the moneys are all the same size, which is what a world with nothing to distinguish them yet has no reason to deny — and it opens the three crosses consistent with the three dollar rates, so the triangle starts with no gap in it rather than with one somebody put there. What it opens at is not what it stays at: America's banks earn euros, sterling and yen they have no use for and the foreign reserve managers earn dollars they have none for, and where those meet is the rate from period one.",
@@ -567,6 +577,7 @@ export function foundationSeedFor(
         id: P.crossHoldingShare,
         value: 0.08,
         unit: "share of a holder's paper that is another country's",
+        dimension: 'ratio',
         kind: 'placeholder',
         owner: 'model',
         why: "Currency D2, Central Bank F4: how much of every central bank's reserves is another country's paper, split evenly between the countries that issue it. A central bank holds it because that is what reserves ARE (F4), and it is the only holder for whom foreign paper is what it is for — what a COMMERCIAL bank holds abroad is a position it takes with its own capital, which is 13h's decision and not the seed's. Eight per cent, small enough that this is a reserve holding rather than a currency fund and large enough that a week of exchange rates is visible in what a central bank is worth. Evenly, because the seed has nothing to say about which foreign government a reserve manager prefers. It is a PLACEHOLDER: what replaces it is the portfolio decision at 13h, after which what anybody holds abroad is an outcome of what it bought and sold.",
@@ -580,6 +591,7 @@ export function foundationSeedFor(
         id: P.openingYield,
         value: 0.02,
         unit: 'per annum',
+        dimension: 'perAnnum',
         kind: 'shape',
         owner: 'model',
         // It was declared a placeholder dying at this item, on the reasoning that once households
@@ -695,8 +707,8 @@ export function foundationSeedFor(
       // neither may change how many people there are. Stating it per (cohort, bank) key meant a world
       // with a fourth bank had a third more people in it, which is the count of banks answering a
       // question about the population.
-      const cells = positiveCount(ctx.params.get(P.cellsPerKey), 'cellsPerKey');
-      const members = positiveCount(ctx.params.get(P.membersPerCohort), 'membersPerCohort');
+      const cells = positiveCount(ctx.params.count(P.cellsPerKey), 'cellsPerKey');
+      const members = positiveCount(ctx.params.count(P.membersPerCohort), 'membersPerCohort');
       for (const cohort of ctx.registry.cohorts) {
         // Seed B4: and they are spread across the banks IN PROPORTION TO SIZE, so a bigger bank has
         // more depositors — which is what makes it bigger. Split exactly: a weight is a count of
@@ -790,12 +802,12 @@ export function foundationSeedFor(
       // ask what one unit of the final good costs in hours ALL THE WAY DOWN — including the machines
       // that wear out making it — and the answer divides the hours there are.
       // ------------------------------------------------------------------------------------------
-      const retirementAge = ctx.params.get(P.retirementAge);
+      const retirementAge = ctx.params.years(P.retirementAge);
       const perWeek = ctx.params.amount(P.hoursPerMember, HOURS);
       let hoursOffered = 0;
       for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
         if (cell.representation !== 'cell') continue;
-        if (ctx.registry.cohort(cell.key.cohort).fromAge >= retirementAge) continue;
+        if (ctx.registry.cohort(cohortId(keyOf(cell, 'cohort'))).fromAge >= retirementAge) continue;
         hoursOffered = add(
           hoursOffered,
           mul(weightOf(cell), perWeek, 'what it offers'),
@@ -829,7 +841,7 @@ export function foundationSeedFor(
         settled = new Set([...settled, next]);
       }
       // Capital Programme A2: the plant those lines run on, with the headroom a going concern has.
-      const headroom = ctx.params.get(P.plantHeadroom);
+      const headroom = ctx.params.ratio(P.plantHeadroom);
       const plantOf = (subUnit: string, kind: string): number => {
         const need = recipeOf(subUnit).plant.find((q) => q.capitalKind === kind);
         if (need === undefined) return 0;
@@ -889,7 +901,7 @@ export function foundationSeedFor(
       /** What this firm starts in a period. Everything it opens holding is a period of this. */
       const startsOf = (f: FirmDecl): number =>
         mul(zeroIfNone(started.get(f.subUnit)), shareOf(f), 'its own');
-      const cashPeriods = ctx.params.get(P.firmCashPeriods);
+      const cashPeriods = ctx.params.periods(P.firmCashPeriods);
       /**
        * Seed C1: the money it opens with, as periods of its own turnover at what the good opens at.
        * It pays its wage bill and buys its inputs before it is paid for what it sells, so a firm that
@@ -899,7 +911,7 @@ export function foundationSeedFor(
         mul(
           mul(
             mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what arrives'),
-            ctx.params.get(openingPrice(f.subUnit)),
+            ctx.params.price(openingPrice(f.subUnit)),
             'what it turns over',
           ),
           cashPeriods,
@@ -909,7 +921,7 @@ export function foundationSeedFor(
       // The maturity profile, outstanding with remaining lives (Seed C3, Treasury D4.a). Every bond
       // carries the coupon that makes it par at the opening yield, so nothing but a level is claimed,
       // and how much of it there is, is the population it is owed by (Law 2: one number, not a table).
-      const y = ctx.params.get(P.openingYield);
+      const y = ctx.params.perAnnum(P.openingYield);
       const opening = new Map<string, number>();
       // Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER THERE IS, as a stock of the economy it is
       // owed by rather than of the heads in it. A treasury that has borrowed is a treasury that
@@ -922,7 +934,7 @@ export function foundationSeedFor(
         [...sizeOfLine.keys()].map((g) =>
           mul(
             mul(zeroIfNone(started.get(g)), recipeOf(g).yieldRate, `what ${g} makes in a period`),
-            ctx.params.get(openingPrice(g)),
+            ctx.params.price(openingPrice(g)),
             'what that fetches',
           ),
         ),
@@ -931,11 +943,11 @@ export function foundationSeedFor(
         ctx.calendar.epoch,
         householdMembers,
         div(
-          mul(turnover, ctx.params.get(P.debtPeriods), 'the debt outstanding'),
+          mul(turnover, ctx.params.periods(P.debtPeriods), 'the debt outstanding'),
           householdMembers,
           'per member',
         ),
-        ctx.params.get(P.householdDebtShare),
+        ctx.params.ratio(P.householdDebtShare),
       );
       for (const line of seedLineRows) {
         const id = instrumentId(line.id);
@@ -1057,7 +1069,7 @@ export function foundationSeedFor(
           period: ctx.period,
           // Law 8: a rate is a price and opens on its pair's own grid — its pip.
           price: toTickOf(
-            ctx.params.get(P.openingRate),
+            ctx.params.price(P.openingRate),
             ctx.registry.rateTickFor(base, quote),
           ),
           ccy: quote,
@@ -1103,7 +1115,7 @@ export function foundationSeedFor(
         // Its holding is therefore not a number in this table either: it is that share of what the
         // line comes to outstanding once everybody else holds theirs, `others × share / (1 − share)`.
         const others = line.banks + line.perMember * householdMembers;
-        const share = ctx.params.get(P.cbOpeningShare);
+        const share = ctx.params.ratio(P.cbOpeningShare);
         const cbUnits = div(mul(others, share, 'the share it targets'), 1 - share, 'its holding');
         const cbDrawn = held(ctx, id, cbUnits);
         if (cbDrawn > 0) {
@@ -1118,7 +1130,7 @@ export function foundationSeedFor(
         }
       }
 
-      const crossShare = ctx.params.get(P.crossHoldingShare);
+      const crossShare = ctx.params.ratio(P.crossHoldingShare);
       const abroadShare = div(
         crossShare,
         ABROAD.length,
@@ -1166,7 +1178,7 @@ export function foundationSeedFor(
       // ITS SHARE of that balance sheet. The banks hold the rest as reserves.
       const buffer = mul(
         centralBankAssets,
-        ctx.params.get(P.treasuryBufferShare),
+        ctx.params.ratio(P.treasuryBufferShare),
         "the treasury's buffer",
       );
       ctx.endowMoney(TREASURY_US, USD, cash(ctx, buffer));
@@ -1199,7 +1211,7 @@ export function foundationSeedFor(
       const lineOfBank = new Map<PartyId, number>(
         bankRows.map((r) => [
           partyId(r.bank),
-          add(ctx.params.get(P.leverageRatio), r.capitalBuffer, 'the line this bank runs to'),
+          add(ctx.params.ratio(P.leverageRatio), r.capitalBuffer, 'the line this bank runs to'),
         ]),
       );
       const over = (b: { id: PartyId }): number => {
@@ -1355,7 +1367,7 @@ export function foundationSeedFor(
           price: priced(
             ctx,
             goodId(row.subUnit, REGION),
-            ctx.params.get(openingPrice(row.subUnit)),
+            ctx.params.price(openingPrice(row.subUnit)),
           ),
           ccy: USD,
           provenance: { kind: 'opening' },
@@ -1366,7 +1378,7 @@ export function foundationSeedFor(
         // for it to hold: the seed endows what exists and never brings an instrument into being to
         // have something to endow (Seed A1). `madeHere` is exactly those that do.
         const firm = partyId(row.firm);
-        const price = ctx.params.get(openingPrice(row.subUnit));
+        const price = ctx.params.price(openingPrice(row.subUnit));
         const starts = startsOf(row);
         // Seed D1: ONE PERIOD of what it makes, finished and ready to sell; what a batch still in
         // flight comes to, which is a period of starts for every period its recipe keeps it (B3); and
@@ -1397,7 +1409,7 @@ export function foundationSeedFor(
         for (const input of recipeOf(row.subUnit).inputs) {
           if (!ctx.instruments.has(goodId(input.subUnit, REGION))) continue;
           const line = goodId(input.subUnit, REGION);
-          const paid = ctx.params.get(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
+          const paid = ctx.params.price(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
           const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
           if (drawn <= 0) continue;
           ctx.endowUnits(firm, line, held(ctx, line, drawn), priced(ctx, line, paid));
@@ -1416,8 +1428,8 @@ export function foundationSeedFor(
           // fraction of one, and what the firm HOLDS is the machines that fraction reaches.
           const mine = downTick(mul(plantOf(row.subUnit, kind.id), shareOf(row), 'its own plant'));
           if (mine <= 0) continue;
-          const newPrice = ctx.params.get(openingPrice(kind.madeFrom));
-          const life = ctx.params.get(paramId(`plant.usefulLife.${kind.id}`));
+          const newPrice = ctx.params.price(openingPrice(kind.madeFrom));
+          const life = ctx.params.periods(paramId(`plant.usefulLife.${kind.id}`));
           // Law 8: whole machines, and the odd one has a named vintage rather than being lost to a
           // division that does not come out (core/tick.ts).
           const perVintage = splitOnTick(
@@ -1485,7 +1497,7 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
     participants: [],
     families: [],
     seed(ctx: SeedContext): void {
-      const minimum = ctx.params.get(P.leverageRatio);
+      const minimum = ctx.params.ratio(P.leverageRatio);
       for (const row of bankRows) {
         const bank = partyId(row.bank);
         if (!ctx.parties.has(bank)) continue;
@@ -1727,6 +1739,7 @@ export function foundationSpec(
         id: KERNEL_PARAMS.periodDays,
         value: 7,
         unit: 'days',
+        dimension: 'days',
         kind: 'resolution',
         owner: 'model',
         why: 'A period is a week (docs/ARCHITECTURE.md 4.7); coarser cannot place a weekly cycle, finer buys nothing yet.',
@@ -1735,6 +1748,7 @@ export function foundationSpec(
         id: KERNEL_PARAMS.cyclesPerPeriod,
         value: 5,
         unit: 'cycles',
+        dimension: 'periods',
         kind: 'resolution',
         owner: 'model',
         why: 'Money G1: a period holds more than one settlement cycle; five stands for business days.',
@@ -1743,6 +1757,7 @@ export function foundationSpec(
         id: KERNEL_PARAMS.worstInstances,
         value: 5,
         unit: 'count',
+        dimension: 'count',
         kind: 'resolution',
         owner: 'model',
         why: 'Audit D2: how many worst instances a family reports; a reporting depth, not a behaviour.',
@@ -1751,6 +1766,7 @@ export function foundationSpec(
         id: KERNEL_PARAMS.pieceShift,
         value: 1,
         unit: "multiple of every unit's declared subdivision",
+        dimension: 'count',
         kind: 'resolution',
         owner: 'model',
         why: 'Law 8, Law 2: how many times finer than declared every unit is divided — 10 makes the piece a tenth of a cent, a tenth of a gram and a tenth of a share. Each unit states its own subdivision; this moves them all together, which is what makes the subdivision a RESOLUTION that can be TESTED: declare the same world in finer pieces and every structural invariant must hold exactly and the path must not move.',
@@ -1759,6 +1775,7 @@ export function foundationSpec(
         id: KERNEL_PARAMS.tickShift,
         value: 1,
         unit: "divisor of every kind's declared price tick",
+        dimension: 'count',
         kind: 'technology',
         owner: 'model',
         why: "Law 8, Law 2: how many times finer than declared every QUOTED PRICE moves — 10 makes the tick a tenth of a cent a share, a tenth of a basis point of a bond's face and a tenth of a pip. Each kind states its own increment (registry/grid.ts) and this moves them all together. It is a TECHNOLOGY and not a resolution, which is what measuring it said: a coarser tick pulls every bid down and every ask up until books that used to cross no longer do, so it changes what trades and this world's money stock moves three per cent between one grid and another without converging. That is what a tick does in a real venue. What running the world at a finer one tests is that every STRUCTURAL invariant holds exactly, never that the path is unchanged.",

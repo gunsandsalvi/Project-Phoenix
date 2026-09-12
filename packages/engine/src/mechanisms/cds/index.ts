@@ -47,6 +47,7 @@ function params(): ParamDecl[] {
       id: CDS_PARAMS.tenors,
       value: 5,
       unit: 'years',
+      dimension: 'years',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'CDS A1.d: the longest tenor this world writes protection to. The term structure is the set of books from one year out to this one, and how many points it has is a fact about the market rather than about anybody in it.',
@@ -55,6 +56,7 @@ function params(): ParamDecl[] {
       id: CDS_PARAMS.window,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'resolution',
       owner: 'model',
       why: "Derivative Layer D1: how much of a book's own record the initial margin is measured over. It is a resolution — the answer must not turn on it — and the invariance test is that a longer window changes the margin and not who can trade.",
@@ -63,6 +65,7 @@ function params(): ParamDecl[] {
       id: CDS_PARAMS.roll,
       value: 26,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'CDS A5: how often a new series is published. The names are fixed when it is — that is what a series IS — so this is how long a line runs before the next one starts, which is a convention of the market and not anybody’s choice within it.',
@@ -71,6 +74,7 @@ function params(): ParamDecl[] {
       id: CDS_PARAMS.riskWeightSold,
       value: 1,
       unit: 'of the notional sold',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'parliament',
       why: 'CDS B3: what protection SOLD weighs in a bank’s capital. A naked seller carries the reference’s whole credit without funding a bond, so what it consumes is stated by the regulator like every other weight (Banks Capital B1).',
@@ -80,7 +84,7 @@ function params(): ParamDecl[] {
 
 /** A1.d: the tenors this world's curve has points at — one year out to the longest it writes. */
 export function cdsTenorsOf(ctx: Pick<MechanismContext, 'params'>): readonly number[] {
-  const longest = ctx.params.get(CDS_PARAMS.tenors);
+  const longest = ctx.params.years(CDS_PARAMS.tenors);
   const out: number[] = [];
   for (let y = 1; y <= longest; y += 2) out.push(y);
   return out;
@@ -95,7 +99,7 @@ export function cdsTenorsOf(ctx: Pick<MechanismContext, 'params'>): readonly num
  */
 function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId): void {
   const open = new Set(ctx.markets.map((m) => String(m.id)));
-  const window = ctx.params.get(CDS_PARAMS.window);
+  const window = ctx.params.periods(CDS_PARAMS.window);
   const tenors = cdsTenorsOf(ctx);
   // Law 19, Law 18: ONE PASS OVER WHAT EXISTS. Asking every party what it owes means asking the
   // whole register once per party, every period, which is the same answer arrived at N times —
@@ -162,7 +166,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId)
  * and the count is what each name has outstanding of the paper the series is on.
  */
 function rollSeries(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId): void {
-  const every = ctx.params.get(CDS_PARAMS.roll);
+  const every = ctx.params.periods(CDS_PARAMS.roll);
   if (ctx.period === 0 || ctx.period % every !== 0) return;
   const byGrade = new Map<string, SeriesName[]>();
   for (const i of ctx.instruments.all()) {
@@ -184,7 +188,7 @@ function rollSeries(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId
   if (ccy === undefined) return;
   const clearer = house(ccy);
   if (!ctx.parties.has(clearer) || !ctx.parties.get(clearer).status.alive) return;
-  const window = ctx.params.get(CDS_PARAMS.window);
+  const window = ctx.params.periods(CDS_PARAMS.window);
   for (const [grade, names] of byGrade.entries()) {
     if (names.length === 0) continue;
     const series = `${grade}.${ctx.period}`;
@@ -467,5 +471,5 @@ export function curveOf(
 
 /** B3: what protection SOLD consumes, at the weight the regulator set (Banks Capital B1). */
 export function soldWeight(ctx: Pick<MechanismContext, 'params'>): number {
-  return ctx.params.get(CDS_PARAMS.riskWeightSold);
+  return ctx.params.ratio(CDS_PARAMS.riskWeightSold);
 }

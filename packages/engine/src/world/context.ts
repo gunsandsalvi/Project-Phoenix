@@ -55,7 +55,7 @@ export interface KernelReads {
   readonly cycle: Cycle;
   readonly calendar: Calendar;
   readonly registry: Registry;
-  readonly params: Pick<ParamRegister, 'get' | 'amount' | 'decl' | 'report' | 'all'>;
+  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'decl' | 'report' | 'all'>;
   readonly instruments: InstrumentsReads;
   readonly markets: readonly MarketDecl[];
   /** Clearing B2: the venues modules clear themselves; declared and public, like a market. */
@@ -449,7 +449,7 @@ export interface SeedContext {
   readonly period: Period;
   readonly calendar: Calendar;
   readonly registry: Registry;
-  readonly params: Pick<ParamRegister, 'get' | 'amount' | 'decl'>;
+  readonly params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount' | 'decl'>;
   readonly rng: Prng;
   readonly parties: Parties;
   readonly instruments: Instruments;

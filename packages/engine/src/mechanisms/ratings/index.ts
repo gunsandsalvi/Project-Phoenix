@@ -157,7 +157,7 @@ function publishIfMoved(
   held.since = measured.grade === held.pending ? held.since + 1 : 1;
   held.pending = measured.grade;
   // A3: STICKY. The state has to stay across the boundary for this assessor's own patience.
-  if (held.since < ctx.params.get(ratingParam(d.assessor, 'patience'))) return;
+  if (held.since < ctx.params.periods(ratingParam(d.assessor, 'patience'))) return;
   const was = held.published;
   held.published = measured.grade;
   held.since = 0;
@@ -197,7 +197,7 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
   for (const d of rows) {
     const me = partyId(d.assessor);
     if (!ctx.parties.has(me) || !ctx.parties.get(me).status.alive) continue;
-    const rate = ctx.params.get(ratingParam(d.assessor, 'fee'));
+    const rate = ctx.params.ratio(ratingParam(d.assessor, 'fee'));
     // A5: the ISSUER pays, once, for the opinion about it. The opinions about its individual lines
     // are the same opinion moved by each line's own place in the queue (B2.a), so they are not
     // separately sold: charging per line would be charging an issuer more for having more paper,
@@ -255,6 +255,7 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
         // in its own, and a cost stated in dollars would be one only an American assessor could pay.
         denominated: true as const,
         unit: 'of the money the account is in, per move',
+        dimension: 'amount',
         kind: 'preference' as const,
         owner: 'model' as const,
         why: 'Banks Funding A1.d, E1: what it costs an assessor to move the account its fees arrive in and its salaries leave from — the payments to redirect, the issuers to tell. It is the whole of what makes a small operating balance sticky and a large one not, and it is a real cost of a real operation rather than a reluctance anybody stated.',
@@ -306,6 +307,7 @@ function methodologies(rows: readonly AssessorDecl[]): readonly ParamDecl[] {
         id: ratingParam(d.assessor, 'patience'),
         value: d.patience,
         unit: 'periods the state must stay across a boundary',
+        dimension: 'periods',
         kind: 'preference',
         owner: 'model',
         why: `Ratings A3: how long ${d.assessor} waits before it moves a published grade. Its own, drawn from the assessors' spread — assessors that all reacted together would make every downgrade one event that every mandated holder acts on in a single session (C1.a).`,
@@ -314,6 +316,7 @@ function methodologies(rows: readonly AssessorDecl[]): readonly ParamDecl[] {
         id: ratingParam(d.assessor, 'firstBoundary'),
         value: d.firstBoundary,
         unit: 'what falls due against what the issuer is worth',
+        dimension: 'ratio',
         kind: 'shape',
         owner: 'model',
         why: `Ratings A2, B1: where ${d.assessor} puts the line between its best grade and the next. A SHAPE — a claim about where the answer is — and it dies when a grade can be measured against the defaults that followed it (E3, Part XII). The disagreement between the assessors' levels is the second opinion (XI-13).`,
@@ -322,6 +325,7 @@ function methodologies(rows: readonly AssessorDecl[]): readonly ParamDecl[] {
         id: ratingParam(d.assessor, 'boundaryStep'),
         value: d.boundaryStep,
         unit: 'how much wider each band is than the one above it',
+        dimension: 'ratio',
         kind: 'shape',
         owner: 'model',
         why: `Ratings A3, B1: ${d.assessor}'s scale widens geometrically, so it spends its resolution where issuers actually sit rather than putting six of its seven grades inside the first few per cent of strain. A shape, dying with the boundary above it.`,
@@ -330,6 +334,7 @@ function methodologies(rows: readonly AssessorDecl[]): readonly ParamDecl[] {
         id: ratingParam(d.assessor, 'fee'),
         value: d.fee,
         unit: "share of the issuer's worth, per period, per rating",
+        dimension: 'ratio',
         kind: 'policy',
         owner: 'model',
         why: `Ratings A5: what ${d.assessor} charges an issuer for an opinion about it. This is the conflict, priced: the assessor's income comes from the parties it grades and nothing here makes it independent of them. What counters it is that its grades and the defaults that follow them are both public (E3).`,
@@ -352,6 +357,7 @@ function riskWeights(): readonly ParamDecl[] {
       id: RATING_PARAMS.riskWeight('aaa'),
       value: 0.2,
       unit: 'weight on an exposure of this grade',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: why('aaa'),
@@ -360,6 +366,7 @@ function riskWeights(): readonly ParamDecl[] {
       id: RATING_PARAMS.riskWeight('aa'),
       value: 0.2,
       unit: 'weight on an exposure of this grade',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: why('aa'),
@@ -368,6 +375,7 @@ function riskWeights(): readonly ParamDecl[] {
       id: RATING_PARAMS.riskWeight('a'),
       value: 0.5,
       unit: 'weight on an exposure of this grade',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: why('a'),
@@ -376,6 +384,7 @@ function riskWeights(): readonly ParamDecl[] {
       id: RATING_PARAMS.riskWeight('bbb'),
       value: 1,
       unit: 'weight on an exposure of this grade',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: why('bbb'),
@@ -384,6 +393,7 @@ function riskWeights(): readonly ParamDecl[] {
       id: RATING_PARAMS.riskWeight('bb'),
       value: 1.5,
       unit: 'weight on an exposure of this grade',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: why('bb'),
@@ -392,6 +402,7 @@ function riskWeights(): readonly ParamDecl[] {
       id: RATING_PARAMS.riskWeight('b'),
       value: 1.5,
       unit: 'weight on an exposure of this grade',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: why('b'),
@@ -400,6 +411,7 @@ function riskWeights(): readonly ParamDecl[] {
       id: RATING_PARAMS.riskWeight('c'),
       value: 1.5,
       unit: 'weight on an exposure of this grade',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: why('c'),

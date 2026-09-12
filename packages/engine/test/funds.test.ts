@@ -192,7 +192,7 @@ describe('net asset value (Fund Shares B1, B2, B3, B4, D4)', () => {
     const PERIODS = 52;
     const w = greedy(0.015);
     const navs = struckIn(w, PERIODS);
-    const opened = w.params.get('fund.openingSharePrice' as never);
+    const opened = w.params.price('fund.openingSharePrice' as never);
     expect(navs.some((x) => x < opened)).toBe(true);
     // ...and WHAT put it there is the fee, which is the whole of D4: what the manager takes leaves
     // the fund's book, so it is taken from the holders and there is nothing else for it to fall on.

@@ -172,7 +172,7 @@ describe('the series (A5, A5.a, A5.b, Indices A1.a, B1)', () => {
   it('fixes its names at the roll and divides them by the rule everybody was told', () => {
     const w = rigWorld('cds-series');
     // Long enough for at least one roll (the roll is every `cds.index.roll.periods`).
-    const every = w.params.get(CDS_PARAMS.roll);
+    const every = w.params.periods(CDS_PARAMS.roll);
     for (let i = 0; i <= every; i += 1) w.step();
     const rolled = w.journal.ofKind('cds.index.rolled');
     if (rolled.length === 0) return;

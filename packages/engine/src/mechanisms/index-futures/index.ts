@@ -89,8 +89,8 @@ export const indexFutureKind: DerivativeKindProfile = {
     const move = reads.measuredMove(c.terms.book, c.terms.window);
     if (!move.some) return none();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
-    const horizon = reads.params.get(
-      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['get']>[0],
+    const horizon = reads.params.periods(
+      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
       mul(
@@ -111,6 +111,7 @@ function params(): ParamDecl[] {
       id: FUTURE_PARAMS.life,
       value: 13,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'Indices C3: how long a contract runs before it settles against the index read. A convention of the exchange, stated with the contract.',
@@ -119,6 +120,7 @@ function params(): ParamDecl[] {
       id: FUTURE_PARAMS.window,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'resolution',
       owner: 'model',
       why: "Derivative Layer D1: how much of the book's own record the initial margin is measured over. A resolution: the answer must not turn on it.",
@@ -173,8 +175,8 @@ function openBooks(
   lines: readonly IndexLine[],
 ): void {
   const open = new Set(ctx.markets.map((m) => String(m.id)));
-  const window = ctx.params.get(FUTURE_PARAMS.window);
-  const life = ctx.params.get(FUTURE_PARAMS.life);
+  const window = ctx.params.periods(FUTURE_PARAMS.window);
+  const life = ctx.params.periods(FUTURE_PARAMS.life);
   for (const line of lines) {
     // D3.a: an index with no level is one nothing has printed into yet, and a contract on it would
     // settle against nothing. It gets a book the period its constituents first print.

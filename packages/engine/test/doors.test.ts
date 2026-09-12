@@ -18,9 +18,15 @@ import {
   marketId,
   moneyInstrumentId,
   none,
+  Parties,
+  Registry,
+  cellKeyFaults,
   partyId,
   some,
   unitId,
+  type CellKey,
+  type CellKeyDimension,
+  type CellParty,
   type InstrumentKindProfile,
   type Leg,
   type MechanismContext,
@@ -633,5 +639,88 @@ describe('the delivery check is exact, because a quantity is a count of pieces (
     // summed below a tolerance, which is units deleted with no instruction behind them.
     expect(seen.left).toBe(0);
     expect(seen.lots).toBe(0);
+  });
+});
+
+/**
+ * XI-15 says the cell key is registry DATA: "at any time the cell key is what the registry declares
+ * it to be, and lifting a relationship from a row into the key is a data change and a
+ * re-stratification event, never a change to a mechanism." That was false while `CellKey` named
+ * region, cohort and bank in the kernel and `Parties.add` checked all three unconditionally — a
+ * world wanting a fourth dimension had to change a kernel type, which is the opposite of the claim.
+ */
+describe('a cell is keyed on what the registry declares, and on nothing else (XI-15)', () => {
+  /** The same world in every respect but the dimensions it keys its cells on. */
+  function restratified(r: Registry, cellKey: readonly CellKeyDimension[]): Registry {
+    return new Registry(
+      {
+        currencies: [...r.currencies.values()],
+        regions: [...r.regions.values()],
+        units: [...r.units.values()],
+        cohorts: r.cohorts,
+        cellKey,
+        lotFlow: r.lotFlow,
+        instrumentKinds: [...r.instrumentKinds.values()],
+        partyKinds: [...r.partyKinds.values()],
+        derivativeKinds: [...r.derivativeKinds.values()],
+        curveFamilies: [...r.curveFamilies.values()],
+      },
+      r.pieceShift,
+      r.tickShift,
+    );
+  }
+
+  function someCell(w: World): CellParty {
+    const c = w.parties.all().find((p): p is CellParty => p.representation === 'cell');
+    if (c === undefined) throw new Error('the rig drew no cells');
+    return c;
+  }
+
+  it('names every fault in a key: one missing, one undeclared, one that disagrees, one nobody declared', () => {
+    const w = world();
+    const cell = someCell(w);
+    expect(cellKeyFaults(w.registry, cell)).toEqual([]);
+
+    const missing = { region: cell.region, bank: cell.bank };
+    expect(cellKeyFaults(w.registry, { ...cell, key: missing }).join('; ')).toMatch(/has no cohort/);
+
+    const extra = { ...cell.key, wealth: 'top' } as unknown as CellKey;
+    expect(cellKeyFaults(w.registry, { ...cell, key: extra }).join('; ')).toMatch(/carries wealth/);
+
+    // Law 4: where a dimension's fact ALSO lives on the party, the two copies are one fact.
+    const disagrees = { ...cell.key, bank: 'bank.nobody' };
+    expect(cellKeyFaults(w.registry, { ...cell, key: disagrees }).join('; ')).toMatch(
+      /keys on bank bank\.nobody but is/,
+    );
+
+    const undeclaredCohort = { ...cell.key, cohort: 'cohort.nobody' };
+    expect(cellKeyFaults(w.registry, { ...cell, key: undeclaredCohort }).join('; ')).toMatch(
+      /which the registry does not declare/,
+    );
+  });
+
+  it('is a DATA change: a world keyed on region alone holds one population where this one holds three', () => {
+    const w = world();
+    const base = someCell(w);
+    const cells = w.parties.all().filter((p): p is CellParty => p.representation === 'cell');
+    const other = cells.find((c) => c.key.cohort !== base.key.cohort);
+    if (other === undefined) throw new Error('the rig drew one cohort');
+    // Here they are two populations, because THIS world stratifies on cohort.
+    expect(w.parties.sameKey(base, other)).toBe(false);
+
+    // There they are one, and no mechanism changed: only the registry's list did. The cells carry
+    // exactly the dimensions that world declares, which is what a re-stratification is.
+    const thin = new Parties(restratified(w.registry, ['region']));
+    const a: CellParty = { ...base, id: partyId('cell.a'), key: { region: base.region } };
+    const b: CellParty = { ...other, id: partyId('cell.b'), key: { region: other.region } };
+    thin.add(a);
+    thin.add(b);
+    expect(thin.sameKey(a, b)).toBe(true);
+
+    // And a cell carrying the dimensions THIS world declares is refused there, because a key with
+    // a dimension nobody declared is a relationship the model cannot name (XI-15).
+    expect(() => {
+      thin.add({ ...base, id: partyId('cell.c') });
+    }).toThrow(/does not key cells on/);
   });
 });

@@ -63,7 +63,7 @@ export function triangularConsistency(rows: readonly FxDeskDecl[]): Family {
 function cheapestRoundTrip(view: AuditView, rows: readonly FxDeskDecl[]): number | undefined {
   let best: number | undefined;
   for (const d of rows) {
-    const cost = view.params.get(fxParam(d.bank, 'arbitrageEdge'));
+    const cost = view.params.ratio(fxParam(d.bank, 'arbitrageEdge'));
     if (best === undefined || cost < best) best = cost;
   }
   return best;

@@ -23,7 +23,7 @@
 import { period as periodOf, type Period } from '../../calendar/calendar.js';
 import { clear, isCleared, type Cleared, type Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { currencyUnit } from '../../core/ids.js';
+import { cohortId, currencyUnit } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
 import {
   add,
@@ -36,7 +36,7 @@ import {
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
-import { weightOf, type Party } from '../../parties/party.js';
+import { keyOf, weightOf, type Party } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
 import {
@@ -64,7 +64,7 @@ export interface LabourParams {
 /** B3: whether a cohort's members are in the workforce at all, or out of it by age. */
 function participates(ctx: MechanismContext, p: Party, retirementAge: number): boolean {
   if (p.representation !== 'cell' || !p.status.alive) return false;
-  return ctx.registry.cohort(p.key.cohort).fromAge < retirementAge;
+  return ctx.registry.cohort(cohortId(keyOf(p, 'cohort'))).fromAge < retirementAge;
 }
 
 /**

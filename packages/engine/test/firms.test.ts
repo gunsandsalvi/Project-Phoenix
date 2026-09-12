@@ -146,7 +146,7 @@ describe('what a firm decides (Firm E1, E2, E6)', () => {
     const charge = plan?.data['capitalCharge'];
     // Law 19: how much labour a piece of grain takes is the recipe's own number, read from the
     // register it is declared in rather than written out again here.
-    const perPiece = w.params.get(labourParam('grain'));
+    const perPiece = w.params.ratio(labourParam('grain'));
     const said = plan?.data['wageBid'];
     const bid = typeof said === 'number' ? said : 0;
     // E2, Law 4: WHAT AN HOUR IS WORTH TO IT, and the test does not compute that a second time. It

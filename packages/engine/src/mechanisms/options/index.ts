@@ -158,8 +158,8 @@ export const optionKind: DerivativeKindProfile = {
     const move = reads.measuredMove(c.terms.underlying, c.terms.window);
     if (!move.some) return none();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
-    const horizon = reads.params.get(
-      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['get']>[0],
+    const horizon = reads.params.periods(
+      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
       mul(
@@ -226,6 +226,7 @@ function params(): ParamDecl[] {
       id: OPTION_PARAMS.life,
       value: 13,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'The ladder a market is opened on: how long the contracts an exchange lists run for. A convention of the exchange, stated with the contract.',
@@ -234,6 +235,7 @@ function params(): ParamDecl[] {
       id: OPTION_PARAMS.window,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'resolution',
       owner: 'model',
       why: "Derivative Layer D1: how much of the underlying's own record the initial margin is measured over. A resolution: the answer must not turn on it.",
@@ -242,6 +244,7 @@ function params(): ParamDecl[] {
       id: OPTION_PARAMS.aversion,
       value: 0.1,
       unit: 'of its own capital it will not risk',
+      dimension: 'ratio',
       kind: 'preference',
       owner: 'model',
       why: 'How much of a surplus a holder’s own management insists on covering rather than carrying. It is a PREFERENCE — what somebody is willing to live with — and it is why one party buys cover at a price another will not.',
@@ -264,7 +267,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const print = view.print(t.underlying);
   if (!print.some) return [];
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
-  const aversion = view.params.get(OPTION_PARAMS.aversion);
+  const aversion = view.params.ratio(OPTION_PARAMS.aversion);
   let covered = 0;
   for (const c of view.contracts.mine()) {
     if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right) continue;
@@ -342,8 +345,8 @@ function openBooks(
   lines: readonly InstrumentId[],
 ): void {
   const open = new Set(ctx.markets.map((m) => String(m.id)));
-  const window = ctx.params.get(OPTION_PARAMS.window);
-  const life = ctx.params.get(OPTION_PARAMS.life);
+  const window = ctx.params.periods(OPTION_PARAMS.window);
+  const life = ctx.params.periods(OPTION_PARAMS.life);
   for (const underlying of lines) {
     if (!ctx.instruments.has(underlying)) continue;
     const i = ctx.instruments.get(underlying);

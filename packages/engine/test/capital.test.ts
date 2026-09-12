@@ -292,7 +292,7 @@ describe('what a purchase becomes (Capital Programme A4.c, C, Firm Birth A2.a)',
     const vintage = String(one?.data['vintage']);
     // C3: the vintage it joined went into service `buildLag` periods after the machines arrived,
     // and the lag is the good's own technology, not a number this mechanism chose.
-    const lag = w.params.get(buildLagParam(MACHINERY));
+    const lag = w.params.periods(buildLagParam(MACHINERY));
     expect(lag).toBeGreaterThan(0);
     const bought = w.ledger
       .all()
@@ -384,7 +384,7 @@ describe('what the stock lets it make (Capital Programme A2, D4, Goods B1.a, B1.
     const needs = [
       {
         capitalKind: MACHINERY,
-        unitsPerUnitPerPeriod: w.params.get('goods.grain.plant.machinery' as never),
+        unitsPerUnitPerPeriod: w.params.ratio('goods.grain.plant.machinery' as never),
       },
     ];
     const read = capitalChargePerUnit(
@@ -593,7 +593,7 @@ describe('what a holder requires (Corporate Credit E5)', () => {
     expect(new Set(rates.map((r) => r.toFixed(9))).size).toBeGreaterThan(1);
     // E7: and a FUND faces a different constraint entirely — a mandate and what its own investors
     // require of it — so what it will pay for the same bill is not what a bank will pay.
-    const fundRequired = w.params.get('fund.requiredYield.fund.money.north' as never);
+    const fundRequired = w.params.perAnnum('fund.requiredYield.fund.money.north' as never);
     expect(rates.every((r) => Math.abs(r - fundRequired) > 1e-9)).toBe(true);
     // XI-14: and nothing stands in for any of it any more — the placeholder is gone.
     expect(w.params.report().placeholders.some((p) => p.id.includes('requiredYield'))).toBe(false);

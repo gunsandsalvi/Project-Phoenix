@@ -166,7 +166,7 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
     }
     expect(matched).toBeGreaterThan(0);
     const ceiling =
-      w.params.get(MM_PARAMS.policyRate) + w.params.get(MM_PARAMS.ceilingSpread);
+      w.params.perAnnum(MM_PARAMS.policyRate) + w.params.perAnnum(MM_PARAMS.ceilingSpread);
     for (const rates of seen.values()) for (const r of rates) expect(r).toBeLessThan(ceiling);
   });
 
@@ -215,7 +215,7 @@ describe('the corridor (Money Market C, Central Bank B2, D)', () => {
     // saying so out loud is what stops the policy rate being read as something a market printed.
     expect(floor).toBeLessThan(policy);
     expect(ceiling).toBeGreaterThan(policy);
-    expect(policy).toBe(w.params.get(MM_PARAMS.policyRate));
+    expect(policy).toBe(w.params.perAnnum(MM_PARAMS.policyRate));
   });
 
   it('moves the market rate when it moves, and only through the corridor (B4, B3.a, E1)', () => {

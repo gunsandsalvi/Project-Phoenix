@@ -83,7 +83,7 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
     const d = rows.get(String(bank.id));
     if (d === undefined || !bank.status.alive) continue;
     const view = ctx.participant(bank.id);
-    const cost = view.params.get(fxParam(d.bank, 'arbitrageEdge'));
+    const cost = view.params.ratio(fxParam(d.bank, 'arbitrageEdge'));
     for (const t of tris) {
       const ab = view.print(t.ab.instrument);
       const bc = view.print(t.bc.instrument);
@@ -98,7 +98,7 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
       // is what both routes start from, so one number sizes all three legs.
       const size = downTick(
         div(
-          mul(view.equity(), view.params.get(fxParam(d.bank, 'inventoryLimit')), 'what it will risk'),
+          mul(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk'),
           ab.value.price,
           'units of the base it can carry',
         ),

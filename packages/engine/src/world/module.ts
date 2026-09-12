@@ -256,7 +256,7 @@ export interface SystemModule {
    * two readers cannot get two levels. One system of them across the world (D5), which is what a
    * single registry at assembly gives: a second module declaring the same id is refused.
    */
-  indices?(params: Pick<ParamRegister, 'get' | 'amount'>): readonly IndexDecl[];
+  indices?(params: Pick<ParamRegister, 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount'>): readonly IndexDecl[];
   /**
    * Expectations A2, XI-16: what a party expects. Exactly one module may answer this — an
    * expectation is a fact about a party and has one writer (Law 4) — and the kernel asks it

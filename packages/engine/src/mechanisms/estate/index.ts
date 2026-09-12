@@ -164,7 +164,7 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
     ctx.settle({ legs: [leg], cause: 'transfer', reason: `${dead} to its estate` });
   }
   ctx.cease(dead, id);
-  const closesAfter = ctx.period + ctx.params.get(ESTATE_PARAMS.programme);
+  const closesAfter = ctx.period + ctx.params.periods(ESTATE_PARAMS.programme);
   b.estates[id] = { dead, opened: ctx.period, closesAfter, closed: false };
   ctx.record('estate.opened', [id, dead], { estate: id, dead, because, ccy, closesAfter }, true);
 }
@@ -558,6 +558,7 @@ export const estate: SystemModule = {
       id: ESTATE_PARAMS.programme,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'XI-8, Firm Birth D1: how long an estate has to sell what it holds before what nobody has bought is abandoned. An insolvency regime is a rule somebody wrote, and how long it gives is the whole of the difference between a fire sale and an orderly one.',

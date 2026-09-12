@@ -107,9 +107,9 @@ function book(ctx: MechanismContext): Book {
 
 function regulationOf(view: ParticipantView): Regulation {
   return {
-    capitalRatio: view.params.get(LENDING_PARAMS.capitalRatio),
-    riskWeight: view.params.get(LENDING_PARAMS.riskWeight),
-    operatingCost: view.params.get(LENDING_PARAMS.operatingCost),
+    capitalRatio: view.params.ratio(LENDING_PARAMS.capitalRatio),
+    riskWeight: view.params.ratio(LENDING_PARAMS.riskWeight),
+    operatingCost: view.params.perAnnum(LENDING_PARAMS.operatingCost),
   };
 }
 
@@ -122,13 +122,13 @@ function rulesFor(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyI
   const view = ctx.participant(bank);
   const decl = declOf(rows, bank);
   return {
-    minWeighted: ctx.params.get(LENDING_PARAMS.capitalRatio),
-    minLeverage: ctx.params.get(LENDING_PARAMS.leverageRatio),
-    buffer: ctx.params.get(bankParam(bank, 'capitalBuffer')),
-    weight: ctx.params.get(LENDING_PARAMS.riskWeight),
-    limitPerName: ctx.params.get(bankParam(bank, 'limitPerBorrower')),
-    sovereignWeight: ctx.params.get(LENDING_PARAMS.sovereignWeight),
-    tradingWeight: ctx.params.get(TRADING_BOOK_RISK_WEIGHT),
+    minWeighted: ctx.params.ratio(LENDING_PARAMS.capitalRatio),
+    minLeverage: ctx.params.ratio(LENDING_PARAMS.leverageRatio),
+    buffer: ctx.params.ratio(bankParam(bank, 'capitalBuffer')),
+    weight: ctx.params.ratio(LENDING_PARAMS.riskWeight),
+    limitPerName: ctx.params.ratio(bankParam(bank, 'limitPerBorrower')),
+    sovereignWeight: ctx.params.ratio(LENDING_PARAMS.sovereignWeight),
+    tradingWeight: ctx.params.ratio(TRADING_BOOK_RISK_WEIGHT),
     // Dealer Desks F2: the same target the dealing line quotes around, read once and used for both
     // — what a holding weighs and what the book may be worth are one line drawn in one place.
     targets:
@@ -137,7 +137,7 @@ function rulesFor(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyI
         : liquidityTargets(
             view,
             decl,
-            liquidityPlan(view, ctx.params.get(bankParam(bank, 'liquidityCushion'))),
+            liquidityPlan(view, ctx.params.ratio(bankParam(bank, 'liquidityCushion'))),
           ),
   };
 }
@@ -269,7 +269,7 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
    */
   const funded = atLeast(capital, 0, 'a hole funds nothing: there is no less capital than none');
   const funding = add(owed, funded, 'what funds its book');
-  const required = ctx.params.get(bankParam(bank, 'returnOnCapital'));
+  const required = ctx.params.perAnnum(bankParam(bank, 'returnOnCapital'));
   const onCapital = mul(funded, required, 'what its own capital costs it');
   const blend = (interest: number): FundingCost => ({
     perAnnum:
@@ -667,7 +667,7 @@ function tradingBookIsCapitalised(): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      const weight = view.params.get(TRADING_BOOK_RISK_WEIGHT);
+      const weight = view.params.ratio(TRADING_BOOK_RISK_WEIGHT);
       for (const e of view.journal.ofKind('bank.capital')) {
         if (e.period !== view.period) continue;
         const bank = e.subjects[0];
@@ -756,6 +756,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: LENDING_PARAMS.capitalRatio,
       value: 0.08,
       unit: 'ratio of risk-weighted assets',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Banks Lending B2.a: the capital a bank must hold against what it lends. It is a rule somebody wrote, not a fact about the world, and it is the number a downturn makes bind.',
@@ -764,6 +765,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: LENDING_PARAMS.riskWeight,
       value: 1,
       unit: 'ratio',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Banks Lending B2.a: how much of the requirement a unit of unsecured lending consumes. One, because an unsecured loan to a firm is the thing the requirement was written about; a weight per security arrives when there is security to weigh (worklist 13d).',
@@ -772,6 +774,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: LENDING_PARAMS.sovereignWeight,
       value: 0,
       unit: 'ratio',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Corporate Credit E5.c, Sovereign E5: how much of the capital requirement a unit of the sovereign own paper consumes. Zero under the standard for a claim on the issuer of the money it is promised in, and that is a RULE somebody wrote rather than a fact about the world — it is most of why a bank holds sovereign paper as its liquidity buffer instead of lending the money out, and it is exactly the kind of number a polity can change (worklist 14).',
@@ -780,6 +783,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: TRADING_BOOK_RISK_WEIGHT,
       value: 1,
       unit: 'ratio of the position',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Dealer Desks D2: how much of a bank capital requirement a unit of a trading position consumes. It is a rule somebody wrote, not a fact about the world, and it is the number that makes carrying inventory cost capital as well as cash. One, because a position taken with a view is the thing the requirement was written about; a weight per kind of position arrives with the derivative layer (worklist 13a).',
@@ -788,6 +792,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: P_COVERAGE,
       value: 1,
       unit: 'ratio of what could leave',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Banks Funding C2: the liquid assets a bank must hold against the money that could leave it. ONE, because that is what the rule says in the world this one imports it from — cover the outflow, not a part of it — and Law 2 allows a real-world primitive to be imported where a real-world equilibrium may not. It is a rule somebody wrote and not a fact about the world, which is why it is the kind of number a polity can change (worklist 14) and why a bank holds sovereign paper instead of lending the money out (Sovereign E2.a, E5).',
@@ -801,6 +806,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
           id: lineParam(r.bank, line, 'capitalAtRisk'),
           value: share,
           unit: 'ratio of its own capital',
+          dimension: 'ratio',
           kind: 'preference',
           owner: 'model',
           why: `Dealer Desks D1, F1, XI-4: the most of its own capital ${r.bank} will have standing behind its ${line} line. Every capacity is finite and enumerable, and a book full of one thing stops bidding for everything, which is how one line's trouble reaches another. It is what this line ASKS ITS OWN TREASURY FOR each period, which is why every line needs one: a line whose ask is whatever is left is not competing for anything, and the treasury that serves it first hands it the lot (\`13b-7\`). It is a share of CAPITAL and not an amount of money: an amount would have to be restated every time this world changed size, and a number restated to keep a result is a result wearing a preference's name.`,
@@ -810,6 +816,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: lineParam(r.bank, DEALING, 'concentration'),
         value: r.concentration,
         unit: 'ratio of its own dealing book',
+        dimension: 'ratio',
         kind: 'preference',
         owner: 'model',
         why: `Dealer Desks D1: the most of its book ${r.bank} will have in ONE line. ${r.why} A dealer without a limit is a synthetic counterparty wearing a dealer's name (Clearing B3.a), and this is the number that makes it one. It is a share rather than a count of pieces because a count would mean something different in a line quoted in shares and a line quoted in par, and would have to be restated every time a price moved.`,
@@ -819,6 +826,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: SUB_PARAMS.periods,
       value: 52,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: 'Banks Capital A2.b, A3: how long a bank borrows the layer between its owners and its creditors for. A year, because capital that runs off next week is not capital — it is funding — and the whole point of the layer is that it is still there when the loss arrives.',
@@ -827,6 +835,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: LENDING_PARAMS.leverageRatio,
       value: 0.03,
       unit: 'ratio of assets, unweighted',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Banks Capital B1.b: the BACKSTOP — capital against everything it holds, with no weights in it at all. It exists because B1 weights, and a rule that weights can be gamed by holding what the rule calls safe: a bank stuffed with zero-weighted paper passes the weighted test at any size. Which of the two binds is an outcome and differs by bank (B1.c), which is the whole reason to have both.',
@@ -835,6 +844,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       id: LENDING_PARAMS.operatingCost,
       value: 0.005,
       unit: 'per annum on the principal',
+      dimension: 'perAnnum',
       /**
        * XI-14, Law 2, Appendix B: IT IS A PLACEHOLDER AND IT WAS DECLARED A TECHNOLOGY.
        *
@@ -862,6 +872,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: bankParam(b.bank, 'credit.memory'),
         value: b.memoryPeriods,
         unit: 'periods',
+        dimension: 'periods' as const,
         kind: 'preference' as const,
         owner: 'model' as const,
         why: `Banks Lending C1.b, C4: how far back ${b.bank} looks when it judges a borrower. ${b.why}`,
@@ -870,6 +881,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: bankParam(b.bank, 'returnOnCapital'),
         value: b.returnOnCapital,
         unit: 'per annum',
+        dimension: 'perAnnum' as const,
         kind: 'preference' as const,
         owner: 'model' as const,
         why: `Banks Lending C1.c: what ${b.bank} needs to earn on the capital a loan consumes.`,
@@ -878,6 +890,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: bankParam(b.bank, 'capitalBuffer'),
         value: b.capitalBuffer,
         unit: 'ratio of risk-weighted assets',
+        dimension: 'ratio' as const,
         kind: 'preference' as const,
         owner: 'model' as const,
         why: `Banks Lending B2.a: how far above the requirement ${b.bank} insists on running. Its own caution, which is why two banks stop lending at different moments.`,
@@ -886,6 +899,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: bankParam(b.bank, 'depositMargin'),
         value: b.depositMargin,
         unit: 'per annum',
+        dimension: 'perAnnum' as const,
         kind: 'preference' as const,
         owner: 'model' as const,
         why: `Banks Funding B1.a, B3: what ${b.bank} keeps for itself out of what the money it takes in is worth to it. Two banks that keep the same margin are one bank, and the one that keeps less wins the deposit and earns less on it — which is what a net interest margin IS.`,
@@ -894,6 +908,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: bankParam(b.bank, 'bufferMemory'),
         value: b.bufferMemory,
         unit: 'periods',
+        dimension: 'periods' as const,
         kind: 'preference' as const,
         owner: 'model' as const,
         why: `Money Market A2.a, Banks Funding C2.a: how far back ${b.bank} looks at its own account when it decides what to hold against what could leave, and how far back it looks at what its funding has been costing it. The buffer is derived from what it has actually seen, never from a ratio of its deposits.`,
@@ -902,6 +917,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: bankParam(b.bank, 'liquidityCushion'),
         value: b.liquidityCushion,
         unit: 'ratio of what could leave, above the rule',
+        dimension: 'ratio' as const,
         kind: 'preference' as const,
         owner: 'model' as const,
         why: `Banks Funding C2, Money Market A2.a: what ${b.bank} holds liquid ABOVE what the rule asks of it. Its own caution, and the reason two banks facing the same depositors carry different portfolios — a bank that runs on the floor is one bad week from the window.`,
@@ -910,6 +926,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         id: bankParam(b.bank, 'limitPerBorrower'),
         value: b.limitPerBorrower,
         unit: 'ratio of its own capital',
+        dimension: 'ratio' as const,
         kind: 'preference' as const,
         owner: 'model' as const,
         why: `Banks Lending F3, B2.c: the most ${b.bank} will have out to one name. A limit that binds is what makes concentration a thing it manages rather than a thing it reports.`,
@@ -1208,7 +1225,7 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
     const view = ctx.participant(b.id);
     const ccy = ctx.registry.region(b.region).ccy;
     const funds = costOfFunds(ctx, b.id, ccy).perAnnum;
-    const reg = { ...regulationOf(view), riskWeight: view.params.get(LENDING_PARAMS.sovereignWeight) };
+    const reg = { ...regulationOf(view), riskWeight: view.params.ratio(LENDING_PARAMS.sovereignWeight) };
     const required: Record<string, number> = {};
     const expectedLoss: Record<string, number> = {};
     const capitalCost: Record<string, number> = {};

@@ -4,6 +4,7 @@
  *
  * @spec Audit B6 Register A1.a Register A3 Register A4 Register F2 Currency A2 XI-15
  */
+import { cellKeyFaults } from '../../parties/party.js';
 import type { Family, Violation } from '../audit.js';
 import { holdsSomething } from '../view.js';
 import type { AuditView } from '../view.js';
@@ -48,10 +49,12 @@ export function namesFamily(): Family {
             p.id,
             `${p.id} ceased with successor ${p.status.successor}, which does not exist`,
           );
+        // XI-15: the key carries exactly the dimensions the registry declares, and each agrees
+        // with the fact it duplicates. `Parties.add` throws on the same rule, but `add` is not the
+        // only writer of a party — `bankAt` rewrites a key — and the registry's declared list can
+        // change under cells that already exist, which is what a re-stratification IS.
         if (p.representation === 'cell') {
-          if (!view.parties.has(p.key.bank))
-            v('XI-15', p.id, `cell ${p.id} keys on bank ${p.key.bank}, which does not exist`);
-          view.registry.cohort(p.key.cohort);
+          for (const fault of cellKeyFaults(view.registry, p)) v('XI-15', p.id, fault);
         }
         view.registry.region(p.region);
       }

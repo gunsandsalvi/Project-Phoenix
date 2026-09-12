@@ -59,7 +59,7 @@ export const insurerKind: PartyKindProfile = {
  */
 export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]): void {
   if (!ctx.parties.has(INSURER) || !ctx.parties.get(INSURER).status.alive) return;
-  const rate = ctx.params.get(INSURER_PARAMS.premium);
+  const rate = ctx.params.perAnnum(INSURER_PARAMS.premium);
   if (rate <= 0) return;
   for (const bank of banks) {
     const p = ctx.parties.get(bank);

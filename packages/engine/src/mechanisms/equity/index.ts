@@ -88,6 +88,7 @@ function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
       id: OPENING_SHARE,
       value: MONEY_PIECES,
       unit: 'pieces of money per share at the seed (one USD)',
+      dimension: 'price',
       kind: 'resolution',
       owner: 'model',
       why: 'Seed C4, Law 2: a market that has never traded has no price (XI-6) and a world that opens with shares outstanding has to say what one is. It is a RESOLUTION: double it and halve every share count the seed states and no value, flow or decision moves — which is exactly what a split does (D4), so the invariance is a mechanism in this world and a test of it, not a claim about one.',
@@ -96,6 +97,7 @@ function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
       id: equityParam(r.firm, 'payoutPatience'),
       value: r.payoutPatience,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'preference',
       owner: 'model',
       why: `Equity D2.c, Firm E5: over how many of its own periods ${r.firm}'s management distributes what it has spare. ${r.why} It is the whole of how fast money leaves the firm for its owners, and two managements that are not equally patient distribute differently out of the same cash.`,
@@ -131,7 +133,7 @@ function decide(ctx: MechanismContext, row: ListedDecl): void {
     equityMarketOf(row.firm),
     line.issued,
     sub(0, short, 'what it has spare'),
-    ctx.params.get(equityParam(row.firm, 'payoutPatience')),
+    ctx.params.periods(equityParam(row.firm, 'payoutPatience')),
   );
   if (!decided.some) return;
   const plan = decided.value;
@@ -452,7 +454,7 @@ export function equity(rows: readonly ListedDecl[]): SystemModule {
           rationing: 'proRata',
         });
         // Seed C4: the line and the level it opens at.
-        const price = ctx.params.get(OPENING_SHARE);
+        const price = ctx.params.price(OPENING_SHARE);
         ctx.prices.write({
           instrument: id,
           market,

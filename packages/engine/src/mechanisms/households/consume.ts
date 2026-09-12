@@ -29,7 +29,7 @@
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { add, atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import type { CellParty } from '../../parties/party.js';
+import { keyOf, type CellParty } from '../../parties/party.js';
 import type { ParticipantView } from '../../world/context.js';
 import { goodId, goodMarketId } from '../../registry/physical.js';
 import type { ConsumptionDecl } from './data.js';
@@ -167,7 +167,7 @@ export function demandOf(
   if (self.representation !== 'cell') return [];
   const out: DemandStep[] = [];
   for (const row of rows) {
-    if (row.cohort !== self.key.cohort) continue;
+    if (row.cohort !== keyOf(self, 'cohort')) continue;
     const budget = div(
       mul(spend, row.share, 'what it spends on this good'),
       add(1, p.consumptionTax, 'with the tax it will owe on it'),

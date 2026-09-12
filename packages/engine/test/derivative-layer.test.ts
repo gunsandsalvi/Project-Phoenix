@@ -427,7 +427,7 @@ describe('capacity (E1, E2, E4)', () => {
     // A draw in which nothing was posted has no subject for this assertion; the test above is what
     // says something was.
     if (posters.length === 0) return;
-    const buffer = w.params.get(LAYER_PARAMS.buffer);
+    const buffer = w.params.ratio(LAYER_PARAMS.buffer);
     for (const m of posters) {
       const view = w.participantView(m);
       const cash = view.cash(USD);

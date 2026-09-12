@@ -78,6 +78,7 @@ function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
       id: lifeParam(d.id),
       value: d.usefulLifePeriods,
       unit: 'periods of service',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'model',
       why: `Capital Programme A4.b, A6: how long a vintage of ${d.name} works before it is worn out and leaves the register. ${d.why} The presence of a life is what makes the good it is built from a capital good.`,
@@ -86,6 +87,7 @@ function paramsOf(rows: readonly CapitalKindDecl[]): ParamDecl[] {
       id: buildLagParam(d.id),
       value: d.buildLagPeriods,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'model',
       why: `Capital Programme C3, C1.a: periods between the ${d.madeFrom} arriving and the plant working. It is why investment is demand now and capacity later, and why a firm cannot answer this week's demand by spending this week.`,
@@ -125,7 +127,7 @@ export function vintage(
     region,
     serviceDate,
     // A4.b, A6: the date it is worn out, placed by the calendar from its own life (Money G3.a).
-    retires: addDays(serviceDate, ctx.params.get(lifeParam(d.id)) * ctx.calendar.periodDays),
+    retires: addDays(serviceDate, ctx.params.periods(lifeParam(d.id)) * ctx.calendar.periodDays),
   };
   ctx.issue({
     id,
@@ -164,7 +166,7 @@ export function seedVintage(
     capitalKind: d.id,
     region,
     serviceDate,
-    retires: addDays(serviceDate, ctx.params.get(lifeParam(d.id)) * ctx.calendar.periodDays),
+    retires: addDays(serviceDate, ctx.params.periods(lifeParam(d.id)) * ctx.calendar.periodDays),
   };
   ctx.instruments.add({
     id,
@@ -235,7 +237,7 @@ function retire(ctx: MechanismContext): void {
  */
 function commission(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void {
   for (const d of rows) {
-    const lag = ctx.params.get(buildLagParam(d.id));
+    const lag = ctx.params.periods(buildLagParam(d.id));
     if (ctx.period < lag) continue;
     const bought = purchases(ctx, d, period(sub(ctx.period, lag, 'the period it was bought in')));
     for (const [buyer, byRegion] of bought) {

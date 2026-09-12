@@ -76,7 +76,7 @@ export interface ContractPayment {
 export interface ContractReads {
   readonly period: Period;
   readonly calendar: Calendar;
-  readonly params: Pick<ParamRegister, 'get' | 'amount'>;
+  readonly params: Pick<ParamRegister, 'periods' | 'ratio' | 'count' | 'perAnnum' | 'price' | 'amount'>;
   /** The last print at or before a period — the same read every holder of the line gets. */
   print(instrument: InstrumentId, at: Period): Option<Print>;
   /** XI-6: what a unit of a line is carried at, for a claim on a book that no session printed. */

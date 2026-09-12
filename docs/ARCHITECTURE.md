@@ -195,8 +195,27 @@ Consequences the representation enforces rather than checks:
 - aggregation is `cell.integrate(f) = f(memberState) × weight`. There is no `mean()`; the average is
   unreachable (XI-15: _a question that cannot be phrased will not be asked wrong_).
 
-The cell **key** (region, cohort, bank) is registry data; lifting a relationship into the key is a data
-change and a re-stratification event, never a mechanism change (Small-Business Pools A6.a).
+The cell **key** is registry data; lifting a relationship into the key is a data change and a
+re-stratification event, never a mechanism change (Small-Business Pools A6.a). The claim is only
+true if the kernel reads the declared list, so `CellKey` is a MAP of the dimensions the registry
+names (`Readonly<Partial<Record<CellKeyDimension, string>>>`) rather than a shape naming three, and
+`keyOf(cell, dim)` is its one reader. `RegistryData.cellKey` says WHICH dimensions this world
+keys on; `KEY_DIMENSIONS` in `parties/party.ts` says what each one MEANS, and it is the only such
+table (Law 15: data in the registry, kind-varying behaviour in one dispatch). A dimension declares
+two things at most: where the same fact **also** lives on the party, so the copies must agree (Law
+4 — `region` and `bank` do, `cohort` does not), and whether the value must name something the
+registry declares. A dimension with neither — a wealth band, a tenure — is the key's own, and
+having nowhere else to live is precisely why it is a dimension.
+
+`cellKeyFaults(registry, cell)` is the one writer of the rule and has two readers with opposite
+postures: `Parties.add` throws on the first fault, the `names` audit family reports each as a
+finding. Both are needed, because `add` is not the only writer of a party — `bankAt` rewrites a key
+— and because the declared list can change under cells that already exist, which is what a
+re-stratification IS. Merge identity (`Parties.sameKey`) reads the same list: a world keyed on a
+fourth dimension that merged on three would fold together two populations it had just stratified
+apart. **Adding a dimension is a registry row, a table entry and the seed that fills it; no
+mechanism and no other kernel type changes** — which is what 13d needs to stratify households by
+wealth.
 
 ### 4.5 Prices and value (XI-6, Clearing D/E)
 

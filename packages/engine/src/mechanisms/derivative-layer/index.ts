@@ -104,6 +104,7 @@ function params(): ParamDecl[] {
       id: LAYER_PARAMS.horizon,
       value: 2,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'policy',
       owner: 'standardSetter',
       why: 'Derivative Layer C3.b, D1: how many sessions the house assumes it takes to close a defaulted book. It scales the initial margin and sizes the fund, and it is a policy because somebody decides it, publishes it, and is answerable for it.',
@@ -112,6 +113,7 @@ function params(): ParamDecl[] {
       id: LAYER_PARAMS.buffer,
       value: 0.2,
       unit: 'of its own liquid cash',
+      dimension: 'ratio',
       kind: 'preference',
       owner: 'model',
       why: 'Derivative Layer E1: what a member keeps back rather than committing to margin. It is a preference — how much of its own liquidity it is willing to have tied up at a house — and E4 forbids raising it to make a trade fit.',
@@ -145,7 +147,7 @@ function capacity(): ClearingCapacity {
         return 0;
       }
       const view = ctx.participant(party);
-      const room = capacityOf(view, m.ccy, ctx.params.get(LAYER_PARAMS.buffer));
+      const room = capacityOf(view, m.ccy, ctx.params.ratio(LAYER_PARAMS.buffer));
       if (room <= 0) return 0;
       // What this trade would ask of it, per unit of notional: the kind's own initial margin on one
       // unit at the level that cleared. A trade it cannot margin is a trade it cannot make, and the
@@ -373,7 +375,7 @@ function payLegs(ctx: MechanismContext): void {
 
 /** C3.b: the fund, trued up every period against what the largest member's book now needs. */
 function trueUpFunds(ctx: MechanismContext): void {
-  const horizon = ctx.params.get(LAYER_PARAMS.horizon);
+  const horizon = ctx.params.periods(LAYER_PARAMS.horizon);
   for (const h of ctx.parties.ofKind(CLEARING_HOUSE)) {
     if (!h.status.alive) continue;
     for (const ccy of moniesOf(ctx, h.id)) trueUpFund(ctx, h.id, ccy, horizon);

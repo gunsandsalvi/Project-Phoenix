@@ -81,7 +81,7 @@ describe('the fiscal calendar is dates (Reporting A3, G6; Money G3.a, G3.b)', ()
     expect(decl.kind).toBe('policy');
     expect(decl.owner).toBe('parliament');
     const q = quarterClosedBy(4, civil(2026, 6, 15));
-    const out = publishableOn(q, w.params.get(REPORTING_PARAMS.lag));
+    const out = publishableOn(q, w.params.days(REPORTING_PARAMS.lag));
     expect(compareCivil(out, q.ends)).toBeGreaterThan(0);
   });
 

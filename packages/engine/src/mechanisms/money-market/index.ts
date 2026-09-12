@@ -101,9 +101,9 @@ const ccyOf = (ctx: MechanismContext, party: PartyId): CurrencyCode =>
 
 function corridor(ctx: MechanismContext): Corridor {
   return corridorOf(
-    ctx.params.get(MM_PARAMS.policyRate),
-    ctx.params.get(MM_PARAMS.floorSpread),
-    ctx.params.get(MM_PARAMS.ceilingSpread),
+    ctx.params.perAnnum(MM_PARAMS.policyRate),
+    ctx.params.perAnnum(MM_PARAMS.floorSpread),
+    ctx.params.perAnnum(MM_PARAMS.ceilingSpread),
   );
 }
 
@@ -195,7 +195,7 @@ function publishClasses(ctx: MechanismContext): void {
         // the same bank pay its classes differently — insured money carries a premium on top of the
         // rate, so a bank paying the same all-in for both offers the insured class less by exactly
         // that. It is published with the class because it is the same regulation, said once (Law 4).
-        premium: c.insured ? ctx.params.get(INSURER_PARAMS.premium) : 0,
+        premium: c.insured ? ctx.params.perAnnum(INSURER_PARAMS.premium) : 0,
       })),
     },
     true,
@@ -209,7 +209,7 @@ function publishClasses(ctx: MechanismContext): void {
  */
 function publishCollateral(ctx: MechanismContext): void {
   const on = ctx.calendar.startOf(ctx.period);
-  const haircut = ctx.params.get(MM_PARAMS.haircut);
+  const haircut = ctx.params.ratio(MM_PARAMS.haircut);
   for (const bank of banksOf(ctx)) {
     const ccy = ccyOf(ctx, bank);
     const cb = ctx.registry.centralBankOf(ccy);
@@ -258,7 +258,7 @@ function runSession(ctx: MechanismContext): void {
   const banks = banksOf(ctx);
   const pos = standings(ctx);
   declareVenues(ctx, banks);
-  const haircut = ctx.params.get(MM_PARAMS.haircut);
+  const haircut = ctx.params.ratio(MM_PARAMS.haircut);
   for (const borrower of banks) {
     const ccy = ccyOf(ctx, borrower);
     const cb = ctx.registry.centralBankOf(ccy);
@@ -444,7 +444,7 @@ function advancesFrom(
         ctx.participant(cb),
         ctx.participant(borrower),
         on,
-        ctx.params.get(MM_PARAMS.overdraftPenalty),
+        ctx.params.perAnnum(MM_PARAMS.overdraftPenalty),
       )
     : collateralFor(ctx, lender, borrower, on);
 }
@@ -530,7 +530,7 @@ function declareVenues(ctx: MechanismContext, banks: readonly PartyId[]): void {
  */
 function publishFunding(ctx: MechanismContext): void {
   const on = ctx.calendar.startOf(ctx.period);
-  const haircut = ctx.params.get(MM_PARAMS.haircut);
+  const haircut = ctx.params.ratio(MM_PARAMS.haircut);
   for (const bank of banksOf(ctx)) {
     const ccy = ccyOf(ctx, bank);
     const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
@@ -602,6 +602,7 @@ function paramsOf(): ParamDecl[] {
       id: MM_PARAMS.policyRate,
       value: 0.02,
       unit: 'per annum',
+      dimension: 'perAnnum',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Central Bank B1, B2: the rate it declares. It is administered and not traded (B2), and it is the one price in this world that is not cleared — Law 3 allows exactly this one, because the quantity response is real and booked on both balance sheets. What it is set AGAINST is its mandate (B1.a), and the mandate is parliament (worklist 14).',
@@ -610,6 +611,7 @@ function paramsOf(): ParamDecl[] {
       id: MM_PARAMS.floorSpread,
       value: 0.001,
       unit: 'per annum below the policy rate',
+      dimension: 'perAnnum',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Money Market C1, C3: what it pays for cash it takes in, and half of the corridor whose WIDTH is a policy choice. Narrow, because a floor far below the policy rate lets the market rate wander and B4 stops being informative.',
@@ -618,6 +620,7 @@ function paramsOf(): ParamDecl[] {
       id: MM_PARAMS.ceilingSpread,
       value: 0.005,
       unit: 'per annum above the policy rate',
+      dimension: 'perAnnum',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Money Market C2, C4: what it charges to lend against paper. Above the policy rate so a bank prefers the market and drawing is information (C4.a), and wider than the floor spread because the window is meant to be the dearer answer.',
@@ -626,6 +629,7 @@ function paramsOf(): ParamDecl[] {
       id: MM_PARAMS.haircut,
       value: 0.05,
       unit: 'ratio of the market price',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Central Bank D2, D3: the haircut the window takes on the paper it lends against. Eligibility and haircuts are its choice and a policy instrument in themselves, which is why this is a policy and not a preference of anybody.',
@@ -634,6 +638,7 @@ function paramsOf(): ParamDecl[] {
       id: MM_PARAMS.overdraftPenalty,
       value: 0.02,
       unit: 'per annum above the window rate',
+      dimension: 'perAnnum',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Central Bank D3, D3.b: AT A PENALTY. An account that went below zero at the central bank borrowed from it without asking, and it is charged above the window it did not use — which is what makes the window the thing a bank goes to first and this the thing it goes to never.',
@@ -643,6 +648,7 @@ function paramsOf(): ParamDecl[] {
       value: 100,
       denominated: true,
       unit: 'of the money it is a deposit in, per member',
+      dimension: 'amount',
       kind: 'policy',
       owner: 'parliament',
       why: 'Banks Funding A1.a, Banks Capital D4: what is insured, PER MEMBER of a cell (XI-15). It is what makes E4 break the run loop for retail money and not for wholesale, and it is a rule somebody wrote — parliament owns it from worklist 14.',
@@ -651,6 +657,7 @@ function paramsOf(): ParamDecl[] {
       id: INSURER_PARAMS.premium,
       value: 0.002,
       unit: 'per annum on the insured part of a bank own deposit base',
+      dimension: 'perAnnum',
       kind: 'policy',
       owner: 'parliament',
       why: 'Banks Capital D4: what the guarantee costs the banks that have it. It is a rule somebody wrote and parliament owns it from worklist 14, and it is what makes deposit insurance a price a bank pays for taking retail money rather than a free option written by the state.',
@@ -902,7 +909,7 @@ function reserveOverdraft(ctx: MechanismContext, o: OverdraftContext): Overdraft
       ctx.participant(o.issuer),
       ctx.participant(o.holder),
       on,
-      ctx.params.get(MM_PARAMS.haircut),
+      ctx.params.ratio(MM_PARAMS.haircut),
     ),
   );
   const solvent = ctx.participant(o.holder).equity() > 0;
@@ -944,7 +951,7 @@ function bookOverdrafts(ctx: MechanismContext): void {
     if (need <= 0) continue;
     const book = BOOKS.find((b) => b.tenor === 'overnight' && b.secured);
     if (book === undefined) continue;
-    const rate = add(c.ceiling, ctx.params.get(MM_PARAMS.overdraftPenalty), 'the penalty rate');
+    const rate = add(c.ceiling, ctx.params.perAnnum(MM_PARAMS.overdraftPenalty), 'the penalty rate');
     const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), need);
     const covered = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
     const amount = ctx.registry.payable(ccy, atMost(covered, need, 'a guarantee pays no more than was owed'));

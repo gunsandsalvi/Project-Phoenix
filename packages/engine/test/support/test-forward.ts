@@ -92,8 +92,8 @@ export const testForwardKind: DerivativeKindProfile = {
     const move = reads.measuredMove(c.terms.underlying, c.terms.window);
     if (!move.some) return none();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
-    const horizon = reads.params.get(
-      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['get']>[0],
+    const horizon = reads.params.periods(
+      'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
       mul(

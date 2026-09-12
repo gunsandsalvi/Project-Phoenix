@@ -34,6 +34,7 @@ function params(): ParamDecl[] {
       id: IRS_PARAMS.tenors,
       value: 9,
       unit: 'years',
+      dimension: 'years',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'IRS C1: the longest tenor this world writes a swap to. The curve is the set of books from one year out to this one; how many points it has is a fact about the market rather than about anybody in it.',
@@ -42,6 +43,7 @@ function params(): ParamDecl[] {
       id: IRS_PARAMS.window,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'resolution',
       owner: 'model',
       why: "Derivative Layer D1: how much of a book's own record the initial margin is measured over. A resolution: the answer must not turn on it.",
@@ -50,6 +52,7 @@ function params(): ParamDecl[] {
       id: IRS_PARAMS.fixedEvery,
       value: 13,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'IRS A2, D6.a: how often the fixed leg pays. A convention of the market, stated with the contract, and not the same as the floating leg’s — which is the whole reason A2 says the two need not match.',
@@ -58,6 +61,7 @@ function params(): ParamDecl[] {
       id: IRS_PARAMS.floatEvery,
       value: 1,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'IRS A3: how often the floating leg fixes and pays. It fixes on the overnight book, which prints every period it trades, so this is how often that fixing is turned into a payment.',
@@ -67,7 +71,7 @@ function params(): ParamDecl[] {
 
 /** C1: the tenors this world's swap curve has points at. */
 export function irsTenorsOf(ctx: Pick<MechanismContext, 'params'>): readonly number[] {
-  const longest = ctx.params.get(IRS_PARAMS.tenors);
+  const longest = ctx.params.years(IRS_PARAMS.tenors);
   const out: number[] = [];
   for (let y = 1; y <= longest; y += 2) out.push(y);
   return out;
@@ -84,9 +88,9 @@ export const benchmarkOf = (ccy: CurrencyCode): string => `${String(ccy)}:secure
  */
 function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId): void {
   const open = new Set(ctx.markets.map((m) => String(m.id)));
-  const window = ctx.params.get(IRS_PARAMS.window);
-  const fixedEvery = ctx.params.get(IRS_PARAMS.fixedEvery);
-  const floatEvery = ctx.params.get(IRS_PARAMS.floatEvery);
+  const window = ctx.params.periods(IRS_PARAMS.window);
+  const fixedEvery = ctx.params.periods(IRS_PARAMS.fixedEvery);
+  const floatEvery = ctx.params.periods(IRS_PARAMS.floatEvery);
   for (const ccy of ctx.registry.currencies.keys()) {
     const clearer = house(ccy);
     if (!ctx.parties.has(clearer) || !ctx.parties.get(clearer).status.alive) continue;

@@ -15,6 +15,7 @@
  */
 import type { Family, Violation } from '../../audit/audit.js';
 import {
+  cohortId,
   paramId,
   unitId,
   venueId,
@@ -22,7 +23,7 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { addTo, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
-import { weightOf } from '../../parties/party.js';
+import { keyOf, weightOf } from '../../parties/party.js';
 import { TIME_PIECES } from '../../registry/grid.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -51,9 +52,9 @@ export const labourVenue = (region: RegionId, occupation: string): VenueId =>
 function numbers(ctx: MechanismContext): LabourParams {
   return {
     hoursPerMember: ctx.params.amount(LABOUR_PARAMS.hoursPerMember, HOURS),
-    retirementAge: ctx.params.get(LABOUR_PARAMS.retirementAge),
-    hiringLagPeriods: ctx.params.get(LABOUR_PARAMS.hiringLag),
-    severancePeriods: ctx.params.get(LABOUR_PARAMS.severance),
+    retirementAge: ctx.params.years(LABOUR_PARAMS.retirementAge),
+    hiringLagPeriods: ctx.params.periods(LABOUR_PARAMS.hiringLag),
+    severancePeriods: ctx.params.periods(LABOUR_PARAMS.severance),
   };
 }
 
@@ -64,6 +65,7 @@ function paramsOf(): ParamDecl[] {
       value: LABOUR_NUMBERS.hoursPerMember,
       denominated: true,
       unit: 'of somebody own time, per person per period',
+      dimension: 'amount',
       kind: 'technology',
       owner: 'model',
       why: 'Labour A1, B2: what one person has to sell in a week. The workforce is people and this is their time, so a headcount and an hour count are the same fact read two ways (F2).',
@@ -72,6 +74,7 @@ function paramsOf(): ParamDecl[] {
       id: LABOUR_PARAMS.retirementAge,
       value: LABOUR_NUMBERS.retirementAge,
       unit: 'years',
+      dimension: 'years',
       kind: 'policy',
       owner: 'parliament',
       why: 'Labour B3: the age from which a cohort is out of the workforce. It is a policy and parliament owns it from worklist 14; until then it stands at the age the cohorts were drawn around.',
@@ -80,6 +83,7 @@ function paramsOf(): ParamDecl[] {
       id: LABOUR_PARAMS.hiringLag,
       value: LABOUR_NUMBERS.hiringLagPeriods,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'model',
       why: 'Labour C2: finding somebody is not having them. The person is paid from the start and productive after this, which is what makes a hire an investment rather than a switch.',
@@ -88,6 +92,7 @@ function paramsOf(): ParamDecl[] {
       id: LABOUR_PARAMS.severance,
       value: LABOUR_NUMBERS.severancePeriods,
       unit: 'periods of pay',
+      dimension: 'periods',
       kind: 'policy',
       owner: 'parliament',
       why: 'Labour C3: what a firing costs, paid to the person separated. It is the cost that makes a firm hold labour through a soft patch and shed it when it is sure, and the asymmetry with hiring is where the employment cycle comes from. A pair of adjustment speeds is not this.',
@@ -144,12 +149,12 @@ function workforceIdentity(book: EmploymentBook): Family {
         }
         addTo(rowsHere, row.region, row.headcount);
       }
-      const retirementAge = view.params.get(LABOUR_PARAMS.retirementAge);
+      const retirementAge = view.params.years(LABOUR_PARAMS.retirementAge);
       const byRegion = new Map<string, { people: number; employed: number; states: number }>();
       for (const p of view.parties.ofKind(HOUSEHOLD)) {
         if (p.representation !== 'cell' || !p.status.alive) continue;
         const acc = byRegion.get(p.region) ?? { people: 0, employed: 0, states: 0 };
-        const working = view.registry.cohort(p.key.cohort).fromAge < retirementAge;
+        const working = view.registry.cohort(cohortId(keyOf(p, 'cohort'))).fromAge < retirementAge;
         const isEmployed = rowOfWorker(book, p.id) !== undefined;
         acc.people += p.weight;
         acc.employed += isEmployed ? p.weight : 0;

@@ -267,7 +267,7 @@ function writeSub(
     drawn,
     maturity: addDays(
       drawn,
-      ctx.params.get(SUB_PARAMS.periods) * ctx.calendar.periodDays,
+      ctx.params.periods(SUB_PARAMS.periods) * ctx.calendar.periodDays,
     ),
     dayCount: 'ACT/365F',
   };

@@ -148,8 +148,8 @@ export function goodTerms(i: Instrument): GoodTerms {
 }
 
 /** A2.a: how much of one input a unit of output takes, read from the register at the moment asked. */
-export function inputPerUnit(params: Pick<ParamRegister, 'get'>, input: RecipeInput): number {
-  return params.get(input.qtyPerUnit);
+export function inputPerUnit(params: Pick<ParamRegister, 'ratio'>, input: RecipeInput): number {
+  return params.ratio(input.qtyPerUnit);
 }
 
 /* ------------------------------------------------------------------------------------------------

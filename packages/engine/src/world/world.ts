@@ -274,7 +274,7 @@ export class World {
     this.currentCycle = this.calendar.cycle(0);
     this.audit = new Audit(
       [...standardFamilies(this.memory), ...spec.families],
-      this.params.get(paramId('audit.worstInstances')),
+      this.params.count(paramId('audit.worstInstances')),
     );
     this.phaseList = [
       {

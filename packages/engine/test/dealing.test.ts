@@ -138,14 +138,14 @@ describe('what a dealer is here (Dealer Desks A1, F2)', () => {
       // book — so the units a limit comes to in a given line fall out of what the bank is worth and
       // what it thinks the line is worth, and no number here has to be restated when either moves.
       for (const what of ['capitalAtRisk', 'concentration']) {
-        const share = w.params.get(lineParam(d.bank, DEALING, what));
+        const share = w.params.ratio(lineParam(d.bank, DEALING, what));
         expect(share).toBeGreaterThan(0);
         expect(share).toBeLessThan(1);
       }
       // XI-4, `13b-7`: AND EVERY LINE HAS ONE, not just this one. A line that asked for whatever
       // was left would take the whole headroom off whichever line was served after it.
       for (const line of [LENDING, DEALING]) {
-        const share = w.params.get(lineParam(d.bank, line, 'capitalAtRisk'));
+        const share = w.params.ratio(lineParam(d.bank, line, 'capitalAtRisk'));
         expect(share).toBeGreaterThan(0);
         expect(share).toBeLessThan(1);
       }
@@ -261,7 +261,7 @@ describe('how it prices (Dealer Desks C)', () => {
       LINE,
       stateOf(w, String(BANK_A), {
         limitAggregate: phx(10_000),
-        concentration: 2 * w.params.get(lineParam('bank.a', DEALING, 'concentration')),
+        concentration: 2 * w.params.ratio(lineParam('bank.a', DEALING, 'concentration')),
       }),
     );
     expect(empty.some && roomier.some).toBe(true);

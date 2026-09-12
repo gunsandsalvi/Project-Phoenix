@@ -146,9 +146,9 @@ export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCod
  */
 function bidFor(ctx: MechanismContext, bank: PartyId, v: Valuation): Bid {
   const view = ctx.participant(bank);
-  const required = ctx.params.get(bankParamOf(bank));
-  // What the trouble is worth to it: its own required return on the capital the book consumes for
-  // one period. A bank that wants more on its capital bids lower for the same book.
+  const required = ctx.params.perAnnum(bankParamOf(bank));
+  // What the trouble is worth to it: its own required return on the capital the book consumes.
+  // A bank that wants more on its capital bids lower for the same book.
   const wants = mul(v.assets, required, 'what it wants for taking the book on');
   const pays = sub(sub(v.assets, v.deposits, 'assets over deposits'), v.borrowings, 'and its rows');
   const bid = sub(pays, wants, 'what it will pay');

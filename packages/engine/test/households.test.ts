@@ -409,7 +409,7 @@ describe('what the state collects (Treasury C1, C1.a, C3)', () => {
     // C1.a: every base is the payers' own statement — what actually reached them and what they
     // actually paid — and what was collected is those bases at the rates parliament set, and
     // nothing else.
-    const at = (id: string): number => w.params.get(id as never);
+    const at = (id: string): number => w.params.ratio(id as never);
     // Law 8: every payer pays in whole pieces of money — a cell in whole pieces for each of its
     // members — so what was collected is the bases at those rates, less at most one piece from
     // each person who paid. The count of them is the slack, and it is derived, not chosen.

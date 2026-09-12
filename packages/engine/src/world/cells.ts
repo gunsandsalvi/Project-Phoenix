@@ -78,7 +78,11 @@ export function mergeCells(
   const ca = d.parties.cell(a);
   const cb = d.parties.cell(b);
   forbid(a !== b, 'XI-15', 'a cell cannot merge with itself');
-  forbid(sameKey(ca, cb), 'XI-15', `cells ${a} and ${b} have different keys and cannot merge`);
+  forbid(
+    d.parties.sameKey(ca, cb) && ca.kind === cb.kind,
+    'XI-15',
+    `cells ${a} and ${b} have different keys and cannot merge`,
+  );
   d.parties.applyWeight({
     kind: 'merge',
     party: a,
@@ -138,15 +142,6 @@ export function weightEvent(
       cause,
     },
     true,
-  );
-}
-
-function sameKey(a: CellParty, b: CellParty): boolean {
-  return (
-    a.key.region === b.key.region &&
-    a.key.cohort === b.key.cohort &&
-    a.key.bank === b.key.bank &&
-    a.kind === b.kind
   );
 }
 

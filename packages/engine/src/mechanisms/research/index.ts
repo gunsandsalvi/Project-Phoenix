@@ -108,7 +108,7 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
   const wage = wagePrinted(ctx, bank);
   if (!wage.some) return;
   const hours = mul(
-    ctx.params.get(RESEARCH_PARAMS.hoursPerName),
+    ctx.params.count(RESEARCH_PARAMS.hoursPerName),
     names,
     'the hours this desk takes',
   );

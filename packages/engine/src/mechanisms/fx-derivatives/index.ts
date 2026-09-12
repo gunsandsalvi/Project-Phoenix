@@ -42,6 +42,7 @@ function params(): ParamDecl[] {
       id: FX_PARAMS.tenors,
       value: 3,
       unit: 'years',
+      dimension: 'years',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'FX Forwards C1: the longest tenor a forward is written to here. The forward curve is the set of books from one year out to this one — a convention of the market, not a choice anybody in it makes.',
@@ -50,6 +51,7 @@ function params(): ParamDecl[] {
       id: FX_PARAMS.window,
       value: 8,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'resolution',
       owner: 'model',
       why: "Derivative Layer D1: how much of a book's own record the initial margin is measured over. A resolution: the answer must not turn on it.",
@@ -58,6 +60,7 @@ function params(): ParamDecl[] {
       id: FX_PARAMS.payEvery,
       value: 13,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'FX Forwards C1.a: how often each leg of a cross-currency swap pays interest on its own money. A convention stated with the contract.',
@@ -67,7 +70,7 @@ function params(): ParamDecl[] {
 
 /** C1: the tenors this world's forward curve has points at. */
 export function fxTenorsOf(ctx: Pick<MechanismContext, 'params'>): readonly number[] {
-  const longest = ctx.params.get(FX_PARAMS.tenors);
+  const longest = ctx.params.years(FX_PARAMS.tenors);
   const out: number[] = [];
   for (let y = 1; y <= longest; y += 2) out.push(y);
   return out;
@@ -92,8 +95,8 @@ function pairsHere(ctx: MechanismContext): readonly { base: CurrencyCode; quote:
  */
 function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId): void {
   const open = new Set(ctx.markets.map((m) => String(m.id)));
-  const window = ctx.params.get(FX_PARAMS.window);
-  const payEvery = ctx.params.get(FX_PARAMS.payEvery);
+  const window = ctx.params.periods(FX_PARAMS.window);
+  const payEvery = ctx.params.periods(FX_PARAMS.payEvery);
   const alive = (p: PartyId): boolean => ctx.parties.has(p) && ctx.parties.get(p).status.alive;
   for (const { base, quote } of pairsHere(ctx)) {
     // C2, and a real one: a pair is cleared through the house of the money it is QUOTED in,

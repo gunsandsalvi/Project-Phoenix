@@ -105,7 +105,7 @@ describe('how an outlook moves (B1, B2, B4)', () => {
     expect(surprises.length).toBeGreaterThan(0);
     const last = surprises[surprises.length - 1];
     const gap = Math.abs(last?.data['surprise'] as number);
-    const memory = w.params.get(EXPECTATION_PARAMS.memoryMean);
+    const memory = w.params.periods(EXPECTATION_PARAMS.memoryMean);
     expect(gap).toBeGreaterThan(0);
     expect(memory).toBeGreaterThan(1);
   });

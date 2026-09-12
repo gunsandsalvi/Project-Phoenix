@@ -131,7 +131,7 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
   for (const h of ctx.register.allHoldings()) {
     const inst = ctx.instruments.get(h.instrument);
     if (!mine.has(inst.kind) || !inst.status.live) continue;
-    const rate = ctx.params.get(goodTerms(inst).spoilage);
+    const rate = ctx.params.ratio(goodTerms(inst).spoilage);
     if (rate === 0) continue;
     const held = sum(h.lots.map((l) => l.qty));
     const party = ctx.parties.get(h.holder);

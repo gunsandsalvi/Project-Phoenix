@@ -168,9 +168,9 @@ export function carryRate(view: ParticipantView, ccy: CurrencyCode): number | un
   if (typeof perAnnum !== 'number') return undefined;
   return rateOf(
     perAnnum,
-    view.params.get(TRADING_BOOK_CAPITAL_RATIO),
-    view.params.get(TRADING_BOOK_RISK_WEIGHT),
-    view.params.get(bankParam(view.self.id, 'returnOnCapital')),
+    view.params.ratio(TRADING_BOOK_CAPITAL_RATIO),
+    view.params.ratio(TRADING_BOOK_RISK_WEIGHT),
+    view.params.perAnnum(bankParam(view.self.id, 'returnOnCapital')),
     periodOfYear(view.calendar, view.period),
   );
 }
@@ -183,7 +183,7 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
   const targets = liquidityTargets(
     view,
     d,
-    liquidityPlan(view, view.params.get(bankParam(view.self.id, 'liquidityCushion'))),
+    liquidityPlan(view, view.params.ratio(bankParam(view.self.id, 'liquidityCushion'))),
   );
   return {
     // C2.a: where its own treasury wants each line held. The treasury posts nothing; this is how
@@ -209,12 +209,12 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
       view,
       mul(
         capitalOf(view),
-        view.params.get(lineParam(view.self.id, DEALING, 'capitalAtRisk')),
+        view.params.ratio(lineParam(view.self.id, DEALING, 'capitalAtRisk')),
         'what it will put behind its dealing book',
       ),
       bookValue(view, targets),
     ),
-    concentration: view.params.get(lineParam(view.self.id, DEALING, 'concentration')),
+    concentration: view.params.ratio(lineParam(view.self.id, DEALING, 'concentration')),
     ratePerPeriod: rate,
     rateIn: (money) => carryRate(view, money),
     bookValue: bookValue(view, targets),

@@ -63,7 +63,7 @@ function published(ctx: MechanismContext): Published {
  * the report carries must be the one the audit will check at the end of this same period.
  */
 function publish(seed: string, ctx: MechanismContext): void {
-  const lag = ctx.params.get(REPORTING_PARAMS.lag);
+  const lag = ctx.params.days(REPORTING_PARAMS.lag);
   const today = ctx.calendar.endOf(ctx.period);
   const state = published(ctx);
   for (const company of ctx.parties.ofKind(FIRM)) {

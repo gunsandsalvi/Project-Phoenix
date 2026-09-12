@@ -28,6 +28,7 @@ export function reportingParams(): ParamDecl[] {
       id: REPORTING_PARAMS.lag,
       value: 30,
       unit: 'days after the fiscal close',
+      dimension: 'days',
       kind: 'policy',
       owner: 'parliament',
       why: 'Reporting A4, A4.a: the books close, then the report comes out, and in between the firm knows its result and nobody else does. A disclosure rule somebody wrote, and the width of the only information asymmetry this world has. Parliament owns it from worklist 14.',

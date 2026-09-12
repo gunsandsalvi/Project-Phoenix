@@ -131,12 +131,12 @@ export function dealerOrders(
   const print = view.print(m.instrument);
   if (!print.some || print.value.price <= 0) return [];
   const rate = print.value.price;
-  const edge = mul(rate, view.params.get(fxParam(d.bank, 'edge')), 'what standing in the middle costs it');
+  const edge = mul(rate, view.params.ratio(fxParam(d.bank, 'edge')), 'what standing in the middle costs it');
   // D1: what it will have behind a position in this pair — its own share of its own capital, which
   // is a read of its own account and is in its OWN money, carried across to the base at the rate
   // in force so the room is a size in the units this book trades in.
   const home = view.registry.region(view.self.region).ccy;
-  const risk = mul(view.equity(), view.params.get(fxParam(d.bank, 'inventoryLimit')), 'what it will risk');
+  const risk = mul(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk');
   const room = downTick(mul(risk, view.rateIn(home, pair.base), 'in the base'));
   if (room <= 0) return [];
   // D4: how far its book is from flat, as a share of the room it has — signed, because a desk can

@@ -181,7 +181,7 @@ describe('what a good is (Goods A)', () => {
     // The recipe in the terms names the declared number rather than carrying a second copy of it.
     const terms = goodTerms(w.instruments.get(GRAVEL_ID));
     expect(terms.recipe.inputs[0]?.qtyPerUnit).toBe(recipeParam('gravel', 'stone'));
-    expect(w.params.get(spoilageParam('stone'))).toBe(0);
+    expect(w.params.ratio(spoilageParam('stone'))).toBe(0);
   });
 
   it('refuses a recipe denominated in money: that is a substitution nobody declared (A2.b)', () => {

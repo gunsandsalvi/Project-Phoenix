@@ -140,6 +140,7 @@ export function indices(
         id: INDEX_PARAMS.base,
         value: 100,
         unit: 'index level at the first period',
+        dimension: 'price',
         kind: 'resolution',
         owner: 'model',
         why: "Indices A4: what every index in this world starts at. A base is a UNIT and not a claim — doubling it doubles every level and changes nothing anybody does, which is exactly what makes it a resolution rather than a number to be justified. A hundred, because that is what a base is called everywhere and because a reader who sees 103 knows what it means without being told. Tested by invariance: declare it at 1000 and every ratio between two levels, every beta and every mandate boundary is the number it was.",
@@ -148,19 +149,20 @@ export function indices(
         id: INDEX_PARAMS.largeCap,
         value: 0.7,
         unit: 'of a region’s listed capitalisation',
+        dimension: 'ratio',
         kind: 'technology',
         owner: 'standardSetter',
         why: 'Indices A1.a, A3, D5: WHERE THE SIZE BOUNDARY IS — the share of a region’s whole listed market the large-cap line covers, stated publicly and in advance by whoever publishes the rule. It is a convention of the index business and not a choice anybody in the market makes, and a firm crosses it both ways by its own capitalisation moving, which is what makes inclusion a real event with a real price effect (C2.a).',
       },
     ],
     indices: (params) => [
-      ...indexRules(regions, currencies, asPeriod(0), params.get(INDEX_PARAMS.base)),
+      ...indexRules(regions, currencies, asPeriod(0), params.price(INDEX_PARAMS.base)),
       ...sizeRules(
         regions,
         statedIn,
-        params.get(INDEX_PARAMS.largeCap),
+        params.ratio(INDEX_PARAMS.largeCap),
         asPeriod(0),
-        params.get(INDEX_PARAMS.base),
+        params.price(INDEX_PARAMS.base),
       ),
     ],
     phases: [
@@ -203,13 +205,13 @@ function publish(
   statedIn: CurrencyCode,
 ): void {
   for (const decl of [
-    ...indexRules(regions, currencies, asPeriod(0), ctx.params.get(INDEX_PARAMS.base)),
+    ...indexRules(regions, currencies, asPeriod(0), ctx.params.price(INDEX_PARAMS.base)),
     ...sizeRules(
       regions,
       statedIn,
-      ctx.params.get(INDEX_PARAMS.largeCap),
+      ctx.params.ratio(INDEX_PARAMS.largeCap),
       asPeriod(0),
-      ctx.params.get(INDEX_PARAMS.base),
+      ctx.params.price(INDEX_PARAMS.base),
     ),
   ]) {
     const read = ctx.index(decl.id);

@@ -85,7 +85,7 @@ export function holderReservation(
   const consumed = mul(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit held');
   const capitalCharge = mul(
     consumed,
-    view.params.get(bankParam(decl.bank, 'returnOnCapital')),
+    view.params.perAnnum(bankParam(decl.bank, 'returnOnCapital')),
     'capital charge',
   );
   return {
@@ -110,7 +110,7 @@ export function probabilityOfDefault(
   /** Every default anybody has published. They are public, so this bank saw all of them (A2). */
   defaults: readonly Event[],
 ): number {
-  const memory = view.params.get(bankParam(decl.bank, 'credit.memory'));
+  const memory = view.params.periods(bankParam(decl.bank, 'credit.memory'));
   const from = view.period - memory;
   const seen = defaults.filter((e) => e.period >= from && e.subjects.includes(borrower));
   const periods = atMost(view.period, memory, 'a world cannot remember before it began');
@@ -142,7 +142,7 @@ export function quote(
   const expectedLoss = mul(pd, lossGivenDefault([]), 'expected loss');
   // C1.c: the capital this loan consumes, times what this bank needs to earn on it.
   const consumed = mul(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit lent');
-  const capitalCharge = mul(consumed, view.params.get(bankParam(decl.bank, 'returnOnCapital')), 'capital charge');
+  const capitalCharge = mul(consumed, view.params.perAnnum(bankParam(decl.bank, 'returnOnCapital')), 'capital charge');
   return {
     bank: view.self.id,
     costOfFunds: funds,
@@ -223,7 +223,7 @@ export function room(view: ParticipantView, decl: BankDecl, borrower: PartyId): 
   // in a period when the room ran out has none, which is what scarce capital means.
   const byCapital = roomFor(view, LENDING);
   // F3, B2.c: the most it will have out to one name, whatever its capital would allow.
-  const limit = mul(capital, view.params.get(bankParam(decl.bank, 'limitPerBorrower')), 'its limit for one name');
+  const limit = mul(capital, view.params.ratio(bankParam(decl.bank, 'limitPerBorrower')), 'its limit for one name');
   const byAppetite = sub(limit, exposureTo(view, borrower), 'room under its limit');
   const byFunding = fundingRoom(view);
   // F3, B2.b: three real constraints and the tightest is the one that binds. A constraint this

@@ -37,6 +37,25 @@ export interface PlaceholderDeath {
   readonly worklistItem: string;
 }
 
+/** Law 8: the closed vocabulary a declared number's unit belongs to. */
+export type Dimension =
+  /** A count of periods of this world's calendar. */
+  | 'periods'
+  /** A count of days, months or years of the civil calendar — never interchangeable with periods. */
+  | 'days'
+  | 'months'
+  | 'years'
+  /** A count of things: people, entries, instructions, contracts, machines. */
+  | 'count'
+  /** A pure share of something, dimensionless: a ratio, a weight, a fraction. */
+  | 'ratio'
+  /** A rate per year. */
+  | 'perAnnum'
+  /** Money for one unit of something: a wage per hour, a level, a price per share. */
+  | 'price'
+  /** A declared AMOUNT of a unit the reader names (`denominated`), read through `amount`. */
+  | 'amount';
+
 export interface ParamDecl {
   readonly id: ParamId;
   /**
@@ -49,8 +68,26 @@ export interface ParamDecl {
    * The unit the value is in (Law 8): 'periods', 'days', 'per annum', 'ratio of the position'.
    * On a `denominated` value it carries what the denomination does not — the basis and the
    * periodicity, 'per member per period' — because WHICH unit that one is, is the reader's to name.
+   *
+   * It is PROSE, and prose is for a reader. What a reader cannot do with it is check anything,
+   * which is what `dimension` is for.
    */
   readonly unit: string;
+  /**
+   * Law 8: WHAT KIND OF NUMBER THIS IS, from a closed list — the half of `unit` a machine can check.
+   *
+   * `unit` was a free string that nothing ever read back: the constructor checked it was non-empty
+   * and `get(id)` handed out a bare `number`. So the one place in the engine where every
+   * behaviour-shaping number is declared with its unit was also the one place the unit could not be
+   * checked, and a number declared in 'periods' multiplied by a day count was wrong at no site
+   * (item 13b.1).
+   *
+   * Every read names what it expects — `params.periods(id)`, `params.ratio(id)` — and a read that
+   * names the wrong one throws where it is made, with both dimensions in the message. The four
+   * durations are kept apart on purpose: periods, days, months and years are the same quantity in
+   * four units, and mixing them is exactly the defect this exists to catch.
+   */
+  readonly dimension: Dimension;
   /**
    * Law 2, Law 8: the value is an AMOUNT of something, declared the way a person says it — thirty
    * thousand USD, seven thousand hours, four hundred thousand units of a line. WHICH unit is named
@@ -154,8 +191,18 @@ export class ParamRegister {
     this.decls = map;
   }
 
-  /** Read a value. A number nobody declared is missing, never zero. */
-  get(id: ParamId): number {
+  /**
+   * Read a value, NAMING WHAT YOU EXPECT IT TO BE (Law 8).
+   *
+   * The dimension is the half of the unit a machine can check, and this is where it is checked: a
+   * read that names the wrong one throws here, with both dimensions in the message, instead of
+   * quietly handing back a count of periods to something about to multiply it by a day count.
+   *
+   * There is no unchecked read. `get` used to be one, and every one of its hundred and fifty-eight
+   * call sites was a place where the declared unit and the expected unit could differ with nothing
+   * to say so (item 13b.1).
+   */
+  private read(id: ParamId, expected: Dimension): number {
     const d = this.decl(id);
     if (d.denominated === true) {
       throw new InvalidRegistry(
@@ -163,7 +210,52 @@ export class ParamRegister {
         `parameter ${id} is an amount of something: read it with amount(), naming the unit`,
       );
     }
+    if (d.dimension !== expected) {
+      throw new InvalidRegistry(
+        'Law 8',
+        `parameter ${id} is declared in ${d.dimension} ("${d.unit}") and was read as ${expected}`,
+        { id, declared: d.dimension, read: expected },
+      );
+    }
     return d.value;
+  }
+
+  /** A count of periods of this world's calendar — never days, months or years. */
+  periods(id: ParamId): number {
+    return this.read(id, 'periods');
+  }
+
+  /** A count of days, months or years of the civil calendar (Money G3.a). */
+  days(id: ParamId): number {
+    return this.read(id, 'days');
+  }
+
+  months(id: ParamId): number {
+    return this.read(id, 'months');
+  }
+
+  years(id: ParamId): number {
+    return this.read(id, 'years');
+  }
+
+  /** A count of things: people, entries, contracts, machines. */
+  count(id: ParamId): number {
+    return this.read(id, 'count');
+  }
+
+  /** A pure share of something, dimensionless. */
+  ratio(id: ParamId): number {
+    return this.read(id, 'ratio');
+  }
+
+  /** A rate per year. */
+  perAnnum(id: ParamId): number {
+    return this.read(id, 'perAnnum');
+  }
+
+  /** Money for one unit of something: a wage per hour, a level, a price per share. */
+  price(id: ParamId): number {
+    return this.read(id, 'price');
   }
 
   /**

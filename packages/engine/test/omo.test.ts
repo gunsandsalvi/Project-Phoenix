@@ -34,7 +34,7 @@ function withPolicy(seed: string, id: string, value: number): World {
 describe('open-market operations (Central Bank C)', () => {
   it('buys towards the share policy chose, paying with money it creates (C1, C1.a, C2)', () => {
     const w = rigWorld('omo-a');
-    const share = w.params.get(CB_PARAMS.targetShare);
+    const share = w.params.ratio(CB_PARAMS.targetShare);
     const baseBefore = w.instruments.get(moneyInstrumentId(CB, USD)).issued;
     w.step();
     const gapBefore = Math.abs(

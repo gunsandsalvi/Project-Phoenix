@@ -53,6 +53,7 @@ export const centralBankOmo: SystemModule = {
       id: CB_PARAMS.targetShare,
       value: 0.25,
       unit: 'ratio of a line outstanding',
+      dimension: 'ratio',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Central Bank C1, C1.a: it buys sovereign paper in a size IT chooses, set by policy and never by an auction’s weakness. The share of each line it wants to hold is that size, stated.',
@@ -61,6 +62,7 @@ export const centralBankOmo: SystemModule = {
       id: CB_PARAMS.reinvest,
       value: 1,
       unit: '1 to reinvest maturities, 0 to let the book run off',
+      dimension: 'count',
       kind: 'policy',
       owner: 'centralBank',
       why: 'Central Bank C4: reinvestment of maturities is a decision separate from new purchases, and the difference between the two is quantitative tightening.',
@@ -69,6 +71,7 @@ export const centralBankOmo: SystemModule = {
       id: CB_PARAMS.remittanceMonths,
       value: 12,
       unit: 'months',
+      dimension: 'months',
       kind: 'policy',
       owner: 'model',
       why: 'Central Bank E3: its net income goes to the treasury because the treasury owns it. How often it settles up is placed on the one calendar by date (Money G3).',
@@ -106,8 +109,8 @@ export const centralBankOmo: SystemModule = {
         if (!sovereigns.has(i.issuer.value)) return [];
         const held = view.quantity(i.id);
         // C4: with reinvestment off there is no target to restore, so the book runs off.
-        if (view.params.get(CB_PARAMS.reinvest) === 0) return [];
-        const target = mul(i.issued, view.params.get(CB_PARAMS.targetShare), 'target holding');
+        if (view.params.count(CB_PARAMS.reinvest) === 0) return [];
+        const target = mul(i.issued, view.params.ratio(CB_PARAMS.targetShare), 'target holding');
         const gap = sub(target, held, 'omo gap');
         // A gap smaller than the dust of the subtraction that produced it is not a policy decision.
         if (!material(gap, 2, add(Math.abs(target), Math.abs(held), 'gap magnitude'))) return [];
@@ -173,7 +176,7 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
 
 /** Placed on the one calendar by date, like every other periodicity (Money G3.a). */
 function dueThisPeriod(ctx: MechanismContext): boolean {
-  const every = ctx.params.get(CB_PARAMS.remittanceMonths);
+  const every = ctx.params.months(CB_PARAMS.remittanceMonths);
   const epoch = ctx.calendar.epoch;
   const end = ctx.calendar.endOf(ctx.period);
   let date: Civil = epoch;

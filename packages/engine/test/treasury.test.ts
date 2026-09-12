@@ -44,7 +44,7 @@ describe('the programme (Treasury D4, Sovereign A2)', () => {
 
   it('announces on its own calendar and not otherwise (Sovereign C1)', () => {
     const w = rigWorld('tsy-b');
-    const every = w.params.get(TREASURY_PARAMS.auctionEvery);
+    const every = w.params.periods(TREASURY_PARAMS.auctionEvery);
     const announced: number[] = [];
     for (let i = 0; i < 3 * every; i += 1) {
       const r = w.step();
@@ -86,7 +86,7 @@ describe('outlays and receipts (Treasury B1, C1)', () => {
 
   it('collects tax on the interest each payer was actually paid (C1.a, C3)', () => {
     const w = rigWorld('tsy-e');
-    const rate = w.params.get(TREASURY_PARAMS.taxInterest);
+    const rate = w.params.ratio(TREASURY_PARAMS.taxInterest);
     let checked = false;
     for (let i = 0; i < 30; i += 1) {
       const r = w.step();

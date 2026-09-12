@@ -94,6 +94,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       id: spoilageParam(d.subUnit),
       value: d.spoilagePerPeriod,
       unit: `fraction of units in store per period`,
+      dimension: 'ratio',
       kind: 'technology',
       owner: 'model',
       why: `Goods E4: ${d.spoilageWhy} It is units that leave, never a fee: a storage charge is cash to whoever stores the goods and is a different thing (E4.a).`,
@@ -105,6 +106,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       id: labourParam(d.subUnit),
       value: (d.labourHoursPerUnit * TIME_PIECES) / piecesOf(d.unit),
       unit: `minutes per piece of ${d.subUnit}`,
+      dimension: 'ratio',
       kind: 'technology',
       owner: 'model',
       why: `Goods A2.c: ${d.labourWhy}`,
@@ -114,6 +116,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
         id: plantParam(d.subUnit, plant.capitalKind),
         value: (plant.unitsPerUnitPerPeriod * WHOLE_PIECES) / piecesOf(d.unit),
         unit: `pieces of ${plant.capitalKind} in service per piece of ${d.subUnit} started per period`,
+        dimension: 'ratio',
         kind: 'technology',
         owner: 'model',
         why: `Goods A2.c, Capital Programme A2: ${plant.why} It is the stock that lets the line run at a rate, so what it can make is a function of what it holds and not of what it wants.`,
@@ -123,6 +126,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       id: yieldParam(d.subUnit),
       value: d.yieldRate,
       unit: `${d.unit} finished per ${d.unit} started`,
+      dimension: 'ratio',
       kind: 'technology',
       owner: 'model',
       why: `Goods B4: ${d.yieldWhy} What survives is dearer than what was started, because the cost of the units that did not make it is carried by the ones that did.`,
@@ -131,6 +135,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
       id: leadTimeParam(d.subUnit),
       value: d.leadTimePeriods,
       unit: 'periods',
+      dimension: 'periods',
       kind: 'technology',
       owner: 'model',
       why: `Goods B3: ${d.leadTimeWhy}`,
@@ -142,6 +147,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
         id: recipeParam(d.subUnit, input.subUnit),
         value: decl.qtyPerUnit,
         unit: recipeUnit(input, d),
+        dimension: 'ratio',
         kind: 'technology',
         owner: 'model',
         why: `Goods A2.a: ${decl.why} It is a fixed physical quantity, so a price that doubles does not halve the draw (A2.b).`,
@@ -369,7 +375,7 @@ function drawFor(view: AuditView, output: InstrumentId, qty: number): Map<Instru
   if (!isGoodTerms(terms)) return out;
   for (const input of terms.recipe.inputs) {
     const id = goodId(input.subUnit, terms.region);
-    out.set(id, mul(qty, view.params.get(input.qtyPerUnit), 'units the recipe draws'));
+    out.set(id, mul(qty, view.params.ratio(input.qtyPerUnit), 'units the recipe draws'));
   }
   return out;
 }

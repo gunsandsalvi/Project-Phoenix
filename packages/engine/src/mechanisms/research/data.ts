@@ -26,6 +26,7 @@ export function researchParams(): ParamDecl[] {
       id: RESEARCH_PARAMS.hoursPerName,
       value: 8,
       unit: 'hours a period, per name covered',
+      dimension: 'count',
       kind: 'technology',
       owner: 'model',
       why: "Reporting D2: what covering one name takes of somebody's week — reading its books, watching its markets, writing the estimate. It is the work and not a choice, and what an hour of it costs is whatever the labour venue cleared at.",

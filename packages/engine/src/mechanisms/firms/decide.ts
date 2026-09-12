@@ -143,24 +143,24 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
   const terms = goodTerms(view.instruments.get(output));
   return {
     terms,
-    spoilage: view.params.get(terms.spoilage),
+    spoilage: view.params.ratio(terms.spoilage),
     // Goods A2 states what the work takes; Firm A3 states what it takes HERE. This is the one place
     // the two meet, so a firm's own hours-per-unit has one writer and every reader gets the same
     // number — what it bids for an hour, what a unit costs it, and what its people can make.
     hoursPerUnit: mul(
-      view.params.get(terms.recipe.labourHoursPerUnit),
-      view.params.get(labourScaleId(line.firm)),
+      view.params.ratio(terms.recipe.labourHoursPerUnit),
+      view.params.ratio(labourScaleId(line.firm)),
       'hours a unit takes this firm',
     ),
-    yieldRate: view.params.get(terms.recipe.yieldRate),
-    leadTime: view.params.get(terms.recipe.leadTimePeriods),
+    yieldRate: view.params.ratio(terms.recipe.yieldRate),
+    leadTime: view.params.periods(terms.recipe.leadTimePeriods),
     inputs: terms.recipe.inputs.map((i) => ({
       instrument: goodId(i.subUnit, terms.region),
-      qtyPerUnit: view.params.get(i.qtyPerUnit),
+      qtyPerUnit: view.params.ratio(i.qtyPerUnit),
     })),
     plant: terms.recipe.plant.map((r) => ({
       capitalKind: r.capitalKind,
-      unitsPerUnitPerPeriod: view.params.get(r.unitsPerUnitPerPeriod),
+      unitsPerUnitPerPeriod: view.params.ratio(r.unitsPerUnitPerPeriod),
     })),
   };
 }
@@ -397,8 +397,8 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         perPeriod,
         div(sales.value.confidence, tech.yieldRate, 'how wide its own surprises are, per unit started'),
         contribution,
-        view.params.get(firmParam(line.firm, 'hurdle')),
-        view.params.get(firmParam(line.firm, 'horizon')),
+        view.params.perAnnum(firmParam(line.firm, 'hurdle')),
+        view.params.periods(firmParam(line.firm, 'horizon')),
         cost.value,
         spendable(view, orders),
       )
@@ -460,7 +460,7 @@ function plantOffers(
   for (const need of tech.plant) {
     const d = capitalKindOf(CAPITAL_KINDS, need.capitalKind);
     if (d === undefined) continue;
-    const life = view.params.get(lifeParam(d.id));
+    const life = view.params.periods(lifeParam(d.id));
     const built = goodId(d.madeFrom, tech.terms.region);
     if (!view.instruments.has(built)) continue;
     const asking = expectedPrice(view, built);

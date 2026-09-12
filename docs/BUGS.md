@@ -96,3 +96,69 @@ phases are ordered, where a print that is not there yet means a phase in the wro
 is the point (Clearing F1.a). Merging them turned every read of a line before its first session —
 including the seed's own valuation — into `NotYetProduced`, measured in `tick.test.ts` at four tests.
 Both functions now state the difference where they are.
+
+---
+
+## 13b.1-5 — A resolution bid charges a full year of required return for one week
+
+**Measured.** `doors.test.ts`, the first world the typed parameter reads ran through:
+
+```
+InvalidRegistry: [Law 8] parameter bank.returnOnCapital.bank.b is declared in perAnnum
+                 ("per annum") and was read as ratio
+ ❯ bidFor  src/mechanisms/money-market/resolution.ts:149
+ ❯ resolve → Money-market run → World.step
+```
+
+**What it is.** `bank.returnOnCapital.<bank>` is a rate per annum, and every one of the four sites
+that reads it says so — `costOfFunds` divides by the fraction of a year the period was, the dealing
+desk passes `periodOfYear` into `rateOf`, both quotes build a rate that is itself per annum. The
+fifth, the bid a surviving bank makes for a failed bank's book (Money-market D3), read the same
+number as a dimensionless `ratio` and multiplied it straight onto the assets: `mul(v.assets,
+required)`. Its own comment said "for one period". Twelve months of required return, charged against
+one week of holding the book — the bid is roughly fifty times too low, so a resolution that should
+place a book is a resolution that declines it (D3.b), and the bank that would have taken it looks
+like a bank whose equity could not stand it.
+
+**The read is fixed, the arithmetic is not.** The read now names `perAnnum`, which is what the
+number is; the missing multiplication by the fraction of a year is the defect, and it is exactly
+what the closed vocabulary was built to make visible — the dimension is part of the number (Law 8),
+so a rate that never meets a length of time is a rate that has not been used yet.
+
+**Where it goes.** Not this item's: 13b.1 changes no economic outcome (its own guard), and this
+changes the price at which a failed bank's book is placed. It is Money-market D3's arithmetic, and
+the item that owns a resolution reaching its own price is 13h.
+
+---
+
+## 13b.1-6 — A mean-preserving spread moves what the sector decides, by nineteen pieces a member
+
+**Measured.** `households.test.ts`, "moves cells across a threshold under a mean-preserving spread
+while the mean stands (A2.g)":
+
+```
+AssertionError: expected 18.99841727653984 to be less than or equal to 1
+  test/households.test.ts:547  Math.abs(meanSpend(spread) - meanSpend(flat))
+```
+
+Confirmed at `8b562e9` as well, with the same figure to every digit: it arrived with one of the
+three redraws, not with the change being made when it was seen.
+
+**What it is.** Two worlds are seeded with the SAME total money reaching the SAME people, spread
+differently between cells. The mean of what the sector then decides to spend should be the same in
+both to within **one piece per member** — the test's own bound, and it is arithmetic and not a band
+(Law 7): moving the same total between cells moves which member holds which cent, and that is all
+it can move. Nineteen pieces is not that.
+
+**What it is NOT.** It is not "the sector decides at an average" — the same test asserts, and the
+assertion still passes, that not one cell decided at the mean and that the decisions are many. So
+A2.f holds. What has moved is the SUM of a nonlinear decision under a spread, which is what
+`Σ f(xᵢ)·wᵢ` is supposed to do — but only when a cell crosses a threshold, and the test's own
+comment says this world has no threshold its cells straddle. So either a threshold appeared with
+the redraw and the test's comment is now out of date, or something in a household's plan is not
+homogeneous of degree one in what it holds when it should be. Which of the two it is, is the
+measurement to take.
+
+**Where it goes.** Not this item's: 13b.1 changes no economic outcome, and the dispersion of what
+households hold is 13d's (Households E/F, the life cycle) or 16's (Part XII, measure). Positioned
+when the item closes.

@@ -67,14 +67,14 @@ export function assemble(spec: AssemblySpec): World {
       curveFamilies: modules.flatMap((m) => m.curveFamilies),
       derivativeKinds: modules.flatMap((m) => m.derivativeKinds ?? []),
     },
-    new ParamRegister(declared).get(KERNEL_PARAMS.pieceShift),
-    new ParamRegister(declared).get(KERNEL_PARAMS.tickShift),
+    new ParamRegister(declared).count(KERNEL_PARAMS.pieceShift),
+    new ParamRegister(declared).count(KERNEL_PARAMS.tickShift),
   );
   const params = new ParamRegister(declared, registry);
   const calendar = new Calendar({
     epoch: spec.epoch,
-    periodDays: params.get(KERNEL_PARAMS.periodDays),
-    cyclesPerPeriod: params.get(KERNEL_PARAMS.cyclesPerPeriod),
+    periodDays: params.days(KERNEL_PARAMS.periodDays),
+    cyclesPerPeriod: params.periods(KERNEL_PARAMS.cyclesPerPeriod),
   });
   const world = new World({
     seed: spec.seed,
