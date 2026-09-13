@@ -84,15 +84,25 @@ function inputsOf(d: GoodDecl, rows: readonly GoodDecl[]): GoodDecl[] {
  * and what the weather does to it in store. None of them is a claim about an answer.
  */
 /** Law 8: how many pieces one named unit of a good is — a tonne is a million grams, a machine one. */
-const BULK: readonly string[] = [
-  'tonnes', 'barrels', 'litres', 'cubic metres', 'MWh',
-];
-function piecesOf(unit: string): number {
-  // A bulk unit is divisible down to the same fine grid a tonne is: a litre of fuel and a
-  // megawatt-hour are both sold in fractions nobody would call a whole one. A thing counted in
-  // WHOLE things — a machine, a vehicle, a building, a head of livestock — has no piece below one.
-  return BULK.includes(unit) ? TONNE_PIECES : WHOLE_PIECES;
-}
+/**
+ * Law 2, Law 8, XI-15 (13d.1): THE PIECE IS A RESOLUTION OF THE REGISTER, and it has to be fine
+ * enough to say what ONE MEMBER OF A CELL holds.
+ *
+ * It used to be one piece per whole thing for anything counted in whole things — a machine, a
+ * vehicle, a building, a head of livestock — on the reasoning that you cannot sell half a car. That
+ * reasoning is about a TRADE and this number is about a STORE, and the two came apart the moment a
+ * household wanted one: a cell carries its holdings per member, a person owns about four tenths of
+ * a dwelling and buys a car every ten years, and a grid whose smallest step is one whole car makes
+ * both of those ZERO. The basket 13c.2 built was half inert because of it — clothing, furniture,
+ * appliances, electronics and vehicles all rounded to nothing per member before they reached a book.
+ *
+ * So every good is counted on the same fine grid, and what is indivisible stays indivisible where
+ * indivisibility actually lives: OCCUPANCY is whole dwellings (`housing`), a plant VINTAGE is whole
+ * units of plant (`registry/physical.ts`), and a lot of a thing a firm makes comes off the line in
+ * whole ones because its recipe says so. Refine the grid further and every answer stands, which is
+ * what makes it a resolution rather than a claim (Law 2).
+ */
+const PIECES_PER_UNIT = TONNE_PIECES;
 
 function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
   const out: ParamDecl[] = [];
@@ -111,7 +121,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
     // grids, and it is done here, once, where the number is declared (Law 4).
     out.push({
       id: labourParam(d.subUnit),
-      value: (d.labourHoursPerUnit * TIME_PIECES) / piecesOf(d.unit),
+      value: (d.labourHoursPerUnit * TIME_PIECES) / PIECES_PER_UNIT,
       unit: `minutes per piece of ${d.subUnit}`,
       dimension: 'ratio',
       kind: 'technology',
@@ -121,7 +131,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
     for (const plant of d.plant) {
       out.push({
         id: plantParam(d.subUnit, plant.capitalKind),
-        value: (plant.unitsPerUnitPerPeriod * WHOLE_PIECES) / piecesOf(d.unit),
+        value: (plant.unitsPerUnitPerPeriod * WHOLE_PIECES) / PIECES_PER_UNIT,
         unit: `pieces of ${plant.capitalKind} in service per piece of ${d.subUnit} started per period`,
         dimension: 'ratio',
         kind: 'technology',
@@ -188,7 +198,7 @@ function unitsOf(rows: readonly GoodDecl[]): UnitDecl[] {
     byUnit.set(d.unit, {
       id: goodUnitId(d.unit),
       name: d.unit,
-      perUnit: piecesOf(d.unit),
+      perUnit: PIECES_PER_UNIT,
     });
   }
   return [...byUnit.values()];

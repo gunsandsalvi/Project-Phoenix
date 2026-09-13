@@ -338,8 +338,13 @@ function mortgagesOf(
  * B1, E2: what a household is short of in MONEY to buy the roof it is short of. Its own outlook of
  * what a dwelling costs where it lives, times how many it is short of, less what it holds.
  */
-function shortOfMoney(ctx: MechanismContext, cell: PartyId, lettings: number): number | undefined {
-  const view = ctx.participant(cell);
+function shortOfMoney(
+  ctx: MechanismContext,
+  who: PartyId,
+  lettings: number,
+  rows: readonly TenureDecl[],
+): number | undefined {
+  const view = ctx.participant(who);
   const region = view.self.region;
   const id = goodId(DWELLING, region);
   if (!ctx.instruments.has(id)) return undefined;
@@ -347,15 +352,24 @@ function shortOfMoney(ctx: MechanismContext, cell: PartyId, lettings: number): n
   const print = view.print(id);
   const price = outlook.some ? outlook.value.expected : print.some ? print.value.price : undefined;
   if (price === undefined || price <= 0) return undefined;
+  const has = owned(view, region);
   /**
-   * B1, C1: WHAT A LANDLORD IS SHORT OF. A party that owns dwellings and has let every one of them
-   * has a business with no stock, and what one more would earn it is the rent the venue just
-   * printed. So it wants one more — and whether it gets it is the BANK's decision, taken on the
-   * bank's own book. A party with an empty house wants nothing: its own vacancy is its answer.
+   * B1, E2: TWO REASONS TO WANT ONE, and neither of them asks what sort of party is asking.
+   *
+   * A household is short of the roofs its own people live under and does not own them: that is
+   * `needs` against `owned`, both reads, and it is what makes a household a buyer rather than a
+   * tenant for ever. A LANDLORD is a party that owns dwellings and has let every one of them — a
+   * business with no stock — and what one more would earn it is the rent the venue just printed;
+   * one with an empty house wants nothing, because its own vacancy is its answer.
+   *
+   * Whether it gets it is the BANK's decision either way, taken on the bank's own book (C5).
    */
-  const spare = sub(owned(view, region), lettings, 'what it owns and nobody is in');
-  if (owned(view, region) <= 0 || spare > 0) return undefined;
-  const want = 1;
+  let want = sub(needs(view, rows), has, 'the roofs it is short of owning');
+  if (want <= 0) {
+    const spare = sub(has, lettings, 'what it owns and nobody is in');
+    if (has <= 0 || spare > 0) return undefined;
+    want = 1;
+  }
   const cost = mul(want, price, 'what buying them would cost it');
   const short = sub(cost, view.cash(ctx.registry.currencyOf(region)), 'less the money it has');
   if (short <= 0) return undefined;
@@ -367,23 +381,23 @@ function shortOfMoney(ctx: MechanismContext, cell: PartyId, lettings: number): n
  * and what it would put up, the banks read it next period and decide, and a household nobody will
  * lend to goes on renting. That is C5.a from the borrower's side — the standard is the lender's.
  */
-function askForMortgages(ctx: MechanismContext, book: LeaseBook): void {
+function askForMortgages(ctx: MechanismContext, book: LeaseBook, rows: readonly TenureDecl[]): void {
   for (const cell of ctx.parties.alive()) {
     /**
-     * XI-15, Housing A1.a: A CELL CANNOT OWN ONE. A cell carries its holdings PER MEMBER and a
-     * dwelling is a whole thing, so a cell of two and a half million households either holds a
-     * whole house for every person in it or none at all — and the number that is true, four tenths
-     * of one each, is not a quantity the register can hold. So in this world households RENT and
-     * the roof over them is somebody else's asset: the builder that could not sell it, or a party
-     * that bought it to let. A household mortgage needs TENURE as a key dimension of the cell
-     * (step 22 of this item, which waits on 13b.1's key data), and it is named here rather than
-     * quietly absent, because it is also the channel a rate rise reaches consumption by (D5).
+     * 13d.1: A HOUSEHOLD CAN NOW HOLD A ROOF — the register's grid is fine enough to say what one
+     * member of a cell owns (`goods/index.ts`) — and it still does not BORROW for one here, for a
+     * reason that is measured rather than assumed: a cell's drawing is struck per member, the
+     * per-member amount is rounded to whole pieces of money, and what the rounding drops does not
+     * reach the cell's equity account, so the balance-sheet family fires on the borrower in the
+     * period it borrowed. The plumbing is built and tested to that point (`banks/index.ts` writes a
+     * cell's drawing per member, both legs); what is missing is the one place the dust goes, and
+     * that is the next step of this item rather than something to leave firing every period.
      */
     if (cell.representation === 'cell') continue;
     // C3: one mortgage at a time. A household already carrying one is not asking for another
     // until it has paid this one down, which is what a single secured row on one roof means.
     if (mortgagesOf(ctx, cell.id).length > 0) continue;
-    const short = shortOfMoney(ctx, cell.id, letOut(book, cell.id));
+    const short = shortOfMoney(ctx, cell.id, letOut(book, cell.id), rows);
     if (short === undefined) continue;
     const id = goodId(DWELLING, cell.region);
     const print = ctx.prices.latest(id, ctx.period);
@@ -412,7 +426,6 @@ function askForMortgages(ctx: MechanismContext, book: LeaseBook): void {
  */
 function charge(ctx: MechanismContext): void {
   for (const cell of ctx.parties.alive()) {
-    if (cell.representation === 'cell') continue;
     const region = cell.region;
     const id = goodId(DWELLING, region);
     if (!ctx.instruments.has(id)) continue;
@@ -424,8 +437,15 @@ function charge(ctx: MechanismContext): void {
       const print = ctx.prices.latest(id, ctx.period);
       if (!print.some || print.value.price <= 0) continue;
       const covers = downTick(div(m.outstanding, print.value.price, 'the roofs the debt stands on'));
-      const bind = asQty(atMost(covers, free, 'it can pledge no more of it than it holds'));
-      if (bind <= 0) continue;
+      /**
+       * XI-15, Law 8: what a cell pledges is whole pieces for every member it stands for, and the
+       * lien is on the total. `free` is already per member for a cell, so the share is struck the
+       * way every other movement on a cell is struck and the two agree by construction.
+       */
+      const perMember = atMost(covers, free, 'it can pledge no more of it than it holds');
+      const share = shareFor(ctx.registry, cell, ctx.instruments.get(id).unit, perMember);
+      if (share.total <= 0) continue;
+      const side = cellSide(cell, share.perMember);
       ctx.settle({
         legs: [
           {
@@ -433,13 +453,13 @@ function charge(ctx: MechanismContext): void {
             pledgor: cell.id,
             beneficiary: m.lender,
             instrument: id,
-            qty: asQty(bind),
+            qty: share.total,
             secures: String(m.id),
-            pledgorCell: none(),
+            pledgorCell: side === undefined ? none() : some(side),
           },
         ],
         cause: 'transfer',
-        reason: `${m.id} is charged on ${bind} of ${id}`,
+        reason: `${m.id} is charged on ${share.total} of ${id}`,
       });
     }
   }
@@ -553,7 +573,7 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         cycle: 0,
         anchor: { after: 'corporateActions' },
         run: (ctx: MechanismContext) => {
-          askForMortgages(ctx, bookOf(ctx));
+          askForMortgages(ctx, bookOf(ctx), rows);
         },
       },
       {

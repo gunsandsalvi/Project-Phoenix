@@ -31,7 +31,7 @@ import {
   type AssemblySpec,
   type World,
 } from '../src/index.js';
-import { rigMembers } from './rig.js';
+import { RIG_PER_LINE, rigMembers } from './rig.js';
 
 const OPENING_RATE = paramId('seed.openingRate');
 const MEMBERS = paramId('seed.households.membersPerCohort');
@@ -46,7 +46,7 @@ const AYEAR = 52;
  * — and the one thing it states differently is a declared opening condition (Seed C4), not a rule.
  */
 function worldAt(rate: number, seed: string, banks: number, firms: number): World {
-  const spec: AssemblySpec = foundationSpec(seed, drawBanks(banks, seed), drawFirms(firms, seed));
+  const spec: AssemblySpec = foundationSpec(seed, drawBanks(banks, seed), drawFirms(firms, seed, RIG_PER_LINE));
   const members = rigMembers(firms);
   return assemble({
     ...spec,

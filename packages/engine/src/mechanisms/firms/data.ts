@@ -29,7 +29,7 @@ import { paramId, type ParamId } from '../../core/ids.js';
 import { prng } from '../../rng/prng.js';
 import { between, betweenWhole, drawSize, type Spread, type Tail } from '../../rng/spread.js';
 import { asQty, splitOnTick } from '../../core/tick.js';
-import { zeroIfNone } from '../../core/num.js';
+import { atLeast, zeroIfNone } from '../../core/num.js';
 
 export interface FirmDecl {
   /** The named party (Firm A1). It banks somewhere, and the wage and the invoices leave that account. */
@@ -420,7 +420,19 @@ function shareOfLine(subUnit: string): number {
   return zeroIfNone(LINE_SHARE[subUnit]);
 }
 
-export function drawFirms(count: number, seed: string): readonly FirmDecl[] {
+export function drawFirms(
+  count: number,
+  seed: string,
+  /**
+   * Seed B1, B4 (13d.1): the FEWEST a line may have, for a SCALE MODEL. A world of nine thousand
+   * firms over sixty-two lines has some of every line by arithmetic; a test rig of a dozen has none
+   * of most of them, and a test that asks the draw for a machine works gets "it drew 0". A scale
+   * model is a smaller world and not a distorted one (`test/rig.ts`), so what a rig asks for is a
+   * floor per line rather than a bigger total — and the real world passes nothing, because it needs
+   * nothing: its shares already put firms in every line, and it says so by passing a floor of none.
+   */
+  atLeastPerLine: number,
+): readonly FirmDecl[] {
   const rng = prng(seed, 'firms');
   const out: FirmDecl[] = [];
   const lines = Object.keys(LINE_SHARE).sort();
@@ -436,8 +448,9 @@ export function drawFirms(count: number, seed: string): readonly FirmDecl[] {
     const trade = TRADE[subUnit] ?? 'Works';
     const occupation = OCCUPATION_OF[subUnit];
     if (occupation === undefined) return;
-    const inLine = perLine[at];
-    if (inLine === undefined) return;
+    const drawn = perLine[at];
+    if (drawn === undefined) return;
+    const inLine = atLeast(drawn, atLeastPerLine, 'a line a scale model keeps has this many in it');
     for (let k = 0; k < inLine; k += 1) {
       n += 1;
       const place = PLACES[Math.floor(k / stems.length) % PLACES.length] ?? subUnit;

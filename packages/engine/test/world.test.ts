@@ -41,7 +41,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { RIG_FIRMS, rigWorld, rigSpec, withDependencies, mergeModules, rigMembers } from './rig.js';
+import { RIG_FIRMS, RIG_PER_LINE, rigWorld, rigSpec, withDependencies, mergeModules, rigMembers } from './rig.js';
 import { unexpected } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { phx } from './units.js';
@@ -165,12 +165,12 @@ describe('assembly (Law 15, Part XIII)', () => {
     // they were handed in. A module with requirements nobody supplied is the other half of the same
     // rule, and both are what Part XIII means by an order that is declared rather than written.
     const seedOnly: SystemModule = {
-      ...foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order')),
+      ...foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order', RIG_PER_LINE)),
       requires: ['sovereign-instruments'],
     };
     const ordered = orderModules([seedOnly, sovereignInstruments]);
     expect(ordered.map((m) => m.id)).toEqual(['sovereign-instruments', 'seed.foundation']);
-    const orphan: SystemModule = { ...foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order')), id: 'x', requires: ['nope'] };
+    const orphan: SystemModule = { ...foundationSeedFor(drawBanks(BANK_COUNT, 'order'), drawFirms(RIG_FIRMS, 'order', RIG_PER_LINE)), id: 'x', requires: ['nope'] };
     expect(() => orderModules([orphan])).toThrow(InvalidRegistry);
   });
 

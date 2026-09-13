@@ -1831,7 +1831,7 @@ export interface FoundationDraw {
 export function foundationDraw(
   seed: string,
   bankRows: readonly BankDecl[] = drawBanks(BANK_COUNT, seed),
-  firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed),
+  firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed, 0),
 ): FoundationDraw {
   const names = bankRows.map((b) => b.bank);
   const listed = drawListed(firmRows, bankRows, seed);
@@ -2007,7 +2007,7 @@ export function foundationSpec(
    */
   bankRows: readonly BankDecl[] = drawBanks(BANK_COUNT, seed),
   /** Seed B1.a, B4: and the firms, the same way and for the same reason. */
-  firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed),
+  firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed, 0),
 ): AssemblySpec {
   // Seed B1.a: WHAT THIS WORLD IS MADE OF — one draw, reaching every module that needs it.
   const drew = foundationDraw(seed, bankRows, firmRows);

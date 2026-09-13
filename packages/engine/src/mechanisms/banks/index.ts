@@ -28,6 +28,8 @@ import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId } from '../../core/ids.js';
+import { weightOf } from '../../parties/party.js';
+import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { add, atLeast, atMost, div, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -439,7 +441,17 @@ function write(
   const b = book(ctx);
   // Law 8, B1: money is created in whole pieces of itself, so a loan is drawn in whole pieces. What
   // the arithmetic asked for below one piece is not lent, because it is not money.
-  const principal = ctx.registry.payable(ccy, wanted);
+  /**
+   * XI-15, Law 8 (13d): A BORROWER CAN BE A CELL. Everything a cell does is denominated per member —
+   * a household that borrows is a million households each borrowing its own share — so the drawing
+   * is struck per member and the total is that times how many of them there are. A named borrower
+   * stands for one of itself and this is the amount it asked for, to the piece.
+   */
+  const who = ctx.parties.get(borrower);
+  const members = weightOf(who);
+  const share = shareFor(ctx.registry, who, currencyUnit(ccy), div(wanted, members, 'per member'));
+  const principal = share.total;
+  const side = cellSide(who, share.perMember);
   if (principal <= 0) return undefined;
   const existing = onTheLine ? lineOf(ctx, bank, borrower) : undefined;
   if (existing !== undefined) return draw(ctx, existing, principal, ccy);
@@ -469,7 +481,7 @@ function write(
       qty: principal,
       pricePerUnit: some(1),
       accruedPerUnit: none(),
-      fromCell: none(),
+      fromCell: side === undefined ? none() : some(side),
       toCell: none(),
     },
     {
@@ -487,7 +499,7 @@ function write(
       ccy,
       amount: principal,
       fromCell: none(),
-      toCell: none(),
+      toCell: side === undefined ? none() : some(side),
     },
   ];
   const r = ctx.settle({ legs, cause: 'issuance', reason: `${bank} lends ${principal} to ${borrower}` });
