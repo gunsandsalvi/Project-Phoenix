@@ -14,6 +14,7 @@ import { InvalidRegistry, Missing } from '../core/errors.js';
 import type { ParamId, UnitId } from '../core/ids.js';
 import { finite } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
+import { asRatio, type Ratio } from '../core/measure.js';
 
 export type ParamKind =
   'technology' | 'preference' | 'policy' | 'resolution' | 'shape' | 'placeholder';
@@ -251,13 +252,20 @@ export class ParamRegister {
   }
 
   /** A pure share of something, dimensionless. */
-  ratio(id: ParamId): number {
-    return this.read(id, 'ratio');
+  /**
+   * Item 16, Law 8: A PURE NUMBER, and the type says so. It is where a `Ratio` enters the world —
+   * a share, a fraction, a multiple — and the point of the brand is what a `Ratio` CANNOT be: an
+   * amount. A spread declared "over what a deposit returns" and used as an absolute rate (A-44),
+   * or a leverage ratio called a cost of funds (A-58), are both a ratio put where a level was
+   * wanted, and both are now a question the compiler asks at the door that would take it.
+   */
+  ratio(id: ParamId): Ratio {
+    return asRatio(this.read(id, 'ratio'), id);
   }
 
-  /** A rate per year. */
-  perAnnum(id: ParamId): number {
-    return this.read(id, 'perAnnum');
+  /** A rate per year. Dimensionless in the same sense and for the same reason. */
+  perAnnum(id: ParamId): Ratio {
+    return asRatio(this.read(id, 'perAnnum'), id);
   }
 
   /** A distance over the ground (13c.1). */
@@ -282,6 +290,11 @@ export class ParamRegister {
    */
   amount(id: ParamId, unit: UnitId): Qty {
     const d = this.decl(id);
+    /**
+     * Item 16: AND IT IS NOT A RATIO. A parameter declared as a share cannot be read as an amount
+     * of anything — `denominated` is the declaration that says which, and the check below is the
+     * runtime half of what `Ratio` says in the type. A-44 and A-58 are both this mistake.
+     */
     if (d.denominated !== true) {
       throw new InvalidRegistry(
         'Law 8',

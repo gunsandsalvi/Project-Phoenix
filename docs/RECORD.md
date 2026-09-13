@@ -4923,3 +4923,58 @@ shock" is something the declaration makes possible and does not yet produce.
 it from the party's name. **What would falsify it:** two kinds that share an objective and must still
 behave differently — a fund and an insurer are both `itsMandate` and their mandates are not alike,
 which is item 8's `Mandate` and not this.
+
+
+## Item 16, stage 0 — the dimension, in the type
+
+**What.** `core/measure.ts`: `Measure<D>`, a phantom-typed number, with `Money<C>`, `Amount<U>`,
+`Price<C,U>`, `Ratio`, `PerMember<D>` and `Total<D>` over it, and an algebra in which the eighteen
+findings below it are programs that do not compile — `plus`/`minus` (same dimension only), `scale`
+(a dimension times a ratio), `valueAt` (`Price × Amount → Money`), `pricedAt`, `ratioOf`, and
+`acrossMembers`/`eachMember` as the ONLY door between per-member and total.
+
+**Why.** `mul(a: number, b: number, what: string)` has **950 call sites** (1,091 counting `add`,
+`sub` and `div`), and at every one of them the third argument is the only place the dimension lives.
+Nothing validates it. `mul(money, money, 'the premium')` compiles — every option premium in this
+world is a money-squared number that does not depend on the strike. `add(usd, eur, 'wealth')`
+compiles. `mul(perMember, headcount, …)` on one side of a flow whose other side used
+`perMember × weight` compiles, and that is the largest conservation break in the model. **594 fields
+are typed as bare `number`.**
+
+`core/num.ts` already said what the fix was, in its own words: *"A caller mixing a `Qty` with a plain
+number is refused by the compiler, which is the question the brand exists to ask."* `Brand<T,B>` has
+existed since `core/ids.ts` was written and is applied to identifiers and to `Qty` and to nothing
+else.
+
+**The phantom is a function type and that is not decoration.** A plain `readonly [d]: D` is
+covariant, so `Measure<'money:USD'>` is assignable to `Measure<'money:USD' | 'money:EUR'>` — and
+`plus(usd, eur, …)` then infers the union and compiles, which is the exact bug the file exists to
+stop. `(d: D) => D` puts `D` in both a parameter and a return position, making it invariant. I built
+it covariant first and the test caught it: five `@ts-expect-error` directives came back "unused",
+which is the compiler saying the lines it was meant to refuse were fine.
+
+**It erases completely.** `Measure<D>` IS a `number` at runtime — no wrapper, no allocation, no
+arithmetic that was not there — so behaviour cannot change and Law 18's "gate on behaviour, not bits"
+holds by construction. What changes is which programs compile.
+
+**How it is tested**, and this is the part worth keeping: these findings are not runtime bugs to
+catch, they are programs that should never have compiled. The test asserts them with
+`@ts-expect-error` — it PASSES when the compiler refuses the line and FAILS when the compiler accepts
+it. Six tests, five of them of that shape.
+
+**The first door is adopted.** `params.ratio()` and `params.perAnnum()` return `Ratio`, so every
+declared rate in this world enters the type system knowing it is dimensionless — and `Ratio` is the
+one type that can never be an amount, which is A-44's shape (a spread used as a level) and A-58's (a
+leverage ratio called a cost of funds).
+
+**What is NOT done, and it is nine tenths of the item.** The sweep is staged in `docs/AUDIT.md` — ten
+stages over 1,091 sites, kernel (157) first, then seeds (79), then module by module with `banks`
+(124), `funds` (74), `firms` (73) and `households` (68) the largest. Each is independently
+completable and the compiler generates its work list. **None of the ten is done**, and the eighteen
+findings stay open until the stage that owns each closes. `world`, `param-owners`: **5 red before,
+5 after.**
+
+**Forecast, with its killer.** The dimension is expressible and enforced wherever it is declared.
+**What would falsify it:** a dimension the six types cannot say — a periodicity, which Law 8 names in
+the same breath as unit and price level and which `Measure` does not yet carry, so A-33's stale wage
+bill is still a runtime question.

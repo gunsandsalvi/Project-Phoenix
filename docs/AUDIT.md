@@ -126,7 +126,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**13**~~ | ~~`Guarantee`~~ | 0 | **BUILT** — three sides, a limit that is a term and not a bound, wired at deposit insurance |
 | ~~**14**~~ | ~~`Process`~~ | 1 | **BUILT** — steps, not a boolean. And one cell inheriting everything becomes 35 |
 | ~~**15**~~ | ~~`Objective`~~ | 0 | **BUILT** — six answers, required on every kind. The 21 hard-coded reasons remain |
-| **16** | `Measure<D>` | 18 | independent of every noun; large, mechanical, compiler-driven — run it alongside |
+| **16** | `Measure<D>` | 18 | **TYPE BUILT, SWEEP STAGED** — the algebra and the first door; 1,091 sites in ten stages, none done |
 | **17** | The local repairs | 18 | never a session's work; take each when its file is already open |
 | **18** | The sectors that were waiting | 4 | after everything, because each is built on the primitives above |
 
@@ -2869,6 +2869,63 @@ under a shock.
 ---
 
 ## 16. `Measure<D>` — the dimension sweep
+
+> **THE TYPE IS BUILT AND THE FIRST DOOR IS ADOPTED. The sweep is staged below, module by module,
+> and the stages are not done.** This is the item's own plan for itself: *"Not a rewrite… Kernel
+> first, then module by module, each independently completable."*
+>
+> **`core/measure.ts`.** `Measure<D>` — a phantom-typed number — with `Money<C>`, `Amount<U>`,
+> `Price<C,U>`, `Ratio`, `PerMember<D>` and `Total<D>` over it, and an algebra that is the whole
+> content:
+>
+> | operation | signature | what it makes impossible |
+> | --- | --- | --- |
+> | `plus` / `minus` | `Measure<D> × Measure<D> → Measure<D>` | `add(usd, eur, 'wealth')` (**A-23**, **A-38**, **A-47**, **A-51**, **A-61**) |
+> | `scale` | `Measure<D> × Ratio → Measure<D>` | a rate applied to a balance producing something else |
+> | `valueAt` | `Price<C,U> × Amount<U> → Money<C>` | `mul(money, money, 'the premium')` (**A-65**) |
+> | `pricedAt` | `Money<C> ÷ Amount<U> → Price<C,U>` | a price made out of two payments |
+> | `ratioOf` | `Measure<D> ÷ Measure<D> → Ratio` | a spread used as a level (**A-44**, **A-58**) |
+> | `acrossMembers` / `eachMember` | `PerMember<D> ↔ Total<D>`, by the weight | `perMember × headcount` (**A-1**, **A-18**, **A-39**) |
+>
+> **The phantom is a function type and that is not decoration.** A plain `readonly [d]: D` is
+> COVARIANT, so `Measure<'money:USD'>` is assignable to `Measure<'money:USD' | 'money:EUR'>` and
+> `plus(usd, eur, …)` infers the union and compiles — the exact bug the file exists to stop.
+> `(d: D) => D` puts `D` in a parameter and a return position, which makes it INVARIANT.
+>
+> **It erases completely.** `Measure<D>` IS a `number` at runtime — no wrapper, no allocation, no
+> arithmetic that was not there — so **behaviour cannot change** and Law 18's "gate on behaviour,
+> not bits" holds by construction. What changes is which programs compile.
+>
+> **How it is tested.** These findings are not runtime bugs to catch; they are programs that should
+> never have compiled. So the test asserts them with `@ts-expect-error`: it PASSES when the compiler
+> refuses the line and FAILS when the compiler accepts it. Five of the six do exactly that.
+>
+> **The first door is adopted**: `params.ratio()` and `params.perAnnum()` return `Ratio`, so every
+> declared rate in the world now enters the type system knowing it is dimensionless, and
+> `params.amount()` states in a comment beside its `denominated` check that it is the runtime half
+> of the same rule.
+>
+> ### The stages, each independently completable
+>
+> `mul | add | sub | div` call sites, by area — **1,091 of them**, and the compiler generates each
+> stage's work list by erroring where the third argument was lying:
+>
+> | stage | area | sites |
+> | --- | --- | --- |
+> | 1 | kernel (`world` 37, `ledger` 29, `registry` 21, `prices` 19, `register` 14, `audit` 11, `core` 9, `observer` 8, `clearing` 8, `parties` 1) | **157** |
+> | 2 | `seeds` | 79 |
+> | 3 | `banks` | 124 |
+> | 4 | `funds` | 74 |
+> | 5 | `firms` | 73 |
+> | 6 | `households` | 68 |
+> | 7 | `money-market` | 56 |
+> | 8 | `cds` | 45 |
+> | 9 | `treasury` | 33 |
+> | 10 | everything else (34 modules) | 382 |
+>
+> Gate every stage on the instruction digest the Law 18 items use: mechanisms, economics and
+> boundaries do not change. **None of the ten is done**, and the eighteen findings below stay open
+> until the stage that owns each one closes.
 
 **Why.** Eighteen findings, and one signature:
 
