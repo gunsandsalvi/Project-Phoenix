@@ -107,6 +107,7 @@ import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { control } from '../mechanisms/control/index.js';
 import { insurers } from '../mechanisms/insurers/index.js';
+import { external } from '../mechanisms/external/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
@@ -2241,6 +2242,10 @@ export function foundationSpec(
       // duration. After the curve, because what a promise of money later is worth is read from the
       // market that prices money later, and a rate move is a solvency event for it.
       insurers(),
+      // 13i, Cross-Border E1-E3: a region's accounts with the rest of the world, as a WALK over
+      // the settled legs rather than a series anybody imported. They sum to zero because every
+      // transaction had two sides, and the audit looks for the leg that went out with nothing back.
+      external(),
       sovereignInstruments,
       // Sovereign D3.a, Currency A3: EVERY SOVEREIGN THAT BORROWS HAS A CURVE, and it is its own —
       // one issuer, one money, its own prints. A world whose foreign lines had no curve family

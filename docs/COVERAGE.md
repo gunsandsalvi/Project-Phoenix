@@ -1488,10 +1488,10 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Cross-Border D4` | MISSING |  |
 | `Cross-Border D5` | MISSING |  |
 | `Cross-Border D6` | MISSING |  |
-| `Cross-Border E1` | MISSING |  |
-| `Cross-Border E2` | MISSING |  |
-| `Cross-Border E3` | MISSING |  |
-| `Cross-Border E4` | MISSING |  |
+| `Cross-Border E1` | MET | packages/engine/src/mechanisms/external/index.ts (the current half is a walk over settled legs — a thing crossing is trade, and a payment with nothing delivered beside it books what it bought at what was paid) |
+| `Cross-Border E2` | MET | packages/engine/src/mechanisms/external/index.ts (the financial half is claims crossing; `financedBy` is who had to lend, read from the region own end) |
+| `Cross-Border E3` | MET | packages/engine/src/mechanisms/external/index.ts (the `flows` family: the two halves cancel because every transaction had two sides, measured with derived dust and never repaired) |
+| `Cross-Border E4` | MET | packages/engine/src/mechanisms/external/index.ts (`external.accounts` published every period, causing nothing and storing no level) |
 | `Cross-Border F1` | MISSING |  |
 | `Cross-Border F2` | MISSING |  |
 | `Cross-Border F3` | MISSING |  |

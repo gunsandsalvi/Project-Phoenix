@@ -3757,3 +3757,36 @@ there says the same thing once.
 
 **Placed rather than built**: hedge funds, private equity and the insurer's matching asset side →
 13i.
+
+
+## 13i — a country's accounts are a walk, and they sum to zero
+
+**Every model that imports a balance of payments has imported an equilibrium.** Appendix B forbids
+an exogenous trade or capital-flow series by name, and a table of flows is exactly that. So here the
+external accounts are a WALK over the settled ledger: what actually crossed a border this period,
+leg by leg, read off instructions that already happened. Nothing is stored and nothing is inferred
+by subtraction; ask again next period and it is walked again, which is what makes it impossible for
+this to drift away from what the wire says.
+
+**They sum to zero because every transaction had two sides.** That is Law 5 seen from a country's
+end, not an identity anybody enforces and not a residual anybody plugs. If the two halves did not
+cancel, a leg went out with nothing coming back — the one-sided flow Law 5 forbids — which is the
+only thing the audit family can find, and it reports it rather than repairing it.
+
+**What decides which half is whether the thing that moved is somebody's PROMISE.** A tonne of grain
+is nobody's liability and is trade; a bond is somebody's and is finance; money is a claim on the
+bank that issued it, so it is finance too. The register already knows that — it is the same question
+the balance sheet asks — so nothing here asks what kind of instrument anything is.
+
+**The interesting case is the one a service economy is mostly made of.** A sale of grain abroad has
+two crossing legs, the cargo out and the money in, and they cancel on their own. A WAGE has one: the
+money goes, and the week of work that earned it is not an instrument anybody holds. Labour, rent and
+a fee are all like that. So a payment with nothing delivered beside it books BOTH halves — the money
+that moved and the thing it bought, valued at what was paid for it, which is a read of the payment
+rather than a number invented for it. That is what a current account IS: the other side of every
+payment whose subject never appeared in a register. Without it the accounts of this world's regions
+were out by exactly their wage bill, which is how the case was found.
+
+**Placed rather than built**: hedge funds, private equity and the insurer's matching asset side came
+in from 13h; sourcing across regions, foreign-currency issuance and the central-bank swap line
+(**M3**, **M6**) stay carried in the worklist.
