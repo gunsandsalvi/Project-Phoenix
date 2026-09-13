@@ -5,9 +5,14 @@ exists for is CLAUDE.md's: a finding not written down is lost, and a finding lea
 by being PLACED — moved into the `docs/plan/<item>.md` of the item that should fix it, or inserted
 as its own item at its dependency position.
 
-Measured on the whole suite at `0f2aff2`: **76 red of 662**, down from 79 at the start of the
-bug-fixing pass. What follows groups them by CAUSE rather than by file, because the files are a
-symptom of about six causes.
+Measured on the whole suite: **74 red of 662**, down from 79 at the start of this pass, with **no
+regressions** — the set of failing tests afterwards is a strict subset of the set before. What
+follows groups them by CAUSE rather than by file, because the files are a symptom of about six
+causes.
+
+One of the fixes below does not show in that count and is the largest of them: `equity`'s waterfall
+test threw `Register C1` and stopped the file; it now runs to an ordinary assertion. A crash and a
+red are both one line in a summary and they are not the same thing.
 
 ---
 
