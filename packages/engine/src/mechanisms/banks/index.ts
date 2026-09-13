@@ -18,6 +18,7 @@
  * What it allows becomes a row before the period closes, so the negative balance is a drawing on a
  * loan and never a silent hole (B3.c).
  */
+import { Missing } from '../../core/errors.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
@@ -368,47 +369,116 @@ function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number
 }
 
 /**
- * C1, C2: every bank quotes from its own state, and the borrower takes the keenest that will have
- * it. A bank with no room does not quote — declining IS the credit decision (C3) — and what it
- * declined is recorded, because a bank that never says no has no credit standard (C3.a).
+ * C1, C2, C3.a, Law 4, Law 19 (13f, finding `12d-3`): THE BORROWER TAKES THE QUOTE IT WAS GIVEN.
+ *
+ * Every bank works out what it requires of a name and the keenest is PUBLISHED under that name
+ * (`publishQuotes`). This used to work the whole thing out a second time when the borrower came
+ * back, and the two answers disagreed: same borrower, same period, same bank, quoted
+ * 0.013676115348016367 and written 0.013676161104839884. Three parts in a million, which is nowhere
+ * near the dust of either derivation — the inputs move between the two phases, because a bank reads
+ * its cost of funds afresh and what it has seen default afresh. One fact, two writers, and a
+ * borrower took a loan at a rate it was not quoted with both numbers published under its name.
+ *
+ * So there is one derivation and this is the READ of it. What is written is what was quoted. The
+ * second derivation is gone; `quote()` is called in exactly one place now.
+ *
+ * C3.a: and where the quoting bank cannot lend after all — its room moved between the quote and the
+ * request, which is a real thing that happens — that is a REFUSAL to record, not a silently
+ * different price. A bank that never says no has no credit standard.
  */
-function shop(rows: readonly BankDecl[], ctx: MechanismContext, borrower: PartyId, want: number, ccy: CurrencyCode): {
+function shop(rows: readonly BankDecl[], ctx: MechanismContext, borrower: PartyId, want: number): {
   readonly best: Quote | undefined;
   readonly lend: number;
 } {
-  let best: Quote | undefined;
-  let lend = 0;
+  const quoted = quotedFor(ctx, borrower);
+  if (quoted === undefined) {
+    // C3, C3.a: NOBODY WOULD QUOTE THIS NAME. Declining IS the credit decision, so each bank says
+    // which of its OWN constraints stopped it (B2.d) — and it is asked here, where there is a
+    // request with an amount on it, because what C3.a makes visible is declined VOLUME.
+    refuse(rows, ctx, borrower, want);
+    return { best: undefined, lend: 0 };
+  }
+  const decl = declOf(rows, quoted.bank);
+  const bank = ctx.parties.get(quoted.bank);
+  if (decl === undefined || !bank.status.alive) {
+    ctx.record(
+      'credit.declined',
+      [quoted.bank, borrower],
+      { bank: quoted.bank, borrower, asked: want, binds: 'the bank that quoted it has gone' },
+      false,
+    );
+    return { best: undefined, lend: 0 };
+  }
+  const r = room(ctx.participant(quoted.bank), decl, borrower);
+  if (r.most <= 0) {
+    refuse(rows, ctx, borrower, want);
+    return { best: undefined, lend: 0 };
+  }
+  return {
+    best: quoted,
+    lend: atMost(r.most, want, 'nobody lends more than the borrower asked for'),
+  };
+}
+
+/**
+ * C3, C3.a, B2.d: what each bank says when it will not have this name, and WHY — its own binding
+ * constraint, which is the whole of what a credit standard is. A bank that never says no has none.
+ */
+function refuse(
+  rows: readonly BankDecl[],
+  ctx: MechanismContext,
+  borrower: PartyId,
+  want: number,
+): void {
   for (const b of ctx.parties.ofKind(BANK)) {
     const decl = declOf(rows, b.id);
-    if (decl === undefined || !b.status.alive) continue;
-    const view = ctx.participant(b.id);
-    const reg = regulationOf(view);
-    const r = room(view, decl, borrower);
-    if (r.most <= 0) {
-      ctx.record(
-        'credit.declined',
-        [b.id, borrower],
-        {
-          bank: b.id,
-          borrower,
-          asked: want,
-          binds: r.binds,
-          capitalRoom: r.capital.some ? r.capital.value : null,
-          appetiteRoom: r.appetite,
-          fundingRoom: r.funding.some ? r.funding.value : null,
-        },
-        false,
-      );
-      continue;
-    }
-    const q = quote(view, decl, borrower, reg, costOfFunds(ctx, b.id, ccy).perAnnum, seenDefaults(ctx));
-    const takeable = atMost(r.most, want, 'nobody lends more than the borrower asked for');
-    if (best === undefined || q.rate < best.rate) {
-      best = q;
-      lend = takeable;
-    }
+    if (decl === undefined || !b.status.alive || b.id === borrower) continue;
+    const r = room(ctx.participant(b.id), decl, borrower);
+    if (r.most > 0) continue;
+    ctx.record(
+      'credit.declined',
+      [b.id, borrower],
+      {
+        bank: b.id,
+        borrower,
+        asked: want,
+        binds: r.binds,
+        capitalRoom: r.capital.some ? r.capital.value : null,
+        appetiteRoom: r.appetite,
+        fundingRoom: r.funding.some ? r.funding.value : null,
+      },
+      false,
+    );
   }
-  return { best, lend };
+}
+
+/** Law 19: the keenest quote published under this name, most recent first. Read, never rebuilt. */
+function quotedFor(ctx: MechanismContext, borrower: PartyId): Quote | undefined {
+  const said = ctx.journal.ofKind('credit.quoted');
+  for (let i = said.length - 1; i >= 0; i -= 1) {
+    const e = said[i];
+    if (e?.data['borrower'] !== borrower) continue;
+    const bank = e.data['bank'];
+    const rate = e.data['rate'];
+    if (typeof bank !== 'string' || typeof rate !== 'number') continue;
+    return {
+      bank: bank as PartyId,
+      rate,
+      costOfFunds: numberIn(e.data['costOfFunds']),
+      expectedLoss: numberIn(e.data['expectedLoss']),
+      capitalCharge: numberIn(e.data['capitalCharge']),
+      operatingCost: numberIn(e.data['operatingCost']),
+    };
+  }
+  return undefined;
+}
+
+/** A published component, read back as it was written. Missing is Missing, and nothing defaults. */
+function numberIn(v: unknown): number {
+  if (typeof v !== 'number') {
+    throw new Missing('Law 4', 'a quote published without one of the terms it was built from');
+  }
+  return v;
 }
 
 /**
@@ -1203,7 +1273,7 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // sign, so the request dies with the borrower.
     if (!party.status.alive) continue;
     const ccy = ctx.registry.currencyOf(party.region);
-    const { best, lend } = shop(rows, ctx, borrower as PartyId, want, ccy);
+    const { best, lend } = shop(rows, ctx, borrower as PartyId, want);
     if (best === undefined || lend <= 0) continue;
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
     // drawing on what it already has there, not taking a new loan every week — and the margin it

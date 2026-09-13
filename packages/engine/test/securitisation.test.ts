@@ -159,7 +159,7 @@ describe('a loss lands on a layer, from the bottom (C2, C6, D4, XI-1)', () => {
     const ownership = report.audit.families.find((f) => f.family === 'ownership');
     expect(ownership).toBeDefined();
     for (const v of ownership?.violations ?? []) {
-      expect(String(v.spec)).not.toContain('Securitisation C6');
+      expect(v.spec).not.toContain('Securitisation C6');
     }
   });
 
