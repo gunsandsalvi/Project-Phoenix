@@ -38,7 +38,7 @@ import { partyId, type CurrencyCode, type PartyId } from '../core/ids.js';
 import type { Event, Journal } from './journal.js';
 
 /** G2: one cause of the equity account's movement, with how many entries made it up. */
-export interface IncomeLine {
+export interface PublishedIncomeLine {
   readonly cause: string;
   readonly amount: number;
   readonly entries: number;
@@ -57,7 +57,7 @@ export interface PublishedStatement {
   readonly earned: number;
   readonly revaluation: number;
   /** G2: the decomposition, in the words its writers used. What the lines say is not re-derived. */
-  readonly income: readonly IncomeLine[];
+  readonly income: readonly PublishedIncomeLine[];
   readonly assets: number;
   readonly liabilities: number;
   readonly ccy: CurrencyCode;
@@ -144,7 +144,7 @@ function guidanceOf(e: Event): PublishedGuidance {
 }
 
 /** G2: the income lines, each read the same total way as every other field (Law 4). */
-function lines(e: Event): readonly IncomeLine[] {
+function lines(e: Event): readonly PublishedIncomeLine[] {
   const rows = e.data['income'];
   if (!Array.isArray(rows)) {
     throw new InvalidRegistry('Reporting G2', `${e.kind} has no income lines`);

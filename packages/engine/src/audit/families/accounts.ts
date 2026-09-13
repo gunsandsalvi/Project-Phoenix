@@ -21,6 +21,7 @@
  * violation the moment the world starts paying itself.
  */
 import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
+import { Impossible } from '../../core/errors.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
 import type { Period } from '../../calendar/calendar.js';
@@ -72,6 +73,18 @@ export interface BalanceSheet {
 }
 
 export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
+  return sheetOf(view, party, NOBODY);
+}
+
+/** Nothing is eliminated for a party on its own: it owes itself nothing (Law 5). */
+const NOBODY: ReadonlySet<string> = new Set<string>();
+
+/**
+ * The read, with the set of parties whose claims on this one are INSIDE the same group and are
+ * therefore not the group's assets or liabilities. For a party on its own that set is empty and
+ * this is exactly the sheet it always was.
+ */
+function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>): BalanceSheet {
   const p = view.parties.get(party);
   const home = view.registry.currencyOf(p.region);
   const assetTerms: number[] = [];
@@ -80,6 +93,9 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
   let walked = 0;
   for (const h of view.register.holdingsOf(party)) {
     const inst = view.instruments.get(h.instrument);
+    // A4: a claim on somebody in the same group is not the group's asset. It is one member's
+    // claim on another, and it is a liability of that other in the same consolidation.
+    if (inst.issuer.some && inside.has(String(inst.issuer.value))) continue;
     // Currency C4, C5, D2: A POSITION IN ANOTHER MONEY IS AN ASSET LIKE ANY OTHER, converted at the
     // rate in force — the same rate the same period settled at, so what a balance sheet says and
     // what a payment does cannot disagree.
@@ -104,6 +120,9 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
    */
   const contractLiabilities: number[] = [];
   for (const c of view.contracts.openOf(party)) {
+    // D1: a contract is an asset to one side and a liability to the other, so one between two
+    // members of the group is worth exactly nothing to the group (Law 4).
+    if (inside.has(String(c.a === party ? c.b : c.a))) continue;
     const worth = view.valuation.inMoney(
       view.contracts.valueTo(c, party, view.period),
       c.ccy,
@@ -124,6 +143,9 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
     if (!view.registry.instrumentKind(inst.kind).liabilityOfIssuer) continue;
     const isMoney = view.registry.instrumentKind(inst.kind).pricing === 'money';
     for (const holder of view.register.holdersOf(inst.id)) {
+      // A4: what it owes a party in the same group is not the group's liability — the other half
+      // of the elimination above, and both halves have to go or the sheet stops balancing.
+      if (inside.has(String(holder))) continue;
       const h = view.register.holding(holder, inst.id);
       if (!h.some) continue;
       const w = weightOf(view.parties.get(holder));
@@ -162,6 +184,48 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
     walked: walked / w,
     ccy: home,
   };
+}
+
+/**
+ * M&A A4, item 9: THE GROUP'S ACCOUNTS — the sheets of every party in it, added, with every claim
+ * one member holds on another taken out of BOTH sides.
+ *
+ * A group's accounts used to be the parent's, because there was no group. What makes this a
+ * consolidation and not an addition is the ELIMINATION: a parent's loan to its subsidiary is an
+ * asset of the parent and a liability of the subsidiary, and a group cannot owe itself money.
+ * Leaving it in would show a group that has lent to nobody outside as holding assets it has not
+ * got, and the deeper the group the larger the fiction (Law 4: one representation per real thing).
+ *
+ * It is a READ and stores nothing (Law 19; Appendix B: no stored aggregate). It is here rather than
+ * in a module because it is the SAME read as the sheet above, restricted to a set of parties: a
+ * second implementation would be a second set of accounts able to disagree with the one the audit
+ * proves (A2.a). Members' home currencies may differ; each sheet is already in its own party's
+ * money and `inMoney` puts them in the root's at the rate in force (Currency C4, C5, D2).
+ *
+ * XI-15: each member's sheet is PER MEMBER, so a member that is a cell is multiplied by its weight
+ * before it is added — a group holding a hundred identical subsidiaries holds a hundred of them.
+ */
+export function consolidated(view: BalanceReads, group: readonly PartyId[]): BalanceSheet {
+  const root = group[0];
+  if (root === undefined) {
+    throw new Impossible('M&A A4', 'a group with nobody in it has no accounts to consolidate');
+  }
+  const home = view.registry.currencyOf(view.parties.get(root).region);
+  const inside = new Set(group.map((p) => String(p)));
+  const assets: number[] = [];
+  const liabilities: number[] = [];
+  let walked = 0;
+  for (const member of group) {
+    const sheet = sheetOf(view, member, inside);
+    const w = weightOf(view.parties.get(member));
+    assets.push(view.valuation.inMoney(sheet.assets.value * w, sheet.ccy, home, view.period));
+    liabilities.push(
+      view.valuation.inMoney(sheet.liabilities.value * w, sheet.ccy, home, view.period),
+    );
+    // Law 7: the dust the READS carried, added the way the numbers were, and never a band.
+    walked += sheet.walked * w;
+  }
+  return { assets: sum(assets), liabilities: sum(liabilities), walked, ccy: home };
 }
 
 export function accountsFamily(): Family {

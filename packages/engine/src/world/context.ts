@@ -32,6 +32,7 @@ import type { Running } from '../core/num.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { PublishedReads } from '../journal/published.js';
+import type { ControlBasis, ControlReads } from '../register/control.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
@@ -182,6 +183,15 @@ export interface KernelReads {
    * reachable through it (A4).
    */
   readonly published: PublishedReads;
+  /**
+   * M&A A4, A5: WHO CONTROLS WHOM, and therefore what a group is.
+   *
+   * Ownership and control are different facts and 51% of the votes is not 51% of the economics.
+   * The register holds the first; this holds the second. It is public — who owns a company is the
+   * one thing about it everybody knows (Observer A3) — so a participant reads it too: a lender
+   * looking at a borrower is looking at the group behind it.
+   */
+  readonly control: ControlReads;
   /**
    * XI-3, Banks Capital C3.b: whether some module takes charge of what happens when a party of this
    * kind fails. The estate asks it so that it can leave a bank alone without knowing what a bank is
@@ -685,6 +695,17 @@ export interface MechanismContext extends WorldReads {
   /** What this party owes that is not an instrument, and what is owed to it (XI-8). */
   owedBy(party: PartyId): readonly Agreement[];
   owedTo(party: PartyId): readonly Agreement[];
+  /**
+   * M&A A4: one party takes control of another, from now, on a named basis.
+   *
+   * It is not a purchase and does not move anything: it records that the votes, the contract or the
+   * appointment now sit somewhere, which is a fact about two parties and not a transfer between
+   * them. What follows from it — consolidation, a board that answers, a subsidiary that can be
+   * transferred out of a resolution — is what reads it.
+   */
+  takeControl(controller: PartyId, subject: PartyId, basis: ControlBasis, why: string): void;
+  /** It stops being true: the stake was sold, the contract ended, the resolution closed. */
+  releaseControl(subject: PartyId, why: string): void;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   /**

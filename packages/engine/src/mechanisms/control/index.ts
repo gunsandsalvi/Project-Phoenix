@@ -306,17 +306,54 @@ function settleTender(
     },
     true,
   );
+  /**
+   * A4, item 9: AND NOW SOMETHING HAPPENS. A takeover used to buy the shares and stop: the target
+   * stayed a separate party with its own balance sheet, its own line and its own board for ever,
+   * and `combine` — which is what A4 and A5 are about — was exported and called by nobody, because
+   * there was nothing for a completed tender to write to.
+   *
+   * What a completed tender establishes is CONTROL, and control is an OUTCOME read off the register:
+   * a holder with more than half of what is in issue has the votes. Nothing here is a threshold
+   * somebody declared — "more than half" is arithmetic, and the two numbers are both reads.
+   */
+  const held = Number(ctx.register.quantity(bid.buyer, bid.line));
+  const inIssue = Number(ctx.instruments.get(bid.line).issued);
+  if (inIssue <= 0) return;
+  const already = ctx.control.controllerOf(bid.target);
+  if (already === undefined && held * 2 > inIssue) {
+    ctx.takeControl(bid.buyer, bid.target, 'shares', `holds ${held} of ${inIssue} shares in issue`);
+  }
+  /**
+   * A5, D4: AND WHEN NOTHING IS LEFT OUTSIDE, the two balance sheets combine. A majority makes a
+   * subsidiary — which is what the world above records — and it is holding ALL of it that makes the
+   * residual claim entirely the acquirer's, so that combining is a description of what is true
+   * rather than a decision somebody has to take. That is why `combine` needed no new caller and no
+   * new rule: it needed the one condition under which it is not a lie.
+   */
+  if (held >= inIssue) combine(ctx, bid.buyer, bid.target);
 }
 
 /**
  * A4, A5, D4, XI-8: THE TWO BALANCE SHEETS COMBINE. The target's own paper is assumed by the
- * acquirer, its holdings are reseated, its shares cease to be a claim on anything because the
- * residual they were has been bought, and the party is terminated with the acquirer as successor.
+ * acquirer, ITS HOLDINGS MOVE TO THE ACQUIRER, its shares cease to be a claim on anything because
+ * the residual they were has been bought, and the party is terminated with the acquirer as
+ * successor.
  *
  * It is the estate's door and not a second one: "this party's obligations are now that one's" is one
  * fact, and a world with two ways to write it would have two ways for it to be wrong (Law 4).
+ *
+ * A-70: THE DOCSTRING SAID "its holdings are reseated" AND THE FUNCTION DID NOT DO IT. `assume` maps
+ * to `reseat`, which changes an instrument's ISSUER — that moves the target's LIABILITIES, and there
+ * was nothing here that moved its cash, its plant, its inventory or its paper. Had it ever been
+ * called, `cease` would have marked the target dead with holdings still under its id and the `names`
+ * family would have reported "`target` has ceased but still holds `instrument`" for every line it
+ * held, every period, for the rest of the run — Register F2, the clause the docstring cites.
  */
 export function combine(ctx: MechanismContext, buyer: PartyId, target: PartyId): void {
+  // XI-3, §25 C1: it is ENDING and it has not ended. Item 7's state, and the interval where its
+  // book is being moved used to be indistinguishable from a firm trading normally.
+  ctx.standing(target, 'winding', `being combined into ${String(buyer)}`);
+  handOver(ctx, buyer, target);
   for (const i of ctx.instruments.issuedBy(target)) {
     if (!i.status.live) continue;
     // A5: including the shares themselves — a residual claim on a firm that is now part of another
@@ -327,13 +364,86 @@ export function combine(ctx: MechanismContext, buyer: PartyId, target: PartyId):
       reason: `${String(buyer)} assumes ${String(i.id)} from ${String(target)}`,
     });
   }
+  /**
+   * Register F2, Appendix B: NO DEATH WITHOUT A DESTINATION. What it still holds after the two
+   * passes above is encumbered — a lien is not free and the register refuses to move bound units —
+   * so the acquirer has bought a company whose assets are pledged to somebody else, and it stays a
+   * named party under the acquirer's control until those liens are released. Combining it would
+   * write a residual with no holder, which is the one thing the estate's door exists to prevent.
+   */
+  if (ctx.register.holdingsOf(target).length > 0) {
+    ctx.takeControl(buyer, target, 'shares', 'wholly owned; its remaining holdings are encumbered');
+    ctx.record(
+      'control.combined',
+      [buyer, target],
+      { buyer: String(buyer), target: String(target), combined: false, why: 'encumbered' },
+      true,
+    );
+    return;
+  }
+  // It is inside the acquirer now, so there is no longer a party for anybody to control (Law 4).
+  ctx.releaseControl(target, `combined into ${String(buyer)}`);
   ctx.cease(target, buyer);
   ctx.record(
     'control.combined',
     [buyer, target],
-    { buyer: String(buyer), target: String(target) },
+    { buyer: String(buyer), target: String(target), combined: true },
     true,
   );
+}
+
+/**
+ * A4: EVERYTHING THE TARGET HOLDS, to the acquirer, by name and to the piece — which is what the
+ * docstring above always claimed and what the register needs before the party can end.
+ *
+ * It is one instruction, so it is atomic: either the whole balance sheet moves or none of it does
+ * and the target is still there holding it (Money E1, Register C3.b). Money moves as money and
+ * everything else as an asset, because a deposit is a holding and is not moved as one (Money D2).
+ */
+function handOver(ctx: MechanismContext, buyer: PartyId, target: PartyId): void {
+  const view = ctx.participant(target);
+  const legs: Leg[] = [];
+  const monies = new Set<CurrencyCode>();
+  for (const h of view.holdings()) {
+    const inst = ctx.instruments.get(h.instrument);
+    if (ctx.registry.instrumentKind(inst.kind).pricing === 'money') {
+      monies.add(inst.ccy);
+      continue;
+    }
+    const free = Number(view.free(h.instrument));
+    if (free <= 0) continue;
+    const print = view.print(h.instrument);
+    legs.push({
+      kind: 'asset',
+      from: target,
+      to: buyer,
+      instrument: h.instrument,
+      qty: asQty(free),
+      pricePerUnit: print.some ? some(print.value.price) : none(),
+      accruedPerUnit: none(),
+      fromCell: none(),
+      toCell: none(),
+    });
+  }
+  for (const ccy of monies) {
+    const cash = Number(view.cash(ccy));
+    if (cash <= 0) continue;
+    legs.push({
+      kind: 'money',
+      from: ctx.accountOf(target, ccy),
+      to: ctx.accountOf(buyer, ccy),
+      ccy,
+      amount: asQty(cash),
+      fromCell: none(),
+      toCell: none(),
+    });
+  }
+  if (legs.length === 0) return;
+  ctx.settle({
+    legs,
+    cause: 'corporateAction',
+    reason: `${String(target)} is combined into ${String(buyer)} and hands over what it holds`,
+  });
 }
 
 /**

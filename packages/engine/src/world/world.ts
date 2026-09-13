@@ -81,6 +81,7 @@ import type { OntologyRegister } from '../registry/nouns.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
 import { Agreements, agreementReads, type AgreementReads } from '../register/agreements.js';
 import { publishedReads, type PublishedReads } from '../journal/published.js';
+import { ControlRegister, controlReads, type ControlReads } from '../register/control.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -203,6 +204,10 @@ export class World {
   readonly agreements: AgreementReads = agreementReads(this.agreementStore);
   /** Reporting A2: the typed read of what companies published. One parse (item 3, Law 4). */
   readonly published: PublishedReads = publishedReads(this.journal);
+  /** M&A A4: who controls whom — the relation beside ownership and encumbrance (item 9). */
+  private readonly controlStore = new ControlRegister();
+  /** The read face. `takeControl` and `releaseControl` are the writes, on the context (Law 4). */
+  readonly control: ControlReads = controlReads(this.controlStore);
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -1224,6 +1229,7 @@ export class World {
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       published: this.published,
+      control: this.control,
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
       contractBooks: (kind, on) => this.contractBooks(kind, on),
@@ -1368,6 +1374,7 @@ export class World {
       registry: this.registry,
       params: this.params,
       published: this.published,
+      control: this.control,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1457,6 +1464,7 @@ export class World {
       registry: this.registry,
       params: this.params,
       published: this.published,
+      control: this.control,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1568,6 +1576,30 @@ export class World {
       },
       owedBy: (party) => this.agreementStore.owedBy(party),
       owedTo: (party) => this.agreementStore.owedTo(party),
+      takeControl: (controller, subject, basis, why) => {
+        const row = this.controlStore.take({ controller, subject, basis, why }, this.currentPeriod);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'control.taken',
+          [row.controller, row.subject],
+          { controller: row.controller, subject: row.subject, basis: row.basis, why },
+          true,
+        );
+      },
+      releaseControl: (subject, why) => {
+        const held = this.controlStore.controllerOf(subject);
+        if (held === undefined) return;
+        this.controlStore.release(subject);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'control.released',
+          [held.controller, subject],
+          { controller: held.controller, subject, since: held.since, why },
+          true,
+        );
+      },
       standing: (party, standing, cause) => {
         const was = this.parties.get(party).status;
         this.parties.standing(party, standing, cause);

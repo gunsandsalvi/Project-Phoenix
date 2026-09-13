@@ -4550,3 +4550,68 @@ are written down, so a valuation, a covenant test and an estimate all read the s
 would falsify it:** a reader needing a line the statement does not carry — most likely a cash-flow
 line, which `publish` writes as `cash` and this read deliberately does not expose, because no reader
 has yet asked for one.
+
+
+## Item 9 — who controls whom
+
+**What.** `register/control.ts`: a controller, a subject, since when, and on what basis —
+`shares | contract | appointment | resolution`. Written through `takeControl` / `releaseControl` on
+`MechanismContext`, journalled publicly, read through `control` on `KernelReads` — so a participant
+reads it too, because who owns a company is the one thing about it everybody knows (Observer A3).
+
+**Why.** Grep `subsidiary|parentOf|controls|consolidat|group` across `register/`, `parties/` and
+`registry/`: **zero hits.** Owning 51% of a company was a large holding and nothing more. So a
+takeover bought the shares and nothing happened, no group consolidated, nothing could be
+ring-fenced, a resolution could not transfer a subsidiary, and **private equity — which is
+definitionally about control — was inexpressible.**
+
+**It refuses the three things that are not control**: a party controlling itself (Law 5), a second
+controller for one subject (Law 4), and a cycle — a group whose parent is its own subsidiary has
+nobody at the top, so `ultimateOf` would not terminate and a consolidated sheet would count one
+balance sheet twice.
+
+**A group consolidates, and it is the SAME read.** `consolidated(view, group)` is `balanceSheet`
+generalised with an elimination set, not a second implementation — a second one would be a second
+set of accounts able to disagree with the one the audit proves (A2.a). A claim one member holds on
+another comes out of the holder's assets AND the issuer's liabilities, and a contract between two
+members comes out of both sides.
+
+**And the two amounts are not the same, which is the economics and not an error.** The asset side
+comes off at the holder's MARK and the liability side at what the issuer OWES. A parent holding its
+subsidiary's paper at 80 against a face of 100 has, on consolidation, retired its own debt at a
+discount, and the group's net worth is 20 above the two sheets added. Taking the same number off
+both sides would be marking a liability to the market — the fiction the balance-sheet read removed.
+
+**`combine` has a caller (A-70, B-4).** A completed tender reads what the buyer holds against what is
+in issue. **More than half is a subsidiary** — control is taken and the target goes on trading, which
+is what a majority actually buys. **Holding all of it is a combination**, because then nothing is
+left outside and the residual is entirely the acquirer's, so combining describes what is true rather
+than a decision somebody has to take. "More than half" is arithmetic over two reads; no threshold
+was declared anywhere.
+
+**And it no longer lies.** Its docstring said "its holdings are reseated" and nothing in it moved
+the target's holdings: `assume` maps to `reseat`, which changes an instrument's ISSUER. It hands the
+whole balance sheet over first, in one atomic instruction, then assumes the liabilities, then
+ceases. **Measured**: with the hand-over removed the target keeps **9 holdings** and the `names`
+family reports it **5 times in 8 periods**; with it, the target ends empty and dead and the family
+is silent for 8.
+
+**What it does when it cannot finish.** Units left after the hand-over are encumbered — a lien is not
+free and the register refuses to move bound units — so the acquirer has bought a company whose
+assets are pledged elsewhere. It does not die: it stays a named party under the acquirer's control,
+recorded `combined: false`. Ceasing it would write a residual with no holder.
+
+**Unreached in this world, and the reason was already a test.** Every listed firm here publishes a
+loss, so there is no stream to capitalise and no bid is made — `control.test.ts` asserts that and
+says the day one earns, the tender machinery starts. The doors and `combine` are therefore exercised
+by a scale-model module that takes control of one drawn firm on behalf of another and combines it
+two periods later.
+
+**Measured.** `control`, `world`, `doors`, `equity`: **10 red before, 10 after.** Twelve new tests.
+Green: lint, typecheck, spec citations (203), forbids (200 files).
+
+**Forecast, with its killer.** Ownership and control are two facts now, and a group is a thing the
+world can name — so consolidation, ring-fencing and a resolution that sells a subsidiary all become
+writable. **What would falsify it:** control that is not a tree — a joint venture two parents control
+between them — which this store refuses by design, because one controller per subject is what makes
+`ultimateOf` and the consolidation well defined.

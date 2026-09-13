@@ -119,7 +119,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **6** | `View` | 1 | **BUILT** — the noun. A bank actually forming a credit view is the mechanism that follows |
 | **7** | `Lifecycle` | 2 | **BUILT** — four states, wired at the estate and at resolution. `distressed` has no writer yet |
 | **8** | `Agreement` | 5 of 9 | **BUILT (the store, and four cases)** — arrears exist and rank. The seven private books are not migrated, so `Mandate` and **A-9**, **A-67**, **B-2**, **B-3** stay open here |
-| **9** | `Control` | 2 | independent; 13o and §29 cannot exist without it |
+| ~~**9**~~ | ~~`Control`~~ | 2 | **BUILT** — the relation, the group, and a consolidation that eliminates. `combine` has a caller and moves the holdings it always claimed to |
 | **10** | `CorporateAction` | 1 | independent; reframes worklist 13k |
 | **11** | `OutputKind` | 1 | independent; small |
 | **12** | `Space` | 0 | independent; it *is* worklist 13m |
@@ -2225,6 +2225,61 @@ too. This world records what did not settle and carries none of it.
 ---
 
 ## 9. `Control` — who controls whom
+
+> **BUILT.** `register/control.ts`: a controller, a subject, since when, and on what basis —
+> `shares | contract | appointment | resolution`, a dispatch key and never a severity. Written
+> through `takeControl` / `releaseControl` on `MechanismContext`, journalled as `control.taken` and
+> `control.released`; read through `control` on **`KernelReads`**, so a PARTICIPANT reads it too —
+> who owns a company is the one thing about it everybody knows (Observer A3), and a lender looking
+> at a borrower is looking at the group behind it.
+>
+> **It refuses the three things that are not control**: a party controlling itself (Law 5), a second
+> controller for one subject (Law 4 — two answers to one question), and a CYCLE. A group whose
+> parent is its own subsidiary has nobody at the top, so `ultimateOf` would not terminate and a
+> consolidated sheet would count one balance sheet twice.
+>
+> **The reads are what it is for.** `subsidiariesOf` (direct), `groupOf` (everything under a party,
+> however deep, once each), `ultimateOf` (who is behind it).
+>
+> **A group consolidates, and the read is the same read.** `consolidated(view, group)` is
+> `balanceSheet` generalised with an ELIMINATION SET, not a second implementation: a second one
+> would be a second set of accounts able to disagree with the one the audit proves (A2.a). A claim
+> one member holds on another comes out of the holder's assets AND the issuer's liabilities, and a
+> contract between two members comes out of both sides — all three halves, or the sheet stops
+> balancing.
+>
+> **And the two amounts are not the same, which is the economics and not an error.** The asset side
+> comes off at the holder's MARK and the liability side at what the issuer OWES. A parent holding
+> its subsidiary's paper at 80 against a face of 100 has, on consolidation, retired its own debt at
+> a discount, and the group's net worth is 20 above the two sheets added. A consolidation that took
+> the same number off both sides would be marking a liability to the market — the fiction the
+> balance-sheet read already removed.
+>
+> **`combine` has a caller and does what it says (A-70, B-4).** A completed tender reads what the
+> buyer now holds against what is in issue. **More than half is a subsidiary** — control is taken,
+> and the target goes on trading, which is what a majority actually buys. **Holding all of it is a
+> combination**, because then nothing is left outside and the residual is entirely the acquirer's,
+> so combining describes what is true rather than a decision somebody has to take. "More than half"
+> is arithmetic (`held * 2 > inIssue`) over two reads — no threshold was declared.
+>
+> **And the function no longer lies.** Its docstring said *"its holdings are reseated"* and nothing
+> in it moved the target's holdings: `assume` maps to `reseat`, which changes an instrument's
+> ISSUER. It hands the whole balance sheet over first, in ONE atomic instruction, then assumes the
+> liabilities, then ceases. **Measured**: with the hand-over removed, the target keeps **9 holdings**
+> and the `names` family reports it **5 times in 8 periods**; with it, the target ends empty and
+> dead and the family is silent for 8 periods.
+>
+> **What it does when it cannot finish.** Units left after the hand-over are ENCUMBERED — a lien is
+> not free and the register refuses to move bound units — so the acquirer has bought a company whose
+> assets are pledged elsewhere. It does not die: it stays a named party under the acquirer's
+> control, recorded `combined: false`. Ceasing it would write a residual with no holder.
+>
+> **Unreached in this world, and the reason is already a test.** Every listed firm here publishes a
+> LOSS, so there is no stream to capitalise and no bid is made — `control.test.ts` asserts exactly
+> that and says the day one earns, the tender machinery starts. So the doors and `combine` are
+> exercised by a scale-model module that takes control of one drawn firm on behalf of another.
+>
+> **Measured.** `control`, `world`, `doors`, `equity`: **10 red before, 10 after.** Twelve new tests.
 
 **Why.** Two findings. Grep `subsidiary|parentOf|controls|consolidat|group` across `register/`,
 `parties/` and `registry/`: **zero hits.** Owning 51% of a company is a large holding and nothing
