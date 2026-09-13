@@ -779,17 +779,16 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
           addTo(due, leg.to.holder, mul(leg.amount, onIncome, 'income tax'));
           break;
         }
-        case 'disposal': {
-          if (!cells.has(leg.to.holder)) break;
-          // Law 19: THE GAIN, and the basis is the one the register handed over at the debit —
-          // never anybody's own arithmetic. A disposal at or below what it cost is not a gain, and
-          // there is no such thing as a negative base: what a loss does is this item's successor's.
-          const gain = sub(leg.amount, receipt.basis, 'what it made on the sale');
-          if (gain <= 0) break;
-          bases.income = add(bases.income, gain, 'gains households realised');
-          addTo(due, leg.to.holder, mul(gain, onIncome, 'tax on the gain'));
+        case 'disposal':
+          // Handled off `r.realised` below, because the gain needs the basis and the basis is
+          // settlement's to publish, not the leg's (Law 19).
           break;
-        }
+        case 'sale':
+          // Revenue from selling what the seller MADE. What it nets to is a firm's profit, which is
+          // a different tax on a different base, and this world has no mechanism for one: the
+          // treasury taxes households (C1). Naming it is what keeps it out of `unclassified`
+          // without pretending it is somebody's income (item 14 owns the corporate base).
+          break;
         case 'returnOfCapital':
         case 'borrowing':
         case 'transfer':
@@ -799,6 +798,19 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         default:
           assertNever(receipt, 'Treasury C1');
       }
+    }
+    /**
+     * C1, Law 19: THE GAIN, from the pass that knows both halves. A disposal at or below what it
+     * cost is not a gain, and there is no negative base here: what a realised LOSS does — carry
+     * against other gains, or not — is a fiscal rule the polity owns (14), and inventing one to fill
+     * the branch would be exactly the outcome-written-as-a-rule the method forbids.
+     */
+    for (const made of r.realised) {
+      if (!cells.has(made.party)) continue;
+      const gain = sub(made.proceeds, made.basis, 'what it made on the sale');
+      if (gain <= 0) continue;
+      bases.income = add(bases.income, gain, 'gains households realised');
+      addTo(due, made.party, mul(gain, onIncome, 'tax on the gain'));
     }
   }
   let collected = 0;

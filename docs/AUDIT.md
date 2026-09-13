@@ -1222,10 +1222,24 @@ and a bond"_) and is nowhere in the code. The fund kind knows the answer — `ma
 > Interest still collects — 14,313,339 of base, 2,835,724 collected — which is what a real base
 > looks like.
 >
-> **Carried.** A `disposal`'s gain is `proceeds − basis` and the code is there, but nothing yet
-> emits a `disposal` receipt: the market settlement has the basis at the debit and does not pass it.
-> That is the next step on this item. A capital-gains RATE distinct from the income rate is a policy
-> primitive the polity owns (**14**), and a dividend rate likewise.
+> **AND THE DISPOSAL HALF IS DONE, which turned up a gap in the union itself.** The market declares a
+> sale; only the register knows what the units cost; so `Settled.realised` pairs the two in the one
+> pass that does both, and the treasury reads the GAIN from there rather than from the leg (Law 19).
+> The first run returned nothing, and the reason is the finding: **a seller that ISSUES the line is
+> selling what it MADE.** Settlement expands that as an issuance — no debit, no lots, no cost — so
+> asking it for a basis asked for something that cannot exist. Selling what you made and selling what
+> you held are two receipts, and the union now has both: `sale` (revenue) and `disposal` (proceeds
+> against a basis).
+>
+> **The census of what this world actually pays**, at six periods: 264 interest, 150 transfers, 22
+> sales, 15 returns of capital — **and nothing else**. No wage is paid, no dividend reaches anybody,
+> nothing held is ever sold, nobody borrows. Four of the nine things money can be to a party happen
+> here. `unclassified` is 0, so that census is complete rather than a sample.
+>
+> **Carried.** A capital-gains rate distinct from the income rate, a dividend rate, and a tax on a
+> firm's profit (what `sale` revenue nets to) are POLICY primitives the polity owns (**14**). What a
+> realised LOSS does — carry against other gains or not — is the same, and inventing a rule to fill
+> the branch would be the outcome-written-as-a-rule the method forbids.
 
 
 **Why.** Six findings, and one line. The income-tax base is `treasury/index.ts:747`: every money leg

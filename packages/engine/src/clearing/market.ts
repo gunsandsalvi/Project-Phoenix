@@ -788,6 +788,12 @@ function fxTrade(
  * same numbered instruction the goods move in, so there is never an instant where one side has
  * parted with something and the other has given nothing (XI-5).
  */
+/** Whether the seller is the issuer of what it is selling: a primary sale rather than a disposal. */
+function sellerIssues(m: AssetMarketDecl, t: Trade, deps: MarketRunDeps): boolean {
+  const issuer = deps.instrumentIssuer(m.instrument);
+  return issuer.some && issuer.value === t.seller;
+}
+
 function payment(
   m: AssetMarketDecl,
   t: Trade,
@@ -818,6 +824,20 @@ function payment(
     kind: 'money',
     from: deps.accountOf(t.buyer, m.ccy),
     to: deps.accountOf(t.seller, m.ccy),
+    // Treasury C1: to the SELLER this money is the proceeds of a sale, which is not income and is
+    // not a returned principal — it is a disposal, and what it made is proceeds less what the units
+    // it gave up had cost. The market knows it is a sale; only the register knows what they cost,
+    // so settlement puts the two together (`Settled.realised`).
+    /**
+     * Treasury C1: WHICH SALE THIS IS, and the two are different receipts.
+     *
+     * A seller that ISSUES the line is selling what it made: settlement expands that as an issuance,
+     * there are no lots behind it and no basis, and the money is REVENUE. A seller that held the
+     * units is disposing of them, and what it made is proceeds less what those units cost — a number
+     * only the register has, which is why settlement pairs the two (`Settled.realised`) instead of
+     * the market guessing at it.
+     */
+    receipt: sellerIssues(m, t, deps) ? { of: 'sale' } : { of: 'disposal' },
     ccy: m.ccy,
     amount: cash,
     fromCell: buyerCashCell === undefined ? none() : some(buyerCashCell),

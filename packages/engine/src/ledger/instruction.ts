@@ -76,8 +76,23 @@ export type Receipt =
   | { readonly of: 'rent' }
   | { readonly of: 'interest' }
   | { readonly of: 'dividend' }
-  /** Law 19: the basis comes from the lots the debit drew, never from anybody's own arithmetic. */
-  | { readonly of: 'disposal'; readonly basis: number }
+  /**
+   * Law 19: WHAT IT COST IS NOT THE PAYER'S TO SAY, and it does not try. A buyer paying a seller
+   * knows the money is proceeds of a sale; only the register knows which lots the seller's debit
+   * drew and what they were carried at. So the leg declares the KIND and settlement, which draws
+   * them, publishes the basis beside the proceeds in `Settled.realised`.
+   */
+  | { readonly of: 'disposal' }
+  /**
+   * Proceeds of selling what you MADE, which is not the same receipt as selling what you HELD.
+   *
+   * A firm selling its own output is the ISSUER of those units: settlement expands the leg as an
+   * issuance and there is no debit, so there are no lots and no basis — there is nothing it cost,
+   * because it did not cost anything, it was produced. Calling that a disposal asked settlement for
+   * a basis that cannot exist. What it IS is revenue, and what revenue nets to is a firm's profit,
+   * which is a different tax with a different base and no mechanism here yet (item 14).
+   */
+  | { readonly of: 'sale' }
   | { readonly of: 'returnOfCapital' }
   | { readonly of: 'borrowing' }
   | { readonly of: 'transfer' };
@@ -88,6 +103,7 @@ export const RECEIPT_KINDS = [
   'interest',
   'dividend',
   'disposal',
+  'sale',
   'returnOfCapital',
   'borrowing',
   'transfer',
@@ -367,6 +383,14 @@ export interface Instruction extends InstructionDraft {
 }
 
 /** The named effects settlement produced when it applied an instruction (Audit B5: named events). */
+/** A sale, with what came in and what it had cost — both, from the pass that did both. */
+export interface Realised {
+  readonly party: PartyId;
+  readonly instrument: InstrumentId;
+  readonly proceeds: number;
+  readonly basis: number;
+}
+
 export interface EquityEffect {
   readonly party: PartyId;
   /** Per member for a cell, in the party's home currency. */
@@ -379,6 +403,16 @@ export interface Settled {
   /** Register deltas actually applied, per member for cells: replayable (D1.a). */
   readonly deltas: readonly RegisterDelta[];
   readonly equity: readonly EquityEffect[];
+  /**
+   * Treasury C1, Law 19: WHAT A SELLER ACTUALLY MADE, published by the only party that can say it.
+   *
+   * A `disposal` money leg says the money is proceeds of a sale; the register says what the lots
+   * the seller's debit drew were carried at. Neither knows the other's half, so settlement — which
+   * does both in one pass — puts them side by side and nobody re-derives either. The gain is
+   * `proceeds − basis` and it is the tax base a household was never charged on, because until this
+   * existed the whole GROSS was taxed as income (A-37, A-46).
+   */
+  readonly realised: readonly Realised[];
   /**
    * Derivative D1, Law 19: the contract rows this instruction opened, in leg order. A module that
    * drafted a trade needs to know which row it now has a side of, and reading it back off the

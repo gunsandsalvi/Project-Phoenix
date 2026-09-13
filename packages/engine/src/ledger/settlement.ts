@@ -47,7 +47,7 @@ import type { DrawnLot, Register } from '../register/register.js';
 import type { Registry } from '../registry/registry.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
 import type { PartyKindId } from '../core/ids.js';
-import type {
+import type { Realised,
   AccountRef,
   AssetLeg,
   AssumeLeg,
@@ -252,6 +252,7 @@ export class Settlement {
       instruction,
       deltas: applied.deltas,
       equity: applied.equity,
+      realised: applied.realised,
       contracts: applied.contracts,
       reserveLegs,
     };
@@ -1012,8 +1013,22 @@ export class Settlement {
   private apply(
     ins: Instruction,
     ops: readonly Op[],
-  ): { deltas: RegisterDelta[]; equity: EquityEffect[]; contracts: ContractId[] } {
+  ): {
+    deltas: RegisterDelta[];
+    equity: EquityEffect[];
+    contracts: ContractId[];
+    realised: Realised[];
+  } {
     const deltas: RegisterDelta[] = [];
+    /**
+     * Treasury C1, Law 19: what a seller made, from the one pass that knows both halves.
+     *
+     * The money leg said the money is proceeds of a sale; the debit below says what the lots it drew
+     * were carried at. Put side by side here and nowhere else, so nobody re-derives either — and so
+     * a tax on a gain is a tax on a gain rather than on the whole gross (A-37, A-46).
+     */
+    const sold = new Map<string, number>();
+    const realised: Realised[] = [];
     const equity = new Map<PartyId, number>();
     /** Derivative D1: the rows this instruction wrote, so its drafter can name what it opened. */
     const written: ContractId[] = [];
@@ -1097,6 +1112,8 @@ export class Settlement {
                 ),
               ),
             ).value;
+            // What this party's units of this line cost it, kept for the disposal pairing below.
+            sold.set(`${op.party}/${op.instrument}`, carrying);
             bump(op.party, -carrying, op.instrument);
           }
           deltas.push({
@@ -1370,7 +1387,23 @@ export class Settlement {
       });
       effects.push({ party, delta });
     }
-    return { deltas, equity: effects, contracts: written };
+    /**
+     * Pair each disposal's proceeds with what the seller's own debit cost. The two halves are found
+     * by the party they belong to — the seller is the `to` of the money and the `from` of the asset
+     * — which is not an inference about shape: the market DECLARED the money a disposal, and this
+     * only supplies the number the register alone holds.
+     */
+    for (const leg of ins.legs) {
+      if (leg.kind !== 'money' || leg.receipt?.of !== 'disposal') continue;
+      const seller = leg.to.holder;
+      for (const asset of ins.legs) {
+        if (asset.kind !== 'asset' || asset.from !== seller) continue;
+        const basis = sold.get(`${seller}/${asset.instrument}`);
+        if (basis === undefined) continue;
+        realised.push({ party: seller, instrument: asset.instrument, proceeds: leg.amount, basis });
+      }
+    }
+    return { deltas, equity: effects, contracts: written, realised };
   }
 
   /**

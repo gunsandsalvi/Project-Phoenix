@@ -16,6 +16,7 @@ describe('a receipt says what money IS to whoever gets it (Treasury C1)', () => 
       'interest',
       'rent',
       'returnOfCapital',
+      'sale',
       'transfer',
       'wage',
     ]);
@@ -66,5 +67,50 @@ describe('a receipt says what money IS to whoever gets it (Treasury C1)', () => 
     const legs = coupons.flatMap((r) => r.instruction.legs).filter((l) => l.kind === 'money');
     expect(legs.length).toBeGreaterThan(0);
     for (const l of legs) expect(l.receipt?.of).toBe('interest');
+  });
+});
+
+describe('selling what you MADE is not selling what you HELD (Treasury C1, Register C2.a)', () => {
+  it('a primary sale is revenue and has no basis to net against', () => {
+    /**
+     * A seller that issues the line is producing the units, not giving up held ones: settlement
+     * expands the leg as an ISSUANCE, so there is no debit, no lots and no cost. Labelling it a
+     * disposal asked settlement for a basis that cannot exist, and it answered with nothing —
+     * which is how the distinction was found.
+     */
+    const w = rigWorld('receipt');
+    for (let i = 0; i < 6; i += 1) w.step();
+    const kinds = new Map<string, number>();
+    let realised = 0;
+    for (const r of w.ledger.all()) {
+      if (r.outcome !== 'settled') continue;
+      realised += r.realised.length;
+      for (const l of r.instruction.legs) {
+        if (l.kind === 'money' && l.receipt !== undefined) {
+          kinds.set(l.receipt.of, (kinds.get(l.receipt.of) ?? 0) + 1);
+        }
+      }
+    }
+    // Every asset-market sale in this world is a firm selling its own output.
+    expect(kinds.get('sale')).toBeGreaterThan(0);
+    expect(kinds.get('disposal')).toBeUndefined();
+    // And with no secondary sale, nothing is realised. The zero is correct, not missing.
+    expect(realised).toBe(0);
+  });
+
+  it('the census of what this world pays, which is the sharpest statement of what it does not', () => {
+    const w = rigWorld('receipt');
+    for (let i = 0; i < 6; i += 1) w.step();
+    const kinds = new Set<string>();
+    for (const r of w.ledger.all()) {
+      if (r.outcome !== 'settled') continue;
+      for (const l of r.instruction.legs) {
+        if (l.kind === 'money' && l.receipt !== undefined) kinds.add(l.receipt.of);
+      }
+    }
+    // Interest, transfers, returns of capital and firms' own sales — and NOTHING ELSE. No wage is
+    // paid, no dividend reaches anybody, nothing held is ever sold, and nobody borrows. Four of the
+    // nine things money can be to a party happen here (`docs/AUDIT.md` item 5).
+    expect([...kinds].sort()).toEqual(['interest', 'returnOfCapital', 'sale', 'transfer']);
   });
 });

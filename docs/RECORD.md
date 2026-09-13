@@ -4296,3 +4296,41 @@ sectors come alive — which would be the read working, not failing.
 **Measured.** `households`, `treasury` and `estate` — the three files this reaches: **10 red before,
 the same 10 after, by name.** Green: lint, typecheck, spec citations, forbids, plan progress, 21
 tests across the four files this work has added.
+
+
+## Item 5, second half — the gain, and a distinction the union was missing
+
+**What.** `Settled.realised`: settlement publishes, for each disposal, what came in beside what the
+units had cost. The treasury reads the gain from there. And a ninth receipt kind, because the first
+run proved eight were not enough.
+
+**Why settlement and not the leg.** A buyer paying a seller knows the money is proceeds of a sale.
+Only the register knows which lots the seller's debit drew and what they were carried at. Neither
+half can state the other, and having the treasury pair them afterwards would be re-deriving what one
+pass already knew (Law 19). Settlement does both in the same pass, so it puts them side by side and
+nobody computes either twice.
+
+**The first run returned nothing, and that was the finding.** Twenty-two money legs were labelled
+`disposal`, all twenty-two settled, all twenty-two paired with an asset leg from the seller — and
+`realised` was empty. Because `expandAsset` checks `issuedBy(inst, leg.from)`: **a seller that issues
+the line is selling what it MADE**, which settlement expands as an ISSUANCE. No debit, no lots, no
+cost — there is nothing it cost, because it was produced. Asking for a basis asked for something that
+cannot exist.
+
+So selling what you made and selling what you held are two different receipts, and calling both a
+disposal was my error in the union, not a defect in the world. `sale` is revenue; `disposal` is
+proceeds against a basis. The market picks between them on whether the seller issues the line.
+
+**The census of what this world pays**, six periods, scale model: **264 interest, 150 transfers, 22
+sales, 15 returns of capital — and nothing else.** No wage is paid, no dividend reaches anybody,
+nothing held is ever sold, nobody borrows. Four of the nine things money can be to a party happen
+here. `unclassified` is 0, which is what makes that a census rather than a sample — and it is a
+sharper statement of what this world does not do than anything in the original read.
+
+**Carried to 14.** A capital-gains rate distinct from the income rate, a dividend rate, and a tax on
+what `sale` revenue nets to — a firm's profit — are policy primitives the polity owns. So is what a
+realised LOSS does: carrying one against other gains is a fiscal rule, and inventing one to fill the
+branch would be an outcome written as a rule.
+
+**Measured.** `households`, `treasury`, `estate`: 10 red before, 10 after, same names. Green: lint,
+typecheck, spec citations, forbids, plan progress, `receipt.test.ts` 6 of 6.
