@@ -18,14 +18,22 @@ import type { Civil } from '../calendar/civil.js';
 import type { DayCount } from '../calendar/daycount.js';
 import { InvalidRegistry } from '../core/errors.js';
 import type { Instrument, Terms } from '../register/instruments.js';
+import { none, some, type Option } from '../core/option.js';
 
 export const LOAN = instrumentKindId('loan');
 
 /** A2: fixed at origination — principal, maturity, rate, currency; and A4: secured or not. */
 export interface LoanTerms extends Terms {
   readonly kind: typeof LOAN;
-  /** A1: the bank of record. The borrower is the instrument's issuer (it owes the money). */
-  readonly lender: PartyId;
+  /**
+   * A1, Banks Lending D4: WHO WROTE IT, which is not always who owns it now. A loan can be sold
+   * (D4) and securitised (XI-11), and when it is, the row's units move in the register like any
+   * other units — so who the money is owed TO is `creditorOf`, read off the register, and this is
+   * the party that originated it and whose standard it was written to. Two different facts, two
+   * different names; one of them was doing both jobs and would have become a lie the first time a
+   * row left a bank's book (Law 4, Law 19).
+   */
+  readonly originator: PartyId;
   readonly borrower: PartyId;
   /** A2: the rate struck at origination, per annum. It is what the negotiation produced (C2.a). */
   readonly rate: number;
@@ -41,7 +49,32 @@ export interface LoanTerms extends Terms {
  * that it names a lender and a borrower and says what it is secured on (Law 15, A1, A4).
  */
 export function isLoan(t: Terms): t is LoanTerms {
-  return 'lender' in t && 'borrower' in t && 'security' in t;
+  return 'originator' in t && 'borrower' in t && 'security' in t;
+}
+
+/**
+ * Banks Lending A1, D4, XI-11: WHO THE MONEY IS OWED TO, right now. The register is the one writer
+ * of who holds what (Law 4), so this asks it rather than reading a name off the terms — which is
+ * what makes a sale a real transfer instead of a relabelling, and what makes the originator's
+ * capital fall because the row genuinely left its book.
+ *
+ * NOBODY is a real answer and not a failure: a row that has been repaid to the last unit is owed to
+ * no one, and so is one that has been written and not yet drawn. TWO is not: a loan is a bilateral
+ * row and a second holder of it would be two lenders of one loan, so that throws where it happens.
+ */
+export function creditorOf(
+  holdersOf: (i: InstrumentId) => readonly PartyId[],
+  i: Instrument,
+): Option<PartyId> {
+  const held = holdersOf(i.id);
+  if (held.length > 1) {
+    throw new InvalidRegistry(
+      'Banks Lending A1',
+      `${i.id} is owed to ${held.length} parties; a loan is a row between two`,
+    );
+  }
+  const first = held[0];
+  return first === undefined ? none<PartyId>() : some(first);
 }
 
 export function loanTerms(i: Instrument): LoanTerms {

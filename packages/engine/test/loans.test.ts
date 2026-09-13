@@ -5,7 +5,10 @@
  * @spec Banks Lending A1 Banks Lending A1.a Banks Lending A2 Banks Lending A4 Banks Lending B1 Banks Lending B1.a Banks Lending B1.b Banks Lending B1.c Banks Lending B2 Banks Lending B2.a Banks Lending B2.c Banks Lending B2.d Banks Lending C1 Banks Lending C1.a Banks Lending C1.b Banks Lending C1.c Banks Lending C1.d Banks Lending C2 Banks Lending C2.a Banks Lending C3 Banks Lending C3.a Banks Lending C4 Banks Lending D1 Banks Lending D3 Banks Lending E1 Banks Lending F1 Banks Lending F1.a Banks Lending F3 Money B3.a Money B3.c Bond N13.a Corporate Credit G8 XI-4
  */
 import { describe, expect, it } from 'vitest';
+
 import {
+  type Instrument,
+  creditorOf,
   moneyInstrumentId,
   mul,
   upTick,
@@ -190,6 +193,12 @@ m.id === 'sovereign-instruments' ||
   return assemble({ ...spec, modules: mergeModules(modules, extra) });
 }
 
+/** Whoever is owed a row, as a name a test can read; a repaid row is owed to nobody. */
+function whoIsOwed(w: World, i: Instrument): string {
+  const owed = creditorOf((h) => w.register.holdersOf(h), i);
+  return owed.some ? String(owed.value) : '';
+}
+
 function loans(w: World): { id: string; issued: number; lender: string; rate: number }[] {
   return w.instruments
     .all()
@@ -197,7 +206,7 @@ function loans(w: World): { id: string; issued: number; lender: string; rate: nu
     .map((i) => ({
       id: String(i.id),
       issued: i.issued,
-      lender: isLoan(i.terms) ? String(i.terms.lender) : '',
+      lender: whoIsOwed(w, i),
       rate: isLoan(i.terms) ? i.terms.rate : 0,
     }));
 }
@@ -269,7 +278,10 @@ describe('writing it (Banks Lending B1, B1.a, B1.c)', () => {
     expect(row).toBeDefined();
     if (row === undefined || !isLoan(row.terms)) return;
     // There is no book number anywhere: a bank's book is the sum of the rows it holds.
-    expect(w.register.quantity(row.terms.lender, row.id)).toBeCloseTo(row.issued, 9);
+    const owed = creditorOf((h) => w.register.holdersOf(h), row);
+    expect(owed.some).toBe(true);
+    if (!owed.some) return;
+    expect(w.register.quantity(owed.value, row.id)).toBeCloseTo(row.issued, 9);
     expect(row.terms.borrower).toBe(BORROWER);
   });
 });
@@ -341,7 +353,10 @@ describe('the provision (Banks Lending D1, D2, D2.a, D2.b, C4)', () => {
     const row = w.instruments.all().find((i) => i.kind === LOAN);
     expect(row).toBeDefined();
     if (row === undefined || !isLoan(row.terms)) return;
-    const holding = w.register.holding(row.terms.lender, row.id);
+    const creditor = creditorOf((h) => w.register.holdersOf(h), row);
+    expect(creditor.some).toBe(true);
+    if (!creditor.some) return;
+    const holding = w.register.holding(creditor.value, row.id);
     expect(holding.some).toBe(true);
     if (!holding.some) return;
     // D1, D2: amortised cost less what this bank expects to lose. It is ON the lot, which is what
@@ -460,10 +475,14 @@ describe('the world it lives in', () => {
     expect(written.length).toBeGreaterThan(0);
     const rows = w.instruments.all().filter((i) => i.kind === LOAN);
     expect(rows.length).toBeGreaterThan(0);
-    // F1.a: every row has a lender of record holding every unit of it, which the flows family
-    // checks every period — and the year above was green.
+    // F1.a: every row is owed to somebody holding every unit of it, which the flows family checks
+    // every period — and the year above was green. Who that is is read off the register; the name
+    // on the terms is whoever WROTE it (13e), and in a world with no sales yet they are the same.
     for (const row of rows) {
-      expect(isLoan(row.terms) && row.terms.lender.startsWith('bank.')).toBe(true);
+      expect(isLoan(row.terms)).toBe(true);
+      const who = creditorOf((h) => w.register.holdersOf(h), row);
+      // A row repaid to the last unit is owed to nobody, which is a state and not a defect.
+      if (who.some) expect(String(who.value).startsWith('bank.')).toBe(true);
     }
     expect(w.parties.ofKind(partyId('bank') as never).length).toBeGreaterThan(0);
     expect(TREASURY_US).toBeDefined();

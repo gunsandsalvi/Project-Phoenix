@@ -36,7 +36,7 @@ import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { LineWeights } from './capital.js';
 import { appetiteOf, DEALING, LENDING, type BankDecl } from './data.js';
-import { isLoan } from './loan.js';
+import { creditorOf, isLoan } from './loan.js';
 
 export { DEALING, LENDING } from './data.js';
 
@@ -223,7 +223,14 @@ function lineOf(
     if (id === undefined || !ctx.instruments.has(id)) continue;
     const i = ctx.instruments.get(id);
     const terms = i.terms;
-    const which = isLoan(terms) && terms.lender === bank
+    // D4, XI-11: lending business is a row this bank is OWED, whoever wrote it (Law 19).
+    // Only a LOAN has one creditor: a bill has as many holders as bought it, and asking it the
+    // question would be asking a security to be a bilateral row.
+    const owed = isLoan(terms)
+      ? creditorOf((held) => ctx.register.holdersOf(held), i)
+      : none<PartyId>();
+    const which =
+      owed.some && owed.value === bank
       ? LENDING
       : d.makes.includes(String(i.kind))
         ? DEALING

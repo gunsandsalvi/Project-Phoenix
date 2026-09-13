@@ -47,7 +47,7 @@ import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { keyOf, weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
 import { goodId, spoilageParam } from '../../registry/physical.js';
-import { isLoan } from '../../registry/credit.js';
+import { creditorOf, isLoan } from '../../registry/credit.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
@@ -347,7 +347,12 @@ function mortgagesOf(
     const t = i.terms;
     if (t.borrower !== borrower) continue;
     if (!t.security.some((sec) => String(sec.instrument).startsWith(`good.${DWELLING}.`))) continue;
-    out.push({ id: i.id, lender: t.lender, outstanding: ctx.register.heldTotal(i.id).value });
+    // C5, XI-11: WHO FORECLOSES is whoever is owed the row today. A mortgage sold into a pool is
+    // foreclosed by the pool, which is what makes the transfer a real one (Law 19).
+    const owed = creditorOf((held) => ctx.register.holdersOf(held), i);
+    // A mortgage nobody is owed is a mortgage that is paid off; there is nothing left to foreclose.
+    if (!owed.some) continue;
+    out.push({ id: i.id, lender: owed.value, outstanding: ctx.register.heldTotal(i.id).value });
   }
   return out;
 }
@@ -522,15 +527,19 @@ function foreclose(ctx: MechanismContext): void {
     // exactly what was bound to it and never a quantity worked out from the loan.
     const holding = ctx.register.holding(t.borrower, id);
     if (!holding.some) continue;
+    // C5, XI-11: the proceeds go to whoever is owed the row now, not to whoever wrote it.
+    const owed = creditorOf((held) => ctx.register.holdersOf(held), i);
+    if (!owed.some) continue;
+    const lender = owed.value;
     const liens = holding.value.liens.filter((l) => l.reason.includes(String(i.id)));
     for (const lien of liens) {
       const settled = ctx.settle({
         legs: [
-          { kind: 'release', pledgor: t.borrower, beneficiary: t.lender, instrument: id, lien: lien.id },
+          { kind: 'release', pledgor: t.borrower, beneficiary: lender, instrument: id, lien: lien.id },
           {
             kind: 'asset',
             from: t.borrower,
-            to: t.lender,
+            to: lender,
             instrument: id,
             qty: lien.qty,
             pricePerUnit: some(print.value.price),
@@ -544,10 +553,10 @@ function foreclose(ctx: MechanismContext): void {
       });
       ctx.record(
         FORECLOSED,
-        [String(i.id), String(t.lender)],
+        [String(i.id), String(lender)],
         {
           loan: String(i.id),
-          lender: String(t.lender),
+          lender: String(lender),
           dwellings: lien.qty,
           at: print.value.price,
           settled: settled.outcome === 'settled',

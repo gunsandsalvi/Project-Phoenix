@@ -32,7 +32,7 @@ import type { Namer } from '../../registry/naming.js';
  * roof it is foreclosing, and a module may not import another module to find out. Everything else
  * about a loan is here, and this re-export is what keeps one spelling.
  */
-export { LOAN, isLoan, loanTerms, type LoanTerms } from '../../registry/credit.js';
+export { LOAN, creditorOf, isLoan, loanTerms, type LoanTerms } from '../../registry/credit.js';
 
 /** The period after this one; the calendar counts, this only names the next index (Money G3.a). */
 const next = (p: Period): Period => asPeriod(p + 1);
@@ -60,7 +60,7 @@ export const loanKind: InstrumentKindProfile = {
     if (compareCivil(t.drawn, t.maturity) >= 0) {
       throw new InvalidRegistry('Banks Lending A2', 'a loan matures after it is drawn');
     }
-    if (t.lender === t.borrower) {
+    if (t.originator === t.borrower) {
       throw new InvalidRegistry('Banks Lending A1', 'a loan has two parties, and they differ');
     }
   },

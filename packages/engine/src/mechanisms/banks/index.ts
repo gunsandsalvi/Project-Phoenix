@@ -67,7 +67,8 @@ import {
 } from './subordinated.js';
 import { operatingCostOf, staffOrders, STAFF_PARAMS } from './staff.js';
 import { publishLines } from './lines.js';
-import { LOAN, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
+import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
+import type { Holding } from '../../register/register.js';
 import {
   holderReservation,
   lossGivenDefault,
@@ -459,7 +460,7 @@ function write(
   const drawn = ctx.calendar.startOf(ctx.period);
   const terms: LoanTerms = {
     kind: LOAN,
-    lender: bank,
+    originator: bank,
     borrower,
     rate,
     drawn,
@@ -514,7 +515,13 @@ function write(
   return id;
 }
 
-/** C9: the borrower's live line at this bank, if it has one. One row, whatever it has drawn. */
+/**
+ * C9: the borrower's live line at this bank, if it has one. One row, whatever it has drawn.
+ *
+ * D4, XI-11: AT THIS BANK means this bank is owed it NOW. A row this bank wrote and has since sold
+ * is somebody else's asset, and a further drawing on it would put the bank's money behind a loan
+ * that is not its own — so the register answers, not the terms (Law 19).
+ */
 function lineOf(ctx: MechanismContext, bank: PartyId, borrower: PartyId): Instrument | undefined {
   return ctx.instruments
     .all()
@@ -522,8 +529,8 @@ function lineOf(ctx: MechanismContext, bank: PartyId, borrower: PartyId): Instru
       (i) =>
         i.status.live &&
         isLoan(i.terms) &&
-        i.terms.lender === bank &&
-        i.terms.borrower === borrower,
+        i.terms.borrower === borrower &&
+        ctx.register.quantity(bank, i.id) > 0,
     );
 }
 
@@ -539,7 +546,12 @@ function draw(
   ccy: CurrencyCode,
 ): InstrumentId | undefined {
   if (!isLoan(line.terms)) return undefined;
-  const { lender, borrower } = line.terms;
+  const { borrower } = line.terms;
+  // D4: the money comes from whoever is owed the line now, which is whoever holds it (Law 19). A
+  // line nobody is owed is a line nobody can be drawn on.
+  const owed = creditorOf((id) => ctx.register.holdersOf(id), line);
+  if (!owed.some) return undefined;
+  const lender = owed.value;
   const legs: Leg[] = [
     {
       kind: 'asset',
@@ -640,6 +652,9 @@ function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
  * what it is — and a book that moved with no instruction behind it is the scalar F1.a forbids,
  * arrived at by another route.
  */
+/** A row nobody is owed has no holding to walk; naming the absence once keeps the check one read. */
+const NO_HOLDING = none<Holding>();
+
 function bookMoves(): Family {
   return {
     name: 'flows',
@@ -650,20 +665,24 @@ function bookMoves(): Family {
       const out: Violation[] = [];
       for (const i of view.instruments.all()) {
         if (!isLoan(i.terms)) continue;
-        // Register F2, Banks Capital D6: the lender of record can have CEASED since the row was
-        // written — an acquirer takes a resolved bank's loans, an estate takes a dead firm's — and
-        // a reference to it resolves to whoever succeeded it. Nothing about the row changed.
-        const lender = view.parties.resolve(i.terms.lender).id;
-        const held = view.register.quantity(lender, i.id);
-        const holding = view.register.holding(lender, i.id);
+        // D4, XI-11: WHOEVER IS OWED IT holds every unit of it — and who that is can have changed
+        // since the row was written, because a loan can be sold (D4) and a resolved bank's loans go
+        // to its acquirer (Banks Capital D6). The register says who; nothing about the row changed.
+        const owed = creditorOf((id) => view.register.holdersOf(id), i);
+        // A row repaid to the last unit is owed to nobody, and so is one not yet drawn; what the
+        // clause says of it is that nothing is outstanding, which is the same comparison.
+        const held = owed.some ? view.register.quantity(owed.value, i.id) : 0;
+        const holding = owed.some ? view.register.holding(owed.value, i.id) : NO_HOLDING;
         // Law 7: `issued` is a running total that carries the dust of every drawing it has taken,
         // and what the lender holds is a sum over the lots those drawings made. The comparison is
         // entitled to both walks and to nothing else.
         const lots = holding.some ? holding.value.lots.length : 0;
         const dust =
           i.issuedDust + dustOf(lots + 2, Math.abs(i.issued) + Math.abs(held));
-        // F1.a: the lender of record holds every unit of it. A loan somebody else is holding is a
-        // loan that was sold, and selling one is worklist 13f — so until then this must be true.
+        // F1.a: WHOEVER IS OWED IT holds every unit of it. The check used to name the originator
+        // and say a sold loan was 13f's problem; a sold loan is now an ordinary thing (XI-11), and
+        // what the clause actually says — the outstanding and the holding are one number — is true
+        // of the party that owns the row today whoever wrote it.
         if (withinDust(held, i.issued, dust)) continue;
         out.push({
           family: 'flows',
@@ -672,7 +691,7 @@ function bookMoves(): Family {
           size: sub(i.issued, held, 'units not with the lender of record'),
           unit: i.unit,
           period: view.period,
-          message: `${i.id}: ${i.issued} outstanding and its lender of record holds ${held}`,
+          message: `${i.id}: ${i.issued} outstanding and ${owed.some ? String(owed.value) : 'nobody'}, who is owed it, holds ${held}`,
         });
       }
       return out;
@@ -1118,9 +1137,13 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
  */
 function worthToItsLender(rows: readonly BankDecl[], ctx: MechanismContext, i: Instrument): Option<number> {
   if (!isLoan(i.terms)) return none<number>();
-  const decl = declOf(rows, i.terms.lender);
+  // D1: what a loan is worth is ITS OWN CREDITOR's judgement of it, and after a sale that is the
+  // buyer of the row rather than the bank that wrote it (XI-11).
+  const creditor = creditorOf((id) => ctx.register.holdersOf(id), i);
+  if (!creditor.some) return none<number>();
+  const decl = declOf(rows, creditor.value);
   if (decl === undefined) return none<number>();
-  const view = ctx.participant(i.terms.lender);
+  const view = ctx.participant(creditor.value);
   const pd = probabilityOfDefault(view, decl, i.terms.borrower, seenDefaults(ctx));
   /**
    * C5.a (13d): what stands behind it, at the MARKET's own price, read when the question is asked.
@@ -1372,16 +1395,19 @@ function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): v
   }
 }
 
-/** Re-exported so the observer and the tests can read a bank's own book as the sum of its rows. */
-export function loanBook(view: ParticipantView, bank: PartyId): number {
-  return exposureToAll(view, bank);
-}
-
-function exposureToAll(view: ParticipantView, bank: PartyId): number {
+/**
+ * A bank's own book: the sum of the loan rows it holds.
+ *
+ * D4, XI-11: WHAT IT HOLDS, which is the whole of the question. A row it sold is not its exposure
+ * any more and a row it bought is — and because a party sees its own holdings and nobody else's
+ * (§45: no observer sees private state), asking what it holds is both the right read and the only
+ * one it is entitled to. The filter that named a lender on the terms is gone with the fact.
+ */
+export function loanBook(view: ParticipantView): number {
   const terms: number[] = [];
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
-    if (!isLoan(i.terms) || i.terms.lender !== bank) continue;
+    if (!isLoan(i.terms)) continue;
     terms.push(view.quantity(h.instrument));
   }
   return sum(terms).value;

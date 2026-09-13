@@ -49,7 +49,10 @@ function bookOf(view: ParticipantView): { readonly rows: number; readonly princi
   for (const h of view.holdings()) {
     if (!view.instruments.has(h.instrument)) continue;
     const i = view.instruments.get(h.instrument);
-    if (!i.status.live || !isLoan(i.terms) || i.terms.lender !== view.self.id) continue;
+    // C2, D4, XI-11: what costs a bank to run is the book it HOLDS. A row it sold is somebody
+    // else's to administer and one it bought is its own — and since this walks its own holdings,
+    // holding it is the whole of the test. The name on the terms is who wrote it, not whose it is.
+    if (!i.status.live || !isLoan(i.terms)) continue;
     const units = sum(h.lots.map((l) => l.qty));
     if (units.value <= 0) continue;
     rows += 1;
