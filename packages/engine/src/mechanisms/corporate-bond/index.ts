@@ -217,22 +217,18 @@ interface Said {
 
 /** Reporting A2: the last accounts this issuer published, read off the wire and never rebuilt. */
 function latestReport(ctx: MechanismContext, issuer: PartyId): Said | undefined {
-  const said = ctx.journal.ofKind('reporting.report');
-  for (let i = said.length - 1; i >= 0; i -= 1) {
-    const e = said[i];
-    if (e?.data['company'] !== issuer) continue;
-    const { quarter, assets, liabilities, earned } = e.data;
-    if (
-      typeof quarter !== 'string' ||
-      typeof assets !== 'number' ||
-      typeof liabilities !== 'number' ||
-      typeof earned !== 'number'
-    ) {
-      return undefined;
-    }
-    return { quarter, assets, liabilities, earned };
+  const e = ctx.journal.lastOf('reporting.report', issuer);
+  if (e === undefined) return undefined;
+  const { quarter, assets, liabilities, earned } = e.data;
+  if (
+    typeof quarter !== 'string' ||
+    typeof assets !== 'number' ||
+    typeof liabilities !== 'number' ||
+    typeof earned !== 'number'
+  ) {
+    return undefined;
   }
-  return undefined;
+  return { quarter, assets, liabilities, earned };
 }
 
 interface Book {

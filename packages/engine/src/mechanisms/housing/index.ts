@@ -84,13 +84,73 @@ export interface Lease {
 }
 
 export interface LeaseBook {
-  rows: Record<string, Lease>;
+  readonly rows: Map<string, Lease>;
   next: number;
 }
 
-const emptyBook = (): LeaseBook => ({ rows: {}, next: 1 });
+const emptyBook = (): LeaseBook => ({ rows: new Map(), next: 1 });
 
-const allLeases = (b: LeaseBook): Lease[] => Object.values(b.rows);
+/**
+ * A copy of the LIST, not of the tenancies: `collect` ends a tenancy while walking it, and the walk
+ * still sees the one it was about to end.
+ */
+const allLeases = (b: LeaseBook): Lease[] => [...b.rows.values()];
+
+/**
+ * Law 18: the same tenancies, found by the party they belong to. Every question here is about one
+ * landlord or one tenant, and each was answered by walking every tenancy in the world — so a world
+ * with more housing cost every party all of it. The lists hold the same rows the book holds and are
+ * written where a tenancy is signed and where one ends, and nowhere else (Law 4).
+ */
+interface LeaseIndex {
+  readonly byLandlord: Map<PartyId, Lease[]>;
+  readonly byTenant: Map<PartyId, Lease[]>;
+}
+
+const leaseIndexes = new WeakMap<LeaseBook, LeaseIndex>();
+
+function indexOf(b: LeaseBook): LeaseIndex {
+  const held = leaseIndexes.get(b);
+  if (held !== undefined) return held;
+  const made: LeaseIndex = { byLandlord: new Map(), byTenant: new Map() };
+  leaseIndexes.set(b, made);
+  for (const lease of b.rows.values()) intoIndex(made, lease);
+  return made;
+}
+
+function intoIndex(ix: LeaseIndex, lease: Lease): void {
+  under(ix.byLandlord, lease.landlord).push(lease);
+  under(ix.byTenant, lease.tenant).push(lease);
+}
+
+function under(of: Map<PartyId, Lease[]>, who: PartyId): Lease[] {
+  const held = of.get(who);
+  if (held !== undefined) return held;
+  const made: Lease[] = [];
+  of.set(who, made);
+  return made;
+}
+
+function without(of: Map<PartyId, Lease[]>, who: PartyId, lease: Lease): void {
+  const held = of.get(who);
+  if (held === undefined) return;
+  const at = held.indexOf(lease);
+  if (at >= 0) held.splice(at, 1);
+}
+
+/** A tenancy begins. It is written here and ended in `ends`, and in no other place. */
+function signs(b: LeaseBook, lease: Lease): void {
+  b.rows.set(lease.id, lease);
+  intoIndex(indexOf(b), lease);
+}
+
+/** A tenancy ends, in every arrangement of it at once. */
+function ends(b: LeaseBook, lease: Lease): void {
+  b.rows.delete(lease.id);
+  const ix = indexOf(b);
+  without(ix.byLandlord, lease.landlord, lease);
+  without(ix.byTenant, lease.tenant, lease);
+}
 
 /** Law 8: the unit a dwelling is counted in, which is the instrument's own. */
 function goodUnitOf(view: ParticipantView, region: RegionId): UnitId {
@@ -108,11 +168,11 @@ function owned(view: ParticipantView, region: RegionId): number {
 
 /** How many dwellings this party has LET OUT, and how many it has taken (Law 19: off the rows). */
 function letOut(b: LeaseBook, who: PartyId): number {
-  return sum(allLeases(b).filter((l) => l.landlord === who).map((l) => l.dwellings)).value;
+  return sum((indexOf(b).byLandlord.get(who) ?? []).map((l) => l.dwellings)).value;
 }
 
 function taken(b: LeaseBook, who: PartyId): number {
-  return sum(allLeases(b).filter((l) => l.tenant === who).map((l) => l.dwellings)).value;
+  return sum((indexOf(b).byTenant.get(who) ?? []).map((l) => l.dwellings)).value;
 }
 
 /** E1, XI-15: how many dwellings the people in this cell live in. Whole dwellings, per cell. */
@@ -249,14 +309,14 @@ function letIn(ctx: MechanismContext, book: LeaseBook, venue: VenueDecl): void {
       const dwellings = asQty(atMost(want, left, 'there is no more of it to let than there is'));
       const id = `lease.${book.next}`;
       book.next += 1;
-      book.rows[id] = {
+      signs(book, {
         id,
         tenant: t.party,
         landlord: owner.party,
         region,
         rentPerDwelling: struck,
         dwellings,
-      };
+      });
       want = asQty(sub(want, dwellings, 'what it is still short of'));
       left = asQty(sub(left, dwellings, 'what this owner has left'));
     }
@@ -287,7 +347,7 @@ function collect(ctx: MechanismContext, book: LeaseBook): void {
     const tenant = ctx.parties.get(lease.tenant);
     const landlord = ctx.parties.get(lease.landlord);
     if (!tenant.status.alive || !landlord.status.alive) {
-      book.rows = Object.fromEntries(Object.entries(book.rows).filter(([id]) => id !== lease.id));
+      ends(book, lease);
       continue;
     }
     const ccy = ctx.registry.currencyOf(lease.region);

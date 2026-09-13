@@ -174,7 +174,12 @@ export class World {
   /** Clearing B2: the venues whose schedules have been gathered this period, so they are asked once. */
   private readonly gathered = new Set<VenueId>();
   /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
-  private readonly slots = new Map<string, object>();
+  /**
+   * Every module's state, filed under the module that owns it. Law 18: a module asks for its own
+   * slot inside reads it takes per party, so the ask itself is on the hot path; nested this way it
+   * is two lookups of a name that already exists rather than a string built to make a key.
+   */
+  private readonly slots = new Map<string, Map<string, object>>();
   /** Expectations A2: the one module that answers what a party expects. */
   private outlookProvider: { owner: string; provider: OutlookProvider } | undefined;
   /** Derivative Layer E1: the one module that says what a clearing member may carry. */
@@ -507,11 +512,15 @@ export class World {
 
   /** A module's own state, created once and then read and written by that module alone (Law 4). */
   private slot<T extends object>(owner: string, name: string, initial: () => T): T {
-    const key = `${owner}/${name}`;
-    const existing = this.slots.get(key);
+    let mine = this.slots.get(owner);
+    if (mine === undefined) {
+      mine = new Map<string, object>();
+      this.slots.set(owner, mine);
+    }
+    const existing = mine.get(name);
     if (existing !== undefined) return existing as T;
     const made = initial();
-    this.slots.set(key, made);
+    mine.set(name, made);
     return made;
   }
 
@@ -521,9 +530,13 @@ export class World {
    * it should not.
    */
   stateSlots(): Readonly<Record<string, unknown>> {
-    return Object.fromEntries(
-      [...this.slots].map(([k, v]) => [k, JSON.parse(JSON.stringify(v, replacer)) as unknown]),
-    );
+    const out: Record<string, unknown> = {};
+    for (const [owner, mine] of this.slots) {
+      for (const [name, v] of mine) {
+        out[`${owner}/${name}`] = JSON.parse(JSON.stringify(v, replacer)) as unknown;
+      }
+    }
+    return out;
   }
 
   /**

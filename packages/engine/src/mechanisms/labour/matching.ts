@@ -41,6 +41,9 @@ import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
 import {
   allRows,
+  enter,
+  leave,
+  rowsAt,
   employed,
   goingRate,
   hoursAt,
@@ -117,6 +120,9 @@ function supply(
   const occupation = v.key['occupation'];
   const region = v.key['region'];
   if (occupation === undefined || region === undefined) return out;
+  // D1.c: what this trade pays is a fact about the TRADE, so it is read once for the venue rather
+  // than once for every person looking at it. Nothing in it varies by who is asking.
+  const going = goingRate(book, occupation, region as RegionId);
   for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
     if (!participates(ctx, cell, p.retirementAge) || cell.region !== region) continue;
     if (rowOfWorker(book, cell.id) !== undefined) continue;
@@ -137,7 +143,6 @@ function supply(
      * A trade NOBODY is employed in has no going rate, and then there is nothing to be discouraged
      * by: a new trade is open to anybody, which is how a trade gets its first worker at all.
      */
-    const going = goingRate(book, occupation, region as RegionId);
     const mine = reservation(ctx, cell.id, p.hoursPerMember);
     if (mine === undefined) continue;
     if (going !== undefined && going < mine) continue;
@@ -327,7 +332,7 @@ function hire(
     headcount: weightOf(ctx.parties.get(hired)),
   };
   book.next += 1;
-  book.rows[row.id] = row;
+  enter(book, row);
   book.skill[hired] = occupation;
   ctx.record(
     'labour.hire',
@@ -358,9 +363,7 @@ function shed(
   p: LabourParams,
 ): void {
   let left = hours;
-  const rows = allRows(book)
-    .filter((r) => r.employer === employer && r.occupation === occupation && r.region === region)
-    .sort((a, b) => b.start - a.start);
+  const rows = [...rowsAt(book, employer, occupation, region)].sort((a, b) => b.start - a.start);
   for (const row of rows) {
     if (left <= 0) break;
     const members = Math.floor(div(left, row.hoursPerMember, 'members to separate'));
@@ -401,7 +404,7 @@ export function separate(
   const whole = members >= row.headcount;
   const gone = whole ? row.worker : ctx.cells.split(row.worker, members, cause);
   if (whole) {
-    book.rows = Object.fromEntries(Object.entries(book.rows).filter(([id]) => id !== row.id));
+    leave(book, row);
   } else {
     row.headcount = sub(row.headcount, members, 'headcount after separation');
   }

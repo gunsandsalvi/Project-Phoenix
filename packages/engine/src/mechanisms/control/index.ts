@@ -67,6 +67,23 @@ export function worthToBuyer(
   target: PartyId,
   line: InstrumentId,
 ): Option<number> {
+  return worthAt(buyer, ctx, target, line, quotedTo(ctx, buyer.self.id));
+}
+
+/**
+ * The same number, with WHAT THIS BUYER REQUIRES already in hand.
+ *
+ * Law 18: a firm's own cost of money is a fact about the firm and not about the company it is
+ * looking at, so it is read once and carried down the list of them. Read per company it was the
+ * same answer fetched three hundred times over.
+ */
+function worthAt(
+  buyer: ParticipantView,
+  ctx: MechanismContext,
+  target: PartyId,
+  line: InstrumentId,
+  required: Option<number>,
+): Option<number> {
   /**
    * A3, B1: WHAT IT WOULD GET, AGAINST WHAT IT REQUIRES — the same comparison it makes about a
    * machine, because "what is this stream worth to me" is one question and a world with two answers
@@ -81,7 +98,6 @@ export function worthToBuyer(
    * market for control exists: the disagreement is load-bearing (§46 A3). There is no synergy term
    * and no control premium anywhere — the premium is what the BOOK produces.
    */
-  const required = quotedTo(ctx, buyer.self.id);
   if (!required.some || required.value <= 0) return none<number>();
   const said = reportOf(ctx, target);
   if (said === undefined || said.earned <= 0 || said.periods <= 0) return none<number>();
@@ -106,16 +122,17 @@ export function worthToBuyer(
   return some(perShare);
 }
 
-/** Law 19: what a bank quoted THIS name, per annum. Its own cost of money, read off the wire. */
+/**
+ * Law 19: what a bank quoted THIS name, per annum. Its own cost of money, read off the wire.
+ *
+ * The journal already keeps the last event of a kind a party is a subject of, so this asks it
+ * rather than walking every quote the world has ever published back to the beginning.
+ */
 function quotedTo(ctx: MechanismContext, who: PartyId): Option<number> {
-  const said = ctx.journal.ofKind('credit.quoted');
-  for (let i = said.length - 1; i >= 0; i -= 1) {
-    const e = said[i];
-    if (e?.data['borrower'] !== who) continue;
-    const rate = e.data['rate'];
-    return typeof rate === 'number' ? some(rate) : none<number>();
-  }
-  return none<number>();
+  const e = ctx.journal.lastOf('credit.quoted', who);
+  if (e === undefined) return none<number>();
+  const rate = e.data['rate'];
+  return typeof rate === 'number' ? some(rate) : none<number>();
 }
 
 interface Published {
@@ -125,17 +142,13 @@ interface Published {
 
 /** Reporting A2: the last accounts this firm published. Read, never rebuilt (A2.a). */
 function reportOf(ctx: MechanismContext, who: PartyId): Published | undefined {
-  const said = ctx.journal.ofKind('reporting.report');
-  for (let i = said.length - 1; i >= 0; i -= 1) {
-    const e = said[i];
-    if (e?.data['company'] !== who) continue;
-    const { earned, from, to } = e.data;
-    if (typeof earned !== 'number' || typeof from !== 'number' || typeof to !== 'number') {
-      return undefined;
-    }
-    return { earned, periods: add(sub(to, from, 'the span it covered'), 1, 'inclusive') };
+  const e = ctx.journal.lastOf('reporting.report', who);
+  if (e === undefined) return undefined;
+  const { earned, from, to } = e.data;
+  if (typeof earned !== 'number' || typeof from !== 'number' || typeof to !== 'number') {
+    return undefined;
   }
-  return undefined;
+  return { earned, periods: add(sub(to, from, 'the span it covered'), 1, 'inclusive') };
 }
 
 /** A1: the bid. A price, and how much of the firm it has to get for the bid to mean anything. */
@@ -408,11 +421,15 @@ export function controlBidsFor(
   const ccy = view.registry.currencyOf(view.self.region);
   const cash = view.cash(ccy);
   if (cash <= 0) return [];
+  // B1: what this buyer's own money costs it, which is the same number for every company on the
+  // list, and a firm nobody will lend to does not look at the list at all.
+  const required = quotedTo(ctx, view.self.id);
+  if (!required.some || required.value <= 0) return [];
   const out: Bid[] = [];
   for (const i of lines) {
     const target = i.issuer.some ? i.issuer.value : view.self.id;
     if (target === view.self.id) continue;
-    const worth = worthToBuyer(view, ctx, target, i.id);
+    const worth = worthAt(view, ctx, target, i.id, required);
     if (!worth.some) continue;
     const outstanding = ctx.register.heldTotal(i.id).value;
     if (outstanding <= 0) continue;

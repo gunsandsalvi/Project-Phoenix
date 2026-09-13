@@ -49,22 +49,97 @@ export interface EmploymentRow {
  * trade looks for that trade.
  */
 export interface EmploymentBook {
-  rows: Record<string, EmploymentRow>;
+  readonly rows: Map<EmploymentId, EmploymentRow>;
   skill: Record<string, string>;
   next: number;
 }
 
 export function emptyBook(): EmploymentBook {
-  return { rows: {}, skill: {}, next: 1 };
+  return { rows: new Map(), skill: {}, next: 1 };
 }
 
+/**
+ * Law 18: THE SAME ROWS UNDER A DIFFERENT ARRANGEMENT, and nothing below changes what a read
+ * returns. Every question this module asks is about ONE worker or ONE trade, and each was answered
+ * by walking every employment relationship in the world: the labour venue asked, for each household
+ * cell, whether any of the rows was that cell's, so a world of more people employed at more firms
+ * cost every one of them the whole register. It was the largest single cost of a period.
+ *
+ * These lists hold the same row objects the book holds — a reference, never a copy of a number — and
+ * they are written where the row is written, by `enter` and `leave` below and by nothing else, so
+ * there is one writer of the fact and nothing here can go stale (Law 4). They live beside the book
+ * rather than in it because a module's state slot is what the module KNOWS, and how it finds a row
+ * is not something it knows (Observer E3).
+ */
+interface Index {
+  readonly byWorker: Map<PartyId, EmploymentRow>;
+  readonly byTrade: Map<string, EmploymentRow[]>;
+  readonly byEmployer: Map<string, EmploymentRow[]>;
+}
+
+const indexes = new WeakMap<EmploymentBook, Index>();
+
+const tradeKey = (occupation: string, region: RegionId): string => `${occupation}\u0000${region}`;
+const employerKey = (employer: PartyId, occupation: string, region: RegionId): string =>
+  `${employer}\u0000${occupation}\u0000${region}`;
+
+function indexOf(book: EmploymentBook): Index {
+  const held = indexes.get(book);
+  if (held !== undefined) return held;
+  const made: Index = { byWorker: new Map(), byTrade: new Map(), byEmployer: new Map() };
+  indexes.set(book, made);
+  for (const row of book.rows.values()) into(made, row);
+  return made;
+}
+
+function into(ix: Index, row: EmploymentRow): void {
+  ix.byWorker.set(row.worker, row);
+  list(ix.byTrade, tradeKey(row.occupation, row.region)).push(row);
+  list(ix.byEmployer, employerKey(row.employer, row.occupation, row.region)).push(row);
+}
+
+function list(of: Map<string, EmploymentRow[]>, key: string): EmploymentRow[] {
+  const held = of.get(key);
+  if (held !== undefined) return held;
+  const made: EmploymentRow[] = [];
+  of.set(key, made);
+  return made;
+}
+
+function drop(of: Map<string, EmploymentRow[]>, key: string, row: EmploymentRow): void {
+  const held = of.get(key);
+  if (held === undefined) return;
+  const at = held.indexOf(row);
+  if (at >= 0) held.splice(at, 1);
+}
+
+/** A4: the row is written here and in one other place, and that place is `leave`. */
+export function enter(book: EmploymentBook, row: EmploymentRow): void {
+  book.rows.set(row.id, row);
+  into(indexOf(book), row);
+}
+
+/** C3: the relationship ends, and every arrangement of it ends in the same call. */
+export function leave(book: EmploymentBook, row: EmploymentRow): void {
+  book.rows.delete(row.id);
+  const ix = indexOf(book);
+  if (ix.byWorker.get(row.worker) === row) ix.byWorker.delete(row.worker);
+  drop(ix.byTrade, tradeKey(row.occupation, row.region), row);
+  drop(ix.byEmployer, employerKey(row.employer, row.occupation, row.region), row);
+}
+
+/**
+ * Every row, as a list taken now. It is a copy of the LIST and not of the rows: a separation during
+ * a walk over it removes the row from the book, and the walk still sees the relationship it was
+ * about to end.
+ */
 export function allRows(book: EmploymentBook): EmploymentRow[] {
-  return Object.values(book.rows);
+  return [...book.rows.values()];
 }
 
 /** The row a cell holds, if it holds one: a person is in exactly one state (B3). */
 export function rowOfWorker(book: EmploymentBook, worker: PartyId): EmploymentRow | undefined {
-  return allRows(book).find((r) => r.worker === worker);
+  return indexOf(book).byWorker.get(worker);
 }
 
 /** Hours an employer has under contract in one occupation and region (its current employment). */
@@ -74,11 +149,28 @@ export function hoursAt(
   occupation: string,
   region: RegionId,
 ): number {
-  return sum(
-    allRows(book)
-      .filter((r) => r.employer === employer && r.occupation === occupation && r.region === region)
-      .map((r) => mul(r.headcount, r.hoursPerMember, 'hours under contract')),
-  ).value;
+  const rows = indexOf(book).byEmployer.get(employerKey(employer, occupation, region));
+  if (rows === undefined) return 0;
+  return sum(rows.map((r) => mul(r.headcount, r.hoursPerMember, 'hours under contract'))).value;
+}
+
+/** The rows in one trade in one place: what a going rate averages and what a cut sheds. */
+export function rowsInTrade(
+  book: EmploymentBook,
+  occupation: string,
+  region: RegionId,
+): readonly EmploymentRow[] {
+  return indexOf(book).byTrade.get(tradeKey(occupation, region)) ?? [];
+}
+
+/** The rows one employer holds in one trade in one place, most recently hired first (C3). */
+export function rowsAt(
+  book: EmploymentBook,
+  employer: PartyId,
+  occupation: string,
+  region: RegionId,
+): readonly EmploymentRow[] {
+  return indexOf(book).byEmployer.get(employerKey(employer, occupation, region)) ?? [];
 }
 
 /**
@@ -90,7 +182,7 @@ export function goingRate(
   occupation: string,
   region: RegionId,
 ): number | undefined {
-  const rows = allRows(book).filter((r) => r.occupation === occupation && r.region === region);
+  const rows = rowsInTrade(book, occupation, region);
   const heads = sum(rows.map((r) => r.headcount));
   if (heads.value === 0) return undefined;
   const paid = sum(rows.map((r) => mul(r.wagePerHour, r.headcount, 'wage weight')));
@@ -99,7 +191,9 @@ export function goingRate(
 
 /** F2: the headcount employed, which is a count of people and can never exceed the workforce. */
 export function employed(book: EmploymentBook): number {
-  return sum(allRows(book).map((r) => r.headcount)).value;
+  const heads: number[] = [];
+  for (const row of book.rows.values()) heads.push(row.headcount);
+  return sum(heads).value;
 }
 
 /** What the employer owes this period on one row: the wage, per member of the worker cell. */

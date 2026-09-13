@@ -454,21 +454,20 @@ function refuse(
 
 /** Law 19: the keenest quote published under this name, most recent first. Read, never rebuilt. */
 function quotedFor(ctx: MechanismContext, borrower: PartyId): Quote | undefined {
-  const said = ctx.journal.ofKind('credit.quoted');
-  for (let i = said.length - 1; i >= 0; i -= 1) {
-    const e = said[i];
-    if (e?.data['borrower'] !== borrower) continue;
+  const e = ctx.journal.lastOf('credit.quoted', borrower);
+  if (e !== undefined) {
     const bank = e.data['bank'];
     const rate = e.data['rate'];
-    if (typeof bank !== 'string' || typeof rate !== 'number') continue;
-    return {
-      bank: bank as PartyId,
-      rate,
-      costOfFunds: numberIn(e.data['costOfFunds']),
-      expectedLoss: numberIn(e.data['expectedLoss']),
-      capitalCharge: numberIn(e.data['capitalCharge']),
-      operatingCost: numberIn(e.data['operatingCost']),
-    };
+    if (typeof bank === 'string' && typeof rate === 'number') {
+      return {
+        bank: bank as PartyId,
+        rate,
+        costOfFunds: numberIn(e.data['costOfFunds']),
+        expectedLoss: numberIn(e.data['expectedLoss']),
+        capitalCharge: numberIn(e.data['capitalCharge']),
+        operatingCost: numberIn(e.data['operatingCost']),
+      };
+    }
   }
   return undefined;
 }

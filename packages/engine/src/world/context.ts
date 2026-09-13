@@ -379,7 +379,7 @@ export interface WorldReads extends KernelReads {
     Valuation,
     'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust' | 'inMoney' | 'rateInForce'
   >;
-  readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail'>;
+  readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail' | 'lastOf'>;
   readonly contracts: ContractsRead;
   /** 13c.1, Freight A3: what is on its way somewhere and where it has got to. */
   readonly voyages: VoyagesRead;
@@ -415,7 +415,7 @@ export interface MechanismContext extends WorldReads {
     Valuation,
     'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust' | 'inMoney' | 'rateInForce'
   >;
-  readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail'>;
+  readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'tail' | 'lastOf'>;
   readonly ledger: Pick<Ledger, 'inPeriod' | 'length'>;
   readonly cells: CellEvents;
   /**
