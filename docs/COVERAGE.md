@@ -795,8 +795,6 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Banks Lending B2.d` | MET | packages/engine/src/mechanisms/banks/quote.ts (which constraint binds is computed from the bank's own state and recorded on the decline, so it differs by bank and by period rather than being decided once) |
 | `Banks Lending C1` | MET | packages/engine/src/mechanisms/banks/quote.ts (four named terms and their sum: what its funding costs it, what it expects to lose on this borrower, the capital the loan consumes times what it needs on it, and what it costs to run) |
 | `Banks Lending C1.d` | MET | packages/engine/src/mechanisms/banks/staff.ts (13d: `loan.operatingCost` is DELETED — half a per cent a year on every principal, paid to nobody. A bank employs people in three trades of its own, and what servicing costs is the hours its book takes times what it is paying for an hour, over the principal it is servicing — so a small loan is dearer than a large one out of the arithmetic) |
-| `Banks Lending C5` | MET | packages/engine/src/mechanisms/banks/quote.ts `lossGivenDefault` (13d: what it would lose is the part the security does not cover, read at the market's own price; no loan-to-value limit and no recovery rate) |
-| `Banks Lending C5.a` | MET | packages/engine/src/mechanisms/banks/index.ts (the standard moves because the PRICE of the thing pledged moves: a bank lending against dwellings where dwellings are falling requires more of every borrower there, without anybody tightening anything) |
 | `Banks Lending C2` | MET | packages/engine/src/mechanisms/banks/index.ts (every bank quotes from its own state and the borrower takes the keenest that will have it; a bank with no room does not quote) |
 | `Banks Lending C3` | MET | packages/engine/src/mechanisms/banks/index.ts (declining IS the credit decision: a bank with no room writes nothing and says so) |
 | `Banks Lending C3.a` | MET | packages/engine/src/mechanisms/banks/index.ts (what was declined and what was written is published every period as a count and a volume; who was refused stays between the two of them, that it happened does not) |
@@ -1374,7 +1372,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Housing C2` | MISSING |  |
 | `Housing C3` | MISSING |  |
 | `Housing C4` | MET | packages/engine/src/mechanisms/housing/index.ts (foreclosure releases the lien and moves the dwellings to the lender at what the market last said; the lender then sells into the same session everybody else does, so the recovery is what it FETCHED) |
-| `Housing C5` | MISSING |  |
+| `Housing C5` | MET | packages/engine/src/mechanisms/banks/quote.ts `lossGivenDefault`, packages/engine/src/mechanisms/banks/index.ts (13d: the lender's standard is a READ of what stands behind the claim at the market's own price — what it would lose is the part the security does not cover. No loan-to-value limit, no recovery rate, and no constant anywhere: what moves the standard is the PRICE of the thing pledged, so a bank lending against a falling thing requires more of every borrower without anybody tightening anything) |
 | `Housing C6` | MISSING |  |
 | `Housing D1` | MISSING |  |
 | `Housing D2` | MISSING |  |
