@@ -7,16 +7,13 @@
  * A module: it registers kinds and profiles and touches no kernel store. The auction, the curve and
  * the treasury's programme are separate modules (worklist 3); this one is only the paper.
  */
-import type { Calendar } from '../../calendar/calendar.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
-import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
-import { yearFraction } from '../../calendar/daycount.js';
+import { compareCivil, formatCivil } from '../../calendar/civil.js';
 import { InvalidRegistry } from '../../core/errors.js';
-import { add, mul } from '../../core/num.js';
 import { percent } from '../../core/format.js';
 import { issuerOf } from '../../register/instruments.js';
-import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
+import type { InstrumentKindProfile } from '../../registry/kinds.js';
 import { issuerName } from '../../registry/naming.js';
 import type { SystemModule } from '../../world/module.js';
 
@@ -28,7 +25,9 @@ import {
   SOVEREIGN_BILL,
   SOVEREIGN_BOND,
   validateDates,
-  type SovereignBondTerms,
+  accruedOf,
+  cashFlowsOf,
+  dueOf,
 } from '../../registry/claims.js';
 
 export const sovereignBond: InstrumentKindProfile = {
@@ -75,65 +74,15 @@ export const sovereignBond: InstrumentKindProfile = {
     // Law 9: issuer + coupon + maturity.
     return `${who} ${percent(i.terms.coupon.amount)} ${formatCivil(i.terms.maturity)}`;
   },
-  due: (i, period, cal) => {
-    if (!isBond(i.terms)) return [];
-    const t = i.terms;
-    const out: DueAction[] = [];
-    let prev = t.issueDate;
-    for (const date of couponDates(t, cal)) {
-      if (cal.periodOf(date) === period) {
-        // N6: the coupon for the accrual period, by the instrument's own day count (G3.c).
-        const frac = yearFraction(t.dayCount, prev, date);
-        const amountPerUnit = mul(t.coupon.amount, frac, 'coupon');
-        // N6: a coupon of nothing is not a payment, and a line that promises none has none falling
-        // due. A zero-coupon line is the ordinary shape of paper an issuer brings when the market
-        // will pay above par for the principal alone.
-        if (amountPerUnit > 0) out.push({ kind: 'coupon', date, amountPerUnit });
-      }
-      prev = date;
-    }
-    if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
-    return out.sort((a, b) => compareCivil(a.date, b.date));
-  },
-  // N9.b: what the buyer owes the seller on top of the clean price, from the last coupon date to
-  // the settlement date, on the line's own day count (G3.c).
-  accrued: (i, on, cal) => {
-    if (!isBond(i.terms)) return 0;
-    const t = i.terms;
-    let prev = t.issueDate;
-    for (const date of couponDates(t, cal)) {
-      if (compareCivil(date, on) > 0) break;
-      prev = date;
-    }
-    if (compareCivil(on, prev) <= 0) return 0;
-    return mul(t.coupon.amount, yearFraction(t.dayCount, prev, on), 'accrued');
-  },
-  // Every coupon left, and par at maturity (N5.a, N10). A yield is derived from these against the
-  // price (Sovereign D2); nothing here reads a price.
-  cashFlows: (i, after, cal) => {
-    if (!isBond(i.terms)) return [];
-    const t = i.terms;
-    const out: CashFlow[] = [];
-    let prev = t.issueDate;
-    for (const date of couponDates(t, cal)) {
-      const coupon = mul(t.coupon.amount, yearFraction(t.dayCount, prev, date), 'coupon');
-      const isMaturity = compareCivil(date, t.maturity) === 0;
-      if (compareCivil(date, after) > 0) {
-        out.push({ date, perUnit: isMaturity ? add(coupon, 1, 'final flow') : coupon });
-      }
-      prev = date;
-    }
-    return out;
-  },
+  // N6, N9.b, N5.a, N10 (13f): the schedule is the kernel's, because when a coupon falls and how it
+  // accrues is the same fact for any dated bond whoever issued it (Law 4). What is sovereign about
+  // this line is who can fail, what ranks where and that nothing may be breached — stated above.
+  due: (i, period, cal) => (isBond(i.terms) ? dueOf(i.terms, period, cal) : []),
+  accrued: (i, on, cal) => (isBond(i.terms) ? accruedOf(i.terms, on, cal) : 0),
+  cashFlows: (i, after, cal) =>
+    isBond(i.terms) ? cashFlowsOf(i.terms, after, cal) : [],
 };
 
-/**
- * The coupon dates of a line, in order (N6). The schedule is generated from the issue date so
- * month-ends do not drift (Money G3.a); it is a read of the terms and is never stored.
- */
-function couponDates(t: SovereignBondTerms, cal: Calendar): readonly Civil[] {
-  return cal.schedule(t.issueDate, t.maturity, t.couponPeriodicity);
-}
 
 export const sovereignBill: InstrumentKindProfile = {
   id: SOVEREIGN_BILL,

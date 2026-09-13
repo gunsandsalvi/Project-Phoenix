@@ -104,6 +104,7 @@ import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
+import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
@@ -2227,6 +2228,9 @@ export function foundationSpec(
       // funds, because what is lent is the paper they hold and the desks that need to deliver it
       // are the ones that make its market.
       securitiesLending(),
+      // 13f, Corporate Credit A1, B2: the other credit channel — many holders each pricing the
+      // name from its own view, and covenants tested on what the issuer PUBLISHED (Reporting A2).
+      corporateBondModule(),
       sovereignInstruments,
       // Sovereign D3.a, Currency A3: EVERY SOVEREIGN THAT BORROWS HAS A CURVE, and it is its own —
       // one issuer, one money, its own prints. A world whose foreign lines had no curve family

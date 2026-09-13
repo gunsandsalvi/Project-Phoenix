@@ -3632,3 +3632,49 @@ period, same bank, because the inputs move between the two phases. What is writt
 QUOTED; `quote()` is called in one place. A bank that cannot lend after all records a refusal rather
 than a different price, and a name nobody would quote is a refusal too, each bank naming which of
 its own constraints stopped it (C3.a).
+
+
+## 13f — the other credit channel, and an issuer that stopped profiting from its decline
+
+**The own-credit defect** is written up above; it is the largest thing in this item and it was found
+by being asked the right question. What follows is the rest.
+
+**One rate per loan.** `12d-3`: the quote was derived once to publish and again to write, and the two
+disagreed by three parts in a million because the inputs move between the phases. What is written is
+what was QUOTED; `quote()` is called in one place. A bank whose room moved between the two records a
+refusal rather than a different price, and a name nobody would quote is a refusal too, each bank
+naming which of its own constraints stopped it (C3.a).
+
+**Securities lending: the defining property is that two things come apart.** Legal title moves to
+the borrower — it can sell what it borrowed, which is the entire point — while the economics stay
+with the lender, which gets a manufactured payment equal to whatever the line actually paid. A world
+that moved one without the other would have a lender paying a fee to lose its income.
+
+It is built out of things that already existed. The security moves in the register like any units.
+The collateral is a PLEDGE, so it leaves the poster's free balance and the register refuses to move
+it — nothing here has to remember not to count it twice. The fee is a price and it clears in a book
+per line, so scarce paper is dear and abundant paper is cheap; the rebate is the same number seen
+from the cash side rather than a second table. The lendable pool is a read of who holds the line
+FREE, and it is what caps how large a short can get, which is what makes a squeeze possible.
+
+**The corporate bond, and what is NOT corporate about it.** When a coupon falls and how it accrues is
+the same fact for any dated bond whoever issued it, so the schedule moved into the kernel and both
+kinds read one statement of it — two copies would have been two writers of one fact. What differs is
+the three things that make corporate credit a different subject: the issuer can FAIL, so a missed
+payment is a default and the estate has a ranking to read; the line is senior or subordinated, and
+the number is on the instrument where the waterfall already looks; and there are COVENANTS.
+
+**A covenant is a term of the issue and not a bound.** It is what this issuer promised when it
+borrowed, and breaching it is an EVENT with consequences — never a number pushed back inside a range
+(Law 6). Two lines, because they are the two questions a lender actually asks and they fail in
+different worlds: how much it owes against what it holds, which a fall in asset prices breaks, and
+what it earns against what falls due, which a bad year breaks. A firm can pass either while failing
+the other, and which one goes says what went wrong. Both are tested on the PUBLISHED accounts, with
+the lag publishing already has, because a covenant a lender could test on private books is not a
+covenant but surveillance — and reading the report rather than recomputing it is what stops a second
+set of accounts existing (Reporting A2.a). The module declares no numbers at all: what a given firm
+promised is an outcome of what it had to promise to be lent to.
+
+**What is placed rather than built**, and where: prime brokerage and restructuring → 13h; short-term
+debt and the roll that can fail → 13i. Syndication, bookbuilding, committed facilities and the
+covered bond stay in the worklist's carried findings.

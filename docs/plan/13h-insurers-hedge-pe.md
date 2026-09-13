@@ -358,6 +358,10 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 - [ ] Mortgage pools through the same vehicle, with the foreclosure path running with the pool as lender of record and the servicing agreement as a fee row (Housing C6, XI-11)
 - [ ] Insurers as note holders: the party kind whose liabilities make it the natural buyer of a senior layer, so a tranche has holders that are not other banks (XI-11's "named holders")
 
+
+- [ ] Prime brokerage (from 13f): the relationship and its lien, the margin loan above cost of funds, portfolio margin from the broker's own measured move, calls in `margin.calls`, the line NEVER floored, liquidation with the shortfall on the broker's capital, and the multi-broker blind spot (§15, Equity C5)
+- [ ] Restructuring and the holders' vote (from 13f): the issuer's proposal, each holder deciding at its own expected recovery, vote by face, contractual majority binds, rejection opens the estate (Corporate Credit G7)
+
 ## Exit criteria
 
 A rate move revalues a pension's liability, its hedge and its cash in three different places; an

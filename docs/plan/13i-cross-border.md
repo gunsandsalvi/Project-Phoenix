@@ -266,6 +266,9 @@ packages/engine/test/{cross-sourcing,invoice-currency,hedge-or-carry,exports-imp
 - [ ] **`13b.1-7`: no spot FX trade happens at all.** `spot-fx.test.ts` walks the journal for an instruction with two money legs in two currencies and finds none: the pair market is open, the pair is named, the triangle reads — and nobody converts. Everything else in that file passes, so what is missing is not the venue but a PARTY WITH A REASON, and item 12 built the layer without one. What gives somebody a reason to hold a foreign money is an import, a foreign asset or a foreign liability, and all three are here (Cross-Border B–F). Test: that same assertion goes green — at least one settled instruction with two money legs in two currencies, with both sides named
 - [ ] Delete this file; worklist row 13i → done; commit and push
 
+
+- [ ] Short-term debt and the roll that can fail (from 13f): `discountNote` for any issuer, rolls as new primaries, a run reachable, the backstop costing money every period, maturity profile as a read (§9)
+
 ## Exit criteria
 
 A firm switches supplier when the rate moves because its delivered cost changed; a region's current

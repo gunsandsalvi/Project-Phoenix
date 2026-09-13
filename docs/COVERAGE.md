@@ -243,14 +243,14 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Corporate Credit A1` | MISSING |  |
+| `Corporate Credit A1` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (a `corporate.bond` kind: a firm borrows from many holders, each pricing the name from its own view) |
 | `Corporate Credit A2` | MISSING |  |
 | `Corporate Credit A2.c` | MISSING |  |
 | `Corporate Credit A3` | MISSING |  |
 | `Corporate Credit A4` | MISSING |  |
 | `Corporate Credit B1` | MISSING |  |
-| `Corporate Credit B2` | MISSING |  |
-| `Corporate Credit B3` | MISSING |  |
+| `Corporate Credit B2` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (two covenant lines, both TERMS of the issue and neither a parameter: how much it owes against what it holds, and what it earns against what falls due) |
+| `Corporate Credit B3` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (the `names` family: paper outstanding with nobody holding it is a violation) |
 | `Corporate Credit B4` | MISSING |  |
 | `Corporate Credit C1` | MISSING |  |
 | `Corporate Credit C2` | MISSING |  |
@@ -529,26 +529,26 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Securities Lending A1` | MISSING |  |
-| `Securities Lending A2` | MISSING |  |
-| `Securities Lending A3` | MISSING |  |
+| `Securities Lending A1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the security one way and the collateral the other, both legs in one numbered instruction) |
+| `Securities Lending A2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title passes: the units move in the register and the borrower can sell what it borrowed) |
+| `Securities Lending A3` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`manufacture`: the issuer pays the registered holder and the borrower passes it on, read off what actually arrived) |
 | `Securities Lending A4` | MISSING |  |
-| `Securities Lending A5` | MISSING |  |
+| `Securities Lending A5` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the fee is a price and it clears; `charge` moves real money between two named parties every period) |
 | `Securities Lending B1` | MISSING |  |
 | `Securities Lending B2` | MISSING |  |
 | `Securities Lending B3` | MISSING |  |
-| `Securities Lending B4` | MISSING |  |
-| `Securities Lending C1` | MISSING |  |
+| `Securities Lending B4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`lendable` is a read of who holds it FREE — never a stored number, and it is what caps a short) |
+| `Securities Lending C1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`collateralFor`: worth more than the loan by the lender own haircut) |
 | `Securities Lending C2` | MISSING |  |
 | `Securities Lending C3` | MISSING |  |
-| `Securities Lending C4` | MISSING |  |
+| `Securities Lending C4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (a pledge, so posted collateral leaves the poster free balance and the register refuses to move it) |
 | `Securities Lending C5` | MISSING |  |
 | `Securities Lending D1` | MISSING |  |
 | `Securities Lending D2` | MISSING |  |
 | `Securities Lending D2.a` | MISSING |  |
 | `Securities Lending D3` | MISSING |  |
-| `Securities Lending E1` | MISSING |  |
-| `Securities Lending E2` | MISSING |  |
+| `Securities Lending E1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the `ownership` family measures a negative holding as a finding with an owner, and never enforces it) |
+| `Securities Lending E2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title moves and holdings still sum to issued, because the units are the same units) |
 | `Securities Lending E3` | MISSING |  |
 
 ## Prime Brokerage
