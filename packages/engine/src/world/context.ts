@@ -31,6 +31,7 @@ import type {
 import type { Running } from '../core/num.js';
 import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
+import type { PublishedReads } from '../journal/published.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
@@ -169,6 +170,18 @@ export interface KernelReads {
   contractBooks(kind: DerivativeKindId, on?: string): readonly MarketId[];
   /** Clearing B2: the venues modules clear themselves; declared and public, like a market. */
   readonly venues: readonly VenueDecl[];
+  /**
+   * Reporting A2, Observer A3: WHAT A COMPANY PUBLISHED, typed, and only what it published.
+   *
+   * §48 records the whole statement to the journal, so it was always readable — but there was no
+   * type for it, and eight sites each pulled `unknown` out of `e.data` and checked it by hand, four
+   * of them silently dropping a record they could not parse. This is that read, once (Law 4).
+   *
+   * It is on the KERNEL read because a participant is entitled to it: a set of published accounts
+   * is public, and a bank valuing a borrower is supposed to have seen them. Nothing unpublished is
+   * reachable through it (A4).
+   */
+  readonly published: PublishedReads;
   /**
    * XI-3, Banks Capital C3.b: whether some module takes charge of what happens when a party of this
    * kind fails. The estate asks it so that it can leave a bank alone without knowing what a bank is

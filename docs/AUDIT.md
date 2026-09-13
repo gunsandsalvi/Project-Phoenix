@@ -113,7 +113,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**0**~~ | ~~The register of nouns~~ | — | **DONE** — `registry/nouns.ts`; 19 stores declared, 14 of them nouns with no kernel home. See `docs/RECORD.md`. |
 | **1** | Reach | 25 | no behaviour change, and it makes every item below verifiable instead of argued |
 | **2** | Missing is Missing | 5 | a defaulted zero defeats both **1** and **16** |
-| **3** | `PublishedStatement` | 0 | **corrected**: does not block 4 — accounts are already published to the journal and read cross-module. A typed read, after 4. |
+| ~~**3**~~ | ~~`PublishedStatement`~~ | 0 | **BUILT** — one typed read replaces eight hand-parses; 148 lines out, 79 in. A dropped report was a `?? 0` in disguise |
 | **4** | `worthTo` | 1 | **BUILT** — the valuation door. `liquidity` and an equity mandate remain |
 | **5** | `Receipt` | 6 | **BUILT** — the tax is a dispatch. Emitting `disposal` from a trade remains |
 | **6** | `View` | 1 | **BUILT** — the noun. A bank actually forming a credit view is the mechanism that follows |
@@ -1060,6 +1060,49 @@ compares against its liquidity premium before putting its cash cushion into grai
 ---
 
 ## 3. `PublishedStatement` — a typed read of what is public
+
+> **BUILT.** `journal/published.ts`: `PublishedStatement` (company, quarter, from, to, periods,
+> earned, revaluation, the income lines, assets, liabilities, ccy, shares, and the period it was
+> published in) and `PublishedGuidance`. Exposed as `published` on **`KernelReads`**, so a
+> PARTICIPANT holds it too — a set of published accounts is public, and a bank valuing a borrower is
+> supposed to have seen them (Observer A3). Nothing unpublished is reachable through it.
+>
+> **What it replaced: eight hand-parses of one fact, no two agreeing what a readable report is.**
+>
+> | site | took | did with one it could not parse |
+> | --- | --- | --- |
+> | `world.ts` `worthReads` | earned, from, to | `none()` |
+> | `control/index.ts` | earned, from, to | `undefined` |
+> | `corporate-bond/index.ts` | quarter, assets, liabilities, earned | `undefined` |
+> | `reporting/guidance.ts` | quarter, earned (+ guidance) | `continue` |
+> | `research/index.ts` ×2 | the subject; earned, from, to | `continue` |
+> | `research/estimate.ts` ×2 | earned, from, to; quarter, guided | `continue` |
+> | `observer.ts` | all of it, behind `nums(v) = typeof v === 'number' ? v : 0` | **showed a zero** |
+>
+> **A dropped report is a `?? 0` in disguise**, because every one of those readers treats "not
+> there" as "never published". A statement whose `assets` went missing would have vanished from the
+> covenant test, stayed visible to the analyst, and shown a reader a company with no assets — and
+> nothing anywhere would have said so. `reporting` is the ONE WRITER of the event (Law 4), so a
+> field it did not write is ITS defect: the read **throws** and names it at the site.
+>
+> **It removes code.** 148 lines deleted for 79 added across the eight sites, two duplicate local
+> types gone (`control`'s `Published`, `corporate-bond`'s `Said`), and the observer's `lastOf`
+> helper deleted because the typed read answers what it existed for. `guidanceRecord`'s parameter
+> narrowed from "anything that can read the journal" to the published read — a holder of it cannot
+> see an event that is not a published statement or guidance.
+>
+> **`periods` is derived at the read** from the two dates the writer published, never stored beside
+> them (Law 19), which is what four of the eight sites were each recomputing as `to - from + 1`.
+>
+> **Measured.** `reporting`, `research`, `control`, `corporate-bond`, `world`, `doors`: **7 red
+> before, 7 after.** The new test walks every statement a 30-period world publishes and asks for
+> every field — an assertion the hand-parses could not make, because a malformed one was invisible
+> to readers that had all agreed to look away.
+>
+> **The exit criterion was stale and is corrected.** It said *"reporting keeps no private state"*.
+> Its bag is BOOKKEEPING ABOUT publishing — which quarters are done, what each said so a later
+> disagreement is a restatement, the standing guidance — which is working state and was re-declared
+> `working` at item 0. What was missing was never the readability; it was the type.
 
 > **CORRECTED, AND THE CORRECTION IS MOST OF THE ITEM.** This item claimed *"nothing in this world
 > can read a company's accounts"* and that it therefore blocked **4**. **That is false.** `publish`

@@ -13,6 +13,7 @@ import { partyId, type CurrencyCode, type PartyId, type RegionId } from '../core
 import { placeAt, tilesOf } from '../registry/geography.js';
 import { goodId, isGoodTerms } from '../registry/physical.js';
 import { isCreateLeg } from '../ledger/instruction.js';
+import type { PublishedStatement } from '../journal/published.js';
 import { OCCUPATION_OF } from '../mechanisms/firms/data.js';
 import { OCCUPATIONS } from '../mechanisms/labour/data.js';
 import { tileReached } from '../register/voyages.js';
@@ -1104,15 +1105,18 @@ function measuresOf(w: World): readonly MeasureView[] {
 function statementsOf(w: World, sees: (e: Event) => boolean): readonly StatementsView[] {
   const text = (v: unknown): string => (typeof v === 'string' ? v : '');
   const nums = (v: unknown): number => (typeof v === 'number' ? v : 0);
-  const latest = new Map<string, Event>();
-  for (const e of w.journal.ofKind('reporting.report')) {
-    if (!sees(e)) continue;
-    const who = e.subjects[0];
-    if (who !== undefined) latest.set(who, e);
-  }
+  /**
+   * Item 3: the statements come through the kernel's ONE typed read. This used to pull each field
+   * out of `e.data` behind `nums`, which answers 0 for a field that is not there — so a report
+   * missing its assets would have shown a reader a company with none (Missing is Missing). The
+   * `sees` filter is not lost by the change: both kinds are recorded public, so it never excluded
+   * one, and A3 is satisfied by the read being of published events only.
+   */
+  const latest = new Map<string, PublishedStatement>();
+  for (const said of w.published.statements()) latest.set(String(said.company), said);
   const out: StatementsView[] = [];
   for (const [company, report] of latest) {
-    const guidance = lastOf(w, 'reporting.guidance', company, sees);
+    const guidance = w.published.lastGuidance(partyId(company));
     const estimates = new Map<string, { perPeriod: number; period: number }>();
     for (const e of w.journal.ofKind('research.estimate')) {
       if (!sees(e) || e.subjects[1] !== company) continue;
@@ -1122,25 +1126,19 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
       });
     }
     const read = consensusOf(w, partyId(company));
-    const rows = report.data['income'];
     out.push({
       company,
-      quarter: text(report.data['quarter']),
-      period: report.period,
-      earned: nums(report.data['earned']),
-      revaluation: nums(report.data['revaluation']),
-      income: Array.isArray(rows)
-        ? (rows as unknown[]).map((r) => {
-            const row = r as Record<string, unknown>;
-            return { cause: text(row['cause']), amount: nums(row['amount']) };
-          })
-        : [],
-      assets: nums(report.data['assets']),
-      liabilities: nums(report.data['liabilities']),
-      shares: nums(report.data['shares']),
-      ccy: text(report.data['ccy']),
-      guided: guidance === undefined ? null : nums(guidance.data['guided']),
-      guidedFor: guidance === undefined ? null : text(guidance.data['quarter']),
+      quarter: report.quarter,
+      period: report.at,
+      earned: report.earned,
+      revaluation: report.revaluation,
+      income: report.income.map((l) => ({ cause: l.cause, amount: l.amount })),
+      assets: report.assets,
+      liabilities: report.liabilities,
+      shares: report.shares,
+      ccy: report.ccy,
+      guided: guidance === undefined ? null : guidance.guided,
+      guidedFor: guidance === undefined ? null : guidance.quarter,
       estimates: [...estimates].map(([bank, v]) => ({
         bank,
         perPeriod: v.perPeriod,
@@ -1149,26 +1147,11 @@ function statementsOf(w: World, sees: (e: Event) => boolean): readonly Statement
       consensus: read.some ? read.value : null,
       surprises: w.journal
         .ofKind('research.surprise')
-        .filter((e) => sees(e) && e.subjects[1] === company && e.period === report.period)
+        .filter((e) => sees(e) && e.subjects[1] === company && e.period === report.at)
         .map((e) => ({ bank: text(e.data['bank']), surprise: nums(e.data['surprise']) })),
     });
   }
   return out;
-}
-
-/** The last thing this party said of a kind, as the observer may see it. */
-function lastOf(
-  w: World,
-  kind: EventKind,
-  party: string,
-  sees: (e: Event) => boolean,
-): Event | undefined {
-  let held: Event | undefined;
-  for (const e of w.journal.ofKind(kind)) {
-    if (!sees(e) || e.subjects[0] !== party) continue;
-    held = e;
-  }
-  return held;
 }
 
 function ratingsOf(w: World, depth: number, sees: (e: Event) => boolean): readonly RatingView[] {

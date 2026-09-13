@@ -231,12 +231,9 @@ function moved(now: number, said: number): boolean {
 
 /** G4: the companies there is anything to estimate — the ones that have published a report. */
 function reported(ctx: MechanismContext): PartyId[] {
-  const out = new Set<string>();
-  for (const e of ctx.journal.ofKind('reporting.report')) {
-    const who = e.subjects[0];
-    if (who !== undefined) out.add(who);
-  }
-  return [...out].map((id) => partyId(id));
+  const out = new Set<PartyId>();
+  for (const said of ctx.published.statements()) out.add(said.company);
+  return [...out];
 }
 
 /**
@@ -250,15 +247,10 @@ function reported(ctx: MechanismContext): PartyId[] {
  */
 function settle(ctx: MechanismContext): void {
   const all = desks(ctx);
-  for (const e of ctx.journal.ofKind('reporting.report')) {
-    if (e.period !== ctx.period) continue;
-    const company = e.subjects[0];
-    const earned = e.data['earned'];
-    const from = e.data['from'];
-    const to = e.data['to'];
-    if (company === undefined || typeof earned !== 'number') continue;
-    if (typeof from !== 'number' || typeof to !== 'number') continue;
-    const observed = div(earned, to - from + 1, 'what it made a period');
+  for (const report of ctx.published.statements()) {
+    if (report.at !== ctx.period) continue;
+    const company = String(report.company);
+    const observed = div(report.earned, report.periods, 'what it made a period');
     for (const [bank, desk] of Object.entries(all)) {
       const said = desk.said.get(company);
       if (said === undefined) continue;
@@ -268,7 +260,7 @@ function settle(ctx: MechanismContext): void {
         {
           bank,
           company,
-          quarter: e.data['quarter'],
+          quarter: report.quarter,
           expected: said,
           observed,
           surprise: sub(observed, said, 'observed minus expected'),

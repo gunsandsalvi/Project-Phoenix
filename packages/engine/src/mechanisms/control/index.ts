@@ -100,7 +100,9 @@ function worthAt(
    * and no control premium anywhere — the premium is what the BOOK produces.
    */
   if (!required.some || required.value <= 0) return none<number>();
-  const said = reportOf(ctx, target);
+  // Reporting A2, A2.a: the last accounts it published. Read through the kernel's one typed read,
+  // never rebuilt and never re-parsed here (item 3).
+  const said = ctx.published.lastStatement(target);
   if (said === undefined || said.earned <= 0 || said.periods <= 0) return none<number>();
   // Law 8: the periodicity is part of the number. What it published covers a span of periods; what
   // a required return is quoted in is a year, so the two are put in the same unit by the calendar
@@ -134,22 +136,6 @@ function quotedTo(ctx: MechanismContext, who: PartyId): Option<number> {
   if (e === undefined) return none<number>();
   const rate = e.data['rate'];
   return typeof rate === 'number' ? some(rate) : none<number>();
-}
-
-interface Published {
-  readonly earned: number;
-  readonly periods: number;
-}
-
-/** Reporting A2: the last accounts this firm published. Read, never rebuilt (A2.a). */
-function reportOf(ctx: MechanismContext, who: PartyId): Published | undefined {
-  const e = ctx.journal.lastOf('reporting.report', who);
-  if (e === undefined) return undefined;
-  const { earned, from, to } = e.data;
-  if (typeof earned !== 'number' || typeof from !== 'number' || typeof to !== 'number') {
-    return undefined;
-  }
-  return { earned, periods: add(sub(to, from, 'the span it covered'), 1, 'inclusive') };
 }
 
 /** A1: the bid. A price, and how much of the firm it has to get for the bid to mean anything. */

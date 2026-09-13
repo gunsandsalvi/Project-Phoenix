@@ -92,11 +92,13 @@ export function hasMoved(now: number, said: number): boolean {
 }
 
 /**
- * Whatever can read the journal: a module's context, the observer, a test. The record is public
- * (A3), so what computes it needs nothing private and asks for nothing private.
+ * Whatever can read what companies published: a module's context, the observer, a test. The record
+ * is public (A3), so what computes it needs nothing private and asks for nothing private — and
+ * since item 3 it asks for the TYPED read rather than for the journal, which is narrower again: a
+ * holder of this cannot see an event that is not a published statement or a published guidance.
  */
 export interface JournalReads {
-  readonly journal: Pick<MechanismContext['journal'], 'ofKind'>;
+  readonly published: MechanismContext['published'];
 }
 
 /** B3: what a management has said and what its books then produced, computed when somebody looks. */
@@ -117,21 +119,12 @@ export interface GuidanceRecord {
  */
 export function guidanceRecord(ctx: JournalReads, firm: PartyId): GuidanceRecord {
   const guided = new Map<string, number>();
-  for (const e of ctx.journal.ofKind('reporting.guidance')) {
-    if (e.subjects[0] !== String(firm)) continue;
-    const quarter = e.data['quarter'];
-    const amount = e.data['guided'];
-    if (typeof quarter === 'string' && typeof amount === 'number') guided.set(quarter, amount);
-  }
+  for (const g of ctx.published.guidances(firm)) guided.set(g.quarter, g.guided);
   const misses: { quarter: string; guided: number; earned: number }[] = [];
-  for (const e of ctx.journal.ofKind('reporting.report')) {
-    if (e.subjects[0] !== String(firm)) continue;
-    const quarter = e.data['quarter'];
-    const earned = e.data['earned'];
-    if (typeof quarter !== 'string' || typeof earned !== 'number') continue;
-    const said = guided.get(quarter);
-    if (said === undefined) continue;
-    misses.push({ quarter, guided: said, earned });
+  for (const said of ctx.published.statements(firm)) {
+    const g = guided.get(said.quarter);
+    if (g === undefined) continue;
+    misses.push({ quarter: said.quarter, guided: g, earned: said.earned });
   }
   return { quarters: misses.length, misses };
 }

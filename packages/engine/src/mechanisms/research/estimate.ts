@@ -36,27 +36,19 @@ export interface Seen {
  */
 export function seenOf(ctx: MechanismContext, company: PartyId, from: Period, to: Period): Seen {
   const reports: { period: Period; perPeriod: number }[] = [];
-  for (const e of ctx.journal.ofKind('reporting.report')) {
-    if (e.subjects[0] !== String(company) || e.period < from || e.period > to) continue;
-    const earned = e.data['earned'];
-    const opens = e.data['from'];
-    const closes = e.data['to'];
-    if (typeof earned !== 'number' || typeof opens !== 'number' || typeof closes !== 'number')
-      continue;
-    reports.push({ period: e.period, perPeriod: div(earned, closes - opens + 1, 'per period') });
+  for (const said of ctx.published.statements(company)) {
+    if (said.at < from || said.at > to) continue;
+    reports.push({ period: said.at, perPeriod: div(said.earned, said.periods, 'per period') });
   }
   // C4: WHAT WAS PUBLISHED IN THIS WINDOW, and nothing else. A desk that re-read the whole history
   // every period would correct towards the same observations again and again — a view moving on no
   // new information, which is §46 B2.a's defect and would make every revision a calendar entry.
   let guided = none<number>();
   let guidedFor: string | undefined;
-  for (const e of ctx.journal.ofKind('reporting.guidance')) {
-    if (e.subjects[0] !== String(company) || e.period < from || e.period > to) continue;
-    const per = e.data['perPeriod'];
-    const quarter = e.data['quarter'];
-    if (typeof per !== 'number' || typeof quarter !== 'string') continue;
-    guided = some(per);
-    guidedFor = quarter;
+  for (const g of ctx.published.guidances(company)) {
+    if (g.at < from || g.at > to) continue;
+    guided = some(g.perPeriod);
+    guidedFor = g.quarter;
   }
   return { reports, guided, managementMissedBy: missedBy(ctx, company, guidedFor) };
 }
@@ -68,21 +60,14 @@ function missedBy(
   pending: string | undefined,
 ): Option<number> {
   const said = new Map<string, number>();
-  for (const e of ctx.journal.ofKind('reporting.guidance')) {
-    if (e.subjects[0] !== String(company)) continue;
-    const q = e.data['quarter'];
-    const g = e.data['guided'];
-    if (typeof q === 'string' && typeof g === 'number' && q !== pending) said.set(q, g);
+  for (const g of ctx.published.guidances(company)) {
+    if (g.quarter !== pending) said.set(g.quarter, g.guided);
   }
   let miss = none<number>();
-  for (const e of ctx.journal.ofKind('reporting.report')) {
-    if (e.subjects[0] !== String(company)) continue;
-    const q = e.data['quarter'];
-    const earned = e.data['earned'];
-    if (typeof q !== 'string' || typeof earned !== 'number') continue;
-    const g = said.get(q);
+  for (const report of ctx.published.statements(company)) {
+    const g = said.get(report.quarter);
     if (g === undefined) continue;
-    miss = some(sub(earned, g, 'what the management missed by'));
+    miss = some(sub(report.earned, g, 'what the management missed by'));
   }
   return miss;
 }

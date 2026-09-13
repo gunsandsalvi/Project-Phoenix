@@ -172,7 +172,8 @@ export function testCovenants(ctx: MechanismContext): void {
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !isCorporateBond(i.terms)) continue;
     const t = i.terms;
-    const said = latestReport(ctx, t.issuer);
+    // Reporting A2: the last accounts it published, through the kernel's one typed read (item 3).
+    const said = ctx.published.lastStatement(t.issuer);
     if (said === undefined) continue;
     if (book.tested[String(i.id)] === said.quarter) continue;
     book.tested[String(i.id)] = said.quarter;
@@ -206,29 +207,6 @@ export function testCovenants(ctx: MechanismContext): void {
       true,
     );
   }
-}
-
-interface Said {
-  readonly quarter: string;
-  readonly assets: number;
-  readonly liabilities: number;
-  readonly earned: number;
-}
-
-/** Reporting A2: the last accounts this issuer published, read off the wire and never rebuilt. */
-function latestReport(ctx: MechanismContext, issuer: PartyId): Said | undefined {
-  const e = ctx.journal.lastOf('reporting.report', issuer);
-  if (e === undefined) return undefined;
-  const { quarter, assets, liabilities, earned } = e.data;
-  if (
-    typeof quarter !== 'string' ||
-    typeof assets !== 'number' ||
-    typeof liabilities !== 'number' ||
-    typeof earned !== 'number'
-  ) {
-    return undefined;
-  }
-  return { quarter, assets, liabilities, earned };
 }
 
 interface Book {

@@ -80,6 +80,7 @@ import type { ParamRegister } from '../registry/params.js';
 import type { OntologyRegister } from '../registry/nouns.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
 import { Agreements, agreementReads, type AgreementReads } from '../register/agreements.js';
+import { publishedReads, type PublishedReads } from '../journal/published.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -200,6 +201,8 @@ export class World {
   private readonly agreementStore = new Agreements();
   /** The read face. `owes` and `paidOn` are the writes and they are on the context (Law 4). */
   readonly agreements: AgreementReads = agreementReads(this.agreementStore);
+  /** Reporting A2: the typed read of what companies published. One parse (item 3, Law 4). */
+  readonly published: PublishedReads = publishedReads(this.journal);
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -1220,6 +1223,7 @@ export class World {
       registry: this.registry,
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
+      published: this.published,
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
       contractBooks: (kind, on) => this.contractBooks(kind, on),
@@ -1363,6 +1367,7 @@ export class World {
       calendar: this.calendar,
       registry: this.registry,
       params: this.params,
+      published: this.published,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1451,6 +1456,7 @@ export class World {
       calendar: this.calendar,
       registry: this.registry,
       params: this.params,
+      published: this.published,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1990,13 +1996,8 @@ export class World {
       calendar: this.calendar,
       period: this.currentPeriod,
       lastReport: (issuer: PartyId) => {
-        const e = this.journal.lastOf('reporting.report', issuer);
-        if (e === undefined) return none();
-        const { earned, from, to } = e.data;
-        if (typeof earned !== 'number' || typeof from !== 'number' || typeof to !== 'number') {
-          return none();
-        }
-        return some({ earned, periods: to - from + 1 });
+        const said = this.published.lastStatement(issuer);
+        return said === undefined ? none() : some({ earned: said.earned, periods: said.periods });
       },
       issued: (id: InstrumentId) => this.instruments.get(id).issued,
     };

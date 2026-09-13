@@ -4503,3 +4503,50 @@ size, so an estate can divide one and a solvency test can see it. **What would f
 obligation with more than two sides — a guarantee, which is a third party standing behind a second —
 turning up as something this store is asked to hold. That is item 13, and it is separate precisely
 because this shape cannot express it.
+
+
+## Item 3 — a typed read of what is public
+
+**What.** `journal/published.ts`: `PublishedStatement` and `PublishedGuidance`, exposed as
+`published` on **`KernelReads`** — so a participant holds it too, because published accounts are
+public and a bank valuing a borrower is supposed to have seen them (Observer A3). Nothing
+unpublished is reachable through it.
+
+**Why.** §48's output was never unreadable — `publish` records the whole statement to the journal
+and the journal is a kernel store. What was missing was a TYPE. So **eight sites each pulled
+`unknown` out of `e.data`, checked it by hand, and recovered a different subset of the same fact**:
+`world.ts`'s `worthReads`, `control`, `corporate-bond`, `reporting/guidance`, `research/index` twice,
+`research/estimate` twice, and the observer. Four of them did `continue` on a record they could not
+parse. The observer did worse: `nums(v) = typeof v === 'number' ? v : 0`.
+
+**A dropped report is a `?? 0` in disguise**, because every one of those readers treats "not there"
+as "never published". A statement whose `assets` went missing would have vanished from the covenant
+test, stayed visible to the analyst, and shown a reader a company with no assets — and nothing
+anywhere would have said so. `reporting` is the one writer of the event (Law 4), so a field it did
+not write is its defect, and the read throws and names it at the site.
+
+**It removes code, which is how you know it is the cause and not a symptom (Law 12).** 148 lines
+deleted for 79 added across the eight sites; `control`'s `Published` and `corporate-bond`'s `Said`
+gone as duplicate local types; the observer's `lastOf` helper deleted because the typed read answers
+what it existed for. `guidanceRecord`'s parameter narrowed from "anything that can read the journal"
+to the published read, which is a smaller surface than it had.
+
+**`periods` is derived at the read** from the two dates the writer published, never stored beside
+them (Law 19) — which is what four of the eight sites were separately recomputing as `to - from + 1`.
+
+**Measured.** `reporting`, `research`, `control`, `corporate-bond`, `world`, `doors`: **7 red before,
+7 after.** Six new tests. The last of them walks every statement a 30-period world publishes and
+asks for every field — an assertion the hand-parses could not make, because a malformed statement
+was invisible to readers that had all agreed to look away. Green: lint, typecheck, spec citations
+(202), forbids (199 files).
+
+**The item's own exit criterion was stale and is corrected in the plan.** It said "reporting keeps no
+private state". Its bag is bookkeeping ABOUT publishing — which quarters are done, what each said so
+a later disagreement is a restatement, the standing guidance — which is working state and was
+re-declared `working` at item 0. What was missing was never the readability; it was the type.
+
+**Forecast, with its killer.** Any module can now read a company's accounts without knowing how they
+are written down, so a valuation, a covenant test and an estimate all read the same statement. **What
+would falsify it:** a reader needing a line the statement does not carry — most likely a cash-flow
+line, which `publish` writes as `cash` and this read deliberately does not expose, because no reader
+has yet asked for one.
