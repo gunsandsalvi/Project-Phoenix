@@ -41,17 +41,32 @@ function splitmix32(seed: number): () => number {
 }
 
 class Sfc32 implements Prng {
-  private a: number;
-  private b: number;
-  private c: number;
-  private d: number;
+  private a = 0;
+  private b = 0;
+  private c = 0;
+  private d = 0;
+  /**
+   * Law 18: whether this stream has been WOUND UP yet, and nothing about what it produces.
+   *
+   * A stream is deterministic in (seed, label), so when it is wound up makes no difference to what
+   * it says — the same seed and the same label give the same sequence whatever else ran. What made
+   * this worth deferring is the measurement: a real period derives fifteen and a half million
+   * streams and takes twenty-five thousand draws. Every party is handed its own stream for every
+   * decision it might take, and almost none of those decisions turn on a draw — so the world spent
+   * its time hashing labels and discarding the first outputs of generators nobody asked anything.
+   */
+  private started = false;
   readonly label: string;
   private readonly seedString: string;
 
   constructor(seedString: string, label: string) {
     this.seedString = seedString;
     this.label = label;
-    const mix = splitmix32(hash32(`${seedString} ${label}`));
+  }
+
+  private start(): void {
+    this.started = true;
+    const mix = splitmix32(hash32(`${this.seedString} ${this.label}`));
     this.a = mix();
     this.b = mix();
     this.c = mix();
@@ -61,6 +76,7 @@ class Sfc32 implements Prng {
   }
 
   next(): number {
+    if (!this.started) this.start();
     const t = (((this.a + this.b) | 0) + this.d) | 0;
     this.d = (this.d + 1) | 0;
     this.a = this.b ^ (this.b >>> 9);

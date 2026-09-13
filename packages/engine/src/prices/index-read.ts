@@ -159,7 +159,11 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
   // A1, Law 2: AN INDEX OF NOTHING IS NOT A NUMBER. A rule whose basket is empty — a credit index
   // in a world with no corporate paper in it yet — reports Missing, never its base level: a base
   // carried over an empty basket is a level nobody's prints produced (A2, D5.a).
-  if (decl.constituents(at, d.world).length === 0) return none<IndexRead>();
+  //
+  // Law 4: what the rule says is in it NOW is one question with one answer. It was asked here and
+  // asked again at the bottom for the basket, and a rule answers by walking every line in the world.
+  const constituents = decl.constituents(at, d.world);
+  if (constituents.length === 0) return none<IndexRead>();
   // Law 18: start from the last period this reader has already walked. Every step it skips is a
   // step it took before, over prints that cannot have changed since.
   let level = decl.base;
@@ -190,7 +194,6 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
     // Only a period that is OVER is remembered: this period's prints are still being made.
     if (t < at) d.cache?.set(decl.id, t as Period, level);
   }
-  const constituents = decl.constituents(at, d.world);
   const from: { instrument: InstrumentId; price: number; weight: number }[] = [];
   for (const c of constituents) {
     const p = d.price(c.instrument, at);

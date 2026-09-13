@@ -38,16 +38,37 @@ function onStateCredit(w: IndexWorld, i: Instrument): boolean {
  * lines those are (`pricing: 'derived'`): it is what a claim on a book IS, not a list of them.
  */
 function listed(w: IndexWorld): readonly Instrument[] {
-  return w.instruments
-    .all()
-    .filter((i) => i.status.live && i.market.some && i.issuer.some)
-    .filter((i) => w.registry.instrumentKind(i.kind).pricing !== 'derived');
+  const out: Instrument[] = [];
+  for (const i of w.instruments.all()) {
+    if (!i.status.live || !i.market.some || !i.issuer.some) continue;
+    if (w.registry.instrumentKind(i.kind).pricing === 'derived') continue;
+    out.push(i);
+  }
+  return out;
 }
 
-/** B3: a claim with DATED PAYMENTS on it, which is what tells a bond from a share (Law 15). */
+/**
+ * B3: a claim with DATED PAYMENTS on it, which is what tells a bond from a share (Law 15).
+ *
+ * Law 18: the answer is a fact about a line and a date — a line's terms do not change, and neither
+ * does what they promise on a given day — so it is worked out once for each pair. Every index rule
+ * asks it of every line in the world, so a world of several regions and currencies asked the same
+ * question of the same bond a dozen times a period and built its whole payment schedule to answer.
+ */
+const paysOn = new WeakMap<Instrument, Map<Period, boolean>>();
+
 function pays(w: IndexWorld, i: Instrument, at: Period): boolean {
+  let dates = paysOn.get(i);
+  if (dates === undefined) {
+    dates = new Map<Period, boolean>();
+    paysOn.set(i, dates);
+  }
+  const held = dates.get(at);
+  if (held !== undefined) return held;
   const on = w.calendar.startOf(at);
-  return w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar).length > 0;
+  const does = w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar).length > 0;
+  dates.set(at, does);
+  return does;
 }
 
 /**

@@ -56,7 +56,7 @@ export interface AuditView {
     'markPerUnit' | 'carryingPerUnit' | 'valueAtMark' | 'valueOfLots' | 'equityDust' | 'inMoney' | 'rateInForce'
   >;
   readonly ledger: Pick<Ledger, 'all' | 'inPeriod' | 'length'>;
-  readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'tail'>;
+  readonly journal: Pick<Journal, 'all' | 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
   readonly markets: readonly MarketDecl[];
   /**
    * Derivative X1, D1.b: the second register. A contract enters no ownership check and it does

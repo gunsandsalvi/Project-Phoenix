@@ -102,7 +102,7 @@ import type {
 } from './module.js';
 import { revalue } from './revalue.js';
 import type { Qty } from '../core/tick.js';
-import { indexCache, readIndex, type IndexDecl, type IndexRead } from '../prices/index-read.js';
+import { indexCache, readIndex, type IndexDecl, type IndexDeps, type IndexRead } from '../prices/index-read.js';
 
 
 
@@ -245,6 +245,7 @@ export class World {
    * each reader's own place in its own walk, which is what walking a chain means.
    */
   private indexThrough: Period = period(0);
+  private deps: IndexDeps | undefined;
   /** XI-3: which module takes charge of a kind's failure, if any does (Banks Capital C3.b). */
   private readonly resolvers = new Map<PartyKindId, string>();
   private readonly valuers = new Map<InstrumentKindId, { owner: string; value: Valuer }>();
@@ -1332,13 +1333,23 @@ export class World {
       this.contexts.set(owner, { period: this.currentPeriod, cycle: this.currentCycle, ctx: fresh });
     }
     /**
-     * The stream is derived eagerly, and that is deliberate. Handing it out through a lazy getter
-     * skips the work for a module that never draws — but an object with an accessor on it is not
-     * the shape V8 inlines property reads on, and the forty reads a module makes of everything ELSE
-     * in its context then cost more than the stream saved: measured at 41.9 ms a period against
-     * 36.2. The cheap-looking change was the slower one, which is why Law 18 says measure.
+     * The stream is its own, and everything else is the one context BEHIND it. A copy of forty
+     * references is forty references copied fifteen million times a period — which is what a real
+     * world asks for, almost all of it one module being asked what one party expects — so the
+     * handout is an object with a stream on it and that context as its prototype. Every other read
+     * is the same read it was, reached one step up a chain V8 keeps monomorphic because every
+     * handout of an owner has the same shape and the same prototype.
+     *
+     * The stream stays eager, and that is deliberate. Handing it out through a lazy getter skips
+     * the work for a module that never draws — but an object with an accessor on it is not the
+     * shape V8 inlines property reads on, and the forty reads a module makes of everything ELSE in
+     * its context then cost more than the stream saved: measured at 41.9 ms a period against 36.2.
+     * The cheap-looking change was the slower one, which is why Law 18 says measure. Deriving one
+     * is now nearly free in any case: a stream winds itself up the first time it is drawn from.
      */
-    return { ...fresh, rng: root.derive(`module/${owner}/${this.currentPeriod}`) };
+    const out = Object.create(fresh) as { rng: Prng };
+    out.rng = root.derive(`module/${owner}/${this.currentPeriod}`);
+    return out as MechanismContext;
   }
 
   private buildMechanismContext(owner: string): MechanismContext {
@@ -1626,7 +1637,27 @@ export class World {
   index(id: string): Option<IndexRead> {
     const decl = this.indexList.get(id);
     if (decl === undefined) return none<IndexRead>();
-    return readIndex(decl, this.indexThrough, {
+    return readIndex(decl, this.indexThrough, this.indexDeps());
+  }
+
+  /**
+   * A2, Law 4: WHAT AN INDEX IS READ FROM — one statement of it, for every index and every reader.
+   *
+   * "What the market SAID in that period" is one question: an index built on carried marks would
+   * move when nothing traded, which is a level nobody made (Law 3). It was written out twice in
+   * this one call, once for the rule and once for the level, so two copies of one read had to agree
+   * by being read the same. Now the rule and the level ask the same function, and it is the same
+   * object every time it is asked for: the reads it holds are this world's, and this world does not
+   * change into another one.
+   */
+  private indexDeps(): IndexDeps {
+    const held = this.deps;
+    if (held !== undefined) return held;
+    const printed = (instrument: InstrumentId, at: Period): Option<number> => {
+      const p = this.prices.latest(instrument, at);
+      return p.some && p.value.period === at ? some(p.value.price) : none<number>();
+    };
+    const made: IndexDeps = {
       cache: this.indexLevels,
       world: {
         calendar: this.calendar,
@@ -1636,20 +1667,14 @@ export class World {
         ledger: this.ledger,
         // A3: a rule whose membership turns on size reads what a constituent's OWN market said —
         // the same read the level is built from, so there is one answer to "what did this print".
-        price: (instrument, at) => {
-          const p = this.prices.latest(instrument, at);
-          return p.some && p.value.period === at ? some(p.value.price) : none<number>();
-        },
+        price: printed,
         // XI-12: and what one money buys of another, for the one line that crosses regions.
         rate: (from, to, at) => this.valuation.rateInForce(from, to, at),
       },
-      price: (instrument, at) => {
-        const p = this.prices.latest(instrument, at);
-        // A2: what the market SAID in that period, not what it was carried at. An index built on
-        // carried marks would move when nothing traded, which is a level nobody made (Law 3).
-        return p.some && p.value.period === at ? some(p.value.price) : none<number>();
-      },
-    });
+      price: printed,
+    };
+    this.deps = made;
+    return made;
   }
 
   /**

@@ -159,7 +159,7 @@ function mandatePerPeriod(ctx: MechanismContext, id: PartyId): number {
 
 /** What its own payroll came to last time it was paid, read from its own record (Law 19). */
 function lastWageBill(ctx: MechanismContext, id: PartyId): number {
-  const events = ctx.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(id));
+  const events = ctx.journal.forSubject('labour.wages', id);
   const last = events[events.length - 1];
   if (last === undefined) return 0;
   const due = last.data['due'];
@@ -168,7 +168,7 @@ function lastWageBill(ctx: MechanismContext, id: PartyId): number {
 
 /** What an hour costs it: what its own payroll paid for one, or what the market last printed. */
 function wageItFaces(ctx: MechanismContext, id: PartyId): number | undefined {
-  const own = ctx.journal.ofKind('labour.wages').filter((e) => e.subjects.includes(id));
+  const own = ctx.journal.forSubject('labour.wages', id);
   const mine = own[own.length - 1];
   if (mine !== undefined) {
     const due = mine.data['due'];

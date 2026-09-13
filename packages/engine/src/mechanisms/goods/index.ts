@@ -281,7 +281,7 @@ function unitsIdentity(kinds: ReadonlySet<InstrumentKindId>): Family {
       }
       // A weight event moves stock between books without an instruction (a cell splits, a member
       // dies): the holders' totals are re-struck, and this period's identity is not about them.
-      const weights = view.journal.ofKind('weight').filter((e) => e.period === view.period).length;
+      const weights = view.journal.ofKindIn('weight', view.period).length;
       const consecutive = seen.period !== undefined && view.period === seen.period + 1;
       const held = new Map<InstrumentId, number>();
       for (const i of view.instruments.all()) {

@@ -56,6 +56,14 @@ export class Calendar {
   readonly periodDays: number;
   readonly cyclesPerPeriod: number;
   private readonly epochDay: number;
+  /**
+   * Law 18: the first and last day of a period, worked out once each. A `Civil` is frozen and a
+   * period's dates cannot move, so the same date handed out twice is the same date — and almost
+   * everything that reads a date asks for one of these two. Building them afresh every ask was the
+   * calendar arithmetic of a whole world done again for an answer that had not changed.
+   */
+  private readonly starts = new Map<Period, Civil>();
+  private readonly ends = new Map<Period, Civil>();
 
   constructor(spec: CalendarSpec) {
     this.epoch = spec.epoch;
@@ -69,12 +77,20 @@ export class Calendar {
 
   /** The first day of a period. */
   startOf(p: Period): Civil {
-    return fromDayNumber(this.epochDay + p * this.periodDays);
+    const held = this.starts.get(p);
+    if (held !== undefined) return held;
+    const made = fromDayNumber(this.epochDay + p * this.periodDays);
+    this.starts.set(p, made);
+    return made;
   }
 
   /** The last day of a period. */
   endOf(p: Period): Civil {
-    return fromDayNumber(this.epochDay + (p + 1) * this.periodDays - 1);
+    const held = this.ends.get(p);
+    if (held !== undefined) return held;
+    const made = fromDayNumber(this.epochDay + (p + 1) * this.periodDays - 1);
+    this.ends.set(p, made);
+    return made;
   }
 
   /**

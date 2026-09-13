@@ -224,7 +224,7 @@ export function liquidityMetric(liquid: number, couldLeave: number): Option<numb
  * it is one public number and not two private ones (Law 4).
  */
 export function announced(ctx: MechanismContext, bank: PartyId, cls: string): Option<number> {
-  const said = ctx.journal.ofKind('bank.depositRate').filter((e) => e.subjects.includes(bank));
+  const said = ctx.journal.forSubject('bank.depositRate', bank);
   const last = said[said.length - 1];
   if (last === undefined) return none<number>();
   const rates = last.data['rates'];

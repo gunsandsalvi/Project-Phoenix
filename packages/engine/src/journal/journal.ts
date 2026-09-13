@@ -53,7 +53,8 @@ export class Journal {
    */
   private readonly byKind = new Map<EventKind, Event[]>();
   private readonly byPeriod = new Map<Period, Event[]>();
-  private readonly lastBySubject = new Map<string, Event>();
+  private readonly byKindPeriod = new Map<string, Event[]>();
+  private readonly bySubject = new Map<string, Event[]>();
 
   record(
     period: Period,
@@ -76,7 +77,8 @@ export class Journal {
     this.events.push(ev);
     push(this.byKind, kind, ev);
     push(this.byPeriod, period, ev);
-    for (const s of ev.subjects) this.lastBySubject.set(`${kind}\u0000${s}`, ev);
+    push(this.byKindPeriod, keyOf(kind, period), ev);
+    for (const s of ev.subjects) push(this.bySubject, keyOf(kind, s), ev);
     return ev;
   }
 
@@ -90,6 +92,22 @@ export class Journal {
 
   ofKind(kind: EventKind): readonly Event[] {
     return this.byKind.get(kind) ?? EMPTY;
+  }
+
+  /**
+   * What was said of one kind IN one period. A read about this period sifted it out of everything
+   * ever said of that kind, so it grew with the age of the world rather than with what happened.
+   */
+  ofKindIn(kind: EventKind, period: Period): readonly Event[] {
+    return this.byKindPeriod.get(keyOf(kind, period)) ?? EMPTY;
+  }
+
+  /**
+   * A4: everything of a kind this party is a subject of — its own record, oldest first. A private
+   * event of somebody else is never reachable through here, for the same reason `lastOf` is not.
+   */
+  forSubject(kind: EventKind, subject: string): readonly Event[] {
+    return this.bySubject.get(keyOf(kind, subject)) ?? EMPTY;
   }
 
   tail(n: number): readonly Event[] {
@@ -128,7 +146,8 @@ export class Journal {
    * a private event of somebody else is never reachable through here.
    */
   lastOf(kind: EventKind, subject: string): Event | undefined {
-    return this.lastBySubject.get(`${kind}\u0000${subject}`);
+    const said = this.bySubject.get(keyOf(kind, subject));
+    return said === undefined ? undefined : said[said.length - 1];
   }
 
   publicTail(last: number): readonly Event[] {
@@ -142,6 +161,8 @@ export class Journal {
 }
 
 const EMPTY: readonly Event[] = Object.freeze([]);
+
+const keyOf = (kind: EventKind, of: string | Period): string => `${kind}\u0000${of}`;
 
 /** One arrangement of the same events; the list is created the first time something lands in it. */
 function push<K>(into: Map<K, Event[]>, key: K, e: Event): void {

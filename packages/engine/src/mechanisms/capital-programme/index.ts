@@ -458,7 +458,7 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
       }
       // A weight event restates every holding of a cell without an instruction; this period's
       // identity is not about that, exactly as the goods module's own units check has it.
-      const weights = view.journal.ofKind('weight').filter((e) => e.period === view.period).length;
+      const weights = view.journal.ofKindIn('weight', view.period).length;
       const consecutive = seen.period !== undefined && view.period === seen.period + 1;
       const held = new Map<string, number>();
       for (const i of view.instruments.all()) {

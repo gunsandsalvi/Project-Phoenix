@@ -205,8 +205,7 @@ function runRaises(rows: readonly BankDecl[], ctx: MechanismContext): void {
 
 /** B3: what it published that it must raise to be back above both lines, or nothing (Law 19). */
 function mustRaise(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyId): number {
-  const said = ctx.journal.ofKind('bank.capitalPlan').filter((e) => e.subjects.includes(bank));
-  const last = said[said.length - 1];
+  const last = ctx.journal.lastOf('bank.capitalPlan', bank);
   // Only the plan it published at the LAST close: a plan from a month ago is a fact about a month
   // that is over, and a bank that has since raised or earned its way back is not raising again.
   if (last === undefined || last.period + 1 !== ctx.period) return 0;
@@ -1288,7 +1287,7 @@ function publishStandard(ctx: MechanismContext): void {
   const declined = ctx.journal
     .ofKind('credit.declined')
     .filter((e) => e.period === ctx.period);
-  const written = ctx.journal.ofKind('credit.written').filter((e) => e.period === ctx.period);
+  const written = ctx.journal.ofKindIn('credit.written', ctx.period);
   const volume = (rows: readonly Event[], key: string): number =>
     sum(rows.map((e) => (typeof e.data[key] === 'number' ? (e.data[key]) : 0))).value;
   ctx.record(
