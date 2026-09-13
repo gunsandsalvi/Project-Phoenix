@@ -120,7 +120,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **7** | `Lifecycle` | 2 | **BUILT** — four states, wired at the estate and at resolution. `distressed` has no writer yet |
 | **8** | `Agreement` | 5 of 9 | **BUILT (the store, and four cases)** — arrears exist and rank. The seven private books are not migrated, so `Mandate` and **A-9**, **A-67**, **B-2**, **B-3** stay open here |
 | ~~**9**~~ | ~~`Control`~~ | 2 | **BUILT** — the relation, the group, and a consolidation that eliminates. `combine` has a caller and moves the holdings it always claimed to |
-| **10** | `CorporateAction` | 1 | independent; reframes worklist 13k |
+| ~~**10**~~ | ~~`CorporateAction`~~ | 1 | **BUILT** — four dates, and the declaration is separate from the payment. Dividend payout legs fall from 13.8% of everything to 0.58% |
 | **11** | `OutputKind` | 1 | independent; small |
 | **12** | `Space` | 0 | independent; it *is* worklist 13m |
 | **13** | `Guarantee` | 0 | independent; tripartite, so **8** does not cover it |
@@ -2363,6 +2363,65 @@ target's holdings even if it were.
 
 ## 10. `CorporateAction` — what a company does to its own claims
 
+> **BUILT.** `register/corporate.ts`: an issuer, a line, a kind
+> (`dividend | split | rights | buyback | spinOff | merger`), and **four dates** — announced, ex,
+> record, payable — with a state that walks `announced → recorded → paid` and will not skip a step.
+> Written through `announce` / `recordAction` / `payAction` / `cancelAction`, journalled publicly;
+> read through `actions` on **`KernelReads`**, because a share trading EX is a fact every buyer has
+> to know or it pays for something it will not get.
+>
+> **It refuses the dates out of order**, because every consequence depends on the order: a record
+> date before the ex date pays the seller of a share that had already gone ex, and a payable date
+> before the record date pays before anybody knows who is owed.
+>
+> **The declaration is now separate from the payment, which is the whole item.** `equity.decide`
+> still runs every period, because what a firm has spare is its own funding read and that is
+> weekly — but a PLAN IS NOT A DECLARATION. A board declares on **its own fiscal quarters**, the
+> same ones it reports on.
+>
+> **So `fiscal.ts` and `anchorOf` moved to the kernel calendar.** A fiscal quarter is a fact about
+> the CALENDAR ("one calendar; periodicities placed by date") and reporting was only the first
+> thing that needed one. Leaving it in `reporting` would have made `equity` derive its own year
+> ends — one company with two of them (Law 4).
+>
+> **Between the record date and the payment it is a LIABILITY, and that noun already exists.** On
+> the record date the holders stop being a date and become named parties, so the module opens an
+> `Agreement` per holder (item 8, and this is what item 8 was for). A holder that dies before the
+> payment does not lose it: its estate has a claim. A payment that fails leaves the claim standing,
+> because a payer that cannot pay has not paid.
+>
+> **The payment reads the CLAIM and not the register.** A shareholder that sold the day after the
+> record date is still owed and the buyer is not — re-deriving from what people hold on the payable
+> date would pay exactly the wrong people (Law 19). What will not divide into whole pieces per
+> member of a cell whose weight has since changed stays owed rather than being rounded away.
+>
+> **Measured, and it is the largest number in the world.** Forty periods of the equity rig world:
+>
+> | | before | after |
+> | --- | --- | --- |
+> | instructions settled | 61,788 | 53,266 |
+> | dividend payout legs | **8,538 (13.8%)** | **308 (0.58%)** |
+> | declare-and-pay events | 38 | 2 declarations, 2 record dates, 1 payment |
+> | plans carrying a dividend | 38 | 39 |
+>
+> The plan is still made every period; what stopped is a board declaring fifty-two times a year.
+>
+> **Two tests changed because their premise was the defect, and one of them found something.** The
+> cadence test ran for six periods and found a payout; it now runs for forty and asserts the three
+> dates. The waterfall test relied on a listed firm being bled dry weekly — with the cadence fixed,
+> **no listed firm dies in 60 periods with a deep buyer in either of their own lines**, because a
+> listing is what a LARGE firm gets and a deep buyer kills the marginal firm in a line. It now puts
+> the reason in the world (a claim bigger than everything the firm holds) instead of waiting for one.
+>
+> **13k is answered and was never periodicity.** `Periodicity` is a proper union in `core/rate.ts`
+> and the fiscal calendar was built and unused. What was missing was this noun. The rating fee and
+> the tax assessment remain genuinely periodicity and stay in 13k.
+>
+> **Carried.** The buyback is still decided weekly out of this week's spare cash: a buyback is an
+> announced PROGRAMME executed over time, and `buyback` is a kind this store already has — it needs
+> the programme, which is item 14's `Process`. `split` and `rights` likewise have a kind here and
+> no caller yet.
+
 **Why.** One carried finding, and it **reframes an open worklist item**. `corporateActions` is a
 *phase name*. The only data is two booleans on the instrument kind (`splits?`, `accelerates?`) and
 `cause: 'corporateAction'` on the wire — which *freight* uses, so the enum is already a generic
@@ -2386,6 +2445,14 @@ assessment).
 ### Findings this closes (1)
 
 #### C-2 — four things this world does every week that the world does not (carried from `SWEEP.md`; worklist **13k**)
+
+> **The dividend is fixed (item 10); the other three are not, and they stay in 13k.** A board now
+> declares on its own fiscal quarters with a record date and a payable date after it, and dividend
+> payout legs fall from **8,538 of 61,788 instructions to 308 of 53,266** over forty periods. The
+> **rating fee**, the **tax assessment** and the **buyback** are still weekly. The first two are
+> genuinely periodicity and are 13k's remaining subject; the buyback is a PROGRAMME and needs item
+> 14's `Process` — its kind is already in `register/corporate.ts` waiting for one.
+
 
 Law 8 says the periodicity is part of the number. A weekly period is the resolution; it is not a
 licence to do everything weekly. Re-verified at the source in this pass.
@@ -4082,6 +4149,7 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **C-7** (—) | 17 | the confidence question, answered and closed (carried from `VERIFY.md`) |
 | **D-1** (A) | 8 | a levy that fails is recorded and then forgotten: no arrears (`12d-5`) |
 | **D-2** (B) | 18 | the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) |
+| **E-3** (C) | 17 | *(found while building item 10)* an estate pays RENT for the space its inventory sits in while it winds up, and its own `flows` family reports every non-`corporateAction` payment out of an estate as a distribution to somebody with no claim. A cost of a winding-up is not a distribution; D6 is about distributions |
 | **E-2** (B) | 14 | *(found while building item 8)* an estate left `winding` because it could not hand over is still a household cell to the eleven `ofKind(HOUSEHOLD)` readers, which all ask `status.alive`. Unreached in the scale model — **0 failed probate transfers, 0 encumbered household holdings over 12 periods** — and named rather than left silent |
 | **E-1** (A) | 8 | *(found while building item 8)* a rating fee that fails is written as `rating.unpaid` and carried by nothing — the same hole as D-1, in a fourth module. **18 of them over fourteen periods** in a world where no bank lends. Closed with D-1, through the same door |
 

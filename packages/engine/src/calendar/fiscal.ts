@@ -3,6 +3,12 @@
  *
  * @spec Reporting A3 Reporting A4 Reporting G6 Money G3.a Money G3.b Law 19
  *
+ * IT IS KERNEL, not `reporting`'s, and that is item 10's doing. A fiscal quarter is a fact about
+ * the CALENDAR — "one calendar; periodicities placed by date" — and reporting was only the first
+ * thing that needed one. A BOARD DECLARES ITS DIVIDEND WITH ITS RESULTS, on the same quarters, and
+ * a module may not import another module: leaving this inside `reporting` would have made `equity`
+ * derive its own year ends, and one company would have had two of them (Law 4).
+ *
  * G6 is the whole design constraint: no reporting calendar finer than a period, and none placed by a
  * COUNT of periods rather than by a date. So nothing here counts periods. A company's year ends in a
  * month; its quarters end on the last day of that month and of the three months before it, three at
@@ -20,9 +26,11 @@ import {
   compareCivil,
   daysInMonth,
   type Civil,
-} from '../../calendar/civil.js';
-import type { Calendar, Period } from '../../calendar/calendar.js';
-import { forbid } from '../../core/assert.js';
+} from './civil.js';
+import type { Calendar, Period } from './calendar.js';
+import { forbid } from '../core/assert.js';
+import type { PartyId } from '../core/ids.js';
+import { prng } from '../rng/prng.js';
 
 /** One fiscal quarter, as the two dates that bound it and the name a reader would call it. */
 export interface Quarter {
@@ -115,4 +123,18 @@ export function publishableOn(q: Quarter, lagDays: number): Civil {
  */
 export function spanOf(q: Quarter, calendar: Calendar): { from: Period; to: Period } {
   return { from: calendar.periodOf(q.begins), to: calendar.periodOf(q.ends) };
+}
+
+/**
+ * A3, Seed B1.a: the month a company's fiscal year ends in.
+ *
+ * IT IS DRAWN AND NOT STATED. Nothing in this world has a reason to prefer December, and if every
+ * company closed in the same month there would be one reporting season a year instead of a thing
+ * that happens continuously — which is what makes estimates, revisions, surprises and now dividends
+ * land at different times for different names rather than all at once. Deterministic in the world's
+ * seed and the company's own identity, so it is the same in every run of the same world and
+ * different between companies, with no number written down beside any name.
+ */
+export function anchorOf(seed: string, company: PartyId): number {
+  return prng(seed, 'reporting.anchor').derive(String(company)).int(MONTHS_IN_YEAR) + 1;
 }

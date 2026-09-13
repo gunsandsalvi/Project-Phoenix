@@ -2364,7 +2364,7 @@ export function foundationSpec(
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
-      equity(drew.listed),
+      equity(drew.listed, seed),
       funds(drew.funds, drew.etfs),
       // 13f, Securities Lending A1-A3: title passes and the economics do not. After equity and the
       // funds, because what is lent is the paper they hold and the desks that need to deliver it

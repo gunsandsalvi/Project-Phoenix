@@ -3,10 +3,7 @@
  *
  * @spec Reporting A3 Reporting A4 Reporting A4.a Reporting G6 Law 2 Seed B1.a
  */
-import { MONTHS_IN_YEAR } from '../../calendar/civil.js';
 import { paramId } from '../../core/ids.js';
-import type { PartyId } from '../../core/ids.js';
-import { prng } from '../../rng/prng.js';
 import type { ParamDecl } from '../../registry/params.js';
 
 export const REPORTING_PARAMS = {
@@ -36,16 +33,3 @@ export function reportingParams(): ParamDecl[] {
   ];
 }
 
-/**
- * A3, Seed B1.a: the month a company's fiscal year ends in.
- *
- * IT IS DRAWN AND NOT STATED. Nothing in this world has a reason to prefer December, and if every
- * company closed in the same month there would be one reporting season a year instead of a thing
- * that happens continuously — which is what makes estimates, revisions and surprises land at
- * different times for different names rather than all at once. Deterministic in the world's seed and
- * the company's own identity, so it is the same in every run of the same world and different between
- * companies, with no number written down beside any name.
- */
-export function anchorOf(seed: string, company: PartyId): number {
-  return prng(seed, 'reporting.anchor').derive(String(company)).int(MONTHS_IN_YEAR) + 1;
-}

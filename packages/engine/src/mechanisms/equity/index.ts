@@ -30,10 +30,14 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import { currencyUnit, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
-import { add, combineDust, div, material, mul, sub, sum, withinDust } from '../../core/num.js';
+import { currencyUnit, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
+import { add, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
+import { period as periodOf } from '../../calendar/calendar.js';
+import { anchorOf, quarterClosedBy } from '../../calendar/fiscal.js';
+import { compareCivil } from '../../calendar/civil.js';
+import type { CorporateAction } from '../../register/corporate.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
@@ -66,10 +70,12 @@ export { marketCapitalisation, freeFloat } from './opinion.js';
 interface Book {
   /** E4: the lines whose issuer has been succeeded, so the wipe is announced once and not weekly. */
   succeeded: string[];
+  /** D3, item 10: the quarter each firm last DECLARED for, so a board declares once for one (Law 4). */
+  declared: Record<string, string>;
 }
 
 function book(ctx: MechanismContext): Book {
-  return ctx.state<Book>('equity', () => ({ succeeded: [] }));
+  return ctx.state<Book>('equity', () => ({ succeeded: [], declared: {} }));
 }
 
 /**
@@ -82,8 +88,20 @@ function stillItsIssuer(i: Instrument): boolean {
   return issuerOf(i) === shareTerms(i).issuer;
 }
 
+/** D3, item 10: the one number the declaration needs — how long after the record date it pays. */
+export const EQUITY_PAYOUT_LAG = paramId('equity.payoutLag');
+
 function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
   return [
+    {
+      id: EQUITY_PAYOUT_LAG,
+      value: 2,
+      unit: 'periods',
+      dimension: 'periods',
+      kind: 'technology',
+      owner: 'model',
+      why: 'Equity D3, Law 2: between the record date and the payable date a company works out who it owes and instructs its bank, and that takes time. It is a settlement convention of the market — a real-world primitive, imported (Law 2) — and it is the reason a declared dividend is a LIABILITY for an interval rather than an instant. Shorten it to zero and the declaration and the payment collapse back into one event, which is what this world used to do.',
+    },
     {
       id: OPENING_SHARE,
       value: MONEY_PIECES,
@@ -113,7 +131,7 @@ function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
  * read said (Firm E4) — one number, one writer — and before the session, because a decision that
  * read the session it is about to be in would be reading its own answer (Clearing A4).
  */
-function decide(ctx: MechanismContext, row: ListedDecl): void {
+function decide(ctx: MechanismContext, seed: string, row: ListedDecl): void {
   const line = ctx.instruments.get(equityLineOf(row.firm));
   if (!line.status.live) return;
   if (!stillItsIssuer(line)) {
@@ -162,52 +180,159 @@ function decide(ctx: MechanismContext, row: ListedDecl): void {
     },
     false,
   );
-  if (plan.dividendPerShare > 0) payDividend(ctx, row, line, plan);
+  if (plan.dividendPerShare > 0) declareDividend(ctx, seed, row, line, plan);
 }
 
 /**
- * D3, D3.a, Register E1, E1.a: cash per share, out of the firm and into the accounts of whoever
- * the register says holds it AT THE MOMENT IT IS APPLIED. There is no earlier date to remember: a
- * buyer between two dividends paid for what it bought at the price it paid (B2), and what a share
- * has paid so far is public, which is what anybody forming an opinion of it reads (B3).
+ * D3, D3.b, Reporting A3, item 10: THE BOARD DECLARES, WITH ITS RESULTS, AND THE MONEY MOVES LATER.
  *
- * The declaration is PUBLIC and carries the number, because D3.b's cut is only an event others
- * react to if others can see it.
+ * This function used to be `payDividend` and it paid, in the same pass, to whoever happened to hold
+ * the line at that instant — every period, because `decide` runs every period. **Period 5 settled
+ * 249,288 instructions and 162,615 of them were dividend payouts: 65% of everything this world did**
+ * (C-2). Not because dividends matter that much, but because THERE WAS NO DECLARATION TO BE
+ * SEPARATE FROM THE PAYMENT.
+ *
+ * A board declares on its own fiscal calendar — the same quarters it reports on, which is why the
+ * anchor is in the kernel and drawn once per company. Between the declaration and the payment the
+ * dividend is a LIABILITY to named holders, and the share trades EX from the ex date, which is why
+ * total return and price return are different numbers.
  */
-function payDividend(
+function declareDividend(
   ctx: MechanismContext,
+  seed: string,
   row: ListedDecl,
   line: Instrument,
   plan: EquityPlan,
 ): void {
   const firm = row.firm as PartyId;
+  /**
+   * A3: WITH ITS RESULTS, on the company's OWN fiscal quarters — the same quarters it reports on,
+   * which is why the anchor moved to the kernel calendar and is drawn once per company (Law 4).
+   *
+   * It is the CALENDAR and not the report: a company that does not publish still has a year end and
+   * still pays its owners, and tying the declaration to a published statement would have stopped
+   * every dividend in a world where nothing is public yet.
+   */
+  const today = ctx.calendar.endOf(ctx.period);
+  const quarter = quarterClosedBy(anchorOf(seed, firm), today);
+  // Seed A2: not for a quarter that began before this world had books in it at all.
+  if (compareCivil(quarter.begins, ctx.calendar.epoch) < 0) return;
+  // One declaration per quarter: `decide` runs every period, and a board declares once for one set
+  // of results. This is what stopped a dividend being declared and paid fifty-two times a year.
+  const b = book(ctx);
+  if (b.declared[String(firm)] === quarter.label) return;
+  b.declared[String(firm)] = quarter.label;
+  /**
+   * D3.b: the ex date is the next period — on and after it a BUYER does not get this dividend, and
+   * the record date is the same period because who holds it when the market opens ex is who is
+   * owed. The payable date is later by the one convention this module declares.
+   */
+  const ex = periodOf(ctx.period + 1);
+  ctx.announce({
+    issuer: firm,
+    line: line.id,
+    kind: 'dividend',
+    ex,
+    record: ex,
+    payable: periodOf(Number(ex) + ctx.params.periods(EQUITY_PAYOUT_LAG)),
+    perUnit: plan.dividendPerShare,
+    ccy: line.ccy,
+    why: `declared with the results for ${quarter.label}`,
+  });
+}
+
+/**
+ * D3, Register E1, E1.a: THE RECORD DATE. Whoever the register says holds it now is who is owed, and
+ * from here it is not a date any more — it is a set of named parties and an amount each (XI-8).
+ *
+ * That is what makes a declared dividend a LIABILITY rather than an intention: item 8's noun, used
+ * for what it was built for. A holder that dies between here and the payment does not lose it — its
+ * estate has a claim, which is exactly what "nothing ranks in an estate" used to mean.
+ */
+function recordDividends(ctx: MechanismContext): void {
+  for (const action of ctx.recordingOn(ctx.period)) {
+    const line = ctx.instruments.get(action.line);
+    const firm = action.issuer;
+    for (const holderId of ctx.register.holdersOf(line.id)) {
+      if (holderId === firm) continue;
+      const holder = ctx.parties.get(holderId);
+      const perMemberUnits = ctx.register.quantity(holderId, line.id);
+      if (perMemberUnits <= 0) continue;
+      const share = shareFor(
+        ctx.registry,
+        holder,
+        currencyUnit(line.ccy),
+        dividendFor(action.perUnit, perMemberUnits),
+      );
+      if (share.total <= 0) continue;
+      ctx.owes({
+        debtor: firm,
+        creditor: holderId,
+        ccy: line.ccy,
+        owed: share.total,
+        what: `dividend ${action.id}`,
+        why: `declared on ${String(line.id)} and payable in ${action.payable}`,
+      });
+    }
+    ctx.recordAction(action.id);
+  }
+}
+
+/**
+ * D3.a: THE PAYABLE DATE. What was declared leaves the issuer, to the parties the record date named
+ * — and a payment that does not arrive leaves the claim standing, because a payer that cannot pay
+ * has not paid (Money E1) and the agreement is where that fact already lives.
+ */
+function payDividends(ctx: MechanismContext): void {
+  for (const action of ctx.payableOn(ctx.period)) {
+    const line = ctx.instruments.get(action.line);
+    payDividend(ctx, action.issuer, line, action);
+    ctx.payAction(action.id);
+  }
+}
+
+function payDividend(
+  ctx: MechanismContext,
+  firm: PartyId,
+  line: Instrument,
+  action: CorporateAction,
+): void {
   const paid: number[] = [];
   let failed = 0;
-  for (const holderId of ctx.register.holdersOf(line.id)) {
-    if (holderId === firm) continue;
+  for (const owed of ctx.owedBy(firm)) {
+    if (owed.what !== `dividend ${action.id}` || owed.state !== 'performing') continue;
+    const holderId = owed.creditor;
     const holder = ctx.parties.get(holderId);
-    const perMemberUnits = ctx.register.quantity(holderId, line.id);
-    if (perMemberUnits <= 0) continue;
-    // Law 8: a dividend is paid in whole pieces of the money, and to each member of a cell in
-    // whole pieces — every one of them is a shareholder with an account of their own. A holding so
-    // small that its share comes to less than one piece is paid nothing, which is what a payout
-    // per share that small means.
+    /**
+     * Law 19: WHAT IT IS OWED, read from the claim the record date wrote — not recomputed from what
+     * it holds today. A shareholder that sold the day after the record date is still owed this
+     * dividend and the buyer is not, which is the whole point of there being a record date, and
+     * re-deriving the amount from today's register would pay exactly the wrong people.
+     *
+     * Law 8, XI-15: WHAT IT CAN BE PAID IN is another question. A cell is a count of people and
+     * every one of them has an account, so the claim is paid in whole pieces to each — and between
+     * the record date and now the cell may have split, aged or lost members, so what was a whole
+     * number of pieces per member then need not be one now. What will not divide stays OWED: the
+     * agreement carries it and it is paid when the cell can take it, rather than being rounded
+     * away into a residual with no holder (Appendix B).
+     */
     const share = shareFor(
       ctx.registry,
       holder,
       currencyUnit(line.ccy),
-      dividendFor(plan.dividendPerShare, perMemberUnits),
+      owed.owed / weightOf(holder),
     );
-    const perMemberCash = share.perMember;
-    const total = share.total;
-    if (!material(total, 2, total) || total <= 0) continue;
-    const side = cellSide(holder, perMemberCash);
+    const total = Number(share.total);
+    if (total <= 0) continue;
+    const side = cellSide(holder, share.perMember);
     const leg: Leg = {
       kind: 'money',
       from: ctx.accountOf(firm, line.ccy),
       to: ctx.accountOf(holderId, line.ccy),
       ccy: line.ccy,
-      amount: total,
+      // Treasury C1: the payer says what this is. A dividend is not a wage and not a disposal.
+      receipt: { of: 'dividend' },
+      amount: asQty(total),
       fromCell: none(),
       toCell: side === undefined ? none() : some(side),
     };
@@ -216,15 +341,20 @@ function payDividend(
       cause: 'corporateAction',
       reason: `payout on ${line.id} to ${holderId}`,
     });
-    if (r.outcome === 'settled') paid.push(total);
-    else failed += 1;
+    // Money E1: a payer that cannot pay has not paid, and the claim STAYS — which is the state that
+    // used to be a number in an event and is now something the holder's estate can divide (XI-8).
+    if (r.outcome === 'settled') {
+      paid.push(total);
+      ctx.paidOn(owed.id, total);
+    } else failed += 1;
   }
   ctx.record(
     'payout.declared',
     [firm, line.id],
     {
       line: line.id,
-      perShare: plan.dividendPerShare,
+      action: action.id,
+      perShare: action.perUnit,
       shares: line.issued,
       paid: sum(paid).value,
       failedPayments: failed,
@@ -386,7 +516,7 @@ function publishReads(ctx: MechanismContext, rows: readonly ListedDecl[]): void 
  * The module. `rows` is which firms this world listed (Law 15: the data says). A firm that is not
  * in it has no shares at all, which is a real state and not an omission.
  */
-export function equity(rows: readonly ListedDecl[]): SystemModule {
+export function equity(rows: readonly ListedDecl[], seed: string): SystemModule {
   return {
     id: 'equity',
     nouns: [
@@ -420,7 +550,19 @@ export function equity(rows: readonly ListedDecl[]): SystemModule {
         // happened (Clearing F1).
         anchor: { after: 'firms.decide' },
         run: (ctx: MechanismContext) => {
-          for (const row of rows) decide(ctx, row);
+          /**
+           * D3, item 10: THE THREE DATES, in order, in one phase — because they are one story and
+           * splitting them across phases would let a record date and its own payment land in
+           * different orders in different periods.
+           *
+           * Paying first is deliberate: what is payable today was recorded in an earlier period, so
+           * a line that records and pays in the same period pays the claim the earlier record made
+           * and not the one written a moment ago (Law 19, and Clearing A4's "never read your own
+           * answer"). The declaration comes last for the same reason.
+           */
+          payDividends(ctx);
+          recordDividends(ctx);
+          for (const row of rows) decide(ctx, seed, row);
         },
       },
       {

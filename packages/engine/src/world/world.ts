@@ -82,6 +82,11 @@ import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js
 import { Agreements, agreementReads, type AgreementReads } from '../register/agreements.js';
 import { publishedReads, type PublishedReads } from '../journal/published.js';
 import { ControlRegister, controlReads, type ControlReads } from '../register/control.js';
+import {
+  CorporateActions,
+  corporateActionReads,
+  type CorporateActionReads,
+} from '../register/corporate.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -208,6 +213,9 @@ export class World {
   private readonly controlStore = new ControlRegister();
   /** The read face. `takeControl` and `releaseControl` are the writes, on the context (Law 4). */
   readonly control: ControlReads = controlReads(this.controlStore);
+  /** Equity D3: what a company has declared and not yet paid — the four dates (item 10). */
+  private readonly actionStore = new CorporateActions();
+  readonly actions: CorporateActionReads = corporateActionReads(this.actionStore);
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -1230,6 +1238,7 @@ export class World {
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       published: this.published,
       control: this.control,
+      actions: this.actions,
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
       contractBooks: (kind, on) => this.contractBooks(kind, on),
@@ -1375,6 +1384,7 @@ export class World {
       params: this.params,
       published: this.published,
       control: this.control,
+      actions: this.actions,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1465,6 +1475,7 @@ export class World {
       params: this.params,
       published: this.published,
       control: this.control,
+      actions: this.actions,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1576,6 +1587,66 @@ export class World {
       },
       owedBy: (party) => this.agreementStore.owedBy(party),
       owedTo: (party) => this.agreementStore.owedTo(party),
+      announce: (decl) => {
+        const row = this.actionStore.announce(decl, this.currentPeriod);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'corporate.announced',
+          [row.issuer, row.line],
+          {
+            action: row.id,
+            issuer: row.issuer,
+            line: row.line,
+            what: row.kind,
+            ex: row.ex,
+            record: row.record,
+            payable: row.payable,
+            perUnit: row.perUnit,
+            why: row.why,
+          },
+          true,
+        );
+        return row;
+      },
+      recordAction: (id) => {
+        const row = this.actionStore.recorded(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'corporate.recorded',
+          [row.issuer, row.line],
+          { action: row.id, what: row.kind, perUnit: row.perUnit },
+          true,
+        );
+        return row;
+      },
+      payAction: (id) => {
+        const row = this.actionStore.paid(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'corporate.paid',
+          [row.issuer, row.line],
+          { action: row.id, what: row.kind, perUnit: row.perUnit },
+          true,
+        );
+        return row;
+      },
+      cancelAction: (id, why) => {
+        const row = this.actionStore.cancel(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'corporate.cancelled',
+          [row.issuer, row.line],
+          { action: row.id, what: row.kind, why },
+          true,
+        );
+        return row;
+      },
+      recordingOn: (at) => this.actionStore.recordingOn(at),
+      payableOn: (at) => this.actionStore.payableOn(at),
       takeControl: (controller, subject, basis, why) => {
         const row = this.controlStore.take({ controller, subject, basis, why }, this.currentPeriod);
         this.journal.record(

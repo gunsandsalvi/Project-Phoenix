@@ -19,6 +19,7 @@ import type { VenueDecl } from '../clearing/venue.js';
 import type {
   AgreementId,
   Brand,
+  CorporateActionId,
   CurrencyCode,
   CurveFamilyId,
   DerivativeKindId,
@@ -33,6 +34,11 @@ import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { PublishedReads } from '../journal/published.js';
 import type { ControlBasis, ControlReads } from '../register/control.js';
+import type {
+  CorporateAction,
+  CorporateActionDecl,
+  CorporateActionReads,
+} from '../register/corporate.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
@@ -192,6 +198,13 @@ export interface KernelReads {
    * looking at a borrower is looking at the group behind it.
    */
   readonly control: ControlReads;
+  /**
+   * Equity D3, D3.b: WHAT A COMPANY HAS DECLARED AND NOT YET PAID, with its four dates.
+   *
+   * It is public — a declaration is an announcement, and a share trading EX is a fact every buyer
+   * has to know or it pays for something it will not get (D3.b).
+   */
+  readonly actions: CorporateActionReads;
   /**
    * XI-3, Banks Capital C3.b: whether some module takes charge of what happens when a party of this
    * kind fails. The estate asks it so that it can leave a bank alone without knowing what a bank is
@@ -703,6 +716,20 @@ export interface MechanismContext extends WorldReads {
    * them. What follows from it — consolidation, a board that answers, a subsidiary that can be
    * transferred out of a resolution — is what reads it.
    */
+  /**
+   * Equity D3, Reporting A3: THE BOARD DECLARES, and the payment is a later event with its own date.
+   *
+   * There was no declaration to be separate from the payment, which is why a dividend was declared
+   * and paid fifty-two times a year and why 65% of everything this world did was a dividend payout.
+   */
+  announce(decl: CorporateActionDecl): CorporateAction;
+  /** The holders are fixed: who is owed is a set of named parties now, not a date (D3). */
+  recordAction(id: CorporateActionId): CorporateAction;
+  payAction(id: CorporateActionId): CorporateAction;
+  cancelAction(id: CorporateActionId, why: string): CorporateAction;
+  /** Announced and reaching its record date now; recorded and due now. */
+  recordingOn(at: Period): readonly CorporateAction[];
+  payableOn(at: Period): readonly CorporateAction[];
   takeControl(controller: PartyId, subject: PartyId, basis: ControlBasis, why: string): void;
   /** It stops being true: the stake was sold, the contract ended, the resolution closed. */
   releaseControl(subject: PartyId, why: string): void;

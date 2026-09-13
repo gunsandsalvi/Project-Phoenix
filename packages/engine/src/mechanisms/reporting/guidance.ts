@@ -22,7 +22,7 @@ import type { PartyId } from '../../core/ids.js';
 import { dustOf, sub } from '../../core/num.js';
 import type { Outlook } from '../../world/context.js';
 import type { MechanismContext } from '../../world/context.js';
-import { quarterEndingOn, spanOf, type Quarter } from './fiscal.js';
+import { quarterEndingOn, spanOf, type Quarter } from '../../calendar/fiscal.js';
 import { about } from '../../world/context.js';
 
 /** B1: the quarter guidance is ABOUT — the one that opens the day after the one just reported. */

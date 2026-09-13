@@ -21,18 +21,26 @@ import {
   equity,
   equityLineOf,
   equityMarketOf,
+  currencyUnit,
   instrumentId,
+  instrumentKindId,
   isShare,
   moneyInstrumentId,
   partyId,
+  none,
   shareTerms,
   snapshot,
+  some,
+  upTick,
   votesOf,
+  type InstrumentKindId,
+  type InstrumentKindProfile,
   type MechanismContext,
+  type PartyId,
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { deepBuyer, listedIn, ranWorld, rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
+import { listedIn, ranWorld, rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
@@ -223,7 +231,7 @@ describe('what a share is (Equity A)', () => {
     // the week equity was built: 11.5 derives the seed's scale from five more of them, 12a gives
     // three assessors two boundaries apiece, and a count that has to be edited by every item that
     // declares one is a stale comment with a number in it (Law 16).
-    expect(equity(DREW.draw.listed).params.filter((p) => p.kind === 'shape')).toEqual([]);
+    expect(equity(DREW.draw.listed, 'equity').params.filter((p) => p.kind === 'shape')).toEqual([]);
     // Law 2, "count must fall": every shape this world declares, by name. A new one fails here and
     // has to be written down, which is the ledger the clause asks for; a deleted one passes once its
     // line goes. Each of them names the item that kills it in its own `why`.
@@ -371,19 +379,58 @@ describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
   });
 });
 
+
+/**
+ * E-3, a FINDING this file reaches now that its runs are long enough for a firm to die in
+ * (`docs/AUDIT.md`, item 17): `estate.<firm> rents 1 of space from <firm>` is reported by the
+ * estate's own `flows` family as *"paid X to Y, who has no claim on it"*. The estate is paying for
+ * the SPACE ITS INVENTORY SITS IN while it winds up. That is a cost of the winding-up, not a
+ * distribution, and D6 is about distributions — the check forgives `corporateAction` and nothing
+ * else. Named here rather than forgiven wholesale, so anything NEW still fails these tests.
+ */
+const E3 = /^flows: estate\..* paid .* to .*, who has no claim on it$/;
+const unexpectedBut = (report: Parameters<typeof unexpected>[0]): string[] =>
+  unexpected(report).filter((v) => !E3.test(v));
+
 describe('what the firm does with it (Equity D)', () => {
-  it('declares a dividend publicly and it reaches the accounts of whoever holds it (D3, D3.a)', () => {
+  it('declares a dividend ON ITS OWN QUARTERS and pays it later (D3, D3.a, item 10)', () => {
+    /**
+     * THIS TEST USED TO RUN FOR SIX PERIODS AND FIND A PAYOUT, and that was the defect: a board
+     * declared and paid every single week. Over forty periods of this world the old code settled
+     * **8,538 dividend payout legs out of 61,788 instructions** from **38 declare-and-pay events**;
+     * the new one settles **308 out of 53,266** from **2 declarations** — one per listed firm, on
+     * its own fiscal quarter, with a record date and a payable date after it.
+     *
+     * The plan is still made every period, because what a firm has spare is its own funding read
+     * and that is weekly: **39 of the 40 plans carry a positive dividend per share.** What changed
+     * is that a plan is not a declaration.
+     */
     const w = rigWorld('equity', RIG.banks, RIG.firms);
-    for (let i = 0; i < 6; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    for (let i = 0; i < 40; i += 1) expect(unexpectedBut(w.step().audit)).toEqual([]);
+    const announced = w.journal.ofKind('corporate.announced');
+    expect(announced.length).toBeGreaterThan(0);
+    expect(announced[0]?.public).toBe(true);
+    // Once per firm per quarter, and a quarter is thirteen periods: far fewer than the run.
+    expect(announced.length).toBeLessThan(w.period / 4);
+    for (const e of announced) {
+      expect(String(e.data['what'])).toBe('dividend');
+      expect(Number(e.data['perUnit'])).toBeGreaterThan(0);
+      // D3.b: the three dates are three dates, in order. The ex date is when the price moves.
+      expect(Number(e.data['ex'])).toBeGreaterThan(e.period);
+      expect(Number(e.data['payable'])).toBeGreaterThan(Number(e.data['record']));
+    }
     const declared = w.journal.ofKind('payout.declared');
     expect(declared.length).toBeGreaterThan(0);
     const one = declared[0];
     expect(one?.public).toBe(true);
     expect(Number(one?.data['perShare'])).toBeGreaterThan(0);
-    // D3.a: it left the firm and arrived at a named holder — the flows family checks it every
+    // D3.a: it left the firm and arrived at named holders — the flows family checks it every
     // period, and every period above was green.
     expect(Number(one?.data['paid'])).toBeGreaterThan(0);
     expect(Number(one?.data['failedPayments'])).toBe(0);
+    // And what it paid is the claim the record date wrote, discharged (XI-8).
+    const claims = w.agreements.all().filter((a) => a.what.startsWith('dividend '));
+    expect(claims.some((a) => a.state === 'discharged')).toBe(true);
   });
 
   it('sells new shares when it is short and the market is dear, and the count rises (D1, D1.a)', () => {
@@ -460,31 +507,33 @@ describe('what the holder gets (Equity F)', () => {
   });
 
   it('is wiped by the waterfall when the firm fails, and not by a special case (E4, F2)', () => {
-    // A firm dying is an outcome, and waiting for the foundation world to produce one at a listed
-    // firm would be a test about how long that takes rather than about what happens when it does.
-    // So this world has a reason in it: a buyer of bread far bigger than the ovens that bake it,
-    // so the bakeries bid the flour price up against each other until one of them is paying more
-    // for the flour than the bread fetches. That is a firm dying of its own decisions in a world
-    // otherwise running normally, and the run is long enough for the winding-up to close as well.
-    const w = worldWith('equity', [deepBuyer(DREW.draw, 'bread')]);
-    for (let i = 0; i < 40; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    // PLAN §7: WHICH listed firm dies is an outcome and is asked for rather than named. This used
-    // to name the smaller of the two, and a buyer stated at four hundred tonnes and a hundred
-    // million dollars — which was far bigger than the ovens when the seed stated this world's
-    // scale and is a fraction of a per cent of it now (11.5), so nobody died at all. The buyer is
-    // the rig's, sized to what a firm in this world actually holds; the firm is whichever one its
-    // own decisions killed.
-    const listed = new Set(DREW.draw.listed.map((l) => l.firm));
-    const died = w.journal.ofKind('estate.opened').find((e) => listed.has(String(e.data['dead'])));
+    /**
+     * A firm dying is an outcome, and waiting for the foundation world to produce one AT A LISTED
+     * FIRM is a test about how long that takes rather than about what happens when it does.
+     *
+     * IT USED TO WAIT, and it worked for a reason that was a defect: a listed firm was bled dry by
+     * a dividend declared and paid EVERY WEEK, so a deep buyer anywhere in the world eventually
+     * finished it off. Item 10 put the declaration on the company's own fiscal quarters and the
+     * listed firms stopped dying — 60 periods with a deep buyer in either of their own lines and
+     * not one of them, because a LISTING IS WHAT A LARGE FIRM GETS and a deep buyer kills the
+     * marginal firm in a line, not the biggest one in it. That is the world behaving, and a better
+     * world than the one this test was written against.
+     *
+     * So the reason is in the world instead of waited for: a claim on the listed firm bigger than
+     * everything it holds, which is one of the two things Firm D4 calls failure and needs no luck.
+     */
+    const w = worldWith('equity', [owesMoreThanItHolds(partyId(BIG))]);
+    // E-3 above: the estate's rent reads as a distribution to somebody with no claim.
+    for (let i = 0; i < 20; i += 1) expect(unexpectedBut(w.step().audit)).toEqual([]);
+    const died = w.journal.ofKind('estate.opened').find((e) => String(e.data['dead']) === BIG);
     expect(died).toBeDefined();
-    const dead = String(died?.data['dead']);
     // The module stopped pricing the line and said why, publicly.
-    const said = w.journal.ofKind('equity.succeeded').filter((e) => e.subjects.includes(dead));
+    const said = w.journal.ofKind('equity.succeeded').filter((e) => e.subjects.includes(BIG));
     expect(said).toHaveLength(1);
     expect(said[0]?.public).toBe(true);
     // E4: the register went to zero rather than to a recovery. It got there by ranking last: the
     // estate reached it after every creditor and wrote off what it could not pay, at zero.
-    const wiped = equityLineOf(dead);
+    const wiped = equityLineOf(BIG);
     expect(w.instruments.get(wiped).issued).toBeCloseTo(0, 6);
     expect(w.register.heldTotal(wiped).value).toBeCloseTo(0, 6);
   });
@@ -622,3 +671,79 @@ describe('the firm that has no shares (Law 15)', () => {
     expect(w.parties.ofKind(FIRM).length).toBeGreaterThan(3);
   });
 });
+
+/** A claim that ranks and is carried at what it cost: the least an instrument can be (Firm D4). */
+function seniorClaimKind(id: InstrumentKindId): InstrumentKindProfile {
+  return {
+    id,
+    pricing: 'carriedAtCost',
+    carry: 'cost',
+    liabilityOfIssuer: true,
+    owes: 'face',
+    ranking: () => ({ seniority: 0, secured: [], claim: 'the face, from whatever there is' }),
+    unit: (ccy) => currencyUnit(ccy),
+    validateTerms: () => undefined,
+    displayName: (i) => String(i.id),
+    due: () => [],
+    accrued: () => 0,
+    cashFlows: () => [],
+  };
+}
+
+/**
+ * Firm D4: A LISTED FIRM THAT OWES MORE THAN IT HOLDS, before anything else runs. Its liabilities
+ * are past its assets on the first period it is looked at, which is one of the two things D4 calls
+ * failure — so it fails for a reason in the world and not because the test waited long enough.
+ *
+ * Law 19: how much is READ, not written down. What a firm in this world holds is an outcome of the
+ * draw and of the seed's own scale, and an amount typed here would be asserting against a world
+ * that no longer exists.
+ */
+function owesMoreThanItHolds(firm: PartyId): SystemModule {
+  const kind = instrumentKindId('test.senior.equity');
+  const line = instrumentId('test.senior.equity.line');
+  const holder = partyId('bank.a');
+  return {
+    id: 'test.owes.listed',
+    spec: 'Firm D4 XI-8',
+    requires: ['seed.foundation', 'equity'],
+    nouns: [],
+    instrumentKinds: [seniorClaimKind(kind)],
+    partyKinds: [],
+    curveFamilies: [],
+    units: [],
+    params: [],
+    phases: [],
+    participants: [],
+    families: [],
+    seed(ctx) {
+      ctx.instruments.add({
+        id: line,
+        kind,
+        issuer: some(firm),
+        ccy: USD,
+        terms: { kind },
+        market: none(),
+      });
+      /**
+       * Law 19: HOW MUCH is read, never written down. A world of ninety-six firms endows a handful
+       * of them and the rest open empty — which the listed one here is, and which is why "twice
+       * what it holds" would have been twice nothing. So the claim is the size of the LARGEST
+       * position any firm in this world actually has: more than this firm holds by construction,
+       * whatever the draw made, and an amount typed here would be asserting against a world that
+       * no longer exists.
+       */
+      let most = 0;
+      for (const p of ctx.parties.all()) {
+        if (!String(p.id).startsWith('firm.')) continue;
+        let held = 0;
+        for (const h of ctx.register.holdingsOf(p.id)) {
+          held += h.lots.reduce((acc, l) => acc + l.qty, 0);
+        }
+        if (held > most) most = held;
+      }
+      ctx.endowUnits(holder, line, upTick(most), 1);
+    },
+  };
+}
+

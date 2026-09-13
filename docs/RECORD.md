@@ -4615,3 +4615,70 @@ world can name — so consolidation, ring-fencing and a resolution that sells a 
 writable. **What would falsify it:** control that is not a tree — a joint venture two parents control
 between them — which this store refuses by design, because one controller per subject is what makes
 `ultimateOf` and the consolidation well defined.
+
+
+## Item 10 — what a company does to its own claims
+
+**What.** `register/corporate.ts`: an issuer, a line, a kind
+(`dividend | split | rights | buyback | spinOff | merger`) and **four dates** — announced, ex,
+record, payable — with a state that walks `announced → recorded → paid` and will not skip a step.
+Written through `announce` / `recordAction` / `payAction` / `cancelAction`, journalled publicly, read
+through `actions` on `KernelReads` because a share trading EX is a fact every buyer has to know.
+
+**Why.** `corporateActions` was a PHASE NAME. The only data anywhere was two booleans on the
+instrument kind and a `cause` on the wire that `freight` also uses. **Period 5 settled 249,288
+instructions of which 162,615 were dividend payouts — 65% of everything the world did** — not
+because dividends matter that much, but because there was no declaration to be separate from the
+payment.
+
+**It refuses the dates out of order**, because every consequence depends on the order: a record date
+before the ex date pays the seller of a share that had already gone ex; a payable date before the
+record date pays before anybody knows who is owed.
+
+**A plan is not a declaration.** `equity.decide` still runs every period — what a firm has spare is
+its own funding read and that is weekly — but a board declares on **its own fiscal quarters**, the
+same ones it reports on. So `fiscal.ts` and `anchorOf` moved to the kernel calendar: a fiscal quarter
+is a fact about the CALENDAR and reporting was only the first thing that needed one. Leaving it in
+`reporting` would have made `equity` derive its own year ends, and one company would have had two.
+
+**Between the record date and the payment it is a LIABILITY, and that noun already existed.** On the
+record date the holders stop being a date and become named parties, so the module opens an
+`Agreement` per holder — item 8, used for what item 8 was for. A holder that dies before the payment
+does not lose it; a payment that fails leaves the claim standing.
+
+**And the payment reads the CLAIM, not the register.** A shareholder that sold the day after the
+record date is still owed and the buyer is not; re-deriving from what people hold on the payable date
+would pay exactly the wrong people (Law 19). What will not divide into whole pieces per member of a
+cell whose weight has since changed stays owed rather than being rounded away.
+
+**Measured.** Forty periods of the equity rig world: instructions **61,788 → 53,266**; dividend
+payout legs **8,538 (13.8%) → 308 (0.58%)**; declare-and-pay events **38 → 2 declarations, 2 record
+dates, 1 payment**. Plans carrying a positive dividend: 38 → 39, because the plan never stopped being
+weekly. `equity` before and after: **5 red, the same 5 test for test.** Eight new tests.
+
+**Two tests changed because their premise was the defect, and one of them found something.** The
+cadence test ran six periods and found a payout; it now runs forty and asserts the three dates. The
+waterfall test relied on a listed firm being bled dry weekly — with the cadence fixed, **no listed
+firm dies in 60 periods** with a deep buyer in either of their own lines, because a listing is what a
+LARGE firm gets and a deep buyer kills the marginal firm in a line, not the biggest. It now puts the
+reason in the world (a claim bigger than everything the firm holds) rather than waiting for one.
+
+**Found while measuring — E-3, positioned at item 17.** `estate.<firm> rents 1 of space from <firm>`
+is reported by the estate's own `flows` family as "paid X to Y, who has no claim on it". The estate
+is paying for the space its inventory sits in while it winds up. That is a cost of a winding-up, not
+a distribution, and D6 is about distributions — the check forgives `corporateAction` and nothing
+else. Named in the two tests that reach it rather than forgiven wholesale, so anything new still
+fails them.
+
+**13k is answered and was never periodicity.** `Periodicity` is a proper union in `core/rate.ts` and
+the fiscal calendar was built and unused. What was missing was this noun. The rating fee and the tax
+assessment remain genuinely periodicity and stay in 13k.
+
+**Carried.** The buyback is still decided weekly out of this week's spare cash: a buyback is an
+announced PROGRAMME executed over time, and `buyback` is a kind this store already has — it needs
+item 14's `Process`. `split` and `rights` likewise have a kind here and no caller yet.
+
+**Forecast, with its killer.** A dividend has an announcement, an ex date and a payment, so total
+return and price return can differ and a share can trade ex. **What would falsify it:** the ex date
+not actually moving the price — nothing yet reads `actions.exToday` when forming an opinion of a
+line, so the price move D3.b describes is a consequence this makes possible and does not yet produce.
