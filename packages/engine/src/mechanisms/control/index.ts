@@ -39,6 +39,7 @@ import { downTick, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide } from '../../ledger/settlement.js';
+import type { Instrument } from '../../register/instruments.js';
 import { asQty } from '../../core/tick.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -378,22 +379,38 @@ function deals(): Family {
  * with borrowed money is a credit decision somebody else takes — both are real and both are the
  * next step, and neither is invented by assuming it.
  */
-export function controlBidsFor(view: ParticipantView, ctx: MechanismContext): readonly Bid[] {
+/**
+ * Equity A1: THE LINES A BIDDER COULD BID FOR — the residual claims. A share is the residual claim
+ * and not a liability, which is the whole of what makes a firm buyable: buying every liability of a
+ * firm buys you nothing, and buying the residual buys you the firm. So what a bidder looks for is a
+ * claim ON somebody that its issuer does not owe, which the register and the kind profile already
+ * say, with nothing here branching on a kind id (Law 15).
+ *
+ * Law 18: it is the same list for every bidder, so it is found ONCE for the session rather than
+ * once per firm. Asked per firm it was a walk over every instrument in the world for each of three
+ * thousand of them, to arrive at the same handful of listed lines every time.
+ */
+export function listedLines(ctx: MechanismContext): readonly Instrument[] {
+  const out: Instrument[] = [];
+  for (const i of ctx.instruments.all()) {
+    if (!i.status.live || !i.issuer.some) continue;
+    if (ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+    out.push(i);
+  }
+  return out;
+}
+
+export function controlBidsFor(
+  view: ParticipantView,
+  ctx: MechanismContext,
+  lines: readonly Instrument[],
+): readonly Bid[] {
   const ccy = view.registry.currencyOf(view.self.region);
   const cash = view.cash(ccy);
   if (cash <= 0) return [];
   const out: Bid[] = [];
-  for (const i of ctx.instruments.all()) {
-    /**
-     * Equity A1: A SHARE IS THE RESIDUAL CLAIM AND NOT A LIABILITY, which is the whole of what
-     * makes a firm buyable: buying every liability of a firm buys you nothing, and buying the
-     * residual buys you the firm. So what a bidder looks for is a claim ON somebody that its issuer
-     * does not owe — which the register and the kind profile already say, with nothing here
-     * branching on a kind id (Law 15).
-     */
-    if (!i.status.live || !i.issuer.some) continue;
-    if (ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
-    const target = i.issuer.value;
+  for (const i of lines) {
+    const target = i.issuer.some ? i.issuer.value : view.self.id;
     if (target === view.self.id) continue;
     const worth = worthToBuyer(view, ctx, target, i.id);
     if (!worth.some) continue;
@@ -433,9 +450,11 @@ export function control(): SystemModule {
         anchor: { before: 'lending.book' },
         cycle: 'anchor',
         run: (ctx: MechanismContext): void => {
+          const lines = listedLines(ctx);
+          if (lines.length === 0) return;
           for (const p of ctx.parties.ofKind(FIRM)) {
             if (!p.status.alive) continue;
-            for (const bid of controlBidsFor(ctx.participant(p.id), ctx)) runTender(ctx, bid);
+            for (const bid of controlBidsFor(ctx.participant(p.id), ctx, lines)) runTender(ctx, bid);
           }
         },
       },

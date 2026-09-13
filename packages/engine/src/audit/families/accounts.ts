@@ -20,7 +20,6 @@
  * sum over accounts that moved hundreds of times, and a tolerance that saw only the sum reports a
  * violation the moment the world starts paying itself.
  */
-import { issuedBy } from '../../register/instruments.js';
 import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
@@ -46,7 +45,7 @@ export interface BalanceReads {
   readonly period: Period;
   readonly registry: AuditView['registry'];
   readonly parties: { get: AuditView['parties']['get'] };
-  readonly instruments: Pick<AuditView['instruments'], 'all' | 'get'>;
+  readonly instruments: Pick<AuditView['instruments'], 'all' | 'get' | 'issuedBy'>;
   readonly register: Pick<
     AuditView['register'],
     'holdingsOf' | 'holdersOf' | 'holding' | 'moneyWalk'
@@ -114,9 +113,15 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
     if (worth >= 0) assetTerms.push(worth);
     else contractLiabilities.push(-worth);
   }
-  for (const inst of view.instruments.all()) {
-    if (!issuedBy(inst, party) || !view.registry.instrumentKind(inst.kind).liabilityOfIssuer)
-      continue;
+  /**
+   * Law 18: WHAT THIS PARTY ISSUED, asked of the index that already answers it. This used to walk
+   * every instrument in the world for every party, which is parties times instruments once a period
+   * — three thousand parties against five thousand lines is fifteen million visits to find each
+   * party's handful of liabilities. `Instruments` has kept a `byIssuer` index since it was written;
+   * this is the one read that was not using it.
+   */
+  for (const inst of view.instruments.issuedBy(party)) {
+    if (!view.registry.instrumentKind(inst.kind).liabilityOfIssuer) continue;
     const isMoney = view.registry.instrumentKind(inst.kind).pricing === 'money';
     for (const holder of view.register.holdersOf(inst.id)) {
       const h = view.register.holding(holder, inst.id);

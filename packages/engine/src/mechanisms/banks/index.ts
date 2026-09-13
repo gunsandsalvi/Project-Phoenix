@@ -593,15 +593,12 @@ function write(
  * that is not its own — so the register answers, not the terms (Law 19).
  */
 function lineOf(ctx: MechanismContext, bank: PartyId, borrower: PartyId): Instrument | undefined {
+  // Law 18, A1: a loan is ISSUED BY ITS BORROWER — the borrower owes the money — so the rows that
+  // could be this borrower's line are the rows it issued, which the register indexes. Scanning every
+  // instrument in the world to find them was a walk per request.
   return ctx.instruments
-    .all()
-    .find(
-      (i) =>
-        i.status.live &&
-        isLoan(i.terms) &&
-        i.terms.borrower === borrower &&
-        ctx.register.quantity(bank, i.id) > 0,
-    );
+    .issuedBy(borrower)
+    .find((i) => i.status.live && isLoan(i.terms) && ctx.register.quantity(bank, i.id) > 0);
 }
 
 /**

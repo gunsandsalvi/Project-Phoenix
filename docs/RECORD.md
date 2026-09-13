@@ -3883,3 +3883,32 @@ profile is now flat — nothing above 3%, where it opened with a sixth of the ti
 Per period, 52.4 ms to 33.4 on the median and 48.8 to 29.6 on the minimum of five runs, which is
 **about 39% off** the number least disturbed by a noisy machine. Every step gated on the same
 digest: 4,041 instructions, 347 instruments, every market outcome, price and audit total identical.
+
+
+## Law 18 — the scans that grew with the world
+
+**The rig is 179 parties and the world is 3,169**, so the last round went looking for traversals
+that grow with size rather than costs that show on a small clock. Counting calls at two sizes said
+nothing was superlinear in call COUNT — but three reads walked every instrument in the world from
+inside a per-party loop, which is the product that does not show until the world is big.
+
+**The accounts family was the worst of them.** `balanceSheet` found a party's liabilities by walking
+every instrument and asking whether this party issued it — once per party, once a period. At real
+scale that is three thousand parties against five thousand lines, fifteen million visits a period,
+to find each party's handful of liabilities. `Instruments` has kept a `byIssuer` index since it was
+written; this was the one read not using it.
+
+**A loan is issued by its borrower**, because the borrower owes the money — so the rows that could be
+a borrower's line at a bank are the rows that borrower issued, and `lineOf` can ask the same index
+instead of scanning the world once per credit request.
+
+**And the list of listed lines is the same list for every bidder.** `controlBidsFor` worked out which
+instruments are residual claims — a claim on somebody its issuer does not owe — for each firm in
+turn, arriving at the same handful of lines three thousand times. It is found once for the session
+and handed in.
+
+**Measured**: full scans of the instrument register fell from 530 to 439 a period at twelve firms
+and from 660 to 525 at twenty-four, and the ones removed are precisely the per-party ones, so what
+flattens is the growth rather than the level. **Gate**: the same digest again, which mattered more
+here than elsewhere — `reseat` moves a line to the end of its new issuer's bucket, so an estate
+assuming paper could have changed the order a sum was taken in, and the hash says it did not.
