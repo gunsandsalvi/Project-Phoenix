@@ -146,8 +146,22 @@ export function weightOf(p: Party): number {
   return p.representation === 'cell' ? p.weight : 1;
 }
 
+const EMPTY_PARTIES: readonly Party[] = [];
+
 export class Parties {
   private readonly map = new Map<PartyId, Party>();
+  /**
+   * Law 18: the same parties under a second arrangement — their IDS by kind, in the order they were
+   * added. `ofKind` used to spread the whole map into an array and filter it twice on every call,
+   * and modules ask it inside loops, so a world of three thousand parties walked three thousand of
+   * them to find its banks each time.
+   *
+   * It holds IDS and never objects, which is what keeps it honest: a party is frozen and REPLACED
+   * when its weight moves or it ceases, so a bucket of objects would go stale the first time one
+   * did. A bucket of ids is resolved through the map at read, so the answer is always current.
+   * One writer — `add`, where a party's kind is settled and never changes again (Law 4).
+   */
+  private readonly byKind = new Map<PartyKindId, PartyId[]>();
 
   constructor(private readonly registry: Registry) {}
 
@@ -167,6 +181,9 @@ export class Parties {
       forbid(faults.length === 0, 'XI-15', faults.join('; '), { id: p.id });
     }
     this.map.set(p.id, Object.freeze({ ...p }));
+    const ofItsKind = this.byKind.get(p.kind);
+    if (ofItsKind === undefined) this.byKind.set(p.kind, [p.id]);
+    else ofItsKind.push(p.id);
   }
 
   has(id: PartyId): boolean {
@@ -207,7 +224,14 @@ export class Parties {
 
   /** Alive parties of one kind, in insertion order (deterministic). */
   ofKind(kind: PartyKindId): readonly Party[] {
-    return this.alive().filter((p) => p.kind === kind);
+    const ids = this.byKind.get(kind);
+    if (ids === undefined) return EMPTY_PARTIES;
+    const out: Party[] = [];
+    for (const id of ids) {
+      const p = this.map.get(id);
+      if (p?.status.alive === true) out.push(p);
+    }
+    return out;
   }
 
   /**

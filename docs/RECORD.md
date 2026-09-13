@@ -3854,3 +3854,32 @@ the cheap-looking change has to earn it on the clock.
 **Gate**: the same digest as before, 4,041 instructions and 347 instruments over twelve periods.
 **Result**: 41.0 ms a period to about 36, and 52.4 to 36 across the two Law 18 changes together —
 roughly a third off, with the minimum of five runs going 48.8 to 32.6.
+
+
+## Law 18 — the two reads the period loop makes most often
+
+**A sum of whole pieces has no dust.** `register.quantity` was the most expensive read in the engine
+at 3.7% of the period. It allocated an array of lot quantities and handed it to `sum`, which is
+compensated summation with a finiteness check and a magnitude walk on every term — exactly right for
+money, where a total carries the rounding of everything that made it, and unnecessary here: a lot's
+quantity is a `Qty`, a whole number of the unit's indivisible pieces, and adding whole numbers is
+exact. The compensation term Kahan accumulates is identically zero on integers, so the answer is the
+same to the bit; `asQty` still refuses a total that has left the range integers are exact in, which
+is the one case where the question arises at all. Measured in isolation at **92.3 ns against 23.5**,
+identical on 20,000 random integer holdings. `encumbered` is the same read of the liens.
+
+**`ofKind` walked the world to find its banks.** It spread the whole party map into an array and
+filtered it twice, on every call — and modules ask it inside loops, so a world of three thousand
+parties walked three thousand of them each time. There is now an index of party IDS by kind, in the
+order they were added, written in `add` where a party's kind is settled and never changes again.
+
+It holds IDS and never objects, and that is what keeps it honest: a party is frozen and REPLACED
+when its weight moves or it ceases, so a bucket of objects would go stale the first time one did. A
+bucket of ids is resolved through the map at read, so the answer is always current, and the
+insertion order the old filter produced is the order the bucket is in.
+
+**Where this leaves it.** Engine self-time over sixty periods fell from 5,159 ms to 4,246, and the
+profile is now flat — nothing above 3%, where it opened with a sixth of the time in date arithmetic.
+Per period, 52.4 ms to 33.4 on the median and 48.8 to 29.6 on the minimum of five runs, which is
+**about 39% off** the number least disturbed by a noisy machine. Every step gated on the same
+digest: 4,041 instructions, 347 instruments, every market outcome, price and audit total identical.

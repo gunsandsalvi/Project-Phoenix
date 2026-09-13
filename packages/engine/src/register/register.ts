@@ -174,9 +174,26 @@ export class Register {
    * so what it reads back is a quantity and carries the type that says so. Everything computed FROM
    * it that involves a division is not, and has to say which way it rounds (core/tick.ts).
    */
+  /**
+   * Law 7, Law 18: THERE IS NO DUST IN A SUM OF WHOLE PIECES, so this adds them up and says so.
+   *
+   * `sum` is compensated summation with a finiteness check and a magnitude walk on every term, and
+   * it is exactly right for money, where a total carries the rounding of everything that made it.
+   * A lot's quantity is not that: it is a `Qty`, a whole number of the unit's indivisible pieces
+   * (Money A2), and adding whole numbers is exact — the compensation term Kahan accumulates is
+   * identically zero on integers, so the answer is the same to the bit. `asQty` still refuses a
+   * total that has left the range integers are exact in, which is the one case where the question
+   * arises at all.
+   *
+   * At 3.7% of the period this was the most expensive read in the engine, and most of that was the
+   * array `map` allocated to hand the lots to an iterator.
+   */
   quantity(holder: PartyId, instrument: InstrumentId): Qty {
     const h = this.byHolder.get(holder)?.get(instrument);
-    return h === undefined ? NO_QTY : asQty(sum(h.lots.map((l) => l.qty)).value, 'units held');
+    if (h === undefined) return NO_QTY;
+    let held = 0;
+    for (const lot of h.lots) held += lot.qty;
+    return asQty(held, 'units held');
   }
 
   /** Units held by the whole party: weight x member (XI-15). A weight is a count of people. */
@@ -188,9 +205,13 @@ export class Register {
     );
   }
 
+  /** D5: units bound by a lien — whole pieces again, and exact for the same reason as above. */
   encumbered(holder: PartyId, instrument: InstrumentId): Qty {
     const h = this.byHolder.get(holder)?.get(instrument);
-    return h === undefined ? NO_QTY : asQty(sum(h.liens.map((l) => l.qty)).value, 'units bound');
+    if (h === undefined) return NO_QTY;
+    let bound = 0;
+    for (const lien of h.liens) bound += lien.qty;
+    return asQty(bound, 'units bound');
   }
 
   /** D5.a: free units are held minus encumbered, and only free units can move. */
