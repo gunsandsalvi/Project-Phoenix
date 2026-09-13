@@ -3790,3 +3790,39 @@ were out by exactly their wage bill, which is how the case was found.
 **Placed rather than built**: hedge funds, private equity and the insurer's matching asset side came
 in from 13h; sourcing across regions, foreign-currency issuance and the central-bank swap line
 (**M3**, **M6**) stay carried in the worklist.
+
+
+## Law 18 — the schedule a line cannot change, computed once
+
+**Measured first, on the compiled build.** At rig scale one period was 52 ms, and the profile put a
+sixth of engine self-time in date arithmetic: `dayNumber` 4.3%, `compareCivil` 3.8%, `cashFlowsOf`
+3.3%, `addMonths` 2.2%, `calendar.schedule` 1.6%, `civil` 1.2%, `yearFraction` 0.9%. Counting the
+calls said why: `couponDatesOf` ran **3,003 times a period and built 48,162 dates**, in a world with
+about thirty bonds in it, and `compareCivil` ran **99,580 times** with 93 parties on the books.
+
+**Two things were wrong and they were the same thing.** `dueOf` and `cashFlowsOf` each walked a
+line's schedule and each worked the coupon out with its own copy of one formula — two writers of
+"what this coupon comes to" (Law 4), the kind of pair that drifts the day somebody fixes a day count
+in one of them. And both regenerated the whole schedule from issue to maturity on every call, every
+period, for every read: the curve, the revaluation, `due`, `accrued`.
+
+A line's schedule CANNOT change: the terms are fixed at issuance and the calendar is the world's one
+calendar. So it is computed once and read thereafter, keyed weakly on the terms and the calendar —
+the two identities that decide the answer — which is the ledger's own pattern (`byPeriod`,
+`failedBy`): the same facts under a second arrangement, written where they are first computed, one
+writer, nothing that can go stale, and a line that ceases takes its schedule with it.
+
+**`compareCivil` was converting twice to answer a question about order.** It called `dayNumber` on
+both dates — ten `Math.floor`s and a couple of dozen operations — where a calendar answers by
+reading three fields in order. Measured at **46.1 ns against 22.0 ns**, and the signs agree on all
+143,000 pairs of a date grid, which is the behaviour gate for it. Every caller in the codebase uses
+the sign — a comparison or a sort comparator — and none reads the magnitude as a day count, which
+the comment now says out loud.
+
+**The gate.** Not "the same tests pass" but the same WORLD: twelve periods of the rig, digesting
+every market outcome and price, every audit total, every settled instruction and every issued
+amount. Before and after are the same hash — 4,041 instructions, 347 instruments, identical. Law 18
+asks for behaviour, not bits, and this is the stronger of the two.
+
+**The result: 52.4 ms a period to 41.0 ms, 22% off**, with the least noisy number — the minimum of
+five runs — going 48.8 to 37.6.

@@ -92,8 +92,24 @@ export function addDays(c: Civil, days: number): Civil {
   return fromDayNumber(dayNumber(c) + days);
 }
 
+/**
+ * Money G3, Law 18: WHICH DAY IS EARLIER. The ORDER of two dates and nothing else — the sign is the
+ * answer and the magnitude is not a day count; `dayNumber` is where a distance in days comes from.
+ *
+ * It used to convert both dates to day numbers and subtract, which is two civil-to-serial
+ * conversions — ten `Math.floor`s and a couple of dozen operations — to answer a question that a
+ * calendar answers by reading three fields in order. It is called from inside every coupon
+ * schedule, every cash-flow walk and every `due` check in the world, and at 3.8% of engine time it
+ * was the second most expensive leaf there is.
+ *
+ * Nothing about the answer changes: for every valid civil date, comparing (y, m, d) in order gives
+ * the same sign as comparing the days they land on, because that is what a calendar IS. Law 18:
+ * gate on behaviour, not bits.
+ */
 export function compareCivil(a: Civil, b: Civil): number {
-  return dayNumber(a) - dayNumber(b);
+  if (a.y !== b.y) return a.y - b.y;
+  if (a.m !== b.m) return a.m - b.m;
+  return a.d - b.d;
 }
 
 export function formatCivil(c: Civil): string {

@@ -77,13 +77,67 @@ export function validateDates(issue: Civil, maturity: Civil, what: string): void
  * drift (Money G3.a); a read of the terms, never stored.
  */
 export function couponDatesOf(t: CouponSchedule, cal: ScheduleCalendar): readonly Civil[] {
-  return cal.schedule(t.issueDate, t.maturity, t.couponPeriodicity);
+  return scheduleOf(t, cal).map((f) => f.date);
 }
 
 /** What this file needs of a calendar, and nothing else: it is registry data, not the period loop. */
 export interface ScheduleCalendar {
   schedule(from: Civil, to: Civil, per: Periodicity): readonly Civil[];
   periodOf(date: Civil): number;
+}
+
+/** One dated coupon of a line: when it falls, what it comes to per unit, and the period it is in. */
+interface Coupon {
+  readonly date: Civil;
+  readonly perUnit: number;
+  readonly period: number;
+}
+
+/**
+ * Bond N5.a, N6, Law 4, Law 18: WHAT THIS LINE PAYS AND WHEN — computed once per line and read
+ * thereafter.
+ *
+ * TWO THINGS WERE WRONG AND THEY WERE THE SAME THING. `dueOf` and `cashFlowsOf` each walked the
+ * schedule and each worked the coupon out with its own copy of one formula — two writers of "what
+ * this coupon comes to" (Law 4), which is exactly the kind of pair that drifts the day somebody
+ * fixes a day count in one of them. And both regenerated the whole schedule from issue to maturity
+ * on every call: measured at rig scale, `couponDatesOf` ran 3,003 times a period and built 48,162
+ * dates, in a world with about thirty bonds in it. Every one of those dates costs an `addMonths`, a
+ * `dayNumber` and a `civil`, which is why date arithmetic was a sixth of engine time.
+ *
+ * A LINE'S SCHEDULE CANNOT CHANGE. The terms are fixed at issuance and the calendar is the world's
+ * one calendar, so this is the ledger's own pattern (`byPeriod`, `failedBy`): the same facts under
+ * a second arrangement, written where they are first computed, with one writer and nothing that can
+ * go stale. Keyed on the terms object and the calendar, both of which are the identities that
+ * decide the answer; weakly, so a line that ceases takes its schedule with it.
+ *
+ * Law 18: mechanisms, economics and boundaries are untouched. What changed is how often the same
+ * arithmetic is done.
+ */
+const schedules = new WeakMap<ScheduleCalendar, WeakMap<CouponSchedule, readonly Coupon[]>>();
+
+function scheduleOf(t: CouponSchedule, cal: ScheduleCalendar): readonly Coupon[] {
+  let byTerms = schedules.get(cal);
+  if (byTerms === undefined) {
+    byTerms = new WeakMap<CouponSchedule, readonly Coupon[]>();
+    schedules.set(cal, byTerms);
+  }
+  const held = byTerms.get(t);
+  if (held !== undefined) return held;
+  const out: Coupon[] = [];
+  let prev = t.issueDate;
+  for (const date of cal.schedule(t.issueDate, t.maturity, t.couponPeriodicity)) {
+    // N6: the coupon for the accrual period, by the instrument's own day count (G3.c). ONE
+    // statement of it, which both of the reads below now use.
+    out.push({
+      date,
+      perUnit: mul(t.coupon.amount, yearFraction(t.dayCount, prev, date), 'coupon'),
+      period: cal.periodOf(date),
+    });
+    prev = date;
+  }
+  byTerms.set(t, out);
+  return out;
 }
 
 /** N6, N10: what falls due in a period — each coupon by its own accrual, and par at maturity. */
@@ -93,15 +147,12 @@ export function dueOf(
   cal: ScheduleCalendar,
 ): readonly DueAction[] {
   const out: DueAction[] = [];
-  let prev = t.issueDate;
-  for (const date of couponDatesOf(t, cal)) {
-    if (cal.periodOf(date) === period) {
-      const amountPerUnit = mul(t.coupon.amount, yearFraction(t.dayCount, prev, date), 'coupon');
-      // N6: a coupon of nothing is not a payment. A zero-coupon line is the ordinary shape of paper
-      // an issuer brings when the market will pay above par for the principal alone.
-      if (amountPerUnit > 0) out.push({ kind: 'coupon', date, amountPerUnit });
+  for (const c of scheduleOf(t, cal)) {
+    // N6: a coupon of nothing is not a payment. A zero-coupon line is the ordinary shape of paper
+    // an issuer brings when the market will pay above par for the principal alone.
+    if (c.period === period && c.perUnit > 0) {
+      out.push({ kind: 'coupon', date: c.date, amountPerUnit: c.perUnit });
     }
-    prev = date;
   }
   if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
   return out.sort((a, b) => compareCivil(a.date, b.date));
@@ -113,9 +164,9 @@ export function dueOf(
  */
 export function accruedOf(t: CouponSchedule, on: Civil, cal: ScheduleCalendar): number {
   let prev = t.issueDate;
-  for (const date of couponDatesOf(t, cal)) {
-    if (compareCivil(date, on) > 0) break;
-    prev = date;
+  for (const c of scheduleOf(t, cal)) {
+    if (compareCivil(c.date, on) > 0) break;
+    prev = c.date;
   }
   if (compareCivil(on, prev) <= 0) return 0;
   return mul(t.coupon.amount, yearFraction(t.dayCount, prev, on), 'accrued');
@@ -131,14 +182,10 @@ export function cashFlowsOf(
   cal: ScheduleCalendar,
 ): readonly CashFlow[] {
   const out: CashFlow[] = [];
-  let prev = t.issueDate;
-  for (const date of couponDatesOf(t, cal)) {
-    const coupon = mul(t.coupon.amount, yearFraction(t.dayCount, prev, date), 'coupon');
-    const isMaturity = compareCivil(date, t.maturity) === 0;
-    if (compareCivil(date, after) > 0) {
-      out.push({ date, perUnit: isMaturity ? add(coupon, 1, 'final flow') : coupon });
-    }
-    prev = date;
+  for (const c of scheduleOf(t, cal)) {
+    if (compareCivil(c.date, after) <= 0) continue;
+    const isMaturity = compareCivil(c.date, t.maturity) === 0;
+    out.push({ date: c.date, perUnit: isMaturity ? add(c.perUnit, 1, 'final flow') : c.perUnit });
   }
   return out;
 }
