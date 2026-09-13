@@ -4082,3 +4082,54 @@ checks including a rig world that opens and steps a period with every store on t
 before it, and they are `docs/AUDIT.md` C-1's "a test that named the world it was written against"
 (a small assembled world compared against a phase list from the foundation world). Measured both
 ways rather than assumed.
+
+
+## Item 1 — reach: what was declared, against what has ever come of it
+
+**What.** `world/reach.ts`. Every capability this world declares is named before anything runs, and
+what has ever come of it is counted. Published every period in the audit report's reads. **Measured
+on the rig at three periods: 397 declared, 221 never reached.**
+
+**The plan said "one audit family" and the spec forbids it.** Audit **E1**: the audit *"cannot find
+an absence — no invariant fires because credit has no price or because a currency market does not
+exist; there is nothing to be inconsistent with."* **E2** separates the two jobs: the audit measures
+CONSISTENCY and the requirement document measures COMPLETENESS, and neither substitutes for the
+other. A never-reached capability is an absence. So it is a READ — one of the standing measurements
+the report already carries (Part XII) — and it feeds `docs/COVERAGE.md`, which is where completeness
+lives. Found by reading the spec section before building, which is the point of reading it.
+
+**Seven kinds, and only two of them are tallied.** What a participant posted and whether a module's
+own store was opened have no store behind them, so the world records those as they happen. The other
+five are DERIVED at read time from the stores that already hold the answer — an instrument kind has
+reached the world when one of its instruments exists, a party kind when one of its parties does, a
+derivative kind when one of its contracts has opened, a market when it has printed a price
+`wasTraded` says is a trade. A carried mark is the market saying it did NOT clear, and counting one
+would count the refusal as the outcome (Law 3, E4). No second copy of any fact (Law 4, Law 19).
+
+**Every row has an owner**, which meant stamping one on participant and venue-participant
+declarations the way `addPhase` already did. A finding with nobody to answer for it is not a finding
+(Audit D2).
+
+**What the first run found, in one period, that three reads of the source had found one at a time:**
+`instrumentKind:corporate.bond`; `partyKind:insurance` and `instrumentKind:policy`;
+`participant:banks/bank`; `venueParticipant:housing/household`; **all nine** derivative kinds;
+`partyKind:vehicle`; `repo`, `tranche`, `margin.claim`, `defaultFund.contribution`,
+`closeOut.claim`; two module stores never opened; and 190 markets that have never printed a cleared
+price. Each of those cost a day of reading and is now a line in a report that runs every period.
+
+**Closed:** **B-10** ("checks green" satisfied by families that cannot fail), **B-12** (99 `MET` on
+never-producing mechanisms), **A-69** (dead entry points), **C-5** (params never read), **C-6**
+(margin refusals). Their whole content was invisibility, and it is gone.
+
+**Not closed, and the item stays open for it.** The read NAMES twenty dead capabilities; it does not
+build them. Each is carried by name to the item that owns it. And deriving `docs/COVERAGE.md`'s `MET`
+from the read rather than from the presence of an `@spec` tag needs `coverage:spec` to run a world —
+a tooling change, carried to item 18.
+
+**Forecast, with its killer.** From here a sector cannot be built, cited, marked `MET` and left dead
+without the report saying so every period. **What would falsify it:** a capability that produces
+something the seven kinds cannot see — most likely an outcome that is neither an order, a print, an
+instrument, a party, a contract nor a store write.
+
+**Green:** lint, typecheck, spec citations, forbids, plan progress, 51 tests. `world.test.ts`'s five
+reds are the same five that fail two commits back (C-1) and are not this item's.

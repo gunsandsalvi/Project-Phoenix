@@ -66,6 +66,8 @@ export interface PhaseDecl {
  * something the party may not see.
  */
 export interface ParticipantDecl {
+  /** The module that declared it, stamped by the kernel so a never-reached one has an owner. */
+  readonly owner?: string;
   readonly partyKind: PartyKindId;
   /**
    * Spot FX D1, Clearing B2, Law 15: WHICH SORT OF MARKET THIS PARTICIPANT IS ASKED ABOUT — the
@@ -142,6 +144,8 @@ export interface ParticipantDecl {
  * exactly as a market's does; the venue's module asks for them (`gather`) and clears what it gets.
  */
 export interface VenueParticipantDecl {
+  /** The module that declared it, stamped by the kernel so a never-reached one has an owner. */
+  readonly owner?: string;
   readonly partyKind: PartyKindId;
   orders(view: ParticipantView, venue: VenueDecl): readonly Order[];
 }

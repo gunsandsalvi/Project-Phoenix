@@ -90,10 +90,22 @@ export function assemble(spec: AssemblySpec): World {
     calendar,
     families: modules.flatMap((m) => m.families),
   });
+  // Audit E2: every capability this assembly declares, named before anything runs, so a sector
+  // that never produces an outcome is a MEASURED state and not a thing somebody has to notice.
+  world.declareCapability('instrumentKind', String(moneyKind.id), 'kernel');
+  for (const m of modules) {
+    for (const k of m.instrumentKinds) world.declareCapability('instrumentKind', String(k.id), m.id);
+    for (const k of m.partyKinds) world.declareCapability('partyKind', String(k.id), m.id);
+    for (const k of m.derivativeKinds ?? [])
+      world.declareCapability('derivativeKind', String(k.id), m.id);
+    for (const n of m.nouns ?? []) world.declareCapability('store', `${m.id}/${n.name}`, m.id);
+  }
+  for (const k of KERNEL_PARTY_KINDS) world.declareCapability('partyKind', String(k.id), 'kernel');
+
   for (const m of modules) {
     for (const p of m.phases) world.addPhase(p, m.id);
-    for (const p of m.participants) world.addParticipant(p);
-    for (const p of m.venueParticipants ?? []) world.addVenueParticipant(p);
+    for (const p of m.participants) world.addParticipant(p, m.id);
+    for (const p of m.venueParticipants ?? []) world.addVenueParticipant(p, m.id);
     const outlooks = m.outlooks;
     if (outlooks !== undefined) world.provideOutlooks(m.id, outlooks);
     for (const d of m.creditDecisions ?? []) world.provideCreditDecision(m.id, d.partyKind, d.decide);

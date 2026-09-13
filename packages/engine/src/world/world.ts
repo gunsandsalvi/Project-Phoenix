@@ -61,7 +61,7 @@ import { Ledger } from '../ledger/ledger.js';
 import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
 import { type CurveFamilyDecl, type CurveRead, readCurve } from '../prices/curve.js';
-import { PriceStore, type Print } from '../prices/price-store.js';
+import { PriceStore, type Print, wasTraded } from '../prices/price-store.js';
 import { Valuation } from '../prices/value.js';
 import { Instruments } from '../register/instruments.js';
 import { Register, type RegisterReads, registerReads } from '../register/register.js';
@@ -76,6 +76,7 @@ import {
 import type { Contract, ContractReads, Underlying } from '../registry/derivatives.js';
 import type { ParamRegister } from '../registry/params.js';
 import type { OntologyRegister } from '../registry/nouns.js';
+import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -150,6 +151,15 @@ export interface WorldSpec {
   readonly families: readonly Family[];
 }
 
+/**
+ * A declared participation, named by who declared it and for whom. Two declarations by one module
+ * for one party kind in one sort of market are ONE capability here, deliberately: what is being
+ * measured is whether that module's parties ever post, and splitting it by closure identity would
+ * report a thing no reader could act on.
+ */
+const declId = (owner: string, kind: PartyKindId, market?: string): string =>
+  market === undefined ? `${owner}/${kind}` : `${owner}/${kind}/${market}`;
+
 export class World {
   readonly seed: string;
   readonly registry: Registry;
@@ -186,6 +196,12 @@ export class World {
   private readonly participantDecls: ParticipantDecl[] = [];
   private readonly venueParticipantDecls: VenueParticipantDecl[] = [];
   /** Clearing B2: the venues whose schedules have been gathered this period, so they are asked once. */
+  /**
+   * Audit E1, E2: what this world declared it could do, against what has ever come of it. It is a
+   * READ and never a family, because the audit cannot find an absence and this is nothing else.
+   */
+  private readonly reachTally = new Reach();
+
   private readonly gathered = new Set<VenueId>();
   /** Module-owned state, keyed by the module that owns it (Law 4: one writer each). */
   /**
@@ -446,6 +462,8 @@ export class World {
   }
 
   addMarket(m: MarketDecl): void {
+    // Every market in this world is opened through the seed, which is the one thing that owns one.
+    this.reachTally.declare('market', String(m.id), 'seed');
     forbid(!this.marketList.some((x) => x.id === m.id), 'Law 4', `market ${m.id} declared twice`);
     const pair = pairOf(m);
     if (pair !== undefined) {
@@ -538,6 +556,7 @@ export class World {
    */
   private slot<T extends object>(owner: string, name: string, initial: () => T): T {
     this.nouns.declared(owner, name);
+    this.reachTally.produced('store', `${owner}/${name}`, 1, this.currentPeriod);
     let mine = this.slots.get(owner);
     if (mine === undefined) {
       mine = new Map<string, object>();
@@ -931,17 +950,29 @@ export class World {
   }
 
   /** A module's participants: evaluated per party of the kind with that party's own view (Clearing B2). */
-  addParticipant(p: ParticipantDecl): void {
+  /**
+   * Audit E2: a capability exists from the moment it is declared. Assembly says so for the kinds
+   * nothing else announces — an instrument kind, a party kind, a derivative kind, a module's own
+   * store — so that "never reached" is a state with a name on it rather than a silence.
+   */
+  declareCapability(kind: CapabilityKind, id: string, owner: string): void {
+    forbid(!this.sealed, 'Law 10', 'capabilities are declared at assembly');
+    this.reachTally.declare(kind, id, owner);
+  }
+
+  addParticipant(p: ParticipantDecl, owner: string): void {
     forbid(!this.sealed, 'Law 10', 'participants are declared at assembly');
     this.registry.partyKind(p.partyKind);
-    this.participantDecls.push(p);
+    this.reachTally.declare('participant', declId(owner, p.partyKind, p.in), owner);
+    this.participantDecls.push({ ...p, owner });
   }
 
   /** Clearing B2: a module's venue schedules, evaluated per party of the kind with its own view. */
-  addVenueParticipant(p: VenueParticipantDecl): void {
+  addVenueParticipant(p: VenueParticipantDecl, owner: string): void {
     forbid(!this.sealed, 'Law 10', 'participants are declared at assembly');
     this.registry.partyKind(p.partyKind);
-    this.venueParticipantDecls.push(p);
+    this.reachTally.declare('venueParticipant', declId(owner, p.partyKind), owner);
+    this.venueParticipantDecls.push({ ...p, owner });
   }
 
   /**
@@ -965,7 +996,14 @@ export class World {
       for (const party of this.parties.ofKind(p.partyKind)) {
         // Money E4: a ceased party takes no part. What it held is its estate's now (XI-8).
         if (!party.status.alive) continue;
-        for (const o of p.orders(this.participantView(party.id), decl)) this.post(venue, o);
+        const posted = p.orders(this.participantView(party.id), decl);
+        this.reachTally.produced(
+          'venueParticipant',
+          declId(p.owner ?? 'kernel', p.partyKind),
+          posted.length,
+          this.currentPeriod,
+        );
+        for (const o of posted) this.post(venue, o);
       }
     }
   }
@@ -1923,6 +1961,12 @@ export class World {
         // estate's now, and the estate posts its own orders under its own name (XI-8).
         if (!party.status.alive) continue;
         const posted = decl.orders(this.participantView(party.id), m);
+        this.reachTally.produced(
+          'participant',
+          declId(decl.owner ?? 'kernel', decl.partyKind, decl.in),
+          posted.length,
+          this.currentPeriod,
+        );
         if (posted.length > 0 && decl.speculative === true) {
           withAView = true;
         }
@@ -1980,6 +2024,43 @@ export class World {
     });
   }
 
+  /**
+   * Audit E1, E2, Part XII: WHAT WAS DECLARED, AGAINST WHAT HAS EVER COME OF IT.
+   *
+   * Five of the seven kinds are derived here rather than tallied, because the stores already hold
+   * the answer and a second copy of a fact is the defect this project hunts (Law 4, Law 19). An
+   * instrument kind has reached the world when one of its instruments exists; a party kind when one
+   * of its parties does; a derivative kind when one of its contracts has opened; a market when it
+   * has printed a cleared price. Only what a participant POSTED and whether a module's own store was
+   * ever opened have no store behind them, and those two are tallied as they happen.
+   */
+  reach(): readonly Capability[] {
+    const kinds = new Set<string>();
+    for (const i of this.instruments.all()) kinds.add(String(i.kind));
+    this.reachTally.fold('instrumentKind', kinds, this.currentPeriod);
+    const parties = new Set<string>();
+    for (const p of this.parties.all()) parties.add(String(p.kind));
+    this.reachTally.fold('partyKind', parties, this.currentPeriod);
+    const derivatives = new Set<string>();
+    for (const c of this.contractStore.all()) derivatives.add(String(c.kind));
+    this.reachTally.fold('derivativeKind', derivatives, this.currentPeriod);
+    // A market has reached the world when it has printed a CLEARED price. A stale print is the
+    // market saying it did not clear, and counting it would be counting the refusal as the outcome.
+    const printed = new Set<string>();
+    for (const m of this.marketList) {
+      for (const print of this.prices.history(m.instrument)) {
+        // `wasTraded`: a level real supply met real demand at. A carried mark is the market saying
+        // it did NOT clear, and counting one would count the refusal as the outcome (Law 3, E4).
+        if (print.market === m.id && wasTraded(print)) {
+          printed.add(String(m.id));
+          break;
+        }
+      }
+    }
+    this.reachTally.fold('market', printed, this.currentPeriod);
+    return this.reachTally.all();
+  }
+
   private reads(): Reads {
     const populations = new Map<string, number>();
     for (const p of this.parties.alive()) {
@@ -1998,6 +2079,8 @@ export class World {
         .filter((r) => r.outcome === 'failed').length,
       placeholders: params.counts.placeholder,
       shapes: params.counts.shape,
+      reach: reachOf(this.reach()),
+      nouns: this.nouns.report().counts,
     };
   }
 }

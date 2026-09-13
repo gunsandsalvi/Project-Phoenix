@@ -81,6 +81,14 @@ export interface Reads {
   readonly failedInstructions: number;
   readonly placeholders: number;
   readonly shapes: number;
+  /**
+   * Audit E1, E2: WHAT WAS DECLARED AGAINST WHAT HAS EVER COME OF IT, and it is a READ rather than a
+   * family precisely because E1 says the audit cannot find an absence. E2 puts completeness in the
+   * requirement document instead, so this is the number that document is re-marked from.
+   */
+  readonly reach: { readonly declared: number; readonly reached: number; readonly never: number };
+  /** The ontology register's own count: how many nouns are still in a module's bag (item 0). */
+  readonly nouns: Readonly<Record<string, number>>;
 }
 
 export interface AuditReport {

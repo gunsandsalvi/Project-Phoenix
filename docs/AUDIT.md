@@ -137,7 +137,33 @@ is the existing worklist, re-pointed.
 ---
 
 
-## 1. Reach — the family that measures whether anything ever happened
+## 1. Reach — the read that measures whether anything ever happened
+
+> **BUILT (`world/reach.ts`), AND NOT AS A FAMILY — the spec forbade that.** This item said "one
+> audit family". **Audit E1**: the audit *"cannot find an absence — no invariant fires because credit
+> has no price or because a currency market does not exist; there is nothing to be inconsistent
+> with."* **E2** separates the jobs: the audit measures CONSISTENCY, the requirement document
+> measures COMPLETENESS, neither substitutes for the other. So reach is a **read** — one of the
+> standing measurements the report already carries (Part XII) — and it feeds `docs/COVERAGE.md`.
+>
+> **Measured on the rig at three periods: 397 capabilities declared, 221 never reached.** Seven kinds
+> — participant, venue participant, market, instrument kind, party kind, derivative kind, store. Two
+> are tallied as they happen (what a participant posted, whether a module's store was opened); five
+> are derived from the stores that already answer (Law 19). Every row has an owner.
+>
+> **What it closes now**, because their whole content was invisibility: **B-10**, **B-12**, **A-69**,
+> **C-5**, **C-6**. **What it now NAMES, every period, for the items below to fix:**
+> `instrumentKind:corporate.bond` (B-1), `partyKind:insurance` and `instrumentKind:policy` (B-2),
+> `participant:banks/bank` (A-60), `venueParticipant:housing/household` (A-54, B-5), all nine
+> `derivativeKind`s (A-66, B-7), `partyKind:vehicle`, `instrumentKind:repo | tranche | margin.claim |
+> defaultFund.contribution | closeOut.claim`, two stores never opened, and 190 markets that have
+> never printed a cleared price.
+>
+> **The item stays open** and its exit is unchanged: every capability the read names is fixed, or
+> carried by name into the item that owns it. **Remaining here**: derive `docs/COVERAGE.md`'s `MET`
+> from the read rather than from the presence of an `@spec` tag, which needs `coverage:spec` to run a
+> world — a tooling change, carried to **18**.
+
 
 **Why.** Twenty-four findings, and they were all sitting in the journal the whole time. This world
 faithfully records its refusals — `market.noView`, `noDemand`, `noSupply`, `noOverlap` are journalled
