@@ -77,7 +77,7 @@ import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
-import { mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
+import { dieCell, mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
 import type {
   ContractsRead,
   MechanismContext,
@@ -1287,6 +1287,9 @@ export class World {
         },
         reKey: (cell, members, key, cause) =>
           reKeyCell(cell, members, key, cause, this.currentPeriod, this.currentCycle, cellDeps),
+        die: (cell, successor, cause) => {
+          dieCell(cell, successor, cause, this.currentPeriod, this.currentCycle, cellDeps);
+        },
       },
       contracts: this.contracts,
       voyages: this.voyages,

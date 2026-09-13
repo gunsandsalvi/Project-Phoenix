@@ -351,6 +351,11 @@ export interface CellEvents {
     key: Readonly<Record<string, string>>,
     cause: string,
   ): PartyId;
+  /**
+   * XI-15, Households F1.b: every member of this cell has died. It ceases to a named successor and
+   * it must already hold nothing — what the dead held goes to somebody by name first (Appendix B).
+   */
+  die(cell: PartyId, successor: PartyId, cause: string): void;
 }
 
 /**

@@ -104,6 +104,7 @@ import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
+import { PROBATE, probateId } from '../mechanisms/households/lifecycle.js';
 import {
   drawCarriers,
   freight,
@@ -842,6 +843,21 @@ export function foundationSeedFor(
             key: { region: REGION, cohort: cohortId(cohort.id), bank: bank.id },
           };
           ctx.parties.add(cell);
+        });
+      }
+      // Households F2 (13d.1): AND ONE PROBATE OFFICE PER PLACE AND BANK, where what the dead held
+      // waits until it can be divided. A cell cannot pay a cell — two weights share no whole number
+      // of pieces of anything — so the estate of the departed goes to a NAMED party, which can take
+      // a thing to the piece and hand it on. It holds nothing at the opening and it owes nobody.
+      for (const bank of banks) {
+        ctx.parties.add({
+          id: probateId(REGION, bank.id),
+          kind: PROBATE,
+          region: REGION,
+          name: `Probate, ${bank.id}`,
+          bank: bank.id,
+          representation: 'named',
+          status: { alive: true },
         });
       }
 

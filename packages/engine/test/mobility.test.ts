@@ -7,6 +7,8 @@
 import { describe, expect, it } from 'vitest';
 import { HOUSEHOLD, LABOUR_PARAMS, paramId } from '../src/index.js';
 import { LABOUR_NUMBERS, OCCUPATIONS } from '../src/mechanisms/labour/data.js';
+import { MORTALITY } from '../src/mechanisms/households/data.js';
+import { PROBATE } from '../src/mechanisms/households/lifecycle.js';
 import { rigWorld } from './rig.js';
 
 describe('what changing trade costs (A3.b, XI-10)', () => {
@@ -98,9 +100,15 @@ describe('a cell moves between keys and nothing crosses (13d.1, XI-15)', () => {
     const before = w.parties.ofKind(HOUSEHOLD).reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 0), 0);
     for (let i = 0; i < 3; i += 1) w.step();
     const after = w.parties.ofKind(HOUSEHOLD).reduce((t, p) => t + (p.representation === 'cell' ? p.weight : 0), 0);
-    // XI-15: NOBODY APPEARS AND NOBODY DISAPPEARS. A re-key is exact by construction, because it is
-    // a split: the part that crossed carries the same per-member state and the totals add up.
-    expect(after).toBe(before);
+    // XI-15: NOBODY APPEARS AND NOBODY LEAVES EXCEPT BY DYING. A re-key is exact by construction,
+    // because it is a split: the part that crossed carries the same per-member state and the totals
+    // add up. What the population loses is exactly what the death events say it lost, to the person.
+    const died = w.journal
+      .ofKind('households.lifecycle')
+      .filter((e) => e.data['event'] === 'died')
+      .reduce((t, e) => t + Number(e.data['members'] ?? 0), 0);
+    expect(died).toBeGreaterThan(0);
+    expect(after + died).toBe(before);
     const moves = w.journal
       .ofKind('weight')
       .filter((e) => e.data['kind'] === 'promotion' && typeof e.data['to'] === 'string');
@@ -123,5 +131,50 @@ describe('a cell moves between keys and nothing crosses (13d.1, XI-15)', () => {
     // What IS declared is the age the band starts at, which is a fact about people.
     expect(w.registry.cohorts.length).toBeGreaterThan(1);
     for (const c of w.registry.cohorts) expect(c.fromAge).toBeGreaterThanOrEqual(0);
+  });
+});
+
+describe('dying, and where what the dead held goes (13d.1, Households F1.b, F2)', () => {
+  it('declares mortality per cohort, and the retired die faster (F1.b)', () => {
+    const w = rigWorld('probate-a');
+    for (const r of MORTALITY) {
+      const d = w.params.decl(paramId(`households.mortality.${r.cohort}`));
+      expect(d.kind).toBe('technology');
+      expect(d.value).toBeGreaterThan(0);
+    }
+    const working = MORTALITY.find((r) => r.cohort === 'working');
+    const retired = MORTALITY.find((r) => r.cohort === 'retired');
+    // The difference between the two rows is what makes an ageing population change what an
+    // economy owns and who owns it.
+    expect(retired?.perPeriod ?? 0).toBeGreaterThan(working?.perPeriod ?? 0);
+  });
+
+  it('has a named party for what the dead held, because a cell cannot pay a cell (F2)', () => {
+    const w = rigWorld('probate-a');
+    const offices = w.parties.ofKind(PROBATE);
+    expect(offices.length).toBeGreaterThan(0);
+    for (const o of offices) {
+      // It is named: a named party's side of a leg is the total, so it can take a thing to the
+      // piece and hand it on. Two cells of different weights have no quantity they could both
+      // denominate, which is the whole reason it exists.
+      expect(o.representation).toBe('named');
+      expect(String(o.id)).toContain('probate.');
+    }
+  });
+
+  it('never lets a cell die holding something (Appendix B)', () => {
+    const w = rigWorld('probate-a');
+    for (let i = 0; i < 4; i += 1) w.step();
+    const deaths = w.journal
+      .ofKind('households.lifecycle')
+      .filter((e) => e.data['event'] === 'died');
+    expect(deaths.length).toBeGreaterThan(0);
+    for (const d of deaths) {
+      const dead = d.subjects[0];
+      if (dead === undefined) continue;
+      // No death without a destination, no residual with no holder: the kernel refuses a cell that
+      // still holds something, so a death that happened is a death that had somewhere to go.
+      expect(w.register.holdingsOf(dead as never).length).toBe(0);
+    }
   });
 });

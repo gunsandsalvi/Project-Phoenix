@@ -308,3 +308,28 @@ export const CONSUMPTION: readonly ConsumptionDecl[] = [
     why: 'The same line for a household past working age: jobs a week: something in the house, something on the car.',
   },
 ];
+
+/**
+ * Households F1.b: what a cohort's members die at, per period. Declared per cohort, never per
+ * world: the difference between the two rows is the whole reason an ageing population changes what
+ * an economy owns and who owns it.
+ */
+export interface MortalityDecl {
+  readonly cohort: string;
+  readonly perPeriod: number;
+  readonly why: string;
+}
+
+/** A period is a week, so these are weekly. Two facts about people, and nothing else. */
+export const MORTALITY: readonly MortalityDecl[] = [
+  {
+    cohort: 'working',
+    perPeriod: 0.0000385,
+    why: 'Households F1.b: about two in a thousand a year between eighteen and sixty-five. It is a fact about people — a real-world primitive imported as one (Law 2) — and it is why an estate happens to somebody who was not failing.',
+  },
+  {
+    cohort: 'retired',
+    perPeriod: 0.000769,
+    why: 'Households F1.b: about four in a hundred a year past sixty-five, which is some twenty more years of life. The difference between these two rows is what makes an ageing population change what an economy owns and who owns it.',
+  },
+];

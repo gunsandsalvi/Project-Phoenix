@@ -33,9 +33,9 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { householdChoosesBank, HOUSEHOLD_SWITCHING_COST } from './bank.js';
-import { CONSUMPTION, type ConsumptionDecl } from './data.js';
+import { CONSUMPTION, MORTALITY, type ConsumptionDecl } from './data.js';
 import { demandOf, spendPerMember, type HouseholdParams } from './consume.js';
-import { age } from './lifecycle.js';
+import { age, die, mortalityParams, probateKind, settleEstates } from './lifecycle.js';
 import {
   cushionForFund,
   fundOrders,
@@ -269,6 +269,10 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     // Households C1.d: nobody lends to a household in this world; consumer credit is 13d.
     // Banks Funding A1.a: many, small, sticky, insured to a limit — which is what a cell IS (XI-15).
     partyKinds: [
+      // F2 (13d.1): where what the dead held waits until it can be divided. It is named, because a
+      // cell cannot pay a cell — two weights share no whole number of pieces — and a named party
+      // can take a thing to the piece and hand it on.
+      probateKind,
       {
         id: HOUSEHOLD,
         representation: 'cell',
@@ -280,7 +284,7 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
     ],
     curveFamilies: [],
     units: [],
-    params: paramsOf(),
+    params: [...paramsOf(), ...mortalityParams(MORTALITY)],
     phases: [
       {
         name: 'households.decide',
@@ -301,7 +305,13 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         // After everything else has happened to them: somebody who crossed into retirement this
         // period worked this period, and ageing them first would be backdating it.
         anchor: { after: 'revaluation' },
-        run: age,
+        run: (ctx: MechanismContext) => {
+          age(ctx);
+          die(ctx, MORTALITY);
+          // F2: and what is in probate is divided, after the deaths that put it there — an estate
+          // that arrived this period is divided this period if it will divide.
+          settleEstates(ctx);
+        },
       },
     ],
     participants: [

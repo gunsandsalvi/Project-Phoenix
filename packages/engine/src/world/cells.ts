@@ -213,6 +213,44 @@ export function reKeyCell(
   return id;
 }
 
+/**
+ * XI-15, Households F1.b, F2, Appendix B (13d.1): A CELL WHOSE PEOPLE HAVE ALL DIED, and it may only
+ * die EMPTY.
+ *
+ * The five events move a weight and none of them takes one to nothing, which is right — a cell of
+ * nobody is nobody's. This is the other thing that can happen to a cell: it ends. The death of every
+ * member it stands for, journaled as the weight event it is, and the party ceasing to a NAMED
+ * SUCCESSOR the way every other party that ceases does (Register F2).
+ *
+ * It refuses a cell that still holds something. "No death without a destination" and "no residual
+ * with no holder" are one rule read twice, and the place to enforce it is here rather than in
+ * whichever module happened to call: what the dead held must already have gone somewhere by name.
+ */
+export function dieCell(
+  cell: PartyId,
+  successor: PartyId,
+  cause: string,
+  period: Period,
+  cycle: Cycle,
+  d: CellDeps,
+): void {
+  const c = d.parties.cell(cell);
+  forbid(
+    d.register.holdingsOf(cell).length === 0,
+    'Appendix B',
+    `${cell} still holds something and cannot die; what the dead held goes to somebody by name first`,
+  );
+  d.journal.record(
+    period,
+    cycle,
+    'weight',
+    [cell, successor],
+    { kind: 'death', members: c.weight, before: c.weight, after: 0, successor, cause },
+    true,
+  );
+  d.parties.cease(cell, period, successor);
+}
+
 function nextSplitId(c: CellParty, parties: Parties): PartyId {
   for (let n = 1; ; n += 1) {
     const id = partyId(`${c.id}.${n}`);
