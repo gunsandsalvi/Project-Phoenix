@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 81.9%** (582 of 711 steps across 45 items).
-**Requirement coverage: 58.4%** (800 MET, 90 PARTIAL, 0 OUT OF SCOPE of 1369 REASON/VERIFY/FORBID clauses).
+**Plan completion: 89.8%** (643 of 716 steps across 45 items).
+**Requirement coverage: 59.8%** (819 MET, 90 PARTIAL, 0 OUT OF SCOPE of 1369 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -57,9 +57,9 @@ The plan has two parts:
 | 13d — Labour mobility, housing, household life cycle | 26 | 26 | closed |
 | 13e — Trade credit, small-business pools, securitisation | 20 | 20 | closed |
 | 13f — Corporate credit, short-term debt, lending and financing | 38 | 38 | closed |
-| [13g — Corporate development: where a firm builds, what it buys, and what it is in](plan/13g-mna-birth.md) | 24 | 0 | open |
-| [13h — Insurers, hedge funds, private equity](plan/13h-insurers-hedge-pe.md) | 34 | 0 | open |
-| [13i — Cross-border](plan/13i-cross-border.md) | 19 | 0 | open |
+| 13g — Corporate development: where a firm builds, what it buys, and what it is in | 24 | 24 | closed |
+| 13h — Insurers, hedge funds, private equity | 37 | 37 | closed |
+| [13i — Cross-border](plan/13i-cross-border.md) | 21 | 0 | open |
 | [14 — The polity](plan/14-polity.md) | 14 | 0 | open |
 | [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |
 | [16 — Measure](plan/16-measure.md) | 20 | 0 | open |

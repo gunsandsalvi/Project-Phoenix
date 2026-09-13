@@ -18,10 +18,12 @@ import type {
   PartyId,
   PartyKindId,
   UnitId,
+  CurveFamilyId,
 } from '../core/ids.js';
 import type { Failed } from '../ledger/instruction.js';
 import type { Instrument, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
+import type { CurveRead } from '../prices/curve.js';
 import type { Option } from '../core/option.js';
 import type { Namer } from './naming.js';
 
@@ -261,6 +263,14 @@ export interface DerivedReads {
   issued(instrument: InstrumentId): number;
   /** A kind's profile, for a book that must ask what its own holdings are (Law 15). */
   kindOf(instrument: InstrumentId): InstrumentKindProfile;
+  /**
+   * Insurers B2: what money later is worth now, from the market that prices money later. A claim
+   * whose value is a SCHEDULE discounted at a rate somebody traded needs this and nothing else —
+   * and needing it is what gives the sector duration, which B2.b says it must have.
+   */
+  curve(family: CurveFamilyId, at: Period): CurveRead;
+  /** Money G3.a: the DAY a period starts, because a discount factor is a distance between dates. */
+  on(at: Period): Civil;
 }
 
 /**

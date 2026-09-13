@@ -58,6 +58,7 @@ export * from './mechanisms/securitisation/index.js';
 export * from './mechanisms/securities-lending/index.js';
 export * from './mechanisms/corporate-bond/index.js';
 export * from './mechanisms/control/index.js';
+export * from './mechanisms/insurers/index.js';
 export * from './mechanisms/commodity-futures/index.js';
 export * from './mechanisms/housing/index.js';
 export * from './mechanisms/expectations/index.js';

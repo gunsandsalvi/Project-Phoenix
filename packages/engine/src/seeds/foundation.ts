@@ -106,6 +106,7 @@ import { securitisation } from '../mechanisms/securitisation/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { control } from '../mechanisms/control/index.js';
+import { insurers } from '../mechanisms/insurers/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
@@ -2236,6 +2237,10 @@ export function foundationSpec(
       // share is worth to each side, and a premium is the distance between two valuations rather
       // than a number anybody set.
       control(),
+      // 13h, Insurers B2, B2.b: the sector whose liability is a SCHEDULE and therefore has
+      // duration. After the curve, because what a promise of money later is worth is read from the
+      // market that prices money later, and a rate move is a solvency event for it.
+      insurers(),
       sovereignInstruments,
       // Sovereign D3.a, Currency A3: EVERY SOVEREIGN THAT BORROWS HAS A CURVE, and it is its own —
       // one issuer, one money, its own prints. A world whose foreign lines had no curve family

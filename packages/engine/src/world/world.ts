@@ -267,7 +267,16 @@ export class World {
     });
     this.store = new Register(this.parties);
     this.register = registerReads(this.store);
-    this.valuation = new Valuation(this.registry, this.instruments, this.prices, this.register);
+    this.valuation = new Valuation(
+      this.registry,
+      this.instruments,
+      this.prices,
+      this.register,
+      // Insurers B2: the world's own curve, so a claim discounted at it and a bond priced off it
+      // are reading one thing (Law 4). Lazy, because the world is still being built here.
+      (family, at) => this.curveAt(family, at),
+      (at) => this.calendar.startOf(at),
+    );
     this.root = prng(spec.seed);
     this.accountOf = accountResolver(
       this.parties,
@@ -1683,7 +1692,12 @@ export class World {
    * previous output can never be an observation (D3.b).
    */
   curve(family: CurveFamilyId): CurveRead {
-    return readCurve(this.registry.curveFamily(family), this.currentPeriod, {
+    return this.curveAt(family, this.currentPeriod);
+  }
+
+  /** The same read at a stated period, which is what a derived value discounting a schedule asks. */
+  private curveAt(family: CurveFamilyId, at: Period): CurveRead {
+    return readCurve(this.registry.curveFamily(family), at, {
       calendar: this.calendar,
       prices: this.prices,
       instruments: () => this.instruments.all(),

@@ -269,6 +269,10 @@ packages/engine/test/{cross-sourcing,invoice-currency,hedge-or-carry,exports-imp
 
 - [ ] Short-term debt and the roll that can fail (from 13f): `discountNote` for any issuer, rolls as new primaries, a run reachable, the backstop costing money every period, maturity profile as a read (§9)
 
+
+- [ ] Hedge funds and private equity (from 13h): redeemable equity whose investors bear the result, leverage as a loan from a named prime broker, committed capital called on dates investors cannot refuse, and a mark that is honestly not a price (§28, §29)
+- [ ] The insurer's asset side (from 13h): matching long liabilities with long bonds and swaps — the one-way demand C2.a calls a real force in that market — plus securities lending for extra return and a mandate that can force a sale on downgrade (Insurers C2, C2.a, C4, C5)
+
 ## Exit criteria
 
 A firm switches supplier when the rate moves because its delivered cost changed; a region's current

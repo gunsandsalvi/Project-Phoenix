@@ -3715,3 +3715,45 @@ stream to capitalise and no bid to make. The mechanism is unreached rather than 
 listed firm here earns something the assertion fails and the tender machinery starts running.
 
 **Placed rather than built**: firm birth, learning by doing (**M5**) and siting → 13h.
+
+
+## 13h — the sector that has duration
+
+**B2.b is the clause this exists for**, and it says what the easy version gets wrong: a liability
+that accumulates contributions minus benefits plus investment income has no schedule, no discount
+rate and no discounting — so it never moves when rates move, and THE SECTOR'S DEFINING RISK
+DISAPPEARS. This is the model's largest holder of duration; it must have duration.
+
+So a policy here is a promise to pay STATED AMOUNTS AT STATED FUTURE TIMES, and what it is worth is
+those amounts discounted at a rate read from a market. That needed one new kernel read — `curve` on
+`DerivedReads`, the world's own curve passed in rather than rebuilt, because a second derivation of
+a discount factor is a second answer to one question. A derived value is allowed to be exactly this:
+a fact about the world anybody may compute and everybody gets the same answer from.
+
+**Falling rates raise the liability and the institution wears it.** The kind says its issuer owes
+the VALUE of what it promised rather than a face, and the revaluation pass does the rest: the
+liability rises, its equity falls, and a rate move is a solvency event for this sector and a P&L
+event for everybody else. Nothing anywhere had to assert that — it is arithmetic on a schedule and a
+discount.
+
+It is the second kind in this world whose issuer owes a value, and it is the OPPOSITE case from the
+first: a fund share moves because the assets moved, a policy because the discount rate did. Both
+needed the same declared fact, and the fact was built two items ago for a different reason.
+
+**A2.a is the whole difference between this sector and a fund**, and it is that one fact: the
+beneficiary does not absorb the investment result, the promise is fixed, and the institution's
+equity is what moves. A sector that passed the result through would be a fund wearing an insurer's
+name.
+
+**What it charges is its own experience and its own capital and nothing else** (A4.b): what a unit
+of cover has actually cost IT, read off the claims it paid, plus the return required on the capital
+held against the premium. Worse experience or dearer capital quotes higher. No loss ratio, no
+industry table, no draw from a stated distribution, and no declared parameter in the module at all.
+
+An insurer with no surplus writes nothing, which is not a threshold: it has nothing to stand behind
+cover with, and that is arithmetic (A4.a, Law 6). `capacityOf` was written as a ternary that floored
+a negative surplus at zero, which is a bound; it is gone, and the `<= 0` guard that was already
+there says the same thing once.
+
+**Placed rather than built**: hedge funds, private equity and the insurer's matching asset side →
+13i.

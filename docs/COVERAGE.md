@@ -918,13 +918,13 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Insurers A1` | MISSING |  |
-| `Insurers A2` | MISSING |  |
-| `Insurers A3` | MISSING |  |
+| `Insurers A1` | MET | packages/engine/src/mechanisms/insurers/index.ts (a named party with a register, holding assets against liabilities owed to named beneficiaries) |
+| `Insurers A2` | MET | packages/engine/src/mechanisms/insurers/index.ts (a policy is a promise to pay stated amounts at stated future times) |
+| `Insurers A3` | MET | packages/engine/src/mechanisms/insurers/index.ts (equity is a read and can go negative; the party kind fails on solvency and on cash) |
 | `Insurers A4` | MISSING |  |
-| `Insurers B1` | MISSING |  |
-| `Insurers B2` | MISSING |  |
-| `Insurers B2.b` | MISSING |  |
+| `Insurers B1` | MET | packages/engine/src/mechanisms/insurers/index.ts (the schedule is the terms; a scheduled payment of nothing is refused) |
+| `Insurers B2` | MET | packages/engine/src/mechanisms/insurers/index.ts (the present value is the schedule discounted at the curve, through a new `curve` read on DerivedReads) |
+| `Insurers B2.b` | MET | packages/engine/src/mechanisms/insurers/index.ts (a policy with no schedule is refused at assembly and reported by the names family — there is no cash-balance liability here) |
 | `Insurers B3` | MISSING |  |
 | `Insurers B4` | MISSING |  |
 | `Insurers C1` | MISSING |  |
@@ -932,12 +932,12 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Insurers C3` | MISSING |  |
 | `Insurers C4` | MISSING |  |
 | `Insurers C5` | MISSING |  |
-| `Insurers D1` | MISSING |  |
-| `Insurers D2` | MISSING |  |
+| `Insurers D1` | MET | packages/engine/src/mechanisms/insurers/index.ts (`gapOf`: what it has against what it owes, and it may be negative) |
+| `Insurers D2` | MET | packages/engine/src/mechanisms/insurers/index.ts (the revaluation moves its equity when the discount moves, in the opposite direction to a bank) |
 | `Insurers D3` | MISSING |  |
 | `Insurers D4` | MISSING |  |
 | `Insurers D5` | MISSING |  |
-| `Insurers E1` | MISSING |  |
+| `Insurers E1` | MET | packages/engine/src/mechanisms/insurers/index.ts (the names family: a promise outstanding with nobody it is owed to is a violation) |
 | `Insurers E2` | MISSING |  |
 | `Insurers E3` | MISSING |  |
 | `Insurers E4` | MISSING |  |

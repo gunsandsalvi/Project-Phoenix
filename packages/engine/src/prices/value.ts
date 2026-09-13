@@ -17,6 +17,9 @@ import { dustOf, mul, sum, type Running } from '../core/num.js';
 import type { InstrumentsReads as Instruments } from '../register/instruments.js';
 import type { Lot, RegisterReads } from '../register/register.js';
 import type { DerivedReads } from '../registry/kinds.js';
+import type { CurveRead } from './curve.js';
+import type { CurveFamilyId } from '../core/ids.js';
+import type { Civil } from '../calendar/civil.js';
 import type { Registry } from '../registry/registry.js';
 import { struckIn, type PriceStore } from './price-store.js';
 
@@ -43,6 +46,20 @@ export class Valuation {
     private readonly instruments: Instruments,
     private readonly prices: PriceStore,
     private readonly register: RegisterReads,
+    /**
+     * Insurers B2, B2.b, Law 3, Law 19 (13h): WHAT A PROMISE OF MONEY LATER IS WORTH NOW, read from
+     * the market that prices money later. A derived value may ask for it because a curve is exactly
+     * what a derived value is allowed to be — a fact about this world that anybody may compute and
+     * everybody gets the same answer from — and the sector that needs it is the one whose liability
+     * is a SCHEDULE: falling rates raise what it owes, which is why a rate move is a solvency event
+     * for an insurer and a P&L event for everybody else.
+     *
+     * It is the WORLD's curve, passed in rather than rebuilt here, because a second derivation of a
+     * discount factor is a second answer to one question (Law 4).
+     */
+    private readonly curveAt: (family: CurveFamilyId, at: Period) => CurveRead,
+    /** The day a period starts, from the world's one calendar (Law 4). */
+    private readonly dayOf: (at: Period) => Civil,
   ) {}
 
   /** Fund Shares B1: the reads a derived value is given — the kernel's own, and nothing else. */
@@ -55,6 +72,8 @@ export class Valuation {
       instruments: () => this.instruments.all(),
       issued: (instrument) => this.instruments.get(instrument).issued,
       kindOf: (instrument) => this.registry.instrumentKind(this.instruments.get(instrument).kind),
+      curve: (family, at) => this.curveAt(family, at),
+      on: (at) => this.dayOf(at),
     };
   }
 
