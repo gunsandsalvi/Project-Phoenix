@@ -280,13 +280,14 @@ function declaredIsPaid(): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
+      const paidOut = dividendLegs(view);
       for (const e of view.journal.ofKind('payout.declared')) {
         if (e.period !== view.period) continue;
         const line = e.data['line'];
         const paid = e.data['paid'];
         const firm = e.subjects[0];
         if (typeof line !== 'string' || typeof paid !== 'number' || firm === undefined) continue;
-        const moved = dividendLegs(view, line, firm);
+        const moved = sum(paidOut.get(`${line}\u0000${firm}`) ?? []);
         if (withinDust(paid, moved.value, combineDust(sum([paid]), moved))) continue;
         out.push({
           family: 'flows',
@@ -303,17 +304,33 @@ function declaredIsPaid(): Family {
   };
 }
 
-/** What actually left the issuer this period on a payout instruction (Law 19: read the legs). */
-function dividendLegs(view: AuditView, line: string, firm: string): ReturnType<typeof sum> {
-  const terms: number[] = [];
+/**
+ * What actually left each issuer this period on a payout instruction (Law 19: read the legs).
+ *
+ * Law 18: ONE WALK OF THE PERIOD, not one per declared payout. A dividend is a payment to every
+ * holder by name, so the period a world of four countries pays them in carries a quarter of a
+ * million instructions and two thirds of them are payouts — and this was walking all of them again
+ * for every line that declared one. The sums are the same sums over the same legs in the same
+ * order; what changes is that the ledger is read once.
+ */
+function dividendLegs(view: AuditView): ReadonlyMap<string, number[]> {
+  const out = new Map<string, number[]>();
   for (const r of view.ledger.inPeriod(view.period)) {
     if (r.outcome !== 'settled') continue;
-    if (!r.instruction.reason.startsWith(`payout on ${line} `)) continue;
+    const reason = r.instruction.reason;
+    if (!reason.startsWith('payout on ')) continue;
+    // The reason names the line it is a payout ON, which is what the declaration named.
+    const line = reason.slice('payout on '.length, reason.indexOf(' ', 'payout on '.length));
+    if (line === '') continue;
     for (const leg of r.instruction.legs) {
-      if (isMoneyLeg(leg) && leg.from.holder === firm) terms.push(leg.amount);
+      if (!isMoneyLeg(leg)) continue;
+      const key = `${line}\u0000${String(leg.from.holder)}`;
+      const held = out.get(key);
+      if (held === undefined) out.set(key, [leg.amount]);
+      else held.push(leg.amount);
     }
   }
-  return sum(terms);
+  return out;
 }
 
 /**
