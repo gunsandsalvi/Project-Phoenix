@@ -1228,28 +1228,34 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Trade Credit A1` | MISSING |  |
-| `Trade Credit A2` | MISSING |  |
-| `Trade Credit A3` | MISSING |  |
-| `Trade Credit A4` | MISSING |  |
-| `Trade Credit B1` | MISSING |  |
+| `Trade Credit A1` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (one row: the buyer issues it and the seller holds it, so there is one writer of what is owed), packages/engine/src/clearing/market.ts (written in the SAME numbered instruction the goods move in), packages/engine/test/trade-credit.test.ts |
+| `Trade Credit A2` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (a zero-coupon bill: one payment, of everything, on a date, collected by the kernel own corporate-action phase) |
+| `Trade Credit A3` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (`tradeCredit.days` is the convention; WHO gets terms is the seller decision and never a number), packages/engine/src/world/module.ts (`termsOffered`) |
+| `Trade Credit A4` | PARTIAL | the claim ranks unsecured in the estate (Firm Birth D2.b, stated on the kind); the estate collecting a dead firm receivables is 13f |
+| `Trade Credit B1` | PARTIAL | the buyer pays with a promise; its cash plan reading the terms is 13f |
 | `Trade Credit B2` | MISSING |  |
-| `Trade Credit B3` | MISSING |  |
+| `Trade Credit B3` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (a buyer in arrears to THIS seller buys for cash, which is stopping shipment read from the seller own book) |
 | `Trade Credit B4` | MISSING |  |
-| `Trade Credit B5` | MISSING |  |
+| `Trade Credit B5` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (the seller own record of that buyer and nothing else: an opinion is somebody) |
 | `Trade Credit C1` | MISSING |  |
-| `Trade Credit C2` | MISSING |  |
+| `Trade Credit C2` | MISSING | financing a receivable — pledge and factoring — positioned to 13f |
 | `Trade Credit C3` | MISSING |  |
 | `Trade Credit C4` | MISSING |  |
-| `Trade Credit D1` | MISSING |  |
+| `Trade Credit D1` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (`overdue`: lateness is a STATE on the seller book, read rather than remembered) |
 | `Trade Credit D2` | MISSING |  |
 | `Trade Credit D3` | MISSING |  |
 | `Trade Credit D3.a` | MISSING |  |
-| `Trade Credit D4` | MISSING |  |
+| `Trade Credit D4` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (the ageing IS the tightening: the row is overdue or it is not) |
 | `Trade Credit D5` | MISSING |  |
 | `Trade Credit E1` | MISSING |  |
-| `Trade Credit E2` | MISSING |  |
-| `Trade Credit E3` | MISSING |  |
+| `Trade Credit E2` | MET | packages/engine/src/mechanisms/trade-credit/index.ts (every receivable is held by the seller; the register is what says so) |
+| `Trade Credit E3` | PARTIAL | the claim ranks; the estate path for a failed buyer is 13f |
+
+## XI-11
+
+| requirement | status | where / why |
+|---|---|---|
+| `XI-11` | MET | packages/engine/src/mechanisms/securitisation/index.ts (all four objects XI-11 names and each a real one: a `vehicle` party holding the rows, a `tranche` with a stated attachment and a cleared price, a waterfall that allocates real losses from the bottom, and named holders. The originator capital falls because THE ROW LEFT — the register moves and no weight changes — and a junior that is not deep enough lets the loss reach the layer above, which is the event XI-11 says has no holders to hit. Mortgage pools through the same vehicle are positioned to 13h, senior notes as repo collateral to 13f), packages/engine/test/securitisation.test.ts |
 
 ## Goods
 

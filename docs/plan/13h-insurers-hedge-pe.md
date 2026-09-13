@@ -352,6 +352,12 @@ packages/engine/test/{insurer-liability,cover-market,claims,catastrophe,matching
 - [ ] **`13b.1-1`: A FUND SHARE WORTH NEARLY NOTHING MAKES EVERY QUANTITY DIVIDED BY IT EXPLODE, and at 13b.1's close it is the largest single cause of red in the suite.** It is `13b-9`'s open half — why a share is worth less than a piece of money — and the guards 13b.1 put on the rounding doors turned it from a wrong number into a refusal at the site, in three places: a redemption whose cash rounds to nothing (a one-sided money leg, now refused at the wire and the request left on the book, which is C2.b's own answer); a household cell asking for `scaleQty(sharesPerMember, weight)` = **1.33e16 shares**, past the safe-integer range (`households/index.ts:374`); and a dealer's creation-unit arithmetic, `money / nav` = **1.72e16** (`banks/dealing.ts:415`), which takes `omo`, `raise` and both `equity-anchor` tests with it. Law 6: a number that explodes means the compensating mechanism is missing, and here the missing one is whatever holds a fund's NAV per share off zero — which is this item's, because what a fund IS and what stands behind its shares is. Tests: the three sites above, and a year-long run in which no share count exceeds what its holder could hold
 - [ ] Coverage re-marked, including IRS B2 and B2.a (PARTIAL from 13b: the reason is stated and no party in this world has it) and `Fund Shares A3`; record entry with both shapes' deaths (`funds.managementFee` and `seed.crossHoldingShare`); delete this file; worklist row 13h → done; commit and push
 
+
+## Carried in from 13e (positioned when 13e closed)
+
+- [ ] Mortgage pools through the same vehicle, with the foreclosure path running with the pool as lender of record and the servicing agreement as a fee row (Housing C6, XI-11)
+- [ ] Insurers as note holders: the party kind whose liabilities make it the natural buyer of a senior layer, so a tranche has holders that are not other banks (XI-11's "named holders")
+
 ## Exit criteria
 
 A rate move revalues a pension's liability, its hedge and its cash in three different places; an

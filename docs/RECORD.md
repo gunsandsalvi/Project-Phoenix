@@ -3513,3 +3513,79 @@ reservation wage is what it lives on and rent is most of that. Two falsification
 the build lag and the gap should close; raise the dwellings a cohort needs and the gap should widen
 in the place that cannot build. If rent and wages move independently, the reservation wage is not
 reading what it is supposed to be reading.
+
+
+## 13e — trade credit and securitisation: the invoice, the vehicle, the layer
+
+**Most of the credit in an economy is not a bank's.** A firm that buys from another firm pays in
+thirty days, and until it does the seller has lent it the money without either of them calling it
+that. This world had none of it: every trade settled money for goods in the same instant, so a supply
+chain could not transmit anything except a price, and a firm could not fail because somebody else
+failed to pay it.
+
+**An invoice is ONE ROW.** The seller's receivable and the buyer's payable are the same instrument —
+issued by the buyer, held by the seller — so there is one writer of what is owed and the two sides
+cannot disagree (Law 4). It is written in the SAME numbered instruction the goods move in: the buyer
+pays with a promise instead of money, both legs are there, and there is never an instant where one
+side has parted with something and the other has given nothing. The kernel gained one door for it —
+`onTerms`, answered by `SystemModule.termsOffered`, exactly one module per party kind — and the door
+carries WHAT IS SOLD, because a good is a thing nobody issued and a share is somebody's promise,
+bought and paid for on delivery. The register already held that distinction; nothing branches on a
+kind.
+
+**Lateness is a state, not a memory.** Whether a seller ships on terms is its own judgement of that
+buyer and reads its own book: a buyer with an overdue row on it buys for cash, and when the row is
+paid, terms resume. So the ageing IS the tightening, and a solvent firm starved of terms is what
+happens when several suppliers are each looking at their own overdue row at once. There is no memory
+parameter, because there is nothing to remember — the answer is on the books.
+
+**Who is owed a loan is read off the register.** A loan named its lender in its terms and twelve
+places read that name as "whose book this is". That was a mirrored fact and a stale one waiting to
+happen: a sold row makes it a lie. The field is now `originator` — who WROTE it — and `creditorOf`
+asks the register. The rename is what found the twelve sites; they did not all mean the same thing.
+A mortgage sold into a pool is now foreclosed BY THE POOL, which is the whole point.
+
+**XI-11 has all four of its objects and each is real.** A `vehicle` is a named party with a balance
+sheet holding the rows. A `tranche` states its attachment and detachment and has a market. The
+waterfall pays by seniority out of what the borrowers actually paid — LAST in the period, after
+everything the vehicle itself owes, because a pass-through that pays its investors before its own
+obligations is not a waterfall but a hole. And a loss lands from the bottom: when the pool falls
+below the notes, the layer attaching at zero is written down until there is none of it left and then
+the one above, which is what an attachment point IS. Nothing stops a senior loss.
+
+**Nothing about the structure is declared.** The arranger sells no more than it must — its relief is
+what LEFT its book — and keeps the rest, because every unit sold beyond its need is income given away
+for nothing. The pool is whole rows and a row does not divide, so the overshoot lands in the junior
+too. HOW MANY LAYERS A DEAL HAS is an outcome as well: a bank that had to sell everything keeps
+nothing, and what the buyers hold is a pass-through over the whole pool with nobody underneath them.
+The module declares no parameters at all.
+
+**A vehicle CAN fail, and saying otherwise would have been the whole trick.** The temptation was to
+call it bankruptcy-remote and leave `fails` empty, because it has no other business to be brought
+down by. But `fails` is not about whether a party has other business — it is about whether a claim on
+it can go wrong. Left empty, every capital rule here would have weighed a tranche at NOTHING, and a
+bank could sell its book to a vehicle, buy the notes back, and watch its requirement vanish with the
+risk still on its own balance sheet. That is regulatory arbitrage by construction.
+
+**A defect the first single-currency income-earner found.** Every treasury in this world walked EVERY
+settled money leg wherever it happened and billed the tax in its own money: a dollar coupon paid in
+New York raised a euro assessment, a sterling one and a yen one, all at once, against a party that
+had never held any of them ("two currencies never added", Law 8). Nobody had noticed, because every
+party that receives interest here holds money in several currencies. A securitisation vehicle is the
+first that holds one — it was billed four times, could not pay three, and died of a cash failure it
+did not owe. One line fixes it. An estate test that REQUIRED a household to fail a tax bill was
+measuring the defect and now states the absence instead.
+
+**A finding, written as a test so it cannot be lost.** Securitisation relieves a risk-weighted
+requirement and relieves a leverage one by exactly zero: a sale at a price is a swap, the rows go out
+and money of the same value comes in, so total assets do not move. Every bank in this world that runs
+out of room runs out of it on the LEVERAGE backstop — they carry reserves many times their capital,
+and reserves weigh nothing under one rule and everything under the other. So the deal machinery
+correctly does nothing here, and the mechanism is unreached rather than wrong. The day a bank here is
+weighted-bound, that test fails, which is the point of writing it.
+
+**What is placed rather than built**, and where: small-business cells with their own loan rows and
+promotion across the size boundary → 13f, where cell-level borrowers and the corporate credit market
+belong; the covered bond (M7) → 13f, with bank funding; financing a receivable — pledge and factoring
+— → 13f; senior notes as repo collateral → 13f; mortgage pools through the same vehicle, and the
+insurers that would buy the notes → 13h.

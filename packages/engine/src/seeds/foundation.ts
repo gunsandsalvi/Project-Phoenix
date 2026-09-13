@@ -102,6 +102,7 @@ import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
+import { securitisation } from '../mechanisms/securitisation/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
@@ -2237,6 +2238,10 @@ export function foundationSpec(
       // those two put into the world, and it prices a name off what the lending module published
       // about it. Both reach it as public events and prints, never as imports (Law 15).
       moneyMarket,
+      // 13e, Securitisation C1, XI-11: a loan leaves a bank's book and a REAL PARTY takes it. After
+      // the money market, because what a bank is short of — and therefore what it would sell — is
+      // what it could not fund there (D1).
+      securitisation(),
       // Currency, Spot FX: the pairs, after the banks whose desks quote them and the money market
       // whose overnight book they fund a position in.
       // Spot FX D1, D3, C2.a: the desks draw their OWN numbers, from this world's own seed value

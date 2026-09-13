@@ -217,7 +217,7 @@
   },
   {
     "id": "13e",
-    "title": "Trade credit, small business, securitisation",
+    "title": "Trade credit, small-business pools, securitisation",
     "file": "13e-trade-credit-pools-securitisation.md",
     "steps": 20
   },
@@ -225,7 +225,7 @@
     "id": "13f",
     "title": "Corporate credit, short-term debt, lending and financing",
     "file": "13f-corporate-credit-financing.md",
-    "steps": 33
+    "steps": 38
   },
   {
     "id": "13g",
@@ -237,7 +237,7 @@
     "id": "13h",
     "title": "Insurers, hedge funds, private equity",
     "file": "13h-insurers-hedge-pe.md",
-    "steps": 30
+    "steps": 32
   },
   {
     "id": "13i",

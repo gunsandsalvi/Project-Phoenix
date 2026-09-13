@@ -604,11 +604,24 @@ describe('what does not open an estate', () => {
       levies += failed.filter((f) => f.instruction.reason === `tax due from ${cell}`).length;
       expect(failed.filter((f) => f.instruction.reason !== `tax due from ${cell}`)).toEqual([]);
     }
-    // Money E1, D3: and the levies that failed are a state somebody carries, not a silent hole —
-    // the treasury says how much it did not collect, in the period it did not collect it.
-    expect(levies).toBeGreaterThan(0);
-    const short = w.journal.ofKind('treasury.receipts').filter((e) => Number(e.data['unpaid']) > 0);
-    expect(short.length).toBeGreaterThan(0);
+    /**
+     * Money E1, D3: and a levy that fails is a state somebody carries, not a silent hole — the
+     * treasury says how much it did not collect, in the period it did not collect it.
+     *
+     * It used to require that at least one levy DID fail, and that requirement was measuring a
+     * defect rather than a mechanism: every treasury in this world walked every settled money leg
+     * wherever it happened and billed the tax in its OWN money, so a household in New York was
+     * assessed in euros, sterling and yen as well, and of course could not pay three of the four.
+     * With the currency guard in place (13e) it is billed once, in the money it holds, and it pays.
+     * What the clause is about is the ABSENCE above — a cell never fails a payment IT posted — and
+     * what remains to say here is that a shortfall, if there is one, is recorded rather than lost.
+     */
+    if (levies > 0) {
+      const short = w.journal
+        .ofKind('treasury.receipts')
+        .filter((e) => Number(e.data['unpaid']) > 0);
+      expect(short.length).toBeGreaterThan(0);
+    }
   });
 });
 

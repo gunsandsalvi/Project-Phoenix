@@ -722,6 +722,19 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     }
     for (const leg of r.instruction.legs) {
       if (!isMoneyLeg(leg)) continue;
+      /**
+       * Law 8, Appendix B (13e): IN ITS OWN MONEY, and only in its own money. Every base here is a
+       * sum of amounts and every amount carries a currency, so a leg in another one is not a
+       * smaller or larger number — it is a different thing, and adding it is adding two currencies.
+       *
+       * Without this line every treasury walked EVERY settled leg in the world and billed the tax
+       * in its own money: a dollar coupon paid in New York raised a euro assessment, a sterling one
+       * and a yen one, all at once and all against a party that had never held any of them. Found
+       * when a securitisation vehicle — the first party in this world that receives interest and
+       * holds money in ONE currency — was billed four times, could not pay three of them, and died
+       * of a cash failure it did not owe.
+       */
+      if (leg.ccy !== ccy) continue;
       if (buyers.has(leg.from.holder)) {
         bases.consumption = add(bases.consumption, leg.amount, 'what households paid for goods');
         addTo(due, leg.from.holder, mul(leg.amount, onConsumption, 'consumption tax'));

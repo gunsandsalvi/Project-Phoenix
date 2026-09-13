@@ -449,6 +449,15 @@ packages/engine/test/{commitment-market,corporate-bond,capital-structure,covenan
 - [ ] Observer: books, syndicates and their fills, facilities, restructurings, borrow fees, margin per client (own view only), the breakeven and the grade boundary as reads; year-long run green; determinism; H2/H3 as reads; coverage re-marked; record entry
 - [ ] Delete this file; worklist row 13f → done; commit and push
 
+
+## Carried in from 13e (positioned when 13e closed)
+
+- [ ] `smallFirm` cell kind with declared key dimensions and per-member state; the firms profile runs per member through `integrate`; a mean-preserving spread of member cash causes defaults among the members below the threshold (Small-Business Pools A2.a, A6, A6.a)
+- [ ] Small-firm loans per (lender, cell) with member-level default and split; security on the owner's dwelling; promotion across the size boundary as a split into a named firm with its rows reseated (B1–B4, A6.b, A6.c, E4–E6)
+- [ ] Financing a receivable: a lien on the invoice row, and factoring as a reseat with a money leg (Trade Credit C2)
+- [ ] The covered bond (**M7**): a pool of LIENS on loan rows the bank still owns and still collects on; a substitution is a release and a pledge in one instruction, and a release that breaks the cover ratio is REFUSED AT THE CALL — the ratio is a term of the issue, not a bound on a number afterwards (Register D5.a, Banks Funding A2, Law 6); dual recourse read off the instrument in the one waterfall (XI-8)
+- [ ] Senior tranches as eligible repo collateral (Money Market B3.a)
+
 ## Exit criteria
 
 A deal larger than any one desk's limit is carried by a syndicate of named banks by shares each
