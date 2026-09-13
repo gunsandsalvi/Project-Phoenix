@@ -1132,10 +1132,26 @@ function holdingsWorth(view: ParticipantView): number {
 /** A4, D1: what the mandate allows — the kind, and how long it may still have to run. */
 function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
   if (!i.status.live || !d.eligible.includes(i.kind)) return false;
+  /**
+   * A4, D1, Equity B1: THE MANDATE'S TWO QUESTIONS, AND THEY ARE NOT THE SAME QUESTION.
+   *
+   * A mandate says what a fund may hold and how long its money may be tied up. This asked only the
+   * second, through `cashFlows` — the issuer's DATED PROMISE — so anything that promises no dated
+   * payment failed the tenor test by having no last flow at all. A share promises none. That single
+   * line is why **no fund in this world could ever hold a share** and why every fund here is a bond
+   * fund at the type level, whatever its mandate says (`docs/AUDIT.md` item 4).
+   *
+   * The tenor test now applies where a tenor EXISTS, which is what a tenor is; and what the fund can
+   * put a number on is asked of the kind's own valuation door, which every kind answers in its own
+   * terms. A claim it cannot value is one it does not buy — that is a real refusal and not a
+   * property of whether the claim happens to promise anything.
+   */
+  const required = view.params.perAnnum(fundParam(d.fund, 'requiredYield'));
+  if (!view.worth(i.id, required).some) return false;
   const on = view.calendar.startOf(view.period);
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
   const last = flows[flows.length - 1];
-  if (last === undefined) return false;
+  if (last === undefined) return true;
   const by = view.calendar.startOf(
     periodOf(view.period + view.params.periods(fundParam(d.fund, 'maxTenorPeriods'))),
   );

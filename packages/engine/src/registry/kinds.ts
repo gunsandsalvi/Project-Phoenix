@@ -59,6 +59,25 @@ export type Carry = 'mark' | 'cost';
 export type LotFlow = 'FIFO';
 
 /** One dated payment per unit the terms promise (Bond N5, N10): the curve reads these. */
+/**
+ * What a kind needs to say what one unit is worth beyond its own promise (`worthTo`).
+ *
+ * Everything in it is PUBLIC (Observer A3): what an issuer published about itself, and how many
+ * units of a line exist. A kind cannot reach a holder's private state through here, and it has no
+ * business with one — what it answers is a fact about the INSTRUMENT at a required return.
+ */
+export interface WorthReads {
+  readonly calendar: Calendar;
+  readonly period: Period;
+  /**
+   * Reporting A1, A2: the issuer's last published accounts — what it said it earned and over how
+   * many periods. There is no second set of accounts and no forecast (Reporting A2.a).
+   */
+  lastReport(issuer: PartyId): Option<{ readonly earned: number; readonly periods: number }>;
+  /** How many units of this line exist, so a per-unit figure is per unit. */
+  issued(instrument: InstrumentId): number;
+}
+
 export interface CashFlow {
   readonly date: Civil;
   /** Per unit of the instrument, in its currency. */
@@ -166,6 +185,28 @@ export interface InstrumentKindProfile {
    * yield is derived FROM). An instrument that promises nothing dated returns none of them.
    */
   readonly cashFlows: (i: Instrument, after: Civil, calendar: Calendar) => readonly CashFlow[];
+  /**
+   * §46, Equity B1, Capital Programme B1: WHAT ONE UNIT IS WORTH TO A HOLDER THAT REQUIRES `required`
+   * PER ANNUM — the other half of this profile, and the half that was missing.
+   *
+   * Every other field here answers *what is this thing legally and how does it settle*. Not one
+   * answered *why would anyone hold it*, and `cashFlows` is the ISSUER'S CONTRACTUAL PROMISE, so the
+   * only theory of value this world had was "discount the promise". A share has no promise. From
+   * that single absence: `funds.eligible` returned false for anything with no cash flows, so no fund
+   * could ever hold a share and every fund was a bond fund at the type level; a household therefore
+   * valued a share by extrapolating its own price history; and the one earnings-based valuation in
+   * the tree sat inside a module that has never produced anything. The equity market was a closed
+   * loop of price-extrapolators with no fundamental side (`docs/AUDIT.md` item 4).
+   *
+   * ABSENT IS AN ANSWER AND NOT A DEFAULT: it says THE PROMISE IS THE EXPECTATION, which is true of
+   * every contractual instrument, and the kernel then discounts `cashFlows` at what the holder
+   * requires. A kind that is worth something for another reason says so here.
+   *
+   * It is not a price and cannot become one (Law 3). The profile answers the stream, the PARTY
+   * brings the required return out of its own circumstances, and what comes out is one participant's
+   * bid meeting another's in a book.
+   */
+  readonly worthTo?: (i: Instrument, required: number, reads: WorthReads) => Option<number>;
   /**
    * Goods E2, Capital Programme A3: what a LOT of this kind is carried at now, per unit.
    *

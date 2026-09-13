@@ -238,6 +238,20 @@ export interface ParticipantView extends KernelReads {
   mark(instrument: InstrumentId): Option<number>;
   /** The issuer's announced supply in this period's session, if any (Sovereign C1.a: public). */
   offer(market: MarketId): Option<PrimaryOffer>;
+  /**
+   * §46, Equity B1, Capital Programme B1: WHAT ONE UNIT IS WORTH TO A PARTY THAT REQUIRES THIS,
+   * per annum — one question, asked of every kind of claim, answered by the kind's own profile.
+   *
+   * Its absence was the reason this world had one theory of value: `cashFlows` is the issuer's
+   * PROMISE, so anything that promises nothing was worth nothing to anybody who discounted. A share
+   * promises nothing. What each kind does with the question is its own (`InstrumentKindProfile.
+   * worthTo`): a bond discounts its promise, a company capitalises what it published.
+   *
+   * The REQUIRED RETURN is the caller's, out of its own circumstances, and that is what keeps this
+   * a bid rather than a price (Law 3): two parties requiring different things want the same claim
+   * at different levels, which is what gives a book two sides (§46 A3).
+   */
+  worth(instrument: InstrumentId, requiredPerAnnum: number): Option<number>;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): number;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */

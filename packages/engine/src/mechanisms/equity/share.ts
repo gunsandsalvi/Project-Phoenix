@@ -16,6 +16,10 @@
  * (A1.a), so an estate reaches it last, and reaching it last with nothing left is the wipe.
  */
 import type { InstrumentKindId, PartyId } from '../../core/ids.js';
+import { none, some } from '../../core/option.js';
+import { div } from '../../core/num.js';
+import { period } from '../../calendar/calendar.js';
+import { yearFraction } from '../../calendar/daycount.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import { instrumentKindId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
@@ -110,4 +114,40 @@ export const shareKind: InstrumentKindProfile = {
   // answer: a share promises no dated payment, so nothing about it can be discounted into a price
   // by anybody but a participant with an opinion (B3).
   cashFlows: () => [],
+  /**
+   * Equity B1, B3, §46 A3, Capital Programme B1: WHAT A SHARE IS WORTH TO A HOLDER THAT REQUIRES
+   * THIS, and it is the same question the same holder asks of a machine — what it expects to get out
+   * of it, against what its own money costs it. One valuation technology, in one place (Law 4).
+   *
+   * What it would get is what the company PUBLISHED (Reporting A2), annualised by the span of its own
+   * report; there is no second set of accounts, no forecast and no multiple. What it requires is the
+   * caller's, out of its own circumstances, which is what makes two holders want the same share at
+   * different levels and what gives the book two sides (§46 A3). Nothing here is a price and nothing
+   * here reaches one (Law 3): it is one participant's opinion, and a market decides.
+   *
+   * `cashFlows` above says a share promises no dated payment, which is true and was the whole
+   * problem: every read that discounted a promise found nothing here, so no fund could hold a share
+   * and the only bid in the equity book came from parties extrapolating its own price. A company
+   * that has published nothing is still worth nothing THROUGH THIS DOOR — that is an absence of
+   * evidence and it is returned as one, not as a zero (App A).
+   */
+  worthTo: (i, required, reads) => {
+    const issuer = i.issuer;
+    if (!issuer.some) return none<number>();
+    const said = reads.lastReport(issuer.value);
+    if (!said.some || said.value.earned <= 0 || said.value.periods <= 0) return none<number>();
+    // Law 8: the periodicity is part of the number. The report covers a span of PERIODS and a
+    // required return is quoted per YEAR, so the calendar puts them in one unit — never a factor.
+    const ofAYear = yearFraction(
+      'ACT/365F',
+      reads.calendar.startOf(reads.period),
+      reads.calendar.startOf(period(reads.period + said.value.periods)),
+    );
+    if (ofAYear <= 0) return none<number>();
+    const annual = div(said.value.earned, ofAYear, 'what it earns a year, as it published it');
+    const whole = div(annual, required, 'what that stream is worth at what this holder requires');
+    const shares = reads.issued(i.id);
+    if (shares <= 0) return none<number>();
+    return some(div(whole, shares, 'what one share of it is worth to this holder'));
+  },
 };

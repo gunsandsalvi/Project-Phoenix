@@ -114,7 +114,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **1** | Reach | 25 | no behaviour change, and it makes every item below verifiable instead of argued |
 | **2** | Missing is Missing | 5 | a defaulted zero defeats both **1** and **16** |
 | **3** | `PublishedStatement` | 0 | **corrected**: does not block 4 — accounts are already published to the journal and read cross-module. A typed read, after 4. |
-| **4** | `expectedStream()` and `liquidity` | 1 | **needs nothing** — published earnings and a required return both exist; takeable now |
+| **4** | `worthTo` | 1 | **BUILT** — the valuation door. `liquidity` and an equity mandate remain |
 | **5** | `ReceiptKind` | 6 | independent; everything above it touches money |
 | **6** | `View` | 1 | independent; **4** wants it for the borrower haircut |
 | **7** | `Lifecycle` | 2 | independent; **8** and 13n want the states |
@@ -1103,7 +1103,33 @@ published accounts and their date, and cannot read anything unpublished.
 
 ---
 
-## 4. `expectedStream()` and `liquidity` — what a claim is like to HOLD
+## 4. `worthTo` — the half of an instrument profile that was missing
+
+> **BUILT.** `InstrumentKindProfile.worthTo(i, required, reads)` and `ParticipantView.worth(instrument,
+> requiredPerAnnum)`. One question — *what is one unit worth to a holder that requires this per
+> annum* — asked of every kind, answered by the kind's own profile, dispatched by the kernel.
+>
+> **Absent is an answer, not a default**: it says THE PROMISE IS THE EXPECTATION, true of every
+> contractual instrument, and the kernel then discounts `cashFlows` at what the holder requires. The
+> share kind says otherwise and capitalises what its company PUBLISHED (`reporting.report` in the
+> journal), annualised by the span of its own report, over the shares in issue — the same arithmetic
+> `control/worthAt` was already doing alone, now in one place (Law 4). No multiple, no forecast, no
+> second set of accounts. It is not a price and cannot become one (Law 3): the profile answers, the
+> PARTY brings its own required return, and what comes out is a bid.
+>
+> **`funds.eligible` no longer asks the wrong question.** It tested `cashFlows` — the issuer's dated
+> promise — for BOTH of a mandate's questions, so anything promising no dated payment failed the
+> tenor test by having no last flow at all. That one line is why no fund in this world could ever
+> hold a share and why every fund is a bond fund at the type level whatever its mandate says. The
+> tenor test now applies where a tenor exists, and what a fund can put a number on is asked of the
+> valuation door.
+>
+> **What is still missing, stated plainly.** No seeded fund has an equity mandate — `eligible` is
+> bills or grain — so the CAPABILITY exists and nothing exercises it yet. Giving a manager a mandate
+> that holds shares is a seed decision and it belongs with **13o**. `liquidity` — how fast a claim
+> becomes money, absent from the profile entirely and half of every funding decision (**A-27**) — is
+> not built here and stays on this item.
+
 
 **Why.** `InstrumentKindProfile` has ten fields — `pricing, carry, owes, liabilityOfIssuer, unit,
 priceTick, validateTerms, displayName, due, cashFlows` — and every one answers *what is this thing

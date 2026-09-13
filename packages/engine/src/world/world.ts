@@ -40,7 +40,7 @@ import {
   fxPairId,
 } from '../core/ids.js';
 
-import { add, addTo, div, mul, sub, sum } from '../core/num.js';
+import { finite, add, addTo, div, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
   asContractMarket,
@@ -62,6 +62,8 @@ import { cellSide, Settlement, totalFor } from '../ledger/settlement.js';
 import { Parties, partiesReads, weightOf, type Party } from '../parties/party.js';
 import { type CurveFamilyDecl, type CurveRead, readCurve } from '../prices/curve.js';
 import { PriceStore, type Print, wasTraded } from '../prices/price-store.js';
+import { priceAt } from '../prices/curve.js';
+import type { WorthReads } from '../registry/kinds.js';
 import { Valuation } from '../prices/value.js';
 import { Instruments } from '../register/instruments.js';
 import { Register, type RegisterReads, registerReads } from '../register/register.js';
@@ -159,6 +161,12 @@ export interface WorldSpec {
  */
 const declId = (owner: string, kind: PartyKindId, market?: string): string =>
   market === undefined ? `${owner}/${kind}` : `${owner}/${kind}/${market}`;
+
+/**
+ * Law 4: ONE day count for the whole valuation door. A world with two conventions has two answers
+ * to "what is this worth", and `control` was already using this one for the same arithmetic.
+ */
+const WORTH_DAY_COUNT = 'ACT/365F' as const;
 
 export class World {
   readonly seed: string;
@@ -1236,6 +1244,7 @@ export class World {
       print: (instrument) => this.prices.latest(instrument, this.currentPeriod),
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
+      worth: (instrument, required) => this.worthTo(instrument, required),
       curve: (family) => this.curve(family),
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
       failedPayments: (since: Period) => this.ledger.failedFor(party, since),
@@ -1896,6 +1905,48 @@ export class World {
         this.registry.instrumentKind(i.kind).cashFlows(i, after, this.calendar),
       accrued: (i, on) => this.registry.instrumentKind(i.kind).accrued(i, on, this.calendar),
     });
+  }
+
+  /**
+   * §46, Equity B1, Law 4: WHAT ONE UNIT IS WORTH AT A REQUIRED RETURN — one valuation door, asked
+   * of every kind, answered by the kind's own profile.
+   *
+   * A kind that says nothing is saying its PROMISE is the expectation, which is true of every
+   * contractual instrument, so the kernel discounts the promise at what the holder requires. One day
+   * count for the whole door (Law 4: a world with two valuation conventions has two answers to one
+   * question), and it is the one `control` was already using for the same arithmetic.
+   */
+  private worthTo(instrument: InstrumentId, required: number): Option<number> {
+    finite(required, `required return for ${instrument}`);
+    if (required <= 0) return none<number>();
+    const i = this.instruments.get(instrument);
+    const profile = this.registry.instrumentKind(i.kind);
+    const on = this.calendar.startOf(this.currentPeriod);
+    const own = profile.worthTo;
+    if (own !== undefined) return own(i, required, this.worthReads());
+    const flows = profile.cashFlows(i, on, this.calendar);
+    if (flows.length === 0) return none<number>();
+    return some(
+      priceAt(flows, required, on, WORTH_DAY_COUNT, `what ${instrument} is worth at ${required}`),
+    );
+  }
+
+  /** Public reads only (Observer A3): what an issuer published, and how many units exist. */
+  private worthReads(): WorthReads {
+    return {
+      calendar: this.calendar,
+      period: this.currentPeriod,
+      lastReport: (issuer: PartyId) => {
+        const e = this.journal.lastOf('reporting.report', issuer);
+        if (e === undefined) return none();
+        const { earned, from, to } = e.data;
+        if (typeof earned !== 'number' || typeof from !== 'number' || typeof to !== 'number') {
+          return none();
+        }
+        return some({ earned, periods: to - from + 1 });
+      },
+      issued: (id: InstrumentId) => this.instruments.get(id).issued,
+    };
   }
 
   /** Bond N9.b: what has accrued per unit on a line at the start of a period, from its own terms. */

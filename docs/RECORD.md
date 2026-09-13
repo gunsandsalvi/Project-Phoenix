@@ -4193,3 +4193,58 @@ exist, and `control/worthAt` already combines them correctly.
 reach: **7 red before it and the same 7 red after it, by name.** Not this item's, and not made worse
 by it. The full suite was not run to completion — a year of the whole chain at four countries is
 long past the point where waiting on it teaches anything (C-1 owns that measurement).
+
+
+## Item 4 — the valuation door: what a claim is worth to somebody who requires something
+
+**What.** `InstrumentKindProfile.worthTo(i, required, reads)` and `ParticipantView.worth(instrument,
+requiredPerAnnum)`. One question, asked of every kind of claim, answered by the kind's own profile.
+
+**Why it was the item the equity question was really about.** The instrument profile had ten fields
+— `pricing, carry, owes, liabilityOfIssuer, unit, priceTick, validateTerms, displayName, due,
+cashFlows` — and every one answers *what is this thing legally and how does it settle*. **Not one
+answered why anyone would hold it.** `cashFlows` is the issuer's CONTRACTUAL PROMISE, so this world
+had exactly one theory of value: discount the promise. A share has no promise. Everything followed
+from that single absence — `funds.eligible` returned false for anything with no cash flows, so no
+fund could ever hold a share; a household therefore valued a share at
+`outlook('price.<id>').expected − confidence`, an extrapolation of the price's own history; and the
+one earnings-based valuation in the tree, `control/worthAt`, sat inside a module that has never
+produced anything. The equity market was a closed loop of price-extrapolators with no fundamental
+side, which is why the price collapsed in the year-long run and why 12c patched an anchor at the
+seed. **The anchor is a buyer.**
+
+**Absent is an answer and not a default.** A kind that says nothing is saying its promise IS the
+expectation, which is true of every contractual instrument, and the kernel discounts `cashFlows` at
+what the holder requires — one day count for the whole door, the one `control` was already using
+(Law 4). The share kind says otherwise: it capitalises what its company published, annualised by the
+span of its own report, over the shares in issue. No multiple, no forecast, no second set of
+accounts (Reporting A2.a). It is not a price and cannot become one (Law 3) — the profile answers the
+stream, the PARTY brings its required return, and two holders requiring different things want the
+same claim at different levels, which is the disagreement §46 A3 says a book is made of.
+
+**`funds.eligible` was asking one question for two.** It tested `cashFlows` for both halves of a
+mandate — what it may hold AND how long its money may be tied up — so anything promising no dated
+payment failed the tenor test by having no last flow at all. The tenor test now applies where a
+tenor exists, and what the fund can put a number on is asked of the valuation door. A claim it
+cannot value is one it does not buy: a real refusal, rather than a property of whether the claim
+happens to promise anything.
+
+**What is NOT done, and it is not hidden.** No seeded fund has an equity mandate — `eligible` is
+bills or grain — so the capability exists and nothing exercises it yet; giving a manager a mandate
+that holds shares is a seed decision and belongs with 13o. And `liquidity` — how fast a claim
+becomes money, absent from the profile entirely and half of every funding decision (**A-27**) — is
+not built here. Both stay on the item.
+
+**Tested where the arithmetic lives.** A listed line is DRAWN and the scale model draws none, so the
+share's answer is exercised against the profile directly rather than by waiting for a world to
+produce a company with four published quarters. A bond's worth falling as the holder requires more
+is tested on the world, because that path runs there.
+
+**Forecast, with its killer.** A dealer, a fund and an acquirer can now form a view of a share from
+what its company earns, and they will disagree with each other and with the tape. **What would
+falsify it:** the first world where a fund holds shares showing that a capitalised published quarter
+is too noisy to bid on — in which case what is missing is a smoothing that is itself a preference
+somebody declares, not a change to this door.
+
+**Measured.** `funds.test.ts` — 2 red before this change and the same 2 after, by name. Green: lint,
+typecheck, spec citations, forbids, plan progress, `worth.test.ts` 5 of 5.
