@@ -63,17 +63,23 @@ export const RIG_FIRMS = 12;
 
 /**
  * Seed B1, B4 (13d.1): and at least this many in EVERY line. `RIG_FIRMS` is a TOTAL, and a total
- * spread over sixty-two lines by their real shares leaves most of them empty — a rig that asks the
- * draw for a machine works is told "it drew 0", which is a fact about the rig and not about the
- * world.
+ * spread over sixty-two lines by their real shares leaves most of them empty.
  *
- * It is ZERO for now, and that is a finding rather than a decision: raising it changes how many
- * firms a rig world has, which changes the population the scale model is sized to
- * (`rigMembers`), which changes what a labour venue has in it — seven of `labour.test.ts`'s
- * assertions are about a venue with a known number of seekers in it. A scale model is a smaller
- * world and not a distorted one, so making every line present means re-deriving the population
- * from the firms the draw actually made rather than from the number it was asked for. That is one
- * bounded change and it is not this item's.
+ * It is ZERO, and that is a measurement rather than an oversight. A rig that asks the draw for a
+ * machine works is told "it drew 0", which is a fact about the rig and not about the world, and it
+ * takes `capital.test.ts` and `firms.test.ts` down with it at file level.
+ *
+ * ONE BLOCKER IS GONE: `rigSpec` used to size the population from the number of firms REQUESTED, so
+ * every extra firm the draw made moved the people-to-firm ratio under it. It reads the draw now, so
+ * the ratio holds however many the draw makes.
+ *
+ * WHAT REMAINS IS NOT A BUG, IT IS A REWRITE, and that is measured rather than assumed. Setting
+ * this to ONE takes the whole suite from 79 red to 139: a rig with every line in it is a different
+ * small world — more firms, more seekers in a labour venue, different fills, different prices — and
+ * the assertions across `labour`, `firms` and a dozen other files are written against the world
+ * this rig makes today. Those tests are not wrong; they are SPECIFIC. Re-sizing the scale model and
+ * re-deriving what every one of them asserts is item 16's work, and it is one bounded change rather
+ * than a fix smuggled into another.
  */
 export const RIG_PER_LINE = 0;
 
@@ -96,8 +102,16 @@ const MEMBERS_PER_COHORT = 15_000_000;
 const MEMBERS = paramId('seed.households.membersPerCohort');
 
 export function rigSpec(seed: string, banks = RIG_BANKS, firms = RIG_FIRMS): AssemblySpec {
-  const spec = foundationSpec(seed, drawBanks(banks, seed), drawFirms(firms, seed, RIG_PER_LINE));
-  const members = rigMembers(firms);
+  const drawn = drawFirms(firms, seed, RIG_PER_LINE);
+  const spec = foundationSpec(seed, drawBanks(banks, seed), drawn);
+  /**
+   * Seed B1.a: THE POPULATION FOLLOWS THE FIRMS THE DRAW ACTUALLY MADE, not the number it was asked
+   * for. A scale model keeps the real world's ratio — ten thousand people to a named firm — and
+   * `firms` is a request rather than a result: asking for twelve and requiring every line to have
+   * one produces more than twelve, and sizing the population to the request would put the wrong
+   * number of people behind them. Reading the draw is what lets `RIG_PER_LINE` move at all.
+   */
+  const members = rigMembers(drawn.length);
   return {
     ...spec,
     modules: spec.modules.map((m) => ({

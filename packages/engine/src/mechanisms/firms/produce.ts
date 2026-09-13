@@ -119,10 +119,25 @@ function start(
     },
     ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: `capacity.${capacity.value.binding}` }] : []),
     ...tech.inputs.map((input) => ({
-      // Law 8: it must draw WHOLE pieces of the input, and a recipe met with the piece below is a
-      // recipe not met — so what its stock reaches is a piece short of what dividing would say.
+      /**
+       * Law 8, Law 6: WHAT THE STOCK ON HAND REACHES, which for a stock of nothing is nothing.
+       *
+       * It used to subtract a piece first, to leave room for the round-up on the draw: the recipe
+       * takes `upTick(batch x qtyPerUnit)` and a recipe met with the piece below is a recipe not
+       * met. But a firm holding NONE of an input then reached minus one piece, the least limit won,
+       * and a NEGATIVE BATCH went to settlement — where the register refused it, because a create
+       * moves a positive quantity or it is not a create (Register C1). It took a whole test file
+       * down and it would have taken a run down.
+       *
+       * The subtraction was never needed. Free stock is a whole number of pieces, so for any batch
+       * b at or below free/q the draw is b*q <= free, and rounding b*q up cannot pass an integer it
+       * is already at or below. Flooring the batch — which `deliverable` does below, on the line's
+       * own grid — is the whole of what makes the draw fit. So the piece comes back, a firm with
+       * nothing reaches nothing and stands idle, and one holding an exact multiple can start the
+       * batch that multiple pays for instead of one short of it.
+       */
       qty: div(
-        sub(ctx.register.free(firm, input.instrument), 1, 'stock it can commit'),
+        ctx.register.free(firm, input.instrument),
         input.qtyPerUnit,
         'what the stock on hand reaches',
       ),
