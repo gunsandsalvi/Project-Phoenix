@@ -88,6 +88,7 @@ import {
   type CorporateActionReads,
 } from '../register/corporate.js';
 import { Guarantees, guaranteeReads, type GuaranteeReads } from '../register/guarantees.js';
+import { Processes, processReads, type ProcessReads } from '../register/processes.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -220,6 +221,9 @@ export class World {
   /** Banks Funding A1.a: who stands behind whom — the one relation with three sides (item 13). */
   private readonly guaranteeStore = new Guarantees();
   readonly guarantees: GuaranteeReads = guaranteeReads(this.guaranteeStore);
+  /** XI-8: what a party is in the middle of — a procedure with steps and a close (item 14). */
+  private readonly processStore = new Processes();
+  readonly processes: ProcessReads = processReads(this.processStore);
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -1244,6 +1248,7 @@ export class World {
       control: this.control,
       actions: this.actions,
       guarantees: this.guarantees,
+      processes: this.processes,
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
       contractBooks: (kind, on) => this.contractBooks(kind, on),
@@ -1391,6 +1396,7 @@ export class World {
       control: this.control,
       actions: this.actions,
       guarantees: this.guarantees,
+      processes: this.processes,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1483,6 +1489,7 @@ export class World {
       control: this.control,
       actions: this.actions,
       guarantees: this.guarantees,
+      processes: this.processes,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1648,6 +1655,49 @@ export class World {
           'corporate.cancelled',
           [row.issuer, row.line],
           { action: row.id, what: row.kind, why },
+          true,
+        );
+        return row;
+      },
+      beginProcess: (decl) => {
+        const row = this.processStore.open(decl, this.currentPeriod);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'process.opened',
+          [row.subject],
+          {
+            process: row.id,
+            what: row.what,
+            subject: row.subject,
+            steps: [...row.steps],
+            closesAfter: row.closesAfter,
+            why: row.why,
+          },
+          true,
+        );
+        return row;
+      },
+      advanceProcess: (id) => {
+        const row = this.processStore.advance(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'process.advanced',
+          [row.subject],
+          { process: row.id, what: row.what, step: this.processStore.step(id) },
+          true,
+        );
+        return row;
+      },
+      endProcess: (id, how, why) => {
+        const row = how === 'closed' ? this.processStore.close(id) : this.processStore.abandon(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          how === 'closed' ? 'process.closed' : 'process.abandoned',
+          [row.subject],
+          { process: row.id, what: row.what, why },
           true,
         );
         return row;

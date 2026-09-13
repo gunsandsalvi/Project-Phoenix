@@ -4831,3 +4831,49 @@ look through to a guarantor and an estate can rank a guaranteed claim differentl
 falsify it:** a guarantee whose guarantor is itself guaranteed and where the chain matters — the
 store answers `behind` one level at a time and nothing walks it, which is fine until a clearing house
 stands behind a member that stands behind a client.
+
+
+## Item 14 — a multi-period state machine
+
+**What.** `register/processes.ts`: a named procedure about a named subject, with ordered steps and a
+period it must be over by. Written through `beginProcess` / `advanceProcess` / `endProcess`,
+journalled publicly, read through `processes` on `KernelReads`.
+
+**Why.** `Winding = {dead, opened, closesAfter, closed}` — four fields in one module's bag, and the
+only thing of its shape in the codebase. A construction project, an auction cycle, a tender period, a
+rights issue, a resolution and a restructuring are the same shape, and each would have invented its
+own version in its own bag, none visible to the kernel and none able to answer "what is this party in
+the middle of".
+
+**The steps are declared because a boolean could not say where it was.** `Winding` could say started
+and finished, which are the two states an estate spends none of its time in. An estate is
+`selling → paying → dividing`. Leaving the last step is ENDING rather than an off-by-one, and
+`closed` and `abandoned` are different facts.
+
+**The settle loop walks `ctx.processes.running('estate')`** instead of a private list, so the module
+no longer keeps a second answer to a question the world already has one of — and it was the answer
+nobody else could reach.
+
+**A-21 is closed, and the fix is not another choice.** `heirOf` was `.find`: the first cell the
+parties store happened to return, of the first cohort. Every estate in a (region, bank) went to that
+one cell and to no other, so **one household cell in each region accumulated the wealth of everybody
+who died there and the rest inherited nothing, ever** — and which cell it was depended on insertion
+order, a seed-draw artefact rather than a fact about the world. It is `heirsOf` now: every surviving
+cell where the dead lived and banked, in proportion to how many people each stands for. **Nobody is
+picked.** The share is the population, and a region whose cells are all the same size divides equally
+because that is what its cells are, not because a rule says so. What will not divide into whole
+pieces stays with the office until enough of it has arrived.
+
+**Measured**, fourteen periods: **14 divisions to 1 heir → 304 divisions to 35 heirs.** `estate`,
+`households`, `world`: **14 red before, 14 after.** Six new tests. Green: lint, typecheck, spec
+citations (207), forbids (204 files).
+
+**Carried.** The `?? ''` in the old `heirOf` went with the function. `E-4` (a capacity line producing
+to order) and `E-2` (a `winding` estate still a household cell to eleven readers) both wanted this
+noun and now have it; neither is built on it yet. The estate is the only declared process — a
+construction, a tender and a resolution are each one line of `beginProcess` away and none is written.
+
+**Forecast, with its killer.** A procedure has a place it has got to and a date it must be over by,
+which anybody can read. **What would falsify it:** a procedure whose steps are not a line — a
+resolution that can go back to valuing after an acquirer walks away — which this walks forward only
+and would have to be a set of transitions rather than a list.

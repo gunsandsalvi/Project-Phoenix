@@ -30,7 +30,7 @@
 import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { assertNever } from '../../core/assert.js';
-import { div, mul, sub } from '../../core/num.js';
+import { add, div, mul, sub } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { asQty } from '../../core/tick.js';
 import { partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
@@ -163,19 +163,42 @@ export const probateKind: PartyKindProfile = {
   depositClass: null,
 };
 
-/** The cell an estate goes to: the working people in the same place, banking where the family banks. */
-function heirOf(ctx: MechanismContext, region: RegionId, bank: PartyId): PartyId | undefined {
-  const first = String(ctx.registry.cohorts[0]?.id ?? '');
-  return ctx.parties
-    .ofKind(HOUSEHOLD)
-    .find(
-      (p) =>
-        p.status.alive &&
-        p.representation === 'cell' &&
-        p.region === region &&
-        p.bank === bank &&
-        keyOf(p, 'cohort') === first,
-    )?.id;
+/**
+ * A-21, F2, Law 2: WHO INHERITS. The survivors where the dead lived and banked, in proportion to
+ * how many people each cell stands for.
+ *
+ * IT USED TO BE `.find` — the FIRST cell the parties store happened to return, of the first cohort.
+ * Every estate in a (region, bank) went to that one cell and to no other, so one household cell in
+ * each region accumulated the wealth of everybody who died there and the rest inherited nothing,
+ * ever. Which cell it was depended on the parties store's insertion order, which is a seed-draw
+ * artefact and not a fact about the world.
+ *
+ * Two things were wrong with it and both are gone. The distribution was an OUTCOME written as a
+ * lookup (Law 2), and it was a decision taken at no party's own reason — nobody chose an heir,
+ * nobody had a claim, and there was no mechanism behind it. What replaces it is not a choice
+ * either: it is a SHARE, and the share is the population. Nobody is picked, and a region whose
+ * cells are all the same size divides equally because that is what its cells are, not because a
+ * rule says to.
+ *
+ * `handToProbate`'s own header says the survivors of the dead cell's own key are the natural
+ * somebody. The office pools the estates of every cohort that banks there, so by the time it pays
+ * it cannot say whose is whose — which is a real limitation of pooling and is why this is every
+ * cell in the (region, bank) rather than the dead's own cohort.
+ */
+function heirsOf(
+  ctx: MechanismContext,
+  region: RegionId,
+  bank: PartyId,
+): readonly { readonly id: PartyId; readonly weight: number }[] {
+  const out: { id: PartyId; weight: number }[] = [];
+  for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
+    if (!p.status.alive || p.representation !== 'cell') continue;
+    if (p.region !== region || p.bank !== bank) continue;
+    const weight = weightOf(p);
+    if (weight <= 0) continue;
+    out.push({ id: p.id, weight });
+  }
+  return out;
 }
 
 
@@ -326,59 +349,86 @@ export function die(ctx: MechanismContext, rows: readonly MortalityDecl[]): void
 export function settleEstates(ctx: MechanismContext): void {
   for (const office of ctx.parties.ofKind(PROBATE)) {
     if (!office.status.alive) continue;
-    const heir = heirOf(ctx, office.region, office.bank);
-    if (heir === undefined) continue;
-    const to = ctx.parties.get(heir);
-    const weight = weightOf(to);
-    if (weight <= 0) continue;
+    /**
+     * A-21, item 14: EVERY SURVIVOR WHERE THE DEAD LIVED AND BANKED, in proportion to how many
+     * people each cell stands for — and the proportion is the population, not a rule.
+     */
+    const heirs = heirsOf(ctx, office.region, office.bank);
+    const people = heirs.reduce((t, h) => add(t, h.weight, 'the survivors here'), 0);
+    if (people <= 0) continue;
     const view = ctx.participant(office.id);
     const ccy = ctx.registry.currencyOf(office.region);
-    const legs: Leg[] = [];
-    for (const h of view.holdings()) {
-      if (isMoney(ctx, h.instrument)) continue;
-      const held = view.free(h.instrument);
-      if (held <= 0) continue;
-      const unit = ctx.instruments.get(h.instrument).unit;
-      const perMember = ctx.registry.deliverable(unit, div(held, weight, 'each of them gets'));
-      if (perMember <= 0) continue;
-      const print = view.print(h.instrument);
-      legs.push({
-        kind: 'asset',
-        from: office.id,
-        to: heir,
-        instrument: h.instrument,
-        qty: asQty(mul(perMember, weight, 'what they get between them')),
-        pricePerUnit: print.some ? some(print.value.price) : none(),
-        accruedPerUnit: none(),
-        fromCell: none(),
-        toCell: some({ perMember, weight }),
-      });
-    }
-    const cash = view.cash(ccy);
-    if (cash > 0) {
-      const perMember = ctx.registry.payable(ccy, div(cash, weight, 'each of them gets'));
-      if (perMember > 0) {
+    for (const heir of heirs) {
+      const legs: Leg[] = [];
+      const share = div(heir.weight, people, 'this cell share of what is here');
+      for (const h of view.holdings()) {
+        if (isMoney(ctx, h.instrument)) continue;
+        const held = view.free(h.instrument);
+        if (held <= 0) continue;
+        const unit = ctx.instruments.get(h.instrument).unit;
+        /**
+         * Law 8, XI-15: WHOLE PIECES, to each member of this cell. What will not divide stays with
+         * the office and is divided when enough of it has arrived — nothing is rounded away, which
+         * is the same rule the office already applied to one heir and now applies to all of them.
+         */
+        const perMember = ctx.registry.deliverable(
+          unit,
+          div(mul(held, share, 'this cell share'), heir.weight, 'each of them gets'),
+        );
+        if (perMember <= 0) continue;
+        const print = view.print(h.instrument);
         legs.push({
-          kind: 'money',
-          from: ctx.accountOf(office.id, ccy),
-          to: ctx.accountOf(heir, ccy),
-          // Treasury C1, XI-8: an inheritance is a TRANSFER of what somebody already owned, not
-          // something the heir earned. It was taxed as income at the wage rate (A-46).
-          receipt: { of: 'transfer' },
-          ccy,
-          amount: asQty(mul(perMember, weight, 'what they get between them')),
+          kind: 'asset',
+          from: office.id,
+          to: heir.id,
+          instrument: h.instrument,
+          qty: asQty(mul(perMember, heir.weight, 'what they get between them')),
+          pricePerUnit: print.some ? some(print.value.price) : none(),
+          accruedPerUnit: none(),
           fromCell: none(),
-          toCell: some({ perMember, weight }),
+          toCell: some({ perMember, weight: heir.weight }),
         });
       }
+      const cash = view.cash(ccy);
+      if (cash > 0) {
+        const perMember = ctx.registry.payable(
+          ccy,
+          div(mul(cash, share, 'this cell share'), heir.weight, 'each of them gets'),
+        );
+        if (perMember > 0) {
+          legs.push({
+            kind: 'money',
+            from: ctx.accountOf(office.id, ccy),
+            to: ctx.accountOf(heir.id, ccy),
+            // Treasury C1, XI-8: an inheritance is a TRANSFER of what somebody already owned, not
+            // something the heir earned. It was taxed as income at the wage rate (A-46).
+            receipt: { of: 'transfer' },
+            ccy,
+            amount: asQty(mul(perMember, heir.weight, 'what they get between them')),
+            fromCell: none(),
+            toCell: some({ perMember, weight: heir.weight }),
+          });
+        }
+      }
+      if (legs.length === 0) continue;
+      const r = ctx.settle({
+        legs,
+        cause: 'corporateAction',
+        reason: `${office.id} divides an estate`,
+      });
+      ctx.record(
+        LIFECYCLE,
+        [office.id, heir.id],
+        {
+          event: 'divided',
+          heir: heir.id,
+          of: people,
+          members: heir.weight,
+          lines: legs.length,
+          settled: r.outcome === 'settled',
+        },
+        true,
+      );
     }
-    if (legs.length === 0) continue;
-    const r = ctx.settle({ legs, cause: 'corporateAction', reason: `${office.id} divides an estate` });
-    ctx.record(
-      LIFECYCLE,
-      [office.id, heir],
-      { event: 'divided', heir, lines: legs.length, settled: r.outcome === 'settled' },
-      true,
-    );
   }
 }

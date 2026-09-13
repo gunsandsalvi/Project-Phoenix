@@ -21,6 +21,7 @@ import type {
   Brand,
   CorporateActionId,
   GuaranteeId,
+  ProcessId,
   CurrencyCode,
   CurveFamilyId,
   DerivativeKindId,
@@ -41,6 +42,7 @@ import type {
   CorporateActionReads,
 } from '../register/corporate.js';
 import type { Guarantee, GuaranteeDecl, GuaranteeReads } from '../register/guarantees.js';
+import type { Process, ProcessDecl, ProcessReads, ProcessState } from '../register/processes.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
@@ -213,6 +215,12 @@ export interface KernelReads {
    * (Observer A3), which is why a deposit insurance scheme is announced rather than discovered.
    */
   readonly guarantees: GuaranteeReads;
+  /**
+   * XI-8, Firm Birth D5: WHAT A PARTY IS IN THE MIDDLE OF — a winding-up, a construction, a tender,
+   * a resolution — with the step it is on and the period it must be over by. Public: a procedure
+   * that has begun is an announcement, and a depositor watching a resolution is watching this.
+   */
+  readonly processes: ProcessReads;
   /**
    * XI-3, Banks Capital C3.b: whether some module takes charge of what happens when a party of this
    * kind fails. The estate asks it so that it can leave a bank alone without knowing what a bank is
@@ -742,6 +750,19 @@ export interface MechanismContext extends WorldReads {
    * between any two of them. What follows from it — a claim that ranks differently, a lender that
    * looks through to the guarantor, a fund that is called before the purse — is what reads it.
    */
+  /**
+   * XI-8, D5: A PROCEDURE BEGINS, with its steps named and a period it must be over by.
+   *
+   * It holds nothing and moves nothing: what happens at each step is the mechanism's own business,
+   * and this says only which step that is and how long there is left. Before it, the one instance
+   * of this shape was four fields in one module's bag, and nothing could be asked what a party was
+   * in the middle of.
+   */
+  beginProcess(decl: ProcessDecl): Process;
+  /** One step on. It refuses to walk past the last: that is ending, and ending says so. */
+  advanceProcess(id: ProcessId): Process;
+  /** It finished, or it stopped without finishing — and the two are different facts (D5). */
+  endProcess(id: ProcessId, how: Exclude<ProcessState, 'running'>, why: string): Process;
   guarantee(decl: GuaranteeDecl): Guarantee;
   /** D4: it is called, and what it paid is recorded against what it promised. */
   callGuarantee(id: GuaranteeId, amount: number, why: string): Guarantee;

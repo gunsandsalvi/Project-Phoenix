@@ -124,7 +124,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**11**~~ | ~~`OutputKind`~~ | 1 | **BUILT** — the noun, and A-64's three parts. 18 declared numbers gone; produce-to-order is `E-4`, after 14 |
 | ~~**12**~~ | ~~`Space`~~ | 0 | **BUILT** — the ground of a place is finite, held and cleared. The rest of 13m stands on it: `E-5` |
 | ~~**13**~~ | ~~`Guarantee`~~ | 0 | **BUILT** — three sides, a limit that is a term and not a bound, wired at deposit insurance |
-| **14** | `Process` | 1 | independent; small |
+| ~~**14**~~ | ~~`Process`~~ | 1 | **BUILT** — steps, not a boolean. And one cell inheriting everything becomes 35 |
 | **15** | `Objective` | 0 | needs most of the above to be expressible at all |
 | **16** | `Measure<D>` | 18 | independent of every noun; large, mechanical, compiler-driven — run it alongside |
 | **17** | The local repairs | 18 | never a session's work; take each when its file is already open |
@@ -2734,6 +2734,45 @@ unguaranteed one.
 ---
 
 ## 14. `Process` — a multi-period state machine
+
+> **BUILT.** `register/processes.ts`: a named procedure about a named subject, with ORDERED STEPS
+> and a period it must be over by. Written through `beginProcess` / `advanceProcess` / `endProcess`,
+> journalled publicly, read through `processes` on **`KernelReads`** — `of(subject)`,
+> `running(what)`, `dueBy(period)`, `step(id)`.
+>
+> **`Winding = {dead, opened, closesAfter, closed}` is gone.** It was four fields in one module's
+> bag and the only thing of its shape in the codebase, and a construction project, an auction cycle,
+> a tender period, a rights issue, a resolution and a restructuring would each have invented their
+> own. The estate module keeps what is actually its own — the number it names the next estate with,
+> and who each is the estate OF — and the programme is the kernel's.
+>
+> **The steps are declared because a boolean could not say where it was.** `Winding` could say
+> started and finished, which are the two states an estate spends none of its time in. An estate is
+> `selling → paying → dividing`, and leaving the last step is ENDING rather than an off-by-one.
+> `closed` and `abandoned` are different facts: one finished, the other stopped.
+>
+> **The settle loop walks `ctx.processes.running('estate')`** instead of a private list, so the
+> module no longer keeps a second answer to a question the world already has one of (Law 4) — and
+> it was the answer nobody else could reach.
+>
+> **A-21 is closed, and the fix is not another choice.** `heirOf` was `.find` — the FIRST cell the
+> parties store happened to return, of the first cohort. Every estate in a (region, bank) went to
+> that one cell and to no other, so **one household cell in each region accumulated the wealth of
+> everybody who died there and the rest inherited nothing, ever**, and which cell it was depended on
+> insertion order: a seed-draw artefact, not a fact about the world. It is `heirsOf` now — every
+> surviving cell where the dead lived and banked, in proportion to how many people each stands for.
+> **Nobody is picked**: the share is the population, and a region whose cells are all the same size
+> divides equally because that is what its cells are and not because a rule says so. What will not
+> divide into whole pieces stays with the office until enough of it has arrived (Law 8).
+>
+> **Measured**, fourteen periods: **14 divisions to 1 heir → 304 divisions to 35 heirs.**
+> `estate`, `households`, `world`: **14 red before, 14 after.** Six new tests.
+>
+> **Carried.** The `?? ''` in the old `heirOf` went with the function. `E-4` (a capacity line
+> producing to order) and `E-2` (a `winding` estate that is still a household cell to eleven
+> readers) both wanted this noun and now have it; neither is built on it yet. The estate is the only
+> declared process — a construction, a tender and a resolution are each one line of `beginProcess`
+> away and none of them has been written.
 
 **Why.** One finding. The single instance is `Winding = {dead, opened, closesAfter, closed}` — four
 fields in a module bag. A construction project, an auction cycle, a tender offer period, a rights

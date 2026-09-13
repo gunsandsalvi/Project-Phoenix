@@ -56,6 +56,8 @@ export type AgreementId = Brand<string, 'AgreementId'>;
 export type CorporateActionId = Brand<string, 'CorporateActionId'>;
 /** Banks Funding A1.a: a third party standing behind a second (`register/guarantees.ts`). */
 export type GuaranteeId = Brand<string, 'GuaranteeId'>;
+/** XI-8: a procedure that takes more than one period (`register/processes.ts`). */
+export type ProcessId = Brand<string, 'ProcessId'>;
 export type DerivativeKindId = Brand<string, 'DerivativeKindId'>;
 
 /**
@@ -106,6 +108,7 @@ export const agreementId = (s: string): AgreementId => nonEmpty(s, 'AgreementId'
 export const corporateActionId = (s: string): CorporateActionId =>
   nonEmpty(s, 'CorporateActionId') as CorporateActionId;
 export const guaranteeId = (s: string): GuaranteeId => nonEmpty(s, 'GuaranteeId') as GuaranteeId;
+export const processId = (s: string): ProcessId => nonEmpty(s, 'ProcessId') as ProcessId;
 export const derivativeKindId = (s: string): DerivativeKindId =>
   nonEmpty(s, 'DerivativeKindId') as DerivativeKindId;
 

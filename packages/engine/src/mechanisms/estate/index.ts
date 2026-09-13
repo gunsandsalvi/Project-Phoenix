@@ -28,6 +28,8 @@ import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId, partyKindId } from '../../core/ids.js';
+import { period as periodOf } from '../../calendar/calendar.js';
+import type { Process } from '../../register/processes.js';
 import { div, material, mul, sub, sum, withinDust } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -52,20 +54,26 @@ export const ESTATE_PARAMS = {
 } as const;
 
 /** XI-8: what the estate is winding up, and how long it has to do it in. */
-interface Winding {
-  readonly dead: string;
-  readonly opened: number;
-  readonly closesAfter: number;
-  closed: boolean;
-}
+/**
+ * Item 14: `Winding = {dead, opened, closesAfter, closed}` WAS THIS BAG, and it was the only thing
+ * of its shape in the codebase — a construction project, an auction cycle, a tender period, a
+ * rights issue, a resolution and a restructuring are all the same shape and each would have
+ * invented its own. It is the kernel's `Process` now: named steps, a subject, and a period it must
+ * be over by, which anybody can ask about (`ctx.processes.of(estate)`).
+ *
+ * What stays here is the estate's own bookkeeping: the number it names the next one with, and who
+ * each one is the estate OF, which is a fact about this mechanism and not about procedures.
+ */
+/** XI-8, item 14: the procedure every estate in this world is, by name (`ctx.processes`). */
+export const ESTATE_PROCESS = 'estate';
 
 interface Book {
   next: number;
-  estates: Record<string, Winding>;
+  dead: Record<string, string>;
 }
 
 function book(ctx: MechanismContext): Book {
-  return ctx.state<Book>('estates', () => ({ next: 1, estates: {} }));
+  return ctx.state<Book>('estates', () => ({ next: 1, dead: {} }));
 }
 
 export const estateKind: PartyKindProfile = {
@@ -172,8 +180,20 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
    */
   ctx.standing(dead, 'winding', `estate ${id} opened: ${because}`);
   ctx.cease(dead, id);
-  const closesAfter = ctx.period + ctx.params.periods(ESTATE_PARAMS.programme);
-  b.estates[id] = { dead, opened: ctx.period, closesAfter, closed: false };
+  const closesAfter = periodOf(ctx.period + ctx.params.periods(ESTATE_PARAMS.programme));
+  b.dead[id] = String(dead);
+  /**
+   * D1, D2, D5, item 14: THE THREE THINGS AN ESTATE DOES, in order and out loud. `Winding` could
+   * say started and finished and nothing between — which are the two states an estate spends none
+   * of its time in. It sells, it pays in rank order, and it divides what is left.
+   */
+  ctx.beginProcess({
+    what: ESTATE_PROCESS,
+    subject: partyId(id),
+    steps: ['selling', 'paying', 'dividing'],
+    closesAfter,
+    why: `XI-8, Firm Birth D5: ${because}. An estate has a programme with an end, and a liquidator with a year left can wait for a price where one with a week cannot.`,
+  });
   ctx.record('estate.opened', [id, dead], { estate: id, dead, because, ccy, closesAfter }, true);
 }
 
@@ -359,7 +379,7 @@ function repay(
  * and then the estate must hold nothing in any currency, because a residual on a dead party is a
  * defect that must be found and paid away.
  */
-function close(ctx: MechanismContext, estate: PartyId, w: Winding, ccy: CurrencyCode): void {
+function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: CurrencyCode): void {
   // D1: what nobody bought by the last period is ABANDONED. A thing leaves the world by a destroy
   // leg, which is one-sided because nobody is on the other end of a heap of grain nobody wanted
   // (Register A3). A CLAIM cannot be abandoned that way — somebody still owes it, and handing it
@@ -447,9 +467,9 @@ function close(ctx: MechanismContext, estate: PartyId, w: Winding, ccy: Currency
     );
     return;
   }
-  w.closed = true;
+  ctx.endProcess(p.id, 'closed', `${estate} sold what it could, paid in rank order and divided the rest`);
   ctx.cease(estate, estate);
-  ctx.record('estate.closed', [estate], { estate, dead: w.dead, opened: w.opened }, true);
+  ctx.record('estate.closed', [estate], { estate, dead: book(ctx).dead[String(estate)], opened: p.opened }, true);
 }
 
 /**
@@ -628,14 +648,17 @@ export const estate: SystemModule = {
        */
       anchor: { after: 'markets' },
       run: (ctx: MechanismContext): void => {
-        const b = book(ctx);
-        for (const [id, w] of Object.entries(b.estates)) {
-          if (w.closed) continue;
-          const estateId = partyId(id);
+        /**
+         * Item 14, Law 19: THE RUNNING ONES, asked of the kernel rather than walked out of a bag.
+         * A module that kept its own list of what it had opened kept a second answer to a question
+         * the world already has one of (Law 4) — and it was the answer nobody else could reach.
+         */
+        for (const p of ctx.processes.running(ESTATE_PROCESS)) {
+          const estateId = p.subject;
           if (!ctx.parties.get(estateId).status.alive) continue;
           const ccy = ctx.registry.currencyOf(ctx.parties.get(estateId).region);
           distribute(ctx, estateId, ccy);
-          if (ctx.period >= w.closesAfter) close(ctx, estateId, w, ccy);
+          if (ctx.period >= p.closesAfter) close(ctx, estateId, p, ccy);
         }
       },
     },

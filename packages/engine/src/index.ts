@@ -27,6 +27,7 @@ export * from './register/register.js';
 export * from './register/agreements.js';
 export * from './register/control.js';
 export * from './register/guarantees.js';
+export * from './register/processes.js';
 export * from './register/corporate.js';
 export * from './mechanisms/land/index.js';
 export * from './journal/published.js';
