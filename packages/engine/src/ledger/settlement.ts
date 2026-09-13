@@ -34,7 +34,7 @@ import {
   type PartyId,
   type UnitId,
 } from '../core/ids.js';
-import { addTo, atMost, finite, mul, sum, zeroIfNone } from '../core/num.js';
+import { addTo, atMost, div, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
 import { negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
@@ -1031,6 +1031,18 @@ export class Settlement {
       bumpIn(party, delta, this.d.instruments.get(instrument).ccy);
     };
     /**
+     * XI-15, Law 8 (13d.1): AN EQUITY ACCOUNT IS PER MEMBER AND AN ISSUED TOTAL IS NOT.
+     *
+     * What a party has issued is a total — it is the same number however many people the issuer
+     * stands for — and every equity account in this world is kept per member of whoever owns it.
+     * For a named party those are the same number and this changed nothing for years; the day a
+     * CELL issued something, it booked a million households' worth of liability against one
+     * household's equity. What the issuer's own book moves by is its share of what it issued.
+     */
+    const perMemberOf = (party: PartyId, amount: number): number =>
+      div(amount, weightOf(this.d.parties.get(party)), 'the issuer\u2019s own share of it');
+
+    /**
      * The same, for a value that belongs to no instrument: a contract's, which is a bilateral
      * obligation and not a holding (Derivative X1), so its money is the contract's own (D5).
      */
@@ -1128,7 +1140,7 @@ export class Settlement {
           const inst = this.d.instruments.get(op.instrument);
           if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
             const per = op.valuePerUnit === 'carrying' ? carryingOf(op.fromDebit) : op.valuePerUnit;
-            bump(op.issuer, -mul(op.qty, per, 'issue value'), op.instrument);
+            bump(op.issuer, perMemberOf(op.issuer, -mul(op.qty, per, 'issue value')), op.instrument);
           }
           break;
         }
@@ -1163,7 +1175,7 @@ export class Settlement {
                 : op.valuePerUnit === 'carrying'
                   ? 1
                   : op.valuePerUnit;
-            bump(op.issuer, mul(op.qty, per, 'redeem value'), op.instrument);
+            bump(op.issuer, perMemberOf(op.issuer, mul(op.qty, per, 'redeem value')), op.instrument);
           }
           break;
         }

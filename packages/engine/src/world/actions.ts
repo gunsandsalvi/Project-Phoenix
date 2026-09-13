@@ -13,16 +13,16 @@
  * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Bond N12 Bond N13 Money C1.c Money E1 Money E1.a Money G3.a Banks Lending E1 Banks Lending E2 Firm Birth C1 Firm Birth C3 XI-1 Law 15
  */
 import { issuedBy, issuerOf } from '../register/instruments.js';
-import { negQty } from '../core/tick.js';
+import { negQty, type Qty } from '../core/tick.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
-import { assertNever } from '../core/assert.js';
+import { assertNever, forbid } from '../core/assert.js';
 import { currencyUnit, type CurrencyCode, type PartyId } from '../core/ids.js';
-import { mul } from '../core/num.js';
+import { div, mul } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Journal } from '../journal/journal.js';
 import type { CellSide, Failed, InstructionDraft, Leg } from '../ledger/instruction.js';
 import { cellSide, shareFor, type Settlement, totalFor } from '../ledger/settlement.js';
-import type { Parties } from '../parties/party.js';
+import { weightOf, type Parties, type Party } from '../parties/party.js';
 import type { Instrument, Instruments } from '../register/instruments.js';
 import type { Register } from '../register/register.js';
 import type { Registry } from '../registry/registry.js';
@@ -77,8 +77,25 @@ function payToHolders(
     // member of a cell separately, because each of them is a real holder with a real account
     // (XI-15). What the fraction would have been is not owed, because it is not money.
     const share = shareFor(d.registry, holder, currencyUnit(i.ccy), mul(perMemberUnits, perUnit, 'coupon cash'));
-    const perMemberCash = share.perMember;
-    const total = share.total;
+    /**
+     * XI-15, Law 8 (13d.1): AND THE PAYER MAY BE A CELL TOO. A household with a mortgage is a
+     * million households each owing its own share, so what leaves is struck per member of the
+     * ISSUER and the total is that times how many of them there are — the same rule the holder's
+     * side has always had, read from the other end.
+     *
+     * WHICHEVER SIDE IS A CELL GOVERNS, because a cell is the side that cannot take a fraction: a
+     * member is a real holder with a real account and the smallest thing it can pay is one piece of
+     * the money. Both sides being cells is a different problem — the amount would have to be a
+     * whole number of pieces for two different counts of people at once, which two weights in the
+     * millions share no useful number for — and it does not arise in this world: a cell's creditor
+     * is a bank. It throws rather than rounding, because rounding it is where units go missing.
+     */
+    const payer = d.parties.get(issuerOf(i));
+    const struck =
+      payer.representation === 'cell'
+        ? cellPays(d, payer, holder, i, share.total)
+        : { total: share.total, perMemberOut: undefined, perMemberIn: share.perMember };
+    const total = struck.total;
     if (total <= 0) continue;
     const leg: Leg = {
       kind: 'money',
@@ -86,9 +103,13 @@ function payToHolders(
       to: d.accountOf(holderId, i.ccy),
       ccy: i.ccy,
       amount: total,
-      fromCell: none(),
+      fromCell: optionalCell(
+        struck.perMemberOut === undefined ? undefined : cellSide(payer, struck.perMemberOut),
+      ),
       toCell: optionalCell(
-        holder.representation === 'cell' ? cellSide(holder, perMemberCash) : undefined,
+        holder.representation === 'cell' && struck.perMemberIn !== undefined
+          ? cellSide(holder, struck.perMemberIn)
+          : undefined,
       ),
     };
     const draft: InstructionDraft = {
@@ -99,6 +120,34 @@ function payToHolders(
     const record = d.settlement.settle(draft, period, cycle);
     if (record.outcome === 'failed') defaulted(i, record, holderId, total, period, cycle, d);
   }
+}
+
+/**
+ * XI-15, Law 8: what a CELL pays out, struck per member of the payer. What it comes to for each of
+ * them is the whole payment over how many of them there are, rounded down to money that exists, and
+ * the total is that back out — so the two sides of the leg are the same number reached from the
+ * payer's end. What the rounding drops is not owed, because it is not money.
+ */
+function cellPays(
+  d: ActionDeps,
+  payer: Party,
+  holder: Party,
+  i: Instrument,
+  gross: Qty,
+): { total: Qty; perMemberOut: Qty | undefined; perMemberIn: Qty | undefined } {
+  forbid(
+    holder.representation !== 'cell',
+    'XI-15',
+    `${i.id} is owed by a cell to a cell: one payment cannot be whole pieces for two counts of people at once`,
+    { instrument: i.id, payer: payer.id, holder: holder.id },
+  );
+  const out = shareFor(
+    d.registry,
+    payer,
+    currencyUnit(i.ccy),
+    div(gross, weightOf(payer), 'what each of them owes'),
+  );
+  return { total: out.total, perMemberOut: out.perMember, perMemberIn: undefined };
 }
 
 /**

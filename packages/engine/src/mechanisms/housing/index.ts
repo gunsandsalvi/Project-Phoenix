@@ -37,7 +37,7 @@
 import type { Order } from '../../clearing/solver.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { currencyUnit, unitId, type PartyId, type RegionId } from '../../core/ids.js';
+import { currencyUnit, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
 import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { asQty, downTick, type Qty } from '../../core/tick.js';
@@ -92,7 +92,12 @@ const emptyBook = (): LeaseBook => ({ rows: {}, next: 1 });
 
 const allLeases = (b: LeaseBook): Lease[] => Object.values(b.rows);
 
-/** A3, D1: dwellings this party OWNS in a place — the register's own answer, never a tally. */
+/** Law 8: the unit a dwelling is counted in, which is the instrument's own. */
+function goodUnitOf(view: ParticipantView, region: RegionId): UnitId {
+  return view.instruments.get(goodId(DWELLING, region)).unit;
+}
+
+/** A3, D1: dwellings this party OWNS in a place, IN PIECES — the register's own answer. */
 function owned(view: ParticipantView, region: RegionId): number {
   const id = goodId(DWELLING, region);
   if (!view.instruments.has(id)) return 0;
@@ -118,7 +123,15 @@ function needs(view: ParticipantView, rows: readonly TenureDecl[]): number {
   const row = rows.find((r) => r.cohort === cohort);
   if (row === undefined) return 0;
   const per = view.params.ratio(HOUSING_PARAMS.perMember(cohort));
-  return mul(weightOf(self), per, 'the occupancy the people in it need between them');
+  /**
+   * Law 8, 13c.1's lesson twice over: THE DECLARED RATIO IS IN NAMED UNITS AND THE STATE COUNTS IN
+   * PIECES, so it is converted where the ratio is READ and nowhere else. A dwelling per member is
+   * four tenths of a DWELLING, and what a register, a venue and a price all speak is pieces of one.
+   */
+  return view.registry.pieces(
+    goodUnitOf(view, self.region),
+    mul(weightOf(self), per, 'the occupancy the people in it need between them'),
+  );
 }
 
 /**
@@ -146,8 +159,13 @@ function reservation(view: ParticipantView, rows: readonly TenureDecl[]): number
   if (row === undefined) return undefined;
   const income = view.outlook('income');
   if (!income.some || income.value.expected <= 0) return undefined;
-  const per = view.params.ratio(HOUSING_PARAMS.perMember(keyOf(self, 'cohort')));
+  const per = view.registry.pieces(
+    goodUnitOf(view, self.region),
+    view.params.ratio(HOUSING_PARAMS.perMember(keyOf(self, 'cohort'))),
+  );
   if (per <= 0) return undefined;
+  // Law 8: money pieces a member expects, over the PIECES of occupancy a member lives under — so
+  // what it bids is money per piece, which is what the venue's book is in.
   return div(income.value.expected, per, 'what a member would pay for the roof it lives under');
 }
 
@@ -370,8 +388,19 @@ function shortOfMoney(
     if (has <= 0 || spare > 0) return undefined;
     want = 1;
   }
+  /**
+   * Law 8, XI-15: `want` is PIECES of the thing and `price` is money a piece, so the product is the
+   * money this party needs — and for a cell it is the money ALL its members need between them,
+   * because `want` was struck on the whole cell. What it already has is per member, so it is
+   * multiplied out to meet it rather than subtracted from a number in a different denomination.
+   */
   const cost = mul(want, price, 'what buying them would cost it');
-  const short = sub(cost, view.cash(ctx.registry.currencyOf(region)), 'less the money it has');
+  const money = mul(
+    view.cash(ctx.registry.currencyOf(region)),
+    weightOf(view.self),
+    'the money its people have between them',
+  );
+  const short = sub(cost, money, 'less the money it has');
   if (short <= 0) return undefined;
   return short;
 }
@@ -384,14 +413,20 @@ function shortOfMoney(
 function askForMortgages(ctx: MechanismContext, book: LeaseBook, rows: readonly TenureDecl[]): void {
   for (const cell of ctx.parties.alive()) {
     /**
-     * 13d.1: A HOUSEHOLD CAN NOW HOLD A ROOF — the register's grid is fine enough to say what one
-     * member of a cell owns (`goods/index.ts`) — and it still does not BORROW for one here, for a
-     * reason that is measured rather than assumed: a cell's drawing is struck per member, the
-     * per-member amount is rounded to whole pieces of money, and what the rounding drops does not
-     * reach the cell's equity account, so the balance-sheet family fires on the borrower in the
-     * period it borrowed. The plumbing is built and tested to that point (`banks/index.ts` writes a
-     * cell's drawing per member, both legs); what is missing is the one place the dust goes, and
-     * that is the next step of this item rather than something to leave firing every period.
+     * 13d.1: A HOUSEHOLD CAN HOLD A ROOF AND CAN BORROW FOR ONE — the register's grid says what one
+     * member owns, the drawing is struck per member on both legs, the payer's side of a coupon is
+     * denominated per member, and a cell issuer's equity moves by its own share of what it issued.
+     * All four were built and measured here, and the last two were kernel defects nobody had met
+     * because no cell had ever issued anything.
+     *
+     * WHAT STOPS IT IS ONE MORE THING, and it is not this item's: a borrower that MISSES A PAYMENT
+     * goes on accruing on the lender's book at amortised cost while nothing moves on its own, so
+     * its balance sheet drifts from the lender's by exactly the interest it did not pay. A
+     * household with a mortgage and no money set aside to service it misses immediately, so it
+     * shows there first — but it is the same defect for any borrower, and the item that owns it is
+     * **13f**, which is corporate credit and rewrites what a bank does with a borrower that has
+     * missed. Servicing a mortgage out of a household's own budget is Households E3/E4, and the
+     * same item.
      */
     if (cell.representation === 'cell') continue;
     // C3: one mortgage at a time. A household already carrying one is not asking for another
