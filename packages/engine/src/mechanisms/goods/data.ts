@@ -167,8 +167,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'Goods B4, 13c.1: it stands on pasture, so where it is run is part of what it yields.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 4,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -364,8 +363,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -758,8 +756,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 1,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -911,8 +908,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 1,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -943,8 +939,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -978,8 +973,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 3,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1013,8 +1007,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 26,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1050,8 +1043,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 3,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1082,8 +1074,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 2,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1117,8 +1108,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 2,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1151,8 +1141,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 1,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1184,8 +1173,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1222,8 +1210,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       'A line made indoors stands on no particular ground.',
     storagePerUnit: null,
-    storageWhy:
-      null,
+    storageWhy: null,
     leadTimePeriods: 6,
     leadTimeWhy:
       'B3: periods between committing the inputs and having the thing, so a decision taken on a stale view of demand cannot be unwound.',
@@ -1265,8 +1252,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1294,8 +1280,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1325,8 +1310,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1356,8 +1340,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1386,8 +1369,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1415,8 +1397,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1445,8 +1426,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1476,8 +1456,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1506,8 +1485,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1537,8 +1515,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1567,8 +1544,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1596,8 +1572,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1625,8 +1600,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1655,8 +1629,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1685,8 +1658,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1715,8 +1687,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none. It is made indoors, on ground its premises already stand on; the ground is in the plant and counting it twice would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: nothing. There is nowhere to put it, which is the same fact as `portable: false` said from the other side: a store is somewhere a thing waits that is not where it will be used.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is made to order, which is what having no stock to make it from means.',
   },
@@ -1747,8 +1718,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13c.2: none of its own. The ground is under the depot and counting it again would be counting it twice (Law 4).',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: none. The SERVICE cannot be stored; the STOCK can, and a merchant rents room for it in the storage market like everybody else.',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. It is done in the week it is asked for, which is what a wholesaler is for.',
   },
@@ -1788,8 +1758,7 @@ const MAKES: readonly GoodDecl[] = [
     standsOnWhy:
       '13d: none YET, and it is the biggest thing missing from this line. A dwelling stands on a PLOT, and what a plot costs is most of what a house costs in the places where houses are dear. The ground reads exist (13c.1 `groundFor`, `buildOn`) and what is not built is the thing that asks them for a dwelling rather than for a piece of plant — worklist 13g, where siting is decided.',
     storagePerUnit: null,
-    storageWhy:
-      'Commodities Spot A3: none. Nobody warehouses houses; a house waiting for a buyer is standing where it was built, which is what `portable: false` already said.',
+    storageWhy: null,
     leadTimePeriods: 26,
     leadTimeWhy:
       'B3, Housing B2: half a year from breaking ground to a set of keys. It is why housing supply answers a price slowly and why a shortage lasts longer than the thing that caused it.',
@@ -1902,7 +1871,7 @@ function shelfLine(d: RetailDecl, of: GoodDecl): GoodDecl {
     // more room would buy more premises, which is the plant above; renting it a second time in the
     // storage market would charge it twice for one thing.
     storagePerUnit: null,
-    storageWhy: 'Commodities Spot A3: none. The shelf is the store and the shelf is the premises; charging for the room twice would be charging twice (Law 4).',
+    storageWhy: null,
     leadTimePeriods: 0,
     leadTimeWhy: 'B3: none. A shop restocks inside the week, which is what a delivery round is.',
   };
