@@ -330,8 +330,8 @@ function settleTender(
  * fact, and a world with two ways to write it would have two ways for it to be wrong (Law 4).
  */
 export function combine(ctx: MechanismContext, buyer: PartyId, target: PartyId): void {
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== target) continue;
+  for (const i of ctx.instruments.issuedBy(target)) {
+    if (!i.status.live) continue;
     // A5: including the shares themselves — a residual claim on a firm that is now part of another
     // firm is a claim on that other firm, and the register says so rather than a rule.
     ctx.settle({

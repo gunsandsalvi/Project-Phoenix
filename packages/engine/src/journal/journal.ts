@@ -54,7 +54,12 @@ export class Journal {
   private readonly byKind = new Map<EventKind, Event[]>();
   private readonly byPeriod = new Map<Period, Event[]>();
   private readonly byKindPeriod = new Map<string, Event[]>();
-  private readonly bySubject = new Map<string, Event[]>();
+  /**
+   * Law 18: nested rather than keyed on a name built from the two, because a party asking what it
+   * last said is one of the commonest reads in the engine and every ask was a string made to be
+   * thrown away. The events in it are the same events in the same order.
+   */
+  private readonly bySubject = new Map<EventKind, Map<string, Event[]>>();
 
   record(
     period: Period,
@@ -78,7 +83,14 @@ export class Journal {
     push(this.byKind, kind, ev);
     push(this.byPeriod, period, ev);
     push(this.byKindPeriod, keyOf(kind, period), ev);
-    for (const s of ev.subjects) push(this.bySubject, keyOf(kind, s), ev);
+    if (ev.subjects.length > 0) {
+      let mine = this.bySubject.get(kind);
+      if (mine === undefined) {
+        mine = new Map<string, Event[]>();
+        this.bySubject.set(kind, mine);
+      }
+      for (const s of ev.subjects) push(mine, s, ev);
+    }
     return ev;
   }
 
@@ -107,7 +119,7 @@ export class Journal {
    * event of somebody else is never reachable through here, for the same reason `lastOf` is not.
    */
   forSubject(kind: EventKind, subject: string): readonly Event[] {
-    return this.bySubject.get(keyOf(kind, subject)) ?? EMPTY;
+    return this.bySubject.get(kind)?.get(subject) ?? EMPTY;
   }
 
   tail(n: number): readonly Event[] {
@@ -146,7 +158,7 @@ export class Journal {
    * a private event of somebody else is never reachable through here.
    */
   lastOf(kind: EventKind, subject: string): Event | undefined {
-    const said = this.bySubject.get(keyOf(kind, subject));
+    const said = this.bySubject.get(kind)?.get(subject);
     return said === undefined ? undefined : said[said.length - 1];
   }
 

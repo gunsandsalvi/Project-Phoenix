@@ -504,8 +504,8 @@ function nothingLeaksOut(): Family {
 /** Who holds paper this estate owes, read from the register rather than kept beside it (Law 19). */
 function claimsOf(view: AuditView, estate: PartyId): string[] {
   const out: string[] = [];
-  for (const i of view.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== estate) continue;
+  for (const i of view.instruments.issuedBy(estate)) {
+    if (!i.status.live) continue;
     for (const holder of view.register.holdersOf(i.id)) out.push(holder);
   }
   return out;

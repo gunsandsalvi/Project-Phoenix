@@ -139,8 +139,10 @@ function quotedRate(view: ParticipantView): Option<number> {
 /** Firm C2: what this firm owes — the liabilities it has issued, at what is outstanding. */
 function owes(view: ParticipantView): number {
   const terms: number[] = [];
-  for (const i of view.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== view.self.id) continue;
+  // Law 19: the register already indexes what a party issued, so this reads its own lines rather
+  // than every line in the world to find them.
+  for (const i of view.instruments.issuedBy(view.self.id)) {
+    if (!i.status.live) continue;
     if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
     terms.push(i.issued);
   }
@@ -177,8 +179,8 @@ function requiredOnEquity(view: ParticipantView): Option<number> {
 
 /** Equity A1: the residual claim on this firm, if a market prices one. It is a claim nobody owes. */
 function shareLine(view: ParticipantView): Option<InstrumentId> {
-  for (const i of view.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== view.self.id) continue;
+  for (const i of view.instruments.issuedBy(view.self.id)) {
+    if (!i.status.live) continue;
     if (view.registry.instrumentKind(i.kind).liabilityOfIssuer || !i.market.some) continue;
     return some(i.id);
   }

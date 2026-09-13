@@ -72,6 +72,35 @@ function pays(w: IndexWorld, i: Instrument, at: Period): boolean {
 }
 
 /**
+ * Law 18: A RULE'S ANSWER FOR A PERIOD, KEPT WHILE WHAT IT IS A FUNCTION OF HAS NOT MOVED.
+ *
+ * A rule walks every line in the world to say what is in it and what each counts for. A real period
+ * asks one equity rule TEN THOUSAND TIMES — every party looking at a book on the index asks for the
+ * level, and every level is read from the basket — and between almost all of those asks nothing was
+ * issued, redeemed, split, reseated or ceased. The register counts its own changes, so a rule that
+ * is a function of the register and the date can tell that its last answer still stands.
+ *
+ * It is the same answer, not a stored one (Indices A2, E2): the moment anything the rule reads
+ * changes, the count moves and the rule is asked again. Only the rules that read NOTHING ELSE are
+ * wrapped — a basket weighed by what was bought is a function of the ledger, and one that selects
+ * by capitalisation is a function of the prints, and both of those move inside a period.
+ */
+function whileTheRegisterStands(
+  rule: (at: Period, w: IndexWorld) => readonly Constituent[],
+): (at: Period, w: IndexWorld) => readonly Constituent[] {
+  let when: Period | undefined;
+  let version = -1;
+  let held: readonly Constituent[] = [];
+  return (at: Period, w: IndexWorld): readonly Constituent[] => {
+    if (when === at && version === w.instruments.version) return held;
+    held = rule(at, w);
+    when = at;
+    version = w.instruments.version;
+    return held;
+  };
+}
+
+/**
  * D1: THE EQUITY INDEX OF A REGION — the listed shares of the companies that book there, each
  * counting for the number of them there are.
  *
@@ -79,12 +108,18 @@ function pays(w: IndexWorld, i: Instrument, at: Period): boolean {
  * level and nothing else. B3: a split multiplies the count and divides the price in the same event
  * (Register E4), so the basket is worth what it was worth and the level does not jump.
  */
-export function equityOf(region: RegionId) {
-  return (at: Period, w: IndexWorld): readonly Constituent[] =>
-    listed(w)
-      .filter((i) => !pays(w, i, at))
-      .filter((i) => i.issuer.some && w.parties.get(i.issuer.value).region === region)
-      .map((i) => ({ instrument: i.id, weight: i.issued }));
+export function equityOf(
+  region: RegionId,
+): (at: Period, w: IndexWorld) => readonly Constituent[] {
+  return whileTheRegisterStands((at: Period, w: IndexWorld): readonly Constituent[] => {
+    const out: Constituent[] = [];
+    for (const i of listed(w)) {
+      if (pays(w, i, at)) continue;
+      if (!i.issuer.some || w.parties.get(i.issuer.value).region !== region) continue;
+      out.push({ instrument: i.id, weight: i.issued });
+    }
+    return out;
+  });
 }
 
 /**
@@ -94,12 +129,18 @@ export function equityOf(region: RegionId) {
  * A world with no corporate paper in it has an empty basket and therefore no level at all, which is
  * the honest answer until 13f issues some.
  */
-export function creditOf(ccy: CurrencyCode) {
-  return (at: Period, w: IndexWorld): readonly Constituent[] =>
-    listed(w)
-      .filter((i) => i.ccy === ccy && pays(w, i, at))
-      .filter((i) => i.issuer.some && !onStateCredit(w, i))
-      .map((i) => ({ instrument: i.id, weight: i.issued }));
+export function creditOf(
+  ccy: CurrencyCode,
+): (at: Period, w: IndexWorld) => readonly Constituent[] {
+  return whileTheRegisterStands((at: Period, w: IndexWorld): readonly Constituent[] => {
+    const out: Constituent[] = [];
+    for (const i of listed(w)) {
+      if (i.ccy !== ccy || !pays(w, i, at)) continue;
+      if (!i.issuer.some || onStateCredit(w, i)) continue;
+      out.push({ instrument: i.id, weight: i.issued });
+    }
+    return out;
+  });
 }
 
 /**

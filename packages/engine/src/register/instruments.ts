@@ -96,6 +96,21 @@ export class Instruments {
    */
   private readonly byIssuer = new Map<PartyId, InstrumentId[]>();
   private everything: readonly Instrument[] | undefined;
+  /**
+   * Law 18: HOW MANY TIMES THIS REGISTER HAS CHANGED. It is not a fact about the world and nothing
+   * decides anything by it — it is how a reader whose answer is a function of these records can tell
+   * that its answer still holds. An index rule walks every line in the world to say what is in it
+   * and what each counts for; a real period asks one rule ten thousand times, and between most of
+   * those asks nothing was issued, redeemed, split, reseated or ceased.
+   *
+   * It is bumped wherever `everything` is dropped, because those are the same moments: a record
+   * replaced, a line added, a status changed.
+   */
+  private changes = 0;
+
+  get version(): number {
+    return this.changes;
+  }
 
   constructor(private readonly registry: Registry) {}
 
@@ -134,6 +149,7 @@ export class Instruments {
     const i: Instrument = Object.freeze({ ...decl, unit, issued: NO_QTY, issuedDust: 0, status });
     this.map.set(i.id, i);
     this.everything = undefined;
+    this.changes += 1;
     if (i.issuer.some) {
       const list = this.byIssuer.get(i.issuer.value);
       if (list === undefined) this.byIssuer.set(i.issuer.value, [i.id]);
@@ -186,6 +202,7 @@ export class Instruments {
       }),
     );
     this.everything = undefined;
+    this.changes += 1;
   }
 
   /**
@@ -203,6 +220,7 @@ export class Instruments {
     const status: InstrumentStatus = { live: true, performing: false };
     this.map.set(id, Object.freeze({ ...i, status }));
     this.everything = undefined;
+    this.changes += 1;
   }
 
   /**
@@ -219,6 +237,7 @@ export class Instruments {
     forbid(i.issuer.some, 'Register B3', `${id} was promised by nobody, so nobody can succeed to it`);
     this.map.set(id, Object.freeze({ ...i, issuer: some(issuer) }));
     this.everything = undefined;
+    this.changes += 1;
     // B3 guarantees an issuer above, so the old one is there to move the line off.
     const was = this.byIssuer.get(i.issuer.value);
     if (was !== undefined) this.byIssuer.set(i.issuer.value, was.filter((x) => x !== id));
@@ -255,6 +274,7 @@ export class Instruments {
     // every derived value (item 13b.1). A memo that can disagree with the map is the index this
     // file's own comment says an index must never be.
     this.everything = undefined;
+    this.changes += 1;
   }
 
   /** B4: an instrument ceases, and every holding in it has already resolved to something else, named. */
@@ -271,11 +291,12 @@ export class Instruments {
     const ceased: InstrumentStatus = { live: false, ceasedIn: period };
     this.map.set(id, Object.freeze({ ...i, status: ceased }));
     this.everything = undefined;
+    this.changes += 1;
   }
 }
 
 /** The read-only face of the instruments store, for mechanisms and participants. */
-export type InstrumentsReads = Pick<Instruments, 'has' | 'get' | 'all' | 'issuedBy'>;
+export type InstrumentsReads = Pick<Instruments, 'has' | 'get' | 'all' | 'issuedBy' | 'version'>;
 
 /**
  * Law 8, Register A1.c: WHAT IS OUTSTANDING IS A WHOLE NUMBER OF PIECES, like every holding of it.
