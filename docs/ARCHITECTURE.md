@@ -605,7 +605,20 @@ books that party is in at all this cycle — and the kernel builds a per-cycle i
 only those (Law 18). The kernel cannot guess the answer, because which books a party is in is its
 own business and changes period to period; and the answer is a READ of the same published plan the
 orders come out of, so the two cannot disagree (Law 4, Law 19). Declaring nothing means every market
-of the participant's kind, which is what every participant did before the door existed. A VENUE — where something is struck that is not the
+of the participant's kind, which is what every participant did before the door existed.
+
+The derivative layer speaks for a party in every contract book (one face per book), so its `markets`
+answer has to cover every class at once. It asks each class, through two doors on
+`DerivativeClassDecl`: `subject(m)` — what a book is written ON, as a name — and `reasons(view)` —
+the subjects this party could have a reason about, read off its own state. The kernel keeps the
+books indexed by (class, subject), rebuilt whenever a book opens (`World.contractBooks`), so a party
+names its books without walking the world's. A class declaring neither is asked about every book of
+its kind, as before. The measurement that asked for it: a real period put **13.5 million questions**
+to firms about option books and got **not one order** — what an option is worth to a party is its own
+outlook's confidence about the underlying, and a party with no view of a line has nothing to say
+about optionality on it, which every firm discovered separately for every line every period.
+
+A VENUE — where something is struck that is not the
 transfer of an instrument, a job at a wage or a week of money at a rate — is cleared by the module
 that opened it (Clearing B2, Labour C5), and its schedules come the same way: a module declares
 `venueParticipants`, the module that opened the venue calls `ctx.gather(venue)` at the top of its

@@ -92,6 +92,30 @@ export interface DerivativeClassDecl {
    */
   readonly orders?: (view: ParticipantView, m: ContractMarketDecl) => readonly Order[];
   /**
+   * Law 18: WHAT THIS BOOK IS WRITTEN ON, as a name a party can ask for books by — the line an
+   * option is over, the thing a future delivers. Declared with `reasons` or not at all: the two are
+   * one narrowing, said from the book's end and from the party's.
+   */
+  readonly subject?: (m: ContractMarketDecl) => string;
+  /**
+   * Law 18: THE SUBJECTS THIS PARTY COULD HAVE A REASON ABOUT, read off its own state.
+   *
+   * A session asks every party of a kind whether it has an order in a book. At the real scale the
+   * option books alone are THIRTEEN AND A HALF MILLION QUESTIONS A PERIOD AND NOT ONE ORDER: what an
+   * option is worth to a party is its own outlook's confidence about the underlying, and a party
+   * with no view of a line has nothing to say about optionality on it — which every firm in the
+   * world discovered separately, for every line, every period.
+   *
+   * The kernel cannot guess this: which lines a party has a view of is its own business and changes
+   * period to period, so the only place it can come from is the class that knows why a party would
+   * be in one of its books. Absent means every book of the kind, which is what asking everybody
+   * already meant, and is right for a class whose books anybody might be in.
+   *
+   * It is a TRAVERSAL and never a decision (Law 18): a subject left out must be one `orders` returns
+   * nothing about, and it is read from the same state `orders` reads so the two cannot disagree.
+   */
+  readonly reasons?: (view: ParticipantView) => readonly string[];
+  /**
    * Observer A1, Law 19: a basis is a class's own question — protection against the same name's
    * cash bond (CDS C3), a cleared fixed rate against the sovereign's own yield (IRS C3), a future
    * against the carry on what it delivers (Sovereign I2), how much protection on one name exists at
@@ -117,7 +141,17 @@ export interface KernelReads {
    * than read off the kind's registry profile, because a registry row is data (ARCHITECTURE 4.9b).
    */
   readonly derivativeClass: (kind: DerivativeKindId) => DerivativeClassDecl | undefined;
+  /** Every class this world has, for the layer that speaks for a party in all of their books. */
+  readonly derivativeClasses: readonly DerivativeClassDecl[];
   readonly markets: readonly MarketDecl[];
+  /**
+   * Law 18: THE CONTRACT BOOKS OF A CLASS, and the ones of a class written on one subject.
+   *
+   * Which books exist and what each is written on is a fact about the MARKETS, so it is held where
+   * the markets are and worked out once a cycle. Without it a party naming the books it could be in
+   * would walk every book in the world to find them, which is the walk this exists to remove.
+   */
+  contractBooks(kind: DerivativeKindId, on?: string): readonly MarketId[];
   /** Clearing B2: the venues modules clear themselves; declared and public, like a market. */
   readonly venues: readonly VenueDecl[];
   /**
@@ -227,6 +261,14 @@ export interface ParticipantView extends KernelReads {
    * (Appendix A). There is no global expectation to fall back on (A2.b).
    */
   outlook(variable: OutlookVariable): Option<Outlook>;
+  /**
+   * Expectations A2: WHAT THIS PARTY HAS AN OUTLOOK OF AT ALL — what it has observed, and nothing
+   * more. A party with no history answers with nothing, which is what having observed nothing IS.
+   *
+   * It is its own record, the same one `outlook` answers out of, so what it says it has a view of
+   * and what it has a view of cannot disagree (Law 4).
+   */
+  outlookVariables(): readonly OutlookVariable[];
   /**
    * Money E1.b, Firm D4, D5: its OWN payments that did not go through, most recent last. A party
    * knows what it failed to pay and what did not reach it, because it was a side of both; it learns

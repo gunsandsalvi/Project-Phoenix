@@ -45,6 +45,8 @@ import type { SystemModule, DerivativeClassDecl } from '../../world/module.js';
 export const OPTION = derivativeKindId('option');
 export const OPTION_CONTRACTS = unitId('optionContracts');
 const OPTION_DAY_COUNT = 'ACT/365F';
+/** Expectations A2: how the outlook book names a view of what a line is worth. */
+const PRICE_OF = 'price.';
 
 export const OPTION_PARAMS = {
   life: paramId('option.life.periods'),
@@ -202,6 +204,27 @@ export function impliedMove(
  */
 const optionClass: DerivativeClassDecl = {
   kind: OPTION,
+  subject: (m) => {
+    const t = m.contract.terms;
+    return isOption(t) ? String(t.underlying) : '';
+  },
+  /**
+   * Law 18, D7.a: THE LINES THIS PARTY HAS A VIEW OF, which is the whole of why it would be in an
+   * option book at all. What optionality is worth to it is its own outlook's confidence about the
+   * underlying (`optionOrders`), so a party with no outlook of a line prices no option on it —
+   * every path below `mine <= 0` returns nothing.
+   *
+   * It is the same read `orders` makes, off the same outlook book, so the books this names and the
+   * books it posts in cannot disagree (Law 4, Law 19).
+   */
+  reasons: (view) => {
+    const out: string[] = [];
+    for (const variable of view.outlookVariables()) {
+      if (!variable.startsWith(PRICE_OF)) continue;
+      out.push(variable.slice(PRICE_OF.length));
+    }
+    return out;
+  },
   orders: optionOrders,
   measures: (m, reads): readonly ContractMeasure[] => {
     const t = m.contract.terms;
@@ -276,14 +299,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const t = decl.terms;
   const print = view.print(t.underlying);
   if (!print.some) return [];
-  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   const aversion = view.params.ratio(OPTION_PARAMS.aversion);
-  let covered = 0;
-  for (const c of view.contracts.mine()) {
-    if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right) continue;
-    const iAmA = c.a === view.self.id;
-    covered = add(covered, iAmA === c.terms.holds ? c.notional : -c.notional, 'cover it has');
-  }
   /**
    * Expectations A3, XI-13, §46's second dimension: WHAT THIS PARTY THINKS OPTIONALITY IS WORTH,
    * and it is never read off this book.
@@ -304,13 +320,23 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * party with no view of how much the underlying moves has no view of what optionality on it is
    * worth — which is a real answer (D4) and not a gap to fill with somebody else's number.
    */
-  const outlook = view.outlook(`price.${String(t.underlying)}`);
-  const own = view.equity();
+  const outlook = view.outlook(`${PRICE_OF}${String(t.underlying)}`);
   const moves = outlook.some
     ? mul(outlook.value.expected, outlook.value.confidence, 'what it thinks it moves')
     : 0;
   const mine = moves > 0 ? add(moves, mul(moves, aversion, 'what its capital wants'), 'its quote') : 0;
+  // A party with no view of how much the underlying moves has no view of what optionality on it is
+  // worth, and that is the end of it — so nothing below is worked out for one. Law 18: every party
+  // in the world is asked about every book, and its own book and its own equity were both walked
+  // before this line to arrive at the same nothing.
   if (mine <= 0) return [];
+  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
+  let covered = 0;
+  for (const c of view.contracts.mine()) {
+    if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right) continue;
+    const iAmA = c.a === view.self.id;
+    covered = add(covered, iAmA === c.terms.holds ? c.notional : -c.notional, 'cover it has');
+  }
   /** Clearing E1: where the market is — the comparator that decides the side, never the level. */
   const at = view.print(t.book);
   /**
@@ -324,6 +350,9 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     ? div(mul(held, aversion, 'the part it will not carry'), t.multiplier, 'in contracts')
     : 0;
   const price = mine;
+  // What it can write comes off its own balance sheet, and that is walked only where the comparison
+  // it feeds actually happens: a book that has not printed has nothing for its number to be above.
+  const own = at.some ? view.equity() : 0;
   if (at.some && own > 0) {
     const book = at.value.price;
     const room = view.registry.deliverable(

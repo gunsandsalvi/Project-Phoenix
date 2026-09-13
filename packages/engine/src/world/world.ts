@@ -43,6 +43,7 @@ import {
 import { add, addTo, div, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
+  asContractMarket,
   contractOf,
   delivers,
   pairOf,
@@ -109,6 +110,15 @@ import { indexCache, readIndex, type IndexDecl, type IndexDeps, type IndexRead }
 /** Maps are data too; the surface shows them as the entries they are (Observer D3). */
 function replacer(_key: string, value: unknown): unknown {
   return value instanceof Map ? Object.fromEntries(value) : value;
+}
+
+const NO_BOOKS: readonly MarketId[] = Object.freeze([]);
+
+/** One arrangement of the same markets; the list is made the first time a book lands in it. */
+function pushInto(into: Map<string, MarketId[]>, key: string, id: MarketId): void {
+  const list = into.get(key);
+  if (list === undefined) into.set(key, [id]);
+  else list.push(id);
 }
 
 export interface Phase {
@@ -1144,6 +1154,8 @@ export class World {
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
+      derivativeClasses: [...this.derivativeClasses.values()],
+      contractBooks: (kind, on) => this.contractBooks(kind, on),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
@@ -1176,6 +1188,7 @@ export class World {
       failedPayments: (since: Period) => this.ledger.failedFor(party, since),
       publicEvents: (last) => this.journal.visibleTo(party, last),
       outlook: (variable) => this.outlookOf(party, variable),
+      outlookVariables: () => this.outlookVariables(party),
       lastPublic: (kind) => {
         const events = this.journal.ofKind(kind).filter((e) => e.public);
         const last = events[events.length - 1];
@@ -1276,6 +1289,8 @@ export class World {
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
+      derivativeClasses: [...this.derivativeClasses.values()],
+      contractBooks: (kind, on) => this.contractBooks(kind, on),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
@@ -1362,6 +1377,8 @@ export class World {
       params: this.params,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
+      derivativeClasses: [...this.derivativeClasses.values()],
+      contractBooks: (kind, on) => this.contractBooks(kind, on),
       instruments: this.instruments,
       markets: this.marketList,
       venues: this.venueList,
@@ -1736,6 +1753,35 @@ export class World {
   }
 
   /** What the class that owns this kind knows, or nothing because no module said (Law 15). */
+  /**
+   * Law 18: WHICH CONTRACT BOOKS EXIST, BY CLASS AND BY WHAT THEY ARE WRITTEN ON.
+   *
+   * It is the same market list under a different arrangement, worked out once a cycle because a
+   * book can open inside a period. A party naming the books it could be in asks here; without it,
+   * naming them would mean walking every book in the world per party, which is the walk this
+   * exists to remove.
+   */
+  private books = new Map<string, MarketId[]>();
+  private booksAt = '';
+
+  contractBooks(kind: DerivativeKindId, on?: string): readonly MarketId[] {
+    const stamp = `${this.currentPeriod}:${this.currentCycle}:${this.marketList.length}`;
+    if (this.booksAt !== stamp) {
+      this.books = new Map<string, MarketId[]>();
+      this.booksAt = stamp;
+      for (const m of this.marketList) {
+        const book = asContractMarket(m);
+        if (book === undefined) continue;
+        const cls = this.derivativeClasses.get(book.contract.kind);
+        pushInto(this.books, String(book.contract.kind), m.id);
+        if (cls?.subject === undefined) continue;
+        pushInto(this.books, `${book.contract.kind}\u0000${cls.subject(book)}`, m.id);
+      }
+    }
+    const key = on === undefined ? String(kind) : `${kind}\u0000${on}`;
+    return this.books.get(key) ?? NO_BOOKS;
+  }
+
   derivativeClass(kind: DerivativeKindId): DerivativeClassDecl | undefined {
     return this.derivativeClasses.get(kind);
   }

@@ -302,7 +302,9 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   // B1: short by what it is holding. It made the thing, or it bought it; either way it is exposed.
   const held = view.free(t.deliverable);
   let want = -div(held, t.lotUnits, 'what its holding comes to in lots');
-  const own = view.equity();
+  // Its own balance sheet is walked only where the comparison it feeds happens: a book with no
+  // print has nothing for this party's number to stand against (Law 18).
+  const own = at.some ? view.equity() : 0;
   if (at.some && own > 0) {
     const book = at.value.price;
     const conviction = view.registry.deliverable(

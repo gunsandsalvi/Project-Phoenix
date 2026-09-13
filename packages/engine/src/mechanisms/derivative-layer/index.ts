@@ -21,6 +21,7 @@ import {
   paramId,
   type ContractId,
   type CurrencyCode,
+  type MarketId,
   type PartyId,
   type PartyKindId,
 } from '../../core/ids.js';
@@ -732,6 +733,28 @@ export function derivativeLayer(
     partyKind,
     in: 'contract' as const,
     speculative: true,
+    /**
+     * Law 18: THE CONTRACT BOOKS THIS PARTY COULD BE IN — every book of a class that has not said
+     * why a party would be in one of its books, and for a class that has, the books written on the
+     * subjects this party has a reason about.
+     *
+     * The layer speaks for a party in every contract book (one face per book, above), so it is the
+     * layer that answers which of them are worth asking about — and it answers by asking each class
+     * the same question that class's `orders` answers out of, so a book named here and a book
+     * ordered in cannot disagree (Law 4, Law 19).
+     */
+    markets: (view: ParticipantView): readonly MarketId[] => {
+      const out: MarketId[] = [];
+      for (const cls of view.derivativeClasses) {
+        if (cls.orders === undefined) continue;
+        if (cls.reasons === undefined || cls.subject === undefined) {
+          out.push(...view.contractBooks(cls.kind));
+          continue;
+        }
+        for (const on of cls.reasons(view)) out.push(...view.contractBooks(cls.kind, on));
+      }
+      return out;
+    },
     orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
       const book = asContractMarket(m);
       if (book === undefined) return [];
