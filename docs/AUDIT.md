@@ -1,7 +1,20 @@
-# Line audit — bottom-up, conservation, mechanism
+# The audit
 
-A personal read of `packages/engine/src`, file by file, in dependency order, against three
-questions and nothing else:
+**This is the one place a finding lives.** `docs/BUGS.md`, `docs/SWEEP.md`, `docs/VERIFY.md` and
+`docs/plan/14-polity.md` were merged into it and deleted; a finding leaves here only by being
+PLACED — into the worklist item that fixes it, or as its own item at its dependency position — and
+the entry says where it landed.
+
+| part    | what it is                                                                                                                                                                   |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **I**   | A read of `packages/engine/src` — all 59,927 lines, file by file, in dependency order — against three questions. **A-1 … A-70.**                                             |
+| **II**  | Every `done` row of `docs/WORKLIST.md` and every `MET` in `docs/COVERAGE.md`, against what is in the code — and the three project files that count the work. **B-1 … B-15.** |
+| **III** | What was carried in from the three deleted holding pens, de-duplicated against Part I. **C-1 … C-7.**                                                                        |
+| **IV**  | Item 14, the polity: the plan, and the two findings it carries. **D-1, D-2.**                                                                                                |
+
+## Part I — the read
+
+Three questions and nothing else:
 
 1. **Is it BOTTOM UP?** Does the number come out of a mechanism, or was it written down?
    An outcome stated is the defect this whole project is organised against (Law 2).
@@ -20,7 +33,7 @@ Every finding names the file, the line, what was measured or read, and what the 
 
 ---
 
-## What was found
+### The findings of Part I
 
 **70 findings** — 30 A, 16 B, 24 C. Grouped by what is wrong rather than by file; several appear under more than one heading because they are one defect with two consequences.
 
@@ -122,7 +135,7 @@ Every finding names the file, the line, what was measured or read, and what the 
 
 ---
 
-## Findings
+### Part I findings, in the order they were found
 
 ### A-1 — `reseat` books an issuer's whole liability against a PER-MEMBER equity account (B)
 
@@ -133,8 +146,8 @@ straight into `equity`, which every other path in this file keeps **per member o
 
 The same defect was found and fixed in two of its three places: `issue` (line ~1150) and `redeem`
 (line ~1205) both wrap the amount in `perMemberOf(op.issuer, …)`, whose own comment says why —
-*"the day a CELL issued something, it booked a million households' worth of liability against one
-household's equity"*. `reseat` is the third place and it was not wrapped. So is the issuer re-mark
+_"the day a CELL issued something, it booked a million households' worth of liability against one
+household's equity"_. `reseat` is the third place and it was not wrapped. So is the issuer re-mark
 inside the `credit` case (line ~1120): `bump(issuerOf(inst), mul(op.totalQty, carrying − basis, …))`
 uses `totalQty`, again unscaled.
 
@@ -150,8 +163,8 @@ assumed or its shares change hands, which is exactly the door 13d.1 opened.
 ### A-2 — the merge guard compares liens by COUNT, and its own docstring says it compares them (B)
 
 `register/register.ts:724 sameState`. The doc above `forget` says a merge is legitimate because the
-two cells' per-member state is *identical*, and `sameState`'s own doc lists *"the same lots in the
-same order at the same basis and the same age, **the same liens**, the same equity"*. The code
+two cells' per-member state is _identical_, and `sameState`'s own doc lists _"the same lots in the
+same order at the same basis and the same age, **the same liens**, the same equity"_. The code
 compares `x.liens.length !== y.liens.length` and never looks inside a lien again: two cells with one
 lien each, of different sizes, to different beneficiaries, for different reasons, are judged the
 same. `forget` then deletes the absorbed cell's whole register position — its liens with it — with
@@ -171,7 +184,7 @@ LEDGER as well as the equity balance (`forget` deletes both and only one is chec
 ### A-3 — the merge writes the weight before the guard runs (B)
 
 `world/cells.ts:85-95`. `d.parties.applyWeight({kind:'merge', …, after: ca.weight + cb.weight})`
-runs, and *then* `d.register.forget(b, a)` runs the state comparison that decides whether the merge
+runs, and _then_ `d.register.forget(b, a)` runs the state comparison that decides whether the merge
 was legal at all. A merge the register refuses has already grown the absorbing cell's weight, and
 the journal entry that would have recorded it comes after the throw, so the world is left with a
 weight nobody can account for and no event saying where it came from.
@@ -181,9 +194,9 @@ put right: ask the register first, apply the weight second, journal third.
 
 ### A-4 — a claimed assembly guard on `exposedTo` does not exist (B)
 
-`registry/environment.ts:conditionsFor`, the comment on the `value !== undefined` branch: *"A line
+`registry/environment.ts:conditionsFor`, the comment on the `value !== undefined` branch: _"A line
 naming a fact this world does not have stands in an ordinary period for it. The world that has the
-fact is where the check belongs, **and assembly is where it fires**."*
+fact is where the check belongs, **and assembly is where it fires**."_
 
 It does not fire anywhere. `world/assemble.ts` checks module ids, dependency cycles, money issuance
 and bank choices, and nothing else; `grep -rn exposedTo world/` returns nothing. A recipe naming a
@@ -210,16 +223,16 @@ seed, and here the parameter list actively suggests it.
 
 `mechanisms/goods/index.ts:122-129`. The value is `(d.labourHoursPerUnit * TIME_PIECES) /
 PIECES_PER_UNIT` and `TIME_PIECES` is 1 because a piece of time is AN HOUR
-(`registry/grid.ts`: *"Time: THE HOUR"*). The declared `unit` string is
+(`registry/grid.ts`: _"Time: THE HOUR"_). The declared `unit` string is
 `` `minutes per piece of ${d.subUnit}` ``.
 
 `dimension: 'ratio'` is what a machine checks, so nothing catches it; the prose is what a person
 reads, and a person who believes it is out by sixty. Law 8 says the unit is part of the number.
 
 **Extension (verified against `registry/grid.ts`).** `TIME_PIECES = 1` and grid.ts is explicit
-about why: *"Time: THE HOUR. Labour is contracted, supplied and paid for by the hour in this world
+about why: _"Time: THE HOUR. Labour is contracted, supplied and paid for by the hour in this world
 and no wage in it is struck for part of one, so an hour is the smallest piece of somebody's time
-there is."* So the value is hours per piece and the unit string is wrong by a factor of sixty.
+there is."_ So the value is hours per piece and the unit string is wrong by a factor of sixty.
 
 The same stale premise is in a second place. `mechanisms/labour/index.ts`:
 
@@ -246,8 +259,8 @@ whether the fact EXISTS and reads the value through `params`.
 
 ### A-8 — a doc block describing a declaration that is gone (C)
 
-`registry/physical.ts`, immediately above `STORAGE_SESSION`: a full block beginning *"A4, A4.b, C3:
-the two numbers a kind of capital states about itself, named."* It sits directly on top of a SECOND
+`registry/physical.ts`, immediately above `STORAGE_SESSION`: a full block beginning _"A4, A4.b, C3:
+the two numbers a kind of capital states about itself, named."_ It sits directly on top of a SECOND
 doc block, the one that documents `STORAGE_SESSION`. Whatever it described was deleted and the
 comment stayed. A stale comment is a defect (Law 16).
 
@@ -304,7 +317,7 @@ for and the sector cannot write the promise the clause is about.
 maps:
 
 ```ts
-addTo(booked,  ccy, delta);
+addTo(booked, ccy, delta);
 addTo(implied, ccy, carried * sub(now, was, 'what the rate moved by'));
 ```
 
@@ -317,8 +330,8 @@ const delta = mul(carried, sub(now, was, 'what the rate moved by'), 'what it did
 ```
 
 So `implied` is `booked` recomputed from the operands `booked` was computed from — the same product,
-to the bit. **The family cannot fail.** Audit A1.a in as many words: *"a read of two independent
-things that must agree — never a read of one thing against itself, which always passes."*
+to the bit. **The family cannot fail.** Audit A1.a in as many words: _"a read of two independent
+things that must agree — never a read of one thing against itself, which always passes."_
 
 The check it is trying to make is real and is not being made: what every revaluation BOOKED against
 what the period's rate move on the positions comes to. The second half has to be reached from the
@@ -347,7 +360,9 @@ the split is exact, so the new cell's opening position IS the parent's, and any 
 `audit/families/names.ts`:
 
 ```ts
-!view.markets.some((m) => m.id === i.market.valueOf() || (i.market.some && m.id === i.market.value))
+!view.markets.some(
+  (m) => m.id === i.market.valueOf() || (i.market.some && m.id === i.market.value),
+);
 ```
 
 `i.market` is an `Option<MarketId>`; `.valueOf()` on it returns the option OBJECT, so
@@ -358,8 +373,8 @@ disjunct does the whole job. Dead code in the family whose subject is that refer
 
 `audit/families/units.ts` checks that a weight is a positive count, that physical stock moves with
 its create/destroy legs, and that every lot is on the grid. Part XII's units family is also
-*"including a population: the sum of cell weights equals the population it stands for, and every
-represented party sits in exactly one cell."*
+_"including a population: the sum of cell weights equals the population it stands for, and every
+represented party sits in exactly one cell."_
 
 Neither of those two is in the kernel family. One of them is contributed by a module:
 `mechanisms/labour/index.ts:workforceIdentity` (contributor `labour`, family `units`) checks, per
@@ -395,7 +410,7 @@ two booleans, so for every cell exactly one term is `p.weight` and the other two
 if (acc.states !== acc.people) { … 'employed plus unemployed plus inactive is …' }
 ```
 
-can never fire. The comment says the opposite — *"counted once each way round"* — but there is only
+can never fire. The comment says the opposite — _"counted once each way round"_ — but there is only
 one round: both sides are the same sum of the same `p.weight`s over the same loop. This is A-10's
 defect again (Audit A1.a: a read of one thing against itself), and it is severity A rather than B
 because the docstring, the spec citation (`Labour B5`) and `built: true` all report that Part XII's
@@ -414,9 +429,9 @@ two writers. Only the B5 line is empty.
 `register/register.ts` holds five things keyed by party: `byHolder` (126), `equityAccount` (128),
 `equityLedger` (135), `revaluationAccount` (151) and `moneyAccount` (158, keyed `${holder}/${inst}`).
 
-- `copyMemberState(from, to)` copies the first three. Its one-line doc says *"Copy per-member state
-  to a new party"* and the block inside says *"the ITEMISATION, which is per-member state like
-  everything else here"*. The revaluation account and the money walks are per-member state and are
+- `copyMemberState(from, to)` copies the first three. Its one-line doc says _"Copy per-member state
+  to a new party"_ and the block inside says _"the ITEMISATION, which is per-member state like
+  everything else here"_. The revaluation account and the money walks are per-member state and are
   not copied.
 - `forget(party, into)` deletes the first three and leaves the other two behind, keyed to a party
   that no longer exists.
@@ -443,7 +458,7 @@ restate(instrument, ratio) {
 ```
 
 `onTheGrid` **throws** (`impossible`, Law 8) when `l.qty * ratio` is not a whole number of pieces —
-deliberately, and the docstring is proud of it: *"It throws rather than rounding"*. But the throw
+deliberately, and the docstring is proud of it: _"It throws rather than rounding"_. But the throw
 happens inside a loop that has already assigned `h.lots` for every holder before this one. A
 `PhoenixError` is not caught in the engine, so the world stops — with the line restated for holders
 `0..k-1`, unrestated for `k..n`, and the issued amount not yet touched at all (`world.ts:1557-1559`
@@ -473,20 +488,20 @@ waiting behind it.
 (`world/context.ts:384`) exposes `split`, `merge`, `weight` (entry/death/promotion), `reKey`, `die`.
 Across `mechanisms/` and `seeds/` the callers are exactly:
 
-| door | callers |
-|---|---|
-| `cells.split` | `labour/matching.ts:312`, `labour/matching.ts:405`, `households/lifecycle.ts:250` |
-| `cells.reKey` | `households/lifecycle.ts` (ageing) |
-| `cells.die` | `households/lifecycle.ts` (after probate) |
-| `cells.merge` | **none** |
-| `cells.weight` | **none** |
+| door           | callers                                                                           |
+| -------------- | --------------------------------------------------------------------------------- |
+| `cells.split`  | `labour/matching.ts:312`, `labour/matching.ts:405`, `households/lifecycle.ts:250` |
+| `cells.reKey`  | `households/lifecycle.ts` (ageing)                                                |
+| `cells.die`    | `households/lifecycle.ts` (after probate)                                         |
+| `cells.merge`  | **none**                                                                          |
+| `cells.weight` | **none**                                                                          |
 
 So `entry` never happens: **no person is ever born in this world.** `age()` moves members from
 cohort 0 into cohort 1 and nothing whatever moves into cohort 0. `die()` removes them at the top.
 The population is monotonically non-increasing from the seed to the end of the run, by construction
 and not as an outcome.
 
-This is not "no birth rate" being respected (Appendix B forbids a *declared* birth rate, which is
+This is not "no birth rate" being respected (Appendix B forbids a _declared_ birth rate, which is
 right). It is the mechanism that would produce births as an OUTCOME — a household's own decision,
 with its own cause — being absent, and nothing naming it as absent. `lifecycle.ts`'s header names
 what it leaves out and does not name this. Under Part II that makes it neither MISSING nor OUT OF
@@ -505,6 +520,7 @@ cells that have become identical, so the cell count only ever rises.
 const crossing = Math.floor(mul(weightOf(cell), share, 'the people standing at the boundary'));
 if (crossing <= 0 || crossing >= weightOf(cell)) continue;
 ```
+
 ```ts
 // XI-15: whole people. The fraction that is not somebody waits until it is.
 const dying = Math.floor(mul(weightOf(cell), rate, 'the people who die this period'));
@@ -584,8 +600,11 @@ real, recorded state; nothing half-settles`) with three reachable reasons —
 `dieCell` (`world/cells.ts:238`) then does:
 
 ```ts
-forbid(d.register.holdingsOf(cell).length === 0, 'Appendix B',
-  `${cell} still holds something and cannot die; …`);
+forbid(
+  d.register.holdingsOf(cell).length === 0,
+  'Appendix B',
+  `${cell} still holds something and cannot die; …`,
+);
 ```
 
 `forbid` throws a `PhoenixError`, which the engine never catches. So any failed estate transfer
@@ -603,8 +622,16 @@ estate did not clear, the cell does not die this period and tries again next.
 ```ts
 function heirOf(ctx, region, bank): PartyId | undefined {
   const first = String(ctx.registry.cohorts[0]?.id ?? '');
-  return ctx.parties.ofKind(HOUSEHOLD).find((p) => p.status.alive && p.representation === 'cell'
-    && p.region === region && p.bank === bank && keyOf(p, 'cohort') === first)?.id;
+  return ctx.parties
+    .ofKind(HOUSEHOLD)
+    .find(
+      (p) =>
+        p.status.alive &&
+        p.representation === 'cell' &&
+        p.region === region &&
+        p.bank === bank &&
+        keyOf(p, 'cohort') === first,
+    )?.id;
 }
 ```
 
@@ -616,7 +643,7 @@ parties store's insertion order, which is a seed-draw artefact and not a fact ab
 Two things are wrong. The distribution is an OUTCOME written as a lookup (Law 2), and it is a
 decision taken at no party's own reason — nobody chose an heir, nobody has a claim, and there is no
 mechanism (a will, a kinship key, a share of the cohort) behind it. `handToProbate`'s own header
-says the survivors of the dead cell's *own key* are the natural somebody; `heirOf` ignores the key
+says the survivors of the dead cell's _own key_ are the natural somebody; `heirOf` ignores the key
 entirely except for the cohort, and then takes one of them.
 
 Note also `ctx.registry.cohorts[0]?.id ?? ''` — an `?? ''` producing a cohort id that matches
@@ -639,8 +666,9 @@ this one tells a reader the opposite of what the file does.
 
 ```ts
 function wealthOf(view: ParticipantView, cash: number): number {
-  const terms = [cash];                              // the HOME currency
-  for (const h of view.holdings()) {                 // every holding, whatever it is denominated in
+  const terms = [cash]; // the HOME currency
+  for (const h of view.holdings()) {
+    // every holding, whatever it is denominated in
     const print = view.print(h.instrument);
     if (!print.some) continue;
     terms.push(mul(units.value, print.value.price, 'what it holds is worth'));
@@ -650,9 +678,9 @@ function wealthOf(view: ParticipantView, cash: number): number {
 ```
 
 `view.print` returns the print in the INSTRUMENT's own money. `cash` is `view.cash(currencyOf(region))`,
-the cell's own. Nothing converts and nothing checks: this is `Appendix B`'s *"two currencies never
-added"*, written out. `atRisk`, ten lines up, does the same thing with `confidence`, which the
-`Outlook` contract says is *"in the same unit as the variable"* — the variable being
+the cell's own. Nothing converts and nothing checks: this is `Appendix B`'s _"two currencies never
+added"_, written out. `atRisk`, ten lines up, does the same thing with `confidence`, which the
+`Outlook` contract says is _"in the same unit as the variable"_ — the variable being
 `price.<instrument>`, i.e. that instrument's money.
 
 Both feed `spendPerMember`: `wealth` into the gap that sets what a household spends, `atRisk` into
@@ -665,12 +693,12 @@ whole spending decision is taken on a sum of two moneys.
 if (!i.status.live || !i.market.some || i.ccy !== ccy || !i.issuer.some) continue;
 ```
 
-and the seed is careful too (*"Its own country's paper: a household saving in a money it is not paid
-in would be a currency position nobody took (Currency D2)"*). So today a household's holdings are
+and the seed is careful too (_"Its own country's paper: a household saving in a money it is not paid
+in would be a currency position nobody took (Currency D2)"_). So today a household's holdings are
 all in its own money and the defect does not bite. It is C and not A for that reason only — the
 guard is in the two places that CHOOSE what a household acquires, and absent from the place that
-VALUES what it has. `handToProbate`'s own header asserts the opposite is already happening (*"A world
-with four of them has households paid a coupon in one they do not bank in"*), and if that is true
+VALUES what it has. `handToProbate`'s own header asserts the opposite is already happening (_"A world
+with four of them has households paid a coupon in one they do not bank in"_), and if that is true
 this is A rather than C. `ctx.valuation.inMoney` exists and is the read that would settle it.
 
 ### A-24 — the household's own plan round-trips through `unknown` and drops what it cannot parse (C)
@@ -691,19 +719,23 @@ That is a decision disappearing between the party that took it and the book it w
 the one thing this round trip exists to prevent.
 
 `ordersFrom` also drops any row with `qty <= 0` before `asQty` can complain, so the file's own
-comment — *"through the one door that says a size is a count of pieces — and that throws if what it
-published was not"* — is only true for positive non-integers.
+comment — _"through the one door that says a size is a count of pieces — and that throws if what it
+published was not"_ — is only true for positive non-integers.
 
 ### A-25 — an unpriced physical leg is valued at zero inside an audit family (C)
 
 `households/index.ts`, `consumptionIsBought`:
 
 ```ts
-addTo(bought, leg.to, mul(leg.qty, leg.pricePerUnit.some ? leg.pricePerUnit.value : 0, 'what it took'));
+addTo(
+  bought,
+  leg.to,
+  mul(leg.qty, leg.pricePerUnit.some ? leg.pricePerUnit.value : 0, 'what it took'),
+);
 ```
 
 A `? … : 0` on an `Option` inside a mechanism, which the error discipline forbids without
-qualification (*"No `?? 0`, no `|| 0`, no numeric defaults … Missing is `Missing`"*). The family then
+qualification (_"No `?? 0`, no `|| 0`, no numeric defaults … Missing is `Missing`"_). The family then
 compares that zero against the money the cell paid and reports `took 0 of goods and paid X` — a
 violation whose size and message are both about the missing price rather than about the flow. The
 family's subject is that goods and money move together; an unpriced leg is a different defect and it
@@ -738,8 +770,8 @@ a cell that has saved for a while holds several positions, and every redemption 
 how many.
 
 The consequence is the module's own subject, inverted. Its docstring says the redemption channel is
-what makes *"a shock to incomes become a redemption wave"* and that *"nothing here is an allocation:
-the flow is a consequence of the cell's own budget"*. As written the flow is a multiple of the
+what makes _"a shock to incomes become a redemption wave"_ and that _"nothing here is an allocation:
+the flow is a consequence of the cell's own budget"_. As written the flow is a multiple of the
 cell's budget, and the multiplier is the count of funds in the world — a number no participant
 decided and nothing in the spec names. The wave's size is set by the seed's bank draw.
 
@@ -747,7 +779,7 @@ On the way in it is worse than an over-commitment: the cell posts a buy for mone
 `toFund` came from `cushionForFund(cash, spend, spare)` and is the whole of what its account holds
 over what it is about to spend. Committing it N times is committing money that is not there — the
 same money on N tickets, which is exactly what `paperBids`' sibling comment says the per-line budget
-split exists to prevent (*"so the same money is never committed twice"*). Paper got the split; funds
+split exists to prevent (_"so the same money is never committed twice"_). Paper got the split; funds
 did not.
 
 ### A-27 — the cell counts a commodity fund as money it can spend today (A)
@@ -755,7 +787,7 @@ did not.
 `fundPositions` selects venues by `v.key['kind'] !== 'fund'` and nothing else. Every fund declares
 that key (`funds/index.ts:1557`), the commodity fund included — `drawFunds` builds
 `fund.physical.<bank>` with `eligible: ['good.grain']` and `maxTenorPeriods: 0`, on the stated
-grounds that *"a thing has no maturity … what it is holding for is a price"*.
+grounds that _"a thing has no maturity … what it is holding for is a price"_.
 
 `decide` then does:
 
@@ -765,8 +797,8 @@ const onDemand = sum(positions.map((f) => f.worthPerMember)).value;
 const decided = spendPerMember(view, p, onDemand);
 ```
 
-and `spendPerMember` puts `onDemand` straight into `budget` — *"THE WHOLE OF WHAT IT CAN PAY WITH …
-because nobody lends to it and those are the two places its money is"*. So a household's grocery
+and `spendPerMember` puts `onDemand` straight into `budget` — _"THE WHOLE OF WHAT IT CAN PAY WITH …
+because nobody lends to it and those are the two places its money is"_. So a household's grocery
 budget this week includes the market value of its stake in a grain fund, on the same footing as its
 current account.
 
@@ -774,10 +806,10 @@ current account.
 the money it is holding precisely because it may need it at no notice — is subscribed to the
 commodity fund whenever that fund's published return clears its liquidity premium.
 
-The distinction the module is built on is stated three times in its own prose (*"a MONEY FUND is a
-claim on short paper that can be asked for back at any time"*, *"Anything it cannot get back on
+The distinction the module is built on is stated three times in its own prose (_"a MONEY FUND is a
+claim on short paper that can be asked for back at any time"_, _"Anything it cannot get back on
 demand is wealth (C1.b) but not budget (C1.d), which is the whole difference between a fund share
-and a bond"*) and is nowhere in the code. The fund kind knows the answer — `maxTenorPeriods`, or
+and a bond"_) and is nowhere in the code. The fund kind knows the answer — `maxTenorPeriods`, or
 `eligible` naming a physical kind — and nothing asks it.
 
 ### A-28 — a seller's margin is on the buyer's side (A)
@@ -788,16 +820,16 @@ and a bond"*) and is nowhere in the code. The fund kind knows the answer — `ma
 const price = sub(expected, outlook.some ? outlook.value.confidence : 0, 'what it will pay');
 ```
 
-The comment is explicit that the subtraction is the buyer's margin: *"a saver buying a claim that
-promises it nothing wants the margin on its side"*. `shareOrders` then offers at the same number:
+The comment is explicit that the subtraction is the buyer's margin: _"a saver buying a claim that
+promises it nothing wants the margin on its side"_. `shareOrders` then offers at the same number:
 
 ```ts
 const price = short > 0 ? ('market' as const) : line.price;
 out.push({ market, instrument: id, side: 'sell', price, qty: units });
 ```
 
-with a docstring that says something different from what the line does: *"it OFFERS its holding at
-what it thinks the holding is worth"*. What it thinks it is worth is `expected`. What it offers at is
+with a docstring that says something different from what the line does: _"it OFFERS its holding at
+what it thinks the holding is worth"_. What it thinks it is worth is `expected`. What it offers at is
 `expected − confidence`.
 
 So a cell that has been surprised by a price does not widen — it moves **both** its bid and its ask
@@ -827,16 +859,16 @@ for (const rung of rungsOver(levelsBelow(line.price, steps), perLine)) {
   const qty = downTick(atMost(wanted, exist, 'there are no more units of it than were issued'));
 ```
 
-`atMost`'s own contract (`core/num.ts:229`) is *"They are NOT a place to put a cap. If the reason
+`atMost`'s own contract (`core/num.ts:229`) is _"They are NOT a place to put a cap. If the reason
 cannot be written as 'there is no more of it', the number is a decision or a missing mechanism and
-Law 6 says so."* A bid for more units than exist is not arithmetically impossible — it is a bid that
+Law 6 says so."_ A bid for more units than exist is not arithmetically impossible — it is a bid that
 cannot wholly fill, which is the ordinary state of a book. The clearing solver is what decides how
 much of a bid fills, and it does not need the bidder to pre-truncate.
 
-The comment says out loud why the line is there: *"`asQty` threw at 1.5e16 in a year-long run;
-worklist 12c is why the price collapsed"*. That is a bound added because a number exploded, which is
-the case Law 6 legislates for directly: *"If a number explodes, the compensating mechanism is
-missing — build it, and delete the bound in the same change."* The record says 12c built the
+The comment says out loud why the line is there: _"`asQty` threw at 1.5e16 in a year-long run;
+worklist 12c is why the price collapsed"_. That is a bound added because a number exploded, which is
+the case Law 6 legislates for directly: _"If a number explodes, the compensating mechanism is
+missing — build it, and delete the bound in the same change."_ The record says 12c built the
 compensating mechanism (a saver's level now comes from its own outlook rather than from a
 capitalisation of published earnings). The bound was not deleted with it.
 
@@ -869,17 +901,17 @@ return foregone > cost ? some({ to: best.bank, … }) : none();
 
 `stayed()` is years since the cell last moved, or since the epoch. So the test is
 
-  balance × gap × yearsStayed > oneOffCost
+balance × gap × yearsStayed > oneOffCost
 
 and `yearsStayed` increases every period a depositor does not move. **For any positive gap, however
 small, the inequality is eventually satisfied.** A quarter of a basis point moves every household in
 the world if you wait long enough. The stickiness the module is built to produce —
-*"a small one may never go at all: the class drains instead of crossing in one instant"* — holds for
+_"a small one may never go at all: the class drains instead of crossing in one instant"_ — holds for
 a while and then stops holding, and after it stops the population churns on a fixed cycle of
 `cost / (balance × gap)` years, because `stayed` resets on each move and starts climbing again.
 
-The reason it is written this way is stated: *"Nothing here is a forecast (Law 17): it is what has
-already happened to it."* Law 17 forbids a forecast without a falsification test; it does not
+The reason it is written this way is stated: _"Nothing here is a forecast (Law 17): it is what has
+already happened to it."_ Law 17 forbids a forecast without a falsification test; it does not
 require a decision to be taken on a sunk cost. What moving is worth is `balance × gap × (how long it
 expects to stay)`, and this world already gives a party its own forward-looking number for exactly
 this kind of question — `view.outlook(...)`, with its own confidence, formed from its own history
@@ -903,9 +935,9 @@ export function levelsBelow(opinion: number, steps: number): number[] {
 }
 ```
 
-with the docstring *"every level of a coarser grid is a level of a finer one, so refining adds
-answers and moves none"* and the parameter declared `kind: 'resolution'` with
-*"change it and the answer must not move"* (`households.demand.steps`).
+with the docstring _"every level of a coarser grid is a level of a finer one, so refining adds
+answers and moves none"_ and the parameter declared `kind: 'resolution'` with
+_"change it and the answer must not move"_ (`households.demand.steps`).
 
 Two things are false:
 
@@ -914,11 +946,11 @@ Two things are false:
 2. The grid's **bottom** is `opinion / steps`, so the count of steps sets how far down the cell bids
    at all. A cell with `steps = 5` posts nothing below `0.2 × opinion`; with `steps = 10` it posts to
    `0.1 × opinion`. A session clearing anywhere below the coarse grid's floor sees a different
-   quantity from this cell depending on the resolution, and a session clearing *between* two rungs
+   quantity from this cell depending on the resolution, and a session clearing _between_ two rungs
    sees the rung above rather than the curve — `budget / rung` instead of `budget / cleared`.
 
 The step function is a legitimate way to post a curve. The claim of invariance is what is wrong, and
-Law 2 is specific that a RESOLUTION is *"tested by invariance"* — so this is either a resolution that
+Law 2 is specific that a RESOLUTION is _"tested by invariance"_ — so this is either a resolution that
 has never been tested, or a SHAPE (a claim about the answer) wearing a resolution's name, whose count
 must fall. `pricesOver` in `consume.ts` has the same property.
 
@@ -929,15 +961,15 @@ event of that kind for that party, from any period, ever. Several callers guard 
 (`households/index.ts` and `firms/index.ts` both test `own.value.period !== view.period` before
 reading a plan). Four do not, all of them reading `labour.wages`:
 
-| reader | file | what it becomes |
-|---|---|---|
-| `wagesDue` | `firms/decide.ts` | the payroll `sellSchedule` force-sells stock to cover |
-| `wagesPromised` | `firms/index.ts` | the payroll published to lenders in `firms.funding` |
-| `hoursUnderContract` | `firms/decide.ts` | the hours the production plan is built on |
-| `wageFacing` | `firms/decide.ts` | the wage a unit is costed at |
-| `quotedRate` | `firms/invest.ts` | the cost of debt in the cost of capital — *"AT THE MARGIN, NOW … not the average coupon on debt already outstanding"*, read from `lastOwn('credit.quoted')` with no period test, so it is the last quote the firm ever got |
-| `lastWageBill`, `wageItFaces` | `treasury/index.ts` | the state's own payroll in its funding programme, and what it bids for an hour |
-| `linesCovered` | `banks/staff.ts` | how many lines a dealing desk can quote (A-60) |
+| reader                        | file                | what it becomes                                                                                                                                                                                                            |
+| ----------------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `wagesDue`                    | `firms/decide.ts`   | the payroll `sellSchedule` force-sells stock to cover                                                                                                                                                                      |
+| `wagesPromised`               | `firms/index.ts`    | the payroll published to lenders in `firms.funding`                                                                                                                                                                        |
+| `hoursUnderContract`          | `firms/decide.ts`   | the hours the production plan is built on                                                                                                                                                                                  |
+| `wageFacing`                  | `firms/decide.ts`   | the wage a unit is costed at                                                                                                                                                                                               |
+| `quotedRate`                  | `firms/invest.ts`   | the cost of debt in the cost of capital — _"AT THE MARGIN, NOW … not the average coupon on debt already outstanding"_, read from `lastOwn('credit.quoted')` with no period test, so it is the last quote the firm ever got |
+| `lastWageBill`, `wageItFaces` | `treasury/index.ts` | the state's own payroll in its funding programme, and what it bids for an hour                                                                                                                                             |
+| `linesCovered`                | `banks/staff.ts`    | how many lines a dealing desk can quote (A-60)                                                                                                                                                                             |
 
 `payWages` writes the event **only for employers that have rows this period**
 (`for (const [employer, bill] of bills)`, and `bills` is keyed off `allRows(book)`). So a firm that
@@ -948,16 +980,16 @@ The consequences are not symmetric noise:
 
 - It force-sells at `price: 'market'` every period to cover a payroll of nobody
   (`short = wagesDue − cash`), which is XI-2's forced seller firing on a phantom obligation.
-- It publishes that phantom payroll in `firms.funding` as *"what it is about to have to pay"*, which
+- It publishes that phantom payroll in `firms.funding` as _"what it is about to have to pay"_, which
   is what a bank lends against (`Banks Lending C2`).
 - It plans production on hours it no longer employs, and `produce.ts:start` then finds
   `productiveHours` is 0 (that one IS period-filtered) and records `firms.idle` — so the plan and
   the line disagree about the same firm in the same period.
 
-Each docstring states the period it means (*"what it had under contract at the close of the period
-before"*, *"the payroll it has already promised"*) and none of them asks for it. The fix is one
-predicate, and the reason it matters is that `lastOwn`'s own contract — *"the most recent event of a
-kind THIS party is a subject of"* — makes no promise about when.
+Each docstring states the period it means (_"what it had under contract at the close of the period
+before"_, _"the payroll it has already promised"_) and none of them asks for it. The fix is one
+predicate, and the reason it matters is that `lastOwn`'s own contract — _"the most recent event of a
+kind THIS party is a subject of"_ — makes no promise about when.
 
 ### A-34 — a firm with no wage history bids for inputs as if labour were free (B)
 
@@ -989,10 +1021,13 @@ own wage nor the market's cannot price an input, and that is a `Missing`, not a 
 ### A-35 — `buying` is computed twice, two ways (C)
 
 `firms/decide.ts:spendable`:
+
 ```ts
 .map((o) => (typeof o.price === 'number' ? mul(o.price, o.qty, 'what it is about to buy') : 0))
 ```
+
 `firms/index.ts:publishFunding`:
+
 ```ts
 .map((o: PlannedOrder) => (typeof o.price === 'number' ? o.price * o.qty : 0))
 ```
@@ -1005,13 +1040,14 @@ that already differ in discipline (`mul`, which names the product and checks it,
 ### A-36 — the treasury's immortality is unconditional where the kernel says it is conditional (C)
 
 `registry/profiles.ts:119`:
+
 ```ts
 { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true, depositClass: null, sovereign: true },
 ```
 
-`world/failure.ts`'s header says what this is meant to be: *"XI-3's two exceptions — the central
+`world/failure.ts`'s header says what this is meant to be: _"XI-3's two exceptions — the central
 bank, and **a treasury in its own money** — are named consequences of what they ARE rather than
-omissions."* And Appendix B lists *"sovereign in foreign money"* among the things that must not be
+omissions."_ And Appendix B lists _"sovereign in foreign money"_ among the things that must not be
 immortal.
 
 `fails: []` carries no condition. `failedWhy` asks `partyKind(kind).fails` and nothing else — there
@@ -1056,8 +1092,8 @@ not handle.
 - `households/consume.ts` again — `buffer = bufferPeriods × (expected + confidence)`, so the same
   sale raises the cushion it wants, which partly hides the first effect and makes the net direction
   depend on `patience` and `bufferPeriods` rather than on anything economic.
-- `labour/matching.ts:reservation` — `div(outlook.expected, hours)` is *"the least a cell will work
-  for"*. **A household that sold its shares raises its reservation wage and stops offering hours.**
+- `labour/matching.ts:reservation` — `div(outlook.expected, hours)` is _"the least a cell will work
+  for"_. **A household that sold its shares raises its reservation wage and stops offering hours.**
 
 This compounds directly with A-28: `shareOrders` puts a cell's ENTIRE holding on offer in every
 period it has no spare cash, so households liquidate routinely, and every liquidation reads as a pay
@@ -1080,13 +1116,13 @@ function reservation(ctx, cell, hours) {
 }
 ```
 
-with the docstring *"Its outside option is what it lives on without the job — read from its own
-outlook of its own income, which for somebody not working is the benefit this world pays it."*
+with the docstring _"Its outside option is what it lives on without the job — read from its own
+outlook of its own income, which for somebody not working is the benefit this world pays it."_
 
 For somebody not working, `income` is the benefit **plus** every coupon on the paper it holds, plus
 every distribution it received from probate, plus (per A-37) anything it sold. B1.a's outside option
-is the income it has *instead of* working; this is the income it has *including* working, for an
-employed cell, and *including its capital* for any cell.
+is the income it has _instead of_ working; this is the income it has _including_ working, for an
+employed cell, and _including its capital_ for any cell.
 
 So the wage a cell demands rises with the paper it owns, one-for-one, with no reason behind it: a
 saver is not less willing to work because a bill paid a coupon. And an employed cell's reservation
@@ -1130,11 +1166,11 @@ legs.push({ kind: 'create', party: firm, instrument: wip, qty: batch,
 
 Trace the firm's equity over the two instructions:
 
-| event | firm equity |
-|---|---|
-| the wage leg | `− downTick(perMember) × headcount` |
+| event             | firm equity                                                             |
+| ----------------- | ----------------------------------------------------------------------- |
+| the wage leg      | `− downTick(perMember) × headcount`                                     |
 | the batch created | `− Σ inputCarrying + (wages + Σ inputCost)` = `+ perMember × headcount` |
-| **net** | **`+ (perMember − downTick(perMember)) × headcount`** |
+| **net**           | **`+ (perMember − downTick(perMember)) × headcount`**                   |
 
 and the household side rises by `downTick(perMember) × headcount`, so the world's equity rises by
 `(perMember − downTick(perMember)) × headcount` and nothing anywhere falls. `wagePerMember` is
@@ -1168,12 +1204,14 @@ rather than reading the solver's sell-side fills:
 ```ts
 const queue = offers
   .filter((o) => o.price !== 'market' && o.price <= struck)
-  .sort((a, b) => (a.price === b.price ? (a.party < b.party ? -1 : 1) : Number(a.price) - Number(b.price)))
+  .sort((a, b) =>
+    a.price === b.price ? (a.party < b.party ? -1 : 1) : Number(a.price) - Number(b.price),
+  )
   .map((o) => o.party);
 ```
 
 The solver's `proRata` allocation across sellers is computed and discarded; the module substitutes a
-price-then-party-id priority order. The reason given is sound (*"people are whole (A4.b)"*), but the
+price-then-party-id priority order. The reason given is sound (_"people are whole (A4.b)"_), but the
 two do not agree on the total:
 
 ```ts
@@ -1233,6 +1271,7 @@ anybody's book — which is a flow with one side that settlement never saw (Law 
 ### A-42 — two `units` families switch themselves off in any period with a weight event, which is every period (A)
 
 `mechanisms/goods/index.ts:unitsIdentity`:
+
 ```ts
 // A weight event moves stock between books without an instruction (a cell splits, a member
 // dies): the holders' totals are re-struck, and this period's identity is not about them.
@@ -1243,6 +1282,7 @@ const consecutive = seen.period !== undefined && view.period === seen.period + 1
 ```
 
 `mechanisms/capital-programme/index.ts:461`, in the same words:
+
 ```ts
 const weights = view.journal.ofKindIn('weight', view.period).length;
 …
@@ -1260,8 +1300,8 @@ What is lost is the fine half of Part XII's stock identity. The kernel's own `un
 (`audit/families/units.ts`) survives, but it compares each instrument's `issued` total against the
 create/destroy legs. These two compare the **holdings** — `heldTotal` per instrument, and quantity
 per (holder, instrument) — which is where stock that moved between books with no leg behind it would
-show. That is the case the goods docstring says it exists for: *"so a stock that moved without a leg
-has nowhere to hide."*
+show. That is the case the goods docstring says it exists for: _"so a stock that moved without a leg
+has nowhere to hide."_
 
 The exemption is also unnecessary, which is what makes it worth deleting rather than narrowing. Of
 the three ways a weight can move today:
@@ -1278,10 +1318,10 @@ was attached to.
 
 `MechanismContext.gather`'s contract (`world/context.ts:508`):
 
-> *"ask every party whose module declared a schedule for this venue for one, and post what comes
+> _"ask every party whose module declared a schedule for this venue for one, and post what comes
 > back. The module that OPENED the venue calls it … each schedule is built by the module that owns
 > that party, with that party's own view. … **building somebody else's schedule inside the clearing
-> phase instead is that module deciding for a party it does not own.**"*
+> phase instead is that module deciding for a party it does not own.**"_
 
 `labour/matching.ts:supply` does exactly that: it walks `ctx.parties.ofKind(HOUSEHOLD)`, reads each
 cell's own `outlook('income')` through `ctx.participant(cell)`, decides what that cell will work
@@ -1327,8 +1367,8 @@ anywhere in the households module's saving decision.
 
 This was harmless when it was written and is not now. `portfolio.ts`'s own header still says so:
 
-> *"A deposit is a holding of a bank's money — **it returns nothing at all here**, because paying
-> for deposits is a decision a bank has not been given yet (Banks Funding B1, worklist 11)"*
+> _"A deposit is a holding of a bank's money — **it returns nothing at all here**, because paying
+> for deposits is a decision a bank has not been given yet (Banks Funding B1, worklist 11)"_
 
 Deposits now pay. `mechanisms/money-market/deposits.ts:payDepositInterest` settles a real money leg
 every period for every holder of a bank's money whose kind has a deposit class, at the rate that
@@ -1337,8 +1377,8 @@ currency, every period. So worklist 11 landed and the household's comparison did
 
 The consequence is a wrong substitution, not a cosmetic one: a household will subscribe to a money
 fund offering 0.006 while its own bank's board pays 0.02, because `p.offered < required` tests
-0.006 against 0.005. D5.a's substitution — *"the choice between a deposit and paper bought directly
-… is how a rate reaches a saver"* — currently runs against a constant instead of against the rate
+0.006 against 0.005. D5.a's substitution — _"the choice between a deposit and paper bought directly
+… is how a rate reaches a saver"_ — currently runs against a constant instead of against the rate
 the saver is actually being paid. The board is reachable: `households/bank.ts:board()` in the same
 module already reads `bank.depositRate` for this cell's own bank and class.
 
@@ -1386,16 +1426,16 @@ if (r.instruction.cause === 'coupon') {
 }
 ```
 
-The `else if` is *every other money leg reaching a household cell*. It therefore taxes, at the
+The `else if` is _every other money leg reaching a household cell_. It therefore taxes, at the
 income rate, on the **gross** amount:
 
-| what happens | the cause on the instruction | what the household is billed |
-|---|---|---|
-| a sovereign bill it holds matures | `'maturity'` (`world/actions.ts:264`) | income tax on the whole **principal** |
-| it redeems a money-fund share | `'maturity'` (`funds/index.ts:487`) | income tax on the whole **redemption** |
-| it sells shares or paper in a market | `'trade'` (`clearing/market.ts:726`) | income tax on the whole **sale proceeds** |
-| it receives its share of an estate | `'transfer'` (`households/lifecycle.ts`) | income tax on the whole **inheritance** |
-| an ETF pays it out | `'maturity'` (`funds/etf.ts:248`) | income tax on the whole **payout** |
+| what happens                         | the cause on the instruction             | what the household is billed              |
+| ------------------------------------ | ---------------------------------------- | ----------------------------------------- |
+| a sovereign bill it holds matures    | `'maturity'` (`world/actions.ts:264`)    | income tax on the whole **principal**     |
+| it redeems a money-fund share        | `'maturity'` (`funds/index.ts:487`)      | income tax on the whole **redemption**    |
+| it sells shares or paper in a market | `'trade'` (`clearing/market.ts:726`)     | income tax on the whole **sale proceeds** |
+| it receives its share of an estate   | `'transfer'` (`households/lifecycle.ts`) | income tax on the whole **inheritance**   |
+| an ETF pays it out                   | `'maturity'` (`funds/etf.ts:248`)        | income tax on the whole **payout**        |
 
 Only the first row is a base anybody would call income, and only the interest on it. The seed
 endows every household member with sovereign paper (`foundation.ts:1312`), so this fires from the
@@ -1409,8 +1449,12 @@ The engine already contains the correct discrimination, twenty lines of one file
 // Households B3, B3.a: what a party was PAID, which is not the same as what reached it. A claim
 // handed back to WHOEVER PROMISED IT is capital returning — a bill that matured, a fund share
 // redeemed (Fund Shares C2) …
-const returned = new Set<PartyId>(r.instruction.legs.filter(isAssetLeg)
-  .filter((leg) => issuedBy(ctx.instruments.get(leg.instrument), leg.to)).map((leg) => leg.from));
+const returned = new Set<PartyId>(
+  r.instruction.legs
+    .filter(isAssetLeg)
+    .filter((leg) => issuedBy(ctx.instruments.get(leg.instrument), leg.to))
+    .map((leg) => leg.from),
+);
 ```
 
 So the world holds two definitions of "what a household was paid", one in the module that forms the
@@ -1418,9 +1462,9 @@ household's outlook and one in the module that taxes it, and they disagree about
 balance sheet's turnover. That is Law 4 with a cash consequence: `bases.income` is published in
 `treasury.receipts` as the state's income-tax base, and it is mostly asset turnover.
 
-(The comment directly above this loop is careful about the neighbouring cases — *"A base carries one
+(The comment directly above this loop is careful about the neighbouring cases — _"A base carries one
 rate: the state does not tax back the transfer it just paid, and interest is taxed where it is
-received rather than twice over as income as well"* — which is what makes the omission look like an
+received rather than twice over as income as well"_ — which is what makes the omission look like an
 oversight rather than a decision.)
 
 Note the same file gets the currency question exactly right, with a worked example of what it cost
@@ -1437,11 +1481,13 @@ sovereign bill in the world**: `eligibleLines` counts the Japanese and European 
 American, and `ordersOf` will bid in any of their markets.
 
 **2. The bid.** `ordersOf`:
+
 ```ts
 const each = div(spare, lines, 'what it puts into each line it may hold');
 const dirty = add(price, view.accrued(i.id), 'what a unit costs it');
 const qty = downTick(div(each, dirty, 'units it bids for'));
 ```
+
 `spare` comes off this fund's own `fund.struck` event and is in the fund's own money; `price` is
 `priceAt(flows, required, …)` in the line's money. `each / dirty` divides one currency by another
 and calls the answer a quantity. The fund also does not hold the foreign money it would have to pay
@@ -1449,12 +1495,14 @@ with — `strike` reads its cash as `ctx.register.quantity(fund, moneyOf(ctx, fu
 currency only.
 
 **3. The NAV.** `nav.ts:navOf`:
+
 ```ts
 for (const h of reads.holdingsOf(fund)) { … assets.push(worth.value.value); }
 for (const other of reads.instruments()) { … owed.push(worth.value.value); }
 const net = sub(sum(assets).value, sum(owed).value, 'what the fund is worth');
 return { perShare: div(net, shares, 'net asset value per share'), … };
 ```
+
 `worthOf` answers in the instrument's own money. Nothing converts. So a fund holding one foreign
 bill publishes a NAV that is a sum of two currencies, and every subscription and redemption in the
 world transacts at it (`strike` → `subscribe`/`redeem` both take `perShare`).
@@ -1476,15 +1524,15 @@ The engine has the read: `ctx.valuation.inMoney` / `rateInForce`, which is what 
 
 Separable from A-47, and worth stating because the family's docstring claims the opposite:
 
-> *"A3: a fund's equity is ZERO. … **Nothing in the module enforces it: it falls out of the wire**,
-> and this is the check that says whether the wire actually did it."*
+> _"A3: a fund's equity is ZERO. … **Nothing in the module enforces it: it falls out of the wire**,
+> and this is the check that says whether the wire actually did it."_
 
 It does not fall out of the wire. `fundShareKind.owes: 'value'` and
 `derive: (i, at, reads) => navOf(i, at, reads).perShare`, and `navOf` returns
-`(assets − other liabilities) / shares`. So the fund's liability is *defined* as its assets net of
+`(assets − other liabilities) / shares`. So the fund's liability is _defined_ as its assets net of
 its other liabilities, and `assets − liabilities = 0` is an algebraic identity, not an outcome. No
 subscription, redemption, fee, mark or trade can move it — which is exactly the property the module
-elsewhere states out loud (`fundKind`: *"its equity is zero by construction (A3)"*).
+elsewhere states out loud (`fundKind`: _"its equity is zero by construction (A3)"_).
 
 What the family can still catch is a **disagreement between two valuation paths** — the FX one in
 A-47, a liability `navOf` skipped because `worthOf` was `none` while `balanceSheet` counted it, or a
@@ -1508,8 +1556,8 @@ The variable is `best` and the loop is an assignment, not a maximum: with two is
 families in one currency it returns whichever the registry's `Map` iterates last. And `best = 0`
 means a fund with no readable curve publishes `offered = −fee`, a negative return, as a fact rather
 than as "no answer" — which is what the module's own `returned` field is careful about two
-declarations away (*"A RETURN ON NOTHING IS NOT A NUMBER (Appendix A) … Zero would have been worse
-than the throw"*).
+declarations away (_"A RETURN ON NOTHING IS NOT A NUMBER (Appendix A) … Zero would have been worse
+than the throw"_).
 
 It also sits behind A-27. The commodity fund has `maxTenorPeriods: 0`, so `by === on`,
 `yearFraction === 0`, and `offeredYield` reads the very short end of the **sovereign bill** curve —
@@ -1527,10 +1575,10 @@ function moneyOf(ctx: MechanismContext, party: PartyId, ccy: string): Instrument
 
 `MechanismContext.accountOf`'s contract says why this is not allowed:
 
-> *"WHICH account a party holds a given money in. Its own money is at its own bank; a money its
+> _"WHICH account a party holds a given money in. Its own money is at its own bank; a money its
 > bank does not issue is held at that money's own central bank … One writer of that rule, the
 > kernel's, so **a module never assembles an account out of a party's `bank` field**: a module that
-> did would be right in one currency and wrong in every other."*
+> did would be right in one currency and wrong in every other."_
 
 It also rebuilds the id string by hand rather than calling `moneyInstrumentId` (`core/ids.ts:124`),
 so it is a second spelling of the same format too. It is the only such site in the engine
@@ -1551,27 +1599,33 @@ why it has to:
 // Currency C4, C5, D2: A POSITION IN ANOTHER MONEY IS AN ASSET LIKE ANY OTHER, converted at the
 // rate in force — the same rate the same period settled at, so what a balance sheet says and
 // what a payment does cannot disagree.
-assetTerms.push(view.valuation.inMoney(
-  view.valuation.valueOfLots(inst.id, h.lots, view.period), inst.ccy, home, view.period));
+assetTerms.push(
+  view.valuation.inMoney(
+    view.valuation.valueOfLots(inst.id, h.lots, view.period),
+    inst.ccy,
+    home,
+    view.period,
+  ),
+);
 ```
 
 Every term on both sides goes through `inMoney`. `world/assemble.ts:stateEquityAsRead` carries the
-same lesson written out as a defect that was found and fixed: *"it added `valueOfLots` across every
+same lesson written out as a defect that was found and fixed: _"it added `valueOfLots` across every
 holding in whatever money the instrument was priced in, where the read it is checked against converts
-each one into the party's own (Currency D2). At a rate of one the two agreed and nothing showed."*
+each one into the party's own (Currency D2). At a rate of one the two agreed and nothing showed."_
 
 `inMoney` is exported on `MechanismContext.valuation` and **is called by no module in the engine**
 (`grep -rn 'inMoney' mechanisms/` finds one unrelated local variable in `banks/dealing-quote.ts`).
 Every module that walks a party's book sums it in whatever money each line happens to be in:
 
-| site | what the sum is used for | reachable today? |
-|---|---|---|
-| `funds/nav.ts:navOf` | the NAV every subscription and redemption transacts at | **yes** — A-47: a fund's mandate has no currency in it |
-| `funds/index.ts:holdingsWorth` | the pro-rata base a forced sale is struck on | **yes**, same reason |
-| `banks/capital.ts:capitalOf` | the bank's capital position and its risk-weighted assets | only if a bank holds foreign paper |
-| `money-market/resolution.ts:valueBook` | the hole in a failing bank, which decides who bears it | only if a failing bank held foreign paper |
-| `households/consume.ts:wealthOf`, `atRisk` | what a household spends (A-23) | guarded upstream today |
-| `equity/index.ts:531` | the opening share count of every listed firm | seed-time, single-currency by construction |
+| site                                       | what the sum is used for                                 | reachable today?                                       |
+| ------------------------------------------ | -------------------------------------------------------- | ------------------------------------------------------ |
+| `funds/nav.ts:navOf`                       | the NAV every subscription and redemption transacts at   | **yes** — A-47: a fund's mandate has no currency in it |
+| `funds/index.ts:holdingsWorth`             | the pro-rata base a forced sale is struck on             | **yes**, same reason                                   |
+| `banks/capital.ts:capitalOf`               | the bank's capital position and its risk-weighted assets | only if a bank holds foreign paper                     |
+| `money-market/resolution.ts:valueBook`     | the hole in a failing bank, which decides who bears it   | only if a failing bank held foreign paper              |
+| `households/consume.ts:wealthOf`, `atRisk` | what a household spends (A-23)                           | guarded upstream today                                 |
+| `equity/index.ts:531`                      | the opening share count of every listed firm             | seed-time, single-currency by construction             |
 
 The two `funds` rows are live now. The rest are one holding away, and the failure mode is the one
 `stateEquityAsRead` names: at a rate of one everything agrees and nothing shows, so the defect
@@ -1592,12 +1646,12 @@ if (!reason.startsWith('payout on ')) continue;
 const line = reason.slice('payout on '.length, reason.indexOf(' ', 'payout on '.length));
 ```
 
-`Instruction.reason` is declared as prose — *"C1.b: a human-readable reason, so a unit is traceable
-to why it moved."* This is the practice the register's own `EquityMove` docstring names as the
+`Instruction.reason` is declared as prose — _"C1.b: a human-readable reason, so a unit is traceable
+to why it moved."_ This is the practice the register's own `EquityMove` docstring names as the
 defect it was built to remove:
 
-> *"only the running balance survived, so … a report that wanted 'revenue' had to parse the reason
-> strings on money legs — **recovering by inference a fact its writer knew and did not record**."*
+> _"only the running balance survived, so … a report that wanted 'revenue' had to parse the reason
+> strings on money legs — **recovering by inference a fact its writer knew and did not record**."_
 
 Two modules now depend on the exact wording, in two files, with no shared constant and nothing the
 compiler can check:
@@ -1627,8 +1681,10 @@ every non-zero finite `x`, so the test reduces to `total > 0`.
 ```ts
 const income = view.outlook('income');
 if (!income.some || income.value.expected <= 0) return undefined;
-const per = view.registry.pieces(goodUnitOf(view, self.region),
-  view.params.ratio(HOUSING_PARAMS.perMember(keyOf(self, 'cohort'))));
+const per = view.registry.pieces(
+  goodUnitOf(view, self.region),
+  view.params.ratio(HOUSING_PARAMS.perMember(keyOf(self, 'cohort'))),
+);
 // Law 8: money pieces a member expects, over the PIECES of occupancy a member lives under
 return div(income.value.expected, per, 'what a member would pay for the roof it lives under');
 ```
@@ -1637,8 +1693,8 @@ return div(income.value.expected, per, 'what a member would pay for the roof it 
 `letIn` clears on `marginalBid`, so in any region where dwellings are short the print rises to the
 bids and rent takes a household's entire expected income, every period, indefinitely.
 
-The docstring argues the bid: *"THE MOST A TENANT WILL PAY is what it has, because the alternative
-is nowhere to live."* That is a fair reading of B1.a read from the other side. Two things do not
+The docstring argues the bid: _"THE MOST A TENANT WILL PAY is what it has, because the alternative
+is nowhere to live."_ That is a fair reading of B1.a read from the other side. Two things do not
 follow from it:
 
 1. **Nothing on the household's side knows.** `households/consume.ts:spendPerMember` computes
@@ -1680,11 +1736,11 @@ gather(venue: VenueId, owner: string): void {
 Across the whole engine, `ctx.gather(...)` appears once: `money-market/index.ts:269`. Three modules
 declare `venueParticipants`:
 
-| module | what the schedule is | gathered? |
-|---|---|---|
-| `banks` — `sessionOrders` | a bank's money-market schedule | **yes**, by money-market |
-| `banks` — `staffOrders` | a bank's bid for labour hours | **never** |
-| `housing` — household rent orders | every bid and offer in the lettings venue | **never** |
+| module                            | what the schedule is                      | gathered?                |
+| --------------------------------- | ----------------------------------------- | ------------------------ |
+| `banks` — `sessionOrders`         | a bank's money-market schedule            | **yes**, by money-market |
+| `banks` — `staffOrders`           | a bank's bid for labour hours             | **never**                |
+| `housing` — household rent orders | every bid and offer in the lettings venue | **never**                |
 
 Consequences, both structural:
 
@@ -1696,8 +1752,8 @@ nothing forever. Everything in the module's header about rent clearing between t
 the tenant's income describes a session that never has an order in it.
 
 **2. No bank ever bids for labour.** `staffOrders` is the bank's demand for hours, and the comment
-beside it describes the mechanism it is meant to give: *"A bank whose book earns nothing bids nothing
-and hires nobody, which is how a shrinking bank sheds staff without anybody writing a rule for it."*
+beside it describes the mechanism it is meant to give: _"A bank whose book earns nothing bids nothing
+and hires nobody, which is how a shrinking bank sheds staff without anybody writing a rule for it."_
 It bids nothing because it is never asked. Banks in this world employ no one, so `operatingCostOf`
 has no wage bill behind it and `labour.match` never sees a financial-sector employer.
 
@@ -1731,7 +1787,7 @@ The other routes were checked and all are closed:
 - **No recipe names `dwelling` as an input**: the only occurrence in `goods/data.ts` is the good's
   own declaration, so no firm buys one to make something.
 - **Merchants exclude it**: `marketsOf` filters `!i.terms.portable`, and a dwelling is declared
-  non-portable (*"a house cannot be somewhere other than where it was built, at any price"*).
+  non-portable (_"a house cannot be somewhere other than where it was built, at any price"_).
 - **Fund mandates exclude it**: `drawFunds` gives `['sovereign.bill']` and `['good.grain']`.
 - **Bank dealing desks exclude it**: `BankDecl.makes` is drawn from
   `['equity.share','fund.share','sovereign.bill','sovereign.bond']`.
@@ -1741,13 +1797,13 @@ So the market `mkt.good.dwelling.<region>` has a seller (the builder firms — `
 
 1. The dwelling's price is the seed's placeholder for the life of the run. `foundation.ts:1571`
    writes an opening print for every good with `provenance: {kind:'opening'}` and the comment says
-   *"that number is a placeholder and the market's own first session replaces it"*. For this one
+   _"that number is a placeholder and the market's own first session replaces it"_. For this one
    good no session ever does — so it is a PLACEHOLDER with no scheduled death (Law 2), and it is the
    number `wearOf` and `shortOfMoney` are both built on.
 2. Builders accumulate unsold dwellings and lose them to spoilage (1% a year, `goods/data.ts:1735`),
    which is the only thing that ever removes one from the world.
-3. Owner-occupation is unreachable, so the module header's *"OWNER-OCCUPATION IS AN OUTCOME AND NOT A
-   TENURE FLAG: a household that owns as many dwellings as its members live in has nothing to rent"*
+3. Owner-occupation is unreachable, so the module header's _"OWNER-OCCUPATION IS AN OUTCOME AND NOT A
+   TENURE FLAG: a household that owns as many dwellings as its members live in has nothing to rent"_
    describes a state no household can be in.
 
 Combined with A-54, the housing system produces houses nobody can buy and lets none of them.
@@ -1762,11 +1818,11 @@ capital kind is `madeFrom` (`building`, `machine`, `vehicle`, `vessel`).
 
 Three goods are in none of them:
 
-| good | recipe | portable? |
-|---|---|---|
-| `dwelling` | timber, concrete, steel, glass, building trades | no |
-| `facilities` | chemicals, power, paper | no |
-| `itServices` | power, electronics | no |
+| good         | recipe                                          | portable? |
+| ------------ | ----------------------------------------------- | --------- |
+| `dwelling`   | timber, concrete, steel, glass, building trades | no        |
+| `facilities` | chemicals, power, paper                         | no        |
+| `itServices` | power, electronics                              | no        |
 
 Non-portable, so `merchants/index.ts:marketsOf` (`if (… !i.terms.portable) continue`) excludes all
 three; not in a fund mandate (`['sovereign.bill']`, `['good.grain']`); not in a bank's `makes`
@@ -1842,12 +1898,14 @@ the deal — never leaves. Three things follow, and the third disables the modul
    receives exactly face. Whatever the borrowers paid in interest is not its.
 2. **The residual has no holder.** When the notes are fully redeemed the vehicle still holds the
    un-run-off rows and every coupon it ever collected. Nothing ceases a vehicle whose pool has run
-   off (`distribute` removes a deal only when the vehicle has already *ceased*), the party kind has
+   off (`distribute` removes a deal only when the vehicle has already _ceased_), the party kind has
    no owner, no equity claim and no distribution, and `fails: ['cash','solvency']` will not fire on a
-   party with positive equity. Appendix B: *"no residual with no holder"*.
+   party with positive equity. Appendix B: _"no residual with no holder"_.
 3. **The attachment machinery goes inert.** `absorb` is the whole of C2/C6/D4:
    ```ts
-   const pool = sum(deal.rows.filter(live).map((row) => ctx.register.quantity(deal.vehicle, row))).value;
+   const pool = sum(
+     deal.rows.filter(live).map((row) => ctx.register.quantity(deal.vehicle, row)),
+   ).value;
    const notes = sum(deal.layers.map((id) => ctx.register.heldTotal(id).value)).value;
    let lost = sub(notes, pool, 'what the pool no longer covers');
    if (lost <= 0) return;
@@ -1858,8 +1916,8 @@ the deal — never leaves. Three things follow, and the third disables the modul
    the write-down leg and D4's senior losses are all downstream of a subtraction that has gone the
    wrong way round.
 
-The module's header states the intended behaviour twice — *"it takes in what the borrowers pay and
-passes it out by seniority"*, *"Σ tranche face equals the pool's face after every event"* — and both
+The module's header states the intended behaviour twice — _"it takes in what the borrowers pay and
+passes it out by seniority"_, _"Σ tranche face equals the pool's face after every event"_ — and both
 are true only if what is passed out is separated into interest and principal. Nothing separates them.
 
 ### A-58 — the price a bank will pay for a note is a leverage ratio squared, called a cost of funds (A)
@@ -1881,7 +1939,7 @@ function priceFor(view: ParticipantView, ccy: CurrencyCode): number {
 
 `owed / (owed + equity)` is the **debt share of this bank's funding** — a dimensionless ratio
 between 0 and 1 — not a rate and not a cost. The variable is named `cost` and the comment says it is
-*"what it actually pays for money"*. Squaring it and subtracting from one produces a price per unit
+_"what it actually pays for money"_. Squaring it and subtracting from one produces a price per unit
 of face with:
 
 - **no periodicity** (Law 8: a rate is not a number until its periodicity is) — the note's tenor
@@ -1892,8 +1950,8 @@ of face with:
 - **no dependence on the pool** — two vehicles with completely different loan books get the same bid
   from the same bank.
 
-`owedIn(ccy)` is also the wrong quantity even as a leverage measure: its contract is *"what falls
-due in `ccy` less what it holds of it"* — a short-term funding gap this period, not the bank's
+`owedIn(ccy)` is also the wrong quantity even as a leverage measure: its contract is _"what falls
+due in `ccy` less what it holds of it"_ — a short-term funding gap this period, not the bank's
 liabilities.
 
 The number the docstring describes exists and is published under the bank's own name every period:
@@ -1941,8 +1999,8 @@ Two consequences:
 - **The acquirer's required return is not compensated, and it selected the winner.** The guarantee
   pays exactly `v.hole`, so the acquirer ends whole in balance-sheet terms and earns nothing at all
   for taking on the book, while the auction ranked bidders precisely by how much they wanted for
-  doing so. The mechanism that decides *who* is faithful to XI-3; the mechanism that decides *what it
-  costs* is missing, and its absence is invisible because a number stands in the record where it
+  doing so. The mechanism that decides _who_ is faithful to XI-3; the mechanism that decides _what it
+  costs_ is missing, and its absence is invisible because a number stands in the record where it
   would be.
 
 Everything around it is careful about exactly this distinction — `allocate` moves every haircut as a
@@ -1999,13 +2057,13 @@ What that switches off:
   `speculative: true` participant posted. The bank face is the `speculative` one for bill, bond,
   share and fund-share books; households and merchants cover some of them, so it fires wherever they
   do not.
-- **A bank cannot sell to meet a shortfall.** `urgentSale` is *after* the `covers` gate, so XI-2's
+- **A bank cannot sell to meet a shortfall.** `urgentSale` is _after_ the `covers` gate, so XI-2's
   forced-seller door for banks — the one Banks Funding D1 and Money Market A2.b describe, and the
   one a fire-sale print is supposed to come out of — cannot open.
 - **Primary dealership.** `primaryBid` is behind the same gate, so a sovereign auction has no
   primary dealer bidding into it.
-- **The staffing mechanism it was built to express.** *"a desk that sheds staff drops lines, whose
-  books then journal `market.noView` because nobody is standing in them"* — every desk is in the
+- **The staffing mechanism it was built to express.** _"a desk that sheds staff drops lines, whose
+  books then journal `market.noView` because nobody is standing in them"_ — every desk is in the
   shed-everything state permanently, and for a reason that has nothing to do with its book.
 
 Two smaller things in the same path, worth noting because they will bite once the gather is fixed:
@@ -2035,15 +2093,15 @@ of the seed's draw, not a fact about who owns this central bank. In a world with
 to one country's treasury**, each in its own currency, into accounts that treasury holds at three
 foreign central banks.
 
-The clause it cites says the opposite: *"REMITTANCE (E3) is its net INCOME … the treasury owns it."*
+The clause it cites says the opposite: _"REMITTANCE (E3) is its net INCOME … the treasury owns it."_
 Each treasury owns its own central bank. As written, three governments never receive the seigniorage
 on their own money and one receives all of it, as an unexplained foreign transfer.
 
 The registry already answers the question: `registry.centralBankOf(ccy)` is used everywhere else to
 pair a money with its issuer, and `treasuryOf(ctx, bank)` exists in `money-market/resolution.ts` for
 exactly this lookup. Every neighbouring module got the multi-country pass — `declareVenues` opens a
-money-market book per currency with the note *"a euro bank cannot settle a dollar loan on the Fed's
-books"*; `treasury/runReceipts` skips foreign legs with a worked example of what it cost; the
+money-market book per currency with the note _"a euro bank cannot settle a dollar loan on the Fed's
+books"_; `treasury/runReceipts` skips foreign legs with a worked example of what it cost; the
 resolution auction filters bidders by `currencyOf(other.region) !== ccy`. This one was missed.
 
 ### A-62 — a central bank's loss is forgotten at the next remittance, and the comment says it is carried (B)
@@ -2052,7 +2110,10 @@ Same file. `remit` decides the window it sums over from the last event it can fi
 
 ```ts
 function lastRemittance(ctx: MechanismContext, cb: PartyId): Period {
-  const events = [...ctx.journal.ofKind('centralBank.remittance'), ...ctx.journal.ofKind('centralBank.loss')]
+  const events = [
+    ...ctx.journal.ofKind('centralBank.remittance'),
+    ...ctx.journal.ofKind('centralBank.loss'),
+  ]
     .filter((e) => e.subjects.includes(cb))
     .sort((a, b) => a.period - b.period);
   const last = events[events.length - 1];
@@ -2062,13 +2123,13 @@ function lastRemittance(ctx: MechanismContext, cb: PartyId): Period {
 
 A LOSS advances the window exactly as a remittance does. So the sequence is:
 
-- window `[a, b]` earns −100 → `centralBank.loss` recorded, nothing paid, *"E4: a loss is not
-  remitted. It reduces its equity and stands there until income covers it."*
+- window `[a, b]` earns −100 → `centralBank.loss` recorded, nothing paid, _"E4: a loss is not
+  remitted. It reduces its equity and stands there until income covers it."_
 - next window starts at `b + 1`, earns +100 → the whole +100 is remitted.
 
 The −100 is never covered. The central bank ends two windows down 100 in equity, having paid out
 100 it did not earn, and the treasury has been handed money against a loss that is still on the
-central bank's books. E4's *"until income covers it"* is precisely the behaviour the `+1` removes.
+central bank's books. E4's _"until income covers it"_ is precisely the behaviour the `+1` removes.
 
 The fix is one line and it is the honest one: a loss should NOT advance the window, so the next
 window's income is netted against it before anything is remitted. Note that `income <= 0` is also
@@ -2104,8 +2165,8 @@ and issues an invoice for it. Three consequences, and each is independently a de
 **1. The household's budget constraint is not enforced at the wire.**
 `households/index.ts` states the opposite as a premise of the module:
 
-> *"What it does not do is borrow — nobody lends to it yet (worklist 6) — so its budget is its own
-> cash, and what it cannot pay for it does not buy."*
+> _"What it does not do is borrow — nobody lends to it yet (worklist 6) — so its budget is its own
+> cash, and what it cannot pay for it does not buy."_
 
 and its party kind says `borrows: false, fails: []`. As written, a household's goods purchase needs
 no money at settlement; `spendPerMember`'s `atMost(wanted, budget)` is now a self-imposed plan rather
@@ -2147,12 +2208,12 @@ else if (isMoneyLeg(leg) && cells.has(leg.from.holder)) { addTo(paid, leg.from.h
 The invoice leg is an asset leg whose `to` is the seller, so it matches neither branch. `paid` stays
 empty, `took` is the whole basket, and the family emits
 `${cell} took ${took} of goods and paid 0 for them` — for every cell, in every goods market, in
-every period. Its spec citation is `Households C5` and its subject is *"Units of a physical thing
+every period. Its spec citation is `Households C5` and its subject is _"Units of a physical thing
 reaching a household with no money going the other way in the same instruction is a gift nobody
-gave"*, which is exactly what a terms sale looks like to it and exactly what a terms sale is not.
+gave"_, which is exactly what a terms sale looks like to it and exactly what a terms sale is not.
 
-The module that introduced terms is careful that both legs are in the one instruction (*"there is
-never an instant where one side has parted with something and the other has given nothing"*) — the
+The module that introduced terms is careful that both legs are in the one instruction (_"there is
+never an instant where one side has parted with something and the other has given nothing"_) — the
 three readers downstream were not told.
 
 ### A-64 — a firm pays rent for storage space and receives nothing for it (A)
@@ -2178,10 +2239,10 @@ finds only this file and only these lines.
 
 What is supposed to read it is stated in the module's own header:
 
-> *"Room BINDS what a line can have at the end of a period, exactly as its machinery binds what it
+> _"Room BINDS what a line can have at the end of a period, exactly as its machinery binds what it
 > can make (Capital Programme A2, D4): a good that takes space declares how much, and **the space a
 > firm has — its own plus what it rented this period** — is one more plant need in the same
-> arithmetic that already takes the scarcest."*
+> arithmetic that already takes the scarcest."_
 
 The arithmetic it means is `firms/decide.ts:technologyOf`, which appends a `STORAGE` plant need, and
 `capacityFrom(tech.plant, vintages)` where `vintages = vintagesHeld(view, …)`. `vintagesHeld` walks
@@ -2194,7 +2255,7 @@ not a vintage, and is nowhere in that read. So:
 
 The money is conserved (the letter receives it), so no audit family will see anything. What is
 broken is that one side of a real, settled, two-sided payment gets **no consideration at all** — the
-buyer of a service that does not exist. Law 1's *"real mechanism … fees, refusals, failures"* has the
+buyer of a service that does not exist. Law 1's _"real mechanism … fees, refusals, failures"_ has the
 fee without the thing.
 
 Two smaller defects in the same loop:
@@ -2203,8 +2264,8 @@ Two smaller defects in the same loop:
   outside the `if (r.outcome === 'settled')` block, so a taker whose rent does not settle absorbs
   the letter's room anyway and the next taker cannot have it. One insolvent taker can shut a region's
   storage market for the period.
-- **The `Leases` store is never emptied.** Its own comment says *"Emptied at the top of every period:
-  a lease is a week's"* — `ctx.state` persists for the life of the world and nothing calls `clear()`,
+- **The `Leases` store is never emptied.** Its own comment says _"Emptied at the top of every period:
+  a lease is a week's"_ — `ctx.state` persists for the life of the world and nothing calls `clear()`,
   so `byParty` is a monotonically growing write-only accumulator.
 
 ### A-65 — every option premium is a money-squared number, and it does not depend on the strike (A)
@@ -2236,7 +2297,7 @@ posted as `price` into a book whose tick is `CENT_TICK` and whose unit is `optio
 per contract. The comment immediately above says what the right term is and then multiplies it by
 the wrong one:
 
-> *"What it thinks the thing MOVES is its own outlook's CONFIDENCE **and not its level**"*
+> _"What it thinks the thing MOVES is its own outlook's CONFIDENCE **and not its level**"_
 
 The consequence is not a scaling constant: the premium is proportional to the **square** of the
 underlying's price level, so an option on a line at 100 with 1% surprises quotes 100 (the whole
@@ -2247,11 +2308,11 @@ mispriced by a factor of the underlying's price.
 is built from the outlook alone. `t.strike`, `t.right` and `t.expiry` appear nowhere in it — `t.right`
 is used only to decide whether a HOLDER wants a put, and `t.multiplier` only to convert a size. So a
 party quotes the same premium for a deep out-of-the-money call and an at-the-money put on the same
-line in the same session, and the strike ladder `openBooks` builds (*"a ladder of books on lines this
-world already clears, at strikes around what they print"*) is a set of books that every participant
+line in the same session, and the strike ladder `openBooks` builds (_"a ladder of books on lines this
+world already clears, at strikes around what they print"_) is a set of books that every participant
 prices identically.
 
-D7's *"the premium is what clears"* is respected — nothing here derives a price from a volatility,
+D7's _"the premium is what clears"_ is respected — nothing here derives a price from a volatility,
 and `measures` correctly takes the implied move back OFF the printed premium. What is wrong is the
 reservation each party brings to the book, which is what decides where it clears.
 
@@ -2266,24 +2327,24 @@ order   =  target − <what it already has>
 ```
 
 Each class is careful, and says so, that the book's own print must not be the LEVEL it posts —
-`bond-futures`: *"a party that posted where THIS book last was would be agreeing with it rather than
-saying anything, and a book of those prints one number for ever"*; `cds`, `irs`, `commodity-futures`
+`bond-futures`: _"a party that posted where THIS book last was would be agreeing with it rather than
+saying anything, and a book of those prints one number for ever"_; `cds`, `irs`, `commodity-futures`
 and `fx-derivatives` all carry the same paragraph. What none of them noticed is that the print is
 still load-bearing for the **direction**: with no print, the conviction term drops out and every
 party in the book is left with its hedging need alone — and a hedging need has one sign.
 
-| book | with no print, `want` is | so the first session is | can it open? |
-|---|---|---|---|
-| fx forward | hedgers one way, plus an arbitrageur quoting **bid and ask** around its own carry | two-sided | **yes** |
-| option (put) | `held × aversion / multiplier` for holders, 0 for everyone else | buy-only | no |
-| option (call) | 0 for everyone | **no orders at all** | no |
-| bond future | `−held / contractSize` | sell-only | no |
-| commodity future | `−held / lotUnits` | sell-only | no |
-| interest-rate swap | `−fixedDebtOf(view, t)` | sell-only | no |
-| CDS, single name | `exposureTo(view, t)` | buy-only | no |
-| index future | `book / perContract`, and the only `side` in the file is `'sell'` | sell-only **always** | no |
-| CDS series | `if (!last.some) return []` on the book's OWN line | **no orders at all** | no |
-| cross-currency swap | `if (!last.some) return []` on the book's OWN line, then buy-only | **no orders at all** | no |
+| book                | with no print, `want` is                                                          | so the first session is | can it open? |
+| ------------------- | --------------------------------------------------------------------------------- | ----------------------- | ------------ |
+| fx forward          | hedgers one way, plus an arbitrageur quoting **bid and ask** around its own carry | two-sided               | **yes**      |
+| option (put)        | `held × aversion / multiplier` for holders, 0 for everyone else                   | buy-only                | no           |
+| option (call)       | 0 for everyone                                                                    | **no orders at all**    | no           |
+| bond future         | `−held / contractSize`                                                            | sell-only               | no           |
+| commodity future    | `−held / lotUnits`                                                                | sell-only               | no           |
+| interest-rate swap  | `−fixedDebtOf(view, t)`                                                           | sell-only               | no           |
+| CDS, single name    | `exposureTo(view, t)`                                                             | buy-only                | no           |
+| index future        | `book / perContract`, and the only `side` in the file is `'sell'`                 | sell-only **always**    | no           |
+| CDS series          | `if (!last.some) return []` on the book's OWN line                                | **no orders at all**    | no           |
+| cross-currency swap | `if (!last.some) return []` on the book's OWN line, then buy-only                 | **no orders at all**    | no           |
 
 Nothing seeds a print for a contract book: `openBooks` in each module calls `ctx.openMarket(...)`
 with no price, and `foundation.ts` writes opening prints only for goods and sovereign lines. A
@@ -2298,22 +2359,22 @@ The one that works is the one whose author hit the problem and built the answer:
 // a book whose members were all hedgers printed one number for ever and the cash-and-carry
 // relationship this class exists to express was live in period one and dead from period two.
 return [
-  { party: view.self.id, side: 'buy',  price: bid, qty: asQty(size) },
+  { party: view.self.id, side: 'buy', price: bid, qty: asQty(size) },
   { party: view.self.id, side: 'sell', price: ask, qty: asQty(size) },
 ];
 ```
 
 Two of the eight are worse than a bootstrap problem and would still be broken with a print in hand:
 
-- **`index-futures/futureOrders` has no buy branch at all.** Its docstring is *"A DESK LONG A BOOK OF
-  SHARES SELLS THE INDEX"* — one true reason, and the only one implemented. §46 A3 and XI-13 are
+- **`index-futures/futureOrders` has no buy branch at all.** Its docstring is _"A DESK LONG A BOOK OF
+  SHARES SELLS THE INDEX"_ — one true reason, and the only one implemented. §46 A3 and XI-13 are
   explicit that a market needs two, and this one is one-sided by construction rather than by
   circumstance.
 - **`cdsIndexOrders` and `xccyOrders` read their own book's last print as a precondition**
   (`const last = view.print(seriesLineOf(...)); if (!last.some) return [];`) and then post at
   `last.value.price` or a multiple of it. That is exactly the fixed point the single-name CDS in the
-  same directory refuses in a comment two hundred lines away: *"its OWN number — the cash market's
-  charge for this credit … **Neither is this book's own last price**."*
+  same directory refuses in a comment two hundred lines away: _"its OWN number — the cash market's
+  charge for this credit … **Neither is this book's own last price**."_
 
 Everything downstream of these books is downstream of this: `refusedThisPeriod`, the margin system,
 the clearing house's waterfall, `marginIsHeld`, the option-implied move that §46 A3 says the world
@@ -2333,10 +2394,10 @@ $ grep -rn "wantsToBorrow" packages/engine/src   →  the definition, and nothin
 
 The module's single phase is `borrow.economics`, which runs `manufacture` and `charge` — both of
 which iterate `state(ctx).open`, the book of open borrows. Nothing ever pushes to it. So the phase
-walks an empty list every period for the life of the world, and XI-11's *"title passes and the
-economics do not"* is built and never exercised.
+walks an empty list every period for the life of the world, and XI-11's _"title passes and the
+economics do not"_ is built and never exercised.
 
-The prohibition it exists to satisfy — *"no short without a borrow"* — holds, but vacuously: there
+The prohibition it exists to satisfy — _"no short without a borrow"_ — holds, but vacuously: there
 is no short anywhere in this world either, so there is nothing for the borrow to be behind.
 
 **Two further defects inside the unreachable code, which matter because they are what would run:**
@@ -2344,14 +2405,17 @@ is no short anywhere in this world either, so there is nothing for the borrow to
 1. **The fee is not cleared, it is the single bidder's reservation.** `runBorrows` loops
    `for (const w of wanted)` and clears a separate session per borrower, in which every lender posts
    `price: 'market'`:
+
    ```ts
-   for (const s of supply) ctx.post(venue, { party: s.lender, side: 'sell', price: 'market', qty: s.units });
+   for (const s of supply)
+     ctx.post(venue, { party: s.lender, side: 'sell', price: 'market', qty: s.units });
    ctx.post(venue, { party: w.borrower, side: 'buy', price: w.willPay, qty: w.units });
    const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
    ```
+
    One bidder, and no seller with a level to compete on, so `outcome.price` is `w.willPay`
-   regardless of how much paper is on offer. The docstring says *"Scarce paper is dear and abundant
-   paper is cheap, and neither is a table"* — as arranged, neither scarcity nor abundance can move
+   regardless of how much paper is on offer. The docstring says _"Scarce paper is dear and abundant
+   paper is cheap, and neither is a table"_ — as arranged, neither scarcity nor abundance can move
    the fee at all.
 
 2. **Two `Want`s on one instrument double-post the lenders.** `world.post` appends and `postings` is
@@ -2383,12 +2447,12 @@ describes is published every period by `banks/index.ts:publishCostOfFunds`.
 
 Settlement's effect on the shipper's equity, leg by leg (`ledger/settlement.ts:1089-1100, 1112-1116`):
 
-| leg | equity |
-|---|---|
-| destroy the cargo | `− costOfDraw(lots, take)` — its whole carrying value |
-| create the goods-in-transit at `share / take` | `+ share` |
-| pay the freight | `− share` |
-| **net** | **`− costOfDraw(lots, take)`** |
+| leg                                           | equity                                                |
+| --------------------------------------------- | ----------------------------------------------------- |
+| destroy the cargo                             | `− costOfDraw(lots, take)` — its whole carrying value |
+| create the goods-in-transit at `share / take` | `+ share`                                             |
+| pay the freight                               | `− share`                                             |
+| **net**                                       | **`− costOfDraw(lots, take)`**                        |
 
 The goods in transit are carried at the **freight alone**. Everything the cargo cost to buy or to
 make is expensed at the moment it is loaded.
@@ -2402,34 +2466,34 @@ The total over a completed voyage is right (`−C` at loading, `+P − F` at sal
 is why no conservation family catches it. What is wrong is the whole of what the module says it is
 for:
 
-> *"AND IT TAKES TIME (A3). A cargo leaves the origin now and is ON THE SHIPPER'S BOOK the whole
+> _"AND IT TAKES TIME (A3). A cargo leaves the origin now and is ON THE SHIPPER'S BOOK the whole
 > way, at a place of its own — **A3.a's working capital: a shipper that has paid for a cargo and not
-> yet got it is short of both**."*
+> yet got it is short of both**."_
 
 It is not on the shipper's book at what it cost — it is on the book at the freight. So a shipper
 mid-voyage shows an equity hole the size of its cargo (which `failedWhy`'s solvency trigger reads,
 and which can kill a merchant on the water), and the arrival books a profit equal to the cargo's cost
 that no trade produced. `arrive()` is correct — it carries the transit lot's own basis forward with
 `div(cost, total, 'what a unit cost delivered')` — so the error is entirely at loading, and its own
-docstring there says the opposite: *"the destination at what it cost INCLUDING the voyage (D2)"*.
+docstring there says the opposite: _"the destination at what it cost INCLUDING the voyage (D2)"_.
 
 ### A-69 — nine exported entry points and reads that nothing calls (C)
 
 Checked across the whole repository (`packages/`, tests and app included), these are defined,
 exported, documented and referenced by nothing:
 
-| function | file | what it was for |
-|---|---|---|
-| `runBorrows`, `wantsToBorrow`, `returnLoans` | `securities-lending/index.ts` | the whole borrow mechanism (A-67) |
-| `quoteCover`, `policyTerms` | `insurers/index.ts` | the whole insurance mechanism (A-9) |
-| `cdsBookOrders` | `cds/participants.ts` | *"Law 15: ONE PARTICIPANT, TWO SHAPES OF BOOK, and the dispatch is on the shape of the terms rather than on an id"* — the two classes call `cdsOrders` and `cdsIndexOrders` directly, so the dispatcher it argues for is not the one in use |
-| `refusedThisPeriod` | `derivative-layer/index.ts` | *"E4: what the markets struck BEYOND what their members could margin — a standing measurement"* |
-| `struckRate`, `findSession` | `money-market/session.ts` | reads of what a session struck |
+| function                                     | file                          | what it was for                                                                                                                                                                                                                             |
+| -------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `runBorrows`, `wantsToBorrow`, `returnLoans` | `securities-lending/index.ts` | the whole borrow mechanism (A-67)                                                                                                                                                                                                           |
+| `quoteCover`, `policyTerms`                  | `insurers/index.ts`           | the whole insurance mechanism (A-9)                                                                                                                                                                                                         |
+| `cdsBookOrders`                              | `cds/participants.ts`         | _"Law 15: ONE PARTICIPANT, TWO SHAPES OF BOOK, and the dispatch is on the shape of the terms rather than on an id"_ — the two classes call `cdsOrders` and `cdsIndexOrders` directly, so the dispatcher it argues for is not the one in use |
+| `refusedThisPeriod`                          | `derivative-layer/index.ts`   | _"E4: what the markets struck BEYOND what their members could margin — a standing measurement"_                                                                                                                                             |
+| `struckRate`, `findSession`                  | `money-market/session.ts`     | reads of what a session struck                                                                                                                                                                                                              |
 
 The first two rows are missing mechanisms and are logged separately. The rest are dead code, and
 they matter for one reason: each carries a docstring asserting that something is measured or
 dispatched, and a reader checking whether the world has a given property will find the function and
-believe it. `refusedThisPeriod` in particular is described as *"a standing measurement"* of E4 and
+believe it. `refusedThisPeriod` in particular is described as _"a standing measurement"_ of E4 and
 measures nothing, standing or otherwise.
 
 ### A-70 — a takeover buys the shares and never absorbs the company (A)
@@ -2463,7 +2527,7 @@ is published every time and is the end of the story.
 `ctx.instruments.issuedBy(target)` and settles an `assume` leg for each — `assume` maps to the
 `reseat` op, which changes an instrument's **issuer** (`register/instruments.ts:234`). That moves the
 target's LIABILITIES. Nothing anywhere in it moves the target's HOLDINGS — its cash, its plant, its
-inventory, its paper — and the docstring's *"its holdings are reseated"* describes an operation that
+inventory, its paper — and the docstring's _"its holdings are reseated"_ describes an operation that
 is not in the function.
 
 If it were called, the consequence is loud and permanent: `ctx.cease(target, buyer)` marks the
@@ -2484,7 +2548,7 @@ inert — but `combine` is where it would first bite if a cell ever issued anyth
 
 ---
 
-## What the read covered
+## What Part I covered
 
 `packages/engine/src`, 59,927 lines across 196 files, read in dependency order: `core/`, `calendar/`,
 `rng/`, `registry/`, `parties/`, `register/`, `ledger/`, `prices/`, `clearing/`, `journal/`,
@@ -2527,3 +2591,683 @@ Three shapes account for more than half the findings, and none of them is a mist
 Performance, style, test coverage, and anything in `packages/app`. Nor was anything run: this is a
 read of the source, and the two places where I state what a run WOULD do (`A-18`'s micro-cells,
 `A-66`'s books) say so and show the arithmetic instead of a measurement.
+
+---
+
+# Part II — What the documents claim, and what is in the code
+
+Part I read the source against the three questions and did not look at what anybody had said about
+it. This part does the other half: it takes every row of `docs/WORKLIST.md` marked **done** and every
+`MET` in `docs/COVERAGE.md`, and asks whether the thing claimed is in the code and produces anything.
+
+The distinction that matters throughout is the one `docs/VERIFY.md` found first and put well:
+**"built" was true of the source and false of the world.** Almost nothing here is missing code. It is
+code that exists, compiles, is wired into the assembly, and has never produced an outcome — and a
+worklist row, a coverage mark and a record entry all say it works.
+
+### B-1 — `corporate.bond` is a kind, an id function and a covenant test, and nothing ever issues one (A)
+
+Worklist 13f, **done**:
+
+> _"**The corporate bond**: it can fail, it cross-defaults where a sovereign does not, it says where
+> it ranks on the instrument the waterfall already reads, and it carries COVENANTS tested on the
+> issuer's PUBLISHED accounts."_
+
+`mechanisms/corporate-bond/index.ts` declares `CORPORATE_BOND`, `corporateBondId(issuer, n)`, a full
+`InstrumentKindProfile` with `cashFlows`, `due`, `ranking` and cross-default, a covenant table and
+the `covenant.test` phase. Searching the whole engine for a construction site:
+
+```
+$ grep -rn "kind: CORPORATE_BOND" packages/engine/src   →  nothing
+$ grep -rn "CORPORATE_BOND"       packages/engine/src   →  only its own declaration and profile
+```
+
+**No corporate bond has ever been issued and none can be: there is no issuance path.** `testCovenants`
+runs every period over an empty set. Three `MET` marks in COVERAGE (`Corporate Credit A1`, `B2`,
+`B3`) cite this file.
+
+The clause the module is for — a firm funding itself in a market rather than at a bank — has no
+mechanism that puts a firm in it. `firms/index.ts:publishFunding` publishes what a firm is short of
+and `banks` reads it; nothing reads it as a reason to issue paper.
+
+### B-2 — the insurance sector has no seed, no phase and no participant (A)
+
+Worklist 13h, **done**: _"Closed with the INSURER built."_ COVERAGE marks nine `Insurers` clauses MET
+against this file.
+
+```ts
+export function insurers(): SystemModule {
+  return {
+    id: 'insurers',
+    spec: 'Insurers',
+    requires: ['sovereign-curve'],
+    instrumentKinds: [policyKind],
+    partyKinds: [insuranceKind],
+    curveFamilies: [],
+    units: [{ id: COVER, name: 'units of cover', perUnit: MONEY_PIECES }],
+    params: [],
+    phases: [],
+    participants: [],
+    families: [promises()],
+  };
+}
+```
+
+No `seed`, so **no `insurance` party is ever created**; `phases: []` and `participants: []`, so
+nothing it exports is ever called; and per A-9 the kind's `unit` returns `"USD"` where the registry
+wants `"ccy:USD"`, so a policy could not be registered even if something tried. `promises()` — the
+`names` family contribution — walks an empty set and reports green.
+
+The sector the module is a careful and correct piece of design for (B2.b's dated promise discounted
+at a market rate, the institution wearing the rate move) does not exist in this world.
+
+### B-3 — securities lending is claimed to clear a fee, and has no way in (A)
+
+Worklist 13f, **done**: _"**Securities lending**: title passes and the economics do not … the fee
+CLEARS in a book per line, the manufactured payment is read off what actually reached the borrower,
+and the lendable pool is a read of who holds it free, which is what caps a short."_ Nine `MET` marks.
+
+Per A-67: `runBorrows`, `wantsToBorrow` and `returnLoans` are exported and referenced nowhere. The
+module's one phase walks `state(ctx).open`, which nothing ever pushes to. There is no short anywhere
+in this world for a borrow to be behind.
+
+### B-4 — the market for control buys shares and never combines (A)
+
+Worklist 13g, **done**: _"On completion the two balance sheets combine through the ESTATE's own door,
+because 'this party's obligations are now that one's' is one fact."_ Ten `M&A` clauses marked MET.
+
+Per A-70: the tender half is wired and runs; `combine` is called by nobody, and does not move the
+target's holdings even if it were.
+
+### B-5 — the tenancy venue has never had an order in it (A)
+
+Worklist 13d, **done**: _"a tenancy as a VENUE, clearing between what letting wears the owner and
+what a household can pay rather than have nowhere."_ `Housing A2`, `B5` and `C4` marked MET.
+
+Per A-54: housing declares its orders as `venueParticipants`, and `gather` — the only door that
+runs them — is called by one module, which is not this one. The lettings session reads an empty
+book every period and records `noDemand`. Per A-55 the buying half is unreachable too.
+
+### B-6 — item 9's dealers quote nothing (A)
+
+Worklist 9, **done**: _"Equity, and dealers that carry inventory … a desk with a limit, a funding
+cost and an inventory."_ `banks/dealing-quote.ts` is among the best-built files in the engine.
+
+Per A-60: the gate in front of it (`covers` → `linesCovered` → `lastOwn('labour.wages')`) is zero
+for every bank for ever, because no bank employs anybody, because its labour bid is a
+`venueParticipant` and nothing gathers the labour venue. Not one quote is ever posted.
+
+### B-7 — the derivative layer and its nine classes have never produced a contract (A)
+
+Worklist 13a and 13b, both **done**, 37 steps between them. **99 distinct requirements are marked MET
+against modules that have never produced an outcome**, and 58 of those 99 are the derivative layer,
+CDS, IRS, the two futures classes and options.
+
+`docs/VERIFY.md` measured the runtime side: nine derivative kinds declared, **not one contract of any
+class ever written** over five periods; 7,510 option sessions all `noDemand`, 3,680 commodity-future
+sessions all `noDemand`, 60 CDS sessions all `noSupply`, the IRS books never run at all. A-66 gives
+the cause at the source: every class makes a party's SIDE depend on comparing its own number against
+this book's last print, so with no print the conviction term drops out and every party is left with
+its hedging need, which has one sign.
+
+**This corrects `docs/VERIFY.md`'s own conclusion.** That file diagnosed the single measured cause as
+the margin gate — _"no party can post margin in a currency it does not hold"_ — and concluded
+_"the never-crossing books are downstream of it, not a second cause."_ They are not downstream of it:
+they never reach admission, because they never cross. The margin gate is the whole story for **FX
+forwards only**, which is the one book that crosses, and it crosses because it is the one class with
+a two-way maker that needs no prior print. Two causes, and the structural one is the larger.
+
+### B-8 — the securitisation waterfall never allocates a loss (A)
+
+Worklist 13e, **done**: _"a waterfall paying by seniority out of what was actually collected … with a
+loss landing from the bottom and nothing stopping it reaching the senior."_
+
+Per A-57: `absorb` computes `lost = notes − pool`, and because the pool's interest is paid out as
+accelerated principal redemption, `notes` falls faster than `pool` and `lost` is negative from early
+on. No loss is ever allocated to any tranche, whatever the borrowers do.
+
+### B-9 — `docs/BUGS.md` contradicts its own header about the four countries (C)
+
+Its header: _"Measured on the whole suite: 82 red of 662 **after item 13j gave this world four
+economies**."_ Its section 2, in the same file: _"**The foreign countries are stubs.** Three of the
+four countries are a central bank, a treasury and a bond line. There is no foreign economy … →
+**13i**, which closed with the external accounts built and the foreign economies not."_
+
+Both cannot be current. 13j is marked done and its row claims each of the four gets the same
+construction from the same draw; section 2 says three of them are still stubs and points at the item
+before it. One of the two is stale and the file does not say which. A-61 is a live piece of evidence
+for the pessimistic reading: every central bank in the world remits its seigniorage to
+`treasuries[0]`.
+
+### B-10 — "checks green" has been satisfied by families that cannot fail (A)
+
+The loop's definition of done is _"an item is done when its checks are green, `docs/RECORD.md` has its
+entry, and `docs/COVERAGE.md` is re-marked."_ Four of the nine audit families are green for reasons
+that are not the state of the world:
+
+- `currency`'s money contribution recomputes the number it is checking (A-10);
+- `labour`'s population identity is `Σ p.weight` against `Σ p.weight` (A-14);
+- `goods`' and `capital-programme`'s `units` contributions switch off in any period with a weight
+  event, which is every period after the first ageing (A-42);
+- `funds`' `equityIsZero` restates the definition of the NAV (A-48);
+- and `zeroSum` — the derivative layer's whole invariant — walks a set of size 0 (VERIFY's census),
+  because of B-7.
+
+A green audit has been part of the evidence for thirteen `done` rows.
+
+### B-11 — `npm run check` has been red since the sweep, at the gate that counts the plan (A)
+
+**First written as something smaller and it was wrong, so here is the correction and then the
+finding.** The first version of B-11 said five open items (13k–13o) have no plan file where the
+worklist's preamble says they must, and that the progress figure therefore counts five items fewer
+than there are. The first half is true and harmless — those five were inserted from `docs/SWEEP.md`
+with their reasoning in the worklist row and no plan written yet. The second half is false:
+`docs/plan/manifest.json` **does** carry all five, as `"file": "<id>-no-item-file.md", "steps": 0`,
+which is the convention 10.1, 10.2 and 10.4 established, and `plan:progress` counts them.
+
+What is actually there is worse. The commit that inserted those five rows — `6d6cb6d`, "The sweep" —
+wrote them **over** the manifest row for **13j** instead of after it. So the worklist has 51 items
+and the manifest had 50, and `crossCheck()` — which exists for exactly this, and whose docstring
+tells the story of the last time it happened — throws:
+
+```
+Error: docs/WORKLIST.md has items the manifest does not: 13j.
+Add the row in the change that inserts the item (docs/PLAN.md §5)
+```
+
+`npm run check` runs `plan:check`, which calls it. So **`npm run check` has not been green since
+`6d6cb6d`**, and two commits after it (`e543d8e`, `22fdc7f`) closed work in a tree where the last
+gate CLAUDE.md names — _"All green or the module is not done"_ — could not have passed. A second
+test in the same file was red with it: `tools/test/plan-progress.test.ts` asserts the items with no
+plan file are exactly `['10.1', '10.2', '10.4']`, and the sweep added five more.
+
+The progress block in `docs/PLAN.md` had gone stale in the same commit and stayed stale: it still
+listed **13j as "in progress", 13 of 14 steps, linked to `plan/13j-four-countries.md`** — a file
+deleted when 13j closed, in a row for an item the manifest no longer had. The one number this
+project publishes about its own completion was describing a tree that had not existed for four
+commits.
+
+**And the same commit is where item 13j closed, without the three things that close an item.**
+CLAUDE.md: _"An item is done when its checks are green, `docs/RECORD.md` has its entry, and
+`docs/COVERAGE.md` is re-marked, all in one commit (Law 14)."_ `6d6cb6d` set row 13j from `open` to
+`done` and deleted `docs/plan/13j-four-countries.md`, and it touched neither `docs/RECORD.md` nor
+`docs/COVERAGE.md`:
+
+```
+docs/SWEEP.md                   | 151 +++++++++
+docs/WORKLIST.md                |   7 +-
+docs/plan/13j-four-countries.md | 103 -------
+docs/plan/manifest.json         |  32 ++-
+```
+
+**`docs/RECORD.md` has no entry for 13j** — its last item entry is 13i's, followed by four Law 18
+performance entries. The one item that gave this world four working economies, which is the biggest
+change in it since the module contract, left no outcome in the ledger. Its measurements survive only
+in the commit message (9,225 parties before, 9,231 after, 5,593 of them not American; 62,064
+instructions and 3,620 markets in 19.7s), and a commit message is not the ledger. This is not fixed
+here: an item's record entry is written by whoever did the item, out of what they measured, and
+inventing one after the fact from a diff is the opposite of a ledger of outcomes.
+
+**Fixed in this change**, because it is a build stopper and not a measurement: the `13j` row is back
+in the manifest, both tests are green, and the block is recounted. What the recount says is in
+**B-15**.
+
+### B-12 — 99 `MET` marks stand on mechanisms that have never produced anything (A)
+
+Counted over `docs/COVERAGE.md`'s 823 `MET` rows, by the module each cites:
+
+| module                    | MET rows | why nothing comes out of it                                             |
+| ------------------------- | -------- | ----------------------------------------------------------------------- |
+| `derivative-layer`        | 22       | B-7                                                                     |
+| `cds`                     | 17       | B-7 (single name never crosses; the series book requires its own print) |
+| `irs`                     | 14       | B-7 (the books are never run)                                           |
+| `control`                 | 10       | B-4                                                                     |
+| `securities-lending`      | 9        | B-3                                                                     |
+| `insurers`                | 9        | B-2                                                                     |
+| `commodity-futures`       | 5        | B-7                                                                     |
+| `bond-futures`            | 4        | B-7                                                                     |
+| `corporate-bond`          | 3        | B-1                                                                     |
+| `index-futures`           | 3        | B-7 (sell-only by construction)                                         |
+| `housing`                 | 3        | B-5                                                                     |
+| **distinct requirements** | **99**   |                                                                         |
+
+COVERAGE's own header says `MET at <path>` means _"the cited module implements the clause"_ — which
+is literally true of all 99 and is not what a reader takes from it. The file has no way to say
+"implemented and never reached", and that is the state 99 of its 823 green marks are in.
+
+### B-13 — the three things a firm sector does, and this one does none of them (A)
+
+Carried from `docs/VERIFY.md`'s third sweep, and it is the finding that outranks the rest of that
+file. Measured over the real world:
+
+|                                                |                                                    |
+| ---------------------------------------------- | -------------------------------------------------- |
+| parties that have ever taken delivery of PLANT | **0**                                              |
+| loans in the world, period 6                   | **96**, against 9,006 firms and thousands of banks |
+| companies that have ever published accounts    | **0**                                              |
+| research estimates                             | **0**                                              |
+| parties that have ever ceased                  | **0**                                              |
+| instructions settled over three periods        | 269,139                                            |
+| FX revaluation events                          | 1,051,429                                          |
+| goods perished in store                        | 51,521                                             |
+
+Nothing is ever built, almost nobody borrows, nobody reports, nobody dies — and the two largest
+event streams in the world are revaluing foreign balances and rotting food.
+
+Part I found four contributing causes that VERIFY could not see from the outside, and they are not
+the whole of it:
+
+- **nobody reports** — `reporting/publish` requires `isPublic`, and the shares a firm issues are
+  held by household cells, so this one should fire; it is unexplained and is the best single lead;
+- **nothing is built** — `firms/decide.ts:plan` returns early without an `earnings`-based
+  `costOfCapital`, and `requiredOnEquity` needs a share PRINT, which needs a share session that
+  cleared, which needs a bank's dealing desk on the other side (A-60);
+- **almost nobody borrows** — a firm's own `credit.quoted` read is period-unbounded (A-33), and its
+  input bids are inflated by A-34, but neither explains two orders of magnitude;
+- **nobody dies** — `fails: []` on households and the treasury (A-36), and `failedWhy`'s solvency
+  branch reads an equity account that A-39 is inflating every period.
+
+The diagnosis of the first and third is the next piece of work, and it is not this read's.
+
+### B-14 — a finding was positioned into item 13h, 13h closed, and the finding was not done (B)
+
+`seeds/foundation.ts`, on the derivative layer's list of who may hold a contract, said: _"13h is
+where a fund holds derivatives on purpose — and where the one pass that re-marks a fund's claim on
+itself is next opened (`docs/BUGS.md`, finding `13b-2`)."_ `docs/RECORD.md` (item 13b.1's entry)
+confirms the placement: `13b-2` "to **13h**, folded into two steps there".
+
+13h is **done** on the worklist. `TRADES_CONTRACTS` is still `[BANK, FIRM]`; no fund kind is on it,
+and the pass that would re-mark a fund's claim on itself does not exist. The receiving item closed
+without the step the positioning was for, and nothing anywhere says so: the record's entry for 13h
+does not carry it forward, and the comment in the source went on naming a future that had already
+passed and a file that had been deleted.
+
+This is the failure mode of positioning as a protocol. A finding leaves the audit file by being
+placed into an item, and from that moment nothing checks that the item ever did it — the finding is
+out of the one place findings live and into a plan file that gets deleted when the item closes. Six
+of Part II's thirteen findings (**B-1** through **B-8**) have the same shape read from the other end:
+an item closed and the thing it was for was not there.
+
+The comment is corrected in this change to say what is true. The finding itself is **unpositioned**:
+whether a fund should hold contracts at all is `Fund Shares A3`'s question and it belongs with 13o
+(asset managers with strategies), which is where a fund that takes a position on purpose first has a
+reason to exist.
+
+### B-15 — the recount, once the gate could run (C)
+
+With the `13j` row restored, `plan:progress` recounts to **92.9% (678 of 730 steps across 51
+items)**. The block it replaces published **92.7% (677 of 730 steps across 46 items)** — a figure
+generated before the sweep, listing 13j as in progress at 13 of 14 and not listing 13k–13o at all,
+because the commit that added those five broke the gate that would have recounted it.
+
+The number barely moved, and that is not the finding. The finding is what it took to keep it from
+moving the wrong way. `plan-progress.ts` counted **a deleted plan file as a fully done item**: item
+14's plan is now Part IV of this document and its file is gone while the item is open, so the
+untouched tool would have published **94.8% (692 of 730)** — fourteen worked steps for an item
+nobody has started. The state of an item is written in the worklist's state column and nowhere else
+(Law 4); the tool now reads it (Law 19) instead of inferring it from a stat call. For the same
+reason 13k–13o rendered as **"closed (no item file)"** — five open items, five rows saying closed.
+They say `open (no item file)` now, which is what they are.
+
+The figure is still generous, and this is the honest reading of it: it counts **planned steps
+ticked**, and Parts I and II are 85 findings against work those ticks call done. A step is ticked
+when its code is written, not when its mechanism has ever run.
+
+---
+
+# Part III — carried in from `BUGS.md`, `SWEEP.md` and `VERIFY.md`
+
+Those three files were holding pens with the same rule as each other: _a finding leaves only by being
+PLACED_. They are now here, because three holding pens and an audit is four places a finding can be
+and `Law 4` applies to documents too. Nothing was dropped in the merge; what was already in Part I is
+named below rather than repeated.
+
+## What was a duplicate
+
+`docs/VERIFY.md`'s six lettered findings were all re-found independently in Part I's read. They are
+the same defects, and Part I's entry is the one to work from — in three cases it is wider:
+
+| VERIFY                                                               | Part I            | wider how                                                                                                             |
+| -------------------------------------------------------------------- | ----------------- | --------------------------------------------------------------------------------------------------------------------- |
+| F1 `conditionsFor`'s claimed assembly guard does not exist           | **A-4**           | —                                                                                                                     |
+| F2 `payable` / `cashFor` / `deliverable` ignore their first argument | **A-5**           | —                                                                                                                     |
+| F3 the orphan doc block above `STORAGE_SESSION`                      | **A-8**           | —                                                                                                                     |
+| F4 `foundation.ts:1102` reads a life off the decl, not the register  | **A-7**           | —                                                                                                                     |
+| F5 `sameState` compares liens by count                               | **A-2**           | A-15 adds the two per-party stores `copyMemberState`, `forget` and `sameState` do not touch at all                    |
+| F6 `mergeCells` writes the weight before the guard                   | **A-3**           | —                                                                                                                     |
+| the insurer exports nothing calls                                    | **A-9**, **B-2**  | A-9 finds the unit bug that makes a policy unregisterable, so the sector is not merely unwired                        |
+| securities lending exports nothing calls                             | **A-67**, **B-3** | A-67 adds the two defects inside the unreachable code — the fee cannot clear, and two `Want`s double-post the lenders |
+| nine derivative kinds, no contract ever                              | **B-7**           | A-66 gives the structural cause and corrects VERIFY's conclusion                                                      |
+| 0 plant, 96 loans, 0 accounts, 0 estimates                           | **B-13**          | —                                                                                                                     |
+
+VERIFY's own line-by-line pass covered 6,407 of 60,000 lines and stopped. Part I is that read
+finished, so its "what was read this sweep, and found sound" table is superseded rather than merged:
+every file in it was read again and the verdicts stand.
+
+## C-1 — 82 red of 662, by cause (carried from `BUGS.md`)
+
+Measured on the whole suite after 13j. The count is not the finding; the six causes are, and they are
+carried verbatim because each names where it goes.
+
+| cause                                            | ≈ red | what it is                                                                                                                                                                                                                                                                                                                                                                                                                                                            | placed                                                                                                     |
+| ------------------------------------------------ | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- |
+| **the rig has no firm in most lines**            | 20    | `RIG_PER_LINE` is 0, so twelve firms over sixty-two lines leave most empty and any test asking the draw for a mill is told "it drew 0". Measured: setting it to ONE takes the suite from 79 red to **139** — a rig with every line in it is a different small world, and a dozen files' assertions are written against the one it makes today. Those tests are not wrong, they are SPECIFIC.                                                                          | item **16**, as one bounded change: re-size the scale model and re-derive what every affected test asserts |
+| **the foreign countries are stubs**              | 6     | see **B-9**: this contradicts the same file's header, and which of the two is current is not established                                                                                                                                                                                                                                                                                                                                                              | item **16**, after B-9 is settled                                                                          |
+| **a bank that is insolvent is never resolved**   | 9     | `13b-12`: a bank published capital of −31,237,415,456 and went on making a market for twenty-three periods. Both triggers must exist and the resolution must name which fired (Banks Capital C1.a). Whether the solvency trigger is not reading the published position, or is reading it and the resolution is not being run, is **still unmeasured**                                                                                                                 | its own diagnosis, before **16**                                                                           |
+| **an ETF cannot create**                         | 7     | `12d-8`: a creation delivers a slice of the book and a desk without the basket does not create. Nothing moves a share back to a desk, so `E3` runs one way and the premium — 0.28 of NAV, twenty-six times a period of carry — has nobody able to close it. The answer now EXISTS (securities lending), and wiring it is a BUILD not a fix: a module may not import another, so "whoever must deliver may borrow" needs a kernel door of the shape `termsOffered` has | with **A-67**: the borrow market has to be reachable first                                                 |
+| **two banks, and everything that needs a third** | 4     | `research` wants coverage to VARY, `deposits` wants a class to split rather than cross, `dealing` wants a market to fail when the desks step back. With three banks and one listed line a count that should be an outcome has one value                                                                                                                                                                                                                               | item **16**, same scale-model question                                                                     |
+| **singletons**                                   | 9     | `omo` remittance and run-off (see **A-61**, **A-62**); `raise`; `ratings` ageing; `equity-anchor`; `indices`; `tick`; `environment`'s crop; `treasury`'s receipts (see **A-46**); `world`'s year-long chain. Each needs reading on its own                                                                                                                                                                                                                            | item **16**                                                                                                |
+
+**And the eight 13j cost.** Three measurements of the same suite: 74 red before 13j; **303** with the
+rig opening all four countries; **82** with the rig opening one and the currency tests four. The 303
+is a finding and not a bug — a dozen firms and three banks over four countries gives each a country
+with no banking system its own depositors could fund, and `Seed D1` refuses exactly that ninety-four
+times — so a world's count of countries is a RESOLUTION like its count of banks. The eight that
+remain are all one shape: **a test that named the world it was written against**, in `currency`,
+`spot-fx`, `omo`, `indices`, `opening-liquidity`, `bank-capital`, `deposits`, `money-market`, and a
+long tail of sizes and totals. Positioned to **16**.
+
+## C-2 — four things this world does every week that the world does not (carried from `SWEEP.md`; worklist **13k**)
+
+Law 8 says the periodicity is part of the number. A weekly period is the resolution; it is not a
+licence to do everything weekly. Re-verified at the source in this pass.
+
+- **A dividend is declared and paid every week.** Period 5 settles 249,288 instructions and
+  **162,615 of them are dividend payouts — 65% of everything the world does**. `equity.decide` is
+  `cycle: 0, anchor: { after: 'firms.decide' }` and runs every period; `decideEquity` distributes
+  `spare / patience` each time. A board declares with its results on a fiscal calendar; between the
+  declaration and the payment the dividend is a LIABILITY and the share trades EX, which is why total
+  return and price return are different numbers. There is no declaration date, no ex date, no record
+  date, no payable date and no dividend liability. **The machinery is built and unused**:
+  `reporting/fiscal.ts` has `quarterClosedBy`, `anchorOf` and `publishableOn`. A quarterly dividend
+  is also a world that does what it does in about a third of the settlements.
+- **A rating fee is charged every week.** 16,527 `pays X for its rating` instructions in period 5;
+  `ratings.assess` is `cycle: 'anchor'`, every period, and calls `collectFees` each time. An issuer
+  pays an issue fee once and a surveillance fee annually. Weekly billing makes the assessor's income
+  a flow of the issuer's equity rather than a price for a service, which is the conflict Ratings A5
+  exists to keep.
+- **Tax is levied every week.** 7,778 `tax due from X` instructions in period 5. Payroll withholding
+  is weekly and right; corporation tax is assessed on a fiscal period and VAT quarterly. Levying
+  everything weekly removes the working-capital consequence of a tax bill, which is the thing a
+  treasury and a firm both plan around. (See also **A-46**: the base is wrong as well as the
+  cadence, and **A-63**: the consumption half of it collects nothing at all.)
+- **A buyback is decided weekly.** `decideEquity` chooses between a dividend and a buyback each
+  period out of this week's spare cash. A buyback is an announced PROGRAMME executed over time, and
+  announcing it is the event.
+
+## C-3 — four central banks administer one policy rate (carried from `SWEEP.md`; worklist **13l**)
+
+Re-verified at the source in this pass:
+
+```ts
+function corridor(ctx: MechanismContext): Corridor {
+  return corridorOf(
+    ctx.params.perAnnum(MM_PARAMS.policyRate), // 'centralBank.policyRate', one row, 0.02
+    ctx.params.perAnnum(MM_PARAMS.floorSpread),
+    ctx.params.perAnnum(MM_PARAMS.ceilingSpread),
+  );
+}
+```
+
+`corridor` takes no currency. The Fed, the ECB, the Bank of England and the Bank of Japan all
+administer 2%. With no interest differential between two moneys there is no carry, so an FX forward
+prices flat to spot, covered interest parity says nothing, the cross-currency basis has nothing to be
+a basis against, and the carry trade — the largest real FX flow there is — cannot exist. Four
+countries with identical policy is not an approximation of the world; it is the one assumption that
+switches the whole currency layer off. A rate is a POLICY primitive and each central bank owns its
+own.
+
+It compounds with **A-66**: FX forwards is the one derivative book that can open, and `carryOf` is
+what its two-way maker quotes around.
+
+## C-4 — the sectors that are not there (carried from `SWEEP.md`)
+
+| what                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | state  | worklist |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------ | -------- |
+| **The built environment.** Warehouses exist only as `STORAGE` plant a firm builds for its own stock — nobody builds space to LET, so there is no landlord, no commercial rent, no lease with a term and no CRE lending. Commercial buildings — the shop, the office, the works — do not exist as assets at all; a retail firm in this world sells from nowhere. **Ports do not exist**: `freight` sails a vessel region to region with no berth, no quay, no congestion and no owner. **Building consumes no land and never gets dearer**: `geography.ts` does the right thing for resource yield (the return from the next unit falls continuously, so what stops an expansion is a firm's hurdle and never a refusal by the map) and nothing does it for built space — a tile carries any number of buildings at the cost of the first. | ABSENT | **13m**  |
+| **No firm is ever born.** `estate` kills firms and nothing creates one; the draw fixes the population at the seed and it only falls. Entry is what makes a market contestable, so a surviving firm's margin is never competed away and every concentration measure is one-way. Spec 34 is half built and the birth half has been PLACED forward three times (13f → 13g → 13h).                                                                                                                                                                                                                                                                                                                                                                                                                                                            | ABSENT | **13n**  |
+| **No asset manager runs a strategy.** 13 funds; after four periods **4 hold anything at all**, 8 holdings between them, against 1,274 subscriptions settled in period 4 alone. Every fund is a money fund, one commodity fund, or an index tracker — and the trackers hold nothing. No hedge fund module (28), no private equity (29), no prime brokerage (15). The basis trade is measured by `bond-futures` and repo exists, and there is no party whose reason is to put the two ends together. **No fund holds credit**: `eligible` is `['sovereign.bill']` or `['good.grain']`, so nothing holds a corporate bond, a sovereign BOND or a credit index — and `CREDIT_INDEX(ccy)` is measured every period with no tracker able to take a position in it.                                                                              | ABSENT | **13o**  |
+| **A firm cannot issue commercial paper.** Spec 9 has no module. `money-market` has interbank rows and repo, which is the BANK's short-term funding; a FIRM funding itself at three months and the roll that can fail is what the clause is about. Carried since 13f. See also **B-1**: it cannot issue a bond either, so a firm in this world has exactly one funding channel and it is a bank loan.                                                                                                                                                                                                                                                                                                                                                                                                                                      | ABSENT | carried  |
+| **Pensions are insurers wearing the same name.** Spec 27 is "INSURERS AND PENSIONS" and there is one party kind, `insurance`. A pension has a SPONSOR, contributions from an employer and its members, and a funding ratio that is the sponsor's problem when it falls. See **B-2**: the insurer half does not exist either.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | ABSENT | carried  |
+| **Small-business pools** (spec 42), carried from 13e and never built.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | ABSENT | carried  |
+
+## C-5 — 12,519 declared parameters are never read (carried from `VERIFY.md`)
+
+29,559 declared, 17,040 read in a run. Discounting the ones read at seed time before the instrument
+was attached, the substantive ones:
+
+| never read | what it is                          |
+| ---------- | ----------------------------------- |
+| 5,896      | `firm.hurdle.<firm>`                |
+| 5,896      | `firm.horizon.<firm>`               |
+| 493        | `equity.payoutPatience.<firm>`      |
+| 30         | `bank.lending.capitalAtRisk.<bank>` |
+| 9          | `fund.requiredYield.<fund>`         |
+| 7          | `fund.fee.<fund>`                   |
+
+VERIFY's own correction stands and is the point: the hurdle IS read, at `firms/decide.ts:461`, but
+inside `cost.some ? project(...) : none()` — so a firm whose `costOfCapital` is `none` never
+evaluates a project at all. **9,006 firms alive, 3,104 ever evaluate one.** Two thirds of the economy
+never makes an investment decision, because no bank has quoted them and no market prices their
+equity — which is B-13's first and second causes seen from the parameter register.
+
+## C-6 — the margin gate: 31,640 admission decisions, 31,640 refusals (carried from `VERIFY.md`)
+
+The one measured cause of a dead book, and it is a real missing mechanism rather than a bug. Over two
+periods, diagnosed against the three gates in `capacity().admits`:
+
+| gate                                                         | count      |
+| ------------------------------------------------------------ | ---------- |
+| the clearing house has ceased                                | 0          |
+| **no room — the party holds no cash in the book's currency** | **31,640** |
+| the kind cannot say what one unit's margin is                | 0          |
+| admitted                                                     | **0**      |
+
+`capacityOf(view, ccy, buffer)` is `cash − cash × buffer`, so room is zero exactly when the party
+holds none of that money. Every one of those is an FX forward: a party trading EUR/GBP must post
+margin in EUR or GBP and holds neither. In the real world it would buy the currency or post eligible
+collateral in another one; here there is no such path.
+
+Two things follow that VERIFY did not draw:
+
+1. It is the whole story for **one** book, not for nine — see **B-7**.
+2. The missing mechanism is **eligible collateral in another money**, which `money-market/collateral.ts`
+   already implements for the repo market (`advances`, `valueToLender`, `haircut`). The derivative
+   layer's `admits` asks only about cash.
+
+## C-7 — the confidence question, answered and closed (carried from `VERIFY.md`)
+
+Recorded because it is a hypothesis that was tested and **disproved**, and the next reader should not
+test it again. Twelve periods, the same world:
+
+| period | outlook rows | rows with confidence | contracts | loans |
+| ------ | ------------ | -------------------- | --------- | ----- |
+| 1      | 30,650       | 0                    | 0         | 6     |
+| 2      | 64,803       | 0                    | 0         | 6     |
+| 3      | 101,998      | 12,067               | 0         | 6     |
+| 4      | 126,191      | 21,223               | 0         | 8     |
+
+`width(surprises)` is zero for a party with one surprise or none, so confidence does not exist until
+period 3 and then arrives in bulk. A fifth of all outlooks carry it by period four and the share is
+rising, and still not one contract exists. **Confidence is not the gate and never was.**
+
+(Part I found the one place where confidence IS load-bearing and dimensionally wrong: **A-65**, the
+option premium, where it is multiplied by the price level instead of used as the width it is.)
+
+---
+
+# Part IV — item 14, the polity: folded in from `docs/plan/14-polity.md`
+
+The plan file is deleted and its content is here, because the item's two carried findings are audit
+findings and the rest of it is a design that has to survive contact with what Parts I–III found.
+When the item is opened, this is its plan; `docs/WORKLIST.md` row 14 points here.
+
+**Objective.** The fiscal and regulatory POLICY primitives get their subject: a parliament of a fixed
+number of seats, a few parties each with a platform that is data, an electorate of household cells
+each casting its weight from its own state and its own outlook for the platform that leaves it best
+off, seats by one stated rule, a government by one stated coalition rule, and a mandate that is a
+read of the parliament and the only writer of every parliament-owned policy in the register. Until
+now those policies have a standing mandate declared at the seed; from here the register prints their
+owner beside their value and nothing else can set them.
+
+**Read first.** §47 Polity (all); XI-17; §30 Treasury B1, B3, C1, D4.b; §31 A3, A4; §46 (the cell's
+outlook); §45 A5, B1, B2.a; XI-15; Law 2; Part XII. Code: `registry/params.ts`, item 3's `treasury`
+programme, item 4's `households` and `expectations`, 13d's cohorts and employment states.
+
+**Clauses.** Polity A1, A2, A2.a, A2.b, A3, A4, B1, B1.a, B2, B2.a, B2.b, B3, B4, C1, C2, C2.a, C3,
+C3.a, C3.b, C4, D1–D5, D3.a, E1–E4, F1–F5; XI-17; Treasury B3, D4.b; Central Bank A3, A4.
+
+## The two findings this item carries
+
+### D-1 — a levy that fails is recorded and then forgotten: no arrears (`12d-5`) (A)
+
+Measured in `estate.test.ts` at 14 periods of the rig world: **855 failed tax legs** from household
+cells, and nothing else a cell posted ever failed. `treasury/index.ts` settles the levy and, when it
+fails, adds it to `unpaid` on `treasury.receipts` — which is right (`Money E1`, `D3`: a payer that
+cannot pay has not paid). But `unpaid` is a number in an event and **nothing carries it**: the cell
+does not owe it next period, the treasury does not chase it, and the receipt is not short by it in
+any account. A tax that failed is a hole between two balance sheets that only the journal knows
+about.
+
+The mechanism is **arrears** — a levy that is not paid becomes a claim the treasury holds on the
+payer, ranking where the law says — and the law is this item: what a tax is, what happens when it
+is not paid, and where the claim ranks in XI-8's waterfall are all fiscal policy with an owner
+(Polity D1, D3). It is a claim like any other: an instrument with a named creditor and a named
+debtor, carried until it is paid, written off, or ranked in an estate.
+
+**It is the same shape as three findings from Part I and they should be built together**, because
+one instrument and one door answers all four: **A-41** (an unpaid wage and an unpaid severance
+leave no obligation anywhere and the record says nothing is owed), **A-20** (a failed estate
+transfer becomes an unhandled throw because there is nowhere for the unpaid part to live), and the
+observation under **A-39** that `world/failure.ts:stillOwed` only counts failures whose
+`instruction.period === view.period`, so last period's unpaid amount is gone from the solvency test
+too. This world records what did not settle and carries none of it.
+
+### D-2 — the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) (B)
+
+Its open-market desk closes a gap towards a 25%-of-line target by posting a MARKET order — a
+quantity with no level — so in every sovereign session where it has a gap it bids at the top of the
+book for a quarter of the line. An order with no level is a price-taker of a price the mechanism has
+not yet produced (Clearing A4), and a big enough one is the marginal order that sets it. The quantity
+limit is real policy (Central Bank C1) and the module correctly refuses to stand in any other market,
+so this is NOT Appendix B's buyer of last resort — but it is more aggressive than any real
+open-market operation, and it belongs here because what a central bank may and may not do to a price
+is this item's subject, alongside its administered rate.
+
+What it needs is the level at which its own reason stops: a schedule (Clearing A2), not a quantity.
+Test: the sovereign session's clearing price does not move when the desk's gap is doubled at an
+unchanged book.
+
+**Two of Part III's findings are in the same module and should be read with it**: **A-61** (every
+central bank remits to `treasuries[0]`, in its own money) and **A-62** (a loss advances the
+remittance window, so E4's "it stands there until income covers it" is not what happens).
+
+## Design
+
+### 14.1 Kernel: owners and the mandate door
+
+- Every `policy` parameter already declares an `owner`
+  (`parliament | centralBank | standardSetter | constitution`). This sub-item makes the owner
+  **load-bearing**: a policy owned by `parliament` can be written only through
+  `params.setByMandate(values, effective: Period)` on the `MechanismContext` of the module that
+  declares itself the polity (assembly grants the door to exactly one module: D5, C3.a); every other
+  write path throws `Forbidden`; the seed's standing mandate is the initial value with
+  `setBy: 'seed.standingMandate'` recorded (XI-17); the observer prints the owner and the setter
+  beside every policy value (D5).
+- The central bank's **rate** stays the central bank's (D4, Central Bank A4); its **target** and
+  mandate text are parliament-owned (D4, Central Bank A3): `centralBank.target.*` moves to owner
+  `parliament` here.
+- **C-3 lands here too.** `centralBank.policyRate` is one row for four central banks. Whether it is
+  split into four before this item or as part of 14.1 is the open question — the worklist puts it
+  at **13l**, which is earlier, and that is the right place: the polity needs a rate that belongs to
+  a named central bank before it can hand one of them a target.
+
+### Module `polity`
+
+- `requires: ['households', 'treasury', 'expectations', 'labour']`.
+- **The constitution** (A1, A4, C1): three policy primitives with owner `constitution` —
+  `polity.seats` (a count), `polity.termPeriods` (placed on the calendar by date), and
+  `polity.allotmentRule` (a named rule in a dispatch table: largest remainder, or highest averages).
+- **Platforms** (A2): `registry/platforms.ts`, one row per party with a value for **every**
+  parliament-owned policy (assembly throws if a platform misses one or names one the parliament does
+  not own); platforms differ (A2.a: assembly refuses two identical rows); a party is not a ledger
+  party (A2.b: no account, a name with a seat count).
+- **The vote** (A3, B): phase `polity.election` on its date. For each household cell the module
+  evaluates every platform **applied to that cell's own state at that cell's own outlook** (B1, B2):
+  its expected income under that platform's tax and transfer rates, its expected prices paid at its
+  own basket, what it owns and owes. It never reads a published unemployment or inflation rate
+  (B1.a) — structurally, through a `withoutAggregates` view variant of the kind item 12 built for
+  `withoutPrints`. It picks the platform with the highest expected position; a cell for which every
+  platform gives the same position **abstains** (B2.b, the only abstention; B2.a: no turnout, swing
+  or drawn share). The cell casts `weight` votes through `integrate` (A3, B3). Turnout is a read.
+- **Seats and government** (C): seats by the allotment rule (C1); the government by the coalition
+  rule (C2 — the largest party adds the party whose platform is nearest its own, distance over the
+  policy vector in each policy's own unit, until it holds a majority); a **hung parliament** when no
+  such coalition exists within a stated distance continues the standing mandate and is reported
+  (C2.a).
+- **The mandate** (C3, C4): the seat-weighted position of the coalition's platforms per policy; a
+  journalled `polity.mandate` with date, parties, seats and what changed (C4, E4 — an event that
+  causes nothing itself); written through the door with `effective = election + polity.mandateLag`.
+  C3.b is an audit contribution: every parliament-owned policy's value equals the standing mandate's,
+  every period, exactly.
+- **What it controls** (D): tax rates on named bases, transfer rates, the treasury's buffer, the
+  outlay programme's size and composition, regulatory ratios and floors, the central bank's target.
+  D3.a: no price, quantity or outcome is a parliament-owned policy — assembly throws if a platform
+  names a parameter whose kind is not `policy` or whose owner is not `parliament`.
+- **Consequences** (E): E1 the treasury programme reads the register (it already does); E2 the chain
+  runs through the mechanisms; E3 measured at 16; F4 the **approval rating** is the read "how would
+  the cells vote today", computed by the observer with a lag and read by nothing.
+
+### Parameters
+
+`polity.seats`, `polity.termPeriods`, `polity.allotmentRule`, `polity.coalitionMaxDistance`,
+`polity.mandateLag` (policy, owner `constitution`); `platforms` (data). No `turnout`, no `swing`,
+no `loyalty`, no `bloc`, no `approval` input.
+
+### Audit contributions
+
+- `names`/`flows`: C3.b — register values equal the standing mandate (a check of one writer).
+- `units`: votes cast + abstentions = Σ weights of the electorate, exactly (F5).
+
+  **Write this one against `A-14`.** The labour module's population identity is
+  `Σ p.weight` compared against `Σ p.weight` and cannot fail. A votes-plus-abstentions identity
+  built the same way — one loop, one source, two accumulators — would be the third of its kind in
+  this engine. The two records must be independent: the ballots the vote produced, against the
+  electorate the parties store holds.
+
+### Files
+
+```
+packages/engine/src/registry/params.ts (14.1), registry/platforms.ts
+packages/engine/src/world/context.ts (the door granted to one module), world/assemble.ts
+packages/engine/src/mechanisms/polity/{index.ts,vote.ts,seats.ts,coalition.ts,mandate.ts,approval.ts}
+packages/engine/test/{param-owners,platforms,vote,abstention,seats,coalition,hung,mandate,
+                      mandate-writer,spread-changes-seats,election-chain}.test.ts
+```
+
+## Steps
+
+- [ ] 14.1 Kernel: policy owners load-bearing; parliament-owned policies writable only by the mandate door granted to one module; the seed's standing mandate recorded as the setter; owner and setter printed beside every value; the central bank's target moved to the parliament; tests (D4, D5, C3.a)
+- [ ] The constitution's primitives: seats, term on the calendar, allotment rule from a dispatch table, coalition distance, mandate lag; tests (A1, A4, C1)
+- [ ] Platforms as data rows covering every parliament-owned policy and nothing else, differing; a party holds no account; assembly validation; tests (A2, A2.a, A2.b, D3.a)
+- [ ] The vote: each cell applies each platform to its own state at its own outlook through a view with no aggregate reads; votes weight for the best; abstains when indifferent; turnout as a read; tests (A3, B1, B1.a, B2, B2.a, B2.b, B3)
+- [ ] Seats by the rule; the government by the coalition rule; a hung parliament continues the standing mandate and is reported; tests (C1, C2, C2.a)
+- [ ] The mandate as the seat-weighted coalition platform, journalled with subjects, written through the door at the lag; C3.b contribution; tests (C3, C3.b, C4, E4)
+- [ ] What it controls: fiscal rates, transfers, buffer, outlay programme, regulatory ratios, the target; never the rate, a price, a quantity or an outcome; tests (D1–D4, D3.a)
+- [ ] **Arrears (`D-1`)**: a levy that fails becomes a claim the treasury holds on the payer — an instrument with two named sides, carried until paid, written off or ranked in an estate at the place the law states; the receipt is short by it in the accounts and not only in the journal. **Build it as one door for all four cases**: the unpaid tax, the unpaid wage and severance (`A-41`), the unpaid estate transfer (`A-20`), and the horizon `stillOwed` reads (`A-39`); tests (Money E1, D3; XI-8; Polity D1, D3)
+- [ ] **`D-2`**: the open-market desk posts a SCHEDULE and not a quantity — the level at which its own reason stops. Read it with `A-61` and `A-62` in the same module. Test: the sovereign session's clearing price does not move when the desk's gap is doubled at an unchanged book
+- [ ] Consequences through the mechanisms only: the treasury programme reads the new numbers; a multi-year scenario shows the deficit changing through named outlays and receipts after an election; tests (E1–E3)
+- [ ] Approval rating as a lagged observer read that nothing reads; tests (F4)
+- [ ] B4: two seeds with equal weighted-mean income and different dispersion give different seat counts; F5: seats and mandate computed from members, with the two records independent (see the note under Audit contributions); tests
+- [ ] Observer: parliament, platforms, votes by cohort and region, the mandate with owner beside every policy; a multi-year run with two elections green; determinism; coverage re-marked; record entry
+- [ ] Worklist row 14 → done; delete Part IV from this file; commit and push
+
+## Exit criteria
+
+No parliament-owned policy can be set by anything but a mandate; a cell votes from what it
+experienced and can abstain; a hung parliament is a reported outcome; a change of government reaches
+the deficit only through the treasury's programme.
+
+## Guard
+
+Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set directly").

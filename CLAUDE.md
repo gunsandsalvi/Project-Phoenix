@@ -174,16 +174,16 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   tests, exit criteria, guard) before writing code. Tick the item's steps (`- [x]`) as they close;
   run `npm run plan:progress` to recount the completion figure; delete the item file when the item
   closes. One item, one commit. Write the RECORD entry and re-mark COVERAGE in the same commit.
-- **BUILD FORWARD. EVERY BUG GOES IN `docs/BUGS.md`. TESTS RUN AT THE END OF A MODULE.**
+- **BUILD FORWARD. EVERY BUG GOES IN `docs/AUDIT.md`. TESTS RUN AT THE END OF A MODULE.**
   The three rules the owner set, and they override the instinct to stop and fix:
   1. **The work is the next item.** A session implements; it does not go bug-hunting.
   2. **Every bug is written down — all of them.** A red test, a number that looks wrong, an audit
-     family that fires, a mechanism that never runs, a world that stops: it goes in `docs/BUGS.md`
+     family that fires, a mechanism that never runs, a world that stops: it goes in `docs/AUDIT.md`
      with what was measured and where it was seen, and the item carries on from the step it was on.
      Nothing is chased, and nothing is silently dropped: a finding not written down is lost.
   3. **Tests are WRITTEN as the item goes and RUN when the module is complete.** A suite run
      mid-item measures a half-built world and reports the half that is missing (Law 11). Run it at
-     the end, read what it says, and put what it says in the bug file before changing anything.
+     the end, read what it says, and put what it says in the audit file before changing anything.
 
   The reason is Law 10 and Law 11 together: a misbehaving number is not a work item, the missing
   mechanism is — and most of what looks wrong in a world this unfinished is a mechanism nobody has
@@ -194,7 +194,9 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   When the item closes, every finding in that file is POSITIONED — moved into the
   `docs/plan/<item>.md` of the item that should fix it, or inserted as its own item at its
   dependency position — and the record says where each landed. A finding leaves that file only by
-  being placed. The file is temporary and goes when it is empty.
+  being placed. THERE IS ONE SUCH FILE AND IT STAYS: it was three (`BUGS.md`, `SWEEP.md`,
+  `VERIFY.md`), one per sweep, and what that bought was one defect written three times under three
+  names, the newest of them contradicting the other two. `docs/AUDIT.md` is where a finding lives.
 - Update `docs/ARCHITECTURE.md` in the same change as any structural decision.
 - Ask the owner only for decisions the spec explicitly reserves (e.g. §45 A4 inspector vs
   participant surface); everything else is derived from the spec and stated in the record.

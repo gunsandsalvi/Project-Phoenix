@@ -1072,7 +1072,7 @@ packages/engine/src/
 packages/engine/test/      mirrors src; property tests under test/property
 packages/app/src/          worker.ts (engine host), main.ts, ui/
 tools/                     spec-index.ts (parses the spec), check-citations.ts
-docs/                      spec/ ARCHITECTURE.md WORKLIST.md RECORD.md COVERAGE.md
+docs/                      spec/ ARCHITECTURE.md WORKLIST.md RECORD.md COVERAGE.md AUDIT.md
 ```
 
 Mechanisms (Parts V–X) live in `packages/engine/src/mechanisms/<system>/`, one directory per spec
@@ -1093,14 +1093,26 @@ Every module, mechanism and audit family carries `@spec` tags naming the clauses
 citation does not resolve. `docs/COVERAGE.md` is the requirement → status map (`MET at <path>`,
 `MISSING`, `OUT OF SCOPE (reason)`), re-marked in the same change that meets a requirement (App C).
 
+**A citation is a claim about the source, and `MET` inherits its reach from that.** It says a module
+implementing the clause exists; it cannot say the module has ever run, because nothing about a
+`@spec` tag depends on the world. Ninety-nine `MET` rows cite a module that has never produced an
+outcome, and the ninety-six citing nothing else say **NEVER REACHED** in their `where` cell
+(`docs/AUDIT.md` B-12). Whether a mechanism produces anything is measured by reading the world, and
+that is the audit's job, not the citation checker's.
+
 ---
 
 ## 8. Work discipline (Laws 10–17, Part XIII)
 
-- `docs/WORKLIST.md` is the **one ordered list**. Work the first open item; a new item is inserted at
-  the position its dependencies put it, and the record says where and why.
+- `docs/WORKLIST.md` is the **one ordered list**, and its state column is the **one writer of an
+  item's state**. Work the first open item; a new item is inserted at the position its dependencies
+  put it, and the record says where and why. `tools/plan-progress.ts` READS that column (Law 19): a
+  deleted plan file used to be taken as a second statement that the item was done, which made an
+  open item whose plan had moved elsewhere count as fourteen worked steps.
 - One bounded change per item; a commit per item; the commit message says what and why.
-- `docs/RECORD.md` is a ledger of outcomes, not a diary.
+- `docs/RECORD.md` is a ledger of outcomes, not a diary. `docs/AUDIT.md` is the one place an open
+  FINDING lives — exactly one such file, and a finding leaves it only by being positioned into the
+  item that fixes it.
 - No measurement, tuning or diagnosis of numbers until Part XII is reached. Deterministic checks
   (lint, types, tests, audit at period zero) are gates, not experiments.
 - Never roll back a number. Only a change wrong on its own terms is undone.

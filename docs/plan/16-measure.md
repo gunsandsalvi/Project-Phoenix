@@ -240,7 +240,7 @@ model).
 
 Eight red tests came from item 13j giving this world four economies, and every one of them is an
 assertion about a world with one sovereign issuer, one banking system and one money, being made of a
-world with four (`docs/BUGS.md`, "What item 13j cost"). The mechanisms are sound at four countries —
+world with four (`docs/AUDIT.md` C-1, "And the eight 13j cost"). The mechanisms are sound at four countries —
 the audit reports nothing, every party banks in its own money, and every region's external accounts
 net to zero over thousands of crossing legs on both sides — so what is wrong is what the tests SAY,
 which is this item's work: a measurement is true of the world it is taken of.

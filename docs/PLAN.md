@@ -9,12 +9,15 @@ The plan has two parts:
 - **This file**: what we are building, the rules, the architecture, the contracts, the method, and
   the progress figure. It changes rarely.
 - **`docs/plan/<item>.md`**: one file per worklist item with the detailed implementation of that
-  item. **An item's file is deleted when the item closes** (its outcome moves to `docs/RECORD.md`),
-  so the plan directory always contains only what is still to be built. The progress figure below
-  is recounted from those files by `npm run plan:progress`.
+  item, when one has been written. **An item's file is deleted when the item closes** (its outcome
+  moves to `docs/RECORD.md`), so the plan directory holds only what is still to be built — and not
+  all of that: six of the nine open items have no file, 13k–13o because their reasoning is the
+  worklist row and nothing more, and 14 because its plan is `docs/AUDIT.md` Part IV. The progress
+  figure below counts the steps in those files and takes each item's STATE from the worklist's own
+  state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
 <!-- progress:start -->
-**Plan completion: 92.7%** (677 of 730 steps across 46 items).
+**Plan completion: 92.9%** (678 of 730 steps across 51 items).
 **Requirement coverage: 60.1%** (823 MET, 90 PARTIAL, 0 OUT OF SCOPE of 1369 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -60,8 +63,13 @@ The plan has two parts:
 | 13g — Corporate development: where a firm builds, what it buys, and what it is in | 24 | 24 | closed |
 | 13h — Insurers, hedge funds, private equity | 37 | 37 | closed |
 | 13i — Cross-border | 21 | 21 | closed |
-| [13j — The other three countries are economies](plan/13j-four-countries.md) | 14 | 13 | in progress |
-| [14 — The polity](plan/14-polity.md) | 14 | 0 | open |
+| 13j — The other three countries are economies | 14 | 14 | closed |
+| 13k — Periodicity: what does not happen every week | — | — | open (no item file) |
+| 13l — Four central banks, four policy rates | — | — | open (no item file) |
+| 13m — The built environment: land that gets dearer, commercial property, and ports | — | — | open (no item file) |
+| 13n — Firm birth: somebody starts one | — | — | open (no item file) |
+| 13o — Asset managers with strategies: hedge funds, prime brokerage, the trades nobody puts on | — | — | open (no item file) |
+| 14 — The polity | 14 | 0 | open (plan elsewhere) |
 | [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |
 | [16 — Measure](plan/16-measure.md) | 20 | 0 | open |
 | [17 — The app and the APK](plan/17-app-apk.md) | 12 | 0 | open |
@@ -116,7 +124,7 @@ docs/plan/manifest.json      every item with its step count (for the progress fi
 docs/WORKLIST.md             the one ordered list of items and their state
 docs/RECORD.md               outcomes, one entry per closed item
 docs/COVERAGE.md             one row per spec clause: MET / PARTIAL / MISSING / OUT OF SCOPE
-docs/BUGS.md                 findings parked mid-item (exists only while some are; deleted when empty)
+docs/AUDIT.md                every open finding, in one place; a finding leaves only by being placed
 packages/engine/src/         the engine (kernel + modules), pure TypeScript, no DOM
 packages/engine/test/        its tests (Vitest, fast-check)
 packages/app/                the inspector web app (Vite) and the Capacitor Android wrapper
@@ -360,13 +368,15 @@ Do not skip steps; do not reorder them.
 > The order the owner set, and it overrides every instinct to stop and fix:
 >
 > 1. **Implement.** The work is the next item in the ordered list. That is what a session does.
-> 2. **Every bug goes in `docs/BUGS.md`.** Every one, without exception — a red test, a number that
+> 2. **Every bug goes in `docs/AUDIT.md`.** Every one, without exception — a red test, a number that
 >    looks wrong, an audit family that fires, a mechanism that never runs, a world that stops. It is
 >    written down where it was seen and what was measured, and the item carries on. Nothing is
 >    chased, and nothing is quietly left out either: a finding not written down is a finding lost.
+>    There is ONE such file and it is permanent: a fresh file per sweep is how the same defect came
+>    to be written three times under three names.
 > 3. **Tests run at the END of a full module, not during one.** A suite run mid-item measures a world
 >    that is half-built, and what it reports is the half that is missing (Law 11). Run them when the
->    module is complete, read what they say, and put what they say in the bug file.
+>    module is complete, read what they say, and put what they say in the audit file.
 >
 > The reason is Law 11 and Law 10 together. A misbehaving number is not a work item — the missing
 > mechanism is — and this world is nowhere near complete, so most of what looks wrong is a mechanism
@@ -390,21 +400,22 @@ Do not skip steps; do not reorder them.
 6. **Audit.** Add the identities. A family reports built only when it checks something real.
 7. **Tests.** As the item file lists them — WRITTEN as the item goes, RUN when the module is
    complete. A failing family expected by the item is asserted by name. What a run reports goes in
-   `docs/BUGS.md`, all of it, before anything is changed in response to it.
+   `docs/AUDIT.md`, all of it, before anything is changed in response to it.
 8. **Gates.** `npm run check` at the end of the module. `npm run coverage:spec` recounted. The
    browser smoke test green if the surface changed.
 9. **Tick the steps** in the item file as you go (`- [x]`); `npm run plan:progress` recounts.
-10. **Park what you find. All of it.** Every bug goes in `docs/BUGS.md` — what was measured, where
+10. **Park what you find. All of it.** Every bug goes in `docs/AUDIT.md` — what was measured, where
     it was seen, what is ruled out — and the item carries on from the step it was on. Chasing one is
     how an item stops being one bounded change (Law 14) and how the ordered list stops being ordered
     (Law 10). The one exception is a violation that stops the build: an impossible quantity, a
     one-sided flow, a fact with two writers. Those are fixed where they are, because the engine
     will not run past them — and they are written down too.
 11. **Close.** Write the record entry (what, why, found, deleted, forecast with its killer); delete
-    the item file; leave its manifest row (a missing file counts as done); set the worklist row to
-    done; **position every finding in `docs/BUGS.md`** — into the item that should fix it, or as an
-    inserted item of its own, with the record saying where each landed; commit with a message that
-    says what and why.
+    the item file; leave its manifest row with its step count; set the worklist row to done — THAT
+    is what closes an item, and `plan:progress` reads it, so a deleted plan file is not a second way
+    of saying so; **position every finding in `docs/AUDIT.md`** — into the item that should fix it,
+    or as an inserted item of its own, with the record saying where each landed; commit with a
+    message that says what and why.
 
 **Definition of done for an item:** steps 3–10 complete; no `TODO` in code (a TODO is a worklist
 item or it is nothing); no PARTIAL row without a named item; no placeholder without a named death;
@@ -502,10 +513,11 @@ maturity; a bill issuer + tenor; a share its issuer; a good its sub-unit; a mark
 **WHEN THEY RUN.** At the end of a full module, never during one. A suite run mid-item is measuring
 a world that is half-built and reporting the half that is missing (Law 11), and a session that
 answers it spends itself on tests instead of on the thing the tests are for. Write them as the item
-goes; run them when the module closes; put everything the run says in `docs/BUGS.md` before changing
-anything in response. That file is a holding pen and nothing else: when its last finding has been
-positioned into the item that should fix it, the file is empty and it goes, the same way a closed
-item's own file does.
+goes; run them when the module closes; put everything the run says in `docs/AUDIT.md` before
+changing anything in response. A finding leaves that file by being POSITIONED — into the item that
+should fix it, or as an item inserted at its dependency position — and by nothing else. The file
+itself stays: it was three files under three names once (`BUGS.md`, `SWEEP.md`, `VERIFY.md`), and
+what that bought was the same defect written three times and the newest contradicting the others.
 
 **THE RIG IS NOT THE WORLD.** `foundationWorld` is THE WORLD — thirty million people, three thousand
 named firms, thirty banks, 261 markets, and seconds a period. A file of forty tests cannot build it

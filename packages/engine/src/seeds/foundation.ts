@@ -2422,8 +2422,9 @@ export function foundationSpec(
        * share value had never been told about, which is a fund with equity: measured at 83,247,864
        * on `etf.us` the first time funds were let in here.
        *
-       * 13h is where a fund holds derivatives on purpose — and where the one pass that re-marks a
-       * fund's claim on itself is next opened (`docs/BUGS.md`, finding `13b-2`).
+       * 13h was where a fund would hold derivatives on purpose, and it closed without opening the
+       * pass that re-marks a fund's claim on itself: no fund kind is on this list and none is
+       * scheduled to be. The finding is `docs/AUDIT.md` B-14, unpositioned.
        */
       derivativeLayer([...TRADES_CONTRACTS]),
       // CDS: the first class on the layer (13b). After it, because a book clears through the house

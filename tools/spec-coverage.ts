@@ -148,6 +148,15 @@ const PARTIAL: Readonly<Record<string, string>> = {
   'XI-14': 'every number is declared with its kind and owner; the placeholders that remain name the mechanism and the item that deletes them',
 };
 
+/**
+ * `--init` only: the file as it looks before anybody has marked it, from the citations alone.
+ *
+ * IT DISCARDS EVERY HAND-WRITTEN `where`, which by now is most of what the file says — the reason a
+ * clause is PARTIAL, what a module does about it, and the **NEVER REACHED** marks on the ninety-six
+ * MET rows whose module has never produced an outcome (`docs/AUDIT.md` B-12). Running it on the file
+ * that exists would lose all of it. `MET` here means exactly what it means there: a module cites the
+ * clause and implements it, which is a claim about the source and not about the world.
+ */
 function initialCoverage(): string {
   const idx = buildSpecIndex();
   const cited = citedByCode();

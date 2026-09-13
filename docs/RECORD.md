@@ -3912,3 +3912,69 @@ and from 660 to 525 at twenty-four, and the ones removed are precisely the per-p
 flattens is the growth rather than the level. **Gate**: the same digest again, which mattered more
 here than elsewhere — `reseat` moves a line to the end of its new issuer's bucket, so an estate
 assuming paper could have changed the order a sum was taken in, and the hash says it did not.
+
+
+## The audit is one file, and the files that count the work now count it
+
+**What this is.** Not an item: the close of a three-part read, and the repair of the two project
+files that were describing a tree which no longer existed. `docs/AUDIT.md` is now the one place an
+open finding lives, and `npm run check` can run again.
+
+**One file, because three was the defect.** `docs/BUGS.md`, `docs/SWEEP.md` and `docs/VERIFY.md`
+were three holding pens with the same rule as each other — _a finding leaves only by being placed_ —
+and what three bought was the same defect written three times under three names, with the newest of
+them (`VERIFY.md`) contradicting the other two about why the derivative books never cross. They are
+merged into `docs/AUDIT.md` Part III, de-duplicated against Part I (`VERIFY.md`'s six lettered
+findings were all re-found independently in the read, and the map from one to the other is stated
+rather than the finding repeated). `docs/plan/14-polity.md` went in as Part IV, because item 14's
+two carried findings are audit findings and its design has to survive contact with what the read
+found. All four files are deleted. Law 4 applies to documents: one writer per fact.
+
+**What the read found.** 94 findings. Part I is 70 from reading all 59,927 lines of
+`packages/engine/src` against three questions — is it bottom up, is currency conserved, is the
+mechanism real — of which 30 are severity A. Part II is 15 from the other direction: every `done`
+row of the worklist and every `MET` in coverage, against what the code actually produces. Part III
+is the 7 carried in. Part IV is item 14's two. The pattern behind most of it is one sentence, and
+`VERIFY.md` had already found it: **"built" was true of the source and false of the world.** Eight
+closed items are for mechanisms that are assembled, compile, and have never produced an outcome —
+no corporate bond is ever issued, no insurance party is ever created, no dealer quotes in any
+market, no order has ever reached the tenancy venue, eight of the nine derivative books can never
+print a first price.
+
+**The gate had been red for four commits and nothing said so.** `6d6cb6d` inserted five worklist
+items by writing them **over** the manifest row for 13j instead of after it, so the worklist named
+51 items and the manifest 50, and `crossCheck()` — which exists for exactly this — threw. `npm run
+check` runs `plan:check`, which calls it, so the last gate CLAUDE.md names could not have passed
+since. Two commits closed work in that tree. The `13j` row is restored; two tests in
+`tools/test/plan-progress.test.ts` are green again, the second having asserted that the items with
+no plan file were exactly three when the same commit had made them eight.
+
+**An item's state has one writer, and it is the worklist.** `plan-progress.ts` read it from two
+places: the state column, and whether `docs/plan/<item>.md` still existed. The second is a guess
+that happened to be right while every deleted file belonged to a closed item. Item 14's plan is now
+Part IV of the audit and its file is gone while the item is open, at which point the guess would
+have published **94.8%** — fourteen worked steps for an item nobody has started. The tool now READS
+the column (Law 19) and the inference is deleted. Five open items that rendered as "closed (no item
+file)" say `open (no item file)`. Recounted: **92.9%, 678 of 730 steps across 51 items**, against
+the 92.7% of 46 items the stale block published.
+
+**`MET` says something about the source and the file now says so.** It is derived from `@spec`
+citations: a module implementing the clause exists. It cannot say the module has ever run, because
+nothing about a citation depends on the world — and 99 `MET` rows cite a module that has never
+produced anything. The 96 that cite nothing else carry **NEVER REACHED** in their `where` cell; the
+three that also cite a kernel path are left alone, because the kernel half of each does run. They
+are **not** re-marked `PARTIAL`: a `PARTIAL` names the item that finishes it, none of these findings
+has been positioned into one yet, and inventing a placement to satisfy a lint rule is the clause
+deleted to look better, backwards.
+
+**Found and not fixed.** Item **13j** closed with no entry in this file and no coverage re-mark —
+`6d6cb6d` touched neither — so the item that gave this world four working economies left no outcome
+in the ledger, and its measurements survive only in a commit message (`docs/AUDIT.md` **B-11**).
+That is not repaired here: a record entry is written by whoever did the item, out of what they
+measured, and one reconstructed from a diff afterwards is the opposite of a ledger. **B-14**: a
+finding positioned into 13h was not done by the time 13h closed, and nothing checks that — the
+comment in `seeds/foundation.ts` went on naming a future that had already passed and a file that had
+been deleted. It is corrected to say what is true and the finding is left unpositioned.
+
+**Nothing in the engine's behaviour changed.** One comment in `seeds/foundation.ts`, and the rest is
+`tools/plan-progress.ts` and documents.

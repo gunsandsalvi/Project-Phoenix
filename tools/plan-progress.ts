@@ -2,10 +2,14 @@
  * Recount the plan's completion (Appendix C: recount rather than adjust).
  *
  * `docs/plan/manifest.json` lists every item file with the number of steps it had when written. An
- * item file that still exists contributes its checked steps (`- [x]`); an item file that has been
- * deleted counts as fully done. Coverage comes from docs/COVERAGE.md. The result is written between
- * the markers in docs/PLAN.md. Run: `npm run plan:progress`; `npm run check` runs it with `--check`, which
- * fails if the block is stale.
+ * item file that still exists contributes its checked steps (`- [x]`). WHETHER AN ITEM IS CLOSED IS
+ * READ FROM `docs/WORKLIST.md`, never inferred here (Law 4, Law 19): the worklist's state column is
+ * the one writer of that fact, and a missing plan file is not a second one. It used to be — a
+ * deleted file counted as fully done — and item 14's file was folded into `docs/AUDIT.md` while the
+ * item was still open, at which point the figure would have claimed fourteen steps nobody had
+ * worked. Coverage comes from docs/COVERAGE.md. The result is written between the markers in
+ * docs/PLAN.md. Run: `npm run plan:progress`; `npm run check` runs it with `--check`, which fails if
+ * the block is stale.
  */
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -25,6 +29,14 @@ export interface ManifestItem {
 export interface ItemProgress extends ManifestItem {
   readonly done: number;
   readonly present: boolean;
+  /** The worklist's state column, read (Law 19), not inferred from whether the file is there. */
+  readonly closed: boolean;
+}
+
+/** An item as the worklist states it: its id and the state in its last cell. */
+export interface WorklistItem {
+  readonly id: string;
+  readonly state: string;
 }
 
 /**
@@ -34,14 +46,26 @@ export interface ItemProgress extends ManifestItem {
  * the one ordered list, and a second copy of it here would be the defect this function exists to
  * catch (Law 19).
  */
-export function worklistIds(): string[] {
+export function worklistItems(): WorklistItem[] {
   const text = readFileSync(resolve(root, 'docs', 'WORKLIST.md'), 'utf8');
-  const out: string[] = [];
+  const out: WorklistItem[] = [];
   for (const line of text.split('\n')) {
     const m = /^\|\s*([A-Za-z0-9][A-Za-z0-9.]*)\s*\|/.exec(line);
-    if (m?.[1] !== undefined && m[1] !== 'item') out.push(m[1]);
+    if (m?.[1] === undefined || m[1] === 'item') continue;
+    // The state is the LAST cell, not the third: one item's prose has pipes in it, and counting
+    // from the left would read its middle as its state.
+    const cells = line
+      .trim()
+      .replace(/^\||\|$/g, '')
+      .split('|');
+    const last = cells[cells.length - 1];
+    out.push({ id: m[1], state: (last ?? '').trim() });
   }
   return out;
+}
+
+export function worklistIds(): string[] {
+  return worklistItems().map((w) => w.id);
 }
 
 /**
@@ -75,13 +99,19 @@ export function itemProgress(): ItemProgress[] {
   const manifest = JSON.parse(
     readFileSync(resolve(root, 'docs', 'plan', 'manifest.json'), 'utf8'),
   ) as ManifestItem[];
+  const worklist = worklistItems();
   crossCheck(
     manifest.map((m) => m.id),
-    worklistIds(),
+    worklist.map((w) => w.id),
   );
+  const state = new Map(worklist.map((w) => [w.id, w.state]));
   return manifest.map((m) => {
+    const closed = state.get(m.id) === 'done';
     const path = resolve(root, 'docs', 'plan', m.file);
-    if (!existsSync(path)) return { ...m, done: m.steps, present: false };
+    // A closed item's file is deleted and its steps are all done; an OPEN item whose file is gone
+    // has had its plan moved somewhere the manifest does not count, and none of its steps are done
+    // until the worklist says the item is.
+    if (!existsSync(path)) return { ...m, done: closed ? m.steps : 0, present: false, closed };
     const text = readFileSync(path, 'utf8');
     const checked = (text.match(/^- \[x\]/gim) ?? []).length;
     const unchecked = (text.match(/^- \[ \]/gm) ?? []).length;
@@ -90,7 +120,7 @@ export function itemProgress(): ItemProgress[] {
         `${m.file}: manifest says ${m.steps} steps, file has ${checked + unchecked}; update the manifest in the same change`,
       );
     }
-    return { ...m, done: checked, present: true };
+    return { ...m, done: checked, present: true, closed };
   });
 }
 
@@ -113,14 +143,19 @@ export function render(items: readonly ItemProgress[]): string {
   lines.push('| item | steps | done | state |');
   lines.push('|---|---|---|---|');
   for (const i of items) {
-    // An item worked without a plan file has no planned steps, and saying "0 of 0" would read as an
-    // item that was free. It says what happened instead; the steps column is empty because there
-    // were none to count, not because none were done.
+    // An item with no plan file has no planned steps, and saying "0 of 0" would read as an item
+    // that was free. It says what happened instead; the steps column is empty because there were
+    // none to count, not because none were done. Five such items are OPEN — inserted from a sweep
+    // with their reasoning in the worklist row and no plan written yet.
     const unplanned = !i.present && i.steps === 0;
     const state = unplanned
-      ? 'closed (no item file)'
+      ? i.closed
+        ? 'closed (no item file)'
+        : 'open (no item file)'
       : !i.present
-        ? 'closed'
+        ? i.closed
+          ? 'closed'
+          : 'open (plan elsewhere)'
         : i.done === 0
           ? 'open'
           : i.done === i.steps
