@@ -1292,7 +1292,43 @@ export class World {
     return none<CurveFamilyDecl>();
   }
 
+  /**
+   * Law 18: THE SAME CONTEXT, NOT A SECOND ONE. A module's context is forty closures over a world
+   * that is not going anywhere, and it was built fresh on every call — per phase, per valuation,
+   * per outlook, per margin check, and once per TRADE for the terms door. At 4.7% of engine time it
+   * was the single most expensive thing in the period loop, and all of it was allocation.
+   *
+   * Everything in it reads `this` live, so one object serves the whole of a cycle. The two things
+   * that do not are the period and the cycle, which are captured as values — so they are the key,
+   * and a context is rebuilt exactly when one of them moves.
+   *
+   * The RNG is the exception and it is handed out fresh every call, which is what it did before.
+   * A derived stream is STATEFUL: sharing one between two calls in a cycle would have the second
+   * caller continue the first one's draws instead of starting where it started. That is a change to
+   * what the world does, and Law 18 does not permit one — so the cached object is spread with a new
+   * stream over it, which costs a copy of forty references instead of forty closures.
+   */
+  private contexts = new Map<string, { period: Period; cycle: Cycle; ctx: MechanismContext }>();
+
   mechanismContext(owner: string): MechanismContext {
+    const root = this.root;
+    const held = this.contexts.get(owner);
+    const current = held?.period === this.currentPeriod && held.cycle === this.currentCycle;
+    const fresh = current ? held.ctx : this.buildMechanismContext(owner);
+    if (!current) {
+      this.contexts.set(owner, { period: this.currentPeriod, cycle: this.currentCycle, ctx: fresh });
+    }
+    /**
+     * The stream is derived eagerly, and that is deliberate. Handing it out through a lazy getter
+     * skips the work for a module that never draws — but an object with an accessor on it is not
+     * the shape V8 inlines property reads on, and the forty reads a module makes of everything ELSE
+     * in its context then cost more than the stream saved: measured at 41.9 ms a period against
+     * 36.2. The cheap-looking change was the slower one, which is why Law 18 says measure.
+     */
+    return { ...fresh, rng: root.derive(`module/${owner}/${this.currentPeriod}`) };
+  }
+
+  private buildMechanismContext(owner: string): MechanismContext {
     const cellDeps = { parties: this.parties, register: this.store, journal: this.journal };
     return {
       period: this.currentPeriod,

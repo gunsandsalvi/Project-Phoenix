@@ -3826,3 +3826,31 @@ asks for behaviour, not bits, and this is the stronger of the two.
 
 **The result: 52.4 ms a period to 41.0 ms, 22% off**, with the least noisy number — the minimum of
 five runs — going 48.8 to 37.6.
+
+
+## Law 18 — a module's context, built once a cycle
+
+**`mechanismContext` was 4.7% of the period and all of it was allocation.** A module's context is
+forty closures over a world that is not going anywhere, and it was built fresh on every call — per
+phase, per valuation, per outlook, per margin check, and once per TRADE for the terms door.
+
+Everything in it reads `this` live, so one object serves a whole cycle. The two things that do not
+are the period and the cycle, which are captured as values — so they are the key, and a context is
+rebuilt exactly when one of them moves.
+
+**The RNG is the exception, and it is the reason this needed care.** A derived stream is STATEFUL:
+sharing one between two calls in a cycle would have the second caller continue the first one's draws
+instead of starting where it started, which is a change to what the world does. So the cached object
+is spread with a fresh stream over it — forty references copied instead of forty closures built.
+
+**And the obvious next step was the slower one.** Handing the stream out through a lazy getter skips
+the derive entirely for a module that never draws, which looked free: `prng.derive` was 3.1% on its
+own. Measured, it was WORSE — 41.9 ms a period against 36.2 — because an object with an accessor on
+it is not the shape V8 inlines property reads on, and the forty reads a module makes of everything
+else in its context cost more than the stream saved. It is reverted, with the measurement written
+where the next person will look. This is what Law 18 means by gating on behaviour rather than bits:
+the cheap-looking change has to earn it on the clock.
+
+**Gate**: the same digest as before, 4,041 instructions and 347 instruments over twelve periods.
+**Result**: 41.0 ms a period to about 36, and 52.4 to 36 across the two Law 18 changes together —
+roughly a third off, with the minimum of five runs going 48.8 to 32.6.
