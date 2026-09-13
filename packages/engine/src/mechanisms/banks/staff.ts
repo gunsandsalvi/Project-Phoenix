@@ -36,7 +36,11 @@ export const BANKING = 'banking';
 
 export const STAFF_PARAMS = {
   hoursPerLoanPeriod: paramId('bank.hoursPerLoanPeriod'),
+  hoursPerLinePeriod: paramId('bank.hoursPerLinePeriod'),
 } as const satisfies Record<string, ParamId>;
+
+/** A3: the trade a bank's dealers are in. A market maker is not a lending officer (Labour A3). */
+export const DEALING = 'dealing';
 
 /** What this bank's own book is: the live loans it holds, and what they come to. */
 function bookOf(view: ParticipantView): { readonly rows: number; readonly principal: number } {
@@ -130,3 +134,24 @@ export function staffOrders(view: ParticipantView, venue: VenueDecl): readonly O
 /** The venue this bank's staff are hired in, or none because this world has no such trade. */
 export const staffVenue = (view: ParticipantView): VenueDecl | undefined =>
   findVenue(view.venues, { region: String(view.self.region), occupation: BANKING });
+
+/**
+ * Dealer Desks D1, D4, XI-13 (13d): HOW MANY LINES A DESK CAN ACTUALLY QUOTE, and it is people.
+ *
+ * A desk quotes a line by watching it: somebody prices it, somebody carries the position, somebody
+ * answers the phone. So what a desk can cover is the hours it EMPLOYS over the hours one line takes
+ * — a read of what it actually paid for, in the same event a firm costs a unit from — and a desk
+ * that sheds staff drops lines. Nothing states a coverage; it is a count of people over a technology.
+ *
+ * A bank that has never paid a wage has no hours and covers nothing, which is a real answer: a desk
+ * with nobody on it is not a desk, and a line nobody quotes journals `market.noView` and says so.
+ */
+export function linesCovered(view: ParticipantView): number {
+  const own = view.lastOwn('labour.wages');
+  if (!own.some) return 0;
+  const hours = own.value.data['hours'];
+  if (typeof hours !== 'number' || hours <= 0) return 0;
+  const per = view.params.count(STAFF_PARAMS.hoursPerLinePeriod);
+  if (per <= 0) return 0;
+  return Math.floor(div(hours, per, 'the lines its people can cover'));
+}

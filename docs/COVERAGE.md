@@ -794,6 +794,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Banks Lending B2` | MET | packages/engine/src/mechanisms/banks/quote.ts (`room`: capital, its own appetite for the name, and now LIQUIDITY too — what its own funding leaves it, read from the position it published (Banks Funding C1) — with which of the three bound recorded on every decline) |
 | `Banks Lending B2.d` | MET | packages/engine/src/mechanisms/banks/quote.ts (which constraint binds is computed from the bank's own state and recorded on the decline, so it differs by bank and by period rather than being decided once) |
 | `Banks Lending C1` | MET | packages/engine/src/mechanisms/banks/quote.ts (four named terms and their sum: what its funding costs it, what it expects to lose on this borrower, the capital the loan consumes times what it needs on it, and what it costs to run) |
+| `Banks Lending C1.d` | MET | packages/engine/src/mechanisms/banks/staff.ts (13d: `loan.operatingCost` is DELETED — half a per cent a year on every principal, paid to nobody. A bank employs people in three trades of its own, and what servicing costs is the hours its book takes times what it is paying for an hour, over the principal it is servicing — so a small loan is dearer than a large one out of the arithmetic) |
+| `Banks Lending C5` | MET | packages/engine/src/mechanisms/banks/quote.ts `lossGivenDefault` (13d: what it would lose is the part the security does not cover, read at the market's own price; no loan-to-value limit and no recovery rate) |
+| `Banks Lending C5.a` | MET | packages/engine/src/mechanisms/banks/index.ts (the standard moves because the PRICE of the thing pledged moves: a bank lending against dwellings where dwellings are falling requires more of every borrower there, without anybody tightening anything) |
 | `Banks Lending C2` | MET | packages/engine/src/mechanisms/banks/index.ts (every bank quotes from its own state and the borrower takes the keenest that will have it; a bank with no room does not quote) |
 | `Banks Lending C3` | MET | packages/engine/src/mechanisms/banks/index.ts (declining IS the credit decision: a bank with no room writes nothing and says so) |
 | `Banks Lending C3.a` | MET | packages/engine/src/mechanisms/banks/index.ts (what was declined and what was written is published every period as a count and a volume; who was refused stays between the two of them, that it happened does not) |
@@ -1326,8 +1329,9 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Labour A1` | MET | packages/engine/src/mechanisms/labour/index.ts, packages/engine/src/mechanisms/labour/matching.ts (hours of a person time, supplied by a named cell to a named firm) |
 | `Labour A2` | MET | packages/engine/src/mechanisms/labour/index.ts (the venue prices hours in the money of its region) |
 | `Labour A3` | MET | packages/engine/src/mechanisms/labour/data.ts, packages/engine/src/mechanisms/labour/index.ts (one venue per region and occupation; a trade is what a seeker looks for. 13c.2 took it to thirty-eight trades across twenty-odd sectors: a nurse out of work is not a bricklayer's vacancy filled) |
+| `Labour A3.b` | MET | packages/engine/src/mechanisms/labour/matching.ts (13d: two rounds of ONE matching function — every seeker offers in the trade it has, then the ones nobody took offer in the trades they have not. Who moves is whoever the first round left over, and what it costs is TIME: a mover is productive after the hiring lag AND a quarter of retraining, so the employer pays weeks of wages for work it does not yet get. There is no flow rate between occupations anywhere) |
 | `Labour A4` | MET | packages/engine/src/mechanisms/labour/register.ts (a relationship with a firm, a worker, a wage and a start date) |
-| `Labour B1` | MET | packages/engine/src/mechanisms/labour/matching.ts (each cell decides from its own view whether to offer its hours) |
+| `Labour B1` | MET | packages/engine/src/mechanisms/labour/matching.ts (a cell will not work below its own outside option, AND it does not offer into a trade paying less than it lives on — the going rate is public, so being out of the workforce is a decision with the wage in it and employers bidding up bring the discouraged back) |
 | `Labour B2` | MET | packages/engine/src/mechanisms/labour/matching.ts (supply is the cells weights times the hours a person has) |
 | `Labour B3` | MET | packages/engine/src/mechanisms/labour/index.ts (employed, unemployed or inactive, one state each, read from the rows and the cohort) |
 | `Labour B4` | MET | packages/engine/src/mechanisms/labour/matching.ts (an unemployed cell posts every period; what it meets is finite) |
@@ -1355,21 +1359,21 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Housing A1` | MISSING |  |
-| `Housing A2` | MISSING |  |
+| `Housing A1` | MET | packages/engine/src/mechanisms/goods/data.ts (13d: a dwelling is a GOOD — built out of concrete, timber, steel and glass by named builders, half a year to make, standing where it was built and wearing out. `portable: false`, which is the oldest reason a price is local) |
+| `Housing A2` | MET | packages/engine/src/mechanisms/housing/index.ts (a tenancy is a VENUE: what changes hands is the right to be in it for a period, the owner keeps the asset, and the rent is struck where the two books cross) |
 | `Housing A3` | MISSING |  |
 | `Housing A4` | MISSING |  |
 | `Housing A5` | MISSING |  |
 | `Housing B1` | MISSING |  |
-| `Housing B2` | MISSING |  |
+| `Housing B2` | MET | packages/engine/src/mechanisms/goods/data.ts (a dwelling takes half a year, which is why housing supply answers a price slowly and a shortage outlasts its cause) |
 | `Housing B3` | MISSING |  |
 | `Housing B4` | MISSING |  |
 | `Housing B4.a` | MISSING |  |
-| `Housing B5` | MISSING |  |
-| `Housing C1` | MISSING |  |
+| `Housing B5` | MET | packages/engine/src/mechanisms/housing/index.ts (the owner lets above what letting WEARS it — the dwelling's own spoilage against the dwelling's own cleared price — and the tenant pays up to what it has, because the alternative is nowhere to live) |
+| `Housing C1` | PARTIAL | packages/engine/src/mechanisms/housing/index.ts — a mortgage is a secured loan row with a REAL LIEN placed every period up to what is still owed, so the register itself refuses to let the roof be sold out from under the loan. It is a LANDLORD's for now: a household's waits on a borrower that misses going on accruing while nothing moves on its own book (13f) |
 | `Housing C2` | MISSING |  |
 | `Housing C3` | MISSING |  |
-| `Housing C4` | MISSING |  |
+| `Housing C4` | MET | packages/engine/src/mechanisms/housing/index.ts (foreclosure releases the lien and moves the dwellings to the lender at what the market last said; the lender then sells into the same session everybody else does, so the recovery is what it FETCHED) |
 | `Housing C5` | MISSING |  |
 | `Housing C6` | MISSING |  |
 | `Housing D1` | MISSING |  |

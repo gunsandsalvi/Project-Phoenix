@@ -3446,3 +3446,70 @@ number of people, because the retired cohort's basket says both. Two falsificati
 the cohort shares fixed and the tilt should vanish; move people across the boundary faster and it
 should arrive sooner. If the composition does not move with the age structure, something is
 averaging the cohorts that should not be.
+
+---
+
+## 13d — Labour mobility, housing, the household life cycle (closed)
+
+Paused once, for 13d.1, and finished on the other side of it.
+
+**Labour.** Mobility is TWO ROUNDS OF ONE MATCHING FUNCTION: every seeker offers in the trade it
+has, then the ones nobody took offer in the trades they have not, into whatever the first round left
+unfilled. Who moves is whoever was left over, and what moving costs is TIME — a mover is productive
+after the hiring lag AND a quarter of retraining, so the employer pays weeks of wages for work it
+does not yet get. Deliberately not a fee: a retraining payment with no payee is a one-sided flow,
+and time is what a new trade actually costs somebody. It is also why an employer fills from its own
+trade first and why unemployment and vacancies can be high at once. **Participation has the wage in
+it**: the going rate is public, so a cell does not offer into a trade paying less than it lives on,
+and employers bidding up bring the discouraged back.
+
+**Housing.** A dwelling is a GOOD — built, half a year to make, standing where it was built, wearing
+out, and `portable: false` for the oldest reason a price is local. A tenancy is a VENUE, because
+what changes hands is the right to be in it for a period and not the thing itself. Rent clears
+between what letting WEARS the owner (the dwelling's own spoilage against its own price) and what a
+household can pay rather than have nowhere (its own outlook of its income over the occupancy a
+member needs) — two reads, no coefficient. Owner-occupation is an outcome and not a tenure flag: a
+household that owns what its people live in does not bid, and pays nobody.
+
+**Credit.** A mortgage is a secured loan row with a REAL LIEN, placed every period up to what is
+still owed, so the register itself refuses to let the roof be sold out from under the loan.
+Foreclosure releases the lien, moves the dwellings, and the lender sells into the same session
+everybody else does, so the recovery is what it FETCHED. The bank never learns what a dwelling is:
+the request names an instrument it could take and realise, which is the whole of what security means
+to a lender. **And the standard is a read**: what it would lose is the part the security does not
+cover at the market's own price, so a bank lending against a falling thing requires more of every
+borrower without anybody tightening anything.
+
+**`loan.operatingCost` is deleted.** It was half a per cent a year on every principal, paid to
+nobody. A bank employs people now, in three trades of its own, and what servicing costs is the hours
+its book takes times what it is actually paying for an hour, over the principal it is servicing — so
+a small loan is dearer than a large one out of the arithmetic rather than out of a table. A dealing
+desk covers the hours it employs over the hours one line takes, so a desk that sheds staff drops
+lines and their books journal `market.noView`.
+
+**The household stopped running an analyst's models.** `savingLines` discounted a bond's cash flows,
+capitalised a company's published earnings and marked a fund at its book, in one loop, for one cell.
+That is one analytical technology handed to everybody — the representative agent one level up — and
+it meant parties disagreed only because they had observed different things, which converges. Now it
+is the same ladder a loaf is bought on: its own outlook, the last print, or nothing. What it will
+PAY is the bottom of the range it thinks the price could be in, so two cells looking at one print
+want different prices for it. `priceAt`, `curveFamilyOf` and the whole of `publishedBy` are gone.
+
+**And the retail door into XI-2**: a cell's cushion is against what it holds as well as what it
+earns, so a price shock makes it want more cash and bid lower in one read — the redemption is a
+household wanting its cushion, not a coefficient. With a declared preference for owning the MARKET
+rather than names, which is what makes retail flow undifferentiated and what a tracker is for.
+
+**What is MISSING rather than out of scope, and says so.** Household formation and dissolution:
+Appendix B forbids a birth rate by name, so a household coming into being has to be a decision
+somebody takes, and nothing in this world yet has the reason to take it. Until it exists the
+population falls, and that is a finding about a missing mechanism. Rent is not in the consumer index:
+the index walks settled asset legs and a tenancy is a money leg with no instrument behind it, so it
+needs a second index rule — positioned to 16. The pension claim is PARTIAL to 13h, as planned.
+
+**Forecast, with what would kill it (Law 17).** A place that builds houses slowly should pay more
+for them and more to rent them, and its firms should pay more to hire, because a household's
+reservation wage is what it lives on and rent is most of that. Two falsifications, both 16's: cut
+the build lag and the gap should close; raise the dwellings a cohort needs and the gap should widen
+in the place that cannot build. If rent and wages move independently, the reservation wage is not
+reading what it is supposed to be reading.

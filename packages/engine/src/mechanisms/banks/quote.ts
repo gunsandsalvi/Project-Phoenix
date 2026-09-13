@@ -16,7 +16,7 @@
  * that did not happen (XI-1, Firm Birth C2.a) — and it is the channel by which a default becomes
  * information about what the next loan costs (Corporate Credit G8).
  */
-import type { PartyId } from '../../core/ids.js';
+import type { PartyId, InstrumentId} from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
 import {
   add,
@@ -24,6 +24,7 @@ import {
   div,
   mul,
   sub,
+  sum,
 } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -120,12 +121,36 @@ export function probabilityOfDefault(
 }
 
 /**
- * C1.b: what it would lose if that happened. An unsecured claim on a borrower recovers what the
- * estate realises, and there is no estate yet (worklist 7) — so all of it, which is the honest
- * number and not a stated recovery rate.
+ * C1.b, C5, C5.a (13d): WHAT IT WOULD LOSE IF THAT HAPPENED, and for a secured claim it is a read of
+ * what stands behind it AT THE MARKET'S OWN PRICE.
+ *
+ * An unsecured claim recovers what the estate realises, and until the estate distributes that is all
+ * of it — the honest number rather than a stated recovery rate. A SECURED claim recovers what the
+ * security fetches, so what is lost is the part the security does not cover: one less what it is
+ * worth over what is owed. There is no constant anywhere in that, and no loan-to-value LIMIT: what
+ * moves the standard is the PRICE of the thing pledged, so a bank lending against dwellings in a
+ * place where dwellings are falling requires more of every borrower there, without anybody
+ * tightening anything (C5.a). A pledge of something nobody prices covers nothing, which is a real
+ * answer and not a zero anybody chose.
  */
-export function lossGivenDefault(security: readonly unknown[]): number {
-  return security.length > 0 ? 0 : 1;
+export function lossGivenDefault(
+  security: readonly { readonly instrument: InstrumentId; readonly qty: number }[],
+  /** What the market last said a unit of the thing pledged is worth, or none because it has not said. */
+  worthOf: (instrument: InstrumentId) => number | undefined,
+  /** What is owed, in the same money. A claim secured on more than it lends loses nothing. */
+  owed: number,
+): number {
+  if (security.length === 0 || owed <= 0) return 1;
+  const behind = sum(
+    security.map((row) => {
+      const price = worthOf(row.instrument);
+      if (price === undefined) return 0;
+      return mul(row.qty, price, 'what the security is worth');
+    }),
+  ).value;
+  const uncovered = sub(owed, behind, 'the part the security does not cover');
+  if (uncovered <= 0) return 0;
+  return div(uncovered, owed, 'of every unit lent');
 }
 
 /** C1: the quote, built from this bank's own state and this borrower's own record. */
@@ -139,7 +164,9 @@ export function quote(
   defaults: readonly Event[],
 ): Quote {
   const pd = probabilityOfDefault(view, decl, borrower, defaults);
-  const expectedLoss = mul(pd, lossGivenDefault([]), 'expected loss');
+  // C1.b: an offer to a borrower is priced before it is secured on anything — what it would put up
+  // reaches the lender in the REQUEST, and the quote is about the borrower.
+  const expectedLoss = mul(pd, lossGivenDefault([], () => undefined, 1), 'expected loss');
   // C1.c: the capital this loan consumes, times what this bank needs to earn on it.
   const consumed = mul(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit lent');
   const capitalCharge = mul(consumed, view.params.perAnnum(bankParam(decl.bank, 'returnOnCapital')), 'capital charge');

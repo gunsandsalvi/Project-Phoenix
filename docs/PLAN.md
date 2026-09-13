@@ -14,8 +14,8 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 73.2%** (513 of 701 steps across 45 items).
-**Requirement coverage: 56.4%** (771 MET, 86 PARTIAL, 0 OUT OF SCOPE of 1366 REASON/VERIFY/FORBID clauses).
+**Plan completion: 74.8%** (524 of 701 steps across 45 items).
+**Requirement coverage: 56.9%** (780 MET, 87 PARTIAL, 0 OUT OF SCOPE of 1370 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|
@@ -54,7 +54,7 @@ The plan has two parts:
 | 13c.1 — The map, and the things that move on it | 17 | 17 | closed |
 | 13c.2 — The rest of the economy: services, distribution and retail | 11 | 11 | closed |
 | 13d.1 — A cell's key carries its age, its tenure and its wealth | 12 | 12 | closed |
-| [13d — Labour mobility, housing, household life cycle](plan/13d-labour-housing-lifecycle.md) | 26 | 15 | in progress |
+| 13d — Labour mobility, housing, household life cycle | 26 | 26 | closed |
 | [13e — Trade credit, small business, securitisation](plan/13e-trade-credit-pools-securitisation.md) | 20 | 0 | open |
 | [13f — Corporate credit, short-term debt, lending and financing](plan/13f-corporate-credit-financing.md) | 33 | 0 | open |
 | [13g — Corporate development: where a firm builds, what it buys, and what it is in](plan/13g-mna-birth.md) | 24 | 0 | open |

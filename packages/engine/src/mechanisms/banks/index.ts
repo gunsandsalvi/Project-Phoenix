@@ -874,6 +874,15 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       why: 'Banks Capital B1.b: the BACKSTOP — capital against everything it holds, with no weights in it at all. It exists because B1 weights, and a rule that weights can be gamed by holding what the rule calls safe: a bank stuffed with zero-weighted paper passes the weighted test at any size. Which of the two binds is an outcome and differs by bank (B1.c), which is the whole reason to have both.',
     },
     {
+      id: STAFF_PARAMS.hoursPerLinePeriod,
+      value: 6,
+      unit: 'hours of a dealer per line per period',
+      dimension: 'count',
+      kind: 'technology',
+      owner: 'model',
+      why: 'Dealer Desks D1, D4 (13d): what it takes to QUOTE one line — somebody prices it, somebody carries the position, somebody answers the phone. How many lines a desk can cover is therefore the hours it employs over this, so a desk that sheds staff drops lines and their books journal `market.noView` because nobody is standing in them. A coverage stated directly would be a count of people wearing a policy\u2019s clothes.',
+    },
+    {
       id: LENDING_PARAMS.hoursPerLoanPeriod,
       value: 0.6,
       unit: 'hours of a lending officer per loan per period',
@@ -1113,7 +1122,24 @@ function worthToItsLender(rows: readonly BankDecl[], ctx: MechanismContext, i: I
   if (decl === undefined) return none<number>();
   const view = ctx.participant(i.terms.lender);
   const pd = probabilityOfDefault(view, decl, i.terms.borrower, seenDefaults(ctx));
-  const loss = mul(pd, lossGivenDefault(i.terms.security), 'what it expects to lose per unit');
+  /**
+   * C5.a (13d): what stands behind it, at the MARKET's own price, read when the question is asked.
+   * So a bank holding claims secured on a thing whose price is falling carries them lower, without
+   * anybody tightening anything — which is what a lending standard actually is.
+   */
+  const owed = ctx.register.heldTotal(i.id).value;
+  const loss = mul(
+    pd,
+    lossGivenDefault(
+      i.terms.security,
+      (pledged) => {
+        const print = ctx.prices.latest(pledged, ctx.period);
+        return print.some ? print.value.price : undefined;
+      },
+      owed,
+    ),
+    'what it expects to lose per unit',
+  );
   return some(sub(1, loss, 'what a unit is worth to it'));
 }
 

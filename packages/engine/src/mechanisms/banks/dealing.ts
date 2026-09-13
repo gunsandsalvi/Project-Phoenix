@@ -16,6 +16,7 @@
  * the capital the position consumes has to earn. A bank that carried inventory for free would have
  * to be a bank that paid nothing for its money.
  */
+import { linesCovered } from './staff.js';
 import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
 import {
@@ -236,6 +237,24 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
  * — so they face each other through it, which is the interdealer market (E3) without a second
  * venue for it.
  */
+/**
+ * D1: whether this line is inside what the desk's people can cover. The lines it makes in, in the
+ * instruments store's own order, taking the first `linesCovered` of them — a stable order, so a
+ * desk that loses an hour drops the same line every time rather than a different one each period.
+ */
+function covers(view: ParticipantView, line: InstrumentId): boolean {
+  const room = linesCovered(view);
+  if (room <= 0) return false;
+  let seen = 0;
+  for (const x of view.instruments.all()) {
+    if (!x.status.live || !x.market.some) continue;
+    if (x.id === line) return seen < room;
+    seen += 1;
+    if (seen >= room) return false;
+  }
+  return false;
+}
+
 export function dealingOrders(
   view: ParticipantView,
   m: MarketDecl,
@@ -260,6 +279,16 @@ export function dealingOrders(
    */
   const makers = makersOf?.(i.id);
   if (makers !== undefined && !makers.includes(String(view.self.id))) return [];
+  /**
+   * Dealer Desks D1, D4, XI-13 (13d): AND IT CAN ONLY COVER WHAT IT EMPLOYS. Quoting a line is
+   * people watching it, so how many lines this desk can be in is the hours it actually pays for
+   * over the hours one line takes — and a desk that sheds staff drops lines, whose books then
+   * journal `market.noView` because nobody is standing in them.
+   *
+   * Which lines it drops is the register's own order and never a choice made here: a desk under
+   * pressure keeps what it already holds and stops quoting the rest, which is what a dealer does.
+   */
+  if (!covers(view, i.id)) return [];
   const state = stateOf(view, d);
   if (state === undefined) return [];
   const quoted = quoteFor(view, i.id, state);
