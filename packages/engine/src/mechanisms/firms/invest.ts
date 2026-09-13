@@ -44,6 +44,7 @@ import type { ParticipantView } from '../../world/context.js';
 import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../../registry/physical.js';
 import type { PlannedOrder } from './decide.js';
 import { downTick, upTick } from '../../core/tick.js';
+import { about } from '../../world/context.js';
 
 /** B1.b: what money costs this firm at the margin, now, and what it is made of. */
 export interface CostOfCapital {
@@ -160,7 +161,7 @@ function requiredOnEquity(view: ParticipantView): Option<number> {
   if (!line.some) return none<number>();
   const print = view.print(line.value);
   if (!print.some || print.value.price <= 0) return none<number>();
-  const outlook = view.outlook('earnings');
+  const outlook = view.outlook(about({ on: 'earnings' }));
   if (!outlook.some) return none<number>();
   const shares = view.instruments.get(line.value).issued;
   if (shares <= 0) return none<number>();

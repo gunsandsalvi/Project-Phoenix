@@ -299,7 +299,10 @@ export const expectations: SystemModule = {
       });
     },
     // A2: what it has observed, and nothing more. A party with no history answers with nothing.
-    variables: (ctx, party): readonly OutlookVariable[] => Object.keys(book(ctx)[party] ?? {}),
+    variables: (ctx, party): readonly OutlookVariable[] =>
+      // The store IS the encoding's home (`about` in world/context.ts), so its own keys are the
+      // branded thing by construction; nothing outside here ever makes one from a string.
+      Object.keys(book(ctx)[party] ?? {}) as OutlookVariable[],
   },
 };
 

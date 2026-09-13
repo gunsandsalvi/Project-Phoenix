@@ -53,6 +53,7 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { DWELLING, HOUSING_PARAMS, TENURE, rentVenue, type TenureDecl } from './data.js';
+import { about } from '../../world/context.js';
 
 export * from './data.js';
 
@@ -217,7 +218,7 @@ function reservation(view: ParticipantView, rows: readonly TenureDecl[]): number
   if (self.representation !== 'cell') return undefined;
   const row = rows.find((r) => r.cohort === keyOf(self, 'cohort'));
   if (row === undefined) return undefined;
-  const income = view.outlook('income');
+  const income = view.outlook(about({ on: 'income' }));
   if (!income.some || income.value.expected <= 0) return undefined;
   const per = view.registry.pieces(
     goodUnitOf(view, self.region),
@@ -434,7 +435,7 @@ function shortOfMoney(
   const region = view.self.region;
   const id = goodId(DWELLING, region);
   if (!ctx.instruments.has(id)) return undefined;
-  const outlook = view.outlook(`price.${id}`);
+  const outlook = view.outlook(about({ on: 'price', instrument: id }));
   const print = view.print(id);
   const price = outlook.some ? outlook.value.expected : print.some ? print.value.price : undefined;
   if (price === undefined || price <= 0) return undefined;

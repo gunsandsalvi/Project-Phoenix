@@ -41,6 +41,7 @@ import type { ParticipantView } from '../../world/context.js';
 import { goodId, goodMarketId } from '../../registry/physical.js';
 import type { ConsumptionDecl } from './data.js';
 import { rungsUpTo } from './demand.js';
+import { about } from '../../world/context.js';
 
 /** One line of a cell's demand: a size at a level, in the market it is posted in. */
 export interface DemandStep {
@@ -106,7 +107,7 @@ export function spendPerMember(
   p: HouseholdParams,
   onDemand: number,
 ): Option<Spending> {
-  const income = view.outlook('income');
+  const income = view.outlook(about({ on: 'income' }));
   if (!income.some) return none();
   const ccy = view.registry.currencyOf(view.self.region);
   const cash = view.cash(ccy);
@@ -168,7 +169,7 @@ export function spendPerMember(
 function atRisk(view: ParticipantView): number {
   const terms: number[] = [];
   for (const h of view.holdings()) {
-    const outlook = view.outlook(`price.${String(h.instrument)}`);
+    const outlook = view.outlook(about({ on: 'price', instrument: h.instrument }));
     if (!outlook.some || outlook.value.confidence <= 0) continue;
     const units = sum(h.lots.map((l) => l.qty));
     if (units.value <= 0) continue;
@@ -297,7 +298,7 @@ function lineFor(
   p: HouseholdParams,
 ): Line | undefined {
   const instrument = goodId(row.subUnit, self.region);
-  const outlook = view.outlook(`price.${instrument}`);
+  const outlook = view.outlook(about({ on: 'price', instrument: instrument }));
   const print = view.print(instrument);
   const expected = outlook.some
     ? outlook.value.expected

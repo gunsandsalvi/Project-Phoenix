@@ -72,6 +72,7 @@ import {
 } from './invest.js';
 import { downTick, upTick } from '../../core/tick.js';
 import { NO_QTY, asQty, type Qty } from '../../core/tick.js';
+import { about } from '../../world/context.js';
 
 /** An order the firm has decided to post, in the form the market takes it (Clearing A2). */
 export interface PlannedOrder {
@@ -205,7 +206,7 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
  * and is all a party with no history of its own has. From its first sale its own outlook leads.
  */
 export function expectedPrice(view: ParticipantView, instrument: InstrumentId): Option<number> {
-  const own = view.outlook(`price.${instrument}`);
+  const own = view.outlook(about({ on: 'price', instrument: instrument }));
   if (own.some) return some(own.value.expected);
   const print = view.print(instrument);
   return print.some ? some(print.value.price) : none<number>();
@@ -343,7 +344,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   const venue = venueOf(view, line);
   const wage = venue === undefined ? none<number>() : wageFacing(view, venue);
   const inputPrices = tech.inputs.map((i) => expectedPrice(view, i.instrument));
-  const sales = view.outlook(`sold.${output}`);
+  const sales = view.outlook(about({ on: 'sold', instrument: output }));
   if (!price.some || !sales.some || inputPrices.some((p) => !p.some)) {
     return selling.length === 0
       ? none<Plan>()

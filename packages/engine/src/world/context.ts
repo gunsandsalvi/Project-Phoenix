@@ -16,7 +16,7 @@ import type { Periodicity } from '../core/rate.js';
 import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import type {
+import type { Brand,
   CurrencyCode,
   CurveFamilyId,
   DerivativeKindId,
@@ -39,6 +39,9 @@ import type { Valuation } from '../prices/value.js';
 import type { Holding, Register, RegisterReads } from '../register/register.js';
 import type { Voyage } from '../register/voyages.js';
 import type { PartyId as VoyagePartyId, VoyageId } from '../core/ids.js';
+import { assertNever } from '../core/assert.js';
+import { none, some } from '../core/option.js';
+import { instrumentId, partyId } from '../core/ids.js';
 
 /** Law 4: every read of the voyage store and no writer. The writes reach settlement and nothing else. */
 export interface VoyagesRead {
@@ -190,7 +193,76 @@ export interface Outlook {
  * actually observe — `income` for what reached it, `price.<instrument>` for what it traded at — and
  * a party that has never observed one has no outlook of it (Expectations A2).
  */
-export type OutlookVariable = string;
+/**
+ * §46, XI-16, Law 15: WHAT A BELIEF IS ABOUT, from a closed list.
+ *
+ * A party's whole belief system was keyed by a BARE STRING, so the only belief this world could
+ * express was an extrapolation of an observable — `price.<id>`, `bought.<id>`, `income`. Twenty-five
+ * call sites, and **not one of them was about another PARTY**. That is what a probability of default
+ * is, and a rating opinion, and a dealer's adverse-selection charge, and a depositor's confidence,
+ * and an acquirer's view of a target. Appendix B requires one PD model per borrower; there was
+ * nowhere for one to live, so there was none, and this world has 96 loans across 9,006 firms.
+ *
+ * The tells were in the tree: `control` reached for a variable through an `as never` cast, and
+ * `options` recovered which instrument a belief was about by `startsWith('price.')` and `slice` —
+ * a fact taken back out of a string, which is the shape A-52 names.
+ *
+ * `credit` is the one this list adds, and it is the whole point: a belief HELD BY one party ABOUT
+ * another. Everything else here already existed as a spelling; what is new is that a spelling
+ * nobody declared can no longer be formed (`docs/AUDIT.md` item 6).
+ */
+export type Subject =
+  | { readonly on: 'price'; readonly instrument: InstrumentId }
+  | { readonly on: 'bought'; readonly instrument: InstrumentId }
+  | { readonly on: 'sold'; readonly instrument: InstrumentId }
+  | { readonly on: 'income' }
+  | { readonly on: 'earnings' }
+  /** What this party thinks of THAT one: whether it is good for what it owes (Banks Lending A2). */
+  | { readonly on: 'credit'; readonly party: PartyId };
+
+/**
+ * The key a subject is stored under. The store is still a map keyed by a string, and this is the
+ * one place that string is made — so the encoding has a single writer (Law 4) and no reader
+ * anywhere takes it apart again.
+ */
+export type OutlookVariable = Brand<string, 'OutlookVariable'>;
+
+export function about(s: Subject): OutlookVariable {
+  switch (s.on) {
+    case 'price':
+    case 'bought':
+    case 'sold':
+      return `${s.on}.${String(s.instrument)}` as OutlookVariable;
+    case 'credit':
+      return `credit.${String(s.party)}` as OutlookVariable;
+    case 'income':
+    case 'earnings':
+      return s.on as OutlookVariable;
+    default:
+      return assertNever(s, '§46 B1');
+  }
+}
+
+/**
+ * The subject a stored key is about — the ONE reader of the encoding `about` is the one writer of.
+ *
+ * It exists so nothing else takes a key apart. `options` used to ask which instruments it had a
+ * view on by `variable.startsWith('price.')` and `variable.slice(...)`, which is a fact recovered
+ * from a string (A-52); it asks for subjects now and switches on what they are.
+ */
+export function subjectOf(v: OutlookVariable): Option<Subject> {
+  const s = String(v);
+  if (s === 'income' || s === 'earnings') return some({ on: s });
+  const dot = s.indexOf('.');
+  if (dot < 0) return none<Subject>();
+  const on = s.slice(0, dot);
+  const rest = s.slice(dot + 1);
+  if (on === 'price' || on === 'bought' || on === 'sold') {
+    return some({ on, instrument: instrumentId(rest) });
+  }
+  if (on === 'credit') return some({ on, party: partyId(rest) });
+  return none<Subject>();
+}
 
 /** Observer A1-A4: a party's own state plus the public state, and nothing else. */
 export interface ParticipantView extends KernelReads {
@@ -292,6 +364,8 @@ export interface ParticipantView extends KernelReads {
    * and what it has a view of cannot disagree (Law 4).
    */
   outlookVariables(): readonly OutlookVariable[];
+  /** §46 A2: what this party has a view ON, as the things they are rather than as keys. */
+  outlookSubjects(): readonly Subject[];
   /**
    * Money E1.b, Firm D4, D5: its OWN payments that did not go through, most recent last. A party
    * knows what it failed to pay and what did not reach it, because it was a side of both; it learns

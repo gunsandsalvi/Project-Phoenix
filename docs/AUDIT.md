@@ -116,7 +116,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **3** | `PublishedStatement` | 0 | **corrected**: does not block 4 — accounts are already published to the journal and read cross-module. A typed read, after 4. |
 | **4** | `worthTo` | 1 | **BUILT** — the valuation door. `liquidity` and an equity mandate remain |
 | **5** | `Receipt` | 6 | **BUILT** — the tax is a dispatch. Emitting `disposal` from a trade remains |
-| **6** | `View` | 1 | independent; **4** wants it for the borrower haircut |
+| **6** | `View` | 1 | **BUILT** — the noun. A bank actually forming a credit view is the mechanism that follows |
 | **7** | `Lifecycle` | 2 | independent; **8** and 13n want the states |
 | **8** | `Agreement` | 9 | needs **5** — an agreement performing is a receipt |
 | **9** | `Control` | 2 | independent; 13o and §29 cannot exist without it |
@@ -1588,6 +1588,33 @@ three readers downstream were not told.
 ---
 
 ## 6. `View` — what a party thinks of another party
+
+> **BUILT.** `OutlookVariable` is branded and can only be made by `about(subject)`, where `Subject`
+> is a closed union: `price | bought | sold` of an instrument, a party's own `income` or `earnings`,
+> and **`credit` of another party** — the one this world could not say.
+>
+> **The evidence was in the tree before the change.** Twenty-five call sites, every one about an
+> OBSERVABLE and not one about a party. `control/index.ts:179` reached for a variable through an
+> `as never` cast. `options/index.ts` recovered which instrument a belief was about by
+> `variable.startsWith('price.')` and `variable.slice(...)` — a fact taken back out of a string,
+> which is A-52's shape. Both are gone: the cast because the constructor makes the key, the surgery
+> because `outlookSubjects()` hands back the things themselves. `PRICE_OF` is deleted.
+>
+> The encoding has exactly one writer (`about`) and one reader (`subjectOf`), in the same file, and
+> nothing else anywhere makes or parses a key.
+>
+> **What this does not do**, said plainly: `credit` is now expressible and **nothing forms one yet.**
+> A bank's credit decision reading its own view of a borrower is a MECHANISM, and it is what closes
+> A-31 and the 96-loans-across-9,006-firms finding. The noun is the prerequisite, not the answer.
+> Folding `ratings`, `research` and `banks/reserves` into it — three private stores that are this
+> noun in three shapes — follows the same way.
+>
+> **Also fixed here: a regression item 0 introduced and I missed.** `doors.test.ts`'s fixture modules
+> kept undeclared stores, so the ontology register refused them; item 0 was measured against
+> `nouns.test.ts` and `world.test.ts` and not against the file that exercises the module doors. Two
+> tests, red since item 0, green again. It is the only file that was affected — nothing else in the
+> suite keeps a store of its own.
+
 
 **Why.** `export type OutlookVariable = string` (`world/context.ts:193`). A party's entire belief
 system is a bare-string namespace, and the only belief the type system can express is an

@@ -48,6 +48,7 @@ import { FIRM } from '../../registry/profiles.js';
 import { weightOf } from '../../parties/party.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { period as periodOf } from '../../calendar/calendar.js';
+import { about } from '../../world/context.js';
 
 /** Law 9: one book per target, because what is being priced is control of THAT firm. */
 export const tenderVenue = (target: PartyId): VenueId => venueId(`control:${target}`);
@@ -176,7 +177,7 @@ export function tenders(
 ): readonly Order[] {
   const units = downTick(holder.free(line));
   if (units <= 0) return [];
-  const own = holder.outlook(`price.${String(line)}` as never);
+  const own = holder.outlook(about({ on: 'price', instrument: line }));
   if (!own.some) return [];
   // It sells at its own number or better. What it gets is the clearing price, which is at or above
   // it — the ordinary meaning of an offer, and the reason a tender clears rather than being taken.

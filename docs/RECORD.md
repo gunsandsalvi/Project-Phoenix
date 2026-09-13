@@ -4334,3 +4334,52 @@ branch would be an outcome written as a rule.
 
 **Measured.** `households`, `treasury`, `estate`: 10 red before, 10 after, same names. Green: lint,
 typecheck, spec citations, forbids, plan progress, `receipt.test.ts` 6 of 6.
+
+
+## Item 6 — a belief has a subject, and one of them is another party
+
+**What.** `OutlookVariable` is branded and can only be made by `about(subject)`. `Subject` is a
+closed union — `price | bought | sold` of an instrument, a party's own `income` or `earnings`, and
+**`credit` of another party**.
+
+**Why.** It was `export type OutlookVariable = string`. A party's whole belief system was a bare
+string namespace, so the only belief this world could express was an extrapolation of an observable.
+Twenty-five call sites, and **not one of them was about another PARTY** — which is what a probability
+of default is, and a rating opinion, a dealer's adverse-selection charge, a depositor's confidence
+and an acquirer's view of a target. Appendix B requires one PD model per borrower; there was nowhere
+for one to live, so there is none, and this world has 96 loans across 9,006 firms.
+
+**Two tells were already in the tree.** `control/index.ts:179` reached for a variable through an
+`as never` cast — somebody fighting a type that could not say what they meant. And `options`
+recovered which instrument a belief was about by `variable.startsWith('price.')` and
+`variable.slice(...)`: a fact taken back out of a string, which is exactly A-52's shape. Both are
+gone. The cast, because the constructor makes the key. The surgery, because the view hands back
+`outlookSubjects()` — the things themselves — and `PRICE_OF` is deleted, which is the code this
+change removes rather than adds (Law 12).
+
+**One writer, one reader.** `about` makes the key and `subjectOf` reads it, in the same file, and
+nothing else anywhere makes or parses one. The compiler generated the migration list: sixteen module
+files and four test files, every site converted, no cast surviving.
+
+**What this does NOT do, and it matters.** `credit` is expressible and **nothing forms one yet**. A
+bank's credit decision reading its own view of a borrower is a mechanism, not a type, and it is what
+would close A-31 and the lending finding. Folding `ratings`, `research` and `banks/reserves` into the
+noun — three private stores that are this thing in three shapes — follows the same way. The test
+asserts `credit` is absent from what the world currently holds, so the day one appears, the assertion
+says so.
+
+**A regression of my own, found and fixed here.** `doors.test.ts` had been red since item 0: its
+fixture modules keep their own stores and the ontology register rightly refused them. I measured item
+0 against `nouns.test.ts` and `world.test.ts` and not against the file whose subject is the module
+doors. Two tests green again, and a sweep confirms it was the only file affected — nothing else in
+the suite keeps a store of its own.
+
+**Forecast, with its killer.** A belief under a name nobody declared can no longer be written, and
+the test walks every belief a real world holds to prove it. **What would falsify it:** a subject the
+closed union cannot express turning up as a genuine need — most likely a belief about a THING that
+is not an instrument, such as a place or a line of business, both of which are nouns items 12 and 11
+are about.
+
+**Measured.** The five files this reaches: **7 red before, 5 after** — the two it fixed are the ones
+item 0 broke. Green: lint, typecheck, spec citations, forbids, plan progress, `view.test.ts` 5 of 5,
+`doors.test.ts` 19 of 19.

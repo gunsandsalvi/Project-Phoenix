@@ -39,6 +39,7 @@ import { rigSpec, withDependencies, mergeModules } from './rig.js';
 import { paidTo } from './expected.js';
 import { notDealing } from './no-dealing.js';
 import { asQty, type Qty } from '../src/core/tick.js';
+import { about, type OutlookVariable } from '../src/world/context.js';
 
 const WHEAT = instrumentKindId('good.wheat');
 const TONNES = unitId('tonnes');
@@ -79,6 +80,22 @@ function goodsModule(profile: InstrumentKindProfile, run: (ctx: MechanismContext
     id: 'test.goods',
     spec: 'Goods A, E',
     requires: ['seed.foundation'],
+    // Item 0: a store is declared or it does not open, in a test module as anywhere else. Both of
+    // these are the module's own within-period bookkeeping and neither is a noun the kernel wants.
+    nouns: [
+      {
+        name: 'ledger',
+        kind: 'working',
+        holds: 'how many times this fixture\u2019s phase has run',
+        why: 'a fixture counting its own runs, to prove a slot is created once and kept',
+      },
+      {
+        name: 'outlooks',
+        kind: 'working',
+        holds: 'the fixture outlook book the door test stands one up with',
+        why: 'a stand-in for the expectations module, so the DOOR can be tested without it',
+      },
+    ],
     instrumentKinds: [profile],
     partyKinds: [],
     curveFamilies: [],
@@ -189,7 +206,7 @@ describe("a module's own state (Law 4)", () => {
 describe('what a party expects (Expectations A2)', () => {
   it('has no answer at all until a module says what a party expects', () => {
     const w = world();
-    expect(w.participantView(FIRM_1).outlook('goods.price.wheat').some).toBe(false);
+    expect(w.participantView(FIRM_1).outlook(about({ on: 'income' })).some).toBe(false);
   });
 
   it('comes from the one module that keeps them, through that module own state', () => {
@@ -198,7 +215,7 @@ describe('what a party expects (Expectations A2)', () => {
       id: 'test.outlooks',
       outlooks: {
         of: (ctx, party, variable) => {
-          const s = ctx.state<Record<string, number>>('outlooks', () => ({ 'firm.1|x': 3 }));
+          const s = ctx.state<Record<string, number>>('outlooks', () => ({ 'firm.1|income': 3 }));
           const v = s[`${party}|${variable}`];
           return v === undefined
             ? none<Outlook>()
@@ -211,22 +228,22 @@ describe('what a party expects (Expectations A2)', () => {
               });
         },
         variables: (ctx, party) =>
-          Object.keys(ctx.state<Record<string, number>>('outlooks', () => ({ 'firm.1|x': 3 })))
+          Object.keys(ctx.state<Record<string, number>>('outlooks', () => ({ 'firm.1|income': 3 })))
             .filter((k) => k.startsWith(`${party}|`))
-            .map((k) => k.slice(`${party}|`.length)),
+            .map((k) => k.slice(`${party}|`.length) as OutlookVariable),
       },
     };
     const w = world(outlooks);
-    const got = w.participantView(FIRM_1).outlook('x');
+    const got = w.participantView(FIRM_1).outlook(about({ on: 'income' }));
     expect(got.some).toBe(true);
     expect(got.some ? got.value.expected : null).toBe(3);
     // A2: the door also says WHICH variables this party has an outlook of, so nothing has to guess
     // a name — and a party that has observed nothing answers with nothing.
-    expect(w.outlookVariables(FIRM_1)).toEqual(['x']);
+    expect(w.outlookVariables(FIRM_1)).toEqual([about({ on: 'income' })]);
     expect(w.outlookVariables(BANK_A)).toEqual([]);
     // A2.b: nobody else's expectation is reachable, and an unobserved variable has none.
-    expect(w.participantView(FIRM_1).outlook('y').some).toBe(false);
-    expect(w.participantView(BANK_A).outlook('x').some).toBe(false);
+    expect(w.participantView(FIRM_1).outlook(about({ on: 'earnings' })).some).toBe(false);
+    expect(w.participantView(BANK_A).outlook(about({ on: 'income' })).some).toBe(false);
   });
 
   it('refuses a second writer of what a party expects (Law 4)', () => {

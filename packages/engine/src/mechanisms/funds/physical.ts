@@ -26,6 +26,7 @@ import type { Order } from '../../clearing/solver.js';
 import { isGoodTerms, spacePerPiece, storageRateIn } from '../../registry/physical.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { FundDecl } from './data.js';
+import { about } from '../../world/context.js';
 
 /** A4, Law 15: a mandate of physical things and nothing else. Structural, never a flag on the row. */
 export function holdsPhysical(view: ParticipantView, d: FundDecl): boolean {
@@ -51,7 +52,7 @@ export function physicalOrders(
   const i = view.instruments.get(m.instrument);
   if (!i.status.live || !isGoodTerms(i.terms)) return [];
   if (!d.eligible.includes(String(i.kind))) return [];
-  const expected = view.outlook(`price.${m.instrument}`);
+  const expected = view.outlook(about({ on: 'price', instrument: m.instrument }));
   if (!expected.some) return [];
   const spoilage = view.params.ratio(i.terms.spoilage);
   const survives = sub(expected.value.expected, mul(expected.value.expected, spoilage, 'what perishes'), 'what a piece is worth to it at the end of the wait');

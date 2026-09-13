@@ -32,6 +32,7 @@ import type { Instrument } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
 import { levelsBelow, rungsOver } from './demand.js';
 import type { Qty } from '../../core/tick.js';
+import { about } from '../../world/context.js';
 
 /** A bid for paper: a size at the level this cell's own requirement puts on it. */
 export interface PaperBid {
@@ -111,7 +112,7 @@ export function savingLines(
      * and a saver reading the tape is not a saver reading accounts. A line neither of those answers
      * for is one this cell posts nothing in.
      */
-    const outlook = view.outlook(`price.${String(i.id)}`);
+    const outlook = view.outlook(about({ on: 'price', instrument: i.id }));
     const print = view.print(i.id);
     const expected = outlook.some
       ? outlook.value.expected
@@ -191,7 +192,7 @@ export function paperBids(
  * a great deal, which is why the same firm is worth different amounts to two of them.
  */
 export function ownUncertainty(view: ParticipantView): number {
-  const income = view.outlook('income');
+  const income = view.outlook(about({ on: 'income' }));
   if (!income.some || income.value.expected <= 0) return 0;
   const year = yearFraction(
     'ACT/365F',

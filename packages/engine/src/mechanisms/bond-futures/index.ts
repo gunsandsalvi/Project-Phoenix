@@ -42,6 +42,7 @@ import type { Order } from '../../clearing/solver.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { MechanismContext, ParticipantView, WorldReads } from '../../world/context.js';
 import type { DerivativeClassDecl, SystemModule } from '../../world/module.js';
+import { about } from '../../world/context.js';
 
 export const BOND_FUTURE = derivativeKindId('bond.future');
 /** I1: the notional is a count of CONTRACTS, each for a stated amount of face. */
@@ -297,7 +298,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * anything, and a book of those prints one number for ever (`banks/dealing-quote.ts` records
    * what that did to a bill, and reversed the same order for the same reason).
    */
-  const outlook = view.outlook(`price.${String(t.deliverable)}`);
+  const outlook = view.outlook(about({ on: 'price', instrument: t.deliverable }));
   const mine = outlook.some ? outlook.value.expected : cash.value.price;
   /** Where the market is: the comparator that decides the side and the size, never the level. */
   const at = view.print(t.book);

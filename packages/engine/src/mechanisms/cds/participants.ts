@@ -26,6 +26,7 @@ import type { ParticipantView } from '../../world/context.js';
 import { isCds, type CdsTerms } from './contract.js';
 import { cdsLineOf } from './data.js';
 import { isCdsIndex, seriesLineOf } from './series.js';
+import { about } from '../../world/context.js';
 
 /**
  * A1.c, C3, Law 3, XI-13: WHAT THIS PARTY THINKS PROTECTION ON THIS NAME IS WORTH, and it is never
@@ -118,7 +119,7 @@ function ownView(view: ParticipantView, t: CdsTerms): number | undefined {
   // A2: THE VARIABLE IT HAS ACTUALLY OBSERVED. A party forms a view of a thing by watching it, and
   // what it has watched here is the level THIS BOOK struck when it was in it — which the
   // expectations system records from the fill like any other price it traded at.
-  const o = view.outlook(`price.${String(cdsLineOf(t.reference, t.tenorYears))}`);
+  const o = view.outlook(about({ on: 'price', instrument: cdsLineOf(t.reference, t.tenorYears) }));
   return o.some ? o.value.expected : undefined;
 }
 

@@ -83,7 +83,7 @@ import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
 import { dieCell, mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
-import type {
+import type { Subject,
   ContractsRead,
   MechanismContext,
   WorldReads,
@@ -92,6 +92,7 @@ import type {
   ParticipantView,
   VoyagesRead,
 } from './context.js';
+import { subjectOf } from './context.js';
 import type { DerivativeClassDecl } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
 import type {
@@ -1251,6 +1252,14 @@ export class World {
       publicEvents: (last) => this.journal.visibleTo(party, last),
       outlook: (variable) => this.outlookOf(party, variable),
       outlookVariables: () => this.outlookVariables(party),
+      outlookSubjects: () => {
+        const out: Subject[] = [];
+        for (const v of this.outlookVariables(party)) {
+          const s = subjectOf(v);
+          if (s.some) out.push(s.value);
+        }
+        return out;
+      },
       lastPublic: (kind) => {
         const events = this.journal.ofKind(kind).filter((e) => e.public);
         const last = events[events.length - 1];

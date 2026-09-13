@@ -55,6 +55,7 @@ import {
 } from './register.js';
 import { asQty, scaleQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
+import { about } from '../../world/context.js';
 
 /** The numbers the matching reads, all declared by the module (Law 2). */
 export interface LabourParams {
@@ -95,7 +96,7 @@ function participates(ctx: MechanismContext, p: Party, retirementAge: number): b
  */
 function reservation(ctx: MechanismContext, cell: PartyId, hours: number): number | undefined {
   // `income` is what the expectations module names what a party observes reaching it (A2).
-  const outlook = ctx.participant(cell).outlook('income');
+  const outlook = ctx.participant(cell).outlook(about({ on: 'income' }));
   if (!outlook.some) return undefined;
   return div(outlook.value.expected, hours, 'reservation wage');
 }

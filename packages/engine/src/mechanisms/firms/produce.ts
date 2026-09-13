@@ -43,6 +43,7 @@ import { costOfDraw, dueFromLine } from '../../register/register.js';
 import { capacityFrom, utilisation, vintagesHeld } from '../../registry/physical.js';
 import type { FirmDecl } from './data.js';
 import { technologyOf } from './decide.js';
+import { about } from '../../world/context.js';
 
 /** What this period's own wage bill came to for this firm, read from its own record (Law 19). */
 function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): number {
@@ -296,7 +297,7 @@ function yieldBatch(
 
 /** E7, §46 C2: what the management expects to deliver, published, and then judged against. */
 export function publishExpectation(ctx: MechanismContext, firm: PartyId): void {
-  const outlook = ctx.participant(firm).outlook('earnings');
+  const outlook = ctx.participant(firm).outlook(about({ on: 'earnings' }));
   if (!outlook.some) return;
   ctx.record(
     'firms.expectation',

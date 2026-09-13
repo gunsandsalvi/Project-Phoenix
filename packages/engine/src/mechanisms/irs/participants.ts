@@ -27,6 +27,7 @@ import { issuedBy } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
 import { floatingRate, isIrs, type IrsTerms } from './contract.js';
 import { irsLineOf } from './data.js';
+import { about } from '../../world/context.js';
 
 /**
  * B1: WHAT THIS PARTY OWES AT A FIXED RATE, in this money — its own liabilities, read from the
@@ -79,7 +80,7 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
    * had never traded in it printed one number for ever.
    */
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
-  const outlook = view.outlook(`price.${String(irsLineOf(t.ccy, t.tenorYears))}`);
+  const outlook = view.outlook(about({ on: 'price', instrument: irsLineOf(t.ccy, t.tenorYears) }));
   // Law 8: a level is held in MONEY PIECES PER PIECE OF THE THING. Two per cent a year on a unit
   // of notional is two cents, and a schedule posted at 0.02 is below this book's own tick.
   const mine = fixing.some

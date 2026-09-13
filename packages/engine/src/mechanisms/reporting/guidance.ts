@@ -23,6 +23,7 @@ import { dustOf, sub } from '../../core/num.js';
 import type { Outlook } from '../../world/context.js';
 import type { MechanismContext } from '../../world/context.js';
 import { quarterEndingOn, spanOf, type Quarter } from './fiscal.js';
+import { about } from '../../world/context.js';
 
 /** B1: the quarter guidance is ABOUT — the one that opens the day after the one just reported. */
 export function nextQuarter(anchor: number, closed: Quarter): Quarter {
@@ -55,7 +56,7 @@ export function guidanceOf(
   firm: PartyId,
   quarter: Quarter,
 ): Guidance | undefined {
-  const own = ctx.participant(firm).outlook('income');
+  const own = ctx.participant(firm).outlook(about({ on: 'income' }));
   if (!own.some) return undefined;
   const span = spanOf(quarter, ctx.calendar);
   const periods = span.to - span.from + 1;

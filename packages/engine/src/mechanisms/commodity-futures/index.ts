@@ -58,6 +58,7 @@ import type { Instrument } from '../../register/instruments.js';
 import type { Print } from '../../prices/price-store.js';
 import type { MechanismContext, ParticipantView, WorldReads } from '../../world/context.js';
 import type { DerivativeClassDecl, SystemModule } from '../../world/module.js';
+import { about } from '../../world/context.js';
 
 /** Law 8: how a wait in periods becomes a fraction of the year the benchmark is quoted for. */
 const CARRY_DAY_COUNT = 'ACT/ACT';
@@ -289,7 +290,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const spot = view.print(t.deliverable);
   if (!spot.some) return [];
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
-  const outlook = view.outlook(`price.${String(t.deliverable)}`);
+  const outlook = view.outlook(about({ on: 'price', instrument: t.deliverable }));
   const mine = outlook.some ? outlook.value.expected : spot.value.price;
   const at = view.print(t.book);
   let position = 0;

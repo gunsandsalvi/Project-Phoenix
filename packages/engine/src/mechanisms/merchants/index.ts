@@ -29,6 +29,7 @@ import { goodId, goodMarketId, isGoodTerms } from '../../registry/physical.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { merchantParam, type MerchantDecl } from './data.js';
+import { about } from '../../world/context.js';
 
 export * from './data.js';
 
@@ -45,7 +46,7 @@ function indexOf(rows: readonly MerchantDecl[]): ReadonlyMap<string, MerchantDec
 function expected(view: ParticipantView, subUnit: string, region: RegionId): number | undefined {
   const id = goodId(subUnit, region);
   if (!view.instruments.has(id)) return undefined;
-  const outlook = view.outlook(`price.${id}`);
+  const outlook = view.outlook(about({ on: 'price', instrument: id }));
   if (outlook.some) return outlook.value.expected;
   const print = view.print(id);
   if (print.some) return print.value.price;

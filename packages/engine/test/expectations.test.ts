@@ -15,14 +15,16 @@ import {
 } from '../src/index.js';
 import { dustOf } from '../src/core/num.js';
 import { rigWorld } from './rig.js';
+import { about, type Subject } from '../src/world/context.js';
+import { instrumentId } from '../src/core/ids.js';
 
-function expected(w: World, party: string, variable: string): number | null {
-  const o = w.participantView(partyId(party)).outlook(variable);
+function expected(w: World, party: string, subject: Subject): number | null {
+  const o = w.participantView(partyId(party)).outlook(about(subject));
   return o.some ? o.value.expected : null;
 }
 
-function confidence(w: World, party: string, variable: string): number | null {
-  const o = w.participantView(partyId(party)).outlook(variable);
+function confidence(w: World, party: string, subject: Subject): number | null {
+  const o = w.participantView(partyId(party)).outlook(about(subject));
   return o.some ? o.value.confidence : null;
 }
 
@@ -33,9 +35,9 @@ describe('an outlook is personal (Expectations A2)', () => {
     // The treasury pays; the cells are paid. Both saw money arrive, so both have an income outlook.
     const cell = w.parties.ofKind(HOUSEHOLD)[0];
     if (cell === undefined) throw new Error('no cell');
-    expect(expected(w, cell.id, 'income')).not.toBeNull();
+    expect(expected(w, cell.id, { on: 'income' })).not.toBeNull();
     // A2.b: nothing named for the market as a whole, and nothing for a variable it never saw.
-    expect(expected(w, cell.id, 'goods.price.bread')).toBeNull();
+    expect(expected(w, cell.id, { on: 'price', instrument: instrumentId('goods.price.bread') })).toBeNull();
   });
 
   it('is nobody else s: one party s outlook is not reachable from another s view (A2, D1)', () => {
@@ -51,7 +53,7 @@ describe('an outlook is personal (Expectations A2)', () => {
     expect(Object.keys(view)).not.toContain('register');
     expect(Object.keys(view)).not.toContain('outlooks');
     // What it can ask for is its own; asking is a read about self and nothing else.
-    expect(expected(w, BANK_A, 'income')).not.toBeNull();
+    expect(expected(w, BANK_A, { on: 'income' })).not.toBeNull();
   });
 });
 
@@ -91,14 +93,14 @@ describe('how an outlook moves (B1, B2, B4)', () => {
     for (let i = 0; i < 20; i += 1) w.step();
     // The treasury's own income is what it collects, which is nothing in most periods and a lump
     // when the coupons it taxes fall due: a step it did not see coming.
-    const before = expected(w, TREASURY_US, 'income');
+    const before = expected(w, TREASURY_US, { on: 'income' });
     let jumped = false;
     for (let i = 0; i < 20 && !jumped; i += 1) {
       w.step();
-      const now = expected(w, TREASURY_US, 'income');
+      const now = expected(w, TREASURY_US, { on: 'income' });
       if (before !== null && now !== null && Math.abs(now - before) > 1e-9) jumped = true;
     }
-    const after = expected(w, TREASURY_US, 'income');
+    const after = expected(w, TREASURY_US, { on: 'income' });
     expect(after).not.toBeNull();
     // B1: it moved, but by a fraction of the gap — never all the way in one period.
     const surprises = w.journal.ofKind('expectations.surprise').filter((e) => e.subjects[0] === TREASURY_US);
@@ -126,7 +128,7 @@ describe('how an outlook moves (B1, B2, B4)', () => {
   it('makes confidence a read of how wide the recent surprises were (B3)', () => {
     const w = rigWorld('exp-f');
     for (let i = 0; i < 20; i += 1) w.step();
-    const steady = confidence(w, BANK_B, 'income');
+    const steady = confidence(w, BANK_B, { on: 'income' });
     expect(steady).not.toBeNull();
     expect(steady ?? -1).toBeGreaterThanOrEqual(0);
   });

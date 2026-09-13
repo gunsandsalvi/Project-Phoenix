@@ -51,6 +51,7 @@ import type { ParticipantView } from '../../world/context.js';
 import { priceAtYield, requiredYieldOf } from './treasury.js';
 import { downTick } from '../../core/tick.js';
 import { NO_QTY, type Qty } from '../../core/tick.js';
+import { about } from '../../world/context.js';
 
 /** Law 8: a rate is per annum or it is not a rate; this is the convention these reads use. */
 const DAY_COUNT = 'ACT/365F' as const;
@@ -163,7 +164,7 @@ function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number>
   // A CLAIM THAT PROMISES NOTHING has no such anchor — there are no payments to discount (Equity
   // A4) — so for a share the desk's own outlook, and then what it carries one at, is all there is.
   // `priceAtYield` answers none for it, which is what brings the flow here.
-  const own = view.outlook(`price.${instrument}`);
+  const own = view.outlook(about({ on: 'price', instrument: instrument }));
   if (own.some && own.value.expected > 0) return some(own.value.expected);
   const carried = view.mark(instrument);
   return carried.some && carried.value > 0 ? carried : none();
@@ -176,7 +177,7 @@ function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number>
  * for risk is nothing extra and what it charges for CARRY is still there.
  */
 function riskOf(view: ParticipantView, instrument: InstrumentId): number {
-  const own = view.outlook(`price.${instrument}`);
+  const own = view.outlook(about({ on: 'price', instrument: instrument }));
   return own.some ? own.value.confidence : 0;
 }
 
@@ -187,8 +188,8 @@ function riskOf(view: ParticipantView, instrument: InstrumentId): number {
  * share of the flow. Two-way flow costs it nothing — which is B1's reason for quoting at all.
  */
 function adverseOf(view: ParticipantView, instrument: InstrumentId, risk: number): number {
-  const bought = view.outlook(`bought.${instrument}`);
-  const sold = view.outlook(`sold.${instrument}`);
+  const bought = view.outlook(about({ on: 'bought', instrument: instrument }));
+  const sold = view.outlook(about({ on: 'sold', instrument: instrument }));
   const b = bought.some && bought.value.expected > 0 ? bought.value.expected : 0;
   const s = sold.some && sold.value.expected > 0 ? sold.value.expected : 0;
   const both = add(b, s, 'the flow it faced');

@@ -41,12 +41,12 @@ import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule, DerivativeClassDecl } from '../../world/module.js';
+import { about } from '../../world/context.js';
 
 export const OPTION = derivativeKindId('option');
 export const OPTION_CONTRACTS = unitId('optionContracts');
 const OPTION_DAY_COUNT = 'ACT/365F';
 /** Expectations A2: how the outlook book names a view of what a line is worth. */
-const PRICE_OF = 'price.';
 
 export const OPTION_PARAMS = {
   life: paramId('option.life.periods'),
@@ -218,10 +218,11 @@ const optionClass: DerivativeClassDecl = {
    * books it posts in cannot disagree (Law 4, Law 19).
    */
   reasons: (view) => {
+    // §46 A2: the lines this desk has a view on, asked as SUBJECTS. It used to recover them from
+    // the key by `startsWith('price.')` and `slice`, which is a fact taken back out of a string.
     const out: string[] = [];
-    for (const variable of view.outlookVariables()) {
-      if (!variable.startsWith(PRICE_OF)) continue;
-      out.push(variable.slice(PRICE_OF.length));
+    for (const s of view.outlookSubjects()) {
+      if (s.on === 'price') out.push(String(s.instrument));
     }
     return out;
   },
@@ -320,7 +321,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * party with no view of how much the underlying moves has no view of what optionality on it is
    * worth — which is a real answer (D4) and not a gap to fill with somebody else's number.
    */
-  const outlook = view.outlook(`${PRICE_OF}${String(t.underlying)}`);
+  const outlook = view.outlook(about({ on: 'price', instrument: t.underlying }));
   const moves = outlook.some
     ? mul(outlook.value.expected, outlook.value.confidence, 'what it thinks it moves')
     : 0;

@@ -28,6 +28,7 @@ import {
 } from '../src/index.js';
 import { ranWorld } from './rig.js';
 import { dustOf, withinDust } from '../src/core/num.js';
+import { about } from '../src/world/context.js';
 
 function reportsOf(w: World): readonly Event[] {
   return w.journal.ofKind('reporting.report');
@@ -225,7 +226,7 @@ describe('guidance (Reporting B1, B2, B3, B4; Firm E7)', () => {
     expect(said.length, 'nothing was guided in the period the outlooks are read at').toBeGreaterThan(0);
     for (const e of said) {
       const firm = partyId(e.subjects[0]!);
-      const own = w.participantView(firm).outlook('income');
+      const own = w.participantView(firm).outlook(about({ on: 'income' }));
       if (!own.some) throw new Error(`${firm} guided with no outlook of its own income`);
       // ...and the event says which instant it was formed at, so "the same number" is checkable
       // against an older guidance too, by whoever holds that period's outlook (Law 19).
