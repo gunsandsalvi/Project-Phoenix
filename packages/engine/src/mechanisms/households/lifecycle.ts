@@ -29,11 +29,12 @@
  */
 import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
+import { assertNever } from '../../core/assert.js';
 import { div, mul, sub } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { asQty } from '../../core/tick.js';
 import { partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
-import type { Leg } from '../../ledger/instruction.js';
+import type { FailReason, Leg, Unpaid } from '../../ledger/instruction.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
 import { paramId, type ParamId } from '../../core/ids.js';
@@ -191,7 +192,12 @@ function isMoney(ctx: MechanismContext, instrument: InstrumentId): boolean {
  * region and leave the rest — so a cell that had ever been paid abroad could not die, because what
  * the dead held has to go to somebody by name FIRST (Appendix B) and some of it was still there.
  */
-function handToProbate(ctx: MechanismContext, from: PartyId, to: PartyId, region: RegionId): void {
+function handToProbate(
+  ctx: MechanismContext,
+  from: PartyId,
+  to: PartyId,
+  region: RegionId,
+): readonly Unpaid[] {
   const view = ctx.participant(from);
   const weight = weightOf(ctx.parties.get(from));
   const legs: Leg[] = [];
@@ -217,21 +223,50 @@ function handToProbate(ctx: MechanismContext, from: PartyId, to: PartyId, region
       toCell: none(),
     });
   }
+  const cash: { readonly ccy: CurrencyCode; readonly amount: number }[] = [];
   for (const ccy of monies) {
-    const cash = view.cash(ccy);
-    if (cash <= 0) continue;
+    const perMember = view.cash(ccy);
+    if (perMember <= 0) continue;
+    const amount = mul(perMember, weight, 'the money they had between them');
+    cash.push({ ccy, amount });
     legs.push({
       kind: 'money',
       from: ctx.accountOf(from, ccy),
       to: ctx.accountOf(to, ccy),
       ccy,
-      amount: asQty(mul(cash, weight, 'the money they had between them')),
-      fromCell: some({ perMember: cash, weight }),
+      amount: asQty(amount),
+      fromCell: some({ perMember, weight }),
       toCell: none(),
     });
   }
-  if (legs.length > 0) {
-    ctx.settle({ legs, cause: 'corporateAction', reason: `the estate of ${from} goes to probate` });
+  if (legs.length === 0) return [];
+  const r = ctx.settle({ legs, cause: 'corporateAction', reason: `the estate of ${from} goes to probate` });
+  /**
+   * A-20, Money E1, Register C3.b: A FAIL IS A RECORDED STATE, AND THE MODULE HAS TO READ IT.
+   *
+   * This call discarded what `settle` returned, and settlement is atomic — so on a fail NOTHING
+   * moved and the estate still held everything, which then met `dieCell`'s "no death without a
+   * destination" and threw a `PhoenixError` the engine never catches. A failed estate transfer
+   * STOPPED THE WORLD. What it actually is is an outcome: the money did not arrive, so it is still
+   * owed by the estate to the office (D3), and the reader below decides what to do about it.
+   */
+  if (r.outcome === 'settled') return [];
+  const why = failedBecause(r.reason);
+  return cash.map((c) => ({ payer: from, payee: to, amount: c.amount, ccy: c.ccy, reason: why }));
+}
+
+/** Law 16: the three reasons a settlement fails, in words, for the agreement that records one. */
+function failedBecause(reason: FailReason): string {
+  // eslint-disable-next-line phoenix/no-kind-branch -- a fail reason's tag, not a party or product kind
+  switch (reason.kind) {
+    case 'insufficientUnits':
+      return `${reason.party} is ${reason.short} short of ${reason.instrument}`;
+    case 'overdraftRefused':
+      return `${reason.issuer} refused ${reason.party} an overdraft of ${reason.short} ${reason.ccy}`;
+    case 'insufficientCollateral':
+      return `${reason.party} has ${reason.short} too little free ${reason.instrument} to pledge`;
+    default:
+      return assertNever(reason, 'a settlement fail reason');
   }
 }
 
@@ -248,9 +283,38 @@ export function die(ctx: MechanismContext, rows: readonly MortalityDecl[]): void
     const office = probateId(cell.region, cell.bank);
     if (!ctx.parties.has(office)) continue;
     const estate = ctx.cells.split(cell.id, dying, 'died');
-    handToProbate(ctx, estate, office, cell.region);
-    ctx.cells.die(estate, office, 'died');
-    ctx.record(LIFECYCLE, [estate, office], { event: 'died', cohort, members: dying }, true);
+    const short = handToProbate(ctx, estate, office, cell.region);
+    for (const u of short) {
+      // XI-8: what did not arrive is still owed, by the estate, to the office that was to receive
+      // it. Before this there was nowhere for it to be, so the alternative was the throw above.
+      ctx.owes({
+        debtor: estate,
+        creditor: office,
+        ccy: u.ccy,
+        owed: u.amount,
+        what: 'an estate not yet handed to probate',
+        why: `the transfer failed: ${u.reason}`,
+      });
+    }
+    /**
+     * Appendix B, XI-3: A CELL MAY ONLY DIE EMPTY, and the estate is not empty when the transfer
+     * failed or when what it held was ENCUMBERED — a lien is not free, the asset legs are built
+     * from what is free, and the units stay. Both used to reach `dieCell` and throw.
+     *
+     * It does not die, then. It is `winding` (§25 C1): every member it stands for is dead and it
+     * still holds something, which is exactly the state between alive and gone. What is still on
+     * its book is on its book by name, so nothing is a residual with no holder — and the estate is
+     * a party in an open probate, which is what one is in the world this reflects (Law 1).
+     */
+    const empty = ctx.register.holdingsOf(estate).length === 0;
+    if (empty) ctx.cells.die(estate, office, 'died');
+    else ctx.standing(estate, 'winding', 'died holding what could not be handed to probate');
+    ctx.record(
+      LIFECYCLE,
+      [estate, office],
+      { event: 'died', cohort, members: dying, handedOver: empty },
+      true,
+    );
   }
 }
 

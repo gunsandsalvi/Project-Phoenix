@@ -79,6 +79,7 @@ import type { Contract, ContractReads, Underlying } from '../registry/derivative
 import type { ParamRegister } from '../registry/params.js';
 import type { OntologyRegister } from '../registry/nouns.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
+import { Agreements, agreementReads, type AgreementReads } from '../register/agreements.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -195,6 +196,10 @@ export class World {
   private readonly contractStore: Contracts;
   /** 13c.1, Freight A3: where what is on its way has got to. */
   private readonly voyageStore = new Voyages();
+  /** XI-8: what one party owes another that is not a tradeable instrument (item 8). */
+  private readonly agreementStore = new Agreements();
+  /** The read face. `owes` and `paidOn` are the writes and they are on the context (Law 4). */
+  readonly agreements: AgreementReads = agreementReads(this.agreementStore);
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -1531,6 +1536,32 @@ export class World {
       chooseBanks: () => {
         this.chooseBanks();
       },
+      owes: (decl) => {
+        const row = this.agreementStore.open(decl, this.currentPeriod);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'agreement.opened',
+          [row.debtor, row.creditor],
+          { agreement: row.id, debtor: row.debtor, creditor: row.creditor, owed: row.owed, what: row.what },
+          true,
+        );
+        return row;
+      },
+      paidOn: (id, amount) => {
+        const row = this.agreementStore.paid(id, amount);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          row.state === 'discharged' ? 'agreement.discharged' : 'agreement.paid',
+          [row.debtor, row.creditor],
+          { agreement: row.id, paid: amount, left: row.owed },
+          true,
+        );
+        return row;
+      },
+      owedBy: (party) => this.agreementStore.owedBy(party),
+      owedTo: (party) => this.agreementStore.owedTo(party),
       standing: (party, standing, cause) => {
         const was = this.parties.get(party).status;
         this.parties.standing(party, standing, cause);

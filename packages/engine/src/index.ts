@@ -24,6 +24,7 @@ export * from './registry/naming.js';
 export * from './parties/party.js';
 export * from './register/instruments.js';
 export * from './register/register.js';
+export * from './register/agreements.js';
 export * from './register/contracts.js';
 export * from './ledger/instruction.js';
 export * from './ledger/ledger.js';

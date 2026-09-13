@@ -227,6 +227,20 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
       });
       if (r.outcome !== 'settled') {
         ctx.record('rating.unpaid', [d.assessor, subject], { assessor: d.assessor, subject, due, ccy }, false);
+        /**
+         * XI-8, Money E1: THE FEE IS STILL OWED. `rating.unpaid` is a number in an event and it
+         * carried nothing — the assessor had no claim, the issuer's book was not short by it, and
+         * an estate dividing either of them would have found nothing between them. It is the same
+         * shape as an unpaid tax and an unpaid wage, and it goes through the same door.
+         */
+        ctx.owes({
+          debtor: who,
+          creditor: me,
+          ccy,
+          owed: due,
+          what: 'a rating fee in arrears',
+          why: `${subject} was rated by ${d.assessor} and could not pay for the opinion`,
+        });
       }
     }
   }

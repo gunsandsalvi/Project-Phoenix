@@ -353,7 +353,13 @@ function hire(
   );
 }
 
-/** C3: the employer sheds hours it no longer wants, oldest row first, and pays to do it. */
+/**
+ * C3: the employer sheds hours it no longer wants, NEWEST row first, and pays to do it.
+ *
+ * `b.start - a.start` is descending by start period — last in, first out, which is the ordinary
+ * redundancy convention and what this has always done. The comment said "oldest row first" and the
+ * code has never done that: one of the two was wrong (Law 16) and it was the comment.
+ */
 function shed(
   ctx: MechanismContext,
   book: EmploymentBook,
@@ -421,6 +427,26 @@ export function separate(
   const trading = ctx.parties.get(row.employer).status.alive;
   const paid =
     trading && payFrom(ctx, row.employer, gone, perMember, `severance from ${row.employer}`);
+  /**
+   * A-41, XI-8: AND NOW THERE IS SOMEWHERE FOR IT TO RANK. A trading employer that could not pay
+   * opened its claim inside `payFrom`; a ceased one never tried, so it opens here. Either way the
+   * worker is a named creditor of the employer for what it was owed and did not get, which is the
+   * fact `severanceRanking: 0` used to deny for exactly the case that needed it most.
+   */
+  if (!trading && perMember > 0) {
+    const ccy = ctx.registry.currencyOf(ctx.parties.get(row.employer).region);
+    const owed = shareFor(ctx.registry, ctx.parties.get(gone), currencyUnit(ccy), perMember).total;
+    if (owed > 0) {
+      ctx.owes({
+        debtor: row.employer,
+        creditor: gone,
+        ccy,
+        owed,
+        what: 'severance in arrears',
+        why: `${row.employer} ceased owing ${cause} severance; Firm Birth D2.b ranks it unsecured`,
+      });
+    }
+  }
   ctx.record(
     'labour.separation',
     [row.employer, gone],
@@ -433,8 +459,10 @@ export function separate(
       cause,
       severancePerMember: perMember,
       severancePaid: paid,
-      // What is owed and has nowhere to rank, per member, said out loud rather than dropped.
-      severanceRanking: trading ? 0 : perMember,
+      // What is owed, per member. It said 0 whenever the employer was still trading — including
+      // when its payment had just failed — which recorded "nothing owed" about a worker who worked
+      // and was not paid. What is unpaid is owed, and the agreement above is where it ranks.
+      severanceRanking: paid ? 0 : perMember,
     },
     true,
   );
@@ -504,7 +532,25 @@ function payFrom(
     toCell: side === undefined ? none() : some(side),
   };
   // A failed wage is a real state, recorded by settlement: the employer did not have the money.
-  return ctx.settle({ legs: [leg], cause: 'transfer', reason }).outcome === 'settled';
+  const r = ctx.settle({ legs: [leg], cause: 'transfer', reason });
+  if (r.outcome === 'settled') return true;
+  /**
+   * A-41, XI-8, Money E1: AN UNPAID WAGE IS STILL OWED, and until now nothing said so.
+   *
+   * Settlement recorded that the employer could not pay and the story ended there: no obligation
+   * anywhere, no claim in the estate if the employer then died, and `shed`'s record saying nothing
+   * was owed. A worker who was not paid is a creditor of the employer like any other, and this is
+   * where that fact lives.
+   */
+  ctx.owes({
+    debtor: payer,
+    creditor: cell,
+    ccy,
+    owed: share.total,
+    what: 'wages in arrears',
+    why: reason,
+  });
+  return false;
 }
 
 /**

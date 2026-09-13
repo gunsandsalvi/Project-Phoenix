@@ -4425,3 +4425,81 @@ distinct from `distressed`, and Banks Funding is where that would show.
 
 **Measured.** `estate`, `bank-resolution` and `world` — **11 red before, 11 after.** Green: lint,
 typecheck, spec citations, forbids, plan progress, `lifecycle.test.ts` 5 of 5.
+
+
+## Item 8 — the bilateral commitment that is not an instrument
+
+**What.** `register/agreements.ts`: two named parties, a currency, what is owed, what it is, why it
+exists, and a state — `performing | breached | discharged | terminated`. Indexed both ways. Written
+through `owes` / `paidOn` on `MechanismContext`, read through `world.agreements`, a real read-only
+facade like the register's.
+
+**Why.** An employment, a lease, an invoice, a repo, a stock loan, an insurance policy, a mandate and
+an overdraft facility are ONE NOUN, and seven modules each invented their own book of it in
+`ctx.state` — none visible to the kernel. So there was no answer to "what does this party owe that is
+not an instrument", and that question is what an estate divides. What the absence actually cost was
+not abstract: **four mechanisms had a payment fail, wrote a number in an event, and let the claim
+evaporate between two balance sheets.**
+
+**A write-off is not a discharge, and that is why this is a state machine.** `terminate` leaves what
+is owed standing and says the commitment ended. Calling that a discharge would say somebody was paid
+who was not — which is the entire difference between a write-off and a settlement, and a `boolean`
+cannot hold it.
+
+**The four, and a fifth found while measuring.**
+
+- **D-1** — a failed levy incremented `unpaid` on `treasury.receipts` and nothing carried it. The
+  treasury now holds a claim on the payer.
+- **A-41** — an unpaid wage left no obligation anywhere, and `severanceRanking` recorded **`0`, "nothing
+  owed"**, for exactly the case that needed it: a trading employer whose severance payment had just
+  failed. Both halves are closed — the claim exists, and the field says what is unpaid rather than
+  what is convenient. Its third half was a comment: `shed` said "oldest row first" over code that
+  has always done newest-first. The code is the ordinary redundancy convention; the comment was
+  wrong and is now what the code does.
+- **E-1, new** — measuring the above, a world where no bank lends failed **18 rating fees in fourteen
+  periods**, every one written as `rating.unpaid` and carried by nothing. The same hole, in a fourth
+  module nobody had looked at. One call to the same door.
+- **A-20** — a failed probate transfer became an **unhandled throw that stopped the world**.
+  `handToProbate` discarded what `settle` returned; settlement is atomic, so on a fail nothing moved,
+  the estate still held everything, and `dieCell`'s "no death without a destination" threw a
+  `PhoenixError` the engine never catches. It reads the result now: what did not arrive is owed by
+  the estate to the office, and an estate that still holds does not die — it is `winding` (item 7's
+  own state, which is why item 7 came first).
+
+**A-62 was mis-assigned by me and the finding is better for it.** A central bank's accumulated loss
+is owed to NOBODY. No creditor, no agreement. The real cause was in `lastRemittance`: it read
+`centralBank.loss` events and advanced its window past the loss it had just found. Removing that read
+is the fix, and it removes code (Law 12) rather than adding a noun that would have been a lie.
+
+**Measured.** Confiscatory-tax world (income tax at 20 — a POLICY set past what a payer holds, so the
+levy failing is an OUTCOME): **11 failed levies, 11 arrears, and `Σ owed` equals `Σ unpaid` exactly**,
+which is the Law 4 check that keeps the number in the event honest. No-lending world: **18 rating
+fees failed, 18 claims, same equality.** The ordinary scale model exercises neither — **0 failed
+instructions in 14 periods**, where D-1 was originally measured at 855 — so these branches are
+reached by worlds built to reach them, and item 1's reach read is what publishes that about the
+ordinary one. **The whole suite, before and after: 79 red, and the same 79 test-for-test** — 638
+green becomes 647, the nine being this item's own. Green: lint, typecheck, spec citations (201),
+forbids (198 files), plan progress.
+
+**What is NOT done, and it is the larger half.** The seven private books are still seven private
+books. They WORK. Migrating them is seven bounded changes, not one, and doing them here would have
+been seven items in one commit (Law 14). `Mandate` — and with it the fund/pool/manager split, and
+**B-2**, **A-9**, **A-67**, **B-3** — rides on that migration and stays open. What this item
+establishes is the noun and its store, which is what those seven had nowhere to migrate to.
+
+**Carried, and one of them is new and is mine.** `FailReason`'s discriminant is still `kind`, so
+reading it needs the eslint-disable that `Receipt`'s `of` does not — item 17. `breached` has no
+writer: nothing has yet decided when an arrear becomes a breach, which is fiscal policy with an owner
+(Polity D1) and belongs with item 14. And **E-2**, which A-20's fix creates: an estate left `winding`
+is still a household cell to the eleven places that iterate `ofKind(HOUSEHOLD)` asking `status.alive`,
+so a cell of dead people would go on consuming and looking for work. It is the better of the two
+states — the world does not stop, and the fact is written where a reader can find it rather than
+being a throw — and it is unreached in the scale model (**0 failed probate transfers, 0 encumbered
+household holdings over 12 periods**). An open probate is a multi-period procedure, so it is
+positioned at item 14.
+
+**Forecast, with its killer.** Every unpaid obligation in this world now has two named sides and a
+size, so an estate can divide one and a solvency test can see it. **What would falsify it:** an
+obligation with more than two sides — a guarantee, which is a third party standing behind a second —
+turning up as something this store is asked to hold. That is item 13, and it is separate precisely
+because this shape cannot express it.

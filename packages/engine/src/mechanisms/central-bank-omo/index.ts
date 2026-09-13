@@ -188,9 +188,22 @@ function dueThisPeriod(ctx: MechanismContext): boolean {
   return false;
 }
 
-/** The period it last settled up in, read from the journal; nothing stores it. */
+/**
+ * E3, E4: the period it last SETTLED UP in, read from the journal; nothing stores it.
+ *
+ * A-62: IT USED TO COUNT A LOSS AS SETTLING UP, and that is what forgot the loss. E4 says a loss is
+ * not remitted — it stands until income covers it — and the comment at the loss branch says exactly
+ * that. But `centralBank.loss` advanced this marker too, so the next window began AFTER the loss and
+ * the deficit was never in a window again: the central bank started each period from nothing, and a
+ * bank that had lost a fortune remitted its next quarter's income in full.
+ *
+ * A loss is not an agreement and this is not arrears — the central bank owes it to nobody, and the
+ * treasury has no claim it could rank. It is a deficit against the bank's OWN future income, and
+ * carrying it is a matter of not moving the line the income is measured from. So the fix is the read
+ * that stops: the window runs from the last time it actually paid something over.
+ */
 function lastRemittance(ctx: MechanismContext, cb: PartyId): Period {
-  const events = [...ctx.journal.ofKind('centralBank.remittance'), ...ctx.journal.ofKind('centralBank.loss')]
+  const events = [...ctx.journal.ofKind('centralBank.remittance')]
     .filter((e) => e.subjects.includes(cb))
     .sort((a, b) => a.period - b.period);
   const last = events[events.length - 1];

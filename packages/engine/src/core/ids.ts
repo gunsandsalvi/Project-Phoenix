@@ -50,6 +50,8 @@ export type EventId = Brand<number, 'EventId'>;
  * expected — which is the type system saying the thing the clause says.
  */
 export type ContractId = Brand<string, 'ContractId'>;
+/** XI-8, Money E1: a bilateral commitment that is not a tradeable instrument (`register/agreements.ts`). */
+export type AgreementId = Brand<string, 'AgreementId'>;
 export type DerivativeKindId = Brand<string, 'DerivativeKindId'>;
 
 /**
@@ -96,6 +98,7 @@ export const paramId = (s: string): ParamId => nonEmpty(s, 'ParamId') as ParamId
 export const curveFamilyId = (s: string): CurveFamilyId =>
   nonEmpty(s, 'CurveFamilyId') as CurveFamilyId;
 export const contractId = (s: string): ContractId => nonEmpty(s, 'ContractId') as ContractId;
+export const agreementId = (s: string): AgreementId => nonEmpty(s, 'AgreementId') as AgreementId;
 export const derivativeKindId = (s: string): DerivativeKindId =>
   nonEmpty(s, 'DerivativeKindId') as DerivativeKindId;
 

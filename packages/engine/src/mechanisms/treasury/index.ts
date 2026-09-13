@@ -835,8 +835,28 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     };
     const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `tax due from ${payer}` });
     // A payer that cannot pay its tax has not paid it: nothing advances it (Money E1, D3).
-    if (r.outcome === 'settled') collected = add(collected, share.total, 'collected');
-    else unpaid = add(unpaid, share.total, 'unpaid');
+    if (r.outcome === 'settled') {
+      collected = add(collected, share.total, 'collected');
+      continue;
+    }
+    unpaid = add(unpaid, share.total, 'unpaid');
+    /**
+     * D-1, XI-8, Money E1: ARREARS. A LEVY THAT FAILED IS A CLAIM THE TREASURY HOLDS ON THE PAYER.
+     *
+     * `unpaid` above is a number in an event and nothing carried it: the cell did not owe it next
+     * period, the treasury did not chase it, and no account anywhere was short by it. A tax that
+     * failed was a hole between two balance sheets that only the journal knew about. It is an
+     * agreement now — a named debtor, a named creditor, an amount and a state — which is what makes
+     * it something an estate can divide and a later period can collect.
+     */
+    ctx.owes({
+      debtor: payer,
+      creditor: id,
+      ccy,
+      owed: share.total,
+      what: 'tax in arrears',
+      why: `assessed in ${previous} and not paid: a levy that fails is a claim the state holds`,
+    });
   }
   ctx.record(
     'treasury.receipts',

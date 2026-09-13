@@ -16,7 +16,9 @@ import type { Periodicity } from '../core/rate.js';
 import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
 import type { Order } from '../clearing/solver.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import type { Brand,
+import type {
+  AgreementId,
+  Brand,
   CurrencyCode,
   CurveFamilyId,
   DerivativeKindId,
@@ -40,6 +42,7 @@ import type { Holding, Register, RegisterReads } from '../register/register.js';
 import type { Voyage } from '../register/voyages.js';
 import type { PartyId as VoyagePartyId, VoyageId } from '../core/ids.js';
 import { assertNever } from '../core/assert.js';
+import type { Agreement, AgreementDecl } from '../register/agreements.js';
 import { none, some } from '../core/option.js';
 import { instrumentId, partyId } from '../core/ids.js';
 
@@ -652,6 +655,23 @@ export interface MechanismContext extends WorldReads {
    * one announcement.
    */
   chooseBanks(): void;
+  /**
+   * XI-8, Money E1, D3: WHAT DID NOT ARRIVE IS STILL OWED, by somebody, to somebody.
+   *
+   * A payer that cannot pay has not paid (E1) and a flow has two sides (D3) — so a failed payment
+   * leaves an obligation, and until this door existed there was nowhere for one to be. An unpaid
+   * wage and an unpaid severance left nothing anywhere and the record said nothing was owed; a
+   * failed levy was written as `unpaid` in an event and carried by nothing.
+   *
+   * It is not an instrument: nobody trades it, it has no issued quantity and no holder. It is a
+   * relation between two named parties, and it is what an estate has to divide.
+   */
+  owes(decl: AgreementDecl): Agreement;
+  /** Part of what was owed has arrived. Paid in full discharges it; short does not (Money E1). */
+  paidOn(id: AgreementId, amount: number): Agreement;
+  /** What this party owes that is not an instrument, and what is owed to it (XI-8). */
+  owedBy(party: PartyId): readonly Agreement[];
+  owedTo(party: PartyId): readonly Agreement[];
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
   /**

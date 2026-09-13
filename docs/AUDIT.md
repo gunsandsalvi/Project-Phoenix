@@ -118,7 +118,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **5** | `Receipt` | 6 | **BUILT** — the tax is a dispatch. Emitting `disposal` from a trade remains |
 | **6** | `View` | 1 | **BUILT** — the noun. A bank actually forming a credit view is the mechanism that follows |
 | **7** | `Lifecycle` | 2 | **BUILT** — four states, wired at the estate and at resolution. `distressed` has no writer yet |
-| **8** | `Agreement` | 9 | needs **5** — an agreement performing is a receipt |
+| **8** | `Agreement` | 5 of 9 | **BUILT (the store, and four cases)** — arrears exist and rank. The seven private books are not migrated, so `Mandate` and **A-9**, **A-67**, **B-2**, **B-3** stay open here |
 | **9** | `Control` | 2 | independent; 13o and §29 cannot exist without it |
 | **10** | `CorporateAction` | 1 | independent; reframes worklist 13k |
 | **11** | `OutputKind` | 1 | independent; small |
@@ -1780,6 +1780,60 @@ already discards it on the solvency branch.
 ---
 
 ## 8. `Agreement` — the bilateral commitment that is not an instrument
+
+> **BUILT — the store and the four cases it was built for. The seven private books are not migrated
+> yet and that is named below, not glossed.**
+>
+> `register/agreements.ts`: two named parties, a currency, what is owed, what it is, why it exists,
+> and a state — `performing | breached | discharged | terminated`. Indexed BOTH WAYS, because "what
+> does this party owe" and "who is owed by it" are the two halves an estate has to divide. Written
+> through `owes` / `paidOn` on `MechanismContext`; read through `world.agreements`, a real read-only
+> facade like the register's. It refuses a party owing itself, an agreement owing nothing, and one
+> that does not say what it is.
+>
+> **A write-off is not a discharge.** `terminate` leaves what is owed standing and says the
+> commitment ended; calling that discharged would say somebody was paid who was not. That
+> distinction is the whole reason this is a state machine and not a number.
+>
+> **Wired at four places, and each was a hole between two balance sheets:**
+>
+> | was | now |
+> | --- | --- |
+> | **D-1** a failed levy incremented `unpaid` on an event and nothing carried it | the treasury holds a claim on the payer, and the sum of the claims **equals** `unpaid` to the piece |
+> | **A-41** an unpaid wage or severance left no obligation anywhere | the worker is a creditor of the employer by name |
+> | **NEW** a failed rating fee was written as `rating.unpaid` and carried nothing | the assessor holds a claim on the issuer; **18 of them in fourteen periods** of a world where no bank lends |
+> | **A-20** a failed probate transfer became an unhandled throw that stopped the world | settlement's answer is READ: what did not arrive is owed by the estate to the office, and an estate that still holds does not die — it is `winding` |
+>
+> **A-62 was not an agreement and the reading that said it was, was wrong.** A central bank's
+> accumulated loss is owed to NOBODY — there is no creditor, so there is no agreement. The real
+> cause was in `lastRemittance`, which read `centralBank.loss` events and advanced its window past
+> the loss it had just found. Removing that read is the fix and it removes code (Law 12).
+>
+> **Measured.** The confiscatory-tax world (income tax at 20 — a POLICY set past what a payer holds,
+> so the levy failing is an OUTCOME): **11 failed levies, 11 arrears, `Σ owed` = `Σ unpaid` exactly.**
+> The no-lending world: **18 rating fees failed, 18 claims.** The ordinary scale model exercises
+> neither — **0 failed instructions in 14 periods**, where D-1 was originally measured at 855 — so
+> the branches are reached by worlds built to reach them, and item 1's reach read is what publishes
+> that about the ordinary one. **The whole suite, before and after: 79 red, and the same 79
+> test-for-test**; 638 green becomes 647, the nine being this item's own.
+>
+> **What is NOT done, and it is the larger half.** The seven private books — `EmploymentRow` /
+> `EmploymentBook`, `Lease` / `LeaseBook`, invoices, `StockLoan[]`, loans, covenants, deals — are
+> still seven private books. They WORK; migrating them is seven bounded changes, not one, and doing
+> them inside this item would have been seven items in one commit (Law 14). `Mandate`, and with it
+> the fund/pool/manager split and **B-2**, **A-9**, **A-67**, **B-3**, rides on that migration and
+> is therefore also open. What this item establishes is the noun and its store, which is what those
+> seven migrations had nowhere to migrate TO.
+>
+> **Carried, and one of them is new and is mine.** `FailReason`'s discriminant is still `kind`, so
+> reading it needs an eslint-disable that `Receipt`'s `of` does not — item 17. `breached` has no
+> writer yet: a levy in arrears stays `performing` because nothing has yet decided when an arrear
+> becomes a breach, which is fiscal policy with an owner (Polity D1) and belongs with item 14. And
+> **E-2**: an estate left `winding` is still a household cell to the eleven places that iterate
+> `ofKind(HOUSEHOLD)` on `status.alive`, so a cell of dead people would go on consuming and looking
+> for work. It is the better of the two states — the world does not stop, and the fact is now
+> written where a reader can find it instead of being a throw — but it is not finished, and an open
+> probate is a multi-period procedure, which is item 14's noun.
 
 **Why.** Nine findings and **seven of the nineteen private stores**. An employment, a lease, an
 invoice, a repo, a stock loan, an insurance policy, a mandate, a supply contract and an overdraft
@@ -3930,6 +3984,8 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **C-7** (—) | 17 | the confidence question, answered and closed (carried from `VERIFY.md`) |
 | **D-1** (A) | 8 | a levy that fails is recorded and then forgotten: no arrears (`12d-5`) |
 | **D-2** (B) | 18 | the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) |
+| **E-2** (B) | 14 | *(found while building item 8)* an estate left `winding` because it could not hand over is still a household cell to the eleven `ofKind(HOUSEHOLD)` readers, which all ask `status.alive`. Unreached in the scale model — **0 failed probate transfers, 0 encumbered household holdings over 12 periods** — and named rather than left silent |
+| **E-1** (A) | 8 | *(found while building item 8)* a rating fee that fails is written as `rating.unpaid` and carried by nothing — the same hole as D-1, in a fourth module. **18 of them over fourteen periods** in a world where no bank lends. Closed with D-1, through the same door |
 
 ---
 
