@@ -1651,10 +1651,28 @@ export class World {
     for (const id of this.indexList.keys()) this.index(id);
   }
 
+  /**
+   * Law 18: THE SAME LEVEL, WHILE THE PRINTS AND THE REGISTER IT IS READ FROM HAVE NOT MOVED.
+   *
+   * An index is a function of its constituents' prints and of nothing else (A2), so a reader can
+   * tell that its last answer still stands: a print anywhere or a line issued, redeemed, split or
+   * ceased moves a count, and the level is read again. Nothing is stored (E2) — what is kept is an
+   * answer whose inputs are unchanged, and it is dropped the instant one of them is not.
+   *
+   * A real period asks for one equity index ten thousand times, and each ask priced every line in
+   * the basket to say what the index was read FROM.
+   */
+  private held = new Map<string, { at: Period; shape: string; read: Option<IndexRead> }>();
+
   index(id: string): Option<IndexRead> {
     const decl = this.indexList.get(id);
     if (decl === undefined) return none<IndexRead>();
-    return readIndex(decl, this.indexThrough, this.indexDeps());
+    const shape = `${this.instruments.version}:${this.prices.version}`;
+    const mine = this.held.get(id);
+    if (mine?.at === this.indexThrough && mine.shape === shape) return mine.read;
+    const read = readIndex(decl, this.indexThrough, this.indexDeps());
+    this.held.set(id, { at: this.indexThrough, shape, read });
+    return read;
   }
 
   /**

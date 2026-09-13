@@ -108,6 +108,16 @@ function locate(list: readonly Print[], period: Period): { at?: Print; before?: 
 
 export class PriceStore {
   private readonly byInstrument = new Map<InstrumentId, Print[]>();
+  /**
+   * Law 18: HOW MANY PRINTS THERE HAVE BEEN. Not a fact about the world and nothing decides by it —
+   * it is how a reader whose answer is a function of the prints can tell that its answer still
+   * holds. An index level is exactly such a reader.
+   */
+  private prints = 0;
+
+  get version(): number {
+    return this.prints;
+  }
 
   /** One print per (instrument, period); a second writer is Law 4's defect and throws. */
   write(p: Print): void {
@@ -123,6 +133,7 @@ export class PriceStore {
     );
     list.push(Object.freeze({ ...p }));
     this.byInstrument.set(p.instrument, list);
+    this.prints += 1;
   }
 
   /**
@@ -146,6 +157,9 @@ export class PriceStore {
       instrument,
       list.map((p) => Object.freeze({ ...p, price: finite(p.price / ratio, `print ${p.instrument}`) })),
     );
+    // A restatement changes every price on this line, so a reader holding an answer read from them
+    // must read it again.
+    this.prints += 1;
   }
 
   /** The print for exactly this period, if the market has run. */

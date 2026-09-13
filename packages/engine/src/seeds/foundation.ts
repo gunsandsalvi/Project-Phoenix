@@ -1939,6 +1939,20 @@ function mapSpec(): MapSpec {
 }
 
 
+/**
+ * Dealer Desks A3: WHO MAKES A MARKET IN A LINE — the makers drawn with the listing, found by the
+ * line they were drawn for.
+ *
+ * Law 18: it is the same draw, read by line instead of searched for. A bank asks this every time it
+ * is shopped, and walking every listing in the world for the one that names a line is a search that
+ * grows with the number of listed companies while the answer does not.
+ */
+function makersOf(listed: readonly ListedDecl[]): (i: InstrumentId) => readonly string[] | undefined {
+  const byLine = new Map<InstrumentId, readonly string[]>();
+  for (const row of listed) byLine.set(equityLineOf(row.firm), row.makers);
+  return (instrument) => byLine.get(instrument);
+}
+
 /** Which resource a line stands on, read off the one table that says so (Law 4). */
 function standsOnOf(subUnit: string): string | null {
   const d = GOODS.find((g) => g.subUnit === subUnit);
@@ -2176,10 +2190,7 @@ export function foundationSpec(
       // Dealer Desks A3: the desks, and WHICH LINES EACH OF THEM MAKES — drawn with the listing
       // (`ListedDecl.makers`) and handed in here, because the bank that quotes and the listing that
       // drew its makers are two systems and one fact (Law 4).
-      banks(drew.banks, (instrument) => {
-        const row = drew.listed.find((l) => equityLineOf(l.firm) === instrument);
-        return row?.makers;
-      }),
+      banks(drew.banks, makersOf(drew.listed)),
       estate,
       // Goods A1: the goods of THIS world are made in the one region that has firms in it. The
       // three abroad are a central bank, a treasury and a bond line (13i builds their economies),
