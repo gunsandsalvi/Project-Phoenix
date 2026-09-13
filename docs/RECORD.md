@@ -3978,3 +3978,52 @@ been deleted. It is corrected to say what is true and the finding is left unposi
 
 **Nothing in the engine's behaviour changed.** One comment in `seeds/foundation.ts`, and the rest is
 `tools/plan-progress.ts` and documents.
+
+
+## The audit becomes the plan: sixteen missing primitives, and the register that would have found them
+
+**What this is.** Not an item: `docs/AUDIT.md` converted from a catalogue of ninety-four findings
+into ordered work. Every finding is POSITIONED under the change that closes it — nineteen items,
+nothing dropped, and the index at the foot names where each one landed.
+
+**The fault the ninety-four share.** This model has one rich type system and it is the
+instrument/settlement layer — kinds with profiles, legs, causes, lots with basis, tick grids, one
+writer per fact. It is why money is conserved on the wire. **Above it there is no type system at
+all**: every time an economic category was needed it was expressed as a configuration of an existing
+instrument-layer primitive rather than as a new one. Income is `Instruction.cause`, nine settlement
+labels, so a household is taxed at the wage rate on a returned principal and on gross disposal
+proceeds. Value is `outlook('price.<id>')`, so the equity market is a closed loop of price
+extrapolators with no fundamental side. A service is `portable: false` with `spoilage: 1`, so a
+school holds unsold teaching hours as inventory and writes them off. Who owns and who decides are
+one `fund` party, so a separate account cannot exist and a hedge fund is built on a kind whose
+`borrows` is hard-coded `false`. Alive-or-dead is a boolean, so a bank in resolution is `alive: true`.
+
+**Sixteen missing primitives, found by enumerating the five axes of an ontology mechanically from
+the code rather than by reading it again.** Entities from the nineteen `ctx.state` slots across
+seventeen modules; relations from what the register can express (two, plus three fields on `Party`);
+events from the nine wire causes and twenty-three free-text journal kinds; states from `PartyStatus`
+and `InstrumentStatus`; properties from the ten fields on the instrument profile and the six on the
+party profile. Four of the resulting nouns close no finding at all — `PublishedStatement`, `Space`,
+`Guarantee`, `Objective` — because a primitive nobody attempted leaves nothing for a read to find.
+
+**The primitive underneath the other fifteen** is the register of them. `ParamRegister` forces every
+declared NUMBER to name its kind, its unit and its owner, and `npm run check` fails if one does not.
+There is no equivalent for CATEGORIES: the spec's forty-eight systems enumerate behaviours,
+`registry/kinds.ts` enumerates settlement objects, and nothing anywhere enumerates the things the
+economy is made of. So "is there a noun for this?" had no lookup, only a grep, and a grep finds only
+what somebody already tried to build. Item 0 is that register.
+
+**Two dependencies that the enumeration turned up and that reorder the work.** `expectedStream()` —
+the behaviour whose absence means only debt can be valued in this world — cannot be built until
+published accounts are a kernel noun, because §48's whole output lives in one module's private bag
+and a module may not import another module. And worklist **13k is not periodicity**: `Periodicity`
+is a proper union in `core/rate.ts` and `reporting/fiscal.ts` is built and unused. A dividend is paid
+every week because there is no DECLARATION to be separate from the payment, which is a missing noun.
+
+**What is explicitly not to be touched** is now stated in the file: the grid and dust discipline,
+settlement's money expansion, the solver, the curve, the parameter register's shape guards, the
+two-sided FX quote. The absence of a finding is the finding.
+
+**Nothing in the engine changed.** `docs/AUDIT.md` was rewritten by reassembling its own finding
+blocks under the new spine, so no evidence was lost; `CLAUDE.md`, `docs/PLAN.md`, `docs/WORKLIST.md`
+and `docs/ARCHITECTURE.md` now point at a plan rather than a catalogue.

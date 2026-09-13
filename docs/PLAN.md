@@ -12,7 +12,7 @@ The plan has two parts:
   item, when one has been written. **An item's file is deleted when the item closes** (its outcome
   moves to `docs/RECORD.md`), so the plan directory holds only what is still to be built — and not
   all of that: six of the nine open items have no file, 13k–13o because their reasoning is the
-  worklist row and nothing more, and 14 because its plan is `docs/AUDIT.md` Part IV. The progress
+  worklist row and nothing more, and 14 because its plan is `docs/AUDIT.md` item 18. The progress
   figure below counts the steps in those files and takes each item's STATE from the worklist's own
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
@@ -124,7 +124,7 @@ docs/plan/manifest.json      every item with its step count (for the progress fi
 docs/WORKLIST.md             the one ordered list of items and their state
 docs/RECORD.md               outcomes, one entry per closed item
 docs/COVERAGE.md             one row per spec clause: MET / PARTIAL / MISSING / OUT OF SCOPE
-docs/AUDIT.md                every open finding, in one place; a finding leaves only by being placed
+docs/AUDIT.md                the ordered plan: 19 items, every open finding positioned under one
 packages/engine/src/         the engine (kernel + modules), pure TypeScript, no DOM
 packages/engine/test/        its tests (Vitest, fast-check)
 packages/app/                the inspector web app (Vite) and the Capacitor Android wrapper

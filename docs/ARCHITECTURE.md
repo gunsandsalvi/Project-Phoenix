@@ -1111,8 +1111,8 @@ that is the audit's job, not the citation checker's.
   open item whose plan had moved elsewhere count as fourteen worked steps.
 - One bounded change per item; a commit per item; the commit message says what and why.
 - `docs/RECORD.md` is a ledger of outcomes, not a diary. `docs/AUDIT.md` is the one place an open
-  FINDING lives — exactly one such file, and a finding leaves it only by being positioned into the
-  item that fixes it.
+  FINDING lives, and it is ORDERED WORK: nineteen items, each carrying the findings it closes, worked
+  before `docs/WORKLIST.md` rows 13k–17. A finding leaves it only when its item closes.
 - No measurement, tuning or diagnosis of numbers until Part XII is reached. Deterministic checks
   (lint, types, tests, audit at period zero) are gates, not experiments.
 - Never roll back a number. Only a change wrong on its own terms is undone.

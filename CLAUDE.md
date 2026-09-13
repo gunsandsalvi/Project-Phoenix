@@ -196,7 +196,9 @@ XI-3 + estate XI-8 → 8 redeemable claims → 9 equity + dealers with inventory
   dependency position — and the record says where each landed. A finding leaves that file only by
   being placed. THERE IS ONE SUCH FILE AND IT STAYS: it was three (`BUGS.md`, `SWEEP.md`,
   `VERIFY.md`), one per sweep, and what that bought was one defect written three times under three
-  names, the newest of them contradicting the other two. `docs/AUDIT.md` is where a finding lives.
+  names, the newest of them contradicting the other two. `docs/AUDIT.md` is where a finding lives,
+  and it is the ORDERED PLAN: a finding sits under the item that closes it, and the first open item
+  is taken from there before `docs/WORKLIST.md` (which resumes at 13k when the plan is done).
 - Update `docs/ARCHITECTURE.md` in the same change as any structural decision.
 - Ask the owner only for decisions the spec explicitly reserves (e.g. §45 A4 inspector vs
   participant surface); everything else is derived from the spec and stated in the record.
