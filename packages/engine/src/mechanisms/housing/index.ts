@@ -402,10 +402,13 @@ function mortgagesOf(
   borrower: PartyId,
 ): readonly { readonly id: InstrumentId; readonly lender: PartyId; readonly outstanding: number }[] {
   const out: { id: InstrumentId; lender: PartyId; outstanding: number }[] = [];
-  for (const i of ctx.instruments.all()) {
+  // Law 19: A LOAN IS ISSUED BY ITS BORROWER (`banks/index.ts`: `issuer: some(borrower)`), so the
+  // register already indexes a party's own rows and this asks it. Walking every instrument in the
+  // world to find one household's mortgages is a search that grows with everything the world has
+  // written — every invoice, every bond, every share — while the answer is one or two rows.
+  for (const i of ctx.instruments.issuedBy(borrower)) {
     if (!i.status.live || !isLoan(i.terms)) continue;
     const t = i.terms;
-    if (t.borrower !== borrower) continue;
     if (!t.security.some((sec) => String(sec.instrument).startsWith(`good.${DWELLING}.`))) continue;
     // C5, XI-11: WHO FORECLOSES is whoever is owed the row today. A mortgage sold into a pool is
     // foreclosed by the pool, which is what makes the transfer a real one (Law 19).
