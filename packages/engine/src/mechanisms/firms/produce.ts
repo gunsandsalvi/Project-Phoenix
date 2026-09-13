@@ -40,7 +40,7 @@ import {
   wipId,
 } from '../../registry/physical.js';
 import { costOfDraw, dueFromLine } from '../../register/register.js';
-import { capacityFrom, utilisation, vintagesHeld } from '../../registry/physical.js';
+import { capacityFrom, rentedRoom, utilisation, vintagesHeld } from '../../registry/physical.js';
 import type { FirmDecl } from './data.js';
 import { technologyOf } from './decide.js';
 import { about } from '../../world/context.js';
@@ -111,7 +111,7 @@ function start(
   // line whose recipe needs no plant is not limited by one, which is a different answer from being
   // limited by a large number (Law 6).
   const vintages = vintagesHeld(view, ctx.calendar.startOf(ctx.period));
-  const capacity = capacityFrom(tech.plant, vintages);
+  const capacity = capacityFrom(tech.plant, vintages, rentedRoom(view.lastOwn('commodities.leased')));
   const limits: readonly { readonly qty: number; readonly bound: string }[] = [
     { qty: planned, bound: 'plan' },
     {

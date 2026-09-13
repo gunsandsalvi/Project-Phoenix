@@ -176,7 +176,14 @@ function lease(
   });
   if (!isCleared(outcome)) return;
   const rate = outcome.price;
-  const held = ctx.state<Leases>('commodities.leases', () => ({ byParty: new Map() }));
+  /**
+   * A-64: WHAT EACH TAKER GOT, this period, in one place. It used to be a `ctx.state` store whose
+   * own comment said *"emptied at the top of every period"* — `ctx.state` persists for the life of
+   * the world and nothing ever emptied it, so it was a monotonically growing write-only
+   * accumulator that NOTHING READ. A local map and one event per taker carrying the total is the
+   * same fact with one writer and a reader (Law 4, Law 19), and it deletes the store.
+   */
+  const got = new Map<string, number>();
   const letters = outcome.fills.filter((f) => f.side === 'sell' && f.qty > 0).map((f) => ({ ...f }));
   let at = 0;
   for (const taker of outcome.fills) {
@@ -213,31 +220,38 @@ function lease(
           cause: 'transfer',
           reason: `${taker.party} rents ${space} of space from ${letter.party}`,
         });
-        if (r.outcome === 'settled') {
-          held.byParty.set(String(taker.party), add(leased(held, taker.party), space, 'space taken'));
-          ctx.record(
-            'commodities.leased',
-            [String(taker.party), String(letter.party)],
-            { taker: taker.party, letter: letter.party, region, space, rate, paid: due },
-            true,
-          );
+        /**
+         * A-64, Money E1: A FAILED PAYMENT TAKES NO ROOM. The decrements below used to sit outside
+         * this branch, so a taker whose rent did not settle absorbed the letter's space anyway and
+         * the next taker could not have it — one insolvent taker could shut a region's storage
+         * market for the period. A payer that cannot pay has not paid, and has not rented either.
+         */
+        if (r.outcome !== 'settled') {
+          at += 1;
+          continue;
         }
+        got.set(String(taker.party), add(zeroIfNone(got.get(String(taker.party))), space, 'space taken'));
+        ctx.record(
+          'commodities.let',
+          [String(taker.party), String(letter.party)],
+          { taker: taker.party, letter: letter.party, region, space, rate, paid: due },
+          true,
+        );
       }
       want = sub(want, space, 'what it is still short of');
       letters[at] = { ...letter, qty: asQty(sub(letter.qty, space, 'what it has left to let')) };
       if (letters[at]?.qty === 0) at += 1;
     }
   }
+  /**
+   * A-64: ONE EVENT PER TAKER, carrying what it rented in total — which is what its own capacity
+   * read asks for (`registry/physical.ts:rentedRoom`). A firm that matched three letters rented
+   * one amount of room, and three events would have made it read the last of them.
+   */
+  for (const [party, space] of got) {
+    ctx.record('commodities.leased', [party], { taker: party, region, space, rate }, true);
+  }
 }
-
-/** What each party has rented this period. Emptied at the top of every period: a lease is a week's. */
-interface Leases {
-  readonly byParty: Map<string, number>;
-}
-
-/** A party with no row here rented nothing this period, which is a real answer (Appendix A). */
-const leased = (held: Leases, party: PartyId): number =>
-  zeroIfNone(held.byParty.get(String(party)));
 
 /**
  * The module. It owns the space, not the things kept in it: a commodity is a PHYSICAL LINE and this
@@ -247,17 +261,14 @@ const leased = (held: Leases, party: PartyId): number =>
 export function commodities(): SystemModule {
   return {
     id: 'commodities',
-    nouns: [
-      {
-        name: 'commodities.leases',
-        kind: 'noun',
-        holds:
-          'how much covered space each party rented this period, and from whom',
-        why:
-          'renting storage is an agreement with a lessor, a term and a rent. As a per-period map it has no counterparty at all, which is why a firm pays for space and receives nothing for it (A-64).',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
-      },
-    ],
+    /**
+     * Item 11 DELETED the store this declared. `commodities.leases` was a `ctx.state` map whose own
+     * comment said it was emptied every period and which nothing ever emptied or read: a
+     * write-only accumulator standing in for a noun. What each taker rented is now one public
+     * event per taker per period carrying the total, which its own capacity read asks for — one
+     * writer, one reader, nothing stored (Law 4, Law 19, A-64).
+     */
+    nouns: [],
     spec: 'Commodities Spot A3, A4, D2.a, D3, F2',
     // A4: space is plant, so the kind has to be registered before anybody can hold a unit of it;
     // and what takes up space is a good, so the goods have to exist to take any up.

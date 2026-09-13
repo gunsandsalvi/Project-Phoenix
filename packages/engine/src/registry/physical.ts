@@ -39,7 +39,7 @@ import {
 import type { Calendar } from '../calendar/calendar.js';
 import type { Event } from '../journal/journal.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
-import { div, mul, sub, sum } from '../core/num.js';
+import { div, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
@@ -404,6 +404,25 @@ export function vintagesHeld(view: PlantHolder, on: Civil): HeldVintage[] {
   return out;
 }
 
+/**
+ * A-64, Capital Programme A2: WHAT THIS PARTY RENTED THIS PERIOD, as a plant need it can meet.
+ *
+ * A firm short of room bid for it, won, and paid the letter — and its capacity did not move,
+ * because the capacity read counts the storage VINTAGES it owns and a lease is not a holding. So
+ * next period it was short of exactly the same room and rented it again, and one side of a real,
+ * settled, two-sided payment got NO CONSIDERATION AT ALL. The money was conserved, so no audit
+ * family could see it: the buyer of a service that did not exist (Law 1).
+ *
+ * Read off the party's own lease event (Law 19) — the storage market records one per taker per
+ * period carrying the total, so this is one writer and one reader and nothing is stored twice.
+ */
+export function rentedRoom(said: Option<{ readonly data: Record<string, unknown> }>): ReadonlyMap<string, number> {
+  if (!said.some) return new Map();
+  const space = said.value.data['space'];
+  if (typeof space !== 'number' || space <= 0) return new Map();
+  return new Map([[STORAGE, space]]);
+}
+
 /** A2, A4: the units of one kind of plant this party has in service. */
 export function plantHeld(vintages: readonly HeldVintage[], capitalKind: string): number {
   return sum(vintages.filter((v) => v.capitalKind === capitalKind).map((v) => v.units)).value;
@@ -442,11 +461,25 @@ export interface Capacity {
 export function capacityFrom(
   needs: readonly PlantNeed[],
   vintages: readonly HeldVintage[],
+  /**
+   * A-64, Capital Programme A2, D4: AND WHAT IT RENTED THIS PERIOD, by kind of plant.
+   *
+   * A firm short of room bid for it, won, and paid the letter — and its capacity did not move,
+   * because this read counted the storage VINTAGES it owned and a lease is not a holding. So next
+   * period it was short of exactly the same room and rented it again, and one side of a real,
+   * settled, two-sided payment got no consideration at all. The money was conserved, so no audit
+   * family could see it: the buyer of a service that did not exist (Law 1).
+   *
+   * It is a separate argument and not a second kind of vintage, because a lease has no basis, no
+   * wear and no service life — it is room for a week, and adding a fake vintage for it would put a
+   * number nobody paid into the capital charge.
+   */
+  rented: ReadonlyMap<string, number> = new Map(),
 ): Option<Capacity> {
   let scarcest: Capacity | undefined;
   for (const need of needs) {
     if (need.unitsPerUnitPerPeriod <= 0) continue;
-    const held = plantHeld(vintages, need.capitalKind);
+    const held = plantHeld(vintages, need.capitalKind) + zeroIfNone(rented.get(need.capitalKind));
     const perPeriod = div(held, need.unitsPerUnitPerPeriod, 'what this kind of plant lets it make');
     if (scarcest === undefined || perPeriod < scarcest.perPeriod) {
       scarcest = { perPeriod, binding: need.capitalKind };

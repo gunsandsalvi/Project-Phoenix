@@ -4682,3 +4682,50 @@ item 14's `Process`. `split` and `rights` likewise have a kind here and no calle
 return and price return can differ and a share can trade ex. **What would falsify it:** the ex date
 not actually moving the price — nothing yet reads `actions.exToday` when forming an opinion of a
 line, so the price move D3.b describes is a consequence this makes possible and does not yet produce.
+
+
+## Item 11 — stock or capacity
+
+**What.** `GoodDecl.output: 'stock' | 'capacity'` — whether a line's output can be HELD. A stock line
+makes a thing that waits and is sold later; a capacity line has nothing to wait, because an hour of
+teaching, a night's lodging or a diagnosis is made where it is bought and at the moment it is bought.
+
+**Why, and the case that proves it.** `portable` was declared to be "the one fact that divides a
+manufacture from a service". It is a SHIPPING fact. The two coincide for the sixteen services and
+**come apart at electricity**: power is the most movable thing in the file and nobody stores a
+megawatt-hour. Reading one for the other is what had a school holding unsold teaching hours as
+inventory and writing them off.
+
+**Eighteen declared numbers are gone (Law 2, "count must fall").** `spoilagePerPeriod: 1` eighteen
+times was a shape standing in for the mechanism `output` now names. A capacity line's spoilage is 1
+by construction and `spoilageOf` derives it from a two-entry dispatch table; declaring one anyway
+throws, and so does a stock line that declares none — a contradiction, not a hint.
+
+**A-64 is closed, all three parts.** A lease now buys ROOM: `capacityFrom` takes what a party rented
+this period beside what it owns, so a firm that bid, won and paid the letter is no longer short of
+exactly the same room next period. A failed payment no longer takes room — the decrements sat
+outside the settled branch, so one insolvent taker could shut a region's storage market for a period.
+And the `commodities.leases` store is DELETED: a `ctx.state` map whose own comment said it was
+emptied every period, which `ctx.state` never is and nothing did, and which nothing read. What each
+taker rented is one public event per taker per period carrying the total; the per-match facts keep
+their own kind, because who let it to whom is real and the letter's income has a payer.
+
+**Measured**, forty periods of the equity rig world: **27 matches → 25 taker-period totals** (two
+takers matched two letters each), the same 27 units of space and the same **$3,996,537,468** paid,
+and the capacity read now counts it. **No firm's plan was bound by storage in either run**, so no
+output changes: the fee buys room now, and in this world nobody was short of it. `goods`, `firms`,
+`freight`, `storage`: **7 red before, 7 after.** Seven new tests. Green: lint, typecheck, spec
+citations (204), forbids (201 files).
+
+**What is NOT built, and it is named rather than implied — E-4, positioned after item 14.** A
+capacity line still starts a batch into WIP and the unsold part is destroyed at the end of the
+period. The number is right and the ACCOUNTS LINE is not: an inventory write-off where it should be
+operating leverage on fixed cost. The fix is produce-to-order — a capacity line posting availability
+into the session and making only what clears — and it cannot be done here: `firms.produce` anchors
+after `labour.pay` and therefore before `markets`, so a line cannot know its demand when it produces,
+and reordering for one kind of line would be a kind branch.
+
+**Forecast, with its killer.** A service and a warehouse are now different things in the type system,
+and a lease is consideration for something. **What would falsify it:** a line that is neither — a
+thing that can be held but only briefly, where the honest answer is a fast spoilage on a stock line
+rather than a third case.

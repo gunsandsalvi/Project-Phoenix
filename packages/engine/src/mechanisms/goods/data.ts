@@ -32,6 +32,8 @@
  * `openingLevels` would be right to refuse it.
  */
 
+import { InvalidRegistry } from '../../core/errors.js';
+
 /**
  * A2.c: the capital services one unit of output takes — units of plant of a named kind that let a
  * line start one unit per period. It is technology like the recipe's tonnages and its hours, and it
@@ -51,6 +53,39 @@ export interface RecipeInputDecl {
   readonly why: string;
 }
 
+/**
+ * A3, E4, Law 2, item 11: WHAT FRACTION OF A LINE'S OUTPUT DOES NOT SURVIVE THE PERIOD.
+ *
+ * For a `stock` line it is declared technology — how fast the thing goes off in store. For a
+ * `capacity` line it is ALL OF IT and nobody chose that: there is nothing in store, so the number
+ * follows from what the line is. It used to be written down as `spoilagePerPeriod: 1` eighteen
+ * times, which is a shape standing in for the mechanism (Law 2), and the count falls by eighteen.
+ */
+const SURVIVES: Readonly<Record<GoodDecl['output'], (d: GoodDecl) => number>> = {
+  // A line that makes a thing says how fast the thing goes off. Missing is missing (item 2).
+  stock: (d) => {
+    if (d.spoilagePerPeriod === null) {
+      throw new InvalidRegistry('Goods A3', `${d.subUnit} makes a thing and does not say how fast it goes off`);
+    }
+    return d.spoilagePerPeriod;
+  },
+  // ALL OF IT, and nobody chose it: there is nothing in store, so declaring a number would be
+  // declaring the same 1 eighteen times (Law 2). Saying one anyway is a contradiction, not a hint.
+  capacity: (d) => {
+    if (d.spoilagePerPeriod !== null) {
+      throw new InvalidRegistry(
+        'Goods A3',
+        `${d.subUnit} makes nothing that waits and declares a spoilage of ${d.spoilagePerPeriod}`,
+      );
+    }
+    return 1;
+  },
+};
+
+export function spoilageOf(d: GoodDecl): number {
+  return SURVIVES[d.output](d);
+}
+
 export interface GoodDecl {
   /** A1, A4: the sub-unit — the thing itself, homogeneous within it. */
   readonly subUnit: string;
@@ -58,16 +93,43 @@ export interface GoodDecl {
   readonly unit: string;
   /** The name a market would use for it. */
   readonly name: string;
-  /** A3, E4: the fraction of what is in store that perishes each period. */
-  readonly spoilagePerPeriod: number;
+  /**
+   * A1, A3, item 11: WHETHER A UNIT OF THIS CAN BE HELD AT ALL — the fact that divides a
+   * manufacture from a service, and it is not `portable`.
+   *
+   * `stock` is a thing: it is made, it waits, it is sold later, and what waits is inventory. A
+   * `capacity` line has nothing to wait — an hour of teaching, a night's lodging, a diagnosis is
+   * made where it is bought and at the moment it is bought, so an hour nobody bought is not an
+   * hour waiting, it is GONE, and the wages were paid anyway. That is what gives a service business
+   * its operating leverage and a warehouse none.
+   *
+   * IT USED TO BE `portable: false` PLUS `spoilagePerPeriod: 1`, which reached the same number by
+   * an unrelated route: a school held unsold teaching hours as INVENTORY and wrote them off with a
+   * destroy leg. `portable` is a shipping fact — freight reads it to decide what it can carry — and
+   * it answered this question only by coincidence.
+   */
+  readonly output: 'stock' | 'capacity';
+  /**
+   * A3, E4: the fraction of what is in store that perishes each period.
+   *
+   * Law 2: for a `capacity` line it is NOT DECLARED and not a choice — there is nothing in store to
+   * perish, so the number is 1 by construction and `spoilageOf` derives it. Declaring it was a
+   * shape standing in for the mechanism named in `output` above.
+   */
+  readonly spoilagePerPeriod: number | null;
   readonly spoilageWhy: string;
   /**
    * A1, Freight A3, 13c.2: WHETHER A UNIT OF THIS CAN BE SOMEWHERE OTHER THAN WHERE IT WAS MADE.
    *
-   * Technology, and the one fact that divides a manufacture from a service. A tonne can be loaded;
-   * a diagnosis, a lesson, a night's lodging and a haircut cannot, at any price. It is declared on
-   * the GOOD and never on the holder, because whether a thing can be moved is a fact about the
-   * thing, and freight reads it to decide what it can carry.
+   * A SHIPPING FACT, and only that. It used to be called "the one fact that divides a manufacture
+   * from a service", and it is not: what divides them is whether the output can be HELD, which is
+   * `output` above. The two coincide for everything in this file — nothing unmovable is also
+   * stockable here — and reading one for the other put a school's unsold teaching hours on its
+   * balance sheet as inventory (item 11).
+   *
+   * A tonne can be loaded; a diagnosis, a lesson, a night's lodging and a haircut cannot, at any
+   * price. It is declared on the GOOD and never on the holder, because whether a thing can be
+   * moved is a fact about the thing, and freight reads it to decide what it can carry.
    *
    * There is no `portableWhy` beside it, deliberately (Law 16): for a physical good the value is
    * the whole of the statement and thirty-six copies of "it is a thing and things can be loaded"
@@ -120,6 +182,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'grain',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.004,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Grown. What a bad season takes, it takes here first.',
     inputs: [
@@ -149,6 +212,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'head',
     name: 'livestock',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Grazed and finished on grain.',
     inputs: [
@@ -177,6 +241,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'cubic metres',
     name: 'timber logs',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Felled. Slow to grow and slow to cut.',
     inputs: [
@@ -205,6 +270,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'iron ore',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dug. Drawn from the ground and labour alone, so nothing upstream of it can be short.',
     inputs: [
@@ -233,6 +299,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'coal',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dug. What this world burns for power and smelts with.',
     inputs: [
@@ -261,6 +328,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'barrels',
     name: 'crude oil',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Pumped. Fuel and chemicals both start here.',
     inputs: [
@@ -289,6 +357,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'limestone',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Quarried. Cement and glass both start here.',
     inputs: [
@@ -317,6 +386,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'bauxite',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dug. The light metal begins here.',
     inputs: [
@@ -345,8 +415,16 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'MWh',
     name: 'electric power',
     portable: true,
-    spoilagePerPeriod: 1,
-    spoilageWhy: 'Goods A3, E4: what is lost in store each period. Generated and consumed in the same period: nobody stores a megawatt-hour, which is why an outage is a real shortage rather than a dearer price.',
+    /**
+     * THE CASE THAT PROVES `portable` WAS THE WRONG FACT (item 11). Power travels — it is the most
+     * movable thing in this file — and NOBODY STORES A MEGAWATT-HOUR. It is generated and consumed
+     * in the same period, which is why an outage is a real shortage rather than a dearer price.
+     * `portable` and `output` come apart here, and reading one for the other is what put unsold
+     * output on a balance sheet as inventory.
+     */
+    output: 'capacity',
+    spoilagePerPeriod: null,
+    spoilageWhy: 'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. Generated and consumed in the same period: nobody stores a megawatt-hour.',
     inputs: [
       { subUnit: 'coalRaw', qtyPerUnit: 0.4, why: 'A2.a: 0.4 of coalRaw per unit of power — physical, never a share of cost.' },
     ],
@@ -373,6 +451,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'litres',
     name: 'refined fuel',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Refined. What moves what is not moved by hand.',
     inputs: [
@@ -402,6 +481,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'steel',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Smelted. Most made things are built on it or out of it.',
     inputs: [
@@ -433,6 +513,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'aluminium',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Smelted, and it is mostly electricity: a power shortage is an aluminium shortage a period later.',
     inputs: [
@@ -463,6 +544,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'cubic metres',
     name: 'sawn lumber',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Sawn.',
     inputs: [
@@ -493,6 +575,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'cement',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Burned. Dear to move, so it is made near where it is poured.',
     inputs: [
@@ -524,6 +607,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'industrial chemicals',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.003,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Cracked from crude.',
     inputs: [
@@ -554,6 +638,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'fertiliser',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Made of chemicals and power, and it goes back into the field — so an energy shock reaches the price of bread by two paths.',
     inputs: [
@@ -584,6 +669,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'medicines',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.01,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Synthesised. Low yield, because most of a batch fails its test.',
     inputs: [
@@ -614,6 +700,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'flour',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Milled. The intermediate nobody eats.',
     inputs: [
@@ -644,6 +731,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'meat',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.04,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Dressed. It keeps badly, so it moves fast or not at all.',
     inputs: [
@@ -674,6 +762,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'wool',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Clipped. The other thing a herd gives.',
     inputs: [
@@ -703,6 +792,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'cloth',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Spun and woven.',
     inputs: [
@@ -734,6 +824,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'units',
     name: 'clothing',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Cut and sewn.',
     inputs: [
@@ -766,6 +857,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'glass',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Melted. Fragile and heavy, and wanted everywhere.',
     inputs: [
@@ -796,6 +888,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'plastics',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Moulded. Light, which is why it travels.',
     inputs: [
@@ -826,6 +919,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'rubber',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Compounded. Nothing rolls without it.',
     inputs: [
@@ -856,6 +950,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'paper',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.002,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Pulped and pressed.',
     inputs: [
@@ -887,6 +982,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes',
     name: 'bread',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.25,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Baked. It goes stale in days, so it is made near where it is eaten.',
     inputs: [
@@ -918,6 +1014,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'cubic metres',
     name: 'concrete',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.3,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Mixed and poured the same period: nobody stores it, which is what its spoilage says.',
     inputs: [
@@ -949,6 +1046,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'machines',
     name: 'machinery',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. The capital good: what every line\'s capacity is made of, including its own.',
     inputs: [
@@ -983,6 +1081,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'vessels',
     name: 'vessels',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Built in a yard over half a year, which is why freight capacity answers a shortage slowly.',
     inputs: [
@@ -1017,6 +1116,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'vehicles',
     name: 'vehicles',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Assembled out of six industries at once.',
     inputs: [
@@ -1053,6 +1153,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'units',
     name: 'electronics',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Assembled from very little of a great many things. Most of what is started fails a test.',
     inputs: [
@@ -1084,6 +1185,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'units',
     name: 'appliances',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Assembled. What a household replaces rather than repairs.',
     inputs: [
@@ -1118,6 +1220,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'units',
     name: 'furniture',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Made from lumber. Bulky, so it is made near its market.',
     inputs: [
@@ -1151,6 +1254,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'units',
     name: 'packaging',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0.001,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. What everything else moves in. Nobody buys it for itself.',
     inputs: [
@@ -1183,6 +1287,7 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'buildings',
     name: 'buildings',
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: 0,
     spoilageWhy: 'Goods A3, E4: what is lost in store each period. Built on site over six periods: the longest lead time in this world.',
     inputs: [
@@ -1231,9 +1336,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'courses of care',
     name: 'health and social care',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'medicine', qtyPerUnit: 0.004, why: 'A2.a: the drugs and dressings a course of care uses.' },
       { subUnit: 'power', qtyPerUnit: 0.02, why: 'A2.a: a hospital runs its lights, its heat and its machines the whole time.' },
@@ -1261,9 +1367,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'pupil weeks',
     name: 'teaching',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'paper', qtyPerUnit: 0.0004, why: 'A2.a: books and what is written on.' },
       { subUnit: 'power', qtyPerUnit: 0.006, why: 'A2.a: a lit, heated room for a week.' },
@@ -1289,9 +1396,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'covers',
     name: 'meals and lodging',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'flour', qtyPerUnit: 0.00012, why: 'A2.a: what is on the plate, at the bottom of its own chain.' },
       { subUnit: 'meat', qtyPerUnit: 0.00016, why: 'A2.a: the rest of what is on the plate.' },
@@ -1319,9 +1427,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'connection weeks',
     name: 'telecommunications',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'power', qtyPerUnit: 0.0015, why: 'A2.a: the exchange and the masts, which never stop.' },
       { subUnit: 'electronics', qtyPerUnit: 0.002, why: 'A2.a: what the network is made of and what keeps failing in it.' },
@@ -1349,9 +1458,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'support weeks',
     name: 'software and support',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'power', qtyPerUnit: 0.02, why: 'A2.a: the machines it runs on.' },
       { subUnit: 'electronics', qtyPerUnit: 0.05, why: 'A2.a: the machines themselves, which last two or three years.' },
@@ -1378,9 +1488,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'engagements',
     name: 'professional services',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'paper', qtyPerUnit: 0.0008, why: 'A2.a: what an opinion is delivered on.' },
       { subUnit: 'power', qtyPerUnit: 0.01, why: 'A2.a: an office for the duration.' },
@@ -1406,9 +1517,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'design weeks',
     name: 'design and engineering services',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'paper', qtyPerUnit: 0.001, why: 'A2.a: drawings.' },
       { subUnit: 'power', qtyPerUnit: 0.012, why: 'A2.a: the machines the drawing is done on.' },
@@ -1435,9 +1547,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'campaign weeks',
     name: 'media and advertising',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'paper', qtyPerUnit: 0.004, why: 'A2.a: print.' },
       { subUnit: 'power', qtyPerUnit: 0.02, why: 'A2.a: studios and transmitters.' },
@@ -1465,9 +1578,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'journeys',
     name: 'road transport',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'fuel', qtyPerUnit: 6, why: 'A2.a: litres in the tank for one journey. It is what makes this line the first to feel a crude shock.' },
       { subUnit: 'power', qtyPerUnit: 0.002, why: 'A2.a: depots and yards.' },
@@ -1494,9 +1608,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'jobs',
     name: 'repair and maintenance',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'steel', qtyPerUnit: 0.004, why: 'A2.a: the part that goes in.' },
       { subUnit: 'plastic', qtyPerUnit: 0.001, why: 'A2.a: the rest of the part.' },
@@ -1524,9 +1639,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'site weeks',
     name: 'facilities management',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'chemicals', qtyPerUnit: 0.0015, why: 'A2.a: what it is cleaned with.' },
       { subUnit: 'power', qtyPerUnit: 0.004, why: 'A2.a: plant and lighting.' },
@@ -1553,9 +1669,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'appointments',
     name: 'personal care',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'chemicals', qtyPerUnit: 0.0004, why: 'A2.a: what is used on the customer.' },
       { subUnit: 'power', qtyPerUnit: 0.0015, why: 'A2.a: the shop.' },
@@ -1581,9 +1698,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'admissions',
     name: 'entertainment and recreation',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'power', qtyPerUnit: 0.002, why: 'A2.a: the lights and the sound.' },
       { subUnit: 'paper', qtyPerUnit: 0.0002, why: 'A2.a: tickets and programmes.' },
@@ -1609,9 +1727,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'guard weeks',
     name: 'security services',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'power', qtyPerUnit: 0.0008, why: 'A2.a: monitoring.' },
       { subUnit: 'electronics', qtyPerUnit: 0.01, why: 'A2.a: cameras, alarms and what watches them.' },
@@ -1638,9 +1757,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes collected',
     name: 'waste collection',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'fuel', qtyPerUnit: 9, why: 'A2.a: litres a tonne, on a round that stops every thirty yards.' },
       { subUnit: 'power', qtyPerUnit: 0.004, why: 'A2.a: the depot and the plant that sorts it.' },
@@ -1667,9 +1787,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes handled',
     name: 'warehousing and handling',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. A service is made where it is bought and at the moment it is bought, so an hour of it that nobody bought is not an hour of it that is waiting — it is gone, and the wages were paid anyway. That is what gives a service business its operating leverage and a warehouse none, and it is the technology of the thing rather than a number anybody chose.',
     inputs: [
       { subUnit: 'fuel', qtyPerUnit: 1.4, why: 'A2.a: litres a tonne, moving it about the shed.' },
       { subUnit: 'power', qtyPerUnit: 0.0015, why: 'A2.a: lighting and the cold end.' },
@@ -1696,9 +1817,10 @@ const MAKES: readonly GoodDecl[] = [
     unit: 'tonnes distributed',
     name: 'wholesale distribution',
     portable: false,
-    spoilagePerPeriod: 1,
+    output: 'capacity',
+    spoilagePerPeriod: null,
     spoilageWhy:
-      'Goods A3, E4: ALL OF IT. What a merchant does is get a thing from where it was made to the shop that sells it, in the week it is wanted; a week of that capacity nobody used is not waiting anywhere. The STOCK a merchant carries is a different thing and is on its own book (13c.2, the merchants module).',
+      'Goods A3, E4, item 11: NOT DECLARED — it follows from `output: capacity`. What a merchant does is get a thing from where it was made to the shop that sells it, in the week it is wanted; a week of that capacity nobody used is not waiting anywhere. The STOCK a merchant carries is a different thing and is on its own book (13c.2, the merchants module).',
     inputs: [
       { subUnit: 'logistics', qtyPerUnit: 1, why: 'A2.a, 13c.2: it is handled at the depot, and the handling is somebody else\u2019s line.' },
       { subUnit: 'transport', qtyPerUnit: 0.35, why: 'A2.a, 13c.2: and trunked between depots, which is what makes a wholesaler feel a fuel price before a shop does.' },
@@ -1730,6 +1852,7 @@ const MAKES: readonly GoodDecl[] = [
     // It is the oldest reason a price is local, and it is why a shortage in one place is not
     // relieved by a surplus in another however large that surplus is.
     portable: false,
+    output: 'stock',
     spoilagePerPeriod: 0.0002,
     spoilageWhy:
       'Goods A3, E4, Housing A4: what falls out of the stock each period if nobody keeps it up. About one per cent a year, which is why a dwelling is maintained rather than merely owned, and why a stock nobody spends on shrinks.',
@@ -1854,6 +1977,7 @@ function shelfLine(d: RetailDecl, of: GoodDecl): GoodDecl {
     // It can be loaded: a pallet of packaged goods is a pallet. What a shop adds is being somewhere,
     // and a shop somewhere else is a different shop — but the stock itself is stock.
     portable: true,
+    output: 'stock',
     spoilagePerPeriod: d.spoilage,
     spoilageWhy: `Goods A3, E4: what goes in the bin at the back. ${d.why}`,
     inputs,

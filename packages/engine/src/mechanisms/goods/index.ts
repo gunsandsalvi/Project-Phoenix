@@ -34,7 +34,7 @@ import { TIME_PIECES, TONNE_PIECES, WHOLE_PIECES } from '../../registry/grid.js'
 import type { UnitDecl } from '../../registry/registry.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { GOODS, type GoodDecl } from './data.js';
+import { GOODS, spoilageOf, type GoodDecl } from './data.js';
 import { goodProfile, perish, wipProfile } from './inventory.js';
 import {
   goodId,
@@ -109,7 +109,7 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
   for (const d of rows) {
     out.push({
       id: spoilageParam(d.subUnit),
-      value: d.spoilagePerPeriod,
+      value: spoilageOf(d),
       unit: `fraction of units in store per period`,
       dimension: 'ratio',
       kind: 'technology',
@@ -239,6 +239,12 @@ function refuseValueRecipes(ctx: SeedContext, rows: readonly GoodDecl[]): void {
  * It is a FORBID rather than a derivation (Part II): `portable` and `storagePerUnit` are separate
  * technology facts about separate things — whether it can be loaded, and how much room it takes —
  * and one is not the other. What is checked is that the pair a line declares is a pair that exists.
+ *
+ * Item 11 adds the second pair, and it is the one that matters: A LINE WHOSE OUTPUT CANNOT BE HELD
+ * HAS NOWHERE TO PUT IT. `output: 'capacity'` and a storage requirement is the same contradiction
+ * read the right way round — the first check catches it for a service only because nothing in this
+ * file is both unmovable and stockable, and power is the counter-example that proves they are two
+ * questions: the most movable thing here, and nobody stores a megawatt-hour.
  */
 function refuseUnmovableStores(rows: readonly GoodDecl[]): void {
   for (const d of rows) {
@@ -246,6 +252,11 @@ function refuseUnmovableStores(rows: readonly GoodDecl[]): void {
       d.portable || d.storagePerUnit === null,
       'Commodities Spot A3',
       `${d.subUnit} cannot be moved and declares ${d.storagePerUnit} of covered space a unit: a store is somewhere a thing waits that is not where it will be used`,
+    );
+    forbid(
+      d.output === 'stock' || d.storagePerUnit === null,
+      'Commodities Spot A3',
+      `${d.subUnit} makes nothing that waits and declares ${d.storagePerUnit} of covered space a unit: there is nothing to put in it`,
     );
   }
 }

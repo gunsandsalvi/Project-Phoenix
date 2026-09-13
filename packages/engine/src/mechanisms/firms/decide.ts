@@ -53,6 +53,7 @@ import {
 import {
   CAPITAL_KINDS,
   capacityFrom,
+  rentedRoom,
   capitalChargePerUnit,
   capitalKindOf,
   isPlant,
@@ -355,7 +356,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   ).value;
   // Capital Programme A2, A4: what its plant lets it make, and what that plant costs it to use.
   const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
-  const capacity = capacityFrom(tech.plant, vintages);
+  const capacity = capacityFrom(tech.plant, vintages, rentedRoom(view.lastOwn('commodities.leased')));
   // Capital Programme D1, A6: what its plant will still let it run at next period — this period's
   // stock less the vintages whose life ends before then. It is computed once and both the decision
   // and the record it publishes read the same number (Law 4).

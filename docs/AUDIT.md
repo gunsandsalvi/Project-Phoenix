@@ -121,7 +121,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **8** | `Agreement` | 5 of 9 | **BUILT (the store, and four cases)** — arrears exist and rank. The seven private books are not migrated, so `Mandate` and **A-9**, **A-67**, **B-2**, **B-3** stay open here |
 | ~~**9**~~ | ~~`Control`~~ | 2 | **BUILT** — the relation, the group, and a consolidation that eliminates. `combine` has a caller and moves the holdings it always claimed to |
 | ~~**10**~~ | ~~`CorporateAction`~~ | 1 | **BUILT** — four dates, and the declaration is separate from the payment. Dividend payout legs fall from 13.8% of everything to 0.58% |
-| **11** | `OutputKind` | 1 | independent; small |
+| ~~**11**~~ | ~~`OutputKind`~~ | 1 | **BUILT** — the noun, and A-64's three parts. 18 declared numbers gone; produce-to-order is `E-4`, after 14 |
 | **12** | `Space` | 0 | independent; it *is* worklist 13m |
 | **13** | `Guarantee` | 0 | independent; tripartite, so **8** does not cover it |
 | **14** | `Process` | 1 | independent; small |
@@ -2485,6 +2485,58 @@ licence to do everything weekly. Re-verified at the source in this pass.
 
 ## 11. `OutputKind` — stock or capacity
 
+> **BUILT — the noun and A-64. The produce-to-order mechanism it makes possible is named below and
+> not built.**
+>
+> `GoodDecl.output: 'stock' | 'capacity'`. A `stock` line makes a thing: it waits, it is sold later,
+> and what waits is inventory. A `capacity` line has nothing to wait — an hour of teaching, a
+> night's lodging, a diagnosis is made where it is bought and at the moment it is bought.
+>
+> **POWER IS THE CASE THAT PROVES `portable` WAS THE WRONG FACT.** It is the most movable thing in
+> the file and nobody stores a megawatt-hour: `portable: true`, `output: 'capacity'`. `portable`
+> was declared to be *"the one fact that divides a manufacture from a service"* and it is a
+> SHIPPING fact — the two coincide for the sixteen services and come apart at electricity. Its
+> docstring says so now, and freight reads it for what it is.
+>
+> **Eighteen declared numbers are gone (Law 2, "count must fall").** `spoilagePerPeriod: 1` was a
+> shape standing in for the mechanism; a capacity line's spoilage is 1 BY CONSTRUCTION and
+> `spoilageOf` derives it from a two-entry dispatch table. Declaring one anyway now throws, and so
+> does a stock line that declares none — a contradiction, not a hint (Missing is Missing).
+>
+> **A second FORBID, and it is the one that matters**: a line whose output cannot be held may not
+> ask for somewhere to put it. The old check caught this for services only because nothing in the
+> file is both unmovable and stockable.
+>
+> **A-64 is closed, all three parts.**
+>
+> 1. **A lease buys room.** `capacityFrom` takes what the party RENTED this period beside what it
+>    owns. A firm short of room bid, won, paid the letter, and its capacity did not move, so next
+>    period it was short of exactly the same room and rented it again: the money was conserved, so
+>    no audit family could see it — the buyer of a service that did not exist (Law 1).
+> 2. **A failed payment takes no room.** The decrements sat outside the settled branch, so a taker
+>    whose rent did not settle absorbed the letter's space anyway. One insolvent taker could shut a
+>    region's storage market for the period.
+> 3. **The store is gone.** `commodities.leases` was a `ctx.state` map whose own comment said it was
+>    emptied every period, which `ctx.state` never is and nothing did — a write-only accumulator
+>    nothing read. It is one public event per taker per period carrying the TOTAL, which is what the
+>    capacity read asks for; the per-match facts keep their own kind (`commodities.let`), because
+>    who let it to whom is real and the letter's income has a payer. **One noun declaration deleted.**
+>
+> **Measured**, forty periods of the equity rig world: **27 matches → 25 taker-period totals** (two
+> takers matched two letters each), same 27 units of space, same **$3,996,537,468** paid — and the
+> capacity read now counts it. **No firm's plan was bound by storage in either run**, so no output
+> changes: the fee now buys room, and in this world nobody was short of it. `goods`, `firms`,
+> `freight`, `storage`: **7 red before, 7 after.** Seven new tests.
+>
+> **What is NOT built, and it is named rather than implied.** A capacity line still starts a batch
+> into WIP and the unsold part is destroyed at the end of the period. The number is right and the
+> ACCOUNTS LINE is not: it is an inventory write-off where it should be operating leverage on fixed
+> cost. The fix is produce-to-order — a capacity line posting availability into the session and
+> making only what clears — and it cannot be done here, because `firms.produce` anchors after
+> `labour.pay` and therefore BEFORE `markets`, so a line cannot know its demand when it produces.
+> Reordering for one kind of line would be a kind branch. **This is a new item at its dependency
+> position, after item 14's `Process`** (`E-4` in the index).
+
 **Why.** One finding, and the whole services question. `GoodDecl.portable` is read in four places and
 every one is logistics — freight loading, merchant stocking, futures deliverability, one FORBID. It is
 a **shipping property**, and it is the declared definition of a service: *"the one fact that divides a
@@ -4149,6 +4201,7 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **C-7** (—) | 17 | the confidence question, answered and closed (carried from `VERIFY.md`) |
 | **D-1** (A) | 8 | a levy that fails is recorded and then forgotten: no arrears (`12d-5`) |
 | **D-2** (B) | 18 | the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) |
+| **E-4** (B) | after 14 | *(found while building item 11)* a capacity line still produces into WIP and destroys the unsold part: the number is right and the accounts line is not — an inventory write-off where it should be operating leverage. Produce-to-order needs a line to know its demand when it produces, and `firms.produce` runs before `markets` |
 | **E-3** (C) | 17 | *(found while building item 10)* an estate pays RENT for the space its inventory sits in while it winds up, and its own `flows` family reports every non-`corporateAction` payment out of an estate as a distribution to somebody with no claim. A cost of a winding-up is not a distribution; D6 is about distributions |
 | **E-2** (B) | 14 | *(found while building item 8)* an estate left `winding` because it could not hand over is still a household cell to the eleven `ofKind(HOUSEHOLD)` readers, which all ask `status.alive`. Unreached in the scale model — **0 failed probate transfers, 0 encumbered household holdings over 12 periods** — and named rather than left silent |
 | **E-1** (A) | 8 | *(found while building item 8)* a rating fee that fails is written as `rating.unpaid` and carried by nothing — the same hole as D-1, in a fourth module. **18 of them over fourteen periods** in a world where no bank lends. Closed with D-1, through the same door |
