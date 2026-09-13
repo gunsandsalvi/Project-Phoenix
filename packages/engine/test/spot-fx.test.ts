@@ -5,11 +5,11 @@
  */
 import { describe, expect, it } from 'vitest';
 import { ABROAD, USD, currencyUnit, fxMarketOf, fxPairId, pairOf, triangles } from '../src/index.js';
-import { rigWorld } from './rig.js';
+import { abroadWorld } from './rig.js';
 
 describe('a spot trade is two money legs (Spot FX A1, C4; Currency C1, C2; Law 5)', () => {
   it('moves one money against another, both on their own grids, or neither moves', () => {
-    const w = rigWorld('fx-A');
+    const w = abroadWorld('fx-A');
     for (let i = 0; i < 6; i += 1) w.step();
     let seen = 0;
     for (const r of w.ledger.all()) {
@@ -39,7 +39,7 @@ describe('a spot trade is two money legs (Spot FX A1, C4; Currency C1, C2; Law 5
 
 describe('the triangle (Spot FX C3, E3; XI-12)', () => {
   it('exists at all, which two moneys cannot express', () => {
-    const w = rigWorld('fx-B');
+    const w = abroadWorld('fx-B');
     const tris = triangles(w.markets);
     const n = 1 + ABROAD.length;
     // One per unordered triple: four moneys make four triangles, two make none.
@@ -52,7 +52,7 @@ describe('the triangle (Spot FX C3, E3; XI-12)', () => {
   });
 
   it('is never enforced: the audit measures the gap and closes nothing (C3, E3)', () => {
-    const w = rigWorld('fx-C');
+    const w = abroadWorld('fx-C');
     for (let i = 0; i < 6; i += 1) w.step();
     const family = w.last?.audit.families.find((f) => f.family === 'crossMarket');
     expect(family?.built).toBe(true);
@@ -64,7 +64,7 @@ describe('the triangle (Spot FX C3, E3; XI-12)', () => {
 
 describe('who is in a pair and why (Spot FX B1, B2, B5, B6; XI-13)', () => {
   it('puts a party in the pair between the money it needs and its own, and nowhere else', () => {
-    const w = rigWorld('fx-D');
+    const w = abroadWorld('fx-D');
     w.step();
     // XI-12: nothing is routed. A party with a euro need is in the pair that has euros and its own
     // money in it, so one balance is never committed in three books at once.
@@ -78,7 +78,7 @@ describe('who is in a pair and why (Spot FX B1, B2, B5, B6; XI-13)', () => {
   });
 
   it('leaves a desk’s own money out of its position in a pair (D4)', () => {
-    const w = rigWorld('fx-E');
+    const w = abroadWorld('fx-E');
     for (let i = 0; i < 4; i += 1) w.step();
     // D4: a bank's dollar balance funds everything it does; a desk that counted it as a long dollar
     // book would be permanently too long to bid for dollars, which is a market with one side.
@@ -91,7 +91,7 @@ describe('who is in a pair and why (Spot FX B1, B2, B5, B6; XI-13)', () => {
 
 describe('a session that settles nothing does not print (Clearing E1, Law 3)', () => {
   it('carries the last real price, visibly stale, and says why', () => {
-    const w = rigWorld('fx-F');
+    const w = abroadWorld('fx-F');
     for (let i = 0; i < 8; i += 1) w.step();
     for (const e of w.journal.ofKind('print')) {
       if (e.data['stale'] !== true) continue;

@@ -18,7 +18,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { rigWorld, rigSpec } from './rig.js';
+import { abroadWorld, rigSpec } from './rig.js';
 
 /** The same world with one of the central bank's policy numbers set differently. */
 function withPolicy(seed: string, id: string, value: number): World {
@@ -33,7 +33,7 @@ function withPolicy(seed: string, id: string, value: number): World {
 
 describe('open-market operations (Central Bank C)', () => {
   it('buys towards the share policy chose, paying with money it creates (C1, C1.a, C2)', () => {
-    const w = rigWorld('omo-a');
+    const w = abroadWorld('omo-a');
     const share = w.params.ratio(CB_PARAMS.targetShare);
     const baseBefore = w.instruments.get(moneyInstrumentId(CB, USD)).issued;
     w.step();
@@ -72,7 +72,7 @@ describe('open-market operations (Central Bank C)', () => {
   });
 
   it('is never in a primary market: the seller there is the issuer (C1.b, Treasury D3.a)', () => {
-    const w = rigWorld('omo-b');
+    const w = abroadWorld('omo-b');
     for (let i = 0; i < 24; i += 1) w.step();
     // Every allotment names the treasury as seller; the central bank appears in none of them.
     const issuances = w.ledger
@@ -101,7 +101,7 @@ describe('open-market operations (Central Bank C)', () => {
   });
 
   it('posts a quantity and takes the level the book gives it (C3)', () => {
-    const w = rigWorld('omo-c');
+    const w = abroadWorld('omo-c');
     for (let i = 0; i < 8; i += 1) w.step();
     // Its trades happened at prints somebody posted, never at a level of its own naming: every
     // print this world carries came out of a market it did not price.
@@ -115,7 +115,7 @@ describe('open-market operations (Central Bank C)', () => {
   });
 
   it('lets the book run off when reinvestment is off, and the base shrinks with it (C4)', () => {
-    const on = rigWorld('omo-d');
+    const on = abroadWorld('omo-d');
     const off = withPolicy('omo-d', 'centralBank.reinvest', 0);
     for (let i = 0; i < 30; i += 1) {
       on.step();
@@ -136,7 +136,7 @@ describe('open-market operations (Central Bank C)', () => {
 
 describe('remittance (Central Bank E3)', () => {
   it('hands over what its own instructions earned, on its own calendar, and says so', () => {
-    const w = rigWorld('omo-e');
+    const w = abroadWorld('omo-e');
     const before = w.cash(TREASURY_US, USD);
     for (let i = 0; i < 60; i += 1) w.step();
     const remittances = w.journal.ofKind('centralBank.remittance');
@@ -149,7 +149,7 @@ describe('remittance (Central Bank E3)', () => {
   });
 
   it('remits income and not revaluation (E3.a): what it hands over is what its ledger produced', () => {
-    const w = rigWorld('omo-f');
+    const w = abroadWorld('omo-f');
     for (let i = 0; i < 60; i += 1) w.step();
     const e = w.journal.ofKind('centralBank.remittance')[0];
     if (e === undefined) throw new Error('no remittance');

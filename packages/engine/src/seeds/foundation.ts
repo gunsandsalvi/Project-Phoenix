@@ -313,6 +313,9 @@ export const countryOfRegion = (region: RegionId): CountrySeed => {
   if (c === undefined) throw new Missing('13c.1', `${region} is in no country this world declares`);
   return c;
 };
+
+/** 13j: the one country a world of one has — a scale model opens the first row and nothing else. */
+export const ONE_COUNTRY: readonly CountrySeed[] = COUNTRIES.slice(0, 1);
 /**
  * 13c.1: THE LEGS ARE READ OFF THE MAP, so there is no route table here any more. How many hulls
  * a carrier owns is still drawn; where it can sail them is the world's answer and not a list.
@@ -626,6 +629,8 @@ export function foundationSeedFor(
    * by the assembly that funds them — a second call would be a second banking system (Law 4).
    */
   banked: ReadonlyMap<string, RegionId> = new Map(),
+  /** 13j: the countries this world opens, each getting the same construction (Seed B1). */
+  countries: readonly CountrySeed[] = COUNTRIES,
 ): SystemModule {
   return {
     id: 'seed.foundation',
@@ -782,7 +787,7 @@ export function foundationSeedFor(
       // Currency A2, A3: each money's issuer and the sovereign that borrows in it. Each books in its
       // own region, which is what makes everything it holds of another country's paper FOREIGN and
       // everything that country holds of its own foreign the other way (D2).
-      for (const c of COUNTRIES) {
+      for (const c of countries) {
         ctx.parties.add(named(c.centralBank, CENTRAL_BANK, c.centralBankName, c.centralBank, c.region));
         ctx.parties.add(named(c.treasury, TREASURY, c.treasuryName, c.centralBank, c.region));
       }
@@ -840,7 +845,7 @@ export function foundationSeedFor(
       // money and a bank issues the money of the region it books in — there is no such thing as
       // money without an issuer, and none of it is anybody else's (A1).
       const issuers: readonly { readonly id: PartyId; readonly region: RegionId }[] = [
-        ...COUNTRIES.map((c) => ({ id: c.centralBank, region: c.region })),
+        ...countries.map((c) => ({ id: c.centralBank, region: c.region })),
         ...banks,
       ];
       for (const issuer of issuers) {
@@ -1203,7 +1208,7 @@ export function foundationSeedFor(
       /** Central Bank F4: the line a reserve manager abroad holds — the benchmark, and its price. */
       const benchmarkIn = new Map<string, { id: InstrumentId; price: number }>();
 
-      for (const c of COUNTRIES) {
+      for (const c of countries) {
         const where = String(c.country);
         const banksHere = banksIn.get(where) ?? [];
         const cellsHere = cellsIn.get(where) ?? [];
@@ -1352,7 +1357,7 @@ export function foundationSeedFor(
           ctx.params.ratio(P.treasuryBufferShare),
           "the treasury's buffer",
         );
-        ctx.endowMoney(c.treasury, c.ccy, ctx.registry.payable(c.ccy, buffer));
+        ctx.endowMoney(c.treasury, c.ccy, cash(ctx, c.ccy, buffer));
         const reserves = sub(centralBankAssets, buffer, 'what the banks hold in reserve');
         // Seed C1, Banks Capital B1.b: A BANK'S BALANCE SHEET FOLLOWS ITS DEPOSITORS, and this is
         // the line of causality the whole sheet turns on.
@@ -1432,10 +1437,7 @@ export function foundationSeedFor(
           ctx.endowMoney(
             b.id,
             c.ccy,
-            ctx.registry.payable(
-              c.ccy,
-              sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves'),
-            ),
+            cash(ctx, c.ccy, sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves')),
           );
         }
         for (const line of seedLineRows) {
@@ -1455,7 +1457,7 @@ export function foundationSeedFor(
           });
         }
         for (const f of firmsHere) {
-          ctx.endowMoney(partyId(f.firm), c.ccy, ctx.registry.payable(c.ccy, cashOf(f)));
+          ctx.endowMoney(partyId(f.firm), c.ccy, cash(ctx, c.ccy, cashOf(f)));
         }
       }
 
@@ -1502,16 +1504,20 @@ export function foundationSeedFor(
       // banking system with paper in it, so what each central bank holds abroad is the same share of
       // its OWN system's paper, spread over the other countries — and nothing in this world says
       // which of the four is the reserve currency (XI-12).
+      // A world of ONE country has no cross holdings, because there is nobody else to hold its
+      // paper and nothing of anybody else's to hold. It is not a case to handle: it is the honest
+      // answer to "what does this central bank hold abroad" when there is no abroad (Law 2).
+      const elsewhere = countries.length - 1;
       const crossShare = ctx.params.ratio(P.crossHoldingShare);
-      const abroadShare = div(
+      const abroadShare = elsewhere <= 0 ? 0 : div(
         crossShare,
-        COUNTRIES.length - 1,
+        elsewhere,
         'the part of it that is any ONE other country’s',
       );
-      for (const mine of COUNTRIES) {
+      for (const mine of elsewhere <= 0 ? [] : countries) {
         const systemPaper = zeroIfNone(systemPaperIn.get(String(mine.country)));
         if (systemPaper <= 0) continue;
-        for (const theirs of COUNTRIES) {
+        for (const theirs of countries) {
           if (theirs.country === mine.country) continue;
           const bench = benchmarkIn.get(String(theirs.country));
           if (bench === undefined || bench.price <= 0) continue;
@@ -1808,10 +1814,14 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
  * grams, whole machines. Nothing downstream converts anything, because everything downstream is
  * already a count.
  *
- * 13j: money goes through `registry.payable`, which takes the MONEY as well as the amount. There
- * used to be a `cash` here that took neither, because there was one money in this world worth
- * holding; a seed with four banking systems in it has to say whose cents it means (Money A2.b).
+ * 13j: AND WHOSE. It used to name the dollar, because there was one money in this world worth
+ * holding; a seed with four banking systems in it has to say whose cents it means (Money A2.b),
+ * and every money has its own smallest piece (Currency A3).
  */
+function cash(ctx: SeedContext, ccy: CurrencyCode, phx: number): number {
+  return ctx.registry.pieces(currencyUnit(ccy), phx);
+}
+
 /** Units of an instrument, in whatever its own unit is named in. */
 function held(ctx: SeedContext, instrument: InstrumentId, amount: number): number {
   return ctx.registry.pieces(ctx.instruments.get(instrument).unit, amount);
@@ -1884,6 +1894,8 @@ export function foundationDraw(
   seed: string,
   bankRows: readonly BankDecl[] = drawBanks(BANK_COUNT, seed),
   firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed, 0),
+  /** 13j: the countries this world opens, so a tracker exists for every market it has. */
+  countries: readonly CountrySeed[] = COUNTRIES,
 ): FoundationDraw {
   const names = bankRows.map((b) => b.bank);
   const listed = drawListed(firmRows, bankRows, seed);
@@ -1917,7 +1929,7 @@ export function foundationDraw(
       [
         // 13j: a tracker on every country's own market, because an index with no vehicle following
         // it is a measurement nobody trades and C2's simultaneity has nothing to be simultaneous.
-        ...COUNTRIES.map((c) => EQUITY_INDEX(c.region)),
+        ...countries.map((c) => EQUITY_INDEX(c.region)),
         SIZE_INDEX(REGION, 'large'),
         SIZE_INDEX(REGION, 'small'),
         GLOBAL_INDEX(USD),
@@ -1945,7 +1957,7 @@ function mapReads(): TerrainReads {
   };
 }
 
-function mapSpec(): MapSpec {
+function mapSpec(countries: readonly CountrySeed[]): MapSpec {
   return {
     worldWidthKm: WORLD.widthKm,
     worldHeightKm: WORLD.heightKm,
@@ -1960,7 +1972,7 @@ function mapSpec(): MapSpec {
     water: WATER,
     bands: BANDS.map((b) => ({ id: terrainId(b.id), share: b.share })),
     countries: [
-      ...COUNTRIES.map((c) => ({ id: c.country, name: c.name, regions: PLACES_PER_COUNTRY })),
+      ...countries.map((c) => ({ id: c.country, name: c.name, regions: PLACES_PER_COUNTRY })),
     ],
     terrains: TERRAINS,
     resources: RESOURCES,
@@ -2034,28 +2046,36 @@ function placeBanks(
   g: GeographyDecl,
   reads: RatioReads,
   regions: readonly RegionDecl[],
+  countries: readonly CountrySeed[],
   banks: readonly BankDecl[],
 ): ReadonlyMap<string, RegionId> {
-  const places = regions.map((r) => r.id);
-  const first = places[0];
-  if (first === undefined) throw new Missing('Seed B3', 'this world has nowhere in it');
-  const perPlace = splitOnTick(
-    banks.length,
-    places.map((r) => peopleOn(g, reads, r)),
+  const first = countries[0];
+  if (first === undefined) throw new Missing('Seed B3', 'this world has no countries in it');
+  // How many people a COUNTRY holds is the ground it has to feed them on, summed over its places.
+  const ground = countries.map((c) =>
+    sum(
+      regions.filter((r) => r.country === c.country).map((r) => peopleOn(g, reads, r.id)),
+    ).value,
   );
+  const perCountry = splitOnTick(banks.length, ground);
   const out = new Map<string, RegionId>();
   let at = 0;
-  places.forEach((region, k) => {
-    const here = zeroIfNone(perPlace[k]);
+  countries.forEach((c, k) => {
+    const here = zeroIfNone(perCountry[k]);
     for (let n = 0; n < here; n += 1) {
       const row = banks[at];
       at += 1;
       if (row === undefined) return;
-      out.set(row.bank, region);
+      // 13j: a country's banks book in its FIRST place. Which place inside a country its people
+      // live in is 13d's question and not this item's; what this decides is which COUNTRY they are
+      // in, because that is what settles whose money they hold and whose central bank stands behind
+      // them (Money A1). Spreading them within a country moves the population with them, which is
+      // the same item's work and would be this one doing it by accident.
+      out.set(row.bank, c.region);
     }
   });
   // Clearing C3: the odd bank the split could not place has a named home, and it is the first one.
-  for (const row of banks) if (!out.has(row.bank)) out.set(row.bank, first);
+  for (const row of banks) if (!out.has(row.bank)) out.set(row.bank, first.region);
   return out;
 }
 
@@ -2063,6 +2083,7 @@ function placeFirms(
   g: GeographyDecl,
   reads: RatioReads,
   regions: readonly RegionDecl[],
+  countries: readonly CountrySeed[],
   firms: readonly FirmDecl[],
   seed: string,
 ): ReadonlyMap<string, RegionId> {
@@ -2080,7 +2101,13 @@ function placeFirms(
    * than a number anybody states (Law 2). A world whose map gave Europe more arable ground has more
    * Europeans in it, more firms serving them and more banks holding their money.
    */
-  const peopleIn = (r: RegionId): number => peopleOn(g, reads, r);
+  /**
+   * 13c.2, 13j: WHERE THE PEOPLE ARE, which is where a shop is. A country's people live in its first
+   * place until 13d spreads them, so a consumer line opens where its customers are and the ground
+   * only decides which COUNTRY that is. A mine is still built on the ore, wherever the ore is.
+   */
+  const homes = new Set(countries.map((c) => String(c.region)));
+  const peopleIn = (r: RegionId): number => (homes.has(String(r)) ? peopleOn(g, reads, r) : 0);
   /**
    * Law 15: WHICH LINES GO WHERE THE PEOPLE ARE is read off the basket — the lines a household
    * takes — and never off what kind of line it is. Add a line to the basket and its firms move to
@@ -2135,20 +2162,28 @@ export function foundationSpec(
   bankRows: readonly BankDecl[] = drawBanks(BANK_COUNT, seed),
   /** Seed B1.a, B4: and the firms, the same way and for the same reason. */
   firmRows: readonly FirmDecl[] = drawFirms(FIRM_COUNT, seed, 0),
+  /**
+   * 13j: HOW MANY COUNTRIES THIS WORLD HAS, and which. It is a RESOLUTION like the count of banks
+   * and the count of firms (Law 2): a scale model is a smaller world and not a distorted one, so a
+   * rig that opens one country is the same construction with one row rather than four — and the
+   * `Seed D1` refusal is what says when a world has been asked for more countries than it has
+   * people and firms to open them with.
+   */
+  countries: readonly CountrySeed[] = COUNTRIES,
 ): AssemblySpec {
   // Seed B1.a: WHAT THIS WORLD IS MADE OF — one draw, reaching every module that needs it.
-  const drew = foundationDraw(seed, bankRows, firmRows);
+  const drew = foundationDraw(seed, bankRows, firmRows, countries);
   // Law 4: ONE DRAW OF THE CARRIERS, read by the module that sails them and by the seed that gives
   // them their hulls. A second draw would be a second fleet wearing this one's name.
   // 13c.1: THE GROUND THIS WORLD STANDS ON, drawn from the same seed as everything else and read
   // by the yield, the weather and every journey. Its own stream, so adding a terrain never
   // reshuffles the banks (Seed A5).
-  const drawn = drawMap(mapSpec(), mapReads(), seed);
+  const drawn = drawMap(mapSpec(countries), mapReads(), seed);
   // Seed B1.a: WHERE EACH FIRM OPENS, drawn once along the ground and read by everybody who needs it.
-  const placed = placeFirms(drawn.geography, mapReads(), drawn.regions, firmRows, seed);
+  const placed = placeFirms(drawn.geography, mapReads(), drawn.regions, countries, firmRows, seed);
   // 13j: AND WHERE EACH BANK BOOKS — with its depositors, which is where the people are. It is what
   // makes a bank American or Japanese, and it is drawn once for the same reason the firms are.
-  const banked = placeBanks(drawn.geography, mapReads(), drawn.regions, bankRows);
+  const banked = placeBanks(drawn.geography, mapReads(), drawn.regions, countries, bankRows);
   // Law 4: ONE DRAW OF THE CARRIERS, read by the module that sails them and by the seed that gives
   // them their hulls. A second draw would be a second fleet wearing this one's name.
   // 13j: a hull is registered somewhere, and a world of four countries has ports in all of them.
@@ -2178,13 +2213,13 @@ export function foundationSpec(
     seed,
     epoch: civil(2026, 1, 5),
     registry: {
-      currencies: COUNTRIES.map((c) => ({
+      currencies: countries.map((c) => ({
         code: c.ccy,
         name: c.ccyName,
         centralBank: c.centralBank,
         quoteTick: c.quoteTick,
       })),
-      countries: COUNTRIES.map((c) => ({ id: c.country, name: c.name, ccy: c.ccy })),
+      countries: countries.map((c) => ({ id: c.country, name: c.name, ccy: c.ccy })),
       // 13c.1: THE PLACES ARE DRAWN. A region is where a thing is and its money is its country's,
       // so this list grows with the map and the currency list does not.
       regions: drawn.regions,
@@ -2195,7 +2230,7 @@ export function foundationSpec(
         // cent can be paid, lent, owed or left over anywhere. Two currencies are never added (Money
         // A2.b) and this is where that starts: an amount of euros is counted in euro pieces, and
         // what it comes to in dollars is a conversion at a rate somebody traded at (Currency C5).
-        ...COUNTRIES.map((c) => ({
+        ...countries.map((c) => ({
           id: currencyUnit(c.ccy),
           name: String(c.ccy),
           perUnit: MONEY_PIECES,
@@ -2356,7 +2391,7 @@ export function foundationSpec(
       // would have paper anybody may hold and nobody may value at a yield (D4.a throws where it is
       // asked), which is the same line being a bond here and not one there. One module, because
       // the CONVENTION is one thing and four modules would be four places to write it down.
-      sovereignCurve(COUNTRIES.map((c) => ({ issuer: c.treasury, ccy: c.ccy }))),
+      sovereignCurve(countries.map((c) => ({ issuer: c.treasury, ccy: c.ccy }))),
       treasury,
       centralBankOmo,
       // The money market after the treasury and the curve: a bank funds itself against the paper
@@ -2402,7 +2437,7 @@ export function foundationSpec(
       fxDerivatives(houseIdFor),
       // Indices: after everything that prints, because an index is what its constituents printed
       // and the benchmark is what the overnight book settled at (Indices D3.a, E1).
-      indices(COUNTRIES.map((c) => c.region), COUNTRIES.map((c) => c.ccy)),
+      indices(countries.map((c) => c.region), countries.map((c) => c.ccy)),
       // Index futures: after the indices, because what this settles against is an index READ
       // (Indices C3), and it is what a dealer's hedge actually is (Dealer Desks E1, E2).
       // Options: after the equity book clears, because D3.a forbids an underlying that exists only
@@ -2426,7 +2461,7 @@ export function foundationSpec(
       // because anything enforces it. The carry it is measured against is three reads — the room,
       // the spoilage and the money — and there is no convenience yield anywhere.
       commodityFutures(houseIdFor),
-      indexFutures(houseIdFor, COUNTRIES.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy }))),
+      indexFutures(houseIdFor, countries.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy }))),
       // Ratings: after everything it has an opinion about, and it reads none of them — it decides
       // from state through a view with the prices closed (Ratings A2.a).
       ratings(
@@ -2443,7 +2478,7 @@ export function foundationSpec(
       // Research: after `reporting`, because what a bank estimates is the report a company will
       // publish and what settles its estimate is the one it just did (Reporting C1, F1).
       research(seed),
-      foundationSeedFor(drew.banks, drew.firms, carrierRows, placed, banked),
+      foundationSeedFor(drew.banks, drew.firms, carrierRows, placed, banked, countries),
       foundationFundingFor(drew.banks),
     ],
   };

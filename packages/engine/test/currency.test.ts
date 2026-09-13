@@ -14,13 +14,13 @@ import {pairOf, ABROAD,
   moneyInstrumentId,
   partyId,
   type CurrencyCode,} from '../src/index.js';
-import { rigWorld } from './rig.js';
+import { abroadWorld } from './rig.js';
 
 const FOREIGN = ABROAD.map((c) => c.ccy);
 
 describe('the currencies a world has (Currency A1, A3, A5)', () => {
   it('declares four moneys, each a named central bank’s liability in its own region and its own unit', () => {
-    const w = rigWorld('ccy-A');
+    const w = abroadWorld('ccy-A');
     const codes = [...w.registry.currencies.keys()];
     expect(codes).toEqual([USD, ...FOREIGN]);
     for (const code of codes) {
@@ -41,7 +41,7 @@ describe('the currencies a world has (Currency A1, A3, A5)', () => {
 
 describe('the pairs (Spot FX A1, A3, C1, F1; XI-12)', () => {
   it('opens a market for every pair, prices it in the quote, and clears it before anything else', () => {
-    const w = rigWorld('ccy-B');
+    const w = abroadWorld('ccy-B');
     const pairs = w.markets.filter((m) => pairOf(m) !== undefined);
     const n = 1 + FOREIGN.length;
     // A3: every unordered pair of moneys, once. Six for four moneys — including the three that are
@@ -62,7 +62,7 @@ describe('the pairs (Spot FX A1, A3, C1, F1; XI-12)', () => {
   });
 
   it('prints a rate for every pair from period one, and the print says how it was made', () => {
-    const w = rigWorld('ccy-C');
+    const w = abroadWorld('ccy-C');
     w.step();
     for (const m of w.markets) {
       if (pairOf(m) === undefined) continue;
@@ -80,7 +80,7 @@ describe('the pairs (Spot FX A1, A3, C1, F1; XI-12)', () => {
 
 describe('the rate in force (Currency C5, D1)', () => {
   it('is one number: what a payment settles at and what a book is valued at are the same read', () => {
-    const w = rigWorld('ccy-D');
+    const w = abroadWorld('ccy-D');
     w.step();
     for (const ccy of FOREIGN) {
       const rate = w.valuation.rateInForce(ccy, USD, w.period);
@@ -96,7 +96,7 @@ describe('the rate in force (Currency C5, D1)', () => {
 
 describe('a foreign balance is findable, and it is at that money’s own issuer (Money A1, Currency D2)', () => {
   it('holds a party’s foreign money at that currency’s central bank, not at its own bank', () => {
-    const w = rigWorld('ccy-E');
+    const w = abroadWorld('ccy-E');
     w.step();
     const bank = w.parties.ofKind(partyId('bank') as never)[0];
     expect(bank).toBeDefined();
@@ -118,7 +118,7 @@ describe('a foreign balance is findable, and it is at that money’s own issuer 
 
 describe('a rate move lands on somebody (Currency D2, D4)', () => {
   it('books every revaluation to a holder, and what was booked is what the rate did', () => {
-    const w = rigWorld('ccy-F');
+    const w = abroadWorld('ccy-F');
     for (let i = 0; i < 6; i += 1) w.step();
     const booked = new Map<string, number>();
     const implied = new Map<string, number>();
@@ -149,7 +149,7 @@ describe('a rate move lands on somebody (Currency D2, D4)', () => {
 
 describe('a central bank lends to its own system (Currency D4, Central Bank D1)', () => {
   it('refuses a bank that books abroad, so a foreign money must be bought and not overdrawn', () => {
-    const w = rigWorld('ccy-G');
+    const w = abroadWorld('ccy-G');
     for (let i = 0; i < 6; i += 1) w.step();
     const home = (party: string): CurrencyCode =>
       w.registry.currencyOf(w.parties.get(partyId(party)).region);

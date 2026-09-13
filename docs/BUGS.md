@@ -5,10 +5,9 @@ exists for is CLAUDE.md's: a finding not written down is lost, and a finding lea
 by being PLACED — moved into the `docs/plan/<item>.md` of the item that should fix it, or inserted
 as its own item at its dependency position.
 
-Measured on the whole suite: **74 red of 662**, down from 79 at the start of this pass, with **no
-regressions** — the set of failing tests afterwards is a strict subset of the set before. What
-follows groups them by CAUSE rather than by file, because the files are a symptom of about six
-causes.
+Measured on the whole suite: **82 red of 662** after item 13j gave this world four economies. It was
+74 before it, and the eight are named in their own section at the foot of this file. What follows
+groups them by CAUSE rather than by file, because the files are a symptom of about six causes.
 
 One of the fixes below does not show in that count and is the largest of them: `equity`'s waterfall
 test threw `Register C1` and stopped the file; it now runs to an ordinary assertion. A crash and a
@@ -96,3 +95,43 @@ the published book; `indices` observation; `tick`; `environment`'s crop; `treasu
 they are simply not the same bug.
 
 → **Item 16**, which is where Part XII measures this world and is the item that should read them.
+
+
+---
+
+## What item 13j cost: eight reds, and the shape of them
+
+13j turned three stubs into economies. Measured across the whole suite, three times:
+
+| world the rig builds | red of 662 |
+|---|---|
+| before 13j (one country, the other three stubs) | 74 |
+| 13j with the rig opening all four countries | **303** |
+| 13j with the rig opening one, and the currency tests four | **82** |
+
+The 303 is the finding and not the bug: a dozen firms and three banks spread over four countries
+gives each a country with two firms and no banking system its own depositors could fund, and
+`Seed D1` refuses to open exactly that — ninety-four times. **A world's count of countries is a
+RESOLUTION** like its count of banks and its count of firms, so the rig opens one and scales it, and
+the mechanisms that cannot exist in a world of one country — the currency layer, the pairs, the
+open-market book, the per-region indices — get `abroadWorld`, the same construction with four rows
+and four times the draw.
+
+The eight that remain are all one shape: **a test that named the world it was written against.**
+They are not mechanism failures — the audit reports nothing on the four-country world, every party
+banks in its own money, and every region's external accounts net to zero over thousands of crossing
+legs on both sides. They are assertions about a world with one sovereign issuer, one banking system
+and one money, being made of a world with four.
+
+| where | what it names that has changed |
+|---|---|
+| `currency`, `spot-fx` | Counts of pairs, desks and positions taken against a world whose only foreign parties were three reserve managers. There are now firms, banks and households on both sides of every pair. |
+| `omo` | The base, the remittance and the run-off measured against one central bank's book. There are four, and the rig's four-country model is a quarter the size of its one-country one per country. |
+| `indices` | An index per region and per currency, asserted against the four regions of a world whose three abroad had no constituents. Every one of them now has a market with firms listed in it. |
+| `opening-liquidity`, `bank-capital`, `deposits`, `money-market` | The opening banking system, asserted against every bank in the world being American. A bank's country now decides whose money it issues, whose window it can go to and whose guarantee stands behind it. |
+| `world`, `run`, `households`, `etf`, `equity`, `estate`, `goods`, `storage`, `freight`, `funds`, `raise`, `ratings`, `research`, `treasury`, `environment`, `equity-anchor` | Sizes, counts and totals of a world that is a different size. |
+
+**Where they go.** These are POSITIONED to item 16 (Measure), which is where the plan already puts
+the work of making every measurement true of the world as it then stands — it carries the level from
+eight earlier measurements of it for the same reason. They are not positioned to 13j, because 13j's
+own exit is a world that opens, runs and audits clean at four countries, and it does.

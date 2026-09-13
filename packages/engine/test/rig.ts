@@ -33,7 +33,10 @@ import {
   drawBanks,
   drawFirms,
   foundationDraw,
+  COUNTRIES,
   foundationSpec,
+  ONE_COUNTRY,
+  type CountrySeed,
   goodId,
   mul,
   paramId,
@@ -101,9 +104,24 @@ export function rigMembers(firms: number): number {
 const MEMBERS_PER_COHORT = 15_000_000;
 const MEMBERS = paramId('seed.households.membersPerCohort');
 
-export function rigSpec(seed: string, banks = RIG_BANKS, firms = RIG_FIRMS): AssemblySpec {
+export function rigSpec(
+  seed: string,
+  banks = RIG_BANKS,
+  firms = RIG_FIRMS,
+  countries: readonly CountrySeed[] = ONE_COUNTRY,
+): AssemblySpec {
   const drawn = drawFirms(firms, seed, RIG_PER_LINE);
-  const spec = foundationSpec(seed, drawBanks(banks, seed), drawn);
+  /**
+   * 13j: ONE COUNTRY, because a scale model is a SMALLER world and not a thinner one. The real
+   * world opens four, each with its own banks, people, firms and money; a dozen firms spread over
+   * four of them gives each a country with two firms and no banking system its own depositors could
+   * fund — which is what `Seed D1` refuses, and it refused it ninety-four times when this was tried.
+   *
+   * A world's count of countries is a RESOLUTION like its count of banks and its count of firms, and
+   * the rig already scales both of those down. What is NOT scaled down is the construction: the one
+   * country the rig opens is built by exactly the code the four are.
+   */
+  const spec = foundationSpec(seed, drawBanks(banks, seed), drawn, countries);
   /**
    * Seed B1.a: THE POPULATION FOLLOWS THE FIRMS THE DRAW ACTUALLY MADE, not the number it was asked
    * for. A scale model keeps the real world's ratio — ten thousand people to a named firm — and
@@ -123,6 +141,19 @@ export function rigSpec(seed: string, banks = RIG_BANKS, firms = RIG_FIRMS): Ass
 
 export function rigWorld(seed: string, banks = RIG_BANKS, firms = RIG_FIRMS): World {
   return assemble(rigSpec(seed, banks, firms));
+}
+
+/**
+ * 13j: THE SCALE MODEL WITH EVERY COUNTRY IN IT, for the mechanisms that need more than one.
+ *
+ * A currency is a named issuer's promise and a pair needs two of them, so the currency layer, the
+ * pairs, the open-market book and the per-region indices cannot be tested in a world with one
+ * country in it at all. This is the same construction with four rows instead of one — and with four
+ * times the banks and the firms, because each of them opens a whole economy and a country that
+ * cannot fund its own depositors is one `Seed D1` refuses to open (which is what it does).
+ */
+export function abroadWorld(seed: string): World {
+  return assemble(rigSpec(seed, RIG_BANKS * COUNTRIES.length, RIG_FIRMS * COUNTRIES.length, COUNTRIES));
 }
 
 /** What the rig drew: the firms, banks, listings and funds this world actually has. */
