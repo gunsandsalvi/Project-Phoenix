@@ -157,3 +157,18 @@ for a party with one surprise or none. 1,207 parties do hold price outlooks on s
 10,411 such outlooks exist — so the narrowing is not the gate — but of 101,998 outlook rows only
 12,067 have more than one surprise. **Whether that is a defect or simply a world three periods old is
 being measured over twelve periods now; the answer belongs in this file before anything is concluded.**
+
+**Answered.** Twelve periods, the same world: confidence does not exist until period 3, and then it
+arrives in bulk.
+
+| period | outlook rows | rows with confidence | contracts | loans |
+|---|---|---|---|---|
+| 1 | 30,650 | 0 | 0 | 6 |
+| 2 | 64,803 | 0 | 0 | 6 |
+| 3 | 101,998 | 12,067 | 0 | 6 |
+| 4 | 126,191 | 21,223 | 0 | 8 |
+
+So confidence is not the gate and never was: a fifth of all outlooks carry it by period four and the
+share is rising, and still not one contract exists. The single measured cause stands — no party can
+post margin in a currency it does not hold — and the never-crossing books are downstream of it, not
+a second cause. `width(surprises)` is doing exactly what a world two periods old should do.
