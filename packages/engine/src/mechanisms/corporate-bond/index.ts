@@ -273,6 +273,17 @@ function paper(): Family {
 export function corporateBondModule(): SystemModule {
   return {
     id: 'corporate-bond',
+    nouns: [
+      {
+        name: 'covenants',
+        kind: 'noun',
+        holds:
+          'which covenant of which line has been tested against which set of accounts',
+        why:
+          'a covenant is a TERM of an agreement, and a test of one is that agreement performing or in breach. With no agreement to be a term of, the test is a private note and a breach reaches nobody.',
+        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+      },
+    ],
     spec: 'Corporate Credit',
     requires: ['firms', 'reporting'],
     instrumentKinds: [corporateBond],

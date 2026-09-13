@@ -238,6 +238,17 @@ function report(
 export function reporting(seed: string): SystemModule {
   return {
     id: 'reporting',
+    nouns: [
+      {
+        name: 'reporting',
+        kind: 'noun',
+        holds:
+          'what every party has published, as of when, with what lag: its income, its balance sheet, its cash',
+        why:
+          'what is public is a fact about the world and not about the module that produced it. A module may not import another module, so with the accounts kept here NOTHING IN THIS WORLD CAN READ A COMPANY’S ACCOUNTS \u2014 which is why the only theory of value here is discounting a contractual promise.',
+        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/AUDIT.md item 3' },
+      },
+    ],
     spec: 'Reporting',
     requires: ['firms', 'equity'],
     instrumentKinds: [],

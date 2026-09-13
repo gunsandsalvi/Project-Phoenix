@@ -859,6 +859,33 @@ export type MakersOf = (instrument: InstrumentId) => readonly string[] | undefin
 export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemModule {
   return {
   id: 'banks',
+  nouns: [
+    {
+      name: 'book',
+      kind: 'working',
+      holds:
+        'what the kernel allowed as a customer drawing this period, waiting to become a loan row',
+      why:
+        'the same interval as the money market’s: the kernel has said yes, the row does not exist yet, and by the end of the period it does (Money B3.a).',
+    },
+    {
+      name: 'banks.couponsPaid',
+      kind: 'working',
+      holds:
+        'which period this walk covers and what each bank paid in it, so the walk is taken once',
+      why:
+        'a within-period memo of a walk over the settled ledger, so a read made once per bank does not re-walk the period per bank (Law 18). The ledger is the source and this is not a second copy of it.',
+    },
+    {
+      name: 'reserves',
+      kind: 'noun',
+      holds:
+        'each bank’s memory of its own reserve account’s moves, as far back as that bank looks',
+      why:
+        'this is an OUTLOOK: a party’s adaptive memory of an observable, formed from its own history over its own memory length \u2014 which is exactly what the expectations module is the one writer of (§46, XI-16, Law 4). A second private implementation of one mechanism.',
+      standsInFor: { noun: 'View', planItem: 'docs/AUDIT.md item 6' },
+    },
+  ],
   spec: 'Banks Lending',
   // It needs nobody. What a borrower is short of and what a borrower has failed to pay both reach
   // it as journal events, which are the kernel's — so a world with banks in it can lend whether or
@@ -964,7 +991,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       dimension: 'count',
       kind: 'technology',
       owner: 'model',
-      why: 'Dealer Desks D1, D4 (13d): what it takes to QUOTE one line — somebody prices it, somebody carries the position, somebody answers the phone. How many lines a desk can cover is therefore the hours it employs over this, so a desk that sheds staff drops lines and their books journal `market.noView` because nobody is standing in them. A coverage stated directly would be a count of people wearing a policy\u2019s clothes.',
+      why: 'Dealer Desks D1, D4 (13d): what it takes to QUOTE one line — somebody prices it, somebody carries the position, somebody answers the phone. How many lines a desk can cover is therefore the hours it employs over this, so a desk that sheds staff drops lines and their books journal `market.noView` because nobody is standing in them. A coverage stated directly would be a count of people wearing a policy’s clothes.',
     },
     {
       id: LENDING_PARAMS.hoursPerLoanPeriod,

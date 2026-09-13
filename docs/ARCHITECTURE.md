@@ -1081,6 +1081,25 @@ for building them.
 
 ---
 
+## 6b. The ontology register
+
+`registry/nouns.ts` is to CATEGORIES what `registry/params.ts` is to NUMBERS. A module keeps its own
+state through `MechanismContext.state(name, initial)`, which used to take a name and an object and
+ask nothing — so it became the place every economic category the kernel had no home for ended up:
+seventeen modules, nineteen slots, an employment register and a book of invoices and a party's
+outlooks kept privately, invisible to the audit, to an estate's ranking and to every other module.
+
+A store is now DECLARED or it does not open. `SystemModule.nouns` says what is in each one and which
+of three things it is — `noun` (a thing this economy has, which the kernel should own), `working`
+(state one phase hands to a later phase inside a period), `physics` (the module's own subject matter,
+private by right). A `noun` is a placeholder and must name the plan item that gives it a kernel home,
+the same guard `ParamRegister` puts on a placeholder number and for the same reason (Law 2: a
+stand-in with no scheduled death is a permanent one). Assembly stamps the owner, never the module
+(Law 4). The count of nouns still in a bag is reported, not hidden (Appendix C): **14 of 19 today** —
+seven `Agreement`, four `View`, two `PublishedStatement`, one `Process`.
+
+---
+
 ## 7. Citations in code
 
 Every module, mechanism and audit family carries `@spec` tags naming the clauses it implements:

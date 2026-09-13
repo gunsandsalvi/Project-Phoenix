@@ -247,6 +247,17 @@ const leased = (held: Leases, party: PartyId): number =>
 export function commodities(): SystemModule {
   return {
     id: 'commodities',
+    nouns: [
+      {
+        name: 'commodities.leases',
+        kind: 'noun',
+        holds:
+          'how much covered space each party rented this period, and from whom',
+        why:
+          'renting storage is an agreement with a lessor, a term and a rent. As a per-period map it has no counterparty at all, which is why a firm pays for space and receives nothing for it (A-64).',
+        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+      },
+    ],
     spec: 'Commodities Spot A3, A4, D2.a, D3, F2',
     // A4: space is plant, so the kind has to be registered before anybody can hold a unit of it;
     // and what takes up space is a good, so the goods have to exist to take any up.

@@ -1420,6 +1420,17 @@ export function funds(
   const needs = [...new Set(etfs.flatMap((e) => e.needs))];
   return {
     id: 'funds',
+    nouns: [
+      {
+        name: 'funds',
+        kind: 'noun',
+        holds:
+          'the subscriptions and redemptions queued this cycle, the NAV struck this period, and the NAV struck last',
+        why:
+          'the queue and the strike are working state within a period. The PREVIOUS NAV is not: it is a figure the fund published, which is what makes its return a read rather than a series, and no other party can see it. A published figure belongs where published figures live.',
+        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/AUDIT.md item 3' },
+      },
+    ],
     spec: 'Fund Shares, XI-2',
     // Its investors are households (D2), a fund that fails resolves through the same estate as
     // anything else (XI-3), and it banks somewhere — so all three are there before it opens.

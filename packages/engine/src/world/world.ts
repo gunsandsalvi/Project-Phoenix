@@ -75,6 +75,7 @@ import {
 } from '../prices/contract-value.js';
 import type { Contract, ContractReads, Underlying } from '../registry/derivatives.js';
 import type { ParamRegister } from '../registry/params.js';
+import type { OntologyRegister } from '../registry/nouns.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -142,6 +143,8 @@ export interface WorldSpec {
   readonly seed: string;
   readonly registry: Registry;
   readonly params: ParamRegister;
+  /** Law 15: every store a module keeps, declared. A module cannot open one it did not declare. */
+  readonly nouns: OntologyRegister;
   readonly calendar: Calendar;
   /** Audit contributions from modules, merged with the kernel's own. */
   readonly families: readonly Family[];
@@ -151,6 +154,7 @@ export class World {
   readonly seed: string;
   readonly registry: Registry;
   readonly params: ParamRegister;
+  readonly nouns: OntologyRegister;
   readonly calendar: Calendar;
   readonly parties: Parties;
   /** What a participant is handed: who somebody is, with no way to change who is here (Law 4). */
@@ -272,6 +276,7 @@ export class World {
     this.seed = spec.seed;
     this.registry = spec.registry;
     this.params = spec.params;
+    this.nouns = spec.nouns;
     this.calendar = spec.calendar;
     this.parties = new Parties(this.registry);
     this.partyReads = partiesReads(this.parties);
@@ -522,7 +527,17 @@ export class World {
   }
 
   /** A module's own state, created once and then read and written by that module alone (Law 4). */
+  /**
+   * Law 15, Law 2: A MODULE'S OWN STORE, AND IT IS DECLARED OR IT DOES NOT OPEN.
+   *
+   * This used to take a name and an object and ask nothing, which made it the place every economic
+   * category the kernel had no home for ended up: seventeen modules, nineteen slots, an employment
+   * register and a book of invoices and a party's outlooks kept privately, invisible to the audit
+   * and to every other module. The register asks what is in it and which of three things it is, and
+   * a store that is really a NOUN names the plan item that gives it a kernel home.
+   */
   private slot<T extends object>(owner: string, name: string, initial: () => T): T {
+    this.nouns.declared(owner, name);
     let mine = this.slots.get(owner);
     if (mine === undefined) {
       mine = new Map<string, object>();

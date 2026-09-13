@@ -389,6 +389,16 @@ function publishReads(ctx: MechanismContext, rows: readonly ListedDecl[]): void 
 export function equity(rows: readonly ListedDecl[]): SystemModule {
   return {
     id: 'equity',
+    nouns: [
+      {
+        name: 'equity',
+        kind: 'working',
+        holds:
+          'the lines whose issuer has been succeeded, so the wipe is announced once and not every week',
+        why:
+          'an idempotence marker within the module’s own corporate-actions phase. It is not a fact about the world; it is how this module avoids saying the same thing twice (E4).',
+      },
+    ],
     spec: 'Equity',
     // The firm whose residual claim it is decides about it (Firm E4, E5) and publishes what it has
     // spare; the estate is what a share ranks last on; and the firms it lists are parties somebody

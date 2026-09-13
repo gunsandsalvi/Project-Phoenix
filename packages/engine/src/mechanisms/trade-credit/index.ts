@@ -222,6 +222,17 @@ const state = (ctx: MechanismContext): Book =>
 export function tradeCredit(): SystemModule {
   return {
     id: 'trade-credit',
+    nouns: [
+      {
+        name: 'invoices',
+        kind: 'noun',
+        holds:
+          'every invoice written: the supplier, the customer, the amount and when it falls due',
+        why:
+          'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
+        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+      },
+    ],
     spec: 'Trade Credit',
     requires: ['firms', 'goods'],
     instrumentKinds: [invoiceKind],

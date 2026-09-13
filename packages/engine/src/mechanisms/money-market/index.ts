@@ -750,6 +750,16 @@ function collateralHolds(): Family {
 
 export const moneyMarket: SystemModule = {
   id: 'money-market',
+  nouns: [
+    {
+      name: 'market',
+      kind: 'working',
+      holds:
+        'the accounts the central bank let go below zero this period, waiting to become repo rows',
+      why:
+        'state one phase hands to a later phase in the same period. The ROW is the fact and it is written to the register; this is the interval between the kernel allowing the drawing and the row existing (Money B3.b).',
+    },
+  ],
   spec: 'Money Market, Banks Funding, Central Bank B, D',
   // It reads what a bank published about its own economics (its cost of funds, what it requires of
   // a name) and it lends against sovereign paper. Both arrive as public events and prints, so what

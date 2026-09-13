@@ -108,8 +108,8 @@ accounts held in another module's bag), and **5 blocks 8** (an agreement's perfo
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **0** | The register of nouns | 1 | nothing depends on it; it is what stops this recurring |
-| **1** | Reach | 24 | no behaviour change, and it makes every item below verifiable instead of argued |
+| ~~**0**~~ | ~~The register of nouns~~ | — | **DONE** — `registry/nouns.ts`; 19 stores declared, 14 of them nouns with no kernel home. See `docs/RECORD.md`. |
+| **1** | Reach | 25 | no behaviour change, and it makes every item below verifiable instead of argued |
 | **2** | Missing is Missing | 5 | a defaulted zero defeats both **1** and **16** |
 | **3** | `PublishedStatement` | 0 | blocks **4** |
 | **4** | `expectedStream()` and `liquidity` | 1 | needs **3**; unblocks funds, dealers and 12c |
@@ -136,71 +136,6 @@ is the existing worklist, re-pointed.
 
 ---
 
-## 0. The register of nouns
-
-**Why.** Six rounds of reading this codebase found sixteen missing primitives, and each round found
-more only because the method changed. The reason is structural. `ParamRegister` forces every declared
-NUMBER to name its kind, its unit and its owner, and `npm run check` fails if one does not. **There is
-no equivalent for CATEGORIES.** The spec's 48 systems enumerate behaviours; `registry/kinds.ts`
-enumerates settlement objects; nothing anywhere enumerates the things the economy is made of. So "is
-there a noun for this?" has no lookup — it has a grep, and a grep finds only what somebody already
-tried to build. That is why the ontology drifted, and it is why nobody could answer whether it was
-complete.
-
-**What it is.** `OntologyRegister`, declared at assembly beside `ParamRegister`. One entry per noun:
-its id, its owning module, its profile type, and the spec clause that requires it. `MechanismContext`'s
-`state<T>(name, initial)` narrows: a module may keep scratch that is genuinely its own physics
-(`environment.weather`), and anything that is a noun must be declared. The check refuses an
-undeclared store, the same way `ParamRegister` refuses an undeclared number.
-
-**What it deletes.** The third option. Today a module needing a category it cannot find reaches for
-the nearest flag; after this it gets a build failure that says so.
-
-**The enumeration it starts from** — every `ctx.state` slot in the tree, which is every noun the
-kernel does not have:
-
-```
-banks.couponsPaid  book  commodities.leases  covenants  deals  employment
-environment.weather  equity  estates  funds  invoices  leases  loans  market
-outlooks  ratings  reporting  research  reserves          19 slots, 17 modules
-```
-
-`employment leases commodities.leases invoices loans covenants deals` are **B6**.
-`outlooks ratings research` are **B4**. `reporting` is **B1**. `estates` is **B12**.
-`environment.weather` is legitimate scratch. The rest are caches to be judged one at a time.
-
-**Exit.** Every slot above is a declared noun or a declared exception with a reason; a new
-undeclared store fails `npm run check`.
-
-
-### Findings this closes (1)
-
-#### B-14 — a finding was positioned into item 13h, 13h closed, and the finding was not done (B)
-
-`seeds/foundation.ts`, on the derivative layer's list of who may hold a contract, said: _"13h is
-where a fund holds derivatives on purpose — and where the one pass that re-marks a fund's claim on
-itself is next opened (`docs/BUGS.md`, finding `13b-2`)."_ `docs/RECORD.md` (item 13b.1's entry)
-confirms the placement: `13b-2` "to **13h**, folded into two steps there".
-
-13h is **done** on the worklist. `TRADES_CONTRACTS` is still `[BANK, FIRM]`; no fund kind is on it,
-and the pass that would re-mark a fund's claim on itself does not exist. The receiving item closed
-without the step the positioning was for, and nothing anywhere says so: the record's entry for 13h
-does not carry it forward, and the comment in the source went on naming a future that had already
-passed and a file that had been deleted.
-
-This is the failure mode of positioning as a protocol. A finding leaves the audit file by being
-placed into an item, and from that moment nothing checks that the item ever did it — the finding is
-out of the one place findings live and into a plan file that gets deleted when the item closes. Six
-of Part II's thirteen findings (**B-1** through **B-8**) have the same shape read from the other end:
-an item closed and the thing it was for was not there.
-
-The comment is corrected in this change to say what is true. The finding itself is **unpositioned**:
-whether a fund should hold contracts at all is `Fund Shares A3`'s question and it belongs with 13o
-(asset managers with strategies), which is where a fund that takes a position on purpose first has a
-reason to exist.
-
-
----
 
 ## 1. Reach — the family that measures whether anything ever happened
 
@@ -226,7 +161,7 @@ or carried, by name, into the item below that owns it. `docs/COVERAGE.md`'s `MET
 family rather than from the presence of an `@spec` tag (**B-12**).
 
 
-### Findings this closes (24)
+### Findings this closes (25)
 
 #### A-4 — a claimed assembly guard on `exposedTo` does not exist (B)
 
@@ -913,6 +848,30 @@ Two things follow that VERIFY did not draw:
    already implements for the repo market (`advances`, `valueToLender`, `haircut`). The derivative
    layer's `admits` asks only about cash.
 
+
+#### B-14 — a finding was positioned into item 13h, 13h closed, and the finding was not done (B)
+
+`seeds/foundation.ts`, on the derivative layer's list of who may hold a contract, said: _"13h is
+where a fund holds derivatives on purpose — and where the one pass that re-marks a fund's claim on
+itself is next opened (`docs/BUGS.md`, finding `13b-2`)."_ `docs/RECORD.md` (item 13b.1's entry)
+confirms the placement: `13b-2` "to **13h**, folded into two steps there".
+
+13h is **done** on the worklist. `TRADES_CONTRACTS` is still `[BANK, FIRM]`; no fund kind is on it,
+and the pass that would re-mark a fund's claim on itself does not exist. The receiving item closed
+without the step the positioning was for, and nothing anywhere says so: the record's entry for 13h
+does not carry it forward, and the comment in the source went on naming a future that had already
+passed and a file that had been deleted.
+
+This is the failure mode of positioning as a protocol. A finding leaves the audit file by being
+placed into an item, and from that moment nothing checks that the item ever did it — the finding is
+out of the one place findings live and into a plan file that gets deleted when the item closes. Six
+of Part II's thirteen findings (**B-1** through **B-8**) have the same shape read from the other end:
+an item closed and the thing it was for was not there.
+
+The comment is corrected in this change to say what is true. The finding itself is **unpositioned**:
+whether a fund should hold contracts at all is `Fund Shares A3`'s question and it belongs with 13o
+(asset managers with strategies), which is where a fund that takes a position on purpose first has a
+reason to exist.
 
 ---
 
@@ -3761,7 +3720,7 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **B-11** (A) | 17 | `npm run check` has been red since the sweep, at the gate that counts the plan |
 | **B-12** (A) | 1 | 99 `MET` marks stand on mechanisms that have never produced anything |
 | **B-13** (A) | 1 | the three things a firm sector does, and this one does none of them |
-| **B-14** (B) | 0 | a finding was positioned into item 13h, 13h closed, and the finding was not done |
+| **B-14** (B) | 1 | a finding was positioned into item 13h, 13h closed, and the finding was not done |
 | **B-15** (C) | 17 | the recount, once the gate could run |
 | **C-1** (—) | 18 | 82 red of 662, by cause (carried from `BUGS.md`) |
 | **C-2** (—) | 10 | four things this world does every week that the world does not (carried from `SWEEP.md`; worklist **13k**) |

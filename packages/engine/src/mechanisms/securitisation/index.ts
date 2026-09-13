@@ -909,6 +909,17 @@ function priceFor(view: ParticipantView, ccy: CurrencyCode): number {
 export function securitisation(): SystemModule {
   return {
     id: 'securitisation',
+    nouns: [
+      {
+        name: 'deals',
+        kind: 'noun',
+        holds:
+          'every securitisation: the arranger, the pool, the tranches and who holds them',
+        why:
+          'a deal is an agreement among an arranger, a vehicle and the note holders, with a waterfall for its terms. Kept here, the waterfall is nobody’s obligation and never allocates a loss (B-8).',
+        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+      },
+    ],
     spec: 'Securitisation',
     requires: ['banks'],
     instrumentKinds: [trancheKind],

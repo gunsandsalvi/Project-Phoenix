@@ -291,6 +291,17 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
   const mine = (v: { readonly clearedBy: string }): boolean => v.clearedBy === 'labour';
   return {
     id: 'labour',
+    nouns: [
+      {
+        name: 'employment',
+        kind: 'noun',
+        holds:
+          'every employment in this world: who works for whom, in what trade, at what wage, on what notice',
+        why:
+          'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
+        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+      },
+    ],
     spec: 'Labour, XI-10',
     // A cell decides what it will work for from its own outlook of what it lives on (B1.a).
     requires: ['expectations'],

@@ -24,6 +24,7 @@ import {
 } from '../core/ids.js';
 import { weightOf } from '../parties/party.js';
 import { type ParamDecl, ParamRegister } from '../registry/params.js';
+import { type NounDecl, OntologyRegister } from '../registry/nouns.js';
 import { KERNEL_PARTY_KINDS, moneyKind } from '../registry/profiles.js';
 import { Registry, type RegistryData } from '../registry/registry.js';
 import type { SeedContext } from './context.js';
@@ -76,10 +77,16 @@ export function assemble(spec: AssemblySpec): World {
     periodDays: params.days(KERNEL_PARAMS.periodDays),
     cyclesPerPeriod: params.periods(KERNEL_PARAMS.cyclesPerPeriod),
   });
+  // Law 4: the module says what is in its store and the ASSEMBLY says whose it is. A module
+  // stamping its own owner could name another's and the register would believe it.
+  const nouns = new OntologyRegister(
+    modules.flatMap((m): NounDecl[] => (m.nouns ?? []).map((n) => ({ ...n, owner: m.id }))),
+  );
   const world = new World({
     seed: spec.seed,
     registry,
     params,
+    nouns,
     calendar,
     families: modules.flatMap((m) => m.families),
   });

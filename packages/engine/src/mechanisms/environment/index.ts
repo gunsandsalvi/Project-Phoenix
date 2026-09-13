@@ -84,6 +84,16 @@ export function environment(
   const climate = drawClimate(regions, seed, ground);
   return {
     id: 'environment',
+    nouns: [
+      {
+        name: 'environment.weather',
+        kind: 'physics',
+        holds:
+          'the conditions each region stood in this period, and what a line exposed to them yielded',
+        why:
+          'the weather is this module’s own subject matter. Nothing else in this world has an opinion about it or a reason to write it, and the kernel wants no store for it: it is read through the print the module publishes, like any other public fact.',
+      },
+    ],
     spec: 'Commodities Spot B3, Goods B4, Freight B4, Insurers B4',
     requires: [],
     instrumentKinds: [],

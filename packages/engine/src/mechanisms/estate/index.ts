@@ -546,6 +546,17 @@ function nothingLeftBehind(): Family {
 
 export const estate: SystemModule = {
   id: 'estate',
+  nouns: [
+    {
+      name: 'estates',
+      kind: 'noun',
+      holds:
+        'every estate being wound up: whose it is, when it opened, when it closes, and whether it has',
+      why:
+        'winding up is a multi-period process with states and a rule at each step, and it is the only one in this world that has any representation at all. A construction project, an auction cycle, a tender offer and a restructuring are the same shape and would each invent their own.',
+      standsInFor: { noun: 'Process', planItem: 'docs/AUDIT.md item 14' },
+    },
+  ],
   spec: 'XI-8',
   // It reads the register, the ledger and the instrument profiles, all of which are the kernel's.
   requires: [],

@@ -24,6 +24,7 @@ import type {
 } from '../registry/kinds.js';
 import type { DerivativeKindProfile } from '../registry/derivatives.js';
 import type { ParamDecl, ParamRegister } from '../registry/params.js';
+import type { NounEntry } from '../registry/nouns.js';
 import type { UnitDecl } from '../registry/registry.js';
 import type { CurrencyCode, PartyId } from '../core/ids.js';
 import type { Option } from '../core/option.js';
@@ -284,6 +285,15 @@ export interface SystemModule {
   readonly curveFamilies: readonly CurveFamilyDecl[];
   readonly units: readonly UnitDecl[];
   readonly params: readonly ParamDecl[];
+  /**
+   * Law 15, Law 2: EVERY STORE THIS MODULE KEEPS in `ctx.state`, declared.
+   *
+   * Absent means it keeps none, and that is checked rather than assumed: `ctx.state` refuses a name
+   * this list does not carry. A store that is really an economic NOUN the kernel has no home for
+   * names the plan item that gives it one, the way a placeholder parameter names the mechanism that
+   * deletes it — and for the same reason (`registry/nouns.ts`).
+   */
+  readonly nouns?: readonly NounEntry[];
   readonly phases: readonly PhaseDecl[];
   readonly participants: readonly ParticipantDecl[];
   /** Clearing B2: the schedules this module's parties post into venues other modules clear. */

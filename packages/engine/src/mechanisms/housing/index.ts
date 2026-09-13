@@ -648,6 +648,17 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
   const mine = (v: VenueDecl): boolean => v.clearedBy === 'housing';
   return {
     id: 'housing',
+    nouns: [
+      {
+        name: 'leases',
+        kind: 'noun',
+        holds:
+          'every tenancy: the dwelling, the landlord, the tenant, the rent and the term',
+        why:
+          'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
+        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+      },
+    ],
     spec: 'Housing',
     // It needs the dwelling to be a line and the people to be cells, and nothing else.
     requires: ['goods', 'households'],

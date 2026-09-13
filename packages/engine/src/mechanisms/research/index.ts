@@ -431,6 +431,17 @@ export function research(seed: string): SystemModule {
   forbid(seed.length > 0, 'Seed A5', 'a research desk is drawn from the world seed');
   return {
     id: 'research',
+    nouns: [
+      {
+        name: 'research',
+        kind: 'noun',
+        holds:
+          'each desk’s estimate for each company it covers, when it initiated, and what it has seen',
+        why:
+          'an estimate is one party’s assessment of another \u2014 the same noun as a rating and a credit view, kept a third time in a third shape.',
+        standsInFor: { noun: 'View', planItem: 'docs/AUDIT.md item 6' },
+      },
+    ],
     spec: 'Reporting C Reporting D Reporting E Reporting F',
     requires: ['reporting', 'banks', 'expectations'],
     instrumentKinds: [],

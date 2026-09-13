@@ -235,6 +235,17 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
 export function ratings(rows: readonly AssessorDecl[]): SystemModule {
   return {
     id: 'ratings',
+    nouns: [
+      {
+        name: 'ratings',
+        kind: 'noun',
+        holds:
+          'each agency’s published grade for each issuer, the grade its measure says today, and since when',
+        why:
+          'a rating is one party’s assessment of another and is the same noun as a credit view, a research estimate and a depositor’s confidence. Three modules keep three private versions of it.',
+        standsInFor: { noun: 'View', planItem: 'docs/AUDIT.md item 6' },
+      },
+    ],
     spec: 'Ratings',
     // A5: only the banks, because an assessor banks with one and its seed names it. Who it has an
     // opinion ABOUT is whoever is there to have one about (the kinds that borrow), which is a read

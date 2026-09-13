@@ -4027,3 +4027,58 @@ two-sided FX quote. The absence of a finding is the finding.
 **Nothing in the engine changed.** `docs/AUDIT.md` was rewritten by reassembling its own finding
 blocks under the new spine, so no evidence was lost; `CLAUDE.md`, `docs/PLAN.md`, `docs/WORKLIST.md`
 and `docs/ARCHITECTURE.md` now point at a plan rather than a catalogue.
+
+
+## Item 0 — the register of nouns
+
+**What.** `registry/nouns.ts`: every store a module keeps through `MechanismContext.state` is now
+declared, and an undeclared one throws at the read. The first item of `docs/AUDIT.md`, and the reason
+it was first: it is the thing that stops the rest recurring.
+
+**Why.** `ParamRegister` forces every declared NUMBER to name its kind, its unit and its owner, and
+the build fails if one does not. There was no equivalent for CATEGORIES. The specification's systems
+enumerate behaviours and `registry/kinds.ts` enumerates settlement objects; nothing enumerated the
+things the economy is made of. So "is there a noun for this?" had no lookup — it had a search, and a
+search finds only what somebody already tried to build. Sixteen missing primitives were found over
+six passes and every pass found more only because the method changed.
+
+`ctx.state(name, initial)` took a name and an object and asked nothing, so it became where every
+category the kernel had no home for ended up. Its own docstring lists three of them without noticing:
+*"a register of employment rows, a book of invoices, a party's outlooks."*
+
+**The construction is `ParamRegister`'s, deliberately.** A store is `noun` (a thing this economy has,
+which the kernel should own), `working` (state one phase hands to a later phase inside a period) or
+`physics` (the module's own subject matter, private by right). A `noun` is a PLACEHOLDER and must
+name the plan item that gives it a kernel home — the same guard a placeholder number carries, for the
+same reason (Law 2: a stand-in with no scheduled death is a permanent one). The module says what is
+in the store; **assembly stamps the owner**, because a module writing its own owner could name
+another's and the register would believe it (Law 4).
+
+**Measured: 19 stores across 17 modules — 14 nouns, 4 working, 1 physics.** Where the fourteen are
+going: seven to `Agreement` (employment, two kinds of lease, invoices, stock loans, covenants,
+securitisation deals), four to `View` (outlooks, ratings, research — and `banks/reserves`, which the
+register exposed as a **second private implementation of the outlook mechanism**, a bank's adaptive
+memory of its own account kept outside the module that is supposed to be its one writer), two to
+`PublishedStatement` (reporting, and the fund's previous NAV, which is a published figure no other
+party can see), one to `Process` (estates). Only the weather is private by right.
+
+**Found while classifying, and not chased.** `funds`' slot holds three things of two kinds — a queue
+and a strike that are working state, and a previous NAV that is published. It is declared by the
+strongest claim and the reason says so; item 3 splits it.
+
+**Positioned out of this item.** **B-14** (a finding positioned into 13h, which closed without doing
+it) was filed under item 0 and does not belong there: the register is about nouns, and B-14 is about
+an item closing with its positioned work undone. That is what item 1's reach family detects, and it
+is carried there.
+
+**Forecast, with its killer.** After this, a module needing a category the kernel has no home for gets
+a build failure naming what to declare, instead of reaching for the nearest bag. **What would falsify
+it:** a seventeenth missing primitive found by reading rather than by the register — which would mean
+the three kinds are the wrong vocabulary, not that the register is unnecessary.
+
+**Green:** lint, typecheck, spec citations, forbids, plan progress, and `nouns.test.ts` — seven
+checks including a rig world that opens and steps a period with every store on that path declared.
+`world.test.ts` has five reds and they are **not this item's**: the same five fail at the commit
+before it, and they are `docs/AUDIT.md` C-1's "a test that named the world it was written against"
+(a small assembled world compared against a phase list from the foundation world). Measured both
+ways rather than assumed.
