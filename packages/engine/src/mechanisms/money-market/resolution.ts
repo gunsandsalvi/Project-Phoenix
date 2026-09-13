@@ -197,6 +197,13 @@ export function resolve(ctx: MechanismContext, bank: PartyId, why: string): bool
   const bids: Bid[] = [];
   for (const other of ctx.parties.ofKind(BANK)) {
     if (other.id === bank || !other.status.alive) continue;
+    // 13j, Money A1, D3: A BOOK IS TAKEN BY A BANK OF ITS OWN SYSTEM. What the acquirer takes on is
+    // the failed bank's DEPOSITS — accounts in a money it must then issue itself — and a bank
+    // issues the money of the place it books in. A sterling book handed to an American bank is
+    // dollars owed to people who hold pounds, and settlement refuses it at the first payment
+    // (`bank.l issues no money in GBP`). Whether a bank abroad WOULD buy the business is a
+    // different question and a real one; it is not the same fact as who can hold the accounts.
+    if (ctx.registry.currencyOf(other.region) !== ccy) continue;
     bids.push(bidFor(ctx, other.id, v));
   }
   for (const b of bids) {
