@@ -600,7 +600,30 @@ function settleDeal(
  * left. A vehicle that collected nothing pays nothing; there is no buffer and nothing is smoothed.
  */
 export function distribute(ctx: MechanismContext): void {
-  for (const deal of state(ctx).deals) {
+  const book = state(ctx);
+  for (const deal of [...book.deals]) {
+    /**
+     * XI-8, Money E4: A VEHICLE THAT HAS CEASED IS ITS ESTATE'S BUSINESS. It can fail like anything
+     * else here — it owes its notes and pays them out of loans that can go wrong — and when it does,
+     * an estate opens, assumes its paper and winds the pool up under the ONE waterfall this world
+     * has. There is nothing left for this module to instruct, and the kernel says so plainly: a
+     * ceased party's legs are settled by whoever succeeded it, and addressing the dead party
+     * directly is a defect in the module that did it.
+     *
+     * So the deal leaves the book, once, with the fact recorded. It is not a deal that never
+     * happened — the rows moved and the notes are held — it is a deal whose vehicle is now an
+     * estate, and the holders are creditors of that estate like any other.
+     */
+    if (!ctx.parties.get(deal.vehicle).status.alive) {
+      book.deals.splice(book.deals.indexOf(deal), 1);
+      ctx.record(
+        'securitisation.wound',
+        [deal.arranger, deal.vehicle],
+        { vehicle: String(deal.vehicle), arranger: String(deal.arranger), pool: deal.pool },
+        true,
+      );
+      continue;
+    }
     absorb(ctx, deal);
     // XI-8: what is left when everything ranking above the notes has been paid. A vehicle that
     // collected nothing pays nothing; there is no buffer and nothing is smoothed.

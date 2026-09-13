@@ -13,6 +13,7 @@ import {
   mul,
   upTick,
   BANK_COUNT,
+  probabilityOfDefault,
   drawBanks,
   InvalidRegistry,
   LOAN,
@@ -324,23 +325,69 @@ describe('the price (Banks Lending C1, C2, XI-4)', () => {
     // That is one fact with two writers and it is a finding, not something to assert around.
   });
 
-  it('gets dearer for a borrower that has failed to pay (C1.b, C4, Corporate Credit G8)', () => {
+  it('gets dearer for a borrower its bank has watched get into difficulty (C1.b, C4)', () => {
     const clean = world([asksFor(phx(10_000), 6)]);
     for (let i = 0; i < 8; i += 1) clean.step();
-    const cleanRate = Number(clean.journal.ofKind('credit.written')[0]?.data['rate']);
-    // The same request from a borrower the banks have watched fail to pay.
-    const marked = world([overspends(2, 2), asksFor(phx(10_000), 6)], 0);
+    // The same request from a borrower that overdrew its account four periods earlier, and whose
+    // bank has carried the loan it wrote for that overdraft ever since.
+    const marked = world([overspends(2, 2), asksFor(phx(10_000), 6)]);
     for (let i = 0; i < 8; i += 1) marked.step();
-    const seen = marked.journal
-      .ofKind('credit.default')
-      .filter((e) => e.data['party'] === BORROWER);
-    expect(seen.length).toBeGreaterThan(0);
-    const marked2 = world([overspends(2, 2), asksFor(phx(10_000), 6)]);
-    for (let i = 0; i < 8; i += 1) marked2.step();
-    const markedRate = Number(marked2.journal.ofKind('credit.written')[0]?.data['rate']);
-    // C1.b: the bank's own view of this borrower moved, so the price moved. A default is
-    // information, and this is the channel it travels down (G8).
-    expect(markedRate).toBeGreaterThan(cleanRate);
+    /**
+     * THE SAME REQUEST, which is the whole of the comparison and what this used to get wrong.
+     *
+     * It read `credit.written[0]` from each world — the FIRST loan either world wrote. In the clean
+     * world that is the request; in the marked one it is the overdraft, a hundred million written
+     * at period 2 against a million asked for at period 6. Two different loans to two different
+     * purposes at two different times, and the assertion was that one of them was dearer than the
+     * other. So the mechanism was right and the measurement was not: like for like, the marked
+     * borrower is quoted 0.0272 where the clean one is quoted 0.0219.
+     */
+    const askedFor = (w: World): number => {
+      const mine = w.journal
+        .ofKind('credit.written')
+        .filter((e) => e.data['borrower'] === BORROWER && e.data['principal'] === phx(10_000));
+      expect(mine.length, 'the request was never written, so there is nothing to compare').toBe(1);
+      return Number(mine[0]?.data['rate']);
+    };
+    // C1.b, C4: the bank's own view of this borrower moved — it is carrying a large claim on the
+    // name now, and its capital charge and its cost of funds both say so — so the price moved.
+    expect(askedFor(marked)).toBeGreaterThan(askedFor(clean));
+  });
+
+  /**
+   * G8: AND A DEFAULT IS THE OTHER CHANNEL, which is a fact about the quote rather than about any
+   * one world. What a bank expects to lose on a name is how often it has seen that name fail over
+   * how long it remembers — so it is zero for a borrower that has never failed, which is what every
+   * world above has, and it rises the moment one does.
+   *
+   * It is asked of the function rather than of a run because no world in this file has a borrower
+   * that BOTH defaults and is still quoted: an overdraft its bank allows is not a failure, and a
+   * payment its bank refuses only happens here when no bank will lend at all, so nobody quotes.
+   * Reaching that state needs a bank with room for the name and no willingness to cover it, which
+   * is 13f's committed facility — recorded here rather than asserted around.
+   */
+  it('expects to lose more on a name it has watched fail, and nothing on one it has not (G8)', () => {
+    const w = world();
+    w.step();
+    const view = w.participantView(BANK_OF_A);
+    const decl = drawBanks(BANK_COUNT, 'loans').find((b) => b.bank === BANK_OF_A);
+    expect(decl).toBeDefined();
+    if (decl === undefined) return;
+    const never = probabilityOfDefault(view, decl, BORROWER, []);
+    expect(never).toBe(0);
+    const failed = probabilityOfDefault(view, decl, BORROWER, [
+      {
+        id: 1 as never,
+        period: w.period,
+        cycle: 0 as never,
+        kind: 'credit.default',
+        subjects: [String(BORROWER)],
+        data: {},
+        public: true,
+      },
+    ]);
+    // It is a frequency and not a grade: one failure in the window it remembers.
+    expect(failed).toBeGreaterThan(0);
   });
 });
 
