@@ -106,6 +106,26 @@ export interface InstrumentKindProfile {
    * A share is the residual claim, not a liability (Equity A1).
    */
   readonly liabilityOfIssuer: boolean;
+  /**
+   * Register B3, XI-3, §48: WHAT THE ISSUER OWES WHEN THE PRICE MOVES, and the two answers are
+   * genuinely different things rather than two conventions for one thing.
+   *
+   * `'face'` — THE PROMISE DOES NOT CHANGE. A borrower owes what it agreed to pay. When the market
+   * marks its paper down because it is walking towards default, the HOLDER has lost something real
+   * and the issuer has gained nothing: it still has to find the whole amount on the day. Debt is
+   * not carried at market value on an issuer's balance sheet, and a world that did carry it there
+   * would have a firm growing MORE solvent the less anybody trusted it — which would put the
+   * solvency trigger out of reach exactly when it is supposed to fire (XI-3: nothing is immortal).
+   *
+   * `'value'` — THE CLAIM IS THE BOOK. A fund share is a residual claim on a pool: what the issuer
+   * owes its holders IS what the pool is worth, so when the pool moves the liability moves with it
+   * and the issuer's own equity stays where it belongs, at zero (Fund Shares A3). Leaving this out
+   * would have a fund booking a profit on assets that are its holders'.
+   *
+   * There is no third answer and no default: a kind that is a liability of somebody has to say
+   * which of its issuer's two situations it is in.
+   */
+  readonly owes: 'face' | 'value';
   /** The unit its quantity is counted in (Register A1.c), given its currency. */
   readonly unit: (ccy: CurrencyCode) => UnitId;
   /**

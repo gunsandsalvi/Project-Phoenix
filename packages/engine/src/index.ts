@@ -55,6 +55,7 @@ export * from './mechanisms/freight/index.js';
 export * from './mechanisms/merchants/index.js';
 export * from './mechanisms/trade-credit/index.js';
 export * from './mechanisms/securitisation/index.js';
+export * from './mechanisms/securities-lending/index.js';
 export * from './mechanisms/commodity-futures/index.js';
 export * from './mechanisms/housing/index.js';
 export * from './mechanisms/expectations/index.js';

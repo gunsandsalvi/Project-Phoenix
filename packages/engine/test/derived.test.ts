@@ -47,6 +47,7 @@ function claimKind(countsItsOwn = false): InstrumentKindProfile {
     priceTick: CENT_TICK,
     carry: 'cost',
     liabilityOfIssuer: true,
+  owes: 'value',
     fairValueThroughIncome: true,
     unit: () => CLAIMS,
     ranking: () => ({ seniority: 1, secured: [], claim: 'what is left of the book' }),

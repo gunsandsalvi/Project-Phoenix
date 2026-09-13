@@ -44,6 +44,8 @@ export function goodProfile(d: GoodDecl): InstrumentKindProfile {
     carry: 'cost',
     // A1: a tonne of grain is a real thing, not a promise; nobody owes it to anybody.
     liabilityOfIssuer: false,
+    // A tonne is nobody's promise, so there is no issuer for a price move to reach.
+    owes: 'face',
     physical: true,
     unit: () => unit,
     // Bond N13, N13.a: stated because the clause says to state it even when the answer is nothing.
@@ -93,6 +95,8 @@ export function wipProfile(d: GoodDecl): InstrumentKindProfile {
     pricing: 'carriedAtCost',
     carry: 'cost',
     liabilityOfIssuer: false,
+    // A tonne is nobody's promise, so there is no issuer for a price move to reach.
+    owes: 'face',
     physical: true,
     unit: () => unit,
     // Bond N13, N13.a: stated because the clause says to state it even when the answer is nothing.

@@ -67,6 +67,9 @@ function claimKind(
     pricing: 'carriedAtCost',
     carry: 'cost',
     liabilityOfIssuer: true,
+    // Carried at cost and never re-marked here: what a derivative is worth to each side is the
+    // contract's own mark, which the contracts pass already moves on both books (13a).
+    owes: 'face',
     unit: (ccy) => currencyUnit(ccy),
     validateTerms,
     displayName,

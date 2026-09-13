@@ -54,6 +54,11 @@ export const loanKind: InstrumentKindProfile = {
   carry: 'cost',
   // The borrower owes it: it is the issuer's liability and the lender's asset.
   liabilityOfIssuer: true,
+  // Register B3, XI-3: A BORROWER OWES THE PRINCIPAL. What its lender thinks the row is worth is
+  // the lender's provision (D2) and moves the LENDER's book; the borrower still has to find the
+  // whole of it on the day, and a borrower whose debt was written down as it deteriorated would be
+  // growing more solvent the closer it came to failing.
+  owes: 'face',
   unit: (ccy) => currencyUnit(ccy),
   validateTerms: (t) => {
     if (!isLoan(t)) throw new InvalidRegistry('Banks Lending A1', 'not loan terms');

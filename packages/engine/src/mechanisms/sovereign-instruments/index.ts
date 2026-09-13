@@ -40,6 +40,10 @@ export const sovereignBond: InstrumentKindProfile = {
   priceTick: FACE_TICK,
   carry: 'mark',
   liabilityOfIssuer: true,
+  // Register B3, XI-9: A SOVEREIGN OWES THE FACE. Its paper falling in price is the holder's loss,
+  // never the treasury's gain — a state that grew richer as its own credit went is a state with no
+  // funding constraint at all, which is the one thing XI-9 exists to prevent.
+  owes: 'face',
   unit: () => PAR,
   // Bond N12, N13, N13.a as §8's table answers them, and every answer is stated rather than
   // implied. There are no covenants to breach, so nothing but a missed payment can be a default.
@@ -140,6 +144,10 @@ export const sovereignBill: InstrumentKindProfile = {
   priceTick: FACE_TICK,
   carry: 'mark',
   liabilityOfIssuer: true,
+  // Register B3, XI-9: A SOVEREIGN OWES THE FACE. Its paper falling in price is the holder's loss,
+  // never the treasury's gain — a state that grew richer as its own credit went is a state with no
+  // funding constraint at all, which is the one thing XI-9 exists to prevent.
+  owes: 'face',
   unit: () => PAR,
   // Bond N12, N13, N13.a as §8's table answers them, and every answer is stated rather than
   // implied. There are no covenants to breach, so nothing but a missed payment can be a default.

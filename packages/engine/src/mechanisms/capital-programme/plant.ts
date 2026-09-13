@@ -55,6 +55,8 @@ export function plantProfile(d: CapitalKindDecl): InstrumentKindProfile {
     carry: 'cost',
     // A1: plant is a thing its holder owns. Nobody promised it and nobody owes it.
     liabilityOfIssuer: false,
+    // A machine is nobody's promise, so there is no issuer for a price move to reach.
+    owes: 'face',
     physical: true,
     unit: () => unit,
     // Bond N13, N13.a: stated because the clause says to state it even when the answer is nothing.

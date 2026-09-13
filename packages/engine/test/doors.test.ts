@@ -54,6 +54,7 @@ const wheat: InstrumentKindProfile = {
   priceTick: CENT_TICK,
   carry: 'cost',
   liabilityOfIssuer: false,
+  owes: 'face',
   physical: true,
   unit: () => TONNES,
   ranking: () => ({ seniority: 0, secured: [], claim: 'nothing: it is owned outright' }),

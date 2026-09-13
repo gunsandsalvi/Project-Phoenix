@@ -148,6 +148,8 @@ function shared(
     pricing: 'carriedAtCost',
     carry: 'cost',
     liabilityOfIssuer: true,
+    // Register B3: the borrower owes the amount advanced, whatever the paper behind it does.
+    owes: 'face',
     unit: (ccy) => currencyUnit(ccy),
     validateTerms: (t) => {
       if (!isRow(t)) throw new InvalidRegistry('Money Market B1', 'not money-market row terms');

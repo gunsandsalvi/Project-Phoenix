@@ -145,6 +145,9 @@ export const trancheKind: InstrumentKindProfile = {
    */
   carry: 'cost',
   liabilityOfIssuer: true,
+  // Register B3: a note is owed its face and loses it only when the POOL loses it — which is the
+  // write-down below, an event on a date, and never a re-mark of what somebody would pay today.
+  owes: 'face',
   unit: (ccy) => currencyUnit(ccy),
   validateTerms: (t) => {
     if (!isTranche(t)) throw new InvalidRegistry('XI-11', 'not tranche terms');

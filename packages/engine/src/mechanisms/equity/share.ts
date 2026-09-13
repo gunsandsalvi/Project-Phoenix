@@ -77,6 +77,8 @@ export const shareKind: InstrumentKindProfile = {
   // for every holder class without exception, which is what carrying it at the mark means.
   carry: 'mark',
   liabilityOfIssuer: false,
+  // A1: a share is the residual claim and not a liability, so its issuer owes nothing against it.
+  owes: 'face',
   unit: () => SHARES,
   // D4: the count of a line can be restated without anything else about it changing. It is the one
   // kind in this world that can: par restated is a different promise, and a tonne is a tonne.

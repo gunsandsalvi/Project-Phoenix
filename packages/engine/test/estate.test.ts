@@ -66,6 +66,7 @@ function claimKind(id: InstrumentKindId, seniority: number): InstrumentKindProfi
     pricing: 'carriedAtCost',
     carry: 'cost',
     liabilityOfIssuer: true,
+  owes: 'face',
     ranking: () => ({ seniority, secured: [], claim: 'the face, from whatever there is' }),
     unit: (ccy) => currencyUnit(ccy),
     validateTerms: () => undefined,

@@ -113,7 +113,24 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       },
       false,
     );
-    if (profile.liabilityOfIssuer) {
+    /**
+     * Register B3, XI-3, §48 (13f): THE ISSUER'S SIDE EXISTS ONLY WHERE WHAT IT OWES FOLLOWS THE
+     * PRICE, and for almost everything in this world it does not.
+     *
+     * This used to run for every liability, so an issuer booked the NEGATIVE of its holders' move —
+     * and a firm walking towards default therefore booked a PROFIT on the way down, its equity
+     * rising as the market lost faith in it. That is not a booking convention anybody chose: debt
+     * is not carried at market value on an issuer's balance sheet, because the borrower still owes
+     * the whole of it on the day whatever anybody will pay for the paper today. And it put XI-3 out
+     * of reach exactly when XI-3 is supposed to fire: the closer a firm came to failing, the more
+     * equity it made, so the solvency trigger receded as the failure approached.
+     *
+     * The kind says which situation its issuer is in (`owes`). A fund share is the one here whose
+     * issuer's obligation genuinely IS the book, and its move is what keeps a fund's own equity at
+     * zero (Fund Shares A3). Everything else is owed at its face, and its holder's loss has no
+     * matching gain anywhere — which is correct, and is why there was never a counterparty to find.
+     */
+    if (profile.liabilityOfIssuer && profile.owes === 'value') {
       const weight = weightOf(d.parties.get(h.holder));
       const issuer = issuerOf(inst);
       // And the issuer's account is in the ISSUER's money, which is not always the holder's: a

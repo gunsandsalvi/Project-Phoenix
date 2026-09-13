@@ -32,6 +32,8 @@ export const moneyKind: InstrumentKindProfile = {
   pricing: 'money',
   carry: 'mark',
   liabilityOfIssuer: true,
+  // Money A1: a deposit is owed at its face, which is what makes 1$ 1$. It never re-marks.
+  owes: 'face',
   // Bond N13, N13.a: a deposit is an unsecured claim on the bank that issued it, and there is
   // nothing else of that bank's to rank it against yet. Who pays it when the issuer cannot is the
   // estate (worklist 7); whether anybody insures it is the corridor's neighbour (worklist 11).

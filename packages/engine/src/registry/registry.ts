@@ -273,6 +273,14 @@ export class Registry {
           `instrument kind ${k.id} declares a price tick and is never posted at one (${k.pricing})`,
         );
       }
+      // Register B3: a kind that is nobody's liability has no issuer for a price move to reach, so
+      // saying its issuer owes the VALUE is saying something about a party that is not there.
+      if (!k.liabilityOfIssuer && k.owes === 'value') {
+        throw new InvalidRegistry(
+          'Register B3',
+          `instrument kind ${k.id} is nobody's liability and says its issuer owes what it is worth`,
+        );
+      }
       if (k.priceTick !== undefined && !(k.priceTick > 0)) {
         throw new InvalidRegistry('Law 8', `instrument kind ${k.id} has a price tick of ${k.priceTick}`);
       }

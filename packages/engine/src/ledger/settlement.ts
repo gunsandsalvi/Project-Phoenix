@@ -199,6 +199,14 @@ type Op =
       readonly to: PartyId;
     };
 
+/**
+ * Register B3, XI-3, §48 (13f): whether what this kind's ISSUER owes follows a price, or is the
+ * face it promised. One read, three call sites, so a liability cannot be face on one of them and
+ * market on another (Law 4).
+ */
+const owesItsValue = (k: { readonly liabilityOfIssuer: boolean; readonly owes: 'face' | 'value' }): boolean =>
+  k.liabilityOfIssuer && k.owes === 'value';
+
 export class Settlement {
   constructor(private readonly d: SettlementDeps) {}
 
@@ -1114,11 +1122,17 @@ export class Settlement {
             target: 'holding',
           });
           if (!op.money && op.fromDebit >= 0) {
-            // A holder-to-holder transfer re-marks the issuer's liability from the giver's carrying
-            // value to the receiver's basis: the liability is the same number read from the other
-            // side (Register B3), so the change lands on the issuer.
+            /**
+             * Register B3 (13f): A HOLDER-TO-HOLDER TRANSFER CHANGES NOTHING THE ISSUER OWES, when
+             * what it owes is the face. Two parties agreeing a price between themselves is not an
+             * event on the borrower's book — it still has to find the whole amount on the day — so
+             * the issuer is not a side of their trade and its equity does not move with it.
+             *
+             * Where the claim IS the book (a fund share), the liability really is the same number
+             * read from the other side and the re-mark does land on the issuer.
+             */
             const inst = this.d.instruments.get(op.instrument);
-            if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
+            if (owesItsValue(this.d.registry.instrumentKind(inst.kind))) {
               bump(
                 issuerOf(inst),
                 mul(op.totalQty, carryingOf(op.fromDebit) - basis, 'issuer re-mark'),
@@ -1138,8 +1152,22 @@ export class Settlement {
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);
-          if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
-            const per = op.valuePerUnit === 'carrying' ? carryingOf(op.fromDebit) : op.valuePerUnit;
+          const issuedKind = this.d.registry.instrumentKind(inst.kind);
+          if (issuedKind.liabilityOfIssuer) {
+            /**
+             * Register B3 (13f): WHAT IT TOOK ON IS THE FACE, and the cash it got is whatever the
+             * book gave it. A bond brought at 98 leaves its issuer owing 100 and holding 98, and
+             * the two is a DISCOUNT ON ISSUE it wears on the day — real, and the reason a issuer
+             * with a poor name pays for it at the moment it borrows rather than never.
+             *
+             * This used to book the liability at the price, so an issue at any price was equity-
+             * neutral and a deteriorating name could raise money for ever at no cost to its book.
+             */
+            const per = owesItsValue(issuedKind)
+              ? op.valuePerUnit === 'carrying'
+                ? carryingOf(op.fromDebit)
+                : op.valuePerUnit
+              : 1;
             bump(op.issuer, perMemberOf(op.issuer, -mul(op.qty, per, 'issue value')), op.instrument);
           }
           break;
@@ -1167,14 +1195,17 @@ export class Settlement {
             target: 'issued',
           });
           const inst = this.d.instruments.get(op.instrument);
-          if (this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer) {
-            // The issuer's liability is the same number read from the holder's side (Register B3).
-            const per =
-              op.fromDebit >= 0
+          const redeemedKind = this.d.registry.instrumentKind(inst.kind);
+          if (redeemedKind.liabilityOfIssuer) {
+            // Register B3: the obligation that goes away is the one it carried — the face of it,
+            // unless the claim was the book, in which case it is what the book was worth.
+            const per = owesItsValue(redeemedKind)
+              ? op.fromDebit >= 0
                 ? carryingOf(op.fromDebit)
                 : op.valuePerUnit === 'carrying'
                   ? 1
-                  : op.valuePerUnit;
+                  : op.valuePerUnit
+              : 1;
             bump(op.issuer, perMemberOf(op.issuer, mul(op.qty, per, 'redeem value')), op.instrument);
           }
           break;
@@ -1198,18 +1229,27 @@ export class Settlement {
         }
         case 'reseat': {
           const inst = this.d.instruments.get(op.instrument);
-          const liability = this.d.registry.instrumentKind(inst.kind).liabilityOfIssuer;
-          // Register B3: what the obligation is worth is what its holders carry it at — read from
-          // their side, never re-derived from the issuer's (Law 19). A line nobody owes (a good) is
-          // re-seated with no equity effect at all, which is a different answer from zero.
-          const owed = !liability
+          const seatedKind = this.d.registry.instrumentKind(inst.kind);
+          /**
+           * Register B3 (13f): WHAT THE OBLIGATION IS, read from the holders' side because that is
+           * where the balances are (Law 19) — and it is the FACE of them unless the claim is the
+           * book itself, in which case it is what the book is worth. A line nobody owes (a good) is
+           * re-seated with no equity effect at all, which is a different answer from zero.
+           *
+           * The number an estate takes on has to be the same number the dead party was carrying,
+           * or the two books disagree by the difference and the balance-sheet identity fires on the
+           * estate — which is how this one was found.
+           */
+          const owed = !seatedKind.liabilityOfIssuer
             ? 0
             : sum(
                 this.d.register.holdersOf(op.instrument).map((h) => {
                   const held = this.d.register.holding(h, op.instrument);
                   if (!held.some) return 0;
                   return mul(
-                    this.d.valuation.valueOfLots(op.instrument, held.value.lots, ins.period),
+                    owesItsValue(seatedKind)
+                      ? this.d.valuation.valueOfLots(op.instrument, held.value.lots, ins.period)
+                      : sum(held.value.lots.map((l) => l.qty)).value,
                     weightOf(this.d.parties.get(h)),
                     'liability held',
                   );

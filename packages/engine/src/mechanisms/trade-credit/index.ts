@@ -82,6 +82,8 @@ export const invoiceKind: InstrumentKindProfile = {
   pricing: 'carriedAtCost',
   carry: 'cost',
   liabilityOfIssuer: true,
+  // Register B3: a buyer owes the invoice. A supplier's doubt about it is the SUPPLIER's write-down.
+  owes: 'face',
   unit: (ccy) => currencyUnit(ccy),
   validateTerms: (t) => {
     if (!isInvoice(t)) throw new InvalidRegistry('Trade Credit A1', 'not invoice terms');

@@ -122,14 +122,26 @@ export function balanceSheet(view: BalanceReads, party: PartyId): BalanceSheet {
       const h = view.register.holding(holder, inst.id);
       if (!h.some) continue;
       const w = weightOf(view.parties.get(holder));
-      liabilityTerms.push(
-        view.valuation.inMoney(
-          view.valuation.valueOfLots(inst.id, h.value.lots, view.period),
-          inst.ccy,
-          home,
-          view.period,
-        ) * w,
-      );
+      /**
+       * Register B3 (13f): WHAT THIS PARTY OWES, and for almost everything that is the BALANCE
+       * rather than what somebody would pay for it today. A borrower owes the whole of what it
+       * promised whatever the paper trades at; the holder's mark is the holder's business, and the
+       * two are read off the same row from opposite ends without being the same number.
+       *
+       * It used to read the holder's carrying value on both sides, which was consistent only
+       * because the issuer's equity was being moved by the holder's re-mark — the same defect that
+       * had a firm booking a profit as it walked towards default. With that gone, a balance sheet
+       * that still valued its own debt at the market would be a balance sheet whose equity account
+       * and whose liabilities disagreed by exactly the fiction that was removed.
+       *
+       * `'value'` is the fund share, whose issuer genuinely owes what the book is worth (A3).
+       */
+      const kind = view.registry.instrumentKind(inst.kind);
+      const owed =
+        kind.owes === 'value'
+          ? view.valuation.valueOfLots(inst.id, h.value.lots, view.period)
+          : sum(h.value.lots.map((l) => l.qty)).value;
+      liabilityTerms.push(view.valuation.inMoney(owed, inst.ccy, home, view.period) * w);
       // What this party owes IS those balances, read from the other side (Register B3), so every
       // rounding they have taken since they were opened is a rounding in this number.
       if (isMoney) walked += view.register.moneyWalk(holder, inst.id).dust * w;

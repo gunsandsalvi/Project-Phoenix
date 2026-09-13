@@ -156,6 +156,13 @@ export const fundShareKind: InstrumentKindProfile = {
   // and a fund that could only be written down would be a fund with a hidden guarantor on the way up.
   fairValueThroughIncome: true,
   liabilityOfIssuer: true,
+  /**
+   * A3, Register B3: THE CLAIM IS THE BOOK. What a fund owes its holders IS what its pool is worth,
+   * so when the pool moves the liability moves with it and the fund's own equity stays at zero,
+   * where a fund's equity belongs. This is the one kind in this world whose issuer's obligation
+   * genuinely follows a price — every other liability here is owed at its face.
+   */
+  owes: 'value',
   unit: () => SHARES,
   // Bond N13.a: a share ranks behind anything else the fund owes and takes what is left. That is
   // what "the holders own the assets" means when there is not enough (A3).

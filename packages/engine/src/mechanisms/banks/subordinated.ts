@@ -107,6 +107,8 @@ export const subordinatedKind: InstrumentKindProfile = {
   pricing: 'carriedAtCost',
   carry: 'cost',
   liabilityOfIssuer: true,
+  // Register B3: the bank owes the face of it whatever the market pays for it (N13.a).
+  owes: 'face',
   // N13.a: BEHIND EVERY OTHER CLAIM ON THE BANK and ahead of nobody but its owners. Money is 0 and
   // an unsecured money-market row is 1, so this is the number that puts it last in the queue — and
   // it is the only thing that makes it subordinated.

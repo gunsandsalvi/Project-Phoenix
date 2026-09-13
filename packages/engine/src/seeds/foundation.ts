@@ -103,6 +103,7 @@ import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
+import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
@@ -2222,6 +2223,10 @@ export function foundationSpec(
       // basket can be put in (the funds module reads that off its own data, in `needs`).
       equity(drew.listed),
       funds(drew.funds, drew.etfs),
+      // 13f, Securities Lending A1-A3: title passes and the economics do not. After equity and the
+      // funds, because what is lent is the paper they hold and the desks that need to deliver it
+      // are the ones that make its market.
+      securitiesLending(),
       sovereignInstruments,
       // Sovereign D3.a, Currency A3: EVERY SOVEREIGN THAT BORROWS HAS A CURVE, and it is its own —
       // one issuer, one money, its own prints. A world whose foreign lines had no curve family

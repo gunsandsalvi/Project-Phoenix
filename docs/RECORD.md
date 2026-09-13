@@ -3589,3 +3589,46 @@ promotion across the size boundary → 13f, where cell-level borrowers and the c
 belong; the covered bond (M7) → 13f, with bank funding; financing a receivable — pledge and factoring
 — → 13f; senior notes as repo collateral → 13f; mortgage pools through the same vehicle, and the
 insurers that would buy the notes → 13h.
+
+
+## 13f (step 1) — an issuer does not profit from its own decline
+
+**The defect.** Every instrument that is a liability of its issuer was re-marked on BOTH books: the
+holder booked the price move and the issuer booked the negative of it. So a firm walking towards
+default booked a PROFIT on the way down — its equity rising as the market lost faith in it — and a
+treasury whose paper was falling grew richer as its own credit went.
+
+**Why it is structural and not a booking convention.** Debt is not carried at market value on an
+issuer's balance sheet, because the borrower still owes the whole of it on the day whatever anybody
+will pay for the paper today. And the fiction put XI-3 out of reach exactly when XI-3 is supposed to
+fire: the closer a firm came to failing the more equity it made, so the solvency trigger receded as
+the failure approached. For a sovereign it deleted the funding constraint XI-9 exists to impose.
+
+**The fix is one declared fact on the instrument, and it is a fact rather than a flag.** `owes` says
+which of its issuer's two situations a kind is in. `'face'` — the promise does not change, which is
+every bond, bill, loan, deposit, repo row, invoice and note here. `'value'` — the claim IS the book,
+which is the fund share and only the fund share: what a fund owes its holders is what its pool is
+worth, and that move is what keeps a fund's own equity at zero where a fund's equity belongs (Fund
+Shares A3). There is no default and no third answer: a kind that is somebody's liability has to say
+which. A kind that is nobody's liability and claims to owe its value is refused at assembly.
+
+**It had to be written in four places, which is how one knows it was one fact.** The revaluation
+pass (the issuer's side now exists only where what it owes follows the price); settlement's `issue`
+(what the issuer takes on is the FACE, so a bond brought at 98 leaves it owing 100 and holding 98,
+and the two is a discount on issue it wears on the day — real, and the reason a poor name pays at
+the moment it borrows rather than never); settlement's `redeem` and its holder-to-holder `reseat`
+(two parties agreeing a price between themselves is not an event on the borrower's book); and the
+balance sheet the accounts family reads, which was valuing own debt at the market on one side of
+the identity while the equity account no longer moved with it.
+
+**What found the last one.** The identity fired on ESTATES: an estate assumed a dead party's
+liabilities at what the holders carried them at, while its balance sheet now read the face, and the
+two disagreed by exactly the fiction that had been removed. `balance-identity.test.ts` is what
+caught it, which is what that family is for.
+
+**Also in this item so far.** Finding `12d-3`: a loan's rate was derived twice and the two did not
+agree — quoted 0.013676115348016367 and written 0.013676161104839884 for the same borrower, same
+period, same bank, because the inputs move between the two phases. What is written is now what was
+QUOTED; `quote()` is called in one place. A bank that cannot lend after all records a refusal rather
+than a different price, and a name nobody would quote is a refusal too, each bank naming which of
+its own constraints stopped it (C3.a).
