@@ -26,6 +26,7 @@ export * from './register/instruments.js';
 export * from './register/register.js';
 export * from './register/agreements.js';
 export * from './register/control.js';
+export * from './mechanisms/land/index.js';
 export * from './journal/published.js';
 export * from './register/contracts.js';
 export * from './ledger/instruction.js';

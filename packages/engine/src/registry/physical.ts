@@ -423,6 +423,31 @@ export function rentedRoom(said: Option<{ readonly data: Record<string, unknown>
   return new Map([[STORAGE, space]]);
 }
 
+/** A2: the ground the plant this party already holds is standing on, read off its own vintages. */
+export interface GroundReads {
+  readonly registry: Pick<Registry, 'subdivision'>;
+  readonly params: Pick<ParamRegister, 'ratio'>;
+}
+
+export function groundUnderPlant(reads: GroundReads, vintages: readonly HeldVintage[]): number {
+  const terms: number[] = [];
+  for (const v of vintages) {
+    const kind = capitalKindOf(CAPITAL_KINDS, v.capitalKind);
+    if (kind === undefined) continue;
+    if (kind.landPerUnit === null) continue;
+    // Law 8 twice: the register counts PIECES and the ground is declared per NAMED unit, so the
+    // conversion happens where the ratio is read — the same correction `areaUnderUse` carries.
+    const units = div(
+      v.units,
+      reads.registry.subdivision(plantUnitId(kind.id)),
+      'the plant it holds, in its own named unit',
+    );
+    terms.push(mul(units, reads.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on'));
+  }
+  return sum(terms).value;
+}
+
+
 /** A2, A4: the units of one kind of plant this party has in service. */
 export function plantHeld(vintages: readonly HeldVintage[], capitalKind: string): number {
   return sum(vintages.filter((v) => v.capitalKind === capitalKind).map((v) => v.units)).value;

@@ -101,6 +101,7 @@ import { moneyMarket } from '../mechanisms/money-market/index.js';
 import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
+import { land } from '../mechanisms/land/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
@@ -2341,6 +2342,13 @@ export function foundationSpec(
       // Commodities Spot A3, D3: the market in covered space. After the firms, because who is short
       // of room and who has spare is read off what they hold (Law 19).
       commodities(),
+      /**
+       * Item 12: THE GROUND. After the firms, because a firm buys the ground its plant stands on
+       * and its plant has to exist to stand on any; before the storage market, because a silo
+       * stands on a real yard (`landPerUnit: 0.15`) and covered space competes with everything
+       * else for a place.
+       */
+      land(),
       // Freight A4, D1 (13c): the routes this world has and the carriers that sail them. THE LEGS
       // ARE REAL AND IDLE until there is more than one place with goods in it: this world makes
       // its goods in the one region that has firms, and the three abroad are a central bank, a

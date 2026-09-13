@@ -122,7 +122,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**9**~~ | ~~`Control`~~ | 2 | **BUILT** — the relation, the group, and a consolidation that eliminates. `combine` has a caller and moves the holdings it always claimed to |
 | ~~**10**~~ | ~~`CorporateAction`~~ | 1 | **BUILT** — four dates, and the declaration is separate from the payment. Dividend payout legs fall from 13.8% of everything to 0.58% |
 | ~~**11**~~ | ~~`OutputKind`~~ | 1 | **BUILT** — the noun, and A-64's three parts. 18 declared numbers gone; produce-to-order is `E-4`, after 14 |
-| **12** | `Space` | 0 | independent; it *is* worklist 13m |
+| ~~**12**~~ | ~~`Space`~~ | 0 | **BUILT** — the ground of a place is finite, held and cleared. The rest of 13m stands on it: `E-5` |
 | **13** | `Guarantee` | 0 | independent; tripartite, so **8** does not cover it |
 | **14** | `Process` | 1 | independent; small |
 | **15** | `Objective` | 0 | needs most of the above to be expressible at all |
@@ -2617,6 +2617,58 @@ Two smaller defects in the same loop:
 
 ## 12. `Space` — land with a supply and a price
 
+> **BUILT — the noun, its supply and its market. The rest of 13m stands on it and is named below.**
+>
+> `mechanisms/land/`: one line per place, its issue the place's **effective buildable area**, held
+> by named parties from the first period, traded in a market the kernel clears like any other.
+>
+> **TWO DECLARATIONS WERE ALREADY THERE AND NOTHING READ EITHER.** `TerrainDecl.buildKm2` — what
+> putting up a unit of plant on ground like this takes, against ordinary flat ground at one — has
+> been declared for every terrain since the map was written and was read by nobody. And
+> `CapitalKindDecl.landPerUnit` was read only by the yield arithmetic, which asks how good the
+> MARGINAL hectare is and never whether there IS one. `buildableKm2` is the first thing to read the
+> first, and `groundUnderPlant` the first to ask the second the question that matters.
+>
+> **The supply is a read, not a number.** `Σ over tiles Σ over grounds (share × tileKm² ÷ buildKm2)`
+> — the same shape as `tileYield` beside it, so a km² of open water at twelve times the cost is a
+> twelfth of a km² of buildable place. Computed where it is used and never stored (Law 19).
+>
+> **It is not a capital kind and it is not a claim.** A capital kind is made from a good and has a
+> life; land is neither, and giving it a fake life would put a wearing-out nobody pays into the
+> capital charge. It is `physical: true` with no issuer — the ground is nobody's promise — which is
+> what the `names` family means by "a physical thing names nobody".
+>
+> **It is carried at cost, and that is Seed C4 read honestly.** A world that opened with every state
+> holding a continent would have had to SAY what a hectare was worth before anybody had paid for
+> one — a written price for the largest asset in the world, which Law 3 forbids and which
+> `OPENING_SHARE`'s invariance argument cannot cover, because an area is a physical fact and not a
+> unit anybody chose. The state carries what nobody has bought at nothing and books what somebody
+> pays when somebody pays it.
+>
+> **The price is cleared and there is no formula for it anywhere.** The state offers what it holds
+> at one piece of money — the least there is, not a posted price — and a firm bids what it has for
+> the ground its own plant is standing on and has not bought.
+>
+> **Measured**, twelve periods: `us.1` **113,281,635 hectares** issued to the state, **16,502
+> hectares traded**, **eight holders** where there was one, and a cleared price of **$0.01** — the
+> reservation, because supply is four orders of magnitude above demand. Land in this world is
+> nearly free, which is the right answer for a continent with a hundred firms on it, and it is now
+> an ANSWER rather than an absence: when demand grows the price rises with no code change.
+> `world`, `firms`, `storage`, `doors`, `goods`: **10 red before, 10 after.** Four new tests.
+>
+> **Two things the build found and fixed at their cause.** A bid for less than one hectare asked
+> what a firm would pay for a ten-thousandth of one and got 9.6 × 10²⁰ — past what an integer holds,
+> and the run stopped where it should have shrugged (Law 8: a piece is the number). And the state
+> selling ground in a place it does not sit in reads as a CROSS-BORDER trade in the balance of
+> payments, when a hectare of us.2 sold to anybody is still in us.2.
+>
+> **So the state sells only in its own place, and that is `E-5`.** It holds the ground of every
+> place in its country — nothing is a residual with no holder — and what is missing is a party
+> PRESENT in each place to sell its ground. That is a local authority, which is the same noun a
+> port and a planning consent need, and it is where the rest of 13m starts: a port with an owner
+> and a berth, commercial property, leases with a term, CRE lending, and a retail firm that sells
+> from somewhere. Each of those is now expressible and none of them is built.
+
 **Why.** No findings of its own; it is the whole content of worklist 13m. `RegionDecl = {id, name,
 country}` — three fields, no profile, no behaviours, no supply. A place is a label. Land cannot be
 owned, used up, run out or priced. `geography.ts` already does rising marginal cost properly for
@@ -4201,6 +4253,7 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **C-7** (—) | 17 | the confidence question, answered and closed (carried from `VERIFY.md`) |
 | **D-1** (A) | 8 | a levy that fails is recorded and then forgotten: no arrears (`12d-5`) |
 | **D-2** (B) | 18 | the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) |
+| **E-5** (B) | 18 (13m) | *(found while building item 12)* the state holds the ground of every place in its country and can only SELL in the one it sits in, because a seller in another place reads as a cross-border trade. What is missing is a party present in each place — a local authority, the same noun a port and a planning consent need |
 | **E-4** (B) | after 14 | *(found while building item 11)* a capacity line still produces into WIP and destroys the unsold part: the number is right and the accounts line is not — an inventory write-off where it should be operating leverage. Produce-to-order needs a line to know its demand when it produces, and `firms.produce` runs before `markets` |
 | **E-3** (C) | 17 | *(found while building item 10)* an estate pays RENT for the space its inventory sits in while it winds up, and its own `flows` family reports every non-`corporateAction` payment out of an estate as a distribution to somebody with no claim. A cost of a winding-up is not a distribution; D6 is about distributions |
 | **E-2** (B) | 14 | *(found while building item 8)* an estate left `winding` because it could not hand over is still a household cell to the eleven `ofKind(HOUSEHOLD)` readers, which all ask `status.alive`. Unreached in the scale model — **0 failed probate transfers, 0 encumbered household holdings over 12 periods** — and named rather than left silent |

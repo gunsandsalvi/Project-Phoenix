@@ -4729,3 +4729,60 @@ and reordering for one kind of line would be a kind branch.
 and a lease is consideration for something. **What would falsify it:** a line that is neither — a
 thing that can be held but only briefly, where the honest answer is a fast spoilage on a stock line
 rather than a third case.
+
+
+## Item 12 — land with a supply and a price
+
+**What.** `mechanisms/land/`: one line per place, its issue the place's effective buildable area,
+held by named parties from the first period, traded in a market the kernel clears like any other.
+
+**Why.** `RegionDecl` was `{id, name, country}` — three fields, no profile, no behaviours, no supply.
+A place was a label. Land could not be owned, used up, run out or priced, so a tile carried its
+thousandth building at the price of its first.
+
+**Two declarations were already there and nothing read either.** `TerrainDecl.buildKm2` — what
+putting up a unit of plant on ground like this takes, against ordinary flat ground at one — has been
+declared for every terrain since the map was written and was read by nobody. And
+`CapitalKindDecl.landPerUnit` was read only by the yield arithmetic, which asks how good the MARGINAL
+hectare is and never whether there IS one.
+
+**The supply is a read, not a number**: `Σ over tiles Σ over grounds (share × tileKm² ÷ buildKm2)`,
+the same shape as `tileYield` beside it, so a km² of open water at twelve times the cost is a twelfth
+of a km² of buildable place. Computed where used, never stored.
+
+**It is not a capital kind and it is not a claim.** A capital kind is made from a good and has a
+life; land is neither, and a fake life would put a wearing-out nobody pays into the capital charge.
+It is `physical: true` with no issuer — the ground is nobody's promise.
+
+**It is carried at cost, and that is Seed C4 read honestly.** A world that opened with every state
+holding a continent would have had to SAY what a hectare was worth before anybody had paid for one —
+a written price for the largest asset in the world, which Law 3 forbids and which `OPENING_SHARE`'s
+invariance argument cannot cover, because an area is a physical fact and not a unit anybody chose.
+
+**The price is cleared and there is no formula for it anywhere.** The state offers what it holds at
+one piece of money — the least there is, not a posted price — and a firm bids what it has for the
+ground its own plant is standing on and has not bought.
+
+**Measured**, twelve periods: `us.1` **113,281,635 hectares** issued to the state, **16,502 hectares
+traded**, **eight holders** where there was one, cleared at **$0.01** — the reservation, because
+supply is four orders of magnitude above demand. Land here is nearly free, which is right for a
+continent with a hundred firms on it, and it is an ANSWER now rather than an absence: when demand
+grows the price rises with no code change. `world`, `firms`, `storage`, `doors`, `goods`: **10 red
+before, 10 after.** Four new tests. Green: lint, typecheck, spec citations (205), forbids (202).
+
+**Two things the build found and fixed at their cause.** A bid for less than one hectare asked what a
+firm would pay for a ten-thousandth of one and got 9.6 × 10²⁰ — past what an integer holds, and the
+run stopped where it should have shrugged (Law 8: a piece is the number). And the state selling
+ground in a place it does not sit in reads as a CROSS-BORDER trade in the balance of payments, when a
+hectare of us.2 sold to anybody is still in us.2.
+
+**So the state sells only in its own place — E-5.** It holds the ground of every place in its
+country, so nothing is a residual with no holder; what is missing is a party PRESENT in each place to
+sell its ground. That is a local authority, the same noun a port and a planning consent need, and it
+is where the rest of 13m starts: a port with an owner and a berth, commercial property, leases with a
+term, CRE lending, a retail firm that sells from somewhere. Each is now expressible and none is built.
+
+**Forecast, with its killer.** Ground is finite, owned and priced, so building can be made to consume
+it and get dearer. **What would falsify it:** the price staying at the state's reservation for ever —
+which it will while a continent has a hundred firms on it, and which the reach read publishes rather
+than hides.

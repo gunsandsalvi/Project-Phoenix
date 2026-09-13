@@ -76,3 +76,12 @@ export const PIP_YEN = 0.01;
  * in it is struck for part of one, so an hour is the smallest piece of somebody's time there is.
  */
 export const TIME_PIECES = 1;
+
+/**
+ * Capital Programme C1, Law 8: HOW MANY PIECES A SQUARE KILOMETRE OF GROUND IS DIVIDED INTO.
+ *
+ * A hectare, and there are a hundred to the km². It is the smallest piece of ground anybody builds
+ * on — a plot, not a plan — and nothing is held in a fraction of one, for the same reason no
+ * account is held in a fraction of a cent (item 12).
+ */
+export const HECTARES_PER_KM2 = 100;
