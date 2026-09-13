@@ -142,8 +142,10 @@ export const subordinatedKind: InstrumentKindProfile = {
 /** What a bank still owes on this layer: what its holders carry, at their own books (A2.b, B1). */
 export function subordinatedOf(ctx: MechanismContext, bank: PartyId): number {
   const terms: number[] = [];
-  for (const i of ctx.instruments.all()) {
-    if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || !isSub(i.terms)) continue;
+  // Law 18: the rows a bank issued, asked of the index that answers it, rather than every
+  // instrument in the world once per bank per period.
+  for (const i of ctx.instruments.issuedBy(bank)) {
+    if (!i.status.live || !isSub(i.terms)) continue;
     for (const holder of ctx.register.holdersOf(i.id)) {
       if (holder === bank) continue;
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);

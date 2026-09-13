@@ -12,6 +12,9 @@
 import { describe, expect, it } from 'vitest';
 import {
   LENDING_PARAMS,
+  SUBORDINATED,
+  issuedBy,
+  sum,
   assemble,
   partyId,
   type Event,
@@ -59,8 +62,26 @@ describe('the requirement (Banks Capital B1, B1.a)', () => {
     for (const bank of [BANK_A, BANK_B]) {
       const said = position(w, bank);
       expect(said?.public).toBe(true);
-      // A1: capital is the RESIDUAL — the equity account, not a pot somebody filled.
-      expect(num(said, 'capital')).toBe(w.register.equity(bank));
+      /**
+       * A1, A2: CAPITAL IS THE RESIDUAL PLUS THE LAYER THAT STANDS IN FRONT OF THE CREDITORS — the
+       * equity account, which is a residual and never a pot somebody filled, and the subordinated
+       * debt, which is capital because it is what gets wiped before a depositor loses anything
+       * (A2.b). This used to assert the equity account alone, which held until item 11 built the
+       * subordinated layer and stopped holding the moment a bank raised any: the two differ here by
+       * exactly what these banks have out in it.
+       */
+      const junior = sum(
+        w.instruments
+          .all()
+          .filter((i) => i.status.live && i.kind === SUBORDINATED && issuedBy(i, bank))
+          .flatMap((i) =>
+            w.register
+              .holdersOf(i.id)
+              .filter((h) => h !== bank)
+              .map((h) => w.register.totalQuantity(h, i.id)),
+          ),
+      ).value;
+      expect(num(said, 'capital')).toBeCloseTo(w.register.equity(bank) + junior, 6);
       // B1: and what it is measured against is a walk over what the bank holds, at marks.
       expect(num(said, 'assets')).toBeGreaterThan(0);
       expect(num(said, 'leverageRatio')).toBeCloseTo(num(said, 'capital') / num(said, 'assets'), 9);
