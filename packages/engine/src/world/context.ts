@@ -20,6 +20,7 @@ import type {
   AgreementId,
   Brand,
   CorporateActionId,
+  GuaranteeId,
   CurrencyCode,
   CurveFamilyId,
   DerivativeKindId,
@@ -39,6 +40,7 @@ import type {
   CorporateActionDecl,
   CorporateActionReads,
 } from '../register/corporate.js';
+import type { Guarantee, GuaranteeDecl, GuaranteeReads } from '../register/guarantees.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
@@ -205,6 +207,12 @@ export interface KernelReads {
    * has to know or it pays for something it will not get (D3.b).
    */
   readonly actions: CorporateActionReads;
+  /**
+   * Banks Funding A1.a, Banks Capital D4: WHO STANDS BEHIND WHOM — the first question a lender has,
+   * and until this there was no answer. It is public: a guarantee nobody can see guarantees nobody
+   * (Observer A3), which is why a deposit insurance scheme is announced rather than discovered.
+   */
+  readonly guarantees: GuaranteeReads;
   /**
    * XI-3, Banks Capital C3.b: whether some module takes charge of what happens when a party of this
    * kind fails. The estate asks it so that it can leave a bank alone without knowing what a bank is
@@ -727,6 +735,18 @@ export interface MechanismContext extends WorldReads {
   recordAction(id: CorporateActionId): CorporateAction;
   payAction(id: CorporateActionId): CorporateAction;
   cancelAction(id: CorporateActionId, why: string): CorporateAction;
+  /**
+   * A1.a: ONE PARTY STANDS BEHIND ANOTHER, from now, on a named basis and up to a named limit.
+   *
+   * It moves nothing: it records a promise, which is a fact about three parties and not a transfer
+   * between any two of them. What follows from it — a claim that ranks differently, a lender that
+   * looks through to the guarantor, a fund that is called before the purse — is what reads it.
+   */
+  guarantee(decl: GuaranteeDecl): Guarantee;
+  /** D4: it is called, and what it paid is recorded against what it promised. */
+  callGuarantee(id: GuaranteeId, amount: number, why: string): Guarantee;
+  /** It ends without being called: what it stood behind was met, or its term ran. */
+  releaseGuarantee(id: GuaranteeId, why: string): Guarantee;
   /** Announced and reaching its record date now; recorded and due now. */
   recordingOn(at: Period): readonly CorporateAction[];
   payableOn(at: Period): readonly CorporateAction[];

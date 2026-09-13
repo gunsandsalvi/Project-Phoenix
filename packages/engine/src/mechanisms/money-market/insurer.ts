@@ -68,6 +68,7 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
   for (const bank of banks) {
     const p = ctx.parties.get(bank);
     if (!p.status.alive) continue;
+    standBehind(ctx, bank);
     const ccy = ctx.registry.currencyOf(p.region);
     // 13j, A1.a: a bank pays the guarantee of ITS OWN money, which is the one that covers it.
     const insurer = insurerOf(ccy);
@@ -115,4 +116,38 @@ export function fundOf(ctx: MechanismContext, ccy: CurrencyCode): number {
     weightOf(p),
     'the fund',
   );
+}
+
+/**
+ * A1.a, item 13: THE GUARANTEE ITSELF, said out loud once per bank.
+ *
+ * Deposit insurance worked before this and it worked by being an ORDERING OF PAYMENTS written into
+ * the resolution path — the insurer pays, then the purse — rather than a thing anybody holds. So
+ * nothing could be asked who stood behind a bank, a guaranteed deposit ranked in an estate exactly
+ * like an unguaranteed one, and a second guarantee would have had to be written into a second place.
+ *
+ * It is given when the bank first pays a premium, which is when the cover starts: a bank that has
+ * never paid is not insured, and that is the same fact read from the other end (Law 19). The
+ * beneficiary is `whoeverHolds`, because a guarantee of DEPOSITS is given to whoever holds one and
+ * naming every holder would be naming a set that changes every period.
+ *
+ * The limit is the one this world already declares — `regulation.depositInsurance.limit`, per
+ * member — and it is a TERM of the promise rather than a clamp on a number (Law 6).
+ */
+function standBehind(ctx: MechanismContext, bank: PartyId): void {
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
+  const insurer = insurerOf(ccy);
+  if (!ctx.parties.has(insurer)) return;
+  const already = ctx.guarantees.behind(bank);
+  if (already.some((g) => g.guarantor === insurer && g.basis === 'insurance')) return;
+  ctx.guarantee({
+    guarantor: insurer,
+    obligor: bank,
+    beneficiary: 'whoeverHolds',
+    what: `the insured part of what ${bank} owes its depositors`,
+    ccy,
+    limit: null,
+    basis: 'insurance',
+    why: 'Banks Funding A1.a: a deposit is insured up to a limit per member, and D4 says the insurance PAYS when the book cannot. What the fund cannot meet is the purse (D5), which is why this promise has no limit of its own: the LIMIT IS PER MEMBER AND PER DEPOSIT, declared as `regulation.depositInsurance.limit` and applied where the cover is worked out, not to the scheme as a whole.',
+  });
 }

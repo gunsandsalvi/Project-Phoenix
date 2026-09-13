@@ -4786,3 +4786,48 @@ term, CRE lending, a retail firm that sells from somewhere. Each is now expressi
 it and get dearer. **What would falsify it:** the price staying at the state's reservation for ever —
 which it will while a continent has a hundred firms on it, and which the reach read publishes rather
 than hides.
+
+
+## Item 13 — a third party standing behind a second
+
+**What.** `register/guarantees.ts`: a guarantor, an obligor, a beneficiary, what is guaranteed, a
+currency, a limit and a basis — `insurance | parent | sovereign | clearingHouse | letterOfCredit`.
+States `standing → called → exhausted`, with `released` beside them. Written through `guarantee` /
+`callGuarantee` / `releaseGuarantee`, journalled publicly, read through `guarantees` on
+`KernelReads` — a guarantee nobody can see guarantees nobody.
+
+**Why item 8 could not absorb it.** An agreement is two named parties. What makes a guarantee a
+guarantee is that **the party who pays is not the party who owes**. The only thing of this shape in
+the codebase was `Contracts.novate`, for derivatives.
+
+**A limit here is not a bound (Law 6).** "Insured up to a limit per member" is a TERM of the promise
+— a policy somebody set, with an owner — not a clamp on a computed number. `null` is a guarantee
+with no limit, which is what a parent gives a subsidiary, and it is a real answer rather than a large
+number.
+
+**`exhausted` is not `released`**, and a call past the limit is refused: a guarantor paying more than
+it promised would be paying somebody else's obligation, and what the guarantee cannot meet is what
+the next thing behind it is for (D5's purse) rather than something absorbed quietly here.
+
+**Wired at the one real case, and it was working by accident.** Deposit insurance already collected
+premiums and paid out — as an ordering of payments written into the resolution path rather than as a
+thing anybody holds. So nothing could be asked who stood behind a bank, a guaranteed deposit ranked
+in an estate exactly like an unguaranteed one, and LOLR's four classical conditions had nothing to
+attach to. The insurer now gives the guarantee when a bank first pays a premium — which is when the
+cover starts, so a bank that has never paid is not insured, the same fact read from the other end —
+and the resolution calls it for what it paid.
+
+**Measured**, eight periods: **one guarantee per bank, public, `standing`**, and no bank has two.
+`money-market`, `bank-resolution`, `capital`: **6 red before, 6 after.** Six new tests. Green: lint,
+typecheck, spec citations (206), forbids (203 files).
+
+**Carried.** The other four bases have a key here and no caller: a parent behind a subsidiary needs
+item 9's `Control` to say which parent — now sayable, and nothing says it; a clearing house needs one
+to interpose; a letter of credit needs trade finance; and the sovereign backstop is the purse, which
+pays in the resolution path and does not yet do it under a promise.
+
+**Forecast, with its killer.** Who stands behind whom is a fact the world can read, so a lender can
+look through to a guarantor and an estate can rank a guaranteed claim differently. **What would
+falsify it:** a guarantee whose guarantor is itself guaranteed and where the chain matters — the
+store answers `behind` one level at a time and nothing walks it, which is fine until a clearing house
+stands behind a member that stands behind a client.

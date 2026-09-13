@@ -87,6 +87,7 @@ import {
   corporateActionReads,
   type CorporateActionReads,
 } from '../register/corporate.js';
+import { Guarantees, guaranteeReads, type GuaranteeReads } from '../register/guarantees.js';
 import type { Registry } from '../registry/registry.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
@@ -216,6 +217,9 @@ export class World {
   /** Equity D3: what a company has declared and not yet paid — the four dates (item 10). */
   private readonly actionStore = new CorporateActions();
   readonly actions: CorporateActionReads = corporateActionReads(this.actionStore);
+  /** Banks Funding A1.a: who stands behind whom — the one relation with three sides (item 13). */
+  private readonly guaranteeStore = new Guarantees();
+  readonly guarantees: GuaranteeReads = guaranteeReads(this.guaranteeStore);
   private readonly root: Prng;
   private readonly marketList: MarketDecl[] = [];
   /** Sovereign C1: the issuer's supply for this period's session, posted before it and then spent. */
@@ -1239,6 +1243,7 @@ export class World {
       published: this.published,
       control: this.control,
       actions: this.actions,
+      guarantees: this.guarantees,
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
       contractBooks: (kind, on) => this.contractBooks(kind, on),
@@ -1385,6 +1390,7 @@ export class World {
       published: this.published,
       control: this.control,
       actions: this.actions,
+      guarantees: this.guarantees,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1476,6 +1482,7 @@ export class World {
       published: this.published,
       control: this.control,
       actions: this.actions,
+      guarantees: this.guarantees,
       resolvesItsOwn: (kind) => this.resolvesItsOwn(kind),
       derivativeClass: (kind) => this.derivativeClass(kind),
       derivativeClasses: [...this.derivativeClasses.values()],
@@ -1641,6 +1648,50 @@ export class World {
           'corporate.cancelled',
           [row.issuer, row.line],
           { action: row.id, what: row.kind, why },
+          true,
+        );
+        return row;
+      },
+      guarantee: (decl) => {
+        const row = this.guaranteeStore.give(decl, this.currentPeriod);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'guarantee.given',
+          [row.guarantor, row.obligor],
+          {
+            guarantee: row.id,
+            guarantor: row.guarantor,
+            obligor: row.obligor,
+            what: row.what,
+            limit: row.limit,
+            basis: row.basis,
+            why: row.why,
+          },
+          true,
+        );
+        return row;
+      },
+      callGuarantee: (id, amount, why) => {
+        const row = this.guaranteeStore.called(id, amount);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          row.state === 'exhausted' ? 'guarantee.exhausted' : 'guarantee.called',
+          [row.guarantor, row.obligor],
+          { guarantee: row.id, called: amount, paid: row.paid, limit: row.limit, why },
+          true,
+        );
+        return row;
+      },
+      releaseGuarantee: (id, why) => {
+        const row = this.guaranteeStore.release(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'guarantee.released',
+          [row.guarantor, row.obligor],
+          { guarantee: row.id, why },
           true,
         );
         return row;

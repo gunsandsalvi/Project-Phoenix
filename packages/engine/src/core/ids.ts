@@ -54,6 +54,8 @@ export type ContractId = Brand<string, 'ContractId'>;
 export type AgreementId = Brand<string, 'AgreementId'>;
 /** Equity D3: what a company does to its own claims, with its four dates (`register/corporate.ts`). */
 export type CorporateActionId = Brand<string, 'CorporateActionId'>;
+/** Banks Funding A1.a: a third party standing behind a second (`register/guarantees.ts`). */
+export type GuaranteeId = Brand<string, 'GuaranteeId'>;
 export type DerivativeKindId = Brand<string, 'DerivativeKindId'>;
 
 /**
@@ -103,6 +105,7 @@ export const contractId = (s: string): ContractId => nonEmpty(s, 'ContractId') a
 export const agreementId = (s: string): AgreementId => nonEmpty(s, 'AgreementId') as AgreementId;
 export const corporateActionId = (s: string): CorporateActionId =>
   nonEmpty(s, 'CorporateActionId') as CorporateActionId;
+export const guaranteeId = (s: string): GuaranteeId => nonEmpty(s, 'GuaranteeId') as GuaranteeId;
 export const derivativeKindId = (s: string): DerivativeKindId =>
   nonEmpty(s, 'DerivativeKindId') as DerivativeKindId;
 

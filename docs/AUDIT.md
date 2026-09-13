@@ -123,7 +123,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**10**~~ | ~~`CorporateAction`~~ | 1 | **BUILT** — four dates, and the declaration is separate from the payment. Dividend payout legs fall from 13.8% of everything to 0.58% |
 | ~~**11**~~ | ~~`OutputKind`~~ | 1 | **BUILT** — the noun, and A-64's three parts. 18 declared numbers gone; produce-to-order is `E-4`, after 14 |
 | ~~**12**~~ | ~~`Space`~~ | 0 | **BUILT** — the ground of a place is finite, held and cleared. The rest of 13m stands on it: `E-5` |
-| **13** | `Guarantee` | 0 | independent; tripartite, so **8** does not cover it |
+| ~~**13**~~ | ~~`Guarantee`~~ | 0 | **BUILT** — three sides, a limit that is a term and not a bound, wired at deposit insurance |
 | **14** | `Process` | 1 | independent; small |
 | **15** | `Objective` | 0 | needs most of the above to be expressible at all |
 | **16** | `Measure<D>` | 18 | independent of every noun; large, mechanical, compiler-driven — run it alongside |
@@ -2683,6 +2683,42 @@ somewhere.
 ---
 
 ## 13. `Guarantee` — a third party standing behind a second
+
+> **BUILT.** `register/guarantees.ts`: a guarantor, an obligor, a beneficiary, what is guaranteed, a
+> currency, a limit and a basis — `insurance | parent | sovereign | clearingHouse | letterOfCredit`.
+> States `standing → called → exhausted`, with `released` beside them. Written through `guarantee` /
+> `callGuarantee` / `releaseGuarantee`, journalled publicly; read through `guarantees` on
+> **`KernelReads`**, because a guarantee nobody can see guarantees nobody (Observer A3).
+>
+> **`Agreement` could not absorb it and that is the point.** An agreement is two named parties; what
+> makes a guarantee a guarantee is that THE PARTY WHO PAYS IS NOT THE PARTY WHO OWES.
+>
+> **A LIMIT HERE IS NOT A BOUND (Law 6).** "Insured up to a limit per member" is a TERM of the
+> promise — a policy somebody set, with an owner — not a clamp on a computed number. `null` is a
+> guarantee with no limit, which is what a parent gives a subsidiary and a sovereign gives its own
+> banking system, and it is a real answer rather than a large number.
+>
+> **`exhausted` is not `released`.** A promise that was kept and ran out is a different state from
+> one that ended without being called, and a call past the limit is REFUSED: a guarantor paying more
+> than it promised would be paying somebody else's obligation, and what the guarantee cannot meet is
+> what the next thing behind it is for (D5's purse) rather than something absorbed quietly.
+>
+> **Wired at the one real case, and it was working by accident.** Deposit insurance already
+> collected premiums and paid out — and it did so as an ORDERING OF PAYMENTS written into the
+> resolution path rather than as a thing anybody holds. So nothing could be asked who stood behind a
+> bank, a guaranteed deposit ranked in an estate exactly like an unguaranteed one, LOLR's four
+> conditions had nothing to attach to, and a second guarantee would have had to be written into a
+> second place. The insurer now GIVES the guarantee when a bank first pays a premium — which is when
+> the cover starts, so a bank that has never paid is not insured, the same fact read from the other
+> end — and the resolution CALLS it for what it paid.
+>
+> **Measured**, eight periods: **one guarantee per bank, public, `standing`**, and no bank has two.
+> `money-market`, `bank-resolution`, `capital`: **6 red before, 6 after.** Six new tests.
+>
+> **Carried.** The other four bases have a key here and no caller: a parent behind a subsidiary
+> needs item 9's `Control` to say which parent (it is now sayable and nothing says it), a clearing
+> house needs one to interpose, a letter of credit needs trade finance, and the sovereign backstop
+> is the purse — which pays in the resolution path and does not yet do it under a promise.
 
 **Why.** The only thing of this shape in the codebase is `Contracts.novate`, for derivatives. A parent
 guaranteeing a subsidiary, a deposit insurer standing behind a bank (`depositInsurer` exists as a

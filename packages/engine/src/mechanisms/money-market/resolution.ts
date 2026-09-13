@@ -362,6 +362,20 @@ function allocate(
   const unmet = sub(v.hole, holders, 'what the guarantee must meet');
   if (unmet <= 0) return { holders, insurer: 0, purse: 0, equity };
   const insurer = payFrom(ctx, insurerOf(ccy), acquirer, ccy, unmet, `${bank} resolution: the guarantee`);
+  /**
+   * D4, item 13: AND THE GUARANTEE IS CALLED, against what it promised. The payment above is what
+   * moved; this is what it moved UNDER, which is the fact that had nowhere to be — the insurer paid
+   * and nothing anywhere said it had been standing behind this bank or how much of its promise was
+   * left afterwards.
+   */
+  if (insurer > 0) {
+    for (const g of ctx.guarantees.behind(bank)) {
+      if (g.guarantor !== insurerOf(ccy) || g.basis !== 'insurance') continue;
+      if (g.state === 'released' || g.state === 'exhausted') continue;
+      ctx.callGuarantee(g.id, insurer, `${bank} was resolved and the insured part fell to the fund`);
+      break;
+    }
+  }
   const still = sub(unmet, insurer, 'what the fund could not meet');
   const purse =
     still <= 0
