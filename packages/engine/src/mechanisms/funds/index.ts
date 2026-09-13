@@ -596,6 +596,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       'the cash it keeps back',
     ),
   );
+  const offer = offeredYield(ctx, d);
   ctx.record(
     'fund.struck',
     [d.fund],
@@ -624,9 +625,10 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       spare: subQty(subQty(cash, buffer, 'over its buffer'), owed, 'and after what it owes'),
       oldestMark: oldest,
       // D2, D2.a: what it offers a saver — what the paper its mandate lets it hold is yielding,
-      // less what its manager takes. Both halves are public reads (Sovereign D3, B3), it causes
-      // nothing by itself (Observer A5), and it is the number that competes with a deposit rate.
-      offered: offeredYield(ctx, d),
+      // less what its manager takes. A fund with no curve to read publishes NO OFFER, and the key
+      // is absent rather than zero: a saver reading the tape can tell "nothing to say" from "nothing
+      // on offer", which a number cannot say (App A).
+      ...(offer.some ? { offered: offer.value } : {}),
     },
     true,
   );
@@ -637,19 +639,30 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
  * hold, less its fee. It is not a forecast and not a promise: it is what that paper is fetching
  * today (Sovereign D3), which is the only thing anybody can compare a deposit against.
  */
-function offeredYield(ctx: MechanismContext, d: FundDecl): number {
+function offeredYield(ctx: MechanismContext, d: FundDecl): Option<number> {
   const region = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region);
   const fee = ctx.params.perAnnum(fundParam(d.fund, 'fee'));
   const tenor = ctx.params.periods(fundParam(d.fund, 'maxTenorPeriods'));
   const on = ctx.calendar.startOf(ctx.period);
   const by = ctx.calendar.startOf(periodOf(ctx.period + tenor));
-  let best = 0;
+  /**
+   * D2.a: THE BEST of the curves in its money, and `best` is what the word says.
+   *
+   * It was the LAST family the map happened to iterate that had a yield — an outcome of insertion
+   * order, so a world that registered its curves in another order offered its savers a different
+   * number for the same paper. And when none of them answered it fell to `best = 0`, so a fund with
+   * no curve to read published a NEGATIVE offer of exactly its own fee, which is a saver being told
+   * to pay for the privilege rather than a fund with nothing to say (App A: missing is missing).
+   */
+  let best: Option<number> = none();
   for (const family of ctx.registry.curveFamilies.values()) {
     if (family.ccy !== ctx.registry.currencyOf(region.id)) continue;
     const read = ctx.curve(family.id).at(yearFraction(family.dayCount, on, by));
-    if (read.yield.some) best = read.yield.value;
+    if (!read.yield.some) continue;
+    if (!best.some || read.yield.value > best.value) best = some(read.yield.value);
   }
-  return sub(best, fee, 'what a saver gets after the manager');
+  if (!best.some) return none();
+  return some(sub(best.value, fee, 'what a saver gets after the manager'));
 }
 
 /** What this fund still owes its redeemers, at the NAV each of them struck (C4). */

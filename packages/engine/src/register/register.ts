@@ -113,11 +113,13 @@ export interface EquityEntry {
 
 /**
  * Law 7: the magnitude a move passed through, when the arithmetic went further than the answer did.
- * Nothing is missing when a caller says nothing — it is saying the move IS what happened — so this
- * is not a numeric default standing in for a number nobody read.
+ *
+ * A move that says nothing is not missing a number — it is saying the move IS what passed through —
+ * and `moved` takes the absence and means exactly that. It used to spell the absence as `?? 0` with
+ * the rule disabled above it; the absence is now carried as an absence, so there is nothing to
+ * disable and nothing that reads as a magnitude of nothing.
  */
-// eslint-disable-next-line phoenix/no-numeric-default -- absence here means "the move itself", stated above
-const throughOf = (move: EquityMove): number => move.through ?? 0;
+const throughOf = (move: EquityMove): number | undefined => move.through;
 
 /** One money account is one (holder, instrument) pair; this names it. */
 const moneyKey = (holder: PartyId, instrument: InstrumentId): string => `${holder}/${instrument}`;

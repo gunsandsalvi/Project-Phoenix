@@ -111,9 +111,13 @@ export function openedFrom(terms: Sum, what: string): Running {
  * only saw the net would call every one of them a defect (Law 7: the tolerance is what the
  * arithmetic did, not what the answer looks like).
  */
-export function moved(balance: Running, delta: number, what: string, through = 0): Running {
+export function moved(balance: Running, delta: number, what: string, through?: number): Running {
   const value = finite(balance.value + finite(delta, what), what);
-  const passed = Math.abs(through) > Math.abs(delta) ? through : delta;
+  // A caller that names no `through` is not omitting a number: it is saying the move IS what the
+  // arithmetic passed through. `= 0` said that as a numeric default, which is the one thing this
+  // engine may not do with a number nobody stated (App A) — and it read as a magnitude of nothing.
+  const passed =
+    through !== undefined && Math.abs(through) > Math.abs(delta) ? through : delta;
   return { value, dust: balance.dust + moveDust(balance.value, passed), moves: balance.moves + 1 };
 }
 
@@ -341,8 +345,15 @@ export function material(value: number, terms: number, magnitude: number): boole
   return Math.abs(finite(value, 'material')) > dustOf(terms, magnitude);
 }
 
-/** Add a term into a keyed accumulator; a key with no terms yet has accumulated nothing. */
+/**
+ * Add a term into a keyed accumulator.
+ *
+ * A key with no terms yet is not a MISSING number defaulting to zero — it is the first term, and
+ * saying so is the difference the discipline is about (App A). Written `?? 0` it was neither: it
+ * survived in the one file where `no-numeric-default` had been switched off with the bound rule,
+ * beside the accumulator every tax base and half the engine's sums pass through.
+ */
 export function addTo<K>(acc: Map<K, number>, key: K, delta: number): void {
-  const cur = acc.get(key) ?? 0;
-  acc.set(key, finite(cur + delta, 'accumulator'));
+  const cur = acc.get(key);
+  acc.set(key, cur === undefined ? finite(delta, 'accumulator') : finite(cur + delta, 'accumulator'));
 }

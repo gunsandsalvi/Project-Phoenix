@@ -4133,3 +4133,63 @@ instrument, a party, a contract nor a store write.
 
 **Green:** lint, typecheck, spec citations, forbids, plan progress, 51 tests. `world.test.ts`'s five
 reds are the same five that fail two commits back (C-1) and are not this item's.
+
+
+## Item 2 — missing is missing, in the file that owns the rule
+
+**What.** `phoenix/no-numeric-default` turned back on in `packages/engine/src/core/num.ts`, three
+numeric defaults deleted, and one pair of findings closed that turned out to be a single fact.
+
+**The rule already existed.** Written, registered, enforced across the whole engine — and
+`eslint.config.js:73` switched it off in `core/num.ts` alongside `no-bounds`. The exemption is right
+for bounds: `atMost` and `atLeast` are defined in that file and ARE the admissible bound, so the rule
+cannot apply to its own definition. It is wrong for the other one, and nothing said why it was there
+— it was carried along in the same line. So **the one file that owns "missing is missing" was the one
+file where a numeric default could not be seen**, and it held two: `addTo`'s `acc.get(key) ?? 0` —
+the accumulator every tax base and half the engine's sums pass through — and `moved`'s `through = 0`.
+A check switched off is the defect it was meant to catch, which is A-11 and A-42's shape appearing in
+the lint rather than in a family. The tell was already in the tree: `register.ts` carried an
+`// eslint-disable-next-line phoenix/no-numeric-default` for a rule that was not running there.
+
+**Three sites now say what they mean rather than being excused.** An accumulator with no entry is
+not a missing number defaulting to zero, it is the FIRST TERM, and it is written that way. A move
+that names no `through` is not omitting a magnitude, it is saying the move IS what the arithmetic
+passed through, and the absence is now carried as an absence. No disable comment survives.
+
+**A-49 and A-30's second bullet are one fact and closed together.** `offeredYield` took the LAST
+curve family the map happened to iterate rather than the best — so a world that registered its
+curves in another order offered its savers a different number for the same paper — and answered `0`
+when none replied, which made a fund with no curve publish a NEGATIVE offer of exactly its own fee.
+It answers `Option<number>` now, and the strike event carries the key or omits it. That reaches
+`fundPositions`, which read a missing offer as `0`: zero fails `offered < required` for every cell,
+so the cell **silently never subscribed** and no reason appeared anywhere. It reads absent as absent
+— a saver with nothing to compare does not compare, and the position is not in the list.
+
+**Carried, and why.** **A-25** (an unpriced physical leg valued at zero), **A-34** (a firm with no
+wage history bidding as if labour were free), **A-45** (a bank whose book is funded by nothing) and
+A-30's other two bullets are not missing VALUES, they are missing MECHANISMS: what an unpriced leg is
+worth, what a firm without history should think labour costs, what funds an unfunded bank. Law 11 —
+a misbehaving number is not a work item, the missing mechanism is — so each goes to the item that
+builds it rather than being forced into a throw here.
+
+**Forecast, with its killer.** No numeric default can now enter the engine anywhere, including the
+file that defines the arithmetic. **What would falsify it:** a default expressed as something the
+rule cannot see — a helper whose own signature carries the zero, which is what `moved` was.
+
+**AND A CLAIM OF MINE THAT WAS FALSE, CORRECTED IN THE SAME CHANGE.** `docs/AUDIT.md` item 3 said
+*"nothing in this world can read a company's accounts"* and that it therefore blocked item 4. It
+does not. `publish` writes the whole statement — income lines, earned, revaluation, assets,
+liabilities — to the JOURNAL as `reporting.report`, which is a kernel store any module may read, and
+**five already read it**: `research` at three sites, `control/index.ts:145`, `corporate-bond`,
+`reporting/guidance.ts`, and the observer. What the module keeps privately is only bookkeeping ABOUT
+publishing, which item 0 declared a `noun` on the strength of the same false belief and which is now
+declared `working`, with the correction written into the declaration. Item 3 shrinks to what is
+actually wrong — five modules each pulling one fact out of `unknown` and re-checking its type by
+hand, which is five parses of one fact (Law 4) — and it is re-ordered to follow item 4 instead of
+blocking it. **Item 4 is takeable now**: published earnings and a per-party required return both
+exist, and `control/worthAt` already combines them correctly.
+
+**Measured, both ways.** `funds.test.ts` and `households.test.ts` are the two files this change can
+reach: **7 red before it and the same 7 red after it, by name.** Not this item's, and not made worse
+by it. The full suite was not run to completion — a year of the whole chain at four countries is
+long past the point where waiting on it teaches anything (C-1 owns that measurement).

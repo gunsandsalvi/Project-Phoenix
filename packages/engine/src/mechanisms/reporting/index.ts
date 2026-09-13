@@ -241,12 +241,11 @@ export function reporting(seed: string): SystemModule {
     nouns: [
       {
         name: 'reporting',
-        kind: 'noun',
+        kind: 'working',
         holds:
-          'what every party has published, as of when, with what lag: its income, its balance sheet, its cash',
+          'which quarters each company has already reported, what each report SAID it earned, and the figure management is currently guiding to',
         why:
-          'what is public is a fact about the world and not about the module that produced it. A module may not import another module, so with the accounts kept here NOTHING IN THIS WORLD CAN READ A COMPANY’S ACCOUNTS \u2014 which is why the only theory of value here is discounting a contractual promise.',
-        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/AUDIT.md item 3' },
+          'BOOKKEEPING ABOUT PUBLISHING, not the statement. The statement itself goes to the JOURNAL as `reporting.report` — income lines, earned, revaluation, assets, liabilities — where five other modules already read it (`research`, `control`, `corporate-bond`, `guidance`, the observer). What is kept here is which quarters are done, what each said so a later disagreement is a restatement, and the standing guidance: state one phase hands to a later one. It was declared a noun at item 0 on the belief that accounts were unreadable outside this module, and that belief was wrong (`docs/AUDIT.md` item 3).',
       },
     ],
     spec: 'Reporting',

@@ -103,16 +103,18 @@ A finding under an item is **evidence for the change**, not a task of its own. D
 
 ## The order
 
-Dependencies, not preference. The two arrows that matter: **3 blocks 4** (a module cannot read
-accounts held in another module's bag), and **5 blocks 8** (an agreement's performance is a receipt).
+Dependencies, not preference. The one arrow that matters: **5 blocks 8** (an agreement performing is
+a receipt). The other one this file used to claim — 3 before 4 — **was wrong and is struck**: a
+company's accounts are published to the journal and five modules already read them across the module
+boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 
 | # | item | closes | why here |
 |---|---|---|---|
 | ~~**0**~~ | ~~The register of nouns~~ | — | **DONE** — `registry/nouns.ts`; 19 stores declared, 14 of them nouns with no kernel home. See `docs/RECORD.md`. |
 | **1** | Reach | 25 | no behaviour change, and it makes every item below verifiable instead of argued |
 | **2** | Missing is Missing | 5 | a defaulted zero defeats both **1** and **16** |
-| **3** | `PublishedStatement` | 0 | blocks **4** |
-| **4** | `expectedStream()` and `liquidity` | 1 | needs **3**; unblocks funds, dealers and 12c |
+| **3** | `PublishedStatement` | 0 | **corrected**: does not block 4 — accounts are already published to the journal and read cross-module. A typed read, after 4. |
+| **4** | `expectedStream()` and `liquidity` | 1 | **needs nothing** — published earnings and a required return both exist; takeable now |
 | **5** | `ReceiptKind` | 6 | independent; everything above it touches money |
 | **6** | `View` | 1 | independent; **4** wants it for the borrower haircut |
 | **7** | `Lifecycle` | 2 | independent; **8** and 13n want the states |
@@ -903,6 +905,35 @@ reason to exist.
 
 ## 2. Missing is Missing
 
+> **BUILT.** The rule already existed — `phoenix/no-numeric-default`, registered, enforced across the
+> engine — and `eslint.config.js:73` switched it **off in `core/num.ts`**. The comment there
+> justifies the exemption for BOUNDS, which is right (`atMost`/`atLeast` are defined in that file
+> and are the admissible bound), and carried the other rule along with it. So the one file that owns
+> *"missing is missing"* was the one file where a numeric default could not be seen — and it held
+> two: `addTo`'s `acc.get(key) ?? 0`, the accumulator every tax base and half the engine's sums pass
+> through, and `moved`'s `through = 0`. **A check switched off is the defect it was meant to catch**,
+> which is A-11 and A-42's shape in the lint rather than in a family.
+>
+> Turned on, three sites now say what they mean instead of being excused: an accumulator's first
+> term is the first term, and a move that names no `through` carries the absence rather than a
+> magnitude of nothing (`register.ts:throughOf` loses the disable comment it had been carrying for a
+> rule that was never running there anyway).
+>
+> **Closes A-49 and A-30's second bullet, together, because they are one fact.** `offeredYield` took
+> the LAST curve family the map iterated rather than the best — an outcome of insertion order — and
+> answered `0` when none replied, so a fund with no curve published a NEGATIVE offer of exactly its
+> own fee. It now answers `Option<number>`, the strike event carries the key or omits it, and
+> `fundPositions` reads an absent offer as **absent**: it had read it as `0`, which fails
+> `offered < required` for every cell, so the cell silently never subscribed and no reason for it
+> appeared anywhere.
+>
+> **Carried, and why.** **A-25**, **A-34** and **A-45** are not missing values, they are missing
+> mechanisms: what an unpriced physical leg is worth, what a firm with no wage history should think
+> labour costs, and what funds a bank whose book is funded by nothing. Law 11 — a misbehaving number
+> is not a work item, the missing mechanism is — so each goes to the item that builds it rather than
+> being forced into a throw here. **A-30's first and third bullets** go with them.
+
+
 **Why.** Five findings, and `core/num.ts:346` — `addTo`, the accumulator the tax uses — contains
 `acc.get(key) ?? 0`, in the file that owns the discipline.
 
@@ -1028,7 +1059,30 @@ compares against its liquidity premium before putting its cash cushion into grai
 
 ---
 
-## 3. `PublishedStatement` — what is public, as of when
+## 3. `PublishedStatement` — a typed read of what is public
+
+> **CORRECTED, AND THE CORRECTION IS MOST OF THE ITEM.** This item claimed *"nothing in this world
+> can read a company's accounts"* and that it therefore blocked **4**. **That is false.** `publish`
+> writes the whole statement — income lines, earned, revaluation, assets, liabilities — to the
+> JOURNAL as `reporting.report`, and the journal is a kernel store any module may read. **Five
+> already do**: `research` (three sites), `control/index.ts:145`, `corporate-bond/index.ts:220`,
+> `reporting/guidance.ts:126`, and the observer.
+>
+> What is in the module's private bag is only the bookkeeping ABOUT publishing — which quarters are
+> done, what each report said so a later disagreement is a restatement, and the standing guidance.
+> That is working state, and item 0's register should have said `working`, not `noun`.
+>
+> **So 3 does not block 4, and 4 can be taken now.** The ingredients for an earnings-based valuation
+> are already in the world: published earnings in the journal, and a per-party required return.
+> `worthAt` in `control/index.ts:80` already combines them correctly. What is missing is not the
+> data — it is that no module except `control` asks the question, and `control` is unreachable.
+>
+> **What is left of this item, and it is real but smaller.** Five modules each read one fact by
+> pulling `unknown` out of a journal record and re-checking `typeof earned !== 'number'` by hand.
+> That is five parses of one fact (Law 4) and it is A-52's shape — recovering a fact by taking
+> loosely-typed data apart. A typed read, once, is the fix. It is a cleanup, not a blocker, and it
+> is **re-ordered to sit after 4** rather than before it.
+
 
 **Why.** No findings of its own: the read could not see it, because it is an absence rather than a
 defect. §48's entire output lives in `ctx.state<Published>('reporting', …)` — **one module's private

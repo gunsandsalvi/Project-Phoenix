@@ -69,9 +69,18 @@ export default tseslint.config(
     },
   },
   {
-    // Where arithmetic impossibility and declared data legitimately live.
+    /**
+     * Where arithmetic impossibility legitimately lives — `atMost` and `atLeast` ARE the admissible
+     * bound, so the bound rule cannot apply to the file that defines it.
+     *
+     * `no-numeric-default` used to be off here too and had no reason to be: the comment justified
+     * the exemption for BOUNDS and carried the other rule along with it, so the one file that owns
+     * "missing is missing" was the one file where a numeric default could not be seen. It hid an
+     * `acc.get(key) ?? 0` in `addTo`, the accumulator the tax and half the engine sum through
+     * (`docs/AUDIT.md` item 2). A check switched off is the defect it was meant to catch.
+     */
     files: ['packages/engine/src/core/num.ts'],
-    rules: { 'phoenix/no-bounds': 'off', 'phoenix/no-numeric-default': 'off' },
+    rules: { 'phoenix/no-bounds': 'off' },
   },
   {
     files: [

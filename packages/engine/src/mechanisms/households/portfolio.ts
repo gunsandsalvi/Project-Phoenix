@@ -330,13 +330,22 @@ export function fundPositions(
     const perShare = last.data['perShare'];
     const offered = last.data['offered'];
     if (typeof perShare !== 'number' || perShare <= 0) continue;
+    /**
+     * D5, App A: A FUND THAT PUBLISHED NO OFFER IS NOT A FUND OFFERING NOTHING.
+     *
+     * This read `offered: typeof offered === 'number' ? offered : 0`, so a strike that carried no
+     * offer became an offer of zero — which fails `offered < required` for every cell, so the cell
+     * silently never subscribed and the reason never appeared anywhere. A saver with nothing to
+     * compare does not compare: the position is not in the list, and its absence is the answer.
+     */
+    if (typeof offered !== 'number') continue;
     const held = view.quantity(instrumentId(line));
     out.push({
       venue: v.id,
       fund,
       line: instrumentId(line),
       perShare,
-      offered: typeof offered === 'number' ? offered : 0,
+      offered,
       sharesPerMember: held,
       worthPerMember: mul(held, perShare, 'what its shares are worth'),
     });
