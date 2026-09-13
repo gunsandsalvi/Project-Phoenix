@@ -43,6 +43,8 @@ export const INSURER_PARAMS = {
 } as const;
 
 export const insurerKind: PartyKindProfile = {
+  /** item 15: what somebody else set it up to do, and it does not get to change it. */
+  objective: 'itsMandate',
   id: DEPOSIT_INSURER,
   representation: 'named',
   moneyIssuer: null,

@@ -88,6 +88,8 @@ export const LAYER_PARAMS = {
  * can pay into and be paid from, which is a fact about settlement rather than a rate it shops for.
  */
 const houseKind: PartyKindProfile = {
+  /** item 15: the position it is carrying and what it costs to carry. */
+  objective: 'itsBook',
   id: CLEARING_HOUSE,
   representation: 'named',
   moneyIssuer: null,

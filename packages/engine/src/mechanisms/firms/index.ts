@@ -165,6 +165,8 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
     // Banks Funding A1.b: fewer, larger, operational — a firm banks where it transacts.
     partyKinds: [
       {
+        /** item 15: what is left after everybody else has been paid (Equity A1). */
+        objective: 'theResidual',
         id: FIRM,
         representation: 'named',
         moneyIssuer: null,

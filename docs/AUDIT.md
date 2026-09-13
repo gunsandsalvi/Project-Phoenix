@@ -125,7 +125,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**12**~~ | ~~`Space`~~ | 0 | **BUILT** — the ground of a place is finite, held and cleared. The rest of 13m stands on it: `E-5` |
 | ~~**13**~~ | ~~`Guarantee`~~ | 0 | **BUILT** — three sides, a limit that is a term and not a bound, wired at deposit insurance |
 | ~~**14**~~ | ~~`Process`~~ | 1 | **BUILT** — steps, not a boolean. And one cell inheriting everything becomes 35 |
-| **15** | `Objective` | 0 | needs most of the above to be expressible at all |
+| ~~**15**~~ | ~~`Objective`~~ | 0 | **BUILT** — six answers, required on every kind. The 21 hard-coded reasons remain |
 | **16** | `Measure<D>` | 18 | independent of every noun; large, mechanical, compiler-driven — run it alongside |
 | **17** | The local repairs | 18 | never a session's work; take each when its file is already open |
 | **18** | The sectors that were waiting | 4 | after everything, because each is built on the primitives above |
@@ -2820,6 +2820,35 @@ nothing, where the file's own discipline is `Missing`.
 ---
 
 ## 15. `Objective` — what a party is for
+
+> **BUILT.** `PartyKindProfile.objective`, required, one of six:
+> `theResidual | itsMembers | itsFranchise | itsMandate | itsOffice | itsBook`. Read through
+> `objectiveOf(party)` on **`KernelReads`**. Fifteen kinds declared it, and **the compiler is what
+> asks**: a kind cannot be added without saying what it is for, which is the whole of what this buys.
+>
+> **It is a declared PREFERENCE and not a utility function (Law 2).** Nothing here is maximised and
+> nothing takes an argmax over it. An objective the engine optimised would be the representative
+> agent this world does not have, wearing a different name — and the test asserts that no event
+> anywhere publishes a utility or a score against one.
+>
+> **There is no `itsOwners` beside `theResidual`**, deliberately: the residual IS the owners' claim,
+> and two words for one thing is what Law 4 is about.
+>
+> **Reading it removed a kind branch, which is the point.** The land market's seller was
+> `partyKind: TREASURY` and nothing else — a party kind named inside a mechanism, which is exactly
+> the branch Law 15 forbids. It asks the objective now: a party whose objective is `itsOffice` holds
+> ground as a duty and has nobody to enrich by keeping it, so when `E-5`'s local authority arrives
+> it sells there with no change to that file.
+>
+> **Measured**: **six objectives, fifteen kinds, and more than one answer** — a world where every
+> kind was for the same thing would be a representative agent with extra steps. `world`, `land`,
+> `doors`, `derivative-layer`: **5 red before, 5 after.** Five new tests.
+>
+> **Carried, and it is the larger half.** Twenty-one participant declarations still hard-code their
+> own reason inside `orders()`. What this item establishes is that the reason is SAYABLE and asked
+> of the kind; moving each of the twenty-one to dispatch on it is twenty-one bounded changes, one
+> per module, and none of them is done. Until they are, "two kinds with different objectives behave
+> differently under one shock" is a thing the declaration makes possible and does not yet produce.
 
 **Why.** No findings: the read could not see it. `PartyKindProfile` has six fields and every one is
 balance-sheet — `representation, moneyIssuer, terminal, fails, borrows, depositClass`. **Nothing says

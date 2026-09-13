@@ -104,6 +104,8 @@ export function trancheTerms(i: Instrument): TrancheTerms {
 }
 
 export const vehicleKind: PartyKindProfile = {
+  /** item 15: what somebody else set it up to do, and it does not get to change it. */
+  objective: 'itsMandate',
   id: VEHICLE,
   representation: 'named',
   moneyIssuer: null,

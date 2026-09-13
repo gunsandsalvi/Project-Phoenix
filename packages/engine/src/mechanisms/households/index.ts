@@ -274,6 +274,8 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
       // can take a thing to the piece and hand it on.
       probateKind,
       {
+        /** item 15: the people it stands for, and no residual beyond them (XI-15). */
+        objective: 'itsMembers',
         id: HOUSEHOLD,
         representation: 'cell',
         moneyIssuer: null,

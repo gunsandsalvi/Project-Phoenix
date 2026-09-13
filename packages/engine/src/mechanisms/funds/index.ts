@@ -115,6 +115,8 @@ export const fundVenue = (fund: string): VenueId => venueId(`funds.${fund}`);
  * of cash sells, which is the whole point of it being here.
  */
 export const fundKind: PartyKindProfile = {
+  /** item 15: what somebody else set it up to do, and it does not get to change it. */
+  objective: 'itsMandate',
   id: FUND,
   representation: 'named',
   moneyIssuer: null,
@@ -127,6 +129,8 @@ export const fundKind: PartyKindProfile = {
 
 /** F3: the manager is a separate party. The fee is its income and the fund's cost. */
 export const fundManagerKind: PartyKindProfile = {
+  /** item 15: what somebody else set it up to do, and it does not get to change it. */
+  objective: 'itsMandate',
   id: FUND_MANAGER,
   representation: 'named',
   moneyIssuer: null,

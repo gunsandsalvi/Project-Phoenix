@@ -149,6 +149,8 @@ export const probateId = (region: RegionId, bank: PartyId): PartyId =>
   partyId(`probate.${region}.${bank}`);
 
 export const probateKind: PartyKindProfile = {
+  /** item 15: a DUTY, and duties are not interests — it has no residual and nobody to enrich. */
+  objective: 'itsOffice',
   id: PROBATE,
   representation: 'named',
   moneyIssuer: null,

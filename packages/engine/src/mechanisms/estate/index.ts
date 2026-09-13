@@ -77,6 +77,8 @@ function book(ctx: MechanismContext): Book {
 }
 
 export const estateKind: PartyKindProfile = {
+  /** item 15: a DUTY, and duties are not interests — it has no residual and nobody to enrich. */
+  objective: 'itsOffice',
   id: ESTATE,
   representation: 'named',
   moneyIssuer: null,

@@ -43,6 +43,7 @@ import type {
 } from '../register/corporate.js';
 import type { Guarantee, GuaranteeDecl, GuaranteeReads } from '../register/guarantees.js';
 import type { Process, ProcessDecl, ProcessReads, ProcessState } from '../register/processes.js';
+import type { Objective } from '../registry/kinds.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
@@ -221,6 +222,14 @@ export interface KernelReads {
    * that has begun is an announcement, and a depositor watching a resolution is watching this.
    */
   readonly processes: ProcessReads;
+  /**
+   * Item 15, Law 15: WHAT A PARTY OF THIS KIND IS FOR — asked of the registry rather than assumed.
+   *
+   * It is a fact about the KIND, so it is one read and not a store. What it is for is that a
+   * mechanism can dispatch on a reason instead of on a kind id: `partyKind(k).objective` is the
+   * question, and a table over the six answers is the shape Law 15 asks for.
+   */
+  objectiveOf(party: PartyId): Objective;
   /**
    * XI-3, Banks Capital C3.b: whether some module takes charge of what happens when a party of this
    * kind fails. The estate asks it so that it can leave a bank alone without knowing what a bank is

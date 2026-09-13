@@ -4877,3 +4877,49 @@ construction, a tender and a resolution are each one line of `beginProcess` away
 which anybody can read. **What would falsify it:** a procedure whose steps are not a line — a
 resolution that can go back to valuing after an acquirer walks away — which this walks forward only
 and would have to be a set of transitions rather than a list.
+
+
+## Item 15 — what a party is for
+
+**What.** `PartyKindProfile.objective`, required, one of six:
+`theResidual | itsMembers | itsFranchise | itsMandate | itsOffice | itsBook`. Read through
+`objectiveOf(party)` on `KernelReads`. Fifteen kinds declared it.
+
+**Why.** `PartyKindProfile` had six fields and every one was balance-sheet — how it is represented,
+whether it issues money, what it can fail on, whether it borrows, what sort of depositor it is.
+**Nothing said what a party is FOR.** A firm maximised nothing, a bank had no franchise to protect,
+a manager had no career: every participant's reason was hard-coded inside its own module's
+`orders()` — twenty-one private answers to "why does this party do anything", none declared, none
+comparable, none checkable.
+
+**The compiler is what asks.** A kind cannot be added without saying what it is for, which is the
+whole of what a required field buys.
+
+**It is a declared PREFERENCE and not a utility function (Law 2).** Nothing is maximised and nothing
+takes an argmax over it. An objective the engine optimised would be the representative agent this
+world does not have, wearing a different name — and a test asserts that no event anywhere publishes
+a utility or a score against one.
+
+**There is no `itsOwners` beside `theResidual`**, deliberately: the residual IS the owners' claim,
+and two words for one thing is what Law 4 is about.
+
+**Reading it removed a kind branch, which is the point.** The land market's seller was
+`partyKind: TREASURY` and nothing else — a party kind named inside a mechanism, exactly the branch
+Law 15 forbids. It asks the objective now: a party whose objective is `itsOffice` holds ground as a
+duty and has nobody to enrich by keeping it, so when E-5's local authority arrives it will sell there
+with no change to that file.
+
+**Measured**: six objectives, fifteen kinds, **more than one answer**. `world`, `land`, `doors`,
+`derivative-layer`: **5 red before, 5 after.** Five new tests. Green: lint, typecheck, spec citations
+(207), forbids (204 files).
+
+**Carried, and it is the larger half.** Twenty-one participant declarations still hard-code their own
+reason inside `orders()`. What this establishes is that the reason is SAYABLE and asked of the kind;
+moving each of the twenty-one to dispatch on it is twenty-one bounded changes, one per module, and
+none is done. Until they are, "two kinds with different objectives behave differently under one
+shock" is something the declaration makes possible and does not yet produce.
+
+**Forecast, with its killer.** A mechanism can ask why a party would do a thing instead of assuming
+it from the party's name. **What would falsify it:** two kinds that share an objective and must still
+behave differently — a fund and an insurer are both `itsMandate` and their mandates are not alike,
+which is item 8's `Mandate` and not this.

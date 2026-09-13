@@ -159,6 +159,14 @@ export function land(): SystemModule {
         partyKind: TREASURY,
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           /**
+           * Item 15: IT SELLS BECAUSE OF WHAT IT IS FOR, not because of what it is called. A party
+           * whose objective is `itsOffice` holds ground as a duty and has nobody to enrich by
+           * keeping it; one whose objective is `theResidual` holds it to build on. When `E-5`'s
+           * local authority arrives it will sell here with no change to this file, because the
+           * reason is declared on the kind and read here (Law 15).
+           */
+          if (view.objectiveOf(view.self.id) !== 'itsOffice') return [];
+          /**
            * IN ITS OWN PLACE, and that is a limitation with a reason rather than an oversight.
            *
            * A country has one state and several places, and the state holds the ground of all of

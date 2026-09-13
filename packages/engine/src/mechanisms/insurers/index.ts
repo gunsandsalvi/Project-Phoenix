@@ -86,6 +86,8 @@ export function policyTerms(i: Instrument): PolicyTerms {
 }
 
 export const insuranceKind: PartyKindProfile = {
+  /** item 15: what somebody else set it up to do, and it does not get to change it. */
+  objective: 'itsMandate',
   id: INSURANCE,
   representation: 'named',
   moneyIssuer: null,

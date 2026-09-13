@@ -62,6 +62,8 @@ const SMALL_SIZE = 100;
 const MOVER = partyKindId('test.mover');
 
 const moverKind: PartyKindProfile = {
+  /** item 15: the position it is carrying and what it costs to carry. */
+  objective: 'itsBook',
   id: MOVER,
   representation: 'named',
   moneyIssuer: null,

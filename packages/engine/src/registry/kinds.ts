@@ -357,9 +357,46 @@ export interface OverdraftContext {
   readonly holderIssuesMoney: boolean;
 }
 
+/**
+ * §32, §46, Law 2, item 15: WHAT A PARTY OF THIS KIND IS FOR.
+ *
+ * `PartyKindProfile` had six fields and every one of them was balance-sheet — how it is
+ * represented, whether it issues money, what it can fail on, whether it borrows, what sort of
+ * depositor it is. NOTHING SAID WHAT A PARTY IS FOR. A firm maximised nothing, a bank had no
+ * franchise to protect, a manager had no career: every participant's reason was hard-coded inside
+ * its own module's `orders()`, twenty-one private answers to "why does this party do anything",
+ * none declared, none comparable and none checkable.
+ *
+ * IT IS A DECLARED PREFERENCE AND NOT A UTILITY FUNCTION (Law 2). Nothing here is maximised and
+ * nothing takes an argmax over it: it is a fact about the kind, said once, that a mechanism can ASK
+ * instead of assuming — and dispatch on through a table, which is what Law 15 asks for and what
+ * twenty-one hard-coded reasons were not.
+ *
+ * There is no `itsOwners` beside `theResidual`, deliberately: the residual IS the owners' claim,
+ * and two words for one thing is exactly what Law 4 is about.
+ */
+export type Objective =
+  /** A firm, a dealer's parent: what is left after everybody else has been paid (Equity A1). */
+  | 'theResidual'
+  /** A household cell, a mutual: the people it stands for, and no residual beyond them (XI-15). */
+  | 'itsMembers'
+  /** A bank: the business of being a bank tomorrow, which is why it will take a loss today. */
+  | 'itsFranchise'
+  /** A fund, a central bank, an insurer: what it was set up to do, which somebody else wrote. */
+  | 'itsMandate'
+  /** A treasury, a probate office, an assessor: a DUTY, and duties are not interests. */
+  | 'itsOffice'
+  /** A dealer desk, a market maker: the position it is carrying and what it costs to carry. */
+  | 'itsBook';
+
 export interface PartyKindProfile {
   readonly id: PartyKindId;
   readonly representation: Representation;
+  /**
+   * Item 15: what a party of this kind is FOR. Required, so a kind cannot be added without saying
+   * — which is the whole of what this buys: the compiler asks the question at every new kind.
+   */
+  readonly objective: Objective;
   /** Present when parties of this kind issue money (Money A1): a bank, a central bank. */
   readonly moneyIssuer: { readonly overdraft: OverdraftPolicy } | null;
   /**

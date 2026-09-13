@@ -34,6 +34,8 @@ import { ASSESSOR, ratingParam, RATING_PARAMS, type AssessorDecl, type Grade } f
 
 /** A5: it is a named party with an account, because it is paid and it can fail like anybody else. */
 export const assessorKind: PartyKindProfile = {
+  /** item 15: what is left after everybody else has been paid (Equity A1). */
+  objective: 'theResidual',
   id: ASSESSOR,
   representation: 'named',
   // XI-3: nothing is immortal. An assessor nobody pays runs out of money like any other business.

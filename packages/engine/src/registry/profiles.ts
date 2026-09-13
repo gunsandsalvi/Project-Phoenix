@@ -64,6 +64,8 @@ export const HOUSEHOLD = partyKindId('household');
 /** The party kinds the kernel itself needs: the ones money cannot exist without (Money A1, A1.b, A1.c). */
 export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   {
+    /** item 15: what somebody else set it up to do, and it does not get to change it. */
+    objective: 'itsMandate',
     id: CENTRAL_BANK,
     representation: 'named',
     // XI-3's one named exception, and it is a consequence of its balance sheet rather than an
@@ -91,6 +93,8 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
     },
   },
   {
+    /** item 15: the business of being a bank tomorrow, which is why it will take a loss today. */
+    objective: 'itsFranchise',
     id: BANK,
     representation: 'named',
     // XI-3, Banks Capital C1, C1.a: it cannot fund itself, or its capital is gone. Both triggers
@@ -116,5 +120,15 @@ export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
   // cannot pay does not pay, and that is a real recorded state (Treasury D3) — it does not end it.
   // A default in a money it cannot create is real, and that needs the currency layer (worklist 12).
   // Treasury D3, Central Bank E2: it banks at the central bank, and that is not a choice it revisits.
-  { id: TREASURY, representation: 'named', moneyIssuer: null, fails: [], borrows: true, depositClass: null, sovereign: true },
+  {
+    id: TREASURY,
+    representation: 'named',
+    /** item 15: a DUTY, and duties are not interests — it has no residual and nobody to enrich. */
+    objective: 'itsOffice',
+    moneyIssuer: null,
+    fails: [],
+    borrows: true,
+    depositClass: null,
+    sovereign: true,
+  },
 ];
