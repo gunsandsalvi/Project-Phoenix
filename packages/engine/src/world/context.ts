@@ -116,6 +116,15 @@ export interface DerivativeClassDecl {
    */
   readonly reasons?: (view: ParticipantView) => readonly string[];
   /**
+   * Law 18: AND THE BOOKS OF THIS CLASS ANYBODY COULD BE IN, whatever their own state — the half
+   * `reasons` cannot say, because it is a fact about the book. A future on a thing a party holds
+   * none of is one it would take a view in once the book has PRINTED, and then every party of the
+   * kind is asked about it again.
+   *
+   * Absent means none: only the parties whose `reasons` name a book are asked about it.
+   */
+  readonly openToAll?: (m: ContractMarketDecl, reads: WorldReads) => boolean;
+  /**
    * Observer A1, Law 19: a basis is a class's own question — protection against the same name's
    * cash bond (CDS C3), a cleared fixed rate against the sovereign's own yield (IRS C3), a future
    * against the carry on what it delivers (Sovereign I2), how much protection on one name exists at

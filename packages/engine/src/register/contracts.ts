@@ -166,6 +166,9 @@ export class Contracts {
     return [...this.rows.values()];
   }
 
+  /** Nothing, for a party that has never had a row. */
+  private static readonly none: readonly Contract[] = Object.freeze([]);
+
   /** Every open row in the world, which is what the zero-sum family walks (A4). */
   open_(): readonly Contract[] {
     return this.all().filter((c) => c.state === 'open');
@@ -177,8 +180,20 @@ export class Contracts {
     return ids === undefined ? [] : [...ids].map((id) => this.get(id));
   }
 
+  /**
+   * Law 18: ONE PASS AND ONE ARRAY. A party's open rows are asked for inside every schedule it could
+   * post — a real period asks six and a half million times, once for every (party, contract book)
+   * pair — and this built the party's whole list of rows and then filtered it into a second one.
+   */
   openOf(party: PartyId): readonly Contract[] {
-    return this.of(party).filter((c) => c.state === 'open');
+    const ids = this.byParty.get(party);
+    if (ids === undefined) return Contracts.none;
+    const out: Contract[] = [];
+    for (const id of ids) {
+      const c = this.get(id);
+      if (c.state === 'open') out.push(c);
+    }
+    return out;
   }
 
   /** C1, C1.a: the rows two named parties have with each other. The only netting door there is. */

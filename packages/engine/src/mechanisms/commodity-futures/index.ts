@@ -331,6 +331,36 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
 
 const commodityFutureClass: DerivativeClassDecl = {
   kind: COMMODITY_FUTURE,
+  subject: (m) => {
+    const t = m.contract.terms;
+    return isCommodityFuture(t) ? String(t.deliverable) : '';
+  },
+  /**
+   * Law 18, B1: WHY A PARTY IS IN A FUTURE ON A THING — because it is holding the thing, or because
+   * it is already in one. Both are reads of its own state and both are what `futureOrders` reads:
+   * with neither, what it would want is its conviction alone, and that needs a level on the book to
+   * stand against (`openToAll` below is the other half of the same narrowing).
+   *
+   * A real period asked every firm in the world about every one of these books — six and a half
+   * million questions for thirty thousand orders — and NOT ONE of the 736 books had printed, so not
+   * one of those orders came from anywhere but a holding or a position.
+   */
+  reasons: (view) => {
+    const out = new Set<string>();
+    for (const h of view.holdings()) out.add(String(h.instrument));
+    for (const c of view.contracts.mine()) {
+      if (isCommodityFuture(c.terms)) out.add(String(c.terms.deliverable));
+    }
+    return [...out];
+  },
+  /**
+   * B2, B3: and once the book HAS printed there is a level for anybody's own number to be above or
+   * below, so everybody is asked again. It is a fact about the book, settled once for it.
+   */
+  openToAll: (m, reads) => {
+    const t = m.contract.terms;
+    return isCommodityFuture(t) && reads.prices.latest(t.book, reads.period).some;
+  },
   orders: futureOrders,
   measures: (m, reads): readonly ContractMeasure[] => {
     const t = m.contract.terms;

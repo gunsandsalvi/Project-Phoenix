@@ -37,6 +37,7 @@ import type {
   OutlookVariable,
   ParticipantView,
   SeedContext,
+  WorldReads,
 } from './context.js';
 
 export type { DerivativeClassDecl } from './context.js';
@@ -94,6 +95,21 @@ export interface ParticipantDecl {
    * It may name a market that does not exist; it is a filter and not a claim about the world.
    */
   readonly markets?: (view: ParticipantView) => readonly MarketId[];
+  /**
+   * Law 18, Clearing B2: A BOOK EVERY PARTY OF THE KIND IS ASKED ABOUT, whatever `markets` said.
+   *
+   * `markets` is what a party can say about itself, and some books cannot be answered that way: a
+   * future on a thing this party holds none of is still one it would take a view in ONCE THE BOOK
+   * HAS PRINTED, because then there is a level for its own number to be above or below. That is a
+   * fact about the BOOK and not about any party, so it is settled once for the book instead of by
+   * every party discovering it (which is how a narrowing that only had the party's side would lose
+   * an order somebody would have posted).
+   *
+   * Absent means no: a book is asked of the parties that named it. It is a TRAVERSAL both ways —
+   * what it adds must be what `orders` could answer in, and what `markets` leaves out must be what
+   * `orders` returns nothing in.
+   */
+  readonly everyone?: (m: MarketDecl, reads: WorldReads) => boolean;
   /**
    * XI-13: WHETHER THIS PARTICIPANT IS IN THE BOOK BECAUSE IT HAS A VIEW — it names a level from
    * what it thinks the thing is worth, puts its own money behind that, and takes the loss when it is

@@ -33,7 +33,7 @@ import type { PartyKindProfile } from '../../registry/kinds.js';
 import { asContractMarket, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { BANK, FIRM } from '../../registry/profiles.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { MechanismContext, ParticipantView, WorldReads } from '../../world/context.js';
 import type { ClearingCapacity, SystemModule } from '../../world/module.js';
 import {
   closeOutKind,
@@ -754,6 +754,17 @@ export function derivativeLayer(
         for (const on of cls.reasons(view)) out.push(...view.contractBooks(cls.kind, on));
       }
       return out;
+    },
+    /**
+     * Law 18: and the books a class says anybody could be in, whatever their own state — the half
+     * `markets` cannot answer because it is a fact about the book (`DerivativeClassDecl.openToAll`).
+     */
+    everyone: (m: MarketDecl, reads: WorldReads): boolean => {
+      const book = asContractMarket(m);
+      if (book === undefined) return false;
+      const cls = reads.derivativeClass(book.contract.kind);
+      if (cls?.orders === undefined) return false;
+      return cls.openToAll?.(book, reads) === true;
     },
     orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
       const book = asContractMarket(m);

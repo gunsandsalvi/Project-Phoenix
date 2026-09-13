@@ -1863,6 +1863,9 @@ export class World {
   private asked(at: number, decl: ParticipantDecl, m: MarketDecl): readonly Party[] {
     const naming = decl.markets;
     if (naming === undefined) return this.parties.ofKind(decl.partyKind);
+    // Law 18: a book that is open to everybody is asked of everybody, whatever the index says. It
+    // is one question about the book rather than one per party (`ParticipantDecl.everyone`).
+    if (decl.everyone?.(m, this.worldReads) === true) return this.parties.ofKind(decl.partyKind);
     const stamp = `${this.currentPeriod}:${this.currentCycle}`;
     if (this.asksAt !== stamp) {
       this.asks.clear();
