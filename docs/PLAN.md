@@ -14,7 +14,7 @@ The plan has two parts:
   is recounted from those files by `npm run plan:progress`.
 
 <!-- progress:start -->
-**Plan completion: 92.7%** (664 of 716 steps across 45 items).
+**Plan completion: 92.7%** (677 of 730 steps across 46 items).
 **Requirement coverage: 60.1%** (823 MET, 90 PARTIAL, 0 OUT OF SCOPE of 1369 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
@@ -60,6 +60,7 @@ The plan has two parts:
 | 13g — Corporate development: where a firm builds, what it buys, and what it is in | 24 | 24 | closed |
 | 13h — Insurers, hedge funds, private equity | 37 | 37 | closed |
 | 13i — Cross-border | 21 | 21 | closed |
+| [13j — The other three countries are economies](plan/13j-four-countries.md) | 14 | 13 | in progress |
 | [14 — The polity](plan/14-polity.md) | 14 | 0 | open |
 | [15 — The recipe](plan/15-recipe.md) | 6 | 0 | open |
 | [16 — Measure](plan/16-measure.md) | 20 | 0 | open |

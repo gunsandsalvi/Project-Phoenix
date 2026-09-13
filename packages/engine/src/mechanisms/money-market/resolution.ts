@@ -62,7 +62,7 @@ import type { MechanismContext } from '../../world/context.js';
 import { failedWhy } from '../../world/failure.js';
 import { MM_PARAMS } from './data.js';
 import { insuredAt, uninsuredAt } from './deposits.js';
-import { INSURER } from './insurer.js';
+import { insurerOf } from './insurer.js';
 import type { Instrument } from '../../register/instruments.js';
 import { isRow } from './rows.js';
 import { NO_QTY, subQty } from '../../core/tick.js';
@@ -347,7 +347,7 @@ function allocate(
   // is the one about to owe the depositors the money nobody took from them.
   const unmet = sub(v.hole, holders, 'what the guarantee must meet');
   if (unmet <= 0) return { holders, insurer: 0, purse: 0, equity };
-  const insurer = payFrom(ctx, INSURER, acquirer, ccy, unmet, `${bank} resolution: the guarantee`);
+  const insurer = payFrom(ctx, insurerOf(ccy), acquirer, ccy, unmet, `${bank} resolution: the guarantee`);
   const still = sub(unmet, insurer, 'what the fund could not meet');
   const purse =
     still <= 0
@@ -468,7 +468,7 @@ function writeDownRow(
 function treasuryOf(ctx: MechanismContext, bank: PartyId): PartyId {
   const region = ctx.parties.get(bank).region;
   const t = ctx.parties.ofKind(TREASURY).find((x) => x.region === region && x.status.alive);
-  if (t === undefined) return INSURER;
+  if (t === undefined) return insurerOf(ctx.registry.currencyOf(region));
   return t.id;
 }
 

@@ -24,6 +24,7 @@ import { prng } from '../rng/prng.js';
 import type { RegionDecl } from '../registry/registry.js';
 import { drawMap, type MapSpec } from './map.js';
 import {
+  ARABLE,
   BANDS,
   RESOURCES,
   SYLLABLES,
@@ -181,8 +182,7 @@ export const HOME = countryId('us');
  * the map lands inert — every mechanism reads the ground and nothing about the world moves — and
  * rises in its own step, where what it multiplies is the thing being measured (Law 2).
  */
-const HOME_PLACES = 1;
-const ABROAD_PLACES = 1;
+const PLACES_PER_COUNTRY = 1;
 
 
 export const CB = partyId('fed');
@@ -206,9 +206,14 @@ export const TREASURY_US = partyId('treasury.us');
  *
  * The names are labels for clarity, not claims about the real places (Law 1 is about mechanism).
  */
-export interface AbroadDecl {
+export interface CountrySeed {
   /** 13c.1: the country this row opens — what has the money, the central bank and the treasury. */
   readonly country: CountryId;
+  /**
+   * 13j: THE PLACE ITS PARTIES BOOK IN, which is its first. A country has as many places as the map
+   * gives it; this is the one a party with nowhere better to be opens in, and the one a country's
+   * own index is named for.
+   */
   readonly region: RegionId;
   readonly name: string;
   readonly ccy: CurrencyCode;
@@ -223,7 +228,35 @@ export interface AbroadDecl {
   readonly quoteTick: number;
 }
 
-export const ABROAD: readonly AbroadDecl[] = [
+/**
+ * 13j: EVERY COUNTRY THIS WORLD HAS, and the first of them is not special.
+ *
+ * It used to be: America was written into this file as a handful of constants and the other three
+ * were a list of stubs. That is why every mechanism that crosses a border had one real side and
+ * three that produced nothing — the external accounts of a country whose only transaction is a
+ * reserve manager's coupon, a spread against a place with no firms in it, a currency layer whose
+ * "two parties with opposite reasons" was one bank facing one sovereign.
+ *
+ * Nothing is drawn per country. There is one draw of banks, one of firms, one of listings — the
+ * world's — and what a country is, is where those parties book (Law 4: one writer, and ids that do
+ * not need a country in them). Nor is a country's SIZE stated anywhere: the map draws the ground,
+ * a firm is placed along it, people live where the ground will feed them and a bank is where its
+ * depositors are, so a world whose map came out with a bigger Europe has a bigger Europe.
+ */
+export const COUNTRIES: readonly CountrySeed[] = [
+  {
+    country: HOME,
+    region: REGION,
+    name: 'United States',
+    ccy: USD,
+    quoteTick: PIP,
+    ccyName: 'US dollar',
+    centralBank: CB,
+    centralBankName: 'Federal Reserve',
+    treasury: TREASURY_US,
+    treasuryName: 'US Treasury',
+    paper: 'ust',
+  },
   {
     country: countryId('eu'),
     region: regionId('eu.1'),
@@ -264,6 +297,22 @@ export const ABROAD: readonly AbroadDecl[] = [
     paper: 'jgb',
   },
 ];
+
+/**
+ * Currency A1, A2, A3; Spot FX A3, XI-12: THE OTHER MONEYS, read off the same list. Every one of
+ * them means another issuer, another sovereign borrowing in it, and a market against each of the
+ * others — and, because there are FOUR countries and not two, a cross that is not the dollar's:
+ * with three moneys in a triangle there is a round trip to be taken, which is what XI-12 is about
+ * and what a two-country world cannot express at all (no third leg, no vehicle, no gap to close).
+ */
+export const ABROAD: readonly CountrySeed[] = COUNTRIES.filter((c) => c.country !== HOME);
+
+/** The country a region is in, off the same list. A region's money is its country's (Currency A2). */
+export const countryOfRegion = (region: RegionId): CountrySeed => {
+  const c = COUNTRIES.find((row) => String(region).startsWith(`${row.country}.`));
+  if (c === undefined) throw new Missing('13c.1', `${region} is in no country this world declares`);
+  return c;
+};
 /**
  * 13c.1: THE LEGS ARE READ OFF THE MAP, so there is no route table here any more. How many hulls
  * a carrier owns is still drawn; where it can sail them is the world's answer and not a list.
@@ -317,14 +366,6 @@ interface SeedTenor {
 }
 
 const MONTHS_PER_YEAR = 12;
-
-/**
- * Sovereign D4, Currency A3: the one tenor every other country borrows at. Ten years, which is the
- * benchmark America's own curve is quoted against — the same point on two curves is what makes a
- * spread between two countries mean anything (XI-7), and it is the only line each of them needs to
- * be a borrower in its own money.
- */
-const ABROAD_TENOR_MONTHS = 10 * MONTHS_PER_YEAR;
 
 const SEED_PROFILE: readonly SeedTenor[] = [
   {
@@ -411,6 +452,8 @@ function seedLines(
   members: number,
   perMember: number,
   householdShare: number,
+  /** Law 9: the stem its market names this issuer's paper by — `ust`, `bund`, `gilt`, `jgb`. */
+  paper: string,
 ): SeedLine[] {
   const bankWeight = sum(SEED_PROFILE.map((t) => t.bankWeight)).value;
   const householdWeight = sum(SEED_PROFILE.map((t) => t.householdWeight)).value;
@@ -424,7 +467,7 @@ function seedLines(
     const maturity = onGrid(epoch, t.months);
     const dated = formatCivil(maturity);
     return {
-      id: t.paper === 'bond' ? `ust.${dated}` : `ust.bill.${dated}`,
+      id: t.paper === 'bond' ? `${paper}.${dated}` : `${paper}.bill.${dated}`,
       paper: t.paper,
       maturity,
       banks: Math.round(div(mul(atBanks, t.bankWeight, 'its weight'), bankWeight, 'this line')),
@@ -578,6 +621,11 @@ export function foundationSeedFor(
    * would be a second world (Law 4).
    */
   placed: ReadonlyMap<string, RegionId> = new Map(),
+  /**
+   * 13j: where each drawn bank books. One draw of the banks, read by the seed that places them and
+   * by the assembly that funds them — a second call would be a second banking system (Law 4).
+   */
+  banked: ReadonlyMap<string, RegionId> = new Map(),
 ): SystemModule {
   return {
     id: 'seed.foundation',
@@ -731,33 +779,47 @@ export function foundationSeedFor(
         representation: 'named',
         status: { alive: true },
       });
-      ctx.parties.add(named(CB, CENTRAL_BANK, 'Federal Reserve', CB));
-      ctx.parties.add(named(TREASURY_US, TREASURY, 'US Treasury', CB));
-      // Currency A2, A3: each other money's issuer and the sovereign that borrows in it. They book in
-      // their own region, which is what makes everything they hold of American paper FOREIGN and
-      // everything America holds of theirs foreign the other way (D2).
-      for (const c of ABROAD) {
-        const abroad = (id: PartyId, kind: NamedParty['kind'], name: string): NamedParty => ({
-          id,
-          kind,
-          region: c.region,
-          name,
-          bank: c.centralBank,
-          representation: 'named',
-          status: { alive: true },
-        });
-        ctx.parties.add(abroad(c.centralBank, CENTRAL_BANK, c.centralBankName));
-        ctx.parties.add(abroad(c.treasury, TREASURY, c.treasuryName));
+      // Currency A2, A3: each money's issuer and the sovereign that borrows in it. Each books in its
+      // own region, which is what makes everything it holds of another country's paper FOREIGN and
+      // everything that country holds of its own foreign the other way (D2).
+      for (const c of COUNTRIES) {
+        ctx.parties.add(named(c.centralBank, CENTRAL_BANK, c.centralBankName, c.centralBank, c.region));
+        ctx.parties.add(named(c.treasury, TREASURY, c.treasuryName, c.centralBank, c.region));
       }
       // Seed B1, B4: as many banks as `banks.count`, each with the disposition and the size its own
       // row states. THREE by default, because with two every depositor that answers a rate is the
       // whole of one side of the deposit market, every interbank session is one name facing one name,
       // and a bank in trouble has exactly one place to go — and because the count being load-bearing
       // in a way no mechanism states is exactly what makes it a RESOLUTION to be measured (XI-15).
-      const banks = bankRows.map((b) => ({ id: partyId(b.bank), size: b.size }));
+      const banks = bankRows.map((b) => ({
+        id: partyId(b.bank),
+        size: b.size,
+        // 13j: where it books, and therefore whose money it issues and whose people bank at it.
+        region: banked.get(b.bank) ?? REGION,
+      }));
       banks.forEach((b, n) => {
-        ctx.parties.add(named(b.id, BANK, `Bank ${String.fromCharCode(65 + n)}`, CB));
+        const home = countryOfRegion(b.region);
+        ctx.parties.add(
+          named(b.id, BANK, `Bank ${String.fromCharCode(65 + n)}, ${home.name}`, home.centralBank, b.region),
+        );
       });
+      /**
+       * 13j, Seed B3: THE BANKS OF A PLACE. A firm banks where it is and a household banks where it
+       * lives, because a payment between two parties in two countries is a payment across a border
+       * and an account is not. A place the draw gave no bank falls back on the world's first, which
+       * is the same named-holder rule the split itself uses.
+       */
+      const first = banks[0];
+      if (first === undefined) throw new Missing('Seed B1', 'this world has no banks');
+      const banksIn = new Map<string, typeof banks>();
+      for (const b of banks) {
+        const where = String(countryOfRegion(b.region).country);
+        const held = banksIn.get(where);
+        if (held === undefined) banksIn.set(where, [b]);
+        else held.push(b);
+      }
+      const banksFor = (region: RegionId): typeof banks =>
+        banksIn.get(String(countryOfRegion(region).country)) ?? [first];
       // Seed B1, B3: the firms this world drew, spread across the banks that exist so that no bank's
       // customers all sit on one side of the payment chain — a bank whose do has a structural reserve
       // drain, which is a flow this world would be opening with rather than producing.
@@ -767,32 +829,27 @@ export function foundationSeedFor(
       // seed STATING an opening (Seed C4) and not a decision: choosing where to BUILD is 13c.2's,
       // and that is what turns this literal from a fact about the world into an outcome.
       firmRows.forEach((f, n) => {
-        const bank = banks[n % banks.length];
+        const where = placed.get(f.firm) ?? REGION;
+        const here = banksFor(where);
+        const bank = here[n % here.length];
         if (bank === undefined) return;
-        ctx.parties.add(
-          named(partyId(f.firm), FIRM, f.name, bank.id, placed.get(f.firm) ?? REGION),
-        );
+        ctx.parties.add(named(partyId(f.firm), FIRM, f.name, bank.id, where));
       });
 
       // Money instruments: one per issuer (Money A1, D2). Each central bank issues its own region's
       // money and a bank issues the money of the region it books in — there is no such thing as
       // money without an issuer, and none of it is anybody else's (A1).
-      for (const issuer of [CB, ...banks.map((b) => b.id)]) {
+      const issuers: readonly { readonly id: PartyId; readonly region: RegionId }[] = [
+        ...COUNTRIES.map((c) => ({ id: c.centralBank, region: c.region })),
+        ...banks,
+      ];
+      for (const issuer of issuers) {
+        const ccy = ctx.registry.currencyOf(issuer.region);
         ctx.instruments.add({
-          id: moneyInstrumentId(issuer, USD),
+          id: moneyInstrumentId(issuer.id, ccy),
           kind: MONEY_KIND,
-          issuer: some(issuer),
-          ccy: USD,
-          terms: { kind: MONEY_KIND },
-          market: none(),
-        });
-      }
-      for (const c of ABROAD) {
-        ctx.instruments.add({
-          id: moneyInstrumentId(c.centralBank, c.ccy),
-          kind: MONEY_KIND,
-          issuer: some(c.centralBank),
-          ccy: c.ccy,
+          issuer: some(issuer.id),
+          ccy,
           terms: { kind: MONEY_KIND },
           market: none(),
         });
@@ -829,6 +886,11 @@ export function foundationSeedFor(
         // Seed B4: and they are spread across the banks IN PROPORTION TO SIZE, so a bigger bank has
         // more depositors — which is what makes it bigger. Split exactly: a weight is a count of
         // people and the odd person has a named cell (core/tick.ts), never a fraction anywhere.
+        //
+        // 13j: AND THIS IS HOW THE POPULATION SPREADS OVER THE COUNTRIES, with nothing stated. A
+        // cell lives where its bank books; a bank books where the people are; and how many people a
+        // place holds is what its ground came to (`peopleOn`). So a country's population is the
+        // sizes of the banks the ground gave it — two draws and no share anybody chose (Law 2).
         const perBank = splitOnTick(
           members,
           banks.map((b) => b.size),
@@ -841,13 +903,13 @@ export function foundationSeedFor(
           const cell: CellParty = {
             id: partyId(`hh.${cohort.id}.${bank.id}.${n}`),
             kind: HOUSEHOLD,
-            region: REGION,
+            region: bank.region,
             name: `Households ${cohort.name} at ${bank.id} #${n}`,
             bank: bank.id,
             representation: 'cell',
             status: { alive: true },
             weight,
-            key: { region: REGION, cohort: cohortId(cohort.id), bank: bank.id },
+            key: { region: bank.region, cohort: cohortId(cohort.id), bank: bank.id },
           };
           ctx.parties.add(cell);
         });
@@ -858,20 +920,15 @@ export function foundationSeedFor(
       // a thing to the piece and hand it on. It holds nothing at the opening and it owes nobody.
       for (const bank of banks) {
         ctx.parties.add({
-          id: probateId(REGION, bank.id),
+          id: probateId(bank.region, bank.id),
           kind: PROBATE,
-          region: REGION,
+          region: bank.region,
           name: `Probate, ${bank.id}`,
           bank: bank.id,
           representation: 'named',
           status: { alive: true },
         });
       }
-
-      // Law 19: HOW MANY PEOPLE THERE ARE is read off the cells that were just created, never
-      // recomputed from the parameter they were cut from — a second derivation of a population is a
-      // second population, and it goes wrong the first time a split does not come out.
-      const householdMembers = ctx.parties.ofKind(HOUSEHOLD).reduce((t, c) => t + weightOf(c), 0);
 
       // ------------------------------------------------------------------------------------------
       // WHAT EVERY FIRM OPENS HOLDING (Seed D1, Goods A2.a, Capital Programme A2; Law 2, Law 19)
@@ -887,7 +944,13 @@ export function foundationSeedFor(
       // however many firms the world has, in the proportions their own draws gave them.
       // ------------------------------------------------------------------------------------------
       const started = new Map<string, number>();
-      const madeHere = firmRows.filter((f) => ctx.instruments.has(goodId(f.subUnit, REGION)));
+      // 13j: a firm makes its line WHERE IT IS, and a world of four countries has the same line
+      // opening in more than one of them. A firm whose own place does not make its good opens with
+      // nothing, which is what `madeHere` has always meant — it just used to mean it of one place.
+      const placeOf = (firm: string): RegionId => placed.get(firm) ?? REGION;
+      const madeHere = firmRows.filter((f) =>
+        ctx.instruments.has(goodId(f.subUnit, placeOf(f.firm))),
+      );
       const sizeOfLine = new Map<string, number>();
       for (const f of madeHere) {
         sizeOfLine.set(f.subUnit, add(zeroIfNone(sizeOfLine.get(f.subUnit)), f.size, 'its line'));
@@ -1098,140 +1161,304 @@ export function foundationSeedFor(
       // and how much of it there is, is the population it is owed by (Law 2: one number, not a table).
       const y = ctx.params.perAnnum(P.openingYield);
       const opening = new Map<string, number>();
-      // Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER THERE IS, as a stock of the economy it is
-      // owed by rather than of the heads in it. A treasury that has borrowed is a treasury that
-      // spent, and what it spent it on is an economy — so what is stated is how many periods of what
-      // this world MAKES the sovereign owes, and the amount follows from the same walk everything
-      // else here follows from. Stated per head it did not scale with the real economy at all: a
-      // world whose people could make forty times as much had the same money in it, and its banks
-      // could not carry their own depositors' accounts (Seed D1 refused to open it).
-      const turnover = sum(
-        [...sizeOfLine.keys()].map((g) =>
-          mul(
-            mul(zeroIfNone(started.get(g)), recipeOf(g).yieldRate, `what ${g} makes in a period`),
-            ctx.params.price(openingPrice(g)),
-            'what that fetches',
-          ),
-        ),
-      ).value;
-      const seedLineRows = seedLines(
-        ctx.calendar.epoch,
-        householdMembers,
-        div(
-          mul(turnover, ctx.params.periods(P.debtPeriods), 'the debt outstanding'),
-          householdMembers,
-          'per member',
-        ),
-        ctx.params.ratio(P.householdDebtShare),
+
+      /**
+       * 13j: EVERY COUNTRY'S OPENING BALANCE SHEET, BUILT THE SAME WAY.
+       *
+       * This was written for one country and read as if that were a simplification. It was not: it
+       * was the reason three of the four produced nothing. A sovereign with one line of paper has no
+       * curve to be a spread against, a banking system with no depositors has nothing to lend, and a
+       * country whose only transaction is a reserve manager's coupon has external accounts that
+       * measure a coupon. What follows is the same construction, per country, over that country's
+       * own banks, its own people, its own firms and its own money — and not one number in it is
+       * stated per country: how big each of them is came off the ground the map drew (`peopleOn`).
+       */
+      // Banks Capital B1.b: the line each bank runs its own book to — its own rule, whatever country
+      // it books in, because a leverage line is a fact about a bank and not about a place.
+      const lineOfBank = new Map<PartyId, number>(
+        bankRows.map((r) => [
+          partyId(r.bank),
+          add(ctx.params.ratio(P.leverageRatio), r.capitalBuffer, 'the line this bank runs to'),
+        ]),
       );
-      for (const line of seedLineRows) {
-        const id = instrumentId(line.id);
-        const market = marketId(`mkt.${line.id}`);
-        const maturity = line.maturity;
-        const terms: SovereignBondTerms | SovereignBillTerms =
-          line.paper === 'bond'
-            ? {
-                kind: SOVEREIGN_BOND,
-                coupon: rate(y, ANNUAL),
-                couponPeriodicity: SEMI_ANNUAL,
-                dayCount: SEED_DAY_COUNT,
-                issueDate: ctx.calendar.epoch,
-                maturity,
-              }
-            : { kind: SOVEREIGN_BILL, issueDate: ctx.calendar.epoch, maturity };
-        ctx.instruments.add({
-          id,
-          kind: line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL,
-          issuer: some(TREASURY_US),
-          ccy: USD,
-          terms,
-          market: some(market),
-        });
-        ctx.openMarket({
-          id: market,
-          name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
-          instrument: id,
-          ccy: USD,
-          rationing: 'proRata',
-        });
-        const flows = ctx.registry
-          .instrumentKind(line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL)
-          .cashFlows(ctx.instruments.get(id), ctx.calendar.epoch, ctx.calendar);
-        const price = priceAt(flows, y, ctx.calendar.epoch, SEED_DAY_COUNT, `opening ${line.id}`);
-        opening.set(line.id, price);
-        ctx.prices.write({
-          instrument: id,
-          market,
-          period: ctx.period,
-          price: priced(ctx, id, price),
-          ccy: USD,
-          provenance: { kind: 'opening' },
-        });
+      const cellsIn = new Map<string, PartyId[]>();
+      const membersIn = new Map<string, number>();
+      for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
+        const where = String(countryOfRegion(cell.region).country);
+        const held = cellsIn.get(where);
+        if (held === undefined) cellsIn.set(where, [cell.id]);
+        else held.push(cell.id);
+        membersIn.set(where, add(zeroIfNone(membersIn.get(where)), weightOf(cell), 'its people'));
+      }
+      const firmsIn = new Map<string, FirmDecl[]>();
+      for (const f of madeHere) {
+        const where = String(countryOfRegion(placeOf(f.firm)).country);
+        const held = firmsIn.get(where);
+        if (held === undefined) firmsIn.set(where, [f]);
+        else held.push(f);
       }
 
-      // ------------------------------------------------------------------------------------------
-      // THE OTHER COUNTRIES' PAPER, AND WHO HOLDS WHOSE (Currency A3, D2; Spot FX A3, B1, B2; Bond N3)
-      //
-      // One line each, at the benchmark tenor, in that country's own money and promised by its own
-      // treasury. The US banks hold some of all three and each foreign reserve manager holds dollars:
-      // that is what a cross holding IS, and it is what makes every part of the currency layer
-      // reachable at once —
-      //
-      //   a position in a money that is not its holder's own, so the revaluation has something to
-      //   revalue (D2); a COUPON that arrives in a money its receiver does not book in, so the
-      //   conversion is a real payment and not a display (C4); two parties with OPPOSITE reasons to
-      //   be in the pair market — the US banks earning euros, sterling and yen they have no use for
-      //   and the foreign central banks earning dollars they have none for (B1, B2), neither of them
-      //   a view of the rate (XI-13); and SIX pairs rather than one, so a cross exists that is not
-      //   the dollar and a round trip through three of them either does or does not pay (XI-12).
-      //
-      // WHAT EVERY RATE OPENS AT is the one stated level, like every other opening price, and each
-      // pair's own first session replaces it (Seed C4).
-      const abroadLine = new Map<string, InstrumentId>();
-      const abroadPrice = new Map<string, number>();
-      for (const c of ABROAD) {
-        const line = instrumentId(
-          `${c.paper}.${formatCivil(onGrid(ctx.calendar.epoch, ABROAD_TENOR_MONTHS))}`,
+      /** What one country's own paper came to in the hands of its own banking system. */
+      const systemPaperIn = new Map<string, number>();
+      /** Central Bank F4: the line a reserve manager abroad holds — the benchmark, and its price. */
+      const benchmarkIn = new Map<string, { id: InstrumentId; price: number }>();
+
+      for (const c of COUNTRIES) {
+        const where = String(c.country);
+        const banksHere = banksIn.get(where) ?? [];
+        const cellsHere = cellsIn.get(where) ?? [];
+        const membersHere = zeroIfNone(membersIn.get(where));
+        const firmsHere = firmsIn.get(where) ?? [];
+        if (banksHere.length === 0 || membersHere <= 0) continue;
+        // Seed C3, Treasury D4.a: HOW MUCH SOVEREIGN PAPER THERE IS, as a stock of the economy it is
+        // owed by rather than of the heads in it. A treasury that has borrowed is a treasury that
+        // spent, and what it spent it on is an economy — so what is stated is how many periods of
+        // what THIS country MAKES its sovereign owes, and the amount follows from the same walk
+        // everything else here follows from. Stated per head it did not scale with the real economy
+        // at all: a world whose people could make forty times as much had the same money in it, and
+        // its banks could not carry their own depositors' accounts (Seed D1 refused to open it).
+        const turnover = sum(
+          firmsHere.map((f) =>
+            mul(
+              mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what it makes in a period'),
+              ctx.params.price(openingPrice(f.subUnit)),
+              'what that fetches',
+            ),
+          ),
+        ).value;
+        const seedLineRows = seedLines(
+          ctx.calendar.epoch,
+          membersHere,
+          div(
+            mul(turnover, ctx.params.periods(P.debtPeriods), 'the debt outstanding'),
+            membersHere,
+            'per member',
+          ),
+          ctx.params.ratio(P.householdDebtShare),
+          c.paper,
         );
-        const market = marketId(`mkt.${line}`);
-        const terms: SovereignBondTerms = {
-          kind: SOVEREIGN_BOND,
-          coupon: rate(y, ANNUAL),
-          couponPeriodicity: SEMI_ANNUAL,
-          dayCount: SEED_DAY_COUNT,
-          issueDate: ctx.calendar.epoch,
-          maturity: onGrid(ctx.calendar.epoch, ABROAD_TENOR_MONTHS),
+        for (const line of seedLineRows) {
+          const id = instrumentId(line.id);
+          const market = marketId(`mkt.${line.id}`);
+          const maturity = line.maturity;
+          const terms: SovereignBondTerms | SovereignBillTerms =
+            line.paper === 'bond'
+              ? {
+                  kind: SOVEREIGN_BOND,
+                  coupon: rate(y, ANNUAL),
+                  couponPeriodicity: SEMI_ANNUAL,
+                  dayCount: SEED_DAY_COUNT,
+                  issueDate: ctx.calendar.epoch,
+                  maturity,
+                }
+              : { kind: SOVEREIGN_BILL, issueDate: ctx.calendar.epoch, maturity };
+          ctx.instruments.add({
+            id,
+            kind: line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL,
+            issuer: some(c.treasury),
+            ccy: c.ccy,
+            terms,
+            market: some(market),
+          });
+          ctx.openMarket({
+            id: market,
+            name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
+            instrument: id,
+            ccy: c.ccy,
+            rationing: 'proRata',
+          });
+          const flows = ctx.registry
+            .instrumentKind(line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL)
+            .cashFlows(ctx.instruments.get(id), ctx.calendar.epoch, ctx.calendar);
+          const price = priceAt(flows, y, ctx.calendar.epoch, SEED_DAY_COUNT, `opening ${line.id}`);
+          opening.set(line.id, price);
+          ctx.prices.write({
+            instrument: id,
+            market,
+            period: ctx.period,
+            price: priced(ctx, id, price),
+            ccy: c.ccy,
+            provenance: { kind: 'opening' },
+          });
+        }
+
+        // ----------------------------------------------------------------------------------------
+        // THE OPENING BALANCE SHEET (Seed A3, C1, C5, E2; Central Bank A2, C1; Banks Capital B1.b)
+        //
+        // What is STATED here is what somebody chose: how much paper each bank holds, how much each
+        // household member holds, and how much of its liquid buffer a bank keeps as reserves rather
+        // than paper. Everything else is DERIVED from a rule that already governs the party's own
+        // behaviour, so nothing opens somewhere its own mechanism would immediately move it away
+        // from, and no number here was chosen by looking at the answer (the 11.3 record is what that
+        // costs).
+        // ----------------------------------------------------------------------------------------
+        let systemPaper = 0;
+        let centralBankAssets = 0;
+        for (const line of seedLineRows) {
+          const id = instrumentId(line.id);
+          const price = openingOf(opening, line.id);
+          const par = priced(ctx, id, price);
+          systemPaper = add(systemPaper, line.banks * price, 'what the banking system holds');
+          // Seed E2, XI-15: every member of every cell holds the same stated amount, and the cell
+          // carries it with its weight. Its own country's paper: a household saving in a money it
+          // is not paid in would be a currency position nobody took (Currency D2).
+          if (line.perMember > 0) {
+            for (const cell of cellsHere) {
+              ctx.endowUnits(cell, id, held(ctx, id, line.perMember), par);
+            }
+          }
+          // Central Bank C1, Seed E2: WHAT THE CENTRAL BANK OPENS HOLDING, as a share of each line.
+          // It is the seed's own endowment and it is deliberately NOT the OMO's target: opening the
+          // central bank at the holding its own policy wants would be seeding an outcome (Seed E1)
+          // and importing an equilibrium (Law 2), and it would mean the first open-market session
+          // had nothing to do — the mechanism would never be seen to run at all.
+          //
+          // Its holding is therefore not a number in this table either: it is that share of what the
+          // line comes to outstanding once everybody else holds theirs, `others × share / (1 −
+          // share)`.
+          const others = line.banks + line.perMember * membersHere;
+          const share = ctx.params.ratio(P.cbOpeningShare);
+          const cbUnits = div(mul(others, share, 'the share it targets'), 1 - share, 'its holding');
+          const cbDrawn = held(ctx, id, cbUnits);
+          if (cbDrawn > 0) {
+            ctx.endowUnits(c.centralBank, id, cbDrawn, par);
+            // Law 19: what it holds, not what the division asked for — the whole pieces it was
+            // actually endowed with, read back in the units this price is quoted in.
+            centralBankAssets = add(
+              centralBankAssets,
+              mul(inNamedUnits(ctx, id, cbDrawn), price, 'central bank assets'),
+              'its assets',
+            );
+          }
+        }
+        systemPaperIn.set(where, systemPaper);
+        const last = seedLineRows[seedLineRows.length - 1];
+        if (last !== undefined) {
+          benchmarkIn.set(where, {
+            id: instrumentId(last.id),
+            price: openingOf(opening, last.id),
+          });
+        }
+
+        // Money A1, Central Bank A2: NO CENTRAL-BANK MONEY EXISTS THAT ITS ISSUER BOUGHT NOTHING
+        // WITH. Its money is its liability and the paper above is the asset it bought with it, so
+        // THE SIZE OF ITS BALANCE SHEET IS ALREADY DECIDED: what is left to say is who holds it.
+        //
+        // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on
+        // every single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what is stated
+        // about it is ITS SHARE of that balance sheet. The banks hold the rest as reserves.
+        const buffer = mul(
+          centralBankAssets,
+          ctx.params.ratio(P.treasuryBufferShare),
+          "the treasury's buffer",
+        );
+        ctx.endowMoney(c.treasury, c.ccy, ctx.registry.payable(c.ccy, buffer));
+        const reserves = sub(centralBankAssets, buffer, 'what the banks hold in reserve');
+        // Seed C1, Banks Capital B1.b: A BANK'S BALANCE SHEET FOLLOWS ITS DEPOSITORS, and this is
+        // the line of causality the whole sheet turns on.
+        //
+        // It used to run the other way: the system's paper was split between banks BY THEIR STATED
+        // SIZE, a bank's assets were whatever that came to, and its depositors took the residue.
+        // That works for three banks and stops working for twenty — a firm's account is a stated
+        // amount and a bank's share of the paper shrinks as 1/count, so past a certain number some
+        // bank is handed a depositor bigger than the whole book its capital rule lets it fund, and
+        // the world refuses to open. The count of banks was silently load-bearing, which is what
+        // makes it worth a derivation rather than a table (Seed B1).
+        //
+        // So: what each bank must FUND is its firms' accounts plus its households' share of what is
+        // left, and its assets are what its own leverage line makes of that. One unknown — what a
+        // unit of bank size funds in household money — and it is solved rather than chosen:
+        //
+        //   Σ (firms_i + size_i·H) / (1 − line_i) = assets to go round
+        //
+        // Nothing here is fitted and nothing is capped: a bank with a large depositor is a large
+        // bank because of it, which is what a deposit IS.
+        const all = systemPaper + reserves;
+        const atBank = new Map<PartyId, number>(banksHere.map((b) => [b.id, 0]));
+        for (const f of firmsHere) {
+          const bank = ctx.parties.get(partyId(f.firm)).bank;
+          atBank.set(
+            bank,
+            add(zeroIfNone(atBank.get(bank)), cashOf(f), 'what its firms hold at it'),
+          );
+        }
+        const over = (b: { id: PartyId }): number => {
+          const left = 1 - zeroIfNone(lineOfBank.get(b.id));
+          // Seed D1, Banks Capital B1.b: a bank that must fund EVERY asset out of its own capital
+          // can hold no deposit at all, and this world opens its firms with accounts at it. There is
+          // no balance sheet that satisfies both, so the seed says which rule made it impossible
+          // rather than dividing by it and handing the world a negative amount of assets to go round.
+          forbid(
+            left > 0,
+            'Seed D1',
+            `${b.id} must fund ${zeroIfNone(lineOfBank.get(b.id))} of every asset out of its own capital, so it can take no deposit — and this world opens depositors at it`,
+            { bank: b.id, line: zeroIfNone(lineOfBank.get(b.id)) },
+          );
+          return left;
         };
-        ctx.instruments.add({
-          id: line,
-          kind: SOVEREIGN_BOND,
-          issuer: some(c.treasury),
-          ccy: c.ccy,
-          terms,
-          market: some(market),
-        });
-        ctx.openMarket({
-          id: market,
-          name: displayName(ctx.instruments.get(line), ctx.parties, ctx.registry),
-          instrument: line,
-          ccy: c.ccy,
-          rationing: 'proRata',
-        });
-        const flows = ctx.registry
-          .instrumentKind(SOVEREIGN_BOND)
-          .cashFlows(ctx.instruments.get(line), ctx.calendar.epoch, ctx.calendar);
-        const price = priceAt(flows, y, ctx.calendar.epoch, SEED_DAY_COUNT, `opening ${line}`);
-        ctx.prices.write({
-          instrument: line,
-          market,
-          period: ctx.period,
-          price: priced(ctx, line, price),
-          ccy: c.ccy,
-          provenance: { kind: 'opening' },
-        });
-        abroadLine.set(String(c.region), line);
-        abroadPrice.set(String(c.region), price);
+        const firmsPart = sum(
+          banksHere.map((b) => div(zeroIfNone(atBank.get(b.id)), over(b), 'its firms')),
+        ).value;
+        const sizePart = sum(banksHere.map((b) => div(b.size, over(b), 'its households'))).value;
+        forbid(
+          sizePart > 0 && all > firmsPart,
+          'Seed D1',
+          `${c.name}'s banks cannot carry the accounts it opens them with: ${firmsPart} of assets are needed for the firms alone and there are ${all}`,
+          { country: c.country, all, firmsPart },
+        );
+        const perSize = div(
+          sub(all, firmsPart, 'what is left for the households'),
+          sizePart,
+          'per unit of size',
+        );
+        const assetsOf = (b: { id: PartyId; size: number }): number =>
+          div(
+            add(
+              zeroIfNone(atBank.get(b.id)),
+              mul(b.size, perSize, 'its households'),
+              'what it funds',
+            ),
+            over(b),
+            'its assets',
+          );
+        const assets = new Map<PartyId, number>(banksHere.map((b) => [b.id, assetsOf(b)]));
+
+        // Its assets are paper and reserves in the proportion the system holds them, because at the
+        // opening nothing has yet decided otherwise — the treasury's own liquidity plan does that
+        // from period one (Banks Funding C1).
+        const paperShare = div(systemPaper, all, 'the part of a book that is paper');
+        for (const b of banksHere) {
+          const mine = zeroIfNone(assets.get(b.id));
+          ctx.endowMoney(
+            b.id,
+            c.ccy,
+            ctx.registry.payable(
+              c.ccy,
+              sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves'),
+            ),
+          );
+        }
+        for (const line of seedLineRows) {
+          const id = instrumentId(line.id);
+          const price = openingOf(opening, line.id);
+          const par = priced(ctx, id, price);
+          // Law 8: whole units, split so they sum to exactly what the system holds of the line — the
+          // odd unit goes to the largest remainder and has a named holder (core/tick.ts).
+          const perBank = splitOnTick(
+            line.banks,
+            banksHere.map((b) => mul(zeroIfNone(assets.get(b.id)), paperShare, 'its paper')),
+          );
+          banksHere.forEach((b, at) => {
+            const units = zeroIfNone(perBank[at]);
+            if (units <= 0) return;
+            ctx.endowUnits(b.id, id, held(ctx, id, units), par);
+          });
+        }
+        for (const f of firmsHere) {
+          ctx.endowMoney(partyId(f.firm), c.ccy, ctx.registry.payable(c.ccy, cashOf(f)));
+        }
       }
+
       // Spot FX C1, Seed C4: what a unit of one money costs in another, before any pair has traded.
       // EVERY pair, including the three that are not the dollar's: a cross with no opening level is a
       // market whose dealers have nothing to quote around, and a world that opens with holdings in
@@ -1243,223 +1470,11 @@ export function foundationSeedFor(
           market: fxMarketOf(base, quote),
           period: ctx.period,
           // Law 8: a rate is a price and opens on its pair's own grid — its pip.
-          price: toTickOf(
-            ctx.params.price(P.openingRate),
-            ctx.registry.rateTickFor(base, quote),
-          ),
+          price: toTickOf(ctx.params.price(P.openingRate), ctx.registry.rateTickFor(base, quote)),
           ccy: quote,
           provenance: { kind: 'opening' },
         });
       }
-      // ------------------------------------------------------------------------------------------
-      // THE OPENING BALANCE SHEET (Seed A3, C1, C5, E2; Central Bank A2, C1; Banks Capital B1.b)
-      //
-      // What is STATED here is what somebody chose: how much paper each bank holds, how much each
-      // household member holds, and how much of its liquid buffer a bank keeps as reserves rather
-      // than paper. Everything else is DERIVED from a rule that already governs the party's own
-      // behaviour, so nothing opens somewhere its own mechanism would immediately move it away from,
-      // and no number here was chosen by looking at the answer (the 11.3 record is what that costs).
-      // ------------------------------------------------------------------------------------------
-
-      // What a household member holds in PAPER is stated per member; what the banking system holds
-      // of each line is stated; everything else on this sheet is derived from those two and from the
-      // rule each bank runs its own book to.
-      let systemPaper = 0;
-      let centralBankAssets = 0;
-      const paperIn = new Map<string, number>();
-
-      for (const line of seedLineRows) {
-        const id = instrumentId(line.id);
-        const price = openingOf(opening, line.id);
-        const par = priced(ctx, id, price);
-        paperIn.set(line.id, line.banks * price);
-        systemPaper = add(systemPaper, line.banks * price, 'what the banking system holds');
-        // Seed E2, XI-15: every member of every cell holds the same stated amount, and the cell
-        // carries it with its weight.
-        if (line.perMember > 0) {
-          for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
-            ctx.endowUnits(cell.id, id, held(ctx, id, line.perMember), par);
-          }
-        }
-        // Central Bank C1, Seed E2: WHAT THE CENTRAL BANK OPENS HOLDING, as a share of each line. It
-        // is the seed's own endowment and it is deliberately NOT the OMO's target: opening the
-        // central bank at the holding its own policy wants would be seeding an outcome (Seed E1) and
-        // importing an equilibrium (Law 2), and it would mean the first open-market session had
-        // nothing to do — the mechanism would never be seen to run at all.
-        //
-        // Its holding is therefore not a number in this table either: it is that share of what the
-        // line comes to outstanding once everybody else holds theirs, `others × share / (1 − share)`.
-        const others = line.banks + line.perMember * householdMembers;
-        const share = ctx.params.ratio(P.cbOpeningShare);
-        const cbUnits = div(mul(others, share, 'the share it targets'), 1 - share, 'its holding');
-        const cbDrawn = held(ctx, id, cbUnits);
-        if (cbDrawn > 0) {
-          ctx.endowUnits(CB, id, cbDrawn, par);
-          // Law 19: what it holds, not what the division asked for — the whole pieces it was actually
-          // endowed with, read back in the units this price is quoted in.
-          centralBankAssets = add(
-            centralBankAssets,
-            mul(inNamedUnits(ctx, id, cbDrawn), price, 'central bank assets'),
-            'its assets',
-          );
-        }
-      }
-
-      const crossShare = ctx.params.ratio(P.crossHoldingShare);
-      const abroadShare = div(
-        crossShare,
-        ABROAD.length,
-        'the part of it that is any ONE country\u2019s',
-      );
-      // Central Bank F4, Currency D2: AND ITS RESERVES, which are the other countries' paper. It is
-      // on this side of the sheet with the domestic paper and for the same reason: it is an asset the
-      // central bank bought with money it issued, so it is part of what decides how big its balance
-      // sheet is. Holding it anywhere else was the first version of this seed and it is what took the
-      // banking system's liquidity abroad (worklist 11.5): a foreign bond raises nothing at a
-      // window that is its own system's, so a commercial bank holding one holds an illiquid asset.
-      for (const c of ABROAD) {
-        const line = instrumentId(String(abroadLine.get(String(c.region))));
-        const price = openingOf(abroadPrice, String(c.region));
-        // What it holds of one country's paper is the same share of the system's paper that country's
-        // own central bank holds of America's: the arrangement is symmetric, because nothing in this
-        // world says which of the four is the reserve currency (XI-12).
-        const units = div(
-          mul(systemPaper, abroadShare, `what it holds of ${c.name}`),
-          price,
-          'units',
-        );
-        if (units <= 0) continue;
-        const drawn = held(ctx, line, units);
-        if (drawn <= 0) continue;
-        ctx.endowUnits(CB, line, drawn, priced(ctx, line, price));
-        // Law 8: WHAT IT ACTUALLY HOLDS, in the units the price is quoted in. This read multiplied a
-        // count of PIECES by a price per NAMED unit, so the reserves the seed thought it had bought
-        // were the subdivision of a bond times too big — eight per cent of the system's paper became
-        // eight times it, the money issued against it went with it, and every one of those numbers
-        // moved again when the pieces were made finer. One unit on both sides, or it is not a value.
-        centralBankAssets = add(
-          centralBankAssets,
-          mul(inNamedUnits(ctx, line, drawn), price, 'its reserves abroad'),
-          'central bank assets',
-        );
-      }
-
-      // Money A1, Central Bank A2: NO CENTRAL-BANK MONEY EXISTS THAT ITS ISSUER BOUGHT NOTHING WITH.
-      // Its money is its liability and the paper above is the asset it bought with it, so THE SIZE OF
-      // ITS BALANCE SHEET IS ALREADY DECIDED: what is left to say is who holds that money.
-      //
-      // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on every
-      // single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what is stated about it is
-      // ITS SHARE of that balance sheet. The banks hold the rest as reserves.
-      const buffer = mul(
-        centralBankAssets,
-        ctx.params.ratio(P.treasuryBufferShare),
-        "the treasury's buffer",
-      );
-      ctx.endowMoney(TREASURY_US, USD, cash(ctx, buffer));
-      const reserves = sub(centralBankAssets, buffer, 'what the banks hold in reserve');
-      // Seed C1, Banks Capital B1.b: A BANK'S BALANCE SHEET FOLLOWS ITS DEPOSITORS, and this is the
-      // line of causality the whole sheet turns on.
-      //
-      // It used to run the other way: the system's paper was split between banks BY THEIR STATED
-      // SIZE, a bank's assets were whatever that came to, and its depositors took the residue. That
-      // works for three banks and stops working for twenty — a firm's account is a stated amount and
-      // a bank's share of the paper shrinks as 1/count, so past a certain number some bank is handed
-      // a depositor bigger than the whole book its capital rule lets it fund, and the world refuses
-      // to open. The count of banks was silently load-bearing, which is what makes it worth a
-      // derivation rather than a table (Seed B1).
-      //
-      // So: what each bank must FUND is its firms' accounts plus its households' share of what is
-      // left, and its assets are what its own leverage line makes of that. One unknown — what a unit
-      // of bank size funds in household money — and it is solved rather than chosen:
-      //
-      //   Σ (firms_i + size_i·H) / (1 − line_i) = assets to go round
-      //
-      // Nothing here is fitted and nothing is capped: a bank with a large depositor is a large bank
-      // because of it, which is what a deposit IS.
-      const all = systemPaper + reserves;
-      const atBank = new Map<PartyId, number>(banks.map((b) => [b.id, 0]));
-      for (const f of madeHere) {
-        const bank = ctx.parties.get(partyId(f.firm)).bank;
-        atBank.set(bank, add(zeroIfNone(atBank.get(bank)), cashOf(f), 'what its firms hold at it'));
-      }
-      const lineOfBank = new Map<PartyId, number>(
-        bankRows.map((r) => [
-          partyId(r.bank),
-          add(ctx.params.ratio(P.leverageRatio), r.capitalBuffer, 'the line this bank runs to'),
-        ]),
-      );
-      const over = (b: { id: PartyId }): number => {
-        const left = 1 - zeroIfNone(lineOfBank.get(b.id));
-        // Seed D1, Banks Capital B1.b: a bank that must fund EVERY asset out of its own capital can
-        // hold no deposit at all, and this world opens its firms with accounts at it. There is no
-        // balance sheet that satisfies both, so the seed says which rule made it impossible rather
-        // than dividing by it and handing the world a negative amount of assets to go round.
-        forbid(
-          left > 0,
-          'Seed D1',
-          `${b.id} must fund ${zeroIfNone(lineOfBank.get(b.id))} of every asset out of its own capital, so it can take no deposit — and this world opens depositors at it`,
-          { bank: b.id, line: zeroIfNone(lineOfBank.get(b.id)) },
-        );
-        return left;
-      };
-      const firmsPart = sum(
-        banks.map((b) => div(zeroIfNone(atBank.get(b.id)), over(b), 'its firms')),
-      ).value;
-      const sizePart = sum(banks.map((b) => div(b.size, over(b), 'its households'))).value;
-      forbid(
-        sizePart > 0 && all > firmsPart,
-        'Seed D1',
-        `this world's banks cannot carry the accounts it opens them with: ${firmsPart} of assets are needed for the firms alone and there are ${all}`,
-        { all, firmsPart },
-      );
-      const perSize = div(
-        sub(all, firmsPart, 'what is left for the households'),
-        sizePart,
-        'per unit of size',
-      );
-      const assetsOf = (b: { id: PartyId; size: number }): number =>
-        div(
-          add(
-            zeroIfNone(atBank.get(b.id)),
-            mul(b.size, perSize, 'its households'),
-            'what it funds',
-          ),
-          over(b),
-          'its assets',
-        );
-      const assets = new Map<PartyId, number>(banks.map((b) => [b.id, assetsOf(b)]));
-
-      // Its assets are paper and reserves in the proportion the system holds them, because at the
-      // opening nothing has yet decided otherwise — the treasury's own liquidity plan does that from
-      // period one (Banks Funding C1).
-      const paperShare = div(systemPaper, all, 'the part of a book that is paper');
-      for (const b of banks) {
-        const mine = zeroIfNone(assets.get(b.id));
-        ctx.endowMoney(
-          b.id,
-          USD,
-          cash(ctx, sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves')),
-        );
-      }
-      for (const line of seedLineRows) {
-        const id = instrumentId(line.id);
-        const price = openingOf(opening, line.id);
-        const par = priced(ctx, id, price);
-        // Law 8: whole units, split so they sum to exactly what the system holds of the line — the
-        // odd unit goes to the largest remainder and has a named holder (core/tick.ts).
-        const perBank = splitOnTick(
-          line.banks,
-          banks.map((b) => mul(zeroIfNone(assets.get(b.id)), paperShare, 'its paper')),
-        );
-        banks.forEach((b, at) => {
-          const units = zeroIfNone(perBank[at]);
-          if (units <= 0) return;
-          ctx.endowUnits(b.id, id, held(ctx, id, units), par);
-        });
-      }
-
-      for (const f of madeHere) ctx.endowMoney(partyId(f.firm), USD, cash(ctx, cashOf(f)));
 
       // ------------------------------------------------------------------------------------------
       // THE CROSS HOLDINGS (Currency D2, Spot FX B1, B2; Central Bank F4)
@@ -1482,32 +1497,40 @@ export function foundationSeedFor(
       // That is not a finding about banks; it is a seed that put a position where its own liquidity
       // rule says it cannot be. What a COMMERCIAL bank holds abroad is a decision it takes with its
       // own capital once there is a reason to (13h), and it is not the seed's to state.
-      // Central Bank F4: and each of their own reserves, which are a claim on the American issuer. It
-      // is the benchmark line, because that is the one a reserve manager holds.
-      const reserveLine = instrumentId(
-        seedLineRows[seedLineRows.length - 1]?.id ?? String(GOV_LINE),
+      //
+      // 13j: it is now symmetric BY CONSTRUCTION rather than by arrangement. Every country has a
+      // banking system with paper in it, so what each central bank holds abroad is the same share of
+      // its OWN system's paper, spread over the other countries — and nothing in this world says
+      // which of the four is the reserve currency (XI-12).
+      const crossShare = ctx.params.ratio(P.crossHoldingShare);
+      const abroadShare = div(
+        crossShare,
+        COUNTRIES.length - 1,
+        'the part of it that is any ONE other country’s',
       );
-      const reservePrice = openingOf(opening, String(reserveLine));
-      for (const c of ABROAD) {
-        const reserveUnits = div(
-          mul(systemPaper, abroadShare, `what ${c.name} holds of it`),
-          reservePrice,
-          `units ${c.name} holds`,
-        );
-        if (reserveUnits <= 0) continue;
-        ctx.endowUnits(
-          c.centralBank,
-          reserveLine,
-          held(ctx, reserveLine, reserveUnits),
-          priced(ctx, reserveLine, reservePrice),
-        );
-        // Treasury D4.b: and each treasury opens with a buffer of its own money, because a treasury
-        // that depends on every auction clearing has no way to pay a coupon in week one.
-        ctx.endowMoney(
-          c.treasury,
-          c.ccy,
-          ctx.registry.payable(c.ccy, mul(reserveUnits, reservePrice, 'what it holds abroad')),
-        );
+      for (const mine of COUNTRIES) {
+        const systemPaper = zeroIfNone(systemPaperIn.get(String(mine.country)));
+        if (systemPaper <= 0) continue;
+        for (const theirs of COUNTRIES) {
+          if (theirs.country === mine.country) continue;
+          const bench = benchmarkIn.get(String(theirs.country));
+          if (bench === undefined || bench.price <= 0) continue;
+          const units = div(
+            mul(systemPaper, abroadShare, `what ${mine.name} holds of ${theirs.name}`),
+            bench.price,
+            'units',
+          );
+          if (units <= 0) continue;
+          const drawn = held(ctx, bench.id, units);
+          if (drawn <= 0) continue;
+          // Law 8: WHAT IT ACTUALLY HOLDS, in the units the price is quoted in. This read multiplied
+          // a count of PIECES by a price per NAMED unit, so the reserves the seed thought it had
+          // bought were the subdivision of a bond times too big — eight per cent of the system's
+          // paper became eight times it, the money issued against it went with it, and every one of
+          // those numbers moved again when the pieces were made finer. One unit on both sides, or it
+          // is not a value.
+          ctx.endowUnits(mine.centralBank, bench.id, drawn, priced(ctx, bench.id, bench.price));
+        }
       }
 
       // Banks Capital B1.b, A3: a bank opens where ITS OWN CAPITAL RULE puts it, so it neither has to
@@ -1554,6 +1577,7 @@ export function foundationSeedFor(
         // for it to hold: the seed endows what exists and never brings an instrument into being to
         // have something to endow (Seed A1). `madeHere` is exactly those that do.
         const firm = partyId(row.firm);
+        const here = placeOf(row.firm);
         const price = ctx.params.price(openingPrice(row.subUnit));
         const starts = startsOf(row);
         // Seed D1: ONE PERIOD of what it makes, finished and ready to sell; what a batch still in
@@ -1568,11 +1592,11 @@ export function foundationSeedFor(
         );
         // Seed C4: what it cost whoever holds it is the seed's, and it is below what the market
         // opens at — a firm holding stock it could only sell at a loss would never have made it.
-        const good = goodId(row.subUnit, REGION);
+        const good = goodId(row.subUnit, here);
         const basis = priced(ctx, good, price * SEED_STOCK_BASIS);
         if (finished > 0) ctx.endowUnits(firm, good, held(ctx, good, finished), basis);
         if (onTheLine > 0) {
-          const wip = wipId(row.subUnit, REGION);
+          const wip = wipId(row.subUnit, here);
           ctx.endowUnits(
             firm,
             wip,
@@ -1583,8 +1607,8 @@ export function foundationSeedFor(
         // Seed D1: what its recipe draws, so its first batch is not waiting on a market session.
         // Law 19: WHAT it draws is read from the good's own terms, never listed a second time here.
         for (const input of recipeOf(row.subUnit).inputs) {
-          if (!ctx.instruments.has(goodId(input.subUnit, REGION))) continue;
-          const line = goodId(input.subUnit, REGION);
+          if (!ctx.instruments.has(goodId(input.subUnit, here))) continue;
+          const line = goodId(input.subUnit, here);
           const paid = ctx.params.price(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
           const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
           if (drawn <= 0) continue;
@@ -1614,7 +1638,7 @@ export function foundationSeedFor(
           );
           SEED_PLANT_AGES.forEach((age, at) => {
             const serviceDate = addDays(ctx.calendar.epoch, -age * ctx.calendar.periodDays);
-            const id = seedVintage(ctx, kind, REGION, serviceDate);
+            const id = seedVintage(ctx, kind, here, serviceDate);
             // A3, A6: what a vintage that has already run for `age` periods is carried at — the
             // straight line it has been on since it went into service, and nothing else.
             ctx.endowUnits(
@@ -1634,17 +1658,17 @@ export function foundationSeedFor(
         // A3: room for EVERYTHING it opens holding that needs room — what it made and what its
         // recipe drew. A mill holds grain it did not grow, and it keeps that under cover too.
         const space = [
-          spaceOf(ctx, row.subUnit, held(ctx, goodId(row.subUnit, REGION), finished)),
+          spaceOf(ctx, row.subUnit, held(ctx, goodId(row.subUnit, here), finished), here),
           ...recipeOf(row.subUnit).inputs.map((input) => {
-            const line = goodId(input.subUnit, REGION);
+            const line = goodId(input.subUnit, here);
             if (!ctx.instruments.has(line)) return 0;
             const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
-            return spaceOf(ctx, input.subUnit, held(ctx, line, drawn));
+            return spaceOf(ctx, input.subUnit, held(ctx, line, drawn), here);
           }),
         ].reduce((a, b) => a + b, 0);
         if (space > 0 && ctx.registry.instrumentKinds.has(plantKindId(STORAGE))) {
           const serviceDate = addDays(ctx.calendar.epoch, -ctx.calendar.periodDays);
-          const id = seedVintage(ctx, STORAGE_KIND, REGION, serviceDate);
+          const id = seedVintage(ctx, STORAGE_KIND, here, serviceDate);
           const newPrice = ctx.params.price(openingPrice(STORAGE_KIND.madeFrom));
           const life = ctx.params.periods(paramId(`plant.usefulLife.${STORAGE}`));
           ctx.endowUnits(
@@ -1729,7 +1753,12 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         // in trouble. The buffer is its own (B2), so no two banks open at the same share and none
         // of them opens at a number this seed chose.
         const leverage = add(minimum, row.capitalBuffer, 'the line this bank runs to');
-        const own = moneyInstrumentId(bank, USD);
+        // 13j, Money A2: WHOSE MONEY THIS BANK ISSUES, which is the money of the place it books in.
+        // A deposit is a holding of its issuer's money and there is no such thing as a holding of a
+        // money nobody issued (Money A1), so a seed with four banking systems in it has to say
+        // whose — and the one writer of that is the registry, off the bank's own region.
+        const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
+        const own = moneyInstrumentId(bank, ccy);
         let assets = 0;
         for (const h of ctx.register.holdingsOf(bank)) {
           if (h.instrument === own) continue;
@@ -1766,7 +1795,7 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         );
         // XI-15: per member, and the cell carries it with its weight.
         const perMember = div(fromHouseholds, members, 'the deposit one member opens with');
-        for (const cell of cells) ctx.endowMoney(cell.id, USD, perMember);
+        for (const cell of cells) ctx.endowMoney(cell.id, ccy, perMember);
       }
     },
   };
@@ -1778,12 +1807,12 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
  * tonne — and what goes into the register is the count of indivisible pieces that comes to: cents,
  * grams, whole machines. Nothing downstream converts anything, because everything downstream is
  * already a count.
+ *
+ * 13j: money goes through `registry.payable`, which takes the MONEY as well as the amount. There
+ * used to be a `cash` here that took neither, because there was one money in this world worth
+ * holding; a seed with four banking systems in it has to say whose cents it means (Money A2.b).
  */
-function cash(ctx: SeedContext, phx: number): number {
-  return ctx.registry.pieces(currencyUnit(USD), phx);
-}
-
-/** The same for units of an instrument, in whatever its own unit is named in. */
+/** Units of an instrument, in whatever its own unit is named in. */
 function held(ctx: SeedContext, instrument: InstrumentId, amount: number): number {
   return ctx.registry.pieces(ctx.instruments.get(instrument).unit, amount);
 }
@@ -1886,7 +1915,9 @@ export function foundationDraw(
        * is a rebalance nobody has to trade.
        */
       [
-        EQUITY_INDEX(REGION),
+        // 13j: a tracker on every country's own market, because an index with no vehicle following
+        // it is a measurement nobody trades and C2's simultaneity has nothing to be simultaneous.
+        ...COUNTRIES.map((c) => EQUITY_INDEX(c.region)),
         SIZE_INDEX(REGION, 'large'),
         SIZE_INDEX(REGION, 'small'),
         GLOBAL_INDEX(USD),
@@ -1929,8 +1960,7 @@ function mapSpec(): MapSpec {
     water: WATER,
     bands: BANDS.map((b) => ({ id: terrainId(b.id), share: b.share })),
     countries: [
-      { id: HOME, name: 'United States', regions: HOME_PLACES },
-      ...ABROAD.map((c) => ({ id: c.country, name: c.name, regions: ABROAD_PLACES })),
+      ...COUNTRIES.map((c) => ({ id: c.country, name: c.name, regions: PLACES_PER_COUNTRY })),
     ],
     terrains: TERRAINS,
     resources: RESOURCES,
@@ -1973,6 +2003,62 @@ function standsOnOf(subUnit: string): string | null {
  * firms and the assembly that declares the lines they will make. A second rule would be a second
  * world (Law 4).
  */
+/**
+ * 13j, Goods B4: WHERE THE PEOPLE ARE — on the ground that will feed them.
+ *
+ * A country's SIZE is not stated anywhere in this seed and this is why it does not have to be. The
+ * map draws the ground; how many people a place holds is what its ARABLE ground came to; and every
+ * other population fact follows from that — a shop is built next to its customers, a bank is where
+ * its depositors are, and a country whose draw gave it better ground is a bigger country. Nothing
+ * multiplies it by a share anybody chose.
+ *
+ * ONE WRITER (Law 4): the siting of firms and the making of household cells both ask here, so the
+ * shops cannot be built somewhere the people are not.
+ */
+export function peopleOn(g: GeographyDecl, reads: RatioReads, r: RegionId): number {
+  return groundIn(g, reads, r, ARABLE);
+}
+
+/**
+ * 13j, Seed B3: WHERE EACH DRAWN BANK BOOKS — with its depositors, which is where the people are.
+ *
+ * A bank is not drawn per country and its id carries no country (Law 4: one draw of the banks this
+ * world has). What makes it American or Japanese is where it books: its own bank is that country's
+ * central bank, the money it issues is that country's money, and the cells that hold its deposits
+ * are the ones living in its places. A country whose ground feeds more people has more of them.
+ *
+ * `splitOnTick` is the same door the seed already uses to spread depositors over banks by size: a
+ * bank is a whole bank, so the count is split into whole parts that sum to exactly what was drawn.
+ */
+function placeBanks(
+  g: GeographyDecl,
+  reads: RatioReads,
+  regions: readonly RegionDecl[],
+  banks: readonly BankDecl[],
+): ReadonlyMap<string, RegionId> {
+  const places = regions.map((r) => r.id);
+  const first = places[0];
+  if (first === undefined) throw new Missing('Seed B3', 'this world has nowhere in it');
+  const perPlace = splitOnTick(
+    banks.length,
+    places.map((r) => peopleOn(g, reads, r)),
+  );
+  const out = new Map<string, RegionId>();
+  let at = 0;
+  places.forEach((region, k) => {
+    const here = zeroIfNone(perPlace[k]);
+    for (let n = 0; n < here; n += 1) {
+      const row = banks[at];
+      at += 1;
+      if (row === undefined) return;
+      out.set(row.bank, region);
+    }
+  });
+  // Clearing C3: the odd bank the split could not place has a named home, and it is the first one.
+  for (const row of banks) if (!out.has(row.bank)) out.set(row.bank, first);
+  return out;
+}
+
 function placeFirms(
   g: GeographyDecl,
   reads: RatioReads,
@@ -1980,17 +2066,21 @@ function placeFirms(
   firms: readonly FirmDecl[],
   seed: string,
 ): ReadonlyMap<string, RegionId> {
-  const home = regions.filter((r) => r.country === HOME).map((r) => r.id);
-  const first = home[0];
-  if (first === undefined) throw new Missing('Seed B3', 'the home country has nowhere in it');
+  const places = regions.map((r) => r.id);
+  const first = places[0];
+  if (first === undefined) throw new Missing('Seed B3', 'this world has nowhere in it');
   const rng = prng(seed, 'siting');
   /**
-   * 13c.2: WHERE THE PEOPLE ARE, which is where a shop is. Today every cell this seed makes lives
-   * in `REGION`, so that is the whole of it; when the population spreads (worklist 13d) this read
-   * follows it and the shops and the surgeries follow with it, because a shop is built next to its
-   * customers and a mine is built on the ore, and neither of those is a rule anybody has to write.
+   * 13c.2, 13j: WHERE THE PEOPLE ARE, which is where a shop is — and it is now every country's
+   * places and not one country's. A shop is built next to its customers and a mine is built on the
+   * ore, and neither of those is a rule anybody has to write: both fall out of the weights below.
+   *
+   * People live where the ground will feed them, so how many of them are in a place is what that
+   * place's ground came to — which is what makes a country's SIZE an outcome of the draw rather
+   * than a number anybody states (Law 2). A world whose map gave Europe more arable ground has more
+   * Europeans in it, more firms serving them and more banks holding their money.
    */
-  const peopleIn = (r: RegionId): number => (r === REGION ? 1 : 0);
+  const peopleIn = (r: RegionId): number => peopleOn(g, reads, r);
   /**
    * Law 15: WHICH LINES GO WHERE THE PEOPLE ARE is read off the basket — the lines a household
    * takes — and never off what kind of line it is. Add a line to the basket and its firms move to
@@ -1998,7 +2088,7 @@ function placeFirms(
    */
   const toHouseholds = new Set(CONSUMPTION.map((c) => c.subUnit));
   const weightsFor = (subUnit: string, standsOn: string | null): number[] =>
-    home.map((r) => {
+    places.map((r) => {
       if (toHouseholds.has(subUnit)) return peopleIn(r);
       if (standsOn === null) return areaKm2(g, r);
       return groundIn(g, reads, r, resourceId(standsOn));
@@ -2023,7 +2113,7 @@ function placeFirms(
         break;
       }
     }
-    out.set(f.firm, home[at] ?? first);
+    out.set(f.firm, places[at] ?? first);
   }
   return out;
 }
@@ -2050,18 +2140,30 @@ export function foundationSpec(
   const drew = foundationDraw(seed, bankRows, firmRows);
   // Law 4: ONE DRAW OF THE CARRIERS, read by the module that sails them and by the seed that gives
   // them their hulls. A second draw would be a second fleet wearing this one's name.
-  const carrierRows = drawCarriers(
-    CARRIER_COUNT,
-    [REGION],
-    drew.banks.map((b) => b.bank),
-    seed,
-  );
   // 13c.1: THE GROUND THIS WORLD STANDS ON, drawn from the same seed as everything else and read
   // by the yield, the weather and every journey. Its own stream, so adding a terrain never
   // reshuffles the banks (Seed A5).
   const drawn = drawMap(mapSpec(), mapReads(), seed);
   // Seed B1.a: WHERE EACH FIRM OPENS, drawn once along the ground and read by everybody who needs it.
   const placed = placeFirms(drawn.geography, mapReads(), drawn.regions, firmRows, seed);
+  // 13j: AND WHERE EACH BANK BOOKS — with its depositors, which is where the people are. It is what
+  // makes a bank American or Japanese, and it is drawn once for the same reason the firms are.
+  const banked = placeBanks(drawn.geography, mapReads(), drawn.regions, bankRows);
+  // Law 4: ONE DRAW OF THE CARRIERS, read by the module that sails them and by the seed that gives
+  // them their hulls. A second draw would be a second fleet wearing this one's name.
+  // 13j: a hull is registered somewhere, and a world of four countries has ports in all of them.
+  const carrierRows = drawCarriers(
+    CARRIER_COUNT,
+    drawn.regions.map((r) => ({
+      region: r.id,
+      // 13j, Money A1: the banks of the country this port is in. A hull registered in one country
+      // and banked in another holds an account in a money its own bank does not issue.
+      banks: drew.banks
+        .filter((b) => countryOfRegion(banked.get(b.bank) ?? REGION).country === r.country)
+        .map((b) => b.bank),
+    })),
+    seed,
+  );
   // 13c.2, Law 4: THE MERCHANTS ARE THE FIRMS ALREADY IN THE WHOLESALE LINE. They are drawn, placed,
   // banked and funded by the ordinary firm machinery like everybody else; what this adds is the two
   // preferences that make one of them buy a cargo it will never use and another one not. The filter
@@ -2076,33 +2178,24 @@ export function foundationSpec(
     seed,
     epoch: civil(2026, 1, 5),
     registry: {
-      currencies: [
-        { code: USD, name: 'US dollar', centralBank: CB, quoteTick: PIP },
-        ...ABROAD.map((c) => ({
-          code: c.ccy,
-          name: c.ccyName,
-          centralBank: c.centralBank,
-          quoteTick: c.quoteTick,
-        })),
-      ],
-      countries: [
-        { id: HOME, name: 'United States', ccy: USD },
-        ...ABROAD.map((c) => ({ id: c.country, name: c.name, ccy: c.ccy })),
-      ],
+      currencies: COUNTRIES.map((c) => ({
+        code: c.ccy,
+        name: c.ccyName,
+        centralBank: c.centralBank,
+        quoteTick: c.quoteTick,
+      })),
+      countries: COUNTRIES.map((c) => ({ id: c.country, name: c.name, ccy: c.ccy })),
       // 13c.1: THE PLACES ARE DRAWN. A region is where a thing is and its money is its country's,
       // so this list grows with the map and the currency list does not.
       regions: drawn.regions,
       geography: drawn.geography,
       units: [
-        // Money A2, Law 8: a USD is a hundred cents, like any real money, and the cent is the
-        // smallest amount of it that exists. Every balance in this world is a whole number of them,
-        // so nothing below a cent can be paid, lent, owed or left over anywhere.
-        { id: currencyUnit(USD), name: 'USD', perUnit: MONEY_PIECES },
-        // Currency A3, Law 8: each other money is divided into its own smallest piece, and each is
-        // its OWN unit. Two currencies are never added (Money A2.b) and this is where that starts:
-        // an amount of euros is counted in euro pieces, and what it comes to in dollars is a
-        // conversion at a rate somebody traded at (Currency C5) and never an addition.
-        ...ABROAD.map((c) => ({
+        // Money A2, Currency A3, Law 8: each money is divided into its own smallest piece, and each
+        // is its OWN unit — a dollar is a hundred cents, like any real money, and nothing below a
+        // cent can be paid, lent, owed or left over anywhere. Two currencies are never added (Money
+        // A2.b) and this is where that starts: an amount of euros is counted in euro pieces, and
+        // what it comes to in dollars is a conversion at a rate somebody traded at (Currency C5).
+        ...COUNTRIES.map((c) => ({
           id: currencyUnit(c.ccy),
           name: String(c.ccy),
           perUnit: MONEY_PIECES,
@@ -2263,10 +2356,7 @@ export function foundationSpec(
       // would have paper anybody may hold and nobody may value at a yield (D4.a throws where it is
       // asked), which is the same line being a bond here and not one there. One module, because
       // the CONVENTION is one thing and four modules would be four places to write it down.
-      sovereignCurve([
-        { issuer: TREASURY_US, ccy: USD },
-        ...ABROAD.map((c) => ({ issuer: c.treasury, ccy: c.ccy })),
-      ]),
+      sovereignCurve(COUNTRIES.map((c) => ({ issuer: c.treasury, ccy: c.ccy }))),
       treasury,
       centralBankOmo,
       // The money market after the treasury and the curve: a bank funds itself against the paper
@@ -2312,7 +2402,7 @@ export function foundationSpec(
       fxDerivatives(houseIdFor),
       // Indices: after everything that prints, because an index is what its constituents printed
       // and the benchmark is what the overnight book settled at (Indices D3.a, E1).
-      indices([REGION, ...ABROAD.map((c) => c.region)], [USD, ...ABROAD.map((c) => c.ccy)]),
+      indices(COUNTRIES.map((c) => c.region), COUNTRIES.map((c) => c.ccy)),
       // Index futures: after the indices, because what this settles against is an index READ
       // (Indices C3), and it is what a dealer's hedge actually is (Dealer Desks E1, E2).
       // Options: after the equity book clears, because D3.a forbids an underlying that exists only
@@ -2336,10 +2426,7 @@ export function foundationSpec(
       // because anything enforces it. The carry it is measured against is three reads — the room,
       // the spoilage and the money — and there is no convenience yield anywhere.
       commodityFutures(houseIdFor),
-      indexFutures(houseIdFor, [
-        { id: EQUITY_INDEX(REGION), ccy: USD },
-        ...ABROAD.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy })),
-      ]),
+      indexFutures(houseIdFor, COUNTRIES.map((c) => ({ id: EQUITY_INDEX(c.region), ccy: c.ccy }))),
       // Ratings: after everything it has an opinion about, and it reads none of them — it decides
       // from state through a view with the prices closed (Ratings A2.a).
       ratings(
@@ -2356,7 +2443,7 @@ export function foundationSpec(
       // Research: after `reporting`, because what a bank estimates is the report a company will
       // publish and what settles its estimate is the one it just did (Reporting C1, F1).
       research(seed),
-      foundationSeedFor(drew.banks, drew.firms, carrierRows, placed),
+      foundationSeedFor(drew.banks, drew.firms, carrierRows, placed, banked),
       foundationFundingFor(drew.banks),
     ],
   };
@@ -2375,8 +2462,8 @@ export { PAR };
  * their rounding differed by, and a holder short by one unit of space through rounding alone would
  * lose real tonnes at the close for nothing that happened.
  */
-function spaceOf(ctx: SeedContext, subUnit: string, pieces: number): number {
-  const id = goodId(subUnit, REGION);
+function spaceOf(ctx: SeedContext, subUnit: string, pieces: number, where: RegionId): number {
+  const id = goodId(subUnit, where);
   if (pieces <= 0 || !ctx.instruments.has(id)) return 0;
   const instrument = ctx.instruments.get(id);
   const good = instrument.terms;

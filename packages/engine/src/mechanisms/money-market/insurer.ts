@@ -30,8 +30,13 @@ import { insuredAt } from './deposits.js';
 
 export const DEPOSIT_INSURER = partyKindId('depositInsurer');
 
-/** One in this world, because one currency has one guarantee behind it (A1.a). */
-export const INSURER: PartyId = partyId('insurer.north');
+/**
+ * A1.a: ONE PER CURRENCY, because one currency has one guarantee behind it — one issuer of the
+ * money the deposits are in, one window they can be turned into it at, one set of banks under one
+ * rule. 13j: there used to be one in this world, and it was right when there was one banking system
+ * in it; a world with four has four, and a Japanese depositor is not guaranteed by an American fund.
+ */
+export const insurerOf = (ccy: CurrencyCode): PartyId => partyId(`insurer.${ccy}`);
 
 export const INSURER_PARAMS = {
   premium: paramId('regulation.depositInsurance.premium'),
@@ -58,13 +63,15 @@ export const insurerKind: PartyKindProfile = {
  * the same split A1.a draws for the cover, read once and used for both (Law 4).
  */
 export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]): void {
-  if (!ctx.parties.has(INSURER) || !ctx.parties.get(INSURER).status.alive) return;
   const rate = ctx.params.perAnnum(INSURER_PARAMS.premium);
   if (rate <= 0) return;
   for (const bank of banks) {
     const p = ctx.parties.get(bank);
     if (!p.status.alive) continue;
     const ccy = ctx.registry.currencyOf(p.region);
+    // 13j, A1.a: a bank pays the guarantee of ITS OWN money, which is the one that covers it.
+    const insurer = insurerOf(ccy);
+    if (!ctx.parties.has(insurer) || !ctx.parties.get(insurer).status.alive) continue;
     const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
     const covered: number[] = [];
     for (const holder of ctx.register.holdersOf(moneyInstrumentId(bank, ccy))) {
@@ -79,7 +86,7 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
         {
           kind: 'money',
           from: ctx.accountOf(bank, ccy),
-          to: ctx.accountOf(INSURER, ccy),
+          to: ctx.accountOf(insurer, ccy),
           ccy,
           amount: due,
           fromCell: none(),
@@ -91,8 +98,8 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
     });
     ctx.record(
       'insurance.premium',
-      [INSURER, bank],
-      { insurer: INSURER, bank, covered: base, rate, due, paid: r.outcome === 'settled', ccy },
+      [insurer, bank],
+      { insurer, bank, covered: base, rate, due, paid: r.outcome === 'settled', ccy },
       true,
     );
   }
@@ -100,10 +107,11 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
 
 /** What the fund has to meet a guarantee with, for the reads that need it (D4). */
 export function fundOf(ctx: MechanismContext, ccy: CurrencyCode): number {
-  if (!ctx.parties.has(INSURER)) return 0;
-  const p = ctx.parties.get(INSURER);
+  const insurer = insurerOf(ccy);
+  if (!ctx.parties.has(insurer)) return 0;
+  const p = ctx.parties.get(insurer);
   return mul(
-    ctx.register.quantity(INSURER, moneyInstrumentId(p.bank, ccy)),
+    ctx.register.quantity(insurer, moneyInstrumentId(p.bank, ccy)),
     weightOf(p),
     'the fund',
   );

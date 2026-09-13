@@ -97,19 +97,27 @@ export const freightVenue = (from: RegionId, to: RegionId): VenueId =>
 export const freightMarket = (from: RegionId, to: RegionId): MarketId =>
   marketId(`mkt.freight.${from}.${to}`);
 
-/** Seed A5, Audit D3: the carriers of a world, from its own seed, in their own labelled stream. */
+/**
+ * Seed A5, Audit D3: the carriers of a world, from its own seed, in their own labelled stream.
+ *
+ * 13j, Money A1: A PORT AND ITS BANKS COME TOGETHER, because a carrier registered in one country and
+ * banked in another holds an account in a money its own bank does not issue — which is not a thing.
+ * Drawn separately they were: a Japanese hull banking in New York, and the first fee anybody tried
+ * to charge it stopped the world (`bank.e issues no money in JPY`).
+ */
 export function drawCarriers(
   count: number,
-  regions: readonly RegionId[],
-  banks: readonly string[],
+  ports: readonly { readonly region: RegionId; readonly banks: readonly string[] }[],
   seed: string,
 ): readonly CarrierDecl[] {
   const rng = prng(seed, 'freight');
   const out: CarrierDecl[] = [];
   for (let n = 0; n < count; n += 1) {
-    const region = regions[n % regions.length];
-    const bank = banks[n % banks.length];
-    if (region === undefined || bank === undefined) continue;
+    const port = ports[n % ports.length];
+    if (port === undefined) continue;
+    const region = port.region;
+    const bank = port.banks[n % port.banks.length];
+    if (bank === undefined) continue;
     out.push({
       carrier: `carrier.${n + 1}`,
       name: `Carrier ${n + 1}`,

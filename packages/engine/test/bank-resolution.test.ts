@@ -18,7 +18,7 @@
 import { describe, expect, it } from 'vitest';
 import { asQty } from '../src/core/tick.js';
 import {
-  INSURER,
+  insurerOf,
   INSURER_PARAMS,
   USD,
   TREASURY_US,
@@ -345,8 +345,9 @@ describe('the guarantee (Banks Funding A1.a, Banks Capital D4, D5)', () => {
     // which is the whole distinction D4 and D5 draw, and it is a fiscal cost with a payer.
     const unfunded = failing('res-d5', { [String(INSURER_PARAMS.premium)]: 0 });
     const then = events(unfunded, 'bank.resolution.done', BANK_A)[0];
-    expect(unfunded.register.quantity(INSURER, moneyInstrumentId(
-      unfunded.parties.get(INSURER).bank,
+    const guarantee = insurerOf(USD);
+    expect(unfunded.register.quantity(guarantee, moneyInstrumentId(
+      unfunded.parties.get(guarantee).bank,
       USD,
     ))).toBe(0);
     expect(num(then, 'insurerPaid')).toBe(0);

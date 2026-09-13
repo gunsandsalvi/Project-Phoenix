@@ -32,7 +32,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { div, mul, sub } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { asQty } from '../../core/tick.js';
-import { partyId, partyKindId, type PartyId, type RegionId } from '../../core/ids.js';
+import { partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { InstrumentId } from '../../core/ids.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
@@ -183,14 +183,24 @@ function isMoney(ctx: MechanismContext, instrument: InstrumentId): boolean {
   return ctx.registry.instrumentKind(ctx.instruments.get(instrument).kind).pricing === 'money';
 }
 
-/** Law 5, Law 8: everything this cell holds, to a NAMED party, in full and to the piece. */
+/**
+ * Law 5, Law 8: everything this cell holds, to a NAMED party, in full and to the piece.
+ *
+ * 13j: EVERY MONEY IT HELD, and not only its own. A world with four of them has households paid a
+ * coupon in one they do not bank in (Currency C4), and this used to move the cash of the cell's own
+ * region and leave the rest — so a cell that had ever been paid abroad could not die, because what
+ * the dead held has to go to somebody by name FIRST (Appendix B) and some of it was still there.
+ */
 function handToProbate(ctx: MechanismContext, from: PartyId, to: PartyId, region: RegionId): void {
   const view = ctx.participant(from);
   const weight = weightOf(ctx.parties.get(from));
-  const ccy = ctx.registry.currencyOf(region);
   const legs: Leg[] = [];
+  const monies = new Set<CurrencyCode>([ctx.registry.currencyOf(region)]);
   for (const h of view.holdings()) {
-    if (isMoney(ctx, h.instrument)) continue;
+    if (isMoney(ctx, h.instrument)) {
+      monies.add(ctx.instruments.get(h.instrument).ccy);
+      continue;
+    }
     const perMember = view.free(h.instrument);
     if (perMember <= 0) continue;
     const print = view.print(h.instrument);
@@ -207,8 +217,9 @@ function handToProbate(ctx: MechanismContext, from: PartyId, to: PartyId, region
       toCell: none(),
     });
   }
-  const cash = view.cash(ccy);
-  if (cash > 0) {
+  for (const ccy of monies) {
+    const cash = view.cash(ccy);
+    if (cash <= 0) continue;
     legs.push({
       kind: 'money',
       from: ctx.accountOf(from, ccy),

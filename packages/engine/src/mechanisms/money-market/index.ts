@@ -19,6 +19,7 @@ import {
   partyId,
   type CurrencyCode,
   type PartyId,
+  type RegionId,
 } from '../../core/ids.js';
 import {
   add,
@@ -39,7 +40,7 @@ import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { borrowingPower, windowAdvances, type Advance } from './collateral.js';
-import { collectPremiums, DEPOSIT_INSURER, INSURER, INSURER_PARAMS, insurerKind } from './insurer.js';
+import { collectPremiums, DEPOSIT_INSURER, insurerOf, INSURER_PARAMS, insurerKind } from './insurer.js';
 import { failedBanks, nothingLeftBehind, resolve } from './resolution.js';
 import {
   BOOKS,
@@ -82,7 +83,7 @@ export * from './rows.js';
 export * from './collateral.js';
 export * from './deposits.js';
 export * from './session.js';
-export { DEPOSIT_INSURER, INSURER, INSURER_PARAMS } from './insurer.js';
+export { DEPOSIT_INSURER, insurerOf, INSURER_PARAMS } from './insurer.js';
 export { valueBook, failedBanks, type Valuation as BookValuation } from './resolution.js';
 
 /** What the module keeps: the deposit book, and how many rows it has written. */
@@ -512,13 +513,28 @@ function lentThisPeriod(ctx: MechanismContext, lender: PartyId): number {
   return sum(terms).value;
 }
 
+/**
+ * 13j, Money Market A1: A BOOK PER MONEY, and the banks in it are the ones that issue that money.
+ *
+ * An overnight market is where the banks of ONE system lend each other the reserves of ONE central
+ * bank: a euro bank cannot settle a dollar loan on the Fed's books and there is no rate the two
+ * systems share. It used to take the first bank's money and open one book, which was right when
+ * every bank in this world was American.
+ */
 function declareVenues(ctx: MechanismContext, banks: readonly PartyId[]): void {
-  const ccy = banks[0] === undefined ? undefined : ccyOf(ctx, banks[0]);
-  if (ccy === undefined) return;
-  const cb = ctx.registry.centralBankOf(ccy);
-  for (const v of venuesOf(ccy, [...banks, cb])) {
-    if (ctx.venues.some((x) => x.id === v.id)) continue;
-    ctx.openVenue(v);
+  const byCcy = new Map<CurrencyCode, PartyId[]>();
+  for (const b of banks) {
+    const ccy = ccyOf(ctx, b);
+    const held = byCcy.get(ccy);
+    if (held === undefined) byCcy.set(ccy, [b]);
+    else held.push(b);
+  }
+  for (const [ccy, here] of byCcy) {
+    const cb = ctx.registry.centralBankOf(ccy);
+    for (const v of venuesOf(ccy, [...here, cb])) {
+      if (ctx.venues.some((x) => x.id === v.id)) continue;
+      ctx.openVenue(v);
+    }
   }
 }
 
@@ -824,24 +840,32 @@ export const moneyMarket: SystemModule = {
   resolves: [BANK],
   families: [collateralHolds(), nothingLeftBehind()],
   seed(ctx: SeedContext): void {
-    const banks = ctx.parties.ofKind(BANK).map((b) => b.id);
-    const first = banks[0];
-    if (first === undefined) return;
-    const region = ctx.parties.get(first).region;
-    const ccy = ctx.registry.currencyOf(region);
-    for (const v of venuesOf(ccy, [...banks, ctx.registry.centralBankOf(ccy)])) ctx.openVenue(v);
-    // D4: the fund exists from period zero and opens with NOTHING, because a fund that opened full
-    // would be a seed deciding how much of a future failure the banking system had already paid
-    // for. What it has when one fails is what the premiums have actually brought in (Seed E1).
-    ctx.parties.add({
-      id: INSURER,
-      kind: DEPOSIT_INSURER,
-      region,
-      name: 'North Deposit Guarantee',
-      bank: ctx.registry.centralBankOf(ccy),
-      representation: 'named',
-      status: { alive: true },
-    });
+    // 13j: one book and one guarantee PER MONEY, over the banks that issue it. A world with four
+    // banking systems has four overnight markets and four deposit guarantees, and a bank belongs to
+    // exactly one of each — which is what its own region says (Money A1).
+    const byCcy = new Map<CurrencyCode, { region: RegionId; banks: PartyId[] }>();
+    for (const b of ctx.parties.ofKind(BANK)) {
+      const ccy = ctx.registry.currencyOf(b.region);
+      const held = byCcy.get(ccy);
+      if (held === undefined) byCcy.set(ccy, { region: b.region, banks: [b.id] });
+      else held.banks.push(b.id);
+    }
+    for (const [ccy, here] of byCcy) {
+      const cb = ctx.registry.centralBankOf(ccy);
+      for (const v of venuesOf(ccy, [...here.banks, cb])) ctx.openVenue(v);
+      // D4: the fund exists from period zero and opens with NOTHING, because a fund that opened
+      // full would be a seed deciding how much of a future failure the banking system had already
+      // paid for. What it has when one fails is what the premiums have actually brought in (Seed E1).
+      ctx.parties.add({
+        id: insurerOf(ccy),
+        kind: DEPOSIT_INSURER,
+        region: here.region,
+        name: `${ctx.registry.currency(ccy).name} Deposit Guarantee`,
+        bank: cb,
+        representation: 'named',
+        status: { alive: true },
+      });
+    }
   },
 };
 
