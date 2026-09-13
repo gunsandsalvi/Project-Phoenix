@@ -3391,3 +3391,58 @@ nothing here claims a result it did not get.
 repositioned without a plant reseat the kernel does not have). E2 — households buying energy
 directly — is MET since 13c.2 put `power` in the basket, which is what its dependency note was
 waiting for.
+
+---
+
+## 13d.1 — A cell's key carries its age, its tenure and its wealth (closed)
+
+**What it was for.** Four of 13d's steps ran aground on one rock: a cell carries its holdings PER
+MEMBER in whole pieces, so anything that moves people between two cells has to move VALUE between
+two cells — and a leg's `qty` must equal `perMember × weight` on each side at once, which two
+weights in the millions share no useful number for.
+
+**The key needed none of the three dimensions it was written for, and that is the finding.**
+AGE was already there: a cohort IS an age band with a declared entry age. TENURE was the wrong
+diagnosis — a cell could not own a roof because the register's grid had one piece per whole thing,
+so four tenths of a dwelling per member rounded to nothing; the grid is a RESOLUTION and it has to
+be fine enough to say what one member holds. WEALTH would be a second writer of a fact this world
+already has: since 13c.2 the basket is two physical quantities per member, so the share of income
+going on food already falls as income rises, per cell rather than per band, and a band is three
+answers where a budget gives as many as there are cells.
+
+**What it built instead is the EVENT.** `ctx.cells.reKey` — a split with a different key on the part
+that moved. Exact, per-member state and all, totals preserved by construction; nobody appears,
+nobody disappears, and nothing crosses. The weight event is a PROMOTION, which is the word XI-15
+already had for it. Ageing and retirement are that event and nothing else: the last band is the one
+the registry puts past working age, labour reads the band, and no retirement mechanism exists.
+
+**And PROBATE, because a cell cannot pay a cell.** What the dead held goes to a named party — whose
+side of a leg is the total, so it can take a thing to the piece — and is divided from there in whole
+pieces for every heir, with what will not divide staying on a named book until enough has
+accumulated. `ctx.cells.die` refuses a cell that still holds something: no death without a
+destination and no residual with no holder are one rule, enforced where a cell ends.
+
+**Two kernel defects, found by being the first cell ever to issue anything.** `payToHolders`
+denominated the HOLDER's side of a coupon per member and left the payer's at `none`, so the first
+payment a cell owed was refused. And settlement booked an issuer's liability at the ISSUED TOTAL
+against an equity account kept PER MEMBER — the same number for a named party, and a million
+households' worth against one household's equity for a cell.
+
+**Half the basket 13c.2 built was inert** and nobody had noticed: clothing, furniture, appliances,
+electronics and vehicles all rounded to nothing per member before they reached a book. The grid fix
+was worth more outside housing than in it.
+
+**Three findings positioned.** A fund gains equity when a holder of its shares is not a cell
+(measured: three reds to five once probate holds ETF shares) → **13h**. A borrower that misses goes
+on accruing on the lender's book while nothing moves on its own, so its balance sheet drifts by
+exactly the interest it did not pay — the reason a household mortgage is built but not switched on,
+with Labour E4 and Households E3/E4 behind it → **13f**. The rig's twelve firms cannot cover
+sixty-two lines, and making every line present means deriving the population from the firms the draw
+actually made → **16**.
+
+**Forecast, with what would kill it (Law 17).** An ageing population should tilt what this world
+makes towards care and away from teaching, and should raise the dwellings it needs for the same
+number of people, because the retired cohort's basket says both. Two falsifications, both 16's: hold
+the cohort shares fixed and the tilt should vanish; move people across the boundary faster and it
+should arrive sooner. If the composition does not move with the age structure, something is
+averaging the cohorts that should not be.

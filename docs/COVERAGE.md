@@ -1388,6 +1388,7 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 |---|---|---|
 | `Households A1` | MET | packages/engine/src/mechanisms/households/index.ts (it earns, decides what to spend, saves what is left and owns what it bought) |
 | `Households A2` | PARTIAL | packages/engine/src/mechanisms/households/consume.ts decides per cell from that cell own income, cash, holdings and surprises, so cells with different histories decide differently; life stage is a cohort and employment state is a row, and a cell that borrows arrives with credit (worklist 6) |
+| `Households A2.b` | MET | packages/engine/src/mechanisms/households/data.ts (13d.1: the same income in different hands is different demand because the basket is two physical quantities per member, so the share going on food falls as income rises — per CELL, from its own budget meeting its own prices, rather than per band. A wealth band would be a second writer of one outcome and a coarser one) |
 | `Households A2.d` | MET | packages/engine/src/mechanisms/households/index.ts (every decision is one cell own, and there is no sector anywhere for one to be taken at) |
 | `Households A2.e` | MET | packages/engine/src/parties/party.ts, packages/engine/src/registry/profiles.ts |
 | `Households A2.f` | MET | packages/engine/src/parties/party.ts |
@@ -1415,8 +1416,11 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 | `Households E3` | MISSING |  |
 | `Households E4` | MISSING |  |
 | `Households E5` | MISSING |  |
-| `Households F1` | MISSING |  |
-| `Households F2` | MISSING |  |
+| `Households F1` | MET | packages/engine/src/mechanisms/households/lifecycle.ts (13d.1: a cohort is an age band and the band is in the cell's key, so getting older is a SPLIT WITH A DIFFERENT KEY — exact, per-member state and all, and nothing crosses. How many cross is one over the band's own span in periods, read off the registry's ages and the calendar's week) |
+| `Households F1.a` | MET | packages/engine/src/world/cells.ts `reKeyCell` (the weight event is a PROMOTION, which is the word XI-15 already had for it: the members did not enter, they did not die, and the cell they left is not being renamed) |
+| `Households F1.b` | MET | packages/engine/src/mechanisms/households/data.ts, lifecycle.ts (mortality is TECHNOLOGY declared per cohort — two in a thousand a year while working, four in a hundred past it — and the difference between the rows is what makes an ageing population change what an economy owns and who owns it) |
+| `Households F2` | MET | packages/engine/src/mechanisms/households/lifecycle.ts (PROBATE: a cell cannot pay a cell, because two weights share no whole number of pieces, so what the dead held goes to a NAMED party that can take it to the piece and hand it on. `ctx.cells.die` refuses a cell that still holds something) |
+| `Households F2.a` | MET | packages/engine/src/mechanisms/households/lifecycle.ts `settleEstates` (each heir gets a whole number of pieces for every one of its members, and what will not divide stays on a named book — no residual with no holder, and nothing rounded away) |
 | `Households F3` | MISSING |  |
 | `Households F4` | MISSING |  |
 
