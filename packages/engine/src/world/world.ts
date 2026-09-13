@@ -98,6 +98,7 @@ import type {
   PhaseDecl,
   Valuer,
   ClearingCapacity,
+  TermsDecision,
 } from './module.js';
 import { revalue } from './revalue.js';
 import type { Qty } from '../core/tick.js';
@@ -179,6 +180,14 @@ export class World {
   /** Derivative Layer E1: the one module that says what a clearing member may carry. */
   private capacity: { owner: string; capacity: ClearingCapacity } | undefined;
   private readonly creditDeciders = new Map<PartyKindId, { owner: string; decide: CreditDecision }>();
+  /** Trade Credit A3 (13e): who answers whether a seller of a kind ships on terms, and with what. */
+  private readonly termsDeciders = new Map<
+    PartyKindId,
+    {
+      owner: string;
+      decide: TermsDecision;
+    }
+  >();
   /** Banks Funding E1: the one module that answers where a depositor of a kind wants to bank. */
   private readonly bankChoosers = new Map<
     PartyKindId,
@@ -530,6 +539,26 @@ export class World {
   /** Whether some module takes charge of what happens when a party of this kind fails (XI-3). */
   resolvesItsOwn(kind: PartyKindId): boolean {
     return this.resolvers.has(kind);
+  }
+
+  /**
+   * Trade Credit A1, A3, B5 (13e): exactly one module answers whether a seller of a kind ships on
+   * terms (Law 4). A second would be two sellers' judgements about one sale.
+   */
+  provideTerms(
+    owner: string,
+    kind: PartyKindId,
+    decide: TermsDecision,
+  ): void {
+    forbid(!this.sealed, 'Law 10', 'terms are declared at assembly');
+    const held = this.termsDeciders.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Trade Credit A3',
+        `${owner} would be a second decider of what ${kind} ships on, after ${held.owner}`,
+      );
+    }
+    this.termsDeciders.set(kind, { owner, decide });
   }
 
   provideCreditDecision(owner: string, kind: PartyKindId, decide: CreditDecision): void {
@@ -1763,6 +1792,13 @@ export class World {
       accountOf: this.accountOf,
       accruedPerUnit: (instrument, at) => this.accruedPerUnit(instrument, at),
       instrumentIssuer: (instrument) => this.instruments.get(instrument).issuer,
+      // Trade Credit A1, A3 (13e): what the buyer pays with, which is the SELLER's decision and
+      // therefore its own module's. None is cash, which is what every market did before this door.
+      onTerms: (sale) => {
+        const decider = this.termsDeciders.get(this.parties.get(sale.seller).kind);
+        if (decider === undefined) return none<InstrumentId>();
+        return decider.decide(this.mechanismContext(decider.owner), sale);
+      },
       kinds: {
         contract: {
           derivativeKind: (kind) => this.registry.derivativeKind(kind),

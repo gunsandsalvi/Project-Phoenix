@@ -14,7 +14,7 @@ import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
 import type { ContractMarketDecl, MarketDecl, MarketKind } from '../clearing/market.js';
 import type { VenueDecl } from '../clearing/venue.js';
-import type { InstrumentKindId, MarketId, PartyKindId } from '../core/ids.js';
+import type { InstrumentId, InstrumentKindId, MarketId, PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
 import type {
   InstrumentKindProfile,
@@ -232,6 +232,21 @@ export interface ContractAsk {
   readonly struck: number;
 }
 
+/**
+ * Trade Credit A1, A3 (13e): THE SALE A SELLER IS BEING ASKED TO SHIP ON TERMS. What is sold is
+ * part of it, because terms are what a supplier gives a customer for goods; a firm selling its own
+ * paper is raising money and is paid for it (Clearing B2), and the seller's decision says so.
+ */
+export interface TermsSale {
+  readonly seller: PartyId;
+  readonly buyer: PartyId;
+  readonly ccy: CurrencyCode;
+  readonly cash: number;
+  readonly sold: InstrumentId;
+}
+
+export type TermsDecision = (ctx: MechanismContext, sale: TermsSale) => Option<InstrumentId>;
+
 export interface SystemModule {
   /** Stable id, also the directory name under src/mechanisms or src/seeds. */
   readonly id: string;
@@ -295,6 +310,21 @@ export interface SystemModule {
    * its bank must have one.
    */
   readonly bankChoices?: readonly BankChoiceDecl[];
+  /**
+   * Trade Credit A1, A3, B5 (13e): WHETHER A SELLER OF THIS KIND SHIPS ON TERMS, and what it takes
+   * instead of money. Exactly one module may answer for a kind, and a kind nobody answers for sells
+   * for cash — which is what every market did before there was any such thing.
+   *
+   * It is the same door `creditDecisions` and `bankChoices` are, for the same reason (Clearing B2):
+   * extending credit to a customer is the SELLER's judgement of that customer, taken with the
+   * seller's own view of it, and the kernel has no business guessing at it. What comes back is the
+   * ROW to write — the module issues it, because an invoice is its instrument — and the kernel
+   * writes the leg, because settlement is the one writer of a movement.
+   */
+  readonly termsOffered?: readonly {
+    readonly partyKind: PartyKindId;
+    readonly decide: TermsDecision;
+  }[];
   /**
    * XI-3, Banks Capital C3.b: party kinds whose FAILURE this module takes charge of itself, so the
    * estate does not open one for them. A bank is the case: its liabilities are the money everybody

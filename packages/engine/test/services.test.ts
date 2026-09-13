@@ -100,7 +100,17 @@ describe('the curve under a want (Goods C1, Clearing A2, Law 6)', () => {
 });
 
 describe('the sixteen lines that cannot be put in a box (13c.2)', () => {
-  const services = GOODS.filter((g) => !g.portable);
+  /**
+   * WHAT A SERVICE IS, stated once. An hour of teaching cannot be moved — but neither can a house,
+   * and a house is not a service. What divides them is that NOTHING IS LEFT OF A SERVICE at the end
+   * of the period it was made in: it is consumed as it is produced, which is why it has no stock, no
+   * lead time and no warehouse. A dwelling is the opposite of that and stands for decades.
+   *
+   * So `portable` says where a unit may BE and perishing says whether there is a unit to be
+   * anywhere later; a service is both. (13d added the dwelling, which is the first line in this
+   * world that is unmovable and keeps.)
+   */
+  const services = GOODS.filter((g) => !g.portable && g.spoilagePerPeriod === 1);
 
   it('has a service economy at all, and it is most of the lines a person works in', () => {
     expect(services.length).toBeGreaterThanOrEqual(16);
@@ -115,6 +125,17 @@ describe('the sixteen lines that cannot be put in a box (13c.2)', () => {
       expect(g.storagePerUnit).toBeNull();
       // The ground is in the premises it is made in; counting it again would be counting it twice.
       expect(g.standsOn).toBeNull();
+    }
+  });
+
+  it('leaves the unmovable things that KEEP out of it, because they are not services', () => {
+    const kept = GOODS.filter((g) => !g.portable && g.spoilagePerPeriod !== 1);
+    // A dwelling cannot be moved and is still a thing somebody owns: it has a lead time, it wears
+    // out slowly, and what it is worth is what somebody will pay to be in it (13d, Housing A1).
+    expect(kept.length).toBeGreaterThan(0);
+    for (const g of kept) {
+      expect(g.leadTimePeriods).toBeGreaterThan(0);
+      expect(g.spoilagePerPeriod).toBeLessThan(1);
     }
   });
 

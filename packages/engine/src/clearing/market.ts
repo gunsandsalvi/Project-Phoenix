@@ -33,7 +33,7 @@ import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
 import { asQty, commonGrain, downTick, downToGrain, downToTick, toGrain, upToTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
-import type { AccountRef, InstructionDraft, Leg } from '../ledger/instruction.js';
+import type { AccountRef, InstructionDraft, Leg, CellSide} from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
 import { weightOf, type Parties } from '../parties/party.js';
 import { struckIn, type PriceStore, type StaleReason } from '../prices/price-store.js';
@@ -185,6 +185,28 @@ export interface MarketRunDeps {
   readonly accruedPerUnit: (instrument: InstrumentId, period: Period) => number;
   /** Who promised it, when somebody did: a physical thing has nobody on that side (Goods A1). */
   readonly instrumentIssuer: (instrument: InstrumentId) => Option<PartyId>;
+  /**
+   * Trade Credit A1, A2, A3 (13e): DOES THIS SELLER SHIP THIS BUYER ON TERMS, and against what?
+   *
+   * A sale is goods one way and VALUE the other, and the value is money only when the seller wants
+   * it now. When it ships on terms the buyer pays with a PROMISE — one row, the seller's receivable
+   * and the buyer's payable read from two sides (A1) — and no money moves at all until the promise
+   * falls due. Both legs are still there and both are in this instruction (Law 5); what changes is
+   * what the second one is made of.
+   *
+   * The kernel cannot decide it: whether to extend terms is the SELLER's judgement of the BUYER
+   * (B5), taken with the seller's own view, so the module that owns the seller's kind answers and
+   * hands back the row to write. None means cash, which is what every market did before there was
+   * any such thing.
+   */
+  readonly onTerms?: (sale: {
+    readonly seller: PartyId;
+    readonly buyer: PartyId;
+    readonly ccy: CurrencyCode;
+    readonly cash: Qty;
+    /** A1: WHAT IS BEING SOLD. Terms are a thing a supplier ships on, not a way to buy paper. */
+    readonly sold: InstrumentId;
+  }) => Option<InstrumentId>;
   /** Register A1.c: what this line is counted in, so its smallest piece can be asked for. */
   readonly unitOf: (instrument: InstrumentId) => UnitId;
   /**
@@ -760,6 +782,49 @@ function fxTrade(
   return some({ legs, cause: 'trade', reason: `${m.name}: ${t.qty} @ ${price}` });
 }
 
+/**
+ * Trade Credit A1, A2 (13e): WHAT THE BUYER PAYS WITH. Money, or a promise the seller agreed to
+ * take — one row that is the seller's receivable and the buyer's payable at once, issued in the
+ * same numbered instruction the goods move in, so there is never an instant where one side has
+ * parted with something and the other has given nothing (XI-5).
+ */
+function payment(
+  m: AssetMarketDecl,
+  t: Trade,
+  cash: Qty,
+  buyerCashCell: CellSide | undefined,
+  sellerCashCell: CellSide | undefined,
+  deps: MarketRunDeps,
+): Leg {
+  const promise =
+    deps.onTerms?.({ seller: t.seller, buyer: t.buyer, ccy: m.ccy, cash, sold: m.instrument }) ??
+    none<InstrumentId>();
+  if (promise.some) {
+    return {
+      kind: 'asset',
+      from: t.buyer,
+      to: t.seller,
+      instrument: promise.value,
+      qty: cash,
+      // A2: a promise to pay a sum is worth the sum when it is made. What it is worth later is the
+      // holder's own question, and a late one is worth less to whoever is waiting (D1).
+      pricePerUnit: some(1),
+      accruedPerUnit: none(),
+      fromCell: buyerCashCell === undefined ? none() : some(buyerCashCell),
+      toCell: sellerCashCell === undefined ? none() : some(sellerCashCell),
+    };
+  }
+  return {
+    kind: 'money',
+    from: deps.accountOf(t.buyer, m.ccy),
+    to: deps.accountOf(t.seller, m.ccy),
+    ccy: m.ccy,
+    amount: cash,
+    fromCell: buyerCashCell === undefined ? none() : some(buyerCashCell),
+    toCell: sellerCashCell === undefined ? none() : some(sellerCashCell),
+  };
+}
+
 function assetTrade(
   m: AssetMarketDecl,
   t: Trade,
@@ -794,15 +859,7 @@ function assetTrade(
       fromCell: sellerCell === undefined ? none() : some(sellerCell),
       toCell: buyerCell === undefined ? none() : some(buyerCell),
     },
-    {
-      kind: 'money',
-      from: deps.accountOf(t.buyer, m.ccy),
-      to: deps.accountOf(t.seller, m.ccy),
-      ccy: m.ccy,
-      amount: cash,
-      fromCell: buyerCashCell === undefined ? none() : some(buyerCashCell),
-      toCell: sellerCashCell === undefined ? none() : some(sellerCashCell),
-    },
+    payment(m, t, cash, buyerCashCell, sellerCashCell, deps),
   ];
   const issuer = deps.instrumentIssuer(m.instrument);
   const cause = issuer.some && t.seller === issuer.value ? 'issuance' : 'trade';

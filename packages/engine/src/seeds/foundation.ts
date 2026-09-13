@@ -101,6 +101,7 @@ import { estate } from '../mechanisms/estate/index.js';
 import { creditEvents } from '../mechanisms/credit-events/index.js';
 import { commodities, STORAGE_KIND } from '../mechanisms/commodities/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
+import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
@@ -2211,6 +2212,10 @@ export function foundationSpec(
       // period and not the thing itself. Rent clears between what letting WEARS the owner and what
       // a household can pay rather than have nowhere, and nothing in either is a coefficient.
       housing(),
+      // 13e, Trade Credit A1-A3: MOST OF THE CREDIT IN AN ECONOMY IS NOT A BANK'S. After the firms
+      // and the goods, because what it decides is whether a SALE between two of them settles in
+      // money or in a promise; the kernel writes the leg either way, in the one instruction.
+      tradeCredit(),
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
