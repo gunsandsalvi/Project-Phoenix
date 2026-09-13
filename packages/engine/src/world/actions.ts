@@ -101,6 +101,9 @@ function payToHolders(
       kind: 'money',
       from: d.accountOf(issuerOf(i), i.ccy),
       to: d.accountOf(holderId, i.ccy),
+      // Treasury C1: interest received, said by the payer. `cause: 'coupon'` below is the WIRE's
+      // label for why bytes moved; this is what the money IS to the party getting it.
+      receipt: { of: 'interest' },
       ccy: i.ccy,
       amount: total,
       fromCell: optionalCell(
@@ -252,6 +255,10 @@ function redeem(i: Instrument, period: Period, cycle: Cycle, d: ActionDeps): voi
         kind: 'money',
         from: d.accountOf(issuerOf(i), i.ccy),
         to: d.accountOf(holderId, i.ccy),
+        // Treasury C1: A PRINCIPAL COMING BACK IS NOT INCOME. It is the holder's own money
+        // returning, and taxing it as income taxed the whole face of every bill every time one
+        // matured (A-46). Nothing about the wire could tell the two apart; the payer can.
+        receipt: { of: 'returnOfCapital' },
         ccy: i.ccy,
         amount: units,
         fromCell: none(),

@@ -4248,3 +4248,51 @@ somebody declares, not a change to this door.
 
 **Measured.** `funds.test.ts` — 2 red before this change and the same 2 after, by name. Green: lint,
 typecheck, spec citations, forbids, plan progress, `worth.test.ts` 5 of 5.
+
+
+## Item 5 — a receipt says what money is to whoever gets it
+
+**What.** `MoneyLeg.receipt` — a closed union the ledger owns, stated by the payer — and a treasury
+that dispatches over it instead of inferring from the wire.
+
+**What it replaced.** The income-tax base was every money leg into a household, from anyone but the
+treasury, that was not a `coupon`. The only discriminator in the whole tax was
+`r.instruction.cause === 'coupon'`, and `Cause` is nine SETTLEMENT labels for why bytes moved. So a
+household was taxed at the wage rate on gross share-sale proceeds, on a maturing bill's principal, on
+a fund redemption, on a probate distribution and on a loan drawdown. Borrowing was income.
+
+**THE PAYER SAYS, because the payer knows.** A wage phase knows it is paying a wage; the taxman
+working it out from the shape of the wire is the defect. Five sites now say what they pay: wages
+(`labour/matching.ts`), coupons (`world/actions.ts`), deposit interest (`money-market/deposits.ts`),
+a returned principal at maturity, the treasury's own standing mandate, and an estate being divided.
+A receipt nobody classified is **not taxed** and is counted — `bases.unclassified` is published in
+the receipts event, so the size of the remaining gap is a number rather than a silence.
+
+**The measurement, and it is the whole argument.** In the scale model at six periods the old income
+base was **11,519,429**, and **not one penny of it was a wage**: 132 state transfers under the
+standing mandate and 18 estates divided by probate. The income tax was a tax on benefits and
+inheritance. After classification `unclassified` is **0** — every penny reaching a household in this
+world is named — and the income base is **0**, because no household here is paid a wage at all. That
+zero is a finding about the world, not about the tax. Interest is unaffected and real: 14,313,339 of
+base, 2,835,724 collected.
+
+**One naming decision worth recording.** The union's tag is `of`, not `kind`. `kind` in this engine
+means a REGISTRY kind and `phoenix/no-kind-branch` enforces Law 15 by that spelling — it fired on the
+switch, correctly, because it cannot tell a closed union from a registry kind. Renaming the tag keeps
+the rule absolute with no disable anywhere, and says at the point of use which of the two things this
+is. An exhaustive switch with `assertNever` over a ledger-owned union is what the error discipline
+asks for.
+
+**Carried, and named.** A `disposal`'s gain is `proceeds − basis` and the arithmetic is in place, but
+nothing emits a `disposal` receipt yet: the market settlement holds the basis at the debit and does
+not pass it along. That is the next step on this item and it is what finally makes A-37 ("selling an
+asset counts as income") false rather than merely untested. A capital-gains rate distinct from the
+income rate, and a dividend rate, are POLICY primitives the polity owns (item 14).
+
+**Forecast, with its killer.** From here the tax base is what payers declared, and a new payment
+route cannot silently become taxable income. **What would falsify it:** `unclassified` climbing as
+sectors come alive — which would be the read working, not failing.
+
+**Measured.** `households`, `treasury` and `estate` — the three files this reaches: **10 red before,
+the same 10 after, by name.** Green: lint, typecheck, spec citations, forbids, plan progress, 21
+tests across the four files this work has added.

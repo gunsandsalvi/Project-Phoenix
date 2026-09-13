@@ -45,10 +45,60 @@ export interface CellSide {
   readonly weight: number;
 }
 
+/**
+ * Treasury C1, Reporting G2, Law 1: WHAT KIND OF RECEIPT THIS IS FOR WHOEVER GETS IT.
+ *
+ * Money arriving somewhere MEANS something, and the meaning is not the same for a wage, a coupon,
+ * the proceeds of a sale, a returned principal and a loan drawdown. Nothing in this world carried
+ * that. The only vocabulary near it was `Cause` — nine SETTLEMENT labels for why bytes moved — and
+ * the income tax read them: every money leg into a household from anyone but the treasury that was
+ * not a `coupon` was income. So a household was taxed at the wage rate on gross share-sale proceeds,
+ * on a maturing bill's PRINCIPAL, on a fund redemption, on a probate distribution and on a loan
+ * drawdown. Borrowing was income (`docs/AUDIT.md` item 5, A-46, A-37, A-63).
+ *
+ * THE PAYER SAYS, because the payer knows: the wage phase knows it is paying a wage, and the taxman
+ * inferring it from the shape of the wire is the defect. A `disposal` carries the BASIS of what was
+ * sold, which the register already hands over at the debit and which nothing has ever read, so a
+ * gain is `proceeds − basis` and not the gross.
+ *
+ * Absent means UNCLASSIFIED, and the reach read publishes how much of the world's money movement is
+ * still in that state. It does not mean income: taxing what nobody classified at the wage rate is
+ * the thing this exists to stop.
+ */
+/**
+ * The tag is `of` and not `kind`, deliberately. `kind` in this engine means A REGISTRY KIND — an
+ * instrument's, a party's — and Law 15 forbids a mechanism branching on one, which the lint enforces
+ * by the spelling. This is a closed union the ledger owns, and an exhaustive switch over it with
+ * `assertNever` is what the error discipline asks for. Two different things, two different words.
+ */
+export type Receipt =
+  | { readonly of: 'wage' }
+  | { readonly of: 'rent' }
+  | { readonly of: 'interest' }
+  | { readonly of: 'dividend' }
+  /** Law 19: the basis comes from the lots the debit drew, never from anybody's own arithmetic. */
+  | { readonly of: 'disposal'; readonly basis: number }
+  | { readonly of: 'returnOfCapital' }
+  | { readonly of: 'borrowing' }
+  | { readonly of: 'transfer' };
+
+export const RECEIPT_KINDS = [
+  'wage',
+  'rent',
+  'interest',
+  'dividend',
+  'disposal',
+  'returnOfCapital',
+  'borrowing',
+  'transfer',
+] as const;
+
 export interface MoneyLeg {
   readonly kind: 'money';
   readonly from: AccountRef;
   readonly to: AccountRef;
+  /** What this money IS to the party receiving it (`Receipt`). Absent is unclassified, never income. */
+  readonly receipt?: Receipt;
   readonly ccy: CurrencyCode;
   /** Law 8: total amount that moves, as a count of the money's own smallest piece. */
   readonly amount: Qty;

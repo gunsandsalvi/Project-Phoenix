@@ -15,6 +15,7 @@
  * FAILS, is journalled as a shortfall, and the next programme sees it. That is the constraint the
  * whole system hangs on (XI-9), and it is what makes a failed auction cost something.
  */
+import { assertNever } from '../../core/assert.js';
 import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
@@ -671,6 +672,10 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
       kind: 'money',
       from: ctx.accountOf(id, ccy),
       to: ctx.accountOf(p.id, ccy),
+      // C1, B2: THE STATE DOES NOT TAX BACK THE TRANSFER IT JUST PAID. It was a comment above
+      // `runReceipts` and a `from.holder !== id` test; it is now what the payment SAYS it is, so it
+      // holds for any transfer from anywhere and not only for this treasury's own.
+      receipt: { of: 'transfer' },
       ccy,
       amount: total,
       fromCell: none(),
@@ -710,7 +715,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   const onConsumption = ctx.params.ratio(TREASURY_PARAMS.taxConsumption);
   const cells = new Set(itsPeople(ctx, id).map((p) => p.id));
   const due = new Map<PartyId, number>();
-  const bases = { interest: 0, income: 0, consumption: 0 };
+  const bases = { interest: 0, income: 0, consumption: 0, unclassified: 0 };
   for (const r of ctx.ledger.inPeriod(previous)) {
     if (r.outcome !== 'settled') continue;
     // C1: what a household bought in this instruction is what it paid for the real things in it.
@@ -740,12 +745,59 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         addTo(due, leg.from.holder, mul(leg.amount, onConsumption, 'consumption tax'));
       }
       if (leg.to.holder === id) continue;
-      if (r.instruction.cause === 'coupon') {
-        bases.interest = add(bases.interest, leg.amount, 'interest received');
-        addTo(due, leg.to.holder, mul(leg.amount, onInterest, 'tax on interest'));
-      } else if (cells.has(leg.to.holder) && leg.from.holder !== id) {
-        bases.income = add(bases.income, leg.amount, 'what households were paid');
-        addTo(due, leg.to.holder, mul(leg.amount, onIncome, 'income tax'));
+      /**
+       * C1, Law 15: THE BASE IS WHAT THE PAYER SAID THIS RECEIPT IS, dispatched, never inferred.
+       *
+       * It used to read `r.instruction.cause === 'coupon'` and treat EVERYTHING ELSE arriving at a
+       * household as income — and `Cause` is nine SETTLEMENT labels for why bytes moved, not a tax
+       * taxonomy. So a household paid income tax at the wage rate on gross share-sale proceeds, on a
+       * maturing bill's principal, on a fund redemption, on a probate distribution and on a loan
+       * drawdown. Borrowing was income (A-46, A-37).
+       *
+       * A receipt nobody classified is NOT TAXED and is counted, because taxing the unclassified at
+       * the wage rate is the defect itself. `unclassified` is published in the receipts event, so
+       * how much of this world's money movement still has no name is a number and not a silence.
+       */
+      const receipt = leg.receipt;
+      if (receipt === undefined) {
+        if (cells.has(leg.to.holder) && leg.from.holder !== id) {
+          bases.unclassified = add(bases.unclassified, leg.amount, 'received and unclassified');
+        }
+        continue;
+      }
+      switch (receipt.of) {
+        case 'interest': {
+          bases.interest = add(bases.interest, leg.amount, 'interest received');
+          addTo(due, leg.to.holder, mul(leg.amount, onInterest, 'tax on interest'));
+          break;
+        }
+        case 'wage':
+        case 'rent':
+        case 'dividend': {
+          if (!cells.has(leg.to.holder)) break;
+          bases.income = add(bases.income, leg.amount, 'what households were paid');
+          addTo(due, leg.to.holder, mul(leg.amount, onIncome, 'income tax'));
+          break;
+        }
+        case 'disposal': {
+          if (!cells.has(leg.to.holder)) break;
+          // Law 19: THE GAIN, and the basis is the one the register handed over at the debit —
+          // never anybody's own arithmetic. A disposal at or below what it cost is not a gain, and
+          // there is no such thing as a negative base: what a loss does is this item's successor's.
+          const gain = sub(leg.amount, receipt.basis, 'what it made on the sale');
+          if (gain <= 0) break;
+          bases.income = add(bases.income, gain, 'gains households realised');
+          addTo(due, leg.to.holder, mul(gain, onIncome, 'tax on the gain'));
+          break;
+        }
+        case 'returnOfCapital':
+        case 'borrowing':
+        case 'transfer':
+          // Its own money coming back, money it must repay, and money the state itself moved. None
+          // of the three is income and each used to be taxed as one.
+          break;
+        default:
+          assertNever(receipt, 'Treasury C1');
       }
     }
   }

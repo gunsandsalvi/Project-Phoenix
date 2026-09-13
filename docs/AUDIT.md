@@ -115,7 +115,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **2** | Missing is Missing | 5 | a defaulted zero defeats both **1** and **16** |
 | **3** | `PublishedStatement` | 0 | **corrected**: does not block 4 — accounts are already published to the journal and read cross-module. A typed read, after 4. |
 | **4** | `worthTo` | 1 | **BUILT** — the valuation door. `liquidity` and an equity mandate remain |
-| **5** | `ReceiptKind` | 6 | independent; everything above it touches money |
+| **5** | `Receipt` | 6 | **BUILT** — the tax is a dispatch. Emitting `disposal` from a trade remains |
 | **6** | `View` | 1 | independent; **4** wants it for the borrower haircut |
 | **7** | `Lifecycle` | 2 | independent; **8** and 13n want the states |
 | **8** | `Agreement` | 9 | needs **5** — an agreement performing is a receipt |
@@ -1201,7 +1201,32 @@ and a bond"_) and is nowhere in the code. The fund kind knows the answer — `ma
 
 ---
 
-## 5. `ReceiptKind` — money arriving somewhere means something
+## 5. `Receipt` — money arriving somewhere means something
+
+> **BUILT.** `MoneyLeg.receipt?: Receipt` — a closed union the ledger owns, stated by the PAYER,
+> because the payer knows: a wage phase knows it is paying a wage. `wage | rent | interest |
+> dividend | disposal{basis} | returnOfCapital | borrowing | transfer`. The tag is `of` and not
+> `kind`, because `kind` in this engine means a REGISTRY kind and Law 15's lint enforces that by the
+> spelling — two different things, two different words.
+>
+> The treasury dispatches over it with `assertNever` and no longer reads `Instruction.cause`. A
+> receipt nobody classified is **not taxed** and is COUNTED: `bases.unclassified` is published in
+> the receipts event, so how much of the world's money movement still has no name is a number.
+>
+> **THE MEASUREMENT.** In the scale model at six periods the old income tax had a base of
+> **11,519,429** — and **not one penny of it was a wage.** All of it was the treasury's own standing
+> mandate (132 transfers) and estates being divided by probate (18). The income tax was a tax on
+> benefits and inheritance. With payers classifying, `unclassified` is **0** and the income base is
+> **0**, because no household in this world is paid a wage at all. The zero is the finding.
+>
+> Interest still collects — 14,313,339 of base, 2,835,724 collected — which is what a real base
+> looks like.
+>
+> **Carried.** A `disposal`'s gain is `proceeds − basis` and the code is there, but nothing yet
+> emits a `disposal` receipt: the market settlement has the basis at the debit and does not pass it.
+> That is the next step on this item. A capital-gains RATE distinct from the income rate is a policy
+> primitive the polity owns (**14**), and a dividend rate likewise.
+
 
 **Why.** Six findings, and one line. The income-tax base is `treasury/index.ts:747`: every money leg
 into a household cell, from anyone but the treasury, that is not a coupon. The **only** discriminator

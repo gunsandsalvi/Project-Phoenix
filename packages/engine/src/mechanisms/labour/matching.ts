@@ -494,6 +494,9 @@ function payFrom(
     kind: 'money',
     from: ctx.accountOf(payer, ccy),
     to: ctx.accountOf(cell, ccy),
+    // Treasury C1: THE PAYER SAYS WHAT THIS IS. An employer knows it is paying a wage, and the
+    // taxman working it out from the shape of the wire is what taxed a returned principal as income.
+    receipt: { of: 'wage' },
     ccy,
     amount: share.total,
     fromCell: none(),

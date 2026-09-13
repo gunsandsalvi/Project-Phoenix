@@ -190,6 +190,9 @@ export function payDepositInterest(
       kind: 'money',
       from: paying ? { holder: bank, issuer: bank } : { holder, issuer: bank },
       to: paying ? { holder, issuer: bank } : { holder: bank, issuer: bank },
+      // Treasury C1: interest either way — the bank paying a depositor, or a customer paying the
+      // bank on an overdrawn account. What it IS does not change with which way it goes.
+      receipt: { of: 'interest' },
       ccy,
       amount: share.total,
       fromCell: paying || side === undefined ? none() : some(side),

@@ -298,6 +298,9 @@ export function settleEstates(ctx: MechanismContext): void {
           kind: 'money',
           from: ctx.accountOf(office.id, ccy),
           to: ctx.accountOf(heir, ccy),
+          // Treasury C1, XI-8: an inheritance is a TRANSFER of what somebody already owned, not
+          // something the heir earned. It was taxed as income at the wage rate (A-46).
+          receipt: { of: 'transfer' },
           ccy,
           amount: asQty(mul(perMember, weight, 'what they get between them')),
           fromCell: none(),
