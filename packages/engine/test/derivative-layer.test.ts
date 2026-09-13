@@ -141,7 +141,7 @@ function book(opts: {
           name: `a fixture that trades ${line.id}`,
           bank: bank.id,
           representation: 'named',
-          status: { alive: true },
+          status: { alive: true, standing: 'good' },
         });
         // Enough of each that neither runs out over a year of swapping sides, and NO MORE: an
         // endowment is a liability of whoever issued what it holds (Seed A4), so a fixture that

@@ -473,7 +473,7 @@ export function deepBuyer(
         name: 'A buyer',
         bank,
         representation: 'named',
-        status: { alive: true },
+        status: { alive: true, standing: 'good' },
       });
       const deep = upTick(mul(firmMoney(ctx, draw), DEEP, 'far deeper pockets than a firm'));
       ctx.endowMoney(DEEP_BUYER, USD, deep);

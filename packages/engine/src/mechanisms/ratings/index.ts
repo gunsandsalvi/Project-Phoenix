@@ -302,7 +302,7 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
           name: d.name,
           bank,
           representation: 'named',
-          status: { alive: true },
+          status: { alive: true, standing: 'good' },
         });
       }
     },

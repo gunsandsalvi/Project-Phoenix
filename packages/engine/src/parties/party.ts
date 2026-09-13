@@ -15,9 +15,38 @@ import { cohortId, type PartyId, type PartyKindId, regionId, type RegionId } fro
 import { positiveCount } from '../core/num.js';
 import type { CellKeyDimension, Registry } from '../registry/registry.js';
 
+/**
+ * XI-3, §25 C, XI-8, XI-1: THE STATES BETWEEN ALIVE AND DEAD.
+ *
+ * `PartyStatus` was `{alive:true} | {alive:false}` — binary — so **a bank in resolution was
+ * `alive: true`**, indistinguishable from one nobody had a claim against. Everything an economy
+ * does between those two words had nowhere to be, and each mechanism that needed one built half a
+ * lifecycle of its own: `estate` keeps a `Winding` record in a private bag because there was no
+ * state to put it in, XI-1 publishes a default that changes no status, and §25's resolution runs
+ * over a party the type says is fine (`docs/AUDIT.md` item 7).
+ *
+ * These four are what the specification actually names. Nothing here is a severity scale and the
+ * order is not a ladder: a party can go from `good` straight to `inResolution` without ever having
+ * missed a payment, which is what a capital trigger IS (Banks Capital C1.a).
+ */
+export type Standing =
+  /** Paying what it owes as it falls due, with no process running over it. */
+  | 'good'
+  /** It has failed to pay something and the failure stands (Money E1, XI-1). */
+  | 'distressed'
+  /** An authority has it: somebody else now decides what happens to its book (§25 C1). */
+  | 'inResolution'
+  /** It has stopped trading and its estate is being divided; it still holds things (XI-8). */
+  | 'winding';
+
+export const STANDINGS: readonly Standing[] = ['good', 'distressed', 'inResolution', 'winding'];
+
 export type PartyStatus =
-  | { readonly alive: true }
+  | { readonly alive: true; readonly standing: Standing }
   | { readonly alive: false; readonly ceasedIn: Period; readonly successor: PartyId };
+
+/** Whether a party is in the ordinary course, which is what most readers of `alive` mean. */
+export const inGoodStanding = (s: PartyStatus): boolean => s.alive && s.standing === 'good';
 
 /**
  * XI-15: a cell's key is the value of every dimension the REGISTRY declares, and of nothing else.
@@ -265,8 +294,30 @@ export class Parties {
     );
     this.map.set(
       id,
-      Object.freeze({ ...p, status: { alive: false, ceasedIn: period, successor } }),
+      Object.freeze({
+        ...p,
+        status: { alive: false as const, ceasedIn: period, successor },
+      }),
     );
+  }
+
+  /**
+   * XI-3, §25 C1, XI-8: MOVE A LIVING PARTY BETWEEN THE STATES IT CAN BE IN, with a cause.
+   *
+   * The only other thing that happens to a status is `cease`, which is the end. This is everything
+   * before it, and until now there was nothing before it: a party was fine or it was gone, so a
+   * bank under resolution and a bank nobody had a claim against were the same value.
+   *
+   * It refuses a dead party, because a status is a fact about a party that is still there and a
+   * successor's is its own (Register F2). It is not a ladder and nothing here checks an order: a
+   * capital trigger takes a bank straight from `good` to `inResolution` without a missed payment.
+   */
+  standing(id: PartyId, standing: Standing, cause: string): void {
+    const p = this.get(id);
+    // `forbid` asserts, so from here the status is the alive branch and TypeScript knows it.
+    forbid(p.status.alive, 'XI-3', `${id} has ceased and its standing cannot change: ${cause}`);
+    if (p.status.standing === standing) return;
+    this.map.set(id, Object.freeze({ ...p, status: { alive: true as const, standing } }));
   }
 
   /**

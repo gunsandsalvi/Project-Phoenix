@@ -31,7 +31,7 @@ import type { Option } from '../core/option.js';
 import type { Event, EventKind, Journal } from '../journal/journal.js';
 import type { AccountRef, Failed, InstructionDraft, SettlementRecord } from '../ledger/instruction.js';
 import type { Ledger } from '../ledger/ledger.js';
-import type { NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
+import type { Standing, NamedParty, Parties, PartiesReads, Party, WeightEventKind } from '../parties/party.js';
 import type { CurveFamilyDecl, CurveRead } from '../prices/curve.js';
 import type { IndexRead } from '../prices/index-read.js';
 import type { PriceStore, Print } from '../prices/price-store.js';
@@ -654,6 +654,14 @@ export interface MechanismContext extends WorldReads {
   chooseBanks(): void;
   /** A party ceases and every reference resolves to a named successor (Register F2). */
   cease(party: PartyId, successor: PartyId): void;
+  /**
+   * XI-3, §25 C1, XI-8: a living party moves between the states it can be in, with a cause.
+   *
+   * `cease` is the end and this is everything before it — of which there used to be nothing, so a
+   * bank under resolution and a bank nobody had a claim against were the same value. Journalled,
+   * because a change of standing is public: it is what a depositor runs from and a lender prices.
+   */
+  standing(party: PartyId, standing: Standing, cause: string): void;
   record(
     kind: EventKind,
     subjects: readonly string[],

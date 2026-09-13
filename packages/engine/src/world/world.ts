@@ -1531,6 +1531,19 @@ export class World {
       chooseBanks: () => {
         this.chooseBanks();
       },
+      standing: (party, standing, cause) => {
+        const was = this.parties.get(party).status;
+        this.parties.standing(party, standing, cause);
+        if (was.alive && was.standing === standing) return;
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'party.standing',
+          [party],
+          { party, was: was.alive ? was.standing : 'ceased', now: standing, cause },
+          true,
+        );
+      },
       cease: (party, successor) => {
         this.parties.cease(party, this.currentPeriod, successor);
         this.journal.record(

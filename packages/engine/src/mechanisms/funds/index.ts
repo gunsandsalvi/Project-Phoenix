@@ -775,7 +775,7 @@ function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
       name,
       bank,
       representation: 'named',
-      status: { alive: true },
+      status: { alive: true, standing: 'good' },
     });
   }
   const share = shareLineOf(e.fund);
@@ -1278,7 +1278,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
       name,
       bank: bank.id,
       representation: 'named',
-      status: { alive: true },
+      status: { alive: true, standing: 'good' },
     });
   }
   const share = shareLineOf(e.fund);
@@ -1572,7 +1572,7 @@ export function funds(
             name,
             bank: d.bank as PartyId,
             representation: 'named',
-            status: { alive: true },
+            status: { alive: true, standing: 'good' },
           });
         }
         const ccy = ctx.registry.currencyOf(ctx.parties.get(d.fund as PartyId).region);

@@ -420,7 +420,7 @@ function cut(
     name: `${String(d.arranger)} pool ${d.n}`,
     bank: d.arranger,
     representation: 'named',
-    status: { alive: true },
+    status: { alive: true, standing: 'good' },
   });
   const senior = trancheId(d.vehicle, 'senior');
   issueTranche(ctx, d.vehicle, d.ccy, senior, {

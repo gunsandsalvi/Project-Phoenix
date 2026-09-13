@@ -117,7 +117,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | **4** | `worthTo` | 1 | **BUILT** — the valuation door. `liquidity` and an equity mandate remain |
 | **5** | `Receipt` | 6 | **BUILT** — the tax is a dispatch. Emitting `disposal` from a trade remains |
 | **6** | `View` | 1 | **BUILT** — the noun. A bank actually forming a credit view is the mechanism that follows |
-| **7** | `Lifecycle` | 2 | independent; **8** and 13n want the states |
+| **7** | `Lifecycle` | 2 | **BUILT** — four states, wired at the estate and at resolution. `distressed` has no writer yet |
 | **8** | `Agreement` | 9 | needs **5** — an agreement performing is a receipt |
 | **9** | `Control` | 2 | independent; 13o and §29 cannot exist without it |
 | **10** | `CorporateAction` | 1 | independent; reframes worklist 13k |
@@ -1676,6 +1676,33 @@ runs. Defaulting to panic is a modelling choice and nothing states it.
 ---
 
 ## 7. `Lifecycle` — the states between alive and dead
+
+> **BUILT.** `Standing` on the alive branch of `PartyStatus`: `good | distressed | inResolution |
+> winding`, with a transition door on `Parties` and on `MechanismContext`, journalled as
+> `party.standing` with what it was, what it is and why.
+>
+> **The change is small because of where it went.** 129 readers of `status.alive` and only 13
+> constructions, so the state was ADDED to the alive branch: every reader still means what it meant,
+> the compiler forced all 13 constructions to say a standing, and nothing had to be rewritten.
+>
+> **Wired at both places that needed it.** The estate now moves a party to `winding` before ceasing
+> it — the interval where it still holds things and its book is being moved, which was
+> indistinguishable from trading normally. And `resolve()` moves a bank to `inResolution` the moment
+> a trigger fires, so **a bank under resolution is no longer the same value as a bank nobody has a
+> claim against** — which is precisely what a depositor runs from and a lender prices.
+>
+> **It is not a ladder, and the test says so.** Banks Capital C1.a: a capital trigger takes a bank
+> from `good` straight to `inResolution` with nothing missed. A lifecycle that insisted on distress
+> first would be an outcome written as a rule. A party can also come back: a resolution can end with
+> the bank still trading.
+>
+> **Carried, with reasons.** **A-17** (three of XI-15's five weight events never fire, nobody is ever
+> born) needs a BIRTH mechanism, not a state — worklist 13n. **A-36** (the treasury's immortality is
+> unconditional) is `fails: []` on the party kind, and what should fail is a sovereign in a FOREIGN
+> money (Appendix B) — a currency-layer mechanism, not a standing. `distressed` is declared and
+> nothing sets it yet: XI-1 publishes a default that changes no status, and connecting the two is
+> the next step here.
+
 
 **Why.** Two findings, and the type is the whole evidence:
 

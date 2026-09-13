@@ -108,7 +108,7 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
     name: `Estate of ${p.name}`,
     bank: p.bank,
     representation: 'named',
-    status: { alive: true },
+    status: { alive: true, standing: 'good' },
   });
   const ccy = ctx.registry.currencyOf(p.region);
   // D5: everything the dead party ISSUED is assumed by the estate, so a holder of that paper still
@@ -163,6 +163,14 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
           };
     ctx.settle({ legs: [leg], cause: 'transfer', reason: `${dead} to its estate` });
   }
+  /**
+   * XI-8, XI-3: IT IS WINDING BEFORE IT IS GONE, and the difference is not cosmetic. Between the
+   * moment an estate opens and the moment the party ceases, it still holds things and its book is
+   * being moved — and until this state existed it was `alive: true`, indistinguishable from a party
+   * trading normally. That absence is why this module keeps a `Winding` record of its own
+   * (`docs/AUDIT.md` items 0 and 7).
+   */
+  ctx.standing(dead, 'winding', `estate ${id} opened: ${because}`);
   ctx.cease(dead, id);
   const closesAfter = ctx.period + ctx.params.periods(ESTATE_PARAMS.programme);
   b.estates[id] = { dead, opened: ctx.period, closesAfter, closed: false };

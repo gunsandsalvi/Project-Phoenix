@@ -4383,3 +4383,45 @@ are about.
 **Measured.** The five files this reaches: **7 red before, 5 after** — the two it fixed are the ones
 item 0 broke. Green: lint, typecheck, spec citations, forbids, plan progress, `view.test.ts` 5 of 5,
 `doors.test.ts` 19 of 19.
+
+
+## Item 7 — the states between alive and dead
+
+**What.** `Standing` on the alive branch of `PartyStatus` — `good | distressed | inResolution |
+winding` — with a transition door on `Parties` and on `MechanismContext`, journalled as
+`party.standing` carrying what it was, what it is and why.
+
+**Why.** `PartyStatus` was `{alive:true} | {alive:false}`. Binary. **A bank in resolution was
+`alive: true`**, the same value as one nobody had a claim against, so nothing reading a counterparty
+could tell them apart. Everything an economy does between those two words had nowhere to be, and
+each mechanism that needed one built half a lifecycle of its own: `estate` keeps a `Winding` record
+in a private bag because there was no state to put it in, XI-1 publishes a default that changes no
+status, and §25's resolution runs over a party the type says is fine.
+
+**Where it went is why it was cheap.** 129 readers of `status.alive`, 13 constructions. Adding the
+state to the ALIVE BRANCH means every reader still means exactly what it meant, and the compiler
+made all 13 constructions say a standing. Nothing was rewritten and nothing was guessed.
+
+**Wired at both places that needed it, because a type with no writer is what item 1 exists to
+catch.** The estate moves a party to `winding` before ceasing it — the interval where it still holds
+things and its book is being moved. `resolve()` moves a bank to `inResolution` the moment a trigger
+fires.
+
+**Not a ladder, and the test asserts it.** Banks Capital C1.a: a capital trigger takes a bank from
+`good` straight to `inResolution` with no missed payment anywhere, and a resolution can end with the
+bank still trading. Insisting on distress first would be an outcome written as a rule.
+
+**Carried, with reasons rather than silence.** **A-17** — three of XI-15's five weight events never
+fire and nobody is ever born — needs a BIRTH mechanism, not a state; worklist 13n. **A-36** — the
+treasury's immortality is unconditional — is `fails: []` on the party kind, and what Appendix B says
+should fail is a sovereign in a FOREIGN money: a currency-layer mechanism, not a standing. And
+`distressed` is declared with no writer: XI-1 publishes a default that changes no status, and joining
+those two is the next step on this item.
+
+**Forecast, with its killer.** A counterparty's condition is now a fact the world can read, so a
+depositor, a lender and a dealer can act on it. **What would falsify it:** four states turning out to
+be too few — most likely a party that is solvent but cannot pay today, which is a liquidity state
+distinct from `distressed`, and Banks Funding is where that would show.
+
+**Measured.** `estate`, `bank-resolution` and `world` — **11 red before, 11 after.** Green: lint,
+typecheck, spec citations, forbids, plan progress, `lifecycle.test.ts` 5 of 5.

@@ -873,7 +873,7 @@ export const moneyMarket: SystemModule = {
         name: `${ctx.registry.currency(ccy).name} Deposit Guarantee`,
         bank: cb,
         representation: 'named',
-        status: { alive: true },
+        status: { alive: true, standing: 'good' },
       });
     }
   },

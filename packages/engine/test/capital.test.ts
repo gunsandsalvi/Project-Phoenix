@@ -89,7 +89,7 @@ function hungryFor(instrument: string, price: number, qty: Qty): SystemModule {
         name: 'A buyer',
         bank: BANK_A,
         representation: 'named',
-        status: { alive: true },
+        status: { alive: true, standing: 'good' },
       });
       ctx.endowMoney(BUYER, USD, phx(1_000_000));
       ctx.endowMoney(BANK_A, USD, phx(1_000_000));

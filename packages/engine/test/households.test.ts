@@ -87,7 +87,7 @@ function payer(spreadShare: number): SystemModule {
         name: 'A payer',
         bank: BANK_A,
         representation: 'named',
-        status: { alive: true },
+        status: { alive: true, standing: 'good' },
       });
       const purse = phx(100_000_000);
       ctx.endowMoney(PAYER, USD, purse);

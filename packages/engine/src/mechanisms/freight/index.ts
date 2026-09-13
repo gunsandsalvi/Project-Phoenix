@@ -493,7 +493,7 @@ export function freight(carriers: readonly CarrierDecl[]): SystemModule {
           region: c.region,
           name: c.name,
           bank: partyId(c.bank),
-          status: { alive: true },
+          status: { alive: true, standing: 'good' },
           representation: 'named',
         });
       }

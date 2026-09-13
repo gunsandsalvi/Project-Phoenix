@@ -175,6 +175,13 @@ const bankParamOf = (bank: PartyId): ParamId => paramId(`bank.returnOnCapital.${
  */
 export function resolve(ctx: MechanismContext, bank: PartyId, why: string): boolean {
   const p = ctx.parties.get(bank);
+  /**
+   * §25 C1, XI-3: FROM HERE SOMEBODY ELSE DECIDES WHAT HAPPENS TO ITS BOOK, and that is a state the
+   * world can see. A bank under resolution used to be `alive: true` — the same value as one nobody
+   * had a claim against — so nothing reading a counterparty could tell them apart, which is exactly
+   * what a depositor runs from and a lender prices (`docs/AUDIT.md` item 7).
+   */
+  ctx.standing(bank, 'inResolution', why);
   const ccy = ctx.registry.currencyOf(p.region);
   const v = valueBook(ctx, bank, ccy);
   // C1.a: WHICH TRIGGER FIRED is part of the record. A bank that could not pay and a bank whose

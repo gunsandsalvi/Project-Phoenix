@@ -782,7 +782,7 @@ export function foundationSeedFor(
         name,
         bank,
         representation: 'named',
-        status: { alive: true },
+        status: { alive: true, standing: 'good' },
       });
       // Currency A2, A3: each money's issuer and the sovereign that borrows in it. Each books in its
       // own region, which is what makes everything it holds of another country's paper FOREIGN and
@@ -912,7 +912,7 @@ export function foundationSeedFor(
             name: `Households ${cohort.name} at ${bank.id} #${n}`,
             bank: bank.id,
             representation: 'cell',
-            status: { alive: true },
+            status: { alive: true, standing: 'good' },
             weight,
             key: { region: bank.region, cohort: cohortId(cohort.id), bank: bank.id },
           };
@@ -931,7 +931,7 @@ export function foundationSeedFor(
           name: `Probate, ${bank.id}`,
           bank: bank.id,
           representation: 'named',
-          status: { alive: true },
+          status: { alive: true, standing: 'good' },
         });
       }
 

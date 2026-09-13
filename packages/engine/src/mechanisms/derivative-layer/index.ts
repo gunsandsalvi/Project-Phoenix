@@ -791,7 +791,7 @@ export function derivativeLayer(
         name: `${ctx.registry.currency(ccy).name} Clearing House`,
         bank: bank.id,
         representation: 'named',
-        status: { alive: true },
+        status: { alive: true, standing: 'good' },
       });
     }
   },
