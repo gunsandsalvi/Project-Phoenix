@@ -1201,27 +1201,27 @@ recount with `npm run coverage:spec` rather than adjusting a tally.
 
 | requirement | status | where / why |
 |---|---|---|
-| `M&A A1` | MISSING |  |
-| `M&A A2` | MISSING |  |
-| `M&A A3` | MISSING |  |
-| `M&A A4` | MISSING |  |
-| `M&A A5` | MISSING |  |
-| `M&A B1` | MISSING |  |
+| `M&A A1` | MET | packages/engine/src/mechanisms/control/index.ts (a bid with a price and an ACCEPTANCE CONDITION: below control nothing settles, so there is no half-acquisition) |
+| `M&A A2` | MET | packages/engine/src/mechanisms/control/index.ts (shares one way and money the other, in one numbered instruction per holder) |
+| `M&A A3` | MET | packages/engine/src/mechanisms/control/index.ts (the acquirer values a target the way it values a machine: what it would get, against what IT requires) |
+| `M&A A4` | MET | packages/engine/src/mechanisms/control/index.ts (`combine`: the target paper is assumed, its rows reseated, the party terminated with the acquirer as successor) |
+| `M&A A5` | MET | packages/engine/src/mechanisms/control/index.ts (including the shares: a residual claim on a firm now part of another is a claim on that other) |
+| `M&A B1` | MET | packages/engine/src/mechanisms/control/index.ts (`worthToBuyer` from the target published accounts and the acquirer own quoted cost of money) |
 | `M&A B2` | MISSING |  |
 | `M&A B3` | MISSING |  |
 | `M&A B4` | MISSING |  |
 | `M&A B5` | MISSING |  |
-| `M&A C1` | MISSING |  |
-| `M&A C2` | MISSING |  |
+| `M&A C1` | MET | packages/engine/src/mechanisms/control/index.ts (`tenders`: every holder answers from its own valuation) |
+| `M&A C2` | MET | packages/engine/src/mechanisms/control/index.ts (nobody has to tender; a holder that thinks the firm is worth more keeps its shares, and a bid can fail) |
 | `M&A C3` | MISSING |  |
 | `M&A C4` | MISSING |  |
 | `M&A D1` | MISSING |  |
 | `M&A D2` | MISSING |  |
 | `M&A D3` | MISSING |  |
 | `M&A D4` | MISSING |  |
-| `M&A D5` | MISSING |  |
+| `M&A D5` | MET | packages/engine/src/mechanisms/control/index.ts (what was PAID is recorded and is what the acquirer actually put up, checkable against who was paid) |
 | `M&A E1` | MISSING |  |
-| `M&A E2` | MISSING |  |
+| `M&A E2` | MET | packages/engine/src/mechanisms/control/index.ts (the `names` family: a firm combined into another is not still trading on its own account) |
 | `M&A E3` | MISSING |  |
 
 ## Trade Credit

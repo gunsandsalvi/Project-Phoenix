@@ -3678,3 +3678,40 @@ promised is an outcome of what it had to promise to be lent to.
 **What is placed rather than built**, and where: prime brokerage and restructuring → 13h; short-term
 debt and the roll that can fail → 13i. Syndication, bookbuilding, committed facilities and the
 covered bond stay in the worklist's carried findings.
+
+
+## 13g — the market for control
+
+**A premium is a price and it has to clear.** Every share in this world already has a market and
+every holder already has its own number for what a share is worth to it. A takeover is what happens
+when somebody else's number for the WHOLE firm is higher than theirs for their piece of it — so the
+tender is an ordinary book with an unusual buyer, and the premium is the distance between two
+valuations rather than a percentage anybody chose.
+
+**An acquirer values a target the way it values a machine.** What it would get, against what it
+requires: the target's PUBLISHED earnings (Reporting A2, annualised by the span of its own report)
+over the rate a bank quoted THIS acquirer. Both are reads and neither is a forecast. There is no
+synergy term and no control premium — two acquirers want the same firm at different prices because
+they have different costs of money and different views, which is what §46 A3 says disagreement IS,
+and it is the whole reason a market for control exists. A world where everyone valued a firm
+identically would never see a takeover.
+
+**Nobody has to tender**, and the bid carries an acceptance condition. Below control nothing settles
+at all: there is no half-acquisition in which the acquirer has paid for a minority it never wanted,
+and a failed bid is an event with consequences rather than a silence.
+
+**What a bidder looks for is the residual claim**, and it is read structurally rather than by name:
+a claim ON somebody that its issuer does not owe. Buying every liability of a firm buys you nothing;
+buying the residual buys you the firm. That is Equity A1's own definition, the register and the kind
+profile already carry it, and reading it that way is what lets this module exist without importing
+the one that owns shares.
+
+**On completion the two balance sheets combine through the estate's door.** "This party's
+obligations are now that one's" is one fact, and a world with two ways to write it would have two
+ways for it to be wrong.
+
+**A finding, written as a test.** Every listed firm in this world publishes a LOSS, so there is no
+stream to capitalise and no bid to make. The mechanism is unreached rather than wrong, and the day a
+listed firm here earns something the assertion fails and the tender machinery starts running.
+
+**Placed rather than built**: firm birth, learning by doing (**M5**) and siting → 13h.

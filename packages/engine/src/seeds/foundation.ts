@@ -105,6 +105,7 @@ import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
+import { control } from '../mechanisms/control/index.js';
 import { commodityFutures } from '../mechanisms/commodity-futures/index.js';
 import { housing } from '../mechanisms/housing/index.js';
 import { CONSUMPTION } from '../mechanisms/households/data.js';
@@ -2231,6 +2232,10 @@ export function foundationSpec(
       // 13f, Corporate Credit A1, B2: the other credit channel — many holders each pricing the
       // name from its own view, and covenants tested on what the issuer PUBLISHED (Reporting A2).
       corporateBondModule(),
+      // 13g, M&A A1, B1: the market for CONTROL. After equity, because a bid is priced off what a
+      // share is worth to each side, and a premium is the distance between two valuations rather
+      // than a number anybody set.
+      control(),
       sovereignInstruments,
       // Sovereign D3.a, Currency A3: EVERY SOVEREIGN THAT BORROWS HAS A CURVE, and it is its own —
       // one issuer, one money, its own prints. A world whose foreign lines had no curve family
