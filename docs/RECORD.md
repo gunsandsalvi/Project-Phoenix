@@ -5306,3 +5306,26 @@ the same one stage 4's two `perShare`s made.
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
 forbids, `plan:check`.
+
+## Item 16, stage 7 — the money market, and `Total<D>` corrected
+
+**60 sites became 33.** The resolution waterfall is where per-member and total meet hardest: a
+bank's liability to a household CELL is what one member holds times the weight, and every one of
+those crossings now goes through `acrossMembers`, which refuses a weight that is not a count of
+people. `Valuation` — assets, deposits, borrowings, the hole, the insured part — is `Cash`, and
+`insuredAt`, `uninsuredAt`, `coveredBy` and `payFrom` say what they return.
+
+**AND THE TYPE WAS WRONG, in a way only this stage could show.** `Total<D>` was
+`Measure<`total:${D}`>` — a dimension of its own — so a bank's total deposit liability could not be
+added to the money beside it, and every sum in the waterfall wanted a door that did nothing.
+
+The asymmetry is the point, and it took a module that sums over cells to see it. `PerMember<D>`
+genuinely is NOT `D`: money per person is not money, and a whole liability booked against one
+household's equity account is **A-1**. But a TOTAL of money is just money — `total:` was a
+PROVENANCE dressed as a dimension. `Total<D>` is `Measure<D>` now, `acrossMembers` still guards the
+only crossing there is, and the `@ts-expect-error` that proves **A-39** unwriteable still fails to
+compile. That last part is the test which says the correction cost nothing: what the type was built
+to stop, it still stops.
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
+forbids, `plan:check`.

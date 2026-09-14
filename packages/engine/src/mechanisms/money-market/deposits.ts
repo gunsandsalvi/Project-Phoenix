@@ -30,6 +30,14 @@
  * not, so the buffer differs between two banks with the same balance sheet size, which is what A2.a
  * asks for and what a stated ratio of deposits could never give.
  */
+import {
+  acrossMembers,
+  asCash,
+  asPerMember,
+  type Cash,
+  heldAsMoney,
+  minus,
+} from '../../core/measure.js';
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
@@ -39,7 +47,6 @@ import {
   atMost,
   div,
   mul,
-  sub,
   sum,
   zeroIfNone,
 } from '../../core/num.js';
@@ -103,9 +110,15 @@ export function insuredAt(
   holder: PartyId,
   ccy: CurrencyCode,
   limit: number,
-): number {
+): Cash {
   const covered = coveredPerMember(ctx, bank, holder, ccy, limit);
-  return covered <= 0 ? 0 : mul(covered, weightOf(ctx.parties.get(holder)), 'insured');
+  return covered <= 0
+    ? asCash(0, 'a holder with nothing covered')
+    : acrossMembers(
+        asPerMember<'money:piece'>(covered, 'what one member has covered'),
+        weightOf(ctx.parties.get(holder)),
+        'insured',
+      );
 }
 
 /** A1.a, E4: the other side of the same split — what nobody insures, per member. */
@@ -115,10 +128,14 @@ export function uninsuredAt(
   holder: PartyId,
   ccy: CurrencyCode,
   limit: number,
-): number {
+): Cash {
   const perMember = ctx.register.quantity(holder, moneyInstrumentId(bank, ccy));
-  if (perMember <= 0) return 0;
-  return sub(perMember, coveredPerMember(ctx, bank, holder, ccy, limit), 'uninsured');
+  if (perMember <= 0) return asCash(0, 'a holder with nothing at this bank');
+  return minus(
+    heldAsMoney(perMember, 'what one member holds'),
+    asCash(coveredPerMember(ctx, bank, holder, ccy, limit), 'what one member has covered'),
+    'uninsured',
+  );
 }
 
 /**
@@ -135,12 +152,21 @@ export function couldLeave(
   limit: number,
 ): number {
   const money = moneyInstrumentId(bank, ccy);
-  const terms: number[] = [];
+  const terms: Cash[] = [];
   for (const holder of ctx.register.holdersOf(money)) {
     if (holder === bank) continue;
     const p = ctx.parties.get(holder);
     if (classOf(ctx.registry, p.kind) === undefined) continue;
-    terms.push(mul(uninsuredAt(ctx, bank, holder, ccy, limit), weightOf(p), 'what can run'));
+    terms.push(
+      acrossMembers(
+        asPerMember<'money:piece'>(
+          uninsuredAt(ctx, bank, holder, ccy, limit),
+          'what one member has uninsured',
+        ),
+        weightOf(p),
+        'what can run',
+      ),
+    );
   }
   return sum(terms).value;
 }

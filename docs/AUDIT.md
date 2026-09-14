@@ -2941,6 +2941,7 @@ under a shock.
 > | ~~4~~ | ~~`funds`~~ — **DONE**: the NAV, the basket, and two `perShare`s that were not the same thing | **68 → 34** |
 > | ~~5~~ | ~~`firms`~~ — **DONE**: the plan, the reservation and the project | **77 → 31** |
 > | ~~6~~ | ~~`households`~~ — **DONE**: the cushion, the basket and the demand curve | **73 → 32** |
+> | ~~7~~ | ~~`money-market`~~ — **DONE**: the resolution waterfall, and `Total<D>` corrected | **60 → 33** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -3077,6 +3078,25 @@ under a shock.
 > register counts is an `Amount<'piece'>` of a currency and what a price times a quantity comes to is
 > `Money<'piece'>`: the same cents, and the same cents ONLY because money's own price is one — the
 > single hard-coded price this world has (Money D2). The crossing is named rather than assumed.
+>
+> **Measured**: the same 79.
+>
+> ### Stage 7 — the money market, and `Total<D>` corrected
+>
+> The resolution waterfall is where per-member and total meet hardest: a bank's liability to a
+> household CELL is what one member holds times the weight, and every one of those crossings now
+> goes through `acrossMembers`, which refuses a weight that is not a count of people. `Valuation`
+> (assets, deposits, borrowings, the hole, the insured part) is `Cash`; `insuredAt`, `uninsuredAt`,
+> `coveredBy` and `payFrom` say what they return.
+>
+> **And the type was wrong, in a way only this stage could show.** `Total<D>` was
+> `Measure<`total:${D}`>` — a dimension of its own — so a bank's total deposit liability could not be
+> added to the money beside it. The asymmetry is the point: `PerMember<D>` genuinely is not `D`
+> (money per person is not money, and a whole liability booked against one household's account is
+> **A-1**), but a TOTAL of money is just money. `total:` was a PROVENANCE dressed as a dimension.
+> `Total<D>` is `Measure<D>` now, `acrossMembers` still guards the only crossing, and the
+> `@ts-expect-error` that proves A-39 unwriteable still fails to compile — which is the test that
+> says the correction cost nothing.
 >
 > **Measured**: the same 79.
 >

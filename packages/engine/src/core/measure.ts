@@ -84,8 +84,18 @@ export type Ratio = Measure<'ratio'>;
 /** XI-15: PER MEMBER of a cell, and the only conversion to a total is the cell's weight. */
 export type PerMember<D extends string> = Measure<`perMember:${D}`>;
 
-/** XI-15: the total across a cell's members. `PerMember` and `Total` are different types (A-1, A-39). */
-export type Total<D extends string> = Measure<`total:${D}`>;
+/**
+ * XI-15: THE TOTAL ACROSS A CELL'S MEMBERS, and it is the measure ITSELF.
+ *
+ * The asymmetry is the point and it took stage 7 to see it. `PerMember<D>` is genuinely a different
+ * thing from `D` — money PER PERSON is not money, and a bank's whole liability booked against one
+ * household's account is A-1 — but a TOTAL of money is just money: `total:` would be a provenance
+ * dressed as a dimension, and a total that could not be added to the money beside it would make
+ * every sum in this engine cross a door for nothing. So `Total<D>` is `Measure<D>`, and what
+ * `acrossMembers` guards is the CONVERSION — a per-member number only becomes a total through the
+ * cell's own weight, which is the whole of A-1, A-18 and A-39.
+ */
+export type Total<D extends string> = Measure<D>;
 
 /**
  * Law 7, Law 8: two of the SAME thing, added. Two currencies do not meet here and the compiler is

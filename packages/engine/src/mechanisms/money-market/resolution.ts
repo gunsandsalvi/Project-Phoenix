@@ -41,17 +41,26 @@
  * what holders lost sum to the hole, and the audit family says so rather than this function
  * asserting it.
  */
+import {
+  acrossMembers,
+  asCash,
+  asPerMember,
+  asRatio,
+  asTotal,
+  type Cash,
+  eachMember,
+  heldAsMoney,
+  minus,
+  over,
+  plus,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { CurrencyCode, InstrumentId, ParamId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId } from '../../core/ids.js';
 import { forbid } from '../../core/assert.js';
-import {
-  add,
-  atMost,
-  div,
-  mul,
-  sub,
-  sum,
-} from '../../core/num.js';
+import { atMost, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { CellSide } from '../../ledger/instruction.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
@@ -65,19 +74,19 @@ import { insuredAt, uninsuredAt } from './deposits.js';
 import { insurerOf } from './insurer.js';
 import type { Instrument } from '../../register/instruments.js';
 import { isRow } from './rows.js';
-import { NO_QTY, subQty } from '../../core/tick.js';
+import { NO_QTY, scaleQty, subQty, type Qty } from '../../core/tick.js';
 
 /** D1: what the failed bank has, what it owes, and the difference between them. */
 export interface Valuation {
   /** D1: its assets at the marks a market made, not at what its book said. */
-  readonly assets: number;
+  readonly assets: Cash;
   /** What it owes: the deposits it issued, and every row it borrowed on. */
-  readonly deposits: number;
-  readonly borrowings: number;
+  readonly deposits: Cash;
+  readonly borrowings: Cash;
   /** D1.a: the difference. Positive is a hole; a bank that failed on cash alone can have none. */
-  readonly hole: number;
+  readonly hole: Cash;
   /** A1.a, D4: the part of the deposits this world guarantees, per member (XI-15). */
-  readonly insured: number;
+  readonly insured: Cash;
 }
 
 /** D3.b: what taking the book is WORTH to one bank, from its own view, or why it will not take it. */
@@ -100,7 +109,7 @@ interface Bid {
    * it COSTS is missing, and its absence used to be invisible because a number stood where it would
    * have been (`E-6`).
    */
-  readonly worthToIt: number;
+  readonly worthToIt: Cash;
   readonly declined: boolean;
   readonly why: string;
 }
@@ -113,21 +122,30 @@ interface Bid {
  */
 export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): Valuation {
   const own = moneyInstrumentId(bank, ccy);
-  const held: number[] = [];
+  const held: Cash[] = [];
   for (const h of ctx.register.holdingsOf(bank)) {
     if (h.instrument === own) continue;
     held.push(ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period));
   }
   const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
-  const deposits: number[] = [];
-  const insured: number[] = [];
+  const deposits: Cash[] = [];
+  const insured: Cash[] = [];
   for (const holder of ctx.register.holdersOf(own)) {
     if (holder === bank) continue;
     const p = ctx.parties.get(holder);
-    deposits.push(mul(ctx.register.quantity(holder, own), weightOf(p), 'what it owes this holder'));
+    deposits.push(
+      acrossMembers(
+        asPerMember<'money:piece'>(
+          heldAsMoney(ctx.register.quantity(holder, own), 'what one member holds'),
+          'what one member holds',
+        ),
+        weightOf(p),
+        'what it owes this holder',
+      ),
+    );
     insured.push(insuredAt(ctx, bank, holder, ccy, limit));
   }
-  const borrowings: number[] = [];
+  const borrowings: Cash[] = [];
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !i.issuer.some || i.issuer.value !== bank || i.id === own) continue;
     // Register B3: a liability is worth what the party on the other side of it carries it at. The
@@ -137,17 +155,21 @@ export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCod
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);
       if (!worth.some) continue;
       borrowings.push(
-        mul(worth.value.value, weightOf(ctx.parties.get(holder)), 'what it owes on this row'),
+        acrossMembers(
+          asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
+          weightOf(ctx.parties.get(holder)),
+          'what it owes on this row',
+        ),
       );
     }
   }
   const assets = sum(held).value;
-  const owes = add(sum(deposits).value, sum(borrowings).value, 'what it owes');
+  const owes = plus(sum(deposits).value, sum(borrowings).value, 'what it owes');
   return {
     assets,
     deposits: sum(deposits).value,
     borrowings: sum(borrowings).value,
-    hole: sub(owes, assets, 'the hole'),
+    hole: minus(owes, assets, 'the hole'),
     insured: sum(insured).value,
   };
 }
@@ -165,13 +187,17 @@ function bidFor(ctx: MechanismContext, bank: PartyId, v: Valuation): Bid {
   const required = ctx.params.perAnnum(bankParamOf(bank));
   // What the trouble is worth to it: its own required return on the capital the book consumes.
   // A bank that wants more on its capital bids lower for the same book.
-  const wants = mul(v.assets, required, 'what it wants for taking the book on');
-  const over = sub(sub(v.assets, v.deposits, 'assets over deposits'), v.borrowings, 'and its rows');
-  const bid = sub(over, wants, 'what the book is worth to it');
+  const wants = scale(v.assets, required, 'what it wants for taking the book on');
+  const held = minus(
+    minus(v.assets, v.deposits, 'assets over deposits'),
+    v.borrowings,
+    'and its rows',
+  );
+  const bid = minus(held, wants, 'what the book is worth to it');
   // C1: it takes the hole onto its own balance sheet before it is paid for it. A bank whose own
   // equity would not stand that is not an acquirer, and saying so is the whole of D3.b.
   const equity = view.equity();
-  const declined = equity <= 0 || add(equity, bid, 'what it would be left with') <= 0;
+  const declined = equity <= 0 || plus(equity, bid, 'what it would be left with') <= 0;
   return {
     bank,
     worthToIt: bid,
@@ -311,14 +337,18 @@ function allocate(
   // creditor to this book — neither is secured, neither is subordinated, and nothing in this world
   // ranks between them — so they take the same proportion of the same loss. Pari passu is not a
   // rule applied afterwards: it is what "one pool, one share each" means.
-  const exposed: { holder: PartyId; owed: number; rank: number; row?: InstrumentId }[] = [];
+  const exposed: { holder: PartyId; owed: Cash; rank: number; row?: InstrumentId }[] = [];
   const rankOf = (id: InstrumentId): number =>
     ctx.registry.instrumentKind(ctx.instruments.get(id).kind).ranking(ctx.instruments.get(id))
       .seniority;
   for (const holder of ctx.register.holdersOf(own)) {
     if (holder === bank) continue;
     const p = ctx.parties.get(holder);
-    const owed = mul(uninsuredAt(ctx, bank, holder, ccy, limit), weightOf(p), 'uninsured');
+    const owed = acrossMembers(
+      asPerMember<'money:piece'>(uninsuredAt(ctx, bank, holder, ccy, limit), 'what one member is owed'),
+      weightOf(p),
+      'uninsured',
+    );
     if (owed > 0) exposed.push({ holder, owed, rank: rankOf(own) });
   }
   for (const i of ctx.instruments.all()) {
@@ -334,8 +364,12 @@ function allocate(
       if (holder === bank) continue;
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);
       if (!worth.some || worth.value.value <= 0) continue;
-      const claim = mul(worth.value.value, weightOf(ctx.parties.get(holder)), 'what it is owed');
-      const owed = sub(claim, secured, 'what its security does not reach');
+      const claim = acrossMembers(
+        asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
+        weightOf(ctx.parties.get(holder)),
+        'what it is owed',
+      );
+      const owed = minus(claim, secured, 'what its security does not reach');
       if (owed > 0) exposed.push({ holder, owed, rank: rankOf(i.id), row: i.id });
     }
   }
@@ -346,23 +380,26 @@ function allocate(
   // holders were paid to be here (A2.b), and only when that is gone does anything reach the senior
   // creditors and the depositors (A2.c).
   const ranks = [...new Set(exposed.map((e) => e.rank))].sort((a, b) => b - a);
-  let holders = 0;
+  let holders = asCash(0, 'nothing has landed on a holder yet');
   let left = v.hole;
   for (const rank of ranks) {
     if (left <= 0) break;
     const layer = exposed.filter((e) => e.rank === rank);
-    const pool = sum(layer.map((e) => e.owed)).value;
+    const pool: Cash = sum(layer.map((e) => e.owed)).value;
     if (pool <= 0) continue;
     const cut = atMost(left, pool, 'a layer absorbs no more than there is of it');
     for (const e of layer) {
       // Clearing C3: pro rata, in whole pieces, and the odd piece has a named holder.
-      const share = ctx.registry.payable(ccy, mul(div(e.owed, pool, 'its share'), cut, 'its loss'));
+      const share = heldAsMoney(
+        ctx.registry.payable(ccy, scale(cut, ratioOf(e.owed, pool, 'its share'), 'its loss')),
+        'what this holder loses',
+      );
       if (share <= 0) continue;
       const lost =
         e.row === undefined
           ? writeDownDeposit(ctx, bank, e.holder, ccy, share)
           : writeDownRow(ctx, bank, e.holder, e.row, share, e.owed);
-      holders = add(holders, lost, 'what holders lost');
+      holders = plus(holders, heldAsMoney(lost, 'what this holder lost'), 'what holders lost');
       // E2, A2.c: a loss that landed on a name, said out loud. Nobody is written down quietly.
       ctx.record(
         'bank.resolution.writtenDown',
@@ -371,12 +408,12 @@ function allocate(
         true,
       );
     }
-    left = sub(v.hole, holders, 'what the hole still is');
+    left = minus(v.hole, holders, 'what the hole still is');
   }
   // D4, D5: what is left of the hole is what the guarantee is FOR. The insurer pays what its fund
   // holds and the treasury pays the rest, and both of them pay the acquirer — because the acquirer
   // is the one about to owe the depositors the money nobody took from them.
-  const unmet = sub(v.hole, holders, 'what the guarantee must meet');
+  const unmet = minus(v.hole, holders, 'what the guarantee must meet');
   if (unmet <= 0) return { holders, insurer: 0, purse: 0, equity };
   const insurer = payFrom(ctx, insurerOf(ccy), acquirer, ccy, unmet, `${bank} resolution: the guarantee`);
   /**
@@ -393,7 +430,7 @@ function allocate(
       break;
     }
   }
-  const still = sub(unmet, insurer, 'what the fund could not meet');
+  const still = minus(unmet, heldAsMoney(insurer, 'what the fund met'), 'what the fund could not meet');
   const purse =
     still <= 0
       ? 0
@@ -413,12 +450,12 @@ function allocate(
  * security, valued the way everything else in the resolution is valued (D1). A row with no
  * collateral is covered by nothing, which is what makes it unsecured.
  */
-function coveredBy(ctx: MechanismContext, i: Instrument): number {
-  if (!isRow(i.terms)) return 0;
-  const terms: number[] = [];
+function coveredBy(ctx: MechanismContext, i: Instrument): Cash {
+  if (!isRow(i.terms)) return asCash(0, 'an unsecured row is covered by nothing');
+  const terms: Cash[] = [];
   for (const c of i.terms.collateral) {
     const mark = ctx.valuation.markPerUnit(c.instrument, ctx.period);
-    terms.push(mul(c.qty, mark, 'what the security is worth'));
+    terms.push(valueAt(mark, c.qty, 'what the security is worth'));
   }
   return sum(terms).value;
 }
@@ -429,11 +466,14 @@ function writeDownDeposit(
   bank: PartyId,
   holder: PartyId,
   ccy: CurrencyCode,
-  share: number,
-): number {
+  share: Cash,
+): Qty {
   const p = ctx.parties.get(holder);
-  const perMember = ctx.registry.payable(ccy, div(share, weightOf(p), 'per member'));
-  if (perMember <= 0) return 0;
+  const perMember = ctx.registry.payable(
+    ccy,
+    eachMember(asTotal<'money:piece'>(share, 'what the cell is owed'), weightOf(p), 'per member'),
+  );
+  if (perMember <= 0) return NO_QTY;
   const total = totalFor(p, perMember);
   // XI-15: a cell's side is denominated per member, whatever its weight — every member of it is a
   // real holder with a real account, and one of them is not an exception to that.
@@ -455,7 +495,7 @@ function writeDownDeposit(
     cause: 'corporateAction',
     reason: `${holder} is written down in ${bank}'s resolution`,
   });
-  return r.outcome === 'settled' ? total : 0;
+  return r.outcome === 'settled' ? total : NO_QTY;
 }
 
 /**
@@ -468,23 +508,23 @@ function writeDownRow(
   bank: PartyId,
   holder: PartyId,
   row: InstrumentId,
-  share: number,
-  owed: number,
-): number {
+  share: Cash,
+  owed: Cash,
+): Qty {
   const p = ctx.parties.get(holder);
   const units = ctx.register.quantity(holder, row);
-  if (units <= 0 || owed <= 0) return 0;
-  const total = mul(units, weightOf(p), 'what it holds');
+  if (units <= 0 || owed <= 0) return NO_QTY;
+  const total = scaleQty(units, weightOf(p), 'what it holds');
   const wiped = ctx.registry.deliverable(
     ctx.instruments.get(row).unit,
-    mul(total, div(share, owed, 'the share of it that is lost'), 'units written off'),
+    scale(total, ratioOf(share, owed, 'the share of it that is lost'), 'units written off'),
   );
-  if (wiped <= 0) return 0;
+  if (wiped <= 0) return NO_QTY;
   const perMember = ctx.registry.deliverable(
     ctx.instruments.get(row).unit,
-    div(wiped, weightOf(p), 'per member'),
+    over(wiped, asRatio(weightOf(p), 'the members of the cell'), 'per member'),
   );
-  if (perMember <= 0) return 0;
+  if (perMember <= 0) return NO_QTY;
   const moved = totalFor(p, perMember);
   const per = cellSide(p, perMember);
   const r = ctx.settle({
@@ -505,8 +545,12 @@ function writeDownRow(
     reason: `${holder} is written down on ${row} in ${bank}'s resolution`,
   });
   return r.outcome === 'settled'
-    ? mul(moved, div(owed, total, 'what a unit was worth'), 'lost')
-    : 0;
+    ? scaleQty(
+        moved,
+        Math.round(ratioOf(owed, heldAsMoney(total, 'what it held'), 'what a unit was worth')),
+        'lost',
+      )
+    : NO_QTY;
 }
 
 /** The sovereign of the failed bank's own region: D5's payer has a name. */
@@ -523,15 +567,18 @@ function payFrom(
   from: PartyId,
   to: PartyId,
   ccy: CurrencyCode,
-  wanted: number,
+  wanted: Cash,
   reason: string,
-): number {
-  if (!ctx.parties.has(from)) return 0;
+): Qty {
+  if (!ctx.parties.has(from)) return NO_QTY;
   const payer = ctx.parties.get(from);
-  if (!payer.status.alive) return 0;
-  const has = ctx.register.quantity(from, moneyInstrumentId(ctx.accountOf(from, ccy).issuer, ccy));
+  if (!payer.status.alive) return NO_QTY;
+  const has = heldAsMoney(
+    ctx.register.quantity(from, moneyInstrumentId(ctx.accountOf(from, ccy).issuer, ccy)),
+    'what it has to pay with',
+  );
   const amount = ctx.registry.payable(ccy, atMost(wanted, has, 'it pays out of the money there is'));
-  if (amount <= 0) return 0;
+  if (amount <= 0) return NO_QTY;
   const r = ctx.settle({
     legs: [
       {
@@ -547,7 +594,7 @@ function payFrom(
     cause: 'transfer',
     reason,
   });
-  return r.outcome === 'settled' ? amount : 0;
+  return r.outcome === 'settled' ? amount : NO_QTY;
 }
 
 /**
