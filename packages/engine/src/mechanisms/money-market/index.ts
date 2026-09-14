@@ -46,6 +46,8 @@ import {
   BOOKS,
   DEPOSIT_CLASSES,
   MM_PARAMS,
+  POLICY_RATES,
+  policyRateOf,
   classOf,
   type BookDecl,
 } from './data.js';
@@ -100,9 +102,22 @@ function market(ctx: MechanismContext): Market {
 const ccyOf = (ctx: MechanismContext, party: PartyId): CurrencyCode =>
   ctx.registry.currencyOf(ctx.parties.get(party).region);
 
-function corridor(ctx: MechanismContext): Corridor {
+/**
+ * C-3, worklist 13l, Central Bank B1, B2: THE CORRIDOR OF THIS MONEY, and it is one per money.
+ *
+ * This took no currency at all, so the Fed, the ECB, the Bank of England and the Bank of Japan all
+ * administered 2%. With no interest differential between two moneys there is no carry: an FX
+ * forward prices flat to spot, covered interest parity says nothing, and the cross-currency basis
+ * has nothing to be a basis of — four mechanisms that exist and cannot show anything, because one
+ * parameter was shared by four institutions that are the whole reason they differ.
+ *
+ * The WIDTH is still one policy for every corridor. Two central banks that ran different-width
+ * corridors would be a real difference and a real declaration, and nobody has made it: the floor
+ * and the ceiling stay one row apiece until somebody does (Law 2, fewest primitives).
+ */
+function corridor(ctx: MechanismContext, ccy: CurrencyCode): Corridor {
   return corridorOf(
-    ctx.params.perAnnum(MM_PARAMS.policyRate),
+    ctx.params.perAnnum(policyRateOf(ccy)),
     ctx.params.perAnnum(MM_PARAMS.floorSpread),
     ctx.params.perAnnum(MM_PARAMS.ceilingSpread),
   );
@@ -255,13 +270,15 @@ function standings(ctx: MechanismContext): Map<PartyId, Standing> {
 function runSession(ctx: MechanismContext): void {
   const m = market(ctx);
   const on = ctx.calendar.startOf(ctx.period);
-  const c = corridor(ctx);
   const banks = banksOf(ctx);
   const pos = standings(ctx);
   declareVenues(ctx, banks);
   const haircut = ctx.params.ratio(MM_PARAMS.haircut);
   for (const borrower of banks) {
     const ccy = ccyOf(ctx, borrower);
+    // C-3: the corridor of the money this bank banks in, which is the one its own central bank
+    // administers. It used to be one corridor for every bank in the world.
+    const c = corridor(ctx, ccy);
     const cb = ctx.registry.centralBankOf(ccy);
     for (const book of BOOKS) {
       const venue = sessionVenue(book, borrower);
@@ -458,11 +475,12 @@ function advancesFrom(
  */
 function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Standing>): void {
   const m = market(ctx);
-  const c = corridor(ctx);
   const overnight = BOOKS.find((b) => b.tenor === 'overnight' && !b.secured);
   if (overnight === undefined) return;
   for (const [bank, p] of pos) {
     const ccy = ccyOf(ctx, bank);
+    // C-3: at the floor OF ITS OWN MONEY. A yen bank does not park at the Fed's floor.
+    const c = corridor(ctx, ccy);
     const cb = ctx.registry.centralBankOf(ccy);
     // Law 8: its buffer is a share of what could leave, so what is left over is a fraction of a
     // cent. It places whole ones, and down, because it is what it HAS above the cushion.
@@ -601,28 +619,39 @@ function publishFunding(ctx: MechanismContext): void {
   }
 }
 
-/** B2, Central Bank B2: the two levels, declared. They are administered, and this says so. */
+/**
+ * B2, Central Bank B2: the two levels, declared. They are administered, and this says so.
+ *
+ * C-3: ONE ANNOUNCEMENT PER CENTRAL BANK, naming the money it is about. There was one event with no
+ * currency on it, which is what four institutions administering 2% looks like from the outside.
+ */
 function publishCorridor(ctx: MechanismContext): void {
-  const c = corridor(ctx);
-  ctx.record(
-    'centralBank.corridor',
-    [],
-    { policy: c.policy, floor: c.floor, ceiling: c.ceiling },
-    true,
-  );
+  for (const ccy of ctx.registry.currencies.keys()) {
+    const cb = ctx.registry.centralBankOf(ccy);
+    if (!ctx.parties.has(cb)) continue;
+    const c = corridor(ctx, ccy);
+    ctx.record(
+      'centralBank.corridor',
+      [cb],
+      { ccy, policy: c.policy, floor: c.floor, ceiling: c.ceiling },
+      true,
+    );
+  }
 }
 
 function paramsOf(): ParamDecl[] {
   return [
-    {
-      id: MM_PARAMS.policyRate,
-      value: 0.02,
-      unit: 'per annum',
-      dimension: 'perAnnum',
-      kind: 'policy',
-      owner: 'centralBank',
-      why: 'Central Bank B1, B2: the rate it declares. It is administered and not traded (B2), and it is the one price in this world that is not cleared — Law 3 allows exactly this one, because the quantity response is real and booked on both balance sheets. What it is set AGAINST is its mandate (B1.a), and the mandate is parliament (worklist 14).',
-    },
+    ...POLICY_RATES.map(
+      (r): ParamDecl => ({
+        id: policyRateOf(r.ccy),
+        value: r.rate,
+        unit: 'per annum',
+        dimension: 'perAnnum',
+        kind: 'policy',
+        owner: 'centralBank',
+        why: `Central Bank B1, B2: the rate ${r.ccy}'s own central bank declares. It is administered and not traded (B2), and it is the one price in this world that is not cleared — Law 3 allows exactly this one, because the quantity response is real and booked on both balance sheets. What it is set AGAINST is its mandate (B1.a), and the mandate is parliament (worklist 14). ${r.why}`,
+      }),
+    ),
     {
       id: MM_PARAMS.floorSpread,
       value: 0.001,
@@ -972,13 +1001,14 @@ function bookOverdrafts(ctx: MechanismContext): void {
   const m = market(ctx);
   const drawn = [...m.overdrawn];
   m.overdrawn = [];
-  const c = corridor(ctx);
   const on = ctx.calendar.startOf(ctx.period);
   const seen = new Set<string>();
   for (const d of drawn) {
     if (seen.has(d.bank)) continue;
     seen.add(d.bank);
     const ccy = d.ccy;
+    // C-3: the ceiling of the money it is overdrawn IN, which is the one it is penalised against.
+    const c = corridor(ctx, ccy);
     const cb = ctx.registry.centralBankOf(ccy);
     const short = negQty(ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy)), 'its overdraft');
     const need = ctx.registry.payable(ccy, short);

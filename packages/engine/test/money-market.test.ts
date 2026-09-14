@@ -16,6 +16,7 @@ import {
   BANK,
   CB,
   MM_PARAMS,
+  policyRateOf,
   USD,
   assemble,
   moneyInstrumentId,
@@ -165,8 +166,10 @@ describe('what money costs a bank (Banks Funding B1, B2, B2.b, XI-4 joint one)',
       if (new Set(rates).size === 1) matched += 1;
     }
     expect(matched).toBeGreaterThan(0);
+    // C-3: the ceiling OF THIS WORLD'S OWN MONEY. There was one policy rate for four central banks
+    // and the test could take it without naming a currency; there are four now (worklist 13l).
     const ceiling =
-      w.params.perAnnum(MM_PARAMS.policyRate) + w.params.perAnnum(MM_PARAMS.ceilingSpread);
+      w.params.perAnnum(policyRateOf(USD)) + w.params.perAnnum(MM_PARAMS.ceilingSpread);
     for (const rates of seen.values()) for (const r of rates) expect(r).toBeLessThan(ceiling);
   });
 
@@ -215,7 +218,7 @@ describe('the corridor (Money Market C, Central Bank B2, D)', () => {
     // saying so out loud is what stops the policy rate being read as something a market printed.
     expect(floor).toBeLessThan(policy);
     expect(ceiling).toBeGreaterThan(policy);
-    expect(policy).toBe(w.params.perAnnum(MM_PARAMS.policyRate));
+    expect(policy).toBe(w.params.perAnnum(policyRateOf(String(c?.data['ccy']))));
   });
 
   it('moves the market rate when it moves, and only through the corridor (B4, B3.a, E1)', () => {
@@ -224,8 +227,10 @@ describe('the corridor (Money Market C, Central Bank B2, D)', () => {
     // quantities on its own balance sheet, and every other participant then has an alternative it
     // can actually take. Move the declared rate and the rates that CLEAR move with it — because the
     // alternatives moved, which is the only channel there is.
-    const cheap = run(withParam('mm-policy', { 'centralBank.policyRate': 0.02 }), 12);
-    const dear = run(withParam('mm-policy', { 'centralBank.policyRate': 0.05 }), 12);
+    // C-3: the rate of THIS world's money. There was one row for four central banks and this could
+    // move it without naming one; there are four now, and the dollar's is the one this rig deals in.
+    const cheap = run(withParam('mm-policy', { 'centralBank.policyRate.USD': 0.02 }), 12);
+    const dear = run(withParam('mm-policy', { 'centralBank.policyRate.USD': 0.05 }), 12);
     const struck = (w: World): number => {
       const rates: number[] = [];
       const volumes: number[] = [];

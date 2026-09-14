@@ -153,6 +153,35 @@ export const MM_PARAMS = {
   haircut: paramId('centralBank.collateralHaircut'),
   /** Central Bank D3.b: what it charges ABOVE the window for an account that went below zero. */
   overdraftPenalty: paramId('centralBank.overdraftPenalty'),
-  policyRate: paramId('centralBank.policyRate'),
   insuranceLimit: paramId('regulation.depositInsurance.limit'),
 } as const;
+
+/** C-3: the rate the central bank of THIS money administers (Central Bank B1, B2). */
+export const policyRateOf = (ccy: string): ParamId => paramId(`centralBank.policyRate.${ccy}`);
+
+/**
+ * C-3, worklist 13l, Central Bank B1, B2: FOUR CENTRAL BANKS, FOUR RATES.
+ *
+ * A POLICY per money, with an owner — the one price in this world that is not cleared, and Law 3
+ * allows exactly this one because the quantity response is real and booked on both balance sheets.
+ * They DIFFER, and the difference is the point: with no interest differential between two moneys
+ * there is no carry, so an FX forward prices flat to spot, covered interest parity says nothing,
+ * and the cross-currency basis has nothing to be a basis of. Four mechanisms this world has built
+ * could not show anything, because one row was shared by four institutions.
+ *
+ * The levels are not a forecast and not a calibration: they are where these four have actually sat
+ * relative to one another for most of the last twenty years — a real-world PRIMITIVE, imported,
+ * which Law 2 allows and which a real-world equilibrium would not be. What sets them here is a
+ * mandate (B1.a), and the mandate is parliament (worklist 14): the day that exists, these become
+ * its outputs and the rows go.
+ */
+export const POLICY_RATES: readonly { readonly ccy: string; readonly rate: number; readonly why: string }[] = [
+  { ccy: 'USD', rate: 0.02, why: 'The dollar, and the level the world was written against.' },
+  { ccy: 'EUR', rate: 0.005, why: 'Below the dollar: a euro deposit earns less, which is why a dollar buys forward euros at a premium and not at spot.' },
+  { ccy: 'GBP', rate: 0.015, why: 'Between the two, which is what makes sterling a third answer rather than a copy of one of them.' },
+  {
+    ccy: 'JPY',
+    rate: 0.002,
+    why: 'The lowest of the four, which is what makes the yen a funding currency and gives a carry trade something to fund with. IT IS NOT ZERO, AND IT WANTED TO BE (`E-7`): a rate of zero puts the corridor FLOOR at minus a tenth of a point, and the solver refuses a negative price — rightly for the price of a THING, and wrongly for the price of TIME, which the Bank of Japan and the ECB both ran below zero for years. A negative policy rate is real and this world cannot express one; the least it can say is a tenth of a point above its own floor.',
+  },
+];

@@ -1,5 +1,27 @@
 # The plan
 
+> ## Every item is taken. Fourteen closed, three staged, one re-pointed.
+>
+> **What is BUILT**: 0 the ontology register · 1 reach · 2 Missing is Missing · 3 `PublishedStatement`
+> · 4 `worthTo` · 5 `Receipt` · 6 `View` · 7 `Lifecycle` · 8 `Agreement` · 9 `Control` ·
+> 10 `CorporateAction` · 11 `OutputKind` · 12 `Space` · 13 `Guarantee` · 14 `Process` ·
+> 15 `Objective` · 18 the worklist re-pointed and `C-3`.
+>
+> **What is STAGED, with the stages written and none of them hidden**: **16** `Measure<D>` — the
+> type, its algebra and the first door are built; the sweep is ten stages over 1,091 call sites and
+> none is done. **8**'s seven private books are not migrated, and `Mandate` waits on that. **17**
+> closed eleven of its eighteen repairs and repositioned the rest with reasons.
+>
+> **The measurement that matters**: the whole suite was **79 red of 717** when this began and is
+> **79 red of 786** now — *the same 79, test for test* — with **707 passing where there were 638**.
+> Every one of the 69 new tests is a test of a thing that did not exist.
+>
+> **Seven findings of my own are in the index as `E-1` to `E-7`**, each positioned. One of them
+> (`E-1`) was closed in the same item that found it; one (**the land ordering bug**) cost this world
+> its entire merchant fleet for four commits and is written up in `docs/RECORD.md` under item 17,
+> because the way it was found — running the whole suite instead of the files I thought were
+> affected — is the lesson.
+
 **This is the one place a finding lives, and it is now ordered work.** Ninety-four findings from
 three reads of `packages/engine/src`, every one POSITIONED under the change that fixes it. Nothing
 was dropped in the conversion: a finding leaves this file only by its item closing, and the record
@@ -128,7 +150,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**15**~~ | ~~`Objective`~~ | 0 | **BUILT** — six answers, required on every kind. The 21 hard-coded reasons remain |
 | **16** | `Measure<D>` | 18 | **TYPE BUILT, SWEEP STAGED** — the algebra and the first door; 1,091 sites in ten stages, none done |
 | **17** | The local repairs | 11 of 18 | **11 CLOSED**; A-43 behind item 8's employment book, A-24 behind item 3's typed read, the rest with the sweep |
-| **18** | The sectors that were waiting | 4 | after everything, because each is built on the primitives above |
+| ~~**18**~~ | ~~The sectors that were waiting~~ | 4 | **DONE** — the worklist re-pointed and `C-3` built: four central banks, four rates |
 
 
 Stage A (**0–2**) changes no behaviour and makes the world tell the truth about itself; nothing below
@@ -4147,13 +4169,45 @@ option premium, where it is multiplied by the price level instead of used as the
 
 ## 18. The sectors that were waiting
 
+> **THE WORKLIST IS RE-POINTED AND `C-3` IS CLOSED.** This item's own job is to say what items 0–17
+> changed about the nine open worklist items; the sectors themselves are worklist work and are not
+> this plan's. One of its four carried findings was buildable here and is built.
+>
+> **C-3 — four central banks, four rates.** `corridor(ctx)` took no currency, so the Fed, the ECB,
+> the Bank of England and the Bank of Japan all administered 2%. With no interest differential
+> between two moneys there is no carry: an FX forward prices flat to spot, covered interest parity
+> says nothing, and the cross-currency basis has nothing to be a basis of — **four mechanisms this
+> world has built could show nothing, because one row was shared by four institutions that are the
+> whole reason they differ.**
+>
+> `POLICY_RATES`, one policy per money with an owner: **USD 2%, GBP 1.5%, EUR 0.5%, JPY 0.2%.** The
+> corridor is asked per currency at all four of its call sites — the session (the borrower's own
+> money), the floor a bank parks at, the ceiling an overdraft is penalised against, and the
+> announcement, which is now one per central bank and names the money. The WIDTH stays one policy
+> for every corridor: two central banks running different-width corridors would be a real
+> declaration and nobody has made it (Law 2).
+>
+> **And the yen wanted to be zero — `E-7`.** A rate of zero puts the corridor FLOOR at minus a tenth
+> of a point and the solver refuses a negative price: `Impossible [Law 6] a price cannot be
+> negative: -0.001`. That is right for the price of a THING and wrong for the price of TIME, which
+> the Bank of Japan and the ECB both ran below zero for years. **A negative policy rate is real and
+> this world cannot express one.** The least it can say is a tenth of a point above its own floor,
+> and the finding is written down rather than the rate being quietly rounded up.
+>
+> **Measured.** Whole suite **79 red before, 79 red after, the same 79 test for test.**
+>
+> **The other three carried findings are positions, not builds.** **C-1**'s 82 red are placed at
+> item 16's scale-model question and at their own diagnoses; **B-9** is closed (the file it is about
+> was deleted); **B-11** is closed (`plan:check` is green).
+
+
 The open worklist items, re-pointed at what the work above changes. **All of 0–17 insert before 13k**,
 because each of these five sectors would otherwise be built on the faked primitives.
 
 | worklist item | what changes |
 |---|---|
 | **13k** Periodicity | **Reframed.** Mostly **10** (`CorporateAction`) — the dividend problem is a missing declaration, not a missing schedule. `Periodicity` and `reporting/fiscal.ts` are already built. What is left is genuinely periodic: the rating fee, the tax assessment. |
-| **13l** Four policy rates | Unchanged and independent — one parameter per central bank. `corridor(ctx)` takes no currency; see **C-3**. |
+| ~~**13l**~~ Four policy rates | **BUILT with C-3.** `POLICY_RATES` is one policy per money and `corridor` is asked per currency. What is left of 13l is a rate that MOVES — these four are set at the seed and nothing changes them, which is parliament's (item 14 / worklist 14). |
 | **13m** The built environment | **Is `Space` (12).** Ports, CRE, land getting dearer are not a sector, they are the noun. |
 | **13n** Firm birth | Needs **7** (`Lifecycle`) for the states and **15** (`Objective`) for a reason to start one. |
 | **13o** Asset managers | **Needs 8 (`Agreement`/`Mandate`) and 4 (`expectedStream`).** Building it on today's `fund` party would bake the pool/decider conflation in permanently. |
@@ -4457,6 +4511,7 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **C-7** (—) | 17 | the confidence question, answered and closed (carried from `VERIFY.md`) |
 | **D-1** (A) | 8 | a levy that fails is recorded and then forgotten: no arrears (`12d-5`) |
 | **D-2** (B) | 18 | the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) |
+| **E-7** (B) | 18 (13l) | *(found while building item 18)* a policy rate of zero puts the corridor floor below zero and the solver refuses a negative price — right for the price of a thing, wrong for the price of TIME. A negative policy rate is real and this world cannot express one, so the yen sits a tenth of a point above its own floor |
 | **E-6** (B) | 18 | *(found while building item 17)* an acquirer's consideration in a bank resolution is a missing mechanism. The auction ranks bidders by what the book is worth to each, faithfully; what the winner should be PAID for taking it on is not modelled, and used to be invisible because `pays` stood in the record where it would have been |
 | **E-5** (B) | 18 (13m) | *(found while building item 12)* the state holds the ground of every place in its country and can only SELL in the one it sits in, because a seller in another place reads as a cross-border trade. What is missing is a party present in each place — a local authority, the same noun a port and a planning consent need |
 | **E-4** (B) | after 14 | *(found while building item 11)* a capacity line still produces into WIP and destroys the unsold part: the number is right and the accounts line is not — an inventory write-off where it should be operating leverage. Produce-to-order needs a line to know its demand when it produces, and `firms.produce` runs before `markets` |
