@@ -37,19 +37,28 @@ import type { InstrumentId } from '../../core/ids.js';
 import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
-import type { EtfDecl } from './data.js';
+import type { FundDecl } from './data.js';
 
 export function trackerOrders(
-  etfs: readonly EtfDecl[],
+  etfs: readonly FundDecl[],
   view: ParticipantView,
   m: MarketDecl,
 ): readonly Order[] {
   const d = etfs.find((e) => e.fund === String(view.self.id));
   if (d === undefined || !view.self.status.alive) return [];
+  /**
+   * Indices C2, item 10e: A FUND THAT TRACKS NOTHING IS ACTIVE, and this is not its path.
+   *
+   * Tracking is a term of the mandate now, not a property of a kind of vehicle — so what makes
+   * this the rebalancing path is that the fund SAYS it tracks something, and a fund that picks on
+   * its own view falls through to the ordinary orders.
+   */
+  const tracks = d.tracks;
+  if (tracks === undefined) return [];
   const subject = delivers(m);
   if (!subject.some) return [];
   const line = subject.value;
-  const read = view.index(d.tracks);
+  const read = view.index(tracks);
   // D5.a: no index yet is no mandate yet. A fund that traded against an index with no level would
   // be trading against nothing.
   if (!read.some) return [];

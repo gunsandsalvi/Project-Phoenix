@@ -8003,3 +8003,67 @@ terms decide who can be forced to sell, which is the whole of their point (XI-2)
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4 over 209 files,
 `check:deaths` 6 of 6. Tests written and updated, not run.
+
+---
+
+## Item 10e, third stage — nothing explains what an ETF is
+
+**The owner's instruction, after catching me adding a term to the mandate while leaving the type
+system that made it necessary:** *"there should be nothing explaining what an ETF is aside from the
+blueprint. Names should be derived from the fund characteristics. Remove each reference or system
+that separates what different funds are."* And: *"fees should be in the same block. You should be
+doing this analysis, not me."* Both are fair, and the second is the sharper of the two — I had been
+making the owner find these one at a time instead of reading the sector and proposing the whole
+shape.
+
+**The analysis I should have done first.** Every place that separated what a fund is:
+
+| where | what separated |
+|---|---|
+| `data.ts` | two declaration types, two draws, `MONEY_FUND_SPONSOR_SIZE`/`CREDIT_FUND_SPONSOR_SIZE`, `ETF_*` |
+| `data.ts` | **the fee in two places**: every fund drew `between(rng, FUND_SPREAD.fee)`, the tracker had a literal `0.001` |
+| `data.ts` | names TYPED — "Money Fund", "Credit Fund", "{index} tracker" |
+| `index.ts` | `funds(decls, etfs)`, `paramsOf` + `etfParamsOf`, a separate `funds.etf` phase, ten ETF-only functions |
+| `etf.ts`, `tracker.ts`, `physical.ts` | keyed off the DECLARATION TYPE, when each is really a TERM: `liquidity: 'listed'`, `tracks`, `classes: ['thing']` |
+
+**`EtfDecl` is gone.** One declaration, in three blocks that say what a vehicle is: its identity, its
+MANDATE (blueprint, currency, liquidity, tracks) and its ECONOMICS (buffer, fee, requiredYield). The
+launch data an in-kind vehicle needs is `inKind`, present when its investors come and go that way —
+a consequence of the liquidity term, never a kind of thing. `drawEtfs` is `drawTrackers` and returns
+`FundDecl`.
+
+**The fee was the sharpest of the owner's points and I had not seen it.** A tracker's fee was a
+literal while every other vehicle's was drawn from a spread: two writers of one fact (Law 4), and
+the consequence was that **a tracker's fee could not DISPERSE**. It could never be dearer than a
+rival, never lose money to one, and never be wound up for costing more than it earned — so half of
+what a manager's launch decision turns on was missing for one kind of vehicle, because its fee lived
+somewhere else. One block, one spread, every vehicle.
+
+**Names are DERIVED (`nameOf`).** They were typed, which meant a vehicle could be called one thing
+and hold another, and that the name was a THIRD place a fund's type was written down after its
+declaration and its behaviour. It reads the mandate and nothing else, so a fund whose blueprint
+changes is renamed by the same change.
+
+**Tracking is a mandate characteristic** (owner). `EtfDecl.tracks` already existed with exactly the
+right reasoning — *"a tracker's mandate is not a list of lines somebody typed, it is a rule, and the
+rule is the index's"* — but it sat on the row for ONE kind of vehicle, so an index mutual fund
+(passive, not listed) or a passive segregated mandate could not say it. It is on `MandateTerms` now,
+beside the blueprint: the blueprint says what it MAY hold, `tracks` says whether it chooses within
+that or holds what an index says. Absent is active.
+
+**And the phase is keyed off the term.** `const etfs = decls.filter(d => d.liquidity.how ===
+'listed')` — the fact that decides it, not the launch data beside it.
+
+**The liquidity terms now decide redemption** (10e.3b): a CLOSED vehicle refuses the request
+outright and records the refusal, so it can never be a forced seller, which is the entire reason the
+structure exists; a SEMI-LIQUID one pays only when its window is open, and what the queue costs the
+holders who stayed is C4.a; a LISTED one has no cash redemption at all (G1.a).
+
+**Still separated, and named so it is not lost:** `etf.ts` (319 lines), `tracker.ts` (152) and
+`physical.ts` (93) still take a declaration and are still three files named after three kinds of
+fund. Their CONTENT is right — create/redeem in kind, rebalance to an index, bid for a thing — and
+each is one term's behaviour. Folding them into one orders path that reads the mandate is the rest
+of this step.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4, `check:deaths`
+5 of 5, `check:existence` green. Tests written and updated, not run.

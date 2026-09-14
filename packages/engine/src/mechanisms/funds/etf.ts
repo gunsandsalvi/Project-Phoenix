@@ -43,7 +43,7 @@ import type { CellSide, Leg } from '../../ledger/instruction.js';
 import { shareFor } from '../../ledger/settlement.js';
 import { weightOf, type Party } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
-import type { EtfDecl } from './data.js';
+import { inKindOf, type FundDecl } from './data.js';
 
 /** One line of a creation unit: how many units of it back one share (E3). */
 export interface BasketLine {
@@ -67,7 +67,7 @@ export interface BasketLine {
  * read the book, do not restate it). Before there is a book, it is the basket the fund was launched
  * with, which is the one thing anybody could go on.
  */
-export function basketOf(ctx: MechanismContext, d: EtfDecl, share: InstrumentId): BasketLine[] {
+export function basketOf(ctx: MechanismContext, d: FundDecl, share: InstrumentId): BasketLine[] {
   const fund = d.fund as PartyId;
   const issued = ctx.instruments.get(share).issued;
   const out: BasketLine[] = [];
@@ -91,7 +91,7 @@ export function basketOf(ctx: MechanismContext, d: EtfDecl, share: InstrumentId)
     }
     return out;
   }
-  for (const [line, perShare] of Object.entries(d.basket)) {
+  for (const [line, perShare] of Object.entries(inKindOf(d).basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
     const mark = lastMark(ctx, id);
@@ -157,7 +157,7 @@ function onGrid(
  */
 export function create(
   ctx: MechanismContext,
-  d: EtfDecl,
+  d: FundDecl,
   share: InstrumentId,
   party: PartyId,
   wanted: Qty,
@@ -226,7 +226,7 @@ export function create(
  */
 export function redeemInKind(
   ctx: MechanismContext,
-  d: EtfDecl,
+  d: FundDecl,
   share: InstrumentId,
   party: PartyId,
   wanted: Qty,

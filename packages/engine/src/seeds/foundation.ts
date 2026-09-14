@@ -157,7 +157,7 @@ import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
 import { FUND, funds } from '../mechanisms/funds/index.js';
-import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/funds/data.js';
+import { drawTrackers, drawFunds, type FundDecl } from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
@@ -2178,7 +2178,7 @@ export interface FoundationDraw {
   readonly firms: readonly FirmDecl[];
   readonly listed: readonly ListedDecl[];
   readonly funds: readonly FundDecl[];
-  readonly etfs: readonly EtfDecl[];
+  readonly etfs: readonly FundDecl[];
 }
 
 export function foundationDraw(
@@ -2197,7 +2197,7 @@ export function foundationDraw(
     funds: drawFunds(bankRows, seed),
     // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
     // declares it. The seed is where the two meet, because it is the only place that may know both.
-    etfs: drawEtfs(
+    etfs: drawTrackers(
       listed.map((r) => String(equityLineOf(r.firm))),
       names,
       seed,
@@ -2656,7 +2656,7 @@ export function foundationSpec(
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
       equity(drew.listed, seed),
-      funds(drew.funds, drew.etfs),
+      funds([...drew.funds, ...drew.etfs]),
       // 13f, Securities Lending A1-A3: title passes and the economics do not. After equity and the
       // funds, because what is lent is the paper they hold and the desks that need to deliver it
       // are the ones that make its market.

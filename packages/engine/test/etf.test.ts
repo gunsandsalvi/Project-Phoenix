@@ -25,6 +25,7 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
+import { inKindOf } from '../src/mechanisms/funds/data.js';
 import { rigDraw, rigSpec, mergeModules, rigShapeFor } from './rig.js';
 import { unexpected } from './expected.js';
 import { asQty, type Qty } from '../src/core/tick.js';
@@ -87,12 +88,12 @@ function holdsTheBasket(drew: FoundationDraw): SystemModule {
       for (const e of drew.etfs) {
         const share = shareLineOf(e.fund);
         if (!ctx.instruments.has(share)) continue;
-        for (const holder of Object.keys(e.launchedBy)) {
+        for (const holder of Object.keys(inKindOf(e).by)) {
           const who = partyId(holder);
           if (!ctx.parties.has(who)) continue;
           const units = ctx.register.quantity(who, share);
           if (units <= 0) continue;
-          for (const [line, perShare] of Object.entries(e.basket)) {
+          for (const [line, perShare] of Object.entries(inKindOf(e).basket)) {
             const id = instrumentId(line);
             if (!ctx.instruments.has(id) || perShare <= 0) continue;
             const opening = ctx.prices.latest(id, ctx.period);
@@ -348,12 +349,12 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
     // shares — how many shares a launch comes to is read off the lines it tracks (`ETF_LAUNCH_SHARE`).
     const sponsorOnly = drew.etfs.map((e) => ({
       ...e,
-      launchedBy: { 'manager.etf.us': e.launchedBy['manager.etf.us'] ?? 0 },
+      launchedBy: { 'manager.etf.us': inKindOf(e).by['manager.etf.us'] ?? 0 },
     }));
     const spec = rigSpec('etf-small', shape.banks, shape.firms);
     const w = assemble({
       ...spec,
-      modules: spec.modules.map((m) => (m.id === 'funds' ? funds(drew.funds, sponsorOnly) : m)),
+      modules: spec.modules.map((m) => (m.id === 'funds' ? funds([...drew.funds, ...sponsorOnly]) : m)),
     });
     const whole = assemble({ ...spec, modules: spec.modules });
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);

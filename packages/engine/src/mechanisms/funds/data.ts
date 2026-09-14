@@ -9,6 +9,7 @@
  * what the mandate allows and nothing else. That is what makes a fund a transmission channel.
  */
 import { paramId, type ParamId } from '../../core/ids.js';
+import { InvalidRegistry } from '../../core/errors.js';
 import type { Blueprint } from '../../registry/blueprint.js';
 import type { Liquidity } from './index.js';
 import { prng } from '../../rng/prng.js';
@@ -17,11 +18,13 @@ import { between, type Spread } from '../../rng/spread.js';
 export interface FundDecl {
   /** A1: the named party. It has an account and a register of holdings like anything else. */
   readonly fund: string;
-  readonly name: string;
   /** F3: the manager is a SEPARATE party. The fee is its income and the fund's cost. */
   readonly manager: string;
   readonly managerName: string;
   readonly bank: string;
+
+  /* ---- THE MANDATE: what it may hold, how you get out, and whether it chooses ---- */
+
   /**
    * A4, item 10e: WHAT IT MAY HOLD, in the one language every vehicle is described by. It was a
    * list of instrument kind ids beside a tenor counted in periods; both are bands now, and the
@@ -36,17 +39,111 @@ export interface FundDecl {
   readonly ownCurrencyOnly: boolean;
   /** G1: how its investors get in and out, which is what decides if it can be forced to sell. */
   readonly liquidity: Liquidity;
+  /**
+   * Indices C2, C2.a: WHETHER IT CHOOSES. Absent is ACTIVE — it picks within its blueprint on its
+   * own view. Present is PASSIVE: it holds whatever that index says is in it at whatever the index
+   * weighs it, and a rebalance is the index answering differently, which forces a trade in the same
+   * session at whatever the book gives (C2.a). A tracker is not an investor, and that is the whole
+   * difference between the two businesses.
+   */
+  readonly tracks?: string;
+
+  /* ---- ITS ECONOMICS: one block, one spread table, every vehicle ---- */
+
   /** C2.a: the share of its net assets it keeps in cash, so an ordinary redemption needs no sale. */
   readonly buffer: number;
-  /** B3, F3: what the manager charges, per annum on net assets. */
+  /**
+   * B3, F3: what the manager charges, per annum on net assets — its income and the fund's cost.
+   *
+   * Item 10e: IN THE SAME BLOCK AS THE OTHER TWO, AND DRAWN THE SAME WAY. The tracker declared a
+   * literal `0.001` inline while every other vehicle drew from `FUND_SPREAD.fee`: two writers of
+   * one fact (Law 4), and the consequence was that a tracker's fee could not DISPERSE — so it could
+   * never be dearer or cheaper than a rival, never lose money to one, and never be wound up for
+   * costing more than it earned. Half of what a manager's launch decision turns on was missing for
+   * one kind of vehicle because its fee lived somewhere else.
+   */
   readonly fee: number;
   /**
    * D2, D2.a: what its investors require of it over what a deposit pays them, per annum. It is what
-   * the fund will pay for paper: it exists to be a substitute for a deposit, so what it demands of
-   * a bill is what a saver demands of it.
+   * the fund will pay for paper: what a saver demands of it is what it demands of what it holds.
    */
   readonly requiredYield: number;
+
+  /* ---- HOW THIS WORLD OPENS IT ---- */
+
+  /**
+   * Seed A3, G1.a: present when this vehicle's investors come and go IN KIND against a basket —
+   * which is a consequence of `liquidity: 'listed'` and never a separate kind of thing.
+   *
+   * A vehicle whose investors subscribe with CASH is launched by the first of them deciding to; one
+   * whose investors come in kind cannot be, because the first share has to be paid for with the
+   * things themselves. So this is what the seed needs to open one, and it is absent for everything
+   * that opens the ordinary way.
+   */
+  readonly inKind?: InKindLaunch;
   readonly why: string;
+}
+
+/**
+ * G1.a, item 10e: THE LAUNCH TERMS OF A VEHICLE WHOSE INVESTORS COME IN KIND, or a refusal.
+ *
+ * A vehicle that subscribes for CASH is launched by the first investor deciding to; one that comes
+ * in kind cannot be, because the first share has to be paid for with the things themselves. Asking
+ * for terms a fund does not have is a question about the wrong fund, so it throws rather than
+ * answering with an empty basket (App A: missing is missing).
+ */
+export function inKindOf(d: FundDecl): InKindLaunch {
+  if (d.inKind === undefined) {
+    throw new InvalidRegistry('Fund Shares G1.a', `${d.fund} is not launched in kind`);
+  }
+  return d.inKind;
+}
+
+/** E3, E3.a, Seed A3: what it takes to open a vehicle whose investors come and go in kind. */
+export interface InKindLaunch {
+  /** E3: what a creation unit is made of — the lines, and how much of each. */
+  readonly basket: Readonly<Record<string, number>>;
+  /** What share of the market its launch takes, so how many shares that is can be read off. */
+  readonly share: number;
+  /** Seed A3: who takes the first shares, and what share of the launch each of them took. */
+  readonly by: Readonly<Record<string, number>>;
+  /**
+   * E3.a: whether the SEED opens it, or a phase does when its index first answers. A tracker on a
+   * rule that reads its constituents' own prints cannot be handed a basket at period zero —
+   * nobody could have said it was right — and two vehicles endowed with the same float is a market
+   * owned twice.
+   */
+  readonly seeded: boolean;
+  /** The modules that must be assembled before it, because its basket is made of what they issue. */
+  readonly needs: readonly string[];
+}
+
+/**
+ * Law 9, item 10e: WHAT THIS VEHICLE IS CALLED, DERIVED FROM WHAT IT IS.
+ *
+ * A market names a thing by what it is, and so does this: the names were typed — "Money Fund",
+ * "Credit Fund", "{index} tracker" — which meant a vehicle could be called one thing and hold
+ * another, and that the name was a THIRD place a fund's type was written down after its
+ * declaration and its behaviour.
+ *
+ * It reads the mandate and nothing else, so a fund whose blueprint changes is renamed by the same
+ * change and cannot drift from what it does.
+ */
+export function nameOf(d: Pick<FundDecl, 'blueprint' | 'liquidity' | 'tracks' | 'bank'>): string {
+  if (d.tracks !== undefined) return `${d.bank} ${d.tracks} tracker`;
+  const what = d.blueprint.classes;
+  const short = d.blueprint.duration?.to !== undefined && d.blueprint.duration.to <= 1;
+  const of =
+    what.length === 0
+      ? 'Multi-Asset'
+      : what.includes('thing')
+        ? 'Real Asset'
+        : what.includes('residual')
+          ? 'Equity'
+          : short
+            ? 'Money'
+            : 'Credit';
+  return `${d.bank} ${of} Fund`;
 }
 
 export const fundParam = (fund: string, what: string): ParamId => paramId(`fund.${what}.${fund}`);
@@ -62,189 +159,94 @@ export const FUND_PARAMS = {
  * investors come and go IN KIND against a basket rather than for cash (G1.a), which is why it is
  * not a forced seller and why some other vehicle has to carry that.
  */
-export interface EtfDecl {
-  readonly fund: string;
-  readonly name: string;
-  readonly manager: string;
-  readonly managerName: string;
-  readonly bank: string;
-  /**
-   * E3: the creation basket — units of each line one share is a claim on. It is what a creation
-   * unit is made of before there is a fund to take a slice of; once there is one, a creation unit
-   * is a pro-rata slice of what the fund actually holds, which is what keeps its composition its
-   * own rather than a thing the last creator chose.
-   */
-  readonly basket: Readonly<Record<string, number>>;
-  /**
-   * E3.a, Seed A3: THE SHARE OF EACH LINE'S FLOAT THIS VEHICLE IS LAUNCHED WITH — and only the
-   * SEEDED vehicle is launched out of the float at all.
-   *
-   * It used to be divided among the trackers, because a world whose three trackers were each
-   * endowed with the whole of it would be a world whose listed lines were owned twice. They are no
-   * longer endowed: one is seeded and the rest are launched by a phase, in kind, out of what the
-   * participants actually hold (`launchTracker`). A transfer cannot own a float twice, so there is
-   * nothing left to divide — and dividing it anyway made the one vehicle the seed DOES launch four
-   * times smaller than the market it is supposed to be a tracker of.
-   */
-  readonly launchShare: number;
-  /**
-   * Indices C2, C2.a, Equity C2.c: THE INDEX IT TRACKS, by id. A tracker's mandate is not a list of
-   * lines somebody typed — it is a rule, and the rule is the index's. So what it should hold is
-   * whatever the index says is in it at whatever the index weighs it, and a REBALANCE is the index
-   * answering differently: a line listed, a line gone, a weight moved. The fund then has to trade,
-   * in the same session, at whatever the book gives it (C2.a) — it is not choosing, which is the
-   * whole of what makes a tracker a transmission channel rather than an investor.
-   *
-   * The id is a plain string because a fund may not import the module that declares the index
-   * (`no-cross-module-import`); what index this world's tracker tracks is data about this world.
-   */
-  readonly tracks: string;
-  /**
-   * Seed A3: who holds its shares at launch and WHAT SHARE OF IT each of them took. A fund is
-   * launched by somebody putting a basket in and taking the shares that came out, and in this world
-   * that is its sponsor and the banks whose dealing lines will make its market — an authorised
-   * participant with no shares can only ever create, and a gap the other way would have nobody able
-   * to close it (E3.a).
-   *
-   * Shares of the launch, not counts of shares: how many shares that comes to is read off the lines
-   * the basket names, which only the seed can see (`ETF_LAUNCH_SHARE`).
-   */
-  readonly launchedBy: Readonly<Record<string, number>>;
-  /** E3.a: whether the SEED launches it, or the phase does when its index first answers. */
-  readonly seeded: boolean;
-  /**
-   * Law 15, Part XIII: the modules whose parties and lines this launch NAMES. It is data about
-   * this world's fund rather than about funds, so the module reads its dependencies off it instead
-   * of carrying them: a world whose exchange-traded fund holds nothing anybody else registered
-   * needs none of them.
-   */
-  readonly needs: readonly string[];
-  /** B3, F3: what the manager charges, per annum on net assets. */
-  readonly fee: number;
-  readonly why: string;
-}
+/**
+ * E3, Indices C1, C2: how big a slice of its lines a vehicle opens holding, and who takes the
+ * first shares. Both are facts about the OPENING (Seed A3) and neither says what kind of thing it
+ * is — a vehicle whose investors come in kind needs somebody to hand it the things.
+ */
+export const IN_KIND_LAUNCH_SHARE = 0.05;
+export const IN_KIND_SPONSOR_SHARE = 0.4;
+export const IN_KIND_PARTICIPANTS = 4;
 
 /**
- * Seed B1.a, Fund Shares E3: THE LAUNCH IS DRAWN FROM THE WORLD IT IS LAUNCHED INTO.
+ * M9, Indices C1, C2, item 10e: THE VEHICLES THIS WORLD OPENS ON AN INDEX — and they are FUNDS.
  *
- * It used to be a row: a basket naming three share lines and a launch naming three parties and
- * three counts. A world of three listed firms could be written out; one of three hundred cannot,
- * and a fund that held only the three somebody typed would not be an index fund at all — it would
- * be a portfolio with an index fund's name on it (Equity C2.c). What is stated here is what an
- * index fund IS — it holds every line there is, at the weight the line has — and how big a launch
- * has to be to reach a price.
+ * There is no `EtfDecl` any more. What used to be a second declaration type, with its own draw, its
+ * own params, its own phase and its own FEE written as a literal, is a fund whose mandate says two
+ * things: its investors come and go IN KIND (`liquidity: 'listed'`), and it does not choose
+ * (`tracks`). Everything else about it — a blueprint, a buffer, a fee, what its investors require —
+ * is the same block every other vehicle has, drawn from the same spreads, so a tracker can be
+ * dearer than a rival and lose money to one.
  */
-
-/**
- * Law 2, Law 19, E3.a: HOW BIG THE LAUNCH IS, as a share of the lines it tracks.
- *
- * A launch has to be big enough that a creation or a redemption is a real trade in every line it
- * touches: a fund launched at sixty shares against a float of a hundred thousand is a rounding
- * error with a manager attached, and nothing it did would reach a price.
- *
- * IT USED TO BE A COUNT — twenty thousand shares — and a count is a claim about a world whose scale
- * the seed STATED. 11.5 derives that scale from the hours this world's people offer against the
- * hours its chain needs, and the lines this fund tracks now open at a hundred and eighty million
- * shares apiece: twenty thousand is one ten-thousandth of the smallest of them, so a household cell
- * bidding for the whole fund was bidding a fraction of a cent per member, every session crossed and
- * settled nothing, and the price the file is about was the opening one for ever. The number was the
- * rounding error its own comment warned about.
- *
- * So it is read off the lines instead: the fund holds this share of the SMALLEST line in its basket,
- * which is the one that binds — a share of each is what tracking an index means, and the smallest is
- * as far as a common multiple of all of them reaches.
- */
-export const ETF_LAUNCH_SHARE = 0.05;
-
-/**
- * Seed A3: how the launch is divided between the sponsor and the banks whose dealing lines make its
- * market. An authorised participant with no shares can only ever create, and a gap the other way
- * would have nobody able to close it (E3.a), so both sides of the book open holding some.
- */
-export const ETF_SPONSOR_SHARE = 0.4;
-
-/** How many of this world's banks are authorised participants in it (Dealer Desks A3, E3). */
-export const ETF_PARTICIPANTS = 4;
-
-/**
- * Fund Shares E1-E4: the exchange-traded fund of a world, built from the lines that world listed
- * and the banks it has. Deterministic in the world's own seed value (Seed A5, Audit D3).
- *
- * Equity C2.c: AN INDEX FUND DOES NOT PRICE AT ALL — it holds weight, whatever it costs. One share
- * of it is one share of each listed line, which is the whole of its mandate: it never bids for
- * anything and it never sells anything.
- */
-export function drawEtfs(
+export function drawTrackers(
   lines: readonly string[],
   banks: readonly string[],
   seed: string,
   /**
-   * M9, Indices C1, C2: THE INDICES A VEHICLE IS LAUNCHED ON — one each, because a tracker is how
-   * an index reaches a market at all. With one vehicle on one line, `C2`'s simultaneity (every
-   * tracker, at the same time) is a market of one, and a firm crossing a size boundary is a
-   * rebalance nobody has to trade.
+   * M9, Indices C1, C2: one vehicle per index, because a tracker is how an index reaches a market
+   * at all. With one vehicle on one line, C2's simultaneity is a market of one and a firm crossing
+   * a size boundary is a rebalance nobody has to trade.
    */
   tracks: readonly string[],
-): readonly EtfDecl[] {
+): readonly FundDecl[] {
   if (lines.length === 0 || tracks.length === 0) return [];
   const rng = prng(seed, 'etf');
   const basket: Record<string, number> = {};
   for (const line of lines) basket[line] = 1;
   const manager = 'manager.etf.us';
-  const launchedBy: Record<string, number> = {};
-  launchedBy[manager] = ETF_SPONSOR_SHARE;
+  const by: Record<string, number> = {};
+  by[manager] = IN_KIND_SPONSOR_SHARE;
   // The participants, drawn without repeating a name: a bank cannot be two of them.
   const pool = [...banks];
   const chosen: string[] = [];
-  while (chosen.length < ETF_PARTICIPANTS && pool.length > 0) {
+  while (chosen.length < IN_KIND_PARTICIPANTS && pool.length > 0) {
     const at = rng.int(pool.length);
     const taken = pool[at];
     pool.splice(at, 1);
     if (taken !== undefined) chosen.push(taken);
   }
-  // E3: what is left for the participants once the sponsor has its own slice, written just above.
-  // These are SHARES OF THE LAUNCH and not counts: how many shares that comes to is the seed's,
-  // because it is the one that can see how big the lines turned out (`seedEtf`).
-  const rest = 1 - ETF_SPONSOR_SHARE;
-  for (const bank of [...chosen].sort()) launchedBy[bank] = rest / chosen.length;
+  // E3: what is left for the participants once the sponsor has its slice. These are SHARES OF THE
+  // LAUNCH and not counts: how many shares that comes to is the seed's, because it is the one that
+  // can see how big the lines turned out.
+  const rest = 1 - IN_KIND_SPONSOR_SHARE;
+  for (const bank of [...chosen].sort()) by[bank] = rest / chosen.length;
   const home = chosen[0];
-  /**
-   * M9: ONE VEHICLE PER INDEX, each holding that index's own basket by mandate. They share the
-   * sponsor, the participants and the fee — what makes them different funds is the RULE each one
-   * tracks, which is the only thing that should differ between two index funds.
-   */
   return tracks.map((index, n) => ({
     fund: n === 0 ? 'etf.us' : `etf.${index}`,
-    /**
-     * Fund Shares E3.a, Indices A3, D5.a: WHICH VEHICLE THE SEED CAN LAUNCH, and it is the one
-     * whose index answers at period zero. A tracker on a size segment holds whatever that segment's
-     * rule says is in it, and the rule reads its constituents' own prints — so a seed that launched
-     * one would be handing it a basket nobody could have said was right, and two vehicles each
-     * endowed with their share of the same float is a market owned twice (`12d-4`). The rest are
-     * launched by a phase the period their own index first HAS a level, in kind, out of what the
-     * participants actually hold — which is a transfer and cannot own a float twice.
-     */
-    seeded: n === 0,
-    launchShare: ETF_LAUNCH_SHARE,
-    name: `${index} tracker`,
     manager,
     managerName: 'American Index Managers',
     bank: home ?? manager,
-    basket,
+    /**
+     * A4: what it MAY hold, which is not the same as what the index says it MUST. Listed equity —
+     * the class a share is, and the one read that separates a public company from a private one.
+     * The index picks the lines inside that; the mandate is what bounds it.
+     */
+    blueprint: { classes: ['residual'], currencies: [], listed: true },
+    ownCurrencyOnly: true,
+    // E1, G1.a: its shares TRADE and its investors come and go IN KIND against the basket, which is
+    // why it is not a forced seller and why some other vehicle has to carry that.
+    liquidity: { how: 'listed' },
     tracks: index,
-    launchedBy,
-    needs: ['equity', 'banks'],
-    fee: 0.001,
+    buffer: between(rng, FUND_SPREAD.buffer),
+    fee: between(rng, FUND_SPREAD.fee),
+    requiredYield: between(rng, FUND_SPREAD.requiredYield),
+    inKind: {
+      basket,
+      share: IN_KIND_LAUNCH_SHARE,
+      by,
+      /**
+       * E3.a, Indices A3, D5.a: the seed can open the one whose index answers at period zero. A
+       * tracker on a size segment holds whatever that segment's rule says is in it, and the rule
+       * reads its constituents' own prints — so a seed that launched one would be handing it a
+       * basket nobody could have said was right.
+       */
+      seeded: n === 0,
+      needs: ['equity', 'banks'],
+    },
     why: 'Fund Shares E1-E4: the vehicle that has TWO values. Its shares trade, so a session prices them; its book is the index it tracks, so a read prices them too; and the gap between the two is what somebody has to want to close for it to close at all (E3.a).',
   }));
 }
-
-/**
- * Seed B1.a: the money funds of a world. One per bank that is large enough to sponsor one, so a
- * world of thirty banks has a money-fund sector rather than one fund, and a redemption that cannot
- * be met out of a buffer is a sale into a bill market with other sellers already in it (XI-2).
- */
-export const MONEY_FUND_SPONSOR_SIZE = 4;
+export const SPONSOR_SIZE = 4;
 
 /**
  * Fund Shares A3, A4, C1.a: THE ASSET MANAGER THAT HOLDS CREDIT, and it is the demand side of every
@@ -268,7 +270,7 @@ export const MONEY_FUND_SPONSOR_SIZE = 4;
  * is short, and its reason is not a view about a mispricing. It is the bulk of the buy side, and
  * the leveraged, speculative slice is a different sector with a different item.
  */
-export const CREDIT_FUND_SPONSOR_SIZE = 3;
+export const WIDE_SPONSOR_SIZE = 3;
 
 /**
  * Fund Shares D2.a, Corporate Credit E5: WHAT A CREDIT FUND'S INVESTORS REQUIRE OF IT, per annum.
@@ -314,11 +316,10 @@ export function drawFunds(
   const rng = prng(seed, 'funds');
   const out: FundDecl[] = [];
   for (const b of banks) {
-    if (b.size < MONEY_FUND_SPONSOR_SIZE) continue;
+    if (b.size < SPONSOR_SIZE) continue;
     const at = out.length + 1;
     out.push({
       fund: `fund.money.${b.bank}`,
-      name: `${b.bank} Money Fund`,
       manager: `manager.${b.bank}`,
       managerName: `North Asset Management ${at}`,
       bank: b.bank,
@@ -368,10 +369,9 @@ export function drawFunds(
    * bidders and not one repeated — which is what a book needs to have a shape at all.
    */
   for (const b of banks) {
-    if (b.size < CREDIT_FUND_SPONSOR_SIZE) continue;
+    if (b.size < WIDE_SPONSOR_SIZE) continue;
     out.push({
       fund: `fund.credit.${b.bank}`,
-      name: `${b.bank} Credit Fund`,
       manager: `manager.credit.${b.bank}`,
       managerName: `North Credit Management ${out.length + 1}`,
       bank: b.bank,
@@ -402,11 +402,10 @@ export function drawFunds(
   // with room for exactly what it holds, so nobody is short and nobody has spare, and an investor
   // wanting to hold what it did not make is short of room by construction. Its reason is its own
   // outlook against the carry (B4), so what it will pay is a number nobody wrote down.
-  const sponsor = banks.find((b) => b.size >= MONEY_FUND_SPONSOR_SIZE);
+  const sponsor = banks.find((b) => b.size >= SPONSOR_SIZE);
   if (sponsor !== undefined) {
     out.push({
       fund: `fund.physical.${sponsor.bank}`,
-      name: `${sponsor.bank} Commodity Fund`,
       // F3: its own manager, and a separate party. Two funds at one bank are not one
       // business: the fee is this manager's income and the fund's cost, and a shared name would
       // be two funds' fees arriving in one account nobody could take apart (Law 4).
