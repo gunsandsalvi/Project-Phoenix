@@ -7077,3 +7077,47 @@ than at item 9 as a whole, which is where they are actually migrated.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. `9.2b` is the fee.
+
+---
+
+## Item 9, twelfth stage — two corrections and a new gate (9.2b)
+
+**The fee does not clear, and saying it would have been the defect.** The step's claim is that with
+`Mandate` built, *"two managers can now bid for one"* and the placeholder dies. The read of the code
+says otherwise. A manager in this world has no cost base at all: it employs nobody, holds nothing it
+must fund, and pays for nothing. Two of them in a book would bid each other down to the tick, and a
+fee of one tick is not a cleared price — it is a competition between parties with no reason to
+refuse. **The missing mechanism is a manager with a cost base** — people it employs over the assets
+it runs, which is the shape `banks/staff.ts` already has for a dealing desk — and it is worklist
+**13o**, asset managers with strategies. Law 11 exactly: the misbehaving number is not the work item,
+the missing mechanism is.
+
+**`fundManagerKind` is not deleted either.** The step calls it *"a party whose only behaviour is
+answering where it banks"*, which is true and is a statement that **the manager has no behaviour
+yet** — not that the kind is wrong. A manager is a real party with a real balance sheet that
+receives a real fee; deleting the kind would mean the fee had no payee, and there is no other kind
+it could be (a `FIRM` here produces goods from a recipe). What was actually wrong about it was its
+OBJECTIVE, and 9.2a fixed that. Item 13 gives it behaviour.
+
+**What this stage did do is close a hole that has now cost four defects.**
+
+A placeholder names the item that kills it, and a noun in a module's bag names the item that gives
+it a kernel home. Both are enforced at assembly — one without a death throws. **Neither guard asks
+whether the item is still open.** So an item closes, the stand-in it was meant to kill is still
+there, and nothing anywhere says so: it has become permanent while still carrying the words that
+say it is temporary, which is the state Law 2 exists to prevent.
+
+`B-14` is one finding of exactly this shape. Reading the fee placeholder found three more in the
+same minute: two fee placeholders and a central-bank reserve share pointing at worklist **13h**, and
+the population count pointing at **13f** — all closed, and the worklist's own header says 13f and
+13h never produced an outcome. Each is re-pointed at the item that will actually do it: the fees and
+the reserve share to **13o**, the population to **13n** (which is where `A-17` — nobody in this
+world is ever born — is closed).
+
+**`tools/check-deaths.ts` is the check, and `npm run check` runs it.** It reads the worklist's own
+table and the plan's headings and ticked steps, and fails on any `worklistItem` or `planItem` naming
+something done, absent or unparseable. A rule broken four times should be a check rather than a
+reminder — which is the project's own instruction, applied to the project's own instruction.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:deaths` 11 of
+11, `check:existence` green. `9.6`–`9.9` are the rest of item 9.
