@@ -4,6 +4,7 @@
  *
  * @spec Goods A1 Goods A2.a Goods C1 Goods C3 Households A2.a Households A2.b Households C3 Households C4 Commodities Spot A3 Freight A3 Law 2 Law 6
  */
+import { asCash, asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { FIRM, downTick, paramId, regionId, rungsUpTo, sum } from '../src/index.js';
 import { rigWorld } from './rig.js';
@@ -59,17 +60,18 @@ describe('a preference is a QUANTITY, not a share of spending (Goods A2.a, House
 });
 
 describe('the curve under a want (Goods C1, Clearing A2, Law 6)', () => {
-  const LEVELS = [10, 8, 6, 4, 2];
+  const LEVELS = [10, 8, 6, 4, 2].map((l) => asPerPiece(l, 'a level'));
+  const LEVELS_COARSE = [10, 6, 2].map((l) => asPerPiece(l, 'a level'));
 
   it('is the money divided by the price while the money binds', () => {
     // A want it cannot reach at any of these levels: the curve is the budget curve exactly.
-    const rungs = rungsUpTo(LEVELS, 100, 1000);
+    const rungs = rungsUpTo(LEVELS, asCash(100, 'what it set aside'), 1000);
     expect(sum(rungs.map((r) => r.qty)).value).toBe(downTick(100 / 2));
     expect(rungs[0]?.qty).toBe(downTick(100 / 10));
   });
 
   it('is flat at what it wanted once the price has fallen far enough', () => {
-    const rungs = rungsUpTo(LEVELS, 100, 12);
+    const rungs = rungsUpTo(LEVELS, asCash(100, 'what it set aside'), 12);
     // It never takes more than it wanted, however cheap the thing got: a household does not buy
     // grain by the lorry-load because it is cheap, and nothing caps it — the want is a quantity it
     // named itself and the arithmetic takes whichever ran out first.
@@ -83,8 +85,8 @@ describe('the curve under a want (Goods C1, Clearing A2, Law 6)', () => {
   });
 
   it('refines without moving: every level of a coarse grid says the same on a fine one (Law 2)', () => {
-    const coarse = rungsUpTo([10, 6, 2], 100, 12);
-    const fine = rungsUpTo([10, 8, 6, 4, 2], 100, 12);
+    const coarse = rungsUpTo(LEVELS_COARSE, asCash(100, 'what it set aside'), 12);
+    const fine = rungsUpTo(LEVELS, asCash(100, 'what it set aside'), 12);
     for (const level of [10, 6, 2]) {
       const upToCoarse = sum(coarse.filter((r) => r.price >= level).map((r) => r.qty)).value;
       const upToFine = sum(fine.filter((r) => r.price >= level).map((r) => r.qty)).value;
@@ -93,9 +95,15 @@ describe('the curve under a want (Goods C1, Clearing A2, Law 6)', () => {
   });
 
   it('asks for nothing when it has no money or wants none of it', () => {
-    expect(rungsUpTo(LEVELS, 0, 10)).toEqual([]);
-    expect(rungsUpTo(LEVELS, 100, 0)).toEqual([]);
-    expect(rungsUpTo([0, -1], 100, 10)).toEqual([]);
+    expect(rungsUpTo(LEVELS, asCash(0, 'no money at all'), 10)).toEqual([]);
+    expect(rungsUpTo(LEVELS, asCash(100, 'what it set aside'), 0)).toEqual([]);
+    expect(
+      rungsUpTo(
+        [asPerPiece(0, 'nothing'), asPerPiece(-1, 'less than nothing')],
+        asCash(100, 'what it set aside'),
+        10,
+      ),
+    ).toEqual([]);
   });
 });
 

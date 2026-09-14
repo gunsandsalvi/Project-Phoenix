@@ -5282,3 +5282,27 @@ landing between two pieces with nobody saying which way it went (core/tick.ts's 
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
 forbids, `plan:check`.
+
+## Item 16, stage 6 — the households
+
+**73 sites became 32.** A cell's decision is money all the way through, and it was `number` all the
+way through: what it takes in, what a period could cost it, the cushion it wants against its income
+AND against its savings, what it owns over that cushion, what it decides to spend, what it can pay
+with, what it has spare, what it is short of, what belongs in a fund. They are `Cash` now — and the
+two things in that sentence that are NOT money, the periods of cushion it wants and how fast it
+closes a gap, are `Ratio`, so neither can meet the others.
+
+**The demand curve is the clearest gain.** A `Rung` is a LEVEL and a COUNT. `rungsOver` is
+`amountOf(budget, price)` — money over a level is how many it buys — `rungsUpTo` is the same under a
+want, and `levelsBelow` is a level scaled down a grid. Every one of those was money over a price
+with a string saying so, and every increment was a `sub` of two counts that is now `subQty`.
+
+**A second local `scale`, and then a third.** `consume.ts` and `portfolio.ts` each had a
+`const scale = sum([...])` — a magnitude for a dust check — shadowing the imported operation, in the
+same shape the seed had in stage 2. Renamed `magnitudes`, which is what they are. Three files in six
+stages: `scale` is the name this codebase reaches for when it means "how big the numbers here are",
+and the algebra now owns it. That is a Law 4 observation about NAMES rather than numbers, and it is
+the same one stage 4's two `perShare`s made.
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
+forbids, `plan:check`.

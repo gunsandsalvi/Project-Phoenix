@@ -2940,6 +2940,7 @@ under a shock.
 > | ~~3~~ | ~~`banks`~~ — **DONE**: capital, funding, the desk's quote and the treasury's book | **130 → 44** |
 > | ~~4~~ | ~~`funds`~~ — **DONE**: the NAV, the basket, and two `perShare`s that were not the same thing | **68 → 34** |
 > | ~~5~~ | ~~`firms`~~ — **DONE**: the plan, the reservation and the project | **77 → 31** |
+> | ~~6~~ | ~~`households`~~ — **DONE**: the cushion, the basket and the demand curve | **73 → 32** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -3076,6 +3077,26 @@ under a shock.
 > register counts is an `Amount<'piece'>` of a currency and what a price times a quantity comes to is
 > `Money<'piece'>`: the same cents, and the same cents ONLY because money's own price is one — the
 > single hard-coded price this world has (Money D2). The crossing is named rather than assumed.
+>
+> **Measured**: the same 79.
+>
+> ### Stage 6 — the households
+>
+> A cell's decision is money all the way through and it was `number` all the way through: what it
+> takes in, what a period could cost it, the cushion it wants against both its income and its
+> savings, what it owns over that cushion, what it decides to spend and what it can pay with. They
+> are `Cash` now, and the two things that are NOT money in that sentence — the periods of cushion it
+> wants and how fast it closes a gap — are `Ratio`, so neither can be added to the other.
+>
+> The demand curve is the clearest gain. `Rung` is a LEVEL and a COUNT; `rungsOver` is
+> `amountOf(budget, price)`, `rungsUpTo` is the same under a want, and `levelsBelow` is a level
+> scaled down a grid. Every one of those was money over a price with a string saying so.
+>
+> **A second local `scale`, and then a third.** `consume.ts` and `portfolio.ts` each had a
+> `const scale = sum([...])` — a magnitude for a dust check — shadowing the imported operation, in
+> the same shape the seed had. Renamed `magnitudes`, which is what they are. Three files in six
+> stages: `scale` is the name this codebase reaches for when it means "how big the numbers here
+> are", and the algebra now owns it.
 >
 > **Measured**: the same 79.
 >

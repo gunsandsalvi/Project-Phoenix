@@ -20,12 +20,21 @@
  * and coupons on the paper it holds (B3) — all of them money that actually arrived, because income
  * a household did not receive is not income (B3.a).
  */
+import {
+  asCash,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  over,
+  scale,
+} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
 import { marketId, paramId, type MarketId, type PartyId } from '../../core/ids.js';
-import { addTo, combineDust, div, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, combineDust, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -364,7 +373,7 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   if (!decided.some) return;
   const goods = demandOf(view, rows, p, decided.value.spend);
   const spare = sparePerMember(
-    view.cash(view.registry.currencyOf(self.region)),
+    heldAsMoney(view.cash(view.registry.currencyOf(self.region)), 'what is in its account'),
     decided.value.spend,
     decided.value.buffer,
   );
@@ -396,11 +405,17 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   const toTheMarket = view.params.ratio(HOUSEHOLD_PARAMS.toTheMarket);
   const tracking = [...paper, ...shares].filter((l) => l.tracks).length;
   const picked = paper.length + shares.length - tracking;
-  const forTracking = mul(spare, toTheMarket, 'what it puts into the market as a whole');
-  const forPicked = sub(spare, forTracking, 'what is left for lines it picked');
-  const perTracked = tracking > 0 ? div(forTracking, tracking, 'into one of them') : 0;
-  const perPicked = picked > 0 ? div(forPicked, picked, 'into one line it picked') : 0;
-  const budgetFor = (l: { readonly tracks: boolean }): number => (l.tracks ? perTracked : perPicked);
+  const forTracking = scale(spare, toTheMarket, 'what it puts into the market as a whole');
+  const forPicked = minus(spare, forTracking, 'what is left for lines it picked');
+  const perTracked =
+    tracking > 0
+      ? over(forTracking, asRatio(tracking, 'the lines that track'), 'into one of them')
+      : asCash(0, 'it tracks nothing');
+  const perPicked =
+    picked > 0
+      ? over(forPicked, asRatio(picked, 'the lines it picked'), 'into one line it picked')
+      : asCash(0, 'it picked nothing');
+  const budgetFor = (l: { readonly tracks: boolean }): Cash => (l.tracks ? perTracked : perPicked);
   const lines = paper.length + shares.length;
   const paperOrders = paperBids(view, paper, budgetFor, lines, weightOf(self));
   // D2, D5: the third thing it can do with its money, and the reason it asks for it back. What the

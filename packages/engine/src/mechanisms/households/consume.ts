@@ -33,6 +33,22 @@
  * by its own surprises about that price — so a cell that has seen prices move bids across a wider
  * range than one that has not.
  */
+import {
+  absolute,
+  asAmount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  over,
+  type PerPiece,
+  plus,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { add, atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -74,24 +90,24 @@ export interface Spending {
    * since 13c.2 that can be less: a cell whose needs and wants are covered for less than this keeps
    * the difference, which is a saving nobody decided on separately (`demandOf`).
    */
-  readonly spend: number;
+  readonly spend: Cash;
   /** What it wanted to spend before its own budget had a say (C1.d). */
-  readonly wanted: number;
+  readonly wanted: Cash;
   /** The cushion it wants to be sitting on, per member. */
-  readonly buffer: number;
+  readonly buffer: Cash;
   /** Its own outlook of what it will earn (C1.a). */
-  readonly expected: number;
+  readonly expected: Cash;
   /** What it holds in its account, per member. */
-  readonly cash: number;
+  readonly cash: Cash;
   /**
    * C1.d, D2: THE WHOLE OF WHAT IT CAN PAY WITH, per member — its account and what it can ask back
    * from a money fund on demand, because nobody lends to it and those are the two places its money
    * is. It is the number that bound the decision, so it is the number `constrained` is about, and
    * it is published: a reader that had only `cash` would see a cell spending more than it holds.
    */
-  readonly budget: number;
+  readonly budget: Cash;
   /** C1.b, D3: what it owns, per member — its cash and its holdings at what the market last said. */
-  readonly wealth: number;
+  readonly wealth: Cash;
   /** C1.d: whether its budget bound it, which is a threshold a mean-preserving spread moves cells across (A2.g). */
   readonly constrained: boolean;
 }
@@ -105,21 +121,25 @@ export interface Spending {
 export function spendPerMember(
   view: ParticipantView,
   p: HouseholdParams,
-  onDemand: number,
+  onDemand: Cash,
 ): Option<Spending> {
   const income = view.outlook(about({ on: 'income' }));
   if (!income.some) return none();
   const ccy = view.registry.currencyOf(view.self.region);
-  const cash = view.cash(ccy);
-  const budget = add(cash, onDemand, 'what it can pay with');
-  const wealth = add(wealthOf(view, cash), onDemand, 'what it owns');
+  const cash = heldAsMoney(view.cash(ccy), 'what is in its account');
+  const budget = plus(cash, onDemand, 'what it can pay with');
+  const wealth = plus(wealthOf(view, cash), onDemand, 'what it owns');
   // C1.c, §46 B3: the cushion is so many periods of what it expects, widened by how wrong that
   // expectation has recently been. Confidence is in the same unit as the variable, so a cell whose
   // income has been unpredictable by a given amount wants that much more in hand per period.
-  const buffer = add(
-    mul(
-      p.bufferPeriods,
-      add(income.value.expected, income.value.confidence, 'what a period could cost it'),
+  const buffer = plus(
+    scale(
+      plus(
+        asCash(income.value.expected, 'what it expects to take in'),
+        asCash(income.value.confidence, 'how wrong that has been'),
+        'what a period could cost it',
+      ),
+      asRatio(p.bufferPeriods, 'the periods of cushion it wants'),
       'the cushion it wants against its income',
     ),
     // XI-2, §46 B3, Fund Shares C2.b (13d): AND AGAINST ITS SAVINGS. What it holds can move, and how
@@ -131,8 +151,16 @@ export function spendPerMember(
     atRisk(view),
     'the cushion it wants altogether',
   );
-  const gap = div(sub(wealth, buffer, 'what it owns over its cushion'), p.patience, 'closed at its own patience');
-  const wanted = add(income.value.expected, gap, 'what it decides to spend');
+  const gap = over(
+    minus(wealth, buffer, 'what it owns over its cushion'),
+    asRatio(p.patience, 'how fast it closes a gap'),
+    'closed at its own patience',
+  );
+  const wanted = plus(
+    asCash(income.value.expected, 'what it expects to take in'),
+    gap,
+    'what it decides to spend',
+  );
   // C1.d: it spends what it has, whatever it wants. And nobody buys a negative loaf.
   //
   // Law 7: nor an unrepresentable one. A cell whose budget is the rounding of a subtraction would
@@ -141,15 +169,17 @@ export function spendPerMember(
   // number there is no relative precision left, so dust itself underflows to zero and every
   // identity in the wire becomes exact. A spend that is dust of what it has is nothing.
   const affordable = atMost(wanted, budget, 'it buys with the money it has');
-  const scale = sum([budget, Math.abs(wanted)]);
-  const afforded = material(affordable, scale.terms + 1, scale.value)
+  // Renamed from `scale` at item 16: the imported `scale` is the dimension algebra's, and a local
+  // of that name shadowed it in the middle of this function.
+  const magnitudes = sum([budget, absolute(wanted, 'what it decided to spend')]);
+  const afforded = material(affordable, magnitudes.terms + 1, magnitudes.value)
     ? affordable
-    : 0;
+    : asCash(0, 'a spend that is dust of what it has is nothing');
   return some({
-    spend: atLeast(afforded, 0, 'there is no less to spend than nothing'),
+    spend: atLeast(afforded, asCash(0, 'nothing'), 'there is no less to spend than nothing'),
     wanted,
     buffer,
-    expected: income.value.expected,
+    expected: asCash(income.value.expected, 'what it expects to take in'),
     cash,
     budget,
     wealth,
@@ -166,14 +196,20 @@ export function spendPerMember(
  * Law 19: every term is a read — the register's units and this cell's own outlooks — and there is
  * no risk aversion parameter anywhere. What it will not risk is what it has seen happen.
  */
-function atRisk(view: ParticipantView): number {
-  const terms: number[] = [];
+function atRisk(view: ParticipantView): Cash {
+  const terms: Cash[] = [];
   for (const h of view.holdings()) {
     const outlook = view.outlook(about({ on: 'price', instrument: h.instrument }));
     if (!outlook.some || outlook.value.confidence <= 0) continue;
     const units = sum(h.lots.map((l) => l.qty));
     if (units.value <= 0) continue;
-    terms.push(mul(units.value, outlook.value.confidence, 'what this line could move by'));
+    terms.push(
+      valueAt(
+        asPerPiece(outlook.value.confidence, 'how far it thinks this line can move'),
+        units.value,
+        'what this line could move by',
+      ),
+    );
   }
   return sum(terms).value;
 }
@@ -185,13 +221,13 @@ function atRisk(view: ParticipantView): number {
  * and there is no stored net worth anywhere. What it holds that nothing has ever printed a price
  * for is not in it: a thing with no price is not wealth a household could count on.
  */
-function wealthOf(view: ParticipantView, cash: number): number {
-  const terms = [cash];
+function wealthOf(view: ParticipantView, cash: Cash): Cash {
+  const terms: Cash[] = [cash];
   for (const h of view.holdings()) {
     const print = view.print(h.instrument);
     if (!print.some) continue;
     const units = sum(h.lots.map((l) => l.qty));
-    terms.push(mul(units.value, print.value.price, 'what it holds is worth'));
+    terms.push(valueAt(print.value.price, units.value, 'what it holds is worth'));
   }
   return sum(terms).value;
 }
@@ -224,7 +260,7 @@ export function demandOf(
   view: ParticipantView,
   rows: readonly ConsumptionDecl[],
   p: HouseholdParams,
-  spend: number,
+  spend: Cash,
 ): DemandStep[] {
   const self = view.self;
   if (self.representation !== 'cell') return [];
@@ -234,18 +270,36 @@ export function demandOf(
     const line = lineFor(view, self, row, p);
     if (line !== undefined) lines.push(line);
   }
-  const needCost = sum(lines.map((l) => mul(l.row.neededPerMember, l.perUnit, 'what it must have costs'))).value;
-  const wantCost = sum(lines.map((l) => mul(l.row.wantedPerMember, l.perUnit, 'what it wants on top costs'))).value;
+  const needCost = sum(
+    lines.map((l) =>
+      valueAt(
+        l.perUnit,
+        asAmount<'piece'>(l.row.neededPerMember, 'what a member must have'),
+        'what it must have costs',
+      ),
+    ),
+  ).value;
+  const wantCost = sum(
+    lines.map((l) =>
+      valueAt(
+        l.perUnit,
+        asAmount<'piece'>(l.row.wantedPerMember, 'what a member wants on top'),
+        'what it wants on top costs',
+      ),
+    ),
+  ).value;
   // C1.d: it eats before it does anything else, and it eats out of money it has.
   const toNeeds = atMost(spend, needCost, 'it needs what it needs and pays with what it has');
-  const left = sub(spend, toNeeds, 'what is left when it has had what it must have');
-  let needScale = 0;
-  if (needCost > 0) needScale = div(toNeeds, needCost, 'the fraction of what it must have it can pay for');
-  let wantScale = 0;
+  const left = minus(spend, toNeeds, 'what is left when it has had what it must have');
+  let needScale = asRatio(0, 'it can pay for none of what it must have');
+  if (needCost > 0) {
+    needScale = ratioOf(toNeeds, needCost, 'the fraction of what it must have it can pay for');
+  }
+  let wantScale = asRatio(0, 'it can pay for none of what it wants on top');
   if (wantCost > 0) {
     wantScale = atMost(
-      div(left, wantCost, 'the fraction of what it wants on top it can pay for'),
-      1,
+      ratioOf(left, wantCost, 'the fraction of what it wants on top it can pay for'),
+      asRatio(1, 'all of it'),
       'it takes what it wanted and not more because it could afford more',
     );
   }
@@ -259,8 +313,16 @@ export function demandOf(
     if (qty <= 0) continue;
     // C4: what it set aside is what the units cost it INCLUDING the tax; what reaches the seller is
     // that less the tax, and that is the money the curve is drawn against.
-    const set = mul(qty, l.perUnit, 'what it set aside for this line');
-    const net = div(set, add(1, p.consumptionTax, 'with the tax it will owe on it'), 'what reaches the seller');
+    const set = valueAt(
+      l.perUnit,
+      asAmount<'piece'>(qty, 'what it takes of this line'),
+      'what it set aside for this line',
+    );
+    const net = over(
+      set,
+      asRatio(add(1, p.consumptionTax, 'with the tax it will owe on it'), 'one and the tax'),
+      'what reaches the seller',
+    );
     if (!material(net, 2, spend)) continue;
     for (const r of rungsUpTo(pricesOver(l.expected, l.width, p.steps), net, qty)) {
       out.push({
@@ -280,10 +342,10 @@ interface Line {
   readonly instrument: InstrumentId;
   readonly market: MarketId;
   /** C4: what ONE unit costs it, tax and all, at the price it expects. What the basket is priced at. */
-  readonly perUnit: number;
+  readonly perUnit: PerPiece;
   /** §46 B3: the price it expects, and how wrong it has been about this one. */
-  readonly expected: number;
-  readonly width: number;
+  readonly expected: PerPiece;
+  readonly width: PerPiece;
 }
 
 /**
@@ -301,7 +363,7 @@ function lineFor(
   const outlook = view.outlook(about({ on: 'price', instrument: instrument }));
   const print = view.print(instrument);
   const expected = outlook.some
-    ? outlook.value.expected
+    ? asPerPiece(outlook.value.expected, `what it expects ${instrument} to cost`)
     : print.some
       ? print.value.price
       : undefined;
@@ -310,19 +372,30 @@ function lineFor(
     row,
     instrument,
     market: goodMarketId(row.subUnit, self.region),
-    perUnit: mul(expected, add(1, p.consumptionTax, 'and the tax on it'), 'what a unit costs it'),
+    perUnit: scale(
+      expected,
+      asRatio(add(1, p.consumptionTax, 'and the tax on it'), 'one and the tax'),
+      'what a unit costs it',
+    ),
     expected,
-    width: outlook.some ? outlook.value.confidence : 0,
+    width: asPerPiece(
+      outlook.some ? outlook.value.confidence : 0,
+      'how wrong it has been about this one',
+    ),
   };
 }
 
 /** The levels a cell posts over, highest first: what it expects, spread by its own surprises. */
-function pricesOver(expected: number, width: number, steps: number): number[] {
+function pricesOver(expected: PerPiece, width: PerPiece, steps: number): PerPiece[] {
   if (width <= 0 || steps <= 1) return [expected];
-  const out: number[] = [];
+  const out: PerPiece[] = [];
   for (let i = 0; i < steps; i += 1) {
     const t = div(sub(mul(2, i, 'step'), sub(steps, 1, 'steps less one'), 'centred'), sub(steps, 1, 'steps less one'), 'position');
-    const price = add(expected, mul(width, -t, 'how far from what it expects'), 'a level it would pay');
+    const price = minus(
+      expected,
+      scale(width, asRatio(t, 'how far along the grid'), 'how far from what it expects'),
+      'a level it would pay',
+    );
     if (price > 0) out.push(price);
   }
   return out;

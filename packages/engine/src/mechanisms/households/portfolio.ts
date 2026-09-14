@@ -20,14 +20,26 @@
  * reasons D5 names — yield against risk — which a household cannot weigh until something in this
  * world prices risk (worklist 9). Liquidity is the reason it has now, and this is the whole of it.
  */
+import {
+  amountOf,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  type PerPiece,
+  plus,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { nextPeriod, period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { add, atMost, div, material, mul, sub, sum } from '../../core/num.js';
-import { downTick } from '../../core/tick.js';
+import { atMost, div, material, sum } from '../../core/num.js';
+import { downTick, scaleQty } from '../../core/tick.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
 import { levelsBelow, rungsOver } from './demand.js';
@@ -55,9 +67,9 @@ export interface SavingLine {
    * and its ask DOWN by its own uncertainty, and would sell at a level it would simultaneously buy
    * at. Uncertainty made it a seller, which is the opposite of what uncertainty does.
    */
-  readonly bid: number;
+  readonly bid: PerPiece;
   /** What it will TAKE: the same expectation with the margin on the other side (§46 B3, A3). */
-  readonly ask: number;
+  readonly ask: PerPiece;
   /**
    * Indices C2, Fund Shares A4, D5 (13d): whether this line is a CLAIM ON A BOOK rather than on an
    * issuer — a vehicle that holds the market instead of a company that is part of it. It is the
@@ -127,7 +139,7 @@ export function savingLines(
     const outlook = view.outlook(about({ on: 'price', instrument: i.id }));
     const print = view.print(i.id);
     const expected = outlook.some
-      ? outlook.value.expected
+      ? asPerPiece(outlook.value.expected, `what it expects ${i.id} to be worth`)
       : print.some
         ? print.value.price
         : undefined;
@@ -142,9 +154,12 @@ export function savingLines(
      * different prices for it because one of them has been surprised and the other has not, and a
      * book whose two sides agreed on a number would not be a market.
      */
-    const spread = outlook.some ? outlook.value.confidence : 0;
-    const bid = sub(expected, spread, 'what it will pay');
-    const ask = add(expected, spread, 'what it will take');
+    const spread = asPerPiece(
+      outlook.some ? outlook.value.confidence : 0,
+      'how wrong it has been about this line',
+    );
+    const bid = minus(expected, spread, 'what it will pay');
+    const ask = plus(expected, spread, 'what it will take');
     if (bid <= 0) continue;
     const flows = profile.cashFlows(i, on, view.calendar);
     const last = flows[flows.length - 1];
@@ -173,7 +188,7 @@ export function paperBids(
    * It is asked PER LINE (13d) because a saver that would rather own the market than pick names
    * puts a different amount behind the two, and which of them a line is, is the line's own answer.
    */
-  budgetFor: (line: SavingLine) => number,
+  budgetFor: (line: SavingLine) => Cash,
   lines: number,
   weight: number,
 ): PaperBid[] {
@@ -182,17 +197,27 @@ export function paperBids(
     const perLine = budgetFor(e);
     if (perLine <= 0) continue;
     // Bond N9.b: what it must find is the clean price plus what has accrued and travels with it.
-    const dirty = add(e.bid, view.accrued(e.instrument.id), 'what a unit costs it');
+    const dirty = plus(e.bid, view.accrued(e.instrument.id), 'what a unit costs it');
     // Law 8, XI-15: EVERY MEMBER holds whole units, so what one of them bids for is a whole number
     // of them and the cell posts that many for each of the members it stands for. A cell bidding
     // for 108,739,763,087.57 units is one bidding for a fraction of a unit apiece, which is not a
     // unit and not a bid.
-    const perMember = downTick(div(perLine, dirty, 'units one member bids for'));
-    const qty = mul(perMember, weight, 'what the cell bids for');
+    const perMember = downTick(amountOf(perLine, dirty, 'units one member bids for'));
+    const qty = scaleQty(perMember, weight, 'what the cell bids for');
     // Law 7: this line's share against what the whole budget would have bought — a share that
     // small is the rounding of the split, not a bid.
-    const whole = div(mul(perLine, lines, 'the whole of it'), dirty, 'what it would buy');
-    if (perMember <= 0 || !material(qty, lines + 1, mul(whole, weight, 'the cell')) || !e.instrument.market.some) continue;
+    const whole = amountOf(
+      scale(perLine, asRatio(lines, 'the lines it is in'), 'the whole of it'),
+      dirty,
+      'what it would buy',
+    );
+    if (
+      perMember <= 0 ||
+      !material(qty, lines + 1, scale(whole, asRatio(weight, 'the members of the cell'), 'the cell')) ||
+      !e.instrument.market.some
+    ) {
+      continue;
+    }
     out.push({ market: e.instrument.market.value, instrument: e.instrument.id, price: e.bid, qty });
   }
   return out;
@@ -253,8 +278,8 @@ export interface ShareOrder {
 export function shareOrders(
   view: ParticipantView,
   lines: readonly SavingLine[],
-  budgetFor: (line: SavingLine) => number,
-  short: number,
+  budgetFor: (line: SavingLine) => Cash,
+  short: Cash,
   steps: number,
 ): ShareOrder[] {
   const out: ShareOrder[] = [];
@@ -264,7 +289,7 @@ export function shareOrders(
     if (!line.instrument.market.some) continue;
     const market = line.instrument.market.value;
     const id = line.instrument.id;
-    const units = mul(view.free(id), weight, 'shares it could sell');
+    const units = scaleQty(view.free(id), weight, 'shares it could sell');
     if (short > 0 || perLine <= 0 || steps < 1) {
       if (!material(units, 2, units)) continue;
       // A-28: AT WHAT IT WILL TAKE. A holder short of cash sells at the market; one that is not
@@ -293,7 +318,7 @@ export function shareOrders(
      * deleted with it. It is deleted with this.
      */
     for (const rung of rungsOver(levelsBelow(line.bid, steps), perLine)) {
-      const wanted = mul(rung.qty, weight, 'what the cell puts in');
+      const wanted = scaleQty(rung.qty, weight, 'what the cell puts in');
       const qty = downTick(wanted);
       if (qty <= 0) continue;
       out.push({ market, instrument: id, side: 'buy', price: rung.price, qty });
@@ -325,12 +350,12 @@ export interface FundPosition {
   readonly venue: VenueId;
   readonly fund: string;
   readonly line: InstrumentId;
-  readonly perShare: number;
+  readonly perShare: PerPiece;
   /** D2.a: what it offers a saver, after its manager. This is what competes with a deposit. */
   readonly offered: number;
   /** XI-15, Law 8: whole shares for each member. A member cannot redeem part of one. */
   readonly sharesPerMember: Qty;
-  readonly worthPerMember: number;
+  readonly worthPerMember: Cash;
 }
 
 /**
@@ -353,9 +378,11 @@ export function fundPositions(
     if (fund === undefined || line === undefined) continue;
     const last = struck.filter((e) => e.data['fund'] === fund).pop();
     if (last === undefined) continue;
-    const perShare = last.data['perShare'];
+    const saidPerShare = last.data['perShare'];
     const offered = last.data['offered'];
-    if (typeof perShare !== 'number' || perShare <= 0) continue;
+    if (typeof saidPerShare !== 'number' || saidPerShare <= 0) continue;
+    // Item 16: a level re-entering from what the fund published, at the read that knows what it is.
+    const perShare = asPerPiece(saidPerShare, 'what the fund said a share is worth');
     /**
      * D5, App A: A FUND THAT PUBLISHED NO OFFER IS NOT A FUND OFFERING NOTHING.
      *
@@ -373,7 +400,7 @@ export function fundPositions(
       perShare,
       offered,
       sharesPerMember: held,
-      worthPerMember: mul(held, perShare, 'what its shares are worth'),
+      worthPerMember: valueAt(perShare, held, 'what its shares are worth'),
     });
   }
   return out;
@@ -389,8 +416,8 @@ export function fundPositions(
 export function fundOrders(
   positions: readonly FundPosition[],
   required: number,
-  toFund: number,
-  short: number,
+  toFund: Cash,
+  short: Cash,
 ): FundOrder[] {
   const out: FundOrder[] = [];
   for (const p of positions) {
@@ -404,7 +431,7 @@ export function fundOrders(
       // needs a little of it. Asking for the share above would be redeeming a hundred times the
       // need on every small shortfall in the population, which is the cell grain deciding the
       // aggregate (XI-15) rather than anybody's decision.
-      const want = downTick(div(short, p.perShare, 'shares it must give back'));
+      const want = downTick(amountOf(short, p.perShare, 'shares it must give back'));
       out.push({
         venue: p.venue,
         side: 'sell',
@@ -416,7 +443,7 @@ export function fundOrders(
     // money — the competition D2 names, against a deposit that pays it nothing. Whole shares again,
     // and DOWN this time: what its money buys, never a share it cannot pay for.
     if (toFund <= 0 || p.offered < required) continue;
-    const buying = downTick(div(toFund, p.perShare, 'shares it asks for'));
+    const buying = downTick(amountOf(toFund, p.perShare, 'shares it asks for'));
     if (buying <= 0) continue;
     out.push({ venue: p.venue, side: 'buy', sharesPerMember: buying });
   }
@@ -424,10 +451,12 @@ export function fundOrders(
 }
 
 /** C2: how much of what it is about to spend its account cannot cover, per member (Law 7 as above). */
-export function shortForSpending(cash: number, spend: number): number {
-  const gap = spend - cash;
-  const scale = sum([cash, spend]);
-  return gap > 0 && material(gap, scale.terms, scale.value) ? gap : 0;
+export function shortForSpending(cash: Cash, spend: Cash): Cash {
+  const gap = minus(spend, cash, 'what it means to spend over what it holds');
+  const magnitudes = sum([cash, spend]);
+  return gap > 0 && material(gap, magnitudes.terms, magnitudes.value)
+    ? gap
+    : asCash(0, 'it can pay for what it means to spend');
 }
 
 /**
@@ -435,10 +464,12 @@ export function shortForSpending(cash: number, spend: number): number {
  * what it is about to spend, up to the cushion it wants. Above the cushion it would rather have
  * paper (D5), and below what it is about to spend there is nothing to put anywhere.
  */
-export function cushionForFund(cash: number, spend: number, spare: number): number {
-  const over = cash - spend - spare;
-  const scale = sum([cash, spend, spare]);
-  return over > 0 && material(over, scale.terms, scale.value) ? over : 0;
+export function cushionForFund(cash: Cash, spend: Cash, spare: Cash): Cash {
+  const held = minus(minus(cash, spend, 'after what it spends'), spare, 'and after what it places');
+  const magnitudes = sum([cash, spend, spare]);
+  return held > 0 && material(held, magnitudes.terms, magnitudes.value)
+    ? held
+    : asCash(0, 'nothing over the cushion it wants');
 }
 
 /**
@@ -449,15 +480,18 @@ export function cushionForFund(cash: number, spend: number, spare: number): numb
  * cannot be a cell's per-member share of anything: multiplied back by the weight it does not give
  * the total again, and the wire refuses it (XI-15). The dust is the magnitudes it came out of.
  */
-export function sparePerMember(cash: number, spend: number, buffer: number): number {
-  const left = cash - spend - buffer;
-  const scale = sum([cash, spend, buffer]);
-  return left > 0 && material(left, scale.terms, scale.value) ? left : 0;
+export function sparePerMember(cash: Cash, spend: Cash, buffer: Cash): Cash {
+  const left = minus(minus(cash, spend, 'after what it spends'), buffer, 'after its cushion');
+  // Renamed from `scale` at item 16: the imported `scale` is the dimension algebra's.
+  const magnitudes = sum([cash, spend, buffer]);
+  return left > 0 && material(left, magnitudes.terms, magnitudes.value)
+    ? left
+    : asCash(0, 'a saver with nothing over has nothing to place');
 }
 
 /** The total a cell of this weight commits, from a per-member decision (XI-15). */
-export function totalOf(perMember: number, weight: number): number {
-  return mul(perMember, weight, 'what the cell commits');
+export function totalOf(perMember: Qty, weight: number): Qty {
+  return scaleQty(perMember, weight, 'what the cell commits');
 }
 
 export type { PartyId };

@@ -15,6 +15,7 @@
  * what a saver would pay that nobody had stated and no clause asked for, and it was enough to keep
  * a whole market from ever crossing.
  */
+import { asCash, asPerPiece } from '../../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { downTick, levelsBelow, rungsOver, sum, type Rung } from '../../src/index.js';
 
@@ -25,8 +26,8 @@ import { downTick, levelsBelow, rungsOver, sum, type Rung } from '../../src/inde
  * differ by at most one piece in millions, which is what "a piece is the smallest thing there is"
  * means when the thing is money. The SIZE of the budget is this test's own resolution.
  */
-const BUDGET = 37_500_000;
-const OPINION = 2.75;
+const BUDGET = asCash(37_500_000, 'what a member has to place');
+const OPINION = asPerPiece(2.75, 'what it thinks a unit is worth');
 const GRAINS = [1, 2, 5, 10, 50, 200];
 
 /** What a book sees at a level: every order at or above it, added up (Clearing A2). */
@@ -66,8 +67,10 @@ describe('a cell own demand curve at every grain (Law 2)', () => {
   });
 
   it('posts nothing at all for an opinion of nothing, rather than a price of nothing', () => {
-    expect(levelsBelow(0, 5)).toEqual([]);
-    expect(rungsOver(levelsBelow(OPINION, 5), 0)).toEqual([]);
-    expect(rungsOver([0, -1], BUDGET)).toEqual([]);
+    expect(levelsBelow(asPerPiece(0, 'no opinion at all'), 5)).toEqual([]);
+    expect(rungsOver(levelsBelow(OPINION, 5), asCash(0, 'no money at all'))).toEqual([]);
+    expect(
+      rungsOver([asPerPiece(0, 'nothing'), asPerPiece(-1, 'less than nothing')], BUDGET),
+    ).toEqual([]);
   });
 });
