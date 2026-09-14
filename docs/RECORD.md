@@ -7038,3 +7038,42 @@ plan called all seven nouns — which is what reading the source rather than the
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. No `standsInFor: { noun: 'Agreement' }` is left anywhere in the engine.
+
+---
+
+## Item 9, eleventh stage — `Mandate` exists (9.2a)
+
+**What.** The eighth kind of agreement, and the one item 13 is blocked on. A mandate is a commitment
+between a POOL and a MANAGER: the pool owes the manager its fee, the manager owes the pool its
+judgement. That is what splits a fund into the three things it actually is — a pool that holds and
+has no opinions, a mandate that rules, and a manager that decides.
+
+It was a `FundDecl` row: a fact about this world's DATA rather than about these two parties, which
+nothing outside `funds` could read and which no manager agreed to. `MandateTerms` carries `mayHold`
+(A4's real constraint, which `eligible` now reads off the pool's own commitment) and `leverage`.
+
+**`leverage` is the point of doing it now.** *A hedge fund is a mandate with leverage*, and it lived
+on `fundKind.borrows` as a hard-coded `false` — a fact about the world stated as a fact about a
+CATEGORY, which said no pool anywhere may ever be levered. That is what 13h claimed to have built
+hedge funds on (`B-14`'s shape). Every mandate this world draws still says `false`, so the kind's
+`borrows: false` is left saying the same thing while it is true, and its docstring now says what it
+is: a SHAPE with a scheduled death, item 13.2, which opens the door for a credit decision to ask a
+pool's own mandate. **It is not opened here because no mandate answers `true` yet, and a door nobody
+answers is `A-67` again** — which is the lesson of this item, applied to itself.
+
+**`SeedContext.owes`** is new and is the other half: a fund that exists at period zero was set up by
+somebody, on terms, and a seed states an opening STOCK (Seed A3). A bilateral commitment is as much
+an opening stock as a holding is, and pretending the mandate was struck in the first period would be
+a flow nobody was a side of. It writes no journal event, because nothing happened.
+
+**`fundManagerKind.objective` was wrong and is corrected.** `itsMandate` is what a party somebody
+else set up and wrote the rules for is for — a pool, a central bank, an insurer. It was on the
+MANAGER because the pool and the manager were one thing wearing two party ids. They are two now: the
+pool is run under a mandate and the manager is a business that competes to be given one, so its
+objective is `theResidual`.
+
+The five remaining placeholder nouns (`View` ×4, `PublishedStatement` ×1) point at **9.9** rather
+than at item 9 as a whole, which is where they are actually migrated.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. `9.2b` is the fee.

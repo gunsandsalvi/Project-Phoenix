@@ -987,4 +987,15 @@ export interface SeedContext {
     basisPerUnit: number,
   ): void;
   market(id: MarketId): MarketDecl;
+  /**
+   * XI-8, Seed A3 (item 9.2): A COMMITMENT THE WORLD OPENS WITH — a mandate a pool was set up
+   * under, a tenancy somebody was already in, an employment somebody already held.
+   *
+   * A seed states a STOCK the flows then act on (A3), and a bilateral commitment is as much an
+   * opening stock as a holding is: a fund that exists at period zero was set up by somebody, on
+   * terms, and pretending it was struck in the first period would be a flow nobody was a side of.
+   * It is the same door `owes` is, through the same store, and it writes no journal event because
+   * nothing happened — the world simply starts with this true (Seed A2).
+   */
+  owes(decl: AgreementDecl): Agreement;
 }

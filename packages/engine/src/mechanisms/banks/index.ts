@@ -968,7 +968,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         'each bank’s memory of its own reserve account’s moves, as far back as that bank looks',
       why:
         'this is an OUTLOOK: a party’s adaptive memory of an observable, formed from its own history over its own memory length \u2014 which is exactly what the expectations module is the one writer of (§46, XI-16, Law 4). A second private implementation of one mechanism.',
-      standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9' },
+      standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
     },
   ],
   spec: 'Banks Lending',

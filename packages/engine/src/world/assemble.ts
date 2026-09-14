@@ -235,6 +235,8 @@ function seedContext(w: World): SeedContext {
       w.instruments.adjustIssued(instrument, held * weightOf(p));
     },
     market: (id) => w.market(id),
+    // XI-8, Seed A3: an opening commitment is an opening stock, exactly as a holding is.
+    owes: (decl) => w.openAgreement(decl),
   };
 }
 

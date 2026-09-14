@@ -96,6 +96,8 @@ import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js
 import {
   Agreements,
   agreementReads,
+  type Agreement,
+  type AgreementDecl,
   type AgreementKindDecl,
   type AgreementReads,
 } from '../register/agreements.js';
@@ -1201,6 +1203,15 @@ export class World {
    * It is asked once a period by the module that clears the book, and a need that came back is a
    * reservation and not an order: what is struck is what the fee cleared at.
    */
+  /**
+   * XI-8, Seed A3: open a commitment directly, for a seed. It writes no journal event because
+   * nothing happened: the world simply starts with this true (Seed A2), the way an opening holding
+   * does. Every other writer goes through `ctx.owes`, which journals.
+   */
+  openAgreement(decl: AgreementDecl): Agreement {
+    return this.agreementStore.open(decl, this.currentPeriod);
+  }
+
   borrowsWanted(): readonly Borrowing[] {
     const out: Borrowing[] = [];
     for (const [kind, asker] of [...this.borrowAskers].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {

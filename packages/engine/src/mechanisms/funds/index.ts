@@ -33,6 +33,9 @@ import type { VenueDecl } from '../../clearing/venue.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import {
+  agreementKindId,
+  type AgreementId,
+  type CurrencyCode,
   instrumentId,
   instrumentKindId,
   currencyUnit,
@@ -45,6 +48,8 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
+import { InvalidRegistry } from '../../core/errors.js';
+import type { Agreement, AgreementDecl, AgreementTerms } from '../../register/agreements.js';
 import {
   amountOf,
   asCash,
@@ -120,6 +125,99 @@ export interface FundShareTerms {
 export const shareLineOf = (fund: string): InstrumentId => instrumentId(`share.${fund}`);
 export const fundVenue = (fund: string): VenueId => venueId(`funds.${fund}`);
 
+/* --------------------------------------------------------------------------------------------
+ * THE MANDATE
+ * ------------------------------------------------------------------------------------------ */
+
+/**
+ * Fund Shares A4, F3, XI-8 (item 9.2): A MANDATE IS AN AGREEMENT BETWEEN A POOL AND A MANAGER.
+ *
+ * It is what splits a fund into the three things it actually is: a POOL that holds and has no
+ * opinions, a MANDATE that rules, and a MANAGER that decides. The pool owes the manager its fee and
+ * the manager owes the pool its judgement, which is two named parties with dated terms and a state
+ * — an agreement, and the eighth kind of one (item 9.1).
+ *
+ * It was a `FundDecl` row, which is to say a fact about the WORLD'S DATA rather than about these
+ * two parties, and nothing outside this module could read it. A separate account is a mandate whose
+ * pool is the client's own balance sheet; an ETF and a money fund are pools with different
+ * redemption rules; and a HEDGE FUND IS A MANDATE WITH LEVERAGE, which is why `leverage` is here
+ * and not on `fundKind` — where it was hard-coded `false` for every pool in every world (item 13).
+ */
+export const MANDATE = agreementKindId('funds.mandate');
+
+export interface MandateTerms extends AgreementTerms {
+  readonly kind: typeof MANDATE;
+  /** A4: the instrument kinds this pool may hold. Anything else it may not buy, at any price. */
+  readonly mayHold: readonly string[];
+  /**
+   * B1, F2, XI-3: whether this pool may be levered — and `false` is a real term of a mandate and
+   * not an absence. A levered pool borrows from a NAMED lender, which is what makes its leverage a
+   * fact about a loan rather than a property of the pool (item 13's B1.a).
+   */
+  readonly leverage: boolean;
+}
+
+/**
+ * Law 15: the module that declared the kind narrows a row back to it, structurally — what makes
+ * these terms a mandate is that they say what the pool may hold and whether it may be levered.
+ */
+export const isMandate = (t: AgreementTerms): t is MandateTerms =>
+  'mayHold' in t && 'leverage' in t;
+
+/** One mandate as this module reads it: the pool, its manager, and what it may do. */
+export interface Mandate extends MandateTerms {
+  readonly id: AgreementId;
+  readonly pool: PartyId;
+  readonly manager: PartyId;
+}
+
+/**
+ * A4, F2, XI-8: WRITE THE MANDATE. One door for the seed and for a launch mid-run, so a pool set up
+ * at period zero and one set up in period forty are the same thing (Law 4).
+ *
+ * `leverage` is `false` for every pool this world draws, and that is a TERM and not an absence: none
+ * of the mandates in this world permits borrowing, and a hedge fund is the mandate that does
+ * (item 13). It used to be `borrows: false` on the party KIND, which said no pool anywhere may ever
+ * be levered — a fact about the world stated as a fact about a category.
+ */
+function openMandate(
+  ctx: { owes: (d: AgreementDecl) => Agreement },
+  pool: PartyId,
+  manager: PartyId,
+  ccy: CurrencyCode,
+  mayHold: readonly string[],
+): void {
+  const terms: MandateTerms = { kind: MANDATE, mayHold, leverage: false };
+  ctx.owes({
+    debtor: pool,
+    creditor: manager,
+    ccy,
+    owed: 0,
+    terms,
+    why: `${manager} runs ${pool} under a mandate to hold ${mayHold.join(', ')}`,
+  });
+}
+
+export function mandateOf(a: Agreement): Mandate {
+  if (!isMandate(a.terms)) {
+    throw new InvalidRegistry('Fund Shares A4', `${a.id} is not a mandate`);
+  }
+  return { ...a.terms, id: a.id, pool: a.debtor, manager: a.creditor };
+}
+
+/**
+ * A4: THE MANDATE A POOL IS RUN UNDER, asked of the pool's own commitments. A pool with none is not
+ * a fund — it is a party holding things — and nothing here may decide for it.
+ */
+export function mandateFor(view: ParticipantView): Option<Mandate> {
+  for (const a of view.commitments()) {
+    if (a.state === 'performing' && a.debtor === view.self.id && isMandate(a.terms)) {
+      return some(mandateOf(a));
+    }
+  }
+  return none<Mandate>();
+}
+
 /**
  * A1, F2: a fund is a party like any other. It fails on solvency and on nothing else: its equity is
  * zero by construction (A3), so with no leverage there is nothing for it to be insolvent WITH — and
@@ -137,16 +235,34 @@ export const fundKind: PartyKindProfile = {
   representation: 'named',
   moneyIssuer: null,
   fails: ['solvency'],
+  /**
+   * F2, item 9.2: WHETHER A POOL MAY BE LEVERED IS ITS MANDATE'S, and `MandateTerms.leverage` is
+   * where it is said. Every mandate this world draws says `false`, so no pool here borrows, and
+   * this says the same thing while that is true.
+   *
+   * It is a SHAPE with a scheduled death and not a property of the category: as a fact about the
+   * KIND it said no pool anywhere may ever be levered, which is what 13h claimed to have built
+   * hedge funds on. What replaces it is the credit decision asking the pool's own mandate, and
+   * that door is item 13.2's — it is not opened here because no mandate in this world answers
+   * `true` yet, and a door nobody answers is `A-67` again.
+   */
   borrows: false,
   // Money Market A1.c, E1: its cash is somebody's deposit and it is in the market all day — this
   // is the money that leaves first, and it leaves because it chose to (`bankChoices`, bank.ts).
   depositClass: 'wholesale',
 };
 
-/** F3: the manager is a separate party. The fee is its income and the fund's cost. */
+/**
+ * F3: the manager is a separate party. The fee is its income and the fund's cost.
+ *
+ * Item 15, item 9.2: ITS OBJECTIVE IS THE RESIDUAL AND NOT A MANDATE. `itsMandate` is what a party
+ * somebody else set up and wrote the rules for is for — a pool, a central bank, an insurer — and
+ * it was on the manager because the pool and the manager were one thing wearing two party ids.
+ * They are two now: the POOL is run under a mandate (`funds.mandate`), and the MANAGER is a
+ * business that competes to be given one and takes what is left after everybody else is paid.
+ */
 export const fundManagerKind: PartyKindProfile = {
-  /** item 15: what somebody else set it up to do, and it does not get to change it. */
-  objective: 'itsMandate',
+  objective: 'theResidual',
   id: FUND_MANAGER,
   representation: 'named',
   moneyIssuer: null,
@@ -810,6 +926,16 @@ function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
       status: { alive: true, standing: 'good' },
     });
   }
+  // A4, F3, XI-8: the mandate this pool is launched under. An exchange-traded fund tracks an
+  // index, so what it may hold is the lines its basket names (E3) — the same constraint a money
+  // fund's mandate is, said about a different set of kinds.
+  openMandate(
+    ctx,
+    fund,
+    manager,
+    ctx.registry.currencyOf(region.id),
+    [...new Set(Object.keys(e.basket).map((line) => String(ctx.instruments.get(instrumentId(line)).kind)))],
+  );
   const share = shareLineOf(e.fund);
   const market = etfMarketOf(e.fund);
   const terms: FundShareTerms = { kind: FUND_SHARE, fund };
@@ -1121,6 +1247,10 @@ function ordersOf(
 ): readonly Order[] {
   const d = declOf(decls, view.self.id);
   if (d === undefined) return [];
+  // A4: a pool with no mandate is not a fund, and nothing here decides for one. It is a refusal
+  // and not a default (Part II: MISSING is an answer).
+  const mandate = mandateFor(view);
+  if (!mandate.some) return [];
   const own = view.lastOwnSince('fund.struck', view.period);
   if (!own.some) return [];
   const shortfall = own.value.data['shortfall'];
@@ -1156,7 +1286,7 @@ function ordersOf(
     // XI-2: at whatever the market gives. A forced seller that named a price would not be one.
     return [{ party: view.self.id, side: 'sell', price: 'market', qty }];
   }
-  if (spare <= 0 || !eligible(view, d, i)) return [];
+  if (spare <= 0 || !eligible(view, mandate.value, d, i)) return [];
   // C1.a: it must buy something with the cash, and what it will pay is what makes the paper return
   // what its own investors require of it (D2). A price it will not pay does not fill.
   const on = view.calendar.startOf(view.period);
@@ -1172,7 +1302,7 @@ function ordersOf(
     `what ${i.id} is worth to ${d.fund}`,
   );
   if (price <= 0) return [];
-  const lines = eligibleLines(view, d);
+  const lines = eligibleLines(view, mandate.value, d);
   if (lines === 0) return [];
   const each = over(
     spare,
@@ -1212,9 +1342,15 @@ function holdingsWorth(view: ParticipantView): Cash {
   return sum(terms).value;
 }
 
-/** A4, D1: what the mandate allows — the kind, and how long it may still have to run. */
-function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
-  if (!i.status.live || !d.eligible.includes(i.kind)) return false;
+/**
+ * A4, D1: what the mandate allows — the kind, and how long it may still have to run.
+ *
+ * XI-8 (item 9.2): WHAT IT MAY HOLD IS ITS OWN MANDATE'S, read off the pool's own commitment. It
+ * used to be a field on a `FundDecl` row — a fact about this world's DATA rather than about these
+ * two parties — which nothing outside this module could read and which no manager agreed to.
+ */
+function eligible(view: ParticipantView, m: Mandate, d: FundDecl, i: Instrument): boolean {
+  if (!i.status.live || !m.mayHold.includes(i.kind)) return false;
   /**
    * A-47, Currency C4, A4: AND A MANDATE IS A MANDATE IN A MONEY.
    *
@@ -1255,10 +1391,10 @@ function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
 }
 
 /** How many lines the mandate lets it into, so what it has spare is spread over them and no more. */
-function eligibleLines(view: ParticipantView, d: FundDecl): number {
+function eligibleLines(view: ParticipantView, m: Mandate, d: FundDecl): number {
   let n = 0;
   for (const i of view.instruments.all()) {
-    if (i.market.some && eligible(view, d, i)) n += 1;
+    if (i.market.some && eligible(view, m, d, i)) n += 1;
   }
   return n;
 }
@@ -1580,7 +1716,7 @@ export function funds(
           'the subscriptions and redemptions queued this cycle, the NAV struck this period, and the NAV struck last',
         why:
           'the queue and the strike are working state within a period. The PREVIOUS NAV is not: it is a figure the fund published, which is what makes its return a read rather than a series, and no other party can see it. A published figure belongs where published figures live.',
-        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/IMPLEMENTATION.md item 9' },
+        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
       },
     ],
     spec: 'Fund Shares, XI-2',
@@ -1678,6 +1814,12 @@ export function funds(
     families: [equityIsZero(), noRequestVanishes(state)],
     // A1.c: both kinds are wholesale money and both leave for the same reasons (the manager runs
     // the money and banks like the money it runs), so one reason answers for both.
+    agreementKinds: [
+      {
+        id: MANDATE,
+        what: 'what a pool may hold and whether it may be levered, and which manager runs it',
+      },
+    ],
     bankChoices: [
       { partyKind: FUND, chooses: fundChoosesBank },
       { partyKind: FUND_MANAGER, chooses: fundChoosesBank },
@@ -1699,6 +1841,11 @@ export function funds(
           });
         }
         const ccy = ctx.registry.currencyOf(ctx.parties.get(d.fund as PartyId).region);
+        // A4, F3, XI-8: THE MANDATE THIS POOL WAS SET UP UNDER. A fund that exists at period zero
+        // was set up by somebody, on terms, and a seed states an opening STOCK (Seed A3) — so the
+        // commitment is as much part of the opening as the share line is. The pool owes the manager
+        // its fee; it owes nothing yet, because the fee falls due at the end of a period.
+        openMandate(ctx, d.fund as PartyId, d.manager as PartyId, ccy, d.eligible);
         const terms: FundShareTerms = { kind: FUND_SHARE, fund: d.fund as PartyId };
         ctx.instruments.add({
           id: shareLineOf(d.fund),
