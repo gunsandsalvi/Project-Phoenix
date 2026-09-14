@@ -203,7 +203,7 @@ export interface InstrumentKindProfile {
    * could ever hold a share and every fund was a bond fund at the type level; a household therefore
    * valued a share by extrapolating its own price history; and the one earnings-based valuation in
    * the tree sat inside a module that has never produced anything. The equity market was a closed
-   * loop of price-extrapolators with no fundamental side (`docs/AUDIT.md` item 4).
+   * loop of price-extrapolators with no fundamental side (`docs/RECORD.md` item 4).
    *
    * ABSENT IS AN ANSWER AND NOT A DEFAULT: it says THE PROMISE IS THE EXPECTATION, which is true of
    * every contractual instrument, and the kernel then discounts `cashFlows` at what the holder

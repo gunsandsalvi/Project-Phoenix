@@ -47,7 +47,7 @@ export const NOUN_KINDS: readonly NounKind[] = ['noun', 'working', 'physics'];
 
 /** Where a noun kept in a module's bag is going, and what ends the arrangement (Law 2). */
 export interface NounHome {
-  /** The kernel noun it is an instance of, named as `docs/AUDIT.md` names it. */
+  /** The kernel noun it is an instance of, named as `docs/IMPLEMENTATION.md` names it. */
   readonly noun: string;
   /** The plan item that builds that noun and deletes this declaration in the same change. */
   readonly planItem: string;
@@ -113,14 +113,14 @@ export class OntologyRegister {
    *
    * This is the whole point of the register: a module reaching for a category the kernel has no
    * home for gets a build failure that says so, instead of reaching for the nearest bag — which is
-   * the move that produced every missing primitive in `docs/AUDIT.md`.
+   * the move that produced every missing primitive in `docs/IMPLEMENTATION.md`.
    */
   declared(owner: string, name: string): NounDecl {
     const d = this.decls.get(key(owner, name));
     if (d === undefined) {
       throw new InvalidRegistry(
         'Law 15',
-        `${owner} keeps a store called "${name}" that it never declared. Say what is in it and which of ${NOUN_KINDS.join(' | ')} it is; a noun names the plan item that gives it a kernel home (docs/AUDIT.md item 0)`,
+        `${owner} keeps a store called "${name}" that it never declared. Say what is in it and which of ${NOUN_KINDS.join(' | ')} it is; a noun names the plan item that gives it a kernel home (docs/RECORD.md item 0)`,
       );
     }
     return d;

@@ -59,7 +59,7 @@ describe('the tree as it stands', () => {
   });
 
   it('reads the state from the worklist, not from whether the plan file is there', () => {
-    // Item 14's plan file was folded into docs/AUDIT.md while the item was still open. A missing
+    // Item 14's plan file was folded into docs/IMPLEMENTATION.md while the item was still open. A missing
     // file used to mean "fully done", so the figure would have claimed fourteen worked steps for an
     // item nobody has started. The worklist is the one writer of an item's state (Law 4, Law 19).
     const items = itemProgress();

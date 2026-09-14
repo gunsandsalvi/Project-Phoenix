@@ -197,7 +197,7 @@ export const expectations: SystemModule = {
         'every party’s outlook on every variable it watches, with its memory, its last observation and its recent surprises',
       why:
         'an outlook is what a party BELIEVES, which is a first-class fact about the world and the input to every decision in it. Keyed by a bare string, the only belief expressible is an extrapolation of an observable \u2014 there is no way to say what one party thinks of ANOTHER PARTY (§46, XI-16).',
-      standsInFor: { noun: 'View', planItem: 'docs/AUDIT.md item 6' },
+      standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9' },
     },
   ],
   spec: 'Expectations, XI-16',

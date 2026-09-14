@@ -1214,7 +1214,7 @@ function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
    * second, through `cashFlows` — the issuer's DATED PROMISE — so anything that promises no dated
    * payment failed the tenor test by having no last flow at all. A share promises none. That single
    * line is why **no fund in this world could ever hold a share** and why every fund here is a bond
-   * fund at the type level, whatever its mandate says (`docs/AUDIT.md` item 4).
+   * fund at the type level, whatever its mandate says (`docs/RECORD.md` item 4).
    *
    * The tenor test now applies where a tenor EXISTS, which is what a tenor is; and what the fund can
    * put a number on is asked of the kind's own valuation door, which every kind answers in its own
@@ -1542,7 +1542,7 @@ export function funds(
           'the subscriptions and redemptions queued this cycle, the NAV struck this period, and the NAV struck last',
         why:
           'the queue and the strike are working state within a period. The PREVIOUS NAV is not: it is a figure the fund published, which is what makes its return a read rather than a series, and no other party can see it. A published figure belongs where published figures live.',
-        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/AUDIT.md item 3' },
+        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/IMPLEMENTATION.md item 9' },
       },
     ],
     spec: 'Fund Shares, XI-2',

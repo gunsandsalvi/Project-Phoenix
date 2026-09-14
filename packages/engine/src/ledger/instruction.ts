@@ -55,7 +55,7 @@ export interface CellSide {
  * the income tax read them: every money leg into a household from anyone but the treasury that was
  * not a `coupon` was income. So a household was taxed at the wage rate on gross share-sale proceeds,
  * on a maturing bill's PRINCIPAL, on a fund redemption, on a probate distribution and on a loan
- * drawdown. Borrowing was income (`docs/AUDIT.md` item 5, A-46, A-37, A-63).
+ * drawdown. Borrowing was income (`docs/RECORD.md` item 5, A-46, A-37, A-63).
  *
  * THE PAYER SAYS, because the payer knows: the wage phase knows it is paying a wage, and the taxman
  * inferring it from the shape of the wire is the defect. A `disposal` carries the BASIS of what was

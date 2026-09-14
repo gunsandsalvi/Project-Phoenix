@@ -274,7 +274,7 @@ export interface Outlook {
  *
  * `credit` is the one this list adds, and it is the whole point: a belief HELD BY one party ABOUT
  * another. Everything else here already existed as a spelling; what is new is that a spelling
- * nobody declared can no longer be formed (`docs/AUDIT.md` item 6).
+ * nobody declared can no longer be formed (`docs/RECORD.md` item 6).
  */
 export type Subject =
   | { readonly on: 'price'; readonly instrument: InstrumentId }

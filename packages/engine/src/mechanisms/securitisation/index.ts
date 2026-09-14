@@ -926,7 +926,7 @@ export function securitisation(): SystemModule {
           'every securitisation: the arranger, the pool, the tranches and who holds them',
         why:
           'a deal is an agreement among an arranger, a vehicle and the note holders, with a waterfall for its terms. Kept here, the waterfall is nobody’s obligation and never allocates a loss (B-8).',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
       },
     ],
     spec: 'Securitisation',

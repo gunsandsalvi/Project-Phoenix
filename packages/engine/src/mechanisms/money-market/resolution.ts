@@ -221,7 +221,7 @@ export function resolve(ctx: MechanismContext, bank: PartyId, why: string): bool
    * §25 C1, XI-3: FROM HERE SOMEBODY ELSE DECIDES WHAT HAPPENS TO ITS BOOK, and that is a state the
    * world can see. A bank under resolution used to be `alive: true` — the same value as one nobody
    * had a claim against — so nothing reading a counterparty could tell them apart, which is exactly
-   * what a depositor runs from and a lender prices (`docs/AUDIT.md` item 7).
+   * what a depositor runs from and a lender prices (`docs/RECORD.md` item 7).
    */
   ctx.standing(bank, 'inResolution', why);
   const ccy = ctx.registry.currencyOf(p.region);

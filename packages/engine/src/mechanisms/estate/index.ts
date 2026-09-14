@@ -178,7 +178,7 @@ function open(ctx: MechanismContext, dead: PartyId, because: string): void {
    * moment an estate opens and the moment the party ceases, it still holds things and its book is
    * being moved — and until this state existed it was `alive: true`, indistinguishable from a party
    * trading normally. That absence is why this module keeps a `Winding` record of its own
-   * (`docs/AUDIT.md` items 0 and 7).
+   * (`docs/RECORD.md` items 0 and 7).
    */
   ctx.standing(dead, 'winding', `estate ${id} opened: ${because}`);
   ctx.cease(dead, id);
@@ -595,7 +595,7 @@ export const estate: SystemModule = {
         'every estate being wound up: whose it is, when it opened, when it closes, and whether it has',
       why:
         'winding up is a multi-period process with states and a rule at each step, and it is the only one in this world that has any representation at all. A construction project, an auction cycle, a tender offer and a restructuring are the same shape and would each invent their own.',
-      standsInFor: { noun: 'Process', planItem: 'docs/AUDIT.md item 14' },
+      standsInFor: { noun: 'Process', planItem: 'docs/IMPLEMENTATION.md item 21' },
     },
   ],
   spec: 'XI-8',

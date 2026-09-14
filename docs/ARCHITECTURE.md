@@ -1072,7 +1072,7 @@ packages/engine/src/
 packages/engine/test/      mirrors src; property tests under test/property
 packages/app/src/          worker.ts (engine host), main.ts, ui/
 tools/                     spec-index.ts (parses the spec), check-citations.ts
-docs/                      spec/ ARCHITECTURE.md WORKLIST.md RECORD.md COVERAGE.md AUDIT.md
+docs/                      spec/ ARCHITECTURE.md WORKLIST.md RECORD.md COVERAGE.md IMPLEMENTATION.md
 ```
 
 Mechanisms (Parts V–X) live in `packages/engine/src/mechanisms/<system>/`, one directory per spec
@@ -1116,7 +1116,7 @@ citation does not resolve. `docs/COVERAGE.md` is the requirement → status map 
 implementing the clause exists; it cannot say the module has ever run, because nothing about a
 `@spec` tag depends on the world. Ninety-nine `MET` rows cite a module that has never produced an
 outcome, and the ninety-six citing nothing else say **NEVER REACHED** in their `where` cell
-(`docs/AUDIT.md` B-12). Whether a mechanism produces anything is measured by reading the world, and
+(`docs/IMPLEMENTATION.md` B-12). Whether a mechanism produces anything is measured by reading the world, and
 that is the audit's job, not the citation checker's.
 
 ---
@@ -1129,7 +1129,7 @@ that is the audit's job, not the citation checker's.
   deleted plan file used to be taken as a second statement that the item was done, which made an
   open item whose plan had moved elsewhere count as fourteen worked steps.
 - One bounded change per item; a commit per item; the commit message says what and why.
-- `docs/RECORD.md` is a ledger of outcomes, not a diary. `docs/AUDIT.md` is the one place an open
+- `docs/RECORD.md` is a ledger of outcomes, not a diary. `docs/IMPLEMENTATION.md` is the one place an open
   FINDING lives, and it is ORDERED WORK: nineteen items, each carrying the findings it closes, worked
   before `docs/WORKLIST.md` rows 13k–17. A finding leaves it only when its item closes.
 - No measurement, tuning or diagnosis of numbers until Part XII is reached. Deterministic checks

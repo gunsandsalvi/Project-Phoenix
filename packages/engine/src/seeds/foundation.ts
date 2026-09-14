@@ -2543,7 +2543,9 @@ export function foundationSpec(
        *
        * 13h was where a fund would hold derivatives on purpose, and it closed without opening the
        * pass that re-marks a fund's claim on itself: no fund kind is on this list and none is
-       * scheduled to be. The finding is `docs/AUDIT.md` B-14, unpositioned.
+       * scheduled to be. That is `docs/IMPLEMENTATION.md` B-14, and what a pool may hold is a
+       * MANDATE's answer (Fund Shares A3) — so the list changes at item 9, and item 13 is where a
+       * fund first has a reason to take a position on purpose.
        */
       derivativeLayer([...TRADES_CONTRACTS]),
       // CDS: the first class on the layer (13b). After it, because a book clears through the house

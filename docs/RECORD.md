@@ -1,5 +1,10 @@
 # The record
 
+> **Entries before this line cite `docs/AUDIT.md`.** That file was superseded by
+> `docs/IMPLEMENTATION.md`, which carries every finding that was still open; the closed items are
+> recorded here. The old file's item numbers are kept in these entries as written — a ledger is not
+> rewritten — and `docs/IMPLEMENTATION.md` Part 3 carries the mapping from them to the new ones.
+
 A ledger of outcomes, not a diary (Law 16). One entry per worklist item, written when the item
 closes: what changed, why, what was found, what it deleted. A forecast appears only next to the
 measurement that would kill it (Law 17).
@@ -5439,3 +5444,45 @@ arithmetic, and Law 12 says a fix removes code.
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations
 (208), forbids (205 files), `plan:check`.
+
+## The audit file becomes the implementation file
+
+**What was wrong with it.** `docs/AUDIT.md` was produced by reading all 59,927 lines of
+`packages/engine/src` and every `done` row and `MET` mark made about it. That method finds defects.
+**It cannot find a sector that was never written**, because an absence leaves no trace in source or
+in a claim about source. Six of them were carried in from a deleted holding pen as a single row of
+finding `C-4` — *"the sectors that are not there"* — filed under item **18**, which was then marked
+**DONE** having built one of its four findings.
+
+**What the aggregate says, and it had never been run.** `docs/COVERAGE.md` holds one row per spec
+clause and nothing ever summed it. **1,369 clauses: 823 MET, 90 PARTIAL, 456 MISSING, and 97 of the
+MET carry `NEVER REACHED`** — 47% of the specification is missing, partial or dead. **Five systems
+have no clause MET at all**: Polity (0/32), Private Equity (0/25), Prime Brokerage (0/24), Hedge
+Funds (0/24), Short-Term Debt (0/19). A sixth, Small-Business Pools, has 2 of 28 and both are the
+generic cell kernel.
+
+**How they were lost, traced through the worklist's own rows.** 13e closed placing small-business
+cells, the covered bond, factoring, receivable pledges and senior notes as repo collateral into 13f;
+**13f's PLACED list names none of the five.** 13f placed short-term debt into 13i; 13i closed without
+it. 13h placed prime brokerage and firm birth into *"go on with them"* — no destination. 13n, still
+open, says it itself: *"PLACED forward three times (13f to 13g to 13h) without landing."* That is
+finding `B-14` — *a finding was positioned into an item, the item closed, and the finding was not
+done* — **six more times**.
+
+**What replaces it.** `docs/IMPLEMENTATION.md`, in four parts: the measured state per spec system;
+one ordered list of **25 items** with dependency reasons; each item with files and line-by-line steps;
+and every one of the **63 still-open findings carried verbatim** so nothing is lost. The open lines
+come first (items 2–9 finish what the old file left half-built), then the sectors that are not there
+(10b–19), then the worklist tail. Item **1** is a new gate, `check:existence`, which aggregates
+`docs/COVERAGE.md` and fails when a system's counts move without the plan's table moving with them —
+the check that makes a `done` row falsifiable. Six of the old file's item numbers are re-pointed at
+it; the rest go to this ledger, which keeps the closed items and is not rewritten.
+
+**`E-10` is indexed for the first time.** `Contract.struckAt` means a different dimension per kind —
+a price for a bond future, a spread for a CDS, a rate for a swap, an index level for an index
+future, a basis for a cross-currency swap. It was found by the dimension type at stage 10a, written
+only into code comments, and never added to the findings index.
+
+**Not measured.** No test was run for this change; it is documentation plus 38 re-pointed references
+and 13 placeholder `planItem`s. Typecheck and lint are green. The four `cds` and `money-market` files
+carried in from item 16 stage 10c are typed and unmeasured, and item **2** continues from there.

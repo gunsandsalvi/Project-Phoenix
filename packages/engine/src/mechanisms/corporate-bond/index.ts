@@ -268,7 +268,7 @@ export function corporateBondModule(): SystemModule {
           'which covenant of which line has been tested against which set of accounts',
         why:
           'a covenant is a TERM of an agreement, and a test of one is that agreement performing or in breach. With no agreement to be a term of, the test is a private note and a breach reaches nobody.',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
       },
     ],
     spec: 'Corporate Credit',

@@ -10,7 +10,7 @@ in the engine: it says a module which cites the clause exists and implements it.
 mechanism has ever run. Ninety-nine of these rows cite a module that has never produced an outcome —
 no contract, no policy, no borrow, no tenancy, no bond — and ninety-six of them cite nothing else.
 Those ninety-six carry **NEVER REACHED** in their `where` cell. The list, the eleven modules and the
-reason each is unreachable are `docs/AUDIT.md` B-1 to B-8 and B-12; the three that also cite a kernel
+reason each is unreachable are `docs/IMPLEMENTATION.md` B-1 to B-8 and B-12; the three that also cite a kernel
 path (`Derivative D11`, `Derivative Layer E4`, `IRS B5`) are left unmarked, because the kernel half of
 each does run. They are not re-marked `PARTIAL`: a `PARTIAL` names the item that finishes it, and none
 of these findings has been positioned into an item yet.
@@ -241,26 +241,26 @@ of these findings has been positioned into an item yet.
 | `Derivative D6` | MET | packages/engine/src/registry/derivatives.ts (`expires`: the term runs out and the kind says when) |
 | `Derivative D7` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (`struckAt`: the level the session cleared at), packages/engine/src/clearing/market.ts |
 | `Derivative D8` | MET | packages/engine/src/prices/contract-value.ts (read at every ask, stored nowhere) |
-| `Derivative D9` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (posted as a claim, not spent) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative D10` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (a side can fail before the term ends; what the survivor then has is a claim on an estate, not a payoff) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative D9` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (posted as a claim, not spent) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative D10` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (a side can fail before the term ends; what the survivor then has is a claim on an estate, not a payoff) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative D11` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`settleAndTearUp`: it ceases on both books at once), packages/engine/src/ledger/settlement.ts |
 | `Derivative D12` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (counterparties + underlying + term + strike; two strikes are two rows and an offsetting trade with somebody else is a third) |
 | `Derivative X1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (a second register: no issuer, no issued amount, no ownership check) |
-| `Derivative X2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (the premium and the margin are real money out of a real account, and a payment that cannot be made fails) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative X2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (the premium and the margin are real money out of a real account, and a payment that cannot be made fails) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative X3` | MET | packages/engine/src/registry/derivatives.ts (a mark reads prints the rest of the world cleared; nothing prices the underlying off the contract) |
 
 ## Corporate Credit
 
 | requirement | status | where / why |
 |---|---|---|
-| `Corporate Credit A1` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (a `corporate.bond` kind: a firm borrows from many holders, each pricing the name from its own view) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Corporate Credit A1` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (a `corporate.bond` kind: a firm borrows from many holders, each pricing the name from its own view) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Corporate Credit A2` | MISSING |  |
 | `Corporate Credit A2.c` | MISSING |  |
 | `Corporate Credit A3` | MISSING |  |
 | `Corporate Credit A4` | MISSING |  |
 | `Corporate Credit B1` | MISSING |  |
-| `Corporate Credit B2` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (two covenant lines, both TERMS of the issue and neither a parameter: how much it owes against what it holds, and what it earns against what falls due) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Corporate Credit B3` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (the `names` family: paper outstanding with nobody holding it is a violation) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Corporate Credit B2` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (two covenant lines, both TERMS of the issue and neither a parameter: how much it owes against what it holds, and what it earns against what falls due) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Corporate Credit B3` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (the `names` family: paper outstanding with nobody holding it is a violation) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Corporate Credit B4` | MISSING |  |
 | `Corporate Credit C1` | MISSING |  |
 | `Corporate Credit C2` | MISSING |  |
@@ -367,11 +367,11 @@ of these findings has been positioned into an item yet.
 | `Sovereign H3` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H4` | MET | packages/engine/src/mechanisms/central-bank-omo/index.ts |
 | `Sovereign H5` | MISSING |  |
-| `Sovereign I1` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (a named deliverable line, per unit of face, delivered against cash in one instruction) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Sovereign I1.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`bondCarryOf`, `netBasis`: the coupon and the financing, both read; measured, never set; published through the kind's own `measures` so a reader sees it beside every other basis) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Sovereign I2` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`futureOrders`: a holder short of the future, a party without duration long of it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Sovereign I1` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (a named deliverable line, per unit of face, delivered against cash in one instruction) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Sovereign I1.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`bondCarryOf`, `netBasis`: the coupon and the financing, both read; measured, never set; published through the kind's own `measures` so a reader sees it beside every other basis) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Sovereign I2` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (`futureOrders`: a holder short of the future, a party without duration long of it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Sovereign I3` | MISSING |  |
-| `Sovereign I3.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (cut on a drawdown against its own tolerance, with nothing making it whole) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Sovereign I3.a` | MET | packages/engine/src/mechanisms/bond-futures/index.ts (cut on a drawdown against its own tolerance, with nothing making it whole) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 
 ## Short-Term Debt
 
@@ -539,26 +539,26 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Securities Lending A1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the security one way and the collateral the other, both legs in one numbered instruction) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Securities Lending A2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title passes: the units move in the register and the borrower can sell what it borrowed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Securities Lending A3` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`manufacture`: the issuer pays the registered holder and the borrower passes it on, read off what actually arrived) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Securities Lending A1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the security one way and the collateral the other, both legs in one numbered instruction) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Securities Lending A2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title passes: the units move in the register and the borrower can sell what it borrowed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Securities Lending A3` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`manufacture`: the issuer pays the registered holder and the borrower passes it on, read off what actually arrived) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending A4` | MISSING |  |
-| `Securities Lending A5` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the fee is a price and it clears; `charge` moves real money between two named parties every period) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Securities Lending A5` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the fee is a price and it clears; `charge` moves real money between two named parties every period) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending B1` | MISSING |  |
 | `Securities Lending B2` | MISSING |  |
 | `Securities Lending B3` | MISSING |  |
-| `Securities Lending B4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`lendable` is a read of who holds it FREE — never a stored number, and it is what caps a short) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Securities Lending C1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`collateralFor`: worth more than the loan by the lender own haircut) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Securities Lending B4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`lendable` is a read of who holds it FREE — never a stored number, and it is what caps a short) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Securities Lending C1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`collateralFor`: worth more than the loan by the lender own haircut) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending C2` | MISSING |  |
 | `Securities Lending C3` | MISSING |  |
-| `Securities Lending C4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (a pledge, so posted collateral leaves the poster free balance and the register refuses to move it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Securities Lending C4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (a pledge, so posted collateral leaves the poster free balance and the register refuses to move it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending C5` | MISSING |  |
 | `Securities Lending D1` | MISSING |  |
 | `Securities Lending D2` | MISSING |  |
 | `Securities Lending D2.a` | MISSING |  |
 | `Securities Lending D3` | MISSING |  |
-| `Securities Lending E1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the `ownership` family measures a negative holding as a finding with an owner, and never enforces it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Securities Lending E2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title moves and holdings still sum to issued, because the units are the same units) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Securities Lending E1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the `ownership` family measures a negative holding as a finding with an owner, and never enforces it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Securities Lending E2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title moves and holdings still sum to issued, because the units are the same units) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending E3` | MISSING |  |
 
 ## Prime Brokerage
@@ -595,33 +595,33 @@ of these findings has been positioned into an item yet.
 | requirement | status | where / why |
 |---|---|---|
 | `Derivative Layer A1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (a row lives until it is terminated, and both sides stay exposed to each other meanwhile) |
-| `Derivative Layer A2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative Layer A2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative Layer A3` | MET | packages/engine/src/prices/contract-value.ts (one number, read from two sides) |
 | `Derivative Layer A4` | MET | packages/engine/src/audit/families/zero-sum.ts (per contract, exactly; in aggregate per money, at the dust of the sum) |
 | `Derivative Layer B1` | MET | packages/engine/src/clearing/market.ts (a `contract` book: the solver over posted schedules, and the fill becomes a row) |
 | `Derivative Layer B2` | MET | packages/engine/src/ledger/settlement.ts (one contract, recorded on both books in one instruction) |
-| `Derivative Layer B3` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (closed by an offsetting close, an early termination or expiry) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative Layer B3` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (closed by an offsetting close, an early termination or expiry) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative Layer B4` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (`novate`), packages/engine/src/ledger/settlement.ts (the obligation leaves one balance sheet at what it was carried at and lands on another) |
 | `Derivative Layer C1` | MET | packages/engine/src/register/contracts.ts, packages/engine/src/registry/derivatives.ts (`between`: the rows two named parties have with each other) |
 | `Derivative Layer C2` | MET | packages/engine/src/clearing/market.ts (one trade becomes two rows, member to house and house to member, so no member pays another) |
-| `Derivative Layer C3` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (the margin it holds, the fund it owes, and its own capital as the residual read) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer C4` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (`runWaterfall`, in order) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer C5` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (`waterfall.unfunded`: past the end is an event and the house’s own equity carries it; nothing tops it up) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative Layer C3` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (the margin it holds, the fund it owes, and its own capital as the residual read) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer C4` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (`runWaterfall`, in order) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer C5` | MET | packages/engine/src/mechanisms/derivative-layer/house.ts (`waterfall.unfunded`: past the end is an event and the house’s own equity carries it; nothing tops it up) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative Layer D1` | MET | packages/engine/src/world/world.ts (`measuredMove`: the underlying’s own record), packages/engine/src/registry/derivatives.ts (and no rate per class exists) |
-| `Derivative Layer D2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (the requirement re-measured after the marks moved, met in cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer D2.b` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`marginIsHeld`: what every poster holds against what every holder issued, read from both ends) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer D2.c` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (it goes through settlement; a party that cannot pay fails the instruction and is in Money E1’s state) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer D3` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (held, not consumed: when the requirement falls the claim is redeemed and the cash comes back) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer D4` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`margin.call`, journaled with what was asked and whether it was met) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer D5` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (it rises with the measured move, which is procyclical by construction and is measured rather than smoothed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer E1` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (own liquid cash net of what it has already committed and of its own buffer) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative Layer D2` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (the requirement re-measured after the marks moved, met in cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer D2.b` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`marginIsHeld`: what every poster holds against what every holder issued, read from both ends) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer D2.c` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (it goes through settlement; a party that cannot pay fails the instruction and is in Money E1’s state) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer D3` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (held, not consumed: when the requirement falls the claim is redeemed and the cash comes back) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer D4` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`margin.call`, journaled with what was asked and whether it was met) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer D5` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (it rises with the measured move, which is procyclical by construction and is measured rather than smoothed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer E1` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (own liquid cash net of what it has already committed and of its own buffer) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative Layer E2` | MET | packages/engine/src/clearing/market.ts (cut to the smaller of the two sides’ admitted shares, at the strike, in the same pass as the margin) |
-| `Derivative Layer E3` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (`committed`: capacity is drawn down as it is consumed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative Layer E3` | MET | packages/engine/src/mechanisms/derivative-layer/margin.ts (`committed`: capacity is drawn down as it is consumed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative Layer E4` | MET | packages/engine/src/clearing/market.ts (`derivatives.refused`, with the size), packages/engine/src/mechanisms/derivative-layer/index.ts (`refusedThisPeriod`) |
-| `Derivative Layer F1` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (a party fails with open rows and they are resolved rather than forgotten) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer F2` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (closed out at the stated value; the in-the-money side has a claim on the estate) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer F3` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (the loss is the mark less the collateral held, and it lands on named survivors) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Derivative Layer F4` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`contractsNameTheLiving`) and the journal’s `waterfall.round` and `contract.closed` — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Derivative Layer F1` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (a party fails with open rows and they are resolved rather than forgotten) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer F2` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (closed out at the stated value; the in-the-money side has a claim on the estate) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer F3` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (the loss is the mark less the collateral held, and it lands on named survivors) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Derivative Layer F4` | MET | packages/engine/src/mechanisms/derivative-layer/index.ts (`contractsNameTheLiving`) and the journal’s `waterfall.round` and `contract.closed` — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Derivative Layer G1` | MET | packages/engine/src/audit/families/zero-sum.ts, packages/engine/src/ledger/settlement.ts |
 | `Derivative Layer G2` | MET | packages/engine/src/registry/derivatives.ts (a kind that cannot say what a position could do answers Missing and the layer refuses the trade) |
 | `Derivative Layer G3` | MET | packages/engine/src/world/context.ts (there is no door that nets across counterparties) |
@@ -631,56 +631,56 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `CDS A1` | MET | packages/engine/src/mechanisms/cds/index.ts (a book per reference per tenor, cleared through the house) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS A2` | MET | packages/engine/src/mechanisms/cds/contract.ts (`legs`: the premium in cash every period, stopping the period the reference defaults) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS A3` | MET | packages/engine/src/mechanisms/cds/contract.ts (`markOf`: the spread now against the spread struck, and after the event the payoff — two reads, no model) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS A4` | MET | packages/engine/src/mechanisms/cds/index.ts (`openBooks`: a reference is a party with live paper that can default) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS A4.a` | MET | packages/engine/src/mechanisms/cds/index.ts (`referencesAreObservable`: a row on a reference nobody can watch fail is reported, never silent) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS A5` | MET | packages/engine/src/mechanisms/cds/series.ts (names fixed at the roll; a name’s event settles its weight once per contract; the line runs on over survivors) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS B1` | MET | packages/engine/src/mechanisms/cds/participants.ts (`ownView`: a party whose outlook of this book differs from it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS B2` | MET | packages/engine/src/mechanisms/cds/participants.ts (the seller: the same credit with no bond behind it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS B3` | MET | packages/engine/src/mechanisms/cds/index.ts (`regulation.riskWeight.cds.sold`, policy, parliament) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `CDS A1` | MET | packages/engine/src/mechanisms/cds/index.ts (a book per reference per tenor, cleared through the house) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS A2` | MET | packages/engine/src/mechanisms/cds/contract.ts (`legs`: the premium in cash every period, stopping the period the reference defaults) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS A3` | MET | packages/engine/src/mechanisms/cds/contract.ts (`markOf`: the spread now against the spread struck, and after the event the payoff — two reads, no model) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS A4` | MET | packages/engine/src/mechanisms/cds/index.ts (`openBooks`: a reference is a party with live paper that can default) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS A4.a` | MET | packages/engine/src/mechanisms/cds/index.ts (`referencesAreObservable`: a row on a reference nobody can watch fail is reported, never silent) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS A5` | MET | packages/engine/src/mechanisms/cds/series.ts (names fixed at the roll; a name’s event settles its weight once per contract; the line runs on over survivors) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS B1` | MET | packages/engine/src/mechanisms/cds/participants.ts (`ownView`: a party whose outlook of this book differs from it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS B2` | MET | packages/engine/src/mechanisms/cds/participants.ts (the seller: the same credit with no bond behind it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS B3` | MET | packages/engine/src/mechanisms/cds/index.ts (`regulation.riskWeight.cds.sold`, policy, parliament) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `CDS B4` | MISSING |  |
 | `CDS B5` | MISSING |  |
 | `CDS C1` | MISSING |  |
-| `CDS C2` | MET | packages/engine/src/mechanisms/cds/contract.ts (`impliedDefaultRate`: derived from the spread and the recovery, stored nowhere) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS C3` | MET | packages/engine/src/mechanisms/cds/measures.ts (`basisFor`: protection against the same name's own cash spread over the sovereign curve, a read at the read; surfaced through `DerivativeKindProfile.measures`, so the class that knows it is the one that computes it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `CDS C2` | MET | packages/engine/src/mechanisms/cds/contract.ts (`impliedDefaultRate`: derived from the spread and the recovery, stored nowhere) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS C3` | MET | packages/engine/src/mechanisms/cds/measures.ts (`basisFor`: protection against the same name's own cash spread over the sovereign curve, a read at the read; surfaced through `DerivativeKindProfile.measures`, so the class that knows it is the one that computes it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `CDS C4` | MISSING |  |
-| `CDS D1` | MET | packages/engine/src/mechanisms/cds/contract.ts (`creditState`: item 5’s `credit.default` for the reference) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS D2` | MET | packages/engine/src/mechanisms/cds/index.ts (`settleEvents`: settled at the estate’s realised recovery) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS D2.a` | MET | packages/engine/src/mechanisms/cds/contract.ts (`payoff` reads the defaulted line’s own mark; no recovery rate exists anywhere) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS D3` | MET | packages/engine/src/mechanisms/cds/index.ts (cash from a named seller to a named buyer, and it can fail) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `CDS D4` | MET | packages/engine/src/mechanisms/cds/index.ts (`settleEvents` closes the row when it settles) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `CDS D1` | MET | packages/engine/src/mechanisms/cds/contract.ts (`creditState`: item 5’s `credit.default` for the reference) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS D2` | MET | packages/engine/src/mechanisms/cds/index.ts (`settleEvents`: settled at the estate’s realised recovery) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS D2.a` | MET | packages/engine/src/mechanisms/cds/contract.ts (`payoff` reads the defaulted line’s own mark; no recovery rate exists anywhere) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS D3` | MET | packages/engine/src/mechanisms/cds/index.ts (cash from a named seller to a named buyer, and it can fail) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `CDS D4` | MET | packages/engine/src/mechanisms/cds/index.ts (`settleEvents` closes the row when it settles) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `CDS D5` | MISSING |  |
 | `CDS E1` | MISSING |  |
 | `CDS E2` | MISSING |  |
-| `CDS E3` | MET | packages/engine/src/mechanisms/cds/measures.ts (`netNotionalOn`: one question about one name, never a netting across counterparties; shown once per name however many tenors carry a book on it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `CDS E3` | MET | packages/engine/src/mechanisms/cds/measures.ts (`netNotionalOn`: one question about one name, never a netting across counterparties; shown once per name however many tenors carry a book on it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `CDS E4` | MISSING |  |
 
 ## IRS
 
 | requirement | status | where / why |
 |---|---|---|
-| `IRS A1` | MET | packages/engine/src/mechanisms/irs/contract.ts (two legs on one notional) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS A2` | MET | packages/engine/src/mechanisms/irs/contract.ts (`fixedEvery`, `floatEvery`: each leg its own periodicity) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS A3` | MET | packages/engine/src/mechanisms/irs/contract.ts (the floating leg fixes on what the book actually paid) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS A4` | MET | packages/engine/src/mechanisms/irs/contract.ts (only the net moves, so only the net is in anybody’s cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS B1` | MET | packages/engine/src/mechanisms/irs/participants.ts (`fixedDebtOf`: what it owes at a rate its terms fixed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `IRS A1` | MET | packages/engine/src/mechanisms/irs/contract.ts (two legs on one notional) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS A2` | MET | packages/engine/src/mechanisms/irs/contract.ts (`fixedEvery`, `floatEvery`: each leg its own periodicity) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS A3` | MET | packages/engine/src/mechanisms/irs/contract.ts (the floating leg fixes on what the book actually paid) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS A4` | MET | packages/engine/src/mechanisms/irs/contract.ts (only the net moves, so only the net is in anybody’s cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS B1` | MET | packages/engine/src/mechanisms/irs/participants.ts (`fixedDebtOf`: what it owes at a rate its terms fixed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `IRS B2` | PARTIAL | The reason is stated and no party in this world has it: a pension whose liabilities are long and whose assets are not does not exist until 13h. Measured — every schedule in every contract book is on the same side, because every party the layer admits is a bank or a firm (13b's record; carried into `docs/plan/13h-insurers-hedge-pe.md` as `13b-10`). B2.a's one-way demand is what 13h's parties bring |
-| `IRS B3` | MET | packages/engine/src/mechanisms/irs/participants.ts (a bank managing its own gap) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS B4` | MET | packages/engine/src/mechanisms/irs/participants.ts (a view on the rate path, from its own outlook) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `IRS B3` | MET | packages/engine/src/mechanisms/irs/participants.ts (a bank managing its own gap) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS B4` | MET | packages/engine/src/mechanisms/irs/participants.ts (a view on the rate path, from its own outlook) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `IRS B5` | MET | packages/engine/src/mechanisms/banks/dealing.ts (a bank quotes out of its own inventory against its own capital and funding), packages/engine/src/mechanisms/irs/participants.ts (`swapped`: its net position in the book is what it is hedging) |
-| `IRS C1` | MET | packages/engine/src/mechanisms/irs/index.ts (`swapCurve`: the set of cleared fixed rates) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS C2` | MET | packages/engine/src/mechanisms/irs/index.ts (`forwardRate`: derived from two cleared points) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS C3` | MET | packages/engine/src/mechanisms/irs/measures.ts (`swapSpread`: the cleared rate against the sovereign’s own yield, a read at the read; the sovereign is `WorldReads.sovereignCurveIn`, never a party named at assembly) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `IRS C1` | MET | packages/engine/src/mechanisms/irs/index.ts (`swapCurve`: the set of cleared fixed rates) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS C2` | MET | packages/engine/src/mechanisms/irs/index.ts (`forwardRate`: derived from two cleared points) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS C3` | MET | packages/engine/src/mechanisms/irs/measures.ts (`swapSpread`: the cleared rate against the sovereign’s own yield, a read at the read; the sovereign is `WorldReads.sovereignCurveIn`, never a party named at assembly) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `IRS C4` | MISSING |  |
 | `IRS D1` | MISSING |  |
 | `IRS D2` | MISSING |  |
 | `IRS D3` | MISSING |  |
 | `IRS D4` | MISSING |  |
-| `IRS E1` | MET | packages/engine/src/mechanisms/irs/contract.ts (no path through `legs` moves the notional; `irs.test.ts` reads every leg of a life) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS E2` | MET | packages/engine/src/mechanisms/irs/index.ts (there is no `parRate` and no discount curve in this module to run backwards) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `IRS E3` | MET | packages/engine/src/mechanisms/irs/contract.ts (a period the overnight book did not trade has no fixing and nothing accrues) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `IRS E1` | MET | packages/engine/src/mechanisms/irs/contract.ts (no path through `legs` moves the notional; `irs.test.ts` reads every leg of a life) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS E2` | MET | packages/engine/src/mechanisms/irs/index.ts (there is no `parRate` and no discount curve in this module to run backwards) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `IRS E3` | MET | packages/engine/src/mechanisms/irs/contract.ts (a period the overnight book did not trade has no fixing and nothing accrues) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 
 ## FX Forwards
 
@@ -712,8 +712,8 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Commodity Futures A1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (the short hands over units of the grade at the place the contract names and the long pays at that place's own cleared spot price, in one instruction — XI-5, never a cash difference dressed up as a delivery) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Commodity Futures A2` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (a ladder of four delivery dates a quarter apart on every deliverable grade, which is what makes the book a curve rather than a price) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Commodity Futures A1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (the short hands over units of the grade at the place the contract names and the long pays at that place's own cleared spot price, in one instruction — XI-5, never a cash difference dressed up as a delivery) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Commodity Futures A2` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (a ladder of four delivery dates a quarter apart on every deliverable grade, which is what makes the book a curve rather than a price) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Commodity Futures A3` | MISSING |  |
 | `Commodity Futures A4` | MISSING |  |
 | `Commodity Futures B1` | MISSING |  |
@@ -721,10 +721,10 @@ of these findings has been positioned into an item yet.
 | `Commodity Futures B3` | MISSING |  |
 | `Commodity Futures B4` | MISSING |  |
 | `Commodity Futures B5` | MISSING |  |
-| `Commodity Futures C1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `commodityCarryOf` — the room at the rate the storage session printed, the spoilage at the rate the good declares, and the money at the secured benchmark. Three reads and a subtraction; no convenience yield anywhere — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Commodity Futures C1` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts `commodityCarryOf` — the room at the rate the storage session printed, the spoilage at the rate the good declares, and the money at the secured benchmark. Three reads and a subtraction; no convenience yield anywhere — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Commodity Futures C2` | MISSING |  |
-| `Commodity Futures C3` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (contango is bounded ONLY by somebody who can find room selling it; backwardation is unbounded, because you cannot borrow a tonne that does not exist) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Commodity Futures C4` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (convergence is not enforced: it happens because delivery is possible, and a short with nothing in the shed FAILS rather than settling in cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Commodity Futures C3` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (contango is bounded ONLY by somebody who can find room selling it; backwardation is unbounded, because you cannot borrow a tonne that does not exist) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Commodity Futures C4` | MET | packages/engine/src/mechanisms/commodity-futures/index.ts (convergence is not enforced: it happens because delivery is possible, and a short with nothing in the shed FAILS rather than settling in cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Commodity Futures D1` | MISSING |  |
 | `Commodity Futures D2` | MISSING |  |
 | `Commodity Futures D3` | MISSING |  |
@@ -777,7 +777,7 @@ of these findings has been positioned into an item yet.
 | `Indices C1` | MET | packages/engine/src/mechanisms/funds/tracker.ts (a mandate refers to the index’s own basket, not to what happened to print) |
 | `Indices C2` | MET | packages/engine/src/mechanisms/funds/tracker.ts, packages/engine/src/mechanisms/funds/data.ts (a tracker holds the index at the index’s weights and trades the difference) |
 | `Indices C2.a` | MET | packages/engine/src/mechanisms/funds/tracker.ts (a rebalance is a real trade in the same session; a line that left the index goes out at market) |
-| `Indices C3` | MET | packages/engine/src/mechanisms/index-futures/index.ts (cash-settled against the index READ at expiry) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Indices C3` | MET | packages/engine/src/mechanisms/index-futures/index.ts (cash-settled against the index READ at expiry) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Indices C4` | PARTIAL | packages/engine/src/mechanisms/indices/benchmark.ts — the benchmark is published and transacted; a floating coupon that FIXES on it is 13f’s |
 | `Indices D1` | MET | packages/engine/src/mechanisms/indices/baskets.ts (an equity index per region, over the listed shares of the companies that book there) |
 | `Indices D2` | MET | packages/engine/src/mechanisms/indices/baskets.ts (a credit index per currency, over the dated claims somebody other than the state promised — empty, and therefore Missing, until 13f issues some) |
@@ -916,8 +916,8 @@ of these findings has been positioned into an item yet.
 | `Dealer Desks D3` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/test/dealing.test.ts (the RENT is gone with the desk that paid it — a transfer price between two parties that were economically one. What funds the inventory is what the bank pays its depositors and its lenders, every period, to holders with names, and the quote's carry reads that blended cost plus what the capital the position consumes has to earn) |
 | `Dealer Desks D4` | MET | packages/engine/src/mechanisms/banks/dealing.ts, packages/engine/src/mechanisms/banks/dealing-quote.ts (a desk at its limit widens, shrinks its size, and at the limit stops quoting altogether — a state, not an error); D4.a: packages/engine/test/dealing.test.ts (a market whose only liquidity was a desk that stepped back prints stale with the reason) |
 | `Dealer Desks D5` | MET | packages/engine/src/mechanisms/banks/dealing.ts (`dealers.book` publishes inventory, the width, the skew and the room left together, per line, so a period in which spreads widened and inventory did not is visible rather than inferred), packages/engine/test/dealing.test.ts |
-| `Dealer Desks E1` | MET | packages/engine/src/mechanisms/index-futures/index.ts (a desk lays its book off into a contract sized from its own inventory) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Dealer Desks E2` | MET | packages/engine/src/mechanisms/index-futures/index.ts (the hedge is a contract with a counterparty and its own margin) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Dealer Desks E1` | MET | packages/engine/src/mechanisms/index-futures/index.ts (a desk lays its book off into a contract sized from its own inventory) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Dealer Desks E2` | MET | packages/engine/src/mechanisms/index-futures/index.ts (the hedge is a contract with a counterparty and its own margin) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Dealer Desks E3` | MET | packages/engine/src/mechanisms/banks/dealing.ts (two desks quoting into the same session, so inventory is redistributed between them through the book everybody else trades in — not a separate venue) |
 | `Dealer Desks E4` | MET | packages/engine/src/audit/families/ownership.ts (held equals issued is the identity, and dealer inventory is the part of it the rest of the world does not hold), packages/engine/src/mechanisms/banks/dealing.ts (and what each desk is carrying is published every period, so it can be watched against client flow) |
 | `Dealer Desks F1` | MET | packages/engine/src/mechanisms/banks/dealing-quote.ts (three real constraints — the line's limit, the book's, and the money it actually has — and the binding one is named on the quote; nothing here is unbounded) |
@@ -928,13 +928,13 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Insurers A1` | MET | packages/engine/src/mechanisms/insurers/index.ts (a named party with a register, holding assets against liabilities owed to named beneficiaries) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Insurers A2` | MET | packages/engine/src/mechanisms/insurers/index.ts (a policy is a promise to pay stated amounts at stated future times) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Insurers A3` | MET | packages/engine/src/mechanisms/insurers/index.ts (equity is a read and can go negative; the party kind fails on solvency and on cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Insurers A1` | MET | packages/engine/src/mechanisms/insurers/index.ts (a named party with a register, holding assets against liabilities owed to named beneficiaries) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Insurers A2` | MET | packages/engine/src/mechanisms/insurers/index.ts (a policy is a promise to pay stated amounts at stated future times) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Insurers A3` | MET | packages/engine/src/mechanisms/insurers/index.ts (equity is a read and can go negative; the party kind fails on solvency and on cash) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Insurers A4` | MISSING |  |
-| `Insurers B1` | MET | packages/engine/src/mechanisms/insurers/index.ts (the schedule is the terms; a scheduled payment of nothing is refused) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Insurers B2` | MET | packages/engine/src/mechanisms/insurers/index.ts (the present value is the schedule discounted at the curve, through a new `curve` read on DerivedReads) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Insurers B2.b` | MET | packages/engine/src/mechanisms/insurers/index.ts (a policy with no schedule is refused at assembly and reported by the names family — there is no cash-balance liability here) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Insurers B1` | MET | packages/engine/src/mechanisms/insurers/index.ts (the schedule is the terms; a scheduled payment of nothing is refused) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Insurers B2` | MET | packages/engine/src/mechanisms/insurers/index.ts (the present value is the schedule discounted at the curve, through a new `curve` read on DerivedReads) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Insurers B2.b` | MET | packages/engine/src/mechanisms/insurers/index.ts (a policy with no schedule is refused at assembly and reported by the names family — there is no cash-balance liability here) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Insurers B3` | MISSING |  |
 | `Insurers B4` | MISSING |  |
 | `Insurers C1` | MISSING |  |
@@ -942,12 +942,12 @@ of these findings has been positioned into an item yet.
 | `Insurers C3` | MISSING |  |
 | `Insurers C4` | MISSING |  |
 | `Insurers C5` | MISSING |  |
-| `Insurers D1` | MET | packages/engine/src/mechanisms/insurers/index.ts (`gapOf`: what it has against what it owes, and it may be negative) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `Insurers D2` | MET | packages/engine/src/mechanisms/insurers/index.ts (the revaluation moves its equity when the discount moves, in the opposite direction to a bank) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Insurers D1` | MET | packages/engine/src/mechanisms/insurers/index.ts (`gapOf`: what it has against what it owes, and it may be negative) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Insurers D2` | MET | packages/engine/src/mechanisms/insurers/index.ts (the revaluation moves its equity when the discount moves, in the opposite direction to a bank) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Insurers D3` | MISSING |  |
 | `Insurers D4` | MISSING |  |
 | `Insurers D5` | MISSING |  |
-| `Insurers E1` | MET | packages/engine/src/mechanisms/insurers/index.ts (the names family: a promise outstanding with nobody it is owed to is a violation) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Insurers E1` | MET | packages/engine/src/mechanisms/insurers/index.ts (the names family: a promise outstanding with nobody it is owed to is a violation) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Insurers E2` | MISSING |  |
 | `Insurers E3` | MISSING |  |
 | `Insurers E4` | MISSING |  |
@@ -1211,27 +1211,27 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `M&A A1` | MET | packages/engine/src/mechanisms/control/index.ts (a bid with a price and an ACCEPTANCE CONDITION: below control nothing settles, so there is no half-acquisition) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `M&A A2` | MET | packages/engine/src/mechanisms/control/index.ts (shares one way and money the other, in one numbered instruction per holder) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `M&A A3` | MET | packages/engine/src/mechanisms/control/index.ts (the acquirer values a target the way it values a machine: what it would get, against what IT requires) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `M&A A4` | MET | packages/engine/src/mechanisms/control/index.ts (`combine`: the target paper is assumed, its rows reseated, the party terminated with the acquirer as successor) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `M&A A5` | MET | packages/engine/src/mechanisms/control/index.ts (including the shares: a residual claim on a firm now part of another is a claim on that other) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `M&A B1` | MET | packages/engine/src/mechanisms/control/index.ts (`worthToBuyer` from the target published accounts and the acquirer own quoted cost of money) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `M&A A1` | MET | packages/engine/src/mechanisms/control/index.ts (a bid with a price and an ACCEPTANCE CONDITION: below control nothing settles, so there is no half-acquisition) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `M&A A2` | MET | packages/engine/src/mechanisms/control/index.ts (shares one way and money the other, in one numbered instruction per holder) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `M&A A3` | MET | packages/engine/src/mechanisms/control/index.ts (the acquirer values a target the way it values a machine: what it would get, against what IT requires) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `M&A A4` | MET | packages/engine/src/mechanisms/control/index.ts (`combine`: the target paper is assumed, its rows reseated, the party terminated with the acquirer as successor) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `M&A A5` | MET | packages/engine/src/mechanisms/control/index.ts (including the shares: a residual claim on a firm now part of another is a claim on that other) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `M&A B1` | MET | packages/engine/src/mechanisms/control/index.ts (`worthToBuyer` from the target published accounts and the acquirer own quoted cost of money) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `M&A B2` | MISSING |  |
 | `M&A B3` | MISSING |  |
 | `M&A B4` | MISSING |  |
 | `M&A B5` | MISSING |  |
-| `M&A C1` | MET | packages/engine/src/mechanisms/control/index.ts (`tenders`: every holder answers from its own valuation) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
-| `M&A C2` | MET | packages/engine/src/mechanisms/control/index.ts (nobody has to tender; a holder that thinks the firm is worth more keeps its shares, and a bid can fail) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `M&A C1` | MET | packages/engine/src/mechanisms/control/index.ts (`tenders`: every holder answers from its own valuation) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `M&A C2` | MET | packages/engine/src/mechanisms/control/index.ts (nobody has to tender; a holder that thinks the firm is worth more keeps its shares, and a bid can fail) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `M&A C3` | MISSING |  |
 | `M&A C4` | MISSING |  |
 | `M&A D1` | MISSING |  |
 | `M&A D2` | MISSING |  |
 | `M&A D3` | MISSING |  |
 | `M&A D4` | MISSING |  |
-| `M&A D5` | MET | packages/engine/src/mechanisms/control/index.ts (what was PAID is recorded and is what the acquirer actually put up, checkable against who was paid) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `M&A D5` | MET | packages/engine/src/mechanisms/control/index.ts (what was PAID is recorded and is what the acquirer actually put up, checkable against who was paid) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `M&A E1` | MISSING |  |
-| `M&A E2` | MET | packages/engine/src/mechanisms/control/index.ts (the `names` family: a firm combined into another is not still trading on its own account) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `M&A E2` | MET | packages/engine/src/mechanisms/control/index.ts (the `names` family: a firm combined into another is not still trading on its own account) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `M&A E3` | MISSING |  |
 
 ## Trade Credit
@@ -1374,7 +1374,7 @@ of these findings has been positioned into an item yet.
 | requirement | status | where / why |
 |---|---|---|
 | `Housing A1` | MET | packages/engine/src/mechanisms/goods/data.ts (13d: a dwelling is a GOOD — built out of concrete, timber, steel and glass by named builders, half a year to make, standing where it was built and wearing out. `portable: false`, which is the oldest reason a price is local) |
-| `Housing A2` | MET | packages/engine/src/mechanisms/housing/index.ts (a tenancy is a VENUE: what changes hands is the right to be in it for a period, the owner keeps the asset, and the rent is struck where the two books cross) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Housing A2` | MET | packages/engine/src/mechanisms/housing/index.ts (a tenancy is a VENUE: what changes hands is the right to be in it for a period, the owner keeps the asset, and the rent is struck where the two books cross) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Housing A3` | MISSING |  |
 | `Housing A4` | MISSING |  |
 | `Housing A5` | MISSING |  |
@@ -1383,11 +1383,11 @@ of these findings has been positioned into an item yet.
 | `Housing B3` | MISSING |  |
 | `Housing B4` | MISSING |  |
 | `Housing B4.a` | MISSING |  |
-| `Housing B5` | MET | packages/engine/src/mechanisms/housing/index.ts (the owner lets above what letting WEARS it — the dwelling's own spoilage against the dwelling's own cleared price — and the tenant pays up to what it has, because the alternative is nowhere to live) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Housing B5` | MET | packages/engine/src/mechanisms/housing/index.ts (the owner lets above what letting WEARS it — the dwelling's own spoilage against the dwelling's own cleared price — and the tenant pays up to what it has, because the alternative is nowhere to live) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Housing C1` | PARTIAL | packages/engine/src/mechanisms/housing/index.ts — a mortgage is a secured loan row with a REAL LIEN placed every period up to what is still owed, so the register itself refuses to let the roof be sold out from under the loan. It is a LANDLORD's for now: a household's waits on a borrower that misses going on accruing while nothing moves on its own book (13f) |
 | `Housing C2` | MISSING |  |
 | `Housing C3` | MISSING |  |
-| `Housing C4` | MET | packages/engine/src/mechanisms/housing/index.ts (foreclosure releases the lien and moves the dwellings to the lender at what the market last said; the lender then sells into the same session everybody else does, so the recovery is what it FETCHED) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/AUDIT.md` B-12) |
+| `Housing C4` | MET | packages/engine/src/mechanisms/housing/index.ts (foreclosure releases the lien and moves the dwellings to the lender at what the market last said; the lender then sells into the same session everybody else does, so the recovery is what it FETCHED) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Housing C5` | MET | packages/engine/src/mechanisms/banks/quote.ts `lossGivenDefault`, packages/engine/src/mechanisms/banks/index.ts (13d: the lender's standard is a READ of what stands behind the claim at the market's own price — what it would lose is the part the security does not cover. No loan-to-value limit, no recovery rate, and no constant anywhere: what moves the standard is the PRICE of the thing pledged, so a bank lending against a falling thing requires more of every borrower without anybody tightening anything) |
 | `Housing C6` | MISSING |  |
 | `Housing D1` | MISSING |  |

@@ -23,7 +23,7 @@ import type { CellKeyDimension, Registry } from '../registry/registry.js';
  * does between those two words had nowhere to be, and each mechanism that needed one built half a
  * lifecycle of its own: `estate` keeps a `Winding` record in a private bag because there was no
  * state to put it in, XI-1 publishes a default that changes no status, and §25's resolution runs
- * over a party the type says is fine (`docs/AUDIT.md` item 7).
+ * over a party the type says is fine (`docs/RECORD.md` item 7).
  *
  * These four are what the specification actually names. Nothing here is a severity scale and the
  * order is not a ladder: a party can go from `good` straight to `inResolution` without ever having

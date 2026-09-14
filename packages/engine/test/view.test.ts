@@ -61,7 +61,7 @@ describe('what a belief is about (§46, XI-16)', () => {
     expect(held).toBeGreaterThan(0);
     // And what this world actually believes things about: prices, and its own income and earnings.
     // `credit` is expressible now and nothing forms one yet — that is the next mechanism, not a
-    // property of the door (`docs/AUDIT.md` item 6).
+    // property of the door (`docs/RECORD.md` item 6).
     expect(kinds.has('credit')).toBe(false);
   });
 

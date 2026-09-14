@@ -17,12 +17,12 @@
  * it is writing on. A buyer facing a house prices the house; a buyer facing a seller whose own
  * spread widens with the reference's pays less for the cover, because it is worth less.
  */
-import { asPerNamedUnit } from '../../core/measure.js';
+import { asPerNamedUnit , absolute, amountOf, asRatio, type Cash, heldAsMoney, minus, type PerPiece, plus, type Ratio, ratioOf, scale, asPerPiece} from '../../core/measure.js';
 import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
-import { asQty, negQty } from '../../core/tick.js';
-import { add, div, mul, sub } from '../../core/num.js';
+import { asQty, negQty , addQty, NO_QTY, subQty, type Qty} from '../../core/tick.js';
+import { add, div, sub } from '../../core/num.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isCds, type CdsTerms } from './contract.js';
 import { cdsLineOf } from './data.js';
@@ -53,7 +53,7 @@ function levelFor(
   m: MarketDecl,
   book: ContractBook,
   t: CdsTerms,
-): number | undefined {
+): PerPiece | undefined {
   const cash = view.print(t.obligation);
   if (!cash.some || t.tenorYears <= 0) return undefined;
   const belowPar = sub(1, cash.value.price, 'what the cash market discounts this credit by');
@@ -79,13 +79,13 @@ function levelFor(
  * written on has measured a third of its own exposure — which is the read being wrong rather than
  * the hedge being small.
  */
-function exposureTo(view: ParticipantView, t: CdsTerms): number {
-  let held = 0;
+function exposureTo(view: ParticipantView, t: CdsTerms): Qty {
+  let held = NO_QTY;
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     if (!i.status.live || !i.issuer.some || i.issuer.value !== t.reference) continue;
     if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
-    held = add(held, view.quantity(h.instrument), 'what this name owes it');
+    held = addQty(held, view.quantity(h.instrument), 'what this name owes it');
   }
   return held;
 }
@@ -98,13 +98,17 @@ function exposureTo(view: ParticipantView, t: CdsTerms): number {
  * every period is not hedging a position, it is buying the same hedge fifty-two times a year: what
  * it wants is the exposure it has LEFT, and a party that already has what it wanted posts nothing.
  */
-function coverHeld(view: ParticipantView, t: CdsTerms): number {
-  let net = 0;
+function coverHeld(view: ParticipantView, t: CdsTerms): Qty {
+  let net = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isCds(c.terms) || c.terms.reference !== t.reference) continue;
     const iAmA = c.a === view.self.id;
     const iBuy = iAmA === c.terms.buysProtection;
-    net = add(net, iBuy ? c.notional : negQty(c.notional, 'the other side of it'), 'protection it already has on this name');
+    net = addQty(
+      net,
+      iBuy ? c.notional : negQty(c.notional, 'the other side of it'),
+      'protection it already has on this name',
+    );
   }
   return net;
 }
@@ -116,12 +120,13 @@ function coverHeld(view: ParticipantView, t: CdsTerms): number {
  * print. A party that has never watched this reference has no view of it and says so, which is why
  * a book opens with the parties that are exposed in it and acquires its speculators later.
  */
-function ownView(view: ParticipantView, t: CdsTerms): number | undefined {
+function ownView(view: ParticipantView, t: CdsTerms): PerPiece | undefined {
   // A2: THE VARIABLE IT HAS ACTUALLY OBSERVED. A party forms a view of a thing by watching it, and
   // what it has watched here is the level THIS BOOK struck when it was in it — which the
   // expectations system records from the fill like any other price it traded at.
   const o = view.outlook(about({ on: 'price', instrument: cdsLineOf(t.reference, t.tenorYears) }));
-  return o.some ? o.value.expected : undefined;
+  // Item 16: its own outlook of this book re-enters here — a spread, which is what it clears in.
+  return o.some ? asPerPiece(o.value.expected, 'what it expects this credit to cost') : undefined;
 }
 
 /**
@@ -132,14 +137,15 @@ function ownView(view: ParticipantView, t: CdsTerms): number | undefined {
  * public: the net notional on a reference is a count of rows anybody may read. Protection from
  * somebody already full of the same credit is protection that pays when its writer cannot (E2).
  */
-function counterpartyTerm(view: ParticipantView, facing: number, against: string): number {
+function counterpartyTerm(view: ParticipantView, facing: Qty, against: string): Ratio {
   const own = view.equity();
-  if (own <= 0) return 1;
+  if (own <= 0) return asRatio(1, 'a party with no capital discounts nothing');
   // A fraction of its own capital, which is a read and not a limit: the more of one name it
   // already faces through one counterparty, the less the next unit of it is worth.
-  return add(
-    1,
-    -div(facing, add(facing, own, 'against its own capital'), `facing ${against}`),
+  const held = heldAsMoney(facing, `facing ${against}`);
+  return minus(
+    asRatio(1, 'the whole of it'),
+    ratioOf(held, plus(held, own, 'against its own capital'), `facing ${against}`),
     'the counterparty term',
   );
 }
@@ -162,7 +168,7 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   if (mine === undefined) return [];
   const held = coverHeld(view, t);
   const facing = decl.house === null ? 'the other side' : String(decl.house);
-  const term = counterpartyTerm(view, held > 0 ? held : -held, facing);
+  const term = counterpartyTerm(view, absolute(held, 'what it faces'), facing);
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
   const unit = view.registry.derivativeKind(decl.kind).unit;
   // Clearing E1: WHERE THE MARKET IS. It decides which side this party is on and how hard, and it
@@ -179,23 +185,23 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
    * party that thinks the spread should be wider wants more cover than its holding alone.
    */
   let want = exposureTo(view, t);
-  let price = mul(mine, term, 'what cover is worth facing this side');
+  let price = scale(mine, term, 'what cover is worth facing this side');
   if (at.some) {
     const book = at.value.price;
     const conviction = sizeOf(view, unit, view.equity(), mine);
-    if (mine > add(book, tick, 'wider than the book by a tick it can act on')) {
-      want = add(want, conviction, 'and what its own view is worth to it');
-    } else if (mine < sub(book, tick, 'tighter than the book by a tick it can act on')) {
+    if (mine > plus(book, tick, 'wider than the book by a tick it can act on')) {
+      want = addQty(want, conviction, 'and what its own view is worth to it');
+    } else if (mine < minus(book, tick, 'tighter than the book by a tick it can act on')) {
       // B2, B3: it would rather WRITE this credit than hold cover on it — the same one position,
       // the other way. A naked seller is capitalised (B3), which is what `conviction` reads, and it
       // does not discount its own offer for the counterparty it is writing TO.
-      want = sub(want, conviction, 'against what it would rather write');
+      want = subQty(want, conviction, 'against what it would rather write');
       price = mine;
     }
   }
-  const move = sub(want, held, 'from the protection it has to the protection it wants');
+  const move = subQty(want, held, 'from the protection it has to the protection it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, move > 0 ? move : -move);
+  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
@@ -204,14 +210,14 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
  * Derivative Layer E1: how much it would write, from its own balance sheet — never a limit, and
  * never more than its own capital could stand behind (B3: a naked seller is capitalised).
  */
-function sizeOf(view: ParticipantView, unit: UnitId, own: number, spread: number): number {
-  if (own <= 0 || spread <= 0) return 0;
+function sizeOf(view: ParticipantView, unit: UnitId, own: Cash, spread: PerPiece): Qty {
+  if (own <= 0 || spread <= 0) return NO_QTY;
   // What it would carry is what a year of that spread on its own capital comes to at the spread it
   // is quoting: a bigger book on a wider spread is the same risk, which is the arithmetic a party
   // actually does rather than a notional limit somebody wrote down.
   return view.registry.deliverable(
     unit,
-    div(own, spread, 'what a year of this spread on its own capital would carry'),
+    amountOf(own, spread, 'what a year of this spread on its own capital would carry'),
   );
 }
 
@@ -235,18 +241,22 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
   // B1.a: what it holds of the constituents' own paper, at the weights the series fixed.
   const whole = t.names.reduce((n, x) => add(n, x.weight, 'the whole line'), 0);
   if (whole <= 0) return [];
-  let exposed = 0;
+  let exposed = NO_QTY;
   for (const n of t.names) {
     if (n.reference === view.self.id) return [];
-    exposed = add(exposed, view.quantity(n.obligation), 'its holding of a constituent');
+    exposed = addQty(exposed, view.quantity(n.obligation), 'its holding of a constituent');
   }
-  let held = 0;
+  let held = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isCdsIndex(c.terms) || c.terms.series !== t.series) continue;
     const iAmA = c.a === view.self.id;
-    held = add(held, iAmA === c.terms.buysProtection ? c.notional : negQty(c.notional, 'the other side of it'), 'cover on the line');
+    held = addQty(
+      held,
+      iAmA === c.terms.buysProtection ? c.notional : negQty(c.notional, 'the other side of it'),
+      'cover on the line',
+    );
   }
-  const want = sub(exposed, held, 'the exposure to this line it has not covered');
+  const want = subQty(exposed, held, 'the exposure to this line it has not covered');
   if (want <= 0) return [];
   const qty = view.registry.deliverable(unit, want);
   if (qty <= 0) return [];
@@ -254,7 +264,7 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
     {
       party: view.self.id,
       side: 'buy',
-      price: mul(level, counterpartyTerm(view, held > 0 ? held : -held, 'the line'), 'facing it'),
+      price: scale(level, counterpartyTerm(view, absolute(held, 'what it faces'), 'the line'), 'facing it'),
       qty: asQty(qty),
     },
   ];

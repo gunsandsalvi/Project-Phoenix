@@ -84,9 +84,9 @@ export function findSession(
  * an overnight claim on the central bank that turns back into its account balance tomorrow morning,
  * and that is as liquid as an asset gets. Read off the rows it holds, never off what it parked.
  */
-export function fallsDueToIt(ctx: MechanismContext, lender: PartyId, ccy: CurrencyCode): number {
+export function fallsDueToIt(ctx: MechanismContext, lender: PartyId, ccy: CurrencyCode): Cash {
   const next = ctx.period + 1;
-  const terms: number[] = [];
+  const terms: Cash[] = [];
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !isRow(i.terms) || i.terms.lender !== lender || i.ccy !== ccy) continue;
     if (ctx.calendar.periodOf(i.terms.maturity) !== next) continue;
@@ -95,7 +95,7 @@ export function fallsDueToIt(ctx: MechanismContext, lender: PartyId, ccy: Curren
     const profile = ctx.registry.instrumentKind(i.kind);
     const flows = profile.cashFlows(i, ctx.calendar.startOf(ctx.period), ctx.calendar);
     const perUnit = sum(flows.map((f) => f.perUnit)).value;
-    terms.push(mul(held, perUnit, 'what comes back tomorrow'));
+    terms.push(valueAt(perUnit, held, 'what comes back tomorrow'));
   }
   return sum(terms).value;
 }

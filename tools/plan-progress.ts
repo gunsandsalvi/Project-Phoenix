@@ -5,7 +5,7 @@
  * item file that still exists contributes its checked steps (`- [x]`). WHETHER AN ITEM IS CLOSED IS
  * READ FROM `docs/WORKLIST.md`, never inferred here (Law 4, Law 19): the worklist's state column is
  * the one writer of that fact, and a missing plan file is not a second one. It used to be — a
- * deleted file counted as fully done — and item 14's file was folded into `docs/AUDIT.md` while the
+ * deleted file counted as fully done — and item 14's file was folded into `docs/IMPLEMENTATION.md` while the
  * item was still open, at which point the figure would have claimed fourteen steps nobody had
  * worked. Coverage comes from docs/COVERAGE.md. The result is written between the markers in
  * docs/PLAN.md. Run: `npm run plan:progress`; `npm run check` runs it with `--check`, which fails if

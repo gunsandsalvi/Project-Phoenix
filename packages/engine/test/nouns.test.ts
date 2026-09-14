@@ -8,7 +8,7 @@ const decl = (over: Partial<NounDecl> = {}): NounDecl => ({
   kind: 'noun',
   holds: 'who works for whom',
   why: 'an employment is an agreement and the kernel has no store for one',
-  standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+  standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
   ...over,
 });
 
@@ -53,7 +53,7 @@ describe('the ontology register (Law 2, Law 15)', () => {
     const report = r.report();
     expect(report.counts).toEqual({ noun: 1, working: 1, physics: 0 });
     expect(report.homeless).toEqual([
-      { owner: 'labour', name: 'employment', noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+      { owner: 'labour', name: 'employment', noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
     ]);
   });
 });
@@ -75,6 +75,6 @@ describe('the world as it stands', () => {
     // Every noun in a module's bag names the plan item that gives it a kernel home; the register's
     // own constructor is what guarantees it, and this is the measurement of how many there are.
     expect(report.homeless.length).toBe(report.counts.noun);
-    for (const h of report.homeless) expect(h.planItem).toMatch(/^docs\/AUDIT\.md item \d+$/);
+    for (const h of report.homeless) expect(h.planItem).toMatch(/^docs\/IMPLEMENTATION\.md item \d+$/);
   });
 });

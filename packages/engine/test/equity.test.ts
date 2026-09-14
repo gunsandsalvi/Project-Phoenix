@@ -382,7 +382,7 @@ describe('the count (Equity A2.a, D4, Register E4, E5)', () => {
 
 /**
  * E-3, a FINDING this file reaches now that its runs are long enough for a firm to die in
- * (`docs/AUDIT.md`, item 17): `estate.<firm> rents 1 of space from <firm>` is reported by the
+ * (`docs/RECORD.md`, item 17): `estate.<firm> rents 1 of space from <firm>` is reported by the
  * estate's own `flows` family as *"paid X to Y, who has no claim on it"*. The estate is paying for
  * the SPACE ITS INVENTORY SITS IN while it winds up. That is a cost of the winding-up, not a
  * distribution, and D6 is about distributions — the check forgives `corporateAction` and nothing

@@ -498,7 +498,7 @@ export function securitiesLending(): SystemModule {
           'the stock loans that are open: the lender, the borrower, the line and the fee',
         why:
           'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/AUDIT.md item 8' },
+        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
       },
     ],
     spec: 'Securities Lending',

@@ -12,7 +12,7 @@ The plan has two parts:
   item, when one has been written. **An item's file is deleted when the item closes** (its outcome
   moves to `docs/RECORD.md`), so the plan directory holds only what is still to be built — and not
   all of that: six of the nine open items have no file, 13k–13o because their reasoning is the
-  worklist row and nothing more, and 14 because its plan is `docs/AUDIT.md` item 18. The progress
+  worklist row and nothing more, and 14 because its plan is `docs/IMPLEMENTATION.md` item 18. The progress
   figure below counts the steps in those files and takes each item's STATE from the worklist's own
   state column, which is the one place it is written; `npm run plan:progress` recounts it.
 
@@ -124,7 +124,7 @@ docs/plan/manifest.json      every item with its step count (for the progress fi
 docs/WORKLIST.md             the one ordered list of items and their state
 docs/RECORD.md               outcomes, one entry per closed item
 docs/COVERAGE.md             one row per spec clause: MET / PARTIAL / MISSING / OUT OF SCOPE
-docs/AUDIT.md                the ordered plan: 19 items, every open finding positioned under one
+docs/IMPLEMENTATION.md                the ordered plan: 19 items, every open finding positioned under one
 packages/engine/src/         the engine (kernel + modules), pure TypeScript, no DOM
 packages/engine/test/        its tests (Vitest, fast-check)
 packages/app/                the inspector web app (Vite) and the Capacitor Android wrapper
@@ -368,7 +368,7 @@ Do not skip steps; do not reorder them.
 > The order the owner set, and it overrides every instinct to stop and fix:
 >
 > 1. **Implement.** The work is the next item in the ordered list. That is what a session does.
-> 2. **Every bug goes in `docs/AUDIT.md`.** Every one, without exception — a red test, a number that
+> 2. **Every bug goes in `docs/IMPLEMENTATION.md`.** Every one, without exception — a red test, a number that
 >    looks wrong, an audit family that fires, a mechanism that never runs, a world that stops. It is
 >    written down where it was seen and what was measured, and the item carries on. Nothing is
 >    chased, and nothing is quietly left out either: a finding not written down is a finding lost.
@@ -400,11 +400,11 @@ Do not skip steps; do not reorder them.
 6. **Audit.** Add the identities. A family reports built only when it checks something real.
 7. **Tests.** As the item file lists them — WRITTEN as the item goes, RUN when the module is
    complete. A failing family expected by the item is asserted by name. What a run reports goes in
-   `docs/AUDIT.md`, all of it, before anything is changed in response to it.
+   `docs/IMPLEMENTATION.md`, all of it, before anything is changed in response to it.
 8. **Gates.** `npm run check` at the end of the module. `npm run coverage:spec` recounted. The
    browser smoke test green if the surface changed.
 9. **Tick the steps** in the item file as you go (`- [x]`); `npm run plan:progress` recounts.
-10. **Park what you find. All of it.** Every bug goes in `docs/AUDIT.md` — what was measured, where
+10. **Park what you find. All of it.** Every bug goes in `docs/IMPLEMENTATION.md` — what was measured, where
     it was seen, what is ruled out — and the item carries on from the step it was on. Chasing one is
     how an item stops being one bounded change (Law 14) and how the ordered list stops being ordered
     (Law 10). The one exception is a violation that stops the build: an impossible quantity, a
@@ -413,7 +413,7 @@ Do not skip steps; do not reorder them.
 11. **Close.** Write the record entry (what, why, found, deleted, forecast with its killer); delete
     the item file; leave its manifest row with its step count; set the worklist row to done — THAT
     is what closes an item, and `plan:progress` reads it, so a deleted plan file is not a second way
-    of saying so; **position every finding in `docs/AUDIT.md`** — into the item that should fix it,
+    of saying so; **position every finding in `docs/IMPLEMENTATION.md`** — into the item that should fix it,
     or as an inserted item of its own, with the record saying where each landed; commit with a
     message that says what and why.
 
@@ -513,7 +513,7 @@ maturity; a bill issuer + tenor; a share its issuer; a good its sub-unit; a mark
 **WHEN THEY RUN.** At the end of a full module, never during one. A suite run mid-item is measuring
 a world that is half-built and reporting the half that is missing (Law 11), and a session that
 answers it spends itself on tests instead of on the thing the tests are for. Write them as the item
-goes; run them when the module closes; put everything the run says in `docs/AUDIT.md` before
+goes; run them when the module closes; put everything the run says in `docs/IMPLEMENTATION.md` before
 changing anything in response. A finding leaves that file by being POSITIONED — into the item that
 should fix it, or as an item inserted at its dependency position — and by nothing else. The file
 itself stays: it was three files under three names once (`BUGS.md`, `SWEEP.md`, `VERIFY.md`), and

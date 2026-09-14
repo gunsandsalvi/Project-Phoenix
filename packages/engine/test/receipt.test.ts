@@ -110,7 +110,7 @@ describe('selling what you MADE is not selling what you HELD (Treasury C1, Regis
     }
     // Interest, transfers, returns of capital and firms' own sales — and NOTHING ELSE. No wage is
     // paid, no dividend reaches anybody, nothing held is ever sold, and nobody borrows. Four of the
-    // nine things money can be to a party happen here (`docs/AUDIT.md` item 5).
+    // nine things money can be to a party happen here (`docs/RECORD.md` item 5).
     expect([...kinds].sort()).toEqual(['interest', 'returnOfCapital', 'sale', 'transfer']);
   });
 });

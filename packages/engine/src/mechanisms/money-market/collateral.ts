@@ -185,6 +185,6 @@ export function windowAdvances(
 }
 
 /** What the borrower could raise from this lender against everything it has free (C4.b). */
-export function borrowingPower(advances: readonly Advance[]): number {
+export function borrowingPower(advances: readonly Advance[]): Cash {
   return sum(advances.map((a) => a.total)).value;
 }

@@ -21,9 +21,9 @@ import {
   type PartyId,
   type RegionId,
 } from '../../core/ids.js';
-import { add, atMost, div, dustOf, material, sub, sum, withinDust } from '../../core/num.js';
+import { add, atMost, dustOf, material, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { downTick } from '../../core/tick.js';
+import { downTick , NO_QTY} from '../../core/tick.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
 import { BANK, CENTRAL_BANK } from '../../registry/profiles.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
@@ -68,7 +68,16 @@ import {
   type Corridor,
 } from './session.js';
 import { asQty, subQty, type Qty } from '../../core/tick.js';
-import { heldAsMoney, valueAt, asAmount,} from '../../core/measure.js';
+import {
+  asAmount,
+  asRatio,
+  heldAsMoney,
+  minus,
+  over,
+  plus,
+  type Ratio,
+  valueAt,
+} from '../../core/measure.js';
 import { negQty } from '../../core/tick.js';
 
 export * from './data.js';
@@ -229,9 +238,9 @@ function publishCollateral(ctx: MechanismContext): void {
 
 /** A1, C2.a: where each bank said it stood after the flows. Its number, published, read here. */
 interface Standing {
-  readonly reserves: number;
-  readonly buffer: number;
-  readonly gap: number;
+  readonly reserves: Qty;
+  readonly buffer: Qty;
+  readonly gap: Qty;
 }
 
 function standings(ctx: MechanismContext): Map<PartyId, Standing> {
@@ -242,7 +251,14 @@ function standings(ctx: MechanismContext): Map<PartyId, Standing> {
     if (typeof bank !== 'string' || typeof reserves !== 'number' || typeof buffer !== 'number') {
       continue;
     }
-    out.set(partyId(bank), { reserves, buffer, gap: sub(reserves, buffer, 'its position') });
+    // Item 16: what a bank published about its own account re-enters here, in the pieces it holds.
+    const held = asQty(reserves, 'what it published it holds');
+    const kept = asQty(buffer, 'what it published it keeps back');
+    out.set(partyId(bank), {
+      reserves: held,
+      buffer: kept,
+      gap: subQty(held, kept, 'its position'),
+    });
   }
   return out;
 }
@@ -478,7 +494,9 @@ function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Standing>)
     const cb = ctx.registry.centralBankOf(ccy);
     // Law 8: its buffer is a share of what could leave, so what is left over is a fraction of a
     // cent. It places whole ones, and down, because it is what it HAS above the cushion.
-    const spare = downTick(sub(p.reserves, add(p.buffer, lentThisPeriod(ctx, bank), 'placed'), 'spare'));
+    const spare = downTick(
+      minus(p.reserves, plus(p.buffer, lentThisPeriod(ctx, bank), 'placed'), 'spare'),
+    );
     if (spare <= 0) continue;
     const venue = sessionVenue(overnight, cb);
     const ask: Order = { party: bank, side: 'sell', price: c.floor, qty: spare };
@@ -579,9 +597,13 @@ function publishFunding(ctx: MechanismContext): void {
     const overnight = fallsDueToIt(ctx, bank, ccy);
     // C2.a: what it holds against a bad week is the bank's own decision, and the bank says it.
     const said = standings(ctx).get(bank);
-    const buffer = said === undefined ? 0 : said.buffer;
-    const liquid = add(
-      add(reserves, overnight, 'cash and what comes back'),
+    const buffer = said === undefined ? NO_QTY : said.buffer;
+    const liquid = plus(
+      plus(
+        heldAsMoney(reserves, 'the cash it holds'),
+        overnight,
+        'cash and what comes back',
+      ),
       paper,
       'liquid assets',
     );
@@ -738,7 +760,7 @@ function collateralHolds(): Family {
           const bound = holding.some
             ? sum(holding.value.liens.filter((l) => l.reason === String(i.id)).map((l) => l.qty))
                 .value
-            : 0;
+            : NO_QTY;
           // Law 7: what is bound is a sum over liens and what the row says is a sum over parcels,
           // so the comparison is entitled to the dust of both walks and to nothing else.
           if (!withinDust(bound, c.qty, dustOf(2, Math.abs(bound) + Math.abs(c.qty)))) {
@@ -746,7 +768,7 @@ function collateralHolds(): Family {
               family: 'ownership',
               spec: 'Money Market B3.c',
               owner: String(i.id),
-              size: sub(c.qty, bound, 'unbound collateral'),
+              size: minus(c.qty, bound, 'unbound collateral'),
               unit: 'units',
               period: view.period,
               message: `${i.id} says it is secured on ${c.qty} of ${c.instrument} and ${bound} is bound`,
@@ -915,8 +937,14 @@ export function printed(ctx: MechanismContext, borrower: PartyId): Option<number
   const rows = ctx.journal
     .ofKind('moneyMarket.print')
     .filter((e) => e.period === ctx.period && e.subjects.includes(borrower));
-  const rates = rows.map((e) => e.data['rate']).filter((r): r is number => typeof r === 'number');
-  return rates.length === 0 ? none<number>() : some(div(sum(rates).value, rates.length, 'rate'));
+  const rates = rows
+    .map((e) => e.data['rate'])
+    .filter((r): r is number => typeof r === 'number')
+    // Item 16: what the session printed re-enters here — a rate per annum on what was lent.
+    .map((r) => asRatio(r, 'what this row was struck at'));
+  return rates.length === 0
+    ? none<Ratio>()
+    : some(over(sum(rates).value, asRatio(rates.length, 'the rows there were'), 'rate'));
 }
 
 export { averageRate, CENTRAL_BANK, INTERBANK, REPO, rowTerms };
