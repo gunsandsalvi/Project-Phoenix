@@ -87,7 +87,7 @@ export function indexRules(
 export function sizeRules(
   regions: readonly RegionId[],
   statedIn: CurrencyCode,
-  share: number,
+  share: Ratio,
   from: Period,
   base: Ratio,
 ): readonly IndexDecl[] {

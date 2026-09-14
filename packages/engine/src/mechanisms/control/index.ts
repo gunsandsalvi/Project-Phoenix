@@ -25,6 +25,18 @@
  * and there is one way to write it (XI-8, Register F2).
  */
 import {
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  type PerPiece,
+  pricedAt,
+  type Ratio,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
+import { addQty, NO_QTY, type Qty } from '../../core/tick.js';
+import {
   partyId,
   venueId,
   type CurrencyCode,
@@ -34,8 +46,8 @@ import {
 } from '../../core/ids.js';
 import { currencyUnit } from '../../core/ids.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
-import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
-import { downTick, type Qty } from '../../core/tick.js';
+import { atMost, sum } from '../../core/num.js';
+import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide } from '../../ledger/settlement.js';
@@ -67,7 +79,7 @@ export function worthToBuyer(
   ctx: MechanismContext,
   target: PartyId,
   line: InstrumentId,
-): Option<number> {
+): Option<PerPiece> {
   return worthAt(buyer, ctx, target, line, quotedTo(ctx, buyer.self.id));
 }
 
@@ -83,8 +95,8 @@ function worthAt(
   ctx: MechanismContext,
   target: PartyId,
   line: InstrumentId,
-  required: Option<number>,
-): Option<number> {
+  required: Option<Ratio>,
+): Option<PerPiece> {
   /**
    * A3, B1: WHAT IT WOULD GET, AGAINST WHAT IT REQUIRES — the same comparison it makes about a
    * machine, because "what is this stream worth to me" is one question and a world with two answers
@@ -99,11 +111,11 @@ function worthAt(
    * market for control exists: the disagreement is load-bearing (§46 A3). There is no synergy term
    * and no control premium anywhere — the premium is what the BOOK produces.
    */
-  if (!required.some || required.value <= 0) return none<number>();
+  if (!required.some || required.value <= 0) return none<PerPiece>();
   // Reporting A2, A2.a: the last accounts it published. Read through the kernel's one typed read,
   // never rebuilt and never re-parsed here (item 3).
   const said = ctx.published.lastStatement(target);
-  if (said === undefined || said.earned <= 0 || said.periods <= 0) return none<number>();
+  if (said === undefined || said.earned <= 0 || said.periods <= 0) return none<PerPiece>();
   // Law 8: the periodicity is part of the number. What it published covers a span of periods; what
   // a required return is quoted in is a year, so the two are put in the same unit by the calendar
   // rather than by a factor typed here.
@@ -112,16 +124,16 @@ function worthAt(
     ctx.calendar.startOf(ctx.period),
     ctx.calendar.startOf(periodOf(ctx.period + said.periods)),
   );
-  if (ofAYear <= 0) return none<number>();
-  const annual = div(said.earned, ofAYear, 'what it earns a year, as it published it');
-  const whole = div(annual, required.value, 'what that stream is worth at what it requires');
+  if (ofAYear <= 0) return none<PerPiece>();
+  const annual = over(said.earned, asRatio(ofAYear, 'the fraction of a year that was'), 'what it earns a year, as it published it');
+  const whole = over(annual, required.value, 'what that stream is worth at what it requires');
   const shares = ctx.register.heldTotal(line).value;
-  if (shares <= 0) return none<number>();
-  const perShare = div(whole, shares, 'what one share of it is worth to this buyer');
+  if (shares <= 0) return none<PerPiece>();
+  const perShare = pricedAt(whole, shares, 'what one share of it is worth to this buyer');
   const printed = buyer.print(line);
   // B1: it bids only where its own number is above what a share is already trading at. Below that
   // it can buy shares in the market like anybody else and does not need a tender.
-  if (printed.some && perShare <= printed.value.price) return none<number>();
+  if (printed.some && perShare <= printed.value.price) return none<PerPiece>();
   return some(perShare);
 }
 
@@ -131,11 +143,12 @@ function worthAt(
  * The journal already keeps the last event of a kind a party is a subject of, so this asks it
  * rather than walking every quote the world has ever published back to the beginning.
  */
-function quotedTo(ctx: MechanismContext, who: PartyId): Option<number> {
+function quotedTo(ctx: MechanismContext, who: PartyId): Option<Ratio> {
   const e = ctx.journal.lastOf('credit.quoted', who);
-  if (e === undefined) return none<number>();
+  if (e === undefined) return none<Ratio>();
   const rate = e.data['rate'];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  // Item 16: what a bank quoted it re-enters here — a rate per annum on what it would borrow.
+  return typeof rate === 'number' ? some(asRatio(rate, 'what a bank quoted it')) : none<Ratio>();
 }
 
 /** A1: the bid. A price, and how much of the firm it has to get for the bid to mean anything. */
@@ -143,7 +156,7 @@ export interface Bid {
   readonly buyer: PartyId;
   readonly target: PartyId;
   readonly line: InstrumentId;
-  readonly price: number;
+  readonly price: PerPiece;
   /** A1: the acceptance condition, as a count of shares — control, read off what exists. */
   readonly needs: Qty;
   readonly ccy: CurrencyCode;
@@ -186,12 +199,12 @@ export function runTender(ctx: MechanismContext, bid: Bid): void {
       key: { target: String(bid.target) },
     });
   }
-  let offered = 0;
+  let offered = NO_QTY;
   for (const holder of ctx.register.holdersOf(bid.line)) {
     if (holder === bid.buyer) continue;
     for (const o of tenders(ctx.participant(holder), bid.line)) {
       ctx.post(venue, o);
-      offered = add(offered, o.qty, 'what was offered');
+      offered = addQty(offered, o.qty, 'what was offered');
     }
   }
   if (offered <= 0) {
@@ -244,16 +257,16 @@ export function runTender(ctx: MechanismContext, bid: Bid): void {
 function settleTender(
   ctx: MechanismContext,
   bid: Bid,
-  fills: readonly { readonly party: PartyId; readonly side: string; readonly qty: number }[],
-  price: number,
+  fills: readonly { readonly party: PartyId; readonly side: string; readonly qty: Qty }[],
+  price: PerPiece,
 ): void {
-  const paid: number[] = [];
-  let bought = 0;
+  const paid: Qty[] = [];
+  let bought = NO_QTY;
   for (const f of fills) {
     if (f.side !== 'sell') continue;
     const units = downTick(f.qty);
     if (units <= 0) continue;
-    const cash = downTick(mul(units, price, 'what it pays for them'));
+    const cash = downTick(valueAt(price, units, 'what it pays for them'));
     if (cash <= 0) continue;
     const seller = ctx.parties.get(f.party);
     // XI-15: a cell is a population and what it hands over is struck PER MEMBER, because a member is
@@ -289,7 +302,7 @@ function settleTender(
     });
     if (r.outcome !== 'settled') continue;
     paid.push(cash);
-    bought = add(bought, units, 'bought');
+    bought = addQty(bought, units, 'bought');
   }
   if (bought <= 0) return;
   ctx.record(
@@ -531,10 +544,10 @@ export function controlBidsFor(
     const outstanding = ctx.register.heldTotal(i.id).value;
     if (outstanding <= 0) continue;
     // A1: control is more than half of what exists, read off the register rather than declared.
-    const needs = downTick(div(outstanding, 2, 'more than half of what exists'));
+    const needs = downTick(scale(outstanding, asRatio(1 / 2, 'more than half of what exists'), 'more than half of what exists'));
     if (needs <= 0) continue;
     // B2: and it does not bid for what it cannot pay for. A bid it could not honour is not a bid.
-    const would = mul(needs, worth.value, 'what control would cost it at its own number');
+    const would = valueAt(worth.value, needs, 'what control would cost it at its own number');
     if (would > cash) continue;
     out.push({ buyer: view.self.id, target, line: i.id, price: worth.value, needs, ccy });
   }
@@ -579,9 +592,9 @@ export function control(): SystemModule {
 }
 
 /** A1: what control of a line costs at a price — a read for the observer and for a test. */
-export const costOfControl = (outstanding: number, price: number): number =>
-  mul(atMost(outstanding, outstanding, 'all of it'), price, 'what all of it would cost');
+export const costOfControl = (outstanding: Qty, price: PerPiece): Cash =>
+  valueAt(price, atMost(outstanding, outstanding, 'all of it'), 'what all of it would cost');
 
 /** B2.a: the premium, as the distance between two numbers rather than a percentage anybody set. */
-export const premiumOver = (paid: number, printed: number): number =>
-  sub(paid, printed, 'what control was worth above what a share was trading at');
+export const premiumOver = (paid: PerPiece, printed: PerPiece): PerPiece =>
+  minus(paid, printed, 'what control was worth above what a share was trading at');

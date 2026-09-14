@@ -13,7 +13,7 @@
  * what a call is (D4), what a close-out leaves owing (D11.a, F2), what a waterfall absorbs (C4).
  */
 import { asQty } from '../../core/tick.js';
-import { absolute, asCash, type Cash, heldAsMoney, minus, negated } from '../../core/measure.js';
+import { absolute, asCash, type Cash, heldAsMoney, minus, negated , asPerPiece} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { Period } from '../../calendar/calendar.js';
 import {
@@ -579,7 +579,7 @@ function issueCloseOutClaim(
         to,
         instrument: id,
         qty,
-        pricePerUnit: some(1),
+        pricePerUnit: some(asPerPiece(1, 'at what it promised')),
         accruedPerUnit: none(),
         fromCell: none(),
         toCell: none(),

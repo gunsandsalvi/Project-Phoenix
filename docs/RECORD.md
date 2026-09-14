@@ -5406,3 +5406,36 @@ cents, so an order sized in the money instrument says `asQty(phx(…))`.
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations
 (208), forbids (205 files), `plan:check`.
+
+## Item 16, stage 10b — the kernel's own arithmetic, and the reads that carry it
+
+**99 sites went (506 → 407).** 10a typed what modules ANSWER; this types what the kernel does with
+the answers.
+
+**Settlement's equity pass** is five functions — `bump`, `bumpIn`, `inOwn`, `perMemberOf`,
+`carryingOf` — and all five were bare `number`. `Op.basis` and `Op.valuePerUnit` are
+`PerPiece | 'carrying'`, `AssetLeg.pricePerUnit` is `Option<PerPiece>`, `CreateLeg.costPerUnit` is a
+`PerPiece`, `RegisterDelta.qty` is a `Qty`, and `Valuation.inMoney` takes a `Cash` — which is what a
+currency conversion is: the same value, in another money.
+
+**The per-member claim is now made in exactly one place.** `bumpIn` ends in `asPerMember`, with the
+sentence that justifies it; `perMemberOf` is its inverse for an ISSUER, whose issued amount is a
+total. A-1's shape survives (the register still does not know which of the two a `Qty` in it is) and
+the type says where the claim is made.
+
+**The reads.** `PublishedStatement` carries `Cash` and `Qty` through the dimensions' own doors at
+the one place a published number re-enters the type system; `IndexWorld.rate` is a `Ratio`,
+`Constituent.weight` a `Qty`, `Benchmark.rate` a `PerPiece`, `AuditMemory` holds `Qty`,
+`BalanceSheet` holds `Sum<Cash>`, `World.owedIn` answers in `Qty`.
+
+**And the modules that read them**: securities-lending (a borrow FEE is a share of what the paper is
+worth, not a price of it), control, merchants, corporate-bond (leverage and coverage are `Ratio`s),
+insurers (a cover price was experience plus what its capital costs — two different dimensions added),
+estate, capital-programme, equity's reads, indices, options' own quote, the observer, four audit
+families.
+
+**`mul(t.coupon.amount, 1, …)` was deleted rather than typed** — a multiplication by one is not an
+arithmetic, and Law 12 says a fix removes code.
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations
+(208), forbids (205 files), `plan:check`.

@@ -175,7 +175,7 @@ function writeOff(instrument: InstrumentId): SystemModule {
             to: PAYER,
             instrument,
             qty: units,
-            pricePerUnit: some(0),
+            pricePerUnit: some(asPerPiece(0, 'at what it promised')),
             accruedPerUnit: none(),
             fromCell: none(),
             toCell: none(),

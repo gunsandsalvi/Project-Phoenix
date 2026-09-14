@@ -289,7 +289,7 @@ function writeSub(
       to: lender,
       instrument: id,
       qty: amount,
-      pricePerUnit: some(1),
+      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
       fromCell: none(),
       toCell: none(),

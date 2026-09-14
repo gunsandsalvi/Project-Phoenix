@@ -9,7 +9,7 @@
  * this world (E3) and an index that has stopped matching its prints is a defect with an owner.
  */
 import { asRatio, minus, type PerPiece, type Ratio, ratioOf, scale } from '../../core/measure.js';
-import { sub, sum, withinDust } from '../../core/num.js';
+import { sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { indexCache, readIndex, type IndexCache, type IndexDeps } from '../../prices/index-read.js';
 import type { Family, Violation } from '../audit.js';
@@ -62,7 +62,7 @@ export function indexIsItsConstituents(): Family {
           family: 'crossMarket',
           spec: 'Indices E3',
           owner: decl.id,
-          size: sub(said.value.level, own.value.level, 'what the level is beyond its own basket'),
+          size: minus(said.value.level, own.value.level, 'what the level is beyond its own basket'),
           unit: 'index level',
           period: view.period,
           message: `${decl.id} reads ${said.value.level} where its own prints make ${own.value.level}`,
@@ -93,7 +93,7 @@ function depsOf(view: AuditView, cache: IndexCache): IndexDeps {
         const p = view.prices.latest(instrument, at);
         return p.some && p.value.period === at ? some(p.value.price) : none<PerPiece>();
       },
-      rate: (from, to, at): number => view.valuation.rateInForce(from, to, at),
+      rate: (from, to, at): Ratio => view.valuation.rateInForce(from, to, at),
     },
     price: (instrument, at): Option<PerPiece> => {
       const p = view.prices.latest(instrument, at);

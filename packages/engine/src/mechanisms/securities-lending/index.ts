@@ -20,6 +20,19 @@
  * lendable pool is a read of who actually holds the paper and is willing (B4), and it is what caps
  * how large a short can get — a real constraint, and the reason a squeeze is possible (D2).
  */
+import {
+  amountOf,
+  asCash,
+  heldAsMoney,
+  asRatio,
+  type Cash,
+  minus,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import {
   venueId,
@@ -28,7 +41,7 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
+import { atMost, sum } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -52,7 +65,7 @@ export interface StockLoan {
   readonly lien: LienId;
   readonly posted: Qty;
   /** A5: per period, as a fraction of what the borrowed paper is worth. It cleared (A5.a). */
-  readonly fee: number;
+  readonly fee: Ratio;
   readonly ccy: CurrencyCode;
   readonly opened: number;
 }
@@ -135,7 +148,9 @@ export function runBorrows(ctx: MechanismContext, wanted: readonly Want[]): void
       if (f.side !== 'sell') continue;
       const units = downTick(f.qty);
       if (units <= 0) continue;
-      openLoan(ctx, { ...w, lender: f.party, units, fee: outcome.price });
+      // A5: what the borrow book cleared at is a FEE — a share of what the paper is worth, per
+      // period — and not a price per unit of it. Named where the book that struck it says so.
+      openLoan(ctx, { ...w, lender: f.party, units, fee: asRatio(outcome.price, 'what the borrow cleared at') });
     }
   }
 }
@@ -147,15 +162,19 @@ export interface Want {
   readonly units: Qty;
   readonly ccy: CurrencyCode;
   /** A5: the most it will pay per period per unit of value, from its own reason for being short. */
-  readonly willPay: number;
+  readonly willPay: Ratio;
   /** C1: what it will put up, which must be worth more than what it takes away. */
   readonly collateral: InstrumentId;
-  readonly haircut: number;
+  readonly haircut: Ratio;
 }
 
 /** C1: what must be posted for a borrow of this value, at this lender's own haircut. */
-const collateralFor = (worth: number, haircut: number): number =>
-  mul(worth, add(1, haircut, 'the margin over what it took'), 'what the borrower must put up');
+const collateralFor = (worth: Cash, haircut: Ratio): Cash =>
+  scale(
+    worth,
+    plus(asRatio(1, 'the whole of it'), haircut, 'the margin over what it took'),
+    'what the borrower must put up',
+  );
 
 /**
  * A1, A2, C1, C4: THE TRANSACTION, and both legs of it in one numbered instruction. The security
@@ -168,17 +187,17 @@ const collateralFor = (worth: number, haircut: number): number =>
  */
 function openLoan(
   ctx: MechanismContext,
-  d: Want & { lender: PartyId; units: Qty; fee: number },
+  d: Want & { lender: PartyId; units: Qty; fee: Ratio },
 ): void {
   if (d.lender === d.borrower) return;
   // XI-6: what it is worth is what the market printed for it, at a price a reader can look up.
   const mark = ctx.valuation.markPerUnit(d.instrument, ctx.period);
   if (mark <= 0) return;
-  const worth = mul(d.units, mark, 'what the borrowed paper is worth');
+  const worth = valueAt(mark, d.units, 'what the borrowed paper is worth');
   const needed = collateralFor(worth, d.haircut);
   const price = ctx.prices.latest(d.collateral, ctx.period);
   if (!price.some || price.value.price <= 0) return;
-  const posted = downTick(div(needed, price.value.price, 'units of collateral'));
+  const posted = downTick(amountOf(needed, price.value.price, 'units of collateral'));
   if (posted <= 0 || ctx.register.free(d.borrower, d.collateral) < posted) return;
   const secures = `stockLoan:${String(d.lender)}:${String(d.borrower)}:${String(d.instrument)}`;
   const legs: Leg[] = [
@@ -297,8 +316,8 @@ export function manufacture(ctx: MechanismContext): void {
 }
 
 /** What the issuer actually paid the registered holder this period on this line, off the wire. */
-function receivedOn(ctx: MechanismContext, loan: StockLoan): number {
-  const amounts: number[] = [];
+function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
+  const amounts: Cash[] = [];
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     if (r.outcome !== 'settled' || r.instruction.cause !== 'coupon') continue;
     if (!r.instruction.reason.includes(String(loan.instrument))) continue;
@@ -306,14 +325,16 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): number {
       // A3: the money that reached the registered holder on that line. `isMoneyLeg` asks what SHAPE
       // a leg is, which is the kernel's own dispatch and not a question about an instrument kind.
       if (!isMoneyLeg(leg) || leg.to.holder !== loan.borrower || leg.ccy !== loan.ccy) continue;
-      amounts.push(leg.amount);
+      amounts.push(heldAsMoney(leg.amount, 'what reached the registered holder'));
     }
   }
   const total = sum(amounts).value;
   // E2: it passes on what the units it BORROWED earned, not what its whole holding earned. A
   // borrower that already owned some of the line keeps its own.
   const held = ctx.register.totalQuantity(loan.borrower, loan.instrument);
-  return held <= 0 ? 0 : mul(total, div(loan.units, held, 'the borrowed share of what it holds'), 'passed on');
+  return held <= 0
+    ? asCash(0, 'it holds none of the line')
+    : scale(total, ratioOf(loan.units, held, 'the borrowed share of what it holds'), 'passed on');
 }
 
 /**
@@ -325,7 +346,11 @@ export function charge(ctx: MechanismContext): void {
     const mark = ctx.valuation.markPerUnit(loan.instrument, ctx.period);
     if (mark <= 0) continue;
     const fee = downTick(
-      mul(mul(loan.units, mark, 'what is out on loan'), loan.fee, 'what the borrow cost this period'),
+      scale(
+        valueAt(mark, loan.units, 'what is out on loan'),
+        loan.fee,
+        'what the borrow cost this period',
+      ),
     );
     if (fee <= 0) continue;
     ctx.settle({
@@ -510,11 +535,11 @@ export function wantsToBorrow(
   units: Qty,
   ccy: CurrencyCode,
   collateral: InstrumentId,
-  haircut: number,
+  haircut: Ratio,
 ): Option<Want> {
   if (units <= 0) return none<Want>();
   const equity = view.equity();
-  const owed = view.owedIn(ccy);
+  const owed = heldAsMoney(view.owedIn(ccy), 'what falls due');
   if (equity <= 0) return none<Want>();
   /**
    * A5, Law 3: THE MOST IT WILL PAY, per period per unit of value, and it comes out of its own
@@ -526,15 +551,15 @@ export function wantsToBorrow(
     instrument,
     units,
     ccy,
-    willPay: div(owed, add(owed, equity, 'what funds it'), 'what a period of its own money costs'),
+    willPay: ratioOf(owed, plus(owed, equity, 'what funds it'), 'what a period of its own money costs'),
     collateral,
     haircut,
   });
 }
 
 /** A5.b: the same fee seen from the cash side — what the lender pays back on cash it was given. */
-export const rebateOf = (fee: number, earns: number): number =>
-  sub(earns, fee, 'what it hands back out of what the cash earned');
+export const rebateOf = (fee: Ratio, earns: Ratio): Ratio =>
+  minus(earns, fee, 'what it hands back out of what the cash earned');
 
 /** B4: how large a short in this line could get — a read of the pool, and a real constraint. */
 export const poolOf = (supply: readonly { readonly units: Qty }[]): number =>

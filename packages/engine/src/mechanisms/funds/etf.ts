@@ -235,7 +235,7 @@ export function redeemInKind(
   const held = mul(ctx.register.free(party, share), weight, 'shares it can give back');
   if (held < shares) return false;
   const legs: Leg[] = [];
-  const taken: number[] = [];
+  const taken: Cash[] = [];
   for (const line of basket) {
     const got = onGrid(ctx, holder, line.instrument, mul(shares, line.perShare, 'units of this line'));
     const units = got.total;
@@ -252,9 +252,9 @@ export function redeemInKind(
       fromCell: none(),
       toCell: cellOf(holder, got.perMember),
     });
-    taken.push(mul(units, line.markPerUnit, 'what this line gave back'));
+    taken.push(valueAt(line.markPerUnit, units, 'what this line gave back'));
   }
-  const perShare = div(sum(taken).value, shares, 'what a share was redeemed at');
+  const perShare = pricedAt(sum(taken).value, shares, 'what a share was redeemed at');
   legs.unshift({
     kind: 'asset',
     from: party,

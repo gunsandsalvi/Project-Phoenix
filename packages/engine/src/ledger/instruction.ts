@@ -131,7 +131,7 @@ export interface AssetLeg {
   /** Law 8: total units that move, as a count of the instrument's own smallest piece. */
   readonly qty: Qty;
   /** C2.a: the print if it is a trade, per unit in the instrument's currency; none for a transfer at carrying value. */
-  readonly pricePerUnit: Option<number>;
+  readonly pricePerUnit: Option<PerPiece>;
   /**
    * Bond N9.b: what accrued since the last coupon and travelled with the paper, per unit. It is
    * part of the money leg's amount and not of the lot's basis; recorded here so the ledger says
@@ -156,7 +156,7 @@ export interface CreateLeg {
   readonly instrument: InstrumentId;
   readonly qty: Qty;
   /** What the units cost to make, per unit: the basis the lot carries (Goods E1). */
-  readonly costPerUnit: number;
+  readonly costPerUnit: PerPiece;
   readonly toCell: Option<CellSide>;
 }
 
@@ -487,7 +487,7 @@ export interface RegisterDelta {
   readonly party: PartyId;
   readonly instrument: InstrumentId;
   /** Per member for a cell. */
-  readonly qty: number;
+  readonly qty: Qty;
   /**
    * XI-15: the multiplicity this delta was struck at, one for a named party. A cell's weight can
    * change later in the same period — it splits when part of it takes a job — so a reader that

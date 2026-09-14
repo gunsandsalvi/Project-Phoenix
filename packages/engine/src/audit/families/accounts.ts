@@ -20,6 +20,7 @@
  * sum over accounts that moved hundreds of times, and a tolerance that saw only the sum reports a
  * violation the moment the world starts paying itself.
  */
+import { asRatio, type Cash, heldAsMoney, over, scale } from '../../core/measure.js';
 import { negated } from '../../core/measure.js';
 import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
@@ -60,14 +61,14 @@ export interface BalanceReads {
    */
   readonly contracts: {
     openOf(party: PartyId): readonly Contract[];
-    valueTo(contract: Contract, party: PartyId, at: Period): number;
+    valueTo(contract: Contract, party: PartyId, at: Period): Cash;
   };
 }
 
 /** The two sides and the rounding the read carries, per member of the party (XI-15). */
 export interface BalanceSheet {
-  readonly assets: Sum;
-  readonly liabilities: Sum;
+  readonly assets: Sum<Cash>;
+  readonly liabilities: Sum<Cash>;
   /** Law 7: the walk behind every money balance the two sides are read off, per member. */
   readonly walked: number;
   readonly ccy: CurrencyCode;
@@ -88,7 +89,7 @@ const NOBODY: ReadonlySet<string> = new Set<string>();
 function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>): BalanceSheet {
   const p = view.parties.get(party);
   const home = view.registry.currencyOf(p.region);
-  const assetTerms: number[] = [];
+  const assetTerms: Cash[] = [];
   // Law 7: the rounding the READ carries, which is the walk behind every money balance it is read
   // off, not the rounding of adding them up today.
   let walked = 0;
@@ -112,14 +113,14 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
       walked += view.register.moneyWalk(party, inst.id).dust;
     }
   }
-  const liabilityTerms: number[] = [];
+  const liabilityTerms: Cash[] = [];
   /**
    * D1: an open contract is an asset to one side and a liability to the other, at every instant.
    * It is kept apart from the liabilities the register holds because those are read from the OTHER
    * side — held by other parties in total, and divided by this one's weight below — while a
    * contract's value is already per member, the way the leg that opened it booked it (XI-15).
    */
-  const contractLiabilities: number[] = [];
+  const contractLiabilities: Cash[] = [];
   for (const c of view.contracts.openOf(party)) {
     // D1: a contract is an asset to one side and a liability to the other, so one between two
     // members of the group is worth exactly nothing to the group (Law 4).
@@ -168,8 +169,14 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
       const owed =
         kind.owes === 'value'
           ? view.valuation.valueOfLots(inst.id, h.value.lots, view.period)
-          : sum(h.value.lots.map((l) => l.qty)).value;
-      liabilityTerms.push(view.valuation.inMoney(owed, inst.ccy, home, view.period) * w);
+          : heldAsMoney(sum(h.value.lots.map((l) => l.qty)).value, 'the face it holds');
+      liabilityTerms.push(
+        scale(
+          view.valuation.inMoney(owed, inst.ccy, home, view.period),
+          asRatio(w, 'the people it stands for'),
+          'what the group owes on it',
+        ),
+      );
       // What this party owes IS those balances, read from the other side (Register B3), so every
       // rounding they have taken since they were opened is a rounding in this number.
       if (isMoney) walked += view.register.moneyWalk(holder, inst.id).dust * w;
@@ -181,7 +188,10 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
   const w = weightOf(p);
   return {
     assets: sum(assetTerms),
-    liabilities: sum([...liabilityTerms.map((t) => t / w), ...contractLiabilities]),
+    liabilities: sum([
+      ...liabilityTerms.map((t) => over(t, asRatio(w, 'the people it stands for'), 'per member')),
+      ...contractLiabilities,
+    ]),
     walked: walked / w,
     ccy: home,
   };
@@ -213,15 +223,28 @@ export function consolidated(view: BalanceReads, group: readonly PartyId[]): Bal
   }
   const home = view.registry.currencyOf(view.parties.get(root).region);
   const inside = new Set(group.map((p) => String(p)));
-  const assets: number[] = [];
-  const liabilities: number[] = [];
+  const assets: Cash[] = [];
+  const liabilities: Cash[] = [];
   let walked = 0;
   for (const member of group) {
     const sheet = sheetOf(view, member, inside);
     const w = weightOf(view.parties.get(member));
-    assets.push(view.valuation.inMoney(sheet.assets.value * w, sheet.ccy, home, view.period));
+    const own = asRatio(w, 'the people it stands for');
+    assets.push(
+      view.valuation.inMoney(
+        scale(sheet.assets.value, own, 'what its people hold between them'),
+        sheet.ccy,
+        home,
+        view.period,
+      ),
+    );
     liabilities.push(
-      view.valuation.inMoney(sheet.liabilities.value * w, sheet.ccy, home, view.period),
+      view.valuation.inMoney(
+        scale(sheet.liabilities.value, own, 'what its people owe between them'),
+        sheet.ccy,
+        home,
+        view.period,
+      ),
     );
     // Law 7: the dust the READS carried, added the way the numbers were, and never a band.
     walked += sheet.walked * w;
@@ -266,7 +289,7 @@ export function accountsFamily(): Family {
         const equity = view.register.equityWalk(p.id);
         const revaluation = view.register.revaluationWalk(p.id);
         const stands = sum([equity.value, revaluation.value]);
-        const read = sum([assets.value, -liabilities.value]);
+        const read = sum([assets.value, negated(liabilities.value, 'what it owes, the other way')]);
         // Per member, like the two sides it belongs to (XI-15).
         const dust =
           combineDust(assets, liabilities, read) +

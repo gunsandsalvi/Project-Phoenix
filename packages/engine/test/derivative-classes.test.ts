@@ -4,6 +4,7 @@
  *
  * @spec CDS B1.a CDS B3 CDS E1 CDS E2 CDS E3 CDS E4 FX Forwards A4 FX Forwards B3 FX Forwards B3.b FX Forwards D3 FX Forwards E4 Dealer Desks E1 Dealer Desks E2 Sovereign I1.a Sovereign I2 Sovereign I3 Sovereign I3.a Derivative D10 Derivative D10.a Law 3 Law 19
  */
+import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {asContractMarket, contractOf, pairOf, BOND_FUTURE_PARAMS,
   CDS_PARAMS,
@@ -110,7 +111,7 @@ describe('what is measured and never set (I1.a, I2, I3.a, Law 3)', () => {
 
   it('takes the option’s implied move off its premium and declares no volatility', () => {
     // Law 3, Bond N7.b: the premium is what cleared; the move it implies is arithmetic on it.
-    expect(impliedMove(9, 1, 9).some).toBe(true);
+    expect(impliedMove(asPerPiece(9, 'what the premium cleared at'), 1, 9).some).toBe(true);
     expect(Object.keys(OPTION_PARAMS).some((k) => k.toLowerCase().includes('vol'))).toBe(false);
   });
 });

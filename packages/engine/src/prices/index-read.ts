@@ -30,6 +30,7 @@ import {
   scale,
   valueAt,
 } from '../core/measure.js';
+import type { Qty } from '../core/tick.js';
 import { add, sum } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Ledger } from '../ledger/ledger.js';
@@ -67,7 +68,7 @@ export interface IndexWorld {
    * the pair's own last print, read through the kernel, so the money a global line is stated in is
    * a label on the read rather than a table of rates this file keeps.
    */
-  rate(from: CurrencyCode, to: CurrencyCode, at: Period): number;
+  rate(from: CurrencyCode, to: CurrencyCode, at: Period): Ratio;
 }
 
 /** A1: one constituent of an index, and what it counts for. */
@@ -79,7 +80,7 @@ export interface Constituent {
    * of the index: a share would have to be restated every time a price moved, and restating it is
    * how an index comes to have a level nobody's prints produced.
    */
-  readonly weight: number;
+  readonly weight: Qty;
 }
 
 /**
@@ -116,7 +117,7 @@ export interface IndexRead {
   readonly from: readonly {
     readonly instrument: InstrumentId;
     readonly price: PerPiece;
-    readonly weight: number;
+    readonly weight: Qty;
   }[];
 }
 
@@ -213,7 +214,7 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
     // Only a period that is OVER is remembered: this period's prints are still being made.
     if (t < at) d.cache?.set(decl.id, t as Period, level);
   }
-  const from: { instrument: InstrumentId; price: PerPiece; weight: number }[] = [];
+  const from: { instrument: InstrumentId; price: PerPiece; weight: Qty }[] = [];
   for (const c of constituents) {
     const p = d.price(c.instrument, at);
     if (p.some) from.push({ instrument: c.instrument, price: p.value, weight: c.weight });

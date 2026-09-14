@@ -22,6 +22,21 @@
  * A3, XI-3: equity is assets minus liabilities, it is a READ, and it can go negative — which is a
  * solvency event with consequences, because these institutions can fail like anything else.
  */
+import {
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  type PerPiece,
+  plus,
+  pricedAt,
+  type Ratio,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
+import type { Qty } from '../../core/tick.js';
 import { compareCivil, type Civil } from '../../calendar/civil.js';
 import {
   instrumentId,
@@ -36,7 +51,7 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { FACE_TICK, MONEY_PIECES } from '../../registry/grid.js';
@@ -209,8 +224,14 @@ export function quoteCover(view: ParticipantView, ccy: CurrencyCode): readonly O
   const experience = claimsSeen(view);
   const capital = view.owedIn(ccy);
   const required =
-    capital > 0 ? div(capital, add(capital, surplus, 'what funds it'), 'what its capital costs') : 0;
-  const price = add(experience, required, 'what a unit of cover costs it to write');
+    capital > 0
+      ? ratioOf(
+          heldAsMoney(capital, 'what it owes'),
+          plus(heldAsMoney(capital, 'what it owes'), surplus, 'what funds it'),
+          'what its capital costs',
+        )
+      : asRatio(0, 'it owes nothing, so its capital costs it nothing');
+  const price = coverPrice(experience, required);
   if (price <= 0) return [];
   const capacity = downTick(surplus);
   if (capacity <= 0) return [];
@@ -223,9 +244,9 @@ export function quoteCover(view: ParticipantView, ccy: CurrencyCode): readonly O
  * off the payments it has made — never a loss ratio, never an industry number, never a draw from a
  * distribution somebody stated.
  */
-function claimsSeen(view: ParticipantView): number {
-  const paid: number[] = [];
-  const written: number[] = [];
+function claimsSeen(view: ParticipantView): PerPiece {
+  const paid: Cash[] = [];
+  const written: Qty[] = [];
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     if (!isPolicy(i.terms) || i.terms.insurer !== view.self.id) continue;
@@ -236,10 +257,12 @@ function claimsSeen(view: ParticipantView): number {
   const claim = view.lastOwn(CLAIM_PAID);
   if (claim.some) {
     const amount = claim.value.data['amount'];
-    if (typeof amount === 'number') paid.push(amount);
+    if (typeof amount === 'number') paid.push(asCash(amount, 'what it paid on a claim'));
   }
   const cover = sum(written).value;
-  return cover > 0 ? div(sum(paid).value, cover, 'what a unit of cover has cost it') : 0;
+  return cover > 0
+    ? pricedAt(sum(paid).value, cover, 'what a unit of cover has cost it')
+    : asPerPiece(0, 'it has written no cover, so nothing has cost it anything');
 }
 
 /**
@@ -308,16 +331,23 @@ export function insurers(): SystemModule {
  */
 export const presentValueOf = (
   schedule: readonly CashFlow[],
-  discount: (date: Civil) => number,
-): number => sum(schedule.map((f) => mul(f.perUnit, discount(f.date), 'discounted'))).value;
+  discount: (date: Civil) => Ratio,
+): PerPiece =>
+  sum(schedule.map((f) => scale(f.perUnit, discount(f.date), 'discounted'))).value;
 
 /** A4.b: the two halves of a cover price, which are the only two things in it. */
-export const coverPrice = (experience: number, requiredOnCapital: number): number =>
-  add(experience, requiredOnCapital, 'what a unit of cover costs to write');
+export const coverPrice = (experience: PerPiece, requiredOnCapital: Ratio): PerPiece =>
+  plus(
+    experience,
+    // A4.b: what its capital costs is a SHARE and what cover costs is a level, so the share is a
+    // level of the same thing before they add — which is what "per unit of cover" means.
+    asPerPiece(requiredOnCapital, 'what its capital costs, per unit of cover'),
+    'what a unit of cover costs to write',
+  );
 
 /** D1: the mismatch, in the one unit that makes it comparable — what each side is worth now. */
-export const gapOf = (assets: number, liabilities: number): number =>
-  sub(assets, liabilities, 'what it has against what it owes');
+export const gapOf = (assets: Cash, liabilities: Cash): Cash =>
+  minus(assets, liabilities, 'what it has against what it owes');
 
 /** C2.a: whether this book is one a matching buyer wants — long assets against long liabilities. */
 export const wantsDuration = (schedule: readonly CashFlow[], horizon: Civil): boolean =>

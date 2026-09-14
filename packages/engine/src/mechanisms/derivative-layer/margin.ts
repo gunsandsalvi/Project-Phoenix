@@ -17,7 +17,7 @@
  * a party that cannot pay it fails the instruction and is in Money E1's state — never a borrowing
  * that appears from nowhere, which is the third of the three ways XI-2's channel is silently closed.
  */
-import { absolute, amountOf, asCash, type Cash, heldAsMoney, minus, plus, valueAt } from '../../core/measure.js';
+import { absolute, amountOf, asCash, type Cash, heldAsMoney, minus, plus, valueAt , asPerPiece} from '../../core/measure.js';
 import { NO_QTY, type Qty } from '../../core/tick.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
@@ -120,7 +120,7 @@ export function moveMargin(
       instrument: id,
       qty,
       // D3: it is returned at what it is, not at a price — a claim to cash is worth the cash.
-      pricePerUnit: some(1),
+      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
       fromCell: none(),
       toCell: none(),

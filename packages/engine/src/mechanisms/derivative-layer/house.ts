@@ -16,7 +16,7 @@
  */
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
-import { absolute, asCash, asRatio, type Cash, heldAsMoney, minus, negated, ratioOf, scale } from '../../core/measure.js';
+import { absolute, asCash, asRatio, type Cash, heldAsMoney, minus, negated, ratioOf, scale , asPerPiece} from '../../core/measure.js';
 import { atMost, sum, zeroIfNone } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { NO_QTY, type Qty, splitOnTick } from '../../core/tick.js';
@@ -142,7 +142,7 @@ export function moveFund(
       to: up ? member : house,
       instrument: id,
       qty,
-      pricePerUnit: some(1),
+      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
       fromCell: none(),
       toCell: none(),
@@ -207,7 +207,7 @@ export function runWaterfall(
           to: house,
           instrument,
           qty: paid,
-          pricePerUnit: some(0),
+          pricePerUnit: some(asPerPiece(0, 'at what it promised')),
           accruedPerUnit: none(),
           fromCell: none(),
           toCell: none(),

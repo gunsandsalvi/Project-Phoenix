@@ -19,10 +19,22 @@
  * NOTHING HERE IS A SPREAD TABLE. There is no mark-up per line, no fee, no schedule of margins by
  * distance: one preference per merchant, drawn, and two prints.
  */
+import {
+  amountOf,
+  asPerPiece,
+  asRatio,
+  heldAsMoney,
+  minus,
+  type PerPiece,
+  plus,
+  pricedAt,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketId, PartyId, RegionId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { asQty, downTick, NO_QTY } from '../../core/tick.js';
 import { FIRM } from '../../registry/profiles.js';
 import { goodId, goodMarketId, isGoodTerms } from '../../registry/physical.js';
@@ -43,11 +55,11 @@ function indexOf(rows: readonly MerchantDecl[]): ReadonlyMap<string, MerchantDec
  * one, the last print where it has not, and nothing at all where the place has never printed. A
  * merchant with no opinion about the other end is a merchant with no reason to buy.
  */
-function expected(view: ParticipantView, subUnit: string, region: RegionId): number | undefined {
+function expected(view: ParticipantView, subUnit: string, region: RegionId): PerPiece | undefined {
   const id = goodId(subUnit, region);
   if (!view.instruments.has(id)) return undefined;
   const outlook = view.outlook(about({ on: 'price', instrument: id }));
-  if (outlook.some) return outlook.value.expected;
+  if (outlook.some) return asPerPiece(outlook.value.expected, `what it expects ${id} to fetch`);
   const print = view.print(id);
   if (print.some) return print.value.price;
   return undefined;
@@ -58,8 +70,8 @@ function dearest(
   view: ParticipantView,
   subUnit: string,
   notHere: RegionId,
-): number | undefined {
-  let best: number | undefined;
+): PerPiece | undefined {
+  let best: PerPiece | undefined;
   for (const region of view.registry.regions.keys()) {
     if (region === notHere) continue;
     const there = expected(view, subUnit, region);
@@ -70,13 +82,13 @@ function dearest(
 }
 
 /** Law 19: what its own lots of this cost it, per unit. The register is where a basis lives. */
-function basisPerUnit(view: ParticipantView, market: MarketDecl): number | undefined {
+function basisPerUnit(view: ParticipantView, market: MarketDecl): PerPiece | undefined {
   for (const h of view.holdings()) {
     if (h.instrument !== market.instrument) continue;
     const units = sum(h.lots.map((l) => l.qty));
     if (units.value <= 0) continue;
-    const cost = sum(h.lots.map((l) => mul(l.qty, l.basisPerUnit, 'what this lot cost it')));
-    return div(cost.value, units.value, 'what a unit of it cost it');
+    const cost = sum(h.lots.map((l) => valueAt(l.basisPerUnit, l.qty, 'what this lot cost it')));
+    return pricedAt(cost.value, units.value, 'what a unit of it cost it');
   }
   return undefined;
 }
@@ -95,11 +107,19 @@ function ordersOf(view: ParticipantView, market: MarketDecl, m: MerchantDecl): r
     // that caps the basis (C2) seen from the buying end.
     const away = dearest(view, i.terms.subUnit, here);
     if (away === undefined) return [];
-    const bid = mul(away, sub(1, margin, 'less what this management wants for the wait'), 'what it will pay');
+    const bid = scale(
+      away,
+      minus(asRatio(1, 'the whole of it'), margin, 'less what this management wants for the wait'),
+      'what it will pay',
+    );
     if (bid <= 0) return [];
     const appetite = view.params.ratio(merchantParam(m.merchant, 'appetite'));
-    const behind = mul(view.cash(i.ccy), appetite, 'what it will put behind this line');
-    const qty = downTick(div(behind, bid, 'units it can pay for'));
+    const behind = scale(
+      heldAsMoney(view.cash(i.ccy), 'the money it holds'),
+      appetite,
+      'what it will put behind this line',
+    );
+    const qty = downTick(amountOf(behind, bid, 'units it can pay for'));
     if (qty <= 0) return [];
     return [{ party: view.self.id, side: 'buy', price: bid, qty: asQty(qty) }];
   }
@@ -110,7 +130,11 @@ function ordersOf(view: ParticipantView, market: MarketDecl, m: MerchantDecl): r
   if (free <= NO_QTY) return [];
   const basis = basisPerUnit(view, market);
   if (basis === undefined || basis <= 0) return [];
-  const ask = mul(basis, add(1, margin, 'and what it wants for having carried it'), 'what it will take');
+  const ask = scale(
+    basis,
+    plus(asRatio(1, 'the whole of it'), margin, 'and what it wants for having carried it'),
+    'what it will take',
+  );
   return [{ party: view.self.id, side: 'sell', price: ask, qty: free }];
 }
 

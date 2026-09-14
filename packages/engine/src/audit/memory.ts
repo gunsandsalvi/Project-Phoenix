@@ -4,6 +4,8 @@
  *
  * @spec Money C4.c Money D3 Audit C2 Audit C2.a
  */
+import type { Qty } from '../core/tick.js';
+import { sum } from '../core/num.js';
 import type { Period } from '../calendar/calendar.js';
 import type { InstrumentId, PartyId } from '../core/ids.js';
 import type { AuditView } from './view.js';
@@ -11,9 +13,9 @@ import type { AuditView } from './view.js';
 export interface AuditMemory {
   period: Period | undefined;
   /** issued amount per instrument at the last audit. */
-  issued: Map<InstrumentId, number>;
+  issued: Map<InstrumentId, Qty>;
   /** per-member quantity per (holder, instrument) at the last audit, and the lots it was read over. */
-  holdings: Map<string, { holder: PartyId; instrument: InstrumentId; qty: number; lots: number }>;
+  holdings: Map<string, { holder: PartyId; instrument: InstrumentId; qty: Qty; lots: number }>;
 }
 
 export function emptyMemory(): AuditMemory {
@@ -29,7 +31,7 @@ export function remember(view: AuditView, m: AuditMemory): void {
   m.issued = new Map(view.instruments.all().map((i) => [i.id, i.issued]));
   m.holdings = new Map();
   for (const h of view.register.allHoldings()) {
-    const qty = h.lots.reduce((s, l) => s + l.qty, 0);
+    const qty = sum(h.lots.map((l) => l.qty)).value;
     m.holdings.set(holdingKey(h.holder, h.instrument), {
       holder: h.holder,
       instrument: h.instrument,

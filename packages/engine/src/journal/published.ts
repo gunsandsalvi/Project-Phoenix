@@ -32,6 +32,11 @@
  * PARTICIPANT may hold one — it is on `KernelReads`, so a bank valuing a borrower sees exactly what
  * the company told everybody and nothing else (Observer A3, A4).
  */
+// Item 16: A PUBLISHED NUMBER RE-ENTERS THE TYPE SYSTEM HERE. `reporting` wrote it knowing what it
+// was and a journal carries `unknown`, so the field this reads into goes through the dimension's
+// own door and says which it is.
+import { asAmount, asCash, type Cash } from '../core/measure.js';
+import type { Qty } from '../core/tick.js';
 import type { Period } from '../calendar/calendar.js';
 import { InvalidRegistry } from '../core/errors.js';
 import { partyId, type CurrencyCode, type PartyId } from '../core/ids.js';
@@ -54,15 +59,15 @@ export interface PublishedStatement {
   /** G5: how many periods the quarter covered, so a reader can annualise without re-deriving it. */
   readonly periods: number;
   /** G2: the bottom line, and the part of it nobody was paid. */
-  readonly earned: number;
-  readonly revaluation: number;
+  readonly earned: Cash;
+  readonly revaluation: Cash;
   /** G2: the decomposition, in the words its writers used. What the lines say is not re-derived. */
   readonly income: readonly PublishedIncomeLine[];
-  readonly assets: number;
-  readonly liabilities: number;
+  readonly assets: Cash;
+  readonly liabilities: Cash;
   readonly ccy: CurrencyCode;
   /** G5: shares in issue, so a reader can divide. The quotient is never stored (Law 2). */
-  readonly shares: number;
+  readonly shares: Qty;
   /** When it was published, which is not when the quarter closed (A2: reporting has a lag). */
   readonly at: Period;
 }
@@ -121,13 +126,13 @@ function statementOf(e: Event): PublishedStatement {
     to: to as Period,
     // Law 19: derived at the read from the two dates the writer published, never stored beside them.
     periods: to - from + 1,
-    earned: num(e, 'earned'),
-    revaluation: num(e, 'revaluation'),
+    earned: asCash(num(e, 'earned'), 'what it published it earned'),
+    revaluation: asCash(num(e, 'revaluation'), 'what the marks did'),
     income: lines(e),
-    assets: num(e, 'assets'),
-    liabilities: num(e, 'liabilities'),
+    assets: asCash(num(e, 'assets'), 'what it published it holds'),
+    liabilities: asCash(num(e, 'liabilities'), 'what it published it owes'),
     ccy: str(e, 'ccy') as CurrencyCode,
-    shares: num(e, 'shares'),
+    shares: asAmount<'piece'>(num(e, 'shares'), 'shares in issue'),
     at: e.period,
   };
 }
@@ -173,6 +178,7 @@ function num(e: Event, field: string): number {
   }
   return v;
 }
+
 
 function str(e: Event, field: string): string {
   const v = e.data[field];

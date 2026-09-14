@@ -15,7 +15,7 @@
  * pieces of money per piece of a good is a real number and always was.
  */
 import { asQty, type Qty } from '../src/core/tick.js';
-import { type Cash, heldAsMoney } from '../src/core/measure.js';
+import { asPerPiece, type Cash, heldAsMoney, type PerPiece } from '../src/core/measure.js';
 import {
   MONEY_PIECES,
   SHARE_PIECES,
@@ -48,7 +48,8 @@ export const par = (amount: number): Qty => asQty(Math.round(amount * MONEY_PIEC
 export const shares = (count: number): Qty => asQty(Math.round(count * SHARE_PIECES));
 
 /** A price in USD for one tonne, as the state holds a price: pieces of money per piece of good. */
-export const perTonne = (price: number): number => (price * MONEY_PIECES) / TONNE_PIECES;
+export const perTonne = (price: number): PerPiece =>
+  asPerPiece((price * MONEY_PIECES) / TONNE_PIECES, 'what a tonne of it costs');
 
 /** A price in USD for one whole thing (a machine), as the state holds a price. */
 export const perMachine = (price: number): number => (price * MONEY_PIECES) / WHOLE_PIECES;

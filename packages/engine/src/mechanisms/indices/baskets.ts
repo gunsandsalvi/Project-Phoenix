@@ -14,9 +14,11 @@
  * is who promised it. An index built on kind ids would be a list of this world's kinds written down
  * twice, and would silently miss the next one.
  */
+import { asCash, type Cash, plus, type Ratio, scale, valueAt } from '../../core/measure.js';
+import type { Qty } from '../../core/tick.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, RegionId } from '../../core/ids.js';
-import { add, addTo, mul, sum } from '../../core/num.js';
+import { addTo, sum } from '../../core/num.js';
 import { isAssetLeg } from '../../ledger/instruction.js';
 import type { Constituent, IndexWorld } from '../../prices/index-read.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -165,7 +167,7 @@ export function creditOf(
  */
 export function goodsBoughtIn(region: RegionId, only: 'anybody' | 'households') {
   return (at: Period, w: IndexWorld): readonly Constituent[] => {
-    const units = new Map<string, number>();
+    const units = new Map<string, Qty>();
     for (const r of w.ledger.inPeriod(at)) {
       if (r.outcome !== 'settled') continue;
       for (const leg of r.instruction.legs) {
@@ -227,7 +229,7 @@ function isHousehold(w: IndexWorld, party: string): boolean {
  */
 export type SizeSegment = 'large' | 'small' | 'all';
 
-export function sizeSegmentOf(region: RegionId, segment: SizeSegment, share: number) {
+export function sizeSegmentOf(region: RegionId, segment: SizeSegment, share: Ratio) {
   return (at: Period, w: IndexWorld): readonly Constituent[] => {
     const here = listed(w)
       .filter((i) => !pays(w, i, at))
@@ -235,11 +237,11 @@ export function sizeSegmentOf(region: RegionId, segment: SizeSegment, share: num
     if (segment === 'all') return here.map((i) => ({ instrument: i.id, weight: i.issued }));
     // A3: each line's own capitalisation, from its own print and its own count. A line that has
     // not printed has no capitalisation to compare, and is on neither side of the boundary.
-    const sized: { readonly i: Instrument; readonly cap: number }[] = [];
+    const sized: { readonly i: Instrument; readonly cap: Cash }[] = [];
     for (const i of here) {
       const price = w.price(i.id, at);
       if (!price.some) continue;
-      sized.push({ i, cap: mul(price.value, i.issued, 'what this line is worth altogether') });
+      sized.push({ i, cap: valueAt(price.value, i.issued, 'what this line is worth altogether') });
     }
     const whole = sum(sized.map((x) => x.cap)).value;
     if (whole <= 0) return [];
@@ -247,13 +249,13 @@ export function sizeSegmentOf(region: RegionId, segment: SizeSegment, share: num
     // large ones, and the rest are the small ones. Stated in advance, the same for everybody, and
     // read off nothing but the constituents' own prints.
     const byCap = [...sized].sort((a, b) => b.cap - a.cap);
-    const want = mul(whole, share, 'the part of the market the large line covers');
+    const want = scale(whole, share, 'the part of the market the large line covers');
     const large: Instrument[] = [];
-    let running = 0;
+    let running = asCash(0, 'nothing counted yet');
     for (const x of byCap) {
       if (running >= want) break;
       large.push(x.i);
-      running = add(running, x.cap, 'the capitalisation of the large line so far');
+      running = plus(running, x.cap, 'the capitalisation of the large line so far');
     }
     const inLarge = new Set(large.map((i) => String(i.id)));
     const chosen = segment === 'large' ? byCap.filter((x) => inLarge.has(String(x.i.id))) : byCap.filter((x) => !inLarge.has(String(x.i.id)));
@@ -282,6 +284,10 @@ export function globalEquity(regions: readonly RegionId[], statedIn: CurrencyCod
         // B1: still a COUNT — of what one share is worth in the money the line is stated in. A
         // share priced in another money counts for what that money buys of this one, at the rate
         // its pair last printed, and nothing here stores a rate of its own.
-        weight: mul(i.issued, w.rate(i.ccy, statedIn, at), `${String(i.ccy)} into ${String(statedIn)}`),
+        weight: scale(
+          i.issued,
+          w.rate(i.ccy, statedIn, at),
+          `${String(i.ccy)} into ${String(statedIn)}`,
+        ),
       }));
 }

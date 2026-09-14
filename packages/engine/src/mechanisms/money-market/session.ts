@@ -33,7 +33,7 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
-import { amountOf, type Cash, minus, type Ratio, valueAt } from '../../core/measure.js';
+import { amountOf, type Cash, minus, type Ratio, valueAt , asPerPiece} from '../../core/measure.js';
 import { downTick, upTick, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -238,7 +238,7 @@ export function writeRow(
       to: s.lender,
       instrument: id,
       qty: s.amount,
-      pricePerUnit: some(1),
+      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
       fromCell: none(),
       toCell: none(),

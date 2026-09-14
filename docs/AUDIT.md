@@ -2953,7 +2953,8 @@ under a shock.
 > | 8 | `cds` | 45 |
 > | 9 | `treasury` | 33 |
 > | ~~10a~~ | ~~the derivative tree~~ — **DONE**: the profile, the layer, and four kernel doors | **382 → 271** |
-> | 10b | what is left of everything else | 271 |
+> | ~~10b~~ | ~~the kernel's own arithmetic~~ — **DONE**: settlement, the reads, the audit families | **271 → 172** |
+> | 10c | what is left: `banks`, `funds`, `households`, `firms`, `seeds` and the residue | 172 |
 >
 > Gate every stage on the instruction digest the Law 18 items use: mechanisms, economics and
 > boundaries do not change. **Stage 1 is done; nine remain**, and the eighteen findings below stay
@@ -3217,6 +3218,43 @@ under a shock.
 >
 > **Measured**: **79 red of 793** before and after, the same 79, test for test. Arithmetic sites
 > 697 → 506.
+>
+> ### Stage 10b — the kernel's own arithmetic, and the reads that carry it
+>
+> Stage 10a typed what modules ANSWER; this types what the kernel itself does with the answers, and
+> the reads every module takes off it.
+>
+> **Settlement's equity pass.** `bump`, `bumpIn`, `inOwn`, `perMemberOf` and `carryingOf` are the
+> five functions that decide what an instruction did to somebody's book, and all five were bare
+> `number`. `Op.basis` and `Op.valuePerUnit` are `PerPiece | 'carrying'` now, `AssetLeg.pricePerUnit`
+> is `Option<PerPiece>`, `CreateLeg.costPerUnit` is a `PerPiece`, and `RegisterDelta.qty` is a `Qty`.
+> `Valuation.inMoney` takes a `Cash`, which is what a currency conversion is: the same value, in
+> another money.
+>
+> **The one place the per-member claim is made, and it is made once.** `bumpIn` ends in
+> `asPerMember<'money:piece'>(own, …)` with the sentence that justifies it — a cell's holdings are
+> per member and a named party stands for one of itself — and `perMemberOf` is the inverse for an
+> ISSUER, whose issued amount is a total. A-1's shape survives the type (the register still does not
+> know which of the two a `Qty` in it is), and the type now says where the claim is made.
+>
+> **The reads.** `PublishedStatement` carries `Cash` for what a company said it earned, holds and
+> owes, and a `Qty` for its shares — through the dimension's own door at the one place a published
+> number re-enters the type system. `IndexWorld.rate` is a `Ratio`, `Constituent.weight` a `Qty`,
+> `Benchmark.rate` a `PerPiece`, `AuditMemory` holds `Qty`, `BalanceSheet` holds `Sum<Cash>`, and
+> `World.owedIn` answers in `Qty`.
+>
+> **And the modules that read them**: `securities-lending` (a borrow FEE is a share of what the
+> paper is worth, not a price of it), `control` (what a bank quoted an acquirer is a rate; what a
+> share is worth to it is a level), `merchants`, `corporate-bond` (leverage and coverage are
+> `Ratio`s and the covenant compares two of them), `insurers` (a cover price is experience plus what
+> its capital costs, and those were two different dimensions added), `estate`, `capital-programme`,
+> `equity`'s reads, `indices`, `options`' own quote, the `observer`, and four audit families.
+>
+> **`mul(t.coupon.amount, 1, …)` was deleted rather than typed.** A multiplication by one is not an
+> arithmetic, and Law 12 says a fix removes code: `annualCostOf` is now the coupon rate, named.
+>
+> **Measured**: **79 red of 793** before and after, the same 79, test for test. Arithmetic sites
+> 506 → 407.
 
 **Why.** Eighteen findings, and one signature:
 

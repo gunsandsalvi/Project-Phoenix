@@ -35,15 +35,25 @@ import {
   type UnitId,
 } from '../core/ids.js';
 import {
+  absolute,
   asCash,
+  acrossMembers,
+  asPerMember,
   asPerPiece,
+  asRatio,
   asTotal,
+  type Cash,
   eachMember,
   heldAsMoney,
+  minus,
   negated,
   type PerMember,
+  type PerPiece,
+  pricedAt,
+  scale,
+  valueAt,
 } from '../core/measure.js';
-import { addTo, atMost, finite, mul, sum, zeroIfNone } from '../core/num.js';
+import { addTo, atMost, finite, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
 import { negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
@@ -107,7 +117,7 @@ export interface SettlementDeps {
   readonly contracts: Contracts;
   /** 13c.1: where what is on its way has got to (Freight A3). */
   readonly voyages: Voyages;
-  contractCarrying(c: Contract, at: Period): number;
+  contractCarrying(c: Contract, at: Period): Cash;
   derivativeKind(kind: DerivativeKindId): DerivativeKindProfile;
   /**
    * Derivative D3.a, Derivative Layer G4: whether this world actually produces the thing a contract
@@ -133,10 +143,10 @@ type Op =
       readonly instrument: InstrumentId;
       readonly qty: Qty;
       /** Total units on the leg (weight x per member for a cell), for the issuer's side. */
-      readonly totalQty: number;
+      readonly totalQty: Qty;
       readonly money: boolean;
       /** Basis per unit, or 'carrying' to take the giver's carrying value (a transfer). */
-      readonly basis: number | 'carrying';
+      readonly basis: PerPiece | 'carrying';
       /** The debit whose carrying value a 'carrying' basis reads; -1 for an issuance. */
       readonly fromDebit: number;
     }
@@ -145,7 +155,7 @@ type Op =
       readonly issuer: PartyId;
       readonly instrument: InstrumentId;
       readonly qty: Qty;
-      readonly valuePerUnit: number | 'carrying';
+      readonly valuePerUnit: PerPiece | 'carrying';
       readonly fromDebit: number;
     }
   | {
@@ -153,7 +163,7 @@ type Op =
       readonly issuer: PartyId;
       readonly instrument: InstrumentId;
       readonly qty: Qty;
-      readonly valuePerUnit: number | 'carrying';
+      readonly valuePerUnit: PerPiece | 'carrying';
       readonly fromDebit: number;
     }
   /** Goods E4: units of a physical kind coming into existence or leaving it; nobody issued them. */
@@ -761,7 +771,7 @@ export class Settlement {
         issuer: i1,
         instrument: m1,
         qty: leg.amount,
-        valuePerUnit: 1,
+        valuePerUnit: asPerPiece(1, 'one of itself'),
         fromDebit: -1,
       });
     else
@@ -774,7 +784,7 @@ export class Settlement {
         issuer: i2,
         instrument: m2,
         qty: leg.amount,
-        valuePerUnit: 1,
+        valuePerUnit: asPerPiece(1, 'one of itself'),
         fromDebit: -1,
       });
     else
@@ -785,7 +795,7 @@ export class Settlement {
         qty: perTo,
         totalQty: leg.amount,
         money: true,
-        basis: 1,
+        basis: asPerPiece(1, 'one of itself'),
         fromDebit: -1,
       });
 
@@ -801,7 +811,7 @@ export class Settlement {
           issuer: i1,
           instrument: m1,
           qty: leg.amount,
-          valuePerUnit: 1,
+          valuePerUnit: asPerPiece(1, 'one of itself'),
           fromDebit: -1,
         });
         ops.push({ op: 'debit', party: i1, instrument: reserves, qty: leg.amount, money: true });
@@ -812,7 +822,7 @@ export class Settlement {
           issuer: i2,
           instrument: m2,
           qty: leg.amount,
-          valuePerUnit: 1,
+          valuePerUnit: asPerPiece(1, 'one of itself'),
           fromDebit: -1,
         });
         ops.push({
@@ -822,7 +832,7 @@ export class Settlement {
           qty: leg.amount,
           totalQty: leg.amount,
           money: true,
-          basis: 1,
+          basis: asPerPiece(1, 'one of itself'),
           fromDebit: -1,
         });
       }
@@ -851,7 +861,7 @@ export class Settlement {
     const inst = this.d.instruments.get(leg.instrument);
     const perFrom = leg.fromCell.some ? leg.fromCell.value.perMember : leg.qty;
     const perTo = leg.toCell.some ? leg.toCell.value.perMember : leg.qty;
-    const price: number | 'carrying' = leg.pricePerUnit.some ? leg.pricePerUnit.value : 'carrying';
+    const price: PerPiece | 'carrying' = leg.pricePerUnit.some ? leg.pricePerUnit.value : 'carrying';
     let debitIndex = -1;
     if (issuedBy(inst, leg.from)) {
       if (price === 'carrying') {
@@ -1036,13 +1046,13 @@ export class Settlement {
      * were carried at. Put side by side here and nowhere else, so nobody re-derives either — and so
      * a tax on a gain is a tax on a gain rather than on the whole gross (A-37, A-46).
      */
-    const sold = new Map<string, number>();
+    const sold = new Map<string, Cash>();
     const realised: Realised[] = [];
     const equity = new Map<PartyId, PerMember<'money:piece'>>();
     /** Derivative D1: the rows this instruction wrote, so its drafter can name what it opened. */
     const written: ContractId[] = [];
     const drawnByOp = new Map<number, DrawnLot[]>();
-    const carryingOf = (opIndex: number): number => {
+    const carryingOf = (opIndex: number): PerPiece => {
       const drawn = drawnByOp.get(opIndex);
       if (drawn === undefined) throw new Missing('Register D4', `no drawn lots for op ${opIndex}`);
       const op = ops[opIndex];
@@ -1050,16 +1060,18 @@ export class Settlement {
       const total = sum(drawn.map((l) => l.qty)).value;
       const value = sum(
         drawn.map((l) =>
-          mul(l.qty, this.d.valuation.carryingPerUnit(op.instrument, l, ins.period), 'carrying'),
+          valueAt(this.d.valuation.carryingPerUnit(op.instrument, l, ins.period), l.qty, 'carrying'),
         ),
       ).value;
-      return total === 0 ? 0 : value / total;
+      return total === 0
+        ? asPerPiece(0, 'nothing was drawn, so nothing was carried')
+        : pricedAt(value, total, 'what a unit of it was carried at');
     };
     // Law 7: what each party's equity NETTED to, and what it passed THROUGH getting there. A
     // trade takes a book down by the price and up by the value in one instruction, and the
     // rounding that leaves behind is the price's, not the difference's.
-    const gross = new Map<PartyId, number>();
-    const bump = (party: PartyId, delta: number, instrument: InstrumentId): void => {
+    const gross = new Map<PartyId, Cash>();
+    const bump = (party: PartyId, delta: Cash, instrument: InstrumentId): void => {
       bumpIn(party, delta, this.d.instruments.get(instrument).ccy);
     };
     /**
@@ -1071,15 +1083,19 @@ export class Settlement {
      * CELL issued something, it booked a million households' worth of liability against one
      * household's equity. What the issuer's own book moves by is its share of what it issued.
      */
-    const perMemberOf = (party: PartyId, amount: number): number =>
+    const perMemberOf = (party: PartyId, amount: Cash): Cash =>
       // Item 16: THROUGH THE ONE DOOR BETWEEN A TOTAL AND A PER-MEMBER NUMBER, which is the cell's
       // weight and refuses a cell of nobody — `div` would have answered `Infinity` and carried it
       // into an equity account. What the type cannot yet say is which of the two a `Qty` in the
       // register is: for a cell it is per member and for a named party it is the total, and the
       // register does not know which it is holding. That is A-1's shape, and it survives this type.
-      eachMember(
-        asTotal(amount, 'what the issuer issued'),
-        weightOf(this.d.parties.get(party)),
+      acrossMembers(
+        eachMember(
+          asTotal<'money:piece'>(amount, 'what the issuer issued'),
+          weightOf(this.d.parties.get(party)),
+          'the issuer\u2019s own share of it',
+        ),
+        1,
         'the issuer\u2019s own share of it',
       );
 
@@ -1087,10 +1103,13 @@ export class Settlement {
      * The same, for a value that belongs to no instrument: a contract's, which is a bilateral
      * obligation and not a holding (Derivative X1), so its money is the contract's own (D5).
      */
-    const bumpIn = (party: PartyId, delta: number, ccy: CurrencyCode): void => {
+    const bumpIn = (party: PartyId, delta: Cash, ccy: CurrencyCode): void => {
       const own = inOwn(party, delta, ccy);
-      addTo(equity, party, own);
-      addTo(gross, party, Math.abs(own));
+      // XI-15, A-1: an equity account is kept PER MEMBER, and everything reaching this is already
+      // in that denomination — a cell's holdings are per member and a named party stands for one
+      // of itself. Named here rather than assumed, which is the half of A-1 the type can hold.
+      addTo(equity, party, asPerMember<'money:piece'>(own, 'what one member’s account moves by'));
+      addTo(gross, party, absolute(own, 'what it passed through'));
     };
     /**
      * Currency C5, Money A2.b: AN EQUITY ACCOUNT IS KEPT IN ITS PARTY'S OWN MONEY, so what a leg in
@@ -1101,7 +1120,7 @@ export class Settlement {
      * world with one currency it never runs. Where the single-currency guard used to stand, and it
      * does the thing the guard was standing in for.
      */
-    const inOwn = (party: PartyId, delta: number, ccy: CurrencyCode): number =>
+    const inOwn = (party: PartyId, delta: Cash, ccy: CurrencyCode): Cash =>
       this.d.valuation.inMoney(
         delta,
         ccy,
@@ -1123,22 +1142,22 @@ export class Settlement {
                 acquired: ins.period,
               },
             ]);
-            bump(op.party, negQty(op.qty, 'what leaves'), op.instrument);
+            bump(op.party, negated(heldAsMoney(op.qty, 'what leaves'), 'what leaves'), op.instrument);
           } else {
             const drawn = this.d.register.debit(op.party, op.instrument, op.qty);
             drawnByOp.set(index, drawn);
             const carrying = sum(
               drawn.map((l) =>
-                mul(
-                  l.qty,
+                valueAt(
                   this.d.valuation.carryingPerUnit(op.instrument, l, ins.period),
+                  l.qty,
                   'carrying',
                 ),
               ),
             ).value;
             // What this party's units of this line cost it, kept for the disposal pairing below.
             sold.set(`${op.party}/${op.instrument}`, carrying);
-            bump(op.party, -carrying, op.instrument);
+            bump(op.party, negated(carrying, 'what it gave up'), op.instrument);
           }
           deltas.push({
             party: op.party,
@@ -1154,7 +1173,7 @@ export class Settlement {
           if (op.money)
             this.d.register.moneyDelta(op.party, op.instrument, op.qty, ins.period);
           else this.d.register.credit(op.party, op.instrument, op.qty, basis, ins.period);
-          bump(op.party, mul(op.qty, basis, 'credit value'), op.instrument);
+          bump(op.party, valueAt(basis, op.qty, 'credit value'), op.instrument);
           deltas.push({
             party: op.party,
             instrument: op.instrument,
@@ -1176,7 +1195,11 @@ export class Settlement {
             if (owesItsValue(this.d.registry.instrumentKind(inst.kind))) {
               bump(
                 issuerOf(inst),
-                mul(op.totalQty, carryingOf(op.fromDebit) - basis, 'issuer re-mark'),
+                valueAt(
+                  minus(carryingOf(op.fromDebit), basis, 'what the re-mark moved it by'),
+                  op.totalQty,
+                  'issuer re-mark',
+                ),
                 inst.id,
               );
             }
@@ -1208,8 +1231,12 @@ export class Settlement {
               ? op.valuePerUnit === 'carrying'
                 ? carryingOf(op.fromDebit)
                 : op.valuePerUnit
-              : 1;
-            bump(op.issuer, perMemberOf(op.issuer, -mul(op.qty, per, 'issue value')), op.instrument);
+              : asPerPiece(1, 'at what it promised');
+            bump(
+              op.issuer,
+              perMemberOf(op.issuer, negated(valueAt(per, op.qty, 'issue value'), 'what it took on')),
+              op.instrument,
+            );
           }
           break;
         }
@@ -1244,10 +1271,10 @@ export class Settlement {
               ? op.fromDebit >= 0
                 ? carryingOf(op.fromDebit)
                 : op.valuePerUnit === 'carrying'
-                  ? 1
+                  ? asPerPiece(1, 'at what it promised')
                   : op.valuePerUnit
-              : 1;
-            bump(op.issuer, perMemberOf(op.issuer, mul(op.qty, per, 'redeem value')), op.instrument);
+              : asPerPiece(1, 'at what it promised');
+            bump(op.issuer, perMemberOf(op.issuer, valueAt(per, op.qty, 'redeem value')), op.instrument);
           }
           break;
         }
@@ -1281,24 +1308,24 @@ export class Settlement {
            * or the two books disagree by the difference and the balance-sheet identity fires on the
            * estate — which is how this one was found.
            */
-          const owed = !seatedKind.liabilityOfIssuer
-            ? 0
+          const owed: Cash = !seatedKind.liabilityOfIssuer
+            ? asCash(0, 'a kind its issuer does not owe')
             : sum(
                 this.d.register.holdersOf(op.instrument).map((h) => {
                   const held = this.d.register.holding(h, op.instrument);
-                  if (!held.some) return 0;
-                  return mul(
+                  if (!held.some) return asCash(0, 'it holds none of it');
+                  return scale(
                     owesItsValue(seatedKind)
                       ? this.d.valuation.valueOfLots(op.instrument, held.value.lots, ins.period)
-                      : sum(held.value.lots.map((l) => l.qty)).value,
-                    weightOf(this.d.parties.get(h)),
+                      : heldAsMoney(sum(held.value.lots.map((l) => l.qty)).value, 'the face it holds'),
+                    asRatio(weightOf(this.d.parties.get(h)), 'the people it stands for'),
                     'liability held',
                   );
                 }),
               ).value;
           this.d.instruments.reseat(op.instrument, op.to);
           bump(op.from, owed, op.instrument);
-          bump(op.to, -owed, op.instrument);
+          bump(op.to, negated(owed, 'and onto the new one'), op.instrument);
           break;
         }
         case 'writeContract': {
@@ -1372,9 +1399,9 @@ export class Settlement {
           const carrying = this.d.contractCarrying(row, ins.period);
           // B4: what the leaving side was carrying goes off its book and onto the new one. The sign
           // is the side it was on: `a` holds +mark, `b` holds −mark (D1).
-          const held = row.a === op.from ? carrying : -carrying;
+          const held = row.a === op.from ? carrying : negated(carrying, 'the side it was on');
           this.d.contracts.novate(op.contract, op.from, op.to);
-          bumpIn(op.from, -held, row.ccy);
+          bumpIn(op.from, negated(held, 'off its book'), row.ccy);
           bumpIn(op.to, held, row.ccy);
           break;
         }
@@ -1384,7 +1411,7 @@ export class Settlement {
           const row = this.d.contracts.get(op.contract);
           const carrying = this.d.contractCarrying(row, ins.period);
           this.d.contracts.close(op.contract, ins.period);
-          bumpIn(row.a, -carrying, row.ccy);
+          bumpIn(row.a, negated(carrying, 'off its book'), row.ccy);
           bumpIn(row.b, carrying, row.ccy);
           break;
         }

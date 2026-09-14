@@ -12,6 +12,8 @@
  * the tolerance. Derived any smaller (as if two readings of one balance), a busy account reports a
  * violation every time it is paid more than a handful of times in a week.
  */
+import type { Qty } from '../../core/tick.js';
+import { asRatio, minus, negated, scale } from '../../core/measure.js';
 import { carriedDust, moveDust, mul, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
 import { type AuditMemory, holdingKey } from '../memory.js';
@@ -26,8 +28,8 @@ export function flowsFamily(memory: AuditMemory): Family {
     check(view: AuditView): Violation[] {
       const out: Violation[] = [];
       if (memory.period === undefined || memory.period === view.period) return out;
-      const holdingDeltas = new Map<string, number[]>();
-      const issuedDeltas = new Map<string, number[]>();
+      const holdingDeltas = new Map<string, Qty[]>();
+      const issuedDeltas = new Map<string, Qty[]>();
       for (const r of view.ledger.inPeriod(view.period)) {
         if (r.outcome !== 'settled') continue;
         for (const d of r.deltas) {
@@ -55,7 +57,10 @@ export function flowsFamily(memory: AuditMemory): Family {
         const ratio = e.data['ratio'];
         if (typeof instrument !== 'string' || typeof ratio !== 'number') continue;
         // Two restatements in one period compose, like two multiplications.
-        restated.set(instrument, mul(ratioOf(instrument), ratio, 'the restatement this period'));
+        restated.set(
+          instrument,
+          mul(ratioOf(instrument), ratio, 'the restatement this period'),
+        );
       }
 
       /**
@@ -101,11 +106,15 @@ export function flowsFamily(memory: AuditMemory): Family {
         if (!view.parties.has(holder as never) || !view.instruments.has(instrument as never))
           continue;
         const remembered = memory.holdings.get(key);
-        const before = mul(zeroIfNone(remembered?.qty), ratioOf(instrument), 'restated by the split');
+        const before = scale(
+          zeroIfNone<Qty>(remembered?.qty),
+          asRatio(ratioOf(instrument), 'restated by the split'),
+          'restated by the split',
+        );
         const held = view.register.holding(holder as never, instrument as never);
         const now = view.register.quantity(holder as never, instrument as never);
         const legs = sum(holdingDeltas.get(key) ?? []);
-        const change = sum([now, -before]);
+        const change = sum([now, negated(before, 'the other way')]);
         const lots = zeroIfNone(remembered?.lots) + (held.some ? held.value.lots.length : 0);
         // Law 7: restating is one more rounding, at the magnitude the balance now is.
         const dust = carriedDust(before, now, lots, legs) + moveDust(before, 0);
@@ -114,7 +123,7 @@ export function flowsFamily(memory: AuditMemory): Family {
             family: 'flows',
             spec: 'Money D3',
             owner: holder,
-            size: change.value - legs.value,
+            size: minus(change.value, legs.value, 'what moved with no leg behind it'),
             unit: view.instruments.get(instrument as never).unit,
             period: view.period,
             message: `${holder}/${instrument} moved ${change.value} per member but instructions sum to ${legs.value}`,
@@ -122,9 +131,13 @@ export function flowsFamily(memory: AuditMemory): Family {
         }
       }
       for (const i of view.instruments.all()) {
-        const before = mul(zeroIfNone(memory.issued.get(i.id)), ratioOf(i.id), 'restated by the split');
+        const before = scale(
+          zeroIfNone<Qty>(memory.issued.get(i.id)),
+          asRatio(ratioOf(i.id), 'restated by the split'),
+          'restated by the split',
+        );
         const legs = sum(issuedDeltas.get(i.id) ?? []);
-        const change = sum([i.issued, -before]);
+        const change = sum([i.issued, negated(before, 'the other way')]);
         // Issued is one balance, not lots, but it is carried by the same leg-at-a-time walk.
         const dust = carriedDust(before, i.issued, 1, legs) + moveDust(before, 0);
         if (!withinDust(change.value, legs.value, dust)) {
@@ -132,7 +145,7 @@ export function flowsFamily(memory: AuditMemory): Family {
             family: 'flows',
             spec: 'Register B1',
             owner: i.id,
-            size: change.value - legs.value,
+            size: minus(change.value, legs.value, 'what was issued with no leg behind it'),
             unit: i.unit,
             period: view.period,
             message: `issued of ${i.id} moved ${change.value} but issuance legs sum to ${legs.value}`,

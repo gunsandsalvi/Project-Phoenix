@@ -822,7 +822,7 @@ function payment(
       qty: cash,
       // A2: a promise to pay a sum is worth the sum when it is made. What it is worth later is the
       // holder's own question, and a late one is worth less to whoever is waiting (D1).
-      pricePerUnit: some(1),
+      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
       fromCell: buyerCashCell === undefined ? none() : some(buyerCashCell),
       toCell: sellerCashCell === undefined ? none() : some(sellerCashCell),

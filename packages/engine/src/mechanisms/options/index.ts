@@ -20,14 +20,29 @@
  * when it does not; what comes out is never "the payoff, floored at zero" — it is the payoff of the
  * choice it made, and the choice is the mechanism.
  */
-import { asCash, asPerPiece, asRatio, minus, negated, scale, type Cash, type PerPiece, valueAt } from '../../core/measure.js';
+import {
+  absolute,
+  amountOf,
+  type Amount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  negated,
+  over,
+  type PerPiece,
+  plus,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
-import { add, atLeast, div, mul, sub } from '../../core/num.js';
+import { atLeast, mul } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty, negQty } from '../../core/tick.js';
+import { asQty, negQty, NO_QTY } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type {
   Contract,
@@ -202,12 +217,18 @@ export const optionKind: DerivativeKindProfile = {
  * paying for", and the only one that does not import a model this world has no business having.
  */
 export function impliedMove(
-  premium: number,
+  premium: PerPiece,
   multiplier: number,
   years: number,
-): Option<number> {
-  if (!(years > 0) || !(multiplier > 0)) return none<number>();
-  return some(div(premium, mul(multiplier, Math.sqrt(years), 'what it buys, over root time'), 'the move it implies'));
+): Option<PerPiece> {
+  if (!(years > 0) || !(multiplier > 0)) return none<PerPiece>();
+  return some(
+    over(
+      premium,
+      asRatio(mul(multiplier, Math.sqrt(years), 'what it buys, over root time'), 'over root time'),
+      'the move it implies',
+    ),
+  );
 }
 
 /**
@@ -337,20 +358,31 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    */
   const outlook = view.outlook(about({ on: 'price', instrument: t.underlying }));
   const moves = outlook.some
-    ? mul(outlook.value.expected, outlook.value.confidence, 'what it thinks it moves')
-    : 0;
-  const mine = moves > 0 ? add(moves, mul(moves, aversion, 'what its capital wants'), 'its quote') : 0;
+    ? scale(
+        asPerPiece(outlook.value.expected, 'what it thinks the thing is worth'),
+        asRatio(outlook.value.confidence, 'how sure it is'),
+        'what it thinks it moves',
+      )
+    : asPerPiece(0, 'it has no view of how much the thing moves');
+  const mine =
+    moves > 0
+      ? plus(moves, scale(moves, aversion, 'what its capital wants'), 'its quote')
+      : asPerPiece(0, 'it has no view, so it has no level');
   // A party with no view of how much the underlying moves has no view of what optionality on it is
   // worth, and that is the end of it — so nothing below is worked out for one. Law 18: every party
   // in the world is asked about every book, and its own book and its own equity were both walked
   // before this line to arrive at the same nothing.
   if (mine <= 0) return [];
   const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
-  let covered = 0;
+  let covered: Amount<'piece'> = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right) continue;
     const iAmA = c.a === view.self.id;
-    covered = add(covered, iAmA === c.terms.holds ? c.notional : negQty(c.notional, 'the other side of it'), 'cover it has');
+    covered = plus(
+      covered,
+      iAmA === c.terms.holds ? c.notional : negQty(c.notional, 'the other side of it'),
+      'cover it has',
+    );
   }
   /** Clearing E1: where the market is — the comparator that decides the side, never the level. */
   const at = view.print(t.book);
@@ -361,29 +393,34 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * much the thing MOVES writes out of the same balance sheet it runs everything else on.
    */
   const held = view.free(t.underlying);
-  let want = t.right === 'put' && held > 0
-    ? div(mul(held, aversion, 'the part it will not carry'), t.multiplier, 'in contracts')
-    : 0;
+  let want: Amount<'piece'> =
+    t.right === 'put' && held > 0
+      ? over(
+          scale(held, aversion, 'the part it will not carry'),
+          asRatio(t.multiplier, 'the multiplier'),
+          'in contracts',
+        )
+      : NO_QTY;
   const price = mine;
   // What it can write comes off its own balance sheet, and that is walked only where the comparison
   // it feeds actually happens: a book that has not printed has nothing for its number to be above.
-  const own = at.some ? view.equity() : 0;
+  const own = at.some ? view.equity() : asCash(0, 'no book to stand its capital against');
   if (at.some && own > 0) {
     const book = at.value.price;
     const room = view.registry.deliverable(
       unit,
-      div(own, mul(mine, t.multiplier, 'per contract'), 'what it can write'),
+      amountOf(own, scale(mine, asRatio(t.multiplier, 'the multiplier'), 'per contract'), 'what it can write'),
     );
     if (mine > book) {
       // It thinks these are dear against what the market last paid: it would rather be the writer.
-      want = sub(want, room, 'and what it would write at its own price');
+      want = minus(want, room, 'and what it would write at its own price');
     } else if (mine < book) {
-      want = add(want, room, 'and what it would buy at its own price');
+      want = plus(want, room, 'and what it would buy at its own price');
     }
   }
-  const move = sub(want, covered, 'from the cover it has to the cover it wants');
+  const move = minus(want, covered, 'from the cover it has to the cover it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, move > 0 ? move : -move);
+  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }

@@ -3,6 +3,7 @@
  *
  * @spec Corporate Credit A1 Corporate Credit B2 Corporate Credit B2.a Corporate Credit B3 Corporate Credit G2 Bond N4 Bond N6 Bond N13 Bond N13.a Reporting A2 Law 2 Law 4 Law 6 Law 9
  */
+import { asCash, asRatio } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { annualCostOf, headroomOn, CORPORATE_BOND, corporateBondModule } from '../src/index.js';
 import { rigWorld } from './rig.js';
@@ -53,14 +54,14 @@ describe('the covenant is tested on what was PUBLISHED (B2.a, Reporting A2)', ()
   });
 
   it('breaches when the accounts are the wrong side of the promise, and not before', () => {
-    const c = { leverage: 0.6, coverage: 2 };
+    const c = { leverage: asRatio(0.6, 'what it promised'), coverage: asRatio(2, 'what it promised') };
     // Headroom is what is left of the promise. Negative is a breach, and it is arithmetic on two
     // published numbers rather than a threshold anybody tuned.
-    expect(headroomOn({ assets: 100, liabilities: 50 }, c)).toBeCloseTo(0.1, 12);
-    expect(headroomOn({ assets: 100, liabilities: 70 }, c)).toBeLessThan(0);
+    expect(headroomOn({ assets: asCash(100, 'what it holds'), liabilities: asCash(50, 'what it owes') }, c)).toBeCloseTo(0.1, 12);
+    expect(headroomOn({ assets: asCash(100, 'what it holds'), liabilities: asCash(70, 'what it owes') }, c)).toBeLessThan(0);
     // A firm with no assets has no ratio that means anything and HAS breached — which is what the
     // worst case is, rather than a number pushed back inside a range (Law 6).
-    expect(headroomOn({ assets: 0, liabilities: 1 }, c)).toBeLessThan(0);
+    expect(headroomOn({ assets: asCash(0, 'what it holds'), liabilities: asCash(1, 'what it owes') }, c)).toBeLessThan(0);
   });
 
   it('never repairs or accelerates by itself: a breach is an event and that is all', () => {

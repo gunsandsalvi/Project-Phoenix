@@ -16,7 +16,8 @@
  * Law 5's other half is already the wire's: the gain and the loss here are not two sides of a flow,
  * because nothing flowed. They are one holder's position being worth more in a money nobody paid.
  */
-import { add, addTo, sub, sum, withinDust } from '../../core/num.js';
+import { asCash, asRatio, type Cash, minus, scale } from '../../core/measure.js';
+import { addTo, sub, sum, withinDust } from '../../core/num.js';
 import type { Family, Violation } from '../audit.js';
 import type { AuditView } from '../view.js';
 
@@ -28,9 +29,9 @@ export function revaluationAddsUp(): Family {
     built: true,
     check(view: AuditView): Violation[] {
       const out: Violation[] = [];
-      const booked = new Map<string, number>();
-      const implied = new Map<string, number>();
-      const magnitude = new Map<string, number>();
+      const booked = new Map<string, Cash>();
+      const implied = new Map<string, Cash>();
+      const magnitude = new Map<string, Cash>();
       for (const e of view.journal.ofKind('revaluation.fx')) {
         if (e.period !== view.period) continue;
         const ccy = e.data['ccy'];
@@ -49,29 +50,41 @@ export function revaluationAddsUp(): Family {
         }
         // What the holder's book says it booked, and what the period's own rate move on the same
         // position comes to. One is an event; the other is the arithmetic of D2 done again here.
-        addTo(booked, ccy, delta);
-        addTo(implied, ccy, carried * sub(now, was, 'what the rate moved by'));
-        addTo(magnitude, ccy, Math.abs(delta) + Math.abs(carried * now));
+        addTo(booked, ccy, asCash(delta, 'what its book booked'));
+        addTo(
+          implied,
+          ccy,
+          scale(
+            asCash(carried, 'what it was carrying'),
+            asRatio(sub(now, was, 'what the rate moved by'), 'what the rate moved by'),
+            'what the rate move comes to on it',
+          ),
+        );
+        addTo(
+          magnitude,
+          ccy,
+          asCash(Math.abs(delta) + Math.abs(carried * now), 'what the arithmetic passed through'),
+        );
       }
       for (const [ccy, total] of booked) {
         // Every currency in `booked` was put there with its pair in the other two maps, in the same
         // pass over the same events: a missing one is impossible rather than absent (no `?? 0`).
         const should = implied.get(ccy);
-        const scale = magnitude.get(ccy);
-        if (should === undefined || scale === undefined) continue;
+        const passed = magnitude.get(ccy);
+        if (should === undefined || passed === undefined) continue;
         // Law 7: the dust of the two sums that made these, never a band.
-        const dust = sum([total, should, scale]).dust;
+        const dust = sum([total, should, passed]).dust;
         if (withinDust(total, should, dust)) continue;
         out.push({
           family: 'money',
           spec: 'Currency D4',
           owner: ccy,
-          size: sub(total, should, 'what the books booked beyond what the rate did'),
+          size: minus(total, should, 'what the books booked beyond what the rate did'),
           unit: ccy,
           period: view.period,
           message:
             `revaluation in ${ccy} booked ${total} where the period's rate move on the positions ` +
-            `revalued comes to ${add(should, 0, 'the rate move on the positions')}`,
+            `revalued comes to ${should}`,
         });
       }
       return out;

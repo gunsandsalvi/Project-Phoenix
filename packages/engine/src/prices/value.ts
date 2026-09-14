@@ -246,7 +246,7 @@ export class Valuation {
    * and never stores: nothing anywhere holds a balance in a money that is not its own (C4.a), and a
    * balance sheet that adds two currencies does it here, once, at one rate.
    */
-  inMoney(value: number, from: CurrencyCode, to: CurrencyCode, at: Period): Cash {
+  inMoney(value: Cash, from: CurrencyCode, to: CurrencyCode, at: Period): Cash {
     const held = asCash(value, `${from} in ${to}`);
     return from === to ? held : scale(held, this.rateInForce(from, to, at), `${from} in ${to}`);
   }

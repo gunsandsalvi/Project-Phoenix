@@ -39,7 +39,7 @@ import { instrumentId, marketId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
 import { add, atMost, div, finite, mul, sub, sum, zeroIfNone } from '../../core/num.js';
 import { asQty, downTick, subQty, type Qty } from '../../core/tick.js';
-import { heldAsMoney, type PerPiece, ratioOf, scale, valueAt } from '../../core/measure.js';
+import { heldAsMoney, type PerPiece, ratioOf, scale, valueAt , pricedAt} from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { WIND, conditionsFor } from '../../registry/environment.js';
@@ -321,7 +321,7 @@ function cargo(
           party: shipper,
           instrument: transit,
           qty: asQty(take),
-          costPerUnit: div(add(share, 0, 'the freight'), take, 'what the voyage added to a unit'),
+          costPerUnit: pricedAt(heldAsMoney(share, 'the freight'), take, 'what the voyage added to a unit'),
           toCell: none(),
         },
         {
@@ -421,7 +421,7 @@ function arrive(ctx: MechanismContext): void {
     if (held === undefined) continue;
     const units = ctx.registry.deliverable(i.unit, atMost(v.aboard, ctx.register.free(v.shipper, v.cargo), 'what it still has aboard'));
     if (units <= 0) continue;
-    const cost = sum(held.lots.map((lot) => mul(lot.qty, lot.basisPerUnit, 'what it cost'))).value;
+    const cost = sum(held.lots.map((lot) => valueAt(lot.basisPerUnit, lot.qty, 'what it cost'))).value;
     const total = sum(held.lots.map((lot) => lot.qty)).value;
     const r = ctx.settle({
       legs: [
@@ -431,7 +431,7 @@ function arrive(ctx: MechanismContext): void {
           party: v.shipper,
           instrument: there,
           qty: asQty(units),
-          costPerUnit: div(cost, total, 'what a unit cost delivered'),
+          costPerUnit: pricedAt(cost, total, 'what a unit cost delivered'),
           toCell: none(),
         },
         { kind: 'voyage', act: 'land', voyage: v.id },

@@ -3,6 +3,7 @@
  *
  * @spec Commodities Spot A3 Commodities Spot A4 Commodities Spot D2.a Commodities Spot D3 Capital Programme A2 Capital Programme A4 Clearing A2 Clearing A3 Law 5 Law 6 Law 8
  */
+import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   GOODS,
@@ -194,7 +195,7 @@ function gift(seen: { grain: number; space: number }): SystemModule {
                 party: short,
                 instrument: good,
                 qty: ctx.registry.deliverable(ctx.instruments.get(good).unit, more),
-                costPerUnit: 1,
+                costPerUnit: asPerPiece(1, 'what a unit cost'),
                 toCell: none(),
               },
             ],

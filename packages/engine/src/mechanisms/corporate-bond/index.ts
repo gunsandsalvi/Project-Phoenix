@@ -23,6 +23,16 @@
  * PUBLISHED accounts (Reporting A2), with the lag publishing already has, because a covenant a
  * lender could test on private books is not a covenant, it is surveillance.
  */
+import {
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  type PerPiece,
+  type Ratio,
+  ratioOf,
+  valueAt,
+} from '../../core/measure.js';
 import { compareCivil } from '../../calendar/civil.js';
 import {
   instrumentId,
@@ -31,7 +41,6 @@ import {
   type PartyId,
 } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
-import { div, mul, sub } from '../../core/num.js';
 import { percent } from '../../core/format.js';
 import { formatCivil } from '../../calendar/civil.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
@@ -67,9 +76,9 @@ export const CORPORATE_PAR = unitId('corporate.par');
  */
 export interface Covenants {
   /** B2: the most it may owe against what it holds, as the issuer's own published accounts read. */
-  readonly leverage: number;
+  readonly leverage: Ratio;
   /** B2: the least it must earn against what falls due, on the same published accounts. */
-  readonly coverage: number;
+  readonly coverage: Ratio;
 }
 
 export interface CorporateBondTerms extends Terms, CouponSchedule {
@@ -180,14 +189,14 @@ export function testCovenants(ctx: MechanismContext): void {
     const broke: string[] = [];
     // B2: how much it owes against what it holds. A firm with no assets has no ratio that means
     // anything and has breached, which is what the worst case IS rather than a number pushed back.
-    if (said.assets <= 0 || div(said.liabilities, said.assets, 'leverage') > t.covenants.leverage) {
+    if (said.assets <= 0 || ratioOf(said.liabilities, said.assets, 'leverage') > t.covenants.leverage) {
       broke.push('leverage');
     }
     // B2: what it earns against what falls due on this line over a year of it.
-    const owed = mul(t.coupon.amount, 1, 'what a unit of it costs a year');
+    const owed = annualCostOf(t);
     const face = ctx.register.heldTotal(i.id).value;
-    const annual = mul(owed, face, 'what this line costs it a year');
-    if (annual > 0 && div(said.earned, annual, 'coverage') < t.covenants.coverage) {
+    const annual = valueAt(owed, face, 'what this line costs it a year');
+    if (annual > 0 && ratioOf(said.earned, annual, 'coverage') < t.covenants.coverage) {
       broke.push('coverage');
     }
     if (broke.length === 0) continue;
@@ -199,7 +208,7 @@ export function testCovenants(ctx: MechanismContext): void {
         bond: String(i.id),
         quarter: said.quarter,
         broke: broke.join(' and '),
-        leverage: said.assets > 0 ? div(said.liabilities, said.assets, 'leverage') : null,
+        leverage: said.assets > 0 ? ratioOf(said.liabilities, said.assets, 'leverage') : null,
         promised: t.covenants.leverage,
         earned: said.earned,
         owedPerYear: annual,
@@ -286,11 +295,11 @@ export function corporateBondModule(): SystemModule {
 }
 
 /** B1, A3: what a line costs its issuer a year, per unit of face — a read of its own terms. */
-export const annualCostOf = (t: CorporateBondTerms): number =>
-  mul(t.coupon.amount, 1, 'what a unit of it costs a year');
+export const annualCostOf = (t: CorporateBondTerms): PerPiece =>
+  asPerPiece(t.coupon.amount, 'what a unit of it costs a year');
 
 /** B2: how far the published accounts are the right side of what was promised. Negative is a breach. */
-export const headroomOn = (said: { assets: number; liabilities: number }, c: Covenants): number =>
+export const headroomOn = (said: { assets: Cash; liabilities: Cash }, c: Covenants): Ratio =>
   said.assets <= 0
-    ? -1
-    : sub(c.leverage, div(said.liabilities, said.assets, 'leverage'), 'what is left of the promise');
+    ? asRatio(-1, 'a firm with no assets has breached')
+    : minus(c.leverage, ratioOf(said.liabilities, said.assets, 'leverage'), 'what is left of the promise');

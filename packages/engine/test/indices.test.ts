@@ -89,7 +89,7 @@ describe('an index of nothing is not a number (Indices A1, D5.a)', () => {
         const p = w.prices.latest(instrument, at);
         return p.some ? some(p.value.price) : none<PerPiece>();
       },
-      rate: () => 1,
+      rate: () => asRatio(1, 'one into one'),
     });
     expect(basket.length).toBe(0);
     expect(credit.some).toBe(false);

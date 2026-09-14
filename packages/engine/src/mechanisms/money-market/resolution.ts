@@ -56,7 +56,7 @@ import {
   ratioOf,
   scale,
   valueAt,
-} from '../../core/measure.js';
+ asPerPiece} from '../../core/measure.js';
 import type { CurrencyCode, InstrumentId, ParamId, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId, paramId } from '../../core/ids.js';
 import { forbid } from '../../core/assert.js';
@@ -542,7 +542,7 @@ function writeDownRow(
         to: bank,
         instrument: row,
         qty: moved,
-        pricePerUnit: some(0),
+        pricePerUnit: some(asPerPiece(0, 'at what it promised')),
         accruedPerUnit: none(),
         fromCell: per === undefined ? none<CellSide>() : some(per),
         toCell: none(),
@@ -639,7 +639,7 @@ function moveBook(
             to: bank,
             instrument: i.id,
             qty: units,
-            pricePerUnit: some(0),
+            pricePerUnit: some(asPerPiece(0, 'at what it promised')),
             accruedPerUnit: none(),
             fromCell: none(),
             toCell: none(),

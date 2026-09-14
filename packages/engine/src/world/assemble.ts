@@ -14,7 +14,7 @@ import { Calendar } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import { forbid } from '../core/assert.js';
 import { InvalidRegistry } from '../core/errors.js';
-import type { Cash } from '../core/measure.js';
+import { type Cash, negated } from '../core/measure.js';
 import { combineDust, sum } from '../core/num.js';
 import {
   type CurrencyCode,
@@ -261,7 +261,10 @@ function stateEquityAsRead(w: World): void {
   };
   for (const p of w.parties.all()) {
     const sheet = balanceSheet(reads, p.id);
-    const read = sum([sheet.assets.value, -sheet.liabilities.value]);
+    const read = sum([
+      sheet.assets.value,
+      negated(sheet.liabilities.value, 'what it owes, the other way'),
+    ]);
     // Law 7: the account opens with the dust its own arithmetic earned — the two sides, the
     // subtraction between them, and the walk behind every money balance they were read off. A
     // party whose equity is zero BY CONSTRUCTION (a fund, Fund Shares A3) is nothing but that

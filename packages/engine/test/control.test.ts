@@ -3,16 +3,17 @@
  *
  * @spec M&A A1 M&A A3 M&A B1 M&A B2.a M&A C2 M&A E2 Equity A1 Equity B1 Law 2 Law 3 Law 11
  */
+import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { control, premiumOver } from '../src/index.js';
 import { ranWorld, rigWorld } from './rig.js';
 
 describe('a premium is a distance between two numbers (B2.a, Law 3)', () => {
   it('is what the book produced over what a share was trading at, and never a percentage', () => {
-    expect(premiumOver(120, 100)).toBe(20);
+    expect(premiumOver(asPerPiece(120, 'what it paid'), asPerPiece(100, 'what it printed'))).toBe(20);
     // A bid that clears BELOW the last print is a real outcome — a firm whose holders wanted out
     // more than the buyer wanted in — and nothing bounds it away (Law 6).
-    expect(premiumOver(90, 100)).toBeLessThan(0);
+    expect(premiumOver(asPerPiece(90, 'what it paid'), asPerPiece(100, 'what it printed'))).toBeLessThan(0);
   });
 
   it('declares no number at all: there is no control premium and no synergy term (Law 2)', () => {

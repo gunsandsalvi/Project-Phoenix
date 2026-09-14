@@ -4,6 +4,7 @@
  *
  * @spec Goods A1 Goods A2 Goods A2.a Goods A2.b Goods A3 Goods A4 Goods C1 Goods C2 Goods C4 Goods C5 Goods C6 Goods E1 Goods E2 Goods E2.a Goods E2.c Goods E4 Goods E4.a Commodities Spot D5 Commodities Spot F1 Law 9 XI-6
  */
+import { asPerPiece, type PerPiece } from '../src/core/measure.js';
 import { paidTo } from './expected.js';
 import { perTonne, phx, tonnes } from './units.js';
 import { describe, expect, it } from 'vitest';
@@ -137,7 +138,7 @@ function acts(run: (ctx: MechanismContext) => void, participants: SystemModule['
 }
 
 /** Units of a good on somebody's book, at what they cost (Goods E1). */
-function make(ctx: MechanismContext, holder: string, id: string, qty: Qty, cost: number): void {
+function make(ctx: MechanismContext, holder: string, id: string, qty: Qty, cost: PerPiece): void {
   ctx.settle({
     legs: [
       {
@@ -242,7 +243,7 @@ m.id === 'sovereign-instruments' ||
                 party: FIRM_1,
                 instrument: GRAVEL_ID,
                 qty: asQty(1),
-                costPerUnit: 3,
+                costPerUnit: asPerPiece(3, 'what a unit cost'),
                 toCell: none(),
               },
             ],

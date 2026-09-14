@@ -111,11 +111,11 @@ describe('exercise is a decision, not a clamp (Law 6, D11)', () => {
 describe('what is derived and what does not exist (Law 3, Bond N7.b)', () => {
   it('takes the implied move OFF the premium and stores no volatility anywhere', () => {
     // Law 3: the premium is what cleared; the move it implies is arithmetic on it, at the read.
-    const m = impliedMove(4, 1, 4);
+    const m = impliedMove(asPerPiece(4, 'what the premium cleared at'), 1, 4);
     expect(m.some).toBe(true);
     expect(m.some ? m.value : 0).toBe(2);
     // A premium for no time at all implies nothing, which is Missing and not zero.
-    expect(impliedMove(4, 1, 0).some).toBe(false);
+    expect(impliedMove(asPerPiece(4, 'what the premium cleared at'), 1, 0).some).toBe(false);
     // And there is no parameter, store or field named for a volatility in this module.
     expect(Object.keys(OPTION_PARAMS).some((k) => k.toLowerCase().includes('vol'))).toBe(false);
     expect('volatility' in optionKind).toBe(false);

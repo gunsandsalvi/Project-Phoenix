@@ -18,8 +18,10 @@
  * cannot be revised and cannot be stale. What the publishing phase writes is an OBSERVATION of it,
  * the same way a print is a record of a trade — not a level anybody later reads back as the number.
  */
+import { asAmount, asPerPiece, type Cash, type PerPiece, pricedAt, valueAt } from '../../core/measure.js';
+import type { Qty } from '../../core/tick.js';
 import type { CurrencyCode } from '../../core/ids.js';
-import { add, div, mul, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext } from '../../world/context.js';
 
@@ -35,9 +37,9 @@ export interface Benchmark {
    */
   readonly secured: boolean;
   /** The volume-weighted rate, per period, as the rows themselves carry it. */
-  readonly rate: number;
+  readonly rate: PerPiece;
   /** What it was measured over: how much settled, and how many borrowers paid it. */
-  readonly volume: number;
+  readonly volume: Qty;
   readonly borrowers: number;
 }
 
@@ -47,8 +49,8 @@ export function benchmark(
   ccy: CurrencyCode,
   secured: boolean,
 ): Option<Benchmark> {
-  const weighted: number[] = [];
-  const volumes: number[] = [];
+  const weighted: Cash[] = [];
+  const volumes: Qty[] = [];
   for (const e of ctx.journal.ofKind('moneyMarket.print')) {
     if (e.period !== ctx.period) continue;
     if (e.data['ccy'] !== ccy || e.data['tenor'] !== 'overnight') continue;
@@ -56,16 +58,22 @@ export function benchmark(
     const rate = e.data['rate'];
     const volume = e.data['volume'];
     if (typeof rate !== 'number' || typeof volume !== 'number' || volume <= 0) continue;
-    weighted.push(mul(rate, volume, 'what this borrower paid, for what it took'));
-    volumes.push(volume);
+    weighted.push(
+      valueAt(
+        asPerPiece(rate, 'what this borrower paid'),
+        asAmount<'piece'>(volume, 'for what it took'),
+        'what this borrower paid, for what it took',
+      ),
+    );
+    volumes.push(asAmount<'piece'>(volume, 'what it took'));
   }
   const volume = sum(volumes).value;
   if (volume <= 0) return none<Benchmark>();
   return some({
     ccy,
     secured,
-    rate: div(sum(weighted).value, volume, 'the rate the market paid'),
+    rate: pricedAt(sum(weighted).value, volume, 'the rate the market paid'),
     volume,
-    borrowers: add(weighted.length, 0, 'borrowers'),
+    borrowers: weighted.length,
   });
 }

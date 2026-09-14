@@ -4,6 +4,7 @@
  *
  * @spec Expectations A1 Expectations A2 Expectations A2.b Goods A1 Commodities Spot D5 Goods E1 Goods E2 Goods E2.c Goods E4 Commodities Spot F1 Law 4 Observer E3
  */
+import { asPerPiece } from '../src/core/measure.js';
 import type { PerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -263,7 +264,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: 2, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost'), toCell: none() },
           ],
           cause: 'seed',
           reason: 'the opening harvest',
@@ -286,7 +287,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period === 1) {
           ctx.settle({
             legs: [
-              { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: 2, toCell: none() },
+              { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost'), toCell: none() },
             ],
             cause: 'seed',
             reason: 'the opening harvest',
@@ -317,7 +318,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(1), costPerUnit: 1, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(1), costPerUnit: asPerPiece(1, 'what a unit cost'), toCell: none() },
           ],
           // A trade moves units that exist; it does not make them.
           cause: 'trade',
@@ -338,7 +339,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (ctx.period !== 1) return;
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(3), costPerUnit: 1, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(3), costPerUnit: asPerPiece(1, 'what a unit cost'), toCell: none() },
           ],
           cause: 'production',
           reason: 'the harvest',
@@ -358,7 +359,7 @@ describe('things that are made and used up (Goods E4, Commodities Spot F1)', () 
         if (line === undefined) throw new Error('no claim in the world');
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: line.id, qty: asQty(1), costPerUnit: 1, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: line.id, qty: asQty(1), costPerUnit: asPerPiece(1, 'what a unit cost'), toCell: none() },
           ],
           cause: 'seed',
           reason: 'a bond from nowhere',
@@ -396,7 +397,7 @@ describe('a write-down that only goes one way (Goods E2.c)', () => {
         });
         ctx.settle({
           legs: [
-            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: 2, toCell: none() },
+            { kind: 'create', party: FIRM_1, instrument: WHEAT_ID, qty: asQty(10), costPerUnit: asPerPiece(2, 'what a unit cost'), toCell: none() },
           ],
           cause: 'seed',
           reason: 'the opening harvest',

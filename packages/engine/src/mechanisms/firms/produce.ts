@@ -23,7 +23,7 @@
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
-import { asCash, type Cash } from '../../core/measure.js';
+import { asCash, type Cash , pricedAt} from '../../core/measure.js';
 import { div, finite, material, mul, sub, sum } from '../../core/num.js';
 import type { Qty } from '../../core/tick.js';
 import { asQty, upTick } from '../../core/tick.js';
@@ -48,14 +48,15 @@ import { technologyOf } from './decide.js';
 import { about } from '../../world/context.js';
 
 /** What this period's own wage bill came to for this firm, read from its own record (Law 19). */
-function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): number {
+function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): Cash {
   const events = ctx.journal
     .ofKind('labour.wages')
     .filter((e) => e.period === ctx.period && e.subjects.includes(firm));
   const last = events[events.length - 1];
-  if (last === undefined) return 0;
+  if (last === undefined) return asCash(0, 'it employed nobody this period');
   const paid = last.data['paid'];
-  return typeof paid === 'number' ? paid : 0;
+  // Item 16: the wage bill re-enters here, from what the labour module published about this firm.
+  return typeof paid === 'number' ? asCash(paid, 'what it paid its people') : asCash(0, 'nothing');
 }
 
 /** The batch this firm said it would start, read back from its own published plan. */
@@ -159,7 +160,7 @@ function start(
     return;
   }
   const legs: Leg[] = [];
-  const costs: number[] = [wages];
+  const costs: Cash[] = [wages];
   for (const input of tech.inputs) {
     const qty = upTick(mul(batch, input.qtyPerUnit, 'what the recipe draws'));
     costs.push(heldCost(ctx, firm, input.instrument, qty));
@@ -179,7 +180,7 @@ function start(
     instrument: wip,
     qty: batch,
     // B5, B5.b: the inputs it drew plus what the period's labour cost, over the batch it started.
-    costPerUnit: div(cost.value, batch, 'what a unit on the line has cost'),
+    costPerUnit: pricedAt(cost.value, batch, 'what a unit on the line has cost'),
     toCell: none(),
   });
   const record = ctx.settle({
@@ -269,7 +270,7 @@ function yieldBatch(
         instrument: good,
         qty: finished,
         // B4: the whole batch's cost over the units that survived it, so a survivor is dearer.
-        costPerUnit: div(cost, finished, 'what a finished unit cost'),
+        costPerUnit: pricedAt(cost, finished, 'what a finished unit cost'),
         toCell: none(),
       },
     ],

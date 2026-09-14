@@ -13,6 +13,7 @@
  *    drawing (B3.a), the central bank the reserve overdraft it stood behind (D3.b). One reported
  *    here is a defect in whichever of them allowed it, named by holder and size.
  */
+import { negQty, scaleQty } from '../../core/tick.js';
 import { carriedDust, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { weightOf } from '../../parties/party.js';
 import type { Family, Violation } from '../audit.js';
@@ -43,7 +44,10 @@ export function moneyFamily(memory: AuditMemory): Family {
           const ccy = view.instruments.get(d.instrument).ccy;
           // XI-15: the weight the delta was struck at, not the weight the cell has now — it may
           // have split since, and this instruction moved what it moved.
-          const signed = d.target === 'holding' ? d.qty * d.weight : -d.qty;
+          const signed =
+            d.target === 'holding'
+              ? scaleQty(d.qty, d.weight, 'what the whole party moved')
+              : negQty(d.qty, 'what the issuer owes, the other way');
           const list = perCcy.get(ccy) ?? [];
           list.push(signed);
           perCcy.set(ccy, list);
@@ -76,7 +80,7 @@ export function moneyFamily(memory: AuditMemory): Family {
               if (d.instrument === id && d.target === 'issued') legs.push(d.qty);
           }
           const s = sum(legs);
-          const change = sum([now, -before]);
+          const change = sum([now, negQty(before, 'the other way')]);
           // Law 7: `issued` is a running total moved once per creation and once per destruction,
           // so the comparison is a carried balance and not two readings (see carriedDust).
           if (!withinDust(change.value, s.value, carriedDust(before, now, 1, s))) {

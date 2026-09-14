@@ -3,6 +3,7 @@
  *
  * @spec Securities Lending A1 Securities Lending A2 Securities Lending A3 Securities Lending A5 Securities Lending A5.a Securities Lending A5.b Securities Lending B2 Securities Lending B4 Securities Lending C1 Securities Lending C4 Securities Lending E1 Securities Lending E2 Securities Lending E3 Equity C7 Register D5.a Law 3
  */
+import { asRatio } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { poolOf, rebateOf, securitiesLending } from '../src/index.js';
 import { rigWorld } from './rig.js';
@@ -37,11 +38,11 @@ describe('the fee and the rebate are one number seen from two sides (A5, A5.b)',
     // A5.b: when the collateral is cash the price is expressed as a rebate ON that cash. It is the
     // same number: a world with a fee table and a rebate table would have two answers to one
     // question, and they would drift.
-    expect(rebateOf(0.02, 0.05)).toBeCloseTo(0.03, 12);
-    expect(rebateOf(0.05, 0.05)).toBeCloseTo(0, 12);
+    expect(rebateOf(asRatio(0.02, 'the fee'), asRatio(0.05, 'what the cash earns'))).toBeCloseTo(0.03, 12);
+    expect(rebateOf(asRatio(0.05, 'the fee'), asRatio(0.05, 'what the cash earns'))).toBeCloseTo(0, 12);
     // A borrow dearer than the cash earns is a NEGATIVE rebate, which is a real state of a squeezed
     // line and is not bounded away (Law 6).
-    expect(rebateOf(0.08, 0.05)).toBeLessThan(0);
+    expect(rebateOf(asRatio(0.08, 'the fee'), asRatio(0.05, 'what the cash earns'))).toBeLessThan(0);
   });
 });
 

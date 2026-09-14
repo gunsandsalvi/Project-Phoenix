@@ -3,6 +3,7 @@
  *
  * @spec Insurers A1 Insurers A2.a Insurers A3 Insurers A4.b Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Insurers D1 Insurers D2 Insurers E1 XI-3 Law 2 Law 3 Law 6
  */
+import { asCash, asRatio } from '../src/core/measure.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -48,8 +49,12 @@ describe('falling rates raise the liability (B2, B2.a, D2)', () => {
       { date: { y: 2030, m: 1, d: 1 }, perUnit: asPerPiece(100, 'what a unit pays') },
       { date: { y: 2040, m: 1, d: 1 }, perUnit: asPerPiece(100, 'what a unit pays') },
     ];
-    const dear = presentValueOf(schedule, (d) => (d.y === 2030 ? 0.9 : 0.5));
-    const cheap = presentValueOf(schedule, (d) => (d.y === 2030 ? 0.95 : 0.7));
+    const dear = presentValueOf(schedule, (d) =>
+      asRatio(d.y === 2030 ? 0.9 : 0.5, 'what money then is worth now'),
+    );
+    const cheap = presentValueOf(schedule, (d) =>
+      asRatio(d.y === 2030 ? 0.95 : 0.7, 'what money then is worth now'),
+    );
     // The same promise is worth MORE when money later is worth more — which is what a rate falling
     // means. That is why a rate move is a solvency event for this sector (B2.a) and a P&L event for
     // everybody else, and nothing anywhere had to say so.
@@ -91,17 +96,19 @@ describe('it can fail, and the gap is what does it (A3, D1, XI-3)', () => {
   });
 
   it('measures the gap as what it has against what it owes, and lets it be negative (Law 6)', () => {
-    expect(gapOf(100, 60)).toBe(40);
-    expect(gapOf(60, 100)).toBe(-40);
+    expect(gapOf(asCash(100, 'what it has'), asCash(60, 'what it owes'))).toBe(40);
+    expect(gapOf(asCash(60, 'what it has'), asCash(100, 'what it owes'))).toBe(-40);
   });
 });
 
 describe('what it charges is its own experience and its own capital (A4.b)', () => {
   it('is those two things and nothing else — no loss ratio, no industry number', () => {
-    expect(coverPrice(0.03, 0.02)).toBeCloseTo(0.05, 12);
+    const seen = (x: number) => asPerPiece(x, 'what its own claims have cost it');
+    const costs = (x: number) => asRatio(x, 'what its capital costs');
+    expect(coverPrice(seen(0.03), costs(0.02))).toBeCloseTo(0.05, 12);
     // Worse experience or dearer capital quotes higher, which is the whole of A4.b.
-    expect(coverPrice(0.06, 0.02)).toBeGreaterThan(coverPrice(0.03, 0.02));
-    expect(coverPrice(0.03, 0.05)).toBeGreaterThan(coverPrice(0.03, 0.02));
+    expect(coverPrice(seen(0.06), costs(0.02))).toBeGreaterThan(coverPrice(seen(0.03), costs(0.02)));
+    expect(coverPrice(seen(0.03), costs(0.05))).toBeGreaterThan(coverPrice(seen(0.03), costs(0.02)));
   });
 
   it('wants long assets against long liabilities, which is a read of its own book (C2.a)', () => {

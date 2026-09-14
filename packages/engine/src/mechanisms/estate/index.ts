@@ -24,13 +24,14 @@
  * that names neither cannot die, and the central bank is the one that names neither because it
  * cannot run out of what it alone issues.
  */
+import { asRatio, type Cash, heldAsMoney, over, scale , asPerPiece} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId, partyKindId } from '../../core/ids.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import type { Process } from '../../register/processes.js';
-import { div, material, mul, sub, sum, withinDust } from '../../core/num.js';
+import { div, material, sub, sum, withinDust } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -44,7 +45,6 @@ import type { SystemModule } from '../../world/module.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import { splitOnTick, subQty, type Qty } from '../../core/tick.js';
-import { asQty } from '../../core/tick.js';
 import { negQty } from '../../core/tick.js';
 
 export const ESTATE = partyKindId('estate');
@@ -219,7 +219,11 @@ function offers(view: ParticipantView, m: MarketDecl, closesAfter: number): read
     {
       party: view.self.id,
       side: 'sell',
-      price: mul(print.value.price, div(left, total, 'how much of its patience is left'), 'reservation'),
+      price: scale(
+        print.value.price,
+        asRatio(div(left, total, 'how much of its patience is left'), 'how much of its patience is left'),
+        'reservation',
+      ),
       qty: units,
     },
   ];
@@ -311,9 +315,9 @@ function distributeFrom(
       // `splitOnTick` returns one part per claim, so an absent one is arithmetically impossible.
       if (pay === undefined) throw new Impossible('Law 8', `no share for claim ${at} of this rank`);
       if (!material(pay, 2, c.units)) continue;
-      const paid = repay(ctx, estate, c, pay, account, ccy);
+      const paid = repay(ctx, estate, c, heldAsMoney(pay, 'this claim’s share of the pool'), account, ccy);
       if (!paid.some) continue;
-      cash = subQty(cash, asQty(paid.value, 'what the repayment paid'), 'cash left to distribute');
+      cash = subQty(cash, paid.value, 'cash left to distribute');
     }
   }
 }
@@ -327,17 +331,22 @@ function repay(
   ctx: MechanismContext,
   estate: PartyId,
   claim: Claim,
-  amount: number,
+  amount: Cash,
   account: InstrumentId,
   ccy: CurrencyCode,
-): Option<number> {
+): Option<Qty> {
   const holder = ctx.parties.get(claim.holder);
   // Law 8, XI-15: a claim is redeemed in whole pieces of the money it is denominated in, and for a
   // cell in whole pieces for each member. What is left below a piece stays outstanding, which is
   // what a partial repayment is: the rest of the claim is still there (D2).
-  const share = shareFor(ctx.registry, holder, currencyUnit(ccy), div(amount, weightOf(holder), 'per member'));
+  const share = shareFor(
+    ctx.registry,
+    holder,
+    currencyUnit(ccy),
+    over(amount, asRatio(weightOf(holder), 'the members it has'), 'per member'),
+  );
   const perMember = share.perMember;
-  if (share.total <= 0) return none<number>();
+  if (share.total <= 0) return none<Qty>();
   const legs: Leg[] = [
     {
       kind: 'asset',
@@ -345,7 +354,7 @@ function repay(
       to: estate,
       instrument: claim.instrument,
       qty: share.total,
-      pricePerUnit: some(1),
+      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
       accruedPerUnit: none(),
       fromCell: holder.representation === 'cell' ? some({ perMember, weight: holder.weight }) : none(),
       toCell: none(),
@@ -365,7 +374,7 @@ function repay(
     cause: 'maturity',
     reason: `${estate} pays ${claim.holder} on ${claim.instrument}`,
   });
-  if (r.outcome !== 'settled') return none<number>();
+  if (r.outcome !== 'settled') return none<Qty>();
   ctx.record(
     'estate.paid',
     [estate, claim.holder, claim.instrument],
@@ -423,7 +432,9 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
     const holder = ctx.parties.get(c.holder);
     const perMember = ctx.registry.deliverable(
       ctx.instruments.get(c.instrument).unit,
-      holder.representation === 'cell' ? div(c.units, holder.weight, 'per member') : c.units,
+      holder.representation === 'cell'
+        ? over(c.units, asRatio(holder.weight, 'the members it has'), 'per member')
+        : c.units,
     );
     const leg: Leg = {
       kind: 'asset',
@@ -432,7 +443,7 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
       instrument: c.instrument,
       qty: c.units,
       // What it fetched is nothing. The holder's loss is what it was carrying, and it lands there.
-      pricePerUnit: some(0),
+      pricePerUnit: some(asPerPiece(0, 'at what it promised')),
       accruedPerUnit: none(),
       fromCell: holder.representation === 'cell' ? some({ perMember, weight: holder.weight }) : none(),
       toCell: none(),

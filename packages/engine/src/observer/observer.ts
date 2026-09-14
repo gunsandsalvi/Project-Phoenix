@@ -5,9 +5,22 @@
  *
  * @spec Sovereign D3 Sovereign D3.b Observer A1 Observer A1.a Observer A2 Observer A3 Observer A4 Observer D1 Observer D3 Observer E1 Observer E3 Observer F1 Observer F2 Observer F4 Law 9
  */
+import { addQty, asQty, NO_QTY } from '../core/tick.js';
+import {
+  asCash,
+  asRatio,
+  type Cash,
+  minus,
+  type PerPiece,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../core/measure.js';
 import { formatCivil } from '../calendar/civil.js';
 import { asContractMarket, contractOf, pairOf } from '../clearing/market.js';
-import { add, div, mul, sub } from '../core/num.js';
+import { add } from '../core/num.js';
 import { periodicityLabel } from '../core/rate.js';
 import { partyId, type CurrencyCode, type PartyId, type RegionId } from '../core/ids.js';
 import { placeAt, tilesOf } from '../registry/geography.js';
@@ -301,9 +314,9 @@ export interface RateView {
 
 export interface TriangleView {
   readonly through: string;
-  readonly crossed: number;
-  readonly direct: number;
-  readonly gap: number;
+  readonly crossed: PerPiece;
+  readonly direct: PerPiece;
+  readonly gap: Ratio;
 }
 
 /**
@@ -428,9 +441,9 @@ export interface SectorView {
   readonly sector: string;
   readonly lines: readonly string[];
   /** What its lines MADE this period, at what a unit of each last printed. A flow. */
-  readonly made: number;
+  readonly made: Cash;
   /** What is standing in them: units held, at the same prints. A stock, and a different question. */
-  readonly held: number;
+  readonly held: Cash;
   /** Whether every line in it can be put in a box. False is a sector made where it is bought. */
   readonly portable: boolean;
 }
@@ -788,7 +801,10 @@ export function snapshot(
   // 13c.2: the economy by sector. One walk of this period's create legs and one of the register,
   // both at the prints the markets made (Law 19: never a stored total, never a re-derived price).
   const sectorOf = new Map(OCCUPATIONS.map((o) => [o.id, o.sector]));
-  const sectors = new Map<string, { lines: Set<string>; made: number; held: number; portable: boolean }>();
+  const sectors = new Map<
+    string,
+    { lines: Set<string>; made: Cash; held: Cash; portable: boolean }
+  >();
   const lineOfInstrument = new Map<string, { sector: string; subUnit: string; portable: boolean }>();
   for (const i of w.instruments.all()) {
     if (!isGoodTerms(i.terms)) continue;
@@ -797,12 +813,21 @@ export function snapshot(
     const sector = sectorOf.get(trade);
     if (sector === undefined) continue;
     lineOfInstrument.set(String(i.id), { sector, subUnit: i.terms.subUnit, portable: i.terms.portable });
-    const row = sectors.get(sector) ?? { lines: new Set<string>(), made: 0, held: 0, portable: true };
+    const row = sectors.get(sector) ?? {
+      lines: new Set<string>(),
+      made: asCash(0, 'nothing made yet'),
+      held: asCash(0, 'nothing standing yet'),
+      portable: true,
+    };
     row.lines.add(i.terms.subUnit);
     if (!i.terms.portable) row.portable = false;
     const print = w.prices.latest(i.id, w.period);
     if (print.some) {
-      row.held = add(row.held, mul(w.register.heldTotal(i.id).value, print.value.price, 'what is standing in it'), 'the sector’s stock');
+      row.held = plus(
+        row.held,
+        valueAt(print.value.price, w.register.heldTotal(i.id).value, 'what is standing in it'),
+        'the sector’s stock',
+      );
     }
     sectors.set(sector, row);
   }
@@ -816,7 +841,11 @@ export function snapshot(
       if (!print.some) continue;
       const row = sectors.get(line.sector);
       if (row === undefined) continue;
-      row.made = add(row.made, mul(leg.qty, print.value.price, 'what it made'), 'the sector’s output');
+      row.made = plus(
+        row.made,
+        valueAt(print.value.price, leg.qty, 'what it made'),
+        'the sector’s output',
+      );
     }
   }
   const sectorViews: SectorView[] = [...sectors.entries()]
@@ -837,11 +866,13 @@ export function snapshot(
       .at(-1);
     const rent = said?.data['rentPerDwelling'];
     const letting = said?.data['dwellings'];
-    let taken = 0;
+    let taken = NO_QTY;
     for (const e of w.journal.ofKind('housing.foreclosed')) {
       if (e.period !== w.period) continue;
       const n = e.data['dwellings'];
-      if (typeof n === 'number') taken = add(taken, n, 'dwellings taken this period');
+      if (typeof n === 'number') {
+        taken = addQty(taken, asQty(n, 'dwellings taken'), 'dwellings taken this period');
+      }
     }
     housing.push({
       region: String(region),
@@ -999,7 +1030,7 @@ function ratesOf(w: World): readonly RateView[] {
  * two of them say. Read from the prints, like everything else here.
  */
 function trianglesOf(w: World): readonly TriangleView[] {
-  const rate = (base: string, quote: string): number | null => {
+  const rate = (base: string, quote: string): PerPiece | null => {
     const m = w.markets.find((x) => {
       const p = pairOf(x);
       return p !== undefined && String(p.base) === base && String(p.quote) === quote;
@@ -1019,12 +1050,12 @@ function trianglesOf(w: World): readonly TriangleView[] {
         const bc = rate(b, c);
         const ac = rate(a, c);
         if (ab === null || bc === null || ac === null || ac <= 0) continue;
-        const crossed = mul(ab, bc, `${a} through ${b} into ${c}`);
+        const crossed = scale(ab, asRatio(bc, 'and on into the third'), `${a} through ${b} into ${c}`);
         out.push({
           through: `${a}/${b}/${c}`,
           crossed,
           direct: ac,
-          gap: div(sub(crossed, ac, 'what the two routes disagree by'), ac, 'as a share'),
+          gap: ratioOf(minus(crossed, ac, 'what the two routes disagree by'), ac, 'as a share'),
         });
       }
     }

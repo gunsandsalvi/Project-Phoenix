@@ -25,15 +25,25 @@
  * there is one. What this module does is stop pricing the line: a claim on a liquidation is not the
  * claim anybody formed an opinion of, so nobody posts and the print goes visibly stale.
  */
-import { asCash, asNamed, negated, asAmount,} from '../../core/measure.js';
+import {
+  amountOf,
+  asAmount,
+  asCash,
+  asNamed,
+  type Cash,
+  negated,
+  type PerPiece,
+  plus,
+  pricedAt,
+} from '../../core/measure.js';
 import { forbid } from '../../core/assert.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { currencyUnit, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
-import { add, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
-import { downTick } from '../../core/tick.js';
+import { combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
+import { downTick, type Qty, scaleQty } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import { anchorOf, quarterClosedBy } from '../../calendar/fiscal.js';
@@ -679,11 +689,11 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
         // shares of whatever a share opens at — which is why a larger firm has a larger line
         // without one number being written down beside its name, and why doubling the opening share
         // price halves every count here and moves nothing (D4).
-        let book = 0;
+        let book = asCash(0, 'nothing walked yet');
         for (const h of ctx.register.holdingsOf(firm.id)) {
-          book = add(book, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), 'its book');
+          book = plus(book, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), 'its book');
         }
-        const shares = Math.round(div(book, price, 'the shares its book comes to'));
+        const shares = Math.round(amountOf(book, price, 'the shares its book comes to'));
         const cells = ctx.parties.ofKind(HOUSEHOLD);
         const members = cells.reduce((t, c) => t + weightOf(c), 0);
         forbid(
@@ -711,32 +721,32 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
 }
 
 /** C1.b: how much of a line is bound and therefore not float — a read of the register (D5.a). */
-export function strategicOf(ctx: MechanismContext, firm: string): number {
+export function strategicOf(ctx: MechanismContext, firm: string): Qty {
   const line = equityLineOf(firm);
-  const terms: number[] = [];
+  const terms: Qty[] = [];
   for (const holder of ctx.register.holdersOf(line)) {
     terms.push(
-      mul(ctx.register.encumbered(holder, line), weightOf(ctx.parties.get(holder)), 'units bound'),
+      scaleQty(ctx.register.encumbered(holder, line), weightOf(ctx.parties.get(holder)), 'units bound'),
     );
   }
   return sum(terms).value;
 }
 
 /** B4: shares times price, read once here so nobody derives it a second way (Law 4). */
-export function capitalisationOf(ctx: MechanismContext, firm: string): number | null {
+export function capitalisationOf(ctx: MechanismContext, firm: string): Cash | null {
   const line = ctx.instruments.get(equityLineOf(firm));
   const print = ctx.prices.latest(line.id, ctx.period);
   return print.some ? marketCapitalisation(line.issued, print.value.price) : null;
 }
 
 /** D2.a, D1.a: the count, which is what a dilution raises and a cancellation lowers. */
-export function sharesOf(ctx: MechanismContext, firm: string): number {
+export function sharesOf(ctx: MechanismContext, firm: string): Qty {
   return ctx.instruments.get(equityLineOf(firm)).issued;
 }
 
 /** Law 7: a per-share number and the count it came from, for readers that need both. */
-export function perShare(total: number, shares: number, what: string): number {
-  return div(total, shares, what);
+export function perShare(total: Cash, shares: Qty, what: string): PerPiece {
+  return pricedAt(total, shares, what);
 }
 
 export type { InstrumentId };

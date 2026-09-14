@@ -51,7 +51,7 @@ export function unitsFamily(memory: AuditMemory): Family {
           if (view.registry.instrumentKind(i.kind).physical !== true) continue;
           const before = zeroIfNone(memory.issued.get(i.id));
           const legs = sum(made.get(i.id) ?? []);
-          const change = sum([i.issued, -before]);
+          const change = sum([i.issued, negQty(before, 'the other way')]);
           if (!withinDust(change.value, legs.value, combineDust(legs, change) + i.issuedDust)) {
             out.push({
               family: 'units',

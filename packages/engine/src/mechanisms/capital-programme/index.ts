@@ -23,11 +23,13 @@
  * built it (E2), and shows up in the producer's revenue rather than in a firm's own balance sheet
  * out of nowhere.
  */
+import { asRatio, minus, pricedAt, scale } from '../../core/measure.js';
+import type { Qty } from '../../core/tick.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { negQty } from '../../core/tick.js';
 import { addDays, type Civil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
-import { addTo, atMost, div, dustOf, finite, material, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, atMost, dustOf, finite, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { none, some } from '../../core/option.js';
 import { isAssetLeg, isCreateLeg, isDestroyLeg, type Leg } from '../../ledger/instruction.js';
@@ -285,7 +287,10 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
       'what the weather left standing',
     );
     const units = ctx.register.free(h.holder, i.id);
-    const lost = ctx.registry.deliverable(i.unit, mul(units, 1 - survived, 'what the wind took'));
+    const lost = ctx.registry.deliverable(
+      i.unit,
+      scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
+    );
     if (!material(lost, 2, units) || lost <= 0) continue;
     const party = ctx.parties.get(h.holder);
     const side = cellSide(party, lost);
@@ -396,7 +401,7 @@ function commissionOne(
       instrument: id,
       qty: total,
       // C4, A6: what the plant cost is what the machines cost. Nothing is added at the door.
-      costPerUnit: div(cost, qty, 'what a unit of plant cost'),
+      costPerUnit: pricedAt(cost, qty, 'what a unit of plant cost'),
       toCell: side === undefined ? none() : some(side),
     },
   ];
@@ -425,7 +430,7 @@ function commissionOne(
  * makes commissioning, wearing out and a sale from an estate the only ways plant can appear or go.
  */
 function plantMoves(rows: readonly CapitalKindDecl[]): Family {
-  const seen: { period: Period | undefined; held: Map<string, number> } = {
+  const seen: { period: Period | undefined; held: Map<string, Qty> } = {
     period: undefined,
     held: new Map(),
   };
@@ -438,7 +443,7 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      const moved = new Map<string, number[]>();
+      const moved = new Map<string, Qty[]>();
       for (const r of view.ledger.inPeriod(view.period)) {
         if (r.outcome !== 'settled') continue;
         for (const leg of r.instruction.legs) {
@@ -460,7 +465,7 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
       // identity is not about that, exactly as the goods module's own units check has it.
       const weights = view.journal.ofKindIn('weight', view.period).length;
       const consecutive = seen.period !== undefined && view.period === seen.period + 1;
-      const held = new Map<string, number>();
+      const held = new Map<string, Qty>();
       for (const i of view.instruments.all()) {
         const capital =
           isPlant(i) || (isGoodTerms(i.terms) && goods.has(i.terms.subUnit));
@@ -472,10 +477,10 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
         }
       }
       const comparable = consecutive && weights === 0;
-      for (const [k, before] of comparable ? seen.held : new Map<string, number>()) {
+      for (const [k, before] of comparable ? seen.held : new Map<string, Qty>()) {
         const now = zeroIfNone(held.get(k));
         const legs = sum(moved.get(k) ?? []);
-        const change = sub(now, before, 'what the stock moved by');
+        const change = minus(now, before, 'what the stock moved by');
         const dust = legs.dust + dustOf(legs.terms + 2, Math.abs(before) + Math.abs(now) + legs.magnitude);
         if (withinDust(change, legs.value, dust)) continue;
         const [party, instrument] = k.split('|');
@@ -483,7 +488,7 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
           family: 'units',
           spec: 'Capital Programme A6.b',
           owner: party ?? k,
-          size: sub(change, legs.value, 'plant that moved with no leg behind it'),
+          size: minus(change, legs.value, 'plant that moved with no leg behind it'),
           unit: instrument === undefined ? 'units' : view.instruments.get(instrument as InstrumentId).unit,
           period: view.period,
           message: `${party ?? k}: ${instrument ?? 'plant'} moved by ${change} and its legs account for ${legs.value}`,
@@ -501,7 +506,7 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
             family: 'units',
             spec: 'Capital Programme A6.b',
             owner: party ?? k,
-            size: sub(now, legs.value, 'plant that appeared with no leg behind it'),
+            size: minus(now, legs.value, 'plant that appeared with no leg behind it'),
             unit: instrument === undefined ? 'units' : view.instruments.get(instrument as InstrumentId).unit,
             period: view.period,
             message: `${party ?? k}: ${instrument ?? 'plant'} appeared at ${now} and its legs account for ${legs.value}`,
