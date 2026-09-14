@@ -23,6 +23,7 @@
  */
 import {
   asAmount,
+  asPerPiece,
   asRatio,
   heldAsMoney,
   over,
@@ -50,6 +51,7 @@ export const BANKING = 'banking';
 export const STAFF_PARAMS = {
   hoursPerLoanPeriod: paramId('bank.hoursPerLoanPeriod'),
   hoursPerLinePeriod: paramId('bank.hoursPerLinePeriod'),
+  hoursPerProcess: paramId('bank.hoursPerProcess'),
 } as const satisfies Record<string, ParamId>;
 
 /** A3: the trade a bank's dealers are in. A market maker is not a lending officer (Labour A3). */
@@ -179,4 +181,100 @@ export function linesCovered(view: ParticipantView): number {
       'the lines its people can cover',
     ),
   );
+}
+
+
+/* --------------------------------------------------------------------------------------------
+ * THE FIFTH BUSINESS LINE: CORPORATE FINANCE (item 10f.4)
+ *
+ * §35 B4, §29 D1: *"formal exit processes and m&a processes lead by IBD departments"*. A sale of a
+ * company is not a bilateral tender that appears from nowhere — a seller appoints a bank, the bank
+ * invites bidders, the book clears, and the bank is paid for the work.
+ *
+ * WHAT A BANK CAN RUN AT ONCE IS THE PEOPLE IT EMPLOYS. It is the same read a dealing desk makes
+ * about how many lines it can quote (`linesCovered`) and a manager makes about how many pools it
+ * can run: hours paid for, over the hours one takes. A bank that sheds its bankers runs fewer
+ * processes, and nothing states a capacity anywhere.
+ *
+ * AND WHAT IT CHARGES IS WHAT THE WORK COSTS IT. Not a percentage of the deal — a percentage of an
+ * outcome is a fee with no work in it (Law 2) — but the hours at what an hour of that trade costs
+ * it, which differs by bank because what a bank pays differs. The seller appoints the cheapest bank
+ * that has room, so the fee falls to what the keenest of them can do it for and nothing bounds the
+ * fall (Law 6: the refusal is the mechanism — a bank that cannot cover its people stops bidding).
+ * ------------------------------------------------------------------------------------------ */
+
+/** A3: the trade a bank's corporate-finance people are in. A banker is not a dealer (Labour A3). */
+export const ADVISORY = 'advisory';
+
+/** The venue this bank's corporate-finance people are hired in, where this world has that trade. */
+export const advisoryVenue = (view: ParticipantView): VenueDecl | undefined =>
+  findVenue(view.venues, { region: String(view.self.region), occupation: ADVISORY });
+
+/**
+ * §35 B4 (10f.4): HOW MANY SALES THIS BANK CAN RUN AT ONCE — its hours over what one takes.
+ *
+ * The hours are what it actually PAID FOR (`labour.wages`), which is the same event
+ * `linesCovered` reads and for the same reason: a capacity is a count of people and a count of
+ * people is what a payroll is. A bank that has never met a wage runs nothing, which is a real
+ * answer rather than a zero with a rule behind it.
+ */
+export function processesRun(view: ParticipantView): number {
+  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
+  if (!own.some) return 0;
+  const hours = own.value.data['hours'];
+  if (typeof hours !== 'number' || hours <= 0) return 0;
+  const per = asAmount<'piece'>(
+    view.params.count(STAFF_PARAMS.hoursPerProcess),
+    'the hours one process takes',
+  );
+  if (per <= 0) return 0;
+  return Math.floor(
+    ratioOf(
+      asAmount<'piece'>(hours, 'the hours it actually paid for'),
+      per,
+      'the processes its people can run',
+    ),
+  );
+}
+
+/**
+ * §35 B4 (10f.4): WHAT RUNNING ONE COSTS IT, which is what it charges for it.
+ *
+ * Hours at what an hour of that trade costs it (Labour D1.c), and nothing else: no percentage of
+ * the deal, no minimum, no retainer. A bank that cannot price an hour of the trade cannot quote for
+ * the work, which is a refusal and not a zero (App A).
+ */
+export function costOfAProcess(view: ParticipantView): PerPiece | undefined {
+  const wage = wageFacing(view, ADVISORY);
+  if (wage === undefined) return undefined;
+  const hours = asAmount<'piece'>(
+    view.params.count(STAFF_PARAMS.hoursPerProcess),
+    'the hours one process takes',
+  );
+  if (hours <= 0) return undefined;
+  const cost = valueAt(wage, asQty(hours), 'what running one costs it');
+  return cost > 0 ? asPerPiece(cost, 'what it charges to run one') : undefined;
+}
+
+/**
+ * Labour A1, A2, D1: THE OPENING, in the advisory trade. It wants the hours the sales it is running
+ * take, and it bids what an hour is worth to it — what its business took in over the last period,
+ * over those hours. A bank nobody appointed last period wants nobody this period, which is how a
+ * corporate-finance department shrinks when the deals stop without anybody writing a rule for it.
+ */
+export function advisoryOrders(view: ParticipantView, venue: VenueDecl): readonly Order[] {
+  if (venue.key['occupation'] !== ADVISORY) return [];
+  if (venue.key['region'] !== String(view.self.region)) return [];
+  const ran = view.lastOwnSince('advisory.ran', payrollSince(view.period));
+  if (!ran.some) return [];
+  const count = ran.value.data['processes'];
+  if (typeof count !== 'number' || count <= 0) return [];
+  const per = view.params.count(STAFF_PARAMS.hoursPerProcess);
+  const hours = asQty(scale(asAmount<'piece'>(per, 'the hours one takes'), asRatio(count, 'the ones it ran'), 'the hours they took'));
+  if (hours <= 0) return [];
+  const took = view.earned(1);
+  if (took <= 0) return [];
+  const worth = pricedAt(took, hours, 'what an hour of this is worth to it');
+  if (worth <= 0) return [];
+  return [{ party: view.self.id, side: 'buy', price: worth, qty: hours }];
 }

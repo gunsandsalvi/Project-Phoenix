@@ -9042,3 +9042,53 @@ one name in it.
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 10f.4 — a bank runs the sale, and what it can run is the people it employs
+
+**The owner's second sentence, second half:** *"formal exit processes and m&a processes lead by IBD
+departments."* A sale was a bilateral tender that appeared from nowhere: one buyer, one venue, no
+process, nobody paid for the work.
+
+### `advisory` is a trade, and a capacity is a count of people
+
+A corporate-finance banker is not a lending officer and not a market maker (Labour A3), so it is a
+row in the occupations table and a bank posts openings in it like any other employer — for the hours
+the sales it ran last period took, so a department nobody appointed shrinks without a rule.
+
+**How many sales a bank can run at once is the hours it paid for over the hours one takes.** It is
+the same read a dealing desk makes about how many lines it can quote and a manager makes about how
+many pools it can run. Nothing states a capacity; a bank that has never met a wage runs none. Three
+weeks of somebody is `bank.hoursPerProcess`, declared as the technology it is.
+
+### The fee is what the work costs, and the seller picks the cheapest
+
+Each bank publishes what it will run one for — hours at what an hour of that trade costs IT, which
+differs by bank because what a bank pays differs — and the seller appoints the cheapest with people
+free. **There is no percentage of a deal anywhere.** A percentage of an outcome is a fee with no work
+in it (Law 2), and it would make a large sale dearer to run than a small one for no reason anybody
+could name. What stops the fee falling is the same refusal 10e.4 set for a manager's fee: a bank that
+cannot cover its people stops publishing, and nothing bounds the fall (Law 6).
+
+It is paid out of the deal, in one instruction with two sides, and a client that cannot pay it leaves
+the bank having done the work and not been paid — a recorded state, not an adjustment.
+
+### And B4 bites arithmetically
+
+Every bid for one company goes into ONE book against every holder's ask, and the solver strikes the
+level. **A second bidder raises what the holders are met at whether or not it wins**, which is what
+*"the price is contested"* means as arithmetic rather than as a sentence.
+
+That needed the bids GATHERED BY TARGET before any of them ran. Two buyers taking turns at a target
+in whatever order `parties.ofKind(FIRM)` happens to be in is not an auction: the first past the post
+bought the company before the second was asked, and the second's willingness to pay more never
+touched anything. `M&A B3` and `B4` go MISSING → MET.
+
+**What is honest about the gap:** the winner is the highest bidder and it buys the whole cleared
+volume. Pairing several buyers against several sellers inside one clear needs an allocation rule this
+world does not have, and inventing one would be inventing who faced whom (Law 1). What the losing
+bids do is move the price, which is the half of B4 that carries the economics.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5 over 216 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.

@@ -75,7 +75,14 @@ import {
   setBoard,
 } from './treasury.js';
 import { isSub, runRaise, subordinatedKind, SUB_PARAMS } from './subordinated.js';
-import { operatingCostOf, staffOrders, STAFF_PARAMS } from './staff.js';
+import {
+  advisoryOrders,
+  costOfAProcess,
+  operatingCostOf,
+  processesRun,
+  staffOrders,
+  STAFF_PARAMS,
+} from './staff.js';
 import { financedFor, type PrimeDeps, PRIME, runPrime } from './prime.js';
 import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
@@ -251,6 +258,36 @@ function subscribes(
   const qty = downTick(amountOf(spare, worth.value, 'units it bids for'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: worth.value, qty }];
+}
+
+/**
+ * M&A B4, §29 D1 (10f.4): WHAT THIS BANK WILL RUN A SALE FOR, AND HOW MANY IT CAN RUN AT ONCE.
+ *
+ * Published like everything else a bank's counterparties need (Observer A3, Law 19), so a seller
+ * choosing who runs its process reads what the banks said rather than being told by this module.
+ * A bank that cannot price an hour of the trade or has nobody in it publishes nothing, which is the
+ * refusal and not a zero: it is not in the business this period.
+ *
+ * WHAT IT CHARGES IS WHAT THE WORK COSTS IT, and there is no percentage of a deal anywhere. The
+ * seller appoints the cheapest of them with room, so the fee falls to what the keenest can do it
+ * for, and what stops the fall is that a bank which cannot cover its people stops publishing
+ * (Law 6: the refusal is the mechanism, and 10e.4 set the same one for a manager's fee).
+ */
+function publishAdvisory(ctx: MechanismContext): void {
+  for (const b of ctx.parties.ofKind(BANK)) {
+    if (!b.status.alive) continue;
+    const view = ctx.participant(b.id);
+    const capacity = processesRun(view);
+    if (capacity <= 0) continue;
+    const fee = costOfAProcess(view);
+    if (fee === undefined) continue;
+    ctx.record(
+      'advisory.quoted',
+      [b.id],
+      { bank: String(b.id), fee, capacity, ccy: ctx.registry.currencyOf(b.region) },
+      true,
+    );
+  }
 }
 
 /** B3: what it published that it must raise to be back above both lines, or nothing (Law 19). */
@@ -1192,6 +1229,15 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       why: 'Dealer Desks D1, D4 (13d): what it takes to QUOTE one line — somebody prices it, somebody carries the position, somebody answers the phone. How many lines a desk can cover is therefore the hours it employs over this, so a desk that sheds staff drops lines and their books journal `market.noView` because nobody is standing in them. A coverage stated directly would be a count of people wearing a policy’s clothes.',
     },
     {
+      id: STAFF_PARAMS.hoursPerProcess,
+      value: 120,
+      unit: 'hours of a corporate-finance banker per sale',
+      dimension: 'count',
+      kind: 'technology',
+      owner: 'model',
+      why: 'M&A B4, §29 D1 (10f.4): what it takes to RUN A SALE — preparing the company, finding the buyers, running the auction, closing it. Three weeks of somebody, which is what a small process is, and it is what makes an IBD a CAPACITY: how many a bank can run at once is the hours it employs over this, so a bank that sheds its bankers runs fewer sales and a bank that never met a wage runs none. It is also what the bank CHARGES, because what the work costs is the only thing in this world a fee could honestly be — a percentage of the deal is a fee with no work in it (Law 2), and it would make a large sale dearer to run than a small one for no reason anybody could name.',
+    },
+    {
       id: LENDING_PARAMS.hoursPerLoanPeriod,
       value: 0.6,
       unit: 'hours of a lending officer per loan per period',
@@ -1309,6 +1355,7 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
         publishCostOfFunds(rows, ctx);
         publishQuotes(rows, ctx);
         publishReservations(rows, ctx);
+        publishAdvisory(ctx);
       },
     },
     {
@@ -1414,6 +1461,10 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     // employer. A bank whose book earns nothing bids nothing and hires nobody, which is how a
     // shrinking bank sheds staff without anybody writing a rule for it.
     { partyKind: BANK, orders: staffOrders },
+    // Labour A1, A3, M&A B4 (10f.4): and the corporate-finance department, in a trade of its own —
+    // a banker who runs a sale is not a lending officer. What it wants is the hours the sales it
+    // ran last period took, so a department nobody appointed shrinks.
+    { partyKind: BANK, orders: advisoryOrders },
   ],
   // Law 4, Dealer Desks A1: ONE face. Every order a bank posts into any market comes from here.
   participants: [

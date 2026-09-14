@@ -85,6 +85,11 @@ export const OCCUPATIONS: readonly OccupationDecl[] = [
   { id: 'banking', name: 'lending and branch work', skill: 'administration', sector: 'finance' },
   { id: 'dealing', name: 'market making', skill: 'professional', sector: 'finance' },
   { id: 'analysis', name: 'research and credit analysis', skill: 'professional', sector: 'finance' },
+  // 10f.4: THE PEOPLE WHO RUN A SALE. *"M&A processes lead by IBD departments"* — a corporate-finance
+  // banker is not a lending officer and not a market maker (A3), and what a bank can run at once is
+  // how many of them it employs. A capacity stated directly would be a count of people wearing a
+  // policy's clothes; this is the people.
+  { id: 'advisory', name: 'corporate finance advisory', skill: 'professional', sector: 'finance' },
   { id: 'public', name: 'public service', skill: 'administration', sector: 'government' },
 ];
 

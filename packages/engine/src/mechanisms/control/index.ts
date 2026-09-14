@@ -1,7 +1,7 @@
 /**
  * The market for control: what somebody will pay for a whole firm, and what its owners will take.
  *
- * @spec M&A A1 M&A A2 M&A A3 M&A A4 M&A A5 M&A B1 M&A B2 M&A B2.a M&A B3 M&A C1 M&A C2 M&A D4 M&A D5 M&A E1 M&A E2 Equity B1 Equity E3 Equity F3 Private Equity A5 Private Equity C5 XI-2 XI-8 Law 2 Law 3 Law 4 Law 6 Law 15 Law 19
+ * @spec M&A A1 M&A A2 M&A A3 M&A A4 M&A A5 M&A B1 M&A B2 M&A B2.a M&A B3 M&A B4 M&A C1 M&A C2 M&A D4 M&A D5 M&A E1 M&A E2 Equity B1 Equity E3 Equity F3 Labour A3 Labour D1 Private Equity A5 Private Equity C5 Private Equity D1 XI-2 XI-8 Law 2 Law 3 Law 4 Law 5 Law 6 Law 15 Law 19
  *
  * A PREMIUM IS A PRICE AND IT HAS TO CLEAR. Every share in this world already has a market, and
  * every holder already has its own number for what a share is worth to it (Equity B1, §46 A3). A
@@ -25,6 +25,7 @@
  * and there is one way to write it (XI-8, Register F2).
  */
 import {
+  asCash,
   asPerPiece,
   asRatio,
   type Cash,
@@ -47,9 +48,10 @@ import {
 } from '../../core/ids.js';
 import { currencyUnit } from '../../core/ids.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
-import { atMost, sum } from '../../core/num.js';
+import { atMost, sum, zeroIfNone } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
+import { Missing } from '../../core/errors.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide } from '../../ledger/settlement.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -237,10 +239,134 @@ function wouldTakeFor(holder: ParticipantView, line: InstrumentId): Option<PerPi
 }
 
 /**
+ * M&A B4, §29 D1 (item 10f.4): THE PROCESS — a bank runs it, every bidder is in the same book, and
+ * the winner is the one the book gave the most of.
+ *
+ * *"Formal exit processes and m&a processes lead by IBD departments."* A sale is not a bilateral
+ * tender that appears from nowhere: the bank is APPOINTED (the cheapest with people free, read off
+ * what the banks published), it puts every bidder into one venue against every holder's ask, and
+ * the solver strikes the level. **That is B4 biting numerically**: a second bidder in the book
+ * raises the level the holders are met at, whether or not it wins.
+ *
+ * The winner is the bidder the book filled most — ties on the higher bid, then on the name — and it
+ * buys the whole cleared volume at the struck level. A bidder below the level did not fill at all
+ * and lost on price; one above it that was out-filled walks away, which is what losing a controlled
+ * auction is. Only the winner's acceptance condition is tested, because it is the only one that
+ * ends up holding anything: short of control, nothing settles at all (A1).
+ *
+ * A sale with no bank to run it does not happen. That is a real constraint and not a gap — an IBD
+ * is people, and a world whose banks employ none of them is one where companies change hands by
+ * private treaty, which this world has no mechanism for and does not pretend to.
+ */
+export function runProcess(ctx: MechanismContext, target: PartyId, bids: readonly Bid[]): void {
+  const first = bids[0];
+  if (first === undefined) return;
+  const bank = appoint(ctx, first.ccy);
+  if (bank === undefined) {
+    ctx.record(
+      'control.failed',
+      [first.buyer, target],
+      { buyer: String(first.buyer), target: String(target), why: 'no bank had people free to run it' },
+      true,
+    );
+    return;
+  }
+  runTender(ctx, pickWinner(ctx, target, bids), bids, bank);
+}
+
+/**
+ * B4: THE WINNER — the highest bidder, which is the one the book fills first and fills most.
+ *
+ * It is not the whole of a contest and the record says so: what the losing bids do here is raise
+ * the level the holders are met at, because they are in the same book (`runTender` posts all of
+ * them). Who ends up with the company is the highest of them, which is what a controlled auction
+ * concludes with.
+ */
+function pickWinner(ctx: MechanismContext, target: PartyId, bids: readonly Bid[]): Bid {
+  // Audit D3: the highest bid, and a tie broken on the name so two worlds from one seed agree.
+  const sorted = [...bids].sort((a, b) =>
+    a.price === b.price ? String(a.buyer).localeCompare(String(b.buyer)) : b.price - a.price,
+  );
+  const best = sorted[0];
+  if (best === undefined) throw new Missing('M&A B4', `no bidder for ${String(target)}`);
+  if (sorted.length > 1) {
+    ctx.record(
+      'control.contested',
+      [target],
+      {
+        target: String(target),
+        bidders: sorted.length,
+        // B4: what the others were willing to pay, which is what is in the book beside the winner.
+        bids: sorted.map((b) => ({ buyer: String(b.buyer), price: b.price })),
+      },
+      true,
+    );
+  }
+  return best;
+}
+
+/**
+ * How many sales each bank has been appointed to run THIS period, emptied when the period turns.
+ *
+ * A capacity is a fact about a period — the hours a bank paid for this week — so a counter that
+ * carried over would have every bank at capacity for ever after a busy fortnight (Law 8: the
+ * periodicity is part of the number).
+ */
+function appointments(ctx: MechanismContext): { ran: Record<string, number> } {
+  const held = ctx.state<{ at: number; ran: Record<string, number> }>('control.advisory', () => ({
+    at: -1,
+    ran: {},
+  }));
+  if (held.at !== Number(ctx.period)) {
+    held.at = Number(ctx.period);
+    held.ran = {};
+  }
+  return held;
+}
+
+/**
+ * M&A B4 (10f.4): WHO RUNS IT — the cheapest bank with people free, read off what the banks
+ * published (`advisory.quoted`) and never chosen by this module.
+ *
+ * Capacity is counted as the period goes, so a bank with two bankers runs two sales and the third
+ * seller goes to somebody else or does not sell. That is the constraint the owner asked for: what a
+ * bank can run at once is the people it employs, and nothing states a number.
+ */
+function appoint(ctx: MechanismContext, ccy: CurrencyCode): { readonly bank: PartyId; readonly fee: Cash } | undefined {
+  const ran = appointments(ctx);
+  let best: { bank: PartyId; fee: Cash } | undefined;
+  for (const e of ctx.journal.ofKindIn('advisory.quoted', ctx.period)) {
+    const bank = e.data['bank'];
+    const fee = e.data['fee'];
+    const capacity = e.data['capacity'];
+    if (typeof bank !== 'string' || typeof fee !== 'number' || typeof capacity !== 'number') continue;
+    if (e.data['ccy'] !== String(ccy)) continue;
+    if (zeroIfNone(ran.ran[bank]) >= capacity) continue;
+    if (best === undefined || fee < best.fee) {
+      best = { bank: partyId(bank), fee: asCash(fee, 'what it charges to run one') };
+    }
+  }
+  if (best === undefined) return undefined;
+  const count = zeroIfNone(ran.ran[String(best.bank)]) + 1;
+  ran.ran[String(best.bank)] = count;
+  // Labour D1 (10f.4): what its people did this period, published under its own name, so its own
+  // hiring next period asks for the hours these took (`advisoryOrders`) and no more (Law 19).
+  ctx.record('advisory.ran', [best.bank], { bank: String(best.bank), processes: count }, false);
+  return best;
+}
+
+/**
  * A1, B2, C1, C2: THE TENDER. Everyone who holds the line is asked; the book clears; and either
  * enough came in to meet the condition or nothing settles at all.
  */
-export function runTender(ctx: MechanismContext, bid: Bid): void {
+export function runTender(
+  ctx: MechanismContext,
+  bid: Bid,
+  /** B4: every bidder for this target, all of them in one book. The winner is `bid`. */
+  bids: readonly Bid[] = [bid],
+  /** 10f.4: the bank that ran it and what it is owed for the work, where a process was run. */
+  ran?: { readonly bank: PartyId; readonly fee: Cash },
+): void {
   const venue = tenderVenue(bid.target);
   if (!ctx.venues.some((v) => v.id === venue)) {
     ctx.openVenue({
@@ -269,7 +395,9 @@ export function runTender(ctx: MechanismContext, bid: Bid): void {
     );
     return;
   }
-  ctx.post(venue, { party: bid.buyer, side: 'buy', price: bid.price, qty: bid.needs });
+  // B4: EVERY BIDDER, in the one book. A second bidder raises the level the holders are met at
+  // whether or not it wins, which is what "the price is contested" means arithmetically.
+  for (const b of bids) ctx.post(venue, { party: b.buyer, side: 'buy', price: b.price, qty: b.needs });
   const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
   if (!isCleared(outcome)) {
     ctx.record(
@@ -304,6 +432,57 @@ export function runTender(ctx: MechanismContext, bid: Bid): void {
     return;
   }
   settleTender(ctx, bid, outcome.fills, outcome.price);
+  if (ran !== undefined) payTheBank(ctx, bid, ran);
+}
+
+/**
+ * M&A B4, §35 A1 (10f.4): THE FEE — real income for real work, out of the proceeds.
+ *
+ * The seller's bank is paid by the BUYER's counterparty in the deal it ran, which is who has just
+ * received the money: a sell-side mandate is paid out of what the sale brought in. It is one
+ * instruction with both legs (Law 5) and it is settled or it is not — a bank whose client cannot
+ * pay it has done the work and not been paid, which is a recorded state and not an adjustment.
+ *
+ * Nothing about the fee is a share of the deal (Law 2): it is what the work cost the bank that
+ * published it, and the seller chose the cheapest one with people free.
+ */
+function payTheBank(
+  ctx: MechanismContext,
+  bid: Bid,
+  ran: { readonly bank: PartyId; readonly fee: Cash },
+): void {
+  // Law 8: a money leg moves a count of the money's own smallest piece, and the fee was struck in
+  // those pieces (`costOfAProcess`: hours at what an hour costs). Down, because what it charges is
+  // what it can actually be paid in whole pieces.
+  const fee = downTick(ran.fee);
+  if (fee <= 0) return;
+  const r = ctx.settle({
+    legs: [
+      {
+        kind: 'money',
+        from: ctx.accountOf(bid.buyer, bid.ccy),
+        to: ctx.accountOf(ran.bank, bid.ccy),
+        ccy: bid.ccy,
+        amount: asQty(fee, 'what the bank is paid for running it'),
+        fromCell: none(),
+        toCell: none(),
+      },
+    ],
+    cause: 'transfer',
+    reason: `${String(ran.bank)} ran the sale of ${String(bid.target)}`,
+  });
+  ctx.record(
+    'advisory.fee',
+    [ran.bank, bid.target],
+    {
+      bank: String(ran.bank),
+      target: String(bid.target),
+      payer: String(bid.buyer),
+      fee,
+      paid: r.outcome === 'settled',
+    },
+    true,
+  );
 }
 
 /** A2, Law 5: the shares one way and the money the other, in one numbered instruction per holder. */
@@ -674,6 +853,15 @@ export function control(): SystemModule {
   return {
     id: 'control',
     spec: 'M&A',
+    nouns: [
+      {
+        name: 'control.advisory',
+        kind: 'working',
+        holds: 'how many sales each bank has been appointed to run this period',
+        why:
+          'a counter within this module’s own phase, so a bank is not appointed to more processes than it has people for (10f.4). It is not a fact about the world — what the world keeps is the `advisory.ran` event each appointment writes — and it does not survive the phase in any sense a reader could use.',
+      },
+    ],
     requires: ['equity', 'firms'],
     instrumentKinds: [],
     partyKinds: [],
@@ -695,10 +883,22 @@ export function control(): SystemModule {
         run: (ctx: MechanismContext): void => {
           const lines = equityLines(ctx);
           if (lines.length === 0) return;
+          /**
+           * B4 (10f.4): EVERY BID FOR ONE COMPANY IS ONE PROCESS. Gathered first and run once, so
+           * two buyers that want the same target meet in the same book instead of taking turns at
+           * it in whatever order the party list happens to be in — which is not an auction, and
+           * which let the first bidder past the post buy it before the second was asked.
+           */
+          const byTarget = new Map<PartyId, Bid[]>();
           for (const p of ctx.parties.ofKind(FIRM)) {
             if (!p.status.alive) continue;
-            for (const bid of controlBidsFor(ctx.participant(p.id), ctx, lines)) runTender(ctx, bid);
+            for (const bid of controlBidsFor(ctx.participant(p.id), ctx, lines)) {
+              const held = byTarget.get(bid.target);
+              if (held === undefined) byTarget.set(bid.target, [bid]);
+              else held.push(bid);
+            }
           }
+          for (const [target, bids] of byTarget) runProcess(ctx, target, bids);
         },
       },
     ],

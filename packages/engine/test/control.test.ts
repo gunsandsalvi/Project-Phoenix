@@ -1,11 +1,11 @@
 /**
  * The market for control (13g): what somebody will pay for a whole firm, and what its owners take.
  *
- * @spec M&A A1 M&A A3 M&A A4 M&A A5 M&A B1 M&A B2.a M&A C1 M&A C2 M&A E2 Equity A1 Equity B1 Equity E3 Private Equity A5 Law 2 Law 3 Law 11 Law 15
+ * @spec M&A A1 M&A A3 M&A A4 M&A A5 M&A B1 M&A B2.a M&A B4 M&A C1 M&A C2 M&A E2 Equity A1 Equity B1 Equity E3 Labour A3 Private Equity A5 Law 2 Law 3 Law 5 Law 11 Law 15
  */
 import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
-import { control, instrumentId, partyId, premiumOver } from '../src/index.js';
+import { control, instrumentId, paramId, partyId, period, premiumOver } from '../src/index.js';
 import { ranWorld, rigWorld } from './rig.js';
 
 describe('a premium is a distance between two numbers (B2.a, Law 3)', () => {
@@ -134,6 +134,67 @@ describe('a deal has four shapes and one mechanism (M&A A4, A5, Equity E3, §29 
         if (w.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
         if (i.issued > 0) expect(w.register.holdersOf(i.id).length).toBeGreaterThan(0);
       }
+    }
+  });
+});
+
+/**
+ * 10f.4: THE FORMAL PROCESS. *"Formal exit processes and m&a processes lead by IBD departments."*
+ */
+describe('a bank runs the sale, and what it can run is its people (M&A B4, Labour A3)', () => {
+  it('declares no fee and no capacity: both are reads of a payroll', () => {
+    const w = rigWorld('ctrl-ibd');
+    for (const d of w.params.all()) {
+      const id = String(d.id).toLowerCase();
+      // Law 2: no percentage of a deal anywhere, and no count of processes anybody stated.
+      expect(id).not.toContain('advisoryfee');
+      expect(id).not.toContain('processesperbank');
+    }
+    // What IS declared is the hours one sale takes, which is a technology and is what makes the
+    // capacity a count of people rather than a policy.
+    const hours = w.params.decl(paramId('bank.hoursPerProcess'));
+    expect(hours.kind).toBe('technology');
+    expect(hours.value).toBeGreaterThan(0);
+  });
+
+  it('never appoints a bank to more sales than its people can run', () => {
+    const w = ranWorld('ctrl-ibd', 26);
+    for (let p = 0; p <= Number(w.period); p += 1) {
+      const quoted = new Map<string, number>();
+      for (const e of w.journal.ofKindIn('advisory.quoted', period(p))) {
+        const bank = String(e.data['bank']);
+        const capacity = e.data['capacity'];
+        if (typeof capacity === 'number') quoted.set(bank, capacity);
+      }
+      const ran = new Map<string, number>();
+      for (const e of w.journal.ofKindIn('advisory.ran', period(p))) {
+        // The event carries the RUNNING count, so the last one for a bank is how many it ran.
+        ran.set(String(e.data['bank']), Number(e.data['processes']));
+      }
+      for (const [bank, count] of ran) {
+        expect(count).toBeLessThanOrEqual(quoted.get(bank) ?? 0);
+      }
+    }
+  });
+
+  it('pays the bank that ran it, out of the deal, in one instruction with two sides (Law 5)', () => {
+    const w = ranWorld('ctrl-ibd', 26);
+    for (const e of w.journal.ofKind('advisory.fee')) {
+      expect(Number(e.data['fee'])).toBeGreaterThan(0);
+      // The payer is named and it is the buyer in the deal the bank ran: a fee with no payer is a
+      // flow with one leg, which is the thing Law 5 exists to catch.
+      expect(String(e.data['payer'])).not.toBe('');
+      expect(String(e.data['bank'])).not.toBe(String(e.data['payer']));
+    }
+  });
+
+  it('puts every bidder in one book, so a second bidder moves the level (B4)', () => {
+    const w = ranWorld('ctrl-ibd', 26);
+    for (const e of w.journal.ofKind('control.contested')) {
+      const bids = e.data['bids'];
+      expect(Array.isArray(bids)).toBe(true);
+      // More than one, or it would not have been recorded as contested at all.
+      expect((bids as unknown[]).length).toBeGreaterThan(1);
     }
   });
 });

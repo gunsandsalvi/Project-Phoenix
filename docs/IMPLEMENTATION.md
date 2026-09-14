@@ -75,7 +75,7 @@ checked, not assumed.
 | Firm | 20 | 7 | 3 | 0 | 30 |
 | Capital Programme | 22 | 3 | 0 | 0 | 25 |
 | Firm Birth | 7 | 6 | 12 | 0 | 25 |
-| M&A | 11 | 0 | 11 | **7** | 22 |
+| M&A | 13 | 0 | 9 | **7** | 22 |
 | Trade Credit | 8 | 3 | 11 | 0 | 22 |
 | Goods | 27 | 2 | 10 | 0 | 39 |
 | Freight | 17 | 3 | 0 | 0 | 20 |
@@ -435,8 +435,28 @@ both:
     number here would be a second hole.
   - **M&A B2 goes MET**: the premium is what the tender book struck, and `premiumOver` is a read of
     the distance between it and the last print. Equity E3 and §29 A5 go MET with it.
-- **10f.4** The formal process: a mandate to a bank, an auction with bidders, a fee, and `advisory`
-  as a trade with a capacity.
+- [x] **10f.4 DONE.** *"Formal exit processes and m&a processes lead by IBD departments."* A sale is
+  run by a bank now, and what a bank can run is the people it employs.
+  - **`advisory` is a trade** (Labour A3) — a corporate-finance banker is not a lending officer and
+    not a market maker — and a bank posts openings in it like any other employer, for the hours the
+    sales it ran last period took. A department nobody appointed shrinks.
+  - **Capacity is a count of people**: hours paid for over `bank.hoursPerProcess`, which is the same
+    read a dealing desk makes about how many lines it can quote. Nothing states a capacity, and a
+    bank that has never met a wage runs nothing.
+  - **The fee is what the work costs it**, published as `advisory.quoted`, and the seller appoints
+    the CHEAPEST bank with people free. There is no percentage of a deal anywhere — a percentage of
+    an outcome is a fee with no work in it (Law 2) — and what stops the fee falling is that a bank
+    which cannot cover its people stops publishing (Law 6, the same refusal 10e.4 set for a
+    manager's fee). It is paid out of the deal, in one instruction with two sides.
+  - **B4 bites arithmetically.** Every bid for one company goes into ONE book against every holder's
+    ask, so a second bidder raises the level the holders are met at whether or not it wins. Bids are
+    gathered by TARGET first: two buyers taking turns at a target in party-list order is not an
+    auction, it is the first past the post buying it before the second was asked. `M&A B3` and `B4`
+    go MET.
+  - **What is honest about the gap**: the winner is the highest bidder and it buys the whole cleared
+    volume. Pairing several buyers against several sellers inside one clear needs an allocation rule
+    this world does not have, and inventing one would be inventing who faced whom. What the losing
+    bids do is move the price, which is the half of B4 that matters.
 - **10f.5** Institutions across strategies (corrects 14.0).
 - **10f.6** §29 B, C and D as CALLERS of 10f.3 — which is what 13.5b becomes, and it shrinks to
   naming the vehicle and the carry.

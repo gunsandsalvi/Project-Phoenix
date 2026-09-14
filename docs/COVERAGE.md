@@ -1218,12 +1218,12 @@ of these findings has been positioned into an item yet.
 | `M&A A5` | MET | packages/engine/src/mechanisms/control/index.ts (including the shares: a residual claim on a firm now part of another is a claim on that other) |
 | `M&A B1` | MET | packages/engine/src/mechanisms/control/index.ts (`worthToBuyer` from the target published accounts and the acquirer own quoted cost of money) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `M&A B2` | MET | packages/engine/src/mechanisms/control/index.ts (item 10f.3: *“the premium is what it must pay to get the owners to sell, and it is therefore a cleared price like any other”*. The tender is a book: every holder posts what it would take — its outlook of the price, or what its own accounts carry it at where nothing ever printed one — the buyer posts its own number, and the solver strikes the level with `sellersCompete`. `premiumOver` is a READ of the distance between what was struck and what the line last printed, and there is no premium number anywhere) |
-| `M&A B3` | MISSING |  |
-| `M&A B4` | MISSING |  |
+| `M&A B3` | MET | packages/engine/src/mechanisms/control/index.ts (item 10f.4: *“it must be able to fund it, so the credit market decides which deals happen”* — a bidder needs a bank's published quote to have a cost of money at all (`quotedTo`), and it does not bid for what it cannot pay for out of a real balance (B2). A firm nobody will lend to does not look at the list) |
+| `M&A B4` | MET | packages/engine/src/mechanisms/control/index.ts (item 10f.4: every bid for one company goes into ONE book against every holder's ask, and the solver strikes the level — so **a second bidder raises what the holders are met at whether or not it wins**, which is what "the price is contested" means arithmetically. Gathered by target first, because two buyers taking turns at a target in party-list order is not an auction: the first past the post bought it before the second was asked. `control.contested` records who was in it and at what) |
 | `M&A B5` | MISSING |  |
 | `M&A C1` | MET | packages/engine/src/mechanisms/control/index.ts (`tenders`: every holder answers from its own valuation — its OUTLOOK of the price where it has one, and item 10f.3 adds the other half: **what its own books carry it at where it has not**, which is the holder of a company that has never traded. Without it an outlook is formed from prints, a private line makes none, and every bid for a private company failed with *“nobody tendered”* — the acquisition refused by the one read that could not answer for it) |
 | `M&A C2` | MET | packages/engine/src/mechanisms/control/index.ts (nobody has to tender; a holder that thinks the firm is worth more keeps its shares, and a bid can fail) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
-| `M&A C3` | MISSING |  |
+| `M&A C3` | MISSING | management's interests differ from the owners', and this world's firms have no management with interests of its own: worklist 17 |
 | `M&A C4` | MISSING |  |
 | `M&A D1` | MISSING |  |
 | `M&A D2` | MISSING |  |
