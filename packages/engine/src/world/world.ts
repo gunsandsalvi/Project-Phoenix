@@ -1422,6 +1422,12 @@ export class World {
       },
       rateIn: (from: CurrencyCode, to: CurrencyCode) =>
         this.valuation.rateInForce(from, to, this.currentPeriod),
+      // XI-8, Observer A4: both sides of the store, for this party and no other. A row where it is
+      // both sides cannot exist (`Agreements.open` refuses one), so the two lists never overlap.
+      commitments: () => [
+        ...this.agreementStore.owedBy(party),
+        ...this.agreementStore.owedTo(party),
+      ],
       contracts: {
         mine: () => this.contractStore.openOf(party),
         valueOf: (c) => this.contractValue(c, party, this.currentPeriod),

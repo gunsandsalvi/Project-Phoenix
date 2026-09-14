@@ -52,7 +52,10 @@ import {
 import type { Order } from '../../clearing/solver.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { currencyUnit, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
+import {
+  agreementKindId,
+  type AgreementId, currencyUnit, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
+import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import { atMost, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { addQty, asQty, downTick, NO_QTY, type Qty, scaleQty, subQty } from '../../core/tick.js';
@@ -89,28 +92,49 @@ export const DWELLING_WEEKS = unitId('dwellingWeeks');
  * rent that moves every period is a spot price for a roof, and what makes housing what it is in a
  * real economy is that the rent was struck once and the tenant is still paying it.
  */
-export interface Lease {
-  readonly id: string;
-  readonly tenant: PartyId;
-  readonly landlord: PartyId;
+export const TENANCY = agreementKindId('housing.tenancy');
+
+/** A2, A3, Law 15: what a tenancy says that the kernel has no business understanding. */
+export interface TenancyTerms extends AgreementTerms {
+  readonly kind: typeof TENANCY;
   readonly region: RegionId;
   /** A2: struck at the letting and moving only by a new letting. */
   readonly rentPerDwelling: PerPiece;
-  dwellings: Qty;
+  readonly dwellings: Qty;
 }
-
-export interface LeaseBook {
-  readonly rows: Map<string, Lease>;
-  next: number;
-}
-
-const emptyBook = (): LeaseBook => ({ rows: new Map(), next: 1 });
 
 /**
- * A copy of the LIST, not of the tenancies: `collect` ends a tenancy while walking it, and the walk
- * still sees the one it was about to end.
+ * Law 15: the module that declared the kind narrows a row back to it, structurally — what makes
+ * these terms a tenancy is that they name a rent per dwelling and a number of dwellings.
  */
-const allLeases = (b: LeaseBook): Lease[] => [...b.rows.values()];
+export const isTenancy = (t: AgreementTerms): t is TenancyTerms =>
+  'rentPerDwelling' in t && 'dwellings' in t;
+
+/**
+ * One tenancy as this module reads it. The TENANT owes the rent, so it is the debtor and the
+ * landlord the creditor — which is what makes an unpaid rent rank in a tenant's estate.
+ */
+export interface Lease extends TenancyTerms {
+  readonly id: AgreementId;
+  readonly tenant: PartyId;
+  readonly landlord: PartyId;
+}
+
+export function leaseOf(a: Agreement): Lease {
+  if (!isTenancy(a.terms)) throw new TypeError(`Housing A2: ${a.id} is not a tenancy`);
+  return { ...a.terms, id: a.id, tenant: a.debtor, landlord: a.creditor };
+}
+
+/**
+ * A2, XI-8: the tenancies standing now, off the kernel's own book. It is a copy of the LIST and not
+ * of the tenancies: `collect` ends one while walking it, and the walk still sees the one it was
+ * about to end.
+ */
+export const leasesOf = (ctx: MechanismContext): readonly Lease[] =>
+  ctx.agreements
+    .ofKind(TENANCY)
+    .filter((a) => a.state === 'performing')
+    .map(leaseOf);
 
 /**
  * Law 18: the same tenancies, found by the party they belong to. Every question here is about one
@@ -118,54 +142,37 @@ const allLeases = (b: LeaseBook): Lease[] => [...b.rows.values()];
  * with more housing cost every party all of it. The lists hold the same rows the book holds and are
  * written where a tenancy is signed and where one ends, and nowhere else (Law 4).
  */
-interface LeaseIndex {
-  readonly byLandlord: Map<PartyId, Lease[]>;
-  readonly byTenant: Map<PartyId, Lease[]>;
+/**
+ * A2, XI-8: A TENANCY BEGINS, and it is a commitment in the kernel's own book.
+ *
+ * It owes nothing the instant it is signed: the rent falls due at the end of the period and
+ * `collect` moves it then, and a rent that does not arrive is settlement's failure and the tenancy
+ * stands (A2). Two named parties, dated terms, a state — which is what it always was, kept where
+ * only this module could see it.
+ */
+function signs(
+  ctx: MechanismContext,
+  d: { tenant: PartyId; landlord: PartyId; region: RegionId; rentPerDwelling: PerPiece; dwellings: Qty },
+): void {
+  const terms: TenancyTerms = {
+    kind: TENANCY,
+    region: d.region,
+    rentPerDwelling: d.rentPerDwelling,
+    dwellings: d.dwellings,
+  };
+  ctx.owes({
+    debtor: d.tenant,
+    creditor: d.landlord,
+    ccy: ctx.registry.currencyOf(d.region),
+    owed: 0,
+    terms,
+    why: `${d.tenant} rents ${d.dwellings} from ${d.landlord} in ${d.region}`,
+  });
 }
 
-const leaseIndexes = new WeakMap<LeaseBook, LeaseIndex>();
-
-function indexOf(b: LeaseBook): LeaseIndex {
-  const held = leaseIndexes.get(b);
-  if (held !== undefined) return held;
-  const made: LeaseIndex = { byLandlord: new Map(), byTenant: new Map() };
-  leaseIndexes.set(b, made);
-  for (const lease of b.rows.values()) intoIndex(made, lease);
-  return made;
-}
-
-function intoIndex(ix: LeaseIndex, lease: Lease): void {
-  under(ix.byLandlord, lease.landlord).push(lease);
-  under(ix.byTenant, lease.tenant).push(lease);
-}
-
-function under(of: Map<PartyId, Lease[]>, who: PartyId): Lease[] {
-  const held = of.get(who);
-  if (held !== undefined) return held;
-  const made: Lease[] = [];
-  of.set(who, made);
-  return made;
-}
-
-function without(of: Map<PartyId, Lease[]>, who: PartyId, lease: Lease): void {
-  const held = of.get(who);
-  if (held === undefined) return;
-  const at = held.indexOf(lease);
-  if (at >= 0) held.splice(at, 1);
-}
-
-/** A tenancy begins. It is written here and ended in `ends`, and in no other place. */
-function signs(b: LeaseBook, lease: Lease): void {
-  b.rows.set(lease.id, lease);
-  intoIndex(indexOf(b), lease);
-}
-
-/** A tenancy ends, in every arrangement of it at once. */
-function ends(b: LeaseBook, lease: Lease): void {
-  b.rows.delete(lease.id);
-  const ix = indexOf(b);
-  without(ix.byLandlord, lease.landlord, lease);
-  without(ix.byTenant, lease.tenant, lease);
+/** A tenancy ends. XI-8: terminated, so the record still says there was one. */
+function ends(ctx: MechanismContext, lease: Lease, why: string): void {
+  ctx.endAgreement(lease.id, why);
 }
 
 /** Law 8: the unit a dwelling is counted in, which is the instrument's own. */
@@ -182,13 +189,27 @@ function owned(view: ParticipantView, region: RegionId): Qty {
   return scaleQty(view.free(id), weightOf(view.self), 'what the people it stands for own between them');
 }
 
-/** How many dwellings this party has LET OUT, and how many it has taken (Law 19: off the rows). */
-function letOut(b: LeaseBook, who: PartyId): Qty {
-  return sum((indexOf(b).byLandlord.get(who) ?? []).map((l) => l.dwellings)).value;
+/**
+ * How many dwellings this party has LET OUT, and how many it has taken (Law 19: off the rows).
+ *
+ * Observer A4: it is a read of the party's OWN commitments now, through its own view — so a
+ * participant answers for itself instead of this module answering for it out of a private book it
+ * kept about everybody.
+ */
+const tenancies = (view: ParticipantView): readonly Lease[] =>
+  view
+    .commitments()
+    .filter((a) => a.state === 'performing' && isTenancy(a.terms))
+    .map(leaseOf);
+
+function letOut(view: ParticipantView): Qty {
+  const me = view.self.id;
+  return sum(tenancies(view).filter((l) => l.landlord === me).map((l) => l.dwellings)).value;
 }
 
-function taken(b: LeaseBook, who: PartyId): Qty {
-  return sum((indexOf(b).byTenant.get(who) ?? []).map((l) => l.dwellings)).value;
+function taken(view: ParticipantView): Qty {
+  const me = view.self.id;
+  return sum(tenancies(view).filter((l) => l.tenant === me).map((l) => l.dwellings)).value;
 }
 
 /** E1, XI-15: how many dwellings the people in this cell live in. Whole dwellings, per cell. */
@@ -259,7 +280,6 @@ function reservation(view: ParticipantView, rows: readonly TenureDecl[]): PerPie
 function ordersOf(
   view: ParticipantView,
   venue: VenueDecl,
-  book: LeaseBook,
   rows: readonly TenureDecl[],
 ): readonly Order[] {
   /**
@@ -279,7 +299,7 @@ function ordersOf(
   // The owner offers what it owns and nobody is living in — its own, less what it has already let
   // and less what its own people are under.
   const spare = subQty(
-    subQty(owned(view, region), letOut(book, mine), 'less what it has already let'),
+    subQty(owned(view, region), letOut(view), 'less what it has already let'),
     needs(view, rows),
     'less what its own people live in',
   );
@@ -292,7 +312,7 @@ function ordersOf(
     needs(view, rows),
     addQty(
       atMost(owned(view, region), needs(view, rows), 'it lives in what it owns, up to what it needs'),
-      taken(book, mine),
+      taken(view),
       'what it already has a roof from',
     ),
     'what it is short of',
@@ -307,7 +327,7 @@ function ordersOf(
 }
 
 /** A2, Clearing C4.b: the letting session in one place, and it says what it did either way. */
-function letIn(ctx: MechanismContext, book: LeaseBook, venue: VenueDecl): void {
+function letIn(ctx: MechanismContext, venue: VenueDecl): void {
   const region = venue.key['region'] as RegionId | undefined;
   if (region === undefined) return;
   const posted = ctx.posted(venue.id);
@@ -347,10 +367,7 @@ function letIn(ctx: MechanismContext, book: LeaseBook, venue: VenueDecl): void {
         continue;
       }
       const dwellings = asQty(atMost(want, left, 'there is no more of it to let than there is'));
-      const id = `lease.${book.next}`;
-      book.next += 1;
-      signs(book, {
-        id,
+      signs(ctx, {
         tenant: t.party,
         landlord: owner.party,
         region,
@@ -382,12 +399,12 @@ function letIn(ctx: MechanismContext, book: LeaseBook, venue: VenueDecl): void {
  * pay — settlement records it — and the tenancy stands, because what ends a tenancy is somebody
  * ending it and not a payment going missing (Housing C4 is the secured lender's path, not this).
  */
-function collect(ctx: MechanismContext, book: LeaseBook): void {
-  for (const lease of allLeases(book)) {
+function collect(ctx: MechanismContext): void {
+  for (const lease of leasesOf(ctx)) {
     const tenant = ctx.parties.get(lease.tenant);
     const landlord = ctx.parties.get(lease.landlord);
     if (!tenant.status.alive || !landlord.status.alive) {
-      ends(book, lease);
+      ends(ctx, lease, 'a side of it has ceased');
       continue;
     }
     const ccy = ctx.registry.currencyOf(lease.region);
@@ -533,7 +550,7 @@ function shortOfMoney(
  * and what it would put up, the banks read it next period and decide, and a household nobody will
  * lend to goes on renting. That is C5.a from the borrower's side — the standard is the lender's.
  */
-function askForMortgages(ctx: MechanismContext, book: LeaseBook, rows: readonly TenureDecl[]): void {
+function askForMortgages(ctx: MechanismContext, rows: readonly TenureDecl[]): void {
   for (const cell of ctx.parties.alive()) {
     /**
      * 13d.1: A HOUSEHOLD CAN HOLD A ROOF AND CAN BORROW FOR ONE — the register's grid says what one
@@ -555,7 +572,7 @@ function askForMortgages(ctx: MechanismContext, book: LeaseBook, rows: readonly 
     // C3: one mortgage at a time. A household already carrying one is not asking for another
     // until it has paid this one down, which is what a single secured row on one roof means.
     if (mortgagesOf(ctx, cell.id).length > 0) continue;
-    const short = shortOfMoney(ctx, cell.id, letOut(book, cell.id), rows);
+    const short = shortOfMoney(ctx, cell.id, letOut(ctx.participant(cell.id)), rows);
     if (short === undefined) continue;
     const id = goodId(DWELLING, cell.region);
     const print = ctx.prices.latest(id, ctx.period);
@@ -700,22 +717,15 @@ function params(rows: readonly TenureDecl[]): ParamDecl[] {
 }
 
 export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
-  const book = emptyBook();
-  const bookOf = (ctx: MechanismContext): LeaseBook => ctx.state<LeaseBook>('leases', () => book);
   const mine = (v: VenueDecl): boolean => v.clearedBy === 'housing';
   return {
     id: 'housing',
-    nouns: [
-      {
-        name: 'leases',
-        kind: 'noun',
-        holds:
-          'every tenancy: the dwelling, the landlord, the tenant, the rent and the term',
-        why:
-          'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
-      },
+    agreementKinds: [
+      { id: TENANCY, what: 'a named tenant renting dwellings from a named landlord, at a rent' },
     ],
+    // XI-8, item 9.1: NO NOUNS. The tenancies were this module's private book and are agreements
+    // now; there is no `ctx.state` slot left here at all, which is what a migration looks like when
+    // the whole of what a module was keeping turns out to be a thing the kernel should own.
     spec: 'Housing',
     // It needs the dwelling to be a line and the people to be cells, and nothing else.
     requires: ['goods', 'households'],
@@ -738,7 +748,6 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         cycle: 1,
         anchor: { before: 'markets' },
         run: (ctx: MechanismContext) => {
-          const b = bookOf(ctx);
           /**
            * Clearing B2, B-5: THE LETTINGS VENUE HAD NEVER HAD AN ORDER IN IT. `venueParticipants`
            * declares who bids and offers for a tenancy, and nothing called `gather`, so `letIn` read
@@ -749,7 +758,7 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
            */
           for (const v of ctx.venues.filter(mine)) {
             ctx.gather(v.id);
-            letIn(ctx, b, v);
+            letIn(ctx, v);
           }
         },
       },
@@ -759,8 +768,8 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         cycle: 0,
         anchor: { after: 'corporateActions' },
         run: (ctx: MechanismContext) => {
-          publishShortfall(ctx, bookOf(ctx), rows);
-          askForMortgages(ctx, bookOf(ctx), rows);
+          publishShortfall(ctx, rows);
+          askForMortgages(ctx, rows);
         },
       },
       {
@@ -783,7 +792,7 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         cycle: 2,
         anchor: { after: 'markets' },
         run: (ctx: MechanismContext) => {
-          collect(ctx, bookOf(ctx));
+          collect(ctx);
         },
       },
     ],
@@ -791,7 +800,7 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
     venueParticipants: [
       {
         partyKind: HOUSEHOLD,
-        orders: (view, venue) => ordersOf(view, venue, book, rows),
+        orders: (view, venue) => ordersOf(view, venue, rows),
       },
     ],
     families: [],
@@ -826,7 +835,6 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
  */
 function publishShortfall(
   ctx: MechanismContext,
-  book: LeaseBook,
   rows: readonly TenureDecl[],
 ): void {
   for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
@@ -835,7 +843,7 @@ function publishShortfall(
     const need = needs(view, rows);
     if (need <= 0) continue;
     const has = owned(view, p.region);
-    const rented = taken(book, p.id);
+    const rented = taken(view);
     const short = subQty(subQty(need, has, 'less what it owns'), rented, 'less what it rents');
     ctx.record(
       'housing.shortfall',
@@ -860,6 +868,4 @@ function publishShortfall(
 export const dwellingsNeeded = (view: ParticipantView, rows: readonly TenureDecl[] = TENURE): number =>
   needs(view, rows);
 
-/** The tenancies standing now, for the observer. A read of the module's own rows. */
-export const leasesOf = (book: LeaseBook): readonly Lease[] => allLeases(book);
 

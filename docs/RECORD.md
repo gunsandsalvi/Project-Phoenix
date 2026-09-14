@@ -6850,3 +6850,35 @@ each cell can do, which is a fact about a person and not about any job — a `Vi
 
 Typecheck 0, lint 0 (src and tests), `check:spec` 208 tags, `check:forbids` 4 over 205 files,
 `check:existence` green. Six books left: lease, invoice, stock loan, loan, covenant, deal.
+
+---
+
+## Item 9, fifth stage — the lease is the kernel's, and housing keeps no book at all (9.1c)
+
+**What.** The second of the seven. `Lease`/`LeaseBook` lived in `ctx.state`; they are agreements of
+kind `housing.tenancy` now. The TENANT is the debtor and the landlord the creditor, which is what
+makes an unpaid rent something a tenant's estate divides.
+
+**Housing keeps no state slot afterwards at all.** `LeaseBook`, `emptyBook`, `bookOf`, the
+by-landlord/by-tenant index and the module's whole `nouns` declaration delete — the entirety of what
+this module was keeping turned out to be a thing the kernel should own, which is what a migration
+looks like when it is the right one.
+
+**The index deletes because it is not needed, and that is the interesting part.** It existed so that
+`letOut(book, who)` and `taken(book, who)` would not walk every tenancy in the world for every
+party. Both are reads of a party's own commitments now, through that party's own view — so the
+question is asked of the party rather than of a private book this module kept about everybody and
+answered out of on their behalf. Observer A4 is the rule, and the performance problem the index
+solved was a symptom of breaking it.
+
+**`ParticipantView.commitments()`** is the door that makes that possible: every agreement this party
+is a side of, and none between any other two. A row where one party is both sides cannot exist, so
+the debtor list and the creditor list never overlap. It is a party's own state — exactly as private
+and exactly as knowable as what it holds — and it is what lets a party answer for itself about a
+relationship another module owns. That is `A-43`'s fix (9.6) in advance: a household will be able to
+say whether it is already employed without the labour module building its schedule for it.
+
+`leasesOf` and `allLeases` were the same function under two names and are one.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. Five books left: invoice, stock loan, loan, covenant, deal.

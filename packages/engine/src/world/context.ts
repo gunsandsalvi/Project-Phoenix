@@ -436,6 +436,21 @@ export interface ParticipantView extends KernelReads {
    */
   owedIn(ccy: CurrencyCode): Qty;
   /**
+   * XI-8, Observer A4, item 9.1: THE COMMITMENTS THIS PARTY IS A SIDE OF — every agreement it owes
+   * on and every one owed to it, and nothing between any other two parties.
+   *
+   * An employment, a lease, an invoice, a stock loan, a covenant, a mandate, and every arrear a
+   * mechanism left. It is a party's own state, so it is here and not in the world's reads: what
+   * this party has committed to is exactly as private and exactly as knowable as what it holds.
+   *
+   * It is what lets a party ANSWER FOR ITSELF about a relationship another module owns — a
+   * household knowing whether it is already employed without the labour module building its
+   * schedule for it (`A-43`), a landlord knowing what it has let out. While the seven books were
+   * private there was no way to ask, so the module that owned the book answered on the party's
+   * behalf, with a view no participant may have.
+   */
+  commitments(): readonly Agreement[];
+  /**
    * Currency C5, Law 4: THE RATE IN FORCE between two moneys — the last thing a pair's session
    * printed, at or before now. It is public like every other print (Clearing E1), and it is one
    * read rather than each participant finding the pair, inverting it when it is quoted the other
