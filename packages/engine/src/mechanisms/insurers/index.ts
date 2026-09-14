@@ -1,7 +1,7 @@
 /**
  * Insurers and pensions: the sector whose liability is a SCHEDULE, and therefore has duration.
  *
- * @spec Insurers A1 Insurers A2 Insurers A2.a Insurers A3 Insurers A4 Insurers A4.a Insurers A4.b Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Insurers C2 Insurers C2.a Insurers D2 Insurers E1 Insurers E2 XI-3 XI-11 Law 2 Law 3 Law 4 Law 6 Law 19
+ * @spec Insurers B2 Insurers B2.b Insurers A1 Insurers A2 Insurers A2.a Insurers A3 Insurers A4 Insurers A4.a Insurers A4.b Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Insurers C2 Insurers C2.a Insurers D2 Insurers E1 Insurers E2 XI-3 XI-11 Law 2 Law 3 Law 4 Law 6 Law 19
  *
  * B2.b IS THE CLAUSE THIS EXISTS FOR, and it says what the easy version gets wrong: a liability that
  * accumulates contributions minus benefits plus investment income has no schedule, no discount rate
@@ -69,6 +69,7 @@ import { issuerName } from '../../registry/naming.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+import { allocate } from './allocate.js';
 
 /**
  * Law 9: AN INSURANCE COMPANY, named as the world names one. The deposit insurer this world already
@@ -351,7 +352,10 @@ export function insurers(): SystemModule {
   return {
     id: 'insurers',
     spec: 'Insurers',
-    requires: ['sovereign-curve'],
+    // Item 14.0: AND FUNDS, because an institution does not invest itself — what it does with its
+    // assets is hand them to a manager, so the doors it subscribes at have to exist before it looks
+    // for one. It is a dependency of the ALLOCATION and not of the cover it writes.
+    requires: ['sovereign-curve', 'funds'],
     instrumentKinds: [policyKind],
     partyKinds: [insuranceKind],
     curveFamilies: [],
@@ -368,6 +372,29 @@ export function insurers(): SystemModule {
       },
     ],
     phases: [
+      {
+        /**
+         * B2, B2.b (item 14.0): AN INSTITUTION PUTS ITS ASSETS UNDER MANAGEMENT.
+         *
+         * *"Insurance companies and pension funds don't invest themselves. Their assets are always
+         * third party managed"* (the owner). So this posts ONE subscription at the door of the pool
+         * whose mandate is shaped like what this insurer promised, and everything after that is the
+         * manager's. There is no portfolio here, no allocation rule and no view about a price.
+         *
+         * BEFORE the fund strikes, because a subscription is read at the strike — and after its own
+         * period's flows, so what it puts to work is what it actually has.
+         */
+        name: 'insurers.allocate',
+        spec: 'Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Fund Shares C1',
+        cycle: 0,
+        anchor: { before: 'funds.strike' },
+        run: (ctx: MechanismContext): void => {
+          for (const p of ctx.parties.ofKind(INSURANCE)) {
+            if (!p.status.alive) continue;
+            allocate(ctx, p.id, ctx.registry.currencyOf(p.region));
+          }
+        },
+      },
       {
         name: 'insurers.cover',
         spec: 'Insurers A4 Insurers A4.a Insurers A4.b Insurers A4.c Clearing C3',

@@ -8665,3 +8665,72 @@ MISSING**.
 
 Typecheck 0, lint 0, `check:spec` 216 tags, `check:forbids` 4 over 213 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 14.0 — INSERTED ahead of 13.5: the money those sectors run on
+
+**Law 10 says a new idea is inserted at its dependency position and that I say where. Here is
+where, and why.** Item 13.2 built a strategy house, 13.3 built its prime broker and 10e built a
+credit fund — and **none of them is offered to the public, so the only investors this world has
+(household cells) cannot reach any of them.** A private-equity fund is the same shape and would have
+been the fourth. I started 13.5, found it would be a vehicle nobody could invest in, and stopped:
+that is the "door nobody answers" this codebase keeps catching.
+
+The money those sectors run on is INSTITUTIONAL, and nothing in this world allocated any. An insurer
+wrote cover, took premiums, and sat on the cash for ever.
+
+**It is small because 10e made it small.** *"Insurance companies and pension funds don't invest
+themselves. Their assets are always third party managed"* (the owner), and *"nothing in this world
+invests except a fund, and every fund has a manager"*. So there is **no portfolio mechanism here, no
+allocation rule, and no decision about which bond to buy** — there is a liability schedule and a
+choice of manager, and B2.b's duration matching is the whole of the choice.
+
+An insurer puts what it can spare at the door of the pool whose published mandate duration is
+nearest the furthest thing it has promised, through the same venue a household uses, under the same
+refusals. Everything after that is the manager's.
+
+**Three things worth naming in how it was built:**
+
+- **The promise is a SELECTION, not an average.** It matches on the FURTHEST date it has promised
+  anything on — a fact about one real schedule — and not on a weighted average duration, which is a
+  number no promise in the book actually has (Appendix B: no decision at an average).
+- **A pool that states no duration is REFUSED, not used as a fallback.** An equity fund is not a
+  place to put money you have promised somebody on a date, and the refusal is the answer.
+- **What it keeps back is its OWN last claim**, not a ratio anybody stated (A4.c). An insurer
+  sitting on cash is an insurer whose promises are unfunded, which is what B2 is about.
+
+**And it fixed the access ladder, which was half of `E-22`.** The plan's rungs — *"retail (a
+household cell) | rich retail (a cell over the line) | institutional (insurer, pension, treasury,
+firm)"* — are not three kinds of investor. They are **one structural fact about who is asking**: a
+CELL is people, and the accredited-investor test exists to protect individuals; a NAMED party is an
+institution, and an institution is qualified by BEING one, here as in the world this models — nobody
+asks a life company what it is worth before selling it a fund. It is a read of `representation`,
+never a list of party kinds, which would be the kind branch Law 15 forbids and would go stale the day
+somebody adds a pension. `E-22` is narrowed to the household half, which is the one the number was
+always about.
+
+**A pool now publishes its mandate's duration** on `fund.struck`, for exactly this reader. A fund's
+mandate is public in the world this models — that is what a prospectus is — and an institution whose
+whole decision is duration matching cannot make it from a yield alone.
+
+**14.3 is closed by this and 10e changed what it meant.** It said *"the insurer BUYS duration"*;
+after the owner's correction an insurer buys nothing. It is still the answer to *"nothing in this
+world is a natural buyer of a long bond"* — the insurer's money reaches a long bond through a credit
+fund's mandate rather than through a decision of its own, which is one fewer investor in this world
+and one more real one.
+
+**A finding found on the way, and it is a large one.** **`E-25`**: ninety-eight COVERAGE rows and the
+COVERAGE header cite *"`docs/IMPLEMENTATION.md` B-1 to B-8 and B-12"* — **of which only B-2, B-9 and
+B-13 still exist in that file.** The rest went when the plan was rewritten and nothing said so. It is
+load-bearing rather than cosmetic: `check:existence`'s BUILT AND DEAD list is computed off those
+marks, so five sectors are reported dead on the authority of a finding nobody can read. It lands at
+**23.0b** rather than being fixed now, because what all ninety-eight assert is a MEASUREMENT — has
+this module ever produced an outcome — and 23.0 is the run that re-takes it. Re-marking them from the
+run is one pass; re-marking them from a guess is ninety-eight guesses. Found here, where two of the
+rows described work done this year and said in the same breath that the module had never run.
+
+§27 goes to 12 MET of 23.
+
+Typecheck 0, lint 0, `check:spec` 217 tags, `check:forbids` 4 over 214 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.

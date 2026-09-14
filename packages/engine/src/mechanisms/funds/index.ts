@@ -680,6 +680,22 @@ function queueEverybody(
  */
 function mayEnter(ctx: MechanismContext, m: Mandate, who: PartyId): boolean {
   if (m.offeredPublicly || who === m.manager) return true;
+  /**
+   * Item 14.0, and it is what the ladder actually says: *"retail (a household cell) | rich retail
+   * (a cell over the line) | institutional (insurer, pension, treasury, firm)"*. The rungs are not
+   * three kinds of investor — they are ONE structural fact about who is asking.
+   *
+   * A CELL is people. The accredited-investor test exists to protect individuals, and an individual
+   * is exactly what this world represents as a cell (XI-15). A NAMED party is an institution — an
+   * insurer, a pension, a treasury, a firm, a manager — and an institution is qualified by BEING
+   * one, in this world as in the one it is modelled on: nobody asks a life company what it is worth
+   * before selling it a fund.
+   *
+   * It is a read of `representation`, which is the world's own answer to "is this a person or an
+   * institution", and never a list of party kinds — a list would be the kind branch Law 15 forbids
+   * and would go stale the day somebody adds a pension.
+   */
+  if (ctx.parties.get(who).representation !== 'cell') return true;
   const said = ctx.journal.lastOf(CERTIFIED, String(who));
   if (said === undefined) return false;
   const worth = said.data['wealthPerMember'];
@@ -1000,6 +1016,16 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
       // is absent rather than zero: a saver reading the tape can tell "nothing to say" from "nothing
       // on offer", which a number cannot say (App A).
       ...(offer.some ? { offered: offer.value } : {}),
+      /**
+       * A4, Insurers B2.b (item 14.0): WHAT ITS MANDATE SAYS ABOUT DURATION, published because an
+       * allocator matching its promises to its assets has to be able to read it. A fund's mandate
+       * is public in the world this models — it is what a prospectus is — and an institution whose
+       * whole investment decision is duration matching cannot make it from a yield alone.
+       *
+       * Absent where the mandate states no duration band, and the absence is the answer: a pool
+       * that says nothing about duration is not a thing a liability schedule can be matched to.
+       */
+      ...(m.blueprint.duration?.to === undefined ? {} : { durationYears: m.blueprint.duration.to }),
     },
     true,
   );
