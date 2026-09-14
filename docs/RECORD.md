@@ -5355,3 +5355,23 @@ feeds is a spread.
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
 forbids, `plan:check`.
+
+## Item 16, stage 9 — the treasury
+
+**33 sites became 12.** The funding need is one subtraction with six money terms in it — what its
+own paper will cost it over the horizon, the mandate, the buffer, what it collected last period and
+what is in its account — and every one of them was a `number`. They are `Cash`; the horizon and the
+buffer are `Ratio`s that `scale` them; the auction size is `over(need, auctions)` and the units it
+brings are `amountOf(size, reservation)`.
+
+**Every tax is a rate on a base, and every one was `mul(leg.amount, rate)`.** A leg's amount is a
+count of money pieces, so it crosses `heldAsMoney` first and then `scale`s by the rate — which is
+what says out loud that a tax is a SHARE of what somebody was paid and never an amount of its own.
+`Settled.realised` carries `proceeds` and `basis` as money now, so a capital gain is a `minus` of
+two moneys rather than a subtraction of two numbers that happen to be in the same currency.
+
+`PROCUREMENT`'s `share` is a `Ratio` — the one declared number in the module that is not money and
+was indistinguishable from one.
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
+forbids, `plan:check`.

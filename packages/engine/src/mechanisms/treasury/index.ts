@@ -15,7 +15,22 @@
  * FAILS, is journalled as a shortfall, and the next programme sees it. That is the constraint the
  * whole system hangs on (XI-9), and it is what makes a failed auction cost something.
  */
-import { asRatio, plus } from '../../core/measure.js';
+import {
+  acrossMembers,
+  amountOf,
+  asCash,
+  asPerMember,
+  asRatio,
+  asTotal,
+  type Cash,
+  eachMember,
+  heldAsMoney,
+  minus,
+  over,
+  plus,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { assertNever } from '../../core/assert.js';
 import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
@@ -131,12 +146,14 @@ function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
 }
 
 /** What the treasury must pay over its horizon out of its own paper (B2, B4, D4.a). */
-function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon: Period): number {
-  const terms: number[] = [];
+function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon: Period): Cash {
+  const terms: Cash[] = [];
   for (const i of ctx.instruments.all()) {
     if (!issuedBy(i, issuer) || !i.status.live) continue;
     for (const f of ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar)) {
-      if (ctx.calendar.periodOf(f.date) <= horizon) terms.push(mul(f.perUnit, i.issued, 'service'));
+      if (ctx.calendar.periodOf(f.date) <= horizon) {
+        terms.push(valueAt(f.perUnit, i.issued, 'service'));
+      }
     }
   }
   return sum(terms).value;
@@ -148,24 +165,35 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
  * wage bill is a READ of what it actually paid last period, not a rate on a headcount (B2's rule
  * applied to labour): what it owes its own staff is what its own rows say.
  */
-function mandatePerPeriod(ctx: MechanismContext, id: PartyId): number {
+function mandatePerPeriod(ctx: MechanismContext, id: PartyId): Cash {
   const money = currencyUnit(ctx.registry.currencyOf(ctx.parties.get(id).region));
-  const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, money);
-  const terms: number[] = [
-    ctx.params.amount(TREASURY_PARAMS.purchases, money),
+  const transfers = heldAsMoney(
+    ctx.params.amount(TREASURY_PARAMS.transfers, money),
+    'what it pays a member a period',
+  );
+  const terms: Cash[] = [
+    heldAsMoney(ctx.params.amount(TREASURY_PARAMS.purchases, money), 'what it buys with'),
     lastWageBill(ctx, id),
   ];
-  for (const p of itsPeople(ctx, id)) terms.push(mul(p.weight, transfers, 'transfers'));
+  for (const p of itsPeople(ctx, id)) {
+    terms.push(
+      acrossMembers(
+        asPerMember<'money:piece'>(transfers, 'what one member is paid'),
+        p.weight,
+        'transfers',
+      ),
+    );
+  }
   return sum(terms).value;
 }
 
 /** What its own payroll came to last time it was paid, read from its own record (Law 19). */
-function lastWageBill(ctx: MechanismContext, id: PartyId): number {
+function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
   const events = ctx.journal.forSubject('labour.wages', id);
   const last = events[events.length - 1];
-  if (last === undefined) return 0;
+  if (last === undefined) return asCash(0, 'a treasury that has published no payroll');
   const due = last.data['due'];
-  return typeof due === 'number' ? due : 0;
+  return asCash(typeof due === 'number' ? due : 0, 'what its own payroll says it owes');
 }
 
 /** What an hour costs it: what its own payroll paid for one, or what the market last printed. */
@@ -189,12 +217,13 @@ function wageItFaces(ctx: MechanismContext, id: PartyId): number | undefined {
 }
 
 /** What it collected last period, which is what it has to go on until it has an outlook (§46 C5). */
-function lastReceipts(ctx: MechanismContext): number {
+function lastReceipts(ctx: MechanismContext): Cash {
   const events = ctx.journal.ofKind('treasury.receipts');
   const last = events[events.length - 1];
-  if (last === undefined) return 0;
+  if (last === undefined) return asCash(0, 'a treasury that has collected nothing yet');
   const total = last.data['total'];
-  return typeof total === 'number' ? total : 0;
+  // Item 16: money re-entering from what the treasury itself published.
+  return asCash(typeof total === 'number' ? total : 0, 'what it collected last period');
 }
 
 /** The first grid date on or after a target date (B3.a: which line a tenor lands on). */
@@ -455,15 +484,33 @@ function runProgramme(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
   const service = debtService(ctx, id, on, horizon);
   const perPeriod = mandatePerPeriod(ctx, id);
-  const mandate = mul(perPeriod, horizonPeriods, 'mandate over horizon');
-  const receipts = mul(lastReceipts(ctx), horizonPeriods, 'receipts over horizon');
-  const buffer = mul(perPeriod, ctx.params.periods(TREASURY_PARAMS.bufferPeriods), 'buffer');
-  const cash = ctx.register.quantity(id, accountOf(ctx, id, ccy));
-  const need = sub(add(add(service, mandate, 'outlays'), buffer, 'with buffer'), add(receipts, cash, 'resources'), 'need');
+  const mandate = scale(perPeriod, asRatio(horizonPeriods, 'the periods ahead'), 'mandate over horizon');
+  const receipts = scale(
+    lastReceipts(ctx),
+    asRatio(horizonPeriods, 'the periods ahead'),
+    'receipts over horizon',
+  );
+  const buffer = scale(
+    perPeriod,
+    asRatio(ctx.params.periods(TREASURY_PARAMS.bufferPeriods), 'the periods of buffer it keeps'),
+    'buffer',
+  );
+  const cash = heldAsMoney(
+    ctx.register.quantity(id, accountOf(ctx, id, ccy)),
+    'what is in its account',
+  );
+  const need = minus(
+    plus(plus(service, mandate, 'outlays'), buffer, 'with buffer'),
+    plus(receipts, cash, 'resources'),
+    'need',
+  );
   const auctionEvery = ctx.params.periods(TREASURY_PARAMS.auctionEvery);
   const isAuctionPeriod = ctx.period % auctionEvery === 0;
   const auctions = Math.floor(horizonPeriods / auctionEvery);
-  const size = auctions > 0 && need > 0 ? div(need, auctions, 'auction size') : 0;
+  const size =
+    auctions > 0 && need > 0
+      ? over(need, asRatio(auctions, 'the auctions it will hold'), 'auction size')
+      : asCash(0, 'a treasury that needs nothing sells nothing');
 
   const planned = isAuctionPeriod && size > 0 ? announce(ctx, id, ccy, size, on) : none<string>();
   ctx.record(
@@ -490,7 +537,7 @@ function announce(
   ctx: MechanismContext,
   id: PartyId,
   ccy: CurrencyCode,
-  size: number,
+  size: Cash,
   on: Civil,
 ): Option<InstrumentId> {
   const lines = linesOf(ctx, id, on);
@@ -544,7 +591,7 @@ function announce(
   // Law 8: it needs to raise a sum of money and it raises it by selling UNITS of a line, which are
   // indivisible — so what it brings is the whole units that sum comes to. Up, because the ask is
   // the money: an issue a fraction of a unit short of what the programme needs is short of it.
-  const units = upTick(div(size, reservation, 'units offered'));
+  const units = upTick(amountOf(size, reservation, 'units offered'));
   ctx.offer({
     market: marketOf(ctx, instrument),
     issuer: id,
@@ -659,8 +706,8 @@ function itsPeople(ctx: MechanismContext, id: PartyId): readonly CellParty[] {
 function runOutlays(ctx: MechanismContext, id: PartyId): void {
   const ccy = ctx.registry.currencyOf(ctx.parties.get(id).region);
   const transfers = ctx.params.amount(TREASURY_PARAMS.transfers, currencyUnit(ccy));
-  let paid = 0;
-  let short = 0;
+  let paid = asCash(0, 'nothing paid yet');
+  let short = asCash(0, 'nothing short yet');
   for (const p of itsPeople(ctx, id)) {
     // Law 8, XI-15: each member of the cell is paid a whole number of the smallest piece of the
     // money, so what the mandate actually costs is that times the weight — and the fraction below
@@ -687,8 +734,8 @@ function runOutlays(ctx: MechanismContext, id: PartyId): void {
       cause: 'transfer',
       reason: `standing mandate to ${p.id}`,
     });
-    if (r.outcome === 'settled') paid = add(paid, total, 'paid');
-    else short = add(short, total, 'short');
+    if (r.outcome === 'settled') paid = plus(paid, heldAsMoney(total, 'what it paid'), 'paid');
+    else short = plus(short, heldAsMoney(total, 'what it could not pay'), 'short');
   }
   if (short > 0) {
     // A3.a, D5: the account was empty. Nothing advanced it (D3); the mandate simply went unpaid,
@@ -743,7 +790,11 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       if (leg.ccy !== ccy) continue;
       if (buyers.has(leg.from.holder)) {
         bases.consumption = add(bases.consumption, leg.amount, 'what households paid for goods');
-        addTo(due, leg.from.holder, mul(leg.amount, onConsumption, 'consumption tax'));
+        addTo(
+          due,
+          leg.from.holder,
+          scale(heldAsMoney(leg.amount, 'what it paid'), onConsumption, 'consumption tax'),
+        );
       }
       if (leg.to.holder === id) continue;
       /**
@@ -769,7 +820,11 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       switch (receipt.of) {
         case 'interest': {
           bases.interest = add(bases.interest, leg.amount, 'interest received');
-          addTo(due, leg.to.holder, mul(leg.amount, onInterest, 'tax on interest'));
+          addTo(
+            due,
+            leg.to.holder,
+            scale(heldAsMoney(leg.amount, 'what it received'), onInterest, 'tax on interest'),
+          );
           break;
         }
         case 'wage':
@@ -777,7 +832,11 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         case 'dividend': {
           if (!cells.has(leg.to.holder)) break;
           bases.income = add(bases.income, leg.amount, 'what households were paid');
-          addTo(due, leg.to.holder, mul(leg.amount, onIncome, 'income tax'));
+          addTo(
+            due,
+            leg.to.holder,
+            scale(heldAsMoney(leg.amount, 'what it was paid'), onIncome, 'income tax'),
+          );
           break;
         }
         case 'disposal':
@@ -808,10 +867,10 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
      */
     for (const made of r.realised) {
       if (!cells.has(made.party)) continue;
-      const gain = sub(made.proceeds, made.basis, 'what it made on the sale');
+      const gain = minus(made.proceeds, made.basis, 'what it made on the sale');
       if (gain <= 0) continue;
       bases.income = add(bases.income, gain, 'gains households realised');
-      addTo(due, made.party, mul(gain, onIncome, 'tax on the gain'));
+      addTo(due, made.party, scale(gain, onIncome, 'tax on the gain'));
     }
   }
   let collected = 0;
@@ -822,7 +881,12 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     // Law 8: what a payer can pay is a whole number of the smallest piece of the money, and for a
     // cell that is a whole number of pieces for each of its members. What the fraction below one
     // would have been is not collected — it is not money, so it was never owed.
-    const share = shareFor(ctx.registry, p, currencyUnit(ccy), div(total, weightOf(p), 'per member'));
+    const share = shareFor(
+      ctx.registry,
+      p,
+      currencyUnit(ccy),
+      eachMember(asTotal<'money:piece'>(total, 'what the cell owes'), weightOf(p), 'per member'),
+    );
     const perMember = share.perMember;
     if (share.total <= 0) continue;
     const leg: Leg = {
@@ -891,21 +955,24 @@ function postPublicService(ctx: MechanismContext, id: PartyId): void {
  * with them (C4), and it never states what a thing is worth.
  */
 function procure(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const budget = view.params.amount(TREASURY_PARAMS.purchases, currencyUnit(m.ccy));
+  const budget = heldAsMoney(
+    view.params.amount(TREASURY_PARAMS.purchases, currencyUnit(m.ccy)),
+    'the budget it buys real things with',
+  );
   if (budget <= 0) return [];
   const terms = view.instruments.get(m.instrument).terms;
   const row = PROCUREMENT.find((p) => isGoodTerms(terms) && terms.subUnit === p.subUnit);
   if (row === undefined || !isGoodTerms(terms) || terms.region !== view.self.region) return [];
   const print = view.print(m.instrument);
   if (!print.some || print.value.price <= 0) return [];
-  const spend = mul(budget, row.share, 'what it puts into this market');
+  const spend = scale(budget, row.share, 'what it puts into this market');
   const ccy = view.registry.currencyOf(view.self.region);
-  const cash = view.cash(ccy);
+  const cash = heldAsMoney(view.cash(ccy), 'what is in its account');
   // D1: it buys out of the balance it has, and an empty account buys nothing.
   const afford = atMost(spend, cash, 'it procures with the money in its account');
   // Law 8: a budget divided by a price is a fraction of a unit, and the state buys whole ones like
   // everybody else. Down: what it can afford never rounds up past the money it has.
-  const qty = downTick(div(afford, print.value.price, 'what the budget buys'));
+  const qty = downTick(amountOf(afford, print.value.price, 'what the budget buys'));
   return qty > 0 ? [{ party: view.self.id, side: 'buy', price: print.value.price, qty }] : [];
 }
 
@@ -928,7 +995,7 @@ function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const spare = sparePerProgramme(view);
   if (spare <= 0) return [];
   // Law 8: whole units of its own paper, out of money it does not need.
-  const qty = downTick(div(spare, print.value.price, 'units'));
+  const qty = downTick(amountOf(spare, print.value.price, 'units'));
   return qty > 0 ? [{ party: view.self.id, side: 'buy', price: print.value.price, qty }] : [];
 }
 
@@ -936,13 +1003,14 @@ function buyback(view: ParticipantView, m: MarketDecl): readonly Order[] {
  * D1, D4.b: what it has over and above its own programme. The programme is published every period
  * (C1.a), so this is a read of its own announcement and not of anything private.
  */
-function sparePerProgramme(view: ParticipantView): number {
+function sparePerProgramme(view: ParticipantView): Cash {
+  const nothing = asCash(0, 'a treasury that needs what it has');
   const published = view.lastPublic('treasury.programme');
-  if (!published.some || published.value.period !== view.period) return 0;
-  if (!published.value.subjects.includes(view.self.id)) return 0;
+  if (!published.some || published.value.period !== view.period) return nothing;
+  if (!published.value.subjects.includes(view.self.id)) return nothing;
   const need = published.value.data['need'];
-  if (typeof need !== 'number' || need >= 0) return 0;
+  if (typeof need !== 'number' || need >= 0) return nothing;
   const ccy = view.registry.currencyOf(view.self.region);
-  const cash = view.cash(ccy);
-  return atMost(-need, cash, 'it repays out of the money in its account');
+  const cash = heldAsMoney(view.cash(ccy), 'what is in its account');
+  return atMost(asCash(-need, 'what it does not need'), cash, 'it repays out of the money it has');
 }

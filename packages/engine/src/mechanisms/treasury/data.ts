@@ -8,6 +8,7 @@
  * auctions weeks apart aiming at the same tenor land on the same date, and the second adds to the
  * line the first created rather than making a near-identical one beside it.
  */
+import { asRatio, type Ratio } from '../../core/measure.js';
 
 /** The months a maturity may fall in, with MATURITY_DAY, on the issuer's grid. */
 export const GRID_MONTHS: readonly number[] = [3, 6, 9, 12];
@@ -29,14 +30,14 @@ export const TENOR_WINDOW_YEARS = 1;
  */
 export interface ProcurementDecl {
   readonly subUnit: string;
-  readonly share: number;
+  readonly share: Ratio;
   readonly why: string;
 }
 
 export const PROCUREMENT: readonly ProcurementDecl[] = [
   {
     subUnit: 'bread',
-    share: 1,
+    share: asRatio(1, 'the whole of what it buys with'),
     why: 'The state feeds the people it houses and the people it employs. It buys the finished good, in the same market a household buys it in, and it is rationed there like anybody else.',
   },
 ];

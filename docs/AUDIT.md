@@ -2943,6 +2943,7 @@ under a shock.
 > | ~~6~~ | ~~`households`~~ — **DONE**: the cushion, the basket and the demand curve | **73 → 32** |
 > | ~~7~~ | ~~`money-market`~~ — **DONE**: the resolution waterfall, and `Total<D>` corrected | **60 → 33** |
 > | ~~8~~ | ~~`cds`~~ — **DONE**, and with it the whole DERIVATIVE LAYER: a notional is a count and a strike is a level | **46 → 26** |
+> | ~~9~~ | ~~`treasury`~~ — **DONE**: the funding need, the tax base and the procurement budget | **33 → 12** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -3079,6 +3080,21 @@ under a shock.
 > register counts is an `Amount<'piece'>` of a currency and what a price times a quantity comes to is
 > `Money<'piece'>`: the same cents, and the same cents ONLY because money's own price is one — the
 > single hard-coded price this world has (Money D2). The crossing is named rather than assumed.
+>
+> **Measured**: the same 79.
+>
+> ### Stage 9 — the treasury
+>
+> The funding need is one subtraction with six money terms in it — debt service, the mandate over
+> the horizon, the buffer, receipts and what is in the account — and each was a `number`. They are
+> `Cash`, the horizon and the buffer are `Ratio`s that `scale` them, and the auction size is
+> `over(need, auctions)` with `amountOf(size, reservation)` for the units it brings.
+>
+> Every tax is a rate on a base and every one of them was `mul(leg.amount, rate)`. A leg's amount is
+> a count of money pieces, so it crosses `heldAsMoney` first and then `scale`s by the rate — which
+> is what says out loud that a tax is a SHARE of what somebody was paid and never an amount.
+> `Settled.realised` carries `proceeds` and `basis` as money, so a capital gain is a `minus` of two
+> moneys rather than a subtraction of two numbers.
 >
 > **Measured**: the same 79.
 >

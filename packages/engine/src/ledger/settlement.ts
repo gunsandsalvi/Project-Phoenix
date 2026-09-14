@@ -34,7 +34,7 @@ import {
   type PartyId,
   type UnitId,
 } from '../core/ids.js';
-import { asPerPiece, asTotal, eachMember } from '../core/measure.js';
+import { asCash, asPerPiece, asTotal, eachMember, heldAsMoney } from '../core/measure.js';
 import { addTo, atMost, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
 import { negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
@@ -1416,7 +1416,12 @@ export class Settlement {
         if (asset.kind !== 'asset' || asset.from !== seller) continue;
         const basis = sold.get(`${seller}/${asset.instrument}`);
         if (basis === undefined) continue;
-        realised.push({ party: seller, instrument: asset.instrument, proceeds: leg.amount, basis });
+        realised.push({
+          party: seller,
+          instrument: asset.instrument,
+          proceeds: heldAsMoney(leg.amount, 'what the seller was paid'),
+          basis: asCash(basis, 'what those units cost it'),
+        });
       }
     }
     return { deltas, equity: effects, contracts: written, realised };

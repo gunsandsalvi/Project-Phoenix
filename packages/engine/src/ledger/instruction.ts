@@ -7,7 +7,7 @@
  * Denomination on a cell (XI-15): a leg side on a cell carries the PER-MEMBER amount and the weight
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
  */
-import type { PerPiece } from '../core/measure.js';
+import type { Cash, PerPiece } from '../core/measure.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
 import type { Qty } from '../core/tick.js';
 import type {
@@ -388,8 +388,8 @@ export interface Instruction extends InstructionDraft {
 export interface Realised {
   readonly party: PartyId;
   readonly instrument: InstrumentId;
-  readonly proceeds: number;
-  readonly basis: number;
+  readonly proceeds: Cash;
+  readonly basis: Cash;
 }
 
 export interface EquityEffect {
