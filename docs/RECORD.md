@@ -6915,3 +6915,25 @@ the one writer of what exists, so it is the one that can say which name is free.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. Four books left: stock loan, loan, covenant, deal.
+
+---
+
+## Item 9, seventh stage — the stock loan is the kernel's (9.1e)
+
+**What.** The fourth of the seven, and the book 9.4 had just made reachable. `StockLoan[]` in
+`ctx.state` becomes agreements of kind `securitiesLending.stockLoan`. The BORROWER is the debtor —
+it has the paper, it has to bring it back, and it owes the fee every period — and the lender is the
+creditor, which is what makes an unreturned line something a borrower's estate has to answer for.
+
+The line, the units, the collateral, the lien, what was posted, the fee and the period it opened are
+`StockLoanTerms`; `loansOpen` is a read of `agreements.ofKind(STOCK_LOAN)` and there is no state
+slot left in the module. Like the employment and the tenancy, a loan owes ZERO the instant it is
+struck: the fee falls due at the end of the period and `charge` moves it then.
+
+`returnLoans` no longer splices a row out of an array — it ends the commitment, `terminated` and not
+`discharged`, both when the paper comes back at term and when it does not (D1). That distinction is
+the one 9.1a's four states exist for: the paper coming back is a loan running its course, not a debt
+being settled, and a failed return ends it too.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. Three books left: loan, covenant, deal.

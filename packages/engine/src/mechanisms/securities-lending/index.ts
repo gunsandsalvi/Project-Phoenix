@@ -47,8 +47,10 @@ import {
 } from '../../core/measure.js';
 import { clear, isCleared, type Fill } from '../../clearing/solver.js';
 import {
+  agreementKindId,
   paramId,
   venueId,
+  type AgreementId,
   type CurrencyCode,
   type InstrumentId,
   type PartyId,
@@ -59,6 +61,7 @@ import { downTick, subQty, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { LienId } from '../../core/ids.js';
+import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import { about } from '../../world/context.js';
 import type { Borrowing, MechanismContext, ParticipantView } from '../../world/context.js';
@@ -71,10 +74,12 @@ export const BORROW_TERM = paramId('securitiesLending.borrowTermPeriods');
 export const borrowVenue = (instrument: InstrumentId): VenueId =>
   venueId(`borrow:${instrument}`);
 
-/** A1: one open loan, and everything about it is a read of the register except the fee it struck. */
-export interface StockLoan {
-  readonly lender: PartyId;
-  readonly borrower: PartyId;
+/** A1, XI-8: a stock loan is a bilateral commitment like an employment or a lease (item 9.1). */
+export const STOCK_LOAN = agreementKindId('securitiesLending.stockLoan');
+
+/** A1, Law 15: everything about the loan the kernel has no business understanding. */
+export interface StockLoanTerms extends AgreementTerms {
+  readonly kind: typeof STOCK_LOAN;
   readonly instrument: InstrumentId;
   readonly units: Qty;
   /** C1: what the borrower put up, and the lien that binds it. */
@@ -83,18 +88,41 @@ export interface StockLoan {
   readonly posted: Qty;
   /** A5: per period, as a fraction of what the borrowed paper is worth. It cleared (A5.a). */
   readonly fee: Ratio;
-  readonly ccy: CurrencyCode;
   readonly opened: number;
 }
 
-interface Book {
-  readonly open: StockLoan[];
+/**
+ * Law 15: the structural predicate — what makes these terms a stock loan is that they name a line,
+ * a number of units out on it and the lien that binds what was put up against them.
+ */
+export const isStockLoan = (t: AgreementTerms): t is StockLoanTerms =>
+  'units' in t && 'lien' in t && 'posted' in t;
+
+/**
+ * A1: one open loan as this module reads it. The BORROWER owes — it has the paper and has to bring
+ * it back, and it owes the fee every period — so it is the debtor and the lender the creditor.
+ * Everything about it is a read of the register except the fee it struck.
+ */
+export interface StockLoan extends StockLoanTerms {
+  readonly id: AgreementId;
+  readonly lender: PartyId;
+  readonly borrower: PartyId;
+  readonly ccy: CurrencyCode;
 }
 
-const state = (ctx: MechanismContext): Book => ctx.state<Book>('loans', () => ({ open: [] }));
+export function loanOf(a: Agreement): StockLoan {
+  if (!isStockLoan(a.terms)) {
+    throw new TypeError(`Securities Lending A1: ${a.id} is not a stock loan`);
+  }
+  return { ...a.terms, id: a.id, borrower: a.debtor, lender: a.creditor, ccy: a.ccy };
+}
 
 /** The open loans, for anything that needs to know what is out on loan (Law 19: one writer). */
-export const loansOpen = (ctx: MechanismContext): readonly StockLoan[] => state(ctx).open;
+export const loansOpen = (ctx: MechanismContext): readonly StockLoan[] =>
+  ctx.agreements
+    .ofKind(STOCK_LOAN)
+    .filter((a) => a.state === 'performing')
+    .map(loanOf);
 
 /** B2, A5: one holder's offer into a borrow book — what it has free and the least it will take. */
 export interface Offer {
@@ -382,17 +410,26 @@ function openLoan(
   if (r.outcome !== 'settled') return;
   const lien = lienFor(ctx, d.borrower, d.collateral, secures);
   if (!lien.some) return;
-  state(ctx).open.push({
-    lender: d.lender,
-    borrower: d.borrower,
+  const terms: StockLoanTerms = {
+    kind: STOCK_LOAN,
     instrument: d.instrument,
     units: d.units,
     collateral: d.collateral,
     lien: lien.value,
     posted,
     fee: d.fee,
-    ccy: d.ccy,
     opened: ctx.period,
+  };
+  // XI-8: the loan is a COMMITMENT and the kernel keeps it. It owes nothing the instant it is
+  // struck — the fee falls due at the end of the period and `charge` moves it then — which is why
+  // the store admits a zero (item 9.1a).
+  ctx.owes({
+    debtor: d.borrower,
+    creditor: d.lender,
+    ccy: d.ccy,
+    owed: 0,
+    terms,
+    why: `${d.borrower} has ${d.units} of ${d.instrument} from ${d.lender}`,
   });
   ctx.record(
     'borrow.opened',
@@ -433,7 +470,7 @@ function lienFor(
  * issuer paid nothing there is nothing to manufacture.
  */
 export function manufacture(ctx: MechanismContext): void {
-  for (const loan of state(ctx).open) {
+  for (const loan of loansOpen(ctx)) {
     const paid = receivedOn(ctx, loan);
     if (paid <= 0) continue;
     const r = ctx.settle({
@@ -499,7 +536,7 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
  * position and calling the difference is one mechanism with two callers (§15 C1) and not two.
  */
 export function charge(ctx: MechanismContext): void {
-  for (const loan of state(ctx).open) {
+  for (const loan of loansOpen(ctx)) {
     const mark = ctx.valuation.markPerUnit(loan.instrument, ctx.period);
     if (mark <= 0) continue;
     const fee = downTick(
@@ -539,7 +576,7 @@ export function charge(ctx: MechanismContext): void {
  */
 function due(ctx: MechanismContext): readonly StockLoan[] {
   const term = ctx.params.periods(BORROW_TERM);
-  return state(ctx).open.filter((l) => ctx.period - l.opened >= term);
+  return loansOpen(ctx).filter((l) => ctx.period - l.opened >= term);
 }
 
 /**
@@ -551,7 +588,6 @@ function due(ctx: MechanismContext): readonly StockLoan[] {
  * the point: the loan does not sit open for ever against a borrower who cannot close it.
  */
 export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]): void {
-  const book = state(ctx);
   for (const loan of closing) {
     const held = downTick(ctx.register.free(loan.borrower, loan.instrument));
     const back = downTick(atMost(held, loan.units, 'it returns what it borrowed'));
@@ -619,8 +655,10 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
       });
       if (r.outcome !== 'settled') continue;
     }
-    const at = book.open.indexOf(loan);
-    if (at >= 0) book.open.splice(at, 1);
+    // A4, XI-8: the commitment ends and the record says it existed. `terminated` and not
+    // `discharged`, because the paper coming back is the loan running its course and not a debt
+    // being settled — and a failed return ends it too (D1), which a discharge could not say.
+    ctx.endAgreement(loan.id, failed ? 'the borrower did not bring it back' : 'returned at term');
     ctx.record(
       failed ? 'borrow.failed' : 'borrow.returned',
       [loan.lender, loan.borrower, loan.instrument],
@@ -676,17 +714,13 @@ function borrows(): Family {
 export function securitiesLending(): SystemModule {
   return {
     id: 'securities-lending',
-    nouns: [
+    agreementKinds: [
       {
-        name: 'loans',
-        kind: 'noun',
-        holds:
-          'the stock loans that are open: the lender, the borrower, the line and the fee',
-        why:
-          'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
+        id: STOCK_LOAN,
+        what: 'a named borrower holding a named lender\u2019s paper against collateral, for a fee',
       },
     ],
+    // XI-8, item 9.1: no nouns. The open loans were this module's private book and are agreements.
     spec: 'Securities Lending',
     requires: ['equity'],
     instrumentKinds: [],
