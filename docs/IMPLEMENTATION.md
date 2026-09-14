@@ -302,7 +302,8 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > | ~~2a.1~~ | ~~`banks`, `funds`, and the household demography~~ — **DONE** | **402 → 390** |
 > | ~~2a.2~~ | ~~`firms`~~ — **DONE**: a recipe coefficient is a `Ratio` | **390 → 372** |
 > | ~~2a.3~~ | ~~the seed's build-out, and `E-8`~~ — **DONE** | **372 → 350** |
-> | 2a.4 | the rest of `seeds`, and the residue | 350 |
+> | ~~2a.4~~ | ~~the seed's stock, banks and sovereign debt~~ — **DONE** | **350 → 331** |
+> | 2a.5 | the seed's last 34, and the residue (`ledger` 20, `research` 19, `households` 19, `registry` 16, …) | 331 |
 > | 2b | the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1` (`A-18` closed in 2a.1) | |
 > | 2c | rates read as levels: `A-44`, `A-58`, `A-65` | |
 > | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |

@@ -19,7 +19,7 @@
  * SHAPE: the curve opens flat and the auctions and the secondary market give it whatever shape they
  * find. That single yield is the placeholder, and it dies at the first traded print on each line.
  */
-import { toTickOf } from '../core/tick.js';
+import { downToNamed, toTickOf } from '../core/tick.js';
 import { prng } from '../rng/prng.js';
 import type { RegionDecl } from '../registry/registry.js';
 import { drawMap, type MapSpec } from './map.js';
@@ -79,7 +79,9 @@ import { forbid } from '../core/assert.js';
 import { keyOf, weightOf } from '../parties/party.js';
 import type { Qty } from '../core/tick.js';
 import {
+  acrossMembers,
   asCash,
+  asPerMember,
   asAmount,
   asNamed,
   asPerNamedUnit,
@@ -172,7 +174,7 @@ import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/in
 import { reporting } from '../mechanisms/reporting/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
-import { downTick, splitOnTick } from '../core/tick.js';
+import { splitOnTick } from '../core/tick.js';
 import { displayName } from '../registry/naming.js';
 import { MONEY_PIECES, SHARE_PIECES } from '../registry/grid.js';
 import {
@@ -1292,7 +1294,7 @@ export function foundationSeedFor(
       const lineOfBank = new Map<PartyId, number>(
         bankRows.map((r) => [
           partyId(r.bank),
-          add(ctx.params.ratio(P.leverageRatio), r.capitalBuffer, 'the line this bank runs to'),
+          plus(ctx.params.ratio(P.leverageRatio), asRatio(r.capitalBuffer, 'its own buffer'), 'the line this bank runs to'),
         ]),
       );
       const cellsIn = new Map<string, PartyId[]>();
@@ -1333,9 +1335,13 @@ export function foundationSeedFor(
         // its banks could not carry their own depositors' accounts (Seed D1 refused to open it).
         const turnover = sum(
           firmsHere.map((f) =>
-            mul(
-              mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what it makes in a period'),
+            valueAt(
               ctx.params.pricePerUnit(openingPrice(f.subUnit)),
+              scale(
+                startsOf(f),
+                asRatio(recipeOf(f.subUnit).yieldRate, 'what survives the line'),
+                'what it makes in a period',
+              ),
               'what that fetches',
             ),
           ),
@@ -1343,9 +1349,13 @@ export function foundationSeedFor(
         const seedLineRows = seedLines(
           ctx.calendar.epoch,
           membersHere,
-          div(
-            mul(turnover, ctx.params.periods(P.debtPeriods), 'the debt outstanding'),
-            membersHere,
+          over(
+            scale(
+              turnover,
+              asRatio(ctx.params.periods(P.debtPeriods), 'the periods of it its sovereign owes'),
+              'the debt outstanding',
+            ),
+            asRatio(membersHere, 'the people it is owed by'),
             'per member',
           ),
           ctx.params.ratio(P.householdDebtShare),
@@ -1445,10 +1455,22 @@ export function foundationSeedFor(
           // Its holding is therefore not a number in this table either: it is that share of what the
           // line comes to outstanding once everybody else holds theirs, `others × share / (1 −
           // share)`.
-          const others = line.banks + line.perMember * membersHere;
+          const others = plus(
+            asNamed(line.banks, 'what the banks hold of it'),
+            scale(
+              asNamed(line.perMember, 'what one member holds of it'),
+              asRatio(membersHere, 'the people here'),
+              'what the households hold of it',
+            ),
+            'what everybody else holds of it',
+          );
           const share = ctx.params.ratio(P.cbOpeningShare);
-          const cbUnits = div(mul(others, share, 'the share it targets'), 1 - share, 'its holding');
-          const cbDrawn = held(ctx, id, asNamed(cbUnits, 'what it opens holding'));
+          const cbUnits = over(
+            scale(others, share, 'the share it targets'),
+            minus(asRatio(1, 'the whole line'), share, 'what everybody else has'),
+            'its holding',
+          );
+          const cbDrawn = held(ctx, id, cbUnits);
           if (cbDrawn > 0) {
             ctx.endowUnits(c.centralBank, id, cbDrawn, par);
             // Law 19: what it holds, not what the division asked for — the whole pieces it was
@@ -1511,7 +1533,10 @@ export function foundationSeedFor(
             add(zeroIfNone(atBank.get(bank)), cashOf(f), 'what its firms hold at it'),
           );
         }
-        const over = (b: { id: PartyId }): number => {
+        // Renamed from `over` at item 2: the imported `over` is the dimension algebra's, and a
+        // local of that name shadowed it in the middle of this function — the third time this
+        // codebase has reached for one of the algebra's names for a local (`scale` twice before).
+        const fundedBy = (b: { id: PartyId }): number => {
           const left = 1 - zeroIfNone(lineOfBank.get(b.id));
           // Seed D1, Banks Capital B1.b: a bank that must fund EVERY asset out of its own capital
           // can hold no deposit at all, and this world opens its firms with accounts at it. There is
@@ -1526,9 +1551,9 @@ export function foundationSeedFor(
           return left;
         };
         const firmsPart = sum(
-          banksHere.map((b) => div(zeroIfNone(atBank.get(b.id)), over(b), 'its firms')),
+          banksHere.map((b) => div(zeroIfNone(atBank.get(b.id)), fundedBy(b), 'its firms')),
         ).value;
-        const sizePart = sum(banksHere.map((b) => div(b.size, over(b), 'its households'))).value;
+        const sizePart = sum(banksHere.map((b) => div(b.size, fundedBy(b), 'its households'))).value;
         forbid(
           sizePart > 0 && all > firmsPart,
           'Seed D1',
@@ -1547,7 +1572,7 @@ export function foundationSeedFor(
               mul(b.size, perSize, 'its households'),
               'what it funds',
             ),
-            over(b),
+            fundedBy(b),
             'its assets',
           );
         const assets = new Map<PartyId, number>(banksHere.map((b) => [b.id, assetsOf(b)]));
@@ -1740,10 +1765,10 @@ export function foundationSeedFor(
         // flight comes to, which is a period of starts for every period its recipe keeps it (B3); and
         // what one period of starting draws of each of its inputs. Never a hoard: a firm sitting on a
         // year of stock would produce nothing for a year and the seed would have decided that.
-        const finished = mul(starts, recipeOf(row.subUnit).yieldRate, 'what arrives in a period');
-        const onTheLine = mul(
+        const finished = scale(starts, asRatio(recipeOf(row.subUnit).yieldRate, 'what survives the line'), 'what arrives in a period');
+        const onTheLine = scale(
           starts,
-          recipeOf(row.subUnit).leadTimePeriods,
+          asRatio(recipeOf(row.subUnit).leadTimePeriods, 'the periods its recipe keeps a batch'),
           'what is still in flight',
         );
         // Seed C4: what it cost whoever holds it is the seed's, and it is below what the market
@@ -1767,8 +1792,12 @@ export function foundationSeedFor(
         for (const input of recipeOf(row.subUnit).inputs) {
           if (!ctx.instruments.has(goodId(input.subUnit, here))) continue;
           const line = goodId(input.subUnit, here);
-          const paid = ctx.params.pricePerUnit(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
-          const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
+          const paid = scale(
+            ctx.params.pricePerUnit(openingPrice(input.subUnit)),
+            asRatio(SEED_STOCK_BASIS, 'below what the market opens at'),
+            'what it cost whoever holds it',
+          );
+          const drawn = scale(starts, asRatio(input.qtyPerUnit, 'what one unit draws of it'), 'what a period of starting draws');
           if (drawn <= 0) continue;
           ctx.endowUnits(
             firm,
@@ -1789,7 +1818,10 @@ export function foundationSeedFor(
           if (!ctx.registry.instrumentKinds.has(plantKindId(kind.id))) continue;
           // Law 8: a machine is a whole machine. What a share of a line's plant comes to is a
           // fraction of one, and what the firm HOLDS is the machines that fraction reaches.
-          const mine = downTick(mul(plantOf(row.subUnit, kind.id), shareOf(row), 'its own plant'));
+          const mine = downToNamed(
+            scale(plantOf(row.subUnit, kind.id), shareOf(row), 'its own plant'),
+            'its own plant, in whole machines',
+          );
           if (mine <= 0) continue;
           const newPrice = ctx.params.pricePerUnit(openingPrice(kind.madeFrom));
           const life = ctx.params.periods(paramId(`plant.usefulLife.${kind.id}`));
@@ -1829,7 +1861,7 @@ export function foundationSeedFor(
           ...recipeOf(row.subUnit).inputs.map((input) => {
             const line = goodId(input.subUnit, here);
             if (!ctx.instruments.has(line)) return 0;
-            const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
+            const drawn = scale(starts, asRatio(input.qtyPerUnit, 'what one unit draws of it'), 'what a period of starting draws');
             return spaceOf(ctx, input.subUnit, held(ctx, line, asNamed(drawn, 'what it draws')), here);
           }),
         ].reduce((a, b) => a + b, 0);
@@ -1860,7 +1892,14 @@ export function foundationSeedFor(
           const hulls = held(
             ctx,
             id,
-            asNamed(downTick(mul(c.size, HULLS_PER_UNIT_OF_SIZE, 'its fleet')), 'its fleet'),
+            downToNamed(
+              scale(
+                asNamed(c.size, 'what this carrier is'),
+                asRatio(HULLS_PER_UNIT_OF_SIZE, 'hulls a unit of size carries'),
+                'its fleet',
+              ),
+              'its fleet, in whole hulls',
+            ),
           );
           if (hulls <= 0) continue;
           ctx.endowUnits(
@@ -1928,39 +1967,53 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
         // and starts the run shrinking — which is not an opening condition, it is a bank already
         // in trouble. The buffer is its own (B2), so no two banks open at the same share and none
         // of them opens at a number this seed chose.
-        const leverage = add(minimum, row.capitalBuffer, 'the line this bank runs to');
+        const leverage = plus(minimum, asRatio(row.capitalBuffer, 'its own buffer'), 'the line this bank runs to');
         // 13j, Money A2: WHOSE MONEY THIS BANK ISSUES, which is the money of the place it books in.
         // A deposit is a holding of its issuer's money and there is no such thing as a holding of a
         // money nobody issued (Money A1), so a seed with four banking systems in it has to say
         // whose — and the one writer of that is the registry, off the bank's own region.
         const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
         const own = moneyInstrumentId(bank, ccy);
-        let assets = 0;
+        let assets = asCash(0, 'a bank holding nothing has no assets');
         for (const h of ctx.register.holdingsOf(bank)) {
           if (h.instrument === own) continue;
-          assets = add(
+          assets = plus(
             assets,
             ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
             "the bank's opening assets",
           );
         }
-        const funding = mul(assets, 1 - leverage, 'what its own leverage rule leaves it to fund');
+        const funding = scale(
+          assets,
+          minus(asRatio(1, 'the whole book'), leverage, 'what its own capital does not fund'),
+          'what its own leverage rule leaves it to fund',
+        );
         // Law 19, Law 15: what is ALREADY deposited at it, read off the register — not "what its
         // firms hold", which would be this seed asking what kind a depositor is (nothing branches
         // on a kind: the question is what the account holds, and the answer is the same whoever
         // opened it). Everything endowed at this bank before now counts, and the households take
         // what is left of what has to be funded.
-        let already = 0;
+        let already = asCash(0, 'a bank nobody has deposited at is funded by nothing');
         for (const holder of ctx.register.holdersOf(own)) {
           if (holder === bank) continue;
           const held = ctx.register.quantity(holder, own);
-          already = add(
+          already = plus(
             already,
-            mul(held, weightOf(ctx.parties.get(holder)), 'in total'),
+            // XI-15: the register holds PER MEMBER, so what a cell has between them is that times
+            // how many of them there are. `acrossMembers` is the one crossing and it refuses a
+            // weight that is not a count of people.
+            acrossMembers(
+              asPerMember<'money:piece'>(
+                heldAsMoney(held, 'what one of them holds of it'),
+                'what one member of it holds',
+              ),
+              weightOf(ctx.parties.get(holder)),
+              'in total',
+            ),
             'deposits',
           );
         }
-        const fromHouseholds = sub(funding, already, 'what the households must hold');
+        const fromHouseholds = minus(funding, already, 'what the households must hold');
         const cells = ctx.parties.ofKind(HOUSEHOLD).filter((c) => c.bank === bank);
         const members = cells.reduce((t, c) => t + weightOf(c), 0);
         forbid(

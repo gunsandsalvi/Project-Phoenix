@@ -29,7 +29,7 @@
  * something the arithmetic cannot violate instead of something the audit reports afterwards.
  */
 import { Impossible } from './errors.js';
-import type { Amount, PerPiece } from './measure.js';
+import { asNamed, type Amount, type Named, type PerPiece } from './measure.js';
 import { dustOf, finite } from './num.js';
 
 /**
@@ -152,6 +152,21 @@ export function toTick(value: number): Qty {
 export function downTick(value: number): Qty {
   const n = finite(value, 'quantity');
   return asQty(n < 0 ? -Math.floor(-n) : Math.floor(n), 'the whole piece below');
+}
+
+/**
+ * Law 8, item 2: THE WHOLE NAMED UNIT BELOW — a whole machine, a whole hull, a whole tonne.
+ *
+ * Not `downTick`, and the difference is the two scales. `downTick` floors to the smallest PIECE the
+ * state holds one of; this floors to the unit a PERSON states, which is what "a machine is a whole
+ * machine" means. They coincide only where a unit's subdivision is one, and the seed — which speaks
+ * in named units throughout — was reaching for this and getting the other.
+ */
+export function downToNamed(value: Named, what: string): Named {
+  const n = finite(value, what);
+  // Times minus one rather than a unary minus: `finite` carries the dimension out, and a
+  // dimensioned number is an intersection the unary-minus rule will not take (as `negated` does).
+  return asNamed(n < 0 ? Math.floor(n * -1) * -1 : Math.floor(n), what);
 }
 
 /**

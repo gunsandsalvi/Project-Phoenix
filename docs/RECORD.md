@@ -5617,3 +5617,34 @@ around it, and it is why the parameter register checks the dimension at the read
 
 Arithmetic sites **372 → 350**; the seed's own **75 → 53**. Typecheck 0, lint 0, `check:spec`,
 `check:forbids`, `check:existence` green, tools suite 30 green. The engine suite was not run.
+
+## Item 2, stage 2a.4 — the seed's stock, its banks, and its sovereign debt
+
+**`downTick` has left the seed entirely, and that is the finding of the stage.** The seed speaks in
+NAMED units — a whole machine, a whole hull, a whole tonne — and `downTick` floors to the smallest
+PIECE the state holds one of. They coincide only where a unit's subdivision is one. Every place the
+seed reached for "a machine is a whole machine" it was flooring on the wrong grid, invisibly, because
+both were `number`. `core/tick.ts` gains `downToNamed`, which says which scale it is on, and the
+seed imports no piece-grid door at all now.
+
+**A third shadowed name.** `over` — the algebra's "a dimension divided by a pure number" — was
+shadowed by a local meaning "what funds this bank", in the middle of the function that needed the
+algebra's. Renamed `fundedBy`. Stage 6 found `scale` shadowed twice for the same reason: these are
+the names this codebase reaches for when it means "how big" or "over what", and the algebra now owns
+them. Three files, three stages — worth a lint rule if it happens again (a rule that can be a check
+should be one).
+
+**The bank funding block is money and says so**: `assets`, `already` and `funding` are `Cash`, and
+what a household CELL has on deposit crosses `acrossMembers` — which refuses a weight that is not a
+count of people — rather than a bare `held × weight`. The leverage line is `plus` of two `Ratio`s.
+
+**The build-out**: a firm's opening stock, its work in flight, what a period of starting draws, its
+share of its line's plant, and a carrier's fleet are all `scale` of a `Named` by a `Ratio`. The
+sovereign's debt is `valueAt(openingLevel, whatItMakes)` scaled by the periods of it its sovereign
+owes, over the people it is owed by. The central bank's opening holding — `others × share /
+(1 − share)` — is `over(scale(others, share), minus(ONE, share))`, with `others` built from the two
+things that make it rather than a bare `+`.
+
+Arithmetic sites **350 → 331**; the seed's own **53 → 34**. Typecheck 0, lint 0, `check:spec`,
+`check:forbids`, `check:existence` green, tools suite 30 green. The engine suite was not run: nothing
+in this stage changes a number.
