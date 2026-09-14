@@ -410,11 +410,31 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   const wage = venue === undefined ? none<PerPiece>() : wageFacing(view, venue);
   const inputPrices = tech.inputs.map((i) => expectedPrice(view, i.instrument));
   const sales = view.outlook(about({ on: 'sold', instrument: output }));
-  if (!price.some || !sales.some || inputPrices.some((p) => !p.some)) {
+  if (!price.some || inputPrices.some((p) => !p.some)) {
     return selling.length === 0
       ? none<Plan>()
       : some<Plan>({ planned: false, output, orders: selling, carry: carryPerPiece(view, tech) });
   }
+  /**
+   * A-55, A-56, B1: WHAT A FIRM THAT HAS NEVER SOLD EXPECTS TO SELL, and it is ONE.
+   *
+   * `expectations` forms a `sold` outlook only from an asset leg the firm was a side of, so a firm
+   * that has never sold has none — and without one this returned `planned: false`, started no
+   * batch, and therefore never sold. THREE OF THIS WORLD'S GOODS SAT AT ZERO FROM PERIOD ZERO in
+   * exactly that loop (`dwelling`, `facilities`, `itServices`), and every other line only escaped it
+   * because the seed put stock on a book for it.
+   *
+   * The way out is not a number: it is that YOU CANNOT LEARN WHAT YOU CAN SELL WITHOUT MAKING
+   * SOMETHING. A firm with a price for its output and a price for everything its recipe names makes
+   * ONE unit — the smallest thing that exists (Law 8: the piece is the grid, not a declared number)
+   * — and finds out. If it sells, its own outlook leads from the next period and this never runs
+   * again. If it does not, it is holding one unit and offers it like anything else it made and did
+   * not sell, which is what a firm that guessed wrong actually does.
+   *
+   * Everything downstream is unchanged: `worthMaking` still has to hold, the labour and capacity
+   * limits still bind, and a line whose contribution does not cover a wage still starts nothing.
+   */
+  const firstBatch = asAmount<'piece'>(1, 'one unit, to find out what it sells');
   // Item 16: what the recipe's inputs cost FOR ONE UNIT of output — money per piece, like the
   // level it will sell at, which is what lets the two meet in the contribution below.
   const inputCost = sum(
@@ -476,7 +496,9 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   const stock = view.quantity(output);
   // Item 16: an outlook carries the dimension of the VARIABLE it is about, and this one is about
   // units sold — so it enters as an amount here, once, rather than at each of its three readers.
-  const expectsToSell = asAmount<'piece'>(sales.value.expected, 'the units it expects to sell');
+  const expectsToSell = sales.some
+    ? asAmount<'piece'>(sales.value.expected, 'the units it expects to sell')
+    : firstBatch;
   const perPeriod = worthMaking
     ? over(expectsToSell, tech.yieldRate, 'started per period')
     : asAmount<'piece'>(0, 'a line not worth making starts nothing');
@@ -585,7 +607,11 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         // can or must do (`toTick`, core/tick.ts).
         toTick(
           over(
-            asAmount<'piece'>(sales.value.confidence, 'how wide its surprises about units sold are'),
+            // A firm that has never sold has been surprised about nothing, and that is a real zero:
+            // it has no history to have been wrong about. Its first batch is one unit either way.
+            sales.some
+              ? asAmount<'piece'>(sales.value.confidence, 'how wide its surprises about units sold are')
+              : NO_QTY,
             tech.yieldRate,
             'how wide its own surprises are, per unit started',
           ),

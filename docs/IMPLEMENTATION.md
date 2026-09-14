@@ -184,7 +184,8 @@ Dependencies, not preference, and the open lines before the new ones. The four a
 | ~~**4**~~ | ~~The families that cannot fail~~ | 9 | **DONE.** Every family that reports green can now report red |
 | ~~**5**~~ | ~~Missing is Missing, carried~~ | 4 | **DONE** |
 | ~~**6**~~ | ~~The derivative books open~~ | 3 | **DONE.** Eight classes gained a second side; the margin gate admits somebody |
-| **7** | The three closed lines | 2 | needs **3**; `dwelling` takes the whole housing module with it |
+| **7** | The three closed lines | 2 | **7.4 DONE** — the bootstrap, which is what held all three at zero. 7.1 waits on **9**; 7.2 and 7.3 are inserted as **7b** with their reasons |
+| **7b** | Durables and overheads | — | **inserted** (Law 10, at 7's dependency position): a household buys a dwelling out of its own budget, and a recipe names the services every site buys per period rather than per unit. Both are missing MECHANISMS that 7.2 and 7.3 assumed were wiring |
 | **8** | The securitisation waterfall | 2 | independent; the subtraction has gone the wrong way round since 13e |
 | **9** | The seven private books, and `Mandate` | 5 | the larger half of item 8 of the old file; blocks 13, and `A-43` behind it |
 | **10** | The corporate bond is issued | 2 | needs **3** (a buyer); 51 Corporate Credit clauses stand behind it |
@@ -909,10 +910,10 @@ death (Law 2)**, and it is the number `wearOf` and every mortgage size are built
 
 ### Steps
 
-- [ ] 7.1 `housing/index.ts:askForMortgages` opens `if (cell.representation === 'cell') continue;` — every household is a cell, so no household ever publishes a `housing.funding` request, no bank writes a mortgage, `mortgagesOf` is always empty, and `charge` and `foreclose` are dead phases. The blocker its docstring names (a borrower that misses a payment goes on accruing) is **item 19's arrears** and **item 9's agreement**. Remove the guard when 9 lands; until then this item is 7.2–7.4.
-- [ ] 7.2 Give `dwelling` a buyer that is not a mortgage: a household cell that owns fewer dwellings than its members live in bids for one out of its own savings. Owner-occupation is then an OUTCOME, which is what the module header already claims (*"a household that owns as many dwellings as its members live in has nothing to rent"*) and today describes a state no household can be in.
-- [ ] 7.3 `facilities` and `itServices` are **inputs nobody draws**. Either a recipe draws them — a firm buys IT services and facilities management, which is what those lines are — or they are not lines. Check `goods/data.ts:RETAIL`/`MAKES` against the input graph and connect or delete. A line with a firm, a market and no buyer is Law 2's placeholder with no death.
-- [ ] 7.4 The bootstrap under all three: `firms/decide.ts:plan` returns `{planned: false}` without an outlook of its own sales. A firm that has never sold needs a first reason to make anything. Give the plan a fallback that is a REASON and not a number — the going rate for the line in its own region, which `labour` already publishes for hours and `goods` can for a line.
+- [ ] 7.1 `housing/index.ts:askForMortgages` opens `if (cell.representation === 'cell') continue;` — every household is a cell, so no household ever publishes a `housing.funding` request, no bank writes a mortgage, `mortgagesOf` is always empty, and `charge` and `foreclose` are dead phases. The blocker its docstring names (a borrower that misses a payment goes on accruing) is **item 19's arrears** and **item 9's agreement**. Remove the guard when 9 lands; until then this item is 7.2–7.4. **STAYS OPEN** — blocked on item 9 as the step itself says. Not started.
+- [ ] 7.2 Give `dwelling` a buyer that is not a mortgage: a household cell that owns fewer dwellings than its members live in bids for one out of its own savings. Owner-occupation is then an OUTCOME, which is what the module header already claims (*"a household that owns as many dwellings as its members live in has nothing to rent"*) and today describes a state no household can be in. **NOT DONE, and the reason is a decision the step did not anticipate.** A household bidding for a dwelling out of its savings COMMITS THE SAME MONEY TWICE: `households/index.ts:decide` already divides one budget over consumption, a buffer and every saving line, and a separate housing-side bid spends money that budget has allocated. Putting it inside the household's own budget needs the household to know it is short of a dwelling — an occupancy ratio and a lease book, both of which are `housing`'s, and a module never imports a module. And a dwelling is a DURABLE: `demandOf`'s basket is a per-period flow, so a basket row would buy one every period for ever. **The missing mechanism is a durable purchase inside the household's own budget**, and it is inserted as **7b** below.
+- [ ] 7.3 `facilities` and `itServices` are **inputs nobody draws**. Either a recipe draws them — a firm buys IT services and facilities management, which is what those lines are — or they are not lines. Check `goods/data.ts:RETAIL`/`MAKES` against the input graph and connect or delete. A line with a firm, a market and no buyer is Law 2's placeholder with no death. **NOT DONE, and connecting them through `inputs` would break the seed.** The read: nothing names either line as an input, and both are OVERHEADS rather than recipe inputs — a firm buys facilities management per SITE per period and IT support per MACHINE per period, not per unit of output. `GoodDecl.inputs` only expresses per-unit-of-output. Deriving them from each line's own plant (`facilities` per premises unit, `itServices` per machinery unit) is the right shape and needs two declared numbers instead of 126 — **but it creates a production CYCLE the seed's build-out cannot resolve**: `foundation.ts:652` builds a line only once every input of it is built, and `power` would buy `facilities` while `facilities` buys `power`. Neither would ever build, and a large part of the economy would go with them. That is real circularity in a real economy and the seed's topological order is what cannot take it. **Inserted as 7b.**
+- [x] 7.4 The bootstrap under all three: `firms/decide.ts:plan` returns `{planned: false}` without an outlook of its own sales. A firm that has never sold needs a first reason to make anything. Give the plan a fallback that is a REASON and not a number — the going rate for the line in its own region, which `labour` already publishes for hours and `goods` can for a line. **DONE, and the fallback is not a number.** A firm with a price for its output and a price for everything its recipe names, and no `sold` outlook, plans ONE UNIT — the smallest thing that exists, which is the grid and not a declared number. You cannot learn what you can sell without making something. If it sells, its own outlook leads from the next period and this never runs again; if it does not, it is holding one unit and offers it like anything else it made and did not sell. Everything downstream is unchanged: `worthMaking` still has to hold and the labour and capacity limits still bind.
 
 ### Findings this closes
 
@@ -922,6 +923,45 @@ death (Law 2)**, and it is the number `wearOf` and every mortgage size are built
 
 Every declared good has a bidder; no market's opening print survives the first session; the housing
 module's buying half runs.
+
+---
+
+## 7b. Durables and overheads — **inserted**
+
+**Why here.** Item 7 assumed 7.2 and 7.3 were wiring. They are not: each is a mechanism this world
+does not have, and doing them as wiring would have committed the same money twice in one case and
+deadlocked the seed's build-out in the other. Inserted at 7's dependency position (Law 10), because
+`dwelling`, `facilities` and `itServices` stay at zero until they exist.
+
+### Steps
+
+- [ ] 7b.1 **A durable inside a household's budget.** `households/index.ts:decide` divides one budget
+  over consumption, a buffer and the saving lines. A home is none of those: it is bought ONCE, out of
+  what is left, and owning one removes a rent the cell was paying. Give the budget a fourth call —
+  what it puts towards a durable it needs and does not own — and let the dwelling bid come out of it.
+- [ ] 7b.2 **And the household has to know it is short of one.** The occupancy a cohort needs and the
+  leases it holds are `housing`'s, and a module never imports a module. `housing` publishes what each
+  cell needs against what it owns (the same read `ordersOf` already makes), and the household reads
+  the event — the `lastPublicAbout` route every other cross-module read uses.
+- [ ] 7b.3 **An overhead is not a recipe input.** `GoodDecl.inputs` is per unit of OUTPUT; facilities
+  management is per site per period and IT support is per machine per period. Give the recipe a
+  second list — what a line draws per unit of PLANT in service — with two declared coefficients
+  instead of 126, derived from each line's own `plant`.
+- [ ] 7b.4 **And the seed's build-out has to take a cycle.** `foundation.ts:652` builds a line only
+  when every input of it is already built. Overheads make `power` buy `facilities` and `facilities`
+  buy `power`, which is true of a real economy and is what a topological order cannot express. The
+  build-out opens a line on what it can make WITHOUT its overheads and lets the overheads arrive in
+  the first period, which is also what actually happens: a new site is cleaned after it opens.
+- [ ] 7b.5 Do not measure. Lint and typecheck; the suite runs when the plan is done.
+
+### Findings this closes
+
+`A-56`'s `facilities` and `itServices` halves, and `A-55`'s buyer.
+
+### Exit
+
+Every declared good has a bidder; a household can own the home it lives in; no line's opening print
+survives the first session.
 
 ---
 

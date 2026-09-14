@@ -6405,3 +6405,62 @@ lint 0, `check:spec`, `check:forbids`, `check:existence` green. **Not measured**
 item whose effects the suite will show most, because eight books that have never printed are about
 to, and everything downstream of a first print (`zeroSum` walking a non-empty set, the option-implied
 move §46 A3 needs, the margin gate admitting somebody) becomes measurable for the first time.
+
+---
+
+## Item 7 — the three closed lines: the bootstrap, and two mechanisms the plan called wiring
+
+Three of this world's 63 goods have a firm, a recipe, a market and a printed opening price, and no
+bidder ever: `dwelling`, `facilities`, `itServices`. They are zero at the seed and nothing can start
+them.
+
+**`7.4` is the bootstrap under all three, and it is done.** `firms/decide.ts:plan` returned
+`{planned: false}` without an outlook of its own SALES, and `expectations` forms a `sold` outlook only
+from an asset leg the firm was a side of. So: a firm that has never sold has no outlook; with no
+outlook it makes no plan; with no plan it starts no batch; with no batch it never sells. Three closed
+loops at zero from period zero, and every other line escaped only because the seed put stock on a
+book for it.
+
+The way out is not a number and not a fallback figure: **you cannot learn what you can sell without
+making something.** A firm with a price for its output and a price for everything its recipe names
+plans ONE UNIT — the smallest thing that exists, which is the grid (Law 8) and not a declared number
+— and finds out. If it sells, its own outlook leads from the next period and this never runs again.
+If it does not, it is holding one unit and offers it like anything else it made and did not sell,
+which is what a firm that guessed wrong does. Everything downstream is unchanged: `worthMaking` still
+has to hold, and the labour and capacity limits still bind, so a line whose contribution does not
+cover a wage still starts nothing.
+
+A firm with no sales history has also been surprised about nothing, and that is a real zero rather
+than a default: it has no history to have been wrong about.
+
+**`7.1` stays open and item 9 closes it**, as the step says.
+
+**`7.2` and `7.3` are NOT done, and the reason is the work, not a shortfall.** Each turned out to be a
+mechanism this world does not have rather than a call that was never made — and doing either as
+wiring would have broken something.
+
+`7.2`: a household bidding for a dwelling out of its savings **commits the same money twice**.
+`households/index.ts:decide` already divides ONE budget over consumption, a buffer and every saving
+line; a housing-side bid spends money that budget has allocated. Putting the bid inside the
+household's own budget needs the household to know it is short of a dwelling — an occupancy ratio and
+a lease book, both `housing`'s, and a module never imports a module. And a dwelling is a DURABLE:
+`demandOf`'s basket is a per-period flow, so a basket row would buy one every period for ever.
+
+`7.3`: nothing names `facilities` or `itServices` as an input, and neither is a recipe input — a firm
+buys facilities management per SITE per period and IT support per MACHINE per period, not per unit of
+output. `GoodDecl.inputs` only expresses per-unit-of-output. Deriving them from each line's own plant
+is the right shape and would take two declared coefficients instead of 126 — **but it creates a
+production CYCLE the seed's build-out cannot resolve.** `foundation.ts:652` builds a line only once
+every input of it is built, and `power` would buy `facilities` while `facilities` buys `power`.
+Neither would ever build, and a large part of the economy would go with them. The circularity is real
+— utilities and services do buy each other — and it is the seed's topological order that cannot
+express it.
+
+**Both are inserted as item `7b`**, at item 7's dependency position (Law 10: a new idea is INSERTED
+where it belongs and you say where), with four steps: a durable call inside the household's budget, a
+public read of what a cell needs against what it owns, an overhead list on the recipe that is per
+unit of PLANT rather than per unit of output, and a build-out that opens a line on what it can make
+without its overheads and lets them arrive in the first period — which is also what happens, since a
+new site is cleaned after it opens.
+
+Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.
