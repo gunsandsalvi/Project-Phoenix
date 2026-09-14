@@ -457,7 +457,26 @@ both:
     volume. Pairing several buyers against several sellers inside one clear needs an allocation rule
     this world does not have, and inventing one would be inventing who faced whom. What the losing
     bids do is move the price, which is the half of B4 that matters.
-- **10f.5** Institutions across strategies (corrects 14.0).
+- [x] **10f.5 DONE.** *"Insurance and pension don't only go for duration. They invest in tons of
+  different strategies."* 14.0 matched the NEAREST stated duration, took that one pool, and refused
+  every pool that stated no duration at all — which is **every strategy, equity and private-equity
+  pool in this world**. One institution, one manager, one asset class, for ever, and the money 14.0
+  was inserted to unlock reached exactly one of the three sectors it was unlocked for.
+  - **Duration is a REFUSAL now, not the decision.** A pool longer than its longest promise is
+    refused (a rate risk nobody asked it to take); a pool that states NO duration is not, because
+    equity has nothing to mismatch. One test, and strategies, credit and equity all become eligible
+    through it rather than through three.
+  - **What it requires is what its own promises are discounted at** — the sovereign curve of the
+    money they are promised in, at the tenor of the furthest of them. B2's actual economics, as a
+    READ. A pool that has published it earns less than that is refused; one that has published
+    nothing has not claimed anything to fail against (App A), **which is why an institution reaches
+    past bonds instead of sitting in cash when nothing yields enough.**
+  - **How it spreads is by FEEDING THE SMALLEST**: this period's money goes to whichever acceptable
+    pool it holds least of, valued at what that pool published. Diversification is the OUTCOME and
+    there is no weight, no target and no optimiser anywhere (Law 2, Law 6). A pool it has never
+    bought is worth nothing to it and is therefore next.
+  - `matchFor` is gone and `acceptable` + `feedTheSmallest` replace it; the 14.0 test that asserted
+    *"refuses a pool that states no duration at all"* asserted the defect and is rewritten.
 - **10f.6** §29 B, C and D as CALLERS of 10f.3 — which is what 13.5b becomes, and it shrinks to
   naming the vehicle and the carry.
 

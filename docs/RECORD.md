@@ -9092,3 +9092,53 @@ bids do is move the price, which is the half of B4 that carries the economics.
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5 over 216 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 10f.5 — an institution buys more than duration, and diversification is an outcome
+
+**The owner's third sentence:** *"Also, insurance and pension don't only go for duration. They invest
+in tons of different strategies."* This corrects item 14.0, which is five commits old.
+
+### What 14.0 did, and why it was worse than it looked
+
+It matched the insurer's longest promise to the pool whose stated duration was NEAREST it, took that
+one, and refused every pool that stated no duration at all. The refusal was written down as a
+principle — *"an equity fund is not a place to put money you have promised somebody on a date"* —
+and there was even a test asserting it.
+
+**Every strategy pool, every equity pool and every private-equity pool in this world states no
+duration**, because they have none to state. So 14.0 — which was INSERTED to give the sectors 13.2,
+13.3 and 13.5 built some money to run on — reached exactly one of them: the credit fund. One
+institution, one manager, one asset class, for ever.
+
+### Three reads replace it, and not one of them is a preference
+
+- **Duration is a refusal, not the decision.** A pool whose stated duration runs PAST the furthest
+  thing this institution has promised is refused, because holding it is a rate risk nobody asked it
+  to take. A pool that states NO duration is not refused: equity has nothing to mismatch. One test,
+  and strategies, credit and equity become eligible through it rather than through three.
+- **What it requires is what its own promises are discounted at** — the sovereign curve of the money
+  they are promised in, at the tenor of the furthest of them. That is B2's actual economics and it is
+  a READ: no preference declared, no spread over anything. A pool that has published that it earns
+  less than that has told it it does not cover the promises and is refused; **a pool that has
+  published nothing has not claimed anything to fail against** (App A), which is exactly why an
+  institution reaches past bonds instead of sitting in cash when nothing yields enough.
+- **How it spreads is by feeding the smallest.** This period's money goes to whichever acceptable
+  pool it holds least of, valued at what that pool itself published. Diversification is then the
+  OUTCOME of doing that every period, and there is no weight, no target, no maximum and no optimiser
+  anywhere (Law 2, Law 6). A pool it has never bought is worth nothing to it and is therefore next.
+
+An institution that has promised nothing applies neither test, which is right: it has capital and no
+liabilities, and there is nothing for an asset to be mismatched against.
+
+### The test that asserted the defect
+
+`institutional-allocation.test.ts` had a case called *"refuses a pool that states no duration at
+all"*, with a paragraph explaining why the refusal was the honest answer. It was the defect, written
+down and guarded. It is rewritten around the two refusals that replaced it — and the case that
+matters most now is the opposite one: **a pool that states no duration is NOT refused**, which is the
+line the owner's correction turns on.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5, `check:deaths` 4 of 4,
+`check:existence` green. Tests written and not run.

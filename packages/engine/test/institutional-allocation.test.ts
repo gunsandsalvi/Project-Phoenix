@@ -1,58 +1,75 @@
 /**
- * An institution's whole investment decision: whose mandate is shaped like what I promised.
+ * An institution's whole investment decision: which mandates it can ACCEPT, and which it feeds.
  *
- * @spec Insurers B2 Insurers B2.a Insurers B2.b Fund Shares A4 Law 3 Law 19
+ * @spec Insurers B2 Insurers B2.a Insurers B2.b Fund Shares A4 Fund Shares D2 Law 2 Law 3 Law 6 Law 19
  *
  * ITEM 14.0. *"Insurance companies and pension funds don't invest themselves. Their assets are
  * always third party managed"* (the owner), so there is no portfolio to test here and no allocation
- * rule — there is ONE choice, and B2.b says what it is made of: the duration of what it promised
- * against the duration of what a manager runs.
+ * rule — there is a set of doors it may go through and a rule for which one this period's money
+ * goes to.
  *
- * What is asserted is the shape of that choice and its two REFUSALS, because both of them are the
- * kind of thing a helpful default would quietly delete: a pool that states no duration is not a
- * fallback for a liability schedule, and a tie is not broken by the order a list was built in.
+ * ITEM 10f.5, THE OWNER'S CORRECTION: *"insurance and pension don't only go for duration. They
+ * invest in tons of different strategies."* What 14.0 built matched the NEAREST stated duration and
+ * refused every pool that stated none — which is every strategy, equity and private-equity pool in
+ * this world, for ever. What is asserted here is the two refusals that replaced it, because both of
+ * them are the kind of thing a helpful default would quietly delete: a pool longer than what it
+ * promised is a risk nobody asked for, and a pool that has told it it earns less than its promises
+ * require has told it something a pool that said nothing has not.
  */
 import { describe, expect, it } from 'vitest';
-import { matchFor } from '../src/mechanisms/insurers/allocate.js';
+import { acceptable } from '../src/mechanisms/insurers/allocate.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { venueId } from '../src/core/ids.js';
 
-const door = (fund: string, years: number | undefined) => ({
+const door = (fund: string, years: number | undefined, offered?: number) => ({
   venue: venueId(`funds.${fund}`),
   fund,
   perShare: asPerPiece(100, 'what a share is worth'),
   years,
+  offered,
   asks: undefined,
 });
 
-describe('B2.b: duration matching is the whole of the decision', () => {
-  it('picks the mandate nearest what it promised, from either side', () => {
-    const open = [door('short', 1), door('medium', 7), door('long', 30)];
-    // A book of promises running eight years wants the seven-year mandate, not the thirty-year one
-    // — an institution that bought duration it did not promise has taken a risk nobody asked it to.
-    expect(matchFor(open, 8)?.fund).toBe('medium');
-    // And nearest from below is still nearest: it is a distance, not a floor or a ceiling.
-    expect(matchFor(open, 2)?.fund).toBe('short');
-    expect(matchFor(open, 25)?.fund).toBe('long');
+describe('B2.b: what an institution will not take is duration it did not promise', () => {
+  it('refuses a mandate longer than its longest promise, and takes any shorter one', () => {
+    // A book of promises running eight years may hold a one-year or a seven-year mandate: both of
+    // them come back before it owes anything. A thirty-year one is a rate risk nobody asked it to
+    // take, and it is refused however attractive it is.
+    expect(acceptable(door('short', 1), 8, undefined)).toBe(true);
+    expect(acceptable(door('medium', 7), 8, undefined)).toBe(true);
+    expect(acceptable(door('long', 30), 8, undefined)).toBe(false);
   });
 
-  it('refuses a pool that states no duration at all', () => {
-    // An equity fund is not a place to put money you have promised somebody on a date, and a
-    // mandate that says nothing about duration cannot be matched to a schedule. The refusal is the
-    // answer (App A) — the alternative is an institution funding a life book out of shares because
-    // nothing else was open.
-    expect(matchFor([door('equity', undefined)], 8)).toBeUndefined();
-    // And it stays refused even when it is the only thing there beside a bad match.
-    expect(matchFor([door('equity', undefined), door('long', 30)], 8)?.fund).toBe('long');
+  it('does NOT refuse a pool that states no duration (10f.5)', () => {
+    // Equity has no duration to mismatch. This is the line the owner's correction turns on: 14.0
+    // refused exactly this pool, and refusing it is what left an institution with one asset class.
+    expect(acceptable(door('equity', undefined), 8, undefined)).toBe(true);
+    expect(acceptable(door('strategy', undefined), 1, undefined)).toBe(true);
   });
 
-  it('breaks a tie on the fund’s own name and never on the order of the list', () => {
-    const open = [door('zeta', 10), door('alpha', 10)];
-    expect(matchFor(open, 10)?.fund).toBe('alpha');
-    expect(matchFor([...open].reverse(), 10)?.fund).toBe('alpha');
+  it('applies no duration test at all to an institution that has promised nothing', () => {
+    // It has capital and no liabilities, so there is nothing for an asset to be mismatched against.
+    expect(acceptable(door('long', 30), undefined, undefined)).toBe(true);
+  });
+});
+
+describe('B2: and it will not take less than its promises require', () => {
+  it('refuses a pool that has told it it earns less than what it needs', () => {
+    expect(acceptable(door('thin', 5, 0.01), 8, 0.04)).toBe(false);
+    expect(acceptable(door('fat', 5, 0.06), 8, 0.04)).toBe(true);
+    // Exactly enough is enough: there is no margin anybody declared (Law 6).
+    expect(acceptable(door('exact', 5, 0.04), 8, 0.04)).toBe(true);
   });
 
-  it('has nothing to allocate to when nothing is open', () => {
-    expect(matchFor([], 8)).toBeUndefined();
+  it('does not refuse a pool that has claimed nothing (App A)', () => {
+    // An absence of evidence is returned as one. A pool with no curve to read publishes no offer,
+    // and it has not claimed anything to fail against — which is why an institution reaches past
+    // bonds at all rather than sitting in cash when nothing yields enough.
+    expect(acceptable(door('quiet', undefined, undefined), 8, 0.04)).toBe(true);
+    expect(acceptable(door('quiet', 5, undefined), 8, 0.04)).toBe(true);
+  });
+
+  it('applies no return test where the world published no curve to require anything from', () => {
+    expect(acceptable(door('thin', 5, 0.01), 8, undefined)).toBe(true);
   });
 });

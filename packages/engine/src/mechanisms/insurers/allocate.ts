@@ -1,7 +1,7 @@
 /**
  * An institution does not invest. It hands its assets to somebody whose business that is.
  *
- * @spec Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Fund Shares A1 Fund Shares A4 Fund Shares D5 Law 3 Law 4 Law 19
+ * @spec Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Fund Shares A1 Fund Shares A4 Fund Shares D2 Fund Shares D5 Law 2 Law 3 Law 4 Law 6 Law 19
  *
  * ITEM 14.0, AND IT IS THE OWNER'S LARGEST SIMPLIFICATION: *"insurance companies and pension funds
  * don't invest themselves. Their assets are always third party managed."* So there is no portfolio
@@ -20,13 +20,36 @@
  * cover, took premiums, and sat on the cash for ever. This is where that money comes from.
  *
  * WHAT IT DOES NOT DO. It does not pick a bond, a tenor or a name; it does not rebalance; it holds
- * no view about a price. Its whole decision is: what can I put to work, and whose mandate is shaped
- * like what I promised. Everything after that is the manager's (Fund Shares A4).
+ * no view about a price. Its whole decision is: what can I put to work, and whose mandate it can
+ * accept. Everything after that is the manager's (Fund Shares A4).
+ *
+ * ITEM 10f.5, AND IT IS THE OWNER'S CORRECTION TO 14.0: *"insurance and pension don't only go for
+ * duration. They invest in tons of different strategies."* What stood here matched its longest
+ * promise to the pool whose stated duration was NEAREST it, took that one, and REFUSED every pool
+ * that stated no duration at all — which is every strategy pool, every equity pool and every
+ * private-equity pool in this world. One institution, one manager, one asset class, for ever.
+ *
+ * Both halves of the correction are right and the fix keeps both:
+ *
+ *  - **What it requires is what its own promises are discounted at** (B2). Its liabilities have a
+ *    present value at the curve, and the rate they are discounted at is the rate its assets must
+ *    earn to cover them. It is a READ of a published curve and never a preference anybody declared.
+ *  - **What it will not take is duration it did not promise.** A pool whose stated duration runs
+ *    PAST its longest promise is refused, because holding it is a rate risk nobody asked it to take.
+ *    A pool that states NO duration is not refused: equity has no duration to mismatch, which is how
+ *    strategies, credit and equity all become eligible with one test rather than three.
+ *  - **A pool that OFFERS LESS than what its promises require is refused**, and one that offers
+ *    nothing at all is not — because nothing was said, and an absence of evidence is returned as one
+ *    (App A). That is the whole of why an institution reaches past bonds: a pool with a yield has
+ *    told it whether it covers the promises, and a pool without one has not claimed anything to
+ *    fail against.
+ *  - **How it spreads is by FEEDING THE SMALLEST**: this period's money goes to whichever of the
+ *    doors it can accept it holds least of. Diversification is then an OUTCOME and there is no
+ *    allocation rule anywhere — no percentages, no target weights, no optimiser (Law 2, Law 6).
  */
 import type { CurrencyCode, PartyId, VenueId } from '../../core/ids.js';
-import { moneyInstrumentId } from '../../core/ids.js';
+import { moneyInstrumentId, partyId } from '../../core/ids.js';
 import {
-  absolute,
   amountOf,
   asCash,
   asPerPiece,
@@ -34,7 +57,9 @@ import {
   heldAsMoney,
   minus,
   type PerPiece,
+  valueAt,
 } from '../../core/measure.js';
+import { sum } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -48,6 +73,8 @@ interface Door {
   readonly perShare: PerPiece;
   /** B2.b: what its mandate says about duration, and none where it says nothing. */
   readonly years: number | undefined;
+  /** D2, D2.a (10f.5): what it OFFERS a saver, and none where it has never claimed anything. */
+  readonly offered: number | undefined;
   /** Item 10e.6: the policy an entrant must clear, and none where it is offered to the public. */
   readonly asks: string | undefined;
 }
@@ -67,6 +94,7 @@ function doors(ctx: MechanismContext): readonly Door[] {
     if (said === undefined) continue;
     const perShare = said.data['perShare'];
     const years = said.data['durationYears'];
+    const offered = said.data['offered'];
     if (typeof perShare !== 'number' || perShare <= 0) continue;
     out.push({
       venue: v.id,
@@ -74,6 +102,7 @@ function doors(ctx: MechanismContext): readonly Door[] {
       // Item 16: what the pool published a share is worth, re-entering as the level it is.
       perShare: asPerPiece(perShare, 'what the fund said a share is worth'),
       years: typeof years === 'number' ? years : undefined,
+      offered: typeof offered === 'number' ? offered : undefined,
       asks: v.key['asks'],
     });
   }
@@ -130,26 +159,70 @@ export function investable(ctx: MechanismContext, insurer: PartyId, ccy: Currenc
 const CLAIM_PAID_KIND = 'insurer.claim';
 
 /**
- * B2.b: WHOSE MANDATE IS SHAPED LIKE WHAT IT PROMISED — the pool whose stated duration is nearest
- * the furthest thing this institution owes, and NO pool at all where nothing matches.
+ * B2, B2.b (item 10f.5): WHETHER THIS INSTITUTION CAN ACCEPT THIS POOL — two refusals and nothing
+ * else. It is an ACCEPTANCE and not a preference: what is left over is a set and not a winner.
  *
- * A pool that states no duration cannot be matched to a liability schedule, and that is a refusal
- * rather than a fallback: an equity fund is not a place to put money you have promised somebody on
- * a date. Ties break on the fund's own name, so two identical mandates are not separated by the
- * order a venue list happened to be built in.
+ *  - **Not longer than it promised.** A pool whose stated duration runs past the furthest thing this
+ *    institution owes is a rate risk nobody asked it to take. A pool that states NO duration is not
+ *    refused, because there is nothing to mismatch — which is how strategies, credit and equity
+ *    become eligible under one test rather than three.
+ *  - **Not less than its promises require.** What it requires is what those promises are discounted
+ *    at; a pool that has told it it earns less than that has told it it does not cover them. A pool
+ *    that has said nothing has not claimed anything to fail against, and nothing is returned as
+ *    nothing rather than as a zero (App A).
+ *
+ * An institution that has promised nothing has neither test to apply, which is right: it has capital
+ * and no liabilities, and there is nothing for an asset to be mismatched against.
  */
-export function matchFor(doorsOpen: readonly Door[], years: number): Door | undefined {
+export function acceptable(
+  d: Door,
+  years: number | undefined,
+  requires: number | undefined,
+): boolean {
+  if (years !== undefined && d.years !== undefined && d.years > years) return false;
+  if (requires !== undefined && d.offered !== undefined && d.offered < requires) return false;
+  return true;
+}
+
+/**
+ * Fund Shares D2 (item 10f.5): WHERE THIS PERIOD'S MONEY GOES — whichever of the doors it can accept
+ * it holds LEAST of, valued at what that pool published a share is worth.
+ *
+ * It is the whole of how an institution spreads, and **diversification is the OUTCOME of it rather
+ * than a rule** (Law 2): nothing states a weight, a target or a maximum, and a pool it has never
+ * bought is worth nothing to it and is therefore the smallest. Feed it every period and the book
+ * fills out on its own; stop feeding one and it falls behind and is fed again.
+ *
+ * Ties break on the fund's own name, so two pools it holds none of are not separated by the order a
+ * venue list happened to be built in (Audit D3).
+ */
+export function feedTheSmallest(
+  ctx: MechanismContext,
+  insurer: PartyId,
+  open: readonly Door[],
+): Door | undefined {
   let best: Door | undefined;
-  let closest = 0;
-  for (const d of doorsOpen) {
-    if (d.years === undefined) continue;
-    const away = absolute(asCash(d.years - years, 'how far its mandate is from what it promised'), 'how far');
-    if (best === undefined || away < closest || (away === closest && d.fund < best.fund)) {
+  let smallest = 0;
+  for (const d of open) {
+    const held = heldIn(ctx, insurer, d);
+    if (best === undefined || held < smallest || (held === smallest && d.fund < best.fund)) {
       best = d;
-      closest = away;
+      smallest = held;
     }
   }
   return best;
+}
+
+/** Law 19: what this institution holds of one pool, at what that pool published (Observer A3). */
+function heldIn(ctx: MechanismContext, insurer: PartyId, d: Door): Cash {
+  const terms: Cash[] = [];
+  for (const i of ctx.instruments.issuedBy(partyId(d.fund))) {
+    if (!i.status.live) continue;
+    const units = ctx.register.quantity(insurer, i.id);
+    if (units <= 0) continue;
+    terms.push(valueAt(d.perShare, units, 'what it holds of this pool'));
+  }
+  return sum(terms).value;
 }
 
 /**
@@ -164,8 +237,9 @@ export function allocate(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyC
   const spare = investable(ctx, insurer, ccy);
   if (spare <= 0) return;
   const years = longestPromise(ctx, insurer);
-  if (years === undefined) return;
-  const door = matchFor(doors(ctx), years);
+  const requires = requiredOf(ctx, ccy, years);
+  const open = doors(ctx).filter((d) => acceptable(d, years, requires));
+  const door = feedTheSmallest(ctx, insurer, open);
   if (door === undefined) return;
   // Law 8: whole shares, and DOWN — what its money buys, never a share it cannot pay for.
   const shares = downTick(amountOf(spare, door.perShare, 'shares its money buys'));
@@ -177,12 +251,40 @@ export function allocate(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyC
     {
       insurer,
       fund: door.fund,
-      // B2.b: the two numbers the choice was made on, both of them public.
-      promisedYears: years,
-      mandateYears: door.years,
+      // B2, B2.b: the numbers the acceptance was made on, all of them public.
+      promisedYears: years ?? null,
+      mandateYears: door.years ?? null,
+      requires: requires ?? null,
+      offered: door.offered ?? null,
+      // 10f.5: how many doors it could accept, which is what its book spreads over as the periods
+      // go by. One is a real answer and it is visible as one.
+      doors: open.length,
       shares,
       putToWork: spare,
     },
     false,
   );
+}
+
+
+/**
+ * B2 (item 10f.5): WHAT ITS PROMISES REQUIRE — the rate they are discounted at, read off the
+ * sovereign curve of the money they are promised in, at the tenor of the furthest of them.
+ *
+ * A liability payable in ten years has a present value, and the rate it is discounted at is the
+ * rate the assets against it must earn to cover it. That is B2's actual economics and it is a READ:
+ * no preference is declared, nothing is a spread over anything, and an institution in a world whose
+ * sovereign has published no curve requires NOTHING rather than zero (App A) — it cannot tell
+ * whether a pool covers its promises, so it refuses nothing on that ground.
+ */
+function requiredOf(
+  ctx: MechanismContext,
+  ccy: CurrencyCode,
+  years: number | undefined,
+): number | undefined {
+  if (years === undefined) return undefined;
+  const family = ctx.sovereignCurveIn(ccy);
+  if (!family.some) return undefined;
+  const at = ctx.curve(family.value.id).at(years);
+  return at.yield.some ? at.yield.value : undefined;
 }
