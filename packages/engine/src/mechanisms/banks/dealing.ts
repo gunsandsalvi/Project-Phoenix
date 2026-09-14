@@ -16,6 +16,7 @@
  * the capital the position consumes has to earn. A bank that carried inventory for free would have
  * to be a bank that paid nothing for its money.
  */
+import type { Instrument } from '../../register/instruments.js';
 import { linesCovered } from './staff.js';
 import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
@@ -249,16 +250,35 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
  * venue for it.
  */
 /**
- * D1: whether this line is inside what the desk's people can cover. The lines it makes in, in the
- * instruments store's own order, taking the first `linesCovered` of them — a stable order, so a
- * desk that loses an hour drops the same line every time rather than a different one each period.
+ * D1, A3, A-54: whether this line is inside what THIS desk's people can cover.
+ *
+ * The lines it can make in — its own `BankDecl.makes`, and where a line names its makers, the ones
+ * that name it — in the instruments store's own order, taking the first `linesCovered` of them. The
+ * order is stable, so a desk that loses an hour drops the same line every time rather than a
+ * different one each period.
+ *
+ * It used to walk EVERY live line in the world and take the first `room` of those, which is one
+ * global cutoff applied identically to every bank: two desks with different businesses covered the
+ * same lines, and a line past position `room` in the store was quoted by NOBODY however many banks
+ * made its kind. The candidate set is the desk's own now, so the cutoff is too — which is what A3
+ * means by dealing in a name being a second decision from dealing in a kind.
  */
-function covers(view: ParticipantView, line: InstrumentId): boolean {
+function covers(
+  view: ParticipantView,
+  d: BankDecl,
+  line: InstrumentId,
+  makersOf?: (instrument: InstrumentId) => readonly string[] | undefined,
+): boolean {
   const room = linesCovered(view);
   if (room <= 0) return false;
+  const mine = (x: Instrument): boolean => {
+    if (!x.status.live || !x.market.some || !d.makes.includes(String(x.kind))) return false;
+    const makers = makersOf?.(x.id);
+    return makers === undefined || makers.includes(String(view.self.id));
+  };
   let seen = 0;
   for (const x of view.instruments.all()) {
-    if (!x.status.live || !x.market.some) continue;
+    if (!mine(x)) continue;
     if (x.id === line) return seen < room;
     seen += 1;
     if (seen >= room) return false;
@@ -291,26 +311,34 @@ export function dealingOrders(
   const makers = makersOf?.(i.id);
   if (makers !== undefined && !makers.includes(String(view.self.id))) return [];
   /**
-   * Dealer Desks D1, D4, XI-13 (13d): AND IT CAN ONLY COVER WHAT IT EMPLOYS. Quoting a line is
-   * people watching it, so how many lines this desk can be in is the hours it actually pays for
-   * over the hours one line takes — and a desk that sheds staff drops lines, whose books then
+   * Banks Funding D1, XI-2, Money Market A2.b, A-54: THE RUNG BELOW THE MARKET, AND IT IS ABOVE THE
+   * COVERAGE GATE. A bank the last session refused sells the paper it has left, and a forced seller
+   * does not name a price — the order carries a size and no level (Clearing C3), so it is struck at
+   * whatever the other side posted, and the print a fire sale makes reaches every other holder of
+   * the same paper through the revaluation.
+   *
+   * It sat BELOW `covers`, so a bank that could not quote could not be a forced seller either — and
+   * a bank in trouble is exactly the one whose desk has stopped covering lines. XI-2's door for a
+   * bank could not open. Quoting a market and being made to sell are different acts and only the
+   * first of them needs people.
+   */
+  const urgent = urgentSale(view, d, i.id);
+  if (urgent > 0) return [{ party: view.self.id, side: 'sell', price: 'market', qty: urgent }];
+  /**
+   * Dealer Desks D1, D4, XI-13 (13d): AND IT CAN ONLY QUOTE WHAT IT EMPLOYS. Making a market in a
+   * line is people watching it, so how many lines this desk can be in is the hours it actually pays
+   * for over the hours one line takes — and a desk that sheds staff drops lines, whose books then
    * journal `market.noView` because nobody is standing in them.
    *
-   * Which lines it drops is the register's own order and never a choice made here: a desk under
-   * pressure keeps what it already holds and stops quoting the rest, which is what a dealer does.
+   * Which lines it drops is its OWN candidate set in the register's order, never a choice made
+   * here: a desk under pressure keeps the lines it has been in and stops quoting the rest.
    */
-  if (!covers(view, i.id)) return [];
+  if (!covers(view, d, i.id, makersOf)) return [];
   const state = stateOf(view, d);
   if (state === undefined) return [];
   const quoted = quoteFor(view, i.id, state);
   if (!quoted.some) return [];
   const q = quoted.value;
-  // Banks Funding D1, XI-2: THE RUNG BELOW THE MARKET. A bank the last session refused sells the
-  // paper it has left, and a forced seller does not name a price — the order carries a size and no
-  // level (Clearing C3), so it is struck at whatever the other side posted, and the print a fire
-  // sale makes reaches every other holder of the same paper through the revaluation.
-  const urgent = urgentSale(view, d, i.id);
-  if (urgent > 0) return [{ party: view.self.id, side: 'sell', price: 'market', qty: urgent }];
   const offer = view.offer(m.id);
   // Sovereign C3: a session carrying the issuer's own offer is an AUCTION, and at an auction a
   // primary dealer is a bidder. It posts one order, on one side, for one reason — and it does not

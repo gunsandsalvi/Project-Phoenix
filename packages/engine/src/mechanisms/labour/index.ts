@@ -324,6 +324,20 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
           const p = numbers(ctx);
           const venues = ctx.venues.filter(mine);
           publishGoingRate(ctx, b, venues, ctx.period);
+          /**
+           * Clearing B2, Law 4, B-6: ASK THE VENUE'S OWN PARTICIPANTS FOR THEIR SCHEDULES.
+           *
+           * `gather` is the door a module opens so that parties it does not own can post into a
+           * venue it clears, and across the whole engine it was called ONCE — by the money market.
+           * Three modules declare `venueParticipants` and one of them was gathered, so
+           * `banks/staffOrders` had never run: no bank bid for an hour, no bank employed anybody,
+           * `linesCovered` was 0 for every bank in every period, `covers` was false for every line,
+           * and `dealingOrders` returned nothing — **no bank made a market in anything** (A-60).
+           *
+           * Once per venue per period, before either round reads the book, and after the going rate
+           * is published because a bidder may read it (Expectations A2.a).
+           */
+          for (const v of venues) ctx.gather(v.id);
           // A3.b, XI-10 (13d): TWO ROUNDS, ONE MATCHING FUNCTION. First every seeker offers in the
           // trade it has; then the ones nobody took offer in the trades they have not, and an
           // employer that takes one of those waits longer for the work. It is the order a labour

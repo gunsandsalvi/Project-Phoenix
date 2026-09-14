@@ -262,6 +262,16 @@ function ordersOf(
   book: LeaseBook,
   rows: readonly TenureDecl[],
 ): readonly Order[] {
+  /**
+   * Clearing B2, Law 4: THE VENUES THIS PARTICIPANT SPEAKS FOR, and it is the lettings ones.
+   *
+   * `venueParticipantDecls` is one global list: every declaration is asked about every venue that is
+   * gathered, and the only thing that stops a module answering for somebody else's book is the
+   * module's own test. This asked only about the REGION — and a labour venue has a region too, so
+   * once `labour` began gathering (item 3) this would have posted dwellings into a book quoted in
+   * hours. `banks` guards the same way (`venue.key['market'] !== 'money'`, `occupation !== BANKING`).
+   */
+  if (venue.clearedBy !== 'housing') return [];
   const region = venue.key['region'] as RegionId | undefined;
   if (region === undefined || view.self.region !== region) return [];
   const mine = view.self.id;
@@ -729,7 +739,18 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         anchor: { before: 'markets' },
         run: (ctx: MechanismContext) => {
           const b = bookOf(ctx);
-          for (const v of ctx.venues.filter(mine)) letIn(ctx, b, v);
+          /**
+           * Clearing B2, B-5: THE LETTINGS VENUE HAD NEVER HAD AN ORDER IN IT. `venueParticipants`
+           * declares who bids and offers for a tenancy, and nothing called `gather`, so `letIn` read
+           * an empty book every period of every run: no tenancy was ever signed, no rent was ever
+           * paid, and `housing.rent` — a whole phase — did nothing for ever.
+           *
+           * Once per venue per period, before the book is read.
+           */
+          for (const v of ctx.venues.filter(mine)) {
+            ctx.gather(v.id);
+            letIn(ctx, b, v);
+          }
         },
       },
       {

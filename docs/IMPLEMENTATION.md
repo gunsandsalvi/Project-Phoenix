@@ -180,7 +180,7 @@ Dependencies, not preference, and the open lines before the new ones. The four a
 |---|---|---|---|
 | ~~**1**~~ | ~~The existence check~~ | — | **DONE** — `check:existence`. It found five more dead systems and an 8-row disagreement between the spec and COVERAGE on its first run |
 | **2** | The dimension sweep, finished | 18 | the last open row of a half-done item; it makes 18 findings compile errors, which must then be fixed |
-| **3** | The gather | 4 | one missing call chain kills lettings, bank employment and every dealer quote in the world |
+| ~~**3**~~ | ~~The gather~~ | 4 | **DONE** but for 3.5 (`A-43`), which item 9 closes. It also found a second global list nobody filtered — see the record |
 | **4** | The families that cannot fail | 9 | "checks green" is currently satisfied by four families that cannot fail; nothing below can be measured until they can |
 | **5** | Missing is Missing, carried | 4 | a defaulted zero defeats 1 and 2 |
 | **6** | The derivative books open | 3 | needs **3** (a dealer), and everything in the layer is downstream of a first print |
@@ -686,6 +686,41 @@ is signed, no rent is paid, and `housing.rent` — a whole phase — does nothin
 
 **What it is.** The door is built, documented and correct. Call it.
 
+### As built
+
+**The call chain unlocked.** `World.gather` is the only path that runs `venueParticipantDecls`, and
+across the whole engine `ctx.gather(...)` appeared ONCE. Three modules declare venue participants and
+one was gathered, so `banks/staffOrders` had never run in any period of any run: no bank bid for an
+hour, none employed anybody, `linesCovered` was 0 for every bank for ever, `covers` was false for
+every line, and `dealingOrders` returned nothing. **No bank made a market in anything.** And the
+lettings venue had never had an order in it, so no tenancy was ever signed and `housing.rent` — a
+whole phase — did nothing.
+
+**It is gathered in the phase, not in the clearing function.** `labour.match` calls `runVenue` twice
+per venue (the trade round, then the anywhere round) and a venue is gathered once per period; the
+kernel's own `gathered` set would have made the second call a no-op, but putting it where the two
+rounds can see it would have been writing down the wrong reason.
+
+**And the gather found a second global list nobody filtered.** `venueParticipantDecls` is ONE list:
+every declaration is asked about every venue that is gathered, and the only thing stopping a module
+from answering for somebody else's book is the module's own test. `banks` had one (`market !==
+'money'`, `occupation !== BANKING`); `housing` tested the REGION and nothing else — and a labour
+venue has a region. The moment `labour` began gathering, the housing participant would have posted
+DWELLINGS into a book quoted in hours. It tests `venue.clearedBy` now. This is not in the plan and
+was not a known finding: it is what doing 3.1 exposed, and it is fixed here because the build does
+not run past it.
+
+**`covers` was one global cutoff** — the first `linesCovered` entries of `view.instruments.all()`,
+the same list for every bank, so two desks with different businesses covered the same lines and a
+line past that position was quoted by nobody however many banks made its kind. It walks the desk's
+own candidate set now (its `makes`, and the line's own makers where it names them), so the cutoff is
+the desk's.
+
+**And the forced sale was behind the coverage gate.** A bank that cannot quote could not be a forced
+seller — and a bank in trouble is exactly the one whose desk has stopped covering lines, so XI-2's
+door for a bank could not open at all. Quoting a market and being made to sell are different acts and
+only the first needs people.
+
 ### Files
 
 ```
@@ -697,12 +732,12 @@ packages/engine/src/mechanisms/labour/matching.ts  supply (A-43 rides here)
 
 ### Steps
 
-- [ ] 3.1 `labour/index.ts`, the phase that opens the occupation venue: call `ctx.gather(venue, 'labour')` before `clear`. `banks/staffOrders` then posts, and a bank employs people.
-- [ ] 3.2 `housing/index.ts:lettings`: call `ctx.gather(rentVenue(region), 'housing')` before `letIn`. The venue has bids and offers for the first time.
-- [ ] 3.3 `banks/staff.ts:covers` picks the covered lines as the **first `linesCovered` entries of `view.instruments.all()`** — global insertion order, identical for every bank, so it is one global cutoff rather than a per-desk specialisation, and every line past position `linesCovered` is quoted by nobody however many banks make its kind. Make the desk choose its own lines from its own `BankDecl.makes`.
-- [ ] 3.4 `banks/dealing.ts:dealingOrders`: `urgentSale` must be reachable when the desk covers nothing — a bank that cannot quote can still be a forced seller (XI-2, Banks Funding D1, Money Market A2.b). Move the `urgent` branch **above** the `covers` gate.
-- [ ] 3.5 **A-43** rides here and is the reason to do it now. `labour/matching.ts:supply` walks `ctx.parties.ofKind(HOUSEHOLD)` and posts each cell's order itself — the buyer's market deciding for the seller, which `MechanismContext.gather`'s own contract forbids in as many words. With the venue gathered, `households` declares a `venueParticipant` and `supply` deletes. **Blocked on item 9**: a households-side participant cannot see who is already employed or what trade they have, and that book is one of the seven. Do 3.1–3.4 here; do 3.5 in item 9 and say so in the record.
-- [ ] 3.6 Do not measure. Lint and typecheck only; the suite runs when the item's steps are done.
+- [x] 3.1 `labour/index.ts`, the phase that opens the occupation venue: call `ctx.gather(venue, 'labour')` before `clear`. `banks/staffOrders` then posts, and a bank employs people. **DONE.** `ctx.gather(v.id)` for every labour venue, in the phase and not in `runVenue` — the phase runs `runVenue` twice (the trade round and the anywhere round) and a venue is gathered once per period. After `publishGoingRate`, because a bidder may read it.
+- [x] 3.2 `housing/index.ts:lettings`: call `ctx.gather(rentVenue(region), 'housing')` before `letIn`. The venue has bids and offers for the first time. **DONE**, in the `housing.lettings` loop, before `letIn` reads the book.
+- [x] 3.3 `banks/staff.ts:covers` picks the covered lines as the **first `linesCovered` entries of `view.instruments.all()`** — global insertion order, identical for every bank, so it is one global cutoff rather than a per-desk specialisation, and every line past position `linesCovered` is quoted by nobody however many banks make its kind. Make the desk choose its own lines from its own `BankDecl.makes`. **DONE.** `covers` walks the desk's OWN candidate set — its `BankDecl.makes`, and where a line names its makers, the ones that name it — and takes the first `linesCovered` of those. The cutoff is per desk now instead of one global position in the instruments store.
+- [x] 3.4 `banks/dealing.ts:dealingOrders`: `urgentSale` must be reachable when the desk covers nothing — a bank that cannot quote can still be a forced seller (XI-2, Banks Funding D1, Money Market A2.b). Move the `urgent` branch **above** the `covers` gate. **DONE.** `urgentSale` is above the `covers` gate. A bank in trouble is exactly the one whose desk has stopped covering lines, so XI-2's door for a bank could not open while the forced sale sat behind a gate about having enough people to quote.
+- [ ] 3.5 **A-43** rides here and is the reason to do it now. `labour/matching.ts:supply` walks `ctx.parties.ofKind(HOUSEHOLD)` and posts each cell's order itself — the buyer's market deciding for the seller, which `MechanismContext.gather`'s own contract forbids in as many words. With the venue gathered, `households` declares a `venueParticipant` and `supply` deletes. **Blocked on item 9**: a households-side participant cannot see who is already employed or what trade they have, and that book is one of the seven. Do 3.1–3.4 here; do 3.5 in item 9 and say so in the record. **STAYS OPEN, deliberately, and item 9 closes it** — a households-side participant cannot see who is already employed or what trade they have until `Mandate` gives it that book. 3.1–3.4 are done.
+- [x] 3.6 Do not measure. Lint and typecheck only; the suite runs when the item's steps are done. **DONE**: typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green. The suite waits.
 
 ### What it deletes
 
@@ -3735,19 +3770,15 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-45** (C) | 5 | a bank that owes nothing has a cost of funds of zero |
 | **A-48** (C) | 4 | `equityIsZero` cannot fail for the reason it says it checks |
 | **A-53** (B) | 15 | a household bids its entire income as rent |
-| **A-54** (A) | 3 | `gather` is called by exactly one module |
 | **A-55** (A) | 7 | nobody can buy a dwelling, so Housing B1–C4 never runs |
 | **A-56** (A) | 7 | three lines have a firm, a recipe, a market and no buyer |
 | **A-57** (A) | 8 | a securitisation vehicle keeps the whole interest stream, for ever |
-| **A-60** (A) | 3 | no bank makes a market, because no bank employs anybody |
 | **A-66** (A) | 6 | eight of nine derivative books can never produce a first print |
 | **A-67** (A) | 9 | nothing ever borrows a security |
 | **A-69** (C) | 6, 21 | nine exported entry points that nothing calls |
 | **B-1** (A) | 10 | `corporate.bond` is declared and nothing ever issues one |
 | **B-2** (A) | 9, 14 | the insurance sector has no seed, no phase and no participant |
 | **B-3** (A) | 9 | securities lending is claimed to clear a fee and has no way in |
-| **B-5** (A) | 3 | the tenancy venue has never had an order in it |
-| **B-6** (A) | 3 | item 9's dealers quote nothing |
 | **B-7** (A) | 6 | the derivative layer has never produced a contract |
 | **B-8** (A) | 8 | the securitisation waterfall never allocates a loss |
 | **B-9** (C) | 16 | the four countries: header and section 2 contradict each other |
@@ -3796,6 +3827,7 @@ carries each in full.
 | item 2, stage 2d | `A-23`, `A-47`, `A-50`, `A-51`, `A-61` |
 | item 2, stage 2e | `A-5`, `A-6`, `A-32`, `A-33`, `A-38`, and `A-58`'s schedule |
 | item 2, stage 2f | `E-9`, `E-10` |
+| item 3, the gather | `A-54`, `A-60`, `B-5`, `B-6` (`A-43` stays for item 9) |
 
 ### What the reads covered, and what they did not
 

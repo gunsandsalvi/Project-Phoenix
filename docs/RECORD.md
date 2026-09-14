@@ -6086,3 +6086,68 @@ defect and is answered in stage 2e's entry rather than dropped.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green.
+
+---
+
+## Item 3 — the gather: one call, and a bank employs people
+
+`World.gather` is the only path that runs `venueParticipantDecls`, and across the whole engine
+`ctx.gather(...)` appeared **once** — `money-market/index.ts`. Three modules declare venue
+participants and one of them was gathered. The chain behind the other two is the largest single
+unlock in the model:
+
+```
+no gather → no bank bid for hours → no employment row → no labour.wages event
+          → linesCovered() === 0 → covers() false for every line
+          → dealingOrders() returns [] for every bank, every market, every period
+```
+
+So no bank made a market in anything (`A-60`): no bid-offer spread, no inventory, no interdealer
+market, `market.noView` on every book households and merchants do not cover, and no primary dealer at
+a sovereign auction. And the lettings venue had never had an order in it (`B-5`), so no tenancy was
+ever signed, no rent was ever paid, and `housing.rent` — a whole phase — did nothing for ever.
+
+The door was built, documented and correct. It is called now: in `labour.match` for every occupation
+venue, and in `housing.lettings` for every rent venue.
+
+**Where the call goes matters and the plan's wording did not settle it.** `labour.match` runs
+`runVenue` TWICE per venue — the trade round, then the anywhere round — and a venue is gathered once
+per period. The kernel's own `gathered` set would have made a second call a no-op, so putting it
+inside `runVenue` would have worked by accident. It is in the phase, before either round reads the
+book, and after `publishGoingRate` because a bidder may read what an hour last cleared at.
+
+**And doing it exposed a second global list nobody filtered.** `venueParticipantDecls` is ONE list:
+every declaration is asked about every venue that is gathered, and the only thing that stops a module
+answering for another module's book is that module's own test. `banks` has one — `sessionOrders`
+refuses a venue whose `market` key is not `money`, `staffOrders` one whose `occupation` is not
+`BANKING`. `housing`'s participant tested the REGION and nothing else. A labour venue has a region.
+The moment `labour` began gathering, the housing participant would have posted DWELLINGS into a book
+quoted in HOURS. It tests `venue.clearedBy` now, which is the fact that actually distinguishes them.
+
+That was not a known finding and it is not in the plan. It is what doing 3.1 exposed, and it is fixed
+here rather than written down because it is the kind that stops the build: an impossible quantity in
+somebody else's book.
+
+**`covers` was one global cutoff (`A-54`).** It walked `view.instruments.all()` and took the first
+`linesCovered` of every live line in the world — the same list for every bank. Two desks with
+completely different businesses covered the same lines, and a line past that position in the store
+was quoted by NOBODY however many banks made its kind. It walks the desk's own candidate set now: its
+`BankDecl.makes`, and where a line names its makers, the ones that name it. The cutoff is the desk's,
+which is what Dealer Desks A3 means by dealing in a NAME being a second decision from dealing in a
+KIND.
+
+**And the forced sale sat behind the coverage gate.** `urgentSale` was reached only after `covers`
+returned true, so a bank that could not quote could not be a forced seller — and a bank in trouble is
+exactly the one whose desk has stopped covering lines. XI-2's door for a bank could not open. It is
+above the gate now: quoting a market and being made to sell are different acts and only the first of
+them needs people.
+
+**`3.5` (`A-43`) stays open and item 9 closes it**, as the plan says. `labour/matching.ts:supply`
+walks `ctx.parties.ofKind(HOUSEHOLD)` and posts each cell's order itself — the buyer's market
+deciding for the seller, which `gather`'s own contract forbids in as many words. With the venue
+gathered, `households` can declare a venue participant and `supply` deletes; but a households-side
+participant cannot see who is already employed or what trade they have, and that book is one of the
+seven `Mandate` gives it. Doing it now would be inventing a read.
+
+Closes `A-54`, `A-60`, `B-5`, `B-6`. Typecheck 0, lint 0, `check:spec`, `check:forbids`,
+`check:existence` green. Not measured — the suite runs when the plan is done.
