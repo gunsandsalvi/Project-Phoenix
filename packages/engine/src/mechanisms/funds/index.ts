@@ -1264,9 +1264,22 @@ function eligibleLines(view: ParticipantView, d: FundDecl): number {
 }
 
 /**
- * A3: a fund's equity is ZERO. The holders own the assets, so assets minus liabilities is nothing —
- * and a fund with equity has mislaid somebody's money. Nothing in the module enforces it: it falls
- * out of the wire, and this is the check that says whether the wire actually did it.
+ * A3: a fund's equity is ZERO. The holders own the assets, so assets minus liabilities is nothing,
+ * and a fund with equity has mislaid somebody's money.
+ *
+ * A-48: THE ZERO DOES NOT "FALL OUT OF THE WIRE", and this docstring said it did for a long time.
+ * `fundShareKind` declares `owes: 'value'` and derives that value from `navOf().perShare`, so what
+ * the fund owes its holders is what its book comes to BY CONSTRUCTION and `assets − liabilities = 0`
+ * is an algebraic identity of the valuation, not an outcome of the instructions.
+ *
+ * What this family CAN catch, and why it is kept: a disagreement between two valuation PATHS. The
+ * equity walk adds up what the register and the revaluation actually booked, period by period, and
+ * the liability is `navOf` re-derived now. They are the same number only while every mark that was
+ * booked is a mark `navOf` would still produce — so a rounding that was booked and not re-derived, a
+ * currency conversion on one side and not the other (which is what stage 2d's `inOwnMoney` fixed in
+ * `navOf`), or a stale mark on one path shows up here as a fund with equity.
+ *
+ * That is a narrower claim than the one it used to make, and it is the true one.
  */
 function equityIsZero(): Family {
   return {

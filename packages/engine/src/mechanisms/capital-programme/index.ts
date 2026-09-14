@@ -459,9 +459,10 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
           }
         }
       }
-      // A weight event restates every holding of a cell without an instruction; this period's
-      // identity is not about that, exactly as the goods module's own units check has it.
-      const weights = view.journal.ofKindIn('weight', view.period).length;
+      // A-42: no weight exemption, for the reason `goods/index.ts:unitsIdentity` gives at length —
+      // this counted every weight event in the world and a household ages every period, so the
+      // family had been switched off since the first ageing. This one compares PER HOLDER and per
+      // member, where a split changes the set of keys and not the number on either side of it.
       const consecutive = seen.period !== undefined && view.period === seen.period + 1;
       const held = new Map<string, Qty>();
       for (const i of view.instruments.all()) {
@@ -474,7 +475,7 @@ function plantMoves(rows: readonly CapitalKindDecl[]): Family {
           held.set(k, now);
         }
       }
-      const comparable = consecutive && weights === 0;
+      const comparable = consecutive;
       for (const [k, before] of comparable ? seen.held : new Map<string, Qty>()) {
         const now = zeroIfNone(held.get(k));
         const legs = sum(moved.get(k) ?? []);

@@ -6151,3 +6151,105 @@ seven `Mandate` gives it. Doing it now would be inventing a read.
 
 Closes `A-54`, `A-60`, `B-5`, `B-6`. Typecheck 0, lint 0, `check:spec`, `check:forbids`,
 `check:existence` green. Not measured — the suite runs when the plan is done.
+
+---
+
+## Item 4 — the families that cannot fail
+
+The loop's definition of done is "an item is done when its checks are green", and four of the nine
+audit families were green for reasons that had nothing to do with the state of the world. A green
+audit had been part of the evidence behind thirteen `done` rows. Audit A1.a, in the spec's own words:
+*"a read of two independent things that must agree — never a read of one thing against itself, which
+always passes."*
+
+**`A-10` — the currency family read one event twice.** `revalueForeign` computes
+`delta = carried × (now − was)` and journals `delta`, `carried`, `was` and `now` together;
+`revaluationAddsUp` took `delta` for one side and recomputed `carried × (now − was)` from the other
+three for the other. One path twice, passing in every possible world.
+
+The positions come from the REGISTER now: the holder's own lots, valued at the carrying the
+valuation derives from the period BEFORE — which is why re-reading it at audit time, after the marks
+have run, gives the same number the rate step used. Only the two RATES still come from the event,
+because the rate a period OPENED at is a fact nothing else in the engine stores (`rateInForce` is
+answering with this period's by the time the audit runs). A carrying that has drifted from the copy
+the event took, a revaluation booked twice, one booked to the wrong account, all now show up.
+
+**And it gained coverage nothing had:** a foreign position the FX step never looked at. It is not a
+disagreement of sizes — there is no second number at all — so it is reported as itself under
+Currency D2.
+
+**`A-14` — the workforce identity added a partition to itself.** `acc.states` was
+`(E ? w : 0) + (¬E ∧ W ? w : 0) + (¬E ∧ ¬W ? w : 0)` over two booleans: mutually exclusive and
+exhaustive, so it equalled the population on every iteration by construction.
+
+The three states come from three places now. EMPLOYED from the module's own employment book,
+INACTIVE from the REGISTRY's age bands read against the parties store, POPULATION from the cells —
+so what is left over is the unemployed, and an inactive count that overlaps the employed one is a
+real disagreement between the registry's bands and the book. **And a second reading of employment**:
+what the module BILLED this period, summed off its own published `labour.wages` events, against what
+its book says it employs. Those agree only where `labour.release` took out the rows of employers that
+have ceased — which is exactly the failure the check should name.
+
+**`A-42` — two families switched themselves off on the first ageing.** `goods:unitsIdentity` and the
+capital-programme's own counted EVERY weight event in the world and stopped comparing when there was
+one; `households/lifecycle.ts:age()` journals one every period. Neither had reported anything since.
+
+The guard is deleted rather than narrowed, because there is no case for it to protect against: of
+the three ways a weight moves, `splitCell` and `reKeyCell` preserve the total (the children's
+per-member holdings are the parent's and their weights sum to its), `dieCell` refuses a cell that
+still holds anything, and `weightEvent` has no caller at all (`A-17`). It bought nothing and cost two
+families.
+
+**`A-48` — a docstring that claimed more than the check does.** `equityIsZero` said a fund's zero
+*"falls out of the wire"*. It does not: `fundShareKind` declares `owes: 'value'` and derives it from
+`navOf().perShare`, so `assets − liabilities = 0` is an algebraic identity of the valuation. The
+check is KEPT and the docstring says what it can actually catch — a disagreement between two
+valuation PATHS, the equity walk of what was booked period by period against `navOf` re-derived now.
+Stage 2d made that disagreement possible to have by fixing `navOf`'s currency.
+
+**`A-11` — the flows family exempted a whole cell for a whole period.** A split, a promotion and a
+merge copy a book without an instruction, so the new cell went into a `copied` set and every holding
+of it was skipped for the period: Money D3 switched off across every line, and everything that cell
+then did unexplained by construction.
+
+What has no leg behind it is the copy of the parent's book AT THE INSTANT OF THE SPLIT. A split is
+exact — the new cell's opening per-member position IS the parent's — so the parent's remembered book
+is the `before` the child is measured from, and every difference from it is a leg like anybody
+else's. Only a MERGE's absorbed cell stays exempt: its book really is forgotten with nothing behind
+it.
+
+**`A-12` — a comparison that could never be true.** `m.id === i.market.valueOf()` compared a string
+to an `Option` OBJECT, at every instrument in every period; the second disjunct did the whole job.
+Deleted, and the market name is taken out of the option before the closure so nothing is narrowed by
+assumption.
+
+**`A-13` — a population identity that was nowhere.** Part XII names it — *"the sum of cell weights
+equals the population it stands for, and every represented party sits in exactly one cell"* — and
+neither half was in the kernel family. The only contributor that counted people was `labour`, through
+employment, so a cell nobody employs could lose or invent members and nothing looked: the firms'
+pools and XI-15 cells generally were unwatched.
+
+Both halves are in the kernel family now, for every cell. The population is a period-over-period
+identity: what the cells stand for now, per kind, against what they stood for at the last audit plus
+what the five WEIGHT EVENTS said happened in between. The audit's own memory is the second record,
+which is the only honest way to have one — nothing stores a population (Appendix B forbids a stored
+aggregate). And two live cells of one kind carrying the same key are one population wearing two
+states, which is what A4.c forbids one cell over, a whole cell wide.
+
+**`A-4` — and the check is NOT at assembly, deliberately.** `conditionsFor` said *"the world that has
+the fact is where the check belongs, and assembly is where it fires"*, and `world/assemble.ts` checks
+module ids, dependency cycles, money issuance and bank choices; `exposedTo` appears nowhere in it. A
+recipe naming a fact nobody declares multiplied by one for ever, in silence — a crop with no weather
+in it looking exactly like a crop having an ordinary year.
+
+The plan said "check it at assembly and delete the paragraph". The read of the code says it cannot be
+an assembly check and be this one: which facts a region has is a fact about the PERIOD's published
+conditions, not about the module list, and a fact can be regional. So the throw is at the read that
+needs it, where the world has already said what it publishes — `Missing`, citing Goods B4, with the
+region, the fact and what was published. A world with NO environment module at all still answers 1,
+because "this model has no weather" is an answer and "this line's weather went missing" is not. The
+paragraph is deleted either way (Law 12).
+
+Closes `A-4`, `A-10`, `A-11`, `A-12`, `A-13`, `A-14`, `A-42`, `A-48`, `B-10`. Typecheck 0, lint 0,
+`check:spec`, `check:forbids`, `check:existence` green. Not measured — the suite runs when the plan
+is done, and several of these families are now capable of red for the first time, which is the point.

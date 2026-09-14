@@ -297,9 +297,16 @@ function unitsIdentity(kinds: ReadonlySet<InstrumentKindId>): Family {
           moved.set(leg.instrument, list);
         }
       }
-      // A weight event moves stock between books without an instruction (a cell splits, a member
-      // dies): the holders' totals are re-struck, and this period's identity is not about them.
-      const weights = view.journal.ofKindIn('weight', view.period).length;
+      /**
+       * A-42: THERE IS NO WEIGHT EXEMPTION, because there is no case for it to protect against.
+       *
+       * This counted every `weight` event in the WORLD and switched itself off when there was one —
+       * and `households/lifecycle.ts:age()` journals one every period from the first ageing, so this
+       * family had reported nothing since. Of the three ways a weight moves, `splitCell` and
+       * `reKeyCell` preserve the total (the children's per-member holdings are the parent's and
+       * their weights sum to its), `dieCell` refuses a cell that still holds anything, and
+       * `weightEvent` has no caller at all (`A-17`). The guard bought nothing and cost a family.
+       */
       const consecutive = seen.period !== undefined && view.period === seen.period + 1;
       const held = new Map<InstrumentId, number>();
       for (const i of view.instruments.all()) {
@@ -307,7 +314,7 @@ function unitsIdentity(kinds: ReadonlySet<InstrumentKindId>): Family {
         const now = view.register.heldTotal(i.id);
         held.set(i.id, now.value);
         const before = seen.held.get(i.id);
-        if (!consecutive || before === undefined || weights > 0) continue;
+        if (!consecutive || before === undefined) continue;
         const legs = sum(moved.get(i.id) ?? []);
         const change = sum([now.value, -before]);
         if (withinDust(change.value, legs.value, combineDust(legs, change))) continue;

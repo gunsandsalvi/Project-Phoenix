@@ -80,19 +80,36 @@ export function flowsFamily(memory: AuditMemory): Family {
        * cells whose weights move constantly (item 13b.1). C3 says every family runs the same checks
        * every period.
        */
-      const copied = new Set<string>();
+      /**
+       * A-11: AND A COPIED BOOK IS COMPARED AGAINST THE BOOK IT WAS COPIED FROM.
+       *
+       * This used to put the new cell in a `copied` set and skip EVERY holding of it for the WHOLE
+       * period — so Money D3 was switched off for a cell across every line it held, and everything
+       * that cell then did was unexplained by construction. What has no leg behind it is the copy
+       * of the parent's book AT THE INSTANT OF THE SPLIT, and nothing after that.
+       *
+       * A split is exact: the new cell's opening per-member position IS the parent's, because that
+       * is what splitting a cell means. So the parent's remembered per-member state is the `before`
+       * this cell is measured from, and every difference from it is a leg like anybody else's.
+       *
+       * A MERGE is the one that really vanishes: the absorbed cell's book is forgotten with no
+       * instruction behind it, so that holder — and only that holder — is still exempt.
+       */
+      const openedFrom = new Map<string, string>();
+      const vanished = new Set<string>();
       for (const e of view.journal.inPeriod(view.period)) {
         if (e.kind !== 'weight') continue;
         const kind = e.data['kind'];
+        const to = e.data['to'];
+        const from = e.data['from'];
         // 13d.1: a promotion that names a cell it moved people TO is a re-key, and the new cell's
         // book was copied rather than settled. One that names none is an ordinary weight change.
-        const who =
-          kind === 'split' || kind === 'promotion'
-            ? e.data['to']
-            : kind === 'merge'
-              ? e.data['from']
-              : undefined;
-        if (typeof who === 'string') copied.add(who);
+        if ((kind === 'split' || kind === 'promotion') && typeof to === 'string') {
+          if (typeof from === 'string') openedFrom.set(to, from);
+          // A split whose event does not name the parent has no book to be measured against, and
+          // saying so is better than measuring it against nothing (Missing is Missing).
+          else vanished.add(to);
+        } else if (kind === 'merge' && typeof from === 'string') vanished.add(from);
       }
 
       const keys = new Set<string>([...memory.holdings.keys(), ...holdingDeltas.keys()]);
@@ -102,10 +119,17 @@ export function flowsFamily(memory: AuditMemory): Family {
         const holder = parts[0];
         const instrument = parts[1];
         if (holder === undefined || instrument === undefined) continue;
-        if (copied.has(holder)) continue;
+        if (vanished.has(holder)) continue;
         if (!view.parties.has(holder as never) || !view.instruments.has(instrument as never))
           continue;
-        const remembered = memory.holdings.get(key);
+        // A cell opened by a split starts from its PARENT's remembered book, per member, because
+        // that is exactly what it was given. Its own remembered entry does not exist — it did not
+        // exist last period — and using it would measure the whole copy as unexplained.
+        const parent = openedFrom.get(holder);
+        const remembered =
+          parent === undefined
+            ? memory.holdings.get(key)
+            : memory.holdings.get(holdingKey(parent as never, instrument as never));
         const before = scale(
           zeroIfNone<Qty>(remembered?.qty),
           asRatio(ratioOf(instrument), 'restated by the split'),

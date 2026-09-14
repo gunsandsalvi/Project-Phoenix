@@ -73,17 +73,15 @@ export function namesFamily(): Family {
         } else if (view.registry.instrumentKind(i.kind).physical !== true) {
           v('Register B3', i.id, `${i.id} is a claim on nobody`);
         }
-        if (
-          i.market.some &&
-          !view.markets.some(
-            (m) => m.id === i.market.valueOf() || (i.market.some && m.id === i.market.value),
-          )
-        ) {
-          v(
-            'Clearing D1',
-            i.id,
-            `instrument ${i.id} names market ${i.market.value}, which does not exist`,
-          );
+        // A-12: `m.id === i.market.valueOf()` compared a string to an `Option` OBJECT and was
+        // therefore false at every instrument in every period; the second disjunct did the whole
+        // job, guarded by an `i.market.some` the enclosing test had already established. The name
+        // is taken out of the option here so the closure below has it and no narrowing is assumed.
+        if (i.market.some) {
+          const named = i.market.value;
+          if (!view.markets.some((m) => m.id === named)) {
+            v('Clearing D1', i.id, `instrument ${i.id} names market ${named}, which does not exist`);
+          }
         }
       }
       for (const h of view.register.allHoldings()) {

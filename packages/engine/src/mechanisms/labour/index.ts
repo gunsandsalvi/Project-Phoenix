@@ -161,28 +161,44 @@ function workforceIdentity(book: EmploymentBook): Family {
         addTo(rowsHere, row.region, row.headcount);
       }
       const retirementAge = view.params.years(LABOUR_PARAMS.retirementAge);
-      const byRegion = new Map<string, { people: number; employed: number; states: number }>();
+      /**
+       * A-14, B5: THE THREE STATES, EACH FROM ITS OWN SOURCE.
+       *
+       * The B5 line here was `(E ? w : 0) + (¬E ∧ W ? w : 0) + (¬E ∧ ¬W ? w : 0)` summed over two
+       * booleans — mutually exclusive and exhaustive, so it equalled the population on every
+       * iteration by construction and could not fail in any world. Audit A1.a: "a read of two
+       * independent things that must agree — never a read of one thing against itself".
+       *
+       * What is independent here: EMPLOYED comes from this module's own employment book, INACTIVE
+       * from the REGISTRY's age bands against the parties store, and the POPULATION from the cells.
+       * The third state is what is left, so the identity below is about the two that are read —
+       * an inactive count that exceeds the population, or an employed one that overlaps it, is a
+       * real disagreement between the registry's bands and the book.
+       */
+      const byRegion = new Map<
+        string,
+        { people: number; employed: number; inactive: number }
+      >();
       for (const p of view.parties.ofKind(HOUSEHOLD)) {
         if (p.representation !== 'cell' || !p.status.alive) continue;
-        const acc = byRegion.get(p.region) ?? { people: 0, employed: 0, states: 0 };
+        const acc = byRegion.get(p.region) ?? { people: 0, employed: 0, inactive: 0 };
         const working = view.registry.cohort(cohortId(keyOf(p, 'cohort'))).fromAge < retirementAge;
         const isEmployed = rowOfWorker(book, p.id) !== undefined;
         acc.people += p.weight;
         acc.employed += isEmployed ? p.weight : 0;
-        // B3: exactly one of the three, counted once each way round.
-        acc.states +=
-          (isEmployed ? p.weight : 0) +
-          (!isEmployed && working ? p.weight : 0) +
-          (!isEmployed && !working ? p.weight : 0);
+        acc.inactive += working ? 0 : p.weight;
         byRegion.set(p.region, acc);
       }
       for (const [region, acc] of byRegion) {
-        if (acc.states !== acc.people) {
+        // B5: employed and inactive are read from two different places and nobody is both — so what
+        // is left over is the unemployed, and it cannot be negative in a world where the two agree.
+        const unemployed = acc.people - acc.employed - acc.inactive;
+        if (unemployed < 0) {
           v(
             'Labour B5',
             region,
-            acc.states - acc.people,
-            `employed plus unemployed plus inactive is ${acc.states} against ${acc.people} people`,
+            unemployed,
+            `${acc.employed} employed and ${acc.inactive} past working age is more than the ${acc.people} who live here`,
           );
         }
         const inRows = zeroIfNone(rowsHere.get(region));
@@ -201,6 +217,29 @@ function workforceIdentity(book: EmploymentBook): Family {
       const stray = sum([...rowsHere].filter(([r]) => !byRegion.has(r)).map(([, n]) => n));
       if (stray.value > 0) {
         v('Labour F2', 'workforce', stray.value, `rows employ people in a region with no population`);
+      }
+      /**
+       * A-14, A4.a, F2: AND WHAT THIS MODULE ACTED ON, against what its own register says.
+       *
+       * `payWages` writes one `labour.wages` event per employer it actually billed, and it bills off
+       * the same rows — but it SKIPS an employer that has ceased, and `labour.release` is what is
+       * supposed to have taken those rows out before the audit runs. So the two counts agree in a
+       * world where release did its job and disagree by exactly the rows it left behind. That is a
+       * second reading of employment from a different store, which is what B5 was supposed to be.
+       */
+      const rows = sum([...rowsHere.values()]);
+      const billed = sum(
+        view.journal
+          .ofKindIn('labour.wages', view.period)
+          .map((e) => (typeof e.data['headcount'] === 'number' ? e.data['headcount'] : 0)),
+      );
+      if (rows.value !== billed.value) {
+        v(
+          'Labour A4.a',
+          'workforce',
+          rows.value - billed.value,
+          `the employment book carries ${rows.value} people and ${billed.value} were billed for this period`,
+        );
       }
       return out;
     },

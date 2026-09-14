@@ -17,6 +17,7 @@
 import type { Period } from '../calendar/calendar.js';
 import type { PlaceId } from '../core/ids.js';
 import type { Event } from '../journal/journal.js';
+import { Missing } from '../core/errors.js';
 
 /** The public event the physical state crosses on, published once per region per period. */
 export const ENVIRONMENT_STATE = 'environment.state';
@@ -81,9 +82,30 @@ export function conditionsFor(
   let standing = 1;
   for (const fact of facts) {
     const value = here.get(fact);
-    // A line naming a fact this world does not have stands in an ordinary period for it. The world
-    // that has the fact is where the check belongs, and assembly is where it fires.
-    if (value !== undefined) standing *= value;
+    /**
+     * A-4, Law 15: A LINE NAMING A FACT THIS WORLD PUBLISHES NOTHING FOR IS A DEFECT, AND IT SAYS SO.
+     *
+     * This read `if (value !== undefined) standing *= value` under a comment claiming "the world
+     * that has the fact is where the check belongs, and assembly is where it fires". It does not
+     * fire there: `world/assemble.ts` checks module ids, dependency cycles, money issuance and bank
+     * choices, and `exposedTo` appears nowhere in it. So a recipe naming a fact nobody declares
+     * multiplied by one for ever, in silence — a crop with no weather in it, looking exactly like a
+     * crop having an ordinary year.
+     *
+     * The check could not have been at assembly and be this one: which facts a region has is a
+     * fact about the PERIOD's published conditions, not about the module list, and a fact can be
+     * regional. So it is here, at the read that needs it, where the world has already said what it
+     * publishes — a world with NO environment at all is the case above and still answers 1, because
+     * "this model has no weather" is an answer and "this line's weather went missing" is not.
+     */
+    if (value === undefined) {
+      throw new Missing(
+        'Goods B4',
+        `a line is exposed to ${fact} and ${String(region)} publishes no such condition`,
+        { region: String(region), fact, published: [...here.keys()] },
+      );
+    }
+    standing *= value;
   }
   return standing;
 }
