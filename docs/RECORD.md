@@ -5195,3 +5195,40 @@ by the subdivision, silently. Positioned at stage 3, with the banks and the mone
 **Measured.** **79 red of 791 before and after, the same 79 test for test.** Two new assertions in
 `measure.test.ts` (13 now): dollars do not add to cents, and a count of pieces is not an amount of a
 named unit. Green: lint, typecheck, spec citations, forbids, `plan:check`.
+
+## Item 16, stage 3 — the banks
+
+**130 sites became 44, and what closed is every number a bank decides with.**
+
+`CapitalPosition` and `CapitalRules` carry their dimensions: a risk weight, a minimum, a buffer and
+a limit-per-name are `Ratio`, what a book weighs and what stands in front of its creditors are
+`Cash`, and the whole of `capitalOf` is `scale`, `plus`, `minus`, `over` and `ratioOf`.
+`LiquidityPlan`, `DeskState` and `DeskQuote` follow: a desk's view, edge, skew, bid and offer are
+LEVELS, its limit and its book are MONEY, its concentration and its carry rate are PURE NUMBERS.
+
+**`amountOf` is the door this stage needed and `core/measure.ts` did not have.** `Money / Price =
+Amount` is the third of the three ways money, a price and an amount meet, and every affordability
+read in this world is one: what a party CAN do is its money over the level it would have to pay,
+which is Law 6's one admissible case. A desk's three constraints — the room in its position, the
+room in its whole book, and the money it has spread over the lines it quotes — are three of them.
+It does not round: which way a fraction of a piece goes is the caller's decision and has a name.
+
+**A `Quote` is five RATES and the type says so.** `costOfFunds`, `expectedLoss`, `capitalCharge`,
+`operatingCost` and `rate` are per annum on a unit lent; `lossGivenDefault` is a share of what is
+lent and `probabilityOfDefault` a share of the periods this bank remembers. A-44 and A-58 are the
+mistake of reading one of those as a level, and neither is writeable in this module now.
+
+**Eight doors where a published number re-enters a decision.** `roomFor`, `capitalOf`, `liquidOf`,
+`liquidityPlan`, `numberIn`, `securityIn`, and the two reads of `moneyMarket.refused` all take a
+number out of what a party itself published and hand it straight to a decision. Each now says what
+it is at the read. `securityIn` does more than say: what crossed the 4.9b door claiming to be a
+quantity goes through `asQty`, so a number that is not a whole count of pieces is refused where it
+arrives rather than three phases later.
+
+**A local `scale` was not the only shadow.** `FundingCost.interest` is money — what a bank actually
+paid on what it owes, annualised — and `perAnnum` is that over what funds the book, which is a
+ratio. Typing them separately is what made the distinction visible; both were `number`.
+
+**Measured.** **79 red of 793, the same 79 test for test**, with 714 passing. (791 became 793
+because stage 2's own two assertions were written after stage 2's run.) Green: lint, typecheck,
+spec citations, forbids, `plan:check`.

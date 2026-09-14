@@ -27,6 +27,7 @@
  * would price against, and no rival may see it. Its consequence is public — a bank that stops
  * quoting has stopped quoting where everyone can see.
  */
+import { asCash, type Cash } from '../../core/measure.js';
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
@@ -133,17 +134,21 @@ export function publishLines(
 }
 
 /** What this line was allotted, as the line itself reads it back (Law 19: never derived twice). */
-export function roomFor(view: ParticipantView, line: string): Option<number> {
+export function roomFor(view: ParticipantView, line: string): Option<Cash> {
   const said = view.lastOwn('bank.lines');
-  if (!said.some || said.value.period !== view.period) return none<number>();
+  if (!said.some || said.value.period !== view.period) return none<Cash>();
   const lines = said.value.data['lines'];
-  if (!Array.isArray(lines)) return none<number>();
+  if (!Array.isArray(lines)) return none<Cash>();
   for (const r of lines) {
     if (typeof r !== 'object' || r === null) continue;
     const row = r as { line?: unknown; room?: unknown };
-    if (row.line === line && typeof row.room === 'number') return some(row.room);
+    // Item 16: what this bank PUBLISHED about its own lines re-enters as money here, at the read
+    // that knows what it is — the same door every other published number comes back through.
+    if (row.line === line && typeof row.room === 'number') {
+      return some(asCash(row.room, `the room ${line} was allotted`));
+    }
   }
-  return none<number>();
+  return none<Cash>();
 }
 
 function roomOf(allotted: ReadonlyMap<string, number>, line: string): number {

@@ -13,6 +13,7 @@
  * provision — stays where it belongs, in `mechanisms/banks`, which re-exports these so a loan has
  * one definition and one spelling (Law 4).
  */
+import type { Qty } from '../core/tick.js';
 import { instrumentKindId, type InstrumentId, type PartyId } from '../core/ids.js';
 import type { Civil } from '../calendar/civil.js';
 import type { DayCount } from '../calendar/daycount.js';
@@ -41,7 +42,7 @@ export interface LoanTerms extends Terms {
   readonly maturity: Civil;
   readonly dayCount: DayCount;
   /** A4: what it is secured on, which is nothing for an unsecured loan — stated either way. */
-  readonly security: readonly { readonly instrument: InstrumentId; readonly qty: number }[];
+  readonly security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[];
 }
 
 /**

@@ -19,7 +19,7 @@
  * past what it will have out to that name (F3). If nobody bids, the raise FAILS and the bank is
  * exactly where it was, which is C2.b: nobody has to buy.
  */
-import { asPerPiece } from '../../core/measure.js';
+import { asPerPiece, type Cash } from '../../core/measure.js';
 import { addDays, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
@@ -146,8 +146,8 @@ export const subordinatedKind: InstrumentKindProfile = {
 };
 
 /** What a bank still owes on this layer: what its holders carry, at their own books (A2.b, B1). */
-export function subordinatedOf(ctx: MechanismContext, bank: PartyId): number {
-  const terms: number[] = [];
+export function subordinatedOf(ctx: MechanismContext, bank: PartyId): Cash {
+  const terms: Cash[] = [];
   // Law 18: the rows a bank issued, asked of the index that answers it, rather than every
   // instrument in the world once per bank per period.
   for (const i of ctx.instruments.issuedBy(bank)) {

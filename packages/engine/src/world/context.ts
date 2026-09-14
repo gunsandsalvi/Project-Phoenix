@@ -11,7 +11,7 @@
  * - SeedContext: what a seed module may do at period zero, which is the only time endowments are
  *   written directly (Seed A3: a stock the flows then act on).
  */
-import type { Cash } from '../core/measure.js';
+import type { Cash, PerPiece } from '../core/measure.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { Periodicity } from '../core/rate.js';
 import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
@@ -346,7 +346,7 @@ export interface ParticipantView extends KernelReads {
   /** Own balance at own bank in a currency, per member. */
   cash(ccy: CurrencyCode): Qty;
   /** Own equity account, per member. */
-  equity(): number;
+  equity(): Cash;
   /**
    * Reporting A2, G2, §44 B1: WHAT THIS PARTY TOOK IN over the last `periods` periods — the moves of
    * its own equity account that an INSTRUCTION made, which is what somebody actually paid it.
@@ -372,7 +372,7 @@ export interface ParticipantView extends KernelReads {
    * anybody may read. It is a DIFFERENT question from `print` for exactly one shape — a line that
    * has a book value AND trades — and that the two answers differ is E2 rather than a discrepancy.
    */
-  mark(instrument: InstrumentId): Option<number>;
+  mark(instrument: InstrumentId): Option<PerPiece>;
   /** The issuer's announced supply in this period's session, if any (Sovereign C1.a: public). */
   offer(market: MarketId): Option<PrimaryOffer>;
   /**

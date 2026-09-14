@@ -16,6 +16,19 @@
  * that did not happen (XI-1, Firm Birth C2.a) — and it is the channel by which a default becomes
  * information about what the next loan costs (Corporate Credit G8).
  */
+import type { Qty } from '../../core/tick.js';
+import {
+  asCash,
+  asRatio,
+  type Cash,
+  minus,
+  type PerPiece,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { PartyId, InstrumentId} from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
 import {
@@ -34,17 +47,18 @@ import { LENDING, roomFor } from './lines.js';
 /** C1: the four terms, kept apart so a reader can see which one moved (B2.d, XI-4). */
 export interface Quote {
   readonly bank: PartyId;
-  readonly costOfFunds: number;
-  readonly expectedLoss: number;
-  readonly capitalCharge: number;
-  readonly operatingCost: number;
-  readonly rate: number;
+  /** Item 16: every one of these is a RATE PER ANNUM on a unit lent — a pure number, never money. */
+  readonly costOfFunds: Ratio;
+  readonly expectedLoss: Ratio;
+  readonly capitalCharge: Ratio;
+  readonly operatingCost: Ratio;
+  readonly rate: Ratio;
 }
 
 export interface Regulation {
-  readonly capitalRatio: number;
-  readonly riskWeight: number;
-  readonly operatingCost: number;
+  readonly capitalRatio: Ratio;
+  readonly riskWeight: Ratio;
+  readonly operatingCost: Ratio;
 }
 
 /**
@@ -81,10 +95,10 @@ export function holderReservation(
   decl: BankDecl,
   reg: Regulation,
   /** E5.a: what this bank actually pays for what funds its book, read off the wire (C1.a). */
-  funds: number,
+  funds: Ratio,
 ): Quote {
-  const consumed = mul(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit held');
-  const capitalCharge = mul(
+  const consumed = scale(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit held');
+  const capitalCharge = scale(
     consumed,
     view.params.perAnnum(bankParam(decl.bank, 'returnOnCapital')),
     'capital charge',
@@ -93,10 +107,10 @@ export function holderReservation(
     bank: view.self.id,
     costOfFunds: funds,
     // E5.b: see above. Zero is what this bank has to SAY about the issuer, not what it believes.
-    expectedLoss: 0,
+    expectedLoss: asRatio(0, 'nothing it will say out loud'),
     capitalCharge,
-    operatingCost: 0,
-    rate: add(funds, capitalCharge, 'what it requires to hold it'),
+    operatingCost: asRatio(0, 'nothing it charges for holding it'),
+    rate: plus(funds, capitalCharge, 'what it requires to hold it'),
   };
 }
 
@@ -110,14 +124,17 @@ export function probabilityOfDefault(
   borrower: PartyId,
   /** Every default anybody has published. They are public, so this bank saw all of them (A2). */
   defaults: readonly Event[],
-): number {
+): Ratio {
   const memory = view.params.periods(bankParam(decl.bank, 'credit.memory'));
   const from = view.period - memory;
   const seen = defaults.filter((e) => e.period >= from && e.subjects.includes(borrower));
   const periods = atMost(view.period, memory, 'a world cannot remember before it began');
-  if (periods <= 0) return 0;
+  if (periods <= 0) return asRatio(0, 'a borrower with no history has failed none of it');
   const failures = new Set(seen.map((e) => e.period)).size;
-  return div(failures, periods, 'how often this borrower has failed');
+  return asRatio(
+    div(failures, periods, 'how often this borrower has failed'),
+    'how often this borrower has failed',
+  );
 }
 
 /**
@@ -134,23 +151,23 @@ export function probabilityOfDefault(
  * answer and not a zero anybody chose.
  */
 export function lossGivenDefault(
-  security: readonly { readonly instrument: InstrumentId; readonly qty: number }[],
+  security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[],
   /** What the market last said a unit of the thing pledged is worth, or none because it has not said. */
-  worthOf: (instrument: InstrumentId) => number | undefined,
+  worthOf: (instrument: InstrumentId) => PerPiece | undefined,
   /** What is owed, in the same money. A claim secured on more than it lends loses nothing. */
-  owed: number,
-): number {
-  if (security.length === 0 || owed <= 0) return 1;
+  owed: Cash,
+): Ratio {
+  if (security.length === 0 || owed <= 0) return asRatio(1, 'unsecured: all of it is at risk');
   const behind = sum(
     security.map((row) => {
       const price = worthOf(row.instrument);
-      if (price === undefined) return 0;
-      return mul(row.qty, price, 'what the security is worth');
+      if (price === undefined) return asCash(0, 'nothing anybody has priced');
+      return valueAt(price, row.qty, 'what the security is worth');
     }),
   ).value;
-  const uncovered = sub(owed, behind, 'the part the security does not cover');
-  if (uncovered <= 0) return 0;
-  return div(uncovered, owed, 'of every unit lent');
+  const uncovered = minus(owed, behind, 'the part the security does not cover');
+  if (uncovered <= 0) return asRatio(0, 'covered: it loses nothing');
+  return ratioOf(uncovered, owed, 'of every unit lent');
 }
 
 /** C1: the quote, built from this bank's own state and this borrower's own record. */
@@ -160,23 +177,35 @@ export function quote(
   borrower: PartyId,
   reg: Regulation,
   /** C1.a: what this bank actually paid for what it owed, read off the wire by its own module. */
-  funds: number,
+  funds: Ratio,
   defaults: readonly Event[],
 ): Quote {
   const pd = probabilityOfDefault(view, decl, borrower, defaults);
   // C1.b: an offer to a borrower is priced before it is secured on anything — what it would put up
   // reaches the lender in the REQUEST, and the quote is about the borrower.
-  const expectedLoss = mul(pd, lossGivenDefault([], () => undefined, 1), 'expected loss');
+  const expectedLoss = scale(
+    pd,
+    lossGivenDefault([], () => undefined, asCash(1, 'one unit lent')),
+    'expected loss',
+  );
   // C1.c: the capital this loan consumes, times what this bank needs to earn on it.
-  const consumed = mul(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit lent');
-  const capitalCharge = mul(consumed, view.params.perAnnum(bankParam(decl.bank, 'returnOnCapital')), 'capital charge');
+  const consumed = scale(reg.riskWeight, reg.capitalRatio, 'capital consumed per unit lent');
+  const capitalCharge = scale(
+    consumed,
+    view.params.perAnnum(bankParam(decl.bank, 'returnOnCapital')),
+    'capital charge',
+  );
   return {
     bank: view.self.id,
     costOfFunds: funds,
     expectedLoss,
     capitalCharge,
     operatingCost: reg.operatingCost,
-    rate: add(add(funds, expectedLoss, 'funds and loss'), add(capitalCharge, reg.operatingCost, 'capital and running it'), 'the rate it quotes'),
+    rate: plus(
+      plus(funds, expectedLoss, 'funds and loss'),
+      plus(capitalCharge, reg.operatingCost, 'capital and running it'),
+      'the rate it quotes',
+    ),
   };
 }
 

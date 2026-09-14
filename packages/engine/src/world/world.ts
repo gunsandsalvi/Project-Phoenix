@@ -1230,7 +1230,7 @@ export class World {
       ...open,
       self: open.self,
       print: () => none<Print>(),
-      mark: () => none<number>(),
+      mark: () => none<PerPiece>(),
       index: () => none<IndexRead>(),
       curve: (): never => {
         throw new Unpriced('Ratings A2.a', `${party} assesses from state and is shown no prices`);

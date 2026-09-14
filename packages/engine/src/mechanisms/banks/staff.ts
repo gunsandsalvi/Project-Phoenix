@@ -21,6 +21,7 @@
  * same to make whatever its size — which is a real fact about lending that no parameter could have
  * expressed, and it moves the day the wage moves (Law 19).
  */
+import { asRatio, type Ratio } from '../../core/measure.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { paramId, type ParamId } from '../../core/ids.js';
@@ -97,22 +98,25 @@ export function wageFacing(view: ParticipantView, occupation: string): number | 
  * with no book yet has nothing to service and no cost to add; one that has staff but no principal
  * would be dividing by nothing, and that is not a large number, it is no answer.
  */
-export function operatingCostOf(view: ParticipantView): number {
+export function operatingCostOf(view: ParticipantView): Ratio {
   const book = bookOf(view);
-  if (book.rows <= 0 || book.principal <= 0) return 0;
+  if (book.rows <= 0 || book.principal <= 0) return asRatio(0, 'a bank with no book services nothing');
   const wage = wageFacing(view, BANKING);
-  if (wage === undefined) return 0;
+  if (wage === undefined) return asRatio(0, 'a bank that cannot price an hour');
   const ofAYear = yearFraction(
     'ACT/365F',
     view.calendar.startOf(view.period),
     view.calendar.startOf(periodOf(view.period + 1)),
   );
-  if (ofAYear <= 0) return 0;
+  if (ofAYear <= 0) return asRatio(0, 'a period of no length costs nothing');
   const perPeriod = mul(hoursNeeded(view), wage, 'what its staff cost it a period');
-  return div(
-    div(perPeriod, ofAYear, 'a year of it'),
-    book.principal,
-    'per unit of the principal it is servicing',
+  return asRatio(
+    div(
+      div(perPeriod, ofAYear, 'a year of it'),
+      book.principal,
+      'per unit of the principal it is servicing',
+    ),
+    'what servicing costs, per unit of principal per annum',
   );
 }
 

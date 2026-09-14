@@ -137,6 +137,26 @@ export function pricedAt<C extends string, U extends string>(
 }
 
 /**
+ * Law 3: HOW MANY IT BUYS. `Money<C> / Price<C,U> = Amount<U>` — the third of the three ways money,
+ * a price and an amount meet, and the one every affordability read in this world is: what a party
+ * CAN do is its money over the level it would have to pay (Law 6's one admissible case).
+ *
+ * It does not round. Which way a fraction of a piece goes is the caller's decision and it has a
+ * name (`core/tick.ts`): what a party can do rounds down, what it must do rounds up.
+ */
+export function amountOf<C extends string, U extends string>(
+  paid: Measure<`money:${C}`>,
+  price: Price<C, U>,
+  what: string,
+): Amount<U> {
+  const at = finite(price, what);
+  if (at === 0) {
+    throw new RangeError(`${what}: at a price of nothing there is no amount it buys`);
+  }
+  return (finite(paid, what) / at) as Amount<U>;
+}
+
+/**
  * Law 8: TWO OF THE SAME THING, DIVIDED, IS A PURE NUMBER — a share, a ratio, a multiple. It is the
  * only way to reach `Ratio` from measured things, and it is why a ratio can never be spent.
  */

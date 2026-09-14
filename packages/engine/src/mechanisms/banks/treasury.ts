@@ -23,7 +23,18 @@
  * is how a real treasury sells a liquidity portfolio — through its own desk, whose quote then skews
  * — and it is what keeps one bank showing one face to one market.
  */
-import { asRatio } from '../../core/measure.js';
+import {
+  asCash,
+  asRatio,
+  type Cash,
+  minus,
+  type PerPiece,
+  type Ratio,
+  plus,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { nextPeriod } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
@@ -56,13 +67,13 @@ export const VALUATION_DAY_COUNT = 'ACT/ACT';
 /** C2, C2.a: what this bank wants to be holding, and in what form. */
 export interface LiquidityPlan {
   /** F4: the uninsured money on its own books — what a bad week would ask it for. */
-  readonly couldLeave: number;
+  readonly couldLeave: Cash;
   /** The liquid assets it wants: the rule's coverage plus its own cushion, on what could leave. */
-  readonly wanted: number;
+  readonly wanted: Cash;
   /** C2.a: the part it holds in the account, because that is what has to be paid on the day. */
-  readonly cash: number;
+  readonly cash: Cash;
   /** The rest: the liquidity portfolio, in its own money. Nothing where the cash already covers it. */
-  readonly paper: number;
+  readonly paper: Cash;
 }
 
 /**
@@ -72,18 +83,22 @@ export interface LiquidityPlan {
  * what a bad one costs. That is a real state at the opening of the world and not a missing number:
  * it holds what it was given until it has watched its own account for a period.
  */
-export function liquidityPlan(view: ParticipantView, cushion: number): Option<LiquidityPlan> {
+export function liquidityPlan(view: ParticipantView, cushion: Ratio): Option<LiquidityPlan> {
   const said = view.lastOwn('bank.liquidity');
   if (!said.some) return none<LiquidityPlan>();
-  const couldLeave = said.value.data['couldLeave'];
-  const buffer = said.value.data['buffer'];
-  if (typeof couldLeave !== 'number' || typeof buffer !== 'number') return none<LiquidityPlan>();
-  const wanted = mul(
+  const saidLeave = said.value.data['couldLeave'];
+  const saidBuffer = said.value.data['buffer'];
+  if (typeof saidLeave !== 'number' || typeof saidBuffer !== 'number') return none<LiquidityPlan>();
+  // Item 16: a number re-entering from what this bank PUBLISHED is money again here, at the read
+  // that knows what it is, and it cannot be added to a level or a ratio from here on.
+  const couldLeave = asCash(saidLeave, 'what a bad week would ask it for');
+  const buffer = asCash(saidBuffer, 'what it holds in the account');
+  const wanted = scale(
     couldLeave,
-    add(view.params.ratio(P_COVERAGE), cushion, 'the rule and its own cushion'),
+    plus(view.params.ratio(P_COVERAGE), cushion, 'the rule and its own cushion'),
     'the liquid assets it wants',
   );
-  const above = sub(wanted, buffer, 'what is left for the portfolio');
+  const above = minus(wanted, buffer, 'what is left for the portfolio');
   // A bank whose own worst week is bigger than the coverage asks of it holds no portfolio: the cash
   // is already the answer. Nothing is bounded here — a holding of less than nothing is not a
   // smaller target, it is a short position, and it takes a borrow this bank has not made.
@@ -91,7 +106,11 @@ export function liquidityPlan(view: ParticipantView, cushion: number): Option<Li
     couldLeave,
     wanted,
     cash: buffer,
-    paper: atLeast(above, 0, 'a holding of less than nothing is a short position, not a smaller target'),
+    paper: atLeast(
+      above,
+      asCash(0, 'nothing'),
+      'a holding of less than nothing is a short position, not a smaller target',
+    ),
   });
 }
 
@@ -137,8 +156,8 @@ export function liquidityTargets(
   view: ParticipantView,
   d: BankDecl,
   plan: Option<LiquidityPlan>,
-): ReadonlyMap<InstrumentId, number> {
-  const out = new Map<InstrumentId, number>();
+): ReadonlyMap<InstrumentId, Cash> {
+  const out = new Map<InstrumentId, Cash>();
   const lines = liquidityLines(view, d);
   // EVERY line it makes is in here, and a line it holds for no liquidity reason has a target of
   // NOTHING — which is an answer and not a missing number. So nothing downstream ever has to decide
@@ -147,7 +166,9 @@ export function liquidityTargets(
     const subject = delivers(m);
     if (!subject.some) continue;
     const i = view.instruments.get(subject.value);
-    if (i.status.live && d.makes.includes(String(i.kind))) out.set(i.id, 0);
+    if (i.status.live && d.makes.includes(String(i.kind))) {
+      out.set(i.id, asCash(0, 'a line it holds for no liquidity reason'));
+    }
   }
   /**
    * Seed C1, Dealer Desks D1, D4: BEFORE IT HAS A PLAN, THE TREASURY WANTS WHAT IT HAS.
@@ -168,7 +189,7 @@ export function liquidityTargets(
       // XI-6: a line nobody prices cannot be valued, so what the treasury wants of it cannot be
       // stated either. It keeps the answer it already has rather than being given a number.
       if (!mark.some) continue;
-      out.set(id, mul(view.quantity(id), mark.value, 'what it is holding of this line'));
+      out.set(id, valueAt(mark.value, view.quantity(id), 'what it is holding of this line'));
     }
     return out;
   }
@@ -190,14 +211,14 @@ export function liquidityTargets(
    * A treasury that holds nothing of a line wants nothing of it, which is the answer that makes a
    * position in it the DESK's.
    */
-  const held = new Map<InstrumentId, number>();
-  const worth: number[] = [];
+  const held = new Map<InstrumentId, Cash>();
+  const worth: Cash[] = [];
   for (const id of lines) {
     const mark = view.mark(id);
     // XI-6: a line nobody prices cannot be valued, so what the treasury wants of it cannot be
     // stated either. It keeps the answer it already has (nothing) rather than being given a number.
     if (!mark.some) continue;
-    const value = mul(view.quantity(id), mark.value, 'what it is holding of this line');
+    const value = valueAt(mark.value, view.quantity(id), 'what it is holding of this line');
     held.set(id, value);
     worth.push(value);
   }
@@ -206,7 +227,14 @@ export function liquidityTargets(
   // should buy some, and what it buys is where it will be. Until then nothing here is the desk's.
   if (total <= 0) return out;
   for (const [id, value] of held) {
-    out.set(id, mul(plan.value.paper, div(value, total, 'its share of the paper it holds'), 'of the plan'));
+    out.set(
+      id,
+      scale(
+        plan.value.paper,
+        ratioOf(value, total, 'its share of the paper it holds'),
+        'of the plan',
+      ),
+    );
   }
   return out;
 }
@@ -238,11 +266,11 @@ export function priceAtYield(
   view: ParticipantView,
   instrument: InstrumentId,
   y: number,
-): Option<number> {
+): Option<PerPiece> {
   const i = view.instruments.get(instrument);
   const on = view.calendar.startOf(view.period);
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
-  if (flows.length === 0) return none<number>();
+  if (flows.length === 0) return none<PerPiece>();
   return some(
     priceAt(
       flows,

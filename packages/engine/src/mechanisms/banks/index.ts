@@ -18,10 +18,21 @@
  * What it allows becomes a row before the period closes, so the negative balance is a drawing on a
  * loan and never a silent hole (B3.c).
  */
-import { asPerPiece, type PerPiece } from '../../core/measure.js';
+import {
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  over,
+  type PerPiece,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { type Qty } from '../../core/tick.js';
+import { asQty, type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
@@ -32,7 +43,7 @@ import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
-import { add, atLeast, atMost, div, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { atLeast, atMost, div, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -142,7 +153,7 @@ function rulesFor(rows: readonly BankDecl[], ctx: MechanismContext, bank: PartyI
     // — what a holding weighs and what the book may be worth are one line drawn in one place.
     targets:
       decl === undefined
-        ? new Map<InstrumentId, number>()
+        ? new Map<InstrumentId, Cash>()
         : liquidityTargets(
             view,
             decl,
@@ -246,14 +257,14 @@ function declOf(rows: readonly BankDecl[], bank: PartyId): BankDecl | undefined 
  */
 export interface FundingCost {
   /** B2: the blend — what one unit of what funds this bank's book costs it, per annum. */
-  readonly perAnnum: number;
+  readonly perAnnum: Ratio;
   /** B2.b: what it ACTUALLY PAID on what it owes last period, annualised. Read off the wire. */
-  readonly interest: number;
+  readonly interest: Cash;
   /** XI-4: what its owners require on the part of the book they fund. Nothing where they fund none. */
-  readonly onCapital: number;
-  readonly owed: number;
+  readonly onCapital: Cash;
+  readonly owed: Cash;
   /** A1: the RESIDUAL, as it stands — negative for a bank that is insolvent, and said so. */
-  readonly capital: number;
+  readonly capital: Cash;
 }
 
 function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): FundingCost {
@@ -275,19 +286,25 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
    * the site: `[Clearing A2] bank.a is on both sides of mkt.ust.bill.2026-09-15 at crossing prices`
    * (`13b-12`). The crossing was arithmetic that had lost its meaning, not a decision anybody took.
    */
-  const funded = atLeast(capital, 0, 'a hole funds nothing: there is no less capital than none');
-  const funding = add(owed, funded, 'what funds its book');
+  const funded = atLeast(
+    capital,
+    asCash(0, 'a hole funds nothing'),
+    'a hole funds nothing: there is no less capital than none',
+  );
+  const funding = plus(owed, funded, 'what funds its book');
   const required = ctx.params.perAnnum(bankParam(bank, 'returnOnCapital'));
-  const onCapital = mul(funded, required, 'what its own capital costs it');
-  const blend = (interest: number): FundingCost => ({
+  const onCapital = scale(funded, required, 'what its own capital costs it');
+  const blend = (interest: Cash): FundingCost => ({
     perAnnum:
-      funding <= 0 ? 0 : div(add(interest, onCapital, 'what its funding costs it'), funding, 'per annum'),
+      funding <= 0
+        ? asRatio(0, 'a bank funding nothing pays nothing for it')
+        : ratioOf(plus(interest, onCapital, 'what its funding costs it'), funding, 'per annum'),
     interest,
     onCapital,
     owed,
     capital,
   });
-  if (funding <= 0 || ctx.period === 0) return blend(0);
+  if (funding <= 0 || ctx.period === 0) return blend(asCash(0, 'nothing paid'));
   const previous = period(ctx.period - 1);
   // Law 8: a rate is per annum, so what it paid over this period is divided by the fraction of a
   // year the period actually was — read off the calendar's own dates, never a periods-per-year.
@@ -296,8 +313,14 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
     ctx.calendar.startOf(previous),
     ctx.calendar.startOf(ctx.period),
   );
-  if (year <= 0) return blend(0);
-  return blend(div(couponsPaid(ctx, bank, ccy), year, 'what it paid on what it owes, per annum'));
+  if (year <= 0) return blend(asCash(0, 'a period of no length'));
+  return blend(
+    over(
+      couponsPaid(ctx, bank, ccy),
+      asRatio(year, 'the fraction of a year this period was'),
+      'what it paid on what it owes, per annum',
+    ),
+  );
 }
 
 /**
@@ -321,10 +344,10 @@ interface CouponsPaid {
    * readonly in the one function whose job is to move it (item 13b.1).
    */
   walked: Option<number>;
-  readonly byBank: Map<string, number>;
+  readonly byBank: Map<string, Cash>;
 }
 
-function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
+function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): Cash {
   const held = ctx.state<CouponsPaid>('banks.couponsPaid', () => ({
     walked: none<number>(),
     byBank: new Map(),
@@ -339,7 +362,9 @@ function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): n
         const before = held.byBank.get(key);
         held.byBank.set(
           key,
-          before === undefined ? leg.amount : add(before, leg.amount, 'coupons it paid'),
+          before === undefined
+            ? asCash(leg.amount, 'a coupon it paid')
+            : plus(before, asCash(leg.amount, 'a coupon it paid'), 'coupons it paid'),
         );
       }
     }
@@ -358,12 +383,14 @@ function couponsPaid(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): n
  * one bank's own was the second of the two scans a shopping borrower paid for, and a world with a
  * share line per listed firm has hundreds of them.
  */
-function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): number {
-  const terms: number[] = [];
+function owedBy(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): Cash {
+  const terms: Cash[] = [];
   for (const i of ctx.instruments.issuedBy(bank)) {
     if (i.ccy !== ccy) continue;
     if (!ctx.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
-    terms.push(i.issued);
+    // Money A1: what a bank owes is owed AT ITS FACE, so what it has issued of a liability is what
+    // it owes — one of itself for each unit (item 16: the door, said once).
+    terms.push(asCash(i.issued, `what ${bank} owes on ${i.id}`));
   }
   return sum(terms).value;
 }
@@ -461,7 +488,7 @@ function quotedFor(ctx: MechanismContext, borrower: PartyId): Quote | undefined 
     if (typeof bank === 'string' && typeof rate === 'number') {
       return {
         bank: bank as PartyId,
-        rate,
+        rate: asRatio(rate, 'the rate it quoted'),
         costOfFunds: numberIn(e.data['costOfFunds']),
         expectedLoss: numberIn(e.data['expectedLoss']),
         capitalCharge: numberIn(e.data['capitalCharge']),
@@ -473,11 +500,12 @@ function quotedFor(ctx: MechanismContext, borrower: PartyId): Quote | undefined 
 }
 
 /** A published component, read back as it was written. Missing is Missing, and nothing defaults. */
-function numberIn(v: unknown): number {
+function numberIn(v: unknown): Ratio {
   if (typeof v !== 'number') {
     throw new Missing('Law 4', 'a quote published without one of the terms it was built from');
   }
-  return v;
+  // Item 16: a published quote's terms are RATES, and they re-enter the type system here.
+  return asRatio(v, 'a term of a quote this bank published');
 }
 
 /**
@@ -506,7 +534,7 @@ function write(
    * it could take and realise, which is what security IS. Empty is unsecured and is stated either
    * way, and `lossGivenDefault` is the one place the difference is priced.
    */
-  security: readonly { readonly instrument: InstrumentId; readonly qty: number }[] = [],
+  security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[] = [],
 ): InstrumentId | undefined {
   const b = book(ctx);
   // Law 8, B1: money is created in whole pieces of itself, so a loan is drawn in whole pieces. What
@@ -1256,7 +1284,7 @@ function worthToItsLender(
         const print = ctx.prices.latest(pledged, ctx.period);
         return print.some ? print.value.price : undefined;
       },
-      owed,
+      asCash(owed, 'what is owed on this row'),
     ),
     'what it expects to lose per unit',
   );
@@ -1269,15 +1297,17 @@ function worthToItsLender(
  * data crossing the 4.9b door and it is checked here rather than trusted: an instrument this world
  * does not have, or a quantity that is not one, is not security.
  */
-function securityIn(said: unknown): readonly { readonly instrument: InstrumentId; readonly qty: number }[] {
+function securityIn(said: unknown): readonly { readonly instrument: InstrumentId; readonly qty: Qty }[] {
   if (!Array.isArray(said)) return [];
-  const out: { instrument: InstrumentId; qty: number }[] = [];
+  const out: { instrument: InstrumentId; qty: Qty }[] = [];
   for (const row of said as unknown[]) {
     if (typeof row !== 'object' || row === null) continue;
     const instrument = (row as Record<string, unknown>)['instrument'];
     const qty = (row as Record<string, unknown>)['qty'];
     if (typeof instrument !== 'string' || typeof qty !== 'number' || !(qty > 0)) continue;
-    out.push({ instrument: instrument as InstrumentId, qty });
+    // Law 8: what crossed the 4.9b door says it is a count, and this is where that is checked —
+    // `asQty` throws on anything that is not a whole number of the unit's pieces.
+    out.push({ instrument: instrument as InstrumentId, qty: asQty(qty, 'the security it offered') });
   }
   return out;
 }

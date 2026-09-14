@@ -2937,6 +2937,7 @@ under a shock.
 > | --- | --- | --- |
 > | ~~1~~ | ~~kernel~~ — **DONE**: every money arithmetic in it carries its dimension | **119 → 68** |
 > | ~~2~~ | ~~`seeds`~~ — **DONE**: the two SCALES are named and cannot be crossed | **71** |
+> | ~~3~~ | ~~`banks`~~ — **DONE**: capital, funding, the desk's quote and the treasury's book | **130 → 44** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -3026,7 +3027,36 @@ under a shock.
 > cent"*) and **E-9** (a dirty price adds a per-piece print to a per-named-unit accrual, right today
 > only because par and money happen to share a subdivision). Both are in the index, positioned.
 >
-> **Measured**: **79 red of 791** before and after, the same 79.
+> **Measured**: **79 red of 791** before and after, the same 79. (The stage's own two assertions
+> were written after that run and are counted from stage 3 on, which is why the total is 793 there.)
+>
+> ### Stage 3 — the banks
+>
+> **130 sites became 44, and what closed is every number a bank decides with.** `CapitalPosition`
+> and `CapitalRules` carry their dimensions, so a weight is a `Ratio` and what a book weighs is
+> `Cash`, and the whole of `capitalOf` is `scale`, `plus`, `minus`, `over` and `ratioOf`.
+> `LiquidityPlan`, `DeskState` and `DeskQuote` follow: a desk's view, edge, skew, bid and offer are
+> levels (`PerPiece`), its limit and its book are money, its concentration and its carry rate are
+> pure numbers — and its three constraints are `amountOf(money, level)`, which is the door this
+> stage needed and `core/measure.ts` did not have.
+>
+> **`amountOf` is the third way money, a price and an amount meet**, and every affordability read in
+> this world is one: what a party CAN do is its money over the level it would have to pay (Law 6's
+> one admissible case). It does not round — which way a fraction of a piece goes is the caller's
+> decision and has a name.
+>
+> **A `Quote` is five RATES and they are typed as such.** `costOfFunds`, `expectedLoss`,
+> `capitalCharge`, `operatingCost` and `rate` are per annum on a unit lent; `lossGivenDefault` is a
+> share of what is lent and `probabilityOfDefault` a share of the periods watched. A-44 and A-58 are
+> the mistake of reading one of those as a level, and neither is writeable here now.
+>
+> **Eight doors where a published number re-enters.** `roomFor`, `capitalOf`, `liquidOf`,
+> `liquidityPlan`, `numberIn`, `securityIn` and the two `moneyMarket.refused` reads all take a
+> number out of what a party itself published and hand it to a decision. Each says what it is at the
+> read — and `securityIn` now puts what crossed the 4.9b door through `asQty`, so a "quantity" that
+> is not a whole number of pieces is refused where it arrives rather than three phases later.
+>
+> **Measured**: **79 red of 793**, the same 79 test for test, with **714 passing**.
 
 **Why.** Eighteen findings, and one signature:
 

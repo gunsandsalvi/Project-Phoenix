@@ -21,15 +21,17 @@
  * depositor, a rival and a lender all read, and the bank's own credit decision has less room in it.
  */
 import { currencyUnit, moneyInstrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
+import { atLeast, atMost, sum } from '../../core/num.js';
 import {
-  add,
-  atLeast,
-  atMost,
-  div,
-  mul,
-  sub,
-  sum,
-} from '../../core/num.js';
+  asCash,
+  type Cash,
+  minus,
+  over,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -43,9 +45,9 @@ export interface CapitalPosition {
   readonly bank: PartyId;
   readonly ccy: CurrencyCode;
   /** A1: capital is the RESIDUAL — its own equity account, not a fund. */
-  readonly capital: number;
+  readonly capital: Cash;
   /** B1: what its book weighs, asset by asset. */
-  readonly weighted: number;
+  readonly weighted: Cash;
   /**
    * Law 7: HOW MANY TERMS THAT SUM HAD and what magnitude it passed through. A reader comparing
    * something against this number is comparing against a walk over the bank's whole book, and the
@@ -56,23 +58,23 @@ export interface CapitalPosition {
   readonly weightedTerms: number;
   readonly weightedMagnitude: number;
   /** B1.b: and what it comes to with no weights at all. */
-  readonly assets: number;
-  readonly weightedRatio: Option<number>;
-  readonly leverageRatio: Option<number>;
-  readonly minWeighted: number;
-  readonly minLeverage: number;
+  readonly assets: Cash;
+  readonly weightedRatio: Option<Ratio>;
+  readonly leverageRatio: Option<Ratio>;
+  readonly minWeighted: Ratio;
+  readonly minLeverage: Ratio;
   /** B2: how far above both lines this bank has chosen to run. */
-  readonly buffer: number;
+  readonly buffer: Ratio;
   /** B1.c: which rule leaves it the least room, in units of the asset it would add. */
   readonly binds: Binding;
   /** What it could still put on, at the weight of the asset it is deciding about. */
-  readonly headroom: number;
+  readonly headroom: Cash;
   /** B3: below the line it chose for itself, which is where the consequences start. */
   readonly breach: boolean;
   /** C1: and below the line the rule itself draws, which is a different and worse thing. */
   readonly belowRequirement: boolean;
   /** Banks Lending F3: the most it will fund for one name, which its names can read (XI-2). */
-  readonly limitPerName: number;
+  readonly limitPerName: Cash;
   /**
    * Dealer Desks F2, Banks Capital B1: WHAT EACH LINE OF THE BANK IS USING, off the same walk that
    * produced `weighted` — one traversal, so a line's capital and the bank's can never disagree
@@ -84,28 +86,28 @@ export interface CapitalPosition {
 
 /** What each reason for holding something asks of the bank's capital (Dealer Desks F2). */
 export interface LineWeights {
-  readonly lending: number;
-  readonly liquidity: number;
-  readonly dealing: number;
+  readonly lending: Cash;
+  readonly liquidity: Cash;
+  readonly dealing: Cash;
 }
 
 export interface CapitalRules {
   /** F3: the share of its own capital it will have out to any one name. */
-  readonly limitPerName: number;
-  readonly minWeighted: number;
-  readonly minLeverage: number;
-  readonly buffer: number;
+  readonly limitPerName: Ratio;
+  readonly minWeighted: Ratio;
+  readonly minLeverage: Ratio;
+  readonly buffer: Ratio;
   /** The weight of the asset the decision is about — a loan, unless the caller says otherwise. */
-  readonly weight: number;
-  readonly sovereignWeight: number;
+  readonly weight: Ratio;
+  readonly sovereignWeight: Ratio;
   /** Dealer Desks D2, F2: what a unit of a TRADING position consumes, whatever it is a claim on. */
-  readonly tradingWeight: number;
+  readonly tradingWeight: Ratio;
   /**
    * Dealer Desks C2.a, F2, Banks Funding C2: where this bank's own treasury wants each line held,
    * in its own money. It is what tells a holding it is there because the treasury decided so from
    * a holding it is running as a POSITION, and the two do not weigh the same.
    */
-  readonly targets: ReadonlyMap<InstrumentId, number>;
+  readonly targets: ReadonlyMap<InstrumentId, Cash>;
 }
 
 /**
@@ -115,7 +117,7 @@ export interface CapitalRules {
  * is not a claim on anybody at all and weighs the same as an exposure that can go wrong, because it
  * can.
  */
-export function riskWeightOf(ctx: MechanismContext, i: Instrument, rules: CapitalRules): number {
+export function riskWeightOf(ctx: MechanismContext, i: Instrument, rules: CapitalRules): Ratio {
   if (!i.issuer.some) return rules.weight;
   const issuer = ctx.parties.get(ctx.parties.resolve(i.issuer.value).id);
   const canFail = ctx.registry.partyKind(issuer.kind).fails ?? [];
@@ -134,9 +136,13 @@ export function capitalOf(
   rules: CapitalRules,
 ): CapitalPosition {
   const own = moneyInstrumentId(bank, ccy);
-  const held: number[] = [];
-  const weighted: number[] = [];
-  const byLine = { lending: 0, liquidity: 0, dealing: 0 };
+  const held: Cash[] = [];
+  const weighted: Cash[] = [];
+  const byLine = {
+    lending: asCash(0, 'what its lending uses'),
+    liquidity: asCash(0, 'what its liquidity uses'),
+    dealing: asCash(0, 'what its dealing uses'),
+  };
   for (const h of ctx.register.holdingsOf(bank)) {
     if (h.instrument === own) continue;
     const value = ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period);
@@ -155,29 +161,29 @@ export function capitalOf(
     // buy — but it is not an asset it holds, and capital stands against what a bank owns.
     const want = rules.targets.get(h.instrument);
     const banking = want === undefined ? value : atMost(value, want, 'the treasury cannot claim more of a line than there is of it');
-    const trading = sub(value, banking, 'the part it is running as a position');
-    const asBanking = mul(
+    const trading = minus(value, banking, 'the part it is running as a position');
+    const asBanking = scale(
       banking,
       riskWeightOf(ctx, ctx.instruments.get(h.instrument), rules),
       'weighted',
     );
-    const asTrading = mul(trading, rules.tradingWeight, 'what a position weighs');
-    weighted.push(add(asBanking, asTrading, 'what this holding asks of its capital'));
+    const asTrading = scale(trading, rules.tradingWeight, 'what a position weighs');
+    weighted.push(plus(asBanking, asTrading, 'what this holding asks of its capital'));
     // The same three answers the weighting already gives, kept rather than summed away: what it
     // LENT (a claim it wrote, which no market prices and no target names), what its treasury wants
     // held for liquidity, and what its dealing line is carrying above that.
     if (isLoan(ctx.instruments.get(h.instrument).terms)) {
-      byLine.lending = add(byLine.lending, asBanking, 'what its lending uses');
+      byLine.lending = plus(byLine.lending, asBanking, 'what its lending uses');
     } else {
-      byLine.liquidity = add(byLine.liquidity, asBanking, 'what its liquidity uses');
+      byLine.liquidity = plus(byLine.liquidity, asBanking, 'what its liquidity uses');
     }
-    byLine.dealing = add(byLine.dealing, asTrading, 'what its dealing uses');
+    byLine.dealing = plus(byLine.dealing, asTrading, 'what its dealing uses');
   }
   // A2, A3: CAPITAL IS LAYERED, and both layers are here — the equity that absorbs first and fully
   // (A2.a) and the subordinated claims that absorb next (A2.b). A requirement met with equity alone
   // would be a requirement no bank could ever raise its way back over except by earning it, and
   // C2's "recapitalisation first, if somebody will provide it" would have nothing to provide.
-  const capital = add(
+  const capital = plus(
     ctx.participant(bank).equity(),
     subordinatedOf(ctx, bank),
     'what stands in front of its creditors',
@@ -185,14 +191,23 @@ export function capitalOf(
   const assets = sum(held).value;
   const weightedSum = sum(weighted);
   const rwa = weightedSum.value;
-  const askedWeighted = add(rules.minWeighted, rules.buffer, 'the line it runs to');
-  const askedLeverage = add(rules.minLeverage, rules.buffer, 'the backstop it runs to');
+  const askedWeighted = plus(rules.minWeighted, rules.buffer, 'the line it runs to');
+  const askedLeverage = plus(rules.minLeverage, rules.buffer, 'the backstop it runs to');
   // What each rule leaves it, in units of the asset it would add: the weighted rule counts that
   // asset at its weight and the backstop counts it whole, which is why a zero-weighted asset is
   // free under one and not under the other. That difference IS B1.b's reason to exist.
-  const byWeighted = sub(div(capital, askedWeighted, 'weighted assets it can carry'), rwa, 'weighted room');
-  const byLeverage = sub(div(capital, askedLeverage, 'assets it can carry'), assets, 'leverage room');
-  const inUnits = rules.weight > 0 ? div(byWeighted, rules.weight, 'units it could add') : byWeighted;
+  const byWeighted = minus(
+    over(capital, askedWeighted, 'weighted assets it can carry'),
+    rwa,
+    'weighted room',
+  );
+  const byLeverage = minus(
+    over(capital, askedLeverage, 'assets it can carry'),
+    assets,
+    'leverage room',
+  );
+  const inUnits =
+    rules.weight > 0 ? over(byWeighted, rules.weight, 'units it could add') : byWeighted;
   const binds: Binding =
     byLeverage < inUnits ? 'leverage' : inUnits < byLeverage ? 'weighted' : 'nothing';
   return {
@@ -203,20 +218,21 @@ export function capitalOf(
     weightedTerms: weightedSum.terms,
     weightedMagnitude: weightedSum.magnitude,
     assets,
-    weightedRatio: rwa > 0 ? some(div(capital, rwa, 'its weighted ratio')) : none<number>(),
-    leverageRatio: assets > 0 ? some(div(capital, assets, 'its leverage ratio')) : none<number>(),
+    weightedRatio: rwa > 0 ? some(ratioOf(capital, rwa, 'its weighted ratio')) : none<Ratio>(),
+    leverageRatio: assets > 0 ? some(ratioOf(capital, assets, 'its leverage ratio')) : none<Ratio>(),
     minWeighted: rules.minWeighted,
     minLeverage: rules.minLeverage,
     buffer: rules.buffer,
     binds,
     headroom: atMost(byLeverage, inUnits, 'the rule that leaves it less is the room there is'),
-    limitPerName: mul(capital, rules.limitPerName, 'the most it will fund for one name'),
+    limitPerName: scale(capital, rules.limitPerName, 'the most it will fund for one name'),
     byLine,
-    breach: capital < mul(rwa, askedWeighted, 'what the line asks') ||
-      capital < mul(assets, askedLeverage, 'what the backstop asks'),
+    breach:
+      capital < scale(rwa, askedWeighted, 'what the line asks') ||
+      capital < scale(assets, askedLeverage, 'what the backstop asks'),
     belowRequirement:
-      capital < mul(rwa, rules.minWeighted, 'the requirement') ||
-      capital < mul(assets, rules.minLeverage, 'the backstop'),
+      capital < scale(rwa, rules.minWeighted, 'the requirement') ||
+      capital < scale(assets, rules.minLeverage, 'the backstop'),
   };
 }
 
@@ -255,13 +271,13 @@ export function publish(ctx: MechanismContext, p: CapitalPosition): void {
   // plan is demanded in public, the supervision that follows is public with it, and the money it
   // may still put to work is the headroom above — which its own credit decision reads (B2.b).
   if (!p.breach) return;
-  const shortWeighted = sub(
-    mul(p.weighted, add(p.minWeighted, p.buffer, 'the line'), 'what the weighted rule asks'),
+  const shortWeighted = minus(
+    scale(p.weighted, plus(p.minWeighted, p.buffer, 'the line'), 'what the weighted rule asks'),
     p.capital,
     'short of the weighted line',
   );
-  const shortLeverage = sub(
-    mul(p.assets, add(p.minLeverage, p.buffer, 'the backstop'), 'what the backstop asks'),
+  const shortLeverage = minus(
+    scale(p.assets, plus(p.minLeverage, p.buffer, 'the backstop'), 'what the backstop asks'),
     p.capital,
     'short of the backstop',
   );

@@ -20,15 +20,21 @@ import { linesCovered } from './staff.js';
 import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
 import {
-  add,
-  atLeast,
-  atMost,
-  div,
-  material,
-  mul,
-  sub,
-  sum,
-} from '../../core/num.js';
+  amountOf,
+  asAmount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
+import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { upTick } from '../../core/tick.js';
 import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -56,10 +62,10 @@ import { NO_QTY } from '../../core/tick.js';
  * rather than a bound (Law 6: it cannot spend room that does not exist). Before its treasury has
  * allotted anything it has its own appetite and nothing else to go on.
  */
-function allotted(view: ParticipantView, appetite: number, carried: number): number {
+function allotted(view: ParticipantView, appetite: Cash, carried: Cash): Cash {
   const room = roomFor(view, DEALING);
   if (!room.some) return appetite;
-  const may = add(carried, room.value, 'what it carries plus the room it was given');
+  const may = plus(carried, room.value, 'what it carries plus the room it was given');
   return atMost(may, appetite, 'a line cannot spend room that does not exist');
 }
 
@@ -75,13 +81,13 @@ function allotted(view: ParticipantView, appetite: number, carried: number): num
  */
 export function bookValue(
   view: ParticipantView,
-  targets: ReadonlyMap<InstrumentId, number>,
-): number {
-  const terms: number[] = [];
+  targets: ReadonlyMap<InstrumentId, Cash>,
+): Cash {
+  const terms: Cash[] = [];
   for (const [id, want] of targets) {
     const mark = view.mark(id);
     if (!mark.some) continue;
-    const held = mul(view.quantity(id), mark.value, 'what this line is worth');
+    const held = valueAt(mark.value, view.quantity(id), 'what this line is worth');
     /**
      * D1, D4: ONE HOLDING, TWO OWNERS, AND THE TREASURY'S CLAIM ON IT COMES FIRST.
      *
@@ -99,16 +105,18 @@ export function bookValue(
      * it has not borrowed (Register C4).
      */
     const treasurys = atMost(want, held, 'the treasury cannot claim more of a line than there is of it');
-    terms.push(sub(held, treasurys, 'what the desk is carrying of it'));
+    terms.push(minus(held, treasurys, 'what the desk is carrying of it'));
   }
   return sum(terms).value;
 }
 
 /** Banks Funding C1: what this bank could pay with, as the bank itself last published it (F4). */
-function liquidOf(view: ParticipantView, ccy: CurrencyCode): number {
+function liquidOf(view: ParticipantView, ccy: CurrencyCode): Cash {
   const said = view.lastOwn('bank.liquidity');
   const liquid = said.some ? said.value.data['liquid'] : undefined;
-  return typeof liquid === 'number' && liquid > 0 ? liquid : view.cash(ccy);
+  return typeof liquid === 'number' && liquid > 0
+    ? asCash(liquid, 'what it published it could pay with')
+    : asCash(view.cash(ccy), 'what is in the account');
 }
 
 /**
@@ -116,10 +124,13 @@ function liquidOf(view: ParticipantView, ccy: CurrencyCode): number {
  * dealing book stands behind that capital and nothing else — a limit read off anything but its own
  * published position would be a second answer to what this bank is worth (Law 4, Law 19).
  */
-function capitalOf(view: ParticipantView): number {
+function capitalOf(view: ParticipantView): Cash {
   const said = view.lastOwn('bank.capital');
   const capital = said.some ? said.value.data['capital'] : undefined;
-  return typeof capital === 'number' && capital > 0 ? capital : 0;
+  // Item 16: money re-entering from what this bank published, at the read that knows what it is.
+  return typeof capital === 'number' && capital > 0
+    ? asCash(capital, 'what it published as its capital')
+    : asCash(0, 'a bank that has published nothing');
 }
 
 /** C5: how many books it is making a market in this period — its money is spread over them. */
@@ -142,7 +153,7 @@ function linesQuoted(view: ParticipantView, d: BankDecl): number {
  * dealing line with its own cost of funds would be a second answer to what money costs this bank,
  * and one with its own required return would be a second answer to what its capital costs.
  */
-export function carryRate(view: ParticipantView, ccy: CurrencyCode): number | undefined {
+export function carryRate(view: ParticipantView, ccy: CurrencyCode): Ratio | undefined {
   /**
    * Law 8, Currency A3, XI-12: IN THE MONEY THE LINE IS IN, which is not always this bank's own.
    *
@@ -168,7 +179,7 @@ export function carryRate(view: ParticipantView, ccy: CurrencyCode): number | un
         ]?.perAnnum ?? undefined);
   if (typeof perAnnum !== 'number') return undefined;
   return rateOf(
-    perAnnum,
+    asRatio(perAnnum, 'what this bank published as its cost of funds'),
     view.params.ratio(TRADING_BOOK_CAPITAL_RATIO),
     view.params.ratio(TRADING_BOOK_RISK_WEIGHT),
     view.params.perAnnum(bankParam(view.self.id, 'returnOnCapital')),
@@ -189,7 +200,7 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
   return {
     // C2.a: where its own treasury wants each line held. The treasury posts nothing; this is how
     // what it decided reaches the market (Law 4: one decider, one face).
-    targetIn: (instrument: InstrumentId): number => {
+    targetIn: (instrument: InstrumentId): Cash => {
       const want = targets.get(instrument);
       if (want === undefined) {
         throw new Missing(
@@ -208,7 +219,7 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
     // when capital is scarce rather than when a number said so.
     limitAggregate: allotted(
       view,
-      mul(
+      scale(
         capitalOf(view),
         view.params.ratio(lineParam(view.self.id, DEALING, 'capitalAtRisk')),
         'what it will put behind its dealing book',
@@ -333,13 +344,17 @@ export function dealingOrders(
 function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty {
   const said = view.lastOwn('moneyMarket.refused');
   if (!said.some || said.value.period + 1 !== view.period) return NO_QTY;
-  const short = said.value.data['short'];
-  const buffer = said.value.data['buffer'];
-  if (typeof short !== 'number' || typeof buffer !== 'number') return NO_QTY;
-  const owed = sub(short, buffer, 'what it cannot pay, once the cushion is gone');
+  const saidShort = said.value.data['short'];
+  const saidBuffer = said.value.data['buffer'];
+  if (typeof saidShort !== 'number' || typeof saidBuffer !== 'number') return NO_QTY;
+  const owed = minus(
+    asCash(saidShort, 'what the session refused it'),
+    asCash(saidBuffer, 'the cushion inside it'),
+    'what it cannot pay, once the cushion is gone',
+  );
   if (owed <= 0) return NO_QTY;
-  let total = 0;
-  let mine = 0;
+  const worths: Cash[] = [];
+  let mine = asCash(0, 'what this line would fetch');
   for (const m of view.markets) {
     const subject = delivers(m);
     if (!subject.some) continue;
@@ -348,15 +363,16 @@ function urgentSale(view: ParticipantView, d: BankDecl, line: InstrumentId): Qty
     const mark = view.mark(i.id);
     const free = view.free(i.id);
     if (!mark.some || mark.value <= 0 || free <= 0) continue;
-    const worth = mul(free, mark.value, 'what this parcel would fetch');
-    total += worth;
+    const worth = valueAt(mark.value, free, 'what this parcel would fetch');
+    worths.push(worth);
     if (i.id === line) mine = worth;
   }
+  const total = sum(worths).value;
   if (total <= 0 || mine <= 0) return NO_QTY;
   const mark = view.mark(line);
   if (!mark.some || mark.value <= 0) return NO_QTY;
-  const share = mul(owed, div(mine, total, 'what this line carries'), 'raised here');
-  const want = upTick(div(share, mark.value, 'units to sell'));
+  const share = scale(owed, ratioOf(mine, total, 'what this line carries'), 'raised here');
+  const want = upTick(amountOf(share, mark.value, 'units to sell'));
   const free = view.free(line);
   return atMost(want, free, 'it sells what it holds unencumbered and no more');
 }
@@ -380,23 +396,30 @@ function primaryBid(
   q: DeskQuote,
   state: DeskState,
   instrument: InstrumentId,
-  offered: number,
+  offered: Qty,
 ): readonly Order[] {
   if (q.bid <= 0 || q.view <= 0) return [];
   const said = view.lastPublicAbout('auction.announced', instrument);
   const share = said.some && said.value.period === view.period ? said.value.data['dealershipShare'] : undefined;
-  const obliged = typeof share === 'number' ? mul(offered, share, 'what it must bid for') : 0;
+  const obliged =
+    typeof share === 'number'
+      ? scale(
+          offered,
+          asRatio(share, 'the share its dealership obliges it to bid for'),
+          'what it must bid for',
+        )
+      : asAmount<'piece'>(0, 'no dealership, no obligation');
   // E2.a, E5: and what its own treasury is short of in this line — a reason of its own, and the
   // same distance from target its quote is already skewing around, counted in units.
-  const gap = sub(
-    div(state.targetIn(instrument), q.view, 'units its treasury wants held'),
+  const gap = minus(
+    amountOf(state.targetIn(instrument), q.view, 'units its treasury wants held'),
     view.free(instrument),
     'units it is short of that',
   );
   const wanted = atLeast(obliged, gap, 'its dealership obligation is a floor under its own need');
   // C3.a: it bids out of the money it has. A bank with none bids nothing, and that is how an
   // auction fails: not because a rule allowed it to, but because nobody could pay.
-  const affordable = div(state.cash, q.bid, 'what it could pay for');
+  const affordable = amountOf(state.cash, q.bid, 'what it could pay for');
   // Law 8: both of those are money over a price, so both are fractions of a unit of the paper. It
   // bids for whole ones, and down, because a bid it cannot pay for is not a bid (C3.a).
   const qty = downTick(atMost(wanted, affordable, 'a bid it cannot pay for is not a bid'));
@@ -434,17 +457,22 @@ export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly B
     // Law 8, Law 16: it is a PRICE over a price — what one share trades at less what one share of
     // the book is worth — and it is named for that. Called `gap` it read like a quantity, which is
     // the one thing it is not: nothing in this world holds 2,308.77 of anything.
-    const premium = sub(print.value.price, nav, 'what the market pays over the book');
-    const worth = mul(nav, state.ratePerPeriod, 'what a share costs it to carry for a period');
+    const perShare = asPerPiece(nav, 'what one share of the book is worth');
+    const premium = minus(print.value.price, perShare, 'what the market pays over the book');
+    const worth = scale(
+      perShare,
+      state.ratePerPeriod,
+      'what a share costs it to carry for a period',
+    );
     if (Math.abs(premium) <= worth) continue;
     const held = view.quantity(share);
     // Law 8, D1: what its own limit leaves it room for, in WHOLE creation units — the limit is
     // money and a unit has a price, so the division lands between two of them and the one below is
     // what it has room for.
     const room = downTick(
-      div(
-        mul(state.limitAggregate, state.concentration, 'the most of the book in one line'),
-        nav,
+      amountOf(
+        scale(state.limitAggregate, state.concentration, 'the most of the book in one line'),
+        perShare,
         'creation units that comes to',
       ),
     );
@@ -490,7 +518,13 @@ function deliverable(view: ParticipantView, basket: unknown, room: Qty): Qty {
     lines += 1;
     // Law 8: E3 — a creation unit is a WHOLE unit or it is not one. What this line backs is what it
     // holds over what a unit draws of it, and the fraction above that is a unit it cannot deliver.
-    const canMake = downTick(div(view.free(instrumentId(line)), perShare, 'creation units this line backs'));
+    const canMake = downTick(
+      over(
+        view.free(instrumentId(line)),
+        asRatio(perShare, 'what one creation unit draws of this line'),
+        'creation units this line backs',
+      ),
+    );
     if (canMake < most) most = canMake;
   }
   return lines > 0 ? most : NO_QTY;
@@ -526,10 +560,12 @@ export function publishDealing(
       // C2.a, F2: where its own treasury wants this line, and what it is actually holding of it at
       // the marks — the two numbers that say which part of the holding is a position it took.
       target: state.targetIn(i.id),
-      worth: mark.some ? mul(view.quantity(i.id), mark.value, 'what it holds of this line') : 0,
+      worth: mark.some
+        ? valueAt(mark.value, view.quantity(i.id), 'what it holds of this line')
+        : 0,
       bid: q.bid,
       offer: q.offer,
-      spread: sub(q.offer, q.bid, 'the width it quoted'),
+      spread: minus(q.offer, q.bid, 'the width it quoted'),
       skew: q.skew,
       bidSize: q.bidSize,
       offerSize: q.offerSize,
@@ -544,7 +580,7 @@ export function publishDealing(
       bank,
       book: state.bookValue,
       // D1, F1: how much of its capacity is used. Finite and enumerable, and here it is enumerated.
-      roomLeft: sub(state.limitAggregate, state.bookValue, 'room in the whole book'),
+      roomLeft: minus(state.limitAggregate, state.bookValue, 'room in the whole book'),
       ratePerPeriod: state.ratePerPeriod,
       lines,
     },

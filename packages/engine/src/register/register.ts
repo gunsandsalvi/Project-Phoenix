@@ -14,6 +14,7 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import {
+  asCash,
   asPerPiece,
   asRatio,
   type Cash,
@@ -261,8 +262,8 @@ export class Register {
   }
 
   /** The stated equity account, per member (Audit B5). Missing until the seed states it. */
-  equity(party: PartyId): number {
-    return this.equityWalk(party).value;
+  equity(party: PartyId): Cash {
+    return asCash(this.equityWalk(party).value, `${party}'s equity account`);
   }
 
   /**

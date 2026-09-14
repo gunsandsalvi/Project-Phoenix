@@ -42,10 +42,24 @@
  * history, so it posts the same two prices whether the market has a hundred orders in it or none —
  * which is what stops it being the buyer of last resort with a different name.
  */
+import {
+  amountOf,
+  asAmount,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  type PerPiece,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { nextPeriod, type Calendar, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
-import { add, atMost, div, material, mul, sub } from '../../core/num.js';
+import { add, atMost, div, material, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { priceAtYield, requiredYieldOf } from './treasury.js';
@@ -60,13 +74,13 @@ const DAY_COUNT = 'ACT/365F' as const;
 export interface DeskQuote {
   readonly instrument: InstrumentId;
   /** C1: its own view of what a unit is worth, before its own position is taken into account. */
-  readonly view: number;
+  readonly view: PerPiece;
   /** What one more unit costs it to carry, be wrong about, and face informed flow in. */
-  readonly edge: number;
+  readonly edge: PerPiece;
   /** C2: how far both sides are pushed down by what it is already holding. */
-  readonly skew: number;
-  readonly bid: number;
-  readonly offer: number;
+  readonly skew: PerPiece;
+  readonly bid: PerPiece;
+  readonly offer: PerPiece;
   /** D1: what room it has left, and what it holds. Either can be nothing (D4: it stops). */
   /** Law 8: WHOLE PIECES of the line, on both sides. A quote for four tenths of a share is a
    * quote nobody can hit, and it used to be possible because a size is money over a price. */
@@ -82,28 +96,28 @@ export interface DeskState {
    * C2.a: where its own treasury wants this line held, in the bank's own money. Zero for a line
    * nobody holds for liquidity, which is the ordinary case and is what "flat" used to mean.
    */
-  targetIn(instrument: InstrumentId): number;
+  targetIn(instrument: InstrumentId): Cash;
   /** D1: the most its whole book may be worth. */
-  readonly limitAggregate: number;
+  readonly limitAggregate: Cash;
   /**
    * D1: the most of that book it will have in ONE line, as a share of the whole. Law 8: the units
    * a limit binds in are the line's own, and they fall out of this share and its own view of the
    * line rather than being restated per line in pieces that mean something different in each.
    */
-  readonly concentration: number;
+  readonly concentration: Ratio;
   /** D3, D2: what a unit of value costs it to carry for one period — funding plus capital charge. */
-  readonly ratePerPeriod: number;
+  readonly ratePerPeriod: Ratio;
   /**
    * Currency A3, XI-12: WHAT CARRYING A UNIT COSTS IT IN THE MONEY THE LINE IS IN. A desk quoting
    * a foreign line funds that position in that money — by swap or by borrowing — and what that
    * costs is what the bank itself published for it. A money it has not funded and cannot price has
    * no rate, and its desk does not quote that line (worklist 13b, finding `12d-14`).
    */
-  rateIn(ccy: CurrencyCode): number | undefined;
+  rateIn(ccy: CurrencyCode): Ratio | undefined;
   /** What its whole book is worth at the last marks, so the aggregate limit is a real constraint. */
-  readonly bookValue: number;
+  readonly bookValue: Cash;
   /** F1: the money it actually has. A desk cannot pay for what it bid with money it has not got. */
-  readonly cash: number;
+  readonly cash: Cash;
   /** How many lines it is quoting this period, so its money is spread over them and no further. */
   readonly linesQuoted: number;
 }
@@ -135,7 +149,7 @@ const least = (a: number, b: number): number =>
  * (Sovereign C3.b). It is the LAST resort and not the first, because a reservation is what a holder
  * would need to buy and keep, and a market maker quotes around where the market is.
  */
-function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number> {
+function viewOf(view: ParticipantView, instrument: InstrumentId): Option<PerPiece> {
   // XI-13, AND IT IS THE WHOLE OF WHY THIS ORDER IS WHAT IT IS. A DATED CLAIM is worth what its own
   // payments are worth at what this bank requires of the name (Corporate Credit E5), and that is
   // asked FIRST — because it is the one input to this quote that does not read the print.
@@ -165,7 +179,9 @@ function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number>
   // A4) — so for a share the desk's own outlook, and then what it carries one at, is all there is.
   // `priceAtYield` answers none for it, which is what brings the flow here.
   const own = view.outlook(about({ on: 'price', instrument: instrument }));
-  if (own.some && own.value.expected > 0) return some(own.value.expected);
+  if (own.some && own.value.expected > 0) {
+    return some(asPerPiece(own.value.expected, `what it expects ${instrument} to be worth`));
+  }
   const carried = view.mark(instrument);
   return carried.some && carried.value > 0 ? carried : none();
 }
@@ -176,9 +192,11 @@ function viewOf(view: ParticipantView, instrument: InstrumentId): Option<number>
  * been surprised about a line is not thereby certain of it — it has no history — so what it charges
  * for risk is nothing extra and what it charges for CARRY is still there.
  */
-function riskOf(view: ParticipantView, instrument: InstrumentId): number {
+function riskOf(view: ParticipantView, instrument: InstrumentId): PerPiece {
   const own = view.outlook(about({ on: 'price', instrument: instrument }));
-  return own.some ? own.value.confidence : 0;
+  // §46: confidence is a spread around a LEVEL and is stated in the same money per piece it is a
+  // spread around — which is why it adds to the edge and could never be a share of anything.
+  return asPerPiece(own.some ? own.value.confidence : 0, `how sure it is of ${instrument}`);
 }
 
 /**
@@ -187,14 +205,18 @@ function riskOf(view: ParticipantView, instrument: InstrumentId): number {
  * whoever it faced knew something, and what that is worth to it is its own uncertainty on that
  * share of the flow. Two-way flow costs it nothing — which is B1's reason for quoting at all.
  */
-function adverseOf(view: ParticipantView, instrument: InstrumentId, risk: number): number {
+function adverseOf(view: ParticipantView, instrument: InstrumentId, risk: PerPiece): PerPiece {
   const bought = view.outlook(about({ on: 'bought', instrument: instrument }));
   const sold = view.outlook(about({ on: 'sold', instrument: instrument }));
   const b = bought.some && bought.value.expected > 0 ? bought.value.expected : 0;
   const s = sold.some && sold.value.expected > 0 ? sold.value.expected : 0;
   const both = add(b, s, 'the flow it faced');
-  if (both <= 0) return 0;
-  return mul(div(Math.abs(sub(b, s, 'how one-sided it was')), both, 'the share of it'), risk, 'adverse selection');
+  if (both <= 0) return asPerPiece(0, 'no flow, no adverse selection');
+  return scale(
+    risk,
+    asRatio(div(Math.abs(sub(b, s, 'how one-sided it was')), both, 'the share of it'), 'one-sided'),
+    'adverse selection',
+  );
 }
 
 /**
@@ -210,14 +232,14 @@ export function quoteFor(
   const value = viewOf(view, instrument);
   if (!value.some) return none();
   const mine = value.value;
-  const limitPerInstrument = div(
-    mul(state.limitAggregate, state.concentration, 'the most of the book in one line'),
+  const limitPerInstrument = amountOf(
+    scale(state.limitAggregate, state.concentration, 'the most of the book in one line'),
     mine,
     'units of this line that comes to',
   );
   const inventory = view.free(instrument);
   // C2.a: where its own treasury wants the line, in the same pieces the inventory is counted in.
-  const target = div(state.targetIn(instrument), mine, 'units its treasury wants held');
+  const target = amountOf(state.targetIn(instrument), mine, 'units its treasury wants held');
   const risk = riskOf(view, instrument);
   const adverse = adverseOf(view, instrument, risk);
   // D3, D2: what carrying one more unit costs it for the period it is quoting in — the money it
@@ -228,31 +250,57 @@ export function quoteFor(
   // A line in a money this bank cannot say what costs it is a line it does not quote: the bid
   // would be priced off somebody else's money (Law 8: the unit is part of the number).
   if (rate === undefined) return none();
-  const carry = mul(mine, rate, 'what a unit costs it for a period');
-  const edge = add(add(carry, risk, 'what it must earn on a unit'), adverse, 'and for who it faces');
+  const carry = scale(mine, rate, 'what a unit costs it for a period');
+  const edge = plus(
+    plus(carry, risk, 'what it must earn on a unit'),
+    adverse,
+    'and for who it faces',
+  );
   // C2, C2.a: how far the book is from where it should be, as a share of the room it has. ABOVE
   // the target it bids lower AND offers lower, because it wants to sell; BELOW it, both sides go
   // up, because it wants to buy. That is how a book mean-reverts with nobody telling it to, and
   // with a treasury target on a liquidity line it is also how the treasury sells its portfolio:
   // it moves the target, and its own desk's quote is what the market sees.
-  const away = sub(inventory, target, 'how far the book is from where it should be');
-  const used = limitPerInstrument > 0
-    ? div(away, limitPerInstrument, 'how much of its room that uses')
-    : 1;
-  const skew = mul(used, edge, 'what its own position does to both sides');
-  const bid = sub(sub(mine, edge, 'what it will pay'), skew, 'less what it is already carrying');
-  const offer = sub(add(mine, edge, 'what it wants for one'), skew, 'less what it wants to shed');
-  const room = sub(limitPerInstrument, away, 'units of room left');
+  const away = minus(inventory, target, 'how far the book is from where it should be');
+  const used =
+    limitPerInstrument > 0
+      ? ratioOf(away, limitPerInstrument, 'how much of its room that uses')
+      : asRatio(1, 'a line with no room is wholly used');
+  const skew = scale(edge, used, 'what its own position does to both sides');
+  const bid = minus(
+    minus(mine, edge, 'what it will pay'),
+    skew,
+    'less what it is already carrying',
+  );
+  const offer = minus(
+    plus(mine, edge, 'what it wants for one'),
+    skew,
+    'less what it wants to shed',
+  );
+  const room = minus(limitPerInstrument, away, 'units of room left');
   // D1, D4, F1: three real constraints and the binding one decides, which is what "it shrinks its
   // size" means. A position limit it set itself; the room left in its whole book, so a desk full of
   // one thing stops bidding for everything; and the money it actually has, spread over the lines it
   // is quoting, because a desk that bid its whole account in every book at once would be promising
   // the same money several times over. Law 6: none of these is a bound on a price or on anybody
   // else's behaviour — each is this party deciding how much it will take on, which is a decision.
-  const inBook = div(sub(state.limitAggregate, state.bookValue, 'room in the whole book'), mine, 'units');
-  const inMoney = state.linesQuoted > 0
-    ? div(div(state.cash, state.linesQuoted, 'its money over the lines it quotes'), mine, 'units')
-    : 0;
+  const inBook = amountOf(
+    minus(state.limitAggregate, state.bookValue, 'room in the whole book'),
+    mine,
+    'units',
+  );
+  const inMoney =
+    state.linesQuoted > 0
+      ? amountOf(
+          over(
+            state.cash,
+            asRatio(state.linesQuoted, 'the lines it quotes'),
+            'its money over the lines it quotes',
+          ),
+          mine,
+          'units',
+        )
+      : asAmount<'piece'>(0, 'a desk quoting nothing can pay for nothing');
   // Law 8: AND IT IS A WHOLE NUMBER OF PIECES. Every one of the three above is money divided by a
   // price, so every one of them is a fraction of a piece of the line — and a quote for four tenths
   // of a share is a quote nobody can hit. It rounds DOWN because each of the three is what this
@@ -289,18 +337,24 @@ export function quoteFor(
  * the fraction of a year the calendar says it is — never a periods-per-year anybody stated.
  */
 export function rateOf(
-  costOfFunds: number,
-  capitalRatio: number,
-  riskWeight: number,
-  requiredReturn: number,
+  costOfFunds: Ratio,
+  capitalRatio: Ratio,
+  riskWeight: Ratio,
+  requiredReturn: Ratio,
   yearFractionOfPeriod: number,
-): number {
-  const capital = mul(
-    mul(capitalRatio, riskWeight, 'the capital a unit of the book consumes'),
+): Ratio {
+  // Item 16: every one of these is a PURE NUMBER — a rate on a unit of the book — and the type says
+  // so, which is what stops one of them being read as a level (A-44, A-58).
+  const capital = scale(
+    scale(capitalRatio, riskWeight, 'the capital a unit of the book consumes'),
     requiredReturn,
     'what that capital must earn',
   );
-  return mul(add(costOfFunds, capital, 'what a unit of the book costs it per annum'), yearFractionOfPeriod, 'this period of it');
+  return scale(
+    plus(costOfFunds, capital, 'what a unit of the book costs it per annum'),
+    asRatio(yearFractionOfPeriod, 'this period of a year'),
+    'this period of it',
+  );
 }
 
 /** The fraction of a year this period is, off the calendar (Law 8, Money G3.a). */
