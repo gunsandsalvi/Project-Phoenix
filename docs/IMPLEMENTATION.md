@@ -166,10 +166,8 @@ Three reinforcing reasons, and the third is the one to fix:
 
 ## Part 1 — The order
 
-Dependencies, not preference, and the open lines before the new ones. The three arrows that matter:
+Dependencies, not preference, and the open lines before the new ones. The two arrows that matter:
 
-- **9 (`Mandate`) before 13**: building hedge funds on today's `fund` party bakes the pool/decider
-  conflation in permanently.
 - **11 (Small-Business Pools) before 12 (firm birth)**: a firm is born SMALL and small firms are
   §42's cells, so there is nowhere for a birth to happen until that sector exists — and the
   promotion out of it (A6.c) is the other half of the same life cycle. Building birth first would
@@ -179,13 +177,12 @@ Dependencies, not preference, and the open lines before the new ones. The three 
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **9** | The seven private books, and `Mandate` | 5 | the larger half of item 8 of the old file; blocks 13, and `A-43` behind it |
 | **10** | The corporate bond is issued | 2 | needs **3** (a buyer); 51 Corporate Credit clauses stand behind it |
 | **10b** | Short-term debt (§9) | — | **inserted**: the roll that can fail; one of the six lost things; needs **10**'s issuance path |
-| **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed; takeable as soon as **9** gives it an agreement |
+| **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
-| **13** | Asset managers: §28, §29, §15 | 1 | needs **9**; worklist 13o |
-| **14** | Insurers and pensions (§27) | 2 | needs **9** (a policy is an agreement, not an instrument) |
+| **13** | Asset managers: §28, §29, §15 | 1 | `Mandate` exists (item 9.2a), so it is unblocked; worklist 13o |
+| **14** | Insurers and pensions (§27) | 2 | the insurer exists and can write a policy (items 9.3, 9.5); what is left is the sector and pensions |
 | **15** | Housing, the rest | — | needs **3** and **7**; worklist 13m, and `E-5` |
 | **16** | Cross-border, the rest | — | needs **10b** (foreign-currency issuance) and **13** |
 | **17** | Corporate credit, the rest | — | needs **10**; 51 clauses, the largest single gap |
@@ -197,58 +194,14 @@ Dependencies, not preference, and the open lines before the new ones. The three 
 | **23** | Measure (Part XII) | 1 | worklist 16; carries `C-1`'s 82 red |
 | **24** | The app and the APK | — | worklist 17 |
 
-**Stage B (9)** is the last line the old file left open. **Stage C (10–18)** builds the sectors that
-are not there. **Stage D (19–24)** is the existing worklist tail. Items 1–8 and 7b are closed and
-their sections are gone: this is the plan of what is left, and `docs/RECORD.md` is the ledger of
-what was done.
+**Stage B is finished**: every line the old file left open is closed. **Stage C (10–18)** builds the
+sectors that are not there. **Stage D (19–24)** is the existing worklist tail. Items 1–9 and 7b are
+closed and their sections are gone: this is the plan of what is left, and `docs/RECORD.md` is the
+ledger of what was done.
 
 ---
 
 ## Part 2 — The items
-
----
-
-## 9. The seven private books, and `Mandate`
-
-**Why.** `docs/AUDIT.md`'s item 8 built the `Agreement` store and wired four cases. **The seven
-private books were not migrated, and that is the larger half.** `EmploymentRow`/`EmploymentBook`,
-`Lease`/`LeaseBook`, invoices, `StockLoan[]`, loans, covenants, deals are one noun — two named
-parties, dated terms, a state — invented seven times, none visible to the kernel.
-
-`Mandate` rides on that migration, and with it the whole of item 13: **a decider, a pool, and a rule
-profile** (`mayHold`, `requires`, `charges`, `leverage`). That is what splits the fund into the three
-things it actually is — a **pool** that holds and has no opinions, a **mandate** that rules, and a
-**manager** that decides. A separate account is a mandate whose pool is the client's own balance
-sheet. An ETF and an MMF are pools with different redemption rules. **A hedge fund is a mandate with
-leverage**, and `borrows` moves off `fundKind`, where it is hard-coded `false` — which is what 13h
-claimed to have built hedge funds on.
-
-### Steps
-
-- [x] 9.1a **The kernel first, and it is INSERTED here** (Law 10: at its dependency position, said out loud). Nothing could be migrated into `Agreement` as it stood: it holds `{debtor, creditor, ccy, owed, what, why}` and has no room for a wage, a trade, a rent, a lien or a waterfall, so "migrate the seven" meant throwing away six sevenths of every row. An agreement gets a declared `kind` and its own `terms`, the construction `Terms` is for an instrument — then a book is a KIND of agreement and the terms are the module's. **DONE** — `docs/RECORD.md`.
-- [x] 9.1b **Employment.** `EmploymentRow`/`EmploymentBook` → agreements of kind `labour.employment`. **DONE** — `docs/RECORD.md`.
-- [x] 9.1c **Lease.** `Lease`/`LeaseBook` → agreements of kind `housing.tenancy`; housing keeps no state slot at all. **DONE** — `docs/RECORD.md`.
-- [x] 9.1d **Invoice — and it was NOT an `Agreement`.** The `invoices` book was a MIRROR of the register: an invoice is an instrument and already has a kernel home. Deleted; the ageing reads the register. **DONE** — `docs/RECORD.md`.
-- [x] 9.1e **Stock loan.** `StockLoan[]` → agreements of kind `securitiesLending.stockLoan`; the module keeps no state slot. **DONE** — `docs/RECORD.md`.
-- [x] 9.1f **Covenant — and it was NOT an `Agreement` either.** A bond is an instrument and the agreement store is what holds the owing that is not a security; the covenant is a TERM of it and already lives on it. The slot held a memo the journal already says. Deleted. **DONE** — `docs/RECORD.md`.
-- [x] 9.1g **Deal.** → an agreement between the vehicle (debtor) and its arranger (creditor), carrying the one fact nothing else holds: which rows left the arranger's book. **DONE** — `docs/RECORD.md`.
-- [x] 9.1h **Loan — and it was already the register's**, like the invoice. What was left of the book was a COUNTER, and it counted attempts. **DONE, and 9.1 with it: all seven.** — `docs/RECORD.md`.
-- [x] 9.2a **`Mandate` exists**: an agreement between a POOL and a MANAGER, carrying what the pool may hold and whether it may be levered. `fundKind.borrows`'s hard-coded `false` is re-declared as the SHAPE it is, with 13.2 named as its death. **DONE** — `docs/RECORD.md`.
-- [x] 9.2b **The fee does NOT clear, and `fundManagerKind` is NOT deleted — both are corrections.** A manager in this world employs nobody, so a book with two of them in it clears at the tick: the missing mechanism is a manager with a cost base, and it is worklist **13o**. The placeholder's death is re-pointed there (it named 13h, which is CLOSED — `B-14`'s exact shape, found three more times in the same read), and that rule is a CHECK now: `npm run check:deaths`. **DONE** — `docs/RECORD.md`.
-- [x] 9.6 **A-43** — `households` declares the venue participant and `labour/matching.ts:supply` deletes. **DONE** — `docs/RECORD.md`.
-- [x] 9.7 **B-14** — `FUND` is on `TRADES_CONTRACTS` and being on it is NOT permission: `ParticipantView.mayTrade` asks the party's own module, and for a pool the answer is its mandate's `mayWrite`. **DONE** — `docs/RECORD.md`.
-- [x] 9.8 **C-1's ETF row** — the desk borrows the lines it is short of, delivers the basket and takes the shares. `deskBorrows` is its second answerer, and `etfGaps` is the one read both it and `arbitrage` act on. **DONE** — `docs/RECORD.md`.
-- [x] 9.9a **Two of the five were MIRRORS, not homeless nouns.** `funds`' previous NAV and `banks/reserves` were each a private copy of a number the same call had already published, and both are deleted: read off `fund.struck` and `bank.buffer`. **DONE** — `docs/RECORD.md`.
-- [x] 9.9b **`View` is not a store this kernel is missing, and none of the four was homeless.** `outlooks` is §46's own subject matter and the kernel already reaches it; `ratings.published`, `research.said` and `research.since` were MIRRORS of the events those modules announce; the labour `skill` is not an opinion at all. **DONE** — `docs/RECORD.md`.
-
-### Findings this closes
-
-(`A-9`, `A-43`, `A-67`, `B-2`, `B-3` and `B-14` are closed — `docs/RECORD.md`.)
-
-### Exit
-
-A policy is written and an insurer exists; a stock loan is an agreement and a borrow is reachable; a
-manager decides for a pool it does not own; `Mandate` exists and item 13 is unblocked.
 
 ---
 
@@ -366,7 +319,7 @@ weight is a count). Nothing in the engine is a small firm. The one mention in 59
 comment at `firms/data.ts:124`.
 
 **Inserted here** because both its dependencies are closed — trade credit (13e) for A4, bank lending
-(13d) for A5 — and item 9 gives it the loan agreement B1 needs. It is takeable as soon as 9 lands.
+(13d) for A5 — and item 9 gave it the loan agreement B1 needs. **It is takeable now**, and item 12 needs it: a firm is born SMALL, so there is nowhere for a birth to happen until this sector exists.
 
 **Why it matters beyond its own 28 clauses.** A5.a: small firms are bank-dependent, *"which makes
 them the sector where a credit tightening bites first and hardest"*. Without them a credit tightening
@@ -1023,8 +976,6 @@ letter in each heading is the original read's: **A** structural, **B** live defe
 > 13n → **12**, 13o → **13**, 14 → **19**, 15 → **22**, 16 → **23**, 17 → **24**).
 
 ---
-
-### For item 9. The seven private books, and Mandate
 
 #### B-1 — `corporate.bond` is a kind, an id function and a covenant test, and nothing ever issues one (A)
 
