@@ -78,6 +78,19 @@ export class Valuation {
      * after this and a second answer to "whose money is this" would be a second answer (Law 4).
      */
     private readonly bookMoneyOf: (party: PartyId) => CurrencyCode,
+    /**
+     * Derivative X1, D1, Fund Shares A3 (item 13.6): WHAT A PARTY'S OPEN CONTRACTS ARE WORTH TO IT.
+     *
+     * A contract is not in the register — it is on both sides' books at once and nobody holds units
+     * of it — so a derived value built out of holdings alone cannot see one. It is injected rather
+     * than read here for the same reason the curve and the calendar are: the contract store and the
+     * world's public reads are built after this, and a second way of marking a contract would be a
+     * second answer to one question (Law 4). `contract-value.ts` stays the one writer of a mark.
+     */
+    private readonly contractsWorthOf: (
+      party: PartyId,
+      at: Period,
+    ) => readonly { readonly worth: Cash; readonly ccy: CurrencyCode }[],
   ) {}
 
   /** Fund Shares B1: the reads a derived value is given — the kernel's own, and nothing else. */
@@ -93,6 +106,7 @@ export class Valuation {
       kindOf: (instrument) => this.registry.instrumentKind(this.instruments.get(instrument).kind),
       curve: (family, at) => this.curveAt(family, at),
       on: (at) => this.dayOf(at),
+      contractsOf: (party, at) => this.contractsWorthOf(party, at),
     };
   }
 

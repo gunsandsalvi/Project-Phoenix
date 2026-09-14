@@ -8382,3 +8382,61 @@ equity, and what is left to build there is prime brokerage — the lender those 
 Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
 `check:existence` green. **Tests written and updated, not run** — the suite is the owner's to call
 for, and item 23.0 is where it is called.
+
+---
+
+## Item 13.6 — a fund's book does not stop at the register's edge
+
+**A pass opened before the thing that needs it**, which is the order the plan set and the reason it
+set it: item 13.2 is about to draw the first mandate in this world that writes contracts, and the
+moment it does, a hole that nothing can reach today becomes a defect in every period.
+
+**The hole.** A fund's equity is ZERO by construction (Fund Shares A3) — its share liability follows
+whatever its book comes to, because `fundShareKind` declares `owes: 'value'` and derives that value
+from `navOf`. That construction holds only while the NAV can see the WHOLE book. **A contract is not
+in the register** (Derivative X1): nobody issued it, nobody holds units of it, and it is on both
+sides' books at once, so it lives in its own store — and `navOf` walked holdings.
+
+So the two halves of the identity read different books. The fund's **equity account** moved with
+every contract revaluation (`revaluationOfContract` books a real gain to one side and a real loss to
+the other); its **share liability** moved with the register only. They diverge by exactly the
+contract book, and that divergence is a fund WITH equity, which is the one thing a fund may never
+have. Measured at **83,247,864 on one vehicle** the first time funds were let into the contract
+books; it is invisible today only because every mandate drawn says `mayWrite: []`.
+
+**The fix is one read, and it is the kernel's.** `DerivedReads.contractsOf(party, at)` hands back the
+party's OPEN contracts, signed, in the money each was written in. It is injected into `Valuation` the
+way the curve, the calendar and the book-money read already are — because the contract store is built
+after it, and because `prices/contract-value.ts` must stay the ONE writer of what a contract is worth
+(Law 4). Nothing computes a mark twice.
+
+**`navOf` splits it by SIGN and never nets it.** D1 says a contract is an asset to one side and a
+liability to the other at every instant, so a positive mark is an asset and a negative one is
+something the pool owes. A pool long one contract and short another HAS an asset and a liability —
+adding them first would hide half of both, which is what §28 B5's three reads exist to prevent and
+what Appendix B means by no netting across counterparties.
+
+**What is NOT here, said rather than left implicit.** A contract mark carries no "period this came
+from" the way a print does: it is computed from this period's public reads at the moment it is asked,
+so there is nothing to age. What CAN be stale is a print the mark reads, and that is the underlying
+line's own staleness, reported wherever that line is held (B2.a).
+
+**The rest of the step is 13.2's.** *"Then wire hedge funds into every derivative book as the
+speculative side"* needs a mandate that writes contracts, and there is none yet.
+
+**Two more of item 13's steps are closed by what 10e already built**, and both are marked with what
+was done differently:
+
+- **13.1** (`Mandate` is the spine) — 10e went further: the mandate carries the whole PRODUCT, and
+  the pools that exist are the performing mandates rather than a declared roster.
+- **13.9** (the management fee and what a manager costs) — 10e.4 took it whole. The one deliberate
+  difference is worth recording: this step wanted the mandate COMPETED FOR in a book per pool, and a
+  mandate auctioned between managers with no reason to refuse clears at the tick — which is the
+  defect the step was written to avoid, reproduced from the other side. What sets a fee is ENTRY: a
+  manager opens a competing product under the cheapest incumbent and stops when the fee would no
+  longer cover what a pool costs it.
+
+Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
+`check:existence` green. Tests written and not run — `test/nav-contracts.test.ts` asserts the
+identity on the read itself rather than through a world, because the property has to hold before
+there is a party that can break it.

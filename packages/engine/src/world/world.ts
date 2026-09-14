@@ -389,6 +389,16 @@ export class World {
       (at) => this.calendar.startOf(at),
       // Currency C4.a: whose money a party's book is in. One read, one writer (Law 4).
       (party) => this.registry.currencyOf(this.parties.get(party).region),
+      /**
+       * Derivative X1, D1, Fund Shares A3 (item 13.6): a party's OPEN contracts, signed and in the
+       * money each was written in. Lazy for the same reason the curve is: the world is still being
+       * built here. A terminated contract is not a position and is not in it (D1: the two sides
+       * have nothing left with each other).
+       */
+      (party, at) =>
+        this.contractStore
+          .openOf(party)
+          .map((c) => ({ worth: this.contractValue(c, party, at), ccy: c.ccy })),
     );
     this.root = prng(spec.seed);
     this.accountOf = accountResolver(

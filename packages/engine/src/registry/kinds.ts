@@ -344,6 +344,30 @@ export interface DerivedReads {
   /** A kind's profile, for a book that must ask what its own holdings are (Law 15). */
   kindOf(instrument: InstrumentId): InstrumentKindProfile;
   /**
+   * Derivative X1, D1, Fund Shares A3, B1 (item 13.6): WHAT THIS PARTY'S OPEN CONTRACTS ARE WORTH
+   * TO IT — because a book read out of holdings alone STOPS AT THE REGISTER'S EDGE.
+   *
+   * A contract is not a holding and never will be (X1): nobody issued it, nobody holds units of it,
+   * and it is on both sides' books at once, so it lives in its own store. Everything else a derived
+   * value needs is in the register, which is why this read did not exist — and why a pool with a
+   * derivative position would have carried a mark ITS OWN SHARE VALUE HAD NEVER BEEN TOLD ABOUT.
+   *
+   * The consequence is not a rounding. A fund's equity is zero BY CONSTRUCTION (Fund Shares A3):
+   * its claim on itself absorbs whatever its book comes to, because the share kind `owes: 'value'`.
+   * The equity ACCOUNT moves with every contract revaluation (`revaluationOfContract`); the share
+   * LIABILITY moved with the register only. The two answers diverge by exactly the contract book,
+   * and the divergence is a fund with equity — *"a fund with equity has mislaid somebody's money"*.
+   * Measured at 83,247,864 on one vehicle the first time funds were let into the contract books.
+   *
+   * Signed, per contract, in the contract's own money: an asset to one side and a liability to the
+   * other at every instant (D1), and the reader splits and converts, because a book is kept in one
+   * money and adding two of them is a defect (Currency C4.a).
+   */
+  contractsOf(
+    party: PartyId,
+    at: Period,
+  ): readonly { readonly worth: Cash; readonly ccy: CurrencyCode }[];
+  /**
    * Insurers B2: what money later is worth now, from the market that prices money later. A claim
    * whose value is a SCHEDULE discounted at a rate somebody traded needs this and nothing else —
    * and needing it is what gives the sector duration, which B2.b says it must have.

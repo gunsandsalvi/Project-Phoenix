@@ -1,7 +1,7 @@
 /**
  * Net asset value: what a fund's book comes to, divided by the claims on it.
  *
- * @spec Fund Shares A2 Fund Shares A3 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B4 Fund Shares D4 XI-6 Law 19
+ * @spec Fund Shares A2 Fund Shares A3 Fund Shares B1 Fund Shares B2 Fund Shares B2.a Fund Shares B4 Fund Shares D4 Derivative X1 Derivative D1 XI-6 Law 4 Law 19
  *
  * B1: assets at market minus liabilities, over shares outstanding, READ EVERY TIME. There is no NAV
  * series anywhere in this module and nothing stores one: the number below is computed from the
@@ -14,6 +14,14 @@
  * B2.a: the assets are marked at what a market last said, and how old that is travels with the
  * number. A stale mark makes a stale NAV, somebody subscribes or redeems on it, and that is a real
  * transfer between holders — so it is said out loud rather than smoothed away.
+ *
+ * Item 13.6, Derivative X1: AND THE BOOK IS NOT ONLY THE REGISTER. A contract is on both sides'
+ * books at once and nobody holds units of it, so it lives in its own store — and a NAV read out of
+ * holdings alone would leave a pool's derivative position out of the very number its holders'
+ * claim is measured by, while the pool's EQUITY account moved with every one of its revaluations.
+ * The difference between those two answers is a fund with equity, which is the one thing a fund may
+ * never have (A3). Nothing in this world reaches it today, because every mandate drawn says
+ * `mayWrite: []` — and item 13.2 is about to draw one that does not.
  */
 import type { Period } from '../../calendar/calendar.js';
 import { Unpriced } from '../../core/errors.js';
@@ -21,6 +29,7 @@ import type { PartyId } from '../../core/ids.js';
 import {
   type Cash,
   minus,
+  negated,
   type PerPiece,
   pricedAt,
   valueAt,
@@ -74,6 +83,34 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
     if (worth.value.from < oldest) oldest = worth.value.from;
   }
   const owed: Cash[] = [];
+  /**
+   * Derivative X1, D1, A3, B1 (item 13.6): AND WHAT ITS CONTRACTS ARE WORTH TO IT.
+   *
+   * A book read out of holdings alone stops at the register's edge, and a contract is not in the
+   * register: nobody issued it, nobody holds units of it, and it is on both sides' books at once.
+   * So a pool with a derivative position carried a mark its own share value had never been told
+   * about — and because a fund's share liability follows its book (`owes: 'value'`) while its
+   * equity ACCOUNT follows every revaluation including a contract's, the two answers diverged by
+   * exactly the contract book. That difference is a fund WITH equity (A3), which is the one thing
+   * a fund may never have, and it was measured at 83,247,864 on one vehicle.
+   *
+   * D1: an asset to one side and a liability to the other at every instant, so the sign decides
+   * which side of this read it lands on. Nothing is netted across the two: a pool long one contract
+   * and short another has an asset and a liability, which is what its holders own and what they
+   * owe, and adding them first would hide half of both (B5's three reads, and Appendix B's "no
+   * netting across counterparties").
+   *
+   * NOTHING HERE IS STALE-CHECKED, and that is not an oversight to fix silently: a mark is computed
+   * from this period's public reads at the moment it is asked (`contract-value.ts`), so there is no
+   * "period this mark came from" to travel with it the way a print's does. What could be stale is a
+   * PRINT the mark reads, which is the underlying's own staleness and is already reported wherever
+   * that line is held.
+   */
+  for (const position of reads.contractsOf(fund, at)) {
+    const own = reads.inOwnMoney(fund, position.worth, position.ccy, at);
+    if (own > 0) assets.push(own);
+    else if (own < 0) owed.push(negated(own, 'what this contract is a liability for'));
+  }
   for (const other of reads.instruments()) {
     if (other.id === share.id || !other.status.live) continue;
     if (!other.issuer.some || other.issuer.value !== fund) continue;
