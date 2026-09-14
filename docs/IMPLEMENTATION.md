@@ -235,14 +235,14 @@ claimed to have built hedge funds on.
 - [x] 9.1h **Loan — and it was already the register's**, like the invoice. What was left of the book was a COUNTER, and it counted attempts. **DONE, and 9.1 with it: all seven.** — `docs/RECORD.md`.
 - [x] 9.2a **`Mandate` exists**: an agreement between a POOL and a MANAGER, carrying what the pool may hold and whether it may be levered. `fundKind.borrows`'s hard-coded `false` is re-declared as the SHAPE it is, with 13.2 named as its death. **DONE** — `docs/RECORD.md`.
 - [x] 9.2b **The fee does NOT clear, and `fundManagerKind` is NOT deleted — both are corrections.** A manager in this world employs nobody, so a book with two of them in it clears at the tick: the missing mechanism is a manager with a cost base, and it is worklist **13o**. The placeholder's death is re-pointed there (it named 13h, which is CLOSED — `B-14`'s exact shape, found three more times in the same read), and that rule is a CHECK now: `npm run check:deaths`. **DONE** — `docs/RECORD.md`.
-- [ ] 9.6 **A-43** lands here (it was item 3's step 3.5, deliberately left open for this one): with the employment book in the kernel, `households` declares a `venueParticipant` that can see who is already employed, and `labour/matching.ts:supply` deletes.
+- [x] 9.6 **A-43** — `households` declares the venue participant and `labour/matching.ts:supply` deletes. **DONE** — `docs/RECORD.md`.
 - [ ] 9.7 **B-14** is unpositioned in the old file and lands here: whether a fund should hold contracts at all is `Fund Shares A3`'s question, and `TRADES_CONTRACTS` is still `[BANK, FIRM]`. A mandate says what a pool may hold; that is the answer.
 - [ ] 9.8 **C-1's ETF row** (`12d-8`): a creation delivers a slice of the book and a desk without the basket does not create; nothing moves a share back to a desk, so `E3` runs one way and a premium of 0.28 of NAV has nobody able to close it. **9.4 landed that door**: `SystemModule.borrowNeeds` answers what a party must deliver that it has not got, and `securities-lending` clears the fee against every other borrower of the line. The ETF desk is its second answerer — *whoever must deliver may borrow*.
 - [ ] 9.9 **The stores that stand in for a noun that now exists.** Four kernel nouns were built and the module stores that stand in for them were never migrated, so `registry/nouns.ts` still declares each a PLACEHOLDER pointing at a closed item. Same shape as 9.1, same change: `expectations.outlooks`, `research`, `ratings` and `banks/reserves` → `View` (old item 6 named these three in as many words: *"three private stores that are this noun in three shapes"*); `funds`' previous NAV → `PublishedStatement` (*"a published figure belongs where published figures live"*). Each placeholder's `standsInFor.planItem` points at **this item** until it is migrated, and the declaration is deleted when it is.
 
 ### Findings this closes
 
-`B-14`, and `A-43` from item 21. (`A-9`, `A-67`, `B-2` and `B-3` are closed — `docs/RECORD.md`.)
+`B-14`. (`A-9`, `A-43`, `A-67`, `B-2` and `B-3` are closed — `docs/RECORD.md`.)
 
 ### Exit
 
@@ -944,7 +944,7 @@ are closed.
 ### Steps
 
 - [ ] 21.1 **A-24**. `households/decide` publishes its orders into a journal event as `Record<string, unknown>`; `marketsIn`/`ordersFrom` re-validate from scratch (`if (price !== 'market' && typeof price !== 'number') continue;`) and **silently drop** what they cannot parse. A cell whose plan wrote a row this pair of predicates rejects simply does not trade that period, with no throw, no violation and no event — a decision disappearing between the party that took it and the book it was for, which is the one thing the round trip exists to prevent. Apply item 3 of the old file's answer — a typed read that **throws** on a record its own writer malformed. `ordersFrom` also drops `qty <= 0` before `asQty` can complain, so the file's own comment about throwing is only true for positive non-integers.
-- [ ] 21.2 **A-43** — closed in item 9.6; confirm `labour/matching.ts:supply` is gone.
+- [x] 21.2 **A-43** — closed in item 9.6, and confirmed there: `labour/matching.ts:supply` is gone and nothing calls it.
 - [ ] 21.3 **A-53** — closed in item 15.5; confirm the rent bid is a schedule and `households` has a rent term.
 - [ ] 21.4 **E-6**, found while building item 17 of the old file: **an acquirer's consideration in a bank resolution is a missing mechanism.** `money-market/resolution.ts` ranks bidders by what the book is worth to each — faithfully, and `A-59` is closed by publishing `worthToIt`, which is what ranks them. What an acquirer should be **PAID** for taking the book on does not exist: the guarantee pays exactly `v.hole`, so the acquirer ends whole in balance-sheet terms and earns nothing at all for taking on the book, **while the auction ranked bidders precisely by how much they wanted for doing so**. Build the consideration.
 - [ ] 21.5 **E-3**, found while building item 10 of the old file: an estate pays RENT for the space its inventory sits in while it winds up, and its own `flows` family reports every non-`corporateAction` payment. Decide which is wrong and fix that one.
@@ -1024,35 +1024,6 @@ letter in each heading is the original read's: **A** structural, **B** live defe
 ---
 
 ### For item 9. The seven private books, and Mandate
-
-#### A-43 — the labour module builds the household's schedule, through the door the architecture says not to (C)
-
-`MechanismContext.gather`'s contract (`world/context.ts:508`):
-
-> _"ask every party whose module declared a schedule for this venue for one, and post what comes
-> back. The module that OPENED the venue calls it … each schedule is built by the module that owns
-> that party, with that party's own view. … **building somebody else's schedule inside the clearing
-> phase instead is that module deciding for a party it does not own.**"_
-
-`labour/matching.ts:supply` does exactly that: it walks `ctx.parties.ofKind(HOUSEHOLD)`, reads each
-cell's own `outlook('income')` through `ctx.participant(cell)`, decides what that cell will work
-for, and posts the order itself. The households module declares no `venueParticipants` and labour
-never calls `gather`.
-
-The door is not theoretical — two modules use it (`housing/index.ts:711` and `banks/index.ts:1165`
-declare `venueParticipants`; `money-market/index.ts:269` calls `gather`). Labour is the one venue
-where the seller's decision is taken by the buyer's market.
-
-It is C rather than B because the number `supply` computes is a household's own read and no private
-state leaks. What it costs is where the decision lives: a household's reservation wage is
-`households`' subject (it is the same `income` outlook `spendPerMember` uses), and it currently
-cannot be changed without editing the labour module. A-38's defect — the outside option being every
-kind of money received — is in `labour/matching.ts` for exactly this reason.
-
----
-
-### Carried so nobody tests it again
-
 
 #### B-14 — a finding was positioned into item 13h, 13h closed, and the finding was not done (B)
 
@@ -1439,7 +1410,7 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-18** (A) | ~~2~~, 12 | the fraction of a person is discarded every period — **the fraction and the whole-cell crossing closed at 2a.1**; `cells.merge`, which removes the micro-cells already there, is item 12 |
 | **A-24** (C) | 21 | the household's plan round-trips through `unknown` and drops what it cannot parse |
 | **A-36** (C) | 16 | the treasury's immortality is unconditional where the kernel says conditional |
-| **A-43** (C) | 9, 21 | the labour module builds the household's schedule |
+
 | **A-53** (B) | 15 | a household bids its entire income as rent |
 | **A-69** (C) | ~~1~~, ~~6~~, 21 | nine exported entry points that nothing calls — **closed at item 1** (the reach tally names them) and **two of them wired at 6.5**; `wantsToBorrow` was another and 9.4 DELETED it. What is left is whichever of the nine item 21 finds still dead |
 | **B-1** (A) | 10 | `corporate.bond` is declared and nothing ever issues one |

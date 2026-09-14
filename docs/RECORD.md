@@ -7204,3 +7204,48 @@ other half, and the entry/exit pair (12.7) is §42 E4 — which is why 11.12 is 
 red until this item lands.
 
 No code changed. Typecheck 0, lint 0, `check:deaths` 11 of 11, `check:existence` green.
+
+---
+
+## Item 9, thirteenth stage — the seller's schedule is the seller's (9.6, `A-43`)
+
+**What.** `MechanismContext.gather`'s own contract says a venue's schedules are *"built by the module
+that owns that party, with that party's own view … building somebody else's schedule inside the
+clearing phase instead is that module deciding for a party it does not own"*. The labour market was
+the one venue in the engine where the SELLER's schedule was built by the BUYER's market:
+`labour/matching.ts:supply` walked every household cell, read each one's outlook through
+`ctx.participant`, decided what that cell would work for and posted the order itself.
+
+`households` declares a `venueParticipant` now and `supply` is deleted.
+
+**The division is not "everything moves", and getting that right is the whole of the change.** What
+a household decides is what it will work for — its own `benefit` outlook over its own hours, which
+is A-43's complaint in one line (*"a household's reservation wage is `households`' subject"*, and
+`A-38`'s outside-option defect lived in `labour` for exactly that reason) — and it reads the public
+going rate to decide whether to offer at all, because D1.c publishes it every period.
+
+What stays with the venue is the venue's own rules, applied to what it gathers:
+
+- **B3**: a person is in exactly one state, so a cell that already holds a job is not also looking.
+- **B1, F2**: only the workforce is in the book, measured against the same retirement age this
+  module's own workforce identity is measured against.
+- **A3, A3.b**: the two rounds — the trade you have, then the trades you do not.
+
+None of those is the seller's to know, and a market deciding who is in its book is the market's
+business. `eligible` is where they live and it is a filter over `ctx.posted`, not a walk over the
+world's parties.
+
+**Two facts about a PERSON moved to the registry** (`PEOPLE_PARAMS`): how many hours one person has
+to sell in a week, and the age at which they stop. Neither is a fact about the labour MARKET — a
+market is where hours are struck, not what a week holds — and neither is private to households
+either, because the market has to size a match in the same hours the seller offered. They live
+beside the cohorts, which is this registry's statement about people, and it is the construction
+`registry/physical.ts` already uses for the `goods.*` ids that two modules both name. **The
+declarations stay with `labour`**: what is shared is only the id both sides ask the one register for.
+
+**COVERAGE**: `Labour B1`'s citation moves to `households/index.ts:willWork`, because that is where
+the decision now is. `A-43` is closed and its text deleted; 21.2 is ticked, having confirmed
+`supply` is gone and nothing calls it.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
+`check:deaths` 11 of 11, `check:existence` green. `9.7`–`9.9` are the rest of item 9.

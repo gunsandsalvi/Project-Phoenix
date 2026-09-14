@@ -17,7 +17,8 @@ import {
   type PerPiece,
 } from '../core/measure.js';
 import { downTick, piecesPerUnit, toTick, toTickOf } from '../core/tick.js';
-import { currencyUnit } from '../core/ids.js';
+import {
+  paramId, currencyUnit } from '../core/ids.js';
 import type {
   CohortId,
   CountryId,
@@ -105,6 +106,26 @@ export interface CohortDecl {
   /** Age at which a member enters this cohort, in years; the last cohort has no exit. */
   readonly fromAge: number;
 }
+
+/**
+ * Labour A1, B2, Households A2, item 9.6: TWO FACTS ABOUT A PERSON THAT TWO MODULES BOTH NEED.
+ *
+ * How many hours one person has to sell in a week, and the age at which people stop selling them.
+ * Neither is a fact about the labour MARKET — a market is where hours are struck, not what a week
+ * holds — and neither is private to `households` either: the market has to size a match in the same
+ * hours the seller offered, and its workforce identity (employed + unemployed + inactive = the
+ * population) is measured against the same retirement age the seller retires at.
+ *
+ * They live here, beside the cohorts, because a cohort is this registry's statement about people
+ * and a module never imports another module (ARCHITECTURE 4.9b). It is the same construction
+ * `registry/physical.ts` uses for the `goods.*` ids that the goods module and the firms module both
+ * name. The DECLARATION — the value, the kind, the owner — stays with `labour`, which is the module
+ * that owns the numbers; what is shared is only the id both sides ask the one register for.
+ */
+export const PEOPLE_PARAMS = {
+  hoursPerMember: paramId('labour.hoursPerMember'),
+  retirementAge: paramId('labour.retirementAge'),
+} as const;
 
 /** The cell key dimensions are registry data (XI-15): lifting a relationship into the key is a data change. */
 export type CellKeyDimension = 'region' | 'cohort' | 'bank';

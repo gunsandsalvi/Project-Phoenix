@@ -27,7 +27,6 @@ import {
   asRatio,
   heldAsMoney,
   plus,
-  pricedAt,
   ratioOf,
   scale,
 } from '../../core/measure.js';
@@ -73,7 +72,6 @@ export const severanceOwed = (cause: string): SeveranceOwed => ({
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { keyOf, weightOf, type Party } from '../../parties/party.js';
-import { HOUSEHOLD } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
 import {
   allRows,
@@ -91,7 +89,6 @@ import {
 } from './register.js';
 import { addQty, asQty, negQty, NO_QTY, scaleQty, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
-import { about } from '../../world/context.js';
 
 /** The numbers the matching reads, all declared by the module (Law 2). */
 export interface LabourParams {
@@ -124,81 +121,48 @@ function participates(ctx: MechanismContext, p: Party, retirementAge: number): b
   return ctx.registry.cohort(cohortId(keyOf(p, 'cohort'))).fromAge < retirementAge;
 }
 
-/**
- * B1.a: the least a cell will work for. Its outside option is what it lives on WITHOUT the job —
- * the standing mandate the treasury pays it, what an estate hands it, what its paper pays it. A
- * cell that has never observed one has no outside option to compare against and does not post: it
- * cannot say what it will not work for.
- *
- * A-38: this read `income`, which is everything that reached it — INCLUDING ITS OWN WAGE. An
- * employed cell's reservation was therefore its current wage over its own hours, so it could never
- * be matched below what it already earned: a wage that can go up and never down, which is a
- * downward rigidity nobody declared and which Appendix B forbids arriving as a stated rule. It
- * arrived through a read instead. The other half was the paper: a cell's demanded wage rose
- * one-for-one with every coupon it was paid, as though a saver were less willing to work.
- */
-function reservation(ctx: MechanismContext, cell: PartyId, hours: Qty): PerPiece | undefined {
-  // `benefit` is what the expectations module names what reached a party that it did not work for.
-  const outlook = ctx.participant(cell).outlook(about({ on: 'benefit' }));
-  if (!outlook.some) return undefined;
-  return pricedAt(
-    asCash(outlook.value.expected, 'what it expects to live on without the job'),
-    hours,
-    'reservation wage',
-  );
-}
+
 
 /**
- * B1, B4: every cell that is not working offers its members' hours, at its own reservation.
+ * Labour B3, A3, A3.b, Observer A4 (`A-43`, item 9.6): WHICH OF THE HOURS OFFERED THIS VENUE MAY
+ * TAKE — the market's own rules, applied to what it gathered.
  *
- * A3.b, XI-10 (13d): AND IN THE SECOND ROUND, THE ONES WHOSE OWN TRADE DID NOT TAKE THEM. A person
- * whose trade has no vacancy left is not out of the labour market — they look at the next trade, and
- * an employer will take them if the wage still works once it has taught them. Nothing here is a flow
- * rate between occupations: who moves is who was left over, and whether they are taken is the same
- * book clearing at the same marginal bid.
+ * The offers are the sellers' now: each household cell posted what it will work for, out of its own
+ * view, through `gather` (`households/index.ts:willWork`). What the VENUE decides is who is in its
+ * book, and that is three facts none of which is the seller's to know:
+ *
+ *  - B3: a person is in exactly ONE state, so a cell that already holds a job is not also looking.
+ *    A hire splits the cell, so a cell is wholly employed or wholly not and the whole offer goes.
+ *  - B1, F2: only the WORKFORCE is in the book — a cohort past the retirement age is inactive, and
+ *    that is the same read this module's own workforce identity is measured against.
+ *  - A3, A3.b: a job in one occupation is not a job in another. In the first round somebody who has
+ *    worked looks for the trade they have; in the second it is the other way about, and who moves is
+ *    whoever the first round left over.
+ *
+ * `supply` used to do all of this AND decide what each cell would work for, walking every household
+ * in the world out of a `MechanismContext`. What it decided was the seller's; what is left here is
+ * the market's.
  */
-function supply(
+function eligible(
   ctx: MechanismContext,
   book: EmploymentBook,
   v: VenueDecl,
+  occupation: string,
+  region: RegionId,
   p: LabourParams,
   round: Round,
 ): Order[] {
   const out: Order[] = [];
-  const occupation = v.key['occupation'];
-  const region = v.key['region'];
-  if (occupation === undefined || region === undefined) return out;
-  // D1.c: what this trade pays is a fact about the TRADE, so it is read once for the venue rather
-  // than once for every person looking at it. Nothing in it varies by who is asking.
-  const going = goingRate(ctx, book, occupation, region as RegionId);
-  for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
+  for (const offer of ctx.posted(v.id)) {
+    if (offer.side !== 'sell' || offer.price === 'market' || offer.qty <= 0) continue;
+    const cell = ctx.parties.get(offer.party);
     if (!participates(ctx, cell, p.retirementAge) || cell.region !== region) continue;
     if (rowOfWorker(ctx, book, cell.id) !== undefined) continue;
     const skill = book.skill[cell.id];
-    // A3: a job in one occupation is not a job in another. Somebody who has worked looks for the
-    // trade they have; somebody who never has can start anywhere. In the second round it is the
-    // other way about: the people this trade did not take are the ones looking at another (A3.b).
     const hasTrade = skill === undefined || skill === occupation;
     if (round === 'trade' && !hasTrade) continue;
     if (round === 'anywhere' && hasTrade) continue;
-    /**
-     * B1, B3 (13d): PARTICIPATION IS A DECISION WITH THE WAGE IN IT. A cell can see what this trade
-     * actually pays — the going rate is published every period and it is public (D1.c, C5) — and it
-     * does not offer its members' hours into a trade paying less than it lives on without the job.
-     * That is what being out of the workforce IS, and it is reversible: the going rate is
-     * employment-weighted actual pay, so employers bidding up brings the discouraged back.
-     *
-     * A trade NOBODY is employed in has no going rate, and then there is nothing to be discouraged
-     * by: a new trade is open to anybody, which is how a trade gets its first worker at all.
-     */
-    const mine = reservation(ctx, cell.id, p.hoursPerMember);
-    if (mine === undefined) continue;
-    if (going !== undefined && going < mine) continue;
-    // XI-15, Law 8: whole hours for every member the cell stands for. `hoursPerMember` is
-    // declared as an amount in the venue's own unit (`params.amount`), so it is already a count.
-    const hours = scaleQty(p.hoursPerMember, weightOf(cell), 'hours offered');
-    if (hours <= 0) continue;
-    out.push({ party: cell.id, side: 'sell', price: mine, qty: hours });
+    out.push(offer);
   }
   return out;
 }
@@ -235,7 +199,7 @@ export function runVenue(
       shed(ctx, book, posting.party, occupation, region as RegionId, negQty(gap, 'the hours it is over'), p);
     }
   }
-  const offers = supply(ctx, book, v, p, round);
+  const offers = eligible(ctx, book, v, occupation, region as RegionId, p, round);
   // D1: the highest bids fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT. That is the
   // clause, and it is `marginalBid`: the lowest employer still allotted sets the wage, so one that
   // bid above it fills and keeps the difference (D1.a) and the marginal one earns nothing on the

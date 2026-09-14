@@ -2,7 +2,7 @@
  * Households: cells that earn, consume, save and own, each deciding for one possible household and
  * carrying how many of them it is.
  *
- * @spec Equity B1 Equity B3 Equity C2 Equity C2.a Households A1 Households A2 Households A2.a Households A2.b Households A2.c Households A2.d Households A2.e Households A2.f Households A3 Households B1 Households B2 Households B3 Households B3.a Households B5 Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households C5 Households D1 Households D1.a Households D3 Households D5 Households D5.a Households D6 Goods C1 Goods C3 Expectations C1 Sovereign E2.f XI-15 XI-16 Law 2 Law 4 Law 6
+ * @spec Equity B1 Equity B3 Equity C2 Equity C2.a Households A1 Households A2 Households A2.a Households A2.b Households A2.c Households A2.d Households A2.e Households A2.f Households A3 Households B1 Households B2 Households B3 Households B3.a Households B5 Households C1 Households C1.a Households C1.b Households C1.c Households C1.d Households C2 Households C3 Households C4 Households C5 Households D1 Households D1.a Households D3 Households D5 Households D5.a Households D6 Goods C1 Goods C3 Labour B1 Labour B3 Labour D1.c Clearing B2 Observer A4 Expectations C1 Sovereign E2.f XI-15 XI-16 Law 2 Law 4 Law 6
  *
  * EVERY DECISION IS THE CELL'S, taken for one member and carried at the cell's weight (A2.e, A2.f).
  * The sector's consumption is the weighted sum of what its cells decided, and there is no number
@@ -23,6 +23,7 @@
 import { none, some, type Option } from '../../core/option.js';
 import { about } from '../../world/context.js';
 import {
+  pricedAt,
   asCash,
   asRatio,
   type Cash,
@@ -40,12 +41,14 @@ import {
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
+import type { VenueDecl } from '../../clearing/venue.js';
 import { period } from '../../calendar/calendar.js';
 import { instrumentId, marketId, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
 import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
+import { PEOPLE_PARAMS } from '../../registry/registry.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -300,6 +303,73 @@ function publishSectorIncome(ctx: MechanismContext): void {
 }
 
 /** The module. `rows` is what each cohort spends its money on (Law 15: the data says). */
+/* --------------------------------------------------------------------------------------------
+ * WHAT IT WILL WORK FOR
+ * ------------------------------------------------------------------------------------------ */
+
+/**
+ * Labour B1, B3, D1.c, Observer A4, `A-43` (item 9.6): A HOUSEHOLD DECIDES WHAT IT WILL WORK FOR,
+ * and this is where that decision lives.
+ *
+ * `MechanismContext.gather`'s own contract says a venue's schedules are *"built by the module that
+ * owns that party, with that party's own view … building somebody else's schedule inside the
+ * clearing phase instead is that module deciding for a party it does not own"* — and the labour
+ * market was the one venue where the seller's schedule was built by the buyer's market. It walked
+ * every household cell, read each one's outlook through `ctx.participant`, decided what that cell
+ * would work for and posted the order itself. No private state leaked; what it cost is that a
+ * household's reservation wage could not be changed without editing `labour`, which is why `A-38`'s
+ * defect — the outside option being every kind of money received — lived there too.
+ *
+ * THE DIVISION IS NOT "EVERYTHING MOVES". What a household decides is what it will work for and how
+ * many hours it has. Whether it is ALREADY employed, whether it has this trade, and which round it
+ * is are facts about the labour market's own book and its own rules (B3: a person is in exactly one
+ * state), and the venue applies those to what it gathers — a market deciding who is in its book is
+ * the market's business, and deciding what a seller will accept is not.
+ */
+function willWork(view: ParticipantView, venue: VenueDecl): readonly Order[] {
+  if (venue.clearedBy !== 'labour') return [];
+  const self = view.self;
+  if (self.representation !== 'cell' || !self.status.alive) return [];
+  if (venue.key['region'] !== String(self.region)) return [];
+  /**
+   * B1, B3: PARTICIPATION IS A DECISION WITH THE WAGE IN IT, and the wage it is against is what
+   * this cell would live on WITHOUT the job — `benefit`, which the expectations module forms from
+   * what reached it that it did not work for (A-38). A cell that has never observed one has no
+   * outside option to compare against and does not answer: missing is missing.
+   */
+  const outside = view.outlook(about({ on: 'benefit' }));
+  if (!outside.some) return [];
+  const people = weightOf(self);
+  if (people <= 0) return [];
+  // Law 8, XI-15: whole hours for every member the cell stands for, in the venue's own unit.
+  const each = view.params.amount(PEOPLE_PARAMS.hoursPerMember, venue.unit);
+  const hours = scaleQty(each, people, 'hours offered');
+  if (hours <= 0) return [];
+  const mine = pricedAt(
+    asCash(outside.value.expected, 'what it expects to live on without the job'),
+    each,
+    'reservation wage',
+  );
+  if (mine <= 0) return [];
+  /**
+   * D1.c: AND IT CAN SEE WHAT THE TRADE ACTUALLY PAYS. The going rate is published every period and
+   * is public, so a cell does not offer its members' hours into a trade paying less than it lives on
+   * without the job — that is what being out of the workforce IS, and it is reversible, because the
+   * going rate is employment-weighted actual pay and employers bidding it up brings the discouraged
+   * back. A trade NOBODY is employed in has no going rate and nothing to be discouraged by, which is
+   * how a new trade gets its first worker at all.
+   */
+  const said = view.lastPublic('labour.goingRate');
+  if (said.some) {
+    const rates = said.value.data['wagePerHour'];
+    const going = typeof rates === 'object' && rates !== null
+      ? (rates as Record<string, unknown>)[String(venue.id)]
+      : undefined;
+    if (typeof going === 'number' && going < mine) return [];
+  }
+  return [{ party: self.id, side: 'sell', price: mine, qty: hours }];
+}
+
 export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): SystemModule {
   return {
     id: 'households',
@@ -384,6 +454,10 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         },
       },
     ],
+    // Clearing B2, Labour B1, `A-43` (item 9.6): WHAT THIS CELL WILL WORK FOR, decided by the
+    // module that owns it and posted through the door `gather` is — the last venue in the engine
+    // whose sellers' schedules were built by the buyers' market.
+    venueParticipants: [{ partyKind: HOUSEHOLD, orders: willWork }],
     participants: [
       {
         partyKind: HOUSEHOLD,
