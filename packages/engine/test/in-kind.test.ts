@@ -354,7 +354,7 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
     const spec = rigSpec('etf-small', shape.banks, shape.firms);
     const w = assemble({
       ...spec,
-      modules: spec.modules.map((m) => (m.id === 'funds' ? funds([...drew.funds, ...sponsorOnly]) : m)),
+      modules: spec.modules.map((m) => (m.id === 'funds' ? funds([...drew.funds, ...sponsorOnly], drew.managers) : m)),
     });
     const whole = assemble({ ...spec, modules: spec.modules });
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);

@@ -84,7 +84,7 @@ function world(
     // instead of the matching rule. That is exactly what `quiet` means: the kind, the units and the
     // parameters, with nothing that acts. Equity goes the same way, and the desks with it.
     .map((m) => (m.id === 'firms' || m.id === 'equity' || m.id === 'dealers' ? quiet(m) : m))
-    .map((m) => (m.id === 'funds' ? funds(rigDraw('labour').funds) : m))
+    .map((m) => (m.id === 'funds' ? funds(rigDraw('labour').funds, rigDraw('labour').managers) : m))
     .map((m) =>
     m.id === 'seed.foundation' ||
       m.id === 'seed.funding'

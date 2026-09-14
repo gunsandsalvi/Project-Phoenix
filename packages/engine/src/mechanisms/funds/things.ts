@@ -30,7 +30,7 @@ import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { isGoodTerms, spacePerPiece, storageRateIn } from '../../registry/physical.js';
 import type { ParticipantView } from '../../world/context.js';
-import type { FundDecl } from './data.js';
+import type { Mandate } from './index.js';
 import { admits, type Blueprint } from '../../registry/blueprint.js';
 import { about } from '../../world/context.js';
 
@@ -55,17 +55,15 @@ export function holdsThings(b: Blueprint): boolean {
  * which is the honest answer for a party that has never seen this book (Expectations A2.a).
  */
 export function thingOrders(
-  decls: readonly FundDecl[],
   view: ParticipantView,
+  mandate: Mandate,
   m: MarketDecl,
 ): readonly Order[] {
-  const d = decls.find((row) => row.fund === String(view.self.id));
-  if (d === undefined) return [];
   const i = view.instruments.get(m.instrument);
   if (!i.status.live || !isGoodTerms(i.terms)) return [];
   // A4: and this particular good is inside its mandate, asked of the one `admits` every vehicle
   // in the world asks — so a commodity fund and a credit fund refuse things the same way.
-  if (!admits(d.blueprint, view.classify(m.instrument), () => undefined)) return [];
+  if (!admits(mandate.blueprint, view.classify(m.instrument), () => undefined)) return [];
   const expected = view.outlook(about({ on: 'price', instrument: m.instrument }));
   if (!expected.some) return [];
   const spoilage = view.params.ratio(i.terms.spoilage);

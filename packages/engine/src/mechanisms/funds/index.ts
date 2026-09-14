@@ -22,7 +22,6 @@
  * fetched falls on the holders who stayed, which is why a redemption is a real cost to them and why
  * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
  */
-import { period as periodOf } from '../../calendar/calendar.js';
 import { passiveOrders } from './passive.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { CENT_TICK } from '../../registry/grid.js';
@@ -30,11 +29,8 @@ import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { yearFraction } from '../../calendar/daycount.js';
 import {
-  agreementKindId,
   type AgreementId,
-  type CurrencyCode,
   instrumentId,
   instrumentKindId,
   currencyUnit,
@@ -48,8 +44,7 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
-import type { Agreement, AgreementDecl, AgreementTerms } from '../../register/agreements.js';
-import { admits, type Blueprint } from '../../registry/blueprint.js';
+import { admits } from '../../registry/blueprint.js';
 import {
   amountOf,
   asCash,
@@ -97,14 +92,47 @@ import type { MechanismContext, ParticipantView, SeedContext } from '../../world
 import type { SystemModule } from '../../world/module.js';
 import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
 import { holdsThings, thingOrders } from './things.js';
-import { FUND_PARAMS, fundParam, inKindOf, nameOf, type FundDecl } from './data.js';
+import {
+  costOfAPool,
+  feeOn,
+  type Launch,
+  launchedPoolId,
+  launchToMake,
+  MANAGER_PARAMS,
+  managerParam,
+  type Notice,
+  noticeToGive,
+  staffOrders,
+} from './manager.js';
+import {
+  FUND_PARAMS,
+  inKindOf,
+  MANAGER_NUMBERS,
+  type ManagerDecl,
+  nameOf,
+  type FundDecl,
+} from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './inkind.js';
+import {
+  isMandate,
+  MANDATE,
+  type Mandate,
+  mandateFor,
+  type MandateTerms,
+  openMandate,
+  payingThisPeriod,
+  livingPools,
+  productOf,
+  redeemable,
+} from './mandate.js';
 import { navOf } from './nav.js';
 
 export * from './data.js';
 export { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
 export { holdsThings, thingOrders } from './things.js';
+export * from './manager.js';
 export * from './inkind.js';
+export * from './mandate.js';
 export { navOf } from './nav.js';
 export type { NavRead } from './nav.js';
 
@@ -127,215 +155,9 @@ export interface FundShareTerms {
 }
 
 export const shareLineOf = (fund: string): InstrumentId => instrumentId(`share.${fund}`);
+/** A2: the claim a pool issues, and one writer of what its terms are (Law 4). */
+const shareTerms = (fund: PartyId): FundShareTerms => ({ kind: FUND_SHARE, fund });
 export const fundVenue = (fund: string): VenueId => venueId(`funds.${fund}`);
-
-/* --------------------------------------------------------------------------------------------
- * THE MANDATE
- * ------------------------------------------------------------------------------------------ */
-
-/**
- * Fund Shares A4, F3, XI-8 (item 9.2): A MANDATE IS AN AGREEMENT BETWEEN A POOL AND A MANAGER.
- *
- * It is what splits a fund into the three things it actually is: a POOL that holds and has no
- * opinions, a MANDATE that rules, and a MANAGER that decides. The pool owes the manager its fee and
- * the manager owes the pool its judgement, which is two named parties with dated terms and a state
- * — an agreement, and the eighth kind of one (item 9.1).
- *
- * It was a `FundDecl` row, which is to say a fact about the WORLD'S DATA rather than about these
- * two parties, and nothing outside this module could read it. A separate account is a mandate whose
- * pool is the client's own balance sheet; an ETF and a money fund are pools with different
- * redemption rules; and a HEDGE FUND IS A MANDATE WITH LEVERAGE, which is why `leverage` is here
- * and not on `fundKind` — where it was hard-coded `false` for every pool in every world (item 13).
- */
-export const MANDATE = agreementKindId('funds.mandate');
-
-/**
- * §13 G1, G1.a, item 10e: HOW YOU GET IN AND OUT, and it is what decides who can be FORCED TO SELL.
- *
- * G1 already generalises the mechanism — *"a share count, a redemption request, a sale in the same
- * period's books, and the cost of a late sale landing on the holders who stayed"* — so there is ONE
- * subscription and redemption path and these terms say what it does. That is the whole difference
- * between a money fund and a private equity vehicle, and it is a TERM rather than a kind of thing.
- *
- * It is also this sector's contribution to whether a shock travels (XI-2): a redemption reaches a
- * LIQUID fund and becomes a sale into whatever the market gives; it reaches a CLOSED one and stops,
- * because nobody can ask for money that was committed for the life of the fund.
- */
-export type Liquidity =
-  /** In and out at NAV in any period. The money fund, and what XI-2 door 2 actually runs on. */
-  | { readonly how: 'liquid' }
-  /**
-   * Out at NAV, but only when a window opens, and what does not fit is QUEUED to the next one.
-   * C4.a is what the queue costs: the holders who stayed pay for the late sale.
-   */
-  | { readonly how: 'semiLiquid'; readonly everyPeriods: number }
-  /**
-   * G1.b: committed for the life of the fund, so there is no redemption at all and it can never be
-   * a forced seller — which is the entire reason the structure exists, and what §29 is built on.
-   */
-  | { readonly how: 'closed' }
-  /**
-   * E1, G1.a: you do not subscribe — you buy the share from a HOLDER, in a market, at a cleared
-   * price. Creation and redemption are IN KIND against the basket, which is why an exchange-traded
-   * fund is not a forced seller and why *"some other vehicle must carry it"*.
-   */
-  | { readonly how: 'listed' };
-
-export interface MandateTerms extends AgreementTerms {
-  readonly kind: typeof MANDATE;
-  /**
-   * A4, item 10e: WHAT THIS POOL MAY HOLD, in the one language every vehicle in this world is
-   * described by (`registry/blueprint.ts`).
-   *
-   * It was `mayHold: readonly string[]` — a list of instrument kind ids — and that was three things
-   * wrong at once. It could not express *"credit, three to seven years, senior"* at all, so almost
-   * every real mandate was inexpressible; it described a vehicle by ENUMERATING THE WORLD, so it
-   * went stale the first time anybody issued a kind it was written before; and it was a kind branch
-   * wearing a registry's clothes (Law 15). A blueprint bands over READS instead, so a bond ages out
-   * of a duration band on its own and a company falls out of a size band by falling.
-   */
-  readonly blueprint: Blueprint;
-  /** G1: how its investors get in and out, which is what decides whether it can be forced to sell. */
-  readonly liquidity: Liquidity;
-  /**
-   * Indices C2, C2.a, item 10e: WHETHER IT CHOOSES, and this is the other half of what a mandate is.
-   *
-   * The blueprint says what it MAY hold. This says whether it picks within that on its own view —
-   * ACTIVE — or holds whatever an index says is in it at whatever the index weighs it — PASSIVE.
-   * They are different businesses and the difference is a term the investors agreed to, not a
-   * property of a vehicle type: an exchange-traded fund is usually passive but need not be, an
-   * index mutual fund is passive and not listed, and a segregated institutional mandate can be
-   * either. That is why this is here and not on a declaration row for one kind of vehicle.
-   *
-   * A TRACKER IS NOT AN INVESTOR, which is the whole reason the distinction earns its place: a
-   * rebalance is the index answering differently — a line listed, a line gone, a weight moved — and
-   * the fund then HAS to trade, in the same session, at whatever the book gives it (C2.a). It is
-   * not choosing, and that is what makes it a transmission channel rather than a buyer.
-   *
-   * The id is a plain string because a fund may not import the module that declares the index
-   * (`no-cross-module-import`); which index a tracker tracks is data about this world.
-   */
-  readonly tracks: Option<string>;
-  /**
-   * A3, A4, `B-14` (item 9.7): THE CONTRACT KINDS IT MAY TAKE A POSITION IN, and an empty list is a
-   * real term and not an absence — a money fund does not write derivatives, and saying so is what
-   * lets the derivative layer speak for a pool at all.
-   *
-   * It is a separate list from the blueprint because a contract is not an instrument: nobody
-   * issued it, nobody holds units of it, and it is on both sides' books at once (Derivative D1). A
-   * WIDE mandate — long, short, levered, many markets — is §28's hedge fund, and this is the term
-   * that makes it one.
-   */
-  readonly mayWrite: readonly string[];
-  /**
-   * B1, F2, XI-3: whether this pool may be levered — and `false` is a real term of a mandate and
-   * not an absence. A levered pool borrows from a NAMED lender, which is what makes its leverage a
-   * fact about a loan rather than a property of the pool (item 13's B1.a).
-   */
-  readonly leverage: boolean;
-}
-
-/**
- * Law 15: the module that declared the kind narrows a row back to it, structurally — what makes
- * these terms a mandate is that they say what the pool may hold and whether it may be levered.
- */
-export const isMandate = (t: AgreementTerms): t is MandateTerms =>
-  'blueprint' in t && 'mayWrite' in t && 'leverage' in t;
-
-/** One mandate as this module reads it: the pool, its manager, and what it may do. */
-export interface Mandate extends MandateTerms {
-  readonly id: AgreementId;
-  readonly pool: PartyId;
-  readonly manager: PartyId;
-}
-
-/**
- * A4, F2, XI-8: WRITE THE MANDATE. One door for the seed and for a launch mid-run, so a pool set up
- * at period zero and one set up in period forty are the same thing (Law 4).
- *
- * `leverage` is `false` for every pool this world draws, and that is a TERM and not an absence: none
- * of the mandates in this world permits borrowing, and a hedge fund is the mandate that does
- * (item 13). It used to be `borrows: false` on the party KIND, which said no pool anywhere may ever
- * be levered — a fact about the world stated as a fact about a category.
- */
-function openMandate(
-  ctx: { owes: (d: AgreementDecl) => Agreement },
-  pool: PartyId,
-  manager: PartyId,
-  ccy: CurrencyCode,
-  blueprint: Blueprint,
-  liquidity: Liquidity,
-  tracks: Option<string>,
-): void {
-  // A3, B-14: every mandate this world draws writes NO derivatives — a money fund and a commodity
-  // fund do not, and an index tracker does not. It is a term, and §28's hedge fund is the mandate
-  // that says otherwise (item 13.2).
-  const terms: MandateTerms = {
-    kind: MANDATE,
-    blueprint,
-    liquidity,
-    tracks,
-    mayWrite: [],
-    leverage: false,
-  };
-  ctx.owes({
-    debtor: pool,
-    creditor: manager,
-    ccy,
-    owed: 0,
-    terms,
-    why: `${manager} runs ${pool} under a ${liquidity.how} ${tracks.some ? `mandate tracking ${tracks.value}` : 'mandate on its own view'}`,
-  });
-}
-
-export function mandateOf(a: Agreement): Mandate {
-  if (!isMandate(a.terms)) {
-    throw new InvalidRegistry('Fund Shares A4', `${a.id} is not a mandate`);
-  }
-  return { ...a.terms, id: a.id, pool: a.debtor, manager: a.creditor };
-}
-
-/**
- * A4: THE MANDATE A POOL IS RUN UNDER, asked of the pool's own commitments. A pool with none is not
- * a fund — it is a party holding things — and nothing here may decide for it.
- */
-export function mandateFor(view: ParticipantView): Option<Mandate> {
-  for (const a of view.commitments()) {
-    if (a.state === 'performing' && a.debtor === view.self.id && isMandate(a.terms)) {
-      return some(mandateOf(a));
-    }
-  }
-  return none<Mandate>();
-}
-
-/** G1, G1.a, G1.b: whether this vehicle's investors may ask for their money back AT ALL. */
-const redeemable = (l: Liquidity): boolean => l.how === 'liquid' || l.how === 'semiLiquid';
-
-/**
- * G1: whether a window is open this period. A liquid fund's is every period, which is what liquid
- * MEANS; a semi-liquid one's is every so many, placed on the calendar by the calendar (Money G3.a).
- */
-function payingThisPeriod(l: Liquidity, period: number): boolean {
-  if (l.how === 'liquid') return true;
-  if (l.how !== 'semiLiquid') return false;
-  return l.everyPeriods <= 1 || period % l.everyPeriods === 0;
-}
-
-/**
- * G1, item 10e: THE TERMS THIS POOL'S INVESTORS GET IN AND OUT ON, asked of its own mandate.
- *
- * A pool with no mandate is not a fund and has no terms; a pool that has one is bound by what its
- * manager and its investors agreed, which is where this belongs (XI-8). Nothing reads a liquidity
- * term off a declaration row: the row is what the world OPENED with, and the mandate is what holds.
- */
-function liquidityOf(ctx: MechanismContext, fund: string): Option<Liquidity> {
-  for (const a of ctx.agreements.ofKind(MANDATE)) {
-    if (a.state === 'performing' && String(a.debtor) === fund && isMandate(a.terms)) {
-      return some(a.terms.liquidity);
-    }
-  }
-  return none<Liquidity>();
-}
 
 /**
  * A1, F2: a fund is a party like any other. It fails on solvency and on nothing else: its equity is
@@ -454,9 +276,6 @@ interface Book {
   struck: Record<string, number>;
 }
 
-/** ACT/365F for a fee quoted per annum: a rate is not a number until its periodicity is (Law 8). */
-const FEE_DAY_COUNT = 'ACT/365F' as const;
-
 function emptyBook(): Book {
   return { queued: [], struck: {} };
 }
@@ -464,8 +283,56 @@ function emptyBook(): Book {
 const declOf = (decls: readonly FundDecl[], fund: string): FundDecl | undefined =>
   decls.find((f) => f.fund === fund);
 
-function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
+/**
+ * XI-14, item 10e.4: WHAT IS LEFT HERE IS THE WORLD'S NUMBERS, and the FUND'S ARE ON ITS MANDATE.
+ *
+ * Three per-fund parameters have gone — the buffer, the fee and what its investors require — and
+ * they are terms of the agreement between the pool and its manager now, struck when the mandate was
+ * written. That is where they belong: they are what two named parties agreed, the way a loan's rate
+ * is on the loan, and a parameter register is for numbers the WORLD declares.
+ *
+ * ONE OF THEM WAS A PLACEHOLDER AND ITS DEATH IS THIS ITEM. The fee's reason said so in its own
+ * words — *"no manager competes for the mandate, so the number stands where a competition should
+ * be... the missing mechanism is a manager with a cost base"*. There is a manager with a cost base
+ * now (`manager.ts`): it employs people out of the labour market, it knows what a pool costs it,
+ * and what it charges for a pool it opens is what it takes to undercut whoever is already running
+ * one. The fees this world OPENS with are drawn, which is an opening condition (Seed A3) and not a
+ * placeholder — what makes the difference is that a mechanism now produces the number.
+ *
+ * And it is what made the roster an outcome: a parameter is declared at assembly, so a fund that
+ * did not exist when the world was built could never have had one.
+ */
+function paramsOf(managers: readonly ManagerDecl[]): ParamDecl[] {
   return [
+    {
+      id: MANAGER_PARAMS.hoursPerPool,
+      value: MANAGER_NUMBERS.hoursPerPool,
+      unit: 'hours of the analysis trade one pool takes its manager in a period',
+      dimension: 'count',
+      kind: 'technology',
+      owner: 'model',
+      why: 'Fund Shares F3, Labour A2: what running one pool actually takes in people — the views, the dealing, the answering for it — and it is about the same for a small pool as for a large one. That is the whole economics of this industry, because the FEE is on the assets and the COST is on the product: a large pool carries a small one, and a house with one small pool cannot cover its own people. Nothing states that consequence; it falls out of a cost per product meeting a fee per pound.',
+    },
+    ...managers.flatMap((h): ParamDecl[] => [
+      {
+        id: managerParam(h.manager, 'undercut'),
+        value: h.undercut,
+        unit: 'share off the cheapest fee charged for the product it copies',
+        dimension: 'ratio',
+        kind: 'preference',
+        owner: 'model',
+        why: `Fund Shares F3, D2: how far ${h.name} comes in under the cheapest fee anybody already charges for a product it copies. An entrant has one lever and this is how hard it pulls it. What stops fees falling is not a floor: it is that the next entrant's fee would no longer cover what a pool costs it in people, so it does not open one (Law 6).`,
+      },
+      {
+        id: managerParam(h.manager, 'patience'),
+        value: h.patience,
+        unit: 'periods',
+        dimension: 'periods',
+        kind: 'preference',
+        owner: 'model',
+        why: `Fund Shares F3: how long ${h.name} gives a pool it opened before it asks whether the fee covers the cost. A pool opened this week has been offered to nobody — the strike publishes it and a saver decides the week after — so a manager with no patience would close every fund it ever opened. Two managers with the same patience are one manager with two names (Ratings A4.b).`,
+      },
+    ]),
     {
       id: FUND_SWITCHING_COST,
       value: 900,
@@ -485,36 +352,6 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
       owner: 'model',
       why: 'Fund Shares B1: a fund with no shares has nothing to divide by, so the first subscription fixes the unit its shares are counted in. Double it and every share count halves and no value, flow or decision moves — which is what makes it a resolution and not a price (Law 2).',
     },
-    ...decls.flatMap((f): ParamDecl[] => [
-      {
-        id: fundParam(f.fund, 'buffer'),
-        value: f.buffer,
-        unit: 'share of net assets held as cash',
-        dimension: 'ratio',
-        kind: 'preference',
-        owner: 'model',
-        why: `Fund Shares C2.a: how much of ${f.fund} sits in cash so an ordinary redemption needs no sale. It is the whole of the difference between a redemption that is invisible and one that reaches a market, and a fund that held none would sell on every request.`,
-      },
-      {
-        id: fundParam(f.fund, 'fee'),
-        value: f.fee,
-        unit: 'per annum on net assets',
-        dimension: 'perAnnum',
-        kind: 'placeholder',
-        owner: 'model',
-        why: `Fund Shares B3, F3: what ${f.managerName} charges. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be. The MANDATE exists now (item 9.2a) and the competition does not — what a manager would bid against is what running a pool costs it, and a manager in this world employs nobody, so a book with two of them in it would clear at the tick. The missing mechanism is a manager with a cost base, which is item 13.9.`,
-        standsInFor: { mechanism: 'Fund Shares F3', item: '13.9' },
-      },
-      {
-        id: fundParam(f.fund, 'requiredYield'),
-        value: f.requiredYield,
-        unit: 'per annum over what a deposit returns',
-        dimension: 'perAnnum',
-        kind: 'preference',
-        owner: 'model',
-        why: `Fund Shares D2, D2.a: what ${f.fund}'s investors require of it over a deposit, and therefore what it will pay for paper. A deposit returns nothing until a bank decides to pay for one (Banks Funding B1, worklist 11), and this becomes a comparison rather than a level the period one does.`,
-      },
-    ]),
   ];
 }
 
@@ -528,22 +365,12 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
  * Law 8: a per annum rate is not a per period one, and a fee is money, so what comes out is whole
  * pieces of it. Below one piece there is nothing to pay, and `payable` has already said so.
  */
-function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): Qty {
-  return ctx.registry.payable(scale(
+function feeAccrued(ctx: MechanismContext, m: Mandate, share: Instrument): Qty {
+  return ctx.registry.payable(
+    feeOn(
+      ctx,
       valueAt(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
-      scale(
-        ctx.params.perAnnum(fundParam(fund, 'fee')),
-        asRatio(
-          yearFraction(
-            FEE_DAY_COUNT,
-            ctx.calendar.startOf(ctx.period),
-            ctx.calendar.endOf(ctx.period),
-          ),
-          'this period of a year',
-        ),
-        'this period of a year',
-      ),
-      'the fee',
+      m.feePerAnnum,
     ),
   );
 }
@@ -559,10 +386,10 @@ function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): Qty
  * paying whatever cash was lying there and writing off the rest — was income appearing at one end
  * with nothing to match it at the other, and a shortfall nobody held (Law 2, Law 5).
  */
-function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amount: Qty): void {
+function payFee(ctx: MechanismContext, m: Mandate, amount: Qty): void {
   if (amount <= 0) return;
-  const fund = ctx.parties.get(d.fund as PartyId);
-  const manager = ctx.parties.get(d.manager as PartyId);
+  const fund = ctx.parties.get(m.pool);
+  const manager = ctx.parties.get(m.manager);
   const leg: Leg = {
     kind: 'money',
     from: ctx.accountOf(fund.id, ctx.registry.currencyOf(fund.region)),
@@ -572,11 +399,11 @@ function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amo
     fromCell: none(),
     toCell: none(),
   };
-  const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `${d.fund} pays its manager` });
+  const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `${fund.id} pays its manager` });
   ctx.record(
     'fund.fee',
-    [d.fund, d.manager],
-    { fund: d.fund, manager: d.manager, amount, paid: r.outcome === 'settled' },
+    [fund.id, manager.id],
+    { fund: fund.id, manager: manager.id, amount, paid: r.outcome === 'settled' },
     false,
   );
 }
@@ -584,7 +411,7 @@ function payFee(ctx: MechanismContext, d: { fund: string; manager: string }, amo
 /** C1: cash in, shares out, one instruction. C3: the shares outstanding change, so a fund is not fixed-size. */
 function subscribe(
   ctx: MechanismContext,
-  d: FundDecl,
+  m: Mandate,
   share: Instrument,
   holder: PartyId,
   sharesAsked: Qty,
@@ -601,7 +428,7 @@ function subscribe(
   // while shares are outstanding is a different question and it is `13b-9`'s, positioned to 13h.
   if (perShare <= 0) return;
   const party = ctx.parties.get(holder);
-  const fund = ctx.parties.get(d.fund as PartyId);
+  const fund = ctx.parties.get(m.pool);
   const ccy = ctx.registry.currencyOf(fund.region);
   // C1.d of the buyer's own budget: it subscribes with the money it has, and what it cannot pay
   // for it does not buy. That is a budget, not a bound on the decision.
@@ -643,11 +470,11 @@ function subscribe(
       toCell: side === undefined ? none() : some(side),
     },
   ];
-  const r = ctx.settle({ legs, cause: 'issuance', reason: `${holder} subscribes to ${d.fund}` });
+  const r = ctx.settle({ legs, cause: 'issuance', reason: `${holder} subscribes to ${fund.id}` });
   ctx.record(
     'fund.subscribed',
-    [d.fund, holder],
-    { fund: d.fund, holder, sharesPerMember: shares, perShare, settled: r.outcome === 'settled' },
+    [fund.id, holder],
+    { fund: fund.id, holder, sharesPerMember: shares, perShare, settled: r.outcome === 'settled' },
     false,
   );
 }
@@ -658,14 +485,14 @@ function subscribe(
  */
 function redeem(
   ctx: MechanismContext,
-  d: FundDecl,
+  m: Mandate,
   share: Instrument,
   holder: PartyId,
   sharesAsked: Qty,
   perShare: PerPiece,
 ): number {
   const party = ctx.parties.get(holder);
-  const fund = ctx.parties.get(d.fund as PartyId);
+  const fund = ctx.parties.get(m.pool);
   const ccy = ctx.registry.currencyOf(fund.region);
   // XI-15: the register holds a cell's position PER MEMBER, which is the unit a request is in.
   const held = ctx.register.quantity(holder, share.id);
@@ -726,12 +553,12 @@ function redeem(
         toCell: money === undefined ? none() : some(money),
       },
     ];
-    const r = ctx.settle({ legs, cause: 'maturity', reason: `${d.fund} redeems for ${holder}` });
+    const r = ctx.settle({ legs, cause: 'maturity', reason: `${fund.id} redeems for ${holder}` });
     if (r.outcome === 'settled') {
       ctx.record(
         'fund.redeemed',
-        [d.fund, holder],
-        { fund: d.fund, holder, sharesPerMember: sharesNow, perShare },
+        [fund.id, holder],
+        { fund: fund.id, holder, sharesPerMember: sharesNow, perShare },
         false,
       );
       return subQty(asked, sharesNow, 'what is left to pay');
@@ -767,36 +594,87 @@ function lastNav(ctx: MechanismContext, fund: string): Option<PerPiece> {
   return typeof was === 'number' ? some(asPerPiece(was, 'what a share was worth then')) : none<PerPiece>();
 }
 
-function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
+/**
+ * F3, C2.b, C4, item 10e.4: THE COMPULSORY REDEMPTION. Every holder is put on the queue for
+ * everything it holds, at the NAV struck today, exactly as if each of them had asked.
+ *
+ * It is one queue and one payment convention (Appendix B), so a holder of a fund being wound up and
+ * a holder who asked for its money back on an ordinary Tuesday are paid by the same code at the
+ * same NAV in the same order. What it already asked for is already on the book under its own name
+ * (C4, at the NAV of the day it asked), so only the REST is added — asking twice for one holding
+ * would be two claims where there is one.
+ */
+function queueEverybody(
+  ctx: MechanismContext,
+  b: Book,
+  m: Mandate,
+  share: Instrument,
+  perShare: PerPiece,
+): void {
+  const fundId = m.pool;
+  for (const holder of ctx.register.holdersOf(share.id)) {
+    if (holder === fundId) continue;
+    const held = ctx.register.quantity(holder, share.id);
+    if (held <= 0) continue;
+    const already = sum(
+      b.queued
+        .filter((q) => q.fund === String(fundId) && q.holder === holder)
+        .map((q) => q.sharesPerMember),
+    ).value;
+    const rest = subQty(held, already, 'shares of its it has not already asked back');
+    if (rest <= 0) continue;
+    b.queued.push({
+      fund: String(fundId),
+      holder,
+      sharesPerMember: asQty(rest, 'shares redeemed out of it per member'),
+      navStruck: perShare,
+      since: ctx.period,
+    });
+    ctx.record(
+      'fund.requested',
+      [fundId, holder],
+      { fund: fundId, holder, sharesPerMember: rest, perShare, why: 'windingUp' },
+      false,
+    );
+  }
+}
+
+function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
+  const fundId = m.pool;
   // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
   // through its estate like anybody else's (Firm Birth D5).
-  if (!ctx.parties.get(d.fund as PartyId).status.alive) return;
-  const share = ctx.instruments.get(shareLineOf(d.fund));
+  if (!ctx.parties.get(fundId).status.alive) return;
+  const share = ctx.instruments.get(shareLineOf(String(fundId)));
   const opening = ctx.params.price(FUND_PARAMS.openingShare);
-  const ccy = ctx.registry.currencyOf(ctx.parties.get(d.fund as PartyId).region);
-  const previous = lastNav(ctx, d.fund);
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(fundId).region);
+  const previous = lastNav(ctx, String(fundId));
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
   // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
-  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
+  if (share.issued > 0) payFee(ctx, m, feeAccrued(ctx, m, share));
   const perShare = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
-  b.struck[d.fund] = perShare;
+  b.struck[String(fundId)] = perShare;
   // B2.a: how old the oldest mark behind it is. A stale mark makes a stale NAV and somebody
   // transacts on it: that is a real transfer between holders and it is said out loud.
   let oldest = ctx.period;
-  for (const h of ctx.register.holdingsOf(d.fund as PartyId)) {
+  for (const h of ctx.register.holdingsOf(fundId)) {
     if (h.instrument === share.id) continue;
-    const worth = ctx.valuation.worthOf(d.fund as PartyId, h.instrument, ctx.period);
+    const worth = ctx.valuation.worthOf(fundId, h.instrument, ctx.period);
     if (worth.some && worth.value.from < oldest) oldest = worth.value.from;
   }
   if (oldest < ctx.period) {
     ctx.record(
       'fund.staleNav',
-      [d.fund],
-      { fund: d.fund, perShare, oldestMark: oldest, periodsStale: ctx.period - oldest },
+      [fundId],
+      { fund: fundId, perShare, oldestMark: oldest, periodsStale: ctx.period - oldest },
       true,
     );
   }
-  for (const o of ctx.posted(fundVenue(d.fund))) {
+  // F3, G1, C2.b, item 10e.4: NOTICE HAS BEEN GIVEN, so every holder goes on the queue at this
+  // NAV whether they asked or not. That is what winding a fund up IS, and from here it is the
+  // ordinary redemption path: the fund pays what its cash reaches, sells for the rest at whatever
+  // the market gives (C2.a, XI-2), and the holders who are paid last get what the sales fetched.
+  if (m.windingUp) queueEverybody(ctx, b, m, share, perShare);
+  for (const o of ctx.posted(fundVenue(String(fundId)))) {
     if (o.qty <= 0) continue;
     // XI-15, Law 8: a posting is a total and a cell's decision is per member; this is the one place
     // the two meet, and it is the same conversion every other market makes. A SHARE IS INDIVISIBLE,
@@ -807,14 +685,26 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
     );
     if (asked <= 0) continue;
     if (o.side === 'buy') {
-      subscribe(ctx, d, share, o.party, asked, perShare);
+      // C1, F3: A FUND BEING WOUND UP TAKES NOBODY NEW. Selling a claim on a book that is being
+      // sold off is selling somebody a share of a queue, and the refusal is recorded because a
+      // saver whose subscription did not happen has a real fact about its own money (App A).
+      if (m.windingUp) {
+        ctx.record(
+          'fund.notSubscribing',
+          [fundId, o.party],
+          { fund: fundId, holder: o.party, sharesPerMember: asked, why: 'windingUp' },
+          true,
+        );
+        continue;
+      }
+      subscribe(ctx, m, share, o.party, asked, perShare);
     } else {
       // A holder cannot ask back what it does not have, and what it has already asked for is
       // already on the book — a second ask for the same shares is the same claim, not another one.
       // This is not C2.b's rationing: nothing that was ever a claim is dropped here.
       const held = ctx.register.quantity(o.party, share.id);
       const already = sum(
-        b.queued.filter((q) => q.fund === d.fund && q.holder === o.party).map((q) => q.sharesPerMember),
+        b.queued.filter((q) => q.fund === String(fundId) && q.holder === o.party).map((q) => q.sharesPerMember),
       ).value;
       const room = subQty(held, already, 'shares it has not already asked back');
       const taking = atMost(asked, room, 'it cannot ask back shares it has already asked back');
@@ -831,12 +721,11 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
        * The refusal is RECORDED, because an investor asking for money it agreed it could not have
        * is a real event about that investor's own position — and Appendix A: a refusal is an answer.
        */
-      const terms = liquidityOf(ctx, d.fund);
-      if (terms.some && !redeemable(terms.value)) {
+      if (!redeemable(m.liquidity)) {
         ctx.record(
           'fund.notRedeemable',
-          [d.fund, o.party],
-          { fund: d.fund, holder: o.party, sharesPerMember: taking, terms: terms.value.how },
+          [fundId, o.party],
+          { fund: fundId, holder: o.party, sharesPerMember: taking, terms: m.liquidity.how },
           true,
         );
         continue;
@@ -844,7 +733,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       // C2.b: the request goes on the book under its own name at the NAV of the day it asked. What
       // happens to it after that is a question of cash, never of whether it counts.
       b.queued.push({
-        fund: d.fund,
+        fund: fundId,
         holder: o.party,
         sharesPerMember: asQty(taking, 'shares it asked back per member'),
         navStruck: perShare,
@@ -852,17 +741,17 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       });
       ctx.record(
         'fund.requested',
-        [d.fund, o.party],
-        { fund: d.fund, holder: o.party, sharesPerMember: taking, perShare },
+        [fundId, o.party],
+        { fund: fundId, holder: o.party, sharesPerMember: taking, perShare },
         false,
       );
     }
   }
-  payQueue(ctx, b, d);
-  const owed = owedOn(ctx, b, d);
+  payQueue(ctx, b, m);
+  const owed = owedOn(ctx, b, m);
   const cash = ctx.register.quantity(
-    d.fund as PartyId,
-    moneyInstrumentId(ctx.accountOf(d.fund as PartyId, ccy).issuer, ccy),
+    fundId,
+    moneyInstrumentId(ctx.accountOf(fundId, ccy).issuer, ccy),
   );
   // C2.a, Law 8: WHAT IT KEEPS BACK IS MONEY, so it is a whole number of the smallest piece of it.
   // Up, because it is what the fund insists on holding: a buffer a cent short of what its own rule
@@ -872,16 +761,16 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   const buffer = upTick(
     scale(
       valueAt(perShare, share.issued, 'net assets'),
-      ctx.params.ratio(fundParam(d.fund, 'buffer')),
+      m.buffer,
       'the cash it keeps back',
     ),
   );
-  const offer = offeredYield(ctx, d);
+  const offer = offeredYield(ctx, m);
   ctx.record(
     'fund.struck',
-    [d.fund],
+    [fundId],
     {
-      fund: d.fund,
+      fund: fundId,
       perShare,
       shares: share.issued,
       /**
@@ -923,12 +812,25 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
  * hold, less its fee. It is not a forecast and not a promise: it is what that paper is fetching
  * today (Sovereign D3), which is the only thing anybody can compare a deposit against.
  */
-function offeredYield(ctx: MechanismContext, d: FundDecl): Option<number> {
-  const region = ctx.registry.region(ctx.parties.get(d.fund as PartyId).region);
-  const fee = ctx.params.perAnnum(fundParam(d.fund, 'fee'));
-  const tenor = ctx.params.periods(fundParam(d.fund, 'maxTenorPeriods'));
-  const on = ctx.calendar.startOf(ctx.period);
-  const by = ctx.calendar.startOf(periodOf(ctx.period + tenor));
+function offeredYield(ctx: MechanismContext, m: Mandate): Option<number> {
+  const region = ctx.registry.region(ctx.parties.get(m.pool).region);
+  /**
+   * D2.a, item 10e.4: THE LONGEST THING ITS MANDATE LETS IT HOLD, read off the DURATION BAND.
+   *
+   * It read `fundParam(fund, 'maxTenorPeriods')` — a parameter that item 10e.2 deleted when the
+   * kind list and the tenor became one blueprint, and which nothing has declared since. A read of a
+   * parameter that is not in the register THROWS, so this was a build-stopper in the strike of every
+   * fund in the world, and the first period would not have finished (finding `E-20`; fixed where it
+   * stands, as the rules for a violation that stops the build require).
+   *
+   * A blueprint states its duration in YEARS from today, which is the number a curve is asked at —
+   * so the tenor in periods, the date it came to and the year fraction back out of that date are
+   * all gone, and the read is the band itself (Law 19). A mandate that states no upper duration has
+   * no longest thing and nothing to quote: an equity fund does not offer a yield, and saying so is
+   * the honest answer rather than a point on a curve nobody asked for (App A).
+   */
+  const years = m.blueprint.duration?.to;
+  if (years === undefined || years <= 0) return none<number>();
   /**
    * D2.a: THE BEST of the curves in its money, and `best` is what the word says.
    *
@@ -941,19 +843,19 @@ function offeredYield(ctx: MechanismContext, d: FundDecl): Option<number> {
   let best: Option<Ratio> = none();
   for (const family of ctx.registry.curveFamilies.values()) {
     if (family.ccy !== ctx.registry.currencyOf(region.id)) continue;
-    const read = ctx.curve(family.id).at(yearFraction(family.dayCount, on, by));
+    const read = ctx.curve(family.id).at(years);
     if (!read.yield.some) continue;
     if (!best.some || read.yield.value > best.value) best = some(read.yield.value);
   }
   if (!best.some) return none();
-  return some(minus(best.value, asRatio(fee, "the manager's fee"), 'what a saver gets after the manager'));
+  return some(minus(best.value, m.feePerAnnum, 'what a saver gets after the manager'));
 }
 
 /** What this fund still owes its redeemers, at the NAV each of them struck (C4). */
-function owedOn(ctx: MechanismContext, b: Book, d: FundDecl): Qty {
+function owedOn(ctx: MechanismContext, b: Book, m: Mandate): Qty {
   const terms: number[] = [];
   for (const q of b.queued) {
-    if (q.fund !== d.fund) continue;
+    if (q.fund !== String(m.pool)) continue;
     const holder = ctx.parties.get(q.holder);
     // C2, Law 8: what a redemption COMES TO is shares at a NAV, so it lands between two pieces of
     // money — and what the fund must find is the piece above, because paying all but a fraction of
@@ -971,8 +873,9 @@ function owedOn(ctx: MechanismContext, b: Book, d: FundDecl): Qty {
  * until it is paid, which is public because a gate is information (C4.a: it is a cost to those who
  * stay, and they may want to leave too).
  */
-function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
-  if (!ctx.parties.get(d.fund as PartyId).status.alive) return;
+function payQueue(ctx: MechanismContext, b: Book, m: Mandate): void {
+  const fundId = m.pool;
+  if (!ctx.parties.get(fundId).status.alive) return;
   /**
    * G1 (item 10e): A SEMI-LIQUID FUND PAYS WHEN ITS WINDOW IS OPEN and not otherwise.
    *
@@ -984,24 +887,26 @@ function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
    * It is not a gate anybody chose to close (Law 6): the window is a term of the mandate its
    * investors agreed to, and between windows there is simply no payment date.
    */
-  const terms = liquidityOf(ctx, d.fund);
-  if (terms.some && !payingThisPeriod(terms.value, ctx.period)) return;
-  const share = ctx.instruments.get(shareLineOf(d.fund));
+  // G1, item 10e.4: a pool being WOUND UP pays whenever it has the money. The window is a term
+  // for a fund that has a next one; one that is being closed does not, and a queue that waited for
+  // a window that will never open again is a holder who is never paid.
+  if (!m.windingUp && !payingThisPeriod(m.liquidity, ctx.period)) return;
+  const share = ctx.instruments.get(shareLineOf(String(fundId)));
   // Clearing C3: first come, first served is a stated rule, applied the same way every time.
-  const mine = b.queued.filter((q) => q.fund === d.fund).sort((x, y) => x.since - y.since);
+  const mine = b.queued.filter((q) => q.fund === String(fundId)).sort((x, y) => x.since - y.since);
   if (mine.length === 0) return;
   const left: Queued[] = [];
   for (const q of mine) {
-    const unpaid = redeem(ctx, d, share, q.holder, q.sharesPerMember, q.navStruck);
+    const unpaid = redeem(ctx, m, share, q.holder, q.sharesPerMember, q.navStruck);
     if (unpaid > 0) left.push({ ...q, sharesPerMember: asQty(unpaid, 'shares still owed per member') });
   }
-  b.queued = [...b.queued.filter((q) => q.fund !== d.fund), ...left];
+  b.queued = [...b.queued.filter((q) => q.fund !== String(fundId)), ...left];
   if (left.length === 0) return;
   ctx.record(
     'fund.gate',
-    [d.fund, ...left.map((q) => q.holder)],
+    [fundId, ...left.map((q) => q.holder)],
     {
-      fund: d.fund,
+      fund: fundId,
       requests: left.length,
       sharesOwed: sum(left.map((q) => totalFor(ctx.parties.get(q.holder), q.sharesPerMember))).value,
       oldest: left.reduce<number>((at, q) => atMost(q.since, at, 'the oldest of them is as old as the oldest'), ctx.period),
@@ -1069,7 +974,7 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
   const manager = e.manager as PartyId;
   for (const [id, kind, name] of [
     [manager, FUND_MANAGER, e.managerName],
-    [fund, FUND, nameOf(e)],
+    [fund, FUND, nameOf({ ...e, house: e.bank })],
   ] as const) {
     if (ctx.parties.has(id)) continue;
     ctx.enter({
@@ -1097,24 +1002,15 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
    * single-currency vehicle and that is a term its investors agreed to.
    */
   const ccy = ctx.registry.currencyOf(region.id);
-  openMandate(
-    ctx,
-    fund,
-    manager,
-    ccy,
-    {
+  openMandate(ctx, fund, manager, ccy, {
+    ...productOf(e, ccy),
+    blueprint: {
       classes: [
         ...new Set(Object.keys(inKindOf(e).basket).map((line) => ctx.classify(instrumentId(line)).what)),
       ],
       currencies: [ccy],
     },
-    // E1, G1.a: its shares TRADE and its investors come and go IN KIND against the basket, which is
-    // why it is not a forced seller and why some other vehicle has to carry that.
-    { how: 'listed' },
-    // C2, C2.a: and it TRACKS — a term of its mandate rather than a field on a row that declared
-    // what kind of thing it was, so an index mutual fund or a passive mandate can say it too.
-    some(index),
-  );
+  });
   const share = shareLineOf(e.fund);
   const market = listedMarketOf(e.fund);
   const terms: FundShareTerms = { kind: FUND_SHARE, fund };
@@ -1130,7 +1026,7 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
   });
   ctx.openMarket({
     id: market,
-    name: `${nameOf(e)} shares`,
+    name: `${nameOf({ ...e, house: e.bank })} shares`,
     instrument: share,
     ccy: ctx.registry.currencyOf(region.id),
     rationing: 'proRata',
@@ -1139,7 +1035,7 @@ function launchInKind(ctx: MechanismContext, e: FundDecl): void {
   // module that owns it runs it itself (Clearing B2).
   ctx.openVenue({
     id: inKindVenue(e.fund),
-    name: `${nameOf(e)} creations and redemptions`,
+    name: `${nameOf({ ...e, house: e.bank })} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
     ccy: ctx.registry.currencyOf(region.id),
@@ -1206,7 +1102,9 @@ function firstCreation(
   for (const [holder, slice] of launchers(ctx, e)) {
     const wanted = downTick(scale(full, asRatio(slice, "this holder's slice"), "this holder's slice of the launch"));
     if (wanted <= 0) continue;
-    if (create(ctx, e, share, holder, wanted)) made = addQty(made, wanted, 'shares created');
+    if (create(ctx, e.fund as PartyId, inKindOf(e).basket, share, holder, wanted)) {
+      made = addQty(made, wanted, 'shares created');
+    }
   }
   return made;
 }
@@ -1234,8 +1132,8 @@ function couldCreate(ctx: MechanismContext, e: FundDecl, party: PartyId): Qty {
   return most;
 }
 
-function runInKind(ctx: MechanismContext, d: FundDecl): void {
-  const fund = d.fund as PartyId;
+function runInKind(ctx: MechanismContext, m: Mandate, d: FundDecl): void {
+  const fund = m.pool;
   if (!ctx.parties.get(fund).status.alive) return;
   const share = ctx.instruments.get(shareLineOf(d.fund));
   if (!share.status.live) return;
@@ -1247,15 +1145,15 @@ function runInKind(ctx: MechanismContext, d: FundDecl): void {
     ctx.accountOf(fund, ctx.registry.currencyOf(ctx.parties.get(fund).region)).issuer,
     ctx.registry.currencyOf(ctx.parties.get(fund).region),
   );
-  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
+  if (share.issued > 0) payFee(ctx, m, feeAccrued(ctx, m, share));
   // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
   // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
   for (const o of ctx.posted(inKindVenue(d.fund))) {
     if (o.qty <= 0) continue;
-    if (o.side === 'buy') create(ctx, d, share.id, o.party, o.qty);
-    else redeemInKind(ctx, d, share.id, o.party, o.qty);
+    if (o.side === 'buy') create(ctx, fund, inKindOf(d).basket, share.id, o.party, o.qty);
+    else redeemInKind(ctx, fund, inKindOf(d).basket, share.id, o.party, o.qty);
   }
-  distribute(ctx, d, share.id, money);
+  distribute(ctx, m, share.id, money);
 }
 
 /**
@@ -1270,8 +1168,8 @@ function runInKind(ctx: MechanismContext, d: FundDecl): void {
  * It finds the books by their public key rather than by knowing who runs them (Clearing B2): a
  * world without a money market has no such venue and the fund places nothing.
  */
-function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
-  const fund = ctx.parties.get(d.fund as PartyId);
+function placeSpareCash(ctx: MechanismContext, m: Mandate): void {
+  const fund = ctx.parties.get(m.pool);
   if (!fund.status.alive) return;
   const ccy = ctx.registry.currencyOf(fund.region);
   const cash = ctx.register.quantity(
@@ -1279,7 +1177,7 @@ function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
     moneyInstrumentId(ctx.accountOf(fund.id, ccy).issuer, ccy),
   );
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
-  const buffer = scale(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
+  const buffer = scale(cash, m.buffer, 'what it keeps liquid');
   const spare = ctx.registry.payable(heldAsMoney(minus(cash, buffer, 'what it can place'), 'what it can place'),
   );
   if (spare <= 0) return;
@@ -1315,8 +1213,8 @@ function floorRate(ctx: MechanismContext): Option<number> {
  * It is declared under the one name every issuer that pays anything declares under, so that a saver
  * reads one public fact and does not have to know which system it came out of (Law 4).
  */
-function distribute(ctx: MechanismContext, d: FundDecl, share: InstrumentId, money: InstrumentId): void {
-  const fund = ctx.parties.get(d.fund as PartyId);
+function distribute(ctx: MechanismContext, m: Mandate, share: InstrumentId, money: InstrumentId): void {
+  const fund = ctx.parties.get(m.pool);
   const issued = ctx.instruments.get(share).issued;
   const cash = ctx.register.quantity(fund.id, money);
   if (issued <= 0 || cash <= 0) return;
@@ -1364,7 +1262,7 @@ function distribute(ctx: MechanismContext, d: FundDecl, share: InstrumentId, mon
   if (paid.length === 0 && failed === 0) return;
   ctx.record(
     'payout.declared',
-    [d.fund, share],
+    [fund.id, share],
     {
       line: share,
       perShare,
@@ -1384,12 +1282,12 @@ function distribute(ctx: MechanismContext, d: FundDecl, share: InstrumentId, mon
  * the difference: what closes a gap is somebody creating or redeeming because it is worth their
  * while (E3.a), and a gap that stays is a finding about liquidity (E4).
  */
-function readListed(ctx: MechanismContext, d: FundDecl): void {
-  const fund = d.fund as PartyId;
+function readListed(ctx: MechanismContext, m: Mandate, d: FundDecl): void {
+  const fund = m.pool;
   if (!ctx.parties.get(fund).status.alive) return;
   const share = ctx.instruments.get(shareLineOf(d.fund));
   if (!share.status.live) return;
-  const basket = basketOf(ctx, d, share.id);
+  const basket = basketOf(ctx, fund, inKindOf(d).basket, share.id);
   const nav = share.issued > 0
     ? ctx.valuation.markPerUnit(share.id, ctx.period)
     : basketValue(basket);
@@ -1397,9 +1295,9 @@ function readListed(ctx: MechanismContext, d: FundDecl): void {
   const premium = premiumOf(print.some ? some(print.value.price) : none<PerPiece>(), nav);
   ctx.record(
     'fund.listedStruck',
-    [d.fund, share.id],
+    [fund, share.id],
     {
-      fund: d.fund,
+      fund,
       share: share.id,
       shares: share.issued,
       // E2: the two of them, because that they are different numbers is the point.
@@ -1416,22 +1314,168 @@ function readListed(ctx: MechanismContext, d: FundDecl): void {
   );
 }
 
+/* --------------------------------------------------------------------------------------------
+ * THE MANAGER'S PERIOD: what it closed, and what it opened
+ * ------------------------------------------------------------------------------------------ */
+
+/**
+ * F3, item 10e.4: the manager's own period. Three things, in the order a business does them: what a
+ * pool costs it, which of its pools no longer pay for themselves, and whether there is a product
+ * worth opening. It decides nothing at all if it cannot yet price an hour of its own people's time,
+ * which is the honest state of a business that has never met a wage (App A).
+ */
+function runManagers(ctx: MechanismContext): void {
+  for (const manager of ctx.parties.ofKind(FUND_MANAGER)) {
+    if (!manager.status.alive) continue;
+    const view = ctx.participant(manager.id);
+    const cost = costOfAPool(view);
+    if (!cost.some) continue;
+    for (const n of noticeToGive(ctx, view, cost.value)) giveNotice(ctx, n);
+    const launch = launchToMake(ctx, view, livingPools(ctx), cost.value);
+    if (launch.some) openPool(ctx, manager.id, launch.value);
+  }
+  // A pool that has paid its last holder and sold its last position is finished. It is asked of the
+  // pools as they are AFTER the notices, so a product that never gathered a share is closed the
+  // period its manager gave up on it — there is nothing to sell and nobody to pay — while one with
+  // holders in it has shares outstanding and is not finished by this test for as long as that
+  // takes.
+  for (const m of livingPools(ctx)) if (m.windingUp) finishWindUp(ctx, m);
+}
+
+/**
+ * F3, G1: NOTICE. The mandate is restated rather than ended — a pool with no mandate has nobody
+ * deciding for it and its holders and its book would both still be there — and everything that
+ * follows is the ordinary redemption path (`strike`, `payQueue`) running until there is nothing
+ * left. It is public: a fund closing is information its holders and its market both need (C4.a).
+ */
+function giveNotice(ctx: MechanismContext, n: Notice): void {
+  const a = ctx.agreements.get(mandateIdOf(ctx, n.pool));
+  if (!isMandate(a.terms)) return;
+  const noticed: MandateTerms = { ...a.terms, windingUp: true };
+  ctx.restate(a.id, noticed);
+  ctx.record(
+    'fund.notice',
+    [n.pool, a.creditor],
+    { fund: n.pool, manager: a.creditor, earns: n.earns, costs: n.costs },
+    true,
+  );
+}
+
+/** A4: the mandate this pool is run under, as an id. A pool with none never reached this. */
+function mandateIdOf(ctx: MechanismContext, pool: PartyId): AgreementId {
+  for (const a of ctx.agreements.ofKind(MANDATE)) {
+    if (a.state === 'performing' && a.debtor === pool && isMandate(a.terms)) return a.id;
+  }
+  throw new InvalidRegistry('Fund Shares A4', `${pool} is run under no mandate`);
+}
+
+/**
+ * F3, Seed A3, item 10e.4: THE LAUNCH. A pool is a party, a mandate, a share line and a door its
+ * investors come in at — exactly what the seed opens one with, opened by a manager instead.
+ *
+ * It opens with NOBODY IN IT and nothing in its account, which is the same opening every fund in
+ * this world has (Seed E): the first subscription is a decision somebody takes at the unit its
+ * shares are counted in, and a pool nobody subscribes to is a product that failed, which its
+ * manager will close.
+ */
+function openPool(ctx: MechanismContext, manager: PartyId, launch: Launch): void {
+  const house = ctx.parties.get(manager);
+  const pool = launchedPoolId(manager, ctx.period);
+  if (ctx.parties.has(pool)) return;
+  // A1.c: a pool banks where its house banks, so a house whose bank has gone has nowhere to open
+  // one until it has moved its own account (`fundChoosesBank`). That is a real wait, not a guard.
+  if (!ctx.parties.has(house.bank) || !ctx.parties.get(house.bank).status.alive) return;
+  const ccy = ctx.registry.currencyOf(house.region);
+  const name = nameOf({ blueprint: launch.product.blueprint, house: house.name });
+  ctx.enter({
+    id: pool,
+    kind: FUND,
+    region: house.region,
+    name,
+    // A1.c: a pool banks where its manager banks, which is the relationship that already exists.
+    bank: house.bank,
+    representation: 'named',
+    status: { alive: true, standing: 'good' },
+  });
+  openMandate(ctx, pool, manager, ccy, launch.product);
+  const share = shareLineOf(String(pool));
+  ctx.issue({
+    id: share,
+    kind: FUND_SHARE,
+    issuer: some(pool),
+    ccy,
+    terms: shareTerms(pool),
+    // A2: an open-ended fund's shares do not trade. What one is worth is what the book comes to.
+    market: none(),
+  });
+  ctx.openVenue({
+    id: fundVenue(String(pool)),
+    name: `${name} subscriptions and redemptions`,
+    clearedBy: 'funds',
+    unit: SHARES,
+    ccy,
+    key: { kind: 'fund', fund: String(pool), share },
+  });
+  ctx.record(
+    'fund.launched',
+    [pool, manager],
+    {
+      fund: pool,
+      manager,
+      name,
+      // Law 3, F3: the two numbers the decision was taken on, both of them somebody else's — what a
+      // rival of this product has actually gathered, and what this manager will charge to undercut
+      // the cheapest of them.
+      copying: launch.rival,
+      expects: launch.expects,
+      feePerAnnum: launch.product.feePerAnnum,
+      earns: launch.earns,
+    },
+    true,
+  );
+}
+
+/**
+ * F3, Register F2, XI-8, item 10e.4: THE END OF A WIND-DOWN. Every share is back, every position is
+ * sold, and what is left is dust the grid could not pay out.
+ *
+ * THE DUST HAS A HOLDER, which is the whole of why this is here: a pool that ceased holding money
+ * would be a residual with nobody behind it (Law 2), and the holders it belonged to have all been
+ * paid and gone. It goes to the manager as the last thing the pool pays for being run — one
+ * two-sided instruction through the same door every other fee goes through (Law 4) — and the pool
+ * ceases to the manager, so every reference to a closed fund resolves to the house that ran it.
+ *
+ * A pool that still holds a POSITION is not finished, however long it takes: it keeps striking,
+ * keeps selling at whatever the market gives, and keeps paying its queue. Nothing here hurries it,
+ * and a wind-down nobody will buy into is a real state this world can be in (XI-2).
+ */
+function finishWindUp(ctx: MechanismContext, m: Mandate): void {
+  const pool = m.pool;
+  const share = ctx.instruments.get(shareLineOf(String(pool)));
+  if (share.issued > 0) return;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(pool).region);
+  const money = moneyInstrumentId(ctx.accountOf(pool, ccy).issuer, ccy);
+  for (const h of ctx.register.holdingsOf(pool)) {
+    if (h.instrument === money || h.instrument === share.id) continue;
+    if (ctx.register.quantity(pool, h.instrument) > 0) return;
+  }
+  const left = ctx.register.quantity(pool, money);
+  if (left > 0) payFee(ctx, m, left);
+  ctx.endAgreement(m.id, `${pool} has been wound up`);
+  ctx.cease(pool, m.manager);
+  ctx.record('fund.woundUp', [pool, m.manager], { fund: pool, manager: m.manager, dust: left }, true);
+}
+
 /**
  * A4, C1.a, C2.b: what the fund takes to market. It has exactly two reasons to be there and they
  * are opposites: cash it must put to work per its mandate, and a redemption it must find the money
  * for. The second is the forced sale (XI-2): it names no price, because it has no choice.
  */
 function ordersOf(
-  decls: readonly FundDecl[],
   view: ParticipantView,
+  mandate: Mandate,
   m: MarketDecl,
 ): readonly Order[] {
-  const d = declOf(decls, view.self.id);
-  if (d === undefined) return [];
-  // A4: a pool with no mandate is not a fund, and nothing here decides for one. It is a refusal
-  // and not a default (Part II: MISSING is an answer).
-  const mandate = mandateFor(view);
-  if (!mandate.some) return [];
   const own = view.lastOwnSince('fund.struck', view.period);
   if (!own.some) return [];
   const shortfall = own.value.data['shortfall'];
@@ -1467,23 +1511,22 @@ function ordersOf(
     // XI-2: at whatever the market gives. A forced seller that named a price would not be one.
     return [{ party: view.self.id, side: 'sell', price: 'market', qty }];
   }
-  if (spare <= 0 || !eligible(view, mandate.value, d, i)) return [];
+  if (spare <= 0 || !eligible(view, mandate, i)) return [];
   // C1.a: it must buy something with the cash, and what it will pay is what makes the paper return
   // what its own investors require of it (D2). A price it will not pay does not fill.
   const on = view.calendar.startOf(view.period);
   const family = view.registry.curveFamily(curveFamilyOf(issuerOf(i), i.ccy));
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
   if (flows.length === 0) return [];
-  const required = view.params.perAnnum(fundParam(d.fund, 'requiredYield'));
   const price = priceAt(
     flows,
-    asRatio(required, 'what it requires of this name'),
+    mandate.requiredYieldPerAnnum,
     on,
     family.dayCount,
-    `what ${i.id} is worth to ${d.fund}`,
+    `what ${i.id} is worth to ${mandate.pool}`,
   );
   if (price <= 0) return [];
-  const lines = eligibleLines(view, mandate.value, d);
+  const lines = eligibleLines(view, mandate);
   if (lines === 0) return [];
   const each = over(
     spare,
@@ -1530,7 +1573,7 @@ function holdingsWorth(view: ParticipantView): Cash {
  * used to be a field on a `FundDecl` row — a fact about this world's DATA rather than about these
  * two parties — which nothing outside this module could read and which no manager agreed to.
  */
-function eligible(view: ParticipantView, m: Mandate, d: FundDecl, i: Instrument): boolean {
+function eligible(view: ParticipantView, m: Mandate, i: Instrument): boolean {
   if (!i.status.live) return false;
   /**
    * A4, item 10e: THE ONE QUESTION, ASKED ONCE. What this pool may hold is its blueprint, and the
@@ -1557,14 +1600,14 @@ function eligible(view: ParticipantView, m: Mandate, d: FundDecl, i: Instrument)
    * own terms: a bond discounts its promise, a company capitalises what it published. A claim it
    * cannot value is one it does not buy.
    */
-  return view.worth(i.id, view.params.perAnnum(fundParam(d.fund, 'requiredYield'))).some;
+  return view.worth(i.id, m.requiredYieldPerAnnum).some;
 }
 
 /** How many lines the mandate lets it into, so what it has spare is spread over them and no more. */
-function eligibleLines(view: ParticipantView, m: Mandate, d: FundDecl): number {
+function eligibleLines(view: ParticipantView, m: Mandate): number {
   let n = 0;
   for (const i of view.instruments.all()) {
-    if (i.market.some && eligible(view, m, d, i)) n += 1;
+    if (i.market.some && eligible(view, m, i)) n += 1;
   }
   return n;
 }
@@ -1609,6 +1652,55 @@ function equityIsZero(): Family {
           unit: view.registry.currencyOf(p.region),
           period: view.period,
           message: `${p.id} has equity of ${walk.value}: a fund with equity has mislaid somebody's money`,
+        });
+      }
+      return out;
+    },
+  };
+}
+
+/**
+ * F3, A4, item 10e.4: EVERY POOL IS RUN BY SOMEBODY, and the manager it names is a party that is
+ * still there.
+ *
+ * *"There is no fund without a manager"* (the owner). It used to be true by construction — the
+ * roster was declared and every row named one — and it stopped being true by construction the
+ * moment pools could be opened and closed while the world runs: a launch that entered the party and
+ * failed to write the mandate, or a manager that ceased with pools still on its book, would leave a
+ * pool with an account, holdings, and NOBODY DECIDING FOR IT. Nothing would throw; the pool would
+ * simply never appear in `livingPools` again and its holders' money would sit there.
+ *
+ * A FORBID that holds is as valuable as a mechanism that works, and it breaks silently (Part II) —
+ * which is exactly this. The size is the pool's own book, because that is what has no decider.
+ */
+function everyPoolIsRun(): Family {
+  return {
+    name: 'names',
+    contributor: 'funds',
+    spec: 'Fund Shares F3',
+    built: true,
+    check: (view) => {
+      const out: Violation[] = [];
+      for (const p of view.parties.ofKind(FUND)) {
+        if (!p.status.alive) continue;
+        const run = view.agreements
+          .ofKind(MANDATE)
+          .find((a) => a.state === 'performing' && a.debtor === p.id);
+        const gone =
+          run !== undefined && (!view.parties.has(run.creditor) || !view.parties.get(run.creditor).status.alive);
+        if (run !== undefined && !gone) continue;
+        out.push({
+          family: 'names',
+          spec: 'Fund Shares F3',
+          owner: p.id,
+          // What has no decider is the pool's whole book, which is what the holders own (A3).
+          size: view.register.holdingsOf(p.id).length,
+          unit: 'positions with nobody deciding for them',
+          period: view.period,
+          message:
+            run === undefined
+              ? `${p.id} is a live pool under no mandate: there is no fund without a manager`
+              : `${p.id} is run by ${run.creditor}, which has ceased`,
         });
       }
       return out;
@@ -1683,7 +1775,7 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
   const bank = ctx.parties.get(e.bank as PartyId);
   const region = ctx.registry.region(bank.region);
   for (const [id, kind, name] of [
-    [e.fund, FUND, nameOf(e)],
+    [e.fund, FUND, nameOf({ ...e, house: e.bank })],
     [e.manager, FUND_MANAGER, e.managerName],
   ] as const) {
     // Seed B2, Law 4: ONE PARTY, NAMED ONCE. A manager runs more than one fund — that is what a
@@ -1716,7 +1808,7 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
   });
   ctx.openMarket({
     id: market,
-    name: `${nameOf(e)} shares`,
+    name: `${nameOf({ ...e, house: e.bank })} shares`,
     instrument: share,
     ccy: ctx.registry.currencyOf(region.id),
     rationing: 'proRata',
@@ -1726,7 +1818,7 @@ function seedInKind(ctx: SeedContext, e: FundDecl): void {
   // it runs it itself (Clearing B2).
   ctx.openVenue({
     id: inKindVenue(e.fund),
-    name: `${nameOf(e)} creations and redemptions`,
+    name: `${nameOf({ ...e, house: e.bank })} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
     ccy: ctx.registry.currencyOf(region.id),
@@ -1869,8 +1961,19 @@ export function funds(
    * Item 10e: ONE LIST. It was `(decls, etfs)` — two lists of two declaration types, which is the
    * module saying there are two kinds of thing here before a single line of behaviour runs. There
    * is one: a pool with a mandate, and what it DOES follows from that mandate's terms.
+   *
+   * Item 10e.4, Seed A3: AND IT IS AN OPENING CONDITION. These are the pools this world OPENS with,
+   * the way the bank draw is the balance sheets it opens with. Nothing reads this list after the
+   * seed has written the mandates: the pools that exist are the mandates that are performing, and
+   * from period one that set is what managers opened and closed.
    */
   decls: readonly FundDecl[],
+  /**
+   * F3, item 10e.4: THE HOUSES. A manager is a business with its own preferences — what it will
+   * give up to win a mandate, and how long it gives a product it opened — and they are declared
+   * here rather than derived from a pool, because a house runs several and outlives any of them.
+   */
+  managers: readonly ManagerDecl[],
 ): SystemModule {
   /**
    * G1.a, E1: the ones whose shares TRADE and whose investors come and go in kind — read off the
@@ -1900,7 +2003,10 @@ export function funds(
     spec: 'Fund Shares, XI-2',
     // Its investors are households (D2), a fund that fails resolves through the same estate as
     // anything else (XI-3), and it banks somewhere — so all three are there before it opens.
-    requires: ['households', 'estate', 'seed.foundation', ...needs],
+    // Item 10e.4: AND LABOUR, because a manager employs people. The pools are the demand side of
+    // this world's markets; the HOUSES that run them are on the buy side of its labour market, in a
+    // trade that had a venue in every region and nobody bidding in it until now.
+    requires: ['households', 'estate', 'labour', 'seed.foundation', ...needs],
     instrumentKinds: [fundShareKind],
     partyKinds: [fundKind, fundManagerKind],
     curveFamilies: [],
@@ -1908,8 +2014,22 @@ export function funds(
     // count is what a claim on a book and a claim on a firm are both counted in (Equity A2), and
     // two modules cannot each introduce it — so it is registry data and this module only uses it.
     units: [],
-    params: paramsOf(decls),
+    params: paramsOf(managers),
     phases: [
+      {
+        /**
+         * F3, Labour A2, Seed A3, item 10e.4: THE MANAGER'S OWN PERIOD - what it closed, and what
+         * it opened. BEFORE the strike, because a pool given notice today is redeemed at today's
+         * NAV and a pool opened today publishes one, and both are things the strike does.
+         */
+        name: 'funds.manager',
+        spec: 'Fund Shares A4 Fund Shares B3 Fund Shares F3 Fund Shares G1 Seed A3',
+        cycle: 0,
+        anchor: { before: 'funds.strike' },
+        run: (ctx: MechanismContext) => {
+          runManagers(ctx);
+        },
+      },
       {
         name: 'funds.strike',
         spec: 'Fund Shares B1 Fund Shares B3 Fund Shares C1 Fund Shares C2 Fund Shares C2.b',
@@ -1919,7 +2039,7 @@ export function funds(
         anchor: { after: 'households.decide' },
         run: (ctx: MechanismContext) => {
           const b = book(ctx);
-          for (const d of decls) strike(ctx, b, d);
+          for (const m of livingPools(ctx)) strike(ctx, b, m);
         },
       },
       {
@@ -1934,7 +2054,7 @@ export function funds(
         // central bank pays that for cash it takes in, and nothing it lends should earn less.
         anchor: { after: 'funds.strike' },
         run: (ctx: MechanismContext) => {
-          for (const d of decls) placeSpareCash(ctx, d);
+          for (const m of livingPools(ctx)) placeSpareCash(ctx, m);
         },
       },
       {
@@ -1944,7 +2064,7 @@ export function funds(
         anchor: { after: 'markets' },
         run: (ctx: MechanismContext) => {
           const b = book(ctx);
-          for (const d of decls) payQueue(ctx, b, d);
+          for (const m of livingPools(ctx)) payQueue(ctx, b, m);
         },
       },
       {
@@ -1959,7 +2079,10 @@ export function funds(
           for (const d of listed) launchInKind(ctx, d);
           // E3.a: a vehicle whose index has not answered yet has not been launched, and there is
           // nothing of it to run. It is not absent — it is declared and waiting for its own rule.
-          for (const d of listed) if (ctx.parties.has(d.fund as PartyId)) runInKind(ctx, d);
+          for (const m of livingPools(ctx)) {
+            const d = declOf(listed, String(m.pool));
+            if (d !== undefined) runInKind(ctx, m, d);
+          }
         },
       },
       {
@@ -1970,10 +2093,17 @@ export function funds(
         // premium is a read of that NAV against what the session printed (Clearing F1.a).
         anchor: { after: 'revaluation' },
         run: (ctx: MechanismContext) => {
-          for (const d of listed) if (ctx.parties.has(d.fund as PartyId)) readListed(ctx, d);
+          for (const m of livingPools(ctx)) {
+            const d = declOf(listed, String(m.pool));
+            if (d !== undefined) readListed(ctx, m, d);
+          }
         },
       },
     ],
+    // Labour A1, A3, D1, item 10e.4: a manager wants the hours its pools take, in the `analysis`
+    // trade, at what an hour is worth to it - and it is matched by the same rule as a bank or a
+    // baker. Until this existed the trade had a venue in every region and NOBODY on the bid side.
+    venueParticipants: [{ partyKind: FUND_MANAGER, orders: staffOrders }],
     participants: [
       {
         partyKind: FUND,
@@ -1995,16 +2125,16 @@ export function funds(
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           const mandate = mandateFor(view);
           if (!mandate.some || !view.self.status.alive) return [];
-          if (mandate.value.tracks.some) return passiveOrders(decls, view, m);
+          if (mandate.value.tracks.some) return passiveOrders(view, mandate.value, m);
           // Law 4: `holdsThings` is the one writer of "is this a mandate over things" — and it is
           // the one that gets the empty case right, because a blueprint that states NO class band
           // holds anything and `[].every(...)` would have called that a commodity fund.
-          if (holdsThings(mandate.value.blueprint)) return thingOrders(decls, view, m);
-          return ordersOf(decls, view, m);
+          if (holdsThings(mandate.value.blueprint)) return thingOrders(view, mandate.value, m);
+          return ordersOf(view, mandate.value, m);
         },
       },
     ],
-    families: [equityIsZero(), noRequestVanishes(state)],
+    families: [equityIsZero(), noRequestVanishes(state), everyPoolIsRun()],
     // A1.c: both kinds are wholesale money and both leave for the same reasons (the manager runs
     // the money and banks like the money it runs), so one reason answers for both.
     agreementKinds: [
@@ -2033,7 +2163,7 @@ export function funds(
     seed(ctx: SeedContext): void {
       for (const d of decls) {
         for (const [id, kind, name] of [
-          [d.fund, FUND, nameOf(d)],
+          [d.fund, FUND, nameOf({ ...d, house: d.bank })],
           [d.manager, FUND_MANAGER, d.managerName],
         ] as const) {
           ctx.parties.add({
@@ -2051,19 +2181,7 @@ export function funds(
         // was set up by somebody, on terms, and a seed states an opening STOCK (Seed A3) — so the
         // commitment is as much part of the opening as the share line is. The pool owes the manager
         // its fee; it owes nothing yet, because the fee falls due at the end of a period.
-        openMandate(
-          ctx,
-          d.fund as PartyId,
-          d.manager as PartyId,
-          ccy,
-          // Item 10e: SINGLE OR MULTI CURRENCY is a term of the mandate, and a single-currency one
-          // names ITS OWN money — which is where the fund is, not a field declared beside it.
-          d.ownCurrencyOnly ? { ...d.blueprint, currencies: [ccy] } : d.blueprint,
-          d.liquidity,
-          // C2: these are ACTIVE — a money fund and a credit fund pick within their blueprint on
-          // their own view of what they require, which is why two of them bid different levels.
-          none<string>(),
-        );
+        openMandate(ctx, d.fund as PartyId, d.manager as PartyId, ccy, productOf(d, ccy));
         const terms: FundShareTerms = { kind: FUND_SHARE, fund: d.fund as PartyId };
         ctx.instruments.add({
           id: shareLineOf(d.fund),
@@ -2078,7 +2196,7 @@ export function funds(
         // that owns it runs it itself rather than the solver.
         const venue: VenueDecl = {
           id: fundVenue(d.fund),
-          name: `${nameOf(d)} subscriptions and redemptions`,
+          name: `${nameOf({ ...d, house: d.bank })} subscriptions and redemptions`,
           clearedBy: 'funds',
           unit: SHARES,
           ccy,

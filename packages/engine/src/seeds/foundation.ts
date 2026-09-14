@@ -157,7 +157,13 @@ import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
 import { FUND, funds } from '../mechanisms/funds/index.js';
-import { drawTrackers, drawFunds, type FundDecl } from '../mechanisms/funds/data.js';
+import {
+  drawTrackers,
+  drawFunds,
+  drawManagers,
+  type FundDecl,
+  type ManagerDecl,
+} from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
 import { fxMarketOf, pairsOf, spotFx } from '../mechanisms/spot-fx/index.js';
@@ -2179,6 +2185,12 @@ export interface FoundationDraw {
   readonly listed: readonly ListedDecl[];
   readonly funds: readonly FundDecl[];
   readonly trackers: readonly FundDecl[];
+  /**
+   * F3, Seed A3 (item 10e.4): the HOUSES that run them. Drawn from the pools this world opens with
+   * — a manager exists because something names it, never the other way round — and each with its
+   * own preferences, so two houses compete rather than repeat one number.
+   */
+  readonly managers: readonly ManagerDecl[];
 }
 
 export function foundationDraw(
@@ -2190,14 +2202,10 @@ export function foundationDraw(
 ): FoundationDraw {
   const names = bankRows.map((b) => b.bank);
   const listed = drawListed(firmRows, bankRows, seed);
-  return {
-    banks: bankRows,
-    firms: firmRows,
-    listed,
-    funds: drawFunds(bankRows, seed),
-    // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
-    // declares it. The seed is where the two meet, because it is the only place that may know both.
-    trackers: drawTrackers(
+  const pools = drawFunds(bankRows, seed);
+  // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
+  // declares it. The seed is where the two meet, because it is the only place that may know both.
+  const trackers = drawTrackers(
       listed.map((r) => String(equityLineOf(r.firm))),
       names,
       seed,
@@ -2225,7 +2233,16 @@ export function foundationDraw(
         SIZE_INDEX(REGION, 'small'),
         GLOBAL_INDEX(USD),
       ],
-    ),
+    );
+  return {
+    banks: bankRows,
+    firms: firmRows,
+    listed,
+    funds: pools,
+    trackers,
+    // F3 (item 10e.4): the houses, drawn from the pools that name them. Trackers included: the
+    // index house is a manager like any other and competes for the same people.
+    managers: drawManagers([...pools, ...trackers], seed),
   };
 }
 
@@ -2656,7 +2673,7 @@ export function foundationSpec(
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
       equity(drew.listed, seed),
-      funds([...drew.funds, ...drew.trackers]),
+      funds([...drew.funds, ...drew.trackers], drew.managers),
       // 13f, Securities Lending A1-A3: title passes and the economics do not. After equity and the
       // funds, because what is lent is the paper they hold and the desks that need to deliver it
       // are the ones that make its market.

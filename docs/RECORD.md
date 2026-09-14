@@ -8119,3 +8119,105 @@ never a display name. The display name is derived from the mandate now.
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4 over 209 files,
 `check:deaths` 5 of 5, `check:existence` green. Tests written and updated, not run.
+
+---
+
+## Item 10e, fifth stage — the manager is a business, and the roster of funds is an outcome
+
+**The largest declared equilibrium left in this sector.** `drawFunds` returned a roster and every
+phase in the module walked it, which said that the set of funds in this world is fixed for ever and
+was decided before anybody in it had done anything (Law 2). A manager had ONE pool, no cost of any
+kind, and a fee that was a PLACEHOLDER whose own reason named the missing mechanism: *"no manager
+competes for the mandate, so the number stands where a competition should be… the missing mechanism
+is a manager with a cost base"*. This is that mechanism, and the placeholder is dead —
+`check:deaths` counts four scheduled deaths where it counted five.
+
+**THE RUN-TIME OBJECT IS THE MANDATE, NOT THE DECLARATION.** Every phase asks `livingPools(ctx)` —
+the performing mandates — so the pools that exist are the pools somebody is running, and the draw is
+an OPENING CONDITION (Seed A3), the way the bank draw is the balance sheets this world opens with.
+Nothing reads the declaration after the seed has written the mandates. That one change is what made
+a launch possible at all: a pool that did not exist at assembly could never have been struck, placed
+its cash, or paid anybody.
+
+**And so the mandate carries the whole product.** `feePerAnnum`, `buffer` and
+`requiredYieldPerAnnum` moved from the parameter register onto `MandateTerms`, which is where they
+belong: they are what two named parties agreed, the way a loan's rate is on the loan. Three per-fund
+parameters are gone, `fundParam` is gone, and `paramsOf` no longer takes the roster. A parameter
+could not have been any of them anyway — parameters are declared at assembly, so a fund launched in
+period forty could never have had one.
+
+**What a manager now does, all three with real numbers on both sides:**
+
+- **It employs.** Running a pool takes people, and `analysis` — *"research and credit analysis"*,
+  declared at 13d for a bank's credit desk — was a trade with a venue in every region and **nobody
+  on the bid side**. A manager posts openings there at what an hour is worth to it (its fee income
+  over the hours its pools take) and is matched by the same rule as a bank or a baker. A bank's
+  analysts and a manager's now compete for the same people, which links the two halves of this
+  world's finance industry through one trade.
+- **It winds a pool up** when the fee that pool pays stops covering what running it costs. Notice is
+  a STATE of the mandate and not its end — a pool with no mandate has nobody deciding for it, and
+  its holders and its book would both still be there. From there it is the machinery that was
+  already here: every holder goes on the redemption queue at the struck NAV, the pool sells what it
+  must at whatever the market gives (C2.a, XI-2), and when the last share is back and the book is
+  empty the mandate ends and the pool ceases to its manager. **A wind-down is a forced sale of a
+  whole book**, which is a channel this sector did not have.
+- **It launches one** by copying a product it can SEE working: a blueprint somebody else runs, at the
+  smallest book any of them has actually gathered, at a fee under the cheapest of them. If that
+  covers what a pool costs it, it opens one. It cannot invent a product nobody runs — nothing would
+  tell it what such a thing would gather, and a manager that guessed would be a forecast with no
+  falsification (Law 17).
+
+**Fees fall where several managers run the same blueprint, and NOTHING BOUNDS THE FALL.** Each
+entrant comes in under the cheapest incumbent by its own drawn `undercut`; what stops entry is that
+the next entrant's fee would no longer cover what a pool costs it in people, so it does not open
+one. The refusal is the mechanism (Law 6). Two more preferences are drawn per house — `undercut` and
+`patience`, how long it gives a product before judging it — because two managers with the same
+preferences are one manager with two names (the argument the ratings module already makes about
+assessors).
+
+**One house per bank, running everything it sponsors.** Every pool used to get a manager of its own,
+and the comment that did it argued *"two funds at one bank are not one business: a shared name would
+be two funds' fees arriving in one account nobody could take apart (Law 4)"*. **That was wrong.** Two
+funds' fees arriving in one account is what an asset manager IS; what takes them apart is the
+`fund.fee` event, which names the pool and the manager on every payment. What the old shape cost was
+everything this step is about: a manager with one pool has no book of business, cannot spread the
+cost of its people, cannot lose one product and keep another, and cannot be bigger than a rival.
+
+**Three defects, found by reading, all closed here:**
+
+- **`E-20`, and it stops the build.** `offeredYield` read `fundParam(fund, 'maxTenorPeriods')` — the
+  tenor parameter the blueprint language replaced at 10e.2 and which nothing has declared since. A
+  read of an undeclared parameter throws, and this one is in the strike of every fund in the world.
+  Fixed where it stands, as the rules require: the longest thing a mandate lets a pool hold is its
+  duration BAND, in years, which is the number a curve is asked at anyway — so the tenor in periods,
+  the date it came to, and the year fraction back out of that date all went with it.
+- **`E-19`: the wage read was written twice and the copies disagreed about the key.** The firm's
+  keyed the going rate by the venue id, which is what `publishGoingRate` writes; the bank's keyed it
+  by `region|occupation`, which has never existed — so a bank with no payroll of its own could never
+  fall back to the published rate and put NO staff cost in any quote it made. A manager costing a
+  pool would have been the third copy. It is `registry/wages.ts` now, beside `storageRateIn`, and
+  both copies are deleted (Law 12: the fix removes code).
+- **`E-21`: a saver committed one budget to every fund it could reach.** `fundOrders` posted a buy
+  for the whole of a cell's spare cash at every fund whose offer cleared what it required. Nothing
+  was created — the wire refused the rest for want of money — but which fund got a saver's money was
+  decided by the order the venue list happened to be in. It would also have made this whole step
+  pointless: undercutting a rival wins nothing from a saver that subscribes to everything regardless,
+  and a fee nobody can lose business over is not a price.
+
+**Two more things this deleted.** `liquidityOf` walked the agreement store to find a term the caller
+already had in its hand, and it is gone; and the fee arithmetic now has one writer (`feeOn`), asked
+by the pool with what its own register says and by a manager with what a rival PUBLISHED — two
+sources, one formula, which is the distinction Law 4 actually cares about.
+
+**New: `funds.everyPoolIsRun`** in the `names` family. *"There is no fund without a manager"* used to
+be true by construction and stopped being so the moment pools could be opened and closed mid-run: a
+launch that entered the party and failed to write the mandate would leave a pool with an account,
+holdings and nobody deciding for it, and nothing would throw. A FORBID that holds is as valuable as
+a mechanism that works, and it breaks silently.
+
+**Also extracted: `funds/mandate.ts`.** The mandate was inside `index.ts`, which was fine while the
+module's only reader was its own phases. The manager reads it too, and a file both `index.ts` and
+`manager.ts` import values from cannot be either of them.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files,
+`check:deaths` 4 of 4, `check:existence` green. Tests written and updated, not run.

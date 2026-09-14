@@ -23,8 +23,6 @@
  */
 import {
   asAmount,
-  asCash,
-  asPerPiece,
   asRatio,
   heldAsMoney,
   over,
@@ -43,7 +41,8 @@ import { asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { period as periodOf, type Period } from '../../calendar/calendar.js';
+import { payrollSince, wageFacing as facingIn } from '../../registry/wages.js';
+import { period as periodOf } from '../../calendar/calendar.js';
 
 /** A3: the trade a bank's lending staff are in. Data, and the venue is found by it. */
 export const BANKING = 'banking';
@@ -87,43 +86,21 @@ export function hoursNeeded(view: ParticipantView): Qty {
 }
 
 /**
- * A-33, Law 8: THE PERIOD A WAGE BILL IS STILL CURRENT IN. `labour.pay` settles in cycle 2, so a
- * reader before it means the bill of the period before and one after it means this period's own.
- * Anything older belongs to a desk that has paid NOBODY since — `payWages` writes only for an
- * employer with rows — and `linesCovered` read it as current, so a desk that shed its staff went on
- * quoting the lines its last payroll covered for ever (A-60).
- */
-function payrollSince(at: Period): Period {
-  return at > 0 ? periodOf(at - 1) : at;
-}
-
-/**
- * Labour D1.c, Expectations A2.a: what an hour of this trade costs, as this bank can see it — what
- * its OWN wage bill came to per hour where it has one, and the published going rate where it has
- * not. A bank that has neither has no idea what staff cost and cannot put a cost in its quote.
+ * Labour D1.c, Expectations A2.a: what an hour of this trade costs, as this bank can see it, asked
+ * of the venue it would hire in.
+ *
+ * ITEM 10e.4, FINDING `E-19`: THIS WAS A SECOND COPY AND IT HAD THE WRONG KEY. It looked the going
+ * rate up under `region|occupation`; `publishGoingRate` writes it under the VENUE's id. So the
+ * fallback could never hit, and a bank that had never met a payroll concluded it could not price an
+ * hour and put NO staff cost into any quote it made — for as long as it had no staff of its own,
+ * which is exactly when the published rate is the only thing there is to go on. The read is the
+ * registry's now, and every employer in this world asks the same one (Law 4).
  */
 export function wageFacing(view: ParticipantView, occupation: string): PerPiece | undefined {
-  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
-  if (own.some) {
-    const due = own.value.data['due'];
-    const hours = own.value.data['hours'];
-    if (typeof due === 'number' && typeof hours === 'number' && hours > 0) {
-      // Item 16: its own wage bill re-enters here — what it paid, over the hours it paid for.
-      return pricedAt(
-        asCash(due, 'what its wage bill came to'),
-        asAmount<'piece'>(hours, 'the hours it paid for'),
-        'what an hour cost it',
-      );
-    }
-  }
-  const published = view.lastPublic('labour.goingRate');
-  if (!published.some) return undefined;
-  const rates = published.value.data['wagePerHour'];
-  if (typeof rates !== 'object' || rates === null) return undefined;
-  const here = (rates as Record<string, unknown>)[`${String(view.self.region)}|${occupation}`];
-  return typeof here === 'number' && here > 0
-    ? asPerPiece(here, 'what an hour cleared at where it is')
-    : undefined;
+  const venue = findVenue(view.venues, { region: String(view.self.region), occupation });
+  if (venue === undefined) return undefined;
+  const facing = facingIn(view, view.period, venue.id);
+  return facing.some ? facing.value : undefined;
 }
 
 /**

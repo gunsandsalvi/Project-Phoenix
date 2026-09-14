@@ -8,10 +8,10 @@
  * order for something outside it, which is why a flow into a fund becomes a purchase of exactly
  * what the mandate allows and nothing else. That is what makes a fund a transmission channel.
  */
-import { paramId, type ParamId } from '../../core/ids.js';
+import { paramId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import type { Blueprint } from '../../registry/blueprint.js';
-import type { Liquidity } from './index.js';
+import type { Liquidity } from './mandate.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
 
@@ -129,8 +129,20 @@ export interface InKindLaunch {
  * It reads the mandate and nothing else, so a fund whose blueprint changes is renamed by the same
  * change and cannot drift from what it does.
  */
-export function nameOf(d: Pick<FundDecl, 'blueprint' | 'liquidity' | 'tracks' | 'bank'>): string {
-  if (d.tracks !== undefined) return `${d.bank} ${d.tracks} tracker`;
+export interface Named {
+  readonly blueprint: Blueprint;
+  readonly tracks?: string;
+  /**
+   * Item 10e.4: WHOSE IT IS. A pool this world OPENS with is named for the bank that sponsored it,
+   * which is how a bank-sponsored fund is named; one a manager LAUNCHES is named for the manager,
+   * because there is nobody else it belongs to. Either way it is a house's name in front of what
+   * the mandate says the fund does, which is how a market names a fund (Law 9).
+   */
+  readonly house: string;
+}
+
+export function nameOf(d: Named): string {
+  if (d.tracks !== undefined) return `${d.house} ${d.tracks} tracker`;
   const what = d.blueprint.classes;
   const short = d.blueprint.duration?.to !== undefined && d.blueprint.duration.to <= 1;
   const of =
@@ -143,10 +155,8 @@ export function nameOf(d: Pick<FundDecl, 'blueprint' | 'liquidity' | 'tracks' | 
           : short
             ? 'Money'
             : 'Credit';
-  return `${d.bank} ${of} Fund`;
+  return `${d.house} ${of} Fund`;
 }
-
-export const fundParam = (fund: string, what: string): ParamId => paramId(`fund.${what}.${fund}`);
 
 export const FUND_PARAMS = {
   openingShare: paramId('fund.openingSharePrice'),
@@ -287,6 +297,79 @@ export const CREDIT_SPREAD: Spread = {
   why: 'Fund Shares D2.a: what a credit fund\u2019s investors require of it per annum, which is what it will pay for a company\u2019s paper. Its investor is taking credit and duration rather than choosing against a deposit, so it requires several times what a money fund\u2019s investor does \u2014 and the SPREAD between two of them is what makes a corporate book have two bidders at different levels instead of one number everybody shares.',
 };
 
+/**
+ * F3, Labour A2, item 10e.4: THE HOUSES THAT RUN THE POOLS — a manager is a business, and what it
+ * is drawn with is what makes two of them different businesses rather than one with two names.
+ */
+export interface ManagerDecl {
+  readonly manager: string;
+  readonly name: string;
+  /**
+   * F3, D2: WHAT IT GIVES UP TO BE CHOSEN. An entrant copying somebody's product has exactly one
+   * lever — price — and this is how hard it pulls it: the share it comes in under the cheapest
+   * fee anybody already charges for that product. It is a PREFERENCE (Law 2) and not an outcome:
+   * how much margin a house will sacrifice for scale is a fact about the house.
+   *
+   * It is what makes fees FALL where several managers run the same blueprint, and what stops them
+   * falling is not a floor — it is that the next entrant's fee would no longer cover what a pool
+   * costs it in people, so it does not open one (Law 6: the refusal is the mechanism).
+   */
+  readonly undercut: number;
+  /**
+   * F3: HOW LONG IT GIVES A NEW PRODUCT. A pool opened this week has been offered to nobody yet —
+   * the strike publishes it, a saver reads that and decides the week after — so a manager that
+   * judged it immediately would close every fund it ever opened.
+   *
+   * Drawn, because two managers with the same patience are one manager with two names (Ratings
+   * A4.b, and it is the reason this world's assessors are deliberately unalike).
+   */
+  readonly patience: number;
+}
+
+/**
+ * Labour A2, A3: WHAT RUNNING ONE POOL TAKES, in hours of the `analysis` trade per period.
+ *
+ * TECHNOLOGY (Law 2): somebody forms the views, somebody deals, somebody answers for the pool to
+ * its holders, and that is about as much work for a small pool as for a large one — which is the
+ * whole economics of this industry, because the FEE is on the assets. Sixty hours is under two
+ * people at the 35-hour week this world's people work (`LABOUR_NUMBERS.hoursPerMember`).
+ */
+export const MANAGER_NUMBERS = { hoursPerPool: 60 } as const;
+
+export const MANAGER_SPREAD: Readonly<Record<'undercut' | 'patience', Spread>> = {
+  undercut: {
+    low: 0.05,
+    high: 0.3,
+    why: 'Fund Shares F3, D2: the share a manager comes in under the cheapest fee anybody charges for the product it is copying. Price is the only lever an entrant has, and how hard a house pulls it is its own preference \u2014 which is what makes two managers two bidders for the same saver rather than one number repeated.',
+  },
+  patience: {
+    low: 4,
+    high: 26,
+    why: 'Fund Shares F3: periods a manager gives a pool it opened before it judges whether the fee covers what running it costs. A month at the short end and half a year at the long, and the difference between two houses is the difference between one that pulls a product that has not caught on and one that gives it a year \u2014 which decides which of them is still running it when it does.',
+  },
+};
+
+/**
+ * F3, Seed A3: the houses this world opens with, one per fund it opens — read off the pools, so a
+ * manager exists because something names it and never the other way round (Law 4).
+ */
+export function drawManagers(rows: readonly FundDecl[], seed: string): readonly ManagerDecl[] {
+  const rng = prng(seed, 'managers');
+  const out: ManagerDecl[] = [];
+  const seen = new Set<string>();
+  for (const r of [...rows].sort((a, b) => (a.manager < b.manager ? -1 : 1))) {
+    if (seen.has(r.manager)) continue;
+    seen.add(r.manager);
+    out.push({
+      manager: r.manager,
+      name: r.managerName,
+      undercut: between(rng, MANAGER_SPREAD.undercut),
+      patience: Math.round(between(rng, MANAGER_SPREAD.patience)),
+    });
+  }
+  return out;
+}
+
 export const FUND_SPREAD: Readonly<Record<'buffer' | 'requiredYield' | 'fee', Spread>> = {
   buffer: {
     low: 0.05,
@@ -315,13 +398,33 @@ export function drawFunds(
 ): readonly FundDecl[] {
   const rng = prng(seed, 'funds');
   const out: FundDecl[] = [];
+  /**
+   * F3, item 10e.4: ONE HOUSE PER BANK, RUNNING EVERYTHING IT SPONSORS.
+   *
+   * Every pool used to be given a manager of its own — `manager.x`, `manager.credit.x`,
+   * `manager.physical.x` — and the comment that did it argued *"two funds at one bank are not one
+   * business: a shared name would be two funds' fees arriving in one account nobody could take
+   * apart (Law 4)"*. THAT WAS WRONG, and it is worth saying why rather than quietly changing it.
+   * Two funds' fees arriving in one account is what an asset manager IS; what takes them apart is
+   * the `fund.fee` event, which names the pool and the manager on every payment, and an event is a
+   * writer of a fact in the way a party id is not.
+   *
+   * What the old shape actually cost was everything this item is about: a manager with one pool has
+   * no book of business, so it cannot spread the cost of its people, cannot lose one product and
+   * keep another, and cannot be bigger or smaller than a rival. An industry of one-fund firms has
+   * no scale in it, and scale is most of what asset management is.
+   */
+  const houseOf = (bank: string): string => `manager.${bank}`;
+  // Law 4, Law 9: one writer of what the house is CALLED. Two rows that named one manager two
+  // things would give the party whichever name the seed reached first, silently.
+  const houseName = (bank: string): string =>
+    `North Asset Management ${banks.findIndex((x) => x.bank === bank) + 1}`;
   for (const b of banks) {
     if (b.size < SPONSOR_SIZE) continue;
-    const at = out.length + 1;
     out.push({
       fund: `fund.money.${b.bank}`,
-      manager: `manager.${b.bank}`,
-      managerName: `North Asset Management ${at}`,
+      manager: houseOf(b.bank),
+      managerName: houseName(b.bank),
       bank: b.bank,
       /**
        * D1, Short-Term Debt C1, C2: SHORT GOVERNMENT PAPER AND HIGH-GRADE COMMERCIAL PAPER, which
@@ -372,8 +475,11 @@ export function drawFunds(
     if (b.size < WIDE_SPONSOR_SIZE) continue;
     out.push({
       fund: `fund.credit.${b.bank}`,
-      manager: `manager.credit.${b.bank}`,
-      managerName: `North Credit Management ${out.length + 1}`,
+      // F3: the SAME HOUSE that runs the money fund at this bank. A credit fund is a second product
+      // on the same shelf — different mandate, same people, same fee income — which is what lets a
+      // manager carry a small product on a large one and what makes losing one survivable.
+      manager: houseOf(b.bank),
+      managerName: houseName(b.bank),
       bank: b.bank,
       /**
        * A4: A COMPANY'S PAPER, in the three shapes this world issues it in — a bond (item 10), its
@@ -406,11 +512,9 @@ export function drawFunds(
   if (sponsor !== undefined) {
     out.push({
       fund: `fund.physical.${sponsor.bank}`,
-      // F3: its own manager, and a separate party. Two funds at one bank are not one
-      // business: the fee is this manager's income and the fund's cost, and a shared name would
-      // be two funds' fees arriving in one account nobody could take apart (Law 4).
-      manager: `manager.physical.${sponsor.bank}`,
-      managerName: 'North Real Assets',
+      // F3, item 10e.4: the same house again, and its third product.
+      manager: houseOf(sponsor.bank),
+      managerName: houseName(sponsor.bank),
       bank: sponsor.bank,
       // A4: a mandate of PHYSICAL things and nothing else. What makes it a commodity fund is that
       // every asset it may hold is one NOBODY ISSUED — which the classification reads off the

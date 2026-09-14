@@ -47,7 +47,6 @@ import type { CellSide, Leg } from '../../ledger/instruction.js';
 import { shareFor } from '../../ledger/settlement.js';
 import { weightOf, type Party } from '../../parties/party.js';
 import type { MechanismContext } from '../../world/context.js';
-import { inKindOf, type FundDecl } from './data.js';
 
 /** One line of a creation unit: how many units of it back one share (E3). */
 export interface BasketLine {
@@ -71,8 +70,12 @@ export interface BasketLine {
  * read the book, do not restate it). Before there is a book, it is the basket the fund was launched
  * with, which is the one thing anybody could go on.
  */
-export function basketOf(ctx: MechanismContext, d: FundDecl, share: InstrumentId): BasketLine[] {
-  const fund = d.fund as PartyId;
+export function basketOf(
+  ctx: MechanismContext,
+  fund: PartyId,
+  launch: Readonly<Record<string, number>>,
+  share: InstrumentId,
+): BasketLine[] {
   const issued = ctx.instruments.get(share).issued;
   const out: BasketLine[] = [];
   if (issued > 0) {
@@ -95,7 +98,7 @@ export function basketOf(ctx: MechanismContext, d: FundDecl, share: InstrumentId
     }
     return out;
   }
-  for (const [line, perShare] of Object.entries(inKindOf(d).basket)) {
+  for (const [line, perShare] of Object.entries(launch)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
     const mark = lastMark(ctx, id);
@@ -161,12 +164,13 @@ function onGrid(
  */
 export function create(
   ctx: MechanismContext,
-  d: FundDecl,
+  fund: PartyId,
+  launch: Readonly<Record<string, number>>,
   share: InstrumentId,
   party: PartyId,
   wanted: Qty,
 ): boolean {
-  const basket = basketOf(ctx, d, share);
+  const basket = basketOf(ctx, fund, launch, share);
   if (basket.length === 0 || wanted <= 0) return false;
   if (!(basketValue(basket) > 0)) return false;
   const holder = ctx.parties.get(party);
@@ -187,7 +191,7 @@ export function create(
     legs.push({
       kind: 'asset',
       from: party,
-      to: d.fund as PartyId,
+      to: fund,
       instrument: line.instrument,
       qty: units,
       pricePerUnit: some(line.markPerUnit),
@@ -200,7 +204,7 @@ export function create(
   const perShare = pricedAt(sum(delivered).value, shares, 'what a share was issued at');
   legs.push({
     kind: 'asset',
-    from: d.fund as PartyId,
+    from: fund,
     to: party,
     instrument: share,
     qty: shares,
@@ -216,8 +220,8 @@ export function create(
   });
   ctx.record(
     'fund.created',
-    [d.fund, party, share],
-    { fund: d.fund, by: party, shares, perShare, settled: r.outcome === 'settled' },
+    [fund, party, share],
+    { fund, by: party, shares, perShare, settled: r.outcome === 'settled' },
     true,
   );
   return r.outcome === 'settled';
@@ -230,12 +234,13 @@ export function create(
  */
 export function redeemInKind(
   ctx: MechanismContext,
-  d: FundDecl,
+  fund: PartyId,
+  launch: Readonly<Record<string, number>>,
   share: InstrumentId,
   party: PartyId,
   wanted: Qty,
 ): boolean {
-  const basket = basketOf(ctx, d, share);
+  const basket = basketOf(ctx, fund, launch, share);
   if (basket.length === 0 || wanted <= 0) return false;
   if (!(basketValue(basket) > 0)) return false;
   const holder = ctx.parties.get(party);
@@ -256,10 +261,10 @@ export function redeemInKind(
     );
     const units = got.total;
     if (!material(units, 2, units)) return false;
-    if (ctx.register.free(d.fund as PartyId, line.instrument) < units) return false;
+    if (ctx.register.free(fund, line.instrument) < units) return false;
     legs.push({
       kind: 'asset',
-      from: d.fund as PartyId,
+      from: fund,
       to: party,
       instrument: line.instrument,
       qty: units,
@@ -274,7 +279,7 @@ export function redeemInKind(
   legs.unshift({
     kind: 'asset',
     from: party,
-    to: d.fund as PartyId,
+    to: fund,
     instrument: share,
     qty: shares,
     pricePerUnit: some(perShare),
@@ -289,8 +294,8 @@ export function redeemInKind(
   });
   ctx.record(
     'fund.redeemed',
-    [d.fund, party, share],
-    { fund: d.fund, by: party, shares, perShare, settled: r.outcome === 'settled' },
+    [fund, party, share],
+    { fund, by: party, shares, perShare, settled: r.outcome === 'settled' },
     true,
   );
   return r.outcome === 'settled';

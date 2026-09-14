@@ -568,7 +568,14 @@ was avoidable is stated at 13b.1.
   unchanged and so is its reason — one party shows one face to one book (Clearing A2), so the layer
   declares the participant once and asks the class the book carries. `registry/physical.ts` went the
   same way: the plant read states the shape it needs OF a holder (`PlantHolder`) instead of taking a
-  participant's whole view.
+  participant's whole view. **A read of a PUBLIC fact that several modules need lives here for the
+  same reason**: `storageRateIn` (what a piece of room cleared at) and, since item 10e.4,
+  `registry/wages.ts` (what an hour costs the employer asking — its own last payroll first, the
+  published going rate second, nothing where it has neither). A firm, a bank and a fund manager all
+  need that answer and none of them may import the labour module, so writing it three times is what
+  the alternative actually meant — and two of the three copies had already drifted apart on which
+  key the going rate is published under (`E-19`). Each takes the NARROW shape it needs of a reader
+  (`SessionReads`, `WageReads`), never a participant's whole view.
 
 Modules reach the kernel only through three contexts (`world/context.ts`), and nothing else — and a
 context hands out **facades, never a store**. `SeedContext` was the exception until 13b.1: it held
@@ -1171,6 +1178,31 @@ own book back.
 
 It is the spine of item 9: the seven private books — employment, lease, invoice, stock loan, loan,
 covenant, deal — are seven kinds of this one noun, and `Mandate` is the eighth.
+
+### An agreement can carry the whole PRODUCT, and then a roster becomes an outcome (item 10e.4)
+
+`MandateTerms` carries what a pool may hold, how its investors get in and out, whether it tracks
+something, **what its manager charges, what it keeps in cash, and what its investors require of it**
+— and whether notice has been given. That is the whole product, in one place, struck when two named
+parties agreed it.
+
+Three of those were per-fund PARAMETERS (`fund.fee.x`, `fund.buffer.x`, `fund.requiredYield.x`) and
+the decision to move them is the general one: **a number a mechanism produces is not a parameter,
+and a parameter register is for numbers the WORLD declares** (Law 2, XI-14). A fee is what a manager
+charges, and a manager decides that; the fees this world opens with are drawn, which is an opening
+condition (Seed A3) exactly like a drawn balance sheet.
+
+The consequence is structural and is why it belongs here. **Parameters are declared at assembly, so
+anything whose behaviour depends on one can never be created while the world runs.** As long as a
+pool's economics lived in `params`, the set of pools was fixed before period zero — and every phase
+in the module walked the declaration list, which said the same thing from the other end. Both are
+gone: the run-time object is the performing MANDATE (`livingPools`), the declaration is read once by
+the seed, and a manager opens and closes pools mid-run like any other decision.
+
+**The general rule: where a population can change while the world runs, the population is a read of
+the kernel store that holds it, never a list the module was built with.** The same shape applies to
+firms (item 12), and it is the reason `SystemModule.seed` and the module's phases must not share a
+list.
 
 ---
 

@@ -452,10 +452,12 @@ export function fundOrders(
   short: Cash,
 ): FundOrder[] {
   const out: FundOrder[] = [];
-  for (const p of positions) {
-    // C2: it asks for its money back because it needs it. Nothing else in a household's life is a
-    // reason to redeem, and a rule that redeemed on a bad return would be a run written into it.
-    if (short > 0) {
+  // C2: it asks for its money back because it needs it. Nothing else in a household's life is a
+  // reason to redeem, and a rule that redeemed on a bad return would be a run written into it. A
+  // cell that is short asks every fund it is in and puts nothing anywhere, which is the same
+  // either/or the loop had when the two cases were one pass.
+  if (short > 0) {
+    for (const p of positions) {
       if (p.sharesPerMember <= 0) continue;
       // Law 8: A SHARE IS INDIVISIBLE, so what a member hands back is a whole number of them, and
       // it is the number DOWN — a member short of less than one share's worth asks for nothing and
@@ -469,15 +471,39 @@ export function fundOrders(
         side: 'sell',
         sharesPerMember: atMost(want, p.sharesPerMember, 'it cannot hand back more than the position it holds'),
       });
-      continue;
     }
-    // D2.a: and it puts money in when what the fund offers clears what it wants for giving up its
-    // money — the competition D2 names, against a deposit that pays it nothing. Whole shares again,
-    // and DOWN this time: what its money buys, never a share it cannot pay for.
-    if (toFund <= 0 || p.offered < required) continue;
-    const buying = downTick(amountOf(toFund, p.perShare, 'shares it asks for'));
-    if (buying <= 0) continue;
-    out.push({ venue: p.venue, side: 'buy', sharesPerMember: buying });
+    return out;
+  }
+  /**
+   * D2, D2.a, Fund Shares F3 (item 10e.4): IT PUTS ITS MONEY IN ONE OF THEM, AND IT IS THE ONE THAT
+   * OFFERS IT MOST.
+   *
+   * THIS WAS INSIDE THE LOOP AND IT WAS A DEFECT (`E-21`). A cell with a hundred pounds spare
+   * posted a buy for a hundred pounds' worth at EVERY fund whose offer cleared what it wanted, so
+   * a saver with one budget committed it three times. Nothing was created — the first strike took
+   * the money and the rest were refused by the wire for want of it — but which fund got it was
+   * decided by the order the venues happen to be listed in, which is not a decision anybody took.
+   *
+   * And it made the FEE MEANINGLESS, which is what matters now that managers compete on one: a
+   * cheaper fund offers a saver more (D2.a subtracts the fee), and if the saver subscribes to
+   * everything regardless then undercutting a rival wins nothing and no manager has a reason to do
+   * it. A saver choosing the best offer is what makes a fee a price.
+   *
+   * Ties are broken by the fund's own name, so two funds offering exactly the same thing are not
+   * separated by the order a list was built in.
+   */
+  if (toFund > 0) {
+    let best: FundPosition | undefined;
+    for (const p of positions) {
+      if (p.offered < required) continue;
+      if (best === undefined || p.offered > best.offered) best = p;
+      else if (p.offered === best.offered && p.fund < best.fund) best = p;
+    }
+    // Law 8: whole shares, and DOWN — what its money buys, never a share it cannot pay for.
+    if (best !== undefined) {
+      const buying = downTick(amountOf(toFund, best.perShare, 'shares it asks for'));
+      if (buying > 0) out.push({ venue: best.venue, side: 'buy', sharesPerMember: buying });
+    }
   }
   return out;
 }

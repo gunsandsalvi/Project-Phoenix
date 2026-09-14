@@ -42,15 +42,14 @@ import type { InstrumentId } from '../../core/ids.js';
 import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
-import type { FundDecl } from './data.js';
+import type { Mandate } from './index.js';
 
 export function passiveOrders(
-  decls: readonly FundDecl[],
   view: ParticipantView,
+  mandate: Mandate,
   m: MarketDecl,
 ): readonly Order[] {
-  const d = decls.find((e) => e.fund === String(view.self.id));
-  if (d === undefined || !view.self.status.alive) return [];
+  if (!view.self.status.alive) return [];
   /**
    * Indices C2, item 10e: A FUND THAT TRACKS NOTHING IS ACTIVE, and this is not its path.
    *
@@ -58,8 +57,8 @@ export function passiveOrders(
    * this the rebalancing path is that the fund SAYS it tracks something, and a fund that picks on
    * its own view falls through to the ordinary orders.
    */
-  const tracks = d.tracks;
-  if (tracks === undefined) return [];
+  if (!mandate.tracks.some) return [];
+  const tracks = mandate.tracks.value;
   const subject = delivers(m);
   if (!subject.some) return [];
   const line = subject.value;
