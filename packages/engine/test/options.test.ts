@@ -3,6 +3,7 @@
  *
  * @spec Derivative D1 Derivative D1.b Derivative D2 Derivative D3 Derivative D3.a Derivative D7 Derivative D7.a Derivative D7.b Derivative D8 Derivative D8.a Derivative D9 Derivative D11 Derivative D11.a Bond N7.b Law 3 Law 6 §46 A3
  */
+import { struckAs } from '../src/registry/derivatives.js';
 import { heldAsMoney } from '../src/core/measure.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { asQty, type Qty } from '../src/core/tick.js';
@@ -41,7 +42,7 @@ function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: Qty): Co
     terms: contractOf(m)?.terms as never,
     ccy: m.ccy,
     notional,
-    struckAt: asPerPiece(1, 'the level it was struck at'),
+    struckAt: struckAs('money', 1),
     basis: heldAsMoney(notional, 'what the position cost'),
     opened: w.period,
     state: 'open',
@@ -67,7 +68,7 @@ describe('the books (D7, D7.a, D3.a)', () => {
     // price IS the premium, and it is what the holder pays the writer when the row is written.
     const some = contractOf(books[0])?.terms;
     if (some === undefined || !isOption(some)) return;
-    expect(optionKind.premiumPerUnit(asPerPiece(3, 'the level'), some)).toBe(3 * some.multiplier);
+    expect(optionKind.premiumPerUnit(struckAs('money', 3), some)).toBe(3 * some.multiplier);
   });
 });
 

@@ -15,7 +15,8 @@
  * contract and D1.b would be checking a coincidence. `ContractReads` is therefore the kernel's own
  * reads — prints, marks, indices, curves, public events — and no view of anybody.
  */
-import type { Cash, PerPiece } from '../core/measure.js';
+import { asPerPiece, asRatio, type Cash, type PerPiece, type Ratio } from '../core/measure.js';
+import { Mismatch } from '../core/errors.js';
 import type { Qty } from '../core/tick.js';
 import type { Calendar, Period } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
@@ -94,6 +95,60 @@ export interface ContractReads {
   lastEvent(kind: EventKind, subject: string): Option<Event>;
 }
 
+/**
+ * Law 8, D7, E-10: WHAT THE LEVEL THE TWO SIDES AGREED IS.
+ *
+ * One field meant a different dimension for every kind: a PRICE for a bond future, a SPREAD for a
+ * credit default swap, a RATE for a swap, an INDEX LEVEL for an index future, a BASIS for a
+ * cross-currency swap. All five were a `PerPiece`, so `mark` and `premiumPerUnit` were handed money
+ * per piece whatever the book had actually struck, and a reader shown 0.0125 could not tell a
+ * hundred and twenty-five basis points from a cent and a quarter.
+ *
+ * The kind already SAYS which it quotes (`quotedAs`) — the observer reads it to label a display —
+ * so the tag on the level is that same fact, now carried by the value instead of recovered beside
+ * it. `contracts.open` refuses a level whose tag is not the one its kind quotes in, which is the
+ * check the two-writer version could never have.
+ */
+export type StruckAt =
+  | { readonly as: 'money'; readonly level: PerPiece }
+  | { readonly as: 'rate'; readonly level: Ratio };
+
+/**
+ * Law 8, D7, E-10: READ A LEVEL THE WAY THIS KIND QUOTES IT, and throw where a book struck another.
+ *
+ * A kind knows which of the two its own terms are stated against — a future's mark subtracts its
+ * level from a print, a swap's accrues its level over a year — so the assertion belongs at the read
+ * and it is a contract violation when it fails (`PhoenixError` with a citation, at the site).
+ * Before this the level arrived as a `PerPiece` whatever the book had struck and nothing could fail.
+ */
+export function moneyLevel(s: StruckAt, what: string): PerPiece {
+  if (s.as !== 'money') {
+    throw new Mismatch('Derivative D7', `${what}: this contract was struck at a RATE, not money`, {
+      as: s.as,
+      level: s.level,
+    });
+  }
+  return s.level;
+}
+
+/** The same, the other way: a rate, spread or basis, for a kind whose terms are stated against one. */
+export function rateLevel(s: StruckAt, what: string): Ratio {
+  if (s.as !== 'rate') {
+    throw new Mismatch('Derivative D7', `${what}: this contract was struck at a LEVEL, not a rate`, {
+      as: s.as,
+      level: s.level,
+    });
+  }
+  return s.level;
+}
+
+/** The level a book of this kind struck, tagged with what that kind quotes in (Law 4, one writer). */
+export function struckAs(quotedAs: 'money' | 'rate', level: number): StruckAt {
+  return quotedAs === 'rate'
+    ? { as: 'rate', level: asRatio(level, 'the rate its book struck') }
+    : { as: 'money', level: asPerPiece(level, 'the level its book struck') };
+}
+
 /** The row itself. Two named sides, and the mark is written from `a`'s (A3). */
 export interface Contract {
   readonly id: ContractId;
@@ -107,7 +162,7 @@ export interface Contract {
   /** D2: what scales the payoff, in the kind's own unit. Not the exposure (D2.a). */
   readonly notional: Qty;
   /** D7: the rate, spread or strike the two sides entered at, as the market cleared it. */
-  readonly struckAt: PerPiece;
+  readonly struckAt: StruckAt;
   /**
    * Register D4: what the position COST — what it was worth to `a` when it was written, which is
    * zero for a contract struck at par (D7.b) and the premium for one bought outright. It is the
@@ -173,7 +228,7 @@ export interface DerivativeKindProfile {
    * answer is what the contract is then WORTH to the buyer: a thing is worth what it cost until
    * something re-marks it (Register D4).
    */
-  readonly premiumPerUnit: (struckAt: PerPiece, terms: ContractTerms) => PerPiece;
+  readonly premiumPerUnit: (struckAt: StruckAt, terms: ContractTerms) => PerPiece;
   /** D4, D6: what falls due this period under the terms, both directions (D5: each in its money). */
   readonly legs: (c: Contract, at: Period, reads: ContractReads) => readonly ContractPayment[];
   /**
@@ -231,7 +286,7 @@ export interface ContractMeasure {
 export function identityOf(c: Contract, u: Underlying): string {
   const under =
     u.kind === 'print' ? `${u.market}/${u.instrument}` : u.kind === 'index' ? u.index : `${u.party}:${u.event}`;
-  return `${c.kind}|${c.a}|${c.b}|${under}|${c.opened}|${c.struckAt}`;
+  return `${c.kind}|${c.a}|${c.b}|${under}|${c.opened}|${c.struckAt.as}:${c.struckAt.level}`;
 }
 
 /** The same contract as `b` states it (A3): the sides swap and the terms are read the other way. */

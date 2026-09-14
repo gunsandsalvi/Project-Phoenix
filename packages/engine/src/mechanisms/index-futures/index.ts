@@ -26,6 +26,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { moneyLevel } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -63,13 +64,13 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   if (!isIndexFuture(c.terms)) return asCash(0, 'not an index future');
   const level = reads.index(c.terms.index);
   if (!level.some) return asCash(0, 'the index has no level');
-  // Item 16, and it is a finding (E-10): `Contract.struckAt` is one field meaning a different
-  // dimension per kind — a PRICE for a bond future, a SPREAD for a CDS, a RATE for a swap, and here
-  // an INDEX LEVEL, which is a pure number. They are all "the level it was struck at" and they do
-  // not add to the same things. Named at the site that knows which it is.
+  // E-10, Law 8: an index future is struck at an INDEX LEVEL, which this world quotes as money —
+  // and `moneyLevel` is where that is asserted rather than assumed. `Contract.struckAt` used to be
+  // a `PerPiece` for every kind, so a swap's rate and a future's price were the same type and a
+  // reader could subtract one from the other.
   const move = minus(
     asPerPiece(level.value.level, 'the index now'),
-    c.struckAt,
+    moneyLevel(c.struckAt, 'an index future is struck at a level'),
     'the index now against the level struck',
   );
   const worth = valueAt(move, scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'), 'of the index each');

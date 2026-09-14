@@ -197,9 +197,9 @@ describe('what a share is (Equity A)', () => {
     const w = ranWorld('equity', 0, RIG.banks, RIG.firms);
     const kind = w.registry.instrumentKind(SHARE);
     const line = w.instruments.get(LINE_4);
-    expect(kind.due(line, w.period, w.calendar)).toHaveLength(0);
-    expect(kind.cashFlows(line, w.calendar.startOf(w.period), w.calendar)).toHaveLength(0);
-    expect(kind.accrued(line, w.calendar.startOf(w.period), w.calendar)).toBe(0);
+    expect(kind.due(line, w.period, w.calendar, w.registry)).toHaveLength(0);
+    expect(kind.cashFlows(line, w.calendar.startOf(w.period), w.calendar, w.registry)).toHaveLength(0);
+    expect(kind.accrued(line, w.calendar.startOf(w.period), w.calendar, w.registry)).toBe(0);
     // A4: nothing falls due on it, so there is no promise to break and it cannot default (N12).
     expect(kind.defaultOn).toBeUndefined();
   });

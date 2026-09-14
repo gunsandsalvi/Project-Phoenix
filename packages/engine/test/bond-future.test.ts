@@ -3,7 +3,8 @@
  *
  * @spec Sovereign I1 Sovereign I1.a Sovereign I2 Sovereign I3 Sovereign I3.a Derivative D1.b Derivative D3 XI-5 Law 3 Law 19
  */
-import { asPerPiece, asCash } from '../src/core/measure.js';
+import { struckAs } from '../src/registry/derivatives.js';
+import { asCash } from '../src/core/measure.js';
 import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {contractOf, BOND_FUTURE,
@@ -62,7 +63,7 @@ describe('the contract (I1, D3)', () => {
       terms: t,
       ccy: m.ccy,
       notional: asQty(5, 'the notional'),
-      struckAt: asPerPiece(0.99, 'the level it was struck at'),
+      struckAt: struckAs('money', 0.99),
       basis: asCash(0, 'what it cost'),
       opened: w.period,
       state: 'open',

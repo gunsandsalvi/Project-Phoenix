@@ -104,7 +104,7 @@ export function fallsDueToIt(ctx: MechanismContext, lender: PartyId, ccy: Curren
     const held = ctx.register.quantity(lender, i.id);
     if (held <= 0) continue;
     const profile = ctx.registry.instrumentKind(i.kind);
-    const flows = profile.cashFlows(i, ctx.calendar.startOf(ctx.period), ctx.calendar);
+    const flows = profile.cashFlows(i, ctx.calendar.startOf(ctx.period), ctx.calendar, ctx.registry);
     const perUnit = sum(flows.map((f) => f.perUnit)).value;
     terms.push(valueAt(perUnit, held, 'what comes back tomorrow'));
   }

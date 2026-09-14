@@ -42,7 +42,12 @@ import { struckIn, type PriceStore, type StaleReason } from '../prices/price-sto
 import type { Registry } from '../registry/registry.js';
 import { clear, type Fill, type Order, type Rationing } from './solver.js';
 import type { DerivativeKindId } from '../core/ids.js';
-import type { ContractTerms, DerivativeKindProfile } from '../registry/derivatives.js';
+import {
+  struckAs,
+  type ContractTerms,
+  type DerivativeKindProfile,
+  type StruckAt,
+} from '../registry/derivatives.js';
 
 /**
  * Spot FX A1, C1; Law 15: WHAT KIND OF THING THIS MARKET MOVES, as a dispatch key and never a
@@ -246,7 +251,7 @@ export interface ContractMarketDeps {
     party: PartyId,
     wanted: number,
     m: ContractMarketDecl,
-    struck: PerPiece,
+    struck: StruckAt,
   ) => number;
   /**
    * D9, C3.a: the legs that post what this trade requires — an ASSET SWAP, money out and a claim
@@ -259,7 +264,7 @@ export interface ContractMarketDeps {
     against: PartyId,
     size: Qty,
     m: ContractMarketDecl,
-    struck: PerPiece,
+    struck: StruckAt,
   ) => readonly Leg[];
 }
 
@@ -659,12 +664,20 @@ function contractTrade(
 ): Option<InstructionDraft> {
   const decl = m.contract;
   const profile = deps.kinds.contract.derivativeKind(decl.kind);
+  /**
+   * Law 8, E-10: WHAT THE LEVEL THIS BOOK STRUCK MEANS, tagged here because this is where a cleared
+   * level becomes a contract's. The kind already says which it quotes in (`quotedAs`) and the tag is
+   * that same fact carried by the value, so `admits`, `marginLegs`, `premiumPerUnit` and `mark` take
+   * what they mean instead of a `PerPiece` whatever the book actually struck. `Outcome.price` is
+   * still a `PerPiece` on both roads — that is `E-11`, the same defect one layer down, item 6's.
+   */
+  const struck = struckAs(profile.quotedAs, price);
   let size = t.qty;
   for (const side of [t.buyer, t.seller]) {
     // Law 8: what the layer will admit is money over a margin requirement, so it lands between two
     // contracts — and the one below is what this side can actually carry. A contract is whole or it
     // is not one (item 13b.1).
-    const room = downTick(deps.kinds.contract.admits(side, size, m, price));
+    const room = downTick(deps.kinds.contract.admits(side, size, m, struck));
     if (room < size) size = room;
   }
   if (size < t.qty) {
@@ -682,7 +695,7 @@ function contractTrade(
   if (size <= 0) return none<InstructionDraft>();
   // Law 8: a premium is MONEY, so it is a whole number of the money's own smallest piece.
   const premium = deps.registry.cashFor(
-    valueAt(profile.premiumPerUnit(price, decl.terms), size, 'the premium at inception'),
+    valueAt(profile.premiumPerUnit(struck, decl.terms), size, 'the premium at inception'),
   );
   const house = decl.house;
   const legs: Leg[] = [];
@@ -695,7 +708,7 @@ function contractTrade(
     terms: decl.terms,
     ccy: m.ccy,
     notional: size,
-    struckAt: price,
+    struckAt: struck,
     // Clearing E1: the same line this session's print is written against, so a party that struck
     // the contract has observed the price of this book (Expectations A2).
     book: m.instrument,
@@ -725,8 +738,8 @@ function contractTrade(
     else legs.push(pay(t.buyer, house), pay(house, t.seller));
   }
   legs.push(
-    ...deps.kinds.contract.marginLegs(t.buyer, house ?? t.seller, size, m, price),
-    ...deps.kinds.contract.marginLegs(t.seller, house ?? t.buyer, size, m, price),
+    ...deps.kinds.contract.marginLegs(t.buyer, house ?? t.seller, size, m, struck),
+    ...deps.kinds.contract.marginLegs(t.seller, house ?? t.buyer, size, m, struck),
   );
   return some({
     legs,

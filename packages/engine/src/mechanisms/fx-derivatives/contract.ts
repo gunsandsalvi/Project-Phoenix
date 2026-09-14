@@ -31,6 +31,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { moneyLevel, rateLevel } from '../../registry/derivatives.js';
 import { fxForwardOrders, xccyOrders } from './participants.js';
 
 export const FX_FORWARD = derivativeKindId('fx.forward');
@@ -91,7 +92,13 @@ function forwardMark(c: Contract, at: Period, reads: ContractReads): Cash {
   if (!isFxForward(c.terms)) return asCash(0, 'not a forward');
   const now = reads.print(c.terms.book, at);
   if (!now.some) return asCash(0, 'nothing has printed on this pair');
-  const better = minus(now.value.price, c.struckAt, 'the forward now against the one struck');
+  // E-10: a forward IS struck at a price — money of the quote for one of the base — and this is
+  // where that is said rather than assumed of a field every kind shared.
+  const better = minus(
+    now.value.price,
+    moneyLevel(c.struckAt, 'a money forward is struck at a rate for the pair'),
+    'the forward now against the one struck',
+  );
   const worth = valueAt(better, c.notional, 'over the base it takes');
   return c.terms.buysBase ? worth : negated(worth, 'and the other side of it');
 }
@@ -150,7 +157,11 @@ export const fxForwardKind: DerivativeKindProfile = {
         from: taker,
         to: giver,
         ccy: t.quote,
-        amount: valueAt(c.struckAt, c.notional, 'the quote, at the rate they struck'),
+        amount: valueAt(
+          moneyLevel(c.struckAt, 'a money forward is struck at a rate for the pair'),
+          c.notional,
+          'the quote, at the rate they struck',
+        ),
         date,
         why: 'the quote, paid',
       },
@@ -173,9 +184,16 @@ function xccyMark(c: Contract, at: Period, reads: ContractReads): Cash {
   if (!isXccy(c.terms)) return asCash(0, 'not a cross-currency swap');
   const now = reads.print(c.terms.book, at);
   if (!now.some) return asCash(0, 'nothing has printed on this basis');
-  const better = minus(now.value.price, c.struckAt, 'the basis now against the basis struck');
+  // E-10, E-11: a cross-currency swap is struck at a BASIS — a rate per annum — which is a
+  // different dimension from the price per unit the same field carries for a forward above. The
+  // print is still a `PerPiece` on every book in this world (`E-11`, item 6), so it is named here.
+  const better = minus(
+    asRatio(now.value.price, 'the basis this book last printed'),
+    rateLevel(c.struckAt, 'a cross-currency swap is struck at a basis'),
+    'the basis now against the basis struck',
+  );
   const worth = scale(
-    valueAt(better, c.notional, 'over the notional'),
+    scale(heldAsMoney(c.notional, 'the notional it is on'), better, 'over the notional'),
     asRatio(yearsLeft(c.terms.maturity, at, reads), 'the years it has left'),
     'over the years it has left',
   );
@@ -255,12 +273,12 @@ export const xccyKind: DerivativeKindProfile = {
       asRatio(accrual, 'this period of a year'),
       'accrued',
     );
-    // C4, and it is finding E-10 again: what THIS kind is struck at is a BASIS — a rate per annum —
-    // which is a different dimension from the price per unit the same field carries for a forward.
-    // Named where the kind that knows which it is can say so.
+    // C4, E-10: what THIS kind is struck at is a BASIS — a rate per annum — which is a different
+    // dimension from the price per unit the same field carries for a forward. The level says so
+    // now, and `rateLevel` throws where a book struck the other (Derivative D7).
     const quoteRate = plus(
       asRatio(t.quoteRate, 'the quote rate'),
-      asRatio(c.struckAt, 'the basis they struck'),
+      rateLevel(c.struckAt, 'a cross-currency swap is struck at a basis'),
       'the quote rate plus the basis',
     );
     const quoteInterest = scale(

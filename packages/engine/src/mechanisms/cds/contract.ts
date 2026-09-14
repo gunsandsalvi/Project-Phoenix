@@ -23,6 +23,7 @@ import {
   asCash,
   asPerPiece,
   asRatio,
+  heldAsMoney,
   minus,
   negated,
   ratioOf,
@@ -42,6 +43,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { rateLevel } from '../../registry/derivatives.js';
 import { BASIS_POINT, CDS_DAY_COUNT, PROTECTED } from './data.js';
 import { cdsOrders } from './participants.js';
 import { cdsMeasures } from './measures.js';
@@ -114,9 +116,20 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   }
   const now = reads.print(t.book, at);
   if (!now.some) return asCash(0, 'this protection book has not printed');
-  const richer = minus(now.value.price, c.struckAt, 'the spread now against the spread struck');
+  /**
+   * Law 8, E-10, E-11: A SPREAD IS A RATE, and a protection book clears one. `rateLevel` is where
+   * this contract says so about its own level; `asRatio` beside it is the same statement about the
+   * PRINT, which is still a `PerPiece` on every book in this world (`E-11`, item 6). Both were a
+   * `PerPiece` before, so nothing could tell a hundred and twenty-five basis points from a cent
+   * and a quarter — and what a spread over a notional gives is money over a year, not a value.
+   */
+  const richer = minus(
+    asRatio(now.value.price, 'the spread this book last printed'),
+    rateLevel(c.struckAt, 'a credit default swap is struck at a spread'),
+    'the spread now against the spread struck',
+  );
   const worth = scale(
-    valueAt(richer, c.notional, 'over the notional'),
+    scale(heldAsMoney(c.notional, 'the notional it protects'), richer, 'over the notional'),
     asRatio(yearsLeft(t, at, reads.calendar), 'the years it has left'),
     'over the years it has left',
   );
@@ -170,7 +183,11 @@ export const cdsKind: DerivativeKindProfile = {
     const to = t.buysProtection ? c.b : c.a;
     const accrual = yearFraction(CDS_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.endOf(at));
     const amount = scale(
-      valueAt(c.struckAt, c.notional, 'the spread on the notional'),
+      scale(
+        heldAsMoney(c.notional, 'the notional it protects'),
+        rateLevel(c.struckAt, 'a credit default swap is struck at a spread'),
+        'the spread on the notional',
+      ),
       asRatio(accrual, 'this period of a year'),
       'this period',
     );

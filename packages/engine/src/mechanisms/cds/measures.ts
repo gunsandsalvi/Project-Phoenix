@@ -75,7 +75,7 @@ export function basisFor(
   // The bond's own yield, derived FROM its price and the flows its terms promise (Sovereign D2,
   // Law 3): a price is the input here and never the output.
   const on = ctx.calendar.startOf(ctx.period);
-  const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
+  const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry);
   if (flows.length === 0) return none<number>();
   const own = yieldOf(flows, cash.value.price, on, CDS_DAY_COUNT, `the yield of ${i.id}`);
   if (!own.some) return none<number>();

@@ -1161,7 +1161,7 @@ function ordersOf(
   // what its own investors require of it (D2). A price it will not pay does not fill.
   const on = view.calendar.startOf(view.period);
   const family = view.registry.curveFamily(curveFamilyOf(issuerOf(i), i.ccy));
-  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
   if (flows.length === 0) return [];
   const required = view.params.perAnnum(fundParam(d.fund, 'requiredYield'));
   const price = priceAt(
@@ -1245,7 +1245,7 @@ function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
   const required = view.params.perAnnum(fundParam(d.fund, 'requiredYield'));
   if (!view.worth(i.id, required).some) return false;
   const on = view.calendar.startOf(view.period);
-  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
   const last = flows[flows.length - 1];
   if (last === undefined) return true;
   const by = view.calendar.startOf(

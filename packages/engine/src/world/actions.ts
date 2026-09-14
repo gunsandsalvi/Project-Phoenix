@@ -44,7 +44,7 @@ export function runCorporateActions(period: Period, cycle: Cycle, d: ActionDeps)
   for (const i of d.instruments.all()) {
     if (!i.status.live) continue;
     const profile = d.registry.instrumentKind(i.kind);
-    for (const action of profile.due(i, period, d.calendar)) {
+    for (const action of profile.due(i, period, d.calendar, d.registry)) {
       switch (action.kind) {
         case 'coupon':
           payToHolders(i, action.amountPerUnit, `coupon on ${i.id}`, period, cycle, d);

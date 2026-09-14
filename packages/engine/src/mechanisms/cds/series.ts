@@ -21,6 +21,7 @@ import {
   asCash,
   asPerPiece,
   asRatio,
+  heldAsMoney,
   type Cash,
   type PerPiece,
   minus,
@@ -43,6 +44,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { rateLevel } from '../../registry/derivatives.js';
 import { creditState } from './contract.js';
 import { BASIS_POINT, CDS_DAY_COUNT, PROTECTED } from './data.js';
 import { cdsIndexOrders } from './participants.js';
@@ -112,11 +114,21 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   const t = c.terms;
   const print = reads.print(t.book, at);
   const running = runningShare(t, reads);
+  // Law 8, E-10, E-11: a series clears a SPREAD, which is a rate. `rateLevel` says so about this
+  // contract's own level and `asRatio` says it about the print, which is still a `PerPiece` on every
+  // book in this world (`E-11`, item 6). A rate over a notional gives money per year.
   const spreadLeg = print.some
     ? scale(
-        valueAt(
-          minus(print.value.price, c.struckAt, 'the spread now against the spread struck'),
-          scale(c.notional, asRatio(running, 'what is still running'), 'on the part still running'),
+        scale(
+          heldAsMoney(
+            scale(c.notional, asRatio(running, 'what is still running'), 'on the part still running'),
+            'the notional still running',
+          ),
+          minus(
+            asRatio(print.value.price, 'the spread this series last printed'),
+            rateLevel(c.struckAt, 'a credit index is struck at a spread'),
+            'the spread now against the spread struck',
+          ),
           'over the notional',
         ),
         asRatio(yearsLeft(t, at, reads), 'the years it has left'),
@@ -191,9 +203,12 @@ export const cdsIndexKind: DerivativeKindProfile = {
     const to = t.buysProtection ? c.b : c.a;
     const accrual = yearFraction(CDS_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.endOf(at));
     const amount = scale(
-      valueAt(
-        c.struckAt,
-        scale(c.notional, asRatio(running, 'what is still running'), 'on what is still running'),
+      scale(
+        heldAsMoney(
+          scale(c.notional, asRatio(running, 'what is still running'), 'on what is still running'),
+          'the notional still running',
+        ),
+        rateLevel(c.struckAt, 'a credit index is struck at a spread'),
         'the spread on it',
       ),
       asRatio(accrual, 'this period of a year'),

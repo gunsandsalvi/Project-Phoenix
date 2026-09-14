@@ -27,6 +27,7 @@ import {
   SOVEREIGN_BOND,
   validateDates,
   accruedOf,
+  ontoTheGrid,
   cashFlowsOf,
   dueOf,
 } from '../../registry/claims.js';
@@ -78,10 +79,12 @@ export const sovereignBond: InstrumentKindProfile = {
   // N6, N9.b, N5.a, N10 (13f): the schedule is the kernel's, because when a coupon falls and how it
   // accrues is the same fact for any dated bond whoever issued it (Law 4). What is sovereign about
   // this line is who can fail, what ranks where and that nothing may be breached — stated above.
-  due: (i, period, cal) => (isBond(i.terms) ? dueOf(i.terms, period, cal) : []),
-  accrued: (i, on, cal) => (isBond(i.terms) ? accruedOf(i.terms, on, cal) : 0),
-  cashFlows: (i, after, cal) =>
-    isBond(i.terms) ? cashFlowsOf(i.terms, after, cal) : [],
+  due: (i, period, cal, scale) =>
+    isBond(i.terms) ? dueOf(i.terms, period, cal, ontoTheGrid(scale, i)) : [],
+  accrued: (i, on, cal, scale) =>
+    isBond(i.terms) ? accruedOf(i.terms, on, cal, ontoTheGrid(scale, i)) : 0,
+  cashFlows: (i, after, cal, scale) =>
+    isBond(i.terms) ? cashFlowsOf(i.terms, after, cal, ontoTheGrid(scale, i)) : [],
 };
 
 

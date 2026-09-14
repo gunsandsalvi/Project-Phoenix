@@ -77,11 +77,11 @@ describe('an invoice is a zero-coupon bill and nothing more (Trade Credit A2)', 
     const kind = w.registry.instrumentKind(INVOICE);
     for (const row of invoices(w)) {
       const t = invoiceTerms(row);
-      const before = kind.cashFlows(row, t.due, w.calendar);
+      const before = kind.cashFlows(row, t.due, w.calendar, w.registry);
       expect(before).toHaveLength(1);
       expect(before[0]?.perUnit).toBe(1);
       // Nothing accrues on it: it is a sum owed on a date, not a rate running against a balance.
-      expect(kind.accrued(row, t.due, w.calendar)).toBe(0);
+      expect(kind.accrued(row, t.due, w.calendar, w.registry)).toBe(0);
     }
   });
 

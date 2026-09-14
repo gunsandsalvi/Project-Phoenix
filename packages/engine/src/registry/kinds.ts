@@ -25,7 +25,7 @@ import type { Instrument, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { Option } from '../core/option.js';
-import type { Cash, PerPiece, Ratio } from '../core/measure.js';
+import type { Cash, PerNamedUnit, PerPiece, Ratio } from '../core/measure.js';
 import type { Qty } from '../core/tick.js';
 import type { Namer } from './naming.js';
 
@@ -181,17 +181,27 @@ export interface InstrumentKindProfile {
    */
   readonly displayName: (i: Instrument, namer: Namer) => string;
   /** The dated actions the terms place in `period` (Money G3.a), in date order. */
-  readonly due: (i: Instrument, period: Period, calendar: Calendar) => readonly DueAction[];
+  readonly due: (
+    i: Instrument,
+    period: Period,
+    calendar: Calendar,
+    scale: PriceScale,
+  ) => readonly DueAction[];
   /**
    * Bond N9.b: interest accrued per unit since the last payment date, on a date. Zero for an
    * instrument that pays no coupon: a bill accretes against its own cleared price (Sovereign F2).
    */
-  readonly accrued: (i: Instrument, on: Civil, calendar: Calendar) => number;
+  readonly accrued: (i: Instrument, on: Civil, calendar: Calendar, scale: PriceScale) => number;
   /**
    * Every payment the terms promise strictly after a date, in date order (Sovereign D2: what a
    * yield is derived FROM). An instrument that promises nothing dated returns none of them.
    */
-  readonly cashFlows: (i: Instrument, after: Civil, calendar: Calendar) => readonly CashFlow[];
+  readonly cashFlows: (
+    i: Instrument,
+    after: Civil,
+    calendar: Calendar,
+    scale: PriceScale,
+  ) => readonly CashFlow[];
   /**
    * §46, Equity B1, Capital Programme B1: WHAT ONE UNIT IS WORTH TO A HOLDER THAT REQUIRES `required`
    * PER ANNUM — the other half of this profile, and the half that was missing.
@@ -289,6 +299,23 @@ export interface InstrumentKindProfile {
  * the kernel's own reads and nothing else — no party's view, no module state — because a derived
  * value is a fact about a book that anybody may compute and everybody gets the same answer from.
  */
+/**
+ * Law 8, E-9: THE ONE DOOR BETWEEN THE TWO SCALES, handed to a profile that has to cross it.
+ *
+ * A coupon and a par are stated per NAMED unit of face — five per hundred of it — and a price in
+ * this world is money PIECES per piece of the thing. The three terms functions above all produce
+ * prices out of numbers stated the other way, and each of them used to write `asPerPiece(...)`
+ * straight onto a named number: right today, and only because every face unit in this world happens
+ * to be declared with the money's own subdivision (`PAR` is `MONEY_PIECES`, a loan's unit IS the
+ * money's piece), so the crossing factor is exactly one. A world that declared a bond in units of a
+ * hundred would have had its coupons, its accruals and its redemption silently out by a hundred.
+ *
+ * `Registry` satisfies this, so a caller passes the registry it already has.
+ */
+export interface PriceScale {
+  priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: PerNamedUnit): PerPiece;
+}
+
 export interface DerivedReads {
   /** Every holding of a party, and every holder of an instrument (Register B2, both directions). */
   holdingsOf(holder: PartyId): readonly Holding[];

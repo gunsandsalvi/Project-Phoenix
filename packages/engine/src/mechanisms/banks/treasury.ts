@@ -119,7 +119,7 @@ export function liquidityLines(view: ParticipantView, d: BankDecl): readonly Ins
     // that is why a bank short of a foreign money has to buy it). Paper abroad is a POSITION, and
     // what a bank holds abroad as a position is 13h's portfolio decision, not this.
     if (i.ccy !== home) continue;
-    if (view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar).length === 0) continue;
+    if (view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length === 0) continue;
     out.push(i.id);
   }
   return out;
@@ -250,7 +250,7 @@ export function priceAtYield(
 ): Option<PerPiece> {
   const i = view.instruments.get(instrument);
   const on = view.calendar.startOf(view.period);
-  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
   if (flows.length === 0) return none<PerPiece>();
   return some(
     priceAt(
@@ -450,7 +450,7 @@ export function pledgeable(view: ParticipantView): number {
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
     if (!i.status.live || !i.issuer.some) continue;
-    if (view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar).length === 0) continue;
+    if (view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry).length === 0) continue;
     const mark = view.mark(i.id);
     const free = view.free(i.id);
     if (!mark.some || mark.value <= 0 || free <= 0) continue;
@@ -503,7 +503,7 @@ function dueNext(
     if (!i.status.live || i.ccy !== ccy || !mine(i)) continue;
     const n = units(i);
     if (n <= 0) continue;
-    const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+    const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
     const perUnit = sum(
       flows.filter((f) => view.calendar.periodOf(f.date) === next).map((f) => f.perUnit),
     ).value;

@@ -62,7 +62,7 @@ describe('the curve (Sovereign D3)', () => {
     w.step();
     const i = w.instruments.get(GOV_LINE);
     const on = w.calendar.startOf(w.period);
-    const flows = w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar);
+    const flows = w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar, w.registry);
     const print = w.prices.latest(GOV_LINE, w.period);
     if (!print.some) throw new Error('no print');
     const dirty = plus(print.value.price, w.accruedPerUnit(GOV_LINE, w.period), 'dirty price');

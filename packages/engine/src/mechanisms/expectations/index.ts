@@ -148,7 +148,8 @@ function observations(ctx: MechanismContext): Map<string, { value: number; unit:
          * something — one opinion, and a market needs two (Expectations A3, XI-13).
          */
         const line = `price.${String(leg.book)}`;
-        for (const p of [leg.a, leg.b]) out.set(`${p}|${line}`, { value: leg.struckAt, unit: leg.ccy });
+        for (const p of [leg.a, leg.b])
+          out.set(`${p}|${line}`, { value: leg.struckAt.level, unit: leg.ccy });
       }
     }
   }

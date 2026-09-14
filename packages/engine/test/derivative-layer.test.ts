@@ -6,6 +6,7 @@
  * Everything here runs through the kernel's own book: a fill in a contract market becomes a row on
  * two balance sheets, cut to what its two sides can margin, with the margin in the same instruction.
  */
+import { struckAs } from '../src/registry/derivatives.js';
 import { asCash, heldAsMoney } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {pairOf, BANK,
@@ -476,7 +477,7 @@ describe('capacity (E1, E2, E4)', () => {
         terms,
         ccy: USD,
         notional: asQty(10, 'the notional'),
-        struckAt: asPerPiece(1, 'the level it was struck at'),
+        struckAt: struckAs('money', 1),
         house: houseIdFor(USD),
         a: houseIdFor(USD),
         b: houseIdFor(USD),

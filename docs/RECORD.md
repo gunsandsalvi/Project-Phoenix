@@ -6010,3 +6010,79 @@ than fixes. All eighteen findings the item named are done.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence` green.
 The engine suite is still not run.
+
+---
+
+## Item 2, stage 2f — the two type changes, and what the type found
+
+`E-9` and `E-10` are the last two steps of item 2 that are not the suite. Neither changes a number
+in the world as it stands today, and both remove a way for the next change to be silently wrong.
+
+**`E-9` — a dirty price adds two scales.** `plus(clean, accrued)` in `prices/curve.ts:readCurve` and
+in `clearing/market.ts` added a per-piece print to an accrual that had been written straight onto the
+piece grid out of a number stated per NAMED unit of face. Three places made that assertion, all in
+`registry/claims.ts`: the coupon schedule, `accruedOf`, and `cashFlowsOf`'s redemption — each writing
+`asPerPiece(...)` on a named number, and the par at maturity as a bare `1`.
+
+`InstrumentKindProfile.due`, `.accrued` and `.cashFlows` now take a fourth argument, a `PriceScale`
+— one method, `priceOf`, which `Registry` satisfies structurally, so every caller passes the registry
+it already had (42 sites). `ontoTheGrid(scale, i)` crosses through `Registry.priceOf`, which is the
+door. TypeScript lets an implementation take fewer parameters than its type declares, so the forty
+`() => 0` profiles were untouched: only the five that actually cross needed a line.
+
+The memo in `scheduleOf` stays in NAMED terms. That is deliberate and it is why the memo is still
+correct to key on the terms alone — a crossing inside it would have depended on an instrument the
+key does not carry.
+
+**Two corrections the read produced, and both matter more than the fix itself.** The step said the
+addition is right today "only because par and money share a subdivision". For a BOND that is exactly
+it — its unit is `PAR`, declared separately with `perUnit: MONEY_PIECES`, so the crossing factor is
+one by coincidence, and it is crossed explicitly now. For a LOAN, a money-market row and a
+subordinated note it is not a coincidence at all: those kinds declare
+`unit: (ccy) => currencyUnit(ccy)`, so a piece of the claim IS a piece of its money and there is
+nothing to cross. Their three `PAR` constants said "the two scales only coincide here (`E-9`)"; they
+name the declaration that makes it true instead.
+
+And `curveAt` carried a SECOND `asPerPiece` on the same profile call that `accruedPerUnit` already
+wraps — two writers of one crossing. It reads `accruedPerUnit` now (Law 4).
+
+**`E-10` — one field, five dimensions.** `Contract.struckAt` was a `PerPiece` whether the book had
+struck a bond future's PRICE, a credit default swap's SPREAD, a swap's RATE, an index future's LEVEL
+or a cross-currency swap's BASIS. `StruckAt` is now
+`{ as: 'money'; level: PerPiece } | { as: 'rate'; level: Ratio }`.
+
+The tag is the kind's own `quotedAs`, which **already existed** and which the observer was already
+reading to label a display (`struckAs: 'money' | 'rate'`, with a docstring saying a reader shown 0.01
+with no word for which has been shown a number and not a price). The fact had a writer. What was
+missing is that the VALUE did not carry it, so every consumer got a `PerPiece` regardless.
+
+`clearing/market.ts` tags the cleared level once, before admission, so `admits`, `marginLegs`,
+`ContractAsk.struck`, `premiumPerUnit` and every kind's `mark` take what they mean. `moneyLevel` and
+`rateLevel` are the reader doors and they THROW — a `Mismatch` citing Derivative D7, at the site,
+never caught — where a book struck the other kind of level. That check cannot be written while the
+field is one type, which is the point of the change.
+
+**And the type found real arithmetic.** The three rate-quoted kinds computed
+`valueAt(struckAt, notional)` — a PRICE times a QUANTITY — where a spread or a rate over a notional
+is `scale(heldAsMoney(notional), rate)`. Five sites: the CDS mark and its premium leg, the credit
+index mark and its premium leg, the swap's mark and both accrual legs, and the cross-currency basis.
+They produced the same number only because a `PerPiece` and a `Ratio` are both `number` at runtime
+and the notional happened already to be in money pieces — which is exactly the coincidence a
+dimension is supposed to stop being load-bearing.
+
+**`E-11` is named at every crossing and stays item 6's.** The PRINT on a rate-quoted book is still a
+`PerPiece`, because `Outcome.price` is one type for every market in this world. Each of those marks
+now writes `asRatio(print.value.price, 'the spread this book last printed')` and says so. Positioned,
+not chased.
+
+One helper deleted before it was ever used: `levelOf` had no caller, and something nobody reads is
+not a door (Law 12).
+
+**Item 2 is closed but for step 2.22 — the suite** — which the owner's instruction holds until the
+plan is done. All eighteen findings the item named are closed, plus `E-8`, `E-9` and `E-10`. Three
+findings came out of the work and are positioned: `E-11` (item 6), `E-12` (item 21), and `A-18`'s
+`merge` half (item 12). One named finding — `pricesOver` under `A-32` — turned out not to be a
+defect and is answered in stage 2e's entry rather than dropped.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green.

@@ -951,7 +951,7 @@ function poolSchedule(
     const face = faces[k];
     if (face === undefined || face <= 0) return;
     const i = view.instruments.get(id);
-    for (const f of view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar)) {
+    for (const f of view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry)) {
       const paid = valueAt(f.perUnit, face, 'what this row pays on the day');
       const at = byDate.get(dayNumber(f.date));
       byDate.set(

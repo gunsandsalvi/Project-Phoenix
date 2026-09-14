@@ -1429,7 +1429,7 @@ export function foundationSeedFor(
           });
           const flows = ctx.registry
             .instrumentKind(line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL)
-            .cashFlows(ctx.instruments.get(id), ctx.calendar.epoch, ctx.calendar);
+            .cashFlows(ctx.instruments.get(id), ctx.calendar.epoch, ctx.calendar, ctx.registry);
           // Item 16, and it is a finding (E-8): `priceAt` discounts a schedule whose flows the
           // kernel types per PIECE, and what comes out is used here as a level stated per NAMED
           // unit. The two coincide for par-denominated paper and only for it — `PAR` is declared

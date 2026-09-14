@@ -6,7 +6,8 @@
  * A scale model, and it names no party: the reference is whichever drawn borrower this world's
  * banks actually hold paper of (`rig.ts`), not "the big firm".
  */
-import { asCash, asPerPiece, asRatio } from '../src/core/measure.js';
+import { struckAs } from '../src/registry/derivatives.js';
+import { asCash, asRatio } from '../src/core/measure.js';
 import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {contractOf, CDS,
@@ -74,7 +75,7 @@ describe('the books (A1, A1.d, A4, A4.a, C2)', () => {
     // book clears is that rate PER ANNUM, which is what `quotedAs` says and a reader needs.
     expect(w.registry.tickForDerivative(CDS, USD)).toBeCloseTo(0.01, 12);
     // D7.b: struck at par — the cleared spread is what makes it worth nothing, so nothing is paid.
-    expect(cdsKind.premiumPerUnit(asPerPiece(0.01, 'the level'), { kind: CDS })).toBe(0);
+    expect(cdsKind.premiumPerUnit(struckAs('rate', 0.01), { kind: CDS })).toBe(0);
   });
 });
 
@@ -97,7 +98,7 @@ describe('what the contract IS (A2, A3, D1.b)', () => {
       },
       ccy: USD,
       notional: asQty(1_000_000, 'the notional'),
-      struckAt: asPerPiece(0.01, 'the level it was struck at'),
+      struckAt: struckAs('rate', 0.01),
       basis: asCash(0, 'what it cost'),
       opened: w.period,
       state: 'open',

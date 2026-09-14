@@ -137,7 +137,7 @@ function linesOf(ctx: MechanismContext, issuer: PartyId, on: Civil): Line[] {
   const out: Line[] = [];
   for (const i of ctx.instruments.all()) {
     if (!issuedBy(i, issuer) || !i.status.live) continue;
-    const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
+    const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry);
     const last = flows[flows.length - 1];
     if (last === undefined) continue;
     const tenorYears = yearFraction(dayCountOn(ctx, issuer, i.ccy), on, last.date);
@@ -157,7 +157,7 @@ function debtService(ctx: MechanismContext, issuer: PartyId, on: Civil, horizon:
   const terms: Cash[] = [];
   for (const i of ctx.instruments.all()) {
     if (!issuedBy(i, issuer) || !i.status.live) continue;
-    for (const f of ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar)) {
+    for (const f of ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry)) {
       if (ctx.calendar.periodOf(f.date) <= horizon) {
         terms.push(valueAt(f.perUnit, i.issued, 'service'));
       }
@@ -607,7 +607,7 @@ function announce(
       ? openLine(ctx, id, ccy, maturity, y, wantShort)
       : instrumentId(existing.id);
   const inst = ctx.instruments.get(instrument);
-  const flows = ctx.registry.instrumentKind(inst.kind).cashFlows(inst, on, ctx.calendar);
+  const flows = ctx.registry.instrumentKind(inst.kind).cashFlows(inst, on, ctx.calendar, ctx.registry);
   const reservation = priceAt(
     flows,
     plus(asRatio(y, 'the yield it opens at'), ctx.params.perAnnum(TREASURY_PARAMS.concession), 'walk-away yield'),

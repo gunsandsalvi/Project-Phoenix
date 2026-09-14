@@ -15,7 +15,9 @@
  * and when, and the module that registers them.
  */
 import {
+  type PerNamedUnit,
   type PerPiece,
+  asPerNamedUnit,
   asPerPiece,
   asRatio,
   plus,
@@ -26,8 +28,8 @@ import { compareCivil, type Civil } from '../calendar/civil.js';
 import { InvalidRegistry } from '../core/errors.js';
 import type { DayCount } from '../calendar/daycount.js';
 import type { Periodicity, Rate } from '../core/rate.js';
-import type { Terms } from '../register/instruments.js';
-import type { CashFlow, DueAction } from './kinds.js';
+import type { Instrument, Terms } from '../register/instruments.js';
+import type { CashFlow, DueAction, PriceScale } from './kinds.js';
 import { yearFraction } from '../calendar/daycount.js';
 
 export const SOVEREIGN_BOND = instrumentKindId('sovereign.bond');
@@ -95,8 +97,23 @@ export interface ScheduleCalendar {
 /** One dated coupon of a line: when it falls, what it comes to per unit, and the period it is in. */
 interface Coupon {
   readonly date: Civil;
-  readonly perUnit: PerPiece;
+  /**
+   * Law 8, E-9: PER NAMED UNIT OF FACE, which is how a coupon is stated — five per hundred of it.
+   * It stays in named terms all the way through the memo, and each of the three exits below crosses
+   * it to money PIECES per piece through `Registry.priceOf`, which is the one door between the two
+   * scales. Keeping the memo scale-free is what lets it stay keyed on the terms alone.
+   */
+  readonly perUnit: PerNamedUnit;
   readonly period: number;
+}
+
+/**
+ * Law 8, E-9: the crossing itself, for one instrument — money per NAMED unit of its face becomes
+ * money pieces per piece of it, at the two subdivisions the registry declares. Built once per read
+ * and handed to whichever exit needs it, so the door is named at every use and assumed at none.
+ */
+export function ontoTheGrid(scale: PriceScale, i: Instrument): (x: PerNamedUnit, what: string) => PerPiece {
+  return (x, what) => scale.priceOf(i.ccy, i.unit, asPerNamedUnit(x, what));
 }
 
 /**
@@ -138,7 +155,7 @@ function scheduleOf(t: CouponSchedule, cal: ScheduleCalendar): readonly Coupon[]
     out.push({
       date,
       perUnit: scale(
-        asPerPiece(t.coupon.amount, 'the coupon a unit carries'),
+        asPerNamedUnit(t.coupon.amount, 'the coupon a NAMED unit of face carries'),
         asRatio(yearFraction(t.dayCount, prev, date), 'the accrual period'),
         'coupon',
       ),
@@ -155,13 +172,14 @@ export function dueOf(
   t: CouponSchedule,
   period: number,
   cal: ScheduleCalendar,
+  onto: (x: PerNamedUnit, what: string) => PerPiece,
 ): readonly DueAction[] {
   const out: DueAction[] = [];
   for (const c of scheduleOf(t, cal)) {
     // N6: a coupon of nothing is not a payment. A zero-coupon line is the ordinary shape of paper
     // an issuer brings when the market will pay above par for the principal alone.
     if (c.period === period && c.perUnit > 0) {
-      out.push({ kind: 'coupon', date: c.date, amountPerUnit: c.perUnit });
+      out.push({ kind: 'coupon', date: c.date, amountPerUnit: onto(c.perUnit, 'the coupon due') });
     }
   }
   if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
@@ -172,17 +190,25 @@ export function dueOf(
  * N9.b: what the buyer owes the seller on top of the clean price, from the last coupon date to the
  * settlement date, on the line's own day count.
  */
-export function accruedOf(t: CouponSchedule, on: Civil, cal: ScheduleCalendar): number {
+export function accruedOf(
+  t: CouponSchedule,
+  on: Civil,
+  cal: ScheduleCalendar,
+  onto: (x: PerNamedUnit, what: string) => PerPiece,
+): number {
   let prev = t.issueDate;
   for (const c of scheduleOf(t, cal)) {
     if (compareCivil(c.date, on) > 0) break;
     prev = c.date;
   }
   if (compareCivil(on, prev) <= 0) return asPerPiece(0, 'nothing has accrued yet');
-  return scale(
-    asPerPiece(t.coupon.amount, 'the coupon a unit carries'),
-    asRatio(yearFraction(t.dayCount, prev, on), 'the span of a year'),
-    'accrued',
+  return onto(
+    scale(
+      asPerNamedUnit(t.coupon.amount, 'the coupon a NAMED unit of face carries'),
+      asRatio(yearFraction(t.dayCount, prev, on), 'the span of a year'),
+      'accrued',
+    ),
+    'what has accrued on a piece of it',
   );
 }
 
@@ -194,17 +220,18 @@ export function cashFlowsOf(
   t: CouponSchedule,
   after: Civil,
   cal: ScheduleCalendar,
+  onto: (x: PerNamedUnit, what: string) => PerPiece,
 ): readonly CashFlow[] {
   const out: CashFlow[] = [];
   for (const c of scheduleOf(t, cal)) {
     if (compareCivil(c.date, after) <= 0) continue;
     const isMaturity = compareCivil(c.date, t.maturity) === 0;
-    out.push({
-      date: c.date,
-      perUnit: isMaturity
-        ? plus(c.perUnit, asPerPiece(1, 'the par it redeems at'), 'final flow')
-        : c.perUnit,
-    });
+    // N10, E-9: par is ONE NAMED UNIT of money for one named unit of face, and it crosses to the
+    // piece grid with the coupon beside it rather than being written as a `1` already on it.
+    const named = isMaturity
+      ? plus(c.perUnit, asPerNamedUnit(1, 'the par it redeems at'), 'final flow')
+      : c.perUnit;
+    out.push({ date: c.date, perUnit: onto(named, 'what a piece of it pays that day') });
   }
   return out;
 }

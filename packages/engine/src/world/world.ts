@@ -89,7 +89,7 @@ import {
   markOfContract,
   type ContractValueDeps,
 } from '../prices/contract-value.js';
-import type { Contract, ContractReads, Underlying } from '../registry/derivatives.js';
+import type { Contract, ContractReads, StruckAt, Underlying } from '../registry/derivatives.js';
 import type { ParamRegister } from '../registry/params.js';
 import type { OntologyRegister } from '../registry/nouns.js';
 import { type Capability, type CapabilityKind, Reach, reachOf } from './reach.js';
@@ -958,7 +958,7 @@ export class World {
     party: PartyId,
     wanted: number,
     m: ContractMarketDecl,
-    struck: PerPiece,
+    struck: StruckAt,
   ): number {
     const held = this.capacity;
     if (held === undefined) {
@@ -978,7 +978,7 @@ export class World {
     against: PartyId,
     size: Qty,
     m: ContractMarketDecl,
-    struck: PerPiece,
+    struck: StruckAt,
   ): readonly Leg[] {
     const held = this.capacity;
     if (held === undefined) {
@@ -2102,7 +2102,7 @@ export class World {
       if (inst.ccy !== ccy || !inst.status.live) continue;
       for (const ahead of [0, 1]) {
         const at = period(this.currentPeriod + ahead);
-        for (const action of this.registry.instrumentKind(inst.kind).due(inst, at, this.calendar)) {
+        for (const action of this.registry.instrumentKind(inst.kind).due(inst, at, this.calendar, this.registry)) {
           if (action.kind === 'coupon') {
             owed = plus(
               owed,
@@ -2218,12 +2218,10 @@ export class World {
       prices: this.prices,
       instruments: () => this.instruments.all(),
       cashFlows: (i, after) =>
-        this.registry.instrumentKind(i.kind).cashFlows(i, after, this.calendar),
-      accrued: (i, on) =>
-        asPerPiece(
-          this.registry.instrumentKind(i.kind).accrued(i, on, this.calendar),
-          `what has accrued on ${i.id}`,
-        ),
+        this.registry.instrumentKind(i.kind).cashFlows(i, after, this.calendar, this.registry),
+      // Law 4, E-9: the ONE reader of a kind's accrual, so the crossing between the two scales is
+      // asserted in one place. This was a second `asPerPiece` on the same call.
+      accrued: (i) => this.accruedPerUnit(i.id, at),
     });
   }
 
@@ -2244,7 +2242,7 @@ export class World {
     const on = this.calendar.startOf(this.currentPeriod);
     const own = profile.worthTo;
     if (own !== undefined) return own(i, required, this.worthReads());
-    const flows = profile.cashFlows(i, on, this.calendar);
+    const flows = profile.cashFlows(i, on, this.calendar, this.registry);
     if (flows.length === 0) return none<PerPiece>();
     return some(
       priceAt(
@@ -2278,10 +2276,17 @@ export class World {
   /** Bond N9.b: what has accrued per unit on a line at the start of a period, from its own terms. */
   accruedPerUnit(instrument: InstrumentId, at: Period): PerPiece {
     const i = this.instruments.get(instrument);
-    // Item 16: what has accrued on ONE unit is money per piece, which is what makes a dirty price
-    // `plus(clean, accrued)` and never an addition of a balance to a level.
+    /**
+     * Item 16, Law 8, E-9: what has accrued on ONE PIECE, which is what makes a dirty price
+     * `plus(clean, accrued)` and never an addition of two scales.
+     *
+     * The crossing itself is the kind's, because only the kind knows what its terms are stated in:
+     * the profile is handed `this.registry` and a bond's coupon goes through `priceOf` from money
+     * per NAMED unit of face to money pieces per piece. This is the one door it comes back through,
+     * which is why `curveAt` asks this rather than calling the profile a second time (Law 4).
+     */
     return asPerPiece(
-      this.registry.instrumentKind(i.kind).accrued(i, this.calendar.startOf(at), this.calendar),
+      this.registry.instrumentKind(i.kind).accrued(i, this.calendar.startOf(at), this.calendar, this.registry),
       `what has accrued on ${instrument}`,
     );
   }

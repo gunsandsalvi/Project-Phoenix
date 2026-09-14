@@ -536,7 +536,7 @@ export class Settlement {
       `a contract has a notional and it is positive, got ${leg.notional}`,
     );
     finite(leg.value, 'what the contract is worth at inception');
-    finite(leg.struckAt, 'the level it was struck at');
+    finite(leg.struckAt.level, 'the level it was struck at');
     this.d.registry.currency(leg.ccy);
     const profile = this.d.derivativeKind(leg.derivative);
     profile.validateTerms(leg.terms);

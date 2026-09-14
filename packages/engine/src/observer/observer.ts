@@ -652,7 +652,7 @@ export function snapshot(
       b: String(c.b),
       house: c.house === null ? null : String(c.house),
       notional: c.notional,
-      struckAt: c.struckAt,
+      struckAt: c.struckAt.level,
       struckAs: w.registry.derivativeKind(c.kind).quotedAs,
       markToA: w.contractMark(c, w.period),
       initialMargin: margin.some ? margin.value : null,

@@ -52,6 +52,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { moneyLevel } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -181,7 +182,11 @@ export const optionKind: DerivativeKindProfile = {
    */
   premiumPerUnit: (struckAt, terms): PerPiece =>
     isOption(terms)
-      ? scale(struckAt, asRatio(terms.multiplier, 'the multiplier'), 'per contract')
+      ? scale(
+          moneyLevel(struckAt, 'an option is struck at a premium'),
+          asRatio(terms.multiplier, 'the multiplier'),
+          'per contract',
+        )
       : asPerPiece(0, 'not an option, so nothing is paid for it'),
   initialMargin: (c, at, reads): Option<Cash> => {
     if (!isOption(c.terms)) return none<Cash>();

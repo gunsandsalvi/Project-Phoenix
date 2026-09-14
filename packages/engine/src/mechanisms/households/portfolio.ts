@@ -172,7 +172,7 @@ export function savingLines(
     const bid = minus(expected, spread, 'what it will pay');
     const ask = plus(expected, spread, 'what it will take');
     if (bid <= 0) continue;
-    const flows = profile.cashFlows(i, on, view.calendar);
+    const flows = profile.cashFlows(i, on, view.calendar, view.registry);
     const last = flows[flows.length - 1];
     if (last !== undefined) {
       // D5: it promises dated payments, so the question is whether the money comes back in time.

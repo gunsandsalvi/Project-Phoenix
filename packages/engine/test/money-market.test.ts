@@ -422,7 +422,7 @@ function everythingPledged(bank: PartyId): SystemModule {
           const on = ctx.calendar.startOf(ctx.period);
           for (const i of ctx.instruments.all()) {
             if (!i.status.live || !i.issuer.some) continue;
-            if (ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar).length === 0) {
+            if (ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry).length === 0) {
               continue;
             }
             const free = ctx.register.free(bank, i.id);

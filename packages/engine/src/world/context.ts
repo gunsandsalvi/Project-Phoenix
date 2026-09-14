@@ -85,6 +85,7 @@ import type {
   ContractMeasure,
   ContractPayment,
   Underlying,
+  StruckAt,
 } from '../registry/derivatives.js';
 
 /** Reads every context shares. Every method here is a read; nothing mutates. */
@@ -550,7 +551,7 @@ export interface ContractsRead extends ContractReadsFacade {
       readonly terms: Contract['terms'];
       readonly ccy: Contract['ccy'];
       readonly notional: Qty;
-      readonly struckAt: PerPiece;
+      readonly struckAt: StruckAt;
       readonly house: PartyId | null;
       readonly a: PartyId;
       readonly b: PartyId;

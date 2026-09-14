@@ -84,7 +84,11 @@ export const subId = (bank: PartyId, n: number): InstrumentId =>
 const interestTo = (t: SubTerms, from: Civil, to: Civil): Ratio =>
   scale(t.rate, asRatio(yearFraction(t.dayCount, from, to), 'the span of a year'), 'interest');
 
-/** PAR: one unit is one piece of its money. The one place a share of par becomes a level (`E-9`). */
+/**
+ * PAR: one unit of a note is one unit of its money (`unit: (ccy) => currencyUnit(ccy)`), so a piece
+ * of it is a piece of the money and there is no crossing to make (`E-9`). This is the one place a
+ * share of par becomes a level, named rather than assumed.
+ */
 const PAR: PerPiece = asPerPiece(1, 'par: one unit of this note is one piece of its money');
 
 function dueOn(

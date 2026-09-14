@@ -325,7 +325,8 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > | ~~2b~~ | ~~the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1`~~ (`A-18` closed in 2a.1) — **DONE** | |
 > | ~~2c~~ | ~~rates read as levels: `A-44`, `A-58`, `A-65`~~ — **DONE**, and each was a rate that was not one | |
 > | ~~2d~~ | ~~the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61`~~ — **DONE**; it took one kernel door | |
-> | ~~2e~~ | ~~the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38`~~ — **DONE. STAGE 2 IS CLOSED** apart from `E-9` and `E-10` | |
+> | ~~2e~~ | ~~the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38`~~ — **DONE** | |
+> | ~~2f~~ | ~~the two type changes: `E-9`, `E-10`~~ — **DONE. ITEM 2 IS CLOSED** but for 2.22, which is the suite | |
 >
 > ### Stage 2a.1 — as built
 >
@@ -556,6 +557,53 @@ resolution test `test/resolution/demand.test.ts` was rewritten as the stage went
 SPAN is invariant, which is the property `A-32` names — and it runs at the end of the plan with the
 rest.
 
+### Stage 2f — as built: the two type changes, and what the type found
+
+**`E-9` — a dirty price adds two scales.** `plus(clean, accrued)` in `prices/curve.ts:readCurve` and
+`clearing/market.ts` added a per-piece print to an accrual written straight onto the piece grid from
+a number stated per NAMED unit of face. The three places that made the assertion are all in
+`registry/claims.ts`: the coupon schedule, the accrual and the redemption flow, each writing
+`asPerPiece(...)` on a named number. The profile's `due`, `accrued` and `cashFlows` now take a
+`PriceScale` — `Registry` satisfies it structurally, so a caller passes the registry it already has —
+and `ontoTheGrid(scale, i)` crosses through `Registry.priceOf`, which is the door. The MEMO stays in
+named terms, which is why it is still correct to key it on the terms alone.
+
+**Two corrections the read produced, and both matter more than the fix.** The step said the addition
+is right today "only because par and money share a subdivision". For a BOND that is exactly it: its
+unit is `PAR`, declared separately with `perUnit: MONEY_PIECES`, so the factor is one by coincidence
+and is crossed explicitly now. For a LOAN, a money-market row and a subordinated note it is NOT a
+coincidence at all — their own profiles declare `unit: (ccy) => currencyUnit(ccy)`, so a piece of the
+claim IS a piece of its money and there is nothing to cross. The three `PAR` constants said "the two
+scales only coincide here (`E-9`)"; they name the declaration that makes it true instead.
+
+And `curveAt` held a SECOND `asPerPiece` on the same profile call that `accruedPerUnit` already
+wraps. One reader of a kind's accrual now, so the crossing is asserted in one place (Law 4).
+
+**`E-10` — one field, five dimensions.** `Contract.struckAt` was a `PerPiece` for a bond future's
+PRICE, a credit default swap's SPREAD, a swap's RATE, an index future's LEVEL and a cross-currency
+swap's BASIS. `StruckAt` is `{as:'money'; level: PerPiece} | {as:'rate'; level: Ratio}`, and the tag
+is the kind's own `quotedAs` — which ALREADY EXISTED, and which the observer was already reading to
+label a display. The fact had a writer; the value simply did not carry it.
+
+`clearing/market.ts` tags the cleared level once, before admission, so `admits`, `marginLegs`,
+`ContractAsk.struck`, `premiumPerUnit` and every `mark` take what they mean. `moneyLevel` and
+`rateLevel` are the reader doors and they THROW — `Mismatch`, Derivative D7, at the site — where a
+book struck the other kind of level. That check could not exist while the field was one type.
+
+**And the type found real arithmetic.** The three rate-quoted kinds were computing
+`valueAt(struckAt, notional)` — a PRICE times a QUANTITY — where a spread or a rate over a notional
+is `scale(heldAsMoney(notional), rate)`. Five sites: the CDS mark and its premium leg, the index
+series mark and its premium leg, the swap's mark and both of its accrual legs, and the
+cross-currency basis. They came out the same number only because a `PerPiece` and a `Ratio` are both
+`number` at runtime and the notional was already in money pieces.
+
+**`E-11` is named at every crossing and stays item 6's.** The PRINT on a rate-quoted book is still a
+`PerPiece` — `Outcome.price` is one type for every market — so each of those marks now writes
+`asRatio(print.value.price, 'the spread this book last printed')` and says where the defect is. That
+is the same shape one layer down, and it is positioned, not chased.
+
+**What is left of item 2 is step 2.22 — the suite — and that is the owner's instruction, not a gap.**
+
 ### Steps — stage 2a, the typing
 
 - [x] 2a.1 `banks` and `funds`: `LoanTerms.rate` and `SubTerms.rate` → `Ratio`; `interestTo` → `scale`; `PAR` named in both files; `hoursNeeded` → `scale`, `linesCovered` and `probabilityOfDefault` → `ratioOf`; the desk's one-sided flow → `plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall → `minus`. `mul`, `div`, `add` and `sub` leave five files.
@@ -565,8 +613,8 @@ rest.
 - [x] 2.3 **`E-8` is closed.** `dimension: 'price'` now means money per PIECE and `'pricePerUnit'` money per NAMED unit, read through `params.price` and `params.pricePerUnit`. **Six declared levels were all `price` and four of them are stated per named unit** — every goods opening level, the opening wage, the FX opening rate — so the mis-declaration was the majority. `equity.openingShare` and `funds.openingShare` are genuinely per piece and stay. **And a seventh was not a price at all**: `bondFuture.size` is 100,000 units of FACE per contract, no money anywhere in it, declared `price` and read as money-per-piece; it is a `count` now.
 - [x] 2.3a **The split caught a live defect.** The FX opening rate was written as a print — money PIECES per piece — straight from a declaration stated in named units on both sides, while `rateTickFor` beside it has always crossed through `registry.priceOf`. The two agreed only while base and quote shared a subdivision. It crosses at the door now.
 - [x] 2.3b A stale reader stage 1 left behind: `indices.test.ts` read `index.base` with `params.price` after stage 1 re-declared it a `ratio`, which throws at the read. Corrected to `params.ratio`.
-- [ ] 2.4 `E-9` — a dirty price adds two scales. `prices/curve.ts:readCurve` and `clearing/market.ts` add a per-piece print to a per-named-unit accrual; right today only because par and money share a subdivision. Convert at `Registry.priceOf`, which is the door.
-- [ ] 2.5 `E-10` — `Contract.struckAt` means a different dimension per kind: a price for a bond future, a **spread** for a CDS, a **rate** for a swap, an **index level** for an index future, a **basis** for a cross-currency swap. One field, five dimensions. Make `struckAt` a discriminated union keyed off the derivative kind's profile, so the kind's own `mark` and `premiumPerUnit` take what they mean. **This finding was never in the old index; it is `E-10` here.**
+- [x] 2.4 `E-9` — a dirty price adds two scales. `prices/curve.ts:readCurve` and `clearing/market.ts` add a per-piece print to a per-named-unit accrual; right today only because par and money share a subdivision. Convert at `Registry.priceOf`, which is the door. **DONE.** The profile's `due`, `accrued` and `cashFlows` take a `PriceScale` — `Registry` satisfies it, so a caller passes the registry it already has — and `registry/claims.ts` crosses at its three exits through `ontoTheGrid`. The memo stays in NAMED terms and is therefore still keyed on the terms alone, which is what makes it correct. **And the read of the code corrected the step twice**: the coincidence is not "par and money share a subdivision" in general — for a BOND it is (`units: [{ id: PAR, perUnit: MONEY_PIECES }]`, a separately declared unit that happens to match), and for a loan, a money-market row and a sub note there is no crossing at all, because their own `unit: (ccy) => currencyUnit(ccy)` makes a piece of the claim a piece of its money. The three `PAR` constants say that now instead of citing a coincidence. `curveAt` also had a SECOND `asPerPiece` on the same profile call; it reads `accruedPerUnit`, the one door (Law 4).
+- [x] 2.5 `E-10` — `Contract.struckAt` means a different dimension per kind: a price for a bond future, a **spread** for a CDS, a **rate** for a swap, an **index level** for an index future, a **basis** for a cross-currency swap. One field, five dimensions. Make `struckAt` a discriminated union keyed off the derivative kind's profile, so the kind's own `mark` and `premiumPerUnit` take what they mean. **This finding was never in the old index; it is `E-10` here.** **DONE.** `StruckAt` is `{as:'money'; level: PerPiece} | {as:'rate'; level: Ratio}`, and the tag is the kind's own `quotedAs` — which already existed and which the observer was already reading to label a display, so the fact had a writer and the value did not carry it. `clearing/market.ts` tags the cleared level once, before admission, and `admits`, `marginLegs`, `ContractAsk.struck`, `premiumPerUnit` and every `mark` take it. `moneyLevel`/`rateLevel` are the reader doors and they THROW (`Mismatch`, Derivative D7) where a book struck the other — a check the one-field version could not have. **It found real arithmetic**: the rate-quoted kinds were doing `valueAt(struckAt, notional)` — a price times a quantity — where a spread over a notional is `scale(heldAsMoney(notional), rate)`; five sites across `cds/contract`, `cds/series`, `irs/contract` and `fx-derivatives/contract`. The PRINT on those books is still a `PerPiece` and is named `asRatio` at each crossing: that is **`E-11`**, the same defect one layer down, and it stays item 6's.
 
 ### Steps — the eighteen the type now refuses
 
@@ -590,9 +638,9 @@ rest.
 
 ### Findings this closes (18)
 
-**All eighteen are closed**, and `E-8` with them. What is left of item 2 is `E-9` (a dirty price adds
-two scales) and `E-10` (`Contract.struckAt` means a different dimension per kind), which are steps
-2.4 and 2.5 and are the two that need a type change rather than a fix. Bodies in Part 3.
+**All eighteen are closed**, and `E-8`, `E-9` and `E-10` with them. What is left of item 2 is step
+**2.22 alone — the suite** — which the owner's instruction holds until the plan is done. Bodies in
+Part 3.
 
 Three came OUT of closing them and are positioned, not chased: **`E-11`** (2a.2, 6), **`E-12`** (21),
 and `A-18`'s `merge` half (item 12). **One turned out not to be a defect**: `pricesOver` was named
@@ -3720,8 +3768,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-5** (B) | 15 | the state can only sell ground in the place it sits in |
 | **E-6** (B) | 21 | an acquirer's consideration in a bank resolution is a missing mechanism |
 | **E-7** (B) | 19 | a negative policy rate is real and this world cannot express one |
-| **E-9** (B) | 2 | a dirty price adds two scales |
-| **E-10** (B) | 2 | `Contract.struckAt` means a different dimension per kind — **never indexed before** |
 | **E-11** (B) | 2a.2, 6 | `Outcome.price` is a `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS. `E-10`'s shape at the clearing layer. **Found by the type at stage 2a.1** |
 | **E-12** (B) | 21 | what a household requires of a claim reaches the fund comparison and not the paper bid, so a change in the deposit board does not move what it will pay for a bill — half of D5.a's substitution. **Found closing `A-44` at stage 2c** |
 
@@ -3749,6 +3795,7 @@ carries each in full.
 | item 2, stage 2c | `A-44` (its paper-bid half is `E-12`), `A-65`; `A-58`'s price (its schedule half is 2.19) |
 | item 2, stage 2d | `A-23`, `A-47`, `A-50`, `A-51`, `A-61` |
 | item 2, stage 2e | `A-5`, `A-6`, `A-32`, `A-33`, `A-38`, and `A-58`'s schedule |
+| item 2, stage 2f | `E-9`, `E-10` |
 
 ### What the reads covered, and what they did not
 

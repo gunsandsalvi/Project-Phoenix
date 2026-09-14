@@ -45,7 +45,7 @@ export function eligible(view: ParticipantView, i: Instrument, on: Civil): boole
   if (!i.status.live || !i.issuer.some) return false;
   const profile = view.registry.instrumentKind(i.kind);
   if (!profile.liabilityOfIssuer || profile.pricing !== 'cleared') return false;
-  return profile.cashFlows(i, on, view.calendar).length > 0;
+  return profile.cashFlows(i, on, view.calendar, view.registry).length > 0;
 }
 
 /**
@@ -72,7 +72,7 @@ export function valueToLender(view: ParticipantView, i: Instrument, on: Civil): 
   if (!i.issuer.some) return none<PerPiece>();
   const required = requiredOf(view, i.issuer.value);
   if (!required.some) return none<PerPiece>();
-  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
+  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
   if (flows.length === 0) return none<PerPiece>();
   return some(
     priceAt(

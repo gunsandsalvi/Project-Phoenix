@@ -22,7 +22,7 @@ import type {
   VoyageId,
 } from '../core/ids.js';
 import type { Option } from '../core/option.js';
-import type { ContractTerms } from '../registry/derivatives.js';
+import type { ContractTerms, StruckAt } from '../registry/derivatives.js';
 
 /** Money B1: an account is (holder, issuer, currency). The currency is on the amount. */
 export interface AccountRef {
@@ -247,7 +247,7 @@ export interface OpenContractLeg {
   readonly ccy: CurrencyCode;
   readonly notional: Qty;
   /** D7: the rate, spread or strike the two sides cleared at. */
-  readonly struckAt: PerPiece;
+  readonly struckAt: StruckAt;
   /**
    * Clearing E1, Expectations A2: WHAT THE LEVEL IS A LEVEL OF — the book's own line, which is the
    * subject its print is written against. A party that struck a contract saw this price, and that

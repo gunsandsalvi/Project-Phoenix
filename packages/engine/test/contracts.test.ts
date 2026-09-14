@@ -7,6 +7,7 @@
  * enters is the identity that the marks across its two sides come to nothing EXACTLY (D1.b). These
  * are the doors that identity is made of.
  */
+import { struckAs } from '../src/registry/derivatives.js';
 import { asPerPiece, asCash } from '../src/core/measure.js';
 import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
@@ -137,7 +138,7 @@ function openOne(
           terms: termsOn(w, strike, expiry),
           ccy: USD,
           notional,
-          struckAt: asPerPiece(strike, 'the level it was struck at'),
+          struckAt: struckAs('money', strike),
           book: instrumentId('contract:test.forward'),
           value: asCash(0, 'struck at par, so nothing changes hands'),
           house: null,
@@ -192,7 +193,7 @@ describe('the contract store (Derivative X1, D1, D12)', () => {
               terms: termsOn(w, strike, ctx.period + 4),
               ccy: USD,
               notional: asQty(100, 'the notional'),
-              struckAt: asPerPiece(strike, 'the level it was struck at'),
+              struckAt: struckAs('money', strike),
               book: instrumentId('contract:test.forward'),
               value: asCash(0, 'struck at par, so nothing changes hands'),
               house: null,
@@ -252,7 +253,7 @@ describe('the contract store (Derivative X1, D1, D12)', () => {
               terms: termsOn(w, strike, ctx.period + 4),
               ccy: USD,
               notional: asQty(100, 'the notional'),
-              struckAt: asPerPiece(strike, 'the level it was struck at'),
+              struckAt: struckAs('money', strike),
               book: instrumentId('contract:test.forward'),
               value: asCash(0, 'struck at par, so nothing changes hands'),
               house: null,
@@ -293,7 +294,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
             terms: termsOn(w, 1, ctx.period + 6),
             ccy: USD,
             notional: asQty(100, 'the notional'),
-            struckAt: asPerPiece(1, 'the level it was struck at'),
+            struckAt: struckAs('money', 1),
             book: instrumentId('contract:test.forward'),
             value: asCash(0, 'struck at par, so nothing changes hands'),
             house: null,
@@ -339,7 +340,7 @@ describe('the mark, read from two sides (D1, D8, D1.b, A3)', () => {
               terms: termsOn(w, 1, ctx.period + 6),
               ccy: USD,
               notional: asQty(100, 'the notional'),
-              struckAt: asPerPiece(1, 'the level it was struck at'),
+              struckAt: struckAs('money', 1),
               book: instrumentId('contract:test.forward'),
               value: asCash(0, 'struck at par, so nothing changes hands'),
               house: null,
@@ -385,7 +386,7 @@ describe('the underlying is something this world produces (D3, D3.a, G4)', () =>
               terms,
               ccy: USD,
               notional: asQty(100, 'the notional'),
-              struckAt: asPerPiece(1, 'the level it was struck at'),
+              struckAt: struckAs('money', 1),
               book: instrumentId('contract:test.forward'),
               value: asCash(0, 'struck at par, so nothing changes hands'),
               house: null,
@@ -428,7 +429,7 @@ describe('novation moves who faces whom (B4)', () => {
               terms: termsOn(w, 1, ctx.period + 8),
               ccy: USD,
               notional: asQty(100, 'the notional'),
-              struckAt: asPerPiece(1, 'the level it was struck at'),
+              struckAt: struckAs('money', 1),
               book: instrumentId('contract:test.forward'),
               value: asCash(0, 'struck at par, so nothing changes hands'),
               house: null,
@@ -464,7 +465,7 @@ describe('what the forward is (the test-only kind)', () => {
   it('is a derivative by the contract’s own definition', () => {
     // D2: a notional in a unit; D3: an underlying priced elsewhere; D7.b: struck at par so nothing
     // changes hands at inception; D11: it expires.
-    expect(testForwardKind.premiumPerUnit(asPerPiece(1, 'the level'), { kind: TEST_FORWARD })).toBe(0);
+    expect(testForwardKind.premiumPerUnit(struckAs('money', 1), { kind: TEST_FORWARD })).toBe(0);
     expect(isForward({ kind: TEST_FORWARD })).toBe(false);
     expect(none<number>().some).toBe(false);
   });
@@ -492,7 +493,7 @@ describe('the store guards the row it writes (Law 4, Law 8, D2, D12)', () => {
               terms: { ...termsOn(w, 100, 8), kind: derivativeKindId('not.a.forward') },
               ccy: USD,
               notional: asQty(100, 'the notional'),
-              struckAt: asPerPiece(100, 'the level it was struck at'),
+              struckAt: struckAs('money', 100),
               book: instrumentId('contract:test.forward'),
               value: asCash(0, 'struck at par, so nothing changes hands'),
               house: null,
@@ -525,7 +526,7 @@ describe('the store guards the row it writes (Law 4, Law 8, D2, D12)', () => {
           terms: termsOn(w, 100, 8),
           ccy: USD,
           notional: asQty(100.5, 'the notional'),
-          struckAt: asPerPiece(100, 'the level it was struck at'),
+          struckAt: struckAs('money', 100),
           basis: asCash(0, 'what it cost'),
           house: null,
         },

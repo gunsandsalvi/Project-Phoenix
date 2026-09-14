@@ -46,6 +46,7 @@ import { formatCivil } from '../../calendar/civil.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
 import {
   accruedOf,
+  ontoTheGrid,
   cashFlowsOf,
   dueOf,
   type CouponSchedule,
@@ -156,9 +157,12 @@ export const corporateBond: InstrumentKindProfile = {
     return `${who} ${percent(i.terms.coupon.amount)} ${formatCivil(i.terms.maturity)}`;
   },
   // N6, N9.b, N5.a, N10: the kernel's schedule, because when a coupon falls is not a corporate fact.
-  due: (i, period, cal) => (isCorporateBond(i.terms) ? dueOf(i.terms, period, cal) : []),
-  accrued: (i, on, cal) => (isCorporateBond(i.terms) ? accruedOf(i.terms, on, cal) : 0),
-  cashFlows: (i, after, cal) => (isCorporateBond(i.terms) ? cashFlowsOf(i.terms, after, cal) : []),
+  due: (i, period, cal, scale) =>
+    isCorporateBond(i.terms) ? dueOf(i.terms, period, cal, ontoTheGrid(scale, i)) : [],
+  accrued: (i, on, cal, scale) =>
+    isCorporateBond(i.terms) ? accruedOf(i.terms, on, cal, ontoTheGrid(scale, i)) : 0,
+  cashFlows: (i, after, cal, scale) =>
+    isCorporateBond(i.terms) ? cashFlowsOf(i.terms, after, cal, ontoTheGrid(scale, i)) : [],
 };
 
 /* --------------------------------------------------------------------------------------------

@@ -52,6 +52,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { moneyLevel } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { contractOf, kindOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -99,7 +100,11 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   if (!isBondFuture(c.terms)) return asCash(0, 'not a bond future');
   const p = reads.print(c.terms.book, at);
   if (!p.some) return asCash(0, 'this book has not printed');
-  const move = minus(p.value.price, c.struckAt, 'the future now against the level struck');
+  const move = minus(
+    p.value.price,
+    moneyLevel(c.struckAt, 'a bond future is struck at a price'),
+    'the future now against the level struck',
+  );
   const worth = valueAt(move, scale(c.notional, asRatio(c.terms.contractSize, 'the face in a contract'), 'per contract'), 'of face each');
   return c.terms.long ? worth : negated(worth, 'and the other side of it');
 }
@@ -257,7 +262,7 @@ export function bondCarryOf(
 ): Option<PerPiece> {
   const i = ctx.instruments.get(deliverable);
   const on = ctx.calendar.startOf(ctx.period);
-  const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
+  const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry);
   const until = ctx.calendar.startOf(to);
   // What the bond's own terms promise between now and delivery — the coupon, read from the flows
   // rather than from a rate anybody wrote down (Law 19).
@@ -419,7 +424,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId,
      * the last payment it makes is the last day anybody could deliver it.
      */
     const on = ctx.calendar.startOf(ctx.period);
-    const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
+    const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar, ctx.registry);
     const last = flows[flows.length - 1];
     if (last === undefined) continue;
     if (compareCivil(last.date, ctx.calendar.endOf(expiry)) <= 0) continue;

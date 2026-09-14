@@ -17,7 +17,7 @@
  * there is no path through this file that moves the notional, which is what E1 asks and what the
  * test that reads every leg of a year of swaps checks.
  */
-import { absolute, asCash, asPerPiece, asRatio, type Cash, minus, negated, scale, type PerPiece, valueAt } from '../../core/measure.js';
+import { absolute, asCash, asPerPiece, asRatio, type Cash, heldAsMoney, minus, negated, scale, type PerPiece, valueAt } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -33,6 +33,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { rateLevel } from '../../registry/derivatives.js';
 import { irsOrders } from './participants.js';
 import { irsMeasures } from './measures.js';
 
@@ -94,9 +95,16 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   const t = c.terms;
   const now = reads.print(t.book, at);
   if (!now.some) return asCash(0, 'this swap book has not printed');
-  const richer = minus(now.value.price, c.struckAt, 'the rate now against the rate struck');
+  // Law 8, E-10, E-11: a swap book clears a RATE. `rateLevel` says so about this contract's own
+  // level and `asRatio` says it about the print, which is still a `PerPiece` on every book in this
+  // world (`E-11`, item 6). A rate over a notional is money per year, not a value.
+  const richer = minus(
+    asRatio(now.value.price, 'the rate this book last printed'),
+    rateLevel(c.struckAt, 'an interest-rate swap is struck at a rate'),
+    'the rate now against the rate struck',
+  );
   const worth = scale(
-    valueAt(richer, c.notional, 'over the notional'),
+    scale(heldAsMoney(c.notional, 'the notional it is on'), richer, 'over the notional'),
     asRatio(yearsLeft(t, at, reads), 'the years it has left'),
     'over the years it has left',
   );
@@ -158,14 +166,22 @@ export const irsKind: DerivativeKindProfile = {
       );
     const fixedLeg = fixedDue
       ? scale(
-          valueAt(c.struckAt, c.notional, 'the fixed rate on the notional'),
+          scale(
+            heldAsMoney(c.notional, 'the notional it is on'),
+            rateLevel(c.struckAt, 'an interest-rate swap is struck at a rate'),
+            'the fixed rate on the notional',
+          ),
           asRatio(accrualFor(t.fixedEvery), 'this period of a year'),
           'accrued',
         )
       : asCash(0, 'nothing fell due on the fixed leg');
     const floatLeg = floatDue
       ? scale(
-          valueAt(float.value, c.notional, 'the fixing on the notional'),
+          scale(
+            heldAsMoney(c.notional, 'the notional it is on'),
+            asRatio(float.value, 'the fixing this period'),
+            'the fixing on the notional',
+          ),
           asRatio(accrualFor(t.floatEvery), 'this period of a year'),
           'accrued',
         )

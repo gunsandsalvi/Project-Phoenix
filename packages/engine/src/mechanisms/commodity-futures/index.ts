@@ -66,6 +66,7 @@ import type {
   ContractTerms,
   DerivativeKindProfile,
 } from '../../registry/derivatives.js';
+import { moneyLevel } from '../../registry/derivatives.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { contractOf, kindOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
@@ -119,7 +120,11 @@ function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
   if (!isCommodityFuture(c.terms)) return asCash(0, 'not a commodity future');
   const p = reads.print(c.terms.book, at);
   if (!p.some) return asCash(0, 'this book has not printed');
-  const move = minus(p.value.price, c.struckAt, 'the future now against the level struck');
+  const move = minus(
+    p.value.price,
+    moneyLevel(c.struckAt, 'a commodity future is struck at a price'),
+    'the future now against the level struck',
+  );
   const worth = valueAt(move, scale(c.notional, asRatio(c.terms.lotUnits, 'the units in a lot'), 'per lot'), 'of the grade each');
   return c.terms.long ? worth : negated(worth, 'and the other side of it');
 }

@@ -53,11 +53,13 @@ function interestTo(t: LoanTerms, from: Civil, to: Civil): Ratio {
 }
 
 /**
- * PAR: one unit of a loan is one piece of the money it is written in.
+ * PAR: one unit of a loan is one unit of the money it is written in.
  *
  * This is where a share of par becomes money per unit, and it is named rather than assumed because
- * the two scales only coincide here (`E-9`): the arithmetic below is right because par and the
- * money's own piece are the same size, not because a rate and a level are the same thing.
+ * a rate and a level are not the same thing. `E-9`: no crossing is needed here and the reason is
+ * this kind's OWN declaration — `unit: (ccy) => currencyUnit(ccy)`, so a piece of a loan is a piece
+ * of its money and `priceOf` would multiply by one. A bond is the other case: its unit is `PAR`,
+ * declared separately, and its coupon and redemption cross at the door (`registry/claims.ts`).
  */
 const PAR: PerPiece = asPerPiece(1, 'par: one unit of a loan is one piece of its money');
 

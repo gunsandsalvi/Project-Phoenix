@@ -105,16 +105,16 @@ describe('what has accrued (Bond N9.b)', () => {
     const issue = terms.issueDate;
     const firstCoupon = w.calendar.advance(issue, terms.couponPeriodicity);
     // Nothing accrues before the line exists, or on its issue date.
-    expect(sovereignBond.accrued(i, issue, w.calendar)).toBe(0);
+    expect(sovereignBond.accrued(i, issue, w.calendar, w.registry)).toBe(0);
     const midway = w.calendar.advance(issue, MONTHLY);
-    expect(sovereignBond.accrued(i, midway, w.calendar)).toBeCloseTo(
+    expect(sovereignBond.accrued(i, midway, w.calendar, w.registry)).toBeCloseTo(
       terms.coupon.amount * yearFraction(terms.dayCount, issue, midway),
       15,
     );
     // Just after a coupon it starts again from nothing.
-    expect(sovereignBond.accrued(i, firstCoupon, w.calendar)).toBe(0);
+    expect(sovereignBond.accrued(i, firstCoupon, w.calendar, w.registry)).toBe(0);
     const after = w.calendar.advance(firstCoupon, MONTHLY);
-    expect(sovereignBond.accrued(i, after, w.calendar)).toBeCloseTo(
+    expect(sovereignBond.accrued(i, after, w.calendar, w.registry)).toBeCloseTo(
       terms.coupon.amount * yearFraction(terms.dayCount, firstCoupon, after),
       15,
     );
@@ -124,8 +124,8 @@ describe('what has accrued (Bond N9.b)', () => {
     const w = world(-1);
     const bill = w.instruments.all().find((x) => x.kind === 'sovereign.bill');
     if (bill === undefined) throw new Error('no bill in the opening profile');
-    expect(sovereignBill.accrued(bill, civil(2026, 6, 1), w.calendar)).toBe(0);
-    expect(w.registry.instrumentKind(bill.kind).accrued(bill, civil(2026, 6, 1), w.calendar)).toBe(
+    expect(sovereignBill.accrued(bill, civil(2026, 6, 1), w.calendar, w.registry)).toBe(0);
+    expect(w.registry.instrumentKind(bill.kind).accrued(bill, civil(2026, 6, 1), w.calendar, w.registry)).toBe(
       0,
     );
   });

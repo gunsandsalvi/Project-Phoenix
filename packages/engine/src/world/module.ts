@@ -24,7 +24,7 @@ import type {
   OverdraftDecision,
   PartyKindProfile,
 } from '../registry/kinds.js';
-import type { DerivativeKindProfile } from '../registry/derivatives.js';
+import type { DerivativeKindProfile, StruckAt } from '../registry/derivatives.js';
 import type { ParamDecl, ParamRegister } from '../registry/params.js';
 import type { NounEntry } from '../registry/nouns.js';
 import type { UnitDecl } from '../registry/registry.js';
@@ -252,7 +252,8 @@ export interface ClearingCapacity {
  */
 export interface ContractAsk {
   readonly market: ContractMarketDecl;
-  readonly struck: PerPiece;
+  /** Law 8, E-10: the level, tagged with what its kind quotes in — a price, or a rate. */
+  readonly struck: StruckAt;
 }
 
 /**

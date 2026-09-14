@@ -68,7 +68,7 @@ function pays(w: IndexWorld, i: Instrument, at: Period): boolean {
   const held = dates.get(at);
   if (held !== undefined) return held;
   const on = w.calendar.startOf(at);
-  const does = w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar).length > 0;
+  const does = w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar, w.registry).length > 0;
   dates.set(at, does);
   return does;
 }
