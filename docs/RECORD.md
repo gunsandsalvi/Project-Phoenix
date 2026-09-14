@@ -5486,3 +5486,51 @@ only into code comments, and never added to the findings index.
 **Not measured.** No test was run for this change; it is documentation plus 38 re-pointed references
 and 13 placeholder `planItem`s. Typecheck and lint are green. The four `cds` and `money-market` files
 carried in from item 16 stage 10c are typed and unmeasured, and item **2** continues from there.
+
+## Item 1 — the existence check: is a `done` row true?
+
+**What it is.** `tools/coverage-existence.ts` and `npm run check:existence`, in `npm run check`.
+Per spec system: clauses MET, PARTIAL, MISSING, OUT OF SCOPE, and how many of the MET carry
+`NEVER REACHED`. Two reads and no world. Which system a clause belongs to is joined from the spec
+index rather than parsed out of `docs/COVERAGE.md`'s own headings (Law 4), and the existing
+`readCoverage` and `buildSpecIndex` are reused — no third parser.
+
+**It found two things on its first run.**
+
+**Ten of fifty-one systems produce nothing, not five.** Five have no clause MET at all: Polity 0/32,
+Private Equity 0/25, Prime Brokerage 0/24, Hedge Funds 0/24, Short-Term Debt 0/19. **Five more have
+every clause they MET marked `NEVER REACHED`** — CDS 17, M&A 10, Insurers 9, Securities Lending 9,
+Commodity Futures 5. `builtAndDead()` names those separately, because a reader scanning for "0 MET"
+walks straight past `M&A 10 MET` and all ten of those are marks on a mechanism nothing has ever
+invoked. It is the more dangerous kind: it reads as done. The remedy differs too — an absent sector
+needs writing; one of these needs a way IN to what is already written.
+
+**The spec and COVERAGE disagree about what a requirement is.** 1,369 rows against 1,361
+REASON/VERIFY/FORBID clauses. The eight extra are `MET` rows on spec sub-clauses that carry no form
+word (`Sovereign I1.a`, `Banks Lending C1.d`, `XI-11`, `Labour A3.b`, `Households A2.b`,
+`Households F1.a`, `Households F1.b`, `Households F2.a`), which the index correctly calls NOTEs.
+Marking work you did is not wrong; a denominator that silently disagreed with the spec's own would
+be, so they are reported on every run rather than absorbed. In the other direction every spec clause
+has a row — asserted, not assumed, because a clause nobody answered and a clause somebody deleted
+look identical from inside the file (Part II: never delete a clause to look better).
+
+**One step was dropped and the reason is the interesting part.** As first written, step 1.3 had the
+tool run the rig and cross-check `world/reach.ts`. It does not. The `NEVER REACHED` marks are
+already WRITTEN into `docs/COVERAGE.md` by whoever re-marked it, so the tool READS them (Law 19)
+rather than re-deriving them; the reach read is what keeps them true and this is what counts them.
+That keeps the gate to two file reads — fast and deterministic, which is what lets it sit inside
+`npm run check` instead of being a thing somebody remembers to run.
+
+**The measured state, which Part 0 now carries and the gate now defends.** 1,361 clauses: 815 MET
+(95 NEVER REACHED), 90 PARTIAL, 456 MISSING. **641 of 1,361 — 47% — are missing, partial or dead.**
+
+**Verified in both directions.** Green as committed; perturbing one figure in Part 0 exits 1 and
+prints the two rows that disagree. Eight tests: the join on a two-system fixture, MET-and-never-
+reached as two facts about one row, a NOTE not counted, both absence reads, and three against the
+real files — every absent sector is named in the plan, Part 0's table is the generated one, and no
+spec clause lacks a row.
+
+**Measured.** Lint, typecheck, `check:spec`, `check:forbids`, `check:existence`, `plan:check`: all
+green. The tools suite is 30 green across 5 files. **The engine suite was NOT run** — the owner's
+instruction stands until the plan's items are worked, and item 1 touches no engine code. No COVERAGE
+re-mark: this item implements no spec clause.

@@ -22,80 +22,104 @@
 
 ### 0.1 What exists, by spec system
 
-`docs/COVERAGE.md`, one row per REASON, VERIFY and FORBID. **1,369 clauses: 823 MET, 90 PARTIAL, 456
-MISSING** — and **97 of the MET carry `NEVER REACHED`**, meaning a module cites the clause and has
-never produced an outcome. So **643 of 1,369 (47%) are missing, partial, or dead.**
+`docs/COVERAGE.md`, one row per REASON, VERIFY and FORBID, aggregated per spec system by
+`npm run check:existence`. **1,361 clauses: 815 MET, 90 PARTIAL, 456 MISSING — and 95 of the MET
+carry `NEVER REACHED`**, meaning a module cites the clause and has never produced an outcome. So
+**641 of 1,361 clauses (47%) are missing, partial, or dead.**
 
-| system | MET | PARTIAL | MISSING | total |
-|---|---|---|---|---|
-| Money | 28 | 0 | 8 | 36 |
-| Register | 20 | 4 | 2 | 26 |
-| Clearing | 21 | 5 | 1 | 27 |
-| Audit | 20 | 3 | 0 | 23 |
-| Seed | 16 | 0 | 6 | 22 |
-| Currency | 24 | 0 | 1 | 25 |
-| Bond | 14 | 1 | 1 | 16 |
-| Derivative | 18 | 0 | 0 | 18 |
-| **Corporate Credit** | **7** | 4 | **51** | 62 |
-| Sovereign | 41 | 3 | 8 | 52 |
-| **Short-Term Debt** | **0** | 0 | **19** | 19 |
-| Equity | 25 | 2 | 10 | 37 |
-| Money Market | 25 | 3 | 0 | 28 |
-| Spot FX | 26 | 1 | 0 | 27 |
-| Fund Shares | 23 | 3 | 0 | 26 |
-| Securities Lending | 9 | 0 | 12 | 21 |
-| **Prime Brokerage** | **0** | 0 | **24** | 24 |
-| Derivative Layer | 32 | 0 | 0 | 32 |
-| CDS | 17 | 0 | 8 | 25 |
-| IRS | 14 | 1 | 5 | 20 |
-| FX Forwards | 13 | 0 | 8 | 21 |
-| Commodity Futures | 5 | 0 | 15 | 20 |
-| Commodities Spot | 3 | 1 | 20 | 24 |
-| Indices | 21 | 1 | 0 | 22 |
-| Banks Lending | 22 | 4 | 7 | 33 |
-| Banks Funding | 28 | 4 | 0 | 32 |
-| Banks Capital | 19 | 3 | 1 | 23 |
-| Dealer Desks | 26 | 1 | 0 | 27 |
-| Insurers | 9 | 0 | 14 | 23 |
-| **Hedge Funds** | **0** | 0 | **24** | 24 |
-| **Private Equity** | **0** | 0 | **25** | 25 |
-| Treasury | 20 | 1 | 4 | 25 |
-| Central Bank | 22 | 3 | 4 | 29 |
-| **Polity** | **0** | 0 | **32** | 32 |
-| Firm | 20 | 7 | 3 | 30 |
-| Capital Programme | 22 | 3 | 0 | 25 |
-| Firm Birth | 7 | 6 | 12 | 25 |
-| M&A | 10 | 0 | 12 | 22 |
-| Trade Credit | 8 | 3 | 11 | 22 |
-| XI-11 | 1 | 0 | 0 | 1 |
-| Goods | 27 | 2 | 10 | 39 |
-| Freight | 17 | 3 | 0 | 20 |
-| Labour | 24 | 1 | 3 | 28 |
-| Housing | 6 | 1 | 19 | 26 |
-| Households | 24 | 4 | 9 | 37 |
-| **Small-Business Pools** | **2** | 0 | **26** | 28 |
-| Cross-Border | 6 | 2 | 18 | 26 |
-| Ratings | 16 | 3 | 4 | 23 |
-| Reporting | 32 | 5 | 1 | 38 |
-| Observer | 16 | 0 | 10 | 26 |
-| Expectations | 17 | 2 | 8 | 27 |
+Which system a clause belongs to is the SPEC's fact and is joined from the spec index, never parsed
+out of COVERAGE's own headings (Law 4). A clause is counted where the spec puts it, and a spec
+sub-clause carrying no REASON/VERIFY/FORBID word is a NOTE rather than a requirement — **8 `MET`
+rows mark one of those** (`Sovereign I1.a`, `Banks Lending C1.d`, `XI-11`, `Labour A3.b`,
+`Households A2.b`, `Households F1.a`, `Households F1.b`, `Households F2.a`) and are outside this
+count. The tool names them on every run rather than absorbing them: two documents disagreeing about
+what a requirement IS is the kind of thing this check exists to show. Every spec clause has a row —
+checked, not assumed.
+
+| system | MET | PARTIAL | MISSING | NEVER REACHED | total |
+|---|---|---|---|---|---|
+| Money | 28 | 0 | 8 | 0 | 36 |
+| Register | 20 | 4 | 2 | 0 | 26 |
+| Clearing | 21 | 5 | 1 | 0 | 27 |
+| Audit | 20 | 3 | 0 | 0 | 23 |
+| Seed | 16 | 0 | 6 | 0 | 22 |
+| Currency | 24 | 0 | 1 | 0 | 25 |
+| Bond | 14 | 1 | 1 | 0 | 16 |
+| Derivative | 18 | 0 | 0 | **3** | 18 |
+| **Corporate Credit** | **7** | 4 | **51** | **3** | 62 |
+| Sovereign | 40 | 3 | 8 | **3** | 51 |
+| **Short-Term Debt** | **0** | 0 | **19** | 0 | 19 |
+| Equity | 25 | 2 | 10 | 0 | 37 |
+| Money Market | 25 | 3 | 0 | 0 | 28 |
+| Spot FX | 26 | 1 | 0 | 0 | 27 |
+| Fund Shares | 23 | 3 | 0 | 0 | 26 |
+| Securities Lending | 9 | 0 | 12 | **9** | 21 |
+| **Prime Brokerage** | **0** | 0 | **24** | 0 | 24 |
+| Derivative Layer | 32 | 0 | 0 | **17** | 32 |
+| CDS | 17 | 0 | 8 | **17** | 25 |
+| IRS | 14 | 1 | 5 | **13** | 20 |
+| FX Forwards | 13 | 0 | 8 | 0 | 21 |
+| Commodity Futures | 5 | 0 | 15 | **5** | 20 |
+| **Commodities Spot** | **3** | 1 | **20** | 0 | 24 |
+| Indices | 21 | 1 | 0 | **1** | 22 |
+| Banks Lending | 21 | 4 | 7 | 0 | 32 |
+| Banks Funding | 28 | 4 | 0 | 0 | 32 |
+| Banks Capital | 19 | 3 | 1 | 0 | 23 |
+| Dealer Desks | 26 | 1 | 0 | **2** | 27 |
+| Insurers | 9 | 0 | 14 | **9** | 23 |
+| **Hedge Funds** | **0** | 0 | **24** | 0 | 24 |
+| **Private Equity** | **0** | 0 | **25** | 0 | 25 |
+| Treasury | 20 | 1 | 4 | 0 | 25 |
+| Central Bank | 22 | 3 | 4 | 0 | 29 |
+| **Polity** | **0** | 0 | **32** | 0 | 32 |
+| Firm | 20 | 7 | 3 | 0 | 30 |
+| Capital Programme | 22 | 3 | 0 | 0 | 25 |
+| Firm Birth | 7 | 6 | 12 | 0 | 25 |
+| M&A | 10 | 0 | 12 | **10** | 22 |
+| Trade Credit | 8 | 3 | 11 | 0 | 22 |
+| Goods | 27 | 2 | 10 | 0 | 39 |
+| Freight | 17 | 3 | 0 | 0 | 20 |
+| Labour | 23 | 1 | 3 | 0 | 27 |
+| **Housing** | **6** | 1 | **19** | **3** | 26 |
+| Households | 20 | 4 | 9 | 0 | 33 |
+| **Small-Business Pools** | **2** | 0 | **26** | 0 | 28 |
+| **Cross-Border** | **6** | 2 | **18** | 0 | 26 |
+| Ratings | 16 | 3 | 4 | 0 | 23 |
+| Reporting | 32 | 5 | 1 | 0 | 38 |
+| Observer | 16 | 0 | 10 | 0 | 26 |
+| Expectations | 17 | 2 | 8 | 0 | 27 |
 
 Regenerate with the check in item 1, never by hand.
 
-### 0.2 The five sectors at zero
+### 0.2 The ten systems that produce nothing
 
-Five spec systems have **no clause MET at all**. A sixth, Small-Business Pools, has two, and both are
-the generic cell kernel (`parties/party.ts`, `world/cells.ts`) rather than anything that is a small
-firm.
+**Five have no clause MET at all.** A sixth, Small-Business Pools, has two, and both are the generic
+cell kernel (`parties/party.ts`, `world/cells.ts`) rather than anything that is a small firm.
 
 | sector | spec | MET/total | who owns it today |
 |---|---|---|---|
-| **Polity** | §47 | 0 / 32 | worklist **14** (open) |
-| **Private Equity** | §29 | 0 / 25 | worklist **13o** (open) |
-| **Prime Brokerage** | §15 | 0 / 24 | worklist **13o** (open) |
-| **Hedge Funds** | §28 | 0 / 24 | worklist **13o** (open) |
-| **Short-Term Debt** | §9 | 0 / 19 | **nobody** |
-| **Small-Business Pools** | §42 | 2 / 28 | **nobody** |
+| **Polity** | §47 | 0 / 32 | worklist **14** → item **19** |
+| **Private Equity** | §29 | 0 / 25 | worklist **13o** → item **13** |
+| **Prime Brokerage** | §15 | 0 / 24 | worklist **13o** → item **13** |
+| **Hedge Funds** | §28 | 0 / 24 | worklist **13o** → item **13** |
+| **Short-Term Debt** | §9 | 0 / 19 | **nobody** → item **10b** |
+| **Small-Business Pools** | §42 | 2 / 28 | **nobody** → item **11** |
+
+**And five more are built on paper and dead in the world** — every clause they have MET carries
+`NEVER REACHED`, so a module cites it and has never produced an outcome. The check names these
+separately because a reader scanning for "0 MET" walks straight past `M&A 10 MET`, and all ten of
+those are marks on a mechanism nothing has ever invoked.
+
+| sector | spec | MET (all never reached) / total | the finding | item |
+|---|---|---|---|---|
+| **CDS** | §17 | 17 / 25 | `A-66`, `B-7` — the book cannot produce a first print | **6** |
+| **M&A** | §35 | 10 / 22 | `B-4` — the market for control buys shares and never combines | **6**, **13** |
+| **Insurers** | §27 | 9 / 23 | `A-9`, `B-2` — no policy can be registered in any world | **9**, **14** |
+| **Securities Lending** | §14 | 9 / 21 | `A-67`, `B-3` — nothing ever borrows a security | **9** |
+| **Commodity Futures** | §20 | 5 / 20 | `A-66`, `B-7` | **6**, **18** |
+
+**Ten of fifty-one systems produce nothing.** Five were never written; five were written, marked
+`MET`, and never reached. The second kind is the more dangerous, because it reads as done.
 
 ### 0.3 How six things were lost: the handoff chain
 
@@ -154,7 +178,7 @@ Dependencies, not preference, and the open lines before the new ones. The four a
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **1** | The existence check | — | every claim below is otherwise unverifiable; this is the whole reason six sectors were lost |
+| ~~**1**~~ | ~~The existence check~~ | — | **DONE** — `check:existence`. It found five more dead systems and an 8-row disagreement between the spec and COVERAGE on its first run |
 | **2** | The dimension sweep, finished | 18 | the last open row of a half-done item; it makes 18 findings compile errors, which must then be fixed |
 | **3** | The gather | 4 | one missing call chain kills lettings, bank employment and every dealer quote in the world |
 | **4** | The families that cannot fail | 9 | "checks green" is currently satisfied by four families that cannot fail; nothing below can be measured until they can |
@@ -190,47 +214,56 @@ every line the old file left open. **Stage C (10–18)** builds the sectors that
 
 ---
 
-## 1. The existence check
+## 1. The existence check — **DONE**
+
+> **BUILT: `tools/coverage-existence.ts`, `npm run check:existence`, in `npm run check`.** And it
+> found two things on its first run, which is what it is for.
+>
+> **Ten of fifty-one systems produce nothing, not five.** Five have no clause MET at all. Five more
+> — CDS, M&A, Insurers, Securities Lending, Commodity Futures — have every clause they MET marked
+> `NEVER REACHED`. The second kind is the more dangerous because it reads as done: a reader
+> scanning for "0 MET" walks straight past `M&A 10 MET`, and all ten of those are marks on a
+> mechanism nothing has ever invoked. `builtAndDead()` names them separately, because the remedy is
+> different — an absent sector needs writing, and one of these needs a way IN to what is already
+> written. Part 0.2 carries both lists.
+>
+> **The two documents disagree about what a requirement IS.** `docs/COVERAGE.md` has **1,369** rows;
+> the spec has **1,361** REASON/VERIFY/FORBID clauses. The eight extra are `MET` rows against spec
+> sub-clauses that carry no form word — `Sovereign I1.a`, `Banks Lending C1.d`, `XI-11`,
+> `Labour A3.b`, `Households A2.b`, `Households F1.a`, `Households F1.b`, `Households F2.a` — which
+> the index correctly calls NOTEs. Marking work you did is not wrong; a denominator that silently
+> disagreed with the spec's own would be. They are reported on every run rather than absorbed. In
+> the other direction, **every spec clause has a row** — checked by the test, not assumed, because a
+> clause nobody answered and a clause somebody deleted look identical from inside the file.
+>
+> **It runs no world, and that is a decision.** Step 1.3 as first written had the tool run the rig
+> and cross-check `world/reach.ts`. It does not: the `NEVER REACHED` marks are already WRITTEN into
+> `docs/COVERAGE.md` by whoever re-marked it, so the tool READS them (Law 19) instead of
+> re-deriving them. The reach read is what keeps those marks true; this is what counts them. The
+> gate stays two file reads — fast, deterministic, and safe to put in `npm run check`.
+>
+> **Which system a clause belongs to is joined from the spec index**, never parsed out of COVERAGE's
+> own headings (Law 4: one writer). The existing `readCoverage` and `buildSpecIndex` are reused;
+> no third parser was written.
 
 **Why.** Six sectors were lost because a `done` row and a `MET` mark are claims nobody can falsify.
-`docs/COVERAGE.md` already holds the facts — one row per clause — and nothing aggregates it;
-`world/reach.ts` already measures which capabilities produced an outcome, and nothing compares the
-two. The claim and its evidence exist and have never been put beside each other.
-
-**What it is.** One script and one gate. `coverage:existence` reads `docs/COVERAGE.md` and
-`world/reach.ts`'s output from a short run, and prints one row per spec system: clauses MET,
-PARTIAL, MISSING, and how many of the MET cite a module that has never produced an outcome. A system
-with **zero MET** is named at the top as an ABSENT SECTOR. The gate fails when a system's table row
-disagrees with the header block this file carries in Part 0 — so Part 0 cannot go stale in silence,
-which is how the last one did.
-
-**What it deletes.** The need to read sixty thousand lines to discover that a sector is dead
-(`docs/AUDIT.md`'s item 1 claimed this and delivered the reach read; what was missing is the
-comparison against the claim).
-
-### Files
-
-```
-tools/coverage-existence.ts          new
-tools/test/coverage-existence.test.ts new
-package.json                          the script, and check → check:existence
-docs/IMPLEMENTATION.md                Part 0's table is the fixture
-```
+`docs/COVERAGE.md` holds the facts — one row per clause — and nothing aggregated it. The query is one
+command and had never been run.
 
 ### Steps
 
-- [ ] 1.1 `tools/coverage-existence.ts`: parse `docs/COVERAGE.md` into `{system, met, partial, missing, neverReached}` by walking `^## ` headings and `^| \`` rows; `MET`/`PARTIAL`/`MISSING` from the second cell, `NEVER REACHED` from the third. No regex over the whole file — one pass, one accumulator per heading.
-- [ ] 1.2 Emit two blocks: **ABSENT SECTORS** (`met === 0`), then the full table sorted by spec order. Absent sectors print the spec section number so the reader can go straight to the clauses.
-- [ ] 1.3 Cross-check against `world/reach.ts`: run the rig for three periods, take the never-reached capability list, and for each `MET` row whose cited path is a module that reach names, count it in `neverReached`. A row citing a kernel path as well is not counted (the kernel half runs) — this is the rule `docs/COVERAGE.md`'s header already states for its 97.
-- [ ] 1.4 `tools/test/coverage-existence.test.ts`: assert the parse against a fixture, and assert that **every system with `met === 0` appears in Part 0's five-plus-one list** — so adding a sector to the spec without a home fails the gate.
-- [ ] 1.5 `package.json`: `"check:existence": "tsx tools/coverage-existence.ts --verify"`, added to `check` after `check:forbids`. `--verify` exits non-zero when the generated table differs from the one in `docs/IMPLEMENTATION.md` Part 0.
-- [ ] 1.6 Re-generate Part 0's table from the tool and commit the two together. Record entry; no COVERAGE change (this item implements no clause).
+- [x] 1.1 `tools/coverage-existence.ts`: `existence()` joins `readCoverage()` to `buildSpecIndex()` by clause id and accumulates `{met, partial, missing, outOfScope, neverReached, total}` per system, in the spec's own order. A clause with no row counts MISSING.
+- [x] 1.2 Emit **ABSENT SECTORS** (`met === 0`) and **BUILT AND DEAD** (`met > 0 && neverReached === met`), then the full table.
+- [x] 1.3 ~~Cross-check against `world/reach.ts` by running the rig~~ — **not done, and deliberately**: the marks are read from where the reach read caused them to be written. `marksOnNotes()` and `unanswered()` report the two ways the files can disagree instead.
+- [x] 1.4 `tools/test/coverage-existence.test.ts`: eight tests over a two-system fixture — the join, MET-and-never-reached as two facts about one row, a NOTE not counted, both absence reads — plus three against the real files: every absent sector is named in this plan, Part 0's table is the generated one, and no spec clause lacks a row.
+- [x] 1.5 `package.json`: `check:existence` → `tsx tools/coverage-existence.ts --verify`, in `check` after `check:forbids`. Verified in both directions: green as committed, exit 1 with a diff when a figure in Part 0 is perturbed.
+- [x] 1.6 Part 0 regenerated from the tool. Record entry written.
 
-### Exit
+### Exit — held
 
-`npm run check` fails if a spec system's MET/PARTIAL/MISSING counts move without Part 0 moving with
-them; a system with no MET row is named as an absent sector on every run; and the claim "item X is
-done" can be checked against what exists in one command.
+`npm run check` fails if a spec system's counts move without Part 0 moving with them; a system with
+no MET, and a system whose every MET has never been reached, are named on every run; and "item X is
+done" is checkable against what exists in one command.
 
 ---
 
