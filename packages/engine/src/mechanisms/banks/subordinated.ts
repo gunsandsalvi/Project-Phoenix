@@ -28,31 +28,30 @@ import {
   type PerPiece,
   type Ratio,
 } from '../../core/measure.js';
+import { Missing } from '../../core/errors.js';
+import { FACE_TICK } from '../../registry/grid.js';
+import { displayName } from '../../registry/naming.js';
 import { addDays, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
-import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { percent } from '../../core/format.js';
 import {
   currencyUnit,
   instrumentId,
   instrumentKindId,
+  marketId,
   paramId,
-  venueId,
   type CurrencyCode,
   type InstrumentId,
   type PartyId,
-  type VenueId,
 } from '../../core/ids.js';
-import { atMost, sum } from '../../core/num.js';
-import { downTick, type Qty } from '../../core/tick.js';
-import { none, some } from '../../core/option.js';
-import type { Leg } from '../../ledger/instruction.js';
+import { sum } from '../../core/num.js';
+import { downTick } from '../../core/tick.js';
+import { some } from '../../core/option.js';
 import { issuerOf, type Instrument, type Terms } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Namer } from '../../registry/naming.js';
-import { BANK } from '../../registry/profiles.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { MechanismContext } from '../../world/context.js';
 
 export const SUBORDINATED = instrumentKindId('bank.subordinated');
 
@@ -77,8 +76,16 @@ export function isSub(t: Terms): t is SubTerms {
 }
 
 /** Law 9: named as a market names it — the issuer, what it pays and when it is repaid. */
-export const subId = (bank: PartyId, n: number): InstrumentId =>
-  instrumentId(`sub:${bank}:${n}`);
+/**
+ * Law 9, Law 4 (item 10d): a market names this layer by its issuer and the day it is due. One line
+ * per bank per maturity, so a bank coming back taps the one it has.
+ *
+ * It took a bare `n` that advanced PER FILL, so a bank that raised from three lenders ended up with
+ * three instruments carrying one promise — a second name for one promise is one promise written
+ * twice, and there is no market anywhere that would call them different bonds.
+ */
+export const subId = (bank: PartyId, maturity: Civil): InstrumentId =>
+  instrumentId(`sub:${bank}:${formatCivil(maturity)}`);
 
 /** What a span earns as a SHARE of par: the rate scaled by the fraction of a year it covers. */
 const interestTo = (t: SubTerms, from: Civil, to: Civil): Ratio =>
@@ -124,10 +131,25 @@ function flows(i: Instrument, after: Civil): readonly CashFlow[] {
 
 export const subordinatedKind: InstrumentKindProfile = {
   id: SUBORDINATED,
-  // A1.a's reasoning: nothing trades these here, so they are carried at what they cost and the loss
-  // lands when the issuer cannot pay (XI-1) — or when a resolution writes them down (D2).
-  pricing: 'carriedAtCost',
-  carry: 'cost',
+  /**
+   * A2, D2, Law 3 (item 10d): IT CLEARS, LIKE THE BOND IT IS.
+   *
+   * This said `carriedAtCost` — *"nothing trades these here"* — while the module's own header said
+   * the raise is A REAL ISSUE INTO A REAL MARKET. Both could not be true, and the one that was
+   * false was this: the raise cleared in a private venue, nothing traded the paper afterwards, and
+   * so a bank's capital layer had no price.
+   *
+   * It is not cosmetic. Subordinated debt is the instrument whose price moves FIRST when a bank's
+   * solvency is doubted — before its equity, and long before a depositor notices — which is what
+   * makes D2's bail-in legible: a write-down lands on a layer whose value everybody could already
+   * watch falling. A world where the capital layer has no price is one where a bank deteriorates
+   * invisibly in the one instrument built to show it.
+   */
+  pricing: 'cleared',
+  // Law 8: quoted as a fraction of its own face and moving in ten-thousandths of one, which is the
+  // grid every other piece of paper in this world is quoted on.
+  priceTick: FACE_TICK,
+  carry: 'mark',
   liabilityOfIssuer: true,
   // Register B3: the bank owes the face of it whatever the market pays for it (N13.a).
   owes: 'face',
@@ -182,168 +204,113 @@ export function subordinatedOf(ctx: MechanismContext, bank: PartyId): Cash {
 }
 
 /** One venue per issuer, because what is being priced is that issuer's name (Law 9). */
-export const raiseVenue = (bank: PartyId): VenueId => venueId(`raise:${bank}`);
-
-interface Taken {
-  readonly lender: PartyId;
-  readonly amount: number;
-  readonly rate: Ratio;
-}
-
 /**
- * C2.b: the lenders' side. Each one prices THE NAME from what it published about that name and what
- * money costs it (Law 19: read, never rebuilt), takes only what it has, and will not go past its own
- * limit for that name (F3). A lender with no view of the name posts nothing — no view, no money.
- */
-export function bidsFor(
-  lender: ParticipantView,
-  bank: PartyId,
-  ccy: CurrencyCode,
-  required: number | undefined,
-  appetite: number,
-): readonly Order[] {
-  if (required === undefined) return [];
-  const cash = lender.cash(ccy);
-  const most = atMost(appetite, cash, 'it subscribes out of the money it has');
-  const qty = downTick(most);
-  if (qty <= 0) return [];
-  return [{ party: lender.self.id, side: 'sell', price: required, qty }];
-}
-
-/**
- * A3, C2, C2.a: the raise. It posts what it is short of and no level, the bids clear at one rate,
- * and what it gets is what was actually offered — which can be nothing (C2.b).
+ * A3, C2, C2.a, C2.b, Law 4, Law 9 (item 10d): THE RAISE, THROUGH THE ONE ISSUANCE PATH.
+ *
+ * This module used to do all of this itself: it opened a venue named for the bank, posted the bids
+ * into it, called `clear` by hand, read a RATE out of the outcome, and then issued ONE INSTRUMENT
+ * PER FILL through a counter — so a bank that raised from three lenders held three instruments
+ * carrying one promise, which is Law 9 exactly backwards and Law 4's one-fact-one-writer with it.
+ * Four things were wrong and they were one thing: a private copy of machinery the kernel has.
+ *
+ * What it does now is what a treasury and a firm do. ONE LINE PER BANK PER MATURITY, found by its
+ * own name, so a bank coming back taps the line it has. A size and a walk-away into a KERNEL market,
+ * struck by the one solver, settled by the primary market in one instruction.
+ *
+ * THE WALK-AWAY IS NOTHING, AND THAT IS CLEARING C3 RATHER THAN A HOLE. *"A size and no level. It
+ * is short of capital, not shopping."* A bank raising capital has no alternative to compare against
+ * — raising equity and shrinking are what it does INSTEAD of this, not a price it can hold out for
+ * — so it accepts whatever the book strikes, which is what no level means. Nothing is invented to
+ * stand in for a reservation it does not have (Law 2), and C2.b stays reachable: a book with no
+ * bids strikes nothing and the bank is exactly where it was.
+ *
+ * And the SIZE is face at par: it needs to raise what it is short of, and what it gets for that
+ * face is the book's answer. A bank whose paper the market will only take below par raises less
+ * than it needed and is still short, which is the honest outcome and the one C2.b is about.
  */
 export function runRaise(
   ctx: MechanismContext,
   bank: PartyId,
   ccy: CurrencyCode,
   short: number,
-  bids: readonly Order[],
-): Taken[] {
+): void {
   const want = downTick(short);
-  if (want <= 0) return [];
-  if (bids.length === 0) {
-    // C2.b: nobody bid at all, which is the same answer as nobody bidding enough and is recorded
-    // the same way. A raise nobody answered is a refusal, not a silence.
-    ctx.record('bank.raise.failed', [bank], { bank, wanted: want, outcome: 'noSupply' }, true);
-    return [];
+  if (want <= 0) return;
+  const drawn = ctx.calendar.startOf(ctx.period);
+  const maturity = addDays(drawn, ctx.params.periods(SUB_PARAMS.periods) * ctx.calendar.periodDays);
+  const id = subId(bank, maturity);
+  const standing = ctx.instruments.has(id) ? ctx.instruments.get(id) : undefined;
+  if (standing !== undefined && !standing.status.live) return;
+  if (standing === undefined) openLine(ctx, bank, ccy, id, drawn, maturity);
+  const inst = ctx.instruments.get(id);
+  if (!inst.market.some) {
+    throw new Missing('Clearing D1', `${id} names no market`, { instrument: id });
   }
-  const venue = raiseVenue(bank);
-  if (!ctx.venues.some((v) => v.id === venue)) {
-    ctx.openVenue({
-      id: venue,
-      name: `${bank} subordinated`,
-      clearedBy: 'banks',
-      unit: currencyUnit(ccy),
-      ccy,
-      key: { issuer: String(bank), layer: 'subordinated' },
-    });
-  }
-  for (const b of bids) ctx.post(venue, b);
-  // Clearing C3: a size and no level. It is short of capital, not shopping.
-  ctx.post(venue, { party: bank, side: 'buy', price: 'market', qty: want });
-  const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
-  if (!isCleared(outcome)) {
-    // C2.b: NOBODY HAS TO BUY, and a raise that finds no bid is a real answer with consequences.
-    ctx.record('bank.raise.failed', [bank], { bank, wanted: want, outcome: outcome.kind }, true);
-    return [];
-  }
-  const taken: Taken[] = [];
-  // `E-11`: THIS BOOK CLEARS A RATE, and `Outcome.price` is a `PerPiece` because most books clear a
-  // level. The crossing is named here rather than assumed — the bidders posted rates and the solver
-  // struck one — and the finding is that a book cannot say which of the two its level is.
-  const struck = asRatio(outcome.price, 'the rate the raise struck');
-  for (const f of outcome.fills) {
-    const amount = downTick(f.qty);
-    if (f.side !== 'sell' || amount <= 0) continue;
-    if (writeSub(ctx, bank, f.party, amount, struck, ccy)) {
-      taken.push({ lender: f.party, amount, rate: struck });
-    }
-  }
-  if (taken.length > 0) {
-    ctx.record(
-      'bank.raise',
-      [bank, ...taken.map((t) => t.lender)],
-      {
-        bank,
-        raised: sum(taken.map((t) => t.amount)).value,
-        rate: outcome.price,
-        lenders: taken.length,
-        wanted: want,
-        ccy,
-      },
-      true,
-    );
-  }
-  return taken;
+  ctx.offer({
+    market: inst.market.value,
+    issuer: bank,
+    size: want,
+    // Clearing C3: no level. Zero is not a floor — it is the absence of one.
+    reservation: 0,
+    allotment: 'uniformPrice',
+  });
+  ctx.record(
+    'bank.raise.offered',
+    [bank, id],
+    { bank, line: id, wanted: want, ccy },
+    true,
+  );
 }
 
-/** The claim itself, over the wire: money in, a dated promise out, in one instruction (Law 5). */
-function writeSub(
+/** A2, Law 9: a new layer, named as a market names it — the issuer and the day it is due. */
+function openLine(
   ctx: MechanismContext,
   bank: PartyId,
-  lender: PartyId,
-  amount: Qty,
-  rate: Ratio,
   ccy: CurrencyCode,
-): boolean {
-  /**
-   * Law 4, Law 19 (item 9.1): the next free name for this bank's paper, asked of the register.
-   *
-   * It used to be a counter carried in the `banks` module's own working state, advanced per FILL
-   * and per attempted raise — so it counted tries rather than lines, and a raise that took nothing
-   * still moved it. The register is the one writer of what exists, so it is the one that can say
-   * which name is free.
-   */
-  let id = subId(bank, 1);
-  for (let n = 1; ctx.instruments.has(id); n += 1) id = subId(bank, n + 1);
-  const drawn = ctx.calendar.startOf(ctx.period);
+  id: InstrumentId,
+  drawn: Civil,
+  maturity: Civil,
+): void {
   const terms: SubTerms = {
     kind: SUBORDINATED,
     issuer: bank,
-    rate,
+    // A2.a: what it promises on it, struck at issuance like any coupon (N5.a). It is the rate the
+    // market last required of this name, which is what the book would start at.
+    rate: requiredOf(ctx, bank),
     drawn,
-    maturity: addDays(
-      drawn,
-      ctx.params.periods(SUB_PARAMS.periods) * ctx.calendar.periodDays,
-    ),
+    maturity,
     dayCount: 'ACT/365F',
   };
-  ctx.issue({ id, kind: SUBORDINATED, issuer: some(bank), ccy, terms, market: none() });
-  const legs: Leg[] = [
-    {
-      kind: 'asset',
-      from: bank,
-      to: lender,
-      instrument: id,
-      qty: amount,
-      pricePerUnit: some(asPerPiece(1, 'at what it promised')),
-      accruedPerUnit: none(),
-      fromCell: none(),
-      toCell: none(),
-    },
-    {
-      kind: 'money',
-      from: ctx.accountOf(lender, ccy),
-      to: { holder: bank, issuer: moneyIssuerOf(ctx, bank) },
-      ccy,
-      amount,
-      fromCell: none(),
-      toCell: none(),
-    },
-  ];
-  const r = ctx.settle({
-    legs,
-    cause: 'issuance',
-    reason: `${lender} takes ${bank} subordinated paper`,
+  const market = marketId(`mkt.${id}`);
+  ctx.issue({ id, kind: SUBORDINATED, issuer: some(bank), ccy, terms, market: some(market) });
+  ctx.openMarket({
+    id: market,
+    name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
+    instrument: id,
+    ccy,
+    rationing: 'proRata',
   });
-  return r.outcome === 'settled';
 }
 
-/** Where a bank's own money is: at the central bank, like every other bank's (Money C2.a). */
-function moneyIssuerOf(ctx: MechanismContext, bank: PartyId): PartyId {
-  return ctx.parties.get(bank).bank;
+/**
+ * E5, A2.a: WHAT THE MARKET LAST SAID IT REQUIRES OF THIS NAME, which is what a coupon on a new
+ * layer is struck against — the same construction a treasury and a corporate issuer both use, and
+ * for the same reason: a coupon is a payment the ISSUER promises, so it is struck against what
+ * somebody said they want rather than against what the auction is going to do (Law 3).
+ */
+function requiredOf(ctx: MechanismContext, bank: PartyId): Ratio {
+  let keenest: number | undefined;
+  for (const e of ctx.journal.ofKindIn('bank.reservation', ctx.period)) {
+    const required = e.data['required'];
+    if (typeof required !== 'object' || required === null) continue;
+    const mine = (required as Record<string, unknown>)[String(bank)];
+    if (typeof mine !== 'number') continue;
+    if (keenest === undefined || mine < keenest) keenest = mine;
+  }
+  if (keenest === undefined) {
+    throw new Missing('Banks Capital C2', `nobody has published what they require of ${bank}`, {
+      bank,
+    });
+  }
+  return asRatio(keenest, 'what the keenest holder requires of this name');
 }
-
-export { BANK };

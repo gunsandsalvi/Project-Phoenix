@@ -7839,3 +7839,57 @@ to. Item 13 is unblocked (its own blocker, `Mandate`, closed at 9.2a) and nothin
 it.
 
 Typecheck 0 (engine, app, tools), lint 0.
+
+---
+
+## Item 10d — a bank issues a bond the way everybody else does
+
+**A deletion, and the thing it deletes is a second copy of the kernel.** The question that started
+it was why a bank's subordinated debt has no price. The answer was not *"it needs a secondary
+market"*: `banks/subordinated.ts` was a private copy of the issuance machinery, and the missing price
+was one of four things the copy had drifted into.
+
+```
+DELETED                          REPLACED BY (Law 19: every deletion names the read)
+raiseVenue / openVenue / post    ctx.issue + ctx.openMarket + ctx.offer
+clear() / isCleared              the kernel's one solver, uniformPrice
+asRatio(outcome.price)           a bond book clearing a price per unit of par  (E-11: four left)
+subId(bank, n) per FILL          subId(bank, maturity) — one line per bank per date  (Law 9)
+writeSub's hand-rolled legs      the primary market's own settlement
+bidsFor, gathered by hand        `subscribes`, a participant the kernel asks for  (Clearing B2)
+'bank.raise' / 'bank.raise.failed'   'auction.result', which the market writes for every issuer
+```
+
+**The worst of the four was the one I had not seen when I wrote the item up.** `subId(bank, n)`
+advanced per FILL, so a bank that raised from three lenders ended up holding **three instruments
+carrying one promise**. That is Law 9 exactly backwards — there is no market anywhere that would
+call them different bonds — and Law 4 with it.
+
+**`bank.raise` is deleted rather than reimplemented**, which is the Law 4 half of this. The kernel's
+primary market already publishes `auction.result` for every issuer alike — size, allotted, withdrawn,
+cover, stop-out, tail — so a module writing its own answer to *"what did the raise achieve"* was a
+second writer of a fact the kernel owns. Its readers in two test files now read the auction.
+
+**The walk-away is nothing, and that is Clearing C3 rather than a hole.** *"A size and no level. It
+is short of capital, not shopping."* A bank raising capital has no alternative to hold out for —
+raising equity and shrinking are what it does INSTEAD of this, not a price — so it accepts whatever
+the book strikes. Nothing was invented to stand in for a reservation it does not have, and C2.b stays
+reachable: a book with no bids allots nothing and the bank is exactly where it was. The size is face
+at par, so a bank whose paper the market will only take below par raises less than it needed and is
+still short — the honest outcome and the one C2.b is about.
+
+**And then the price, which was the question.** `pricing: 'carriedAtCost'` with its comment *"nothing
+trades these here"* is gone; it is `cleared`, marked, on the same face tick as every other piece of
+paper. It is not cosmetic: subordinated debt is the instrument whose price moves FIRST when a bank's
+solvency is doubted, before its equity and long before a depositor notices, which is what makes D2's
+bail-in legible — a write-down landing on a layer whose value everybody could already watch falling.
+
+**10c's rule did its own job with nothing to edit.** `saleable` admits a claim that is
+`carriedAtCost` and `liabilityOfIssuer`; a bank's subordinated debt was in that set this morning and
+is out of it now, because it has a market. You do not securitise a bond you can sell. That is the
+whole reason 10c reads declared facts instead of keeping a list.
+
+`E-15` is closed. `E-11` is down to four rate-quoted books.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 210 tags, `check:forbids` 4 over 207 files,
+`check:deaths` 6 of 6, `check:existence` green. Tests written and updated, not run.

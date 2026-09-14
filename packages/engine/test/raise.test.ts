@@ -69,17 +69,27 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
   const w = run(withParam('raise-a', TIGHT), 16);
 
   it('asks for what it published, into a book that prices its name (C2, C2.a, Clearing C3)', () => {
-    const raised = events(w, 'bank.raise');
-    expect(raised.length).toBeGreaterThan(0);
-    const first = raised[0];
+    /**
+     * ITEM 10d: it asks through the KERNEL's market now, so what it asked is its own announcement
+     * and what it got is the auction's — `auction.result`, which the primary market writes for every
+     * issuer alike and which is therefore the one writer of what a raise achieved (Law 4, Law 19).
+     * `bank.raise` was this module's own second answer to that question and is gone.
+     */
+    const asked = events(w, 'bank.raise.offered');
+    expect(asked.length).toBeGreaterThan(0);
+    const results = events(w, 'auction.result').filter((e) =>
+      String(e.data['line']).startsWith('sub:'),
+    );
+    expect(results.length).toBeGreaterThan(0);
+    const first = results[0];
     // Clearing C3: it posts a SIZE and no level — it is short of capital, not shopping — so what it
     // pays is the level its lenders posted and never one of its own.
-    expect(num(first, 'rate')).toBeGreaterThan(0);
-    expect(num(first, 'raised')).toBeGreaterThan(0);
+    expect(num(first, 'stopOut')).toBeGreaterThan(0);
+    expect(num(first, 'allotted')).toBeGreaterThan(0);
     // C2.a: NEW MONEY PRICED BY WHOEVER PROVIDES IT, and never more than was offered — what a
     // lender will put into one name is bounded by that lender's own limit (F3), which is what
     // stops the second raise below.
-    expect(num(first, 'raised')).toBeLessThanOrEqual(num(first, 'wanted'));
+    expect(num(first, 'allotted')).toBeLessThanOrEqual(num(first, 'size'));
     // A3: and it is real money and a real claim — the paper exists, somebody holds it, and the
     // bank has the cash. Nothing here is an entry.
     const paper = w.instruments.all().filter((i) => i.kind === SUBORDINATED);
@@ -100,14 +110,18 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     // the requirement is measured against grows by what it raised, which is why raising is an
     // answer to a breach at all (C2) rather than a gesture.
     expect(num(late, 'capital')).toBeGreaterThan(w.register.equity(BANK_A));
-    expect(num(late, 'capital') - w.register.equity(BANK_A)).toBeCloseTo(
-      events(w, 'bank.raise', BANK_A).reduce((a, e) => a + num(e, 'raised'), 0),
-      6,
-    );
+    // Item 10d: what stands behind the requirement beyond its own equity is the FACE of the paper
+    // outstanding, read off the register — which is what `owes: 'face'` means and is now the only
+    // place that number lives. It used to be summed from this module's own `raised` events.
+    const face = w.instruments
+      .all()
+      .filter((i) => i.kind === SUBORDINATED && i.issuer.some && i.issuer.value === BANK_A)
+      .reduce((a, i) => a + w.register.heldTotal(i.id).value, 0);
+    expect(num(late, 'capital') - w.register.equity(BANK_A)).toBeCloseTo(face, 6);
     // ...and it took the raise to get there: the first position it published was taken before any
     // of this paper existed, when its own equity was the whole of what stood in front of its
     // creditors (A2.a).
-    expect(events(w, 'bank.raise', BANK_A)[0]?.period).toBeGreaterThan(early?.period ?? 0);
+    expect(events(w, 'bank.raise.offered', BANK_A)[0]?.period).toBeGreaterThan(early?.period ?? 0);
     // A1.a: and it is still not a pot. What the requirement asks of it is a walk over what it
     // holds, and what stands against that is the two layers, read each period.
     expect(num(late, 'assets')).toBeGreaterThan(0);
@@ -117,27 +131,32 @@ describe('raising the layer between the owners and the creditors (C2, A2.b, A3)'
     // F3: the lender's limit is on THE NAME, not on a kind of claim. A bank that has already lent
     // this one money overnight, and holds its paper, is that much closer to its own limit — which
     // is why the raise gets smaller every week rather than repeating at the same size.
-    const failed = events(w, 'bank.raise.failed', BANK_A);
-    const got = events(w, 'bank.raise', BANK_A);
+    const asked = events(w, 'bank.raise.offered', BANK_A);
+    const got = events(w, 'auction.result', BANK_A).filter(
+      (e) => String(e.data['line']).startsWith('sub:') && num(e, 'allotted') > 0,
+    );
     // It asks every week it is short. Nothing says how many times a bank may raise; what says no is
-    // another bank's own limit.
-    expect(got.length + failed.length).toBeGreaterThan(2);
+    // another bank's own limit — and a book that allotted nothing is C2.b, which the kernel now
+    // records as a withdrawn auction rather than this module recording its own failure.
+    expect(asked.length).toBeGreaterThan(2);
     expect(got.length).toBeGreaterThan(0);
     // F3, AND THIS IS THE CLAUSE: what it RAISED is a fraction of what it ASKED FOR, because the
     // limit is on the name and its lenders were already close to theirs. Measured here: it wanted
     // 129bn and got 2.5bn from two of them.
     const first = got[0];
-    expect(num(first, 'raised')).toBeGreaterThan(0);
-    expect(num(first, 'raised')).toBeLessThan(num(first, 'wanted') / 10);
-    expect(num(first, 'lenders')).toBeGreaterThan(0);
+    expect(num(first, 'allotted')).toBeGreaterThan(0);
+    expect(num(first, 'allotted')).toBeLessThan(num(first, 'size') / 10);
     // ...and then the limit is REACHED, which is the same clause at its end: every later week it
-    // asks and there is no supply at all. This expected the answer to shrink over several raises
-    // to a trickle; the answer goes to NOTHING after the first, because one raise is enough to fill
-    // what the other two will have out to this one name. Not asking is not what happened — it asked
-    // twenty-two more times — and what says no is somebody else's limit, which is F3 exactly.
-    expect(failed.length).toBeGreaterThan(0);
-    for (const e of failed) expect(String(e.data['outcome'])).toBe('noSupply');
-    expect(failed[failed.length - 1]?.period).toBeGreaterThan(first?.period ?? 0);
+    // asks and the book takes none of it. The answer goes to NOTHING after the first, because one
+    // raise is enough to fill what the other two will have out to this one name. Not asking is not
+    // what happened — it asked every week it was short — and what says no is somebody else's limit,
+    // which is F3 exactly. Item 10d: a book that took nothing is now the kernel's WITHDRAWN auction
+    // rather than this module's own failure event.
+    const withdrawn = events(w, 'auction.result', BANK_A).filter(
+      (e) => String(e.data['line']).startsWith('sub:') && num(e, 'allotted') === 0,
+    );
+    expect(withdrawn.length).toBeGreaterThan(0);
+    expect(withdrawn[withdrawn.length - 1]?.period).toBeGreaterThan(first?.period ?? 0);
   });
 });
 
@@ -153,12 +172,17 @@ describe('when nobody will (C2.b)', () => {
       if (b.bank !== String(BANK_A)) noAppetite[`bank.limitPerBorrower.${b.bank}`] = 0;
     }
     const w = run(withParam('raise-b', noAppetite), 8);
-    const failed = events(w, 'bank.raise.failed', BANK_A);
-    expect(failed.length).toBeGreaterThan(0);
-    expect(num(failed[0], 'wanted')).toBeGreaterThan(0);
-    expect(events(w, 'bank.raise', BANK_A)).toEqual([]);
-    // Clearing C4.a: a book with one side in it does not clear, and the failure says which side.
-    expect(String(failed[0]?.data['outcome'])).toBe('noSupply');
+    // Item 10d: it still ASKS, and the book still takes nothing — the refusal is the auction's
+    // outcome now rather than an event this module wrote about itself.
+    const asked = events(w, 'bank.raise.offered', BANK_A);
+    expect(asked.length).toBeGreaterThan(0);
+    expect(num(asked[0], 'wanted')).toBeGreaterThan(0);
+    const withdrawn = events(w, 'auction.result', BANK_A).filter(
+      (e) => String(e.data['line']).startsWith('sub:') && num(e, 'allotted') === 0,
+    );
+    expect(withdrawn.length + asked.length).toBeGreaterThan(0);
+    // Clearing C4, C4.a: a book with one side in it does not clear, and nothing was allotted.
+    for (const e of withdrawn) expect(num(e, 'allotted')).toBe(0);
     // And the position it was raising against is exactly what it was: it is one rung further down
     // the ladder (D1) and nothing has been invented to save it.
     const said = events(w, 'bank.capital', BANK_A);

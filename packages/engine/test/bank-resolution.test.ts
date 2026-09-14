@@ -376,7 +376,11 @@ describe('contagion by name (Banks Capital E3, Banks Funding E5)', () => {
     // short of capital do not fund each other, which is its own finding and the reason this world
     // is set up this way rather than by moving the rule.
     const w = failing('res-e3', { 'bank.capitalBuffer.bank.a': 0.9 });
-    const took = events(w, 'bank.raise', BANK_A);
+    // Item 10d: the raise goes through the kernel's primary market like every other issue, so what
+    // it achieved is the auction's own result rather than an event the banks module wrote about it.
+    const took = events(w, 'auction.result', BANK_A).filter(
+      (e) => String(e.data['line']).startsWith('sub:') && num(e, 'allotted') > 0,
+    );
     expect(took.length).toBeGreaterThan(0);
     const down = events(w, 'bank.resolution.writtenDown', BANK_A);
     const junior = down.filter((e) => e.data['holder'] === BANK_B && num(e, 'rank') === 2);

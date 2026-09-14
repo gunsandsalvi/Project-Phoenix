@@ -21,7 +21,9 @@
 import {
   asCash,
   asPerPiece,
+  amountOf,
   asRatio,
+  heldAsMoney,
   type Cash,
   over,
   type PerPiece,
@@ -33,7 +35,7 @@ import {
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import type { Family, Violation } from '../../audit/audit.js';
-import { asQty, NO_QTY, type Qty } from '../../core/tick.js';
+import { asQty, downTick, NO_QTY, type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
@@ -72,9 +74,9 @@ import {
   sessionOrders,
   setBoard,
 } from './treasury.js';
-import { bidsFor, runRaise, subordinatedKind, SUB_PARAMS } from './subordinated.js';
+import { isSub, runRaise, subordinatedKind, SUB_PARAMS } from './subordinated.js';
 import { operatingCostOf, staffOrders, STAFF_PARAMS } from './staff.js';
-import { publishLines } from './lines.js';
+import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import type { Holding } from '../../register/register.js';
 import {
@@ -203,20 +205,51 @@ function runRaises(rows: readonly BankDecl[], ctx: MechanismContext): void {
     if (!p.status.alive || declOf(rows, p.id) === undefined) continue;
     const short = mustRaise(rows, ctx, p.id);
     if (short <= 0) continue;
-    const ccy = ctx.registry.currencyOf(p.region);
-    const bids: Order[] = [];
-    for (const other of ctx.parties.ofKind(BANK)) {
-      const decl = declOf(rows, other.id);
-      if (decl === undefined || !other.status.alive || other.id === p.id) continue;
-      const view = ctx.participant(other.id);
-      // A-45: a bank that cannot cost its own funding does not quote a rate, so it does not bid.
-      const funds = costOfFunds(ctx, other.id, ccy).perAnnum;
-      if (!funds.some) continue;
-      const q = quote(view, decl, p.id, regulationOf(view), funds.value, seenDefaults(ctx));
-      bids.push(...bidsFor(view, p.id, ccy, q.rate, room(view, decl, p.id).most));
-    }
-    runRaise(ctx, p.id, ccy, short, bids);
+    runRaise(ctx, p.id, ctx.registry.currencyOf(p.region), short);
   }
+}
+
+/**
+ * C2.b (item 10d): THE LENDERS' SIDE, as a schedule the kernel asks for like every other.
+ *
+ * This loop used to live inside `runRaises`, which gathered every other bank's bid by hand and
+ * handed them to a venue this module cleared itself. A schedule is a participant's and a book is
+ * the kernel's, so what was a private gather is now a declaration (Clearing B2) — and the same
+ * face answers for a subordinated line that answers for every other market a bank is in.
+ *
+ * Each lender prices THE NAME the way it prices any unsecured claim on it, subscribes out of the
+ * money it actually holds, and will not go past its own limit for that name (F3). A lender that
+ * cannot cost its own funding does not quote a rate, so it does not bid (A-45) — no view, no money.
+ */
+function subscribes(
+  view: ParticipantView,
+  m: MarketDecl,
+  rows: readonly BankDecl[],
+): readonly Order[] {
+  if (!('instrument' in m)) return [];
+  const line = view.instruments.get(m.instrument);
+  if (!line.status.live || !isSub(line.terms) || !line.issuer.some) return [];
+  const issuer = line.issuer.value;
+  // C2.b: it does not subscribe to its own paper. A bank buying its own capital has raised nothing.
+  if (issuer === view.self.id) return [];
+  const decl = declOf(rows, view.self.id);
+  if (decl === undefined) return [];
+  // N9, §46: what a unit is worth TO IT at the rate it requires — its own view, so two lenders
+  // requiring different things bid different levels and the book has a shape (Expectations A3).
+  const required = view.params.perAnnum(bankParam(decl.bank, 'returnOnCapital'));
+  const worth = view.worth(m.instrument, required);
+  if (!worth.some || worth.value <= 0) return [];
+  const appetite = roomFor(view, LENDING);
+  if (!appetite.some) return [];
+  const spare = atMost(
+    appetite.value,
+    heldAsMoney(view.cash(m.ccy), 'the money it holds'),
+    'it subscribes out of the money it has',
+  );
+  if (spare <= 0) return [];
+  const qty = downTick(amountOf(spare, worth.value, 'units it bids for'));
+  if (qty <= 0) return [];
+  return [{ party: view.self.id, side: 'buy', price: worth.value, qty }];
 }
 
 /** B3: what it published that it must raise to be back above both lines, or nothing (Law 19). */
@@ -1280,6 +1313,13 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       speculative: true,
       orders: (view: ParticipantView, m: MarketDecl): readonly Order[] =>
         dealingOrders(view, m, rows, makersOf),
+    },
+    {
+      partyKind: BANK,
+      // Banks Capital C2.b (item 10d): the other bank's side of a subordinated raise. It is a
+      // separate face from the dealing desk because it is a separate reason: a desk makes a market
+      // in what it chooses to make one in, and this is a lender deciding to hold a name's capital.
+      orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => subscribes(view, m, rows),
     },
   ],
   marks: [

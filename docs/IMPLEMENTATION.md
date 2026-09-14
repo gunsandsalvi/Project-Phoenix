@@ -64,7 +64,7 @@ checked, not assumed.
 | Indices | 21 | 1 | 0 | **1** | 22 |
 | Banks Lending | 21 | 5 | 6 | 0 | 32 |
 | Banks Funding | 28 | 4 | 0 | 0 | 32 |
-| Banks Capital | 19 | 3 | 1 | 0 | 23 |
+| Banks Capital | 20 | 2 | 1 | 0 | 23 |
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 9 | 0 | 14 | **9** | 23 |
 | **Hedge Funds** | **0** | 0 | **24** | 0 | 24 |
@@ -182,7 +182,6 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **10d** | A bank issues a bond the way everybody else does | — | **inserted** (owner): deletes the THIRD issuance mechanism. Needs nothing — item **10**'s path and `publishReservations` are both there |
 | **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -198,82 +197,16 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 | **23** | Measure (Part XII) | 1 | worklist 16; carries `C-1`'s 82 red |
 | **24** | The app and the APK | — | worklist 17 |
 
-**Stage B is finished**: every line the old file left open is closed. **Stage C (10d–18)** builds the
+**Stage B is finished**: every line the old file left open is closed. **Stage C (13, 11–18)** builds the
 sectors that are not there; **10 is closed** and its section is gone. **10c and 10d are the owner's
 two corrections of 2026-09-14 turned into work, and both are net DELETIONS** — a kind branch and a
-duplicated issuance mechanism. **Stage D (19–24)** is the existing worklist tail. Items 1–10c and 7b are
+duplicated issuance mechanism. **Stage D (19–24)** is the existing worklist tail. Items 1–10d and 7b are
 closed and their sections are gone: this is the plan of what is left, and `docs/RECORD.md` is the
 ledger of what was done.
 
 ---
 
 ## Part 2 — The items
-
----
-
-## 10d. A bank issues a bond the way everybody else does — **inserted**
-
-**Where this came from.** Owner, 2026-09-14: *"Why does bank sub debt has no price? They are just
-bonds as much as corporate bonds"*, then *"You should roll the bank bonds mechanism in the same way
-corp bonds work. There shouldn't be 3 different mechanisms."* Both are right, and the second is the
-bigger of the two: the missing price is a SYMPTOM and the third mechanism is the cause (Law 12).
-
-**The measurement.** `banks/subordinated.ts`'s own header says *"C2, C2.a, C2.b: RAISING IT IS A REAL
-ISSUE INTO A REAL MARKET… the bank posts a size and no level (Clearing C3) and takes what the book
-gives it."* It is a real issue into a real book. It is also **a private copy of the issuance
-machinery the kernel already has**, and the copy has drifted from the original in four ways:
-
-```
-banks/subordinated.ts:185   raiseVenue(bank)          a venue of its own
-                     :234   ctx.openVenue({...})      opened by the module
-                     :246   clear(ctx.posted(venue))  the module calls the solver ITSELF
-                     :255   asRatio(outcome.price)    the book clears a RATE, not a price
-                     :300   let id = subId(bank, 1)   ONE INSTRUMENT PER LENDER
-                     :313   ctx.issue({... market: none() })
-```
-
-1. **It clears its own book.** The treasury and item 10's corporate issuer both bring a size and a
-   walk-away to a KERNEL market and let the one solver strike it. This one posts into a venue it
-   opened and calls `clear` by hand. Three issuers, two mechanisms, and the spec has one primary
-   market (Law 4).
-2. **It writes one line per LENDER.** `subId(bank, n)` advances per fill, so a bank that raises from
-   three investors ends up with three instruments carrying the same promise. That is the exact
-   opposite of Law 9 and of what item 10 established one commit ago: one line per issuer per
-   maturity, named as a market names it, and a second name for one promise is one promise written
-   twice.
-3. **It clears a RATE**, which is `E-11`: a book struck a level and the print store cannot say which
-   of the two kinds of level it is, so nothing printed. A BOND book clears a price per unit of par.
-4. **It hand-rolls its own two-sided instruction** in `writeSub`, where the kernel's primary market
-   already settles an issuer's sale against the book in one instruction.
-
-**And the missing price falls out of all four.** `market: none()` per line, so `pricing:
-'carriedAtCost'`, so a bank's capital layer has no price — and that is not cosmetic. Subordinated
-debt is the instrument whose price moves FIRST when a bank's solvency is doubted, before its equity
-and long before a depositor notices. It is what makes Banks Capital **D2**'s bail-in legible: a
-write-down lands on a layer whose value everybody could already watch falling. A world where the
-capital layer has no price is one where a bank deteriorates invisibly in the one instrument built to
-show it, and the resolution arrives as a surprise to holders who had no number to watch.
-
-**This item is a DELETION.** It needs nothing new: item 10's path already opens a market per line,
-and `banks/index.ts:publishReservations` already makes **every live bank an obligor** — it says so
-explicitly, *"a bank is a name anybody may lend to whether or not it has paper outstanding right
-now"* — so the holders' schedules a book needs are already published every period.
-
-### Steps
-
-- [ ] 10d.1 Delete `raiseVenue`, the `openVenue`, the `ctx.post` calls, the `clear`/`isCleared` import and the hand-rolled legs in `writeSub`. What replaces each is named in the same change (Law 19): the kernel's `ctx.issue` + `ctx.openMarket` + `ctx.offer`, and the primary market's own settlement.
-- [ ] 10d.2 **One line per bank per maturity**, found by its own name exactly as `corporateBondId` does it — so a bank coming back taps the line it has instead of minting a fourth. `subId(bank, n)` goes.
-- [ ] 10d.3 **The one real design question, and it is not settled here.** Clearing C3 says the bank brings *a size and no level*, and `PrimaryOffer.reservation` is a number. A firm's walk-away is the price at which the issue costs it what its bank quoted (item 10); a BANK's alternative to subordinated debt is raising equity (C2) or shrinking (10c's securitisation), so its walk-away is the price at which this costs the same as those. That is the same construction, not a new one — **but check it against C3 before building it**, because "no level" may mean the reservation belongs elsewhere entirely. Do not invent a floor to stand in for an alternative.
-- [ ] 10d.4 `subordinatedKind.pricing` becomes `'cleared'`, `carry` follows, and the stale comment (*"nothing trades these here, so they are carried at what they cost"*) goes in the same change — a stale comment is a defect (Law 16).
-- [ ] 10d.5 Check every other reader of that profile before flipping it: the estate, the resolution write-down (D2), and **10c's securitisable read**, which should stop admitting it — you do not securitise a bond you can sell.
-- [ ] 10d.6 `E-11` loses one of its five books. Say so in its index row; a rate-quoted primary raise that became a price-quoted bond book is one fewer place the print store has to learn a new trick, and the finding shrinks rather than closes.
-- [ ] 10d.7 COVERAGE re-marked for Banks Capital A2.b, C2, C2.a, C2.b and D2, and the record entry saying what was deleted and what read replaced it.
-
-### Exit
-
-A bank's subordinated paper is one named line with a cleared price that falls when the bank does, a
-bail-in writes down a layer somebody was already watching, and **there is one issuance mechanism in
-this world, used by a treasury, a firm and a bank alike.**
 
 ---
 
@@ -1345,11 +1278,10 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-6** (B) | 21 | an acquirer's consideration in a bank resolution is a missing mechanism |
 | **E-7** (B) | 19 | a negative policy rate is real and this world cannot express one |
 | **E-12** (B) | 21 | what a household requires of a claim reaches the fund comparison and not the paper bid, so a change in the deposit board does not move what it will pay for a bill — half of D5.a's substitution. **Found closing `A-44` at stage 2c** |
-| **E-11** (B) | 21 | `Outcome.price` and `Print.price` are `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS, the cross-currency basis, and now the BORROW book, whose level is a fee per period on value and not money per piece (item 9.4). `E-10` closed the CONTRACT layer (the level a contract carries is tagged by its kind's `quotedAs`) and every reader of a rate-quoted print now says `asRatio` at its own door, so the crossing is named everywhere it happens — what is left is that the STORE still cannot say it. **Item 10d takes one of the five books away rather than teaching the store a trick**: the subordinated raise clears a rate only because it is a private venue, and a bond book clears a price per unit of par. The solver genuinely need not care (a schedule is size against a level either way); the print store is where the claim would live. **Re-positioned from item 6, which did not close it** |
+| **E-11** (B) | 21 | `Outcome.price` and `Print.price` are `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS, the cross-currency basis, and now the BORROW book, whose level is a fee per period on value and not money per piece (item 9.4). `E-10` closed the CONTRACT layer (the level a contract carries is tagged by its kind's `quotedAs`) and every reader of a rate-quoted print now says `asRatio` at its own door, so the crossing is named everywhere it happens — what is left is that the STORE still cannot say it. **Item 10d TOOK one of the five books away rather than teaching the store a trick**: the subordinated raise cleared a rate only because it was a private venue, and it is now a bond book clearing a price per unit of par. Four left. The solver genuinely need not care (a schedule is size against a level either way); the print store is where the claim would live. **Re-positioned from item 6, which did not close it** |
 | **E-13** (C) | 21 | `households/portfolio.ts:ownUncertainty` implements §46 B3's income channel and has NO CALLER — a saver's bid is built from its PRICE outlook's confidence and its income uncertainty reaches nothing. Either wire it or delete it; a mechanism nobody reads is not one. **Found closing `A-30` at item 5** |
 | **E-17** (B) | 17.6 | **commercial paper is not repo collateral** (`Short-Term Debt D3`), and D3 says being collateral is *"a large part of why anyone holds it"*. `money-market/collateral.ts` already has the haircut machinery and what is missing is that it accepts this kind — 17.6 is the same shape for senior notes, so it is built once for both. **Found closing item 10b** |
 | **E-18** (C) | 21 | `funds/index.ts:1296` cites `Clearing C1.b`, which does not exist in the spec. It is a PROSE citation so `check:spec` cannot see it — the tool reads `@spec` tags only — which makes it the kind of stale comment Law 16 calls a defect and nothing guards. Two questions for 21: the right clause for that sentence, and whether the citation check should read prose citations too. **Found closing item 10b**, where the same wrong id was written into a new `@spec` tag and the tool DID catch it |
-| **E-15** (A) | 10d | **the THIRD issuance mechanism.** `banks/subordinated.ts` is a private copy of the kernel's issuance machinery: its own venue (`raiseVenue`), its own `clear()` call, a book that clears a RATE, and `subId(bank, n)` advancing per FILL — so a bank raising from three investors holds **three instruments carrying one promise** (Law 4, Law 9), and `market: none()` on each, which is why a bank's capital layer has no price. **Found answering the owner's question of 2026-09-14**; the item is a deletion |
 | **E-14** (B) | 13 | **Securities Lending C2, C2.a are not built.** `charge` moves the FEE every period and nothing re-marks the collateral: when the borrowed line rises the borrower owes more collateral and no leg posts it, so the lender's cover erodes silently between the strike and the return and C1's haircut is the only thing standing behind it. The same mechanism is §15 C1's — a broker marking a whole portfolio and calling the difference — which is why it lands with prime brokerage rather than here. **Found closing `A-67` at item 9.4** |
 
 ## Appendix — the lessons this file exists to keep
