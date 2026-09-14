@@ -23,8 +23,18 @@
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
-import { asCash, type Cash , pricedAt, asRatio, scale} from '../../core/measure.js';
-import { div, finite, material, mul, sub, sum } from '../../core/num.js';
+import {
+  asAmount,
+  asCash,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  plus,
+  pricedAt,
+  scale,
+} from '../../core/measure.js';
+import { finite, material, sub, sum } from '../../core/num.js';
 import type { Qty } from '../../core/tick.js';
 import { asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
@@ -60,22 +70,26 @@ function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): Cash {
 }
 
 /** The batch this firm said it would start, read back from its own published plan. */
-function plannedBatch(view: ParticipantView): number {
+function plannedBatch(view: ParticipantView): Qty {
   const own = view.lastOwn('firms.plan');
-  if (!own.some || own.value.period !== view.period) return 0;
+  const none = asAmount<'piece'>(0, 'a firm with no plan this period starts nothing');
+  if (!own.some || own.value.period !== view.period) return none;
   const batch = own.value.data['batch'];
-  return typeof batch === 'number' ? batch : 0;
+  // Item 16: a published number re-enters the type system here, through the dimension's own door.
+  return typeof batch === 'number' ? asAmount<'piece'>(batch, 'the batch it said it would start') : none;
 }
 
 /** Labour C2, Goods B1.c: the hours it has that can make something, this period. */
-function productiveHours(ctx: MechanismContext, firm: PartyId): number {
+function productiveHours(ctx: MechanismContext, firm: PartyId): Qty {
   const events = ctx.journal
     .ofKind('labour.wages')
     .filter((e) => e.period === ctx.period && e.subjects.includes(firm));
   const last = events[events.length - 1];
-  if (last === undefined) return 0;
+  const none = asAmount<'piece'>(0, 'a firm that employed nobody has no hours');
+  if (last === undefined) return none;
   const hours = last.data['productive'];
-  return typeof hours === 'number' ? hours : 0;
+  // Item 16: a published number re-enters the type system here, through the dimension's own door.
+  return typeof hours === 'number' ? asAmount<'piece'>(hours, 'the hours it paid for') : none;
 }
 
 /** E1, E5: what the units this draw takes cost the firm, read off the lots they come out of. */
@@ -115,10 +129,13 @@ function start(
   // limited by a large number (Law 6).
   const vintages = vintagesHeld(view, ctx.calendar.startOf(ctx.period));
   const capacity = capacityFrom(tech.plant, vintages, rentedRoom(view.lastOwn('commodities.leased')));
-  const limits: readonly { readonly qty: number; readonly bound: string }[] = [
+  // Every limit is a count of the OUTPUT, whatever it was derived from: hours over hours-per-unit,
+  // plant over plant-per-unit, stock over stock-per-unit. A recipe coefficient is a count over a
+  // count, so `over` keeps the quantity's dimension and the coefficient can never become one.
+  const limits: readonly { readonly qty: Qty; readonly bound: string }[] = [
     { qty: planned, bound: 'plan' },
     {
-      qty: div(productiveHours(ctx, firm), tech.hoursPerUnit, 'what its people can make'),
+      qty: over(productiveHours(ctx, firm), tech.hoursPerUnit, 'what its people can make'),
       bound: 'labour',
     },
     ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: `capacity.${capacity.value.binding}` }] : []),
@@ -140,7 +157,7 @@ function start(
        * nothing reaches nothing and stands idle, and one holding an exact multiple can start the
        * batch that multiple pays for instead of one short of it.
        */
-      qty: div(
+      qty: over(
         ctx.register.free(firm, input.instrument),
         input.qtyPerUnit,
         'what the stock on hand reaches',
@@ -162,7 +179,7 @@ function start(
   const legs: Leg[] = [];
   const costs: Cash[] = [wages];
   for (const input of tech.inputs) {
-    const qty = upTick(mul(batch, input.qtyPerUnit, 'what the recipe draws'));
+    const qty = upTick(scale(batch, input.qtyPerUnit, 'what the recipe draws'));
     costs.push(heldCost(ctx, firm, input.instrument, qty));
     legs.push({
       kind: 'destroy',
@@ -286,13 +303,13 @@ function yieldBatch(
       started: due,
       finished,
       // B4: units, at the point they would have been made. Not a rate and not a write-down.
-      scrapped: sub(due, finished, 'scrap'),
+      scrapped: minus(due, finished, 'scrap'),
       // B3, B4: what the season did and what it left, published so a shortfall has a cause
       // anybody can read — and so that the ordinary yield beside it says how much of the gap is
       // the weather and how much is the line.
       season,
       survived,
-      costPerUnit: div(cost, finished, 'what a finished unit cost'),
+      costPerUnit: pricedAt(cost, finished, 'what a finished unit cost'),
     },
     false,
   );
@@ -344,8 +361,8 @@ function groundUnder(ctx: MechanismContext, tech: Technology): number {
  * keeps — and it is EVERY holder's plant, not this firm's, because the ground of a place is a
  * commons and the next farm stands on what the last one left.
  */
-function areaUnderUse(ctx: MechanismContext, region: RegionId): number {
-  let area = 0;
+function areaUnderUse(ctx: MechanismContext, region: RegionId): Qty {
+  let area = asAmount<'piece'>(0, 'ground under nothing is no ground');
   for (const i of ctx.instruments.all()) {
     const terms = i.terms;
     if (!isPlantTerms(terms) || terms.region !== region) continue;
@@ -358,12 +375,16 @@ function areaUnderUse(ctx: MechanismContext, region: RegionId): number {
     // NAMED unit, so the conversion happens where the ratio is read. Multiplying pieces by it would
     // put a farm on a thousand times the land it stands on and take every yield in the world to
     // nothing — which is exactly what it did before this line said so.
-    const units = div(
+    const units = over(
       ctx.register.heldTotal(i.id).value,
-      ctx.registry.subdivision(plantUnitId(kind.id)),
+      asRatio(ctx.registry.subdivision(plantUnitId(kind.id)), 'pieces in a named unit of it'),
       'the plant standing here, in its own named unit',
     );
-    area += mul(units, ctx.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on');
+    area = plus(
+      area,
+      scale(units, ctx.params.ratio(landPerUnitParam(kind.id)), 'the ground it stands on'),
+      'the ground under everything it has here',
+    );
   }
   return area;
 }

@@ -300,7 +300,8 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > | stage | what | sites |
 > | --- | --- | --- |
 > | ~~2a.1~~ | ~~`banks`, `funds`, and the household demography~~ — **DONE** | **402 → 390** |
-> | 2a.2 | `firms`, `seeds`, and the residue | 390 |
+> | ~~2a.2~~ | ~~`firms`~~ — **DONE**: a recipe coefficient is a `Ratio` | **390 → 372** |
+> | 2a.3 | `seeds`, and the residue | 372 |
 > | 2b | the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1` (`A-18` closed in 2a.1) | |
 > | 2c | rates read as levels: `A-44`, `A-58`, `A-65` | |
 > | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |
@@ -331,6 +332,7 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 ### Steps — stage 2a, the typing
 
 - [x] 2a.1 `banks` and `funds`: `LoanTerms.rate` and `SubTerms.rate` → `Ratio`; `interestTo` → `scale`; `PAR` named in both files; `hoursNeeded` → `scale`, `linesCovered` and `probabilityOfDefault` → `ratioOf`; the desk's one-sided flow → `plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall → `minus`. `mul`, `div`, `add` and `sub` leave five files.
+- [x] 2a.2 `firms`: every recipe coefficient — `hoursPerUnit`, `yieldRate`, `qtyPerUnit`, `unitsPerUnitPerPeriod`, `spoilage` — is a `Ratio`, so what a stock reaches is `over(stock, coefficient)` and what a batch draws is `scale(batch, coefficient)`. Four `asRatio(tech.…)` wrappers deleted as redundant (Law 12). `plannedBatch`, `productiveHours`, `hoursUnderContract` and `areaUnderUse` carry `Qty`; the sales outlook enters as an amount once rather than at each of its three readers.
 - [ ] 2.1 Take the residue in the order the file names it — `banks`, `funds`, `households`, `firms`, `seeds`, then what is left — not by site count. Run `npx tsc --noEmit` after each module; the compiler generates the list.
 - [ ] 2.2 For each site the compiler rejects, decide which of three it is: a DIMENSION that was right and unstated (type it), a DIMENSION that was wrong (that is one of the eighteen — fix it, below), or a TARGET typed with a grid door (switch to `asAmount<'piece'>` + `plus`/`minus`).
 - [ ] 2.3 `E-8` — a declared price does not say which of the two scales it is in. `registry/params.ts`: `dimension: 'price'` splits into `'price:piece'` and `'price:named'`; `equity.openingShare` is the second and every goods level is the first. This is the cause of the known "a share worth a hundredth of a cent".

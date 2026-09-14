@@ -10,7 +10,7 @@
  * compares a return against a cost, that the cost comes from the markets and the hurdle from the
  * management, and that the plant it buys was made by somebody and wears out.
  */
-import { asPerPiece } from '../src/core/measure.js';
+import { asRatio, asPerPiece } from '../src/core/measure.js';
 import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -277,8 +277,8 @@ describe('what capital is (Capital Programme A)', () => {
       { instrument: 'plant.b.1', capitalKind: 'b', units: asQty(6), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
     ];
     const needs = [
-      { capitalKind: 'a', unitsPerUnitPerPeriod: 2 },
-      { capitalKind: 'b', unitsPerUnitPerPeriod: 3 },
+      { capitalKind: 'a', unitsPerUnitPerPeriod: asRatio(2, 'what a unit of output takes of a') },
+      { capitalKind: 'b', unitsPerUnitPerPeriod: asRatio(3, 'what a unit of output takes of b') },
     ];
     const c = capacityFrom(needs, held);
     expect(c.some).toBe(true);

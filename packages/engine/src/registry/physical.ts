@@ -44,6 +44,8 @@ import {
   asNamed,
   asPerPiece,
   asRatio,
+  over,
+  type Ratio,
   minus,
   type PerPiece,
   pricedAt,
@@ -276,10 +278,16 @@ export function spaceFor(reads: SpaceReads, unit: UnitId, pieces: number, perUni
  * space makes it nothing and makes room bind nothing (Law 8: what is a COUNT lands on the grid;
  * what is a RATIO between two counts does not).
  */
-export function spacePerPiece(reads: SpaceReads, unit: UnitId, perUnit: number): number {
-  return div(
-    mul(perUnit, reads.registry.subdivision(plantUnitId(STORAGE)), 'in pieces of space'),
-    reads.registry.subdivision(unit),
+export function spacePerPiece(reads: SpaceReads, unit: UnitId, perUnit: Ratio): Ratio {
+  // Law 8: the declared number is space per NAMED unit and the capacity arithmetic runs in PIECES,
+  // so it is shifted by both subdivisions. A count over a count either way, so it stays a `Ratio`.
+  return over(
+    scale(
+      perUnit,
+      asRatio(reads.registry.subdivision(plantUnitId(STORAGE)), 'pieces of space in a unit of it'),
+      'in pieces of space',
+    ),
+    asRatio(reads.registry.subdivision(unit), 'pieces of the thing in a unit of it'),
     'per piece of the thing',
   );
 }
@@ -391,7 +399,8 @@ export function wornOut(terms: PlantTerms, on: Civil): boolean {
 export interface PlantNeed {
   readonly capitalKind: string;
   /** Units of plant of that kind that make one unit of output per period. */
-  readonly unitsPerUnitPerPeriod: number;
+  /** A count over a count — plant per unit of output per period — so a `Ratio` (Law 2, Law 8). */
+  readonly unitsPerUnitPerPeriod: Ratio;
 }
 
 /** One vintage a party holds, as the register has it (A6). */

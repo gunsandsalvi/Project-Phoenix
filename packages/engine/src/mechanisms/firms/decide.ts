@@ -26,6 +26,7 @@
  */
 import {
   amountOf,
+  asAmount,
   asCash,
   asPerPiece,
   asRatio,
@@ -35,23 +36,16 @@ import {
   over,
   type PerPiece,
   plus,
+  pricedAt,
+  ratioOf,
+  type Ratio,
   scale,
   valueAt,
-  asAmount,
-  pricedAt,
 } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import { marketId, type MarketId, type PartyId } from '../../core/ids.js';
 import type { InstrumentId } from '../../core/ids.js';
-import {
-  add,
-  atMost,
-  div,
-  material,
-  mul,
-  sub,
-  sum,
-} from '../../core/num.js';
+import { atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Order, OrderPrice } from '../../clearing/solver.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
@@ -155,15 +149,25 @@ export interface Planned {
   readonly carry: number;
 }
 
+/** The pure one. Named so a `Ratio` is never built out of a bare literal (`core/` owns the digits). */
+const ONE: Ratio = asRatio(1, 'one');
+
 /** The numbers a line's own technology states, read from the good's terms (Goods A2). */
 interface Technology {
   readonly terms: GoodTerms;
-  readonly spoilage: number;
-  /** Firm A3: what a tonne takes at THIS firm — the recipe's hours at its own productivity. */
-  readonly hoursPerUnit: number;
-  readonly yieldRate: number;
+  readonly spoilage: Ratio;
+  /**
+   * Firm A3: what a tonne takes at THIS firm — the recipe's hours at its own productivity.
+   *
+   * Every coefficient here is a `Ratio`, because a recipe states a COUNT OVER A COUNT: hours per
+   * unit, units of an input per unit of output, plant per unit per period. So what a stock of one
+   * reaches is `over(stock, coefficient)` and what a batch draws is `scale(batch, coefficient)` —
+   * the quantity keeps its dimension and the coefficient can never be spent or posted as a level.
+   */
+  readonly hoursPerUnit: Ratio;
+  readonly yieldRate: Ratio;
   readonly leadTime: number;
-  readonly inputs: readonly { readonly instrument: InstrumentId; readonly qtyPerUnit: number }[];
+  readonly inputs: readonly { readonly instrument: InstrumentId; readonly qtyPerUnit: Ratio }[];
   /** Goods A2.c, Capital Programme A2: the plant a unit takes, per kind, at the declared numbers. */
   readonly plant: readonly PlantNeed[];
 }
@@ -177,7 +181,7 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
     // Goods A2 states what the work takes; Firm A3 states what it takes HERE. This is the one place
     // the two meet, so a firm's own hours-per-unit has one writer and every reader gets the same
     // number — what it bids for an hour, what a unit costs it, and what its people can make.
-    hoursPerUnit: mul(
+    hoursPerUnit: scale(
       view.params.ratio(terms.recipe.labourHoursPerUnit),
       view.params.ratio(labourScaleId(line.firm)),
       'hours a unit takes this firm',
@@ -273,11 +277,13 @@ function wageFacing(view: ParticipantView, venue: VenueDecl): Option<PerPiece> {
  * hours that can make something now, which is what a plan taken before the period's own work needs
  * to know. Nobody hired since is in it, and that is right: they are not productive yet.
  */
-function hoursUnderContract(view: ParticipantView): number {
+function hoursUnderContract(view: ParticipantView): Qty {
   const own = view.lastOwn('labour.wages');
-  if (!own.some) return 0;
+  const none = asAmount<'piece'>(0, 'a firm that has employed nobody has no hours');
+  if (!own.some) return none;
   const hours = own.value.data['hours'];
-  return typeof hours === 'number' ? hours : 0;
+  // Item 16: a published number re-enters the type system here, through the dimension's own door.
+  return typeof hours === 'number' ? asAmount<'piece'>(hours, 'the hours it has under contract') : none;
 }
 
 /** D1: what it must pay out that it already knows about — the payroll it is committed to. */
@@ -341,7 +347,7 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<Per
       price: minus(
         scale(
           price.value,
-          asRatio(sub(1, tech.spoilage, 'what survives'), 'what survives'),
+          minus(ONE, tech.spoilage, 'what survives'),
           'the value of holding',
         ),
         carryPerPiece(view, tech),
@@ -422,50 +428,51 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   // runs on wears out by. It is the most it will pay for one.
   const contribution = minus(
     minus(
-      scale(price.value, asRatio(tech.yieldRate, 'what survives the line'), 'what a unit of it fetches'),
+      scale(price.value, tech.yieldRate, 'what a unit of it fetches'),
       inputCost,
       'less its inputs',
     ),
     capitalCharge,
     'less what its plant wears out by',
   );
-  const perHour = over(
-    contribution,
-    asRatio(tech.hoursPerUnit, 'the hours one takes'),
-    'the value of an hour',
-  );
+  const perHour = over(contribution, tech.hoursPerUnit, 'the value of an hour');
   // B5: what a unit costs to start and what a unit that survives the line costs (Goods B4) — known
   // once it has paid a wage. A firm that has never employed anybody knows only what an hour is
   // worth to it, and posting that bid IS how it finds out what one costs (Labour C1, D1).
   const unitCost = wage.some
     ? some(
-        div(
-          add(
+        over(
+          plus(
             plus(
               inputCost,
-              scale(wage.value, asRatio(tech.hoursPerUnit, 'the hours a unit takes'), 'wages per unit'),
+              scale(wage.value, tech.hoursPerUnit, 'wages per unit'),
               'inputs and wages',
             ),
             capitalCharge,
             'and what its plant wears out by',
           ),
-          asRatio(tech.yieldRate, 'what survives the line'),
+          tech.yieldRate,
           'cost per unit finished',
         ),
       )
-    : none<number>();
+    : none<PerPiece>();
   const worthMaking = wage.some ? perHour > wage.value : perHour > 0;
   // B1: what it expects to sell is what it wants to be able to make, period after period; what it
   // starts THIS period is that less the stock it is already sitting on, grossed up for the yield.
   const stock = view.quantity(output);
-  const perPeriod = worthMaking ? div(sales.value.expected, tech.yieldRate, 'started per period') : 0;
+  // Item 16: an outlook carries the dimension of the VARIABLE it is about, and this one is about
+  // units sold — so it enters as an amount here, once, rather than at each of its three readers.
+  const expectsToSell = asAmount<'piece'>(sales.value.expected, 'the units it expects to sell');
+  const perPeriod = worthMaking
+    ? over(expectsToSell, tech.yieldRate, 'started per period')
+    : asAmount<'piece'>(0, 'a line not worth making starts nothing');
   const wanted = worthMaking
-    ? div(sub(sales.value.expected, stock, 'what it is short of'), tech.yieldRate, 'batch wanted')
-    : 0;
-  const fromLabour = div(hoursUnderContract(view), tech.hoursPerUnit, 'what its people can make');
+    ? over(minus(expectsToSell, stock, 'what it is short of'), tech.yieldRate, 'batch wanted')
+    : asAmount<'piece'>(0, 'a line not worth making wants no batch');
+  const fromLabour = over(hoursUnderContract(view), tech.hoursPerUnit, 'what its people can make');
   // Goods B1.a, Capital Programme A2: capacity is one of the reasons, and binding capacity is a
   // real state. A line whose recipe needs no plant is limited by its people and its inputs.
-  const limits: readonly { readonly qty: number; readonly bound: Planned['bound'] }[] = [
+  const limits: readonly { readonly qty: Qty; readonly bound: Planned['bound'] }[] = [
     { qty: wanted, bound: 'demand' },
     { qty: fromLabour, bound: 'labour' },
     ...(capacity.some ? [{ qty: capacity.value.perPeriod, bound: 'capacity' as const }] : []),
@@ -480,7 +487,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   for (const [n, input] of tech.inputs.entries()) {
     // Law 8: a recipe met with the piece below is a recipe not met (`produce.ts` draws the same
     // way), so what it bids for is the whole pieces the batch needs and never the fraction under.
-    const need = upTick(mul(batch, input.qtyPerUnit, 'what the batch draws'));
+    const need = upTick(scale(batch, input.qtyPerUnit, 'what the batch draws'));
     const buy = subQty(need, view.quantity(input.instrument), 'what it must buy');
     if (!material(buy, 2, need) || buy <= 0) continue;
     orders.push({
@@ -494,12 +501,12 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
             minus(
               scale(
                 price.value,
-                asRatio(tech.yieldRate, 'what survives the line'),
+                tech.yieldRate,
                 'the output it makes possible',
               ),
               scale(
                 wage.some ? wage.value : asPerPiece(0, 'what an hour costs it'),
-                asRatio(tech.hoursPerUnit, 'the hours one takes'),
+                tech.hoursPerUnit,
                 'its wages',
               ),
               'less wages',
@@ -520,7 +527,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
           ).value,
           'less the other inputs',
         ),
-        asRatio(input.qtyPerUnit, 'what one takes of this input'),
+        input.qtyPerUnit,
         'what a unit of the input is worth',
       ),
       qty: buy,
@@ -544,7 +551,11 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         // name — the NEAREST piece, because a width is a measurement rather than something a party
         // can or must do (`toTick`, core/tick.ts).
         toTick(
-          div(sales.value.confidence, tech.yieldRate, 'how wide its own surprises are, per unit started'),
+          over(
+            asAmount<'piece'>(sales.value.confidence, 'how wide its surprises about units sold are'),
+            tech.yieldRate,
+            'how wide its own surprises are, per unit started',
+          ),
         ),
         contribution,
         view.params.perAnnum(firmParam(line.firm, 'hurdle')),
@@ -574,7 +585,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     // Law 8: an hour has a smallest piece like everything else, and what it posts is a whole
     // number of them. Down, because it is what this firm will PAY for: a posting rounded up is a
     // wage bill it did not decide on.
-    hours: downTick(mul(perPeriod, tech.hoursPerUnit, 'the employment it wants')),
+    hours: downTick(scale(perPeriod, tech.hoursPerUnit, 'the employment it wants')),
     wageBid: perHour,
     orders,
   });
@@ -656,6 +667,12 @@ function plantOffers(
       if (terms.capitalKind !== need.capitalKind || terms.region !== view.self.region) continue;
       const left = serviceLeft(terms, view.calendar.startOf(view.period), view.calendar);
       if (left <= 0 || life <= 0) continue;
+      // Two counts of periods, so what is left of its service is a pure share of a new one's.
+      const share = ratioOf(
+        asAmount<'piece'>(left, 'the periods of service it has left'),
+        asAmount<'piece'>(life, 'the periods a new one gives'),
+        'the service it has left',
+      );
       // What it expects a second-hand machine to ask: what one that traded went for, and otherwise
       // what a new one costs for the service it has left. It is what this firm expects to have to
       // pay, and it is never what it bids — the bid is its own reservation (Clearing A2).
@@ -668,7 +685,7 @@ function plantOffers(
           ? printed.value
           : scale(
               asking.value,
-              asRatio(div(left, life, 'the service it has left'), 'the service it has left'),
+              share,
               'what a used one asks',
             ),
         periodsOfService: left,

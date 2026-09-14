@@ -52,7 +52,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import { Missing } from '../../core/errors.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { period } from '../../calendar/calendar.js';
-import { atLeast, atMost, div, material, sum } from '../../core/num.js';
+import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../../registry/physical.js';
@@ -317,7 +317,11 @@ export function project(
     if (counted <= 0) continue;
     const recovery = plus(
       required,
-      asRatio(div(1, counted, 'what returning the capital costs a year'), 'returning the capital'),
+      over(
+        asRatio(1, 'the whole of the capital'),
+        asRatio(counted, 'the years of service it counts'),
+        'what returning the capital costs a year',
+      ),
       'what a unit must earn',
     );
     if (recovery <= 0) continue;
