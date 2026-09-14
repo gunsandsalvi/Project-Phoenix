@@ -26,6 +26,12 @@
  * would put a wearing-out nobody pays into the capital charge.
  */
 import type { Order } from '../../clearing/solver.js';
+import {
+  type PerPiece,
+  amountOf,
+  asPerPiece,
+  heldAsMoney,
+} from '../../core/measure.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import { atMost, div, sub, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
@@ -223,7 +229,7 @@ export function land(): SystemModule {
            */
           const wanted = downTick(short);
           if (wanted < 1) return [];
-          const cash = Number(view.cash(m.ccy));
+          const cash = heldAsMoney(view.cash(m.ccy), 'the money it holds of this');
           if (cash <= 0) return [];
           /**
            * §46 B1, B3, Law 3: WHAT IT THINKS A HECTARE IS WORTH — its own outlook on this line
@@ -238,19 +244,33 @@ export function land(): SystemModule {
            */
           const outlook = view.outlook(about({ on: 'price', instrument: m.instrument }));
           const print = view.print(m.instrument);
-          const level = outlook.some
-            ? outlook.value.expected
+          const level: PerPiece = outlook.some
+            ? asPerPiece(outlook.value.expected, 'where its own outlook puts the ground')
             : print.some
               ? print.value.price
-              : CENT_TICK;
-          const price = downTick(level);
+              : asPerPiece(CENT_TICK, 'the least there is, which says yes and nothing more');
+          /**
+           * Law 8, item 2: A LEVEL GOES ON THE QUOTE GRID AND NOT THE QUANTITY ONE.
+           *
+           * This was `downTick(level)`, which is the door for a COUNT OF PIECES — it floored a price
+           * to a whole piece of money. A price has its own smallest increment (`onQuoteGrid`,
+           * 12b.1), and the two coincide only where a line's quote tick happens to be one piece.
+           * Both were `number` and nothing said which grid was meant.
+           */
+          const price = view.registry.onQuoteGrid(
+            view.instruments.get(m.instrument).kind,
+            m.ccy,
+            level,
+          );
           if (price <= 0) return [];
           /**
            * Law 8, Money E1: AND NO MORE OF IT THAN ITS MONEY REACHES. That is arithmetic and not a
            * bound (Law 6) — a bid it could not settle is a bid the wire would refuse, and what a
            * buyer's money reaches at a price is the whole of what a demand curve is.
            */
-          const affordable = downTick(div(cash, price, 'what its money reaches at that price'));
+          const affordable = downTick(
+            amountOf(cash, price, 'what its money reaches at that price'),
+          );
           const qty = atMost(affordable, wanted, 'there is no more of it to buy than it is short of');
           if (qty < 1) return [];
           return [{ party: view.self.id, side: 'buy', price, qty: asQty(qty) }];

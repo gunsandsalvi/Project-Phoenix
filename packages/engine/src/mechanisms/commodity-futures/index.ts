@@ -28,7 +28,23 @@
  * settles into the spot print itself — and if it did not converge that would be a defect in this
  * module rather than a number to correct.
  */
-import { absolute, asCash, asPerPiece, asRatio, minus, negated, plus, pricedAt, type Ratio, scale, type Cash, type PerPiece, valueAt, asAmount,} from '../../core/measure.js';
+import {
+  type Cash,
+  type PerPiece,
+  type Ratio,
+  absolute,
+  asAmount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  minus,
+  negated,
+  over,
+  plus,
+  pricedAt,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { nextCycle, type Calendar, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, ParamId, PartyId, UnitId } from '../../core/ids.js';
@@ -320,7 +336,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   // B1: short by what it is holding. It made the thing, or it bought it; either way it is exposed.
   const held = view.free(t.deliverable);
   let want = negated(
-    asAmount<'piece'>(div(held, t.lotUnits, 'what its holding comes to in lots'), 'lots it is long of the thing'),
+    over(held, asRatio(t.lotUnits, 'what one lot is'), 'what its holding comes to in lots'),
     'so lots it wants to be short',
   );
   // Its own balance sheet is walked only where the comparison it feeds happens: a book with no

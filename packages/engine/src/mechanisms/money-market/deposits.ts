@@ -30,23 +30,30 @@
  * not, so the buffer differs between two banks with the same balance sheet size, which is what A2.a
  * asks for and what a stated ratio of deposits could never give.
  */
+import type { Qty } from '../../core/tick.js';
 import {
+  type Cash,
+  type Ratio,
+  absolute,
   acrossMembers,
   asCash,
   asPerMember,
-  type Cash,
+  asRatio,
   heldAsMoney,
   minus,
+  plus,
+  ratioOf,
+  scale,
 } from '../../core/measure.js';
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import { currencyUnit, moneyInstrumentId } from '../../core/ids.js';
 import {
-  add,
+  
   atMost,
-  div,
-  mul,
+  
+  
   sum,
   zeroIfNone,
 } from '../../core/num.js';
@@ -67,14 +74,14 @@ export function depositsByClass(
   ccy: CurrencyCode,
 ): Map<string, number> {
   const money = moneyInstrumentId(bank, ccy);
-  const out = new Map<string, number>();
+  const out = new Map<string, Qty>();
   for (const holder of ctx.register.holdersOf(money)) {
     if (holder === bank) continue;
     const cls = classOf(ctx.registry, ctx.parties.get(holder).kind);
     if (cls === undefined) continue;
     const held = ctx.register.totalQuantity(holder, money);
     if (held === 0) continue;
-    out.set(cls.id, add(zeroIfNone(out.get(cls.id)), held, `${cls.id} at ${bank}`));
+    out.set(cls.id, plus(zeroIfNone(out.get(cls.id)), held, `${cls.id} at ${bank}`));
   }
   return out;
 }
@@ -150,7 +157,7 @@ export function couldLeave(
   bank: PartyId,
   ccy: CurrencyCode,
   limit: number,
-): number {
+): Cash {
   const money = moneyInstrumentId(bank, ccy);
   const terms: Cash[] = [];
   for (const holder of ctx.register.holdersOf(money)) {
@@ -205,9 +212,18 @@ export function payDepositInterest(
     // Law 8: interest is paid in whole pieces of the money, per member of a cell — each member is
     // a real holder with a real account. A rate that comes to less than one piece pays nothing,
     // which is what a rate that small IS.
-    const wanted = mul(balance, mul(rate.value, year, 'for the days'), 'interest');
+    const wanted = scale(
+      balance,
+      scale(rate.value, asRatio(year, 'the part of a year it covers'), 'for the days'),
+      'interest',
+    );
     const paying = wanted > 0;
-    const share = shareFor(ctx.registry, party, currencyUnit(ccy), paying ? wanted : -wanted);
+    const share = shareFor(
+      ctx.registry,
+      party,
+      currencyUnit(ccy),
+      absolute(wanted, 'what moves, either way'),
+    );
     const perMember = share.perMember;
     if (perMember <= 0) continue;
     const amount = perMember;
@@ -243,8 +259,10 @@ export function depositBase(byClass: ReadonlyMap<string, number>): number {
  * F4, Observer A5: the metric somebody outside can see — what it holds liquid against what could
  * leave. A bank with nothing that could leave has no ratio, and says so rather than showing one.
  */
-export function liquidityMetric(liquid: number, couldLeave: number): Option<number> {
-  return couldLeave <= 0 ? none<number>() : some(div(liquid, couldLeave, 'liquidity metric'));
+export function liquidityMetric(liquid: Cash, couldLeave: Cash): Option<Ratio> {
+  return couldLeave <= 0
+    ? none<Ratio>()
+    : some(ratioOf(liquid, couldLeave, 'liquidity metric'));
 }
 
 /**
@@ -252,12 +270,15 @@ export function liquidityMetric(liquid: number, couldLeave: number): Option<numb
  * rate on the board — the same fact a rival prices against and a depositor moves for, which is why
  * it is one public number and not two private ones (Law 4).
  */
-export function announced(ctx: MechanismContext, bank: PartyId, cls: string): Option<number> {
+export function announced(ctx: MechanismContext, bank: PartyId, cls: string): Option<Ratio> {
   const said = ctx.journal.forSubject('bank.depositRate', bank);
   const last = said[said.length - 1];
-  if (last === undefined) return none<number>();
+  if (last === undefined) return none<Ratio>();
   const rates = last.data['rates'];
-  if (typeof rates !== 'object' || rates === null) return none<number>();
+  if (typeof rates !== 'object' || rates === null) return none<Ratio>();
   const rate = (rates as Record<string, unknown>)[cls];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  // Item 16: a published rate re-enters the type system here, through its dimension's own door.
+  return typeof rate === 'number'
+    ? some(asRatio(rate, 'what this bank announced for this class'))
+    : none<Ratio>();
 }

@@ -13,7 +13,17 @@
  * what a call is (D4), what a close-out leaves owing (D11.a, F2), what a waterfall absorbs (C4).
  */
 import { asQty } from '../../core/tick.js';
-import { absolute, asCash, type Cash, heldAsMoney, minus, negated , asPerPiece} from '../../core/measure.js';
+import {
+  type Cash,
+  type Ratio,
+  absolute,
+  asCash,
+  asPerPiece,
+  heldAsMoney,
+  minus,
+  negated,
+  scale,
+} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { Period } from '../../calendar/calendar.js';
 import {
@@ -27,7 +37,7 @@ import {
   type PartyId,
   type PartyKindId,
 } from '../../core/ids.js';
-import { atLeast, atMost, dustOf, sub, sum, withinDust } from '../../core/num.js';
+import { atLeast, atMost, dustOf, sum, withinDust } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -634,7 +644,7 @@ function marginIsHeld(): Family {
           family: 'zeroSum',
           spec: 'Derivative Layer D2.b',
           owner: String(i.id),
-          size: sub(held.value, issued, 'margin held against margin owed'),
+          size: minus(held.value, issued, 'margin held against margin owed'),
           unit: currencyUnit(i.ccy),
           period: view.period,
           message: `${i.id}: ${held.value} is posted and ${issued} is owed back`,
@@ -700,9 +710,9 @@ export function refusedThisPeriod(ctx: MechanismContext): number {
  * looks like prudence. What E3 asks for is what the cash balance already is (Law 19: read the
  * source, never a second number derived from it).
  */
-export function capacityOf(view: ParticipantView, ccy: CurrencyCode, buffer: number): number {
-  const cash = view.cash(ccy);
-  return sub(cash, cash * buffer, 'net of what it keeps back');
+export function capacityOf(view: ParticipantView, ccy: CurrencyCode, buffer: Ratio): Cash {
+  const cash = heldAsMoney(view.cash(ccy), 'the money it holds of this');
+  return minus(cash, scale(cash, buffer, 'what it keeps back'), 'net of what it keeps back');
 }
 
 export function derivativeLayer(

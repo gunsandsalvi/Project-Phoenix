@@ -37,9 +37,19 @@
 import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { instrumentId, marketId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
-import { add, atMost, div, finite, mul, sub, sum, zeroIfNone } from '../../core/num.js';
-import { asQty, downTick, subQty, type Qty } from '../../core/tick.js';
-import { heldAsMoney, type PerPiece, ratioOf, scale, valueAt , pricedAt} from '../../core/measure.js';
+import { add, atMost, div, finite, mul, sum, zeroIfNone } from '../../core/num.js';
+import { NO_QTY, type Qty, addQty, asQty, downTick, subQty } from '../../core/tick.js';
+import {
+  type PerPiece,
+  asRatio,
+  heldAsMoney,
+  minus,
+  plus,
+  pricedAt,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { WIND, conditionsFor } from '../../registry/environment.js';
@@ -92,14 +102,16 @@ function legs(ctx: MechanismContext): ReadonlyMap<string, Path> {
  * on another" and of "no capacity without a carrier that owns it", and there is no number anywhere
  * that says how much a route can take (A4).
  */
-function roomOf(ctx: MechanismContext, view: ParticipantView): number {
-  let free = 0;
+function roomOf(ctx: MechanismContext, view: ParticipantView): Qty {
+  let free = NO_QTY;
   for (const v of vintagesHeld(view, ctx.calendar.startOf(ctx.period))) {
     if (v.capitalKind !== VESSEL) continue;
-    free += view.free(instrumentId(v.instrument));
+    free = addQty(free, view.free(instrumentId(v.instrument)), 'the hulls it has free');
   }
-  if (free <= 0) return 0;
-  return downTick(mul(free, ctx.params.count(HOLD_UNITS), 'what its free hulls hold'));
+  if (free <= 0) return NO_QTY;
+  return downTick(
+    scale(free, asRatio(ctx.params.count(HOLD_UNITS), 'what one hull holds'), 'what its free hulls hold'),
+  );
 }
 
 /**
@@ -132,7 +144,7 @@ interface Shippable {
   readonly instrument: InstrumentId;
   readonly subUnit: string;
   readonly units: number;
-  readonly here: number;
+  readonly here: PerPiece;
 }
 
 function toShip(ctx: MechanismContext, from: RegionId): readonly Shippable[] {
@@ -175,7 +187,7 @@ function shippers(
     if (!ctx.instruments.has(there)) continue;
     const away = ctx.participant(s.party).print(there);
     if (!away.some) continue;
-    const gap = sub(away.value.price, s.here, 'what the voyage is worth a unit');
+    const gap = minus(away.value.price, s.here, 'what the voyage is worth a unit');
     if (gap <= 0) continue;
     out.push({ party: s.party, side: 'buy', price: gap, qty: asQty(s.units) });
   }
@@ -285,14 +297,14 @@ function cargo(
   if (ctx.parties.get(shipper).region !== from) return false;
   const hulls = room.get(carrier);
   if (hulls === undefined) return false;
-  let shipped = 0;
+  let shipped = NO_QTY;
   for (const h of ctx.register.holdingsOf(shipper)) {
     const i = ctx.instruments.get(h.instrument);
     if (!i.status.live || !isGoodTerms(i.terms) || i.terms.region !== from) continue;
     const transit = inTransit(i.terms.subUnit, from, to);
     if (!ctx.instruments.has(transit)) continue;
     const free = ctx.register.free(shipper, i.id);
-    const left = sub(units, shipped, 'what is still to go aboard');
+    const left = minus(units, shipped, 'what is still to go aboard');
     const take = ctx.registry.deliverable(i.unit, atMost(free, left, 'it ships what it holds'));
     if (take <= 0) continue;
     // E2: the hulls this cargo needs, and never more than the carrier has free. One hull's worth
@@ -352,7 +364,7 @@ function cargo(
       reason: `${shipper} ships ${take} of ${i.terms.subUnit} to ${to} with ${carrier}`,
     });
     if (r.outcome !== 'settled') continue;
-    shipped = add(shipped, take, 'what has gone aboard');
+    shipped = plus(shipped, take, 'what has gone aboard');
     ctx.record(
       'freight.loaded',
       [String(shipper), String(carrier)],
