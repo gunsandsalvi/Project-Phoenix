@@ -87,7 +87,7 @@ import {
   wagePerMember,
   type EmploymentBook,
   type EmploymentRow,
-  employmentId,
+  restate,
 } from './register.js';
 import { addQty, asQty, negQty, NO_QTY, scaleQty, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
@@ -170,10 +170,10 @@ function supply(
   if (occupation === undefined || region === undefined) return out;
   // D1.c: what this trade pays is a fact about the TRADE, so it is read once for the venue rather
   // than once for every person looking at it. Nothing in it varies by who is asking.
-  const going = goingRate(book, occupation, region as RegionId);
+  const going = goingRate(ctx, book, occupation, region as RegionId);
   for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
     if (!participates(ctx, cell, p.retirementAge) || cell.region !== region) continue;
-    if (rowOfWorker(book, cell.id) !== undefined) continue;
+    if (rowOfWorker(ctx, book, cell.id) !== undefined) continue;
     const skill = book.skill[cell.id];
     // A3: a job in one occupation is not a job in another. Somebody who has worked looks for the
     // trade they have; somebody who never has can start anywhere. In the second round it is the
@@ -220,7 +220,7 @@ export function runVenue(
   const bids: Order[] = [];
   for (const posting of ctx.posted(v.id)) {
     if (posting.side !== 'buy' || posting.price === 'market') continue;
-    const held = hoursAt(book, posting.party, occupation, region as RegionId);
+    const held = hoursAt(ctx, book, posting.party, occupation, region as RegionId);
     const gap = subQty(posting.qty, held, 'employment gap');
     if (!material(gap, 2, addQty(posting.qty, held, 'employment'))) continue;
     // Both sides of this subtraction are counts of hours — what it posted and what it employs —
@@ -360,8 +360,9 @@ function hire(
   if (members <= 0) return;
   const whole = members >= weightOf(cell);
   const hired = whole ? worker : ctx.cells.split(worker, members, `hired by ${employer}`);
-  const row: EmploymentRow = {
-    id: employmentId(`row.${book.next}`),
+  // XI-8: the row IS the commitment, so the kernel writes it and gives it its identity — there is
+  // no `book.next` any more, and no employment id this module invented (item 9.1).
+  const row = enter(ctx, book, {
     employer,
     worker: hired,
     occupation,
@@ -380,9 +381,7 @@ function hire(
       ),
     ),
     headcount: weightOf(ctx.parties.get(hired)),
-  };
-  book.next += 1;
-  enter(book, row);
+  });
   book.skill[hired] = occupation;
   ctx.record(
     'labour.hire',
@@ -419,7 +418,7 @@ function shed(
   p: LabourParams,
 ): void {
   let left = hours;
-  const rows = [...rowsAt(book, employer, occupation, region)].sort((a, b) => b.start - a.start);
+  const rows = [...rowsAt(ctx, book, employer, occupation, region)].sort((a, b) => b.start - a.start);
   for (const row of rows) {
     if (left <= 0) break;
     const members = Math.floor(ratioOf(left, row.hoursPerMember, 'members to separate'));
@@ -437,7 +436,7 @@ function shed(
  * the row names an employer that is dead, whatever killed it and whoever is winding it up.
  */
 export function release(ctx: MechanismContext, book: EmploymentBook, p: LabourParams): void {
-  for (const row of allRows(book)) {
+  for (const row of allRows(ctx, book)) {
     if (ctx.parties.get(row.employer).status.alive) continue;
     separate(ctx, book, row, row.headcount, `${row.employer} ceased`, p);
   }
@@ -460,9 +459,12 @@ export function separate(
   const whole = members >= row.headcount;
   const gone = whole ? row.worker : ctx.cells.split(row.worker, members, cause);
   if (whole) {
-    leave(book, row);
+    leave(ctx, book, row, cause);
   } else {
-    row.headcount = sub(row.headcount, members, 'headcount after separation');
+    // A4.c, Law 15: part of the cell left, so the row's terms changed and the commitment did not.
+    // It used to be `row.headcount = ...` on a mutable object in a private book; the kernel's row
+    // is frozen, and a change of terms is an event with its own record (item 9.1).
+    restate(ctx, book, row, { headcount: sub(row.headcount, members, 'headcount after separation') });
   }
   // The trade stays with the person who has it: an unemployed baker looks for baking (A3).
   book.skill[gone] = row.occupation;
@@ -536,7 +538,7 @@ export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
     PartyId,
     { due: Cash; paid: Cash; hours: Qty; productive: Qty; headcount: number }
   >();
-  for (const row of allRows(book)) {
+  for (const row of allRows(ctx, book)) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
     const perMember = wagePerMember(row);
     const moved = payFrom(ctx, row.employer, row.worker, perMember, `wages from ${row.employer}`);
@@ -658,14 +660,14 @@ export function publishGoingRate(
     const occupation = v.key['occupation'];
     const region = v.key['region'];
     if (occupation === undefined || region === undefined) continue;
-    const rate = goingRate(book, occupation, region as RegionId);
+    const rate = goingRate(ctx, book, occupation, region as RegionId);
     if (rate !== undefined) rows[v.id] = rate;
   }
   if (Object.keys(rows).length === 0) return;
   ctx.record(
     'labour.goingRate',
     [],
-    { of: now - 1, wagePerHour: rows, employed: employed(book) },
+    { of: now - 1, wagePerHour: rows, employed: employed(ctx, book) },
     true,
   );
 }

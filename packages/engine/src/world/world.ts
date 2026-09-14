@@ -1702,6 +1702,30 @@ export class World {
         );
         return row;
       },
+      restate: (id, terms) => {
+        const row = this.agreementStore.restate(id, terms);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'agreement.restated',
+          [row.debtor, row.creditor],
+          { agreement: row.id, what: row.terms.kind },
+          true,
+        );
+        return row;
+      },
+      endAgreement: (id, why) => {
+        const row = this.agreementStore.terminate(id);
+        this.journal.record(
+          this.currentPeriod,
+          this.currentCycle,
+          'agreement.terminated',
+          [row.debtor, row.creditor],
+          { agreement: row.id, what: row.terms.kind, owed: row.owed, why },
+          true,
+        );
+        return row;
+      },
       paidOn: (id, amount) => {
         const row = this.agreementStore.paid(id, amount);
         this.journal.record(
@@ -2023,6 +2047,7 @@ export class World {
       instruments: this.instruments,
       register: this.register,
       contracts: this.contracts,
+      agreements: this.agreements,
       voyages: this.voyages,
       prices: this.prices,
       valuation: this.valuation,

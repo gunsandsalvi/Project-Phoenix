@@ -22,6 +22,8 @@ import type { IndexDecl, IndexRead } from '../prices/index-read.js';
 import type { ContractsRead } from '../world/context.js';
 import type { Option } from '../core/option.js';
 
+import type { AgreementReads } from '../register/agreements.js';
+
 export interface AuditView {
   readonly period: Period;
   readonly calendar: Calendar;
@@ -63,6 +65,16 @@ export interface AuditView {
    * enter the zero-sum one, and it is on both sides' balance sheets — so the audit reads it.
    */
   readonly contracts: ContractsRead;
+  /**
+   * XI-8, item 9.1: THE THIRD REGISTER — what one party owes another that is not an instrument.
+   *
+   * An employment, a lease, an invoice, a stock loan, a covenant, a deal, and every arrear a
+   * mechanism can leave. The audit reads it because an estate divides it and a party that has
+   * ceased must not still be a side of one; before it was here, a family checking employments
+   * closed over the labour module's own private book, which is a module handing the audit its
+   * answer rather than the audit reading the world (Audit A1.a).
+   */
+  readonly agreements: AgreementReads;
   /**
    * Indices E3, D5: the index rules this world declares, and what each of them reads as. Both, so a
    * check can put the level against the constituents that made it — which is the one thing an index

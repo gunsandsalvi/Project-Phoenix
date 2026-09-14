@@ -19,6 +19,8 @@ import {
   assemble,
   labourVenue,
   partyId,
+  EMPLOYMENT,
+  employmentOf,
   type EmploymentRow,
   type MechanismContext,
   type SystemModule,
@@ -153,11 +155,16 @@ function deepPockets(...firms: readonly PartyId[]): SystemModule {
   };
 }
 
+/**
+ * XI-8, item 9.1: the employments, read from the KERNEL's agreement store. They used to be reached
+ * by reaching into `labour`'s own state slot and pulling `rows` out of it — a test looking at a
+ * module's private book, which is exactly what having no kernel noun for an employment forced.
+ */
 function allRows(w: World): EmploymentRow[] {
-  const slot = w.stateSlots()['labour/employment'] as
-    | { rows: Record<string, EmploymentRow> }
-    | undefined;
-  return slot === undefined ? [] : Object.values(slot.rows);
+  return w.agreements
+    .ofKind(EMPLOYMENT)
+    .filter((a) => a.state === 'performing')
+    .map(employmentOf);
 }
 
 /** The rows of the employer a test is about: the state employs people in this world too. */

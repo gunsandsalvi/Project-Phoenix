@@ -180,6 +180,28 @@ export class Agreements {
     return next;
   }
 
+  /**
+   * Law 15, item 9.1: THE TERMS CHANGED, and that is an event and not a correction.
+   *
+   * A wage is renegotiated (Labour D2), a worker cell splits so the headcount on the row falls, a
+   * borrow is rolled at a new fee. The row is the same commitment between the same two parties —
+   * the identity does not move — and what it says has changed. It refuses a change of KIND: an
+   * employment cannot become a lease, and a row that did would be two facts under one id.
+   */
+  restate(id: AgreementId, terms: AgreementTerms): Agreement {
+    const row = this.get(id);
+    forbid(
+      row.terms.kind === terms.kind,
+      'Law 15',
+      `${id} is a ${row.terms.kind} and would be restated as a ${terms.kind}`,
+    );
+    forbid(row.state !== 'discharged', 'XI-8', `${id} is discharged and its terms cannot change`);
+    forbid(row.state !== 'terminated', 'XI-8', `${id} is terminated and its terms cannot change`);
+    const next: Agreement = { ...row, terms };
+    this.rows.set(id, Object.freeze(next));
+    return next;
+  }
+
   /** The payment did not arrive and stands unpaid — the state Money E1 names and D3 requires. */
   breached(id: AgreementId): Agreement {
     const row = this.get(id);

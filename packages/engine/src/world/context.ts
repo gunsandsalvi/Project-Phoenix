@@ -56,7 +56,12 @@ import type { Holding, Register, RegisterReads } from '../register/register.js';
 import type { Voyage } from '../register/voyages.js';
 import type { PartyId as VoyagePartyId, VoyageId } from '../core/ids.js';
 import { assertNever } from '../core/assert.js';
-import type { Agreement, AgreementDecl, AgreementReads } from '../register/agreements.js';
+import type {
+  Agreement,
+  AgreementDecl,
+  AgreementReads,
+  AgreementTerms,
+} from '../register/agreements.js';
 import { none, some } from '../core/option.js';
 import { instrumentId, partyId } from '../core/ids.js';
 
@@ -820,6 +825,13 @@ export interface MechanismContext extends WorldReads {
   owes(decl: AgreementDecl): Agreement;
   /** Part of what was owed has arrived. Paid in full discharges it; short does not (Money E1). */
   paidOn(id: AgreementId, amount: number): Agreement;
+  /**
+   * Law 15: the terms of a commitment changed — a renegotiated wage, a cell that split under an
+   * employment, a rolled borrow. Same two parties, same row, different terms; never a new kind.
+   */
+  restate(id: AgreementId, terms: AgreementTerms): Agreement;
+  /** XI-8: it ended with something still owed and nobody left to pay it — a write-off, said so. */
+  endAgreement(id: AgreementId, why: string): Agreement;
   /**
    * XI-8, Law 15 (item 9.1): THE AGREEMENT STORE, READ-ONLY — what a party owes that is not an
    * instrument, what is owed to it, every row of one kind, and a kind's own terms.

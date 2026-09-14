@@ -39,7 +39,14 @@ import {
   WAGES_IN_ARREARS,
   type LabourParams,
 } from './matching.js';
-import { allRows, emptyBook, rowOfWorker, type EmploymentBook } from './register.js';
+import {
+  EMPLOYMENT,
+  emptyBook,
+  employmentOf,
+  type EmploymentBook,
+  type EmploymentRow,
+} from './register.js';
+import type { AuditView } from '../../audit/view.js';
 
 export * from './data.js';
 export * from './register.js';
@@ -120,11 +127,27 @@ function paramsOf(): ParamDecl[] {
 }
 
 /**
+ * XI-8, Audit A1.a: the employments, READ FROM THE WORLD rather than handed over by the module.
+ *
+ * These families used to close over `book` — the labour module's own private register — which is
+ * the module supplying the audit with the answer it is checking. The rows are agreements now, so
+ * the audit reads the same store an estate does, and a family that disagrees with the module is
+ * two independent reads disagreeing, which is what a family is for.
+ */
+function employments(view: AuditView): readonly EmploymentRow[] {
+  const out: EmploymentRow[] = [];
+  for (const a of view.agreements.ofKind(EMPLOYMENT)) {
+    if (a.state === 'performing') out.push(employmentOf(a));
+  }
+  return out;
+}
+
+/**
  * B5, A4.c, F2: every row's headcount is its cell's whole weight, nobody holds two jobs, and
  * employed plus unemployed plus inactive is the population — exactly, because a cell is only ever
  * in one state. The two records are the register's own headcounts and the cells' weights.
  */
-function workforceIdentity(book: EmploymentBook): Family {
+function workforceIdentity(): Family {
   return {
     name: 'units',
     contributor: 'labour',
@@ -145,7 +168,7 @@ function workforceIdentity(book: EmploymentBook): Family {
       };
       const held = new Set<string>();
       const rowsHere = new Map<string, number>();
-      for (const row of allRows(book)) {
+      for (const row of employments(view)) {
         if (!view.parties.has(row.worker)) {
           v('Labour A4.a', row.worker, row.headcount, `row ${row.id} names a worker that is not here`);
           continue;
@@ -177,7 +200,7 @@ function workforceIdentity(book: EmploymentBook): Family {
        * iteration by construction and could not fail in any world. Audit A1.a: "a read of two
        * independent things that must agree — never a read of one thing against itself".
        *
-       * What is independent here: EMPLOYED comes from this module's own employment book, INACTIVE
+       * What is independent here: EMPLOYED comes from the kernel's agreement store, INACTIVE
        * from the REGISTRY's age bands against the parties store, and the POPULATION from the cells.
        * The third state is what is left, so the identity below is about the two that are read —
        * an inactive count that exceeds the population, or an employed one that overlaps it, is a
@@ -187,11 +210,12 @@ function workforceIdentity(book: EmploymentBook): Family {
         string,
         { people: number; employed: number; inactive: number }
       >();
+      const employed = new Set(employments(view).map((r) => String(r.worker)));
       for (const p of view.parties.ofKind(HOUSEHOLD)) {
         if (p.representation !== 'cell' || !p.status.alive) continue;
         const acc = byRegion.get(p.region) ?? { people: 0, employed: 0, inactive: 0 };
         const working = view.registry.cohort(cohortId(keyOf(p, 'cohort'))).fromAge < retirementAge;
-        const isEmployed = rowOfWorker(book, p.id) !== undefined;
+        const isEmployed = employed.has(String(p.id));
         acc.people += p.weight;
         acc.employed += isEmployed ? p.weight : 0;
         acc.inactive += working ? 0 : p.weight;
@@ -255,7 +279,7 @@ function workforceIdentity(book: EmploymentBook): Family {
 }
 
 /** F1: no employment without an employer — every row is a job at a named firm that still exists. */
-function employersExist(book: EmploymentBook): Family {
+function employersExist(): Family {
   return {
     name: 'names',
     contributor: 'labour',
@@ -263,7 +287,7 @@ function employersExist(book: EmploymentBook): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      for (const row of allRows(book)) {
+      for (const row of employments(view)) {
         const known = view.parties.has(row.employer);
         if (known && view.parties.get(row.employer).status.alive) continue;
         out.push({
@@ -339,6 +363,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
   return {
     id: 'labour',
     agreementKinds: [
+      { id: EMPLOYMENT, what: 'a named worker working for a named firm, at a wage, in a trade' },
       { id: WAGES_IN_ARREARS, what: 'wages a worker earned and was not paid' },
       { id: SEVERANCE_IN_ARREARS, what: 'severance an ended employment owed and did not pay' },
     ],
@@ -347,10 +372,10 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
         name: 'employment',
         kind: 'noun',
         holds:
-          'every employment in this world: who works for whom, in what trade, at what wage, on what notice',
+          'the trade each household cell can work in, which is the job it last held, and the index this module finds a row by',
         why:
-          'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
+          'the EMPLOYMENTS moved to the kernel at item 9.1 and are agreements of kind `labour.employment`; the index over them is a traversal and wants no kernel home (Observer E3). What is left that is a NOUN is the SKILL: what a person can do is a fact about that person, not about any job — a `View` a party holds of itself — and it is still kept here.',
+        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
       },
     ],
     spec: 'Labour, XI-10',
@@ -422,7 +447,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
       },
     ],
     participants: [],
-    families: [workforceIdentity(book), employersExist(book), wageIsABid()],
+    families: [workforceIdentity(), employersExist(), wageIsABid()],
     seed(ctx: SeedContext): void {
       for (const region of ctx.registry.regions.values()) {
         for (const o of occupations) {

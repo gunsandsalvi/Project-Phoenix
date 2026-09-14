@@ -6807,3 +6807,46 @@ lint rule permits.
 
 Typecheck 0, lint 0 (src and tests), `check:spec` 208 tags, `check:forbids` 4 over 205 files,
 `check:existence` green.
+
+---
+
+## Item 9, fourth stage — the employment book is the kernel's (`docs/IMPLEMENTATION.md` 9.1b)
+
+**What.** The first of the seven. `EmploymentRow`/`EmploymentBook` lived in `ctx.state`, so an
+employment ranked nowhere in an estate, no other module could see who was employed, and the audit
+families that check the workforce identity CLOSED OVER the labour module's own book — a module
+handing the audit the answer it is checking, which is the one thing Audit A1.a says a family may not
+be. The rows are agreements of kind `labour.employment` now, with the trade, the wage, the hours,
+the start, the productive-from date and the headcount in this module's own `EmploymentTerms`.
+
+**What stays in the module is the INDEX, and the file already said why**: how a module finds a row
+is not something it knows (Observer E3). `byWorker`, `byTrade` and `byEmployer` hold IDS and every
+read resolves them against the kernel's store, so the arrangement is a traversal and never a
+mirror — a stale copy of a fact is the defect Law 19 is about, and an index of snapshots would have
+been one. It is rebuilt from `agreements.ofKind(EMPLOYMENT)` if it is asked for before anything
+wrote to it, which is what makes the kernel the source rather than the destination.
+
+**An employment owes ZERO** and that is the point of 9.1a's relaxed guard: the wage falls due at the
+end of the period and is paid then, and a wage that does not arrive is a `labour.wagesInArrears` row
+of its own. The commitment and the arrear are two rows because they are two facts.
+
+**`book.next` and `employmentId` are deleted.** The row IS the commitment, so the kernel gives it
+its identity; a module inventing a second id for the same thing is Law 4. `EmploymentId` is
+`AgreementId`.
+
+**A headcount change is an EVENT now.** `separate` did `row.headcount = sub(...)` on a mutable
+object in a private book. The kernel's row is frozen, so part of a cell leaving is
+`ctx.restate(id, terms)` — a new kernel door, added here with `endAgreement`: same two parties, same
+id, different terms, journalled as `agreement.restated`, and a change of KIND refused (an employment
+cannot become a lease). `leave` terminates rather than deleting, because a job that vanished from
+the record would leave a severance nothing could be a severance FROM.
+
+**`AuditView` gains `agreements`** — the third register, beside the holdings and the contracts — so
+the workforce-identity and employer-exists families read the world instead of the module. That is
+the change that makes them families rather than assertions.
+
+`labour`'s noun declaration is re-written to say what is actually left in the slot: the SKILL, what
+each cell can do, which is a fact about a person and not about any job — a `View`, carried to 9.9.
+
+Typecheck 0, lint 0 (src and tests), `check:spec` 208 tags, `check:forbids` 4 over 205 files,
+`check:existence` green. Six books left: lease, invoice, stock loan, loan, covenant, deal.
