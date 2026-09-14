@@ -109,13 +109,28 @@ export const LENDING_PARAMS = {
 
 /** What a bank was asked for, by whom, and what it said (C3.a: a decline is an answer). */
 interface Book {
-  next: number;
   /** Money B3.a: what the kernel allowed as a drawing this period, waiting to become a row. */
   draws: { holder: string; issuer: string; ccy: string; amount: Cash }[];
 }
 
 function book(ctx: MechanismContext): Book {
-  return ctx.state<Book>('book', () => ({ next: 1, draws: [] }));
+  return ctx.state<Book>('book', () => ({ draws: [] }));
+}
+
+/**
+ * Law 4, Law 19 (item 9.1): THE NEXT FREE ROW NAME, asked of the register rather than of a counter
+ * this module keeps beside its own working state.
+ *
+ * A loan and a subordinated line are INSTRUMENTS — the register is their home and it is the one
+ * writer of what exists — so a sequence kept here was a second thing to keep true, and it counted
+ * ATTEMPTS rather than rows: `b.next` moved on a raise that took nothing and on a loan whose
+ * settlement failed, so the names it produced had gaps that meant nothing.
+ */
+function freeLine(ctx: MechanismContext, name: (n: number) => InstrumentId): InstrumentId {
+  for (let n = 1; ; n += 1) {
+    const id = name(n);
+    if (!ctx.instruments.has(id)) return id;
+  }
 }
 
 function regulationOf(view: ParticipantView): Regulation {
@@ -185,7 +200,6 @@ function publishCapital(rows: readonly BankDecl[], ctx: MechanismContext): void 
  * recorded as a failure and the bank is exactly where it was, one rung further down the ladder.
  */
 function runRaises(rows: readonly BankDecl[], ctx: MechanismContext): void {
-  const b = book(ctx);
   for (const p of ctx.parties.ofKind(BANK)) {
     if (!p.status.alive || declOf(rows, p.id) === undefined) continue;
     const short = mustRaise(rows, ctx, p.id);
@@ -202,8 +216,7 @@ function runRaises(rows: readonly BankDecl[], ctx: MechanismContext): void {
       const q = quote(view, decl, p.id, regulationOf(view), funds.value, seenDefaults(ctx));
       bids.push(...bidsFor(view, p.id, ccy, q.rate, room(view, decl, p.id).most));
     }
-    const taken = runRaise(ctx, p.id, ccy, short, bids, b.next);
-    b.next += taken.length;
+    runRaise(ctx, p.id, ccy, short, bids);
   }
 }
 
@@ -553,7 +566,6 @@ function write(
    */
   security: readonly { readonly instrument: InstrumentId; readonly qty: Qty }[] = [],
 ): InstrumentId | undefined {
-  const b = book(ctx);
   // Law 8, B1: money is created in whole pieces of itself, so a loan is drawn in whole pieces. What
   // the arithmetic asked for below one piece is not lent, because it is not money.
   /**
@@ -575,7 +587,7 @@ function write(
   if (principal <= 0) return undefined;
   const existing = onTheLine ? lineOf(ctx, bank, borrower) : undefined;
   if (existing !== undefined) return draw(ctx, existing, principal, ccy);
-  const id = loanId(bank, borrower, b.next);
+  const id = freeLine(ctx, (n) => loanId(bank, borrower, n));
   const drawn = ctx.calendar.startOf(ctx.period);
   const terms: LoanTerms = {
     kind: LOAN,
@@ -624,7 +636,6 @@ function write(
   ];
   const r = ctx.settle({ legs, cause: 'issuance', reason: `${bank} lends ${principal} to ${borrower}` });
   if (r.outcome !== 'settled') return undefined;
-  b.next += 1;
   ctx.record(
     'credit.written',
     [bank, borrower, id],

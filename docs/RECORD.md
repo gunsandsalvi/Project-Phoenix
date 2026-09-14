@@ -7004,3 +7004,37 @@ case and the case where the vehicle has already ceased and its estate owes the n
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. One book left: the loan.
+
+---
+
+## Item 9, tenth stage — the loan was already the register's, and 9.1 closes (9.1h)
+
+**What.** The seventh and last, and **the third the plan's text was wrong about** — for the same
+reason the invoice was. A bank loan is an INSTRUMENT: `LOAN` is a registered kind with `LoanTerms`,
+an originator, a rate, a schedule and a holder, and `banks` keeps no book of loans at all. There was
+nothing to migrate.
+
+What `banks`'s `book` slot actually held was two things, and only one of them belongs there: the
+DRAWINGS the kernel has allowed this period and that have not become rows yet (Money B3.a — the slot
+is correctly declared `working` for exactly that), and a COUNTER, `next`, used to name a loan and a
+subordinated line.
+
+**The counter is deleted and it was wrong in a way worth writing down.** It counted ATTEMPTS rather
+than rows: `b.next += taken.length` moved on every raise whether or not anything was taken, and
+`b.next += 1` sat after a `settle` that could fail, so a loan whose settlement failed still consumed
+a name. The gaps in the sequence meant nothing at all. Both `loanId` and `subId` now ask the
+register which name is free, which is the same fix the invoice and the vehicle got: the register is
+the one writer of what exists, so it is the only thing that can answer, and nothing has to be kept
+true beside it.
+
+`runRaise` loses its `n` parameter and `writeSub` its counter argument with it.
+
+**That closes 9.1: all seven.** Employment and lease and stock loan and deal became agreements —
+bilateral commitments with two named parties, dated terms and a state, visible to the estate and to
+every other module. Invoice and covenant and loan turned out to be MIRRORS: an invoice and a loan
+are instruments and the register was already their home, a covenant is a term of an instrument and
+the slot beside it was a memo the journal already held. **Four nouns and three mirrors**, and the
+plan called all seven nouns — which is what reading the source rather than the plan is for.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. No `standsInFor: { noun: 'Agreement' }` is left anywhere in the engine.

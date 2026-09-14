@@ -220,7 +220,6 @@ export function runRaise(
   ccy: CurrencyCode,
   short: number,
   bids: readonly Order[],
-  n: number,
 ): Taken[] {
   const want = downTick(short);
   if (want <= 0) return [];
@@ -251,7 +250,6 @@ export function runRaise(
     return [];
   }
   const taken: Taken[] = [];
-  let m = n;
   // `E-11`: THIS BOOK CLEARS A RATE, and `Outcome.price` is a `PerPiece` because most books clear a
   // level. The crossing is named here rather than assumed — the bidders posted rates and the solver
   // struck one — and the finding is that a book cannot say which of the two its level is.
@@ -259,9 +257,8 @@ export function runRaise(
   for (const f of outcome.fills) {
     const amount = downTick(f.qty);
     if (f.side !== 'sell' || amount <= 0) continue;
-    if (writeSub(ctx, bank, f.party, amount, struck, ccy, m)) {
+    if (writeSub(ctx, bank, f.party, amount, struck, ccy)) {
       taken.push({ lender: f.party, amount, rate: struck });
-      m += 1;
     }
   }
   if (taken.length > 0) {
@@ -290,9 +287,17 @@ function writeSub(
   amount: Qty,
   rate: Ratio,
   ccy: CurrencyCode,
-  n: number,
 ): boolean {
-  const id = subId(bank, n);
+  /**
+   * Law 4, Law 19 (item 9.1): the next free name for this bank's paper, asked of the register.
+   *
+   * It used to be a counter carried in the `banks` module's own working state, advanced per FILL
+   * and per attempted raise — so it counted tries rather than lines, and a raise that took nothing
+   * still moved it. The register is the one writer of what exists, so it is the one that can say
+   * which name is free.
+   */
+  let id = subId(bank, 1);
+  for (let n = 1; ctx.instruments.has(id); n += 1) id = subId(bank, n + 1);
   const drawn = ctx.calendar.startOf(ctx.period);
   const terms: SubTerms = {
     kind: SUBORDINATED,
