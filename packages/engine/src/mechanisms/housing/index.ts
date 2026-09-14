@@ -759,6 +759,7 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
         cycle: 0,
         anchor: { after: 'corporateActions' },
         run: (ctx: MechanismContext) => {
+          publishShortfall(ctx, bookOf(ctx), rows);
           askForMortgages(ctx, bookOf(ctx), rows);
         },
       },
@@ -808,6 +809,51 @@ export function housing(rows: readonly TenureDecl[] = TENURE): SystemModule {
       }
     },
   };
+}
+
+/**
+ * Housing A1, E1, Observer A3, item 7b: WHAT EACH CELL IS SHORT OF A HOME, published.
+ *
+ * A household decides what to do with its own money, and one of the things it can do is buy the
+ * place its people live in. To decide that it has to know it is short of one — and what a cohort's
+ * people need, and what leases it holds, are HOUSING's facts: a module never imports another module
+ * (ARCHITECTURE 4.9b), so the route is the one every other cross-module read uses, which is an event
+ * the owner of the fact publishes and the reader reads under the party's own name.
+ *
+ * It is the same read `ordersOf` makes to decide what a cell offers or takes in the lettings venue,
+ * taken once and published rather than computed twice (Law 4). Nothing here decides anything: a
+ * household that is short of a home may buy one, rent one, or stay where it is.
+ */
+function publishShortfall(
+  ctx: MechanismContext,
+  book: LeaseBook,
+  rows: readonly TenureDecl[],
+): void {
+  for (const p of ctx.parties.ofKind(HOUSEHOLD)) {
+    if (p.representation !== 'cell' || !p.status.alive) continue;
+    const view = ctx.participant(p.id);
+    const need = needs(view, rows);
+    if (need <= 0) continue;
+    const has = owned(view, p.region);
+    const rented = taken(book, p.id);
+    const short = subQty(subQty(need, has, 'less what it owns'), rented, 'less what it rents');
+    ctx.record(
+      'housing.shortfall',
+      [p.id],
+      {
+        cell: p.id,
+        region: p.region,
+        needs: need,
+        owns: has,
+        rents: rented,
+        // E1: what its people live in that it neither owns nor has taken a lease on. Negative is a
+        // cell with more housing than its people need, which is a real state and is said as one.
+        short,
+        dwelling: goodId(DWELLING, p.region),
+      },
+      true,
+    );
+  }
 }
 
 /** Law 19: what a cohort's people need, for a reader. It is the same read the venue uses. */

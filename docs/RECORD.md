@@ -6464,3 +6464,42 @@ without its overheads and lets them arrive in the first period — which is also
 new site is cleaned after it opens.
 
 Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.
+
+---
+
+## Item 7b, first half — a household buys the home its people live in
+
+`dwelling` had a firm, a recipe, a market, a printed opening price and no bidder ever (`A-55`). Not
+in the household basket, not an input to any recipe, not portable so no merchant carries it, not in a
+fund's mandate, not in a bank's `makes`. Owner-occupation was a state the housing module's own header
+described — *"a household that owns as many dwellings as its members live in has nothing to rent"* —
+and no household in this world could be in.
+
+**A home is the third thing a household can do with its money.** It is not consumption, because
+`demandOf`'s basket is a per-period FLOW and a house bought every period for ever is not a house. It
+is not a saving line, because a saving line is a claim that promises something and a home is a thing
+its people live in. So it is its own call on the SAME `spare` — which is what keeps the money
+committed once (Law 4), and was the whole reason 7.2 could not be done as a housing-side bid.
+
+`households.toAHome` is the preference: how much of what a cell has left over goes towards a home it
+needs and does not own. `homeBid` posts at the cell's OWN level — its outlook of the line where it
+has one, the last print where it has not, the same ladder it buys a loaf on and never a valuation of
+a house out of anybody's accounts (Law 3) — for what its share of its spare reaches, and never more
+than it is short of: a cell does not buy a second home because it could afford one.
+
+What the bid COMMITS is what the units it bids for come to, not the whole share. The rest is still
+spare and goes to the saving lines with everything else.
+
+**And the household has to be told it is short of one.** What a cohort's people need and what leases
+a cell holds are `housing`'s facts, and a module never imports a module. `housing.asking` publishes
+`housing.shortfall` once per cell per period — needs, owns, rents, and the difference — from the same
+read `ordersOf` already makes to decide what that cell offers or takes in the lettings venue, so
+there is one computation of it (Law 4). The household reads it under its own name through
+`lastPublicAbout`, which is the route every cross-module read uses.
+
+A negative shortfall is published as one: a cell with more housing than its people need is a real
+state and is said as one rather than clipped to zero.
+
+`7b.3` and `7b.4` — the overheads and the seed's build-out cycle — are the second half and are next.
+
+Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.

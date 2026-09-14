@@ -935,11 +935,11 @@ deadlocked the seed's build-out in the other. Inserted at 7's dependency positio
 
 ### Steps
 
-- [ ] 7b.1 **A durable inside a household's budget.** `households/index.ts:decide` divides one budget
+- [x] 7b.1 **A durable inside a household's budget.** `households/index.ts:decide` divides one budget **DONE.** `households.toAHome` is the preference — how much of what a cell has left over it puts towards the home its people live in — and `homeBid` posts it in the dwelling's own goods market at its OWN level (its outlook where it has one, the last print where it has not). What it commits is what the units it bids for come to, not the whole share: the rest stays spare and goes to the saving lines, so the money is committed once (Law 4). A cell that owns what its people live in bids nothing and its whole spare goes to saving.
   over consumption, a buffer and the saving lines. A home is none of those: it is bought ONCE, out of
   what is left, and owning one removes a rent the cell was paying. Give the budget a fourth call —
   what it puts towards a durable it needs and does not own — and let the dwelling bid come out of it.
-- [ ] 7b.2 **And the household has to know it is short of one.** The occupancy a cohort needs and the
+- [x] 7b.2 **And the household has to know it is short of one.** The occupancy a cohort needs and the **DONE.** `housing.shortfall` is published once per cell per period in `housing.asking` — what its people need, what it owns, what it rents, and the difference — from the same read `ordersOf` already makes. The household reads it under its own name through `lastPublicAbout`, which is the route every cross-module read uses.
   leases it holds are `housing`'s, and a module never imports a module. `housing` publishes what each
   cell needs against what it owns (the same read `ordersOf` already makes), and the household reads
   the event — the `lastPublicAbout` route every other cross-module read uses.

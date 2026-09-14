@@ -20,6 +20,8 @@
  * and coupons on the paper it holds (B3) — all of them money that actually arrived, because income
  * a household did not receive is not income (B3.a).
  */
+import { none, some, type Option } from '../../core/option.js';
+import { about } from '../../world/context.js';
 import {
   asCash,
   asRatio,
@@ -30,13 +32,17 @@ import {
   plus,
   scale,
   valueAt,
+  amountOf,
+  asAmount,
+  asPerPiece,
+  type PerPiece,
 } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { period } from '../../calendar/calendar.js';
-import { marketId, paramId, type MarketId, type PartyId } from '../../core/ids.js';
-import { addTo, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { instrumentId, marketId, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
+import { addTo, atMost, combineDust, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { isAssetLeg, isMoneyLeg } from '../../ledger/instruction.js';
 import { weightOf } from '../../parties/party.js';
 import { HOUSEHOLD } from '../../registry/profiles.js';
@@ -72,7 +78,7 @@ export {
   shortForSpending,
   sparePerMember,
 } from './portfolio.js';
-import { asQty, scaleQty, type Qty } from '../../core/tick.js';
+import { asQty, downTick, scaleQty, type Qty } from '../../core/tick.js';
 export type { DemandStep, HouseholdParams, Spending } from './consume.js';
 export type { FundOrder, FundPosition, PaperBid, SavingLine, ShareOrder } from './portfolio.js';
 
@@ -83,6 +89,8 @@ export const HOUSEHOLD_PARAMS = {
   horizon: paramId('households.horizon.periods'),
   toTheMarket: paramId('households.toTheMarket'),
   steps: paramId('households.demand.steps'),
+  /** D5, Housing E1: what a cell puts towards a home it needs and does not own (item 7b). */
+  toAHome: paramId('households.toAHome'),
 } as const;
 
 /** Treasury C1: the rate a household pays on what it buys, which it must find on top of the price. */
@@ -144,6 +152,15 @@ function paramsOf(): ParamDecl[] {
       kind: 'preference',
       owner: 'model',
       why: 'Banks Funding A1.d, E1: what it costs one household to move its account, ONCE, as an amount of its own money. It is weighed against what staying has already cost it — its own balance times the gap between the boards over as long as it has stayed — so a bigger balance moves for a smaller gap and the class drains instead of crossing at one instant. Retail money is the stickiest because the amount is large beside what a household holds, and that is A1.a arriving as a cost somebody bears rather than as a stated stickiness.',
+    },
+    {
+      id: HOUSEHOLD_PARAMS.toAHome,
+      value: 0.5,
+      unit: 'of what it has left over',
+      dimension: 'ratio',
+      kind: 'preference',
+      owner: 'model',
+      why: 'Households D5, Housing E1 (item 7b): how much of what a cell has left over it puts towards the home its people live in, when it does not own one. A home is a DURABLE — bought once and then owned — so it is not consumption and it is not a claim; it is the other thing a household can do with what it saves, and how hard it goes at it is a preference. A cell that already owns what its people live in puts nothing here, and the whole of its spare goes to the saving lines.',
     },
     {
       id: HOUSEHOLD_PARAMS.steps,
@@ -446,11 +463,32 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
    * the substitution assumption `ConsumptionDecl` was: what it buys with either half is a quantity
    * meeting a price in a book, and neither half is protected from the other.
    */
+  /**
+   * D5, Housing E1, item 7b: A HOME IS A DURABLE AND IT COMES OUT OF THE SAME BUDGET.
+   *
+   * `dwelling` had a firm, a recipe, a market, a printed opening price and NO BIDDER EVER (`A-55`):
+   * not in the basket, not an input to anything, not portable so no merchant carries it, not in a
+   * fund's mandate and not in a bank's `makes`. Owner-occupation was a state the housing module's
+   * own header described and no household could be in.
+   *
+   * It is not consumption — `demandOf`'s basket is a per-period FLOW and a house bought every period
+   * for ever is not a house — and it is not a saving line, because a saving line is a claim that
+   * promises something and a home is a thing its people live in. It is the third thing, and it
+   * comes out of the SAME `spare`, so the money is committed once (Law 4).
+   *
+   * What it is short of is `housing`'s fact and `housing` publishes it (`housing.shortfall`), read
+   * here under this cell's own name — the route every cross-module read uses, because a module never
+   * imports a module.
+   */
+  const home = homeBid(view, spare, weightOf(self));
+  const toSave = home.some
+    ? minus(spare, home.value.committedPerMember, 'what is left after what it puts towards a home')
+    : spare;
   const toTheMarket = view.params.ratio(HOUSEHOLD_PARAMS.toTheMarket);
   const tracking = [...paper, ...shares].filter((l) => l.tracks).length;
   const picked = paper.length + shares.length - tracking;
-  const forTracking = scale(spare, toTheMarket, 'what it puts into the market as a whole');
-  const forPicked = minus(spare, forTracking, 'what is left for lines it picked');
+  const forTracking = scale(toSave, toTheMarket, 'what it puts into the market as a whole');
+  const forPicked = minus(toSave, forTracking, 'what is left for lines it picked');
   const perTracked =
     tracking > 0
       ? over(forTracking, asRatio(tracking, 'the lines that track'), 'into one of them')
@@ -507,8 +545,11 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
       shortForSpendingPerMember: short,
       toFundPerMember: toFund,
       // C2: what it does not spend and does not put into paper is saved where it already is.
+      // D5, item 7b: what it put towards a home, and nothing when it owns what its people live in.
+      toAHomePerMember: home.some ? home.value.committedPerMember : asCash(0, 'it owns its home'),
       orders: [
         ...goods.map((g) => ({ market: g.market, side: 'buy', price: g.price, qty: g.qty })),
+        ...(home.some ? [home.value.order] : []),
         ...paperOrders.map((b) => ({ market: b.market, side: 'buy', price: b.price, qty: b.qty })),
         ...shareOrders(view, shares, budgetFor, short, p.steps).map((o) => ({
           market: o.market,
@@ -520,6 +561,72 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
     },
     false,
   );
+}
+
+/**
+ * D5, Housing E1, item 7b: WHAT THIS CELL BIDS FOR A HOME, and what that commits of what it has left.
+ *
+ * `housing` publishes what each cell needs against what it owns and what it rents; this reads that
+ * event under the cell's own name. A cell that is short of nothing bids for nothing, and the whole of
+ * its spare goes to the saving lines.
+ *
+ * The level is its OWN — its outlook of the line where it has one, the last print where it has not,
+ * which is the same ladder it buys a loaf on and never a valuation of a house from anybody's
+ * accounts (Law 3). The size is what its own share of its spare reaches at that level, and never
+ * more than it is short of: a cell does not buy a second home because it could afford one.
+ */
+function homeBid(
+  view: ParticipantView,
+  spare: Cash,
+  weight: number,
+): Option<{ readonly committedPerMember: Cash; readonly order: PlannedHomeOrder }> {
+  const nothing = none<{ committedPerMember: Cash; order: PlannedHomeOrder }>();
+  if (spare <= 0 || weight <= 0) return nothing;
+  const said = view.lastPublicAbout('housing.shortfall', String(view.self.id));
+  if (!said.some || said.value.period !== view.period) return nothing;
+  const short = said.value.data['short'];
+  const line = said.value.data['dwelling'];
+  // Item 16: two published facts re-enter here — a count of dwellings, and the line they are of.
+  if (typeof short !== 'number' || short <= 0 || typeof line !== 'string') return nothing;
+  const instrument = instrumentId(line);
+  if (!view.instruments.has(instrument)) return nothing;
+  const own = view.outlook(about({ on: 'price', instrument }));
+  const print = view.print(instrument);
+  const level = own.some
+    ? asPerPiece(own.value.expected, 'what it thinks a home here is worth')
+    : print.some
+      ? print.value.price
+      : undefined;
+  if (level === undefined || level <= 0) return nothing;
+  const budget = scale(spare, view.params.ratio(HOUSEHOLD_PARAMS.toAHome), 'towards a home');
+  if (budget <= 0) return nothing;
+  // Law 8, XI-15: whole pieces, per member, and DOWN — what its money actually reaches.
+  const perMember = downTick(amountOf(budget, level, 'what its share of its spare reaches'));
+  if (perMember <= 0) return nothing;
+  const wanted = scaleQty(perMember, weight, 'what the cell bids for');
+  const qty = atMost(wanted, asAmount<'piece'>(short, 'what it is short of'), 'and no more than it needs');
+  if (qty <= 0) return nothing;
+  const market = goodMarketOf(view, instrument);
+  if (market === undefined) return nothing;
+  return some({
+    // What this actually commits is what the units it bids for come to, not the whole share: the
+    // rest is still spare and goes to the saving lines with everything else (Law 4).
+    committedPerMember: valueAt(level, asAmount<'piece'>(perMember, 'what one member bids for'), 'towards a home'),
+    order: { market, side: 'buy' as const, price: level, qty: asQty(qty) },
+  });
+}
+
+interface PlannedHomeOrder {
+  readonly market: MarketId;
+  readonly side: 'buy';
+  readonly price: PerPiece;
+  readonly qty: Qty;
+}
+
+/** Clearing D1: the market this line is traded in, off the instrument itself (Law 19). */
+function goodMarketOf(view: ParticipantView, instrument: InstrumentId): MarketId | undefined {
+  const i = view.instruments.get(instrument);
+  return i.market.some ? i.market.value : undefined;
 }
 
 /** The orders this cell decided on, read back from its own plan (Law 4: one decision, one writer). */
