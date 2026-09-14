@@ -17,7 +17,7 @@ import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../.
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { add, div, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, negQty } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type {
   Contract,
@@ -166,7 +166,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     if (!isIndexFuture(c.terms) || c.terms.index !== t.index) continue;
     const iAmA = c.a === view.self.id;
     const iAmLong = iAmA === c.terms.long;
-    hedged = add(hedged, iAmLong ? -c.notional : c.notional, 'what it has already laid off');
+    hedged = add(hedged, iAmLong ? negQty(c.notional, 'the other side of it') : c.notional, 'what it has already laid off');
   }
   const want = sub(div(book, perContract, 'contracts its book would take'), hedged, 'left to hedge');
   if (want <= 0) return [];
@@ -263,7 +263,7 @@ export function hedgedBy(view: ParticipantView, index: string): number {
   for (const c of view.contracts.mine()) {
     if (!isIndexFuture(c.terms) || c.terms.index !== index) continue;
     const iAmA = c.a === view.self.id;
-    net = add(net, iAmA === c.terms.long ? c.notional : -c.notional, 'its position in the future');
+    net = add(net, iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'), 'its position in the future');
   }
   return net;
 }

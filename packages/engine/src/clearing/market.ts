@@ -244,7 +244,7 @@ export interface ContractMarketDeps {
     party: PartyId,
     wanted: number,
     m: ContractMarketDecl,
-    struck: number,
+    struck: PerPiece,
   ) => number;
   /**
    * D9, C3.a: the legs that post what this trade requires — an ASSET SWAP, money out and a claim
@@ -255,9 +255,9 @@ export interface ContractMarketDeps {
   readonly marginLegs: (
     party: PartyId,
     against: PartyId,
-    size: number,
+    size: Qty,
     m: ContractMarketDecl,
-    struck: number,
+    struck: PerPiece,
   ) => readonly Leg[];
 }
 

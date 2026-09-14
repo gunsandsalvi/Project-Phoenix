@@ -7,6 +7,7 @@
  * Denomination on a cell (XI-15): a leg side on a cell carries the PER-MEMBER amount and the weight
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
  */
+import type { PerPiece } from '../core/measure.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
 import type { Qty } from '../core/tick.js';
 import type {
@@ -244,9 +245,9 @@ export interface OpenContractLeg {
   readonly derivative: DerivativeKindId;
   readonly terms: ContractTerms;
   readonly ccy: CurrencyCode;
-  readonly notional: number;
+  readonly notional: Qty;
   /** D7: the rate, spread or strike the two sides cleared at. */
-  readonly struckAt: number;
+  readonly struckAt: PerPiece;
   /**
    * Clearing E1, Expectations A2: WHAT THE LEVEL IS A LEVEL OF — the book's own line, which is the
    * subject its print is written against. A party that struck a contract saw this price, and that

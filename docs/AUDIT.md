@@ -2942,6 +2942,7 @@ under a shock.
 > | ~~5~~ | ~~`firms`~~ — **DONE**: the plan, the reservation and the project | **77 → 31** |
 > | ~~6~~ | ~~`households`~~ — **DONE**: the cushion, the basket and the demand curve | **73 → 32** |
 > | ~~7~~ | ~~`money-market`~~ — **DONE**: the resolution waterfall, and `Total<D>` corrected | **60 → 33** |
+> | ~~8~~ | ~~`cds`~~ — **DONE**, and with it the whole DERIVATIVE LAYER: a notional is a count and a strike is a level | **46 → 26** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -3078,6 +3079,25 @@ under a shock.
 > register counts is an `Amount<'piece'>` of a currency and what a price times a quantity comes to is
 > `Money<'piece'>`: the same cents, and the same cents ONLY because money's own price is one — the
 > single hard-coded price this world has (Money D2). The crossing is named rather than assumed.
+>
+> **Measured**: the same 79.
+>
+> ### Stage 8 — the CDS, and the derivative layer with it
+>
+> A CDS is spread × notional, which is the shape **A-65** is made of, and the whole layer turned on
+> three fields nobody had typed: `Contract.notional`, `Contract.struckAt` and `ContractReads.mark`.
+> A notional is a COUNT (`Qty`), a strike is a LEVEL (`PerPiece`), and a mark is a level — so a
+> premium is `valueAt(spread, notional)` and cannot be anything else. That one change reached every
+> derivative in the world: futures, options, forwards, swaps, the index, the layer's own margin.
+>
+> **A runtime check became the type, and the code came out.** `Contracts.open` called
+> `asQty(decl.notional, …)` and threw the answer away — a validation at ONE door for a rule that now
+> holds at every site. The line is deleted and the comment says what replaced it (Law 12: a fix
+> removes code).
+>
+> **Ten `-c.notional`s became `negQty`.** Short is the other side of a count, and `negQty` has said
+> so in `core/tick.ts` since it was written; the lint rule that forbids negating a branded number is
+> what found them. One `sub(rate, -basis)` became the `add` it always was.
 >
 > **Measured**: the same 79.
 >

@@ -3,6 +3,8 @@
  *
  * @spec Indices C3 Dealer Desks E1 Dealer Desks E2 Derivative D1.b Derivative D3 Derivative D3.a Law 3
  */
+import { asPerPiece, asCash } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {contractOf, INDEX_FUTURE,
   futureLineOf,
@@ -59,9 +61,9 @@ describe('the contract (C3, D3, D3.a)', () => {
       b,
       terms: t,
       ccy: m.ccy,
-      notional: 10,
-      struckAt: 100,
-      basis: 0,
+      notional: asQty(10, 'the notional'),
+      struckAt: asPerPiece(100, 'the level it was struck at'),
+      basis: asCash(0, 'what it cost'),
       opened: w.period,
       state: 'open',
       terminated: { some: false },

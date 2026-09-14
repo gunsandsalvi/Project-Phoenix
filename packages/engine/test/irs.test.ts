@@ -3,6 +3,8 @@
  *
  * @spec IRS A1 IRS A1.b IRS A1.c IRS A2 IRS A3 IRS A4 IRS C1 IRS C1.a IRS C2 IRS C3 IRS E1 IRS E2 IRS E3 Derivative D1.b Derivative D3.a Derivative D7.b Law 3 Law 19
  */
+import { asPerPiece, asCash } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {contractOf, IRS,
   IRS_PARAMS,
@@ -54,9 +56,9 @@ function aSwap(w: World, a: string, b: string, tenorYears: number): Contract {
       window: 8,
     },
     ccy: USD,
-    notional: 10_000_000,
-    struckAt: 0.02,
-    basis: 0,
+    notional: asQty(10_000_000, 'the notional'),
+    struckAt: asPerPiece(0.02, 'the level it was struck at'),
+    basis: asCash(0, 'what it cost'),
     opened: w.period,
     state: 'open',
     terminated: { some: false },
@@ -94,7 +96,7 @@ describe('the books (A1, A1.c, C1, D3.a)', () => {
     }
     // A1.c, D7.b: what clears is the fixed RATE that makes it worth nothing today.
     expect(irsKind.quotedAs).toBe('rate');
-    expect(irsKind.premiumPerUnit(0.02, { kind: IRS })).toBe(0);
+    expect(irsKind.premiumPerUnit(asPerPiece(0.02, 'the level'), { kind: IRS })).toBe(0);
   });
 });
 

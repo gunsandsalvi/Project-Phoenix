@@ -17,12 +17,23 @@
  * spread leg from that period on, which is how "the line runs on" is arithmetic rather than an
  * edit: the terms still list it, the payoff already happened, and what is left is the survivors.
  */
+import {
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  negated,
+  plus,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId } from '../../core/ids.js';
-import { mul, sub, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type {
   Contract,
@@ -101,19 +112,19 @@ function markOf(c: Contract, at: Period, reads: ContractReads): number {
   const print = reads.print(t.book, at);
   const running = runningShare(t, reads);
   const spreadLeg = print.some
-    ? mul(
-        mul(
-          sub(print.value.price, c.struckAt, 'the spread now against the spread struck'),
-          mul(c.notional, running, 'on the part of the line still running'),
+    ? scale(
+        valueAt(
+          minus(print.value.price, c.struckAt, 'the spread now against the spread struck'),
+          scale(c.notional, asRatio(running, 'what is still running'), 'on the part still running'),
           'over the notional',
         ),
-        yearsLeft(t, at, reads),
+        asRatio(yearsLeft(t, at, reads), 'the years it has left'),
         'over the years it has left',
       )
-    : 0;
+    : asCash(0, 'a line with no print has no spread leg');
   // A name that has defaulted and not yet settled is worth par less what its own debt is worth,
   // on its share of the line — the same read a single-name row makes (D2.a: no fixed recovery).
-  const claims: number[] = [];
+  const claims: Cash[] = [];
   const whole = sum(t.names.map((n) => n.weight)).value;
   for (const n of t.names) {
     const state = creditState(n.reference, reads);
@@ -121,15 +132,19 @@ function markOf(c: Contract, at: Period, reads: ContractReads): number {
     const recovery = reads.mark(n.obligation, at);
     if (!recovery.some || whole <= 0) continue;
     claims.push(
-      mul(
-        sub(1, recovery.value, 'par less recovery'),
-        mul(c.notional, n.weight / whole, 'on this name’s share of the line'),
+      valueAt(
+        minus(asPerPiece(1, 'par'), recovery.value, 'par less recovery'),
+        scale(
+          c.notional,
+          asRatio(n.weight / whole, 'this name’s share of the line'),
+          'on this name’s share of the line',
+        ),
         'what this name owes the line',
       ),
     );
   }
-  const worth = sub(spreadLeg, -sum(claims).value, 'the spread leg and the claims on it');
-  return t.buysProtection ? worth : -worth;
+  const worth = plus(spreadLeg, sum(claims).value, 'the spread leg and the claims on it');
+  return t.buysProtection ? worth : negated(worth, 'and the other side of it');
 }
 
 /** D2, E1: why a party is in the series. The index itself is priced by its own book (Law 3). */
@@ -174,9 +189,13 @@ export const cdsIndexKind: DerivativeKindProfile = {
     const from = t.buysProtection ? c.a : c.b;
     const to = t.buysProtection ? c.b : c.a;
     const accrual = yearFraction(CDS_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.endOf(at));
-    const amount = mul(
-      mul(c.struckAt, mul(c.notional, running, 'on what is still running'), 'the spread on it'),
-      accrual,
+    const amount = scale(
+      valueAt(
+        c.struckAt,
+        scale(c.notional, asRatio(running, 'what is still running'), 'on what is still running'),
+        'the spread on it',
+      ),
+      asRatio(accrual, 'this period of a year'),
       'this period',
     );
     return amount > 0
@@ -189,9 +208,17 @@ export const cdsIndexKind: DerivativeKindProfile = {
     const move = reads.measuredMove(c.terms.book, c.terms.window);
     if (!move.some) return none();
     return some(
-      mul(
-        mul(move.value, mul(c.notional, runningShare(c.terms, reads), 'still running'), 'over it'),
-        yearsLeft(c.terms, at, reads),
+      scale(
+        valueAt(
+          move.value,
+          scale(
+            c.notional,
+            asRatio(runningShare(c.terms, reads), 'what is still running'),
+            'still running',
+          ),
+          'over it',
+        ),
+        asRatio(yearsLeft(c.terms, at, reads), 'the years it has left'),
         'over the years it has left',
       ),
     );

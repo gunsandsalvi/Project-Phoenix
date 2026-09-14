@@ -21,7 +21,7 @@ import { asPerNamedUnit } from '../../core/measure.js';
 import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, negQty } from '../../core/tick.js';
 import { add, div, mul, sub } from '../../core/num.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isCds, type CdsTerms } from './contract.js';
@@ -104,7 +104,7 @@ function coverHeld(view: ParticipantView, t: CdsTerms): number {
     if (!isCds(c.terms) || c.terms.reference !== t.reference) continue;
     const iAmA = c.a === view.self.id;
     const iBuy = iAmA === c.terms.buysProtection;
-    net = add(net, iBuy ? c.notional : -c.notional, 'protection it already has on this name');
+    net = add(net, iBuy ? c.notional : negQty(c.notional, 'the other side of it'), 'protection it already has on this name');
   }
   return net;
 }
@@ -244,7 +244,7 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
   for (const c of view.contracts.mine()) {
     if (!isCdsIndex(c.terms) || c.terms.series !== t.series) continue;
     const iAmA = c.a === view.self.id;
-    held = add(held, iAmA === c.terms.buysProtection ? c.notional : -c.notional, 'cover on the line');
+    held = add(held, iAmA === c.terms.buysProtection ? c.notional : negQty(c.notional, 'the other side of it'), 'cover on the line');
   }
   const want = sub(exposed, held, 'the exposure to this line it has not covered');
   if (want <= 0) return [];

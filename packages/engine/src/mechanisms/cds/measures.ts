@@ -9,6 +9,7 @@
  * them asks the kind, and a world with one more class gets one more measurement without the surface
  * being touched.
  */
+import { negQty } from '../../core/tick.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -45,7 +46,7 @@ export function netNotionalOn(ctx: WorldReads, reference: PartyId): number {
     // C2: a cleared trade is two rows against the house, so counting both would count the
     // protection twice. The member's side is the one that exists in the world.
     if (c.house !== null && c.a === c.house) continue;
-    net = sub(net, -c.notional, 'protection written on this name');
+    net = sub(net, negQty(c.notional, 'the other side of it'), 'protection written on this name');
   }
   return net;
 }

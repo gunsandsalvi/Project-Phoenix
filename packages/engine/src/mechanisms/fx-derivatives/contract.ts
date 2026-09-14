@@ -20,7 +20,7 @@ import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
 import { derivativeKindId, unitId } from '../../core/ids.js';
-import { mul, sub } from '../../core/num.js';
+import { add, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { FACE_TICK, PIP } from '../../registry/grid.js';
 import type {
@@ -234,7 +234,7 @@ export const xccyKind: DerivativeKindProfile = {
     // C1.a: each leg pays on its own money, at its own rate, including the basis on one of them.
     const baseInterest = mul(mul(c.notional, t.baseRate, 'the base rate on it'), accrual, 'accrued');
     const quoteInterest = mul(
-      mul(quoteNotional, sub(t.quoteRate, -c.struckAt, 'the quote rate plus the basis'), 'on it'),
+      mul(quoteNotional, add(t.quoteRate, c.struckAt, 'the quote rate plus the basis'), 'on it'),
       accrual,
       'accrued',
     );

@@ -25,7 +25,7 @@ import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../.
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, negQty } from '../../core/tick.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import { issuedBy } from '../../register/instruments.js';
 import type {
@@ -307,7 +307,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   for (const c of view.contracts.mine()) {
     if (!isBondFuture(c.terms) || c.terms.deliverable !== t.deliverable) continue;
     const iAmA = c.a === view.self.id;
-    position = add(position, iAmA === c.terms.long ? c.notional : -c.notional, 'its position');
+    position = add(position, iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'), 'its position');
     worth = add(worth, view.contracts.valueOf(c), 'what its book is worth');
   }
   const own = view.equity();

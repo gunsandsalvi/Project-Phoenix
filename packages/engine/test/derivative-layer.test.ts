@@ -37,7 +37,7 @@ import {pairOf, BANK,
   type SeedContext,
   type SystemModule,
   type World,} from '../src/index.js';
-import { minus, plus } from '../src/core/measure.js';
+import { asPerPiece, minus, plus } from '../src/core/measure.js';
 import { runWaterfall } from '../src/index.js';
 import { mergeModules, rigSpec, withDependencies } from './rig.js';
 import {
@@ -474,8 +474,8 @@ describe('capacity (E1, E2, E4)', () => {
         kind: TEST_FORWARD,
         terms,
         ccy: USD,
-        notional: 10,
-        struckAt: 1,
+        notional: asQty(10, 'the notional'),
+        struckAt: asPerPiece(1, 'the level it was struck at'),
         house: houseIdFor(USD),
         a: houseIdFor(USD),
         b: houseIdFor(USD),

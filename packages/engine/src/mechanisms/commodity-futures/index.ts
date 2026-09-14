@@ -34,7 +34,7 @@ import type { CurrencyCode, InstrumentId, MarketId, ParamId, PartyId, UnitId } f
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { add, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, negQty } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import {
   isGoodTerms,
@@ -298,7 +298,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     if (!isCommodityFuture(c.terms) || c.terms.deliverable !== t.deliverable) continue;
     if (c.terms.expiry !== t.expiry) continue;
     const iAmA = c.a === view.self.id;
-    position = add(position, iAmA === c.terms.long ? c.notional : -c.notional, 'its position');
+    position = add(position, iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'), 'its position');
   }
   // B1: short by what it is holding. It made the thing, or it bought it; either way it is exposed.
   const held = view.free(t.deliverable);

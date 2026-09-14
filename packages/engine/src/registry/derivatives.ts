@@ -15,6 +15,8 @@
  * contract and D1.b would be checking a coincidence. `ContractReads` is therefore the kernel's own
  * reads — prints, marks, indices, curves, public events — and no view of anybody.
  */
+import type { PerPiece } from '../core/measure.js';
+import type { Qty } from '../core/tick.js';
 import type { Calendar, Period } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import type {
@@ -77,7 +79,7 @@ export interface ContractReads {
   /** The last print at or before a period — the same read every holder of the line gets. */
   print(instrument: InstrumentId, at: Period): Option<Print>;
   /** XI-6: what a unit of a line is carried at, for a claim on a book that no session printed. */
-  mark(instrument: InstrumentId, at: Period): Option<number>;
+  mark(instrument: InstrumentId, at: Period): Option<PerPiece>;
   index(id: string): Option<IndexRead>;
   curve(family: CurveFamilyId): CurveRead;
   /**
@@ -87,7 +89,7 @@ export interface ContractReads {
    * the one honest source of that in this world is the thing's own record. None when the line has
    * not printed enough times to have a record, which is a different answer from zero.
    */
-  measuredMove(instrument: InstrumentId, periods: number): Option<number>;
+  measuredMove(instrument: InstrumentId, periods: number): Option<PerPiece>;
   /** D3: the public event an underlying of that shape names, most recent, or none. */
   lastEvent(kind: EventKind, subject: string): Option<Event>;
 }
@@ -103,9 +105,9 @@ export interface Contract {
   /** D5: the money its legs move in. */
   readonly ccy: CurrencyCode;
   /** D2: what scales the payoff, in the kind's own unit. Not the exposure (D2.a). */
-  readonly notional: number;
+  readonly notional: Qty;
   /** D7: the rate, spread or strike the two sides entered at, as the market cleared it. */
-  readonly struckAt: number;
+  readonly struckAt: PerPiece;
   /**
    * Register D4: what the position COST — what it was worth to `a` when it was written, which is
    * zero for a contract struck at par (D7.b) and the premium for one bought outright. It is the
@@ -171,7 +173,7 @@ export interface DerivativeKindProfile {
    * answer is what the contract is then WORTH to the buyer: a thing is worth what it cost until
    * something re-marks it (Register D4).
    */
-  readonly premiumPerUnit: (struckAt: number, terms: ContractTerms) => number;
+  readonly premiumPerUnit: (struckAt: PerPiece, terms: ContractTerms) => number;
   /** D4, D6: what falls due this period under the terms, both directions (D5: each in its money). */
   readonly legs: (c: Contract, at: Period, reads: ContractReads) => readonly ContractPayment[];
   /**

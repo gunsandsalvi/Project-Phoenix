@@ -3,6 +3,8 @@
  *
  * @spec FX Forwards A1 FX Forwards A1.b FX Forwards A1.d FX Forwards A2 FX Forwards A3 FX Forwards A4 FX Forwards B1 FX Forwards B2 FX Forwards B3 FX Forwards B3.b FX Forwards C1 FX Forwards C3 FX Forwards C4 FX Forwards E1 FX Forwards E3 FX Forwards E4 Derivative D1.b XI-5 Law 3
  */
+import { asPerPiece, asCash } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {contractOf, pairOf, FX_FORWARD,
   USD,
@@ -56,9 +58,9 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
       b,
       terms: t,
       ccy: t.quote,
-      notional: 1_000_000,
-      struckAt: 1.1,
-      basis: 0,
+      notional: asQty(1_000_000, 'the notional'),
+      struckAt: asPerPiece(1.1, 'the level it was struck at'),
+      basis: asCash(0, 'what it cost'),
       opened: w.period,
       state: 'open',
       terminated: { some: false },
@@ -95,9 +97,9 @@ describe('the forward (A1, A1.b, A1.d, A3, E3, XI-5)', () => {
       b,
       terms: t,
       ccy: t.quote,
-      notional: 1_000_000,
-      struckAt: 1.1,
-      basis: 0,
+      notional: asQty(1_000_000, 'the notional'),
+      struckAt: asPerPiece(1.1, 'the level it was struck at'),
+      basis: asCash(0, 'what it cost'),
       opened: w.period,
       state: 'open',
       terminated: { some: false },
@@ -157,9 +159,9 @@ describe('the cross-currency swap (C1, C1.a, C3)', () => {
       b,
       terms: t,
       ccy: t.quote,
-      notional: 1_000_000,
-      struckAt: 0.001,
-      basis: 0,
+      notional: asQty(1_000_000, 'the notional'),
+      struckAt: asPerPiece(0.001, 'the level it was struck at'),
+      basis: asCash(0, 'what it cost'),
       opened: t.started,
       state: 'open',
       terminated: { some: false },
@@ -183,7 +185,7 @@ describe('what the module refuses to be (B3.b, E1)', () => {
     // The only arithmetic on the two rates is a RESERVATION — what one bank will pay — and a
     // reservation is a reason somebody has. Nothing here writes a price.
     expect('parity' in fxForwardKind).toBe(false);
-    expect(fxForwardKind.premiumPerUnit(1.1, { kind: FX_FORWARD })).toBe(0);
+    expect(fxForwardKind.premiumPerUnit(asPerPiece(1.1, 'the level'), { kind: FX_FORWARD })).toBe(0);
     expect(period(0)).toBe(0);
     expect(String(USD)).toBe('USD');
   });

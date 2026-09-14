@@ -40,8 +40,17 @@ import {
   fxPairId,
 } from '../core/ids.js';
 
-import { asPerPiece, asRatio, type Cash, type PerPiece } from '../core/measure.js';
-import { finite, add, addTo, div, mul, sub, sum } from '../core/num.js';
+import {
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  type PerPiece,
+  scale,
+} from '../core/measure.js';
+import { finite, add, addTo, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
   asContractMarket,
@@ -797,7 +806,7 @@ export class World {
             // margin does not depend on one — what it depends on is the underlying, the size and
             // the level, all of which are here.
             id: contractId('unwritten'),
-            basis: 0,
+            basis: asCash(0, 'a row that has not been written cost nothing yet'),
             opened: at,
             state: 'open',
             terminated: none(),
@@ -845,21 +854,35 @@ export class World {
    * with fewer than two prints has no record, and the answer is that there is none — which is what
    * makes a margin on a line nobody has traded impossible to compute rather than zero.
    */
-  measuredMove(instrument: InstrumentId, periods: number, at: Period): Option<number> {
+  measuredMove(instrument: InstrumentId, periods: number, at: Period): Option<PerPiece> {
     const history = this.prices.history(instrument).filter((p) => p.period <= at);
     const window = history.slice(history.length > periods + 1 ? history.length - periods - 1 : 0);
-    if (window.length < 2) return none();
-    const moves: number[] = [];
+    if (window.length < 2) return none<PerPiece>();
+    const moves: PerPiece[] = [];
     for (let i = 1; i < window.length; i += 1) {
       const now = window[i];
       const before = window[i - 1];
       if (now === undefined || before === undefined) continue;
-      moves.push(sub(now.price, before.price, 'what the print moved by'));
+      moves.push(minus(now.price, before.price, 'what the print moved by'));
     }
-    if (moves.length === 0) return none();
-    const mean = div(sum(moves).value, moves.length, 'the mean move');
-    const squares = sum(moves.map((m) => mul(m - mean, m - mean, 'squared move')));
-    return some(Math.sqrt(div(squares.value, moves.length, 'the variance of the move')));
+    if (moves.length === 0) return none<PerPiece>();
+    // Item 16: a standard deviation of LEVELS is a level — the same money per piece the prints are
+    // in — which is why it adds to a spread and could never be a share of anything.
+    const mean = over(sum(moves).value, asRatio(moves.length, 'the moves it saw'), 'the mean move');
+    const squares = sum(
+      moves.map((m) => {
+        const off = minus(m, mean, 'how far this move was from the mean');
+        return scale(off, asRatio(off, 'squared'), 'squared move');
+      }),
+    );
+    return some(
+      asPerPiece(
+        Math.sqrt(
+          over(squares.value, asRatio(moves.length, 'the moves it saw'), 'the variance of the move'),
+        ),
+        'how far this line has been moving',
+      ),
+    );
   }
 
   /**
@@ -929,7 +952,7 @@ export class World {
     party: PartyId,
     wanted: number,
     m: ContractMarketDecl,
-    struck: number,
+    struck: PerPiece,
   ): number {
     const held = this.capacity;
     if (held === undefined) {
@@ -947,9 +970,9 @@ export class World {
   private marginLegsOf(
     party: PartyId,
     against: PartyId,
-    size: number,
+    size: Qty,
     m: ContractMarketDecl,
-    struck: number,
+    struck: PerPiece,
   ): readonly Leg[] {
     const held = this.capacity;
     if (held === undefined) {

@@ -23,7 +23,7 @@ import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
 import { add, div, sub } from '../../core/num.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, negQty } from '../../core/tick.js';
 import { issuedBy } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
 import { floatingRate, isIrs, type IrsTerms } from './contract.js';
@@ -55,7 +55,7 @@ function swapped(view: ParticipantView, t: IrsTerms): number {
     if (!isIrs(c.terms) || c.terms.ccy !== t.ccy) continue;
     const iAmA = c.a === view.self.id;
     const iPayFixed = iAmA === c.terms.paysFixed;
-    net = add(net, iPayFixed ? c.notional : -c.notional, 'fixed it has already agreed to pay');
+    net = add(net, iPayFixed ? c.notional : negQty(c.notional, 'the other side of it'), 'fixed it has already agreed to pay');
   }
   return net;
 }

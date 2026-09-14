@@ -26,7 +26,7 @@ import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../.
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { add, atLeast, div, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, negQty } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type {
   Contract,
@@ -336,7 +336,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   for (const c of view.contracts.mine()) {
     if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right) continue;
     const iAmA = c.a === view.self.id;
-    covered = add(covered, iAmA === c.terms.holds ? c.notional : -c.notional, 'cover it has');
+    covered = add(covered, iAmA === c.terms.holds ? c.notional : negQty(c.notional, 'the other side of it'), 'cover it has');
   }
   /** Clearing E1: where the market is — the comparator that decides the side, never the level. */
   const at = view.print(t.book);

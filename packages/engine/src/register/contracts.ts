@@ -18,11 +18,12 @@
  * would hide the thing that actually breaks. Two contracts on one underlying at different strikes
  * are two rows for the same reason (D12).
  */
+import type { PerPiece } from '../core/measure.js';
 import { forbid } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
 import { contractId, type ContractId, type DerivativeKindId, type PartyId } from '../core/ids.js';
 import { finite } from '../core/num.js';
-import { asQty } from '../core/tick.js';
+import type { Qty } from '../core/tick.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Period } from '../calendar/calendar.js';
 import type { Contract, DerivativeKindProfile } from '../registry/derivatives.js';
@@ -33,8 +34,8 @@ export interface ContractDecl {
   readonly b: PartyId;
   readonly terms: Contract['terms'];
   readonly ccy: Contract['ccy'];
-  readonly notional: number;
-  readonly struckAt: number;
+  readonly notional: Qty;
+  readonly struckAt: PerPiece;
   /** Register D4: what it is worth to `a` at inception — the basis the equity account recognised. */
   readonly basis: number;
   readonly house: PartyId | null;
@@ -96,7 +97,9 @@ export class Contracts {
     // a fractional count is a fractional holding somewhere or an identity that cannot close. Here
     // it would multiply into every mark, every call and every close-out, and the zero-sum family
     // would still pass because both sides are equally fractional.
-    asQty(decl.notional, `the notional of a ${decl.kind}`);
+    // Item 16: `asQty(decl.notional, …)` stood here and its answer was thrown away. The field is a
+    // `Qty` now, so a caller cannot reach this line with a fractional count at all — the check is
+    // the type, at every site, instead of a runtime throw at one of them.
     finite(decl.struckAt, 'the level it was struck at');
     const id = contractId(`contract.${decl.kind}.${this.next}`);
     this.next += 1;

@@ -29,7 +29,7 @@ import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode, UnitId } from '../../core/ids.js';
 import { add, div, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty } from '../../core/tick.js';
+import { asQty, negQty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isFxForward, isXccy } from './contract.js';
 
@@ -76,7 +76,7 @@ function alreadyForward(view: ParticipantView, base: CurrencyCode, quote: Curren
     if (c.terms.base !== base || c.terms.quote !== quote) continue;
     const iAmA = c.a === view.self.id;
     const iTakeBase = iAmA === c.terms.buysBase;
-    net = add(net, iTakeBase ? c.notional : -c.notional, 'base it has already bought forward');
+    net = add(net, iTakeBase ? c.notional : negQty(c.notional, 'the other side of it'), 'base it has already bought forward');
   }
   return net;
 }

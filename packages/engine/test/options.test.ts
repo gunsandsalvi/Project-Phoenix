@@ -3,6 +3,8 @@
  *
  * @spec Derivative D1 Derivative D1.b Derivative D2 Derivative D3 Derivative D3.a Derivative D7 Derivative D7.a Derivative D7.b Derivative D8 Derivative D8.a Derivative D9 Derivative D11 Derivative D11.a Bond N7.b Law 3 Law 6 §46 A3
  */
+import { asPerPiece } from '../src/core/measure.js';
+import { asQty, type Qty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {contractOf, OPTION,
   OPTION_PARAMS,
@@ -29,7 +31,7 @@ const optionBooks = (w: World): readonly MarketDecl[] =>
       return t !== undefined && isOption(t);
     });
 
-function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: number): Contract {
+function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: Qty): Contract {
   return {
     id: 'contract.test' as Contract['id'],
     kind: OPTION,
@@ -38,7 +40,7 @@ function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: number):
     terms: contractOf(m)?.terms as never,
     ccy: m.ccy,
     notional,
-    struckAt: 1,
+    struckAt: asPerPiece(1, 'the level it was struck at'),
     basis: notional,
     opened: w.period,
     state: 'open',
@@ -64,7 +66,7 @@ describe('the books (D7, D7.a, D3.a)', () => {
     // price IS the premium, and it is what the holder pays the writer when the row is written.
     const some = contractOf(books[0])?.terms;
     if (some === undefined || !isOption(some)) return;
-    expect(optionKind.premiumPerUnit(3, some)).toBe(3 * some.multiplier);
+    expect(optionKind.premiumPerUnit(asPerPiece(3, 'the level'), some)).toBe(3 * some.multiplier);
   });
 });
 
@@ -81,7 +83,7 @@ describe('exercise is a decision, not a clamp (Law 6, D11)', () => {
     const a = parties[0]?.id;
     const b = parties[1]?.id;
     if (a === undefined || b === undefined) return;
-    const c = rowOn(w, m, String(a), String(b), 10);
+    const c = rowOn(w, m, String(a), String(b), asQty(10, 'the notional'));
     const paid = intrinsic(c, w.period, w.contractReads(w.period));
     // Not a floor: either exercising pays and this is what it paid, or nobody exercised and it is
     // nothing. There is no Math.max anywhere in this module and the lint would say so.
@@ -99,7 +101,7 @@ describe('exercise is a decision, not a clamp (Law 6, D11)', () => {
     const a = parties[0]?.id;
     const b = parties[1]?.id;
     if (a === undefined || b === undefined) return;
-    const c = rowOn(w, m, String(a), String(b), 10);
+    const c = rowOn(w, m, String(a), String(b), asQty(10, 'the notional'));
     const reads = w.contractReads(w.period);
     expect(optionKind.mark(c, w.period, reads) + optionKind.mark(mirrored(c, optionKind), w.period, reads)).toBe(0);
   });

@@ -16,12 +16,21 @@
  * default probability is what you get by dividing the first by the second, which is why C2 says it
  * is DERIVED: nothing here computes one, and nothing here needs one.
  */
+import {
+  asPerPiece,
+  asRatio,
+  minus,
+  negated,
+  type Ratio,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { Calendar, Period } from '../../calendar/calendar.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { derivativeKindId } from '../../core/ids.js';
-import { div, mul, sub } from '../../core/num.js';
+import { div, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type {
   Contract,
@@ -78,7 +87,11 @@ function payoff(c: Contract, t: CdsTerms, at: Period, reads: ContractReads): num
   // Law 19: nobody assumes a recovery. Until the defaulted line is worth something somebody can
   // read, what protection pays is not knowable and the mark says so rather than inventing a rate.
   if (!recovery.some) return 0;
-  return mul(sub(1, recovery.value, 'par less recovery'), c.notional, 'over the notional protected');
+  return valueAt(
+    minus(asPerPiece(1, 'par'), recovery.value, 'par less recovery'),
+    c.notional,
+    'over the notional protected',
+  );
 }
 
 /** The years this contract has left to run, from the calendar rather than a count of periods. */
@@ -98,13 +111,13 @@ function markOf(c: Contract, at: Period, reads: ContractReads): number {
   }
   const now = reads.print(t.book, at);
   if (!now.some) return 0;
-  const richer = sub(now.value.price, c.struckAt, 'the spread now against the spread struck');
-  const worth = mul(
-    mul(richer, c.notional, 'over the notional'),
-    yearsLeft(t, at, reads.calendar),
+  const richer = minus(now.value.price, c.struckAt, 'the spread now against the spread struck');
+  const worth = scale(
+    valueAt(richer, c.notional, 'over the notional'),
+    asRatio(yearsLeft(t, at, reads.calendar), 'the years it has left'),
     'over the years it has left',
   );
-  return t.buysProtection ? worth : -worth;
+  return t.buysProtection ? worth : negated(worth, 'and the other side of it');
 }
 
 /** C1, C3, E3: why a party is in this book, and what its level says against the cash market. */
@@ -153,7 +166,11 @@ export const cdsKind: DerivativeKindProfile = {
     const from = t.buysProtection ? c.a : c.b;
     const to = t.buysProtection ? c.b : c.a;
     const accrual = yearFraction(CDS_DAY_COUNT, reads.calendar.startOf(at), reads.calendar.endOf(at));
-    const amount = mul(mul(c.struckAt, c.notional, 'the spread on the notional'), accrual, 'this period');
+    const amount = scale(
+      valueAt(c.struckAt, c.notional, 'the spread on the notional'),
+      asRatio(accrual, 'this period of a year'),
+      'this period',
+    );
     if (amount <= 0) return [];
     return [
       { from, to, ccy: c.ccy, amount, date: reads.calendar.endOf(at), why: 'the protection premium' },
@@ -183,7 +200,11 @@ export const cdsKind: DerivativeKindProfile = {
     if (!move.some) return none();
     const life = yearsLeft(c.terms, at, reads.calendar);
     return some(
-      mul(mul(move.value, c.notional, 'over the notional'), life, 'over the years it has left'),
+      scale(
+        valueAt(move.value, c.notional, 'over the notional'),
+        asRatio(life, 'the years it has left'),
+        'over the years it has left',
+      ),
     );
   },
   // D11.a: the stated close-out value is what it is worth now.
@@ -210,5 +231,7 @@ export function heldPastMaturity(c: Contract, at: Period, reads: ContractReads):
 /** A reader's read: the implied default probability, DERIVED (C2) and stored nowhere. */
 export function impliedDefaultRate(spread: number, recovery: number): Option<number> {
   const loss = sub(1, recovery, 'loss given default');
-  return loss > 0 ? some(div(spread, loss, 'the implied default rate')) : none<number>();
+  return loss > 0
+    ? some(asRatio(div(spread, loss, 'the implied default rate'), 'the implied default rate'))
+    : none<Ratio>();
 }

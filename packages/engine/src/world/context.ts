@@ -518,8 +518,8 @@ export interface ContractsRead extends ContractReadsFacade {
       readonly kind: Contract['kind'];
       readonly terms: Contract['terms'];
       readonly ccy: Contract['ccy'];
-      readonly notional: number;
-      readonly struckAt: number;
+      readonly notional: Qty;
+      readonly struckAt: PerPiece;
       readonly house: PartyId | null;
       readonly a: PartyId;
       readonly b: PartyId;

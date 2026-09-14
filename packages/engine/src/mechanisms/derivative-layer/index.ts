@@ -12,6 +12,7 @@
  * kind, once, from public state. Everything here is arithmetic on it: what must be posted (D1, D2),
  * what a call is (D4), what a close-out leaves owing (D11.a, F2), what a waterfall absorbs (C4).
  */
+import { asQty } from '../../core/tick.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { Period } from '../../calendar/calendar.js';
 import {
@@ -160,7 +161,7 @@ function capacity(): ClearingCapacity {
           kind: decl.kind,
           terms: decl.terms,
           ccy: m.ccy,
-          notional: 1,
+          notional: asQty(1, 'one unit of notional'),
           struckAt: about.struck,
           house: decl.house,
           a: party,

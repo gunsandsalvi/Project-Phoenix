@@ -9,6 +9,7 @@
  * reference to a kernel store: everything it reads and writes goes through the contexts in
  * world/context.ts. Replacing a system is replacing its module.
  */
+import type { Qty } from '../core/tick.js';
 import type { PerPiece } from '../core/measure.js';
 import type { Family } from '../audit/audit.js';
 import type { IndexDecl } from '../prices/index-read.js';
@@ -239,7 +240,7 @@ export interface ClearingCapacity {
     ctx: MechanismContext,
     party: PartyId,
     against: PartyId,
-    size: number,
+    size: Qty,
     about: ContractAsk,
   ): readonly Leg[];
 }
@@ -251,7 +252,7 @@ export interface ClearingCapacity {
  */
 export interface ContractAsk {
   readonly market: ContractMarketDecl;
-  readonly struck: number;
+  readonly struck: PerPiece;
 }
 
 /**

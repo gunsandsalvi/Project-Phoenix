@@ -5329,3 +5329,29 @@ to stop, it still stops.
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
 forbids, `plan:check`.
+
+## Item 16, stage 8 — the CDS, and the derivative layer with it
+
+**46 sites became 26, and the change reached every derivative in the world.** A CDS is spread ×
+notional, which is the shape **A-65** is made of, and the whole layer turned on three fields nobody
+had typed: `Contract.notional` is a COUNT (`Qty`), `Contract.struckAt` is a LEVEL (`PerPiece`), and
+`ContractReads.mark` and `measuredMove` return levels. A premium is `valueAt(spread, notional)` and
+cannot be anything else now — and the same three fields carry futures, options, forwards, swaps, the
+index and the layer's own margin, so typing them once typed all of them.
+
+**A runtime check became the type, and the code came out.** `Contracts.open` called
+`asQty(decl.notional, …)` and threw the answer away: a validation at ONE door for a rule that now
+holds at every site that constructs a contract. The line is deleted and the comment says what
+replaced it. That is Law 12's shape — a fix that removes code — and it is the first time in this
+sweep that the type has been able to retire a guard rather than add one.
+
+**Ten `-c.notional`s became `negQty`.** Short is the other side of a count, and `negQty` has said so
+in `core/tick.ts` since it was written; what found them was the lint rule that refuses to negate a
+branded number. One `sub(rate, -basis)` in the cross-currency swap became the `add` it always was.
+
+`measuredMove` — the standard deviation of a line's prints, which every margin in the layer is sized
+from — is a LEVEL, in the same money per piece the prints are in. It was a bare number, and what it
+feeds is a spread.
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
+forbids, `plan:check`.
