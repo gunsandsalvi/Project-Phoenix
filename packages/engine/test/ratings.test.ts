@@ -5,6 +5,7 @@
  * @spec Ratings A1 Ratings A2 Ratings A2.a Ratings A3 Ratings A4 Ratings A5 Ratings B1 Ratings B2 Ratings D1 Ratings D5 Ratings E1 Ratings E2 Ratings E4 XI-13 Law 3 Law 15
  */
 import { describe, expect, it } from 'vitest';
+import { asRatio } from '../src/core/measure.js';
 import {
   ASSESSOR,
   ASSESSOR_COUNT,
@@ -32,7 +33,9 @@ const methodology = (firstBoundary: number, boundaryStep: number): AssessorDecl 
 describe('the scale (Ratings A3, B1)', () => {
   it('is coarse, ordinal and widens, so a worse state never gets a better grade', () => {
     const d = methodology(0.05, 2);
-    const grades = [-1, 0, 0.04, 0.06, 0.2, 0.5, 2, 50].map((strain) => bandOf(strain, d));
+    const grades = [-1, 0, 0.04, 0.06, 0.2, 0.5, 2, 50].map((strain) =>
+      bandOf(asRatio(strain, 'what falls due against what it takes in'), d),
+    );
     for (let i = 1; i < grades.length; i += 1) {
       const before = GRADES.indexOf(grades[i - 1] ?? 'c');
       const now = GRADES.indexOf(grades[i] ?? 'c');
@@ -45,7 +48,8 @@ describe('the scale (Ratings A3, B1)', () => {
   it('gives two assessors with different methodologies different answers about one state (XI-13)', () => {
     const keen = methodology(0.02, 2);
     const relaxed = methodology(0.08, 2);
-    expect(bandOf(0.05, keen)).not.toBe(bandOf(0.05, relaxed));
+    const strain = asRatio(0.05, 'one state');
+    expect(bandOf(strain, keen)).not.toBe(bandOf(strain, relaxed));
   });
 });
 

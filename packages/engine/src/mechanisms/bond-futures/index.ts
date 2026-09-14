@@ -18,13 +18,28 @@
  * repo demand it creates is the largest single source of real demand in a secured market, and here
  * it is a read of that market's own rows rather than a number anybody set.
  */
-import { absolute, asCash, asPerPiece, asRatio, minus, negated, plus, pricedAt, scale, type Cash, type PerPiece, valueAt, asAmount,} from '../../core/measure.js';
+import {
+  type Cash,
+  type PerPiece,
+  absolute,
+  asAmount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  minus,
+  negated,
+  over,
+  plus,
+  pricedAt,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
-import { div, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { addQty, asQty, negQty, NO_QTY, scaleQty } from '../../core/tick.js';
 import { FACE_TICK } from '../../registry/grid.js';
@@ -356,7 +371,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    */
   const held = view.free(t.deliverable);
   let want = negated(
-    asAmount<'piece'>(div(held, t.contractSize, 'what its holding comes to in contracts'), 'contracts it is long'),
+    over(held, asRatio(t.contractSize, 'the face one contract delivers'), 'what its holding comes to in contracts'),
     'so contracts it wants to be short',
   );
   const price = mine;

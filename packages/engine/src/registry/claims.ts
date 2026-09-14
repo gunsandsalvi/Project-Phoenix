@@ -14,7 +14,13 @@
  * What stays with `sovereign-instruments` is the MECHANISM — the two kind profiles, what each pays
  * and when, and the module that registers them.
  */
-import { asPerPiece, asRatio, type PerPiece, plus, scale } from '../core/measure.js';
+import {
+  type PerPiece,
+  asPerPiece,
+  asRatio,
+  plus,
+  scale,
+} from '../core/measure.js';
 import { instrumentKindId, unitId } from '../core/ids.js';
 import { compareCivil, type Civil } from '../calendar/civil.js';
 import { InvalidRegistry } from '../core/errors.js';
@@ -22,7 +28,6 @@ import type { DayCount } from '../calendar/daycount.js';
 import type { Periodicity, Rate } from '../core/rate.js';
 import type { Terms } from '../register/instruments.js';
 import type { CashFlow, DueAction } from './kinds.js';
-import { mul } from '../core/num.js';
 import { yearFraction } from '../calendar/daycount.js';
 
 export const SOVEREIGN_BOND = instrumentKindId('sovereign.bond');
@@ -173,8 +178,12 @@ export function accruedOf(t: CouponSchedule, on: Civil, cal: ScheduleCalendar): 
     if (compareCivil(c.date, on) > 0) break;
     prev = c.date;
   }
-  if (compareCivil(on, prev) <= 0) return 0;
-  return mul(t.coupon.amount, yearFraction(t.dayCount, prev, on), 'accrued');
+  if (compareCivil(on, prev) <= 0) return asPerPiece(0, 'nothing has accrued yet');
+  return scale(
+    asPerPiece(t.coupon.amount, 'the coupon a unit carries'),
+    asRatio(yearFraction(t.dayCount, prev, on), 'the span of a year'),
+    'accrued',
+  );
 }
 
 /**

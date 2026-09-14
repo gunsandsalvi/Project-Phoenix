@@ -17,12 +17,27 @@
  * it is writing on. A buyer facing a house prices the house; a buyer facing a seller whose own
  * spread widens with the reference's pays less for the cover, because it is worth less.
  */
-import { asPerNamedUnit , absolute, amountOf, asRatio, type Cash, heldAsMoney, minus, type PerPiece, plus, type Ratio, ratioOf, scale, asPerPiece} from '../../core/measure.js';
+import {
+  type Cash,
+  type PerPiece,
+  type Ratio,
+  absolute,
+  amountOf,
+  asPerNamedUnit,
+  asPerPiece,
+  asRatio,
+  heldAsMoney,
+  minus,
+  over,
+  plus,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
 import { asQty, negQty , addQty, NO_QTY, subQty, type Qty} from '../../core/tick.js';
-import { add, div, sub } from '../../core/num.js';
+import { add } from '../../core/num.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isCds, type CdsTerms } from './contract.js';
 import { cdsLineOf } from './data.js';
@@ -56,9 +71,12 @@ function levelFor(
 ): PerPiece | undefined {
   const cash = view.print(t.obligation);
   if (!cash.some || t.tenorYears <= 0) return undefined;
-  const belowPar = sub(1, cash.value.price, 'what the cash market discounts this credit by');
+  // PAR: a unit of the cash bond is one piece of its money. The one place a level and a share of
+  // par meet, named rather than assumed (`E-9`).
+  const par = asPerPiece(1, 'par: one unit of the cash bond is one piece of its money');
+  const belowPar = minus(par, cash.value.price, 'what the cash market discounts this credit by');
   if (belowPar <= 0) return undefined;
-  const perAnnum = div(belowPar, t.tenorYears, 'per year of the term it has');
+  const perAnnum = over(belowPar, asRatio(t.tenorYears, 'the years of its term'), 'per year of the term it has');
   // Law 8: A LEVEL IS HELD IN MONEY PIECES PER PIECE OF THE THING, which is not the same number as
   // the rate a person says out loud. Three basis points a year on a unit of face is three
   // hundredths of a cent, and a schedule posted at 0.0003 is a schedule below this book's own tick

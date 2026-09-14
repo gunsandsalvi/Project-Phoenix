@@ -19,7 +19,8 @@
  * balance sheet, and every mandate that refers to it churns with it (C1.a).
  */
 import { period as asPeriod } from '../../calendar/calendar.js';
-import { atLeast, atMost, div, mul } from '../../core/num.js';
+import { asRatio, heldAsMoney, ratioOf, type Ratio, scale } from '../../core/measure.js';
+import { atLeast, atMost } from '../../core/num.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
 import type { ParticipantView } from '../../world/context.js';
 import { GRADES, WORST, type AssessorDecl, type Grade } from './data.js';
@@ -65,16 +66,20 @@ export function assess(blind: ParticipantView, d: AssessorDecl, ccy: CurrencyCod
   if (missed > 0 || takesIn <= 0) {
     return { strain: atLeast(missed, 0, 'nobody misses fewer payments than none'), missed, grade: WORST };
   }
-  const strain = div(blind.owedIn(ccy), takesIn, 'what falls due against what it takes in');
+  const strain = ratioOf(
+    heldAsMoney(blind.owedIn(ccy), 'what falls due'),
+    takesIn,
+    'what falls due against what it takes in',
+  );
   return { strain, missed, grade: bandOf(strain, d) };
 }
 
 /** B1, A3: which band a strain falls in, on this assessor's own geometrically widening scale. */
-export function bandOf(strain: number, d: AssessorDecl): Grade {
-  let edge = d.firstBoundary;
+export function bandOf(strain: Ratio, d: AssessorDecl): Grade {
+  let edge = asRatio(d.firstBoundary, 'where the first band ends');
   for (const grade of GRADES) {
     if (strain < edge) return grade;
-    edge = mul(edge, d.boundaryStep, 'the next band is wider');
+    edge = scale(edge, asRatio(d.boundaryStep, 'how much wider the next band is'), 'the next band is wider');
   }
   return WORST;
 }

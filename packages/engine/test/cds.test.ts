@@ -6,7 +6,7 @@
  * A scale model, and it names no party: the reference is whichever drawn borrower this world's
  * banks actually hold paper of (`rig.ts`), not "the big firm".
  */
-import { asPerPiece, asCash } from '../src/core/measure.js';
+import { asCash, asPerPiece, asRatio } from '../src/core/measure.js';
 import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {contractOf, CDS,
@@ -154,7 +154,7 @@ describe('what is derived and what is stored (C2, E3, Law 3)', () => {
   it('derives the implied default rate and stores none of it', () => {
     // C2: the probability comes OUT of the spread and the recovery; it never goes in. A spread of
     // a hundred basis points against a recovery of forty cents is a rate anybody can divide out.
-    const r = impliedDefaultRate(0.01, 0.4);
+    const r = impliedDefaultRate(asRatio(0.01, 'a hundred basis points'), asRatio(0.4, 'forty cents back'));
     expect(r.some).toBe(true);
     expect(r.some ? r.value : 0).toBeCloseTo(0.01 / 0.6, 12);
     // And nothing in the parameter register carries one: there is no recovery rate in this world.

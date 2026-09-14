@@ -17,14 +17,15 @@
  * is DERIVED: nothing here computes one, and nothing here needs one.
  */
 import {
+  type Cash,
+  type PerPiece,
+  type Ratio,
   asCash,
   asPerPiece,
   asRatio,
-  type Cash,
   minus,
   negated,
-  type PerPiece,
-  type Ratio,
+  ratioOf,
   scale,
   valueAt,
 } from '../../core/measure.js';
@@ -33,7 +34,6 @@ import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
 import { derivativeKindId } from '../../core/ids.js';
-import { div, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type {
   Contract,
@@ -232,9 +232,9 @@ export function heldPastMaturity(c: Contract, at: Period, reads: ContractReads):
 }
 
 /** A reader's read: the implied default probability, DERIVED (C2) and stored nowhere. */
-export function impliedDefaultRate(spread: number, recovery: number): Option<number> {
-  const loss = sub(1, recovery, 'loss given default');
+export function impliedDefaultRate(spread: Ratio, recovery: Ratio): Option<Ratio> {
+  const loss = minus(asRatio(1, 'the whole of it'), recovery, 'loss given default');
   return loss > 0
-    ? some(asRatio(div(spread, loss, 'the implied default rate'), 'the implied default rate'))
+    ? some(ratioOf(spread, loss, 'the implied default rate'))
     : none<Ratio>();
 }

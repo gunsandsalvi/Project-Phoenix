@@ -10,8 +10,9 @@
  * being touched.
  */
 import { negQty } from '../../core/tick.js';
+import { asRatio, minus } from '../../core/measure.js';
+import { NO_QTY, subQty } from '../../core/tick.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
-import { sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { issuedBy } from '../../register/instruments.js';
 import { curveFamilyOf, yieldOf } from '../../prices/curve.js';
@@ -39,14 +40,14 @@ export function defaultableDebtOf(ctx: WorldReads, party: PartyId): Option<Instr
  * name and not a netting across counterparties (G3).
  */
 export function netNotionalOn(ctx: WorldReads, reference: PartyId): number {
-  let net = 0;
+  let net = NO_QTY;
   for (const c of ctx.contracts.open_()) {
     if (!isCds(c.terms)) continue;
     if (c.terms.reference !== reference) continue;
     // C2: a cleared trade is two rows against the house, so counting both would count the
     // protection twice. The member's side is the one that exists in the world.
     if (c.house !== null && c.a === c.house) continue;
-    net = sub(net, negQty(c.notional, 'the other side of it'), 'protection written on this name');
+    net = subQty(net, negQty(c.notional, 'the other side of it'), 'protection written on this name');
   }
   return net;
 }
@@ -80,8 +81,13 @@ export function basisFor(
   if (!own.some) return none<number>();
   const risk = ctx.curve(curveFamilyOf(sovereign, i.ccy)).at(tenorYears);
   if (!risk.yield.some) return none<number>();
-  const cashSpread = sub(own.value, risk.yield.value, 'the bond over the sovereign');
-  return some(sub(protection.value.price, cashSpread, 'protection against the cash bond'));
+  // Two YIELDS, both derived from prices, so what the bond pays over the sovereign is a rate.
+  const cashSpread = minus(own.value, risk.yield.value, 'the bond over the sovereign');
+  // `E-11`: THIS BOOK CLEARS A SPREAD, and `Print.price` is a `PerPiece` because most books clear a
+  // level. The crossing is named here rather than assumed — what the protection book printed IS a
+  // rate — and the finding is that a book cannot say which of the two its level is.
+  const struck = asRatio(protection.value.price, 'the spread this book struck');
+  return some(minus(struck, cashSpread, 'protection against the cash bond'));
 }
 
 /**
