@@ -23,9 +23,16 @@
  * somebody owns and sells (Law 6: the compensating mechanism, not a bound).
  */
 import type { CurrencyCode, PartyId, RegionId } from '../../core/ids.js';
-import { add, atMost, div, sub, sum, zeroIfNone } from '../../core/num.js';
+import { atMost, sum, zeroIfNone } from '../../core/num.js';
 import { downTick, subQty, type Qty } from '../../core/tick.js';
-import { valueAt } from '../../core/measure.js';
+import {
+  type PerPiece,
+  minus,
+  over,
+  plus,
+  
+  valueAt,
+} from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import {
@@ -48,17 +55,17 @@ interface Room {
   readonly party: PartyId;
   readonly region: RegionId;
   /** A3: what everything it holds takes up, read off the register and the goods' own terms. */
-  readonly needs: number;
+  readonly needs: Qty;
   /** A4: the space it owns itself. It fills its own barn before it rents anybody else's. */
-  readonly owns: number;
+  readonly owns: Qty;
   /** What a unit of its own space costs it per period: its reservation as a LETTER of space. */
-  readonly costsPerUnit: number | undefined;
+  readonly costsPerUnit: PerPiece | undefined;
 }
 
 /** A3, Law 19: what a party's holdings take up, read from the goods' own terms and never stored. */
 function roomFor(ctx: MechanismContext, view: ParticipantView, party: PartyId): Room {
   const region = view.self.region;
-  const terms: number[] = [];
+  const terms: Qty[] = [];
   for (const h of view.holdings()) {
     const i = ctx.instruments.get(h.instrument);
     if (!i.status.live || !isGoodTerms(i.terms)) continue;
@@ -95,13 +102,13 @@ function schedules(ctx: MechanismContext, region: RegionId): readonly Order[] {
     const view = ctx.participant(p.id);
     const room = roomFor(ctx, view, p.id);
     if (room.needs <= 0 && room.owns <= 0) continue;
-    const spare = sub(room.owns, room.needs, 'the space it is not using itself');
+    const spare = minus(room.owns, room.needs, 'the space it is not using itself');
     if (spare > 0 && room.costsPerUnit !== undefined) {
       const qty = downTick(spare);
       if (qty > 0) out.push({ party: p.id, side: 'sell', price: room.costsPerUnit, qty });
       continue;
     }
-    const short = sub(room.needs, room.owns, 'the space it is short of');
+    const short = minus(room.needs, room.owns, 'the space it is short of');
     if (short <= 0) continue;
     const worth = perUnitWorth(ctx, view, region);
     if (worth === undefined) continue;
@@ -138,7 +145,10 @@ function perUnitWorth(
     // never bid for any (Law 8: what is a count lands on the grid; what is a ratio does not).
     const space = spacePerPiece(ctx, i.unit, perNamed);
     if (space <= 0) continue;
-    const worth = div(mark.value, space, 'what a piece of space saves it');
+    // A mark is money per piece of the THING and `space` is pieces of space per piece of it, so
+    // what a piece of space saves is the mark OVER that ratio — a level back, not a level over a
+    // count. `space` is deliberately not on a grid: rounding it to a whole piece makes it nothing.
+    const worth = over(mark.value, space, 'what a piece of space saves it');
     if (dearest === undefined || worth > dearest) dearest = worth;
   }
   return dearest;
@@ -184,7 +194,7 @@ function lease(
    * accumulator that NOTHING READ. A local map and one event per taker carrying the total is the
    * same fact with one writer and a reader (Law 4, Law 19), and it deletes the store.
    */
-  const got = new Map<string, number>();
+  const got = new Map<string, Qty>();
   const letters = outcome.fills.filter((f) => f.side === 'sell' && f.qty > 0).map((f) => ({ ...f }));
   let at = 0;
   for (const taker of outcome.fills) {
@@ -231,7 +241,10 @@ function lease(
           at += 1;
           continue;
         }
-        got.set(String(taker.party), add(zeroIfNone(got.get(String(taker.party))), space, 'space taken'));
+        got.set(
+          String(taker.party),
+          plus(zeroIfNone(got.get(String(taker.party))), space, 'space taken'),
+        );
         ctx.record(
           'commodities.let',
           [String(taker.party), String(letter.party)],

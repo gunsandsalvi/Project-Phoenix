@@ -14,9 +14,12 @@
  * (Goods D, worklist 13c) there is nobody to pay, so no such charge exists here at all.
  */
 import { InvalidRegistry } from '../../core/errors.js';
+import {
+  scale,
+} from '../../core/measure.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type { InstrumentKindId } from '../../core/ids.js';
-import { material, mul, sum } from '../../core/num.js';
+import { material, sum } from '../../core/num.js';
 import type { PerPiece } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
@@ -143,7 +146,12 @@ export function perish(ctx: MechanismContext, mine: ReadonlySet<InstrumentKindId
     // Law 8, E4: what perishes is whole pieces of the good, and for a cell whole pieces on each
     // member's own shelf. A fraction of a piece has not spoiled; it is still there, and it spoils
     // when enough of it has gone the same way.
-    const share = shareFor(ctx.registry, party, inst.unit, mul(held.value, rate, `${inst.id} perished`));
+    const share = shareFor(
+      ctx.registry,
+      party,
+      inst.unit,
+      scale(held.value, rate, `${inst.id} perished`),
+    );
     const perMember = share.perMember;
     if (!material(perMember, h.lots.length + 1, held.value) || perMember <= 0) continue;
     const side = cellSide(party, perMember);

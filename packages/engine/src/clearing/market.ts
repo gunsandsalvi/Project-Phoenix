@@ -20,20 +20,20 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
 import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
 import {
-  asPerPiece,
   type Cash,
+  type PerPiece,
+  asPerPiece,
   heldAsMoney,
   minus,
-  type PerPiece,
   plus,
   pricedAt,
   ratioOf,
   valueAt,
 } from '../core/measure.js';
-import { atMost, finite, sub, sum, zeroIfNone } from '../core/num.js';
+import { atMost, finite, sum, zeroIfNone } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
-import { asQty, commonGrain, downTick, downToGrain, downToTick, subQty, toGrain, upToTick } from '../core/tick.js';
+import { NO_QTY, addQty, asQty, commonGrain, downTick, downToGrain, downToTick, subQty, toGrain, upToTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { AccountRef, InstructionDraft, Leg, CellSide} from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
@@ -277,9 +277,9 @@ export interface MarketResult {
 /** What the market reads out of an auction (Sovereign C4). */
 export interface AuctionResult {
   readonly issuer: PartyId;
-  readonly size: number;
+  readonly size: Qty;
   /** Units the issuer actually placed and settled. */
-  readonly allotted: number;
+  readonly allotted: Qty;
   /** Total demand posted, over the size offered: the cover ratio. */
   readonly cover: number;
   /** The average level the winning bids posted, less the stop-out, per unit (in yield it inverts). */
@@ -390,7 +390,7 @@ export function runMarket(
         ? deps.accruedPerUnit(subject.value, period)
         : asPerPiece(0, 'nothing accrues on a line that delivers nothing');
       let settledVolume = 0;
-      let allotted = 0;
+      let allotted = NO_QTY;
       let failed = 0;
       for (const t of trades) {
         const draft = tradeInstruction(m, t, outcome.price, accrued, deps, period, cycle);
@@ -402,7 +402,7 @@ export function runMarket(
         if (record.outcome === 'settled') {
           settledVolume = finite(settledVolume + t.qty, 'settled volume');
           if (offer.some && t.seller === offer.value.issuer)
-            allotted = finite(allotted + t.qty, 'allotted');
+            allotted = addQty(allotted, t.qty, 'allotted');
         } else failed += 1;
       }
       // Law 3, Clearing E1: A PRINT IS WHAT SOMEBODY PAID. A session whose book crossed but whose
@@ -479,7 +479,7 @@ function carryLast(
   fills: readonly Fill[],
 ): MarketResult {
   const auction = offer.some
-    ? some(auctionResult(offer.value, orders, fills, none<PerPiece>(), 0))
+    ? some(auctionResult(offer.value, orders, fills, none<PerPiece>(), NO_QTY))
     : none<AuctionResult>();
   if (auction.some) journalAuction(m, auction.value, period, cycle, deps);
   const last = deps.prices.latest(m.instrument, period);
@@ -675,7 +675,7 @@ function contractTrade(
       cycle,
       'derivatives.refused',
       [m.id, t.buyer, t.seller],
-      { market: m.id, wanted: t.qty, admitted: size, cut: sub(t.qty, size, 'refused') },
+      { market: m.id, wanted: t.qty, admitted: size, cut: minus(t.qty, size, 'refused') },
       true,
     );
   }
@@ -903,7 +903,7 @@ function auctionResult(
   orders: readonly Order[],
   fills: readonly Fill[],
   stopOut: Option<PerPiece>,
-  allotted: number,
+  allotted: Qty,
 ): AuctionResult {
   const bids = orders.filter((o) => o.side === 'buy' && o.party !== offer.issuer);
   const demand = sum(bids.map((o) => o.qty)).value;
@@ -940,7 +940,7 @@ function journalAuction(
       line: m.instrument,
       size: a.size,
       allotted: a.allotted,
-      withdrawn: sub(a.size, a.allotted, 'withdrawn'),
+      withdrawn: minus(a.size, a.allotted, 'withdrawn'),
       cover: a.cover,
       stopOut: a.stopOut.some ? a.stopOut.value : null,
       tail: a.tail.some ? a.tail.value : null,

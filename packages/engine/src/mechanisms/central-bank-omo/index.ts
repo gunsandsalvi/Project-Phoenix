@@ -23,8 +23,14 @@ import type { Civil } from '../../calendar/civil.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type PartyId } from '../../core/ids.js';
-import { add, atMost, material, mul, sub, sum } from '../../core/num.js';
-import { acrossMembers, type PerMember } from '../../core/measure.js';
+import { add, atMost, material, sum } from '../../core/num.js';
+import {
+  type PerMember,
+  acrossMembers,
+  minus,
+  negated,
+  scale,
+} from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { months } from '../../core/rate.js';
 import type { Order } from '../../clearing/solver.js';
@@ -111,8 +117,8 @@ export const centralBankOmo: SystemModule = {
         const held = view.quantity(i.id);
         // C4: with reinvestment off there is no target to restore, so the book runs off.
         if (view.params.count(CB_PARAMS.reinvest) === 0) return [];
-        const target = mul(i.issued, view.params.ratio(CB_PARAMS.targetShare), 'target holding');
-        const gap = sub(target, held, 'omo gap');
+        const target = scale(i.issued, view.params.ratio(CB_PARAMS.targetShare), 'target holding');
+        const gap = minus(target, held, 'omo gap');
         // A gap smaller than the dust of the subtraction that produced it is not a policy decision.
         if (!material(gap, 2, add(Math.abs(target), Math.abs(held), 'gap magnitude'))) return [];
         // Law 8: the target is a share of a line, so the gap it leaves is a fraction of a unit of
@@ -124,7 +130,9 @@ export const centralBankOmo: SystemModule = {
           return want > 0 ? [{ party: view.self.id, side: 'buy', price: 'market', qty: want }] : [];
         }
         const free = view.free(i.id);
-        const size = downTick(atMost(-gap, free, 'it sells what it holds unencumbered and no more'));
+        const size = downTick(
+          atMost(negated(gap, 'the other side of the gap'), free, 'it sells what it holds unencumbered and no more'),
+        );
         return size > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: size }] : [];
       },
     },

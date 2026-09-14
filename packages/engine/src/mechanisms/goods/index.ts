@@ -19,13 +19,17 @@
  * is not its choice, though — the recipe is the good's own technology, and the audit says so.
  */
 import type { Family, Violation } from '../../audit/audit.js';
-import { negQty } from '../../core/tick.js';
+import {
+  minus,
+  scale,
+} from '../../core/measure.js';
+import { type Qty, negQty } from '../../core/tick.js';
 import { forbid } from '../../core/assert.js';
 import type { Period } from '../../calendar/calendar.js';
 import { Missing } from '../../core/errors.js';
 import type { AuditView } from '../../audit/view.js';
 import type { InstrumentId, InstrumentKindId, RegionId } from '../../core/ids.js';
-import { addTo, combineDust, dustOf, mul, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, combineDust, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { isCreateLeg, isDestroyLeg } from '../../ledger/instruction.js';
 import { displayName } from '../../registry/naming.js';
@@ -346,7 +350,7 @@ function recipeIdentity(): Family {
         if (r.outcome !== 'settled' || r.instruction.cause !== 'production') continue;
         const made = r.instruction.legs.filter(isCreateLeg);
         if (made.length === 0) continue;
-        const used = new Map<InstrumentId, number>();
+        const used = new Map<InstrumentId, Qty>();
         for (const leg of r.instruction.legs.filter(isDestroyLeg)) {
           addTo(used, leg.instrument, leg.qty);
         }
@@ -362,7 +366,7 @@ function recipeIdentity(): Family {
               family: 'units',
               spec: canonical.spec,
               owner: leg.instrument,
-              size: sub(need, drawn, 'draw against the recipe'),
+              size: minus(need, drawn, 'draw against the recipe'),
               unit: view.instruments.get(instrument).unit,
               period: view.period,
               message: `${leg.qty} of ${leg.instrument} was made from ${drawn} of ${instrument}, and it takes ${need}`,
@@ -378,12 +382,12 @@ function recipeIdentity(): Family {
 /** One admissible way of making something: what it draws, and whether that is exact or a floor. */
 interface Way {
   readonly spec: string;
-  readonly needs: ReadonlyMap<InstrumentId, number>;
+  readonly needs: ReadonlyMap<InstrumentId, Qty>;
   readonly atLeast: boolean;
 }
 
 /** B2, B3: a batch is made from the recipe; a good is made from its batch, or from the recipe. */
-function waysToMake(view: AuditView, made: InstrumentId, qty: number): Way[] {
+function waysToMake(view: AuditView, made: InstrumentId, qty: Qty): Way[] {
   const terms = view.instruments.get(made).terms;
   if (isWipTerms(terms)) {
     return [{ spec: 'Goods B2', needs: drawFor(view, terms.output, qty), atLeast: false }];
@@ -428,13 +432,13 @@ function satisfiedBy(atLeast: boolean, need: number, drawn: number): boolean {
 }
 
 /** A2.a: what a batch of `qty` of one good draws, input by input, at the declared quantities. */
-function drawFor(view: AuditView, output: InstrumentId, qty: number): Map<InstrumentId, number> {
-  const out = new Map<InstrumentId, number>();
+function drawFor(view: AuditView, output: InstrumentId, qty: Qty): Map<InstrumentId, Qty> {
+  const out = new Map<InstrumentId, Qty>();
   const terms = view.instruments.get(output).terms;
   if (!isGoodTerms(terms)) return out;
   for (const input of terms.recipe.inputs) {
     const id = goodId(input.subUnit, terms.region);
-    out.set(id, mul(qty, view.params.ratio(input.qtyPerUnit), 'units the recipe draws'));
+    out.set(id, scale(qty, view.params.ratio(input.qtyPerUnit), 'units the recipe draws'));
   }
   return out;
 }

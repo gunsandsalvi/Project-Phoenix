@@ -21,12 +21,13 @@
  * its own reservation and not at the going rate).
  */
 import {
-  asCash,
-  asRatio,
   type Cash,
   type PerPiece,
+  asCash,
+  asRatio,
   plus,
   pricedAt,
+  ratioOf,
   scale,
 } from '../../core/measure.js';
 import { period as periodOf, type Period } from '../../calendar/calendar.js';
@@ -34,7 +35,7 @@ import { clear, isCleared, type Cleared, type Order } from '../../clearing/solve
 import type { VenueDecl } from '../../clearing/venue.js';
 import { cohortId, currencyUnit } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
-import { add, atMost, div, material, sub } from '../../core/num.js';
+import { add, atMost, material, sub } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
@@ -285,7 +286,7 @@ function match(
     .sort((a, b) => b.at - a.at);
   let next = 0;
   for (const f of bidsFilled) {
-    let people = Math.floor(div(f.qty, p.hoursPerMember, 'people hired'));
+    let people = Math.floor(ratioOf(f.qty, p.hoursPerMember, 'people hired'));
     while (people > 0 && next < queue.length) {
       const cell = queue[next];
       if (cell === undefined) break;
@@ -381,7 +382,7 @@ function shed(
   const rows = [...rowsAt(book, employer, occupation, region)].sort((a, b) => b.start - a.start);
   for (const row of rows) {
     if (left <= 0) break;
-    const members = Math.floor(div(left, row.hoursPerMember, 'members to separate'));
+    const members = Math.floor(ratioOf(left, row.hoursPerMember, 'members to separate'));
     if (members <= 0) break;
     const taken = atMost(members, row.headcount, 'the row employs no more than it employs');
     separate(ctx, book, row, taken, `${employer} cut its hours`, p);

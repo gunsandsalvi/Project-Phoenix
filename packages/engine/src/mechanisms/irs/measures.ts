@@ -12,7 +12,10 @@
  * asks the kind, and a world with one more class gets one more measurement without being edited.
  */
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { sub } from '../../core/num.js';
+import {
+  asPerPiece,
+  minus,
+} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import { curveFamilyOf } from '../../prices/curve.js';
 import { contractOf, type MarketDecl } from '../../clearing/market.js';
@@ -32,7 +35,7 @@ export function swapSpread(
   if (!swap.some) return none<number>();
   const risk = ctx.curve(curveFamilyOf(sovereign, ccy)).at(tenorYears);
   if (!risk.yield.some) return none<number>();
-  return some(sub(swap.value.price, risk.yield.value, 'the swap against the sovereign'));
+  return some(minus(swap.value.price, asPerPiece(risk.yield.value, 'what the sovereign yields'), 'the swap against the sovereign'));
 }
 
 /**
