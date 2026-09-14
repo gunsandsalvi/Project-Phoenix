@@ -80,11 +80,27 @@ export interface Valuation {
   readonly insured: number;
 }
 
-/** D3.b: what one bank will pay for the book, from its own view, or why it will not take it. */
+/** D3.b: what taking the book is WORTH to one bank, from its own view, or why it will not take it. */
 interface Bid {
   readonly bank: PartyId;
-  /** What it will pay. Negative is what it must BE paid, which is the usual answer. */
-  readonly pays: number;
+  /**
+   * A-59, Law 5, Appendix B: WHAT THE BOOK IS WORTH TO IT, and it is deliberately not called what
+   * it pays.
+   *
+   * This field was `pays` and the record published it as the price of a completed sale. **Nothing
+   * paid it.** Everything around it is careful about exactly this distinction — `allocate` moves
+   * every haircut as a real leg, `payFrom` settles the insurer's and the treasury's money, and
+   * `moveBook` extinguishes the acquirer's own claim with a real leg at zero. The consideration was
+   * the one number in the resolution that stayed a number, and a stated price with no flow behind
+   * it is a one-sided flow with better manners.
+   *
+   * It is what RANKS the bidders, which is a real and faithful use of it (D3.b): the bank for which
+   * the book is worth most is the one that takes it. What it does NOT do any more is claim that
+   * anybody handed it over. The mechanism that decides who is here; the mechanism that decides what
+   * it COSTS is missing, and its absence used to be invisible because a number stood where it would
+   * have been (`E-6`).
+   */
+  readonly worthToIt: number;
   readonly declined: boolean;
   readonly why: string;
 }
@@ -150,15 +166,15 @@ function bidFor(ctx: MechanismContext, bank: PartyId, v: Valuation): Bid {
   // What the trouble is worth to it: its own required return on the capital the book consumes.
   // A bank that wants more on its capital bids lower for the same book.
   const wants = mul(v.assets, required, 'what it wants for taking the book on');
-  const pays = sub(sub(v.assets, v.deposits, 'assets over deposits'), v.borrowings, 'and its rows');
-  const bid = sub(pays, wants, 'what it will pay');
+  const over = sub(sub(v.assets, v.deposits, 'assets over deposits'), v.borrowings, 'and its rows');
+  const bid = sub(over, wants, 'what the book is worth to it');
   // C1: it takes the hole onto its own balance sheet before it is paid for it. A bank whose own
   // equity would not stand that is not an acquirer, and saying so is the whole of D3.b.
   const equity = view.equity();
   const declined = equity <= 0 || add(equity, bid, 'what it would be left with') <= 0;
   return {
     bank,
-    pays: bid,
+    worthToIt: bid,
     declined,
     why: declined
       ? 'taking the book would leave its own equity underwater'
@@ -217,14 +233,15 @@ export function resolve(ctx: MechanismContext, bank: PartyId, why: string): bool
     ctx.record(
       'bank.resolution.bid',
       [bank, b.bank],
-      { failed: bank, bidder: b.bank, pays: b.pays, declined: b.declined, why: b.why },
+      // A-59: `worthToIt`, not `pays`. It ranks the bidders and nobody hands it over.
+      { failed: bank, bidder: b.bank, worthToIt: b.worthToIt, declined: b.declined, why: b.why },
       true,
     );
   }
   // D3.b: the highest bid wins — the one that will pay the most, or ask to be paid the least. A
   // bank that declined is not a bidder, and a resolution with no bidder at all falls to the purse.
-  const taking = bids.filter((b) => !b.declined).sort((a, b) => b.pays - a.pays);
-  const winner = taking[0] ?? bids.sort((a, b) => b.pays - a.pays)[0];
+  const taking = bids.filter((b) => !b.declined).sort((a, b) => b.worthToIt - a.worthToIt);
+  const winner = taking[0] ?? bids.sort((a, b) => b.worthToIt - a.worthToIt)[0];
   if (winner === undefined) {
     ctx.record('bank.resolution.noBank', [bank], { bank, hole: v.hole }, true);
     return false;

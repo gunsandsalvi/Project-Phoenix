@@ -45,7 +45,19 @@ export interface PaperBid {
 /** A line this cell would hold, and what it thinks one unit of it is worth. */
 export interface SavingLine {
   readonly instrument: Instrument;
-  readonly price: number;
+  /**
+   * A-28, §46 B3: WHAT IT WILL PAY, and it is not what it will take.
+   *
+   * There was one `price` here and both sides used it — the cell's expectation LESS how wrong it
+   * has recently been, which is the buyer's margin and is right for a buyer. `shareOrders` then
+   * offered its holding at the same number, under a docstring saying it offers "at what it thinks
+   * the holding is worth". So a cell that had been surprised did not WIDEN: it moved both its bid
+   * and its ask DOWN by its own uncertainty, and would sell at a level it would simultaneously buy
+   * at. Uncertainty made it a seller, which is the opposite of what uncertainty does.
+   */
+  readonly bid: number;
+  /** What it will TAKE: the same expectation with the margin on the other side (§46 B3, A3). */
+  readonly ask: number;
   /**
    * Indices C2, Fund Shares A4, D5 (13d): whether this line is a CLAIM ON A BOOK rather than on an
    * issuer — a vehicle that holds the market instead of a company that is part of it. It is the
@@ -130,17 +142,19 @@ export function savingLines(
      * different prices for it because one of them has been surprised and the other has not, and a
      * book whose two sides agreed on a number would not be a market.
      */
-    const price = sub(expected, outlook.some ? outlook.value.confidence : 0, 'what it will pay');
-    if (price <= 0) continue;
+    const spread = outlook.some ? outlook.value.confidence : 0;
+    const bid = sub(expected, spread, 'what it will pay');
+    const ask = add(expected, spread, 'what it will take');
+    if (bid <= 0) continue;
     const flows = profile.cashFlows(i, on, view.calendar);
     const last = flows[flows.length - 1];
     if (last !== undefined) {
       // D5: it promises dated payments, so the question is whether the money comes back in time.
       if (compareCivil(last.date, by) > 0) continue;
-      paper.push({ instrument: i, price, tracks: profile.pricing === 'derived' });
+      paper.push({ instrument: i, bid, ask, tracks: profile.pricing === 'derived' });
       continue;
     }
-    shares.push({ instrument: i, price, tracks: profile.pricing === 'derived' });
+    shares.push({ instrument: i, bid, ask, tracks: profile.pricing === 'derived' });
   }
   return { paper, shares };
 }
@@ -168,7 +182,7 @@ export function paperBids(
     const perLine = budgetFor(e);
     if (perLine <= 0) continue;
     // Bond N9.b: what it must find is the clean price plus what has accrued and travels with it.
-    const dirty = add(e.price, view.accrued(e.instrument.id), 'what a unit costs it');
+    const dirty = add(e.bid, view.accrued(e.instrument.id), 'what a unit costs it');
     // Law 8, XI-15: EVERY MEMBER holds whole units, so what one of them bids for is a whole number
     // of them and the cell posts that many for each of the members it stands for. A cell bidding
     // for 108,739,763,087.57 units is one bidding for a fraction of a unit apiece, which is not a
@@ -179,7 +193,7 @@ export function paperBids(
     // small is the rounding of the split, not a bid.
     const whole = div(mul(perLine, lines, 'the whole of it'), dirty, 'what it would buy');
     if (perMember <= 0 || !material(qty, lines + 1, mul(whole, weight, 'the cell')) || !e.instrument.market.some) continue;
-    out.push({ market: e.instrument.market.value, instrument: e.instrument.id, price: e.price, qty });
+    out.push({ market: e.instrument.market.value, instrument: e.instrument.id, price: e.bid, qty });
   }
   return out;
 }
@@ -253,23 +267,34 @@ export function shareOrders(
     const units = mul(view.free(id), weight, 'shares it could sell');
     if (short > 0 || perLine <= 0 || steps < 1) {
       if (!material(units, 2, units)) continue;
-      const price = short > 0 ? ('market' as const) : line.price;
+      // A-28: AT WHAT IT WILL TAKE. A holder short of cash sells at the market; one that is not
+      // offers at its ask, which is its expectation with the margin on the SELLER's side.
+      const price = short > 0 ? ('market' as const) : line.ask;
       out.push({ market, instrument: id, side: 'sell', price, qty: units });
       continue;
     }
-    // XI-15: the rungs are ONE MEMBER's, in whole shares, and the cell posts that many apiece.
-    //
-    // Law 8: AND NEVER MORE OF A LINE THAN THERE IS. What a buyer's money reaches at a price is
-    // `budget / price`, which is the curve and is right; how many of the thing exist is a different
-    // fact, and it is the one that makes a bid a bid. It is the mirror of the seller's "never more
-    // than it holds" — the arithmetic of what there is to deliver, not a limit on what anybody
-    // wants — and without it a line whose price has collapsed has every saver bidding for many
-    // times the whole company, and the demand at a level stops being an exact count at all
-    // (`asQty` threw at 1.5e16 in a year-long run; worklist 12c is why the price collapsed).
-    const exist = line.instrument.issued;
-    for (const rung of rungsOver(levelsBelow(line.price, steps), perLine)) {
+    /**
+     * XI-15: the rungs are ONE MEMBER's, in whole shares, and the cell posts that many apiece.
+     *
+     * A-29, Law 6: AND THE CAP IS GONE. This read `atMost(wanted, issued, 'there are no more units
+     * of it than were issued')`, and `atMost`'s own contract says what that is: *"They are NOT a
+     * place to put a cap. If the reason cannot be written as 'there is no more of it', the number
+     * is a decision or a missing mechanism."* A bid for more units than exist is not arithmetically
+     * impossible — it is a bid that cannot wholly fill, which is the ordinary state of a book, and
+     * the SOLVER is what decides how much of a bid fills. It does not need the bidder to
+     * pre-truncate, and truncating made every deep rung of a cheap line post exactly `issued`:
+     * several cells posting identical maximal sizes at descending prices, and the book's depth
+     * below the top rung no longer a function of anybody's budget.
+     *
+     * Its own comment said why it was there — *"`asQty` threw at 1.5e16 in a year-long run;
+     * worklist 12c is why the price collapsed"* — which is Law 6's case exactly: a bound added
+     * because a number exploded. 12c built the compensating mechanism (a saver's level comes from
+     * its own outlook now, not from a capitalisation of published earnings) and the bound was not
+     * deleted with it. It is deleted with this.
+     */
+    for (const rung of rungsOver(levelsBelow(line.bid, steps), perLine)) {
       const wanted = mul(rung.qty, weight, 'what the cell puts in');
-      const qty = downTick(atMost(wanted, exist, 'there are no more units of it than were issued'));
+      const qty = downTick(wanted);
       if (qty <= 0) continue;
       out.push({ market, instrument: id, side: 'buy', price: rung.price, qty });
     }

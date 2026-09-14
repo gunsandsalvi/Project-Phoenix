@@ -30,7 +30,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
-import { marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
+import { committedTo, marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
 import { NO_QTY } from '../../core/tick.js';
 
@@ -368,11 +368,9 @@ function decide(ctx: MechanismContext, line: FirmDecl): void {
  */
 function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned): void {
   const ccy = ctx.registry.currencyOf(view.self.region);
-  const buying = sum(
-    p.orders
-      .filter((o: PlannedOrder) => o.side === 'buy' && o.price !== 'market')
-      .map((o: PlannedOrder) => (typeof o.price === 'number' ? o.price * o.qty : 0)),
-  ).value;
+  // A-35, Law 4: the ONE read of what this firm's buy orders commit. This was a second copy of it,
+  // with a bare `*` where the other used `mul`, and the two already differed in discipline.
+  const buying = committedTo(p.orders);
   // Firm E4.a, Capital Programme B2: the money raised is raised INTO AN ACTUAL INVESTMENT
   // PROGRAMME. What it wants to spend on plant and cannot pay for out of what it holds is part of
   // what it is short of, so a bank lends against a programme and a share issue is raised into one —

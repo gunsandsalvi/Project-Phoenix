@@ -21,11 +21,12 @@
  * that crossed stops offering its hours because of what its key now says. No retirement mechanism
  * exists anywhere, and that is right — it is an age.
  *
- * WHAT IS NOT HERE IS DYING, and it is named rather than missing. What a dead cell held has to
- * reach somebody, and the survivors of its own key are the natural somebody — but the arithmetic
- * that would give it to them is the re-strike a weight event cannot do in whole pieces. The route
- * that IS exact runs through a NAMED estate (a named party holds totals, so a cell can pay one to
- * the piece), and that is 13d.1's remaining step rather than something to approximate here.
+ * AND DYING IS HERE, which this header used to say it was not. 13d.1 closed and the comment did
+ * not move, so it told a reader the opposite of what the file does (A-22, Law 16). What a dead cell
+ * held has to reach somebody, and the arithmetic that would hand it straight to the survivors of
+ * its own key is a re-strike a weight event cannot do in whole pieces — so the route that IS exact
+ * runs through a NAMED estate, because a named party holds totals and a cell can pay one to the
+ * piece. `PROBATE`, `handToProbate`, `die`, `heirsOf` and `settleEstates` below are that route.
  */
 import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';

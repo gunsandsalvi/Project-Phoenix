@@ -653,11 +653,6 @@ export function capitalKindOf(
 }
 
 /**
- * A4, A4.b, C3: the two numbers a kind of capital states about itself, named. A firm weighing a
- * project reads the life of what it would buy and the capital programme reads the same number to
- * wear it out — one parameter, one spelling, and neither module learns the other's (Law 4).
- */
-/**
  * Commodities Spot D3, B4: THE SESSION THE ROOM CLEARED IN, and what it cleared at.
  *
  * The name and the read are the kernel's for the same reason every other crossing name is: a firm

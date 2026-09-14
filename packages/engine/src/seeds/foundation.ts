@@ -126,7 +126,7 @@ import { expectations } from '../mechanisms/expectations/index.js';
 import { firms } from '../mechanisms/firms/index.js';
 import { FIRM_COUNT, drawFirms, type FirmDecl } from '../mechanisms/firms/data.js';
 import { goodId, goodMarketId, goods, isGoodTerms, wipId } from '../mechanisms/goods/index.js';
-import { spaceFor, STORAGE } from '../registry/physical.js';
+import { lifeParam, spaceFor, STORAGE } from '../registry/physical.js';
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
@@ -1100,7 +1100,19 @@ export function foundationSeedFor(
       for (const kind of plantKinds) {
         if (!sizeOfLine.has(kind.madeFrom)) continue;
         const inService = sum([...sizeOfLine.keys()].map((g) => plantOf(g, kind.id))).value;
-        const wearing = div(inService, kind.usefulLifePeriods, 'what wears out in a period');
+        /**
+         * A-7, Law 4, Law 19: THROUGH THE PARAMETER REGISTER, like every other reader of this fact.
+         * It read `kind.usefulLifePeriods` straight off the declaration while
+         * `capital-programme` and `firms/decide` both read `params.periods(lifeParam(d.id))` —
+         * which is where the number is declared with its unit and its owner (XI-14) and where a
+         * resolution shift would move it. Two readable homes for one fact agreed only because both
+         * happened to read the same table.
+         */
+        const wearing = div(
+          inService,
+          ctx.params.periods(lifeParam(kind.id)),
+          'what wears out in a period',
+        );
         started.set(
           kind.madeFrom,
           div(wearing, recipeOf(kind.madeFrom).yieldRate, 'started for it'),
@@ -2342,13 +2354,6 @@ export function foundationSpec(
       // Commodities Spot A3, D3: the market in covered space. After the firms, because who is short
       // of room and who has spare is read off what they hold (Law 19).
       commodities(),
-      /**
-       * Item 12: THE GROUND. After the firms, because a firm buys the ground its plant stands on
-       * and its plant has to exist to stand on any; before the storage market, because a silo
-       * stands on a real yard (`landPerUnit: 0.15`) and covered space competes with everything
-       * else for a place.
-       */
-      land(),
       // Freight A4, D1 (13c): the routes this world has and the carriers that sail them. THE LEGS
       // ARE REAL AND IDLE until there is more than one place with goods in it: this world makes
       // its goods in the one region that has firms, and the three abroad are a central bank, a
@@ -2488,6 +2493,18 @@ export function foundationSpec(
       // publish and what settles its estimate is the one it just did (Reporting C1, F1).
       research(seed),
       foundationSeedFor(drew.banks, drew.firms, carrierRows, placed, banked, countries),
+      /**
+       * Item 12: THE GROUND, and it is declared HERE because it requires the foundation seed — the
+       * state has to exist before it can hold what nobody has built on.
+       *
+       * It was declared beside `commodities`, where it belongs by subject, and that was wrong for a
+       * reason worth writing down: assembly sorts by `requires`, so a module needing
+       * `seed.foundation` declared in the middle of the list DRAGS THE SORT — `freight` went after
+       * the foundation seed, the foundation's hull block ran before the carrier parties existed,
+       * and this world lost its entire merchant fleet. A module that requires the seed is declared
+       * after the seed.
+       */
+      land(),
       foundationFundingFor(drew.banks),
     ],
   };

@@ -499,13 +499,25 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
  * programme, and a programme is what a lender lends into and a share issue is raised into (Firm
  * E4.a); it is not spendable until the money is actually there.
  */
+/**
+ * A-35, Law 4: WHAT THIS FIRM'S BUY ORDERS COMMIT, in one place.
+ *
+ * It was computed twice from the same list — here with `mul`, which names the product and checks
+ * it, and in `publishFunding` with a bare `*`. One fact, two implementations, already differing in
+ * discipline. Both ternaries were dead as well: the filter above them has already removed every
+ * `'market'` price, so the `typeof` was a check on something that could not happen.
+ */
+export function committedTo(orders: readonly PlannedOrder[]): number {
+  return sum(
+    orders
+      .filter((o) => o.side === 'buy' && typeof o.price === 'number')
+      .map((o) => mul(o.price as number, o.qty, 'what it is about to buy')),
+  ).value;
+}
+
 function spendable(view: ParticipantView, orders: readonly PlannedOrder[]): number {
   const ccy = view.registry.currencyOf(view.self.region);
-  const buying = sum(
-    orders
-      .filter((o) => o.side === 'buy' && o.price !== 'market')
-      .map((o) => (typeof o.price === 'number' ? mul(o.price, o.qty, 'what it is about to buy') : 0)),
-  ).value;
+  const buying = committedTo(orders);
   return sub(sub(view.cash(ccy), wagesDue(view), 'after its payroll'), buying, 'after what it is buying');
 }
 

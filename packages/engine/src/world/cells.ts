@@ -83,6 +83,14 @@ export function mergeCells(
     'XI-15',
     `cells ${a} and ${b} have different keys and cannot merge`,
   );
+  /**
+   * A-3: THE REGISTER FIRST. This used to grow the absorbing cell's weight and THEN ask whether the
+   * merge was legal at all — so a merge the register refuses had already moved a weight, and the
+   * journal entry that would have said where it came from comes after the throw. The throw stops
+   * the run so nothing persisted, but the order was backwards and it costs nothing to put right:
+   * ask, apply, journal.
+   */
+  d.register.forget(b, a);
   d.parties.applyWeight({
     kind: 'merge',
     party: a,
@@ -91,8 +99,6 @@ export function mergeCells(
     period,
     cause,
   });
-  // XI-15: the register guards its own store, and it refuses a merge of two cells that differ.
-  d.register.forget(b, a);
   d.parties.cease(b, period, a);
   d.journal.record(
     period,

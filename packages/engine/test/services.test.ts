@@ -10,7 +10,7 @@ import { rigWorld } from './rig.js';
 import { CONSUMPTION } from '../src/mechanisms/households/data.js';
 import { MERCHANT_SPREAD, drawMerchants, merchants } from '../src/mechanisms/merchants/index.js';
 
-import { GOODS, RETAIL, retailOf } from '../src/mechanisms/goods/data.js';
+import { GOODS, RETAIL, retailOf, spoilageOf } from '../src/mechanisms/goods/data.js';
 import { OCCUPATION_OF } from '../src/mechanisms/firms/data.js';
 import { OCCUPATIONS } from '../src/mechanisms/labour/data.js';
 
@@ -101,16 +101,19 @@ describe('the curve under a want (Goods C1, Clearing A2, Law 6)', () => {
 
 describe('the sixteen lines that cannot be put in a box (13c.2)', () => {
   /**
-   * WHAT A SERVICE IS, stated once. An hour of teaching cannot be moved — but neither can a house,
-   * and a house is not a service. What divides them is that NOTHING IS LEFT OF A SERVICE at the end
-   * of the period it was made in: it is consumed as it is produced, which is why it has no stock, no
-   * lead time and no warehouse. A dwelling is the opposite of that and stands for decades.
+   * WHAT A SERVICE IS, stated once — and it is ONE declaration now, not two read together.
    *
-   * So `portable` says where a unit may BE and perishing says whether there is a unit to be
-   * anywhere later; a service is both. (13d added the dwelling, which is the first line in this
-   * world that is unmovable and keeps.)
+   * This used to be `!portable && spoilagePerPeriod === 1`, and the reasoning above it was right
+   * about the economics and wrong about which facts said them: `portable` says where a unit may BE
+   * and is a shipping fact, and reading it for this question is what put a school's unsold teaching
+   * hours on its balance sheet as inventory (item 11). **Power is the case that proves they are two
+   * questions**: the most movable thing in the file, and nobody stores a megawatt-hour.
+   *
+   * `output: 'capacity'` is the fact. Nothing is left of it at the end of the period it was made
+   * in: it is consumed as it is produced, which is why it has no stock, no lead time and no
+   * warehouse. A dwelling is the opposite and stands for decades — unmovable, and not a service.
    */
-  const services = GOODS.filter((g) => !g.portable && g.spoilagePerPeriod === 1);
+  const services = GOODS.filter((g) => g.output === 'capacity');
 
   it('has a service economy at all, and it is most of the lines a person works in', () => {
     expect(services.length).toBeGreaterThanOrEqual(16);
@@ -119,7 +122,10 @@ describe('the sixteen lines that cannot be put in a box (13c.2)', () => {
   it('keeps nothing, waits for nothing and stands on no ground of its own', () => {
     for (const g of services) {
       // An hour nobody bought is not an hour waiting: it is gone, and the wages were paid anyway.
-      expect(g.spoilagePerPeriod).toBe(1);
+      // Law 2: it is NOT DECLARED — `spoilageOf` derives it, and declaring it would be writing the
+      // same 1 eighteen times (item 11).
+      expect(g.spoilagePerPeriod).toBeNull();
+      expect(spoilageOf(g)).toBe(1);
       // Made to order, which is what having no stock to make it from means.
       expect(g.leadTimePeriods).toBe(0);
       expect(g.storagePerUnit).toBeNull();
@@ -129,13 +135,13 @@ describe('the sixteen lines that cannot be put in a box (13c.2)', () => {
   });
 
   it('leaves the unmovable things that KEEP out of it, because they are not services', () => {
-    const kept = GOODS.filter((g) => !g.portable && g.spoilagePerPeriod !== 1);
+    const kept = GOODS.filter((g) => !g.portable && g.output === 'stock');
     // A dwelling cannot be moved and is still a thing somebody owns: it has a lead time, it wears
     // out slowly, and what it is worth is what somebody will pay to be in it (13d, Housing A1).
     expect(kept.length).toBeGreaterThan(0);
     for (const g of kept) {
       expect(g.leadTimePeriods).toBeGreaterThan(0);
-      expect(g.spoilagePerPeriod).toBeLessThan(1);
+      expect(spoilageOf(g)).toBeLessThan(1);
     }
   });
 
@@ -149,25 +155,31 @@ describe('the sixteen lines that cannot be put in a box (13c.2)', () => {
     }
   });
 
-  it('never consumes a good that consumes a service, so the chain still has a bottom', () => {
-    // `openingLevels` walks the recipes from the bottom up and a cycle has no bottom. A world where
-    // a machine works buys an engineer's week and the engineer's week buys a machine would have no
-    // cost to work out, and the seed would be right to refuse it.
+  it('has a bottom: no line, service or thing, is made from itself however far round', () => {
+    /**
+     * `openingLevels` walks the recipes from the bottom up and A CYCLE HAS NO BOTTOM. A world where
+     * a machine works buys an engineer's week and the engineer's week buys a machine would have no
+     * cost to work out, and the seed would be right to refuse it.
+     *
+     * This used to assert a PROXY for that — no service's input chain reaches anything that buys a
+     * service — which held while `services` meant "the sixteen unmovable lines" and stopped holding
+     * the moment item 11 put POWER in the set: power is a capacity line, and half the goods in the
+     * file buy power. The proxy was too strong and the property is not, so this asserts the
+     * property: **the recipe graph is acyclic**, over every line and not only the services.
+     */
     const byName = new Map(GOODS.map((g) => [g.subUnit, g]));
-    const serviceNames = new Set(services.map((g) => g.subUnit));
-    const buysAService = new Set(
-      GOODS.filter((g) => g.inputs.some((i) => serviceNames.has(i.subUnit))).map((g) => g.subUnit),
-    );
-    for (const s of services) {
-      const seen = new Set<string>();
-      const walk = (name: string): void => {
-        if (seen.has(name)) return;
-        seen.add(name);
-        for (const i of byName.get(name)?.inputs ?? []) walk(i.subUnit);
-      };
-      for (const i of s.inputs) walk(i.subUnit);
-      for (const reached of seen) expect(buysAService.has(reached)).toBe(false);
-    }
+    const done = new Set<string>();
+    const onTheWay = new Set<string>();
+    const walk = (name: string, path: readonly string[]): void => {
+      if (done.has(name)) return;
+      expect(onTheWay.has(name), `${[...path, name].join(' → ')} is made from itself`).toBe(false);
+      onTheWay.add(name);
+      for (const i of byName.get(name)?.inputs ?? []) walk(i.subUnit, [...path, name]);
+      onTheWay.delete(name);
+      done.add(name);
+    };
+    for (const g of GOODS) walk(g.subUnit, []);
+    expect(done.size).toBeGreaterThanOrEqual(GOODS.length);
   });
 
   it('is bought by firms as well as by people: the made goods name the services they use', () => {

@@ -127,7 +127,7 @@ boundary, so 4 is takeable now and 3 is a typed-read cleanup that follows it.
 | ~~**14**~~ | ~~`Process`~~ | 1 | **BUILT** — steps, not a boolean. And one cell inheriting everything becomes 35 |
 | ~~**15**~~ | ~~`Objective`~~ | 0 | **BUILT** — six answers, required on every kind. The 21 hard-coded reasons remain |
 | **16** | `Measure<D>` | 18 | **TYPE BUILT, SWEEP STAGED** — the algebra and the first door; 1,091 sites in ten stages, none done |
-| **17** | The local repairs | 18 | never a session's work; take each when its file is already open |
+| **17** | The local repairs | 11 of 18 | **11 CLOSED**; A-43 behind item 8's employment book, A-24 behind item 3's typed read, the rest with the sweep |
 | **18** | The sectors that were waiting | 4 | after everything, because each is built on the primitives above |
 
 
@@ -3642,6 +3642,49 @@ docstring there says the opposite: _"the destination at what it cost INCLUDING t
 
 ## 17. The local repairs
 
+> **NINE CLOSED IN ONE PASS; the rest are repositioned with reasons.** The item's own rule is *"never
+> a session's work; take each when its file is already open"* — items 8 to 16 opened most of these
+> files, so they were taken.
+>
+> | | what it was | what it is |
+> | --- | --- | --- |
+> | **A-2** | `sameState` compared liens by COUNT while its docstring said it compared them, and checked the equity BALANCE and not its walk. `forget` then deleted the absorbed cell's whole position, liens and ledger with it, with no instruction and no counterparty | liens compared by qty, beneficiary and reason (never by id — two identical pledges are two rows), and the equity WALK as well as the balance |
+> | **A-3** | the merge grew the absorbing cell's weight and THEN asked the register whether the merge was legal | ask, apply, journal |
+> | **A-7** | the seed read a capital kind's life off the declaration while three other readers went through the parameter register | through `params.periods(lifeParam(id))`, like the rest |
+> | **A-8** | a doc block describing a declaration that was deleted, sitting on top of the block that documents `STORAGE_SESSION` | gone |
+> | **A-15** | five per-party stores in the register and the cell doors knew about three — a split cell's `moneyWalk` opened at ZERO DUST against copied lots carrying a real balance, so it was checked against a tolerance too tight for what it held | `copyMemberState` copies the revaluation account and the money walks, `forget` deletes them, `sameState` compares the revaluation account |
+> | **A-16** | `restate` validated as it applied, so a reverse split one holder's odd lot could not survive left the line at two counts | every holder checked before any holder is written, which is what settlement does everywhere else |
+> | **A-22** | `lifecycle.ts`'s header said dying is not in this file, directly above the dying | says what the file does |
+> | **A-28** | one `price` on a `SavingLine` and both sides used it, so a cell that had been surprised moved its bid AND its ask down and would sell at a level it would buy at — uncertainty made it a seller | `bid` and `ask`, and being surprised WIDENS |
+> | **A-29** | a bid truncated at `issued` — a bound added because a number exploded, whose compensating mechanism 12c built and which was not deleted with it | deleted; the solver decides how much of a bid fills |
+> | **A-35** | `buying` computed twice from one list, once with `mul` and once with a bare `*` | `committedTo`, one writer |
+> | **A-59** | the resolution published `pays` as the price of a completed sale and **nothing paid it** — a stated price with no flow (Law 5) | `worthToIt`, which is what it is and what ranks the bidders. What an acquirer should be PAID for taking the book on is a missing mechanism (**E-6**), not a number standing where one would be |
+>
+> **Repositioned rather than repaired.** **A-43** (the labour module builds the household's schedule
+> through the door the architecture says not to) cannot move until the EMPLOYMENT BOOK does: a
+> households-side `venueParticipant` cannot see who is already employed or what trade they have, and
+> that book is one of item 8's seven. It is positioned behind that migration. **A-24** (the plan
+> round-trips through `unknown` and silently drops what it cannot parse) is item 3's shape and wants
+> item 3's answer — a typed read that THROWS on a record its own writer malformed — applied to
+> `firms.plan`; positioned there. **B-9** and **B-11** are already closed: the file B-9 is about was
+> deleted, and `plan:check` is green.
+>
+> **A REGRESSION OF MY OWN, found by running the whole suite instead of the files I thought were
+> affected.** Item 12 declared `land()` beside `commodities` — where it belongs by subject — and
+> `land` requires `seed.foundation`. Assembly sorts by `requires`, so a module needing the seed
+> declared in the MIDDLE of the list drags the sort: `freight` went after the foundation seed, the
+> foundation's hull block ran before the carrier parties existed, and **this world lost its entire
+> merchant fleet**. Eleven tests across six files went red and every per-item measurement I took
+> missed it, because I measured the files each item touched. A module that requires the seed is
+> declared after the seed. **Whole suite: 79 red before item 8, 79 red now, the same 79 test for
+> test — and 707 passing where there were 638.**
+>
+> **Also fixed here, and it was item 11's to fix**: `services.test.ts` defined a service as
+> `!portable && spoilagePerPeriod === 1`, which item 11 replaced with `output === 'capacity'`. Its
+> acyclicity test asserted a PROXY — no service's inputs reach anything that buys a service — which
+> held while "service" meant the sixteen unmovable lines and stopped the moment POWER joined the
+> set. It asserts the property now: the recipe graph is acyclic, over every line.
+
 Eighteen findings with no type-level cause: plain bugs, stale comments, and four that this document's
 own history already closed. Each is small, independent, and belongs in the next change that opens the
 file it is in (Law 14: one bounded change). **None of these is a session's work**, and none blocks
@@ -4414,6 +4457,7 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **C-7** (—) | 17 | the confidence question, answered and closed (carried from `VERIFY.md`) |
 | **D-1** (A) | 8 | a levy that fails is recorded and then forgotten: no arrears (`12d-5`) |
 | **D-2** (B) | 18 | the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) |
+| **E-6** (B) | 18 | *(found while building item 17)* an acquirer's consideration in a bank resolution is a missing mechanism. The auction ranks bidders by what the book is worth to each, faithfully; what the winner should be PAID for taking it on is not modelled, and used to be invisible because `pays` stood in the record where it would have been |
 | **E-5** (B) | 18 (13m) | *(found while building item 12)* the state holds the ground of every place in its country and can only SELL in the one it sits in, because a seller in another place reads as a cross-border trade. What is missing is a party present in each place — a local authority, the same noun a port and a planning consent need |
 | **E-4** (B) | after 14 | *(found while building item 11)* a capacity line still produces into WIP and destroys the unsold part: the number is right and the accounts line is not — an inventory write-off where it should be operating leverage. Produce-to-order needs a line to know its demand when it produces, and `firms.produce` runs before `markets` |
 | **E-3** (C) | 17 | *(found while building item 10)* an estate pays RENT for the space its inventory sits in while it winds up, and its own `flows` family reports every non-`corporateAction` payment out of an estate as a distribution to somebody with no claim. A cost of a winding-up is not a distribution; D6 is about distributions |

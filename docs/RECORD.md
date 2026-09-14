@@ -4978,3 +4978,71 @@ findings stay open until the stage that owns each closes. `world`, `param-owners
 **What would falsify it:** a dimension the six types cannot say — a periodicity, which Law 8 names in
 the same breath as unit and price level and which `Measure` does not yet carry, so A-33's stale wage
 bill is still a runtime question.
+
+
+## Item 17 — the local repairs, and a regression of my own
+
+**Eleven closed in one pass.** The item's own rule is "never a session's work; take each when its
+file is already open" — items 8 to 16 opened most of these files.
+
+- **A-2** — `sameState` compared liens by COUNT while its docstring said it compared them, and
+  checked the equity BALANCE and not its walk. `forget` then deleted the absorbed cell's whole
+  position, liens and ledger with it, with no instruction and no counterparty. Liens are compared by
+  qty, beneficiary and reason now — never by id, because two identical pledges by two cells are two
+  rows and that is what a merge renames — and the equity walk as well as the balance.
+- **A-3** — the merge grew the absorbing cell's weight and THEN asked the register whether it was
+  legal. Ask, apply, journal.
+- **A-7** — the seed read a capital kind's life off the declaration while three other readers went
+  through the parameter register. Through `params` now, like the rest.
+- **A-8** — a doc block describing a deleted declaration, sitting on top of the block that documents
+  `STORAGE_SESSION`. Gone.
+- **A-15** — five per-party stores in the register and the cell doors knew about three. A split
+  cell's `moneyWalk` opened at ZERO DUST against copied lots carrying a real balance, so the
+  `accounts` and `ownership` families checked it against a tolerance too tight for what it held.
+  `copyMemberState` copies the revaluation account and the money walks, `forget` deletes them, and
+  `sameState` compares the revaluation account.
+- **A-16** — `restate` validated as it applied, so a reverse split one holder's odd lot could not
+  survive left the line at two counts. Every holder is checked before any holder is written, which
+  is what settlement does everywhere else.
+- **A-22** — `lifecycle.ts`'s header said dying is not in this file, directly above the dying.
+- **A-28** — one `price` on a `SavingLine` and both sides used it, so a cell that had been surprised
+  moved its bid AND its ask down and would sell at a level it would simultaneously buy at:
+  uncertainty made it a seller. `bid` and `ask` now, and being surprised WIDENS.
+- **A-29** — a bid truncated at `issued`: a bound added because a number exploded, whose
+  compensating mechanism 12c built and which was not deleted with it. Deleted; the solver decides
+  how much of a bid fills.
+- **A-35** — `buying` computed twice from one list, once with `mul` and once with a bare `*`. One
+  writer, `committedTo`.
+- **A-59** — the resolution published `pays` as the price of a completed sale and **nothing paid
+  it**. It is `worthToIt`, which is what it is and what ranks the bidders; what an acquirer should be
+  PAID for taking the book on is a missing mechanism (**E-6**) rather than a number standing where
+  one would have been.
+
+**Repositioned rather than repaired, with reasons.** **A-43** — the labour module builds the
+household's schedule through the door the architecture says not to — cannot move until the
+EMPLOYMENT BOOK does: a households-side `venueParticipant` cannot see who is already employed or what
+trade they have, and that book is one of item 8's seven. **A-24** — the plan round-trips through
+`unknown` and silently drops what it cannot parse — is item 3's shape and wants item 3's answer, a
+typed read that throws on a record its own writer malformed, applied to `firms.plan`. **B-9** and
+**B-11** are already closed: the file B-9 is about was deleted, and `plan:check` is green.
+
+**A REGRESSION OF MY OWN, and the way I found it is the point.** Item 12 declared `land()` beside
+`commodities` — where it belongs by subject — and `land` requires `seed.foundation`. Assembly sorts
+by `requires`, so a module needing the seed declared in the MIDDLE of the list drags the sort:
+`freight` went after the foundation seed, the foundation's hull block ran before the carrier parties
+existed, and **this world lost its entire merchant fleet**. Eleven tests across six files went red.
+
+Every per-item measurement I took missed it, because I measured the files I thought each item
+touched. Running the whole suite once found it in a minute. A module that requires the seed is
+declared after the seed, and the comment there now says why.
+
+**Also fixed here, and it was item 11's to fix.** `services.test.ts` defined a service as
+`!portable && spoilagePerPeriod === 1`, which item 11 replaced with `output === 'capacity'`. Its
+acyclicity test asserted a PROXY — no service's inputs reach anything that buys a service — which
+held while "service" meant the sixteen unmovable lines and stopped the moment POWER joined the set.
+It asserts the property itself now: the recipe graph is acyclic, over every line, with the cycle
+named in the failure message if one ever appears.
+
+**Measured.** The whole suite: **79 red before item 8, 79 red now, the same 79 test for test** — and
+**707 passing where there were 638**, the 69 being this run's own tests. Green: lint, typecheck, spec
+citations (208), forbids (205 files), `plan:check`.

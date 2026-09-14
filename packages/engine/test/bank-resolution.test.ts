@@ -275,10 +275,17 @@ describe('the acquirer (Banks Capital D3, D6, C3.b)', () => {
     for (const no of bids.filter((e) => e.data['declined'] === true)) {
       expect(String(no.data['why'])).not.toBe('');
     }
-    // D3: what it will pay is what the book is worth to IT. A book whose liabilities exceed its
-    // assets is worth less than nothing, so the bid is negative: the acquirer is PAID to take it,
-    // out of the estate and then the guarantee, and that payment is the hole made visible.
-    expect(num(bid, 'pays')).toBeLessThan(0);
+    /**
+     * D3: what the book is worth to IT, which is what ranks the bidders. A book whose liabilities
+     * exceed its assets is worth less than nothing, so it is negative: the acquirer is PAID to take
+     * it, out of the estate and then the guarantee, and that payment is the hole made visible.
+     *
+     * A-59: the field was called `pays` and the record published it as the price of a completed
+     * sale. NOTHING PAID IT. It is `worthToIt` now, because it is — and the consideration an
+     * acquirer should get for taking the book on is a missing mechanism (`E-6`) rather than a
+     * number standing where one would have been.
+     */
+    expect(num(bid, 'worthToIt')).toBeLessThan(0);
   });
 
   it('takes the deposits and the book over the wire, and nothing is left behind (D6, C3.b)', () => {

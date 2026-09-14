@@ -633,27 +633,47 @@ export class Register {
       'Equity D4',
       `a split ratio is positive, got ${ratio}`,
     );
+    /**
+     * A-16: EVERY HOLDER IS CHECKED BEFORE ANY HOLDER IS WRITTEN.
+     *
+     * `onTheGrid` throws when a restated quantity is not a whole number of pieces — deliberately,
+     * and rightly. But this walked the holders APPLYING as it validated, so a reverse split that
+     * one holder's odd lot could not survive left the register restated for everybody before it
+     * and untouched for everybody after: half a line at two counts, from one call, with no
+     * instruction and nothing to undo it. Every other multi-holder write in this file goes through
+     * settlement, which validates every leg before applying any (Register C3.b: nothing
+     * half-settles). This one now does the same, in the one file where it could not.
+     */
+    const restated: { holder: PartyId; lots: Lot[]; liens: Lien[] }[] = [];
     for (const holder of this.holdersOf(instrument)) {
       const h = this.mutable(holder, instrument);
-      h.lots = h.lots.map((l) =>
-        Object.freeze({
-          ...l,
-          qty: this.onTheGrid(
-            finite(l.qty * ratio, `${holder}'s units of ${instrument}`),
-            `${holder}'s units of ${instrument} after a ${ratio}-for-one split`,
-          ),
-          basisPerUnit: finite(l.basisPerUnit / ratio, `what a unit of ${instrument} cost`),
-        }),
-      );
-      h.liens = h.liens.map((l) =>
-        Object.freeze({
-          ...l,
-          qty: this.onTheGrid(
-            finite(l.qty * ratio, `units of ${instrument} bound`),
-            `the units of ${instrument} bound after a ${ratio}-for-one split`,
-          ),
-        }),
-      );
+      restated.push({
+        holder,
+        lots: h.lots.map((l) =>
+          Object.freeze({
+            ...l,
+            qty: this.onTheGrid(
+              finite(l.qty * ratio, `${holder}'s units of ${instrument}`),
+              `${holder}'s units of ${instrument} after a ${ratio}-for-one split`,
+            ),
+            basisPerUnit: finite(l.basisPerUnit / ratio, `what a unit of ${instrument} cost`),
+          }),
+        ),
+        liens: h.liens.map((l) =>
+          Object.freeze({
+            ...l,
+            qty: this.onTheGrid(
+              finite(l.qty * ratio, `units of ${instrument} bound`),
+              `the units of ${instrument} bound after a ${ratio}-for-one split`,
+            ),
+          }),
+        ),
+      });
+    }
+    for (const done of restated) {
+      const h = this.mutable(done.holder, instrument);
+      h.lots = done.lots;
+      h.liens = done.liens;
     }
   }
 
@@ -687,6 +707,29 @@ export class Register {
         to,
         kept.map((entry) => ({ ...entry, party: to })),
       );
+    /**
+     * A-15: AND THE OTHER TWO PER-PARTY STORES, which this said it copied and did not.
+     *
+     * There are five of them here — holdings, the equity account, the equity ledger, the
+     * REVALUATION account and the MONEY WALKS — and this copied the first three. Both of the others
+     * are per-member state by exactly the argument in the block above.
+     *
+     * The money half was live and the direction was the safe one, which is why nothing had caught
+     * it: a split cell's `moneyWalk` opened at zero dust while its copied lots carried a real
+     * balance, so the `accounts` and `ownership` families checked it against a tolerance TOO TIGHT
+     * for what it held (Law 7) — a spurious violation waiting to be reported against a cell that
+     * had done nothing. The revaluation half is inert today, because the only party whose
+     * revaluation account moves is a central bank and no central bank is a cell; it becomes wrong
+     * the day any cell holds foreign money (Currency C4).
+     */
+    const revalued = this.revaluationAccount.get(from);
+    if (revalued !== undefined) this.revaluationAccount.set(to, revalued);
+    if (src !== undefined) {
+      for (const inst of src.keys()) {
+        const walk = this.moneyAccount.get(moneyKey(from, inst));
+        if (walk !== undefined) this.moneyAccount.set(moneyKey(to, inst), walk);
+      }
+    }
   }
 
   /**
@@ -711,10 +754,18 @@ export class Register {
       { party, into },
     );
     const m = this.byHolder.get(party);
-    if (m !== undefined) for (const inst of m.keys()) this.index(inst).delete(party);
+    if (m !== undefined) {
+      for (const inst of m.keys()) {
+        this.index(inst).delete(party);
+        // A-15: and the walk behind that balance, which was left keyed to a party that no longer
+        // exists — a row nothing could reach and nothing would ever delete.
+        this.moneyAccount.delete(moneyKey(party, inst));
+      }
+    }
     this.byHolder.delete(party);
     this.equityAccount.delete(party);
     this.equityLedger.delete(party);
+    this.revaluationAccount.delete(party);
   }
 
   /**
@@ -739,10 +790,44 @@ export class Register {
           return false;
         }
       }
+      /**
+       * A-2: AND THE LIENS, WHICH THIS ONLY COUNTED. Two cells with one lien each — of different
+       * sizes, to different beneficiaries, for different reasons — were judged the same, and
+       * `forget` then deleted the absorbed cell's whole position, its liens with it, with no
+       * instruction and no counterparty (Law 5; Appendix B, "no collateral counted twice"). A
+       * household cell does carry them: `housing` pledges a cell's dwellings to its mortgage
+       * lender at `outstanding / price`, which differs between two cells whose mortgages differ.
+       *
+       * A lien's id is not compared and must not be: two identical pledges made by two cells are
+       * two rows with two ids, and that is what a merge is renaming.
+       */
+      for (let i = 0; i < x.liens.length; i += 1) {
+        const p = x.liens[i];
+        const q = y.liens[i];
+        if (p === undefined || q === undefined) return false;
+        if (p.qty !== q.qty || p.beneficiary !== q.beneficiary || p.reason !== q.reason) {
+          return false;
+        }
+      }
     }
     const ea = this.hasEquityAccount(a) ? this.equity(a) : undefined;
     const eb = this.hasEquityAccount(b) ? this.equity(b) : undefined;
-    return ea === eb;
+    if (ea !== eb) return false;
+    /**
+     * A-2, Law 7: AND THE WALK BEHIND IT. `forget` deletes the equity LEDGER as well as the
+     * balance, and only the balance was checked — so two cells that reached the same number by
+     * different histories merged, and one history was thrown away with no event. A balance is not
+     * one rounding old (Audit B5.b), so two of them that agree today are not the same state.
+     */
+    const wa = this.hasEquityAccount(a) ? this.equityWalk(a) : undefined;
+    const wb = this.hasEquityAccount(b) ? this.equityWalk(b) : undefined;
+    if (wa !== wb) return false;
+    /**
+     * A-15: AND THE REVALUATION ACCOUNT, which `forget` deletes and this never looked at. Two cells
+     * whose marks have moved differently are not the same state, and merging them would throw one
+     * of the two histories away with no instruction and no counterparty (Law 5).
+     */
+    return this.revaluation(a) === this.revaluation(b);
   }
 
   // ---- internals ---------------------------------------------------------------------------
