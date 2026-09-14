@@ -31,7 +31,7 @@
 import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { assertNever } from '../../core/assert.js';
-import { add, div, mul, sub } from '../../core/num.js';
+import { add, div, mul, sub, zeroIfNone } from '../../core/num.js';
 import { asRatio, heldAsMoney, over, scale } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import { asQty, scaleQty } from '../../core/tick.js';
@@ -95,6 +95,45 @@ function crossingShare(ctx: MechanismContext, cohort: string): number | undefine
   return div(1, periods, 'the share of it standing at the boundary');
 }
 
+/**
+ * XI-15, A-18: THE PART OF A PERSON THAT HAS NOT CROSSED YET.
+ *
+ * A weight is a COUNT, so what ages out of a band and what dies is a whole number of people. The
+ * fraction below one is not nobody — it is a person partway through the year in which they cross —
+ * and it has to WAIT rather than be deleted, which is what `Math.floor` on its own does.
+ *
+ * What deleting it costs is not a rounding: `share` for a ten-year band is about 1/521, so a cell of
+ * 3,600 ages 6 a period and ITS children age `floor(6 x 0.00192) = 0` — for ever. Mortality is
+ * worse, because the rates are smaller: any cell below `1/rate` members had nobody die in it, at any
+ * age, for the life of the run. The world filled up with micro-cells that could not age, could not
+ * die, and (nothing calls `merge`, A-17) could not recombine, and they went on consuming and voting.
+ *
+ * Carried per cell and per event, because the two boundaries are different: somebody can be most of
+ * the way to the next cohort and nowhere near dying. A cell that dies takes its remainder with it —
+ * the fraction was its own members and they are gone.
+ */
+interface Waiting {
+  readonly toAge: Map<string, number>;
+  readonly toDie: Map<string, number>;
+}
+
+const waiting = (ctx: MechanismContext): Waiting =>
+  ctx.state<Waiting>('households.waiting', () => ({ toAge: new Map(), toDie: new Map() }));
+
+/**
+ * How many whole people cross now, and what is left standing at the boundary.
+ *
+ * The fraction is CARRIED, so `floor` times a real event instead of deleting it: over enough periods
+ * the count that crosses is the count that should have, and no cell is too small for anything to
+ * ever happen in it.
+ */
+function whole(carried: Map<string, number>, cell: string, owed: number): number {
+  const total = add(zeroIfNone(carried.get(cell)), owed, 'what is standing at the boundary');
+  const crossing = Math.floor(total);
+  carried.set(cell, sub(total, crossing, 'the part of somebody that has not crossed'));
+  return crossing;
+}
+
 /** F1, F3: the people who crossed a band boundary this period become a cell with the next key. */
 export function age(ctx: MechanismContext): void {
   const cohorts = ctx.registry.cohorts;
@@ -107,9 +146,26 @@ export function age(ctx: MechanismContext): void {
     const share = crossingShare(ctx, cohort);
     if (share === undefined) continue;
     // XI-15: a weight is a COUNT of people, so what crosses is whole people, and the fraction that
-    // is not somebody stays where it is until enough of it has accumulated to be somebody.
-    const crossing = Math.floor(mul(weightOf(cell), share, 'the people standing at the boundary'));
-    if (crossing <= 0 || crossing >= weightOf(cell)) continue;
+    // is not somebody waits in `waiting` until enough of it has accumulated to be somebody.
+    const crossing = whole(
+      waiting(ctx).toAge,
+      String(cell.id),
+      mul(weightOf(cell), share, 'the people standing at the boundary'),
+    );
+    if (crossing <= 0) continue;
+    // The last members of a band cross AS THEMSELVES: re-keying the whole cell is the event, and
+    // skipping it pinned the tail of every band where it was (A-18's other end).
+    if (crossing >= weightOf(cell)) {
+      ctx.cells.reKey(cell.id, weightOf(cell), { cohort: String(next.id) }, `reached ${String(next.id)}`);
+      waiting(ctx).toAge.delete(String(cell.id));
+      ctx.record(
+        LIFECYCLE,
+        [cell.id],
+        { event: 'aged', from: cohort, to: String(next.id), members: weightOf(cell) },
+        true,
+      );
+      continue;
+    }
     const moved = ctx.cells.reKey(
       cell.id,
       crossing,
@@ -304,12 +360,22 @@ export function die(ctx: MechanismContext, rows: readonly MortalityDecl[]): void
     const cohort = keyOf(cell, 'cohort');
     if (!rows.some((r) => r.cohort === cohort)) continue;
     const rate = ctx.params.ratio(mortalityParam(cohort));
-    // XI-15: whole people. The fraction that is not somebody waits until it is.
-    const dying = Math.floor(mul(weightOf(cell), rate, 'the people who die this period'));
-    if (dying <= 0 || dying >= weightOf(cell)) continue;
+    // XI-15: whole people. The fraction that is not somebody WAITS until it is (A-18) — and this is
+    // the half where deleting it was worst, because a mortality rate is small: any cell below
+    // `1/rate` members had nobody die in it at any age, for the life of the run.
+    const dying = whole(
+      waiting(ctx).toDie,
+      String(cell.id),
+      mul(weightOf(cell), rate, 'the people who die this period'),
+    );
+    if (dying <= 0) continue;
+    // The whole cell dying is the ordinary end of a band, not a case to skip: `split` of everything
+    // would leave a cell of nobody, so the cell itself goes to probate.
+    const everyone = dying >= weightOf(cell);
     const office = probateId(cell.region, cell.bank);
     if (!ctx.parties.has(office)) continue;
-    const estate = ctx.cells.split(cell.id, dying, 'died');
+    const estate = everyone ? cell.id : ctx.cells.split(cell.id, dying, 'died');
+    if (everyone) waiting(ctx).toDie.delete(String(cell.id));
     const short = handToProbate(ctx, estate, office, cell.region);
     for (const u of short) {
       // XI-8: what did not arrive is still owed, by the estate, to the office that was to receive

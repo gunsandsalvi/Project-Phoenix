@@ -18,6 +18,7 @@
  */
 import type { Qty } from '../../core/tick.js';
 import {
+  asAmount,
   asCash,
   asRatio,
   type Cash,
@@ -32,7 +33,7 @@ import {
 } from '../../core/measure.js';
 import type { PartyId, InstrumentId} from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { atMost, div, sum } from '../../core/num.js';
+import { atMost, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { bankParam, type BankDecl } from './data.js';
@@ -125,8 +126,10 @@ export function probabilityOfDefault(
   const periods = atMost(view.period, memory, 'a world cannot remember before it began');
   if (periods <= 0) return asRatio(0, 'a borrower with no history has failed none of it');
   const failures = new Set(seen.map((e) => e.period)).size;
-  return asRatio(
-    div(failures, periods, 'how often this borrower has failed'),
+  // Two counts of the same thing — periods — so what comes out is a pure share and never a level.
+  return ratioOf(
+    asAmount<'piece'>(failures, 'the periods it failed in'),
+    asAmount<'piece'>(periods, 'the periods this bank remembers'),
     'how often this borrower has failed',
   );
 }

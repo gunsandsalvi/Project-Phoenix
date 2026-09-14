@@ -48,6 +48,7 @@ import {
   amountOf,
   asCash,
   asPerPiece,
+  asAmount,
   asRatio,
   type Ratio,
   type Cash,
@@ -61,7 +62,7 @@ import {
   scale,
   valueAt,
 } from '../../core/measure.js';
-import { addTo, atMost, dustOf, material, sub, sum, withinDust, zeroIfNone } from '../../core/num.js';
+import { addTo, atMost, dustOf, material, sum, withinDust, zeroIfNone } from '../../core/num.js';
 import {
   addQty,
   asQty,
@@ -1302,14 +1303,18 @@ function noRequestVanishes(b: Book): Family {
         addTo(queued, `${q.fund}|${q.holder}`, totalFor(view.parties.get(q.holder), q.sharesPerMember));
       }
       for (const [k, want] of asked) {
-        const done = zeroIfNone(paid.get(k)) + zeroIfNone(queued.get(k));
+        const done = plus(
+          asAmount<'piece'>(zeroIfNone(paid.get(k)), 'shares paid'),
+          asAmount<'piece'>(zeroIfNone(queued.get(k)), 'shares still on the book'),
+          'what was paid and what is queued',
+        );
         // Law 7: both sides are sums of the same per-member numbers at the same magnitudes.
         if (withinDust(want, done, dustOf(asked.size + 2, Math.abs(want) + Math.abs(done)))) continue;
         out.push({
           family: 'flows',
           spec: 'Fund Shares C2.b',
           owner: k.split('|')[0] ?? k,
-          size: sub(want, done, 'asked against paid and queued'),
+          size: minus(asAmount<'piece'>(want, 'shares it asked to redeem'), done, 'asked against paid and queued'),
           unit: 'shares',
           period: view.period,
           message: `${k} asked to redeem ${want} shares and only ${done} were paid or are still on the book`,

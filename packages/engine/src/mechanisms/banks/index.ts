@@ -520,7 +520,7 @@ function write(
   bank: PartyId,
   borrower: PartyId,
   wanted: Cash,
-  rate: number,
+  rate: Ratio,
   ccy: CurrencyCode,
   /**
    * Corporate Credit C9, A3: whether this is a drawing on the borrower's LINE at this bank. A line

@@ -5534,3 +5534,49 @@ spec clause lacks a row.
 green. The tools suite is 30 green across 5 files. **The engine suite was NOT run** — the owner's
 instruction stands until the plan's items are worked, and item 1 touches no engine code. No COVERAGE
 re-mark: this item implements no spec clause.
+
+## Item 2, stage 2a.1 — the banks, the funds, and the household demography
+
+**Item 2 is in stages, and the reason is Law 14.** As written it bundled the TYPING — mechanical, no
+behaviour change, gated by Law 18 — with eighteen FINDINGS, each a real change to what the world
+does. Nineteen bounded changes in one item. The typing is 2a; the findings are 2b–2e, grouped by
+what they are, each with its own entry. Said in `docs/IMPLEMENTATION.md` rather than done quietly.
+
+**A rate is a `Ratio`, and that one change is the shape of the stage.** `LoanTerms.rate` and
+`SubTerms.rate` were bare `number`s. What a span earns is the rate SCALED by the fraction of a year
+it covers — dimensionless — and what that comes to per unit is par scaled by the share. So
+`add(1, interest)` is gone: there is a named `PAR` in each file, *"one unit is one piece of its
+money"*, which is the one place the two scales coincide (`E-9`) and now says so instead of being
+assumed. The cascade off `LoanTerms.rate` was two sites, because stage 3 had already typed
+everything around it.
+
+**`E-11`, and the type found it.** `Outcome.price` is a `PerPiece` and **some books clear a RATE** —
+the subordinated raise, the money market, the IRS, the CDS. The bidders post rates, the solver
+strikes one, and nothing in the book can say which of the two its level is. It is `E-10`'s shape —
+one field, a different dimension per use — at the CLEARING layer rather than the contract layer.
+Named at the door in `subordinated.ts` rather than assumed, and positioned to 2a.2 and item 6.
+
+**`A-18` is closed, both ends.** The comment said the fraction below one person *"stays where it is
+until enough of it has accumulated to be somebody"* and nothing accumulated: `crossing` and `dying`
+were recomputed from the weight every period, so the part of a person was DELETED every period.
+`households.waiting` carries it per cell and per event, so `Math.floor` times a real event instead of
+deleting it. The second end matters as much: a cell whose whole weight would cross was SKIPPED, which
+pinned the tail of every band where it was — it now crosses as itself. Declared `physics` in the
+ontology register: who is partway through the year in which they cross is this sector's own
+demography, and the kernel wants no store for it.
+
+What deleting it cost, from the arithmetic in the finding: `share` for a ten-year band is about
+1/521, so a cell of 3,600 ages 6 a period and its children age `floor(6 × 0.00192) = 0` — for ever.
+Mortality was worse because the rates are smaller: any cell below `1/rate` members had nobody die in
+it, at any age, for the life of the run. Those cells could not age, could not die and (nothing calls
+`merge`, `A-17`) could not recombine, and they went on consuming and looking for work.
+
+**Other sites typed**: `hoursNeeded` is `scale` of a technology by a count of rows; `linesCovered`
+and `probabilityOfDefault` are `ratioOf` two counts of the same thing; the desk's one-sided flow is
+`plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall is `minus`. **`mul`, `div`,
+`add` and `sub` leave five files.** Arithmetic sites **402 → 390**.
+
+**Measured.** Typecheck 0, lint 0, `check:existence` green, `nouns.test.ts` 7 green (the new store is
+declared and the register accepts it). **The engine suite was not run** — 2a is a no-behaviour-change
+typing stage except for `A-18`, which is a behaviour change and is named as one here rather than
+hidden inside a refactor.

@@ -21,11 +21,24 @@
  * same to make whatever its size — which is a real fact about lending that no parameter could have
  * expressed, and it moves the day the wage moves (Law 19).
  */
-import { asRatio, type Ratio , asAmount, asCash, asPerPiece, heldAsMoney, over, type PerPiece, pricedAt, ratioOf, valueAt} from '../../core/measure.js';
+import {
+  asAmount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  heldAsMoney,
+  over,
+  type PerPiece,
+  pricedAt,
+  ratioOf,
+  type Ratio,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { findVenue, type VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { paramId, type ParamId } from '../../core/ids.js';
-import { div, mul, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -64,14 +77,13 @@ function bookOf(view: ParticipantView): { readonly rows: number; readonly princi
 
 /** C1.d: the hours this bank's book takes to service in a period. A read of its own rows. */
 export function hoursNeeded(view: ParticipantView): Qty {
-  return asAmount<'piece'>(
-    mul(
-      bookOf(view).rows,
-      view.params.count(STAFF_PARAMS.hoursPerLoanPeriod),
-      'the hours its book takes',
-    ),
-    'the hours its book takes',
+  // The hours one row takes is the TECHNOLOGY and the rows are a read of its own book, so what the
+  // book takes is that technology scaled by how many rows there are — a count, not a second unit.
+  const perRow = asAmount<'piece'>(
+    view.params.count(STAFF_PARAMS.hoursPerLoanPeriod),
+    'the hours one row takes',
   );
+  return scale(perRow, asRatio(bookOf(view).rows, 'the rows it has'), 'the hours its book takes');
 }
 
 /**
@@ -166,7 +178,17 @@ export function linesCovered(view: ParticipantView): number {
   if (!own.some) return 0;
   const hours = own.value.data['hours'];
   if (typeof hours !== 'number' || hours <= 0) return 0;
-  const per = view.params.count(STAFF_PARAMS.hoursPerLinePeriod);
+  const per = asAmount<'piece'>(
+    view.params.count(STAFF_PARAMS.hoursPerLinePeriod),
+    'the hours one line takes',
+  );
   if (per <= 0) return 0;
-  return Math.floor(div(hours, per, 'the lines its people can cover'));
+  // Hours it employs over hours one line takes: two amounts of the same unit, so a pure count.
+  return Math.floor(
+    ratioOf(
+      asAmount<'piece'>(hours, 'the hours it actually paid for'),
+      per,
+      'the lines its people can cover',
+    ),
+  );
 }

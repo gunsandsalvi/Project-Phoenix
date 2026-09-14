@@ -19,7 +19,15 @@
  * past what it will have out to that name (F3). If nobody bids, the raise FAILS and the bank is
  * exactly where it was, which is C2.b: nobody has to buy.
  */
-import { asPerPiece, type Cash } from '../../core/measure.js';
+import {
+  asPerPiece,
+  asRatio,
+  plus,
+  scale,
+  type Cash,
+  type PerPiece,
+  type Ratio,
+} from '../../core/measure.js';
 import { addDays, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
@@ -36,12 +44,7 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import {
-  add,
-  atMost,
-  mul,
-  sum,
-} from '../../core/num.js';
+import { atMost, sum } from '../../core/num.js';
 import { downTick, type Qty } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -61,7 +64,8 @@ export const SUB_PARAMS = {
 export interface SubTerms extends Terms {
   readonly kind: typeof SUBORDINATED;
   readonly issuer: PartyId;
-  readonly rate: number;
+  /** C2: per annum, struck by the raise. A `Ratio`: a rate is never a level (A-44, A-58). */
+  readonly rate: Ratio;
   readonly drawn: Civil;
   readonly maturity: Civil;
   readonly dayCount: DayCount;
@@ -76,8 +80,12 @@ export function isSub(t: Terms): t is SubTerms {
 export const subId = (bank: PartyId, n: number): InstrumentId =>
   instrumentId(`sub:${bank}:${n}`);
 
-const interestTo = (t: SubTerms, from: Civil, to: Civil): number =>
-  mul(t.rate, yearFraction(t.dayCount, from, to), 'interest');
+/** What a span earns as a SHARE of par: the rate scaled by the fraction of a year it covers. */
+const interestTo = (t: SubTerms, from: Civil, to: Civil): Ratio =>
+  scale(t.rate, asRatio(yearFraction(t.dayCount, from, to), 'the span of a year'), 'interest');
+
+/** PAR: one unit is one piece of its money. The one place a share of par becomes a level (`E-9`). */
+const PAR: PerPiece = asPerPiece(1, 'par: one unit of this note is one piece of its money');
 
 function dueOn(
   i: Instrument,
@@ -88,7 +96,7 @@ function dueOn(
   const t = i.terms;
   if (cal.periodOf(t.maturity) !== period) return [];
   const out: DueAction[] = [];
-  const amountPerUnit = asPerPiece(interestTo(t, t.drawn, t.maturity), 'what one unit earned');
+  const amountPerUnit = scale(PAR, interestTo(t, t.drawn, t.maturity), 'what one unit earned');
   if (amountPerUnit > 0) out.push({ kind: 'coupon', date: t.maturity, amountPerUnit });
   out.push({ kind: 'maturity', date: t.maturity });
   return out;
@@ -101,7 +109,11 @@ function flows(i: Instrument, after: Civil): readonly CashFlow[] {
   return [
     {
       date: t.maturity,
-      perUnit: asPerPiece(add(1, interestTo(t, t.drawn, t.maturity), 'at maturity'), 'a unit pays'),
+      perUnit: plus(
+        PAR,
+        scale(PAR, interestTo(t, t.drawn, t.maturity), 'the interest on it'),
+        'a unit pays its par and its interest at maturity',
+      ),
     },
   ];
 }
@@ -167,7 +179,7 @@ export const raiseVenue = (bank: PartyId): VenueId => venueId(`raise:${bank}`);
 interface Taken {
   readonly lender: PartyId;
   readonly amount: number;
-  readonly rate: number;
+  readonly rate: Ratio;
 }
 
 /**
@@ -232,11 +244,15 @@ export function runRaise(
   }
   const taken: Taken[] = [];
   let m = n;
+  // `E-11`: THIS BOOK CLEARS A RATE, and `Outcome.price` is a `PerPiece` because most books clear a
+  // level. The crossing is named here rather than assumed — the bidders posted rates and the solver
+  // struck one — and the finding is that a book cannot say which of the two its level is.
+  const struck = asRatio(outcome.price, 'the rate the raise struck');
   for (const f of outcome.fills) {
     const amount = downTick(f.qty);
     if (f.side !== 'sell' || amount <= 0) continue;
-    if (writeSub(ctx, bank, f.party, amount, outcome.price, ccy, m)) {
-      taken.push({ lender: f.party, amount, rate: outcome.price });
+    if (writeSub(ctx, bank, f.party, amount, struck, ccy, m)) {
+      taken.push({ lender: f.party, amount, rate: struck });
       m += 1;
     }
   }
@@ -264,7 +280,7 @@ function writeSub(
   bank: PartyId,
   lender: PartyId,
   amount: Qty,
-  rate: number,
+  rate: Ratio,
   ccy: CurrencyCode,
   n: number,
 ): boolean {

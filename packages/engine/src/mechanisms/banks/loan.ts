@@ -13,7 +13,7 @@
  * lender of record, a borrower and its own terms. There is no book number anywhere; a bank's book
  * is the sum of the rows it holds, and that is a read.
  */
-import { asPerPiece } from '../../core/measure.js';
+import { asPerPiece, asRatio, plus, scale, type PerPiece, type Ratio } from '../../core/measure.js';
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -21,7 +21,6 @@ import { percent } from '../../core/format.js';
 import { currencyUnit, instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { LOAN, isLoan, type LoanTerms } from '../../registry/credit.js';
-import { mul } from '../../core/num.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { CashFlow, DueAction, InstrumentKindProfile } from '../../registry/kinds.js';
 import type { Namer } from '../../registry/naming.js';
@@ -43,10 +42,24 @@ export function loanId(lender: PartyId, borrower: PartyId, n: number): Instrumen
   return instrumentId(`loan:${lender}:${borrower}:${n}`);
 }
 
-/** Interest for the period this loan's terms place `on`, per unit of par outstanding (D3). */
-function interestTo(t: LoanTerms, from: Civil, to: Civil): number {
-  return mul(t.rate, yearFraction(t.dayCount, from, to), 'interest');
+/**
+ * Interest over a span, as a SHARE of the par outstanding (D3).
+ *
+ * A rate is per annum and a span is a fraction of one, so what the span earns is the rate scaled by
+ * it — dimensionless either way, and never a level (A-44, A-58 are both a rate read as one).
+ */
+function interestTo(t: LoanTerms, from: Civil, to: Civil): Ratio {
+  return scale(t.rate, asRatio(yearFraction(t.dayCount, from, to), 'the span of a year'), 'interest');
 }
+
+/**
+ * PAR: one unit of a loan is one piece of the money it is written in.
+ *
+ * This is where a share of par becomes money per unit, and it is named rather than assumed because
+ * the two scales only coincide here (`E-9`): the arithmetic below is right because par and the
+ * money's own piece are the same size, not because a rate and a level are the same thing.
+ */
+const PAR: PerPiece = asPerPiece(1, 'par: one unit of a loan is one piece of its money');
 
 export const loanKind: InstrumentKindProfile = {
   id: LOAN,
@@ -90,7 +103,7 @@ export const loanKind: InstrumentKindProfile = {
     const to = compareCivil(t.maturity, end) < 0 ? t.maturity : end;
     if (compareCivil(from, to) >= 0) return [];
     const out: DueAction[] = [];
-    const amountPerUnit = asPerPiece(interestTo(t, from, to), 'the interest one unit earned');
+    const amountPerUnit = scale(PAR, interestTo(t, from, to), 'the interest one unit earned');
     if (amountPerUnit > 0) out.push({ kind: 'coupon', date: to, amountPerUnit });
     // A bullet: the principal falls due once, on the day the terms say (A2).
     if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
@@ -107,11 +120,14 @@ export const loanKind: InstrumentKindProfile = {
       const end = cal.startOf(next(p));
       const to = compareCivil(t.maturity, end) < 0 ? t.maturity : end;
       if (compareCivil(from, to) >= 0) break;
-      const coupon = interestTo(t, from, to);
+      const coupon = scale(PAR, interestTo(t, from, to), 'what a unit earned over the span');
       const last = compareCivil(to, t.maturity) === 0;
       // Item 16: what ONE unit pays on that day, which is money per piece — the par it redeems at
       // is one of them, and the coupon is the rest.
-      out.push({ date: to, perUnit: asPerPiece(last ? coupon + 1 : coupon, 'what a unit pays') });
+      out.push({
+        date: to,
+        perUnit: last ? plus(coupon, PAR, 'the last one returns the principal too') : coupon,
+      });
       if (last) break;
       from = to;
     }

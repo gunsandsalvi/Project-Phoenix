@@ -264,6 +264,15 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
   return {
     id: 'households',
     spec: 'Households, Sovereign E2.f',
+    nouns: [
+      {
+        name: 'households.waiting',
+        kind: 'physics',
+        holds:
+          'the part of a person standing at each cell’s cohort boundary and at its mortality, carried between periods',
+        why: 'XI-15 says a weight is a COUNT, so ageing and dying move whole people and the fraction below one has to WAIT rather than be deleted (A-18). Who is partway through the year in which they cross is this sector’s own demography: nothing else in this world has an opinion about it and the kernel wants no store for it — what is public is the weight, which is a read.',
+      },
+    ],
     // It buys goods, it acts on its own outlook, and it sells its members' hours in the venue the
     // labour module runs — so all three must be there before it decides anything.
     // Part XIII, Law 4: and `treasury`, because what a household is charged at the counter includes

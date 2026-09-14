@@ -290,8 +290,47 @@ packages/engine/src/seeds/**
 packages/engine/src/core/measure.ts     if an operation is genuinely missing — never an escape hatch
 ```
 
-### Steps — the typing
+> **THE ITEM IS IN STAGES, and the reason is Law 14.** As first written this item bundled the
+> TYPING — mechanical, no behaviour change, gated by Law 18 — with eighteen FINDINGS, each of which
+> is a real change to what the world does. That is nineteen bounded changes in one item. The typing
+> is stage **2a**; the findings are grouped by what they are, **2b** to **2e**, and each carries its
+> own record entry. Inserted here rather than appended (Law 10) because every one of the findings is
+> a program the type refuses once 2a lands.
+>
+> | stage | what | sites |
+> | --- | --- | --- |
+> | ~~2a.1~~ | ~~`banks`, `funds`, and the household demography~~ — **DONE** | **402 → 390** |
+> | 2a.2 | `firms`, `seeds`, and the residue | 390 |
+> | 2b | the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1` (`A-18` closed in 2a.1) | |
+> | 2c | rates read as levels: `A-44`, `A-58`, `A-65` | |
+> | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |
+> | 2e | the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38` | |
+>
+> ### Stage 2a.1 — as built
+>
+> **`LoanTerms.rate` and `SubTerms.rate` are `Ratio`s**, and that one change is the shape of the
+> whole stage: a rate scaled by a fraction of a year is a SHARE of par, and what that comes to per
+> unit is par scaled by the share. The bare `1` in `add(1, interest)` is gone — there is a named
+> `PAR` in each file, *"one unit is one piece of its money"*, which is the one place the two scales
+> coincide (`E-9`) and now says so instead of being assumed. The cascade was two sites, because
+> stage 3 had already typed everything around them.
+>
+> **`E-11`, and the type found it**: `Outcome.price` is a `PerPiece` and **some books clear a RATE**
+> — the subordinated raise, the money market, the IRS, the CDS. The bidders post rates and the
+> solver strikes one, and nothing in the book can say which of the two its level is. It is `E-10`'s
+> shape (one field, a different dimension per use) at the CLEARING layer rather than the contract
+> layer. Named at the door in `subordinated.ts` rather than assumed; positioned below.
+>
+> **`A-18` is closed, both ends.** `households.waiting` carries the part of a person standing at each
+> cell's cohort boundary and at its mortality, per cell and per event, so `Math.floor` TIMES a real
+> event instead of deleting it. Both ends: the fraction below one now waits, and a cell whose whole
+> weight would cross now crosses AS ITSELF rather than being skipped — which is what pinned the tail
+> of every band where it was. Declared `physics` in the ontology register: who is partway through the
+> year in which they cross is this sector's own demography and wants no kernel home.
 
+### Steps — stage 2a, the typing
+
+- [x] 2a.1 `banks` and `funds`: `LoanTerms.rate` and `SubTerms.rate` → `Ratio`; `interestTo` → `scale`; `PAR` named in both files; `hoursNeeded` → `scale`, `linesCovered` and `probabilityOfDefault` → `ratioOf`; the desk's one-sided flow → `plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall → `minus`. `mul`, `div`, `add` and `sub` leave five files.
 - [ ] 2.1 Take the residue in the order the file names it — `banks`, `funds`, `households`, `firms`, `seeds`, then what is left — not by site count. Run `npx tsc --noEmit` after each module; the compiler generates the list.
 - [ ] 2.2 For each site the compiler rejects, decide which of three it is: a DIMENSION that was right and unstated (type it), a DIMENSION that was wrong (that is one of the eighteen — fix it, below), or a TARGET typed with a grid door (switch to `asAmount<'piece'>` + `plus`/`minus`).
 - [ ] 2.3 `E-8` — a declared price does not say which of the two scales it is in. `registry/params.ts`: `dimension: 'price'` splits into `'price:piece'` and `'price:named'`; `equity.openingShare` is the second and every goods level is the first. This is the cause of the known "a share worth a hundredth of a cent".
@@ -3461,6 +3500,7 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-8** (B) | 2 | a declared price does not say which of the two scales it is in |
 | **E-9** (B) | 2 | a dirty price adds two scales |
 | **E-10** (B) | 2 | `Contract.struckAt` means a different dimension per kind — **never indexed before** |
+| **E-11** (B) | 2a.2, 6 | `Outcome.price` is a `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS. `E-10`'s shape at the clearing layer. **Found by the type at stage 2a.1** |
 
 ### Findings already closed, and where
 

@@ -14,6 +14,7 @@
  * one definition and one spelling (Law 4).
  */
 import type { Qty } from '../core/tick.js';
+import type { Ratio } from '../core/measure.js';
 import { instrumentKindId, type InstrumentId, type PartyId } from '../core/ids.js';
 import type { Civil } from '../calendar/civil.js';
 import type { DayCount } from '../calendar/daycount.js';
@@ -36,8 +37,14 @@ export interface LoanTerms extends Terms {
    */
   readonly originator: PartyId;
   readonly borrower: PartyId;
-  /** A2: the rate struck at origination, per annum. It is what the negotiation produced (C2.a). */
-  readonly rate: number;
+  /**
+   * A2: the rate struck at origination, per annum. It is what the negotiation produced (C2.a).
+   *
+   * A `Ratio`, so it can never be spent or posted as a level: what a rate earns over a span is the
+   * rate SCALED by the span, and what that comes to per unit is par scaled by the result. A-44 and
+   * A-58 are both this distinction read the wrong way round.
+   */
+  readonly rate: Ratio;
   readonly drawn: Civil;
   readonly maturity: Civil;
   readonly dayCount: DayCount;

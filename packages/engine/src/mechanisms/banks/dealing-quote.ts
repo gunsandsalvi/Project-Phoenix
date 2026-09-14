@@ -43,6 +43,7 @@
  * which is what stops it being the buyer of last resort with a different name.
  */
 import {
+  absolute,
   amountOf,
   asAmount,
   asPerPiece,
@@ -59,7 +60,7 @@ import {
 import { yearFraction } from '../../calendar/daycount.js';
 import { nextPeriod, type Calendar, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
-import { add, atMost, div, material, sub } from '../../core/num.js';
+import { atMost, material } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { priceAtYield, requiredYieldOf } from './treasury.js';
@@ -208,15 +209,15 @@ function riskOf(view: ParticipantView, instrument: InstrumentId): PerPiece {
 function adverseOf(view: ParticipantView, instrument: InstrumentId, risk: PerPiece): PerPiece {
   const bought = view.outlook(about({ on: 'bought', instrument: instrument }));
   const sold = view.outlook(about({ on: 'sold', instrument: instrument }));
-  const b = bought.some && bought.value.expected > 0 ? bought.value.expected : 0;
-  const s = sold.some && sold.value.expected > 0 ? sold.value.expected : 0;
-  const both = add(b, s, 'the flow it faced');
+  const flow = (o: typeof bought): Qty =>
+    asAmount<'piece'>(o.some && o.value.expected > 0 ? o.value.expected : 0, 'what it faced');
+  const b = flow(bought);
+  const s = flow(sold);
+  const both = plus(b, s, 'the flow it faced');
   if (both <= 0) return asPerPiece(0, 'no flow, no adverse selection');
-  return scale(
-    risk,
-    asRatio(div(Math.abs(sub(b, s, 'how one-sided it was')), both, 'the share of it'), 'one-sided'),
-    'adverse selection',
-  );
+  // What it bought against what it sold, over the two together: a share of a flow, so a pure number.
+  const oneSided = ratioOf(absolute(minus(b, s, 'how one-sided it was'), 'either way'), both, 'the share of it');
+  return scale(risk, oneSided, 'adverse selection');
 }
 
 /**
