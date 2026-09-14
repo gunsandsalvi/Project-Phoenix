@@ -77,6 +77,7 @@ import type { DayCount } from '../calendar/daycount.js';
 import { priceAt } from '../prices/curve.js';
 import { forbid } from '../core/assert.js';
 import { keyOf, weightOf } from '../parties/party.js';
+import type { PerPiece } from '../core/measure.js';
 import { add, div, mul, positiveCount, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
@@ -1855,7 +1856,7 @@ function inNamedUnits(ctx: SeedContext, instrument: InstrumentId, pieces: number
 }
 
 /** And for a price: money for one NAMED unit becomes money pieces for one piece. */
-function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: number): number {
+function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: number): PerPiece {
   const i = ctx.instruments.get(instrument);
   // Law 8, Seed C4: AN OPENING LEVEL IS A PRICE AND SITS ON THE SAME GRID AS ONE. Nobody posted it
   // and nobody promised anything at it, so there is no side to take a direction from and the

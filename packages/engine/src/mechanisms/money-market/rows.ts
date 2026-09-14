@@ -13,6 +13,7 @@
  * B6: the tenor is in the terms, because overnight and term are the same instrument for a different
  * number of days, and A2.a's roll is what happens when the day arrives and the row is not renewed.
  */
+import { asPerPiece } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import { type Qty } from '../../core/tick.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
@@ -122,7 +123,7 @@ function dueOn(
   const t = i.terms;
   if (cal.periodOf(t.maturity) !== period) return [];
   const out: DueAction[] = [];
-  const amountPerUnit = interestTo(t, t.drawn, t.maturity);
+  const amountPerUnit = asPerPiece(interestTo(t, t.drawn, t.maturity), 'what one unit earned');
   if (amountPerUnit > 0) out.push({ kind: 'coupon', date: t.maturity, amountPerUnit });
   out.push({ kind: 'maturity', date: t.maturity });
   return out;
@@ -133,7 +134,12 @@ function flows(i: Instrument, after: Civil): readonly CashFlow[] {
   if (!isRow(i.terms)) return [];
   const t = i.terms;
   if (compareCivil(t.maturity, after) <= 0) return [];
-  return [{ date: t.maturity, perUnit: add(1, interestTo(t, t.drawn, t.maturity), 'at maturity') }];
+  return [
+    {
+      date: t.maturity,
+      perUnit: asPerPiece(add(1, interestTo(t, t.drawn, t.maturity), 'at maturity'), 'a unit pays'),
+    },
+  ];
 }
 
 function shared(

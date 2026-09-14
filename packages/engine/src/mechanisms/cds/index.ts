@@ -12,6 +12,7 @@
  * somebody fits: it is the set of levels these books cleared, and a tenor nobody traded has no
  * point on it (Law 3, Law 19).
  */
+import { absolute } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { addYears } from '../../calendar/civil.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
@@ -307,7 +308,7 @@ function settleEvents(ctx: MechanismContext): void {
     const owed = ctx.contracts.mark(c, ctx.period);
     const buyer = c.terms.buysProtection ? c.a : c.b;
     const seller = c.terms.buysProtection ? c.b : c.a;
-    const amount = ctx.registry.cashFor(c.ccy, owed < 0 ? -owed : owed);
+    const amount = ctx.registry.cashFor(c.ccy, absolute(owed, 'what the seller owes'));
     const legs: Leg[] = [
       {
         kind: 'contract',

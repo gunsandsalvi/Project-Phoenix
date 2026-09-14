@@ -39,6 +39,7 @@ import {
 import type { Calendar } from '../calendar/calendar.js';
 import type { Event } from '../journal/journal.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
+import { asPerPiece, asRatio, minus, type PerPiece, scale } from '../core/measure.js';
 import { div, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
@@ -319,14 +320,23 @@ export function serviceLeft(terms: PlantTerms, on: Civil, calendar: Calendar): n
  */
 export function carriedAfterWear(
   terms: PlantTerms,
-  basisPerUnit: number,
+  basisPerUnit: PerPiece,
   on: Civil,
   calendar: Calendar,
-): Option<number> {
-  if (basisPerUnit === 0) return none<number>();
+): Option<PerPiece> {
+  if (basisPerUnit === 0) return none<PerPiece>();
   const left = serviceLeft(terms, on, calendar);
-  if (left <= 1) return some(0);
-  return some(mul(basisPerUnit, div(sub(left, 1, 'periods after this one'), left, 'what is left of its life'), 'what it is carried at now'));
+  if (left <= 1) return some(asPerPiece(0, 'a unit at the end of its life is carried at nothing'));
+  return some(
+    scale(
+      basisPerUnit,
+      asRatio(
+        div(sub(left, 1, 'periods after this one'), left, 'what is left of its life'),
+        'what is left of its life',
+      ),
+      'what it is carried at now',
+    ),
+  );
 }
 
 /**
@@ -335,12 +345,14 @@ export function carriedAfterWear(
  */
 export function wearPerUnit(
   terms: PlantTerms,
-  basisPerUnit: number,
+  basisPerUnit: PerPiece,
   on: Civil,
   calendar: Calendar,
-): number {
+): PerPiece {
   const after = carriedAfterWear(terms, basisPerUnit, on, calendar);
-  return after.some ? sub(basisPerUnit, after.value, 'what a unit of it wears out by') : 0;
+  return after.some
+    ? minus(basisPerUnit, after.value, 'what a unit of it wears out by')
+    : asPerPiece(0, 'a unit with nothing left wears out by nothing');
 }
 
 /** A6: whether this vintage is worn out on a date, and so leaves the register. */

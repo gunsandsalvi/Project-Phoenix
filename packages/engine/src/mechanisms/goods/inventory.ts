@@ -17,6 +17,7 @@ import { InvalidRegistry } from '../../core/errors.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type { InstrumentKindId } from '../../core/ids.js';
 import { material, mul, sum } from '../../core/num.js';
+import type { PerPiece } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
@@ -78,7 +79,7 @@ export function goodProfile(d: GoodDecl): InstrumentKindProfile {
     // A stock nobody has priced has nothing to write down to, which is not the same as nothing to
     // write down: it is carried at what it cost until a market says otherwise.
     carriedAt: (_i, lot, marked) =>
-      marked.some && marked.value < lot.basisPerUnit ? some(marked.value) : none<number>(),
+      marked.some && marked.value < lot.basisPerUnit ? some(marked.value) : none<PerPiece>(),
   };
 }
 

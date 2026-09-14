@@ -19,7 +19,23 @@ import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../core/ids.js';
 import { impossible } from '../core/assert.js';
 import { none, type Option } from '../core/option.js';
-import { addTo, atLeast, div, finite, mul, sub, zeroIfNone } from '../core/num.js';
+import {
+  absolute,
+  acrossMembers,
+  asPerMember,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  negated,
+  type PerPiece,
+  pricedAt,
+  type Ratio,
+  scale,
+  valueAt,
+} from '../core/measure.js';
+import { addTo, atLeast, sum, zeroIfNone } from '../core/num.js';
+import type { Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { Parties } from '../parties/party.js';
 import { weightOf } from '../parties/party.js';
@@ -31,14 +47,14 @@ import type { Contract } from '../registry/derivatives.js';
 
 export interface RevalueDeps {
   /** What a market last said a unit is worth, for a kind whose lots are carried at cost. */
-  marked(instrument: InstrumentId, period: Period): Option<number>;
+  marked(instrument: InstrumentId, period: Period): Option<PerPiece>;
   /**
    * Currency D1, D3: the rate THIS period's spot session struck, which is the one the books are
    * about to be brought to. It is asked for separately from `rateInForce` because that answers with
    * the rate still in force — the one the period has been settling at — and the whole of the FX
    * revaluation is the difference between the two.
    */
-  rateAt(from: CurrencyCode, to: CurrencyCode, at: Period): Option<number>;
+  rateAt(from: CurrencyCode, to: CurrencyCode, at: Period): Option<Ratio>;
   readonly calendar: Calendar;
   readonly registry: Registry;
   readonly parties: Parties;
@@ -53,8 +69,8 @@ export interface RevalueDeps {
    */
   readonly contracts: {
     open_(): readonly Contract[];
-    mark(c: Contract, at: Period): number;
-    carrying(c: Contract, at: Period): number;
+    mark(c: Contract, at: Period): Cash;
+    carrying(c: Contract, at: Period): Cash;
   };
 }
 
@@ -94,9 +110,9 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       party: h.holder,
       period,
       cycle,
-      delta: mul(delta, toHolder, 'what it did in its holder’s money'),
+      delta: scale(delta, toHolder, 'what it did in its holder’s money'),
       cause: `revaluation of ${inst.id} in period ${period}`,
-      through: mul(through, toHolder, 'what it passed through in its holder’s money'),
+      through: scale(through, toHolder, 'what it passed through in its holder’s money'),
     });
     d.journal.record(
       period,
@@ -107,7 +123,7 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
         // Law 8: the money is part of both numbers, and they are in different ones. What the
         // account moved by is in the holder's; what a unit is carried at is a price and prices are
         // in the money the thing is priced in.
-        deltaPerMember: mul(delta, toHolder, 'what it did in its holder’s money'),
+        deltaPerMember: scale(delta, toHolder, 'what it did in its holder’s money'),
         mark: carried,
         markedIn: inst.ccy,
       },
@@ -137,11 +153,29 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
       // liability one party carries in its own money is the same liability the other side converts
       // from the instrument's, and the two conversions are different reads of the one rate.
       const toIssuer = intoOwnMoney(issuer, inst.ccy, period, d);
-      addTo(issuerMoves, issuer, -mul(mul(delta, toIssuer, 'in its issuer’s money'), weight, 'issuer revaluation'));
+      // XI-15, item 16: a holder's move is PER MEMBER and what the issuer books is the total, so
+      // it crosses by the cell's weight and by nothing else — `acrossMembers` refuses a weight
+      // that is not a count of people, which is the shape A-1 and A-39 are made of.
+      const moved = asPerMember<'money'>(
+        scale(delta, toIssuer, 'in its issuer’s money'),
+        'what one holder’s share moved by',
+      );
+      addTo(
+        issuerMoves,
+        issuer,
+        negated(acrossMembers(moved, weight, 'issuer revaluation'), 'the other side of it'),
+      );
       addTo(
         issuerThrough,
         issuer,
-        mul(mul(through, toIssuer, 'in its issuer’s money'), weight, 'what its liability passed through'),
+        acrossMembers(
+          asPerMember<'money'>(
+            scale(through, toIssuer, 'in its issuer’s money'),
+            'what one holder’s share passed through',
+          ),
+          weight,
+          'what its liability passed through',
+        ),
       );
     }
   }
@@ -183,9 +217,13 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
   for (const c of d.contracts.open_()) {
     const now = d.contracts.mark(c, period);
     const carried = d.contracts.carrying(c, period);
-    const delta = finite(now - carried, 'what the contract mark moved by');
+    const delta = minus(now, carried, 'what the contract mark moved by');
     if (delta === 0) continue;
-    const through = atLeast(Math.abs(now), Math.abs(delta), 'the dust of a move is charged at the larger magnitude it passed through');
+    const through = atLeast(
+      absolute(now, 'the mark'),
+      absolute(delta, 'the move'),
+      'the dust of a move is charged at the larger magnitude it passed through',
+    );
     for (const [party, sign] of [
       [c.a, 1],
       [c.b, -1],
@@ -195,9 +233,13 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
         party,
         period,
         cycle,
-        delta: mul(mul(delta, sign, 'to this side'), rate, 'in its own money'),
+        delta: scale(
+          sign === 1 ? delta : negated(delta, 'to this side'),
+          rate,
+          'in its own money',
+        ),
         cause: `revaluation of ${c.id} in period ${period}`,
-        through: mul(through, rate, 'what the re-marking passed through'),
+        through: scale(through, rate, 'what the re-marking passed through'),
       });
     }
     d.journal.record(
@@ -226,9 +268,9 @@ function revalueContracts(period: Period, cycle: Cycle, d: RevalueDeps): void {
  * SETTLED at. Where this period's session struck nothing, no rate changed and the one in force is
  * the answer — which is the same case `revalueForeign` skips.
  */
-function intoOwnMoney(party: PartyId, ccy: CurrencyCode, at: Period, d: RevalueDeps): number {
+function intoOwnMoney(party: PartyId, ccy: CurrencyCode, at: Period, d: RevalueDeps): Ratio {
   const home = d.registry.currencyOf(d.parties.get(party).region);
-  if (ccy === home) return 1;
+  if (ccy === home) return asRatio(1, 'a money is one of itself');
   const struck = d.rateAt(ccy, home, at);
   return struck.some ? struck.value : d.valuation.rateInForce(ccy, home, at);
 }
@@ -238,24 +280,26 @@ function intoOwnMoney(party: PartyId, ccy: CurrencyCode, at: Period, d: RevalueD
  * what a unit of it is carried at when it is done.
  */
 interface Moved {
-  readonly delta: number;
-  readonly through: number;
-  readonly carried: number;
+  readonly delta: Cash;
+  readonly through: Cash;
+  readonly carried: PerPiece;
 }
 
 /** Clearing D4: a position carried at the mark moves to this period's print, both ways. */
 function toTheMark(inst: Instrument, h: Holding, period: Period, d: RevalueDeps): Moved {
   const mark = d.valuation.markPerUnit(inst.id, period);
-  let delta = 0;
-  for (const lot of h.lots) {
-    const carrying = d.valuation.carryingPerUnit(inst.id, lot, period);
-    delta = finite(delta + mul(lot.qty, mark - carrying, 'revaluation'), 'revaluation');
-  }
+  const moves = h.lots.map((lot) =>
+    valueAt(
+      minus(mark, d.valuation.carryingPerUnit(inst.id, lot, period), 'what a unit moved by'),
+      lot.qty,
+      'revaluation',
+    ),
+  );
   return {
-    delta,
-    through: mul(
-      h.lots.reduce((t, l) => t + Math.abs(l.qty), 0),
-      Math.abs(mark),
+    delta: sum(moves).value,
+    through: valueAt(
+      absolute(mark, 'the mark'),
+      sum(h.lots.map((l) => absolute(l.qty, 'units held'))).value,
       'what the re-marking passed through',
     ),
     carried: mark,
@@ -275,17 +319,22 @@ function toWhatTheKindSays(
   const profile = d.registry.instrumentKind(inst.kind);
   const written = profile.carriedAt;
   const priced = d.marked(inst.id, period);
-  let delta = 0;
-  let through = 0;
-  let units = 0;
-  let value = 0;
+  const moves: Cash[] = [];
+  const passed: Cash[] = [];
+  const held: Qty[] = [];
+  const carrying: Cash[] = [];
   for (const lot of h.lots) {
-    units = finite(units + Math.abs(lot.qty), 'units re-marked');
-    const now = written === undefined ? none<number>() : written(inst, lot, priced, period, d.calendar);
+    held.push(absolute(lot.qty, 'units re-marked'));
+    const now =
+      written === undefined ? none<PerPiece>() : written(inst, lot, priced, period, d.calendar);
     const per = now.some ? now.value : lot.basisPerUnit;
-    value = finite(value + mul(lot.qty, per, 'what the position is carried at'), 'carrying');
+    carrying.push(valueAt(per, lot.qty, 'what the position is carried at'));
     if (!now.some) continue;
-    const one = mul(lot.qty, sub(now.value, lot.basisPerUnit, 'what the carrying moved by'), 'write-down');
+    const one = valueAt(
+      minus(now.value, lot.basisPerUnit, 'what the carrying moved by'),
+      lot.qty,
+      'write-down',
+    );
     // Goods E2.c: which way a lot may move is the KIND's rule, and this is the one place that
     // holds it. Inventory is written down and never up; a claim moves both ways, because a
     // provision unwinds when its holder stops expecting the loss (Banks Lending D2.a).
@@ -299,13 +348,23 @@ function toWhatTheKindSays(
     // The lot itself is what the book carries it at, so the re-measurement lands there and in
     // the equity account together: one fact, one writer, two reads that agree (Law 4).
     d.register.remark(h.holder, inst.id, lot.id, now.value);
-    delta = finite(delta + one, 'write-down');
-    through = finite(
-      through + Math.abs(mul(lot.qty, now.value, 'what the re-marking passed through')),
-      'what the re-marking passed through',
+    moves.push(one);
+    passed.push(
+      absolute(
+        valueAt(now.value, lot.qty, 'what the re-marking passed through'),
+        'what the re-marking passed through',
+      ),
     );
   }
-  return { delta, through, carried: units === 0 ? 0 : div(value, units, 'carried per unit') };
+  const units = sum(held).value;
+  return {
+    delta: sum(moves).value,
+    through: sum(passed).value,
+    carried:
+      units === 0
+        ? asPerPiece(0, 'nothing is held, so nothing is carried')
+        : pricedAt(sum(carrying).value, units, 'carried per unit'),
+  };
 }
 
 
@@ -339,12 +398,15 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
     if (now === was) continue;
     // What the equity account has already recognised, in the instrument's OWN money: the marks
     // below move that to this period's print, and this moves the money it is counted in.
-    let carried = 0;
-    for (const lot of h.lots) {
-      carried = carried + mul(lot.qty, d.valuation.carryingPerUnit(inst.id, lot, period), 'carried');
-    }
+    const carried = sum(
+      h.lots.map((lot) =>
+        valueAt(d.valuation.carryingPerUnit(inst.id, lot, period), lot.qty, 'carried'),
+      ),
+    ).value;
     if (carried === 0) continue;
-    const delta = mul(carried, sub(now, was, 'what the rate moved by'), 'what it did');
+    // Currency D2: THE POSITION TIMES WHAT THE RATE DID, and a rate is a pure number — which is
+    // what makes this a `scale` of the position rather than an addition of two moneys.
+    const delta = scale(carried, minus(now, was, 'what the rate moved by'), 'what it did');
     if (delta === 0) continue;
     const move = {
       party: h.holder,
@@ -353,7 +415,10 @@ function revalueForeign(period: Period, cycle: Cycle, d: RevalueDeps): void {
       delta,
       cause: `exchange rate on ${inst.id} in period ${period}`,
       // Law 7: it passed through the whole position in home money, not the change in it.
-      through: Math.abs(mul(carried, now, 'the position in its holder\u2019s money')),
+      through: absolute(
+        scale(carried, now, 'the position in its holder\u2019s money'),
+        'what it passed through',
+      ),
     };
     // A2.c: the one holder whose foreign position is not a position — the central bank OF the money
     // it books in, holding the other side of what it printed. It is asked of the registry, which

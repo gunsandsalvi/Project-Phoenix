@@ -16,6 +16,7 @@
  * has three weeks of index and a window longer than that is Missing rather than quietly shortened
  * (`IndexRead.periods` is what a reader measures a window against).
  */
+import type { Ratio } from '../../core/measure.js';
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { paramId, type CurrencyCode, type RegionId } from '../../core/ids.js';
 import { indexIsItsConstituents } from '../../audit/families/cross-market.js';
@@ -54,7 +55,7 @@ export function indexRules(
   regions: readonly RegionId[],
   currencies: readonly CurrencyCode[],
   from: Period,
-  base: number,
+  base: Ratio,
 ): readonly IndexDecl[] {
   const BASE = base;
   const out: IndexDecl[] = [];
@@ -88,7 +89,7 @@ export function sizeRules(
   statedIn: CurrencyCode,
   share: number,
   from: Period,
-  base: number,
+  base: Ratio,
 ): readonly IndexDecl[] {
   const out: IndexDecl[] = [];
   for (const region of regions) {
@@ -140,7 +141,10 @@ export function indices(
         id: INDEX_PARAMS.base,
         value: 100,
         unit: 'index level at the first period',
-        dimension: 'price',
+        // Item 16: A BASE IS A PURE NUMBER. It was declared in `price` and read as one, which is
+        // the mistake `Ratio` exists to catch: a level is not money for a unit of anything, and
+        // an index that could be added to a balance would be a claim rather than a measurement.
+        dimension: 'ratio',
         kind: 'resolution',
         owner: 'model',
         why: "Indices A4: what every index in this world starts at. A base is a UNIT and not a claim — doubling it doubles every level and changes nothing anybody does, which is exactly what makes it a resolution rather than a number to be justified. A hundred, because that is what a base is called everywhere and because a reader who sees 103 knows what it means without being told. Tested by invariance: declare it at 1000 and every ratio between two levels, every beta and every mandate boundary is the number it was.",
@@ -156,13 +160,13 @@ export function indices(
       },
     ],
     indices: (params) => [
-      ...indexRules(regions, currencies, asPeriod(0), params.price(INDEX_PARAMS.base)),
+      ...indexRules(regions, currencies, asPeriod(0), params.ratio(INDEX_PARAMS.base)),
       ...sizeRules(
         regions,
         statedIn,
         params.ratio(INDEX_PARAMS.largeCap),
         asPeriod(0),
-        params.price(INDEX_PARAMS.base),
+        params.ratio(INDEX_PARAMS.base),
       ),
     ],
     phases: [
@@ -205,13 +209,13 @@ function publish(
   statedIn: CurrencyCode,
 ): void {
   for (const decl of [
-    ...indexRules(regions, currencies, asPeriod(0), ctx.params.price(INDEX_PARAMS.base)),
+    ...indexRules(regions, currencies, asPeriod(0), ctx.params.ratio(INDEX_PARAMS.base)),
     ...sizeRules(
       regions,
       statedIn,
       ctx.params.ratio(INDEX_PARAMS.largeCap),
       asPeriod(0),
-      ctx.params.price(INDEX_PARAMS.base),
+      ctx.params.ratio(INDEX_PARAMS.base),
     ),
   ]) {
     const read = ctx.index(decl.id);

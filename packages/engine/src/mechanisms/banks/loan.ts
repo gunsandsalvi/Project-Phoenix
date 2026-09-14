@@ -13,6 +13,7 @@
  * lender of record, a borrower and its own terms. There is no book number anywhere; a bank's book
  * is the sum of the rows it holds, and that is a read.
  */
+import { asPerPiece } from '../../core/measure.js';
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
@@ -89,7 +90,7 @@ export const loanKind: InstrumentKindProfile = {
     const to = compareCivil(t.maturity, end) < 0 ? t.maturity : end;
     if (compareCivil(from, to) >= 0) return [];
     const out: DueAction[] = [];
-    const amountPerUnit = interestTo(t, from, to);
+    const amountPerUnit = asPerPiece(interestTo(t, from, to), 'the interest one unit earned');
     if (amountPerUnit > 0) out.push({ kind: 'coupon', date: to, amountPerUnit });
     // A bullet: the principal falls due once, on the day the terms say (A2).
     if (cal.periodOf(t.maturity) === period) out.push({ kind: 'maturity', date: t.maturity });
@@ -108,7 +109,9 @@ export const loanKind: InstrumentKindProfile = {
       if (compareCivil(from, to) >= 0) break;
       const coupon = interestTo(t, from, to);
       const last = compareCivil(to, t.maturity) === 0;
-      out.push({ date: to, perUnit: last ? coupon + 1 : coupon });
+      // Item 16: what ONE unit pays on that day, which is money per piece — the par it redeems at
+      // is one of them, and the coupon is the rest.
+      out.push({ date: to, perUnit: asPerPiece(last ? coupon + 1 : coupon, 'what a unit pays') });
       if (last) break;
       from = to;
     }

@@ -9,6 +9,7 @@
  * world is built, because parties are state, not data.
  */
 import { InvalidRegistry, Missing } from '../core/errors.js';
+import type { PerPiece } from '../core/measure.js';
 import { downTick, piecesPerUnit, toTick, toTickOf } from '../core/tick.js';
 import { currencyUnit } from '../core/ids.js';
 import type {
@@ -343,8 +344,9 @@ export class Registry {
    * price of 400 USD the tonne is four hundredths of a cent the gram, and value = units x price
    * comes out in cents without anybody converting anything downstream.
    */
-  priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: number): number {
-    return (perNamedUnit * this.subdivision(currencyUnit(ccy))) / this.subdivision(unit);
+  priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: number): PerPiece {
+    return ((perNamedUnit * this.subdivision(currencyUnit(ccy))) /
+      this.subdivision(unit)) as PerPiece;
   }
 
   /**
@@ -356,7 +358,7 @@ export class Registry {
    * is not nothing. Law 2's `tickShift` divides it, which is how the same world is declared with a
    * finer grid and its path shown not to turn on the number.
    */
-  tickFor(kind: InstrumentKindId, ccy: CurrencyCode): number {
+  tickFor(kind: InstrumentKindId, ccy: CurrencyCode): PerPiece {
     const k = this.instrumentKind(kind);
     const declared = k.priceTick;
     if (declared === undefined) {
@@ -371,7 +373,7 @@ export class Registry {
    * increment for the same reason everything else does: a level finer than the tick is not a level
    * anybody can hit.
    */
-  tickForDerivative(kind: DerivativeKindId, ccy: CurrencyCode): number {
+  tickForDerivative(kind: DerivativeKindId, ccy: CurrencyCode): PerPiece {
     const k = this.derivativeKind(kind);
     return this.priceOf(ccy, k.unit, k.priceTick / this.tickShift);
   }
@@ -384,7 +386,7 @@ export class Registry {
    * and a cost lands on the money's own grid at the moment it is paid (`Registry.cashFor`). Giving
    * it a quote tick would be inventing a market for a thing that has none.
    */
-  onQuoteGrid(kind: InstrumentKindId, ccy: CurrencyCode, price: number): number {
+  onQuoteGrid(kind: InstrumentKindId, ccy: CurrencyCode, price: PerPiece): PerPiece {
     return this.instrumentKind(kind).priceTick === undefined
       ? price
       : toTickOf(price, this.tickFor(kind, ccy));
@@ -395,7 +397,7 @@ export class Registry {
    * in (`CurrencyDecl.quoteTick`) — a pip. The base money's unit is what one of is being bought,
    * so the two subdivisions in the ratio are the two moneys' own.
    */
-  rateTickFor(base: CurrencyCode, quote: CurrencyCode): number {
+  rateTickFor(base: CurrencyCode, quote: CurrencyCode): PerPiece {
     return this.priceOf(
       quote,
       currencyUnit(base),

@@ -3,6 +3,7 @@
  *
  * @spec Insurers A1 Insurers A2.a Insurers A3 Insurers A4.b Insurers B1 Insurers B2 Insurers B2.a Insurers B2.b Insurers D1 Insurers D2 Insurers E1 XI-3 Law 2 Law 3 Law 6
  */
+import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   INSURANCE,
@@ -44,8 +45,8 @@ describe('the liability is a SCHEDULE, which is the whole clause (B1, B2.b)', ()
 describe('falling rates raise the liability (B2, B2.a, D2)', () => {
   it('is arithmetic on the schedule and the discount, not a rule anybody wrote', () => {
     const schedule = [
-      { date: { y: 2030, m: 1, d: 1 }, perUnit: 100 },
-      { date: { y: 2040, m: 1, d: 1 }, perUnit: 100 },
+      { date: { y: 2030, m: 1, d: 1 }, perUnit: asPerPiece(100, 'what a unit pays') },
+      { date: { y: 2040, m: 1, d: 1 }, perUnit: asPerPiece(100, 'what a unit pays') },
     ];
     const dear = presentValueOf(schedule, (d) => (d.y === 2030 ? 0.9 : 0.5));
     const cheap = presentValueOf(schedule, (d) => (d.y === 2030 ? 0.95 : 0.7));
@@ -104,7 +105,7 @@ describe('what it charges is its own experience and its own capital (A4.b)', () 
   });
 
   it('wants long assets against long liabilities, which is a read of its own book (C2.a)', () => {
-    const long = [{ date: { y: 2045, m: 1, d: 1 }, perUnit: 1 }];
+    const long = [{ date: { y: 2045, m: 1, d: 1 }, perUnit: asPerPiece(1, 'what a unit pays') }];
     expect(wantsDuration(long, { y: 2030, m: 1, d: 1 })).toBe(true);
     expect(wantsDuration(long, { y: 2050, m: 1, d: 1 })).toBe(false);
   });

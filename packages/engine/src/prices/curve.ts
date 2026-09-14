@@ -25,7 +25,16 @@ import {
   type InstrumentId,
   type PartyId,
 } from '../core/ids.js';
-import { add, div, finite, invertDecreasing, mul, sub, sum } from '../core/num.js';
+import {
+  asRatio,
+  minus,
+  over,
+  type PerPiece,
+  plus,
+  type Ratio,
+  scale,
+} from '../core/measure.js';
+import { add, div, finite, invertDecreasing, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import { issuedBy, type Instrument } from '../register/instruments.js';
 import type { CashFlow } from '../registry/kinds.js';
@@ -57,12 +66,12 @@ export interface CurvePoint {
   readonly instrument: InstrumentId;
   readonly tenorYears: number;
   /** Derived from the dirty price and the line's own cash flows (D2). */
-  readonly yield: number;
+  readonly yield: Ratio;
   readonly provenance: 'traded' | 'stale';
 }
 
 export interface CurveReading {
-  readonly yield: Option<number>;
+  readonly yield: Option<Ratio>;
   readonly provenance: PointProvenance;
 }
 
@@ -73,7 +82,7 @@ export interface CurveRead {
   /** The yield at a tenor, with how it was arrived at. */
   at(tenorYears: number): CurveReading;
   /** The price per unit a set of cash flows has at this curve's yield for its own tenor. */
-  priceOf(flows: readonly CashFlow[], from: Civil): Option<number>;
+  priceOf(flows: readonly CashFlow[], from: Civil): Option<PerPiece>;
 }
 
 export interface CurveInputs {
@@ -82,7 +91,7 @@ export interface CurveInputs {
   /** Live instruments, with the profile reads the curve needs. */
   instruments(): readonly Instrument[];
   cashFlows(i: Instrument, after: Civil): readonly CashFlow[];
-  accrued(i: Instrument, on: Civil): number;
+  accrued(i: Instrument, on: Civil): PerPiece;
 }
 
 /**
@@ -91,11 +100,11 @@ export interface CurveInputs {
  */
 export function yieldOf(
   flows: readonly CashFlow[],
-  price: number,
+  price: PerPiece,
   from: Civil,
   dc: DayCount,
   what: string,
-): Option<number> {
+): Option<Ratio> {
   const pv = (y: number): number => {
     let total = 0;
     for (const f of flows) {
@@ -114,20 +123,26 @@ export function yieldOf(
     return total;
   };
   const y = invertDecreasing(pv, finite(price, what), what);
-  return y === undefined ? none<number>() : some(finite(y, what));
+  // Item 16: a yield is DERIVED FROM the price and is a pure number (Law 3) — which is what stops
+  // it being read as a level, and why `priceAt` is the only way back to one.
+  return y === undefined ? none<Ratio>() : some(asRatio(y, what));
 }
 
 /** The present value of cash flows at one yield: the inverse of yieldOf, used to quote a price. */
 export function priceAt(
   flows: readonly CashFlow[],
-  y: number,
+  y: Ratio,
   from: Civil,
   dc: DayCount,
   what: string,
-): number {
+): PerPiece {
   return sum(
     flows.map((f) =>
-      div(f.perUnit, Math.pow(add(1, y, 'discount base'), yearFraction(dc, from, f.date)), what),
+      over(
+        f.perUnit,
+        asRatio(Math.pow(add(1, y, 'discount base'), yearFraction(dc, from, f.date)), 'discount'),
+        what,
+      ),
     ),
   ).value;
 }
@@ -150,7 +165,7 @@ export function readCurve(
     if (last === undefined) continue;
     const tenorYears = yearFraction(family.dayCount, on, last.date);
     if (tenorYears <= 0) continue;
-    const dirty = add(print.value.price, inputs.accrued(i, on), 'dirty price');
+    const dirty = plus(print.value.price, inputs.accrued(i, on), 'dirty price');
     // D3: A CURVE IS THE LINES THAT HAVE A YIELD. A print for which no yield exists is not a point
     // on one — a bill printed above what it redeems for, days from redeeming, is a price with no
     // rate behind it — and leaving it out is the honest read rather than a curve built on a number
@@ -206,9 +221,11 @@ function readAt(points: readonly CurvePoint[], tenorYears: number): CurveReading
   }
   const span = sub(hi.tenorYears, lo.tenorYears, 'tenor span');
   if (span === 0) return { yield: some(lo.yield), provenance: lo.provenance };
-  const w = div(sub(tenorYears, lo.tenorYears, 'tenor offset'), span, 'weight');
+  const w = asRatio(div(sub(tenorYears, lo.tenorYears, 'tenor offset'), span, 'weight'), 'weight');
   return {
-    yield: some(add(lo.yield, mul(w, sub(hi.yield, lo.yield, 'yield span'), 'lerp'), 'yield')),
+    yield: some(
+      plus(lo.yield, scale(minus(hi.yield, lo.yield, 'yield span'), w, 'lerp'), 'yield'),
+    ),
     provenance: 'interpolated',
   };
 }

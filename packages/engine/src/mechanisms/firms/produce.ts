@@ -23,7 +23,9 @@
  * below its rate does to unit cost. Either way the cost is in exactly one place (F5.b).
  */
 import type { InstrumentId, PartyId, RegionId } from '../../core/ids.js';
+import { asCash, type Cash } from '../../core/measure.js';
 import { div, finite, material, mul, sub, sum } from '../../core/num.js';
+import type { Qty } from '../../core/tick.js';
 import { asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -76,9 +78,9 @@ function productiveHours(ctx: MechanismContext, firm: PartyId): number {
 }
 
 /** E1, E5: what the units this draw takes cost the firm, read off the lots they come out of. */
-function heldCost(ctx: MechanismContext, firm: PartyId, instrument: InstrumentId, qty: number): number {
+function heldCost(ctx: MechanismContext, firm: PartyId, instrument: InstrumentId, qty: Qty): Cash {
   const h = ctx.register.holding(firm, instrument);
-  return h.some ? costOfDraw(h.value.lots, qty) : 0;
+  return h.some ? costOfDraw(h.value.lots, qty) : asCash(0, 'nothing held cost nothing');
 }
 
 /** The whole line for one firm, in one period: what it starts, and what comes off it. */

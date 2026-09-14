@@ -19,6 +19,7 @@
  * past what it will have out to that name (F3). If nobody bids, the raise FAILS and the bank is
  * exactly where it was, which is C2.b: nobody has to buy.
  */
+import { asPerPiece } from '../../core/measure.js';
 import { addDays, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
@@ -87,7 +88,7 @@ function dueOn(
   const t = i.terms;
   if (cal.periodOf(t.maturity) !== period) return [];
   const out: DueAction[] = [];
-  const amountPerUnit = interestTo(t, t.drawn, t.maturity);
+  const amountPerUnit = asPerPiece(interestTo(t, t.drawn, t.maturity), 'what one unit earned');
   if (amountPerUnit > 0) out.push({ kind: 'coupon', date: t.maturity, amountPerUnit });
   out.push({ kind: 'maturity', date: t.maturity });
   return out;
@@ -97,7 +98,12 @@ function flows(i: Instrument, after: Civil): readonly CashFlow[] {
   if (!isSub(i.terms)) return [];
   const t = i.terms;
   if (compareCivil(t.maturity, after) <= 0) return [];
-  return [{ date: t.maturity, perUnit: add(1, interestTo(t, t.drawn, t.maturity), 'at maturity') }];
+  return [
+    {
+      date: t.maturity,
+      perUnit: asPerPiece(add(1, interestTo(t, t.drawn, t.maturity), 'at maturity'), 'a unit pays'),
+    },
+  ];
 }
 
 export const subordinatedKind: InstrumentKindProfile = {

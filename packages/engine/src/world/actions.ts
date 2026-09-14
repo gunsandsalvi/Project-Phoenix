@@ -12,12 +12,12 @@
  *
  * @spec Register E1 Register E1.a Register E2 Register B4 Register E5 Bond N10 Bond N12 Bond N13 Money C1.c Money E1 Money E1.a Money G3.a Banks Lending E1 Banks Lending E2 Firm Birth C1 Firm Birth C3 XI-1 Law 15
  */
+import { asTotal, eachMember, type PerPiece, valueAt } from '../core/measure.js';
 import { issuedBy, issuerOf } from '../register/instruments.js';
 import { negQty, type Qty } from '../core/tick.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
 import { currencyUnit, type CurrencyCode, type PartyId } from '../core/ids.js';
-import { div, mul } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Journal } from '../journal/journal.js';
 import type { CellSide, Failed, InstructionDraft, Leg } from '../ledger/instruction.js';
@@ -61,7 +61,7 @@ export function runCorporateActions(period: Period, cycle: Cycle, d: ActionDeps)
 
 function payToHolders(
   i: Instrument,
-  perUnit: number,
+  perUnit: PerPiece,
   reason: string,
   period: Period,
   cycle: Cycle,
@@ -76,7 +76,12 @@ function payToHolders(
     // a fraction of a tick more often than not, and the payment is the tick below it — for each
     // member of a cell separately, because each of them is a real holder with a real account
     // (XI-15). What the fraction would have been is not owed, because it is not money.
-    const share = shareFor(d.registry, holder, currencyUnit(i.ccy), mul(perMemberUnits, perUnit, 'coupon cash'));
+    const share = shareFor(
+      d.registry,
+      holder,
+      currencyUnit(i.ccy),
+      valueAt(perUnit, perMemberUnits, 'coupon cash'),
+    );
     /**
      * XI-15, Law 8 (13d.1): AND THE PAYER MAY BE A CELL TOO. A household with a mortgage is a
      * million households each owing its own share, so what leaves is struck per member of the
@@ -148,7 +153,9 @@ function cellPays(
     d.registry,
     payer,
     currencyUnit(i.ccy),
-    div(gross, weightOf(payer), 'what each of them owes'),
+    // XI-15, item 16: the one door between a total and a per-member number, and it refuses a cell
+    // of nobody where `div` answered `Infinity` and put it on a leg.
+    eachMember(asTotal(gross, 'what the payer owes'), weightOf(payer), 'what each of them owes'),
   );
   return { total: out.total, perMemberOut: out.perMember, perMemberIn: undefined };
 }

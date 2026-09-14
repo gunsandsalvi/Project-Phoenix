@@ -13,15 +13,21 @@
 import type { Cycle, Period } from '../calendar/calendar.js';
 import { forbid, impossible } from '../core/assert.js';
 import { Missing } from '../core/errors.js';
+import {
+  asPerPiece,
+  asRatio,
+  type Cash,
+  over,
+  type PerPiece,
+  valueAt,
+} from '../core/measure.js';
 import type { InstructionId, InstrumentId, LienId, LotId, PartyId } from '../core/ids.js';
 import {
   atMost,
   finite,
   moved,
-  mul,
   opened,
   openedFrom,
-  sub,
   sum,
   type Running,
   type Sum,
@@ -35,8 +41,14 @@ export interface Lot {
   readonly id: LotId;
   /** Law 8: units, per member for a cell — a count of the unit's own smallest piece. */
   readonly qty: Qty;
-  /** What those units cost, per unit, in the instrument's currency (Register D4). */
-  readonly basisPerUnit: number;
+  /**
+   * What those units cost, per unit, in the instrument's currency (Register D4).
+   *
+   * Item 16: IT IS A PRICE AND THE TYPE SAYS SO, which is what makes `valueAt(basis, qty)` the only
+   * way to turn a lot into money — a basis cannot be added to a balance, and a balance cannot be
+   * put where a basis goes.
+   */
+  readonly basisPerUnit: PerPiece;
   readonly acquired: Period;
 }
 
@@ -61,7 +73,7 @@ export interface Holding {
 export interface DrawnLot {
   readonly lot: LotId;
   readonly qty: Qty;
-  readonly basisPerUnit: number;
+  readonly basisPerUnit: PerPiece;
   readonly acquired: Period;
 }
 
@@ -413,13 +425,14 @@ export class Register {
       instrument,
     });
     const pieces = this.onTheGrid(qty, `what ${holder} is credited of ${instrument}`);
-    finite(basisPerUnit, 'basis');
     this.parties.get(holder);
     const h = this.mutable(holder, instrument);
     const lot: Lot = Object.freeze({
       id: this.nextLot as LotId,
       qty: pieces,
-      basisPerUnit,
+      // Item 16: the door. What the caller paid per unit enters the register as a PRICE here, and
+      // `finite` is inside it — the check this line used to make on its own.
+      basisPerUnit: asPerPiece(basisPerUnit, 'basis'),
       acquired: period,
     });
     this.nextLot += 1;
@@ -447,7 +460,7 @@ export class Register {
     if (current === undefined) {
       throw new Missing('Register D3', `${holder} holds no lot ${lot} of ${instrument}`);
     }
-    h.lots[i] = Object.freeze({ ...current, basisPerUnit: finite(basisPerUnit, 'the new basis') });
+    h.lots[i] = Object.freeze({ ...current, basisPerUnit: asPerPiece(basisPerUnit, 'the new basis') });
   }
 
   /**
@@ -564,7 +577,8 @@ export class Register {
     const lot: Lot = Object.freeze({
       id: current === undefined ? (this.nextLot as LotId) : current.id,
       qty: asQty(after, `balance of ${holder}/${instrument}`),
-      basisPerUnit: 1,
+      // Money D2: one of itself, which is the only hard-coded price there is.
+      basisPerUnit: asPerPiece(1, 'money is worth one of itself'),
       acquired,
     });
     if (current === undefined) this.nextLot += 1;
@@ -656,7 +670,11 @@ export class Register {
               finite(l.qty * ratio, `${holder}'s units of ${instrument}`),
               `${holder}'s units of ${instrument} after a ${ratio}-for-one split`,
             ),
-            basisPerUnit: finite(l.basisPerUnit / ratio, `what a unit of ${instrument} cost`),
+            basisPerUnit: over(
+              l.basisPerUnit,
+              asRatio(ratio, 'the split ratio'),
+              `what a unit of ${instrument} cost`,
+            ),
           }),
         ),
         liens: h.liens.map((l) =>
@@ -940,14 +958,14 @@ export function registerReads(store: Register): RegisterReads {
  * first in, first out. It is a read of the lots themselves, which are where the cost lives (E1);
  * nothing here stores or re-derives a value beside them (Law 19).
  */
-export function costOfDraw(lots: readonly Lot[], qty: number): number {
-  const terms: number[] = [];
+export function costOfDraw(lots: readonly Lot[], qty: Qty): Cash {
+  const terms: Cash[] = [];
   let left = qty;
   for (const lot of lots) {
     if (left <= 0) break;
     const take = atMost(lot.qty, left, 'this lot has no more in it than it has');
-    terms.push(mul(take, lot.basisPerUnit, 'cost of the units drawn'));
-    left = sub(left, take, 'units left to draw');
+    terms.push(valueAt(lot.basisPerUnit, take, 'cost of the units drawn'));
+    left = subQty(left, take, 'units left to draw');
   }
   return sum(terms).value;
 }
@@ -958,6 +976,6 @@ export function costOfDraw(lots: readonly Lot[], qty: number): number {
  * one lead time per good the oldest lots are exactly the ones due, which is the order they are
  * drawn in anyway (E5).
  */
-export function dueFromLine(lots: readonly Lot[], startedBy: number): number {
+export function dueFromLine(lots: readonly Lot[], startedBy: number): Qty {
   return sum(lots.filter((l) => l.acquired <= startedBy).map((l) => l.qty)).value;
 }

@@ -20,6 +20,7 @@
  * sum over accounts that moved hundreds of times, and a tolerance that saw only the sum reports a
  * violation the moment the world starts paying itself.
  */
+import { negated } from '../../core/measure.js';
 import { combineDust, sum, withinDust, type Sum } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
@@ -130,7 +131,7 @@ function sheetOf(view: BalanceReads, party: PartyId, inside: ReadonlySet<string>
       view.period,
     );
     if (worth >= 0) assetTerms.push(worth);
-    else contractLiabilities.push(-worth);
+    else contractLiabilities.push(negated(worth, 'what this contract owes'));
   }
   /**
    * Law 18: WHAT THIS PARTY ISSUED, asked of the index that already answers it. This used to walk

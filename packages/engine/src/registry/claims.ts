@@ -14,6 +14,7 @@
  * What stays with `sovereign-instruments` is the MECHANISM — the two kind profiles, what each pays
  * and when, and the module that registers them.
  */
+import { asPerPiece, asRatio, type PerPiece, plus, scale } from '../core/measure.js';
 import { instrumentKindId, unitId } from '../core/ids.js';
 import { compareCivil, type Civil } from '../calendar/civil.js';
 import { InvalidRegistry } from '../core/errors.js';
@@ -21,7 +22,7 @@ import type { DayCount } from '../calendar/daycount.js';
 import type { Periodicity, Rate } from '../core/rate.js';
 import type { Terms } from '../register/instruments.js';
 import type { CashFlow, DueAction } from './kinds.js';
-import { add, mul } from '../core/num.js';
+import { mul } from '../core/num.js';
 import { yearFraction } from '../calendar/daycount.js';
 
 export const SOVEREIGN_BOND = instrumentKindId('sovereign.bond');
@@ -89,7 +90,7 @@ export interface ScheduleCalendar {
 /** One dated coupon of a line: when it falls, what it comes to per unit, and the period it is in. */
 interface Coupon {
   readonly date: Civil;
-  readonly perUnit: number;
+  readonly perUnit: PerPiece;
   readonly period: number;
 }
 
@@ -131,7 +132,11 @@ function scheduleOf(t: CouponSchedule, cal: ScheduleCalendar): readonly Coupon[]
     // statement of it, which both of the reads below now use.
     out.push({
       date,
-      perUnit: mul(t.coupon.amount, yearFraction(t.dayCount, prev, date), 'coupon'),
+      perUnit: scale(
+        asPerPiece(t.coupon.amount, 'the coupon a unit carries'),
+        asRatio(yearFraction(t.dayCount, prev, date), 'the accrual period'),
+        'coupon',
+      ),
       period: cal.periodOf(date),
     });
     prev = date;
@@ -185,7 +190,12 @@ export function cashFlowsOf(
   for (const c of scheduleOf(t, cal)) {
     if (compareCivil(c.date, after) <= 0) continue;
     const isMaturity = compareCivil(c.date, t.maturity) === 0;
-    out.push({ date: c.date, perUnit: isMaturity ? add(c.perUnit, 1, 'final flow') : c.perUnit });
+    out.push({
+      date: c.date,
+      perUnit: isMaturity
+        ? plus(c.perUnit, asPerPiece(1, 'the par it redeems at'), 'final flow')
+        : c.perUnit,
+    });
   }
   return out;
 }

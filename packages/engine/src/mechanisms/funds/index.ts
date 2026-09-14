@@ -43,6 +43,7 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
+import { type Cash, pricedAt, valueAt } from '../../core/measure.js';
 import {
   add,
   addTo,
@@ -56,7 +57,7 @@ import {
   withinDust,
   zeroIfNone,
 } from '../../core/num.js';
-import { asQty, downTick, subQty, upTick, type Qty } from '../../core/tick.js';
+import { asQty, downTick, NO_QTY, scaleQty, subQty, upTick, type Qty } from '../../core/tick.js';
 
 /** Law 8: one piece — the smallest step there is, and the only literal a count of them can have. */
 const ONE_PIECE = asQty(1);
@@ -1356,7 +1357,7 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
   // it to be out. Taking first and issuing against what came left the fund holding more than its
   // shares claimed, and a fund holding more than its shares claim HAS EQUITY: the accounts family
   // said so at period zero, `etf.us has equity of 600`, which is somebody's money mislaid.
-  const contributions: number[] = [];
+  const contributions: Cash[] = [];
   for (const [line, perShare] of Object.entries(e.basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
@@ -1370,14 +1371,14 @@ function seedEtf(ctx: SeedContext, e: EtfDecl): void {
     );
     if (units <= 0) return;
     ctx.register.credit(e.fund as PartyId, id, units, opening.value.price, ctx.period);
-    contributions.push(mul(units, opening.value.price, 'what this line put in'));
+    contributions.push(valueAt(opening.value.price, units, 'what this line put in'));
   }
   // Law 19, Fund Shares A3: WHAT ONE SHARE IS A CLAIM ON IS READ OFF THE BASKET THAT ARRIVED, never
   // off the one that was asked for. A holder gives up whole pieces per member, so a little less of
   // a line comes in — and a share issued at what a whole basket would have been worth is a claim on
   // more than the fund has: its holders carry it at that basis, the fund owes them that, and the
   // difference is equity a fund may not have (measured at -15,599,400 before this read).
-  const perShare = div(sum(contributions).value, launched, 'what one share is a claim on');
+  const perShare = pricedAt(sum(contributions).value, launched, 'what one share is a claim on');
   if (perShare <= 0) return;
   for (const [at, [holder]] of holders.entries()) {
     const mine = taken[at];
@@ -1421,10 +1422,10 @@ function outOfTheFloat(
   id: InstrumentId,
   wanted: number,
   fund: PartyId,
-): number {
+): Qty {
   const outstanding = ctx.instruments.get(id).issued;
-  if (outstanding <= 0 || wanted <= 0) return 0;
-  const taken: number[] = [];
+  if (outstanding <= 0 || wanted <= 0) return NO_QTY;
+  const taken: Qty[] = [];
   for (const holder of ctx.register.holdersOf(id)) {
     if (holder === fund) continue;
     const weight = weightOf(ctx.parties.get(holder));
@@ -1434,7 +1435,9 @@ function outOfTheFloat(
     );
     if (perMember <= 0) continue;
     ctx.register.debit(holder, id, perMember);
-    taken.push(mul(perMember, weight, 'units this holder gave up'));
+    // XI-15, item 16: a count PER MEMBER times the cell's weight, through the one door that says
+    // so — it refuses a fractional weight, and a total cannot be mistaken for a per-member count.
+    taken.push(scaleQty(perMember, weight, 'units this holder gave up'));
   }
   return sum(taken).value;
 }

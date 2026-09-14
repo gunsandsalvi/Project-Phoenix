@@ -25,9 +25,15 @@ export function finite(x: number, what: string): number {
   return x === 0 ? 0 : x;
 }
 
-/** A sum with the arithmetic dust it is entitled to (Law 7). */
-export interface Sum {
-  readonly value: number;
+/**
+ * A sum with the arithmetic dust it is entitled to (Law 7).
+ *
+ * Item 16: IT CARRIES ITS TERMS' DIMENSION. Adding a list of moneys gives a money and adding a list
+ * of prices gives a price, so a total does not lose what it counts on the way out of `sum` — which
+ * is where most of the engine's totals are made. A list of plain numbers still gives a plain one.
+ */
+export interface Sum<T extends number = number> {
+  readonly value: T;
   /** The tolerance any comparison involving this sum may use: terms × ε × Σ|terms|. */
   readonly dust: number;
   readonly terms: number;
@@ -41,7 +47,7 @@ export const ZERO_SUM: Sum = Object.freeze({ value: 0, dust: 0, terms: 0, magnit
  * Neumaier compensated summation. The returned dust is the specification's bound,
  * (number of terms) × ε × (sum of absolute magnitudes), not the (smaller) compensated error.
  */
-export function sum(terms: Iterable<number>): Sum {
+export function sum<T extends number = number>(terms: Iterable<T>): Sum<T> {
   let s = 0;
   let c = 0;
   let mag = 0;
@@ -55,7 +61,7 @@ export function sum(terms: Iterable<number>): Sum {
     else c += t - u + s;
     s = u;
   }
-  const value = finite(s + c, 'sum');
+  const value = finite(s + c, 'sum') as T;
   return { value, dust: n * EPS * mag, terms: n, magnitude: mag };
 }
 
@@ -268,8 +274,8 @@ export function largest(values: readonly number[], what: string): number {
  * (Register). This is the one place absence becomes zero, and only for quantities, never for a
  * value, a price or a rate (Appendix A: a missing number is missing).
  */
-export function zeroIfNone(q: number | undefined): number {
-  return q === undefined ? 0 : finite(q, 'quantity');
+export function zeroIfNone<T extends number = number>(q: T | undefined): T {
+  return q === undefined ? (0 as T) : (finite(q, 'quantity') as T);
 }
 
 /**

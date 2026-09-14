@@ -25,6 +25,7 @@ import type { Instrument, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { Option } from '../core/option.js';
+import type { PerPiece } from '../core/measure.js';
 import type { Namer } from './naming.js';
 
 /** Named individually or represented as cells with a weight (XI-15). */
@@ -80,13 +81,18 @@ export interface WorthReads {
 
 export interface CashFlow {
   readonly date: Civil;
-  /** Per unit of the instrument, in its currency. */
-  readonly perUnit: number;
+  /**
+   * Per unit of the instrument, in its currency.
+   *
+   * Item 16: A PRICE, because that is what money per piece is — which is why discounting a schedule
+   * gives a price back and never a balance, and why a coupon cannot be added to one.
+   */
+  readonly perUnit: PerPiece;
 }
 
 /** What an instrument's terms say falls due in a period (Register E1, E2). */
 export type DueAction =
-  | { readonly kind: 'coupon'; readonly date: Civil; readonly amountPerUnit: number }
+  | { readonly kind: 'coupon'; readonly date: Civil; readonly amountPerUnit: PerPiece }
   | { readonly kind: 'maturity'; readonly date: Civil };
 
 /**
@@ -225,11 +231,11 @@ export interface InstrumentKindProfile {
    */
   readonly carriedAt?: (
     i: Instrument,
-    lot: { readonly qty: number; readonly basisPerUnit: number; readonly acquired: Period },
-    marked: Option<number>,
+    lot: { readonly qty: number; readonly basisPerUnit: PerPiece; readonly acquired: Period },
+    marked: Option<PerPiece>,
     at: Period,
     calendar: Calendar,
-  ) => Option<number>;
+  ) => Option<PerPiece>;
   /**
    * Goods E2.c: whether this kind may be carried above cost. A dealer's book marks both ways; an
    * ordinary holder's inventory does not.

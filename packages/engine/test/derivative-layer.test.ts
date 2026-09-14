@@ -37,6 +37,7 @@ import {pairOf, BANK,
   type SeedContext,
   type SystemModule,
   type World,} from '../src/index.js';
+import { minus, plus } from '../src/core/measure.js';
 import { runWaterfall } from '../src/index.js';
 import { mergeModules, rigSpec, withDependencies } from './rig.js';
 import {
@@ -223,7 +224,9 @@ function book(opts: {
           if (!last.some) return [];
           const tick = view.registry.tickFor(view.instruments.get(m.instrument).kind, m.ccy);
           const up = view.period % 2 === 0;
-          const level = last.value.price + (up ? tick : -tick);
+          const level = up
+            ? plus(last.value.price, tick, 'one tick up')
+            : minus(last.value.price, tick, 'one tick down');
           if (level <= 0) return [];
           const buyer = up ? MOVERS[0] : MOVERS[1];
           const side = view.self.id === buyer ? 'buy' : 'sell';

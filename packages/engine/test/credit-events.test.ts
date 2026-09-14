@@ -7,6 +7,7 @@
  * the kernel wrote off an instrument's own definition, and the module declares no number at all —
  * no probability of default, no loss given default, no recovery rate. That absence is the clause.
  */
+import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { asQty } from '../src/core/tick.js';
 import {
@@ -320,7 +321,15 @@ function acceleratingKind(): InstrumentKindProfile {
     displayName: (i) => String(i.id),
     // A coupon this issuer cannot possibly pay, on the one line only.
     due: (i, p, calendar) =>
-      i.id === LINE_A ? [{ kind: 'coupon', date: calendar.startOf(p), amountPerUnit: phx(1_000_000) }] : [],
+      i.id === LINE_A
+        ? [
+            {
+              kind: 'coupon',
+              date: calendar.startOf(p),
+              amountPerUnit: asPerPiece(phx(1_000_000), 'a coupon it cannot pay'),
+            },
+          ]
+        : [],
     accrued: () => 0,
     cashFlows: () => [],
   };

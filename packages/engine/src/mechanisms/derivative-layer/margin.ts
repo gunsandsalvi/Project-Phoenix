@@ -17,6 +17,7 @@
  * a party that cannot pay it fails the instruction and is in Money E1's state — never a borrowing
  * that appears from nowhere, which is the third of the three ways XI-2's channel is silently closed.
  */
+import { absolute } from '../../core/measure.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { instrumentId } from '../../core/ids.js';
 import {
@@ -76,7 +77,7 @@ export function requirement(
     }),
   );
   const net = sum(rows.map((c) => ctx.contracts.valueTo(c, poster, ctx.period)));
-  const owing = net.value < 0 ? -net.value : 0;
+  const owing = net.value < 0 ? absolute(net.value, 'what it is down by') : 0;
   return ctx.registry.cashFor(ccy, add(initial.value, owing, 'what it must have posted'));
 }
 

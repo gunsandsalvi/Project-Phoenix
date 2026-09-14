@@ -11,6 +11,7 @@
  * - SeedContext: what a seed module may do at period zero, which is the only time endowments are
  *   written directly (Seed A3: a stock the flows then act on).
  */
+import type { Cash } from '../core/measure.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { Periodicity } from '../core/rate.js';
 import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
@@ -498,11 +499,11 @@ export interface OwnContracts {
 /** What a phase may read of the contract store: everything public, and no writer (Law 4). */
 export interface ContractsRead extends ContractReadsFacade {
   /** D8: what a row is worth to its `a` side at a period; `b`'s is the negation (A3). */
-  mark(contract: Contract, at: Period): number;
+  mark(contract: Contract, at: Period): Cash;
   /** D1: to a named party, signed by the side it is on. */
-  valueTo(contract: Contract, party: PartyId, at: Period): number;
+  valueTo(contract: Contract, party: PartyId, at: Period): Cash;
   /** Clearing D4: what the two equity accounts have recognised, to `a`. */
-  carrying(contract: Contract, at: Period): number;
+  carrying(contract: Contract, at: Period): Cash;
   /** D1 (layer): what the kind says must be posted against this row, or none when it cannot say. */
   initialMargin(contract: Contract, at: Period): Option<number>;
   /**

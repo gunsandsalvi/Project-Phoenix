@@ -204,3 +204,55 @@ export const asPerMember = <D extends string>(x: number, what: string): PerMembe
 
 export const asTotal = <D extends string>(x: number, what: string): Total<D> =>
   finite(x, what) as Total<D>;
+
+/**
+ * WHAT THE KERNEL CAN CHECK AND WHAT IT CANNOT, said out loud rather than implied by an alias.
+ *
+ * A currency in this world is DRAWN (Seed B1.a) and an instrument's unit is registry data, so
+ * neither is a literal the compiler ever sees: `C` and `U` are `string` in every kernel signature
+ * and two currencies are one type to it. What the kernel therefore checks is the DIMENSION — money
+ * is not an amount, an amount is not a price, a price is not a ratio, and per-member is not a total
+ * — and that is what makes A-65, A-39, A-1, A-18, A-44 and A-58 unwriteable. Cross-currency
+ * addition (A-23 and the four beside it) stays a RUNTIME refusal at the leg, which is where the
+ * currency is actually known, and becomes a compile error only where a module names its money as a
+ * literal. The generics are still worth carrying: a kernel function generic in `C` cannot reach its
+ * return currency except through the rate, whatever a caller instantiates it at.
+ */
+export type Cash = Money<string>;
+
+/**
+ * Law 8: MONEY PER PIECE, which is what every price in this engine is. `Qty` is `Amount<'piece'>`
+ * (`core/tick.ts`) because a count of pieces on the tick grid is exactly what an amount is here —
+ * one representation of one thing (Law 4) — so `valueAt(price, qty)` takes the register's own
+ * quantity with nothing in between.
+ */
+export type PerPiece = Price<string, 'piece'>;
+
+/** The doors for the two above, so a kernel site does not have to spell the parameters out. */
+export const asCash = (x: number, what: string): Cash => finite(x, what) as Cash;
+
+export const asPerPiece = (x: number, what: string): PerPiece => finite(x, what) as PerPiece;
+
+/**
+ * Law 8: A DIMENSION DIVIDED BY A PURE NUMBER IS THAT DIMENSION — `scale` read the other way, and
+ * it is here because the inverse is a rounding waiting to happen: `scale(x, asRatio(1 / n))` says
+ * the same thing through a reciprocal nobody needed to compute. A split restating a price, a total
+ * shared out, a cost spread over a run: each is one of these.
+ */
+export function over<D extends string>(a: Measure<D>, by: Ratio, what: string): Measure<D> {
+  const den = finite(by, what);
+  if (den === 0) {
+    throw new RangeError(`${what}: divided into nothing`);
+  }
+  return (finite(a, what) / den) as Measure<D>;
+}
+
+/** Law 8: HOW BIG IT IS, which is the same dimension as the thing. A magnitude is not a ratio. */
+export function absolute<D extends string>(a: Measure<D>, what: string): Measure<D> {
+  return Math.abs(finite(a, what)) as Measure<D>;
+}
+
+/** Law 5: the other side of it — what is owed rather than held. A direction, not a new dimension. */
+export function negated<D extends string>(a: Measure<D>, what: string): Measure<D> {
+  return -finite(a, what) as Measure<D>;
+}

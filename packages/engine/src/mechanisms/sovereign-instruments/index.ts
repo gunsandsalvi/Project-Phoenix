@@ -7,6 +7,7 @@
  * A module: it registers kinds and profiles and touches no kernel store. The auction, the curve and
  * the treasury's programme are separate modules (worklist 3); this one is only the paper.
  */
+import { asPerPiece } from '../../core/measure.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import { compareCivil, formatCivil } from '../../calendar/civil.js';
@@ -133,7 +134,7 @@ export const sovereignBill: InstrumentKindProfile = {
   // N5.c: one payment, par at maturity. The discount to it is the whole return.
   cashFlows: (i, after) =>
     isBill(i.terms) && compareCivil(i.terms.maturity, after) > 0
-      ? [{ date: i.terms.maturity, perUnit: 1 }]
+      ? [{ date: i.terms.maturity, perUnit: asPerPiece(1, 'a bill redeems at par') }]
       : [],
 };
 

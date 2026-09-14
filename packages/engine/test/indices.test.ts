@@ -3,6 +3,7 @@
  *
  * @spec Indices A1 Indices A2 Indices A4 Indices B1 Indices B2 Indices C1 Indices C2 Indices D1 Indices D2 Indices D3 Indices D3.a Indices D4 Indices D5 Indices D5.a Indices E1 Indices E2 Indices E3 XI-7 Law 3 Law 19
  */
+import { asRatio, type PerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   none,
@@ -86,7 +87,7 @@ describe('an index of nothing is not a number (Indices A1, D5.a)', () => {
       ledger: w.ledger,
       price: (instrument, at) => {
         const p = w.prices.latest(instrument, at);
-        return p.some ? some(p.value.price) : none<number>();
+        return p.some ? some(p.value.price) : none<PerPiece>();
       },
       rate: () => 1,
     });
@@ -111,7 +112,7 @@ describe('the base is a resolution (Indices A4, Law 2)', () => {
     const w = rigWorld('idx-F');
     for (let i = 0; i < 4; i += 1) w.step();
     const at = (base: number): number | undefined => {
-      const rules = indexRules([REGION], [USD], asPeriod(0), base);
+      const rules = indexRules([REGION], [USD], asPeriod(0), asRatio(base, 'the base under test'));
       const rule = rules.find((d) => d.id === EQUITY_INDEX(REGION));
       if (rule === undefined) return undefined;
       const read = w.index(rule.id);

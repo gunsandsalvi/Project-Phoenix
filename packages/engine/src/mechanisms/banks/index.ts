@@ -18,6 +18,7 @@
  * What it allows becomes a row before the period closes, so the negative balance is a drawing on a
  * loan and never a silent hole (B3.c).
  */
+import { asPerPiece, type PerPiece } from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { type Qty } from '../../core/tick.js';
@@ -1227,14 +1228,18 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
  * A bank that has seen this borrower fail half the time carries the loan at half. That is the whole
  * of it: no coverage ratio, no stage, no through-the-cycle anything.
  */
-function worthToItsLender(rows: readonly BankDecl[], ctx: MechanismContext, i: Instrument): Option<number> {
-  if (!isLoan(i.terms)) return none<number>();
+function worthToItsLender(
+  rows: readonly BankDecl[],
+  ctx: MechanismContext,
+  i: Instrument,
+): Option<PerPiece> {
+  if (!isLoan(i.terms)) return none<PerPiece>();
   // D1: what a loan is worth is ITS OWN CREDITOR's judgement of it, and after a sale that is the
   // buyer of the row rather than the bank that wrote it (XI-11).
   const creditor = creditorOf((id) => ctx.register.holdersOf(id), i);
-  if (!creditor.some) return none<number>();
+  if (!creditor.some) return none<PerPiece>();
   const decl = declOf(rows, creditor.value);
-  if (decl === undefined) return none<number>();
+  if (decl === undefined) return none<PerPiece>();
   const view = ctx.participant(creditor.value);
   const pd = probabilityOfDefault(view, decl, i.terms.borrower, seenDefaults(ctx));
   /**
@@ -1255,7 +1260,8 @@ function worthToItsLender(rows: readonly BankDecl[], ctx: MechanismContext, i: I
     ),
     'what it expects to lose per unit',
   );
-  return some(sub(1, loss, 'what a unit is worth to it'));
+  // Item 16: par less what it expects to lose, per unit — a PRICE, which is what a mark is.
+  return some(asPerPiece(sub(1, loss, 'what a unit is worth to it'), 'what a unit is worth to it'));
 }
 
 /**

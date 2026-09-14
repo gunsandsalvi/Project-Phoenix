@@ -3,6 +3,7 @@
  *
  * @spec Sovereign D2 Sovereign D3 Sovereign D3.a Sovereign D3.b Sovereign D3.c Bond N7.b XI-6
  */
+import { plus } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   GOV_LINE,
@@ -64,7 +65,7 @@ describe('the curve (Sovereign D3)', () => {
     const flows = w.registry.instrumentKind(i.kind).cashFlows(i, on, w.calendar);
     const print = w.prices.latest(GOV_LINE, w.period);
     if (!print.some) throw new Error('no print');
-    const dirty = print.value.price + w.accruedPerUnit(GOV_LINE, w.period);
+    const dirty = plus(print.value.price, w.accruedPerUnit(GOV_LINE, w.period), 'dirty price');
     // A price this line printed HAS a yield, and the read says so rather than assuming it: a price
     // for which none exists is a real state (a bill above what it redeems for), and the curve
     // leaves such a line out rather than inventing a rate for it.

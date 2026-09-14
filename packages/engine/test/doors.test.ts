@@ -4,6 +4,7 @@
  *
  * @spec Expectations A1 Expectations A2 Expectations A2.b Goods A1 Commodities Spot D5 Goods E1 Goods E2 Goods E2.c Goods E4 Commodities Spot F1 Law 4 Observer E3
  */
+import type { PerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   ANNUAL,
@@ -66,7 +67,7 @@ const wheat: InstrumentKindProfile = {
   cashFlows: () => [],
   // E2, E2.a: lower of cost and what it would fetch, and never the other way (E2.c).
   carriedAt: (_i, lot, marked) =>
-    marked.some && marked.value < lot.basisPerUnit ? some(marked.value) : none<number>(),
+    marked.some && marked.value < lot.basisPerUnit ? some(marked.value) : none<PerPiece>(),
 };
 
 /** The same kind, but claiming it may be carried above cost: what E2.c forbids for a non-dealer. */

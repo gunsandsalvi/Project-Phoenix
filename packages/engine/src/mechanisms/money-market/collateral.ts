@@ -17,6 +17,7 @@
  * rather than being stated. A lender that has published no view of an issuer will not take its
  * paper: no view, no advance.
  */
+import { asRatio } from '../../core/measure.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { DayCount } from '../../calendar/daycount.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
@@ -63,7 +64,15 @@ export function valueToLender(view: ParticipantView, i: Instrument, on: Civil): 
   if (!required.some) return none<number>();
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
   if (flows.length === 0) return none<number>();
-  return some(priceAt(flows, required.value, on, COLLATERAL_DAY_COUNT, `advance against ${i.id}`));
+  return some(
+    priceAt(
+      flows,
+      asRatio(required.value, 'what this lender requires'),
+      on,
+      COLLATERAL_DAY_COUNT,
+      `advance against ${i.id}`,
+    ),
+  );
 }
 
 /**

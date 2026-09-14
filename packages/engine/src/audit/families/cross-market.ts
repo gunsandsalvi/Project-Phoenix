@@ -8,6 +8,7 @@
  * kind of claim that rots quietly. Neither repairs anything: a triangular gap is a measurement about
  * this world (E3) and an index that has stopped matching its prints is a defect with an owner.
  */
+import type { PerPiece } from '../../core/measure.js';
 import { div, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { indexCache, readIndex, type IndexCache, type IndexDeps } from '../../prices/index-read.js';
@@ -88,15 +89,15 @@ function depsOf(view: AuditView, cache: IndexCache): IndexDeps {
       ledger: view.ledger,
       // A3, E3: the same two reads the kernel gives the rule, taken independently here — the two
       // paths share the prints and nothing else, which is what makes this a check.
-      price: (instrument, at): Option<number> => {
+      price: (instrument, at): Option<PerPiece> => {
         const p = view.prices.latest(instrument, at);
-        return p.some && p.value.period === at ? some(p.value.price) : none<number>();
+        return p.some && p.value.period === at ? some(p.value.price) : none<PerPiece>();
       },
       rate: (from, to, at): number => view.valuation.rateInForce(from, to, at),
     },
-    price: (instrument, at): Option<number> => {
+    price: (instrument, at): Option<PerPiece> => {
       const p = view.prices.latest(instrument, at);
-      return p.some && p.value.period === at ? some(p.value.price) : none<number>();
+      return p.some && p.value.period === at ? some(p.value.price) : none<PerPiece>();
     },
   };
 }

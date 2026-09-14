@@ -11,6 +11,7 @@ import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
 import { NotYetProduced, Unpriced } from '../core/errors.js';
 import type { CurrencyCode, InstrumentId, MarketId } from '../core/ids.js';
+import { asRatio, over, type PerPiece } from '../core/measure.js';
 import { finite } from '../core/num.js';
 import { type Option, none, some } from '../core/option.js';
 
@@ -44,7 +45,7 @@ export interface Print {
   readonly market: MarketId;
   readonly period: Period;
   /** Per unit of the instrument, in its currency. */
-  readonly price: number;
+  readonly price: PerPiece;
   readonly ccy: CurrencyCode;
   readonly provenance: Provenance;
 }
@@ -155,7 +156,12 @@ export class PriceStore {
     if (list === undefined) return;
     this.byInstrument.set(
       instrument,
-      list.map((p) => Object.freeze({ ...p, price: finite(p.price / ratio, `print ${p.instrument}`) })),
+      list.map((p) =>
+        Object.freeze({
+          ...p,
+          price: over(p.price, asRatio(ratio, 'the split ratio'), `print ${p.instrument}`),
+        }),
+      ),
     );
     // A restatement changes every price on this line, so a reader holding an answer read from them
     // must read it again.

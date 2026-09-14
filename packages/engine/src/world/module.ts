@@ -9,6 +9,7 @@
  * reference to a kernel store: everything it reads and writes goes through the contexts in
  * world/context.ts. Replacing a system is replacing its module.
  */
+import type { PerPiece } from '../core/measure.js';
 import type { Family } from '../audit/audit.js';
 import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
@@ -200,7 +201,7 @@ export type Valuer = (
   ctx: MechanismContext,
   instrument: Instrument,
   at: Period,
-) => Option<number>;
+) => Option<PerPiece>;
 
 export interface OutlookProvider {
   of(ctx: MechanismContext, party: PartyId, variable: OutlookVariable): Option<Outlook>;

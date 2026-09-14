@@ -34,7 +34,8 @@ import {
   type PartyId,
   type UnitId,
 } from '../core/ids.js';
-import { addTo, atMost, div, finite, mul, sum, zeroIfNone } from '../core/num.js';
+import { asPerPiece, asTotal, eachMember } from '../core/measure.js';
+import { addTo, atMost, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
 import { negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
@@ -623,7 +624,7 @@ export class Settlement {
       // of people, so the product is a count of pieces and the leg's total is the same count —
       // two integers, which agree bit for bit or name two different amounts. The dust this
       // carried was a band under a multiplication that cannot round (item 13b.1).
-      const expected = mul(cs.perMember, cs.weight, 'cell total');
+      const expected = scaleQty(cs.perMember, cs.weight, 'cell total');
       forbid(
         expected === total,
         'XI-15',
@@ -1063,7 +1064,16 @@ export class Settlement {
      * household's equity. What the issuer's own book moves by is its share of what it issued.
      */
     const perMemberOf = (party: PartyId, amount: number): number =>
-      div(amount, weightOf(this.d.parties.get(party)), 'the issuer\u2019s own share of it');
+      // Item 16: THROUGH THE ONE DOOR BETWEEN A TOTAL AND A PER-MEMBER NUMBER, which is the cell's
+      // weight and refuses a cell of nobody — `div` would have answered `Infinity` and carried it
+      // into an equity account. What the type cannot yet say is which of the two a `Qty` in the
+      // register is: for a cell it is per member and for a named party it is the total, and the
+      // register does not know which it is holding. That is A-1's shape, and it survives this type.
+      eachMember(
+        asTotal(amount, 'what the issuer issued'),
+        weightOf(this.d.parties.get(party)),
+        'the issuer\u2019s own share of it',
+      );
 
     /**
      * The same, for a value that belongs to no instrument: a contract's, which is a bilateral
@@ -1097,7 +1107,13 @@ export class Settlement {
           if (op.money) {
             this.d.register.moneyDelta(op.party, op.instrument, negQty(op.qty, 'what leaves'), ins.period);
             drawnByOp.set(index, [
-              { lot: 0 as never, qty: op.qty, basisPerUnit: 1, acquired: ins.period },
+              {
+                lot: 0 as never,
+                qty: op.qty,
+                // Money D2: one of itself, and it is the only price in this world that is written.
+                basisPerUnit: asPerPiece(1, 'money is worth one of itself'),
+                acquired: ins.period,
+              },
             ]);
             bump(op.party, negQty(op.qty, 'what leaves'), op.instrument);
           } else {

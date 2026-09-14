@@ -20,18 +20,18 @@ import type { Cycle, Period } from '../calendar/calendar.js';
 import { assertNever, forbid } from '../core/assert.js';
 import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
 import {
-  add,
-  atMost,
-  div,
-  finite,
-  mul,
-  sub,
-  sum,
-  zeroIfNone,
-} from '../core/num.js';
+  asPerPiece,
+  minus,
+  type PerPiece,
+  plus,
+  pricedAt,
+  ratioOf,
+  valueAt,
+} from '../core/measure.js';
+import { atMost, finite, sub, sum, zeroIfNone } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
 import { none, type Option, some } from '../core/option.js';
-import { asQty, commonGrain, downTick, downToGrain, downToTick, toGrain, upToTick } from '../core/tick.js';
+import { asQty, commonGrain, downTick, downToGrain, downToTick, subQty, toGrain, upToTick } from '../core/tick.js';
 import type { Journal } from '../journal/journal.js';
 import type { AccountRef, InstructionDraft, Leg, CellSide} from '../ledger/instruction.js';
 import { cellSide, type Settlement } from '../ledger/settlement.js';
@@ -182,7 +182,7 @@ export interface MarketRunDeps {
   readonly journal: Journal;
   readonly accountOf: AccountResolver;
   /** Bond N9.b: what has accrued per unit at this session's date, from the instrument's own terms. */
-  readonly accruedPerUnit: (instrument: InstrumentId, period: Period) => number;
+  readonly accruedPerUnit: (instrument: InstrumentId, period: Period) => PerPiece;
   /** Who promised it, when somebody did: a physical thing has nobody on that side (Goods A1). */
   readonly instrumentIssuer: (instrument: InstrumentId) => Option<PartyId>;
   /**
@@ -282,7 +282,7 @@ export interface AuctionResult {
   readonly cover: number;
   /** The average level the winning bids posted, less the stop-out, per unit (in yield it inverts). */
   readonly tail: Option<number>;
-  readonly stopOut: Option<number>;
+  readonly stopOut: Option<PerPiece>;
 }
 
 /** A matched trade: two named sides and a quantity (Clearing D2). */
@@ -384,7 +384,9 @@ export function runMarket(
       // accrues on money is nothing, and what accrues on an obligation is what its own terms say
       // falls due (D4), which is the kind's business rather than the kernel's.
       const subject = delivers(m);
-      const accrued = subject.some ? deps.accruedPerUnit(subject.value, period) : 0;
+      const accrued = subject.some
+        ? deps.accruedPerUnit(subject.value, period)
+        : asPerPiece(0, 'nothing accrues on a line that delivers nothing');
       let settledVolume = 0;
       let allotted = 0;
       let failed = 0;
@@ -475,7 +477,7 @@ function carryLast(
   fills: readonly Fill[],
 ): MarketResult {
   const auction = offer.some
-    ? some(auctionResult(offer.value, orders, fills, none<number>(), 0))
+    ? some(auctionResult(offer.value, orders, fills, none<PerPiece>(), 0))
     : none<AuctionResult>();
   if (auction.some) journalAuction(m, auction.value, period, cycle, deps);
   const last = deps.prices.latest(m.instrument, period);
@@ -550,8 +552,9 @@ function pairFills(
     const step = commonGrain(weight(buyer.party), weight(seller.party));
     const q = downToGrain(want, step);
     if (q > 0) out.push({ buyer: buyer.party, seller: seller.party, qty: q });
-    bLeft = finite(bLeft - q, 'buy left');
-    sLeft = finite(sLeft - q, 'sell left');
+    // Item 16, Law 8: a count of pieces less a count of pieces, through the door that keeps it one.
+    bLeft = subQty(bLeft, q, 'buy left');
+    sLeft = subQty(sLeft, q, 'sell left');
     // What is left over is smaller than these two can trade: it is not filled, and the side with
     // less of it steps aside so the other can meet somebody it CAN deal with.
     if (bLeft < step) {
@@ -575,8 +578,8 @@ function pairFills(
 function tradeInstruction(
   m: MarketDecl,
   t: Trade,
-  price: number,
-  accruedPerUnit: number,
+  price: PerPiece,
+  accruedPerUnit: PerPiece,
   deps: MarketRunDeps,
   period: Period,
   cycle: Cycle,
@@ -608,8 +611,8 @@ interface MarketKindTerms<M extends MarketDecl> {
   trade(
     m: M,
     t: Trade,
-    price: number,
-    accruedPerUnit: number,
+    price: PerPiece,
+    accruedPerUnit: PerPiece,
     deps: MarketRunDeps,
     period: Period,
     cycle: Cycle,
@@ -646,8 +649,8 @@ const MARKET_KINDS: Readonly<Record<MarketKind, MarketKindTerms<MarketDecl>>> = 
 function contractTrade(
   m: ContractMarketDecl,
   t: Trade,
-  price: number,
-  _accruedPerUnit: number,
+  price: PerPiece,
+  _accruedPerUnit: PerPiece,
   deps: MarketRunDeps,
   period: Period,
   cycle: Cycle,
@@ -678,7 +681,11 @@ function contractTrade(
   // Law 8: a premium is MONEY, so it is a whole number of the money's own smallest piece.
   const premium = deps.registry.cashFor(
     m.ccy,
-    mul(profile.premiumPerUnit(price, decl.terms), size, 'the premium at inception'),
+    valueAt(
+      asPerPiece(profile.premiumPerUnit(price, decl.terms), 'the premium per contract'),
+      size,
+      'the premium at inception',
+    ),
   );
   const house = decl.house;
   const legs: Leg[] = [];
@@ -745,15 +752,15 @@ function contractTrade(
 function fxTrade(
   m: FxMarketDecl,
   t: Trade,
-  price: number,
-  _accruedPerUnit: number,
+  price: PerPiece,
+  _accruedPerUnit: PerPiece,
   deps: MarketRunDeps,
 ): Option<InstructionDraft> {
   const pair = m.fx;
   const buyer = deps.parties.get(t.buyer);
   const seller = deps.parties.get(t.seller);
   const grain = commonGrain(weightOf(buyer), weightOf(seller));
-  const quote = toGrain(mul(t.qty, price, 'what the base costs in quote'), grain);
+  const quote = toGrain(valueAt(price, t.qty, 'what the base costs in quote'), grain);
   if (quote <= 0) return none<InstructionDraft>();
   const baseOut = cellSide(seller, asQty(t.qty / weightOf(seller), 'its share per member'));
   const baseIn = cellSide(buyer, asQty(t.qty / weightOf(buyer), 'its share per member'));
@@ -848,8 +855,8 @@ function payment(
 function assetTrade(
   m: AssetMarketDecl,
   t: Trade,
-  price: number,
-  accruedPerUnit: number,
+  price: PerPiece,
+  accruedPerUnit: PerPiece,
   deps: MarketRunDeps,
 ): Option<InstructionDraft> {
   const buyer = deps.parties.get(t.buyer);
@@ -861,7 +868,10 @@ function assetTrade(
   // money per member — which is what rounding a price to real money has always meant, and is why
   // `settledVolume` and the print are two numbers rather than one.
   const cashGrain = commonGrain(weightOf(buyer), weightOf(seller));
-  const cash = toGrain(mul(t.qty, add(price, accruedPerUnit, 'dirty price'), 'trade cash'), cashGrain);
+  const cash = toGrain(
+    valueAt(plus(price, accruedPerUnit, 'dirty price'), t.qty, 'trade cash'),
+    cashGrain,
+  );
   if (cash <= 0) return none<InstructionDraft>();
   const buyerCell = cellSide(buyer, asQty(t.qty / weightOf(buyer), 'its share per member'));
   const sellerCell = cellSide(seller, asQty(t.qty / weightOf(seller), 'its share per member'));
@@ -891,23 +901,23 @@ function auctionResult(
   offer: PrimaryOffer,
   orders: readonly Order[],
   fills: readonly Fill[],
-  stopOut: Option<number>,
+  stopOut: Option<PerPiece>,
   allotted: number,
 ): AuctionResult {
   const bids = orders.filter((o) => o.side === 'buy' && o.party !== offer.issuer);
   const demand = sum(bids.map((o) => o.qty)).value;
   const won = fills.filter((f) => f.side === 'buy');
   const wonQty = sum(won.map((f) => f.qty)).value;
-  const wonValue = sum(won.map((f) => mul(f.qty, f.at, 'bid value'))).value;
+  const wonValue = sum(won.map((f) => valueAt(f.at, f.qty, 'bid value'))).value;
   const tail =
     stopOut.some && wonQty > 0
-      ? some(sub(div(wonValue, wonQty, 'average bid'), stopOut.value, 'tail'))
-      : none<number>();
+      ? some(minus(pricedAt(wonValue, wonQty, 'average bid'), stopOut.value, 'tail'))
+      : none<PerPiece>();
   return {
     issuer: offer.issuer,
     size: offer.size,
     allotted,
-    cover: div(demand, offer.size, 'cover ratio'),
+    cover: ratioOf(demand, offer.size, 'cover ratio'),
     tail,
     stopOut,
   };

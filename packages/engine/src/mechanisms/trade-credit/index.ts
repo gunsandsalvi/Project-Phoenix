@@ -28,6 +28,7 @@
  * B3's "stop shipment" and D4's tightening in one read: what a seller knows about a customer is
  * what that customer did to it.
  */
+import { asPerPiece } from '../../core/measure.js';
 import { addDays, compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
 import {
   instrumentId,
@@ -107,7 +108,9 @@ export const invoiceKind: InstrumentKindProfile = {
     if (!isInvoice(i.terms)) return [];
     const due = i.terms.due;
     // A2: one payment, of everything, on the day. Nothing before it and nothing after it.
-    return compareCivil(due, on) < 0 ? [] : [{ date: due, perUnit: 1 }];
+    return compareCivil(due, on) < 0
+      ? []
+      : [{ date: due, perUnit: asPerPiece(1, 'an invoice pays its face') }];
   },
   due: (i, period, calendar) => {
     if (!isInvoice(i.terms)) return [];

@@ -16,7 +16,7 @@
 import type { Period } from '../calendar/calendar.js';
 import type { PartyId } from '../core/ids.js';
 import { Forbidden } from '../core/errors.js';
-import { sub } from '../core/num.js';
+import { asCash, type Cash, minus, negated } from '../core/measure.js';
 import type {
   Contract,
   ContractReads,
@@ -32,8 +32,10 @@ export interface ContractValueDeps {
 }
 
 /** D8: what it is worth to `a` at `at`. */
-export function markOfContract(c: Contract, at: Period, d: ContractValueDeps): number {
-  return d.profile(c.kind).mark(c, at, d.reads(at));
+export function markOfContract(c: Contract, at: Period, d: ContractValueDeps): Cash {
+  // Item 16: a mark is MONEY — what the contract is worth to `a` — and the door is here, at the
+  // one reader of the kind's own answer. Nothing downstream can multiply two of them together.
+  return asCash(d.profile(c.kind).mark(c, at, d.reads(at)), `what ${c.id} is worth`);
 }
 
 /**
@@ -48,7 +50,7 @@ export function contractValueTo(
   party: PartyId,
   at: Period,
   d: ContractValueDeps,
-): number {
+): Cash {
   if (party !== c.a && party !== c.b) {
     throw new Forbidden('Derivative D1', `${party} is on neither side of contract ${c.id}`, {
       contract: c.id,
@@ -56,23 +58,25 @@ export function contractValueTo(
     });
   }
   const mark = markOfContract(c, at, d);
-  return party === c.a ? mark : -mark;
+  return party === c.a ? mark : negated(mark, `what ${c.id} is worth to ${party}`);
 }
 
 /**
  * What the equity accounts are carrying it at, to `a`. The basis while it is younger than the last
  * recognised marks; the mark of that period once it is not.
  */
-export function carryingOfContract(c: Contract, now: Period, d: ContractValueDeps): number {
+export function carryingOfContract(c: Contract, now: Period, d: ContractValueDeps): Cash {
   const recognised = d.recognisedFor(now);
   // A contract younger than the last marks anybody recognised is carried at what it cost: there is
   // no earlier mark of it to read, and reading one would be asking what a contract was worth in a
   // period it did not exist in. A contract opened IN the recognised period is not younger than it —
   // its mark of that period is in the accounts — which is the same `>` a lot's `acquired < now` is.
-  return c.opened > recognised ? c.basis : markOfContract(c, recognised, d);
+  return c.opened > recognised
+    ? asCash(c.basis, `what ${c.id} cost`)
+    : markOfContract(c, recognised, d);
 }
 
 /** D8.a: what the period's re-marking moves, a real gain to one side and a real loss to the other. */
-export function revaluationOfContract(c: Contract, now: Period, d: ContractValueDeps): number {
-  return sub(markOfContract(c, now, d), carryingOfContract(c, now, d), 'what the mark moved by');
+export function revaluationOfContract(c: Contract, now: Period, d: ContractValueDeps): Cash {
+  return minus(markOfContract(c, now, d), carryingOfContract(c, now, d), 'what the mark moved by');
 }

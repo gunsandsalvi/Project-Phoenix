@@ -6,6 +6,7 @@
  */
 import { describe, expect, it } from 'vitest';
 import { asQty } from '../src/core/tick.js';
+import { asPerPiece } from '../src/core/measure.js';
 import {
   BANK_A,
   KERNEL_PARAMS,
@@ -353,7 +354,9 @@ describe('a price on the grid (Law 8)', () => {
     expect(downToTick(50, 0.01)).toBeCloseTo(50, 10);
     expect(upToTick(50, 0.01)).toBeCloseTo(50, 10);
     // And a STATED level — a seed's opening price, which nobody posted — takes the nearest.
-    expect(toTickOf(0.98849, 0.0001)).toBeCloseTo(0.9885, 10);
+    expect(
+      toTickOf(asPerPiece(0.98849, 'a stated level'), asPerPiece(0.0001, 'the grid')),
+    ).toBeCloseTo(0.9885, 10);
   });
 
   it('refuses an increment that is not one', () => {

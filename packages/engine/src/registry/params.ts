@@ -14,7 +14,7 @@ import { InvalidRegistry, Missing } from '../core/errors.js';
 import type { ParamId, UnitId } from '../core/ids.js';
 import { finite } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
-import { asRatio, type Ratio } from '../core/measure.js';
+import { asRatio, type PerPiece, type Ratio } from '../core/measure.js';
 
 export type ParamKind =
   'technology' | 'preference' | 'policy' | 'resolution' | 'shape' | 'placeholder';
@@ -278,9 +278,15 @@ export class ParamRegister {
     return this.read(id, 'kmPerDay');
   }
 
-  /** Money for one unit of something: a wage per hour, a level, a price per share. */
-  price(id: ParamId): number {
-    return this.read(id, 'price');
+  /**
+   * Money for one unit of something: a wage per hour, a level, a price per share.
+   *
+   * Item 16, Law 8: IT IS A PRICE AND THE TYPE SAYS SO, which is the same door `ratio` is. A
+   * declared level enters the world here knowing it is money per piece, so it can be put on a grid,
+   * multiplied by a quantity and printed — and cannot be added to a balance or read as an amount.
+   */
+  price(id: ParamId): PerPiece {
+    return this.read(id, 'price') as PerPiece;
   }
 
   /**

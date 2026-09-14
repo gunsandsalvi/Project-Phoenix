@@ -21,7 +21,16 @@
 import type { Calendar, Period } from '../calendar/calendar.js';
 import { Missing } from '../core/errors.js';
 import type { CurrencyCode, InstrumentId } from '../core/ids.js';
-import { add, div, mul, sum } from '../core/num.js';
+import {
+  asAmount,
+  type Cash,
+  type PerPiece,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../core/measure.js';
+import { add, sum } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Ledger } from '../ledger/ledger.js';
 import type { PartiesReads } from '../parties/party.js';
@@ -52,7 +61,7 @@ export interface IndexWorld {
    * and a rule that selected by the index's level would be exactly that. A line that did not print
    * has no capitalisation to compare and is on neither side.
    */
-  price(instrument: InstrumentId, at: Period): Option<number>;
+  price(instrument: InstrumentId, at: Period): Option<PerPiece>;
   /**
    * XI-12, Spot FX: WHAT ONE MONEY BUYS OF ANOTHER, for the one index that crosses regions. It is
    * the pair's own last print, read through the kernel, so the money a global line is stated in is
@@ -86,14 +95,14 @@ export interface IndexDecl {
    * A4: what the index was set to when it began. A base is a UNIT and not a claim: doubling it
    * doubles every level and changes nothing anybody does, which is what makes it a resolution.
    */
-  readonly base: number;
+  readonly base: Ratio;
   /** The first period the rule was in force. Before it there is no index (D5.a). */
   readonly from: Period;
 }
 
 export interface IndexRead {
   readonly id: string;
-  readonly level: number;
+  readonly level: Ratio;
   /** How many periods of level there are behind it — what a window may be measured over (XI-7). */
   readonly periods: number;
   /**
@@ -104,12 +113,16 @@ export interface IndexRead {
    */
   readonly basket: readonly Constituent[];
   /** A2: what it was read FROM, so a reader can see the index is its constituents and nothing else. */
-  readonly from: readonly { readonly instrument: InstrumentId; readonly price: number; readonly weight: number }[];
+  readonly from: readonly {
+    readonly instrument: InstrumentId;
+    readonly price: PerPiece;
+    readonly weight: number;
+  }[];
 }
 
 /** What the index reader needs of the world: the prints, and nothing else (A2). */
 export interface IndexDeps {
-  price(instrument: InstrumentId, at: Period): Option<number>;
+  price(instrument: InstrumentId, at: Period): Option<PerPiece>;
   readonly world: IndexWorld;
   /**
    * Law 18: WHERE THIS READER GOT TO LAST TIME. A level is chained from the base, so asking for it
@@ -128,13 +141,13 @@ export interface IndexDeps {
 
 /** Law 18: a reader's own memory of the levels it has already walked. */
 export interface IndexCache {
-  get(id: string, at: Period): number | undefined;
-  set(id: string, at: Period, level: number): void;
+  get(id: string, at: Period): Ratio | undefined;
+  set(id: string, at: Period, level: Ratio): void;
 }
 
 /** The cache every reader makes for itself: a level per (index, period), and nothing else. */
 export function indexCache(): IndexCache {
-  const held = new Map<string, number>();
+  const held = new Map<string, Ratio>();
   return {
     get: (id, at) => held.get(`${id}|${at}`),
     set: (id, at, level) => {
@@ -177,24 +190,30 @@ export function readIndex(decl: IndexDecl, at: Period, d: IndexDeps): Option<Ind
   }
   for (let t = start + 1; t <= at; t += 1) {
     const now = decl.constituents(t as Period, d.world);
-    const terms: number[] = [];
-    const wasTerms: number[] = [];
+    const terms: Cash[] = [];
+    const wasTerms: Cash[] = [];
     for (const c of now) {
       const priceNow = d.price(c.instrument, t as Period);
       const priceWas = d.price(c.instrument, (t - 1) as Period);
       if (!priceNow.some || !priceWas.some) continue;
-      terms.push(mul(c.weight, priceNow.value, `${c.instrument} now`));
-      wasTerms.push(mul(c.weight, priceWas.value, `${c.instrument} then`));
+      // Item 16: a basket weight is HOW MANY UNITS OF THE LINE THE BASKET HOLDS, which is an
+      // amount and not a count on the grid — the global basket restates it at a rate (`baskets.ts`)
+      // and lands between two shares. So it enters as an amount, and what it comes to is money.
+      const held = asAmount<'piece'>(c.weight, `${c.instrument} in the basket`);
+      terms.push(valueAt(priceNow.value, held, `${c.instrument} now`));
+      wasTerms.push(valueAt(priceWas.value, held, `${c.instrument} then`));
     }
     const then = sum(wasTerms).value;
     // A basket worth nothing a period ago is a basket with no step to take: the index carries, and
     // it carries because nothing moved rather than because somebody held it there (Law 6).
     if (then === 0) continue;
-    level = mul(level, div(sum(terms).value, then, 'what the basket did'), 'chained');
+    // Item 16: A LEVEL IS A PURE NUMBER and what the basket did is a ratio of two baskets. Neither
+    // is money, which is what stops an index level being spent, printed or added to a balance.
+    level = scale(level, ratioOf(sum(terms).value, then, 'what the basket did'), 'chained');
     // Only a period that is OVER is remembered: this period's prints are still being made.
     if (t < at) d.cache?.set(decl.id, t as Period, level);
   }
-  const from: { instrument: InstrumentId; price: number; weight: number }[] = [];
+  const from: { instrument: InstrumentId; price: PerPiece; weight: number }[] = [];
   for (const c of constituents) {
     const p = d.price(c.instrument, at);
     if (p.some) from.push({ instrument: c.instrument, price: p.value, weight: c.weight });

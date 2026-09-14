@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import fc from 'fast-check';
+import { asPerPiece } from '../src/core/measure.js';
 import {
   ANNUAL,
   Calendar,
@@ -231,7 +232,7 @@ describe('the doors that let something through without looking (item 13b.1)', ()
               instrument: line,
               ccy: currencyCode('USD'),
               period: period(at),
-              price: at + 1,
+              price: asPerPiece(at + 1, 'a level under test'),
               provenance: { kind: 'traded', qty: 1, trades: 1 },
             });
           }

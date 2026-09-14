@@ -8,13 +8,13 @@
 > 15 `Objective` · 18 the worklist re-pointed and `C-3`.
 >
 > **What is STAGED, with the stages written and none of them hidden**: **16** `Measure<D>` — the
-> type, its algebra and the first door are built; the sweep is ten stages over 1,091 call sites and
-> none is done. **8**'s seven private books are not migrated, and `Mandate` waits on that. **17**
-> closed eleven of its eighteen repairs and repositioned the rest with reasons.
+> type, its algebra and **stage 1, the kernel**, are built; nine module stages remain. **8**'s seven
+> private books are not migrated, and `Mandate` waits on that. **17** closed eleven of its eighteen
+> repairs and repositioned the rest with reasons.
 >
 > **The measurement that matters**: the whole suite was **79 red of 717** when this began and is
-> **79 red of 786** now — *the same 79, test for test* — with **707 passing where there were 638**.
-> Every one of the 69 new tests is a test of a thing that did not exist.
+> **79 red of 791** now — *the same 79, test for test* — with **712 passing where there were 638**.
+> Every one of the 74 new tests is a test of a thing that did not exist.
 >
 > **Seven findings of my own are in the index as `E-1` to `E-7`**, each positioned. One of them
 > (`E-1`) was closed in the same item that found it; one (**the land ordering bug**) cost this world
@@ -2892,9 +2892,9 @@ under a shock.
 
 ## 16. `Measure<D>` — the dimension sweep
 
-> **THE TYPE IS BUILT AND THE FIRST DOOR IS ADOPTED. The sweep is staged below, module by module,
-> and the stages are not done.** This is the item's own plan for itself: *"Not a rewrite… Kernel
-> first, then module by module, each independently completable."*
+> **THE TYPE IS BUILT AND STAGE 1 — THE KERNEL — IS DONE. Nine module stages remain, staged below.**
+> This is the item's own plan for itself: *"Not a rewrite… Kernel first, then module by module, each
+> independently completable."*
 >
 > **`core/measure.ts`.** `Measure<D>` — a phantom-typed number — with `Money<C>`, `Amount<U>`,
 > `Price<C,U>`, `Ratio`, `PerMember<D>` and `Total<D>` over it, and an algebra that is the whole
@@ -2934,7 +2934,7 @@ under a shock.
 >
 > | stage | area | sites |
 > | --- | --- | --- |
-> | 1 | kernel (`world` 37, `ledger` 29, `registry` 21, `prices` 19, `register` 14, `audit` 11, `core` 9, `observer` 8, `clearing` 8, `parties` 1) | **157** |
+> | ~~1~~ | ~~kernel~~ — **DONE**: every money arithmetic in it carries its dimension | **119 → 68** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -2946,8 +2946,54 @@ under a shock.
 > | 10 | everything else (34 modules) | 382 |
 >
 > Gate every stage on the instruction digest the Law 18 items use: mechanisms, economics and
-> boundaries do not change. **None of the ten is done**, and the eighteen findings below stay open
-> until the stage that owns each one closes.
+> boundaries do not change. **Stage 1 is done; nine remain**, and the eighteen findings below stay
+> open until the stage that owns each one closes.
+>
+> ### Stage 1 — the kernel, as built
+>
+> The counting was a grep and it counted `Set.add`: there were **119** arithmetic sites in the
+> kernel, not 157. What closed is the VALUE SPINE, door by door, and the ripple was small because a
+> `Measure<D>` IS a number — 52 files, and every one of them either a door or a site the compiler
+> found:
+>
+> | door | what it now says |
+> | --- | --- |
+> | `Qty = Amount<'piece'>` (`core/tick.ts`) | **Law 4: one representation of a count.** The tick grid's brand IS the dimension system's amount, so `valueAt(price, qty)` takes the register's own quantity with nothing in between. Zero call sites changed. |
+> | `Print.price` | every level this world has printed is `PerPiece`, and the six writers say so at their door (`asPerPiece`, `params.price`, `registry.onQuoteGrid`, the solver's book) |
+> | `Lot.basisPerUnit`, `DrawnLot` | what a lot cost is a price, so `costOfDraw` is `valueAt` and returns `Cash` |
+> | `CashFlow.perUnit`, `DueAction.amountPerUnit` | what one unit pays is a price; discounting a schedule gives a price back (`priceAt → PerPiece`) and a yield is a `Ratio` (`yieldOf`) |
+> | `Valuation` | `markPerUnit`, `carryingPerUnit`, `derived` → `PerPiece`; `worthOf`, `valueOfLots`, `valueAtMark`, `inMoney` → `Cash`; `rateInForce` → `Ratio`, so a conversion is a `scale` and a rate cannot be spent |
+> | `Outcome.price`, `Fill.at`, `LimitOrder.price` | the book's own door: a level a participant posted becomes a price where the solver takes it, and every trade's cash is `valueAt` |
+> | `Sum<T>` (`core/num.ts`) | a total carries its terms' dimension out of `sum`, which is where most of this engine's totals are made |
+> | `IndexDecl.base`, `IndexRead.level` | **a base was declared `dimension: 'price'` and read as one.** An index level is a pure number; it is a `Ratio` now, and the parameter's declaration was corrected with it — the first thing this type found that was wrong rather than merely unchecked |
+> | `perMemberOf` (`ledger/settlement.ts`), the coupon payer (`world/actions.ts`) | `eachMember`, which refuses a cell of nobody where `div` answered `Infinity` and carried it into an equity account or onto a leg |
+> | `revalue` (`world/revalue.ts`) | every re-marking and every FX move: a rate is a `Ratio` so a conversion is a `scale`; a holder's move crosses to its issuer's books through `acrossMembers` and the cell's weight, and through nothing else |
+> | `ContractsRead.mark / valueTo / carrying`, `Valuer`, `carriedAt` | a contract's mark and a module's own valuation are `Cash` and `PerPiece`; `wearPerUnit` and `carriedAfterWear` follow |
+>
+> Five operations were added to `core/measure.ts` because the kernel needed them and each is real
+> algebra rather than an escape: `over` (a dimension divided by a pure number), `absolute`,
+> `negated`, and the two doors `asCash` / `asPerPiece`.
+>
+> **What stage 1 CANNOT check, said out loud rather than implied.** A currency is DRAWN (Seed B1.a)
+> and a unit is registry data, so neither is a literal the compiler ever sees: `C` and `U` are
+> `string` in every kernel signature and two currencies are one type to it. So A-65 (money²), A-39,
+> A-1, A-18 (per member vs total), A-44 and A-58 (a ratio as a level) are unwriteable in the kernel
+> now; **A-23 and the four beside it are not** — cross-currency addition stays a runtime refusal at
+> the leg, which is where the currency is actually known, and becomes a compile error only where a
+> module names its money as a literal. And the register cannot say whether a `Qty` it holds is per
+> member or a total, because for a cell it is the first and for a named party the second: **A-1's
+> shape survives this type**, and closing it needs the ontology, not the arithmetic.
+>
+> **What is left in the kernel, and it is not money.** 119 sites became **68**, and the residue is a
+> different dimension family: plant wear, storage and capacity (`registry/physical.ts` 16), days over
+> terrain (`registry/geography.ts`), a variance of price moves and two audit families that compare
+> two routes to one rate (`audit/` 9, `observer/` 8), and `core/num.ts`'s own definitions (9). Each
+> belongs with the stage that owns its module, and none of them is a money arithmetic that could add
+> two currencies or square a price.
+>
+> **Measured**: the whole suite was **79 red of 786** before this stage and is **79 red of 791**
+> after — *the same 79, test for test* — the five new ones being the stage's own. Which is the
+> guarantee the type was built to make: it erases, so behaviour cannot change (Law 18).
 
 **Why.** Eighteen findings, and one signature:
 

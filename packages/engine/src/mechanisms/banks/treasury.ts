@@ -23,6 +23,7 @@
  * is how a real treasury sells a liquidity portfolio — through its own desk, whose quote then skews
  * — and it is what keeps one bank showing one face to one market.
  */
+import { asRatio } from '../../core/measure.js';
 import { nextPeriod } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { moneyInstrumentId, partyId } from '../../core/ids.js';
@@ -242,7 +243,15 @@ export function priceAtYield(
   const on = view.calendar.startOf(view.period);
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
   if (flows.length === 0) return none<number>();
-  return some(priceAt(flows, y, on, VALUATION_DAY_COUNT, `what ${instrument} is worth to it`));
+  return some(
+    priceAt(
+      flows,
+      asRatio(y, 'the yield it is asked at'),
+      on,
+      VALUATION_DAY_COUNT,
+      `what ${instrument} is worth to it`,
+    ),
+  );
 }
 
 /** The money this bank settles in, off its own region (Law 8: a number carries its currency). */

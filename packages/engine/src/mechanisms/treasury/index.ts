@@ -15,6 +15,7 @@
  * FAILS, is journalled as a shortfall, and the next programme sees it. That is the constraint the
  * whole system hangs on (XI-9), and it is what makes a failed auction cost something.
  */
+import { asRatio, plus } from '../../core/measure.js';
 import { assertNever } from '../../core/assert.js';
 import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
@@ -535,7 +536,7 @@ function announce(
   const flows = ctx.registry.instrumentKind(inst.kind).cashFlows(inst, on, ctx.calendar);
   const reservation = priceAt(
     flows,
-    add(y, ctx.params.perAnnum(TREASURY_PARAMS.concession), 'walk-away yield'),
+    plus(asRatio(y, 'the yield it opens at'), ctx.params.perAnnum(TREASURY_PARAMS.concession), 'walk-away yield'),
     on,
     dayCount,
     'reservation',

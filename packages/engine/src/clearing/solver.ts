@@ -11,6 +11,7 @@
  * orders (C5).
  */
 import { impossible } from '../core/assert.js';
+import { asPerPiece, type PerPiece } from '../core/measure.js';
 import type { PartyId } from '../core/ids.js';
 import {
   atMost,
@@ -45,9 +46,16 @@ export interface Order {
   readonly qty: Qty;
 }
 
-/** An order with its level fixed: what the solver works on. */
+/**
+ * An order with its level fixed: what the solver works on.
+ *
+ * Item 16: AND THE LEVEL IS A PRICE FROM HERE ON. `OrderPrice` is what a participant posted and it
+ * is still a bare number, because the modules that post one have not been swept; the book's door is
+ * where it becomes money per piece, and everything the session produces downstream — the clearing
+ * level, a fill's level, the print — carries that.
+ */
 export interface LimitOrder extends Order {
-  readonly price: number;
+  readonly price: PerPiece;
 }
 
 export interface Fill {
@@ -55,13 +63,13 @@ export interface Fill {
   readonly side: Side;
   readonly qty: Qty;
   /** The level this order posted, which is what a tail is measured against (Sovereign C4). */
-  readonly at: number;
+  readonly at: PerPiece;
 }
 
 export type Outcome =
   | {
       readonly kind: 'cleared';
-      readonly price: number;
+      readonly price: PerPiece;
       readonly volume: number;
       readonly fills: readonly Fill[];
       /** The side that posted more at the clearing price and was rationed (C3), if any. */
@@ -71,7 +79,7 @@ export type Outcome =
     }
   | { readonly kind: 'noDemand' }
   | { readonly kind: 'noSupply' }
-  | { readonly kind: 'noOverlap'; readonly bestBid: number; readonly bestAsk: number };
+  | { readonly kind: 'noOverlap'; readonly bestBid: PerPiece; readonly bestAsk: PerPiece };
 
 export type Rationing = 'proRata';
 
@@ -119,19 +127,20 @@ export function resolveMarketOrders(orders: readonly Order[]): {
   readonly resolved: readonly LimitOrder[];
   readonly unpriced: readonly Order[];
 } {
-  const limits = orders.filter((o): o is LimitOrder => o.price !== 'market');
-  let highestAsk: number | undefined;
-  let lowestBid: number | undefined;
-  for (const o of limits) {
-    if (o.side === 'sell' && (highestAsk === undefined || o.price > highestAsk)) highestAsk = o.price;
-    if (o.side === 'buy' && (lowestBid === undefined || o.price < lowestBid)) lowestBid = o.price;
+  let highestAsk: PerPiece | undefined;
+  let lowestBid: PerPiece | undefined;
+  for (const o of orders) {
+    if (o.price === 'market') continue;
+    const posted = asPerPiece(o.price, 'a level a participant posted');
+    if (o.side === 'sell' && (highestAsk === undefined || posted > highestAsk)) highestAsk = posted;
+    if (o.side === 'buy' && (lowestBid === undefined || posted < lowestBid)) lowestBid = posted;
   }
   const resolved: LimitOrder[] = [];
   const unpriced: Order[] = [];
   for (const o of orders) {
     const posted = o.price;
     if (posted !== 'market') {
-      resolved.push({ ...o, price: posted });
+      resolved.push({ ...o, price: asPerPiece(posted, 'a level a participant posted') });
       continue;
     }
     const level = o.side === 'buy' ? highestAsk : lowestBid;
@@ -178,7 +187,7 @@ export function clear(
   if (sells.length === 0) return { kind: 'noSupply' };
 
   const candidates = [...new Set(orders.map((o) => o.price))].sort((a, b) => a - b);
-  let best: { price: number; volume: Qty; imbalance: number; d: Qty; s: Qty } | undefined;
+  let best: { price: PerPiece; volume: Qty; imbalance: number; d: Qty; s: Qty } | undefined;
   for (const p of candidates) {
     // Law 8: adding counts of pieces gives a count of pieces — no rounding is involved, so the
     // sum is still a quantity and says so.
@@ -197,9 +206,9 @@ export function clear(
     }
   }
   if (best === undefined || best.volume === 0) {
-    let bestBid = zeroIfNone(buys[0]?.price);
+    let bestBid: PerPiece = zeroIfNone(buys[0]?.price);
     for (const o of buys) if (o.price > bestBid) bestBid = o.price;
-    let bestAsk = zeroIfNone(sells[0]?.price);
+    let bestAsk: PerPiece = zeroIfNone(sells[0]?.price);
     for (const o of sells) if (o.price < bestAsk) bestAsk = o.price;
     return { kind: 'noOverlap', bestBid, bestAsk };
   }

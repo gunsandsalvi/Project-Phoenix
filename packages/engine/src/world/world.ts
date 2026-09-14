@@ -40,6 +40,7 @@ import {
   fxPairId,
 } from '../core/ids.js';
 
+import { asPerPiece, asRatio, type Cash, type PerPiece } from '../core/measure.js';
 import { finite, add, addTo, div, mul, sub, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
@@ -440,11 +441,13 @@ export class World {
             // price store — the one read in the engine that deliberately looks past the rate still
             // in force, because bringing the books to it is what revaluation IS (D3).
             rateAt: (from, to, at) => {
-              if (from === to) return some(1);
+              if (from === to) return some(asRatio(1, 'a money is one of itself'));
               const direct = w.prices.latest(fxPairId(from, to), at);
-              if (direct.some) return some(direct.value.price);
+              if (direct.some) return some(asRatio(direct.value.price, `the rate ${from}/${to}`));
               const inverse = w.prices.latest(fxPairId(to, from), at);
-              return inverse.some && inverse.value.price > 0 ? some(1 / inverse.value.price) : none();
+              return inverse.some && inverse.value.price > 0
+                ? some(asRatio(1 / inverse.value.price, `the rate ${from}/${to}`))
+                : none();
             },
             calendar: w.calendar,
             registry: w.registry,
@@ -726,7 +729,7 @@ export class World {
     this.valuers.set(kind, { owner, value });
   }
 
-  private markOf(instrument: InstrumentId, at: Period): Option<number> {
+  private markOf(instrument: InstrumentId, at: Period): Option<PerPiece> {
     const i = this.instruments.get(instrument);
     // Fund Shares B1, E2: a derived value is not somebody's assessment and has no owner to ask —
     // it is arithmetic on a book anybody may read, so the kernel reads it rather than a module
@@ -741,12 +744,12 @@ export class World {
       // of is asking a fair question, and XI-6's answer to "what is this worth" when nothing has
       // priced it is that it is unpriced. A reader that REQUIRES a price still gets the throw, at
       // the site that requires it (`markPerUnit`, `printOrThrow`).
-      return i.issued > 0 ? some(this.valuation.markPerUnit(i.id, at)) : none<number>();
+      return i.issued > 0 ? some(this.valuation.markPerUnit(i.id, at)) : none<PerPiece>();
     }
     const printed = this.prices.latest(instrument, at);
     if (printed.some) return some(printed.value.price);
     const held = this.valuers.get(i.kind);
-    if (held === undefined) return none<number>();
+    if (held === undefined) return none<PerPiece>();
     return held.value(this.mechanismContext(held.owner), i, at);
   }
 
@@ -893,17 +896,17 @@ export class World {
   }
 
   /** D8: what a contract is worth to `a` at a period; `b`'s is the negation (A3). */
-  contractMark(c: Contract, at: Period): number {
+  contractMark(c: Contract, at: Period): Cash {
     return markOfContract(c, at, this.contractValueDeps());
   }
 
   /** D1: an asset to one side and a liability to the other, at every instant. */
-  contractValue(c: Contract, party: PartyId, at: Period): number {
+  contractValue(c: Contract, party: PartyId, at: Period): Cash {
     return contractValueTo(c, party, at, this.contractValueDeps());
   }
 
   /** Clearing D4: what the two equity accounts have recognised, to `a`. */
-  contractCarrying(c: Contract, at: Period): number {
+  contractCarrying(c: Contract, at: Period): Cash {
     return carryingOfContract(c, at, this.contractValueDeps());
   }
 
@@ -2016,9 +2019,9 @@ export class World {
   private indexDeps(): IndexDeps {
     const held = this.deps;
     if (held !== undefined) return held;
-    const printed = (instrument: InstrumentId, at: Period): Option<number> => {
+    const printed = (instrument: InstrumentId, at: Period): Option<PerPiece> => {
       const p = this.prices.latest(instrument, at);
-      return p.some && p.value.period === at ? some(p.value.price) : none<number>();
+      return p.some && p.value.period === at ? some(p.value.price) : none<PerPiece>();
     };
     const made: IndexDeps = {
       cache: this.indexLevels,
@@ -2169,7 +2172,11 @@ export class World {
       instruments: () => this.instruments.all(),
       cashFlows: (i, after) =>
         this.registry.instrumentKind(i.kind).cashFlows(i, after, this.calendar),
-      accrued: (i, on) => this.registry.instrumentKind(i.kind).accrued(i, on, this.calendar),
+      accrued: (i, on) =>
+        asPerPiece(
+          this.registry.instrumentKind(i.kind).accrued(i, on, this.calendar),
+          `what has accrued on ${i.id}`,
+        ),
     });
   }
 
@@ -2193,7 +2200,13 @@ export class World {
     const flows = profile.cashFlows(i, on, this.calendar);
     if (flows.length === 0) return none<number>();
     return some(
-      priceAt(flows, required, on, WORTH_DAY_COUNT, `what ${instrument} is worth at ${required}`),
+      priceAt(
+        flows,
+        asRatio(required, `required return for ${instrument}`),
+        on,
+        WORTH_DAY_COUNT,
+        `what ${instrument} is worth at ${required}`,
+      ),
     );
   }
 
@@ -2211,9 +2224,14 @@ export class World {
   }
 
   /** Bond N9.b: what has accrued per unit on a line at the start of a period, from its own terms. */
-  accruedPerUnit(instrument: InstrumentId, at: Period): number {
+  accruedPerUnit(instrument: InstrumentId, at: Period): PerPiece {
     const i = this.instruments.get(instrument);
-    return this.registry.instrumentKind(i.kind).accrued(i, this.calendar.startOf(at), this.calendar);
+    // Item 16: what has accrued on ONE unit is money per piece, which is what makes a dirty price
+    // `plus(clean, accrued)` and never an addition of a balance to a level.
+    return asPerPiece(
+      this.registry.instrumentKind(i.kind).accrued(i, this.calendar.startOf(at), this.calendar),
+      `what has accrued on ${instrument}`,
+    );
   }
 
   /**

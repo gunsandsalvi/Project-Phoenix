@@ -29,7 +29,7 @@
  * something the arithmetic cannot violate instead of something the audit reports afterwards.
  */
 import { Impossible } from './errors.js';
-import type { Brand } from './ids.js';
+import type { Amount, PerPiece } from './measure.js';
 import { dustOf, finite } from './num.js';
 
 /**
@@ -53,7 +53,13 @@ import { dustOf, finite } from './num.js';
  * That is the difference between a rule and a habit: this one is checked by the compiler at every
  * site at once, and a new writer cannot forget it.
  */
-export type Qty = Brand<number, 'Qty'>;
+/**
+ * Item 16, Law 4: IT IS THE DIMENSION SYSTEM'S `Amount`, not a second brand beside it. A count of
+ * pieces on the tick grid is exactly what an amount of a thing is, and two representations of one
+ * real thing is the defect Law 4 names — so `Qty` IS `Amount<'piece'>`, `valueAt(price, qty)` takes
+ * the register's own quantity with nothing in between, and every door below still guards the grid.
+ */
+export type Qty = Amount<'piece'>;
 
 /**
  * A number that is ALREADY a count of pieces, said out loud. It throws if it is not — so the only
@@ -299,8 +305,8 @@ export function upToTick(price: number, tick: number): number {
  * opening level, a published net asset value. Nobody is promising anything at it, so there is no
  * side to take the direction from and the nearest is the honest answer.
  */
-export function toTickOf(price: number, tick: number): number {
-  return Math.round(ticksIn(price, tick)) * tick;
+export function toTickOf(price: PerPiece, tick: PerPiece): PerPiece {
+  return (Math.round(ticksIn(price, tick)) * tick) as PerPiece;
 }
 
 function ticksIn(price: number, tick: number): number {

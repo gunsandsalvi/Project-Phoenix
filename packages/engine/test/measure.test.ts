@@ -8,10 +8,23 @@
  * PASSES when the compiler refuses the line, and fails when it accepts it.
  */
 import { describe, expect, it } from 'vitest';
+import { period } from '../src/calendar/calendar.js';
+import { currencyCode, instrumentId, marketId } from '../src/core/ids.js';
+import { sum } from '../src/core/num.js';
+import { asQty, type Qty } from '../src/core/tick.js';
+import type { Print } from '../src/prices/price-store.js';
+import type { Lot } from '../src/register/register.js';
+import type { CashFlow } from '../src/registry/kinds.js';
 import {
+  absolute,
   acrossMembers,
   asAmount,
+  asCash,
   asMoney,
+  asPerPiece,
+  negated,
+  over,
+  type Cash,
   asPerMember,
   asPrice,
   asRatio,
@@ -95,6 +108,66 @@ describe('per member and total are different types (A-1, A-18, A-39)', () => {
     // A weight is a COUNT OF PEOPLE, and a fraction of one is not (XI-15).
     expect(() => acrossMembers(each, 2.5, 'between them')).toThrow(/count of people/);
     expect(() => eachMember(asTotal<'money:USD'>(9, 'nine'), 0, 'each')).toThrow(/nobody to divide/);
+  });
+});
+
+describe('stage 1: the kernel carries its dimensions', () => {
+  it('a print is a price, and a bare number cannot be one', () => {
+    const line = instrumentId('line.under.test');
+    const good: Print = {
+      instrument: line,
+      market: marketId('mkt.under.test'),
+      period: period(0),
+      price: asPerPiece(3, 'a level'),
+      ccy: currencyCode('USD'),
+      provenance: { kind: 'opening' },
+    };
+    expect(good.price).toBe(3);
+    const bad: Print = {
+      instrument: line,
+      market: marketId('mkt.under.test'),
+      period: period(0),
+      // @ts-expect-error a level a market printed is money per piece, not a bare number
+      price: 3,
+      ccy: currencyCode('USD'),
+      provenance: { kind: 'opening' },
+    };
+    expect(bad.price).toBe(3);
+  });
+
+  it('a lot basis and a cash flow are prices too', () => {
+    const lot: Pick<Lot, 'basisPerUnit'> = { basisPerUnit: asPerPiece(2, 'what it cost') };
+    expect(lot.basisPerUnit).toBe(2);
+    const flow: CashFlow = { date: { y: 2030, m: 1, d: 1 }, perUnit: asPerPiece(1, 'par') };
+    expect(flow.perUnit).toBe(1);
+    // @ts-expect-error what one unit pays is money per piece and says so
+    const wrong: CashFlow = { date: { y: 2030, m: 1, d: 1 }, perUnit: 1 };
+    expect(wrong.perUnit).toBe(1);
+  });
+
+  it('a register quantity IS an amount, so it prices with nothing in between (Law 4)', () => {
+    // `Qty` is `Amount<'piece'>`: one representation of a count, not a second brand beside one.
+    const held: Qty = asQty(50, 'fifty pieces');
+    const level = asPerPiece(4, 'four a piece');
+    const worth: Cash = valueAt(level, held, 'what it is worth');
+    expect(worth).toBe(200);
+    // And what it is worth is not what it is worth PER PIECE.
+    // @ts-expect-error a balance is not a level
+    expect(() => plus(worth, level, 'nonsense')).toBeDefined();
+  });
+
+  it('a total carries the dimension of its terms out of `sum` (Law 7)', () => {
+    const total: Cash = sum([asCash(1, 'one'), asCash(2, 'two')]).value;
+    expect(total).toBe(3);
+    // @ts-expect-error a sum of money is money, and a level is not
+    expect(() => plus(total, asPerPiece(1, 'a level'), 'nonsense')).toBeDefined();
+  });
+
+  it('a dimension survives division by a pure number, negation and magnitude', () => {
+    expect(over(asCash(10, 'ten'), asRatio(4, 'a four-for-one split'), 'restated')).toBe(2.5);
+    expect(negated(asCash(10, 'ten'), 'what is owed')).toBe(-10);
+    expect(absolute(asCash(-10, 'owed'), 'how big it is')).toBe(10);
+    expect(() => over(asCash(10, 'ten'), asRatio(0, 'none'), 'restated')).toThrow(/into nothing/);
   });
 });
 

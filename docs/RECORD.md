@@ -5046,3 +5046,101 @@ named in the failure message if one ever appears.
 **Measured.** The whole suite: **79 red before item 8, 79 red now, the same 79 test for test** — and
 **707 passing where there were 638**, the 69 being this run's own tests. Green: lint, typecheck, spec
 citations (208), forbids (205 files), `plan:check`.
+
+## Item 18 — the worklist re-pointed, and four central banks get four rates
+
+**This entry was missed at the commit it belongs to (`4018142`) and is written here.** The rule is
+one item, one commit, carrying its record; item 18 carried its `docs/AUDIT.md` block and its
+`docs/WORKLIST.md` re-pointing and not this. A record with a hole in it is a ledger nobody can read
+back, so the hole is filled rather than left — and named, because that is what the ledger is for.
+
+**The worklist was re-pointed at what items 0–17 changed.** 13k is reframed: the dividend half of it
+was built at item 10 (`declareDividend` on the firm's own fiscal quarter, a claim per holder, a
+payment that reads the claim), and what is genuinely still periodic is the rating fee and the tax
+assessment. 13m stands on item 12's ground now that land has a supply and a cleared price. 13n is
+unblocked by items 7 and 15: a firm can be born because there is a lifecycle to be born into and an
+objective to be born with. **13o is still blocked and by a named thing** — item 8 built `Agreement`
+and did not migrate the seven private books, so `Mandate` does not exist, and building asset
+managers on today's `fund` party would bake the pool/decider conflation in permanently. 13l is done.
+
+**C-3: `corridor(ctx)` took no currency, so four central banks administered one rate.** The Fed, the
+ECB, the Bank of England and the Bank of Japan all sat at 2%. With no interest differential between
+two moneys there is no carry — an FX forward prices flat to spot, covered interest parity says
+nothing, and the cross-currency basis has nothing to be a basis of. **Four mechanisms this world has
+built could show nothing**, because one row was shared by four institutions whose whole reason to
+differ is that they set different rates. `POLICY_RATES` declares one policy per money and
+`corridor(ctx, ccy)` is asked per currency at all four call sites, with one `centralBank.corridor`
+announcement per central bank.
+
+**And the yen wanted to be zero and could not be.** A policy rate of 0.0 puts the corridor's floor at
+−0.001 and the solver refuses a negative price, so it sits at 0.002 and the absence is written down
+as **E-7**: a negative policy rate is real, three of this world's four central banks have run one,
+and nothing here can express it. That is a finding about the price grid, not a number to tune.
+
+**Measured.** Whole suite 79 red before, 79 red after, the same 79 test for test.
+
+## Item 16, stage 1 — the kernel carries its dimensions
+
+**The stage's own count was wrong and the grep is why.** Stage 1 was written as 157 kernel sites; the
+count came from `grep -E '(mul|add|sub|div)\('`, which counts every `Set.add` and `Map.set` sibling
+in the kernel. There were **119**. They are **68** now, and what closed is every money arithmetic
+among them.
+
+**Fifty-two files, and every one of them either a door or a site the compiler found.**
+
+**`Qty` IS `Amount<'piece'>` (Law 4), and that is the change the rest rests on.** The tick grid's
+brand and the dimension system's amount were two representations of one real thing — a count of a
+unit's smallest pieces — and Law 4 says that is a defect however well each is written. One line in
+`core/tick.ts` made them one type, the whole engine typechecked unchanged, and `valueAt(price, qty)`
+now takes the register's own quantity with nothing in between.
+
+**The doors, and the ripple was small because a `Measure<D>` IS a number at runtime.** `Print.price`
+is a `PerPiece`, and the six writers say so where they write (`params.price`, `registry.onQuoteGrid`,
+`toTickOf`, the seed's `priced`, the solver's book, the funds' opening level). `Lot.basisPerUnit` and
+`DrawnLot` are prices, so `costOfDraw` is a `valueAt` and returns `Cash`. `CashFlow.perUnit` and
+`DueAction.amountPerUnit` are prices, so discounting a schedule gives a price back (`priceAt`) and a
+yield comes out a `Ratio` (`yieldOf`) — Law 3 in the type: a yield is derived FROM a price and can
+never be one. `Valuation` hands out `PerPiece` for what a unit is marked at and `Cash` for what a
+position is worth, and `rateInForce` is a `Ratio`, which makes `inMoney` a `scale` and makes a rate
+something that cannot be spent. The solver's outcome, every fill's level and every trade's cash go
+the same way, and `revalue` — every re-marking and every FX move in this world — with them.
+
+**`Sum<T>` carries its terms' dimension out of `sum`**, which is where most of this engine's totals
+are made; a list of moneys totals to money and a list of prices to a price.
+
+**Five operations were added to `core/measure.ts`** because the kernel needed them and each is real
+algebra rather than an escape hatch: `over` (a dimension divided by a pure number — a split restating
+a price, a total shared out), `absolute`, `negated`, and the two doors `asCash` and `asPerPiece`.
+
+**The first thing the type found that was WRONG rather than merely unchecked.** `index.base` was
+declared `dimension: 'price'` and read with `params.price`. An index level is a pure number — the
+declaration's own `why` says so, at length, in the same breath as calling it a price — and a level
+that could be added to a balance would be a claim rather than a measurement. It is a `Ratio` now and
+the declaration was corrected with it.
+
+**`eachMember` where `div` was, at the two per-member doors.** `perMemberOf` in settlement and the
+coupon payer in `world/actions.ts` divided by a cell's weight with `div`, which answers `Infinity`
+for a cell of nobody and puts it in an equity account or on a leg. `eachMember` refuses it. The
+issuer's side of a revaluation crosses by `acrossMembers` and by nothing else.
+
+**What this stage cannot check, said out loud rather than implied by an alias.** A currency is DRAWN
+(Seed B1.a) and a unit is registry data, so neither is a literal the compiler ever sees: `C` and `U`
+are `string` in every kernel signature and two currencies are one type to it. So **A-65** (money²),
+**A-39**, **A-1**, **A-18** (per member against total) and **A-44**, **A-58** (a ratio as a level)
+are unwriteable in the kernel now, and **A-23 and the four beside it are not** — cross-currency
+addition stays a runtime refusal at the leg, which is where the currency is actually known, and
+becomes a compile error only where a module names its money as a literal. Nor can the register say
+whether a `Qty` it holds is per member or a total, because for a cell it is the first and for a named
+party the second: **A-1's shape survives this type**, and closing it needs the ontology rather than
+the arithmetic. Those limits are in `core/measure.ts` beside the aliases, where the next reader will
+be standing when it matters.
+
+**What is left in the kernel is not money.** Plant wear, storage and capacity
+(`registry/physical.ts`), days over terrain (`registry/geography.ts`), a variance of price moves,
+two audit families comparing two routes to one rate, and `core/num.ts`'s own definitions. Each
+belongs with the stage that owns its module.
+
+**Measured.** The whole suite was **79 red of 786** before this stage and is **79 red of 791** after
+— the same 79, test for test — the five new ones being this stage's own, which assert that a bare
+number can no longer be a print, a basis, a cash flow or a total. Green: lint, typecheck, spec
+citations, forbids, `plan:check`.

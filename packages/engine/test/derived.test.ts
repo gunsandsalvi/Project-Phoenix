@@ -8,6 +8,7 @@
  * read from the same marks everything else is valued at, never stored, and the same number for
  * every holder. What it is a claim on is the funds module's business.
  */
+import type { PerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   USD,
@@ -56,7 +57,7 @@ function claimKind(countsItsOwn = false): InstrumentKindProfile {
     due: () => [],
     accrued: () => 0,
     cashFlows: () => [],
-    carriedAt: (_i, lot, marked) => (lot.qty === 0 ? none<number>() : marked),
+    carriedAt: (_i, lot, marked) => (lot.qty === 0 ? none<PerPiece>() : marked),
     derive: (i, at, reads) => {
       const issued = reads.issued(i.id);
       if (issued <= 0) throw new Error('no claims outstanding');

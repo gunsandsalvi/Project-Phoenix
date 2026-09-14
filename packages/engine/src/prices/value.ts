@@ -13,7 +13,19 @@ import { assertNever } from '../core/assert.js';
 import { Forbidden, Unpriced } from '../core/errors.js';
 import { fxPairId, type CurrencyCode, type InstrumentId, type PartyId } from '../core/ids.js';
 import { none, some, type Option } from '../core/option.js';
-import { dustOf, mul, sum, type Running } from '../core/num.js';
+import {
+  absolute,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  type PerPiece,
+  type Ratio,
+  scale,
+  valueAt,
+} from '../core/measure.js';
+import { dustOf, sum, type Running } from '../core/num.js';
+import type { Qty } from '../core/tick.js';
 import type { InstrumentsReads as Instruments } from '../register/instruments.js';
 import type { Lot, RegisterReads } from '../register/register.js';
 import type { DerivedReads } from '../registry/kinds.js';
@@ -87,13 +99,13 @@ export class Valuation {
     holder: PartyId,
     instrument: InstrumentId,
     at: Period,
-  ): Option<{ readonly value: number; readonly from: Period }> {
+  ): Option<{ readonly value: Cash; readonly from: Period }> {
     const held = this.register.holding(holder, instrument);
     if (!held.some) return none();
     const lots = held.value.lots;
     const i = this.instruments.get(instrument);
     const profile = this.registry.instrumentKind(i.kind);
-    const qty = lots.reduce((t, l) => t + l.qty, 0);
+    const qty = sum(lots.map((l) => l.qty)).value;
     // A derived value is asked FIRST, before the carrying rule: it is available fresh at every ask
     // (B1), and reading the lot's basis instead would be a stale mirror of a number the kernel can
     // read now (Law 19). What the equity account has RECOGNISED is a different question and stays
@@ -103,7 +115,8 @@ export class Valuation {
     }
     switch (profile.pricing) {
       case 'money':
-        return some({ value: qty, from: at });
+        // Money D2: a balance is worth its own face, which is the one price that is not read.
+        return some({ value: asCash(qty, `what ${instrument} is worth`), from: at });
       case 'cleared': {
         /**
          * Observer A1.a, XI-6: `latest` HERE AND `printOrThrow` IN `markPerUnit`, and they are two
@@ -121,12 +134,15 @@ export class Valuation {
          */
         const p = this.prices.latest(instrument, at);
         return p.some
-          ? some({ value: mul(qty, p.value.price, `what ${instrument} is worth`), from: struckIn(p.value) })
+          ? some({
+              value: valueAt(p.value.price, qty, `what ${instrument} is worth`),
+              from: struckIn(p.value),
+            })
           : none();
       }
       case 'derived':
         return some({
-          value: mul(qty, this.derived(instrument, at), `what ${instrument} is worth`),
+          value: valueAt(this.derived(instrument, at), qty, `what ${instrument} is worth`),
           from: at,
         });
       case 'carriedAtCost':
@@ -140,7 +156,7 @@ export class Valuation {
    * Fund Shares B1: the derived value of one unit, read at the moment it is asked. A kind that says
    * its price is derived and derives nothing is a defect the registry should have refused.
    */
-  private derived(instrument: InstrumentId, at: Period): number {
+  private derived(instrument: InstrumentId, at: Period): PerPiece {
     const i = this.instruments.get(instrument);
     const derive = this.registry.instrumentKind(i.kind).derive;
     if (derive === undefined) {
@@ -158,7 +174,7 @@ export class Valuation {
     // No try/finally: a derivation that throws stops the run at its site (§5), so there is no
     // later read for a stale entry to confuse — and the engine does not catch.
     this.deriving.add(instrument);
-    const value = derive(i, at, this.reads());
+    const value = asPerPiece(derive(i, at, this.reads()), `what one ${instrument} is worth`);
     this.deriving.delete(instrument);
     // Law 8, worklist 12b.1: AND IT IS NOT PUT ON A PRICE GRID, which was tried and was wrong.
     // A derived value is arithmetic on a book (B1) and not a level anybody offers, so rounding it
@@ -203,19 +219,25 @@ export class Valuation {
    * A money is one of itself: the only other hard-coded price of one, and it is arithmetic rather
    * than a claim (Money D2 has the first).
    */
-  rateInForce(from: CurrencyCode, to: CurrencyCode, at: Period): number {
-    if (from === to) return 1;
+  rateInForce(from: CurrencyCode, to: CurrencyCode, at: Period): Ratio {
+    if (from === to) return asRatio(1, 'a money is one of itself');
     // At period zero there is no period before it to have struck a rate, so the one in force is
     // the one the seed wrote — which is what "the opening world is priced at a stated level" means
     // for a rate exactly as it does for a price (Seed C4).
     const asOf = this.recognisedThrough >= at || at === 0 ? at : period(at - 1);
     const direct = this.prices.latest(fxPairId(from, to), asOf);
-    if (direct.some) return direct.value.price;
+    // Item 16: it is a PRICE in the store — what one unit of `from` costs in `to` — and it comes
+    // out of this reader as a `Ratio`, because with the currency erased from the type (core/
+    // measure.ts) money-in-`to` over money-in-`from` is what a pure number is. That is what lets
+    // `inMoney` be a `scale` and stops the rate itself being spent or printed as a level.
+    if (direct.some) return asRatio(direct.value.price, `the rate ${from}/${to}`);
     // C3: the same market read the other way round. It is not a second market and not a second
     // number — one over a rate is the same rate — so nothing is triangulated and no vehicle
     // currency is invented (C3.b).
     const inverse = this.prices.latest(fxPairId(to, from), asOf);
-    if (inverse.some && inverse.value.price > 0) return 1 / inverse.value.price;
+    if (inverse.some && inverse.value.price > 0) {
+      return asRatio(1 / inverse.value.price, `the rate ${from}/${to}`);
+    }
     throw new Unpriced('Currency C5', `no rate for ${from}/${to} in force at ${at}`, { from, to, at });
   }
 
@@ -224,16 +246,18 @@ export class Valuation {
    * and never stores: nothing anywhere holds a balance in a money that is not its own (C4.a), and a
    * balance sheet that adds two currencies does it here, once, at one rate.
    */
-  inMoney(value: number, from: CurrencyCode, to: CurrencyCode, at: Period): number {
-    return from === to ? value : mul(value, this.rateInForce(from, to, at), `${from} in ${to}`);
+  inMoney(value: number, from: CurrencyCode, to: CurrencyCode, at: Period): Cash {
+    const held = asCash(value, `${from} in ${to}`);
+    return from === to ? held : scale(held, this.rateInForce(from, to, at), `${from} in ${to}`);
   }
 
-  markPerUnit(instrument: InstrumentId, at: Period): number {
+  markPerUnit(instrument: InstrumentId, at: Period): PerPiece {
     const i = this.instruments.get(instrument);
     const pricing = this.registry.instrumentKind(i.kind).pricing;
     switch (pricing) {
       case 'money':
-        return 1; // Money D2: the only admissible hard-coded price of one.
+        // Money D2: the only admissible hard-coded price of one.
+        return asPerPiece(1, 'money is worth one of itself');
       case 'cleared':
         return this.prices.printOrThrow(instrument, at).price;
       case 'derived':
@@ -255,12 +279,12 @@ export class Valuation {
     instrument: InstrumentId,
     lot: Pick<Lot, 'basisPerUnit' | 'acquired'>,
     now: Period,
-  ): number {
+  ): PerPiece {
     const i = this.instruments.get(instrument);
     const pricing = this.registry.instrumentKind(i.kind).pricing;
     switch (pricing) {
       case 'money':
-        return 1;
+        return asPerPiece(1, 'money is worth one of itself');
       // A derived value has no history to read: nothing stored what a book came to last week, and
       // re-deriving it from today's register would be answering a different question. So what the
       // equity account has recognised is what the lot carries, which revaluation re-marks each
@@ -294,13 +318,16 @@ export class Valuation {
     const sides = sum(
       this.register
         .holdingsOf(party)
-        .map((h) => Math.abs(this.valueOfLots(h.instrument, h.lots, at))),
+        .map((h) => absolute(this.valueOfLots(h.instrument, h.lots, at), 'what a holding is worth')),
     );
-    return walk.dust + dustOf(sides.terms + 2, mul(sides.value, 2, 'both sides of the balance sheet'));
+    return (
+      walk.dust +
+      dustOf(sides.terms + 2, scale(sides.value, asRatio(2, 'both sides of a balance sheet'), 'both sides of the balance sheet'))
+    );
   }
 
   /** Value of a quantity at the mark in force for `at`, in the instrument's currency. */
-  valueAtMark(instrument: InstrumentId, qty: number, at: Period): number {
+  valueAtMark(instrument: InstrumentId, qty: Qty, at: Period): Cash {
     const i = this.instruments.get(instrument);
     const pricing = this.registry.instrumentKind(i.kind).pricing;
     if (pricing === 'carriedAtCost') {
@@ -308,11 +335,11 @@ export class Valuation {
         instrument,
       });
     }
-    return mul(qty, this.markPerUnit(instrument, at), `value of ${instrument}`);
+    return valueAt(this.markPerUnit(instrument, at), qty, `value of ${instrument}`);
   }
 
   /** Value of lots: at mark for cleared instruments and money, at basis for carried-at-cost. */
-  valueOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): number {
+  valueOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): Cash {
     const i = this.instruments.get(instrument);
     const carry = this.registry.instrumentKind(i.kind).carry;
     /**
@@ -322,7 +349,11 @@ export class Valuation {
      * (item 13b.1).
      */
     const terms = lots.map((lot) =>
-      mul(lot.qty, carry === 'cost' ? lot.basisPerUnit : this.markPerUnit(instrument, at), `value of ${instrument}`),
+      valueAt(
+        carry === 'cost' ? lot.basisPerUnit : this.markPerUnit(instrument, at),
+        lot.qty,
+        `value of ${instrument}`,
+      ),
     );
     return sum(terms).value;
   }
