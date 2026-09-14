@@ -377,25 +377,25 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Short-Term Debt A1` | MISSING |  |
-| `Short-Term Debt A2` | MISSING |  |
-| `Short-Term Debt A3` | MISSING |  |
-| `Short-Term Debt B1` | MISSING |  |
-| `Short-Term Debt B2` | MISSING |  |
-| `Short-Term Debt B3` | MISSING |  |
-| `Short-Term Debt B4` | MISSING |  |
-| `Short-Term Debt B5` | MISSING |  |
-| `Short-Term Debt C1` | MISSING |  |
-| `Short-Term Debt C2` | MISSING |  |
-| `Short-Term Debt C3` | MISSING |  |
-| `Short-Term Debt C4` | MISSING |  |
-| `Short-Term Debt D1` | MISSING |  |
-| `Short-Term Debt D2` | MISSING |  |
-| `Short-Term Debt D3` | MISSING |  |
-| `Short-Term Debt D4` | MISSING |  |
-| `Short-Term Debt E1` | MISSING |  |
-| `Short-Term Debt E2` | MISSING |  |
-| `Short-Term Debt E3` | MISSING |  |
+| `Short-Term Debt A1` | MET | packages/engine/src/mechanisms/short-term-debt/paper.ts (`commercial.paper`: it satisfies the bond contract and answers four of its nodes its own way — no coupon and a discount that is the whole return, under a year, senior unsecured, and no early-termination regime at all because it is too short to be worth an option, which is a stated answer rather than an omission), packages/engine/test/short-term-debt.test.ts |
+| `Short-Term Debt A2` | MET | packages/engine/src/mechanisms/short-term-debt/paper.ts (`pricing: 'cleared'`, and `yieldOn` derives the yield FROM the price and the days left — in that direction only, never back into a price) |
+| `Short-Term Debt A3` | MET | packages/engine/src/mechanisms/short-term-debt/paper.ts (one contract, and the TYPE IS THE CREDIT: the state's short paper is the `sovereign.bill` it already issues, a firm's and a bank's is this. They differ in the three things §7 separates from §8 — the issuer can FAIL into an estate, the claim RANKS, and one miss makes the rest due — and in nothing about what the paper promises, which is why `DiscountSchedule` in the kernel is written once and both kinds read it), packages/engine/src/mechanisms/short-term-debt/index.ts (`NEEDS`: what each type is short of is its own published fact, read through a table and never a branch) |
+| `Short-Term Debt B1` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (`firmNeed` reads what a firm published it cannot pay of what falls due soon; `bankNeed` reads what a bank published it keeps back against a bad week against the reserves it actually holds. `firms.funding` now splits the near need from the programme where the firm allocates its own cash, so a bond funds the plant and paper funds the payroll and one hole is not filled twice) |
+| `Short-Term Debt B2` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (`costOfBorrowing`/`priceCosting`: the issuer's walk-away is the price at which this paper costs what borrowing otherwise costs it, so it comes when the short end is the cheaper of the two — a comparison against a published quote, never a curve this module drew) |
+| `Short-Term Debt B3` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (`maturingIn`: what matures enlarges the need it brings paper against, so the roll is the ordinary case of the ordinary mechanism) |
+| `Short-Term Debt B4` | PARTIAL | packages/engine/src/mechanisms/short-term-debt/index.ts (`grantBackstops`/`chargeBackstops`/`drawBackstops`: a committed line as an `Agreement` between two named parties, a fee that leaves the issuer's account every period on the UNDRAWN headroom, and a draw when maturing paper exceeds what it holds). What is a PLACEHOLDER is the LIMIT: a facility is granted, priced and re-sized by a lender out of its own view of the borrower, which is Corporate Credit C9 and item 17.2 — `shortTermDebt.line` is declared a SHAPE naming that item and is deleted in the same change |
+| `Short-Term Debt B5` | PARTIAL | packages/engine/src/mechanisms/short-term-debt/index.ts (the `units` family reads every live line's outstanding and reports what should not be there). The PROFILE itself — the shape of what falls due when, and a concentrated one being a foreseeable wall — is a standing measurement and belongs with the rest of Part XII (item 23) |
+| `Short-Term Debt C1` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (`buys`, declared for a bank's liquidity book, a corporate treasurer and a money fund: several party kinds with ONE reason, so one participant declared once per kind rather than three mechanisms) |
+| `Short-Term Debt C2` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (`onDeposit`: the most a buyer will pay is the price at which this paper returns what the keenest published deposit board would pay it — so C2.a's substitution happens because the buyer's ALTERNATIVE moved and nothing ties the two) |
+| `Short-Term Debt C3` | PARTIAL | packages/engine/src/mechanisms/short-term-debt/index.ts (`headroomFor` and `doubted`: a buyer will not add to a name past a share of its own book, and will not lend at any price to one it has seen default or breach within the memory it keeps — which is what makes a deteriorating issuer lose funding BEFORE it loses solvency). Every buyer shares one concentration and one memory today: Corporate Credit A4.b's argument applies here too, that a single view held by everybody removes the dispersion a book needs, and each buyer having its own is unbuilt |
+| `Short-Term Debt C4` | MISSING | a VERIFY, and it is a MEASUREMENT of a long run rather than a mechanism (Law 11): C2's channel is built, so the bill yield CAN move with the policy rate because the buyers' alternative moved. That it DOES is Part XII's to measure (item 23) |
+| `Short-Term Debt D1` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (`openLine` opens a market on every line, so a holder can get out early at a cleared price) |
+| `Short-Term Debt D2` | MISSING | a read of how the price responds to short rates against the issuer's credit, and at this tenor which of the two dominates. Both inputs exist and the response is a measurement, not a mechanism (item 23) |
+| `Short-Term Debt D3` | MISSING | paper as repo collateral with a haircut. `money-market/collateral.ts` already has the haircut machinery and what is missing is that it accepts this kind — item 17.6 is the same shape for senior notes and builds it once |
+| `Short-Term Debt D4` | MISSING | a spread over the equivalent-tenor bill, as a derived read of two cleared prices. It needs bills and paper at a comparable tenor to have both printed, which is a measurement (item 23) |
+| `Short-Term Debt E1` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (there is NO renewal path: the only way a line continues is a fresh offer into a book that may decline, and the test asserts the module has one issuing phase and no other) |
+| `Short-Term Debt E2` | MET | packages/engine/src/mechanisms/short-term-debt/paper.ts (`pricing: 'cleared'` and nothing anywhere computes a discount off a curve; `priceCosting` produces a party's own walk-away and never reaches the price store) |
+| `Short-Term Debt E3` | MET | packages/engine/src/mechanisms/short-term-debt/index.ts (the `units` family: no negative outstanding, and no line still outstanding after its own maturity has passed — a maturity that passed without cash moving is exactly what that second read finds), packages/engine/test/short-term-debt.test.ts |
 
 ## Equity
 

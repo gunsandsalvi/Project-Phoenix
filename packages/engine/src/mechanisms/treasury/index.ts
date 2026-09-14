@@ -691,7 +691,9 @@ function openLine(
   const on = ctx.calendar.startOf(ctx.period);
   const id = instrumentId(`${issuer}.${short ? 'bill.' : ''}${formatCivil(maturity)}`);
   const terms: SovereignBondTerms | SovereignBillTerms = short
-    ? { kind: SOVEREIGN_BILL, issueDate: on, maturity }
+    // A2.a (item 10b): on the same convention its coupon lines use, because it is the same
+    // issuer quoting in the same money — and at this tenor the convention is part of the number.
+    ? { kind: SOVEREIGN_BILL, issueDate: on, maturity, dayCount }
     : {
         kind: SOVEREIGN_BOND,
         coupon: rate(atLeast(y, 0, 'an issuer cannot promise to be paid for borrowing'), ANNUAL),

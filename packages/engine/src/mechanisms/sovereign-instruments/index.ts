@@ -7,10 +7,9 @@
  * A module: it registers kinds and profiles and touches no kernel store. The auction, the curve and
  * the treasury's programme are separate modules (worklist 3); this one is only the paper.
  */
-import { asPerPiece } from '../../core/measure.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
-import { compareCivil, formatCivil } from '../../calendar/civil.js';
+import { formatCivil } from '../../calendar/civil.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { percent } from '../../core/format.js';
 import { issuerOf } from '../../register/instruments.js';
@@ -29,6 +28,8 @@ import {
   accruedOf,
   ontoTheGrid,
   cashFlowsOf,
+  discountDue,
+  discountFlows,
   dueOf,
 } from '../../registry/claims.js';
 
@@ -126,19 +127,14 @@ export const sovereignBill: InstrumentKindProfile = {
     isBill(i.terms)
       ? `${issuerName(namer, i.id)} bill ${formatCivil(i.terms.maturity)}`
       : `${issuerName(namer, i.id)} bill`,
-  // N5.c: no coupon; the return is the discount to par, and the bill accretes against its own print.
-  due: (i, period, cal) =>
-    isBill(i.terms) && cal.periodOf(i.terms.maturity) === period
-      ? [{ kind: 'maturity', date: i.terms.maturity }]
-      : [],
+  // N5.c, Law 4 (item 10b): the kernel's schedule, because "one payment of par on one day" is not a
+  // sovereign fact. It was written out here and again in every other discount line until §9 needed
+  // one too, and two implementations of one promise agree until the day somebody edits one.
+  due: (i, period, cal) => (isBill(i.terms) ? discountDue(i.terms, period, cal) : []),
   // F2: a bill accretes against its own cleared price; nothing accrues on the paper itself, so
   // nothing travels with a trade beyond the price.
   accrued: () => 0,
-  // N5.c: one payment, par at maturity. The discount to it is the whole return.
-  cashFlows: (i, after) =>
-    isBill(i.terms) && compareCivil(i.terms.maturity, after) > 0
-      ? [{ date: i.terms.maturity, perUnit: asPerPiece(1, 'a bill redeems at par') }]
-      : [],
+  cashFlows: (i, after) => (isBill(i.terms) ? discountFlows(i.terms, after) : []),
 };
 
 export const sovereignInstruments: SystemModule = {

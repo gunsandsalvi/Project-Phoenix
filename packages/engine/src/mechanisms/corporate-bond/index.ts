@@ -265,7 +265,16 @@ function shortOf(
 ): Option<{ readonly short: Cash; readonly ccy: CurrencyCode }> {
   const said = ctx.journal.lastOf('firms.funding', String(firm));
   if (said?.period !== ctx.period) return none();
-  const short = said.data['short'];
+  /**
+   * E4, Short-Term Debt B1 (item 10b): THE PART OF ITS GAP THAT IS NOT DUE FOR YEARS.
+   *
+   * This read `short` — the whole gap — until §9 gave this world a short channel, and then one
+   * hole had two issuers filling it: a five-year bond and three-month paper both brought against
+   * the same published number, and the firm raised twice what it needed. `firms.funding` now
+   * splits it where the firm allocates its own money, and each channel funds what it is for: paper
+   * covers what falls due within weeks, a bond covers the plant (Capital Programme B2).
+   */
+  const short = said.data['shortTerm'];
   const ccy = said.data['ccy'];
   // E4: a negative short is what it has OVER, and a firm with money to spare does not borrow.
   if (typeof short !== 'number' || short <= 0 || typeof ccy !== 'string') return none();
@@ -325,7 +334,7 @@ const gridOf =
     ctx.registry.priceOf(ccy, CORPORATE_PAR, asPerNamedUnit(x, what));
 
 /**
- * A1, C2, C2.a, C3, C4, C8, Clearing C1.b: THE ISSUE — a line, a market, and the paper brought to it.
+ * A1, C2, C2.a, C3, C4, C8, Clearing C4: THE ISSUE — a line, a market, and the paper brought to it.
  *
  * C2, C3, C5: THE BOOK IS THE KERNEL'S, and it has to be. Holders post schedules — a size at a level,
  * which is what C2.a says an indication is — one solver strikes the one level at which the book
@@ -394,7 +403,7 @@ function place(
     reservation: walkAway,
     allotment: 'uniformPrice',
   });
-  // C2.b, Clearing C1.b: the announcement, and the two prices it compared — so a reader can see which of B1's two
+  // C2.b, Clearing C4: the announcement, and the two prices it compared — so a reader can see which of B1's two
   // reasons brought it, and so a bank reads off the market that this shortfall is being raised
   // there rather than writing a loan against the same published number (Law 4).
   ctx.record(

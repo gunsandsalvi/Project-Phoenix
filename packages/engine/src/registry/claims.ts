@@ -57,10 +57,51 @@ export interface SovereignBondTerms extends Terms, CouponSchedule {
   readonly kind: typeof SOVEREIGN_BOND;
 }
 
-export interface SovereignBillTerms extends Terms {
-  readonly kind: typeof SOVEREIGN_BILL;
+/**
+ * Short-Term Debt A1.a, A2.a, Bond N5.c, Law 4 (item 10b): WHAT DISCOUNT PAPER PROMISES, whoever
+ * issued it — ONE payment of par on ONE day, and the discount to it is the whole return.
+ *
+ * The same argument `CouponSchedule` makes, at the short end. A state's bill and a firm's commercial
+ * paper differ in the three things §7 already separates from §8 — whether the issuer can FAIL into an
+ * estate, where the claim RANKS, and whether one miss makes the rest due — and in nothing about what
+ * the paper promises. So there is one statement of the promise and both kinds read it, rather than
+ * two implementations of "one flow at maturity" that agree until the day one of them is edited.
+ */
+export interface DiscountSchedule {
   readonly issueDate: Civil;
+  /** N4: the day the par is due. Under a year (A1.b), which is a fact about the line, not a bound. */
   readonly maturity: Civil;
+  /**
+   * A2.a: THE DAY COUNT IS PART OF THE NUMBER. At this tenor the quoting convention is a material
+   * part of what the paper yields — a discount quoted ACT/360 and read ACT/365F is a different
+   * number about the same promise (Law 8) — so it is stated per line and never assumed.
+   */
+  readonly dayCount: DayCount;
+}
+
+export interface SovereignBillTerms extends Terms, DiscountSchedule {
+  readonly kind: typeof SOVEREIGN_BILL;
+}
+
+/**
+ * N5.c: one payment, par at maturity, and nothing before it. A read of the terms (Law 19).
+ *
+ * `after` is exclusive, as it is for a coupon line: paper maturing today has already been dealt
+ * with by the maturity action and is not still promising anything.
+ */
+export function discountFlows(t: DiscountSchedule, after: Civil): readonly CashFlow[] {
+  return compareCivil(t.maturity, after) > 0
+    ? [{ date: t.maturity, perUnit: asPerPiece(1, 'discount paper redeems at par') }]
+    : [];
+}
+
+/** N5.c: the one action this paper ever takes, in the period its own date falls in (G3.a). */
+export function discountDue(
+  t: DiscountSchedule,
+  period: number,
+  cal: ScheduleCalendar,
+): readonly DueAction[] {
+  return cal.periodOf(t.maturity) === period ? [{ kind: 'maturity', date: t.maturity }] : [];
 }
 
 export function isBond(t: Terms): t is SovereignBondTerms {

@@ -33,7 +33,7 @@ import type { Family, Violation } from '../../audit/audit.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { MarketId, PartyId } from '../../core/ids.js';
-import { combineDust, dustOf, sum, withinDust } from '../../core/num.js';
+import { atMost, combineDust, dustOf, sum, withinDust } from '../../core/num.js';
 import { isCreateLeg } from '../../ledger/instruction.js';
 import { FIRM } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
@@ -391,13 +391,34 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
   // what it is short of, so a bank lends against a programme and a share issue is raised into one —
   // and a firm with no programme is short of nothing on that account and raises nothing.
   const programme = p.project === null ? asCash(0, 'it has no programme') : p.project.programme;
-  const owed = plus(
-    plus(buying, wagesPromised(view), 'what it is about to have to pay'),
-    programme,
-    'and what it wants to build',
+  const working = plus(buying, wagesPromised(view), 'what it is about to have to pay');
+  const owed = plus(working, programme, 'and what it wants to build');
+  const cash = heldAsMoney(view.cash(ccy), 'the money it holds');
+  const short = minus(owed, cash, 'what it is short of');
+  /**
+   * Short-Term Debt B1, Law 4 (item 10b): AND WHICH OF IT FALLS DUE SOON, split HERE because the
+   * allocation is the firm's own decision about its own money and there is one of it.
+   *
+   * It pays its payroll before it builds a factory, so its cash goes to the near need first and
+   * what is left goes to the programme. Two channels read this: paper funds what falls due within
+   * weeks (B1's *"seasonal working-capital swing"*), a bond funds the plant. Before the split they
+   * both read `short` — the whole gap — and a firm with one hole raised twice to fill it, which is
+   * money nobody needed on a liability somebody owes (Law 5, Appendix B).
+   *
+   * `atMost` here is not a floor on an outcome (Law 6): it is what APPLYING money means — a firm
+   * cannot put more into the near need than the need is, nor more than it holds. The identity
+   * closes exactly, `shortNow + shortTerm === short`, whichever side of zero each falls.
+   */
+  const toNear = atMost(working, cash, 'it cannot put more into the near need than the need is');
+  const shortNow = minus(working, toNear, 'what it cannot pay of what falls due soon');
+  const left = minus(cash, toNear, 'what is left once the near need is met');
+  const shortTerm = minus(programme, left, 'what it cannot fund of what it wants to build');
+  ctx.record(
+    'firms.funding',
+    [view.self.id],
+    { short, owed, programme, working, shortNow, shortTerm, ccy },
+    false,
   );
-  const short = minus(owed, heldAsMoney(view.cash(ccy), 'the money it holds'), 'what it is short of');
-  ctx.record('firms.funding', [view.self.id], { short, owed, programme, ccy }, false);
 }
 
 /** D1: the payroll it has already promised, read from its own last wage bill (Law 19). */

@@ -7635,3 +7635,101 @@ the mismatch is not expressible.
 derivatives, which are contracts and ARE marked by their class; you cannot sell your margin balance
 at a clearing house. `money-market`'s two are `INTERBANK` and `REPO`, bilateral rows you unwind or
 let mature, not money market FUNDS, whose shares are correctly `derived`. Both tags stand.
+
+---
+
+## Item 10b — short-term debt (§9): the first liquidity failure this world can have
+
+**What was missing was a KIND of failure, not a clause count.** Every failure in this world is a
+solvency failure: a party fails because what it owes exceeds what it holds. Nobody has ever been
+unable to find the money on a Tuesday. §9 B3.b is the other kind — *buyers decline, the issuer must
+repay maturing paper out of cash it does not have, and it must find the money somewhere* — and it
+was 0 of 19 clauses with no open item owning it. It is now **12 MET, 3 PARTIAL, 4 MISSING**, and the
+world has one fewer absent sector (5 → 4).
+
+**The roll is not a mechanism, and that is the whole of B3.a.** A rollover is a NEW ISSUE INTO A
+MARKET THAT MUST CLEAR, so there is one issuing phase and what maturing paper does is ENLARGE the
+need it brings paper against. E1 names the alternative and forbids it: paper that always rolls at a
+written rate is not debt, it is a permanent liability with a coupon, and it removes the only risk the
+instrument has. There is no renewal path in the module and the test asserts there is none.
+
+**It issues through the path that exists.** A size and a walk-away into a kernel market, the one
+solver striking it — the same doors the treasury and a corporate issuer use. The owner's correction
+of this morning is what wrote `10b.0` before the module existed: commercial paper was the next thing
+this world issued, and a new module writing its own venue would have put the third issuance mechanism
+back the week after 10d deleted it.
+
+**One promise, written once.** A bill and commercial paper promise the identical thing — one payment
+of par on one day — and differ in the three things §7 already separates from §8: the issuer can FAIL
+into an estate, the claim RANKS, and one miss makes the rest due. So `DiscountSchedule` went into the
+kernel beside `CouponSchedule`, and `sovereignBill` now READS it where it had the same three lines
+written out inline. Two implementations of one promise agree until the day somebody edits one.
+
+**A2.a made the type system find its own gap.** The day count is a material part of the number at
+this tenor, so it is a required field on the shared schedule — and adding it failed the build in
+exactly three places, every one of them a bill constructed without saying what convention it was
+quoted on. That is the clause doing its job before a single test ran.
+
+**THE DEFECT THIS ITEM FOUND AND FIXED: one hole, two issuers.** `issueBonds` read
+`firms.funding.short` — the whole funding gap — and so would paper. A firm would have brought a
+five-year bond and three-month paper against the same published number and raised twice what it
+needed: money nobody wanted, on a liability somebody owes (Law 5, Appendix B's residual with no
+holder). `publishFunding` now splits the gap WHERE THE FIRM ALLOCATES ITS OWN MONEY, which is the one
+writer of that decision: cash goes to the near need first, what is left goes to the programme, and
+`shortNow + shortTerm === short` exactly. Paper funds the payroll, the bond funds the plant. The
+`atMost` in it is not a floor on an outcome — it is what APPLYING money means, since a firm cannot
+put more into a need than the need is, nor more than it holds.
+
+**A BANK ISSUES PAPER TOO, and the first draft did not let it.** I had excluded banks because
+nothing published a bank's dated shortfall the way `firms.funding` publishes a firm's, and wrote that
+up as an absence. The owner's correction — *"Banks also issue commercial paper"* — is right, and the
+read was there: `bank.buffer` publishes what a bank keeps back against a bad week, and its reserves
+are in the register. The difference between those two reads is the point. **This phase runs after
+the money market has sat**, so the published number is what it wanted BEFORE the session and the
+register is what it holds AFTER it: a bank that funded itself overnight is short of nothing here and
+brings no paper; one that could not is exactly the issuer B1 describes. Nothing has to stand down for
+anything, because what this reads is the residue and not a second claim on one gap.
+
+Which type is short of what is a TABLE (`NEEDS`) and not a branch — a firm says one thing, a bank
+says another, and adding the state is a row. That is A3: the same instrument, and the type is the
+credit.
+
+**The buyer's reservation and the issuer's are the same arithmetic on different alternatives**, which
+is why the book has two sides at all (§46 A3). The issuer computes the price at which this costs what
+borrowing otherwise costs it; the buyer computes the price at which it returns what a deposit would
+pay it. They overlap or they do not, and a book with no overlap says so — no demand is added to clear.
+C2.a falls out for free: short paper substitutes for a deposit because the buyer's ALTERNATIVE moved,
+with nothing tying a bill yield to a policy rate.
+
+**C3 is why funding goes before solvency does.** A buyer will not add to a name past a share of its
+own book, and will not lend at any price to one it has seen default or breach within the memory it
+keeps. A buyer that waited for insolvency would be the forced buyer Appendix B forbids.
+
+**The backstop is granted, not seeded.** B4's *"a committed line with no commitment fee on undrawn
+headroom is a free option the lender did not sell"* is the load-bearing sentence: without the fee
+every issuer would hold an unlimited backstop it never paid for and B3.b's run could never bite. It
+is an `Agreement` between two named parties (nobody trades a commitment), the fee leaves the issuer's
+account every period on what it has NOT drawn, and the draw happens when maturing paper exceeds what
+it holds. Granting it as a standing decision rather than seeding it also means it COMES BACK: an
+issuer whose bank failed has no line, and next period has one from wherever it banks now. A seeded
+relation could not do that. Its LIMIT is the one number and it is a declared PLACEHOLDER naming item
+17.2, because a facility is granted and re-sized by a lender and this world cannot yet take that
+decision.
+
+**B3.b's three paths, and only one of them is this module's.** It can DRAW (here). It can SELL —
+XI-2's forced seller already exists and needed nothing. Or it can FAIL, which is the kernel's: the
+maturity is a payment like any other, it does not happen, `defaultOn` says what that means and
+`accelerates` carries it to every other line the issuer has. There is no fourth path.
+
+Two lint rules earned their keep: `phoenix/no-kind-branch` caught two scans that filtered the record
+by event kind where typed doors existed, and `phoenix/no-magic-numbers` caught a buyer's memory
+window sitting as a bare `256` — which is a PREFERENCE (§46 B1) and is now declared as one.
+
+Findings positioned: **E-17** (paper is not repo collateral; D3 says being collateral is much of why
+anyone holds it — item 17.6 builds the same acceptance for senior notes, so once for both) and
+**E-18** (`funds/index.ts` cites a `Clearing C1.b` that does not exist; it is PROSE, so `check:spec`
+reads `@spec` tags only and cannot see it — item 21, with the question of whether the tool should
+read prose too. The same wrong id went into a new `@spec` tag here and the tool DID catch it).
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 210 tags, `check:forbids` 4 over 207 files,
+`check:deaths` 6 of 6, `check:existence` green. Tests written, not run (standing instruction).

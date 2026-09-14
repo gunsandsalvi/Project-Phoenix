@@ -130,6 +130,7 @@ import { land } from '../mechanisms/land/index.js';
 import { drawMerchants, merchants } from '../mechanisms/merchants/index.js';
 import { tradeCredit } from '../mechanisms/trade-credit/index.js';
 import { securitisation } from '../mechanisms/securitisation/index.js';
+import { CASH_INVESTORS, shortTermDebt } from '../mechanisms/short-term-debt/index.js';
 import { securitiesLending } from '../mechanisms/securities-lending/index.js';
 import { corporateBondModule } from '../mechanisms/corporate-bond/index.js';
 import { control } from '../mechanisms/control/index.js';
@@ -1411,7 +1412,13 @@ export function foundationSeedFor(
                   issueDate: ctx.calendar.epoch,
                   maturity,
                 }
-              : { kind: SOVEREIGN_BILL, issueDate: ctx.calendar.epoch, maturity };
+              : {
+                  kind: SOVEREIGN_BILL,
+                  issueDate: ctx.calendar.epoch,
+                  maturity,
+                  // A2.a: the same convention the opening coupon lines were struck on.
+                  dayCount: SEED_DAY_COUNT,
+                };
           ctx.instruments.add({
             id,
             kind: line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL,
@@ -2686,6 +2693,12 @@ export function foundationSpec(
       // the money market, because what a bank is short of — and therefore what it would sell — is
       // what it could not fund there (D1).
       securitisation(),
+      // 10b, Short-Term Debt A1, B3.b: MONEY BORROWED FOR WEEKS, and the asking-again that is the
+      // whole risk of it. After the money market, because a bank's need here is what the overnight
+      // books did not fund; after the funds, because a money fund is the cash investor C1 is about
+      // and its party kind is theirs to name. Until this module every failure in this world was a
+      // solvency failure — there was nowhere an issuer could be unable to find the money on a day.
+      shortTermDebt([...CASH_INVESTORS, FUND]),
       // Currency, Spot FX: the pairs, after the banks whose desks quote them and the money market
       // whose overnight book they fund a position in.
       // Spot FX D1, D3, C2.a: the desks draw their OWN numbers, from this world's own seed value

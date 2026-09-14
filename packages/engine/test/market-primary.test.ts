@@ -238,6 +238,7 @@ describe('a line with no price (XI-6)', () => {
               kind: SOVEREIGN_BILL,
               issueDate: civil(2026, 1, 5),
               maturity: civil(2027, 12, 15),
+              dayCount: 'ACT/365F',
             };
             ctx.issue({
               id: BILL,

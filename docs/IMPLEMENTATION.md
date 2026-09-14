@@ -48,7 +48,7 @@ checked, not assumed.
 | Derivative | 18 | 0 | 0 | **3** | 18 |
 | **Corporate Credit** | **13** | 8 | **41** | 0 | 62 |
 | Sovereign | 40 | 3 | 8 | **3** | 51 |
-| **Short-Term Debt** | **0** | 0 | **19** | 0 | 19 |
+| Short-Term Debt | 12 | 3 | 4 | 0 | 19 |
 | Equity | 25 | 2 | 10 | 0 | 37 |
 | Money Market | 25 | 3 | 0 | 0 | 28 |
 | Spot FX | 26 | 1 | 0 | 0 | 27 |
@@ -178,7 +178,6 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **10b** | Short-term debt (§9) | — | **inserted**: the roll that can fail; one of the six lost things; needs **10**'s issuance path |
 | **10c** | Securitisation is for any non-tradable claim | — | **inserted** (owner): deletes a Law 15 kind branch and adds the demand leg; before **11**, which fills the world with the small claims a bank would want to move |
 | **10d** | A bank issues a bond the way everybody else does | — | **inserted** (owner): deletes the THIRD issuance mechanism. Needs nothing — item **10**'s path and `publishReservations` are both there |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
@@ -196,80 +195,16 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 | **23** | Measure (Part XII) | 1 | worklist 16; carries `C-1`'s 82 red |
 | **24** | The app and the APK | — | worklist 17 |
 
-**Stage B is finished**: every line the old file left open is closed. **Stage C (10b–18)** builds the
+**Stage B is finished**: every line the old file left open is closed. **Stage C (10c–18)** builds the
 sectors that are not there; **10 is closed** and its section is gone. **10c and 10d are the owner's
 two corrections of 2026-09-14 turned into work, and both are net DELETIONS** — a kind branch and a
-duplicated issuance mechanism. **Stage D (19–24)** is the existing worklist tail. Items 1–10 and 7b are
+duplicated issuance mechanism. **Stage D (19–24)** is the existing worklist tail. Items 1–10b and 7b are
 closed and their sections are gone: this is the plan of what is left, and `docs/RECORD.md` is the
 ledger of what was done.
 
 ---
 
 ## Part 2 — The items
-
----
-
-## 10b. Short-term debt (§9) — **inserted**
-
-**Where this came from.** Worklist 13f closed with *"PLACED: … short-term debt and the roll that can
-fail → 13i"*. **13i closed and its row does not mention it.** §9 is **0 of 19 clauses MET** and no
-open item owns it. Inserted here because A1 makes it the same instrument contract as item 10's bond
-and the same issuance path — building it before 10 would build that path twice.
-
-**Why it matters beyond its own 19 clauses.** `docs/AUDIT.md`'s C-4: *"A firm cannot issue commercial
-paper. Spec 9 has no module. `money-market` has interbank rows and repo, which is the BANK's
-short-term funding; a FIRM funding itself at three months and the roll that can fail is what the
-clause is about."* B3.b — a **run** — is the only place in this world where an issuer must repay
-maturing paper out of cash it does not have and must find the money somewhere. Without it there is no
-funding-side failure mode at all: every failure in this model today is solvency, never liquidity.
-
-### What it is
-
-`src/mechanisms/short-term-debt/`, one `SystemModule`.
-
-- **The instrument** (A1): satisfies the bond contract, answering it its own way — **no coupon**,
-  issued at a **discount**, redeemed at par, and the discount is the whole return (A1.a); under a
-  year (A1.b); senior unsecured, ranking with the issuer's other senior debt (A1.c); no option
-  (A1.d). `unit`, `priceTick`, `cashFlows` (one flow, at maturity), `due`, `ranking`.
-- **The day count is material** (A2.a): at this tenor the quoting convention is part of the number.
-  Declare it per line; `calendar`'s `yearFraction` already takes one.
-- **Types by issuer, and the type is the credit** (A3): the state, a bank, a firm — one kind, three
-  issuers, no kind branch (Law 15).
-- **Why an issuer issues** (B1, B2): a short, known need — a tax date, a seasonal working-capital
-  swing, a bridge — and because it is cheap when the curve is upward-sloping. Both are reads the
-  issuer already has: `treasury` knows its tax dates, `firms` knows its wage bill and its input
-  orders, and the curve is `prices/curve.ts`.
-- **The roll** (B3): a rollover is a **new issue into a market that must clear** (B3.a). The issuer
-  is asking the market to lend again **and it may not** — so a `noDemand` on a roll is the event, not
-  an error.
-- **The backstop** (B4): a committed bank line, and **it costs money in every period it is not
-  used**. *"A committed line with no commitment fee on undrawn headroom is a free option the lender
-  did not sell."* This is an `Agreement` (item 9) with a fee, not an instrument.
-- **Buyers** (C1, C2): a money fund, a corporate treasurer, a bank liquidity book — the reasons are
-  yield against the alternatives (a deposit, a repo, a central bank facility), credit, and liquidity.
-  C2.a makes this a channel a policy rate travels down, which is what item 19 needs.
-- **A limit per issuer** (C3), *"which is why a deteriorating issuer loses funding before it loses
-  solvency"* — the mechanism this whole world is missing.
-- **Collateral** (D3): with a haircut, which `money-market/collateral.ts` already implements.
-
-### Steps
-
-- [ ] 10b.0 **IT ISSUES THROUGH THE PATH THAT EXISTS** (owner, 2026-09-14: *"There shouldn't be 3 different mechanisms"*). Commercial paper is brought by an issuer with a size and a walk-away into a KERNEL market — `ctx.issue` + `ctx.openMarket` + `ctx.offer`, uniform price, settled by the primary market — exactly as the treasury and item 10's corporate issuer do. **Item 10d is deleting the one module that rolled its own; this item must not add it back.** What is this module's own is the REASON to issue, the instrument's shape, and the roll — never the clearing.
-- [ ] 10b.1 The module skeleton: kinds, units, params, one phase anchored at `markets`, one participant per party kind, an audit contribution, a seed contribution. Cite every clause with `@spec`.
-- [ ] 10b.2 The instrument kind: discount-to-par, one cash flow at maturity, senior unsecured, stated day count. **The yield is derived from price and days to maturity, never into it** (A2, Law 3).
-- [ ] 10b.3 The issuer's reason: a firm or treasury with a dated need inside the tenor issues, sized to the need. No investment rate, no issuance schedule — the need is a read of its own book.
-- [ ] 10b.4 The roll as a new issue into a market that must clear. **E1: no automatic roll.** *"Paper that always rolls at a written rate is not debt; it is a permanent liability with a coupon, and it removes the only risk the instrument has."*
-- [ ] 10b.5 B3.b, the run: when the roll does not clear, the issuer must repay out of cash it does not have. It sells (XI-2's forced seller, which item 3 reopened for banks), it draws the backstop, or it fails. **All three paths must exist** or the run is a scripted event.
-- [ ] 10b.6 The backstop as an `Agreement` with a commitment fee on undrawn headroom, paid every period it is not used (B4).
-- [ ] 10b.7 The buyer's limit per issuer (C3), held as a `View` (item 6 of the old file, built) — the buyer's own opinion, not a table.
-- [ ] 10b.8 C4 as a VERIFY, never an enforcement: when the policy rate moves, the bill yield moves with it **because the buyers' alternative moved**. Measure it; do not tie it.
-- [ ] 10b.9 D4: a spread over the equivalent-tenor bill is a **derived read of two cleared prices**, never stored. E2: no price without a market. E3: no negative outstanding, and no maturity that passes without cash moving.
-- [ ] 10b.10 Seed contribution, COVERAGE re-marked for all 19 clauses, record entry.
-
-### Exit
-
-A firm funds a three-month need in a market; a roll fails at least once in a long run and the issuer
-finds the money somewhere or fails; §9 is 19 of 19 or states what is `OUT OF SCOPE` and why.
 
 ---
 
@@ -1459,6 +1394,8 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-12** (B) | 21 | what a household requires of a claim reaches the fund comparison and not the paper bid, so a change in the deposit board does not move what it will pay for a bill — half of D5.a's substitution. **Found closing `A-44` at stage 2c** |
 | **E-11** (B) | 21 | `Outcome.price` and `Print.price` are `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS, the cross-currency basis, and now the BORROW book, whose level is a fee per period on value and not money per piece (item 9.4). `E-10` closed the CONTRACT layer (the level a contract carries is tagged by its kind's `quotedAs`) and every reader of a rate-quoted print now says `asRatio` at its own door, so the crossing is named everywhere it happens — what is left is that the STORE still cannot say it. **Item 10d takes one of the five books away rather than teaching the store a trick**: the subordinated raise clears a rate only because it is a private venue, and a bond book clears a price per unit of par. The solver genuinely need not care (a schedule is size against a level either way); the print store is where the claim would live. **Re-positioned from item 6, which did not close it** |
 | **E-13** (C) | 21 | `households/portfolio.ts:ownUncertainty` implements §46 B3's income channel and has NO CALLER — a saver's bid is built from its PRICE outlook's confidence and its income uncertainty reaches nothing. Either wire it or delete it; a mechanism nobody reads is not one. **Found closing `A-30` at item 5** |
+| **E-17** (B) | 17.6 | **commercial paper is not repo collateral** (`Short-Term Debt D3`), and D3 says being collateral is *"a large part of why anyone holds it"*. `money-market/collateral.ts` already has the haircut machinery and what is missing is that it accepts this kind — 17.6 is the same shape for senior notes, so it is built once for both. **Found closing item 10b** |
+| **E-18** (C) | 21 | `funds/index.ts:1296` cites `Clearing C1.b`, which does not exist in the spec. It is a PROSE citation so `check:spec` cannot see it — the tool reads `@spec` tags only — which makes it the kind of stale comment Law 16 calls a defect and nothing guards. Two questions for 21: the right clause for that sentence, and whether the citation check should read prose citations too. **Found closing item 10b**, where the same wrong id was written into a new `@spec` tag and the tool DID catch it |
 | **E-15** (A) | 10d | **the THIRD issuance mechanism.** `banks/subordinated.ts` is a private copy of the kernel's issuance machinery: its own venue (`raiseVenue`), its own `clear()` call, a book that clears a RATE, and `subId(bank, n)` advancing per FILL — so a bank raising from three investors holds **three instruments carrying one promise** (Law 4, Law 9), and `market: none()` on each, which is why a bank's capital layer has no price. **Found answering the owner's question of 2026-09-14**; the item is a deletion |
 | **E-16** (B) | 10c | `securitisation/index.ts:saleable` gates on `isLoan` — a kind branch in a mechanism (Law 15) — and `arrange` starts a deal only on a capital shortfall (`if (gap <= 0) continue`), so investor demand can never pull one and a bank that could sell a pool above what it carries it at does not. **Found answering the owner's correction of 2026-09-14** |
 | **E-14** (B) | 13 | **Securities Lending C2, C2.a are not built.** `charge` moves the FEE every period and nothing re-marks the collateral: when the borrowed line rises the borrower owes more collateral and no leg posts it, so the lender's cover erodes silently between the strike and the return and C1's haircut is the only thing standing behind it. The same mechanism is §15 C1's — a broker marking a whole portfolio and calling the difference — which is why it lands with prime brokerage rather than here. **Found closing `A-67` at item 9.4** |
