@@ -37,13 +37,15 @@
 import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/ids.js';
 import { instrumentId, marketId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
-import { add, atMost, div, finite, mul, sum, zeroIfNone } from '../../core/num.js';
+import { atMost, div, finite, mul, sum, zeroIfNone } from '../../core/num.js';
 import { NO_QTY, type Qty, addQty, asQty, downTick, subQty } from '../../core/tick.js';
 import {
   type PerPiece,
+  asPerPiece,
   asRatio,
   heldAsMoney,
   minus,
+  over,
   plus,
   pricedAt,
   ratioOf,
@@ -119,13 +121,27 @@ function roomOf(ctx: MechanismContext, view: ParticipantView): Qty {
  * crew is paid per DAY, so a long leg is dearer twice over and a slow one dearer again — all of it
  * out of the leg the map gave, and none of it a rate (Law 3).
  */
-function costOf(ctx: MechanismContext, view: ParticipantView, c: CarrierDecl, leg: Path): number {
+function costOf(ctx: MechanismContext, view: ParticipantView, c: CarrierDecl, leg: Path): PerPiece {
   const wear = wearPerPlantUnit(vintagesHeld(view, ctx.calendar.startOf(ctx.period)), VESSEL);
-  if (!wear.some) return 0;
-  const hold = ctx.params.count(HOLD_UNITS);
-  const perKm = mul(ctx.params.ratio(WEAR_PER_UNIT_KM), leg.km, 'the hull a unit uses on the way');
-  const crew = mul(div(wear.value, hold, 'the hull a unit uses standing'), leg.days, 'the days it takes');
-  return mul(add(perKm, crew, 'what the voyage costs a unit'), c.crewScale, 'this carrier');
+  if (!wear.some) return asPerPiece(0, 'a carrier with no hull wears none of one');
+  const hold = asRatio(ctx.params.count(HOLD_UNITS), 'what one hull holds');
+  // Both halves are a LEVEL — what a unit carried costs — so they add as levels and the carrier's
+  // own scale multiplies through as the pure number it is.
+  const perKm = scale(
+    asPerPiece(ctx.params.ratio(WEAR_PER_UNIT_KM), 'the hull a unit uses over a kilometre'),
+    asRatio(leg.km, 'the kilometres of it'),
+    'the hull a unit uses on the way',
+  );
+  const crew = scale(
+    over(wear.value, hold, 'the hull a unit uses standing'),
+    asRatio(leg.days, 'the days it takes'),
+    'the days it takes',
+  );
+  return scale(
+    plus(perKm, crew, 'what the voyage costs a unit'),
+    asRatio(c.crewScale, 'what this carrier runs at'),
+    'this carrier',
+  );
 }
 
 /**

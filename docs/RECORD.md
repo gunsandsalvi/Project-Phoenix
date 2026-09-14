@@ -5648,3 +5648,41 @@ things that make it rather than a bare `+`.
 Arithmetic sites **350 → 331**; the seed's own **53 → 34**. Typecheck 0, lint 0, `check:spec`,
 `check:forbids`, `check:existence` green, tools suite 30 green. The engine suite was not run: nothing
 in this stage changes a number.
+
+## Item 2, stage 2a — the dimension sweep's typing is finished
+
+**Twelve stages, 402 grep sites to 55, and the 55 are named rather than left.** What remains is
+arithmetic that is dimensionless on purpose: counts of periods, days, years and people; the discount
+bases in `prices/curve.ts`; the two `Map.add`/`Set.add` the grep has always miscounted; and
+`mechanisms/expectations`, which keeps `add`/`sub`/`mul`/`div` because an `Outlook` is generic over
+its SUBJECT — no single `D` is true of that store, and the dimension is asserted at each READ by the
+module that knows what it asked about. That is written into the file, not just here.
+
+**What the type found, in the order it found it.** A rate declared as a number (`LoanTerms.rate`,
+`SubTerms.rate`, `RowTerms.rate`, `Corridor`) — three loan books now say "a span earns a SHARE of
+par" the same way, each with a named `PAR` where the two scales meet. A recipe coefficient declared
+as a number while `params.ratio()` already returned one — `Technology` widened them back on the way
+in. `E-8`: six declared levels, four of them stated per NAMED unit and all six read as per piece,
+plus a seventh that was not a price at all. `downTick` flooring NAMED units on the piece grid
+throughout the seed. `downTick` flooring a PRICE on the quantity grid in the land market. An equity
+delta accumulated as a total when the register keeps it per member.
+
+**`E-11` is this item's own finding and it appeared five times**: `Outcome.price` and `Print.price`
+are `PerPiece` and some books clear a RATE — the subordinated raise, the interbank session, the IRS,
+the CDS. Each site now names the crossing instead of assuming it. One of them changed an operation
+rather than a name: `irs/sizeOf` divided equity by its book's level with `over` (money over a pure
+number, which gives money) where the level is a level and the answer wanted is a notional —
+`amountOf`. The book still cannot say which of the two it holds; that is what the finding is for.
+
+**Three shadowed names** — `scale` twice in earlier stages, `over` once in the seed — all renamed.
+When it happens a fourth time it should be a lint rule.
+
+**And a method note that changed how the later stages were worked.** `Measure<D>` is
+`number & {...}`, so it is assignable to `number`: the compiler drives the sweep in the direction of
+CONSTRUCTION and not of USE. `div(Ratio, Ratio)` compiles happily. What works is typing the
+STRUCTURE — a map, an interface field, a return type — which then forces every read behind it.
+
+Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green, tools suite 30 green.
+**The engine suite was not run at any point in 2a**: the typing erases, so behaviour cannot change,
+and the one behaviour change made inside it (`A-18`) was named as one where it happened. Stages
+2b–2e are the eighteen findings, which do change behaviour and will be measured.

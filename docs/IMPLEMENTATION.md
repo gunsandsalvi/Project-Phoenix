@@ -303,7 +303,25 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > | ~~2a.2~~ | ~~`firms`~~ — **DONE**: a recipe coefficient is a `Ratio` | **390 → 372** |
 > | ~~2a.3~~ | ~~the seed's build-out, and `E-8`~~ — **DONE** | **372 → 350** |
 > | ~~2a.4~~ | ~~the seed's stock, banks and sovereign debt~~ — **DONE** | **350 → 331** |
-> | 2a.5 | the seed's last 34, and the residue (`ledger` 20, `research` 19, `households` 19, `registry` 16, …) | 331 |
+> | ~~2a.5~~ | ~~the seed's last, `research`, the households~~ — **DONE** | **188 → 168** true |
+> | ~~2a.6~~ | ~~the money market, the registry's physical reads~~ — **DONE** | **168 → 156** |
+> | ~~2a.7~~ | ~~the treasury, the swaps, the forwards~~ — **DONE** | **156 → 128** |
+> | ~~2a.8~~ | ~~the clearing book, the goods audit, the commodities room~~ — **DONE** | **128 → 102** |
+> | ~~2a.9~~ | ~~the outlook stays undimensioned, and why~~ — **DONE** | **102 → 95** |
+> | ~~2a.10~~ | ~~a level on the quantity grid; freight, land, deposits~~ — **DONE** | **95 → 77** |
+> | ~~2a.11~~ | ~~the credit books, the ratings bands, the accrual~~ — **DONE** | **77 → 66** |
+> | ~~2a.12~~ | ~~reporting, the external accounts, the voyage~~ — **DONE. STAGE 2a IS CLOSED.** | **66 → 55** |
+>
+> ### Stage 2a is done, and what the 55 are
+>
+> **The typing is finished.** What is left is arithmetic that is dimensionless ON PURPOSE and is
+> named here so nobody sweeps it again: counts of **periods, days, years and people** (the calendar,
+> the cohort bands, the headcounts, `Math.pow` discount bases in `prices/curve.ts`); the two
+> `Map.add`/`Set.add` false positives the grep has always counted; and `mechanisms/expectations`,
+> which stays `add`/`sub`/`mul`/`div` for the reason written into the file — an `Outlook` is generic
+> over its SUBJECT, so no single `D` is true of that store and the dimension is asserted at each
+> READ by the module that knows what it asked about.
+>
 > | 2b | the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1` (`A-18` closed in 2a.1) | |
 > | 2c | rates read as levels: `A-44`, `A-58`, `A-65` | |
 > | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |

@@ -4,6 +4,7 @@
  * @spec Cross-Border E1 Cross-Border E2 Cross-Border E3 Cross-Border E4 Money D3 Law 2 Law 5 Law 19
  */
 import { describe, expect, it } from 'vitest';
+import { asCash } from '../src/core/measure.js';
 import { external, financedBy, tradeBalanceOf } from '../src/index.js';
 import { rigWorld } from './rig.js';
 
@@ -75,10 +76,15 @@ describe('they sum to zero, because every transaction had two sides (E3, Law 5)'
 
 describe('a deficit is financed by somebody who chose to (E2)', () => {
   it('is the other half of the trade balance, read from the region’s own end', () => {
-    const said = { region: 'x' as never, trade: -100, finance: 100, legs: 4 };
+    const said = {
+      region: 'x' as never,
+      trade: asCash(-100, 'it bought more than it sold'),
+      finance: asCash(100, 'and somebody lent it the difference'),
+      legs: 4,
+    };
     expect(tradeBalanceOf(said)).toBe(-100);
     // What somebody had to lend it to pay for what it bought — and a surplus is the other way.
     expect(financedBy(said)).toBe(100);
-    expect(financedBy({ ...said, trade: 100 })).toBe(-100);
+    expect(financedBy({ ...said, trade: asCash(100, 'the other way') })).toBe(-100);
   });
 });

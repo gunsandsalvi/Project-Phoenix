@@ -10,6 +10,16 @@
  * if a figure needs one, the equity ledger is missing a writer and not the report a calculation.
  */
 import { period as asPeriod, type Period } from '../../calendar/calendar.js';
+import { weightOf } from '../../parties/party.js';
+import {
+  type Cash,
+  type PerMember,
+  acrossMembers,
+  
+  asPerMember,
+  heldAsMoney,
+  plus,
+} from '../../core/measure.js';
 import { negQty } from '../../core/tick.js';
 import {
   moneyInstrumentId,
@@ -17,7 +27,6 @@ import {
   type InstrumentId,
   type PartyId,
 } from '../../core/ids.js';
-import { add } from '../../core/num.js';
 import { isMoneyLeg } from '../../ledger/instruction.js';
 import { issuedBy, type Instrument } from '../../register/instruments.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -66,7 +75,7 @@ function periodsIn(from: Period, to: Period): Period[] {
 export interface IncomeLine {
   /** What the instructions or the marks were doing, in the words their own writers used. */
   readonly cause: string;
-  readonly amount: number;
+  readonly amount: Cash;
   readonly entries: number;
 }
 
@@ -98,22 +107,35 @@ export function incomeOf(ctx: MechanismContext, firm: PartyId, from: Period, to:
       cause.set(r.instruction.id, r.instruction.cause);
     }
   }
-  const byCause = new Map<string, { amount: number; entries: number }>();
-  let total = 0;
-  let revaluation = 0;
+  /**
+   * An equity entry's delta is MONEY PER MEMBER — `EquityEffect.delta`, stage 10a — because the
+   * register keeps a cell's book per member and a named party stands for one of itself. A published
+   * statement is a TOTAL, so the crossing happens once, at the end, through `acrossMembers`. A rate
+   * can never reach any of it either way.
+   */
+  const byCause = new Map<string, { amount: PerMember<'money:piece'>; entries: number }>();
+  let total = asPerMember<'money:piece'>(0, 'a period that moved nothing produced nothing');
+  let revaluation = asPerMember<'money:piece'>(0, 'and the marks did nothing');
   for (const e of ctx.register.equityEntries(firm, from, to)) {
     const named = e.instruction === undefined ? undefined : cause.get(e.instruction);
     const key = named ?? MARKS;
     const at = byCause.get(key);
     if (at === undefined) byCause.set(key, { amount: e.delta, entries: 1 });
-    else byCause.set(key, { amount: add(at.amount, e.delta, key), entries: at.entries + 1 });
-    total = add(total, e.delta, 'what the period produced');
-    if (named === undefined) revaluation = add(revaluation, e.delta, 'what the marks did');
+    else byCause.set(key, { amount: plus(at.amount, e.delta, key), entries: at.entries + 1 });
+    total = plus(total, e.delta, 'what the period produced');
+    if (named === undefined) revaluation = plus(revaluation, e.delta, 'what the marks did');
   }
+  // XI-15: what a company published is what all of it came to, and the weight is what crosses.
+  const members = weightOf(ctx.parties.get(firm));
+  const whole = (x: PerMember<'money:piece'>, what: string): Cash => acrossMembers(x, members, what);
   const lines = [...byCause]
-    .map(([c, v]) => ({ cause: c, amount: v.amount, entries: v.entries }))
+    .map(([c, v]) => ({ cause: c, amount: whole(v.amount, c), entries: v.entries }))
     .sort((a, b) => (a.cause < b.cause ? -1 : 1));
-  return { lines, total, revaluation };
+  return {
+    lines,
+    total: whole(total, 'what the period produced'),
+    revaluation: whole(revaluation, 'what the marks did'),
+  };
 }
 
 /**
@@ -124,7 +146,7 @@ export interface CashLine {
   readonly counterparty: PartyId;
   readonly instrument: InstrumentId;
   readonly cause: string;
-  readonly amount: number;
+  readonly amount: Cash;
   readonly legs: number;
 }
 
@@ -154,13 +176,16 @@ export function cashOf(ctx: MechanismContext, firm: PartyId, from: Period, to: P
         // Money A2.b: WHICH money it was. A payment in a money the firm does not book in is a
         // different line of its cash statement, not the same one with a different number in it.
         const instrument = moneyInstrumentId(side.issuer, leg.ccy);
-        const amount = outgoing ? negQty(leg.amount, 'what this party paid out') : leg.amount;
+        const amount = heldAsMoney(
+          outgoing ? negQty(leg.amount, 'what this party paid out') : leg.amount,
+          'what moved on this leg',
+        );
         const key = `${counterparty}|${instrument}|${r.instruction.cause}`;
         const at = by.get(key);
         if (at === undefined) {
           by.set(key, { counterparty, instrument, cause: r.instruction.cause, amount, legs: 1 });
         } else {
-          by.set(key, { ...at, amount: add(at.amount, amount, key), legs: at.legs + 1 });
+          by.set(key, { ...at, amount: plus(at.amount, amount, key), legs: at.legs + 1 });
         }
       }
     }
