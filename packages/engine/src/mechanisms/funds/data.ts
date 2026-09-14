@@ -9,6 +9,8 @@
  * what the mandate allows and nothing else. That is what makes a fund a transmission channel.
  */
 import { paramId, type ParamId } from '../../core/ids.js';
+import type { Blueprint } from '../../registry/blueprint.js';
+import type { Liquidity } from './index.js';
 import { prng } from '../../rng/prng.js';
 import { between, type Spread } from '../../rng/spread.js';
 
@@ -20,13 +22,20 @@ export interface FundDecl {
   readonly manager: string;
   readonly managerName: string;
   readonly bank: string;
-  /** A4: the instrument kinds it may hold. Anything else it may not buy, at any price. */
-  readonly eligible: readonly string[];
   /**
-   * D1: short paper. The longest a holding may still have to run, in periods — a mandate of short,
-   * high-quality paper is what makes a money fund a deposit substitute rather than a bond fund.
+   * A4, item 10e: WHAT IT MAY HOLD, in the one language every vehicle is described by. It was a
+   * list of instrument kind ids beside a tenor counted in periods; both are bands now, and the
+   * duration one is in YEARS measured from today, so a line ages out of the mandate by itself.
    */
-  readonly maxTenorPeriods: number;
+  readonly blueprint: Blueprint;
+  /**
+   * Item 10e: SINGLE OR MULTI CURRENCY, which is a real term of a mandate and not a default. A
+   * fund that may hold another money has an FX exposure its investors agreed to; one that may not
+   * has its own money written into its blueprint when it is launched, from where the fund IS.
+   */
+  readonly ownCurrencyOnly: boolean;
+  /** G1: how its investors get in and out, which is what decides if it can be forced to sell. */
+  readonly liquidity: Liquidity;
   /** C2.a: the share of its net assets it keeps in cash, so an ordinary redemption needs no sale. */
   readonly buffer: number;
   /** B3, F3: what the manager charges, per annum on net assets. */
@@ -326,12 +335,23 @@ export function drawFunds(
        * (XI-2 door 2) — so an issuer that cannot roll and a saver who wants their money back are
        * connected, which is the transmission the clause is about and which bills alone cannot carry.
        *
-       * The mandate is the ONE gate on what a fund may hold (`eligible`), so naming the kind here is
-       * naming it once: the tenor its investors agreed to, its own money and the yield it requires
-       * are all still asked, and paper that fails any of them is paper it does not buy.
+       * Item 10e: AND IT IS A BAND NOW, NOT A LIST. It was `['sovereign.bill', 'commercial.paper']`
+       * — two kind ids, which said "the two short things I know the name of" and would have gone
+       * stale the next time anybody issued a third. What the clause actually says is SHORT,
+       * HIGH-QUALITY PAPER, and that is what the band says: a dated promise, under a year, from a
+       * name the assessors are content with. A bill and a piece of commercial paper both answer it
+       * without this file having to know either exists.
        */
-      eligible: ['sovereign.bill', 'commercial.paper'],
-      maxTenorPeriods: 52,
+      blueprint: {
+        classes: ['government', 'corporate'],
+        currencies: [],
+        duration: { to: 1 },
+        worstGrade: 'a',
+      },
+      ownCurrencyOnly: true,
+      // D2: in and out at NAV whenever a saver wants, which is what a deposit substitute IS — and
+      // what makes this the vehicle XI-2 door 2 runs through.
+      liquidity: { how: 'liquid' },
       buffer: between(rng, FUND_SPREAD.buffer),
       fee: between(rng, FUND_SPREAD.fee),
       requiredYield: between(rng, FUND_SPREAD.requiredYield),
@@ -365,14 +385,12 @@ export function drawFunds(
        * What is NOT here is as deliberate: no share, no bill, no grain. This fund is not a balanced
        * fund and does not become one by holding whatever is cheap.
        */
-      eligible: ['corporate.bond', 'commercial.paper', 'tranche'],
-      /**
-       * D1 inverted: a money fund's mandate is SHORT and that is what makes it a deposit
-       * substitute. This one's is long, because a company borrows for years and somebody has to be
-       * willing to hold that. It is what its investors agreed to have their money tied up for, and
-       * it is why this fund and not the money fund beside it can take a five-year bond.
-       */
-      maxTenorPeriods: 520,
+      blueprint: { classes: ['corporate', 'structured'], currencies: [], duration: { from: 1, to: 30 } },
+      ownCurrencyOnly: true,
+      // A fund of company paper is open-ended: its investors may have their money back at NAV, and
+      // meeting that out of a market for credit is a real sale at whatever that market gives.
+      liquidity: { how: 'liquid' },
+
       buffer: between(rng, FUND_SPREAD.buffer),
       fee: between(rng, FUND_SPREAD.fee),
       requiredYield: between(rng, CREDIT_SPREAD),
@@ -396,11 +414,11 @@ export function drawFunds(
       managerName: 'North Real Assets',
       bank: sponsor.bank,
       // A4: a mandate of PHYSICAL things and nothing else. What makes it a commodity fund is that
-      // every kind it may hold is one nobody issued, which is structural rather than a flag.
-      eligible: ['good.grain'],
-      // A thing has no maturity, so there is no tenor to be inside: what it is holding for is a
-      // price, and what it is up against is the carry rather than a date.
-      maxTenorPeriods: 0,
+      // every asset it may hold is one NOBODY ISSUED — which the classification reads off the
+      // absence of a promise, so it is structural rather than a flag or a list of goods.
+      blueprint: { classes: ['thing'], currencies: [] },
+      ownCurrencyOnly: true,
+      liquidity: { how: 'liquid' },
       buffer: between(rng, FUND_SPREAD.buffer),
       fee: between(rng, FUND_SPREAD.fee),
       requiredYield: between(rng, FUND_SPREAD.requiredYield),

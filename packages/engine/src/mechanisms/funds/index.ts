@@ -30,7 +30,6 @@ import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import {
   agreementKindId,
@@ -50,6 +49,7 @@ import {
 } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import type { Agreement, AgreementDecl, AgreementTerms } from '../../register/agreements.js';
+import { admits, type Blueprint } from '../../registry/blueprint.js';
 import {
   amountOf,
   asCash,
@@ -145,17 +145,61 @@ export const fundVenue = (fund: string): VenueId => venueId(`funds.${fund}`);
  */
 export const MANDATE = agreementKindId('funds.mandate');
 
+/**
+ * §13 G1, G1.a, item 10e: HOW YOU GET IN AND OUT, and it is what decides who can be FORCED TO SELL.
+ *
+ * G1 already generalises the mechanism — *"a share count, a redemption request, a sale in the same
+ * period's books, and the cost of a late sale landing on the holders who stayed"* — so there is ONE
+ * subscription and redemption path and these terms say what it does. That is the whole difference
+ * between a money fund and a private equity vehicle, and it is a TERM rather than a kind of thing.
+ *
+ * It is also this sector's contribution to whether a shock travels (XI-2): a redemption reaches a
+ * LIQUID fund and becomes a sale into whatever the market gives; it reaches a CLOSED one and stops,
+ * because nobody can ask for money that was committed for the life of the fund.
+ */
+export type Liquidity =
+  /** In and out at NAV in any period. The money fund, and what XI-2 door 2 actually runs on. */
+  | { readonly how: 'liquid' }
+  /**
+   * Out at NAV, but only when a window opens, and what does not fit is QUEUED to the next one.
+   * C4.a is what the queue costs: the holders who stayed pay for the late sale.
+   */
+  | { readonly how: 'semiLiquid'; readonly everyPeriods: number }
+  /**
+   * G1.b: committed for the life of the fund, so there is no redemption at all and it can never be
+   * a forced seller — which is the entire reason the structure exists, and what §29 is built on.
+   */
+  | { readonly how: 'closed' }
+  /**
+   * E1, G1.a: you do not subscribe — you buy the share from a HOLDER, in a market, at a cleared
+   * price. Creation and redemption are IN KIND against the basket, which is why an exchange-traded
+   * fund is not a forced seller and why *"some other vehicle must carry it"*.
+   */
+  | { readonly how: 'listed' };
+
 export interface MandateTerms extends AgreementTerms {
   readonly kind: typeof MANDATE;
-  /** A4: the instrument kinds this pool may hold. Anything else it may not buy, at any price. */
-  readonly mayHold: readonly string[];
+  /**
+   * A4, item 10e: WHAT THIS POOL MAY HOLD, in the one language every vehicle in this world is
+   * described by (`registry/blueprint.ts`).
+   *
+   * It was `mayHold: readonly string[]` — a list of instrument kind ids — and that was three things
+   * wrong at once. It could not express *"credit, three to seven years, senior"* at all, so almost
+   * every real mandate was inexpressible; it described a vehicle by ENUMERATING THE WORLD, so it
+   * went stale the first time anybody issued a kind it was written before; and it was a kind branch
+   * wearing a registry's clothes (Law 15). A blueprint bands over READS instead, so a bond ages out
+   * of a duration band on its own and a company falls out of a size band by falling.
+   */
+  readonly blueprint: Blueprint;
+  /** G1: how its investors get in and out, which is what decides whether it can be forced to sell. */
+  readonly liquidity: Liquidity;
   /**
    * A3, A4, `B-14` (item 9.7): THE CONTRACT KINDS IT MAY TAKE A POSITION IN, and an empty list is a
    * real term and not an absence — a money fund does not write derivatives, and saying so is what
    * lets the derivative layer speak for a pool at all.
    *
-   * It is a separate list from `mayHold` because a contract is not an instrument: nobody issued it,
-   * nobody holds units of it, and it sits on both sides' balance sheets at once (Derivative D1). A
+   * It is a separate list from the blueprint because a contract is not an instrument: nobody
+   * issued it, nobody holds units of it, and it is on both sides' books at once (Derivative D1). A
    * WIDE mandate — long, short, levered, many markets — is §28's hedge fund, and this is the term
    * that makes it one.
    */
@@ -173,7 +217,7 @@ export interface MandateTerms extends AgreementTerms {
  * these terms a mandate is that they say what the pool may hold and whether it may be levered.
  */
 export const isMandate = (t: AgreementTerms): t is MandateTerms =>
-  'mayHold' in t && 'mayWrite' in t && 'leverage' in t;
+  'blueprint' in t && 'mayWrite' in t && 'leverage' in t;
 
 /** One mandate as this module reads it: the pool, its manager, and what it may do. */
 export interface Mandate extends MandateTerms {
@@ -196,19 +240,20 @@ function openMandate(
   pool: PartyId,
   manager: PartyId,
   ccy: CurrencyCode,
-  mayHold: readonly string[],
+  blueprint: Blueprint,
+  liquidity: Liquidity,
 ): void {
   // A3, B-14: every mandate this world draws writes NO derivatives — a money fund and a commodity
   // fund do not, and an index tracker does not. It is a term, and §28's hedge fund is the mandate
   // that says otherwise (item 13.2).
-  const terms: MandateTerms = { kind: MANDATE, mayHold, mayWrite: [], leverage: false };
+  const terms: MandateTerms = { kind: MANDATE, blueprint, liquidity, mayWrite: [], leverage: false };
   ctx.owes({
     debtor: pool,
     creditor: manager,
     ccy,
     owed: 0,
     terms,
-    why: `${manager} runs ${pool} under a mandate to hold ${mayHold.join(', ')}`,
+    why: `${manager} runs ${pool} under a ${liquidity.how} mandate`,
   });
 }
 
@@ -421,15 +466,6 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
         kind: 'preference',
         owner: 'model',
         why: `Fund Shares D2, D2.a: what ${f.fund}'s investors require of it over a deposit, and therefore what it will pay for paper. A deposit returns nothing until a bank decides to pay for one (Banks Funding B1, worklist 11), and this becomes a comparison rather than a level the period one does.`,
-      },
-      {
-        id: fundParam(f.fund, 'maxTenorPeriods'),
-        value: f.maxTenorPeriods,
-        unit: 'periods',
-        dimension: 'periods',
-        kind: 'policy',
-        owner: 'model',
-        why: `Fund Shares A4, D1: the longest anything ${f.fund} holds may still have to run. A mandate is a rule somebody wrote in a prospectus, and it is a real constraint on what the fund buys rather than a label on it.`,
       },
     ]),
   ];
@@ -959,15 +995,35 @@ function launchTracker(ctx: MechanismContext, e: EtfDecl): void {
       status: { alive: true, standing: 'good' },
     });
   }
-  // A4, F3, XI-8: the mandate this pool is launched under. An exchange-traded fund tracks an
-  // index, so what it may hold is the lines its basket names (E3) — the same constraint a money
-  // fund's mandate is, said about a different set of kinds.
+  /**
+   * A4, E3, F3, XI-8, item 10e: THE MANDATE THIS POOL IS LAUNCHED UNDER — and a tracker's mandate
+   * and its BASKET are two different things, which this used to conflate.
+   *
+   * It took the kinds its basket happened to name and called that the mandate. But an index fund's
+   * mandate is the ASSET CLASS its investors bought — listed equity, or government paper — and the
+   * INDEX is what says which lines and in what weights (E3). Keeping them apart is what lets the
+   * index change its constituents without anybody rewriting the fund's mandate, which is what an
+   * index doing its job looks like.
+   *
+   * So the blueprint is the classes the basket is made of, read off the classification rather than
+   * off the kinds — and `currencies: [its own]`, because a tracker of a domestic index is a
+   * single-currency vehicle and that is a term its investors agreed to.
+   */
+  const ccy = ctx.registry.currencyOf(region.id);
   openMandate(
     ctx,
     fund,
     manager,
-    ctx.registry.currencyOf(region.id),
-    [...new Set(Object.keys(e.basket).map((line) => String(ctx.instruments.get(instrumentId(line)).kind)))],
+    ccy,
+    {
+      classes: [
+        ...new Set(Object.keys(e.basket).map((line) => ctx.classify(instrumentId(line)).what)),
+      ],
+      currencies: [ccy],
+    },
+    // E1, G1.a: its shares TRADE and its investors come and go IN KIND against the basket, which is
+    // why it is not a forced seller and why some other vehicle has to carry that.
+    { how: 'listed' },
   );
   const share = shareLineOf(e.fund);
   const market = etfMarketOf(e.fund);
@@ -1383,44 +1439,33 @@ function holdingsWorth(view: ParticipantView): Cash {
  * two parties — which nothing outside this module could read and which no manager agreed to.
  */
 function eligible(view: ParticipantView, m: Mandate, d: FundDecl, i: Instrument): boolean {
-  if (!i.status.live || !m.mayHold.includes(i.kind)) return false;
+  if (!i.status.live) return false;
   /**
-   * A-47, Currency C4, A4: AND A MANDATE IS A MANDATE IN A MONEY.
+   * A4, item 10e: THE ONE QUESTION, ASKED ONCE. What this pool may hold is its blueprint, and the
+   * ASSET ANSWERS FOR ITSELF out of the kernel's classification — so two funds cannot come to
+   * different conclusions about the same paper, and nothing here enumerates the world.
    *
-   * This tested live, kind and tenor and never the currency, and `d.eligible` for every money fund
-   * is `['sovereign.bill']` — which is EVERY SOVEREIGN BILL IN THE WORLD. `eligibleLines` counted
-   * the Japanese and the European ones beside the American, so what it spread its cash over was
-   * three times what it could actually buy, and `ordersOf` then divided money in one currency by a
-   * price in another to get a size (A-50).
+   * THREE HAND-WRITTEN CONSTRAINTS WENT INTO THE LANGUAGE and are gone from this function:
    *
-   * The money is the fund's own — where it banks and what its shares are struck in — and it is an
-   * OUTCOME of where the fund is rather than a field somebody declared beside it (Law 2, Law 4).
+   *  - the KIND LIST, which could not say "credit, three to seven years, senior" at all;
+   *  - the CURRENCY test (A-47, A-50), which was hand-written and so a multi-currency mandate was
+   *    inexpressible — a fund that may hold another money has an FX exposure its investors agreed
+   *    to, and now its mandate is where that is agreed;
+   *  - the TENOR test, which ran through `cashFlows` and therefore FAILED ANYTHING THAT PROMISES NO
+   *    DATED PAYMENT by having no last flow. A share promises none, which is why no fund in this
+   *    world could ever hold one whatever its mandate said (`docs/RECORD.md` item 4). A duration
+   *    BAND asks where a duration exists, and a blueprint that wants shares does not state one.
    */
-  if (i.ccy !== view.registry.currencyOf(view.self.region)) return false;
+  if (!admits(m.blueprint, view.classify(i.id), () => undefined)) return false;
   /**
-   * A4, D1, Equity B1: THE MANDATE'S TWO QUESTIONS, AND THEY ARE NOT THE SAME QUESTION.
+   * A4, Equity B1: AND WHETHER IT CAN PUT A NUMBER ON IT — a different question from whether the
+   * mandate allows it, and the FUND's own refusal rather than its investors'.
    *
-   * A mandate says what a fund may hold and how long its money may be tied up. This asked only the
-   * second, through `cashFlows` — the issuer's DATED PROMISE — so anything that promises no dated
-   * payment failed the tenor test by having no last flow at all. A share promises none. That single
-   * line is why **no fund in this world could ever hold a share** and why every fund here is a bond
-   * fund at the type level, whatever its mandate says (`docs/RECORD.md` item 4).
-   *
-   * The tenor test now applies where a tenor EXISTS, which is what a tenor is; and what the fund can
-   * put a number on is asked of the kind's own valuation door, which every kind answers in its own
-   * terms. A claim it cannot value is one it does not buy — that is a real refusal and not a
-   * property of whether the claim happens to promise anything.
+   * What it can value is asked of the kind's own valuation door, which every kind answers in its
+   * own terms: a bond discounts its promise, a company capitalises what it published. A claim it
+   * cannot value is one it does not buy.
    */
-  const required = view.params.perAnnum(fundParam(d.fund, 'requiredYield'));
-  if (!view.worth(i.id, required).some) return false;
-  const on = view.calendar.startOf(view.period);
-  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
-  const last = flows[flows.length - 1];
-  if (last === undefined) return true;
-  const by = view.calendar.startOf(
-    periodOf(view.period + view.params.periods(fundParam(d.fund, 'maxTenorPeriods'))),
-  );
-  return compareCivil(last.date, by) <= 0;
+  return view.worth(i.id, view.params.perAnnum(fundParam(d.fund, 'requiredYield'))).some;
 }
 
 /** How many lines the mandate lets it into, so what it has spare is spread over them and no more. */
@@ -1890,7 +1935,16 @@ export function funds(
         // was set up by somebody, on terms, and a seed states an opening STOCK (Seed A3) — so the
         // commitment is as much part of the opening as the share line is. The pool owes the manager
         // its fee; it owes nothing yet, because the fee falls due at the end of a period.
-        openMandate(ctx, d.fund as PartyId, d.manager as PartyId, ccy, d.eligible);
+        openMandate(
+          ctx,
+          d.fund as PartyId,
+          d.manager as PartyId,
+          ccy,
+          // Item 10e: SINGLE OR MULTI CURRENCY is a term of the mandate, and a single-currency one
+          // names ITS OWN money — which is where the fund is, not a field declared beside it.
+          d.ownCurrencyOnly ? { ...d.blueprint, currencies: [ccy] } : d.blueprint,
+          d.liquidity,
+        );
         const terms: FundShareTerms = { kind: FUND_SHARE, fund: d.fund as PartyId };
         ctx.instruments.add({
           id: shareLineOf(d.fund),

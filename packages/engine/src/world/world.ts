@@ -111,6 +111,8 @@ import {
 import { Guarantees, guaranteeReads, type GuaranteeReads } from '../register/guarantees.js';
 import { Processes, processReads, type ProcessReads } from '../register/processes.js';
 import type { Registry } from '../registry/registry.js';
+import { classify, type Classified } from '../registry/universe.js';
+import type { Civil } from '../calendar/civil.js';
 import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
 import { dieCell, mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
@@ -1407,6 +1409,7 @@ export class World {
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       worth: (instrument, required) => this.worthTo(instrument, required),
+      classify: (instrument) => this.classifyAsset(instrument),
       inOwnMoney: (value, from) =>
         this.valuation.inOwnMoney(party, value, from, this.currentPeriod),
       inMoney: (value, from, to) => this.valuation.inMoney(value, from, to, this.currentPeriod),
@@ -1677,6 +1680,7 @@ export class World {
       accountOf: (party, ccy) => this.accountOf(party, ccy),
       settle: (draft) => this.settlement.settle(draft, this.currentPeriod, this.currentCycle),
       issue: (decl) => this.instruments.add(decl),
+      classify: (instrument) => this.classifyAsset(instrument),
       openMarket: (decl) => {
         this.addMarket(decl);
       },
@@ -2372,6 +2376,62 @@ export class World {
    * count for the whole door (Law 4: a world with two valuation conventions has two answers to one
    * question), and it is the one `control` was already using for the same arithmetic.
    */
+  /**
+   * Fund Shares A4, item 10e: WHAT AN ASSET IS, and the kernel answers because everybody must get
+   * the same answer (Law 4).
+   *
+   * A mandate asks it to decide whether it may hold something; a manager asks it to decide what
+   * business to be in; an audit family asks it to see what a pool is made of. Three modules asking
+   * three times would be three classifications that agree until one of them is edited — and the
+   * reads it is built from are the kernel's stores anyway, so there is nowhere else it could
+   * honestly live.
+   */
+  classify(instrument: InstrumentId): Classified {
+    return this.classifyAsset(instrument);
+  }
+
+  private classifyAsset(instrument: InstrumentId): Classified {
+    const i = this.instruments.get(instrument);
+    const on = this.calendar.startOf(this.currentPeriod);
+    return classify(i, {
+      on,
+      partyKind: (party) => String(this.parties.get(party).kind),
+      promises: (of) => this.registry.instrumentKind(of.kind).liabilityOfIssuer,
+      lastFlow: (of) => {
+        const flows = this.registry
+          .instrumentKind(of.kind)
+          .cashFlows(of, on, this.calendar, this.registry);
+        const last = flows[flows.length - 1];
+        return last === undefined ? none<Civil>() : some(last.date);
+      },
+      /**
+       * Bond N13, N13.a: every kind states where a claim on it stands, *"even when the answers are
+       * 'nothing seizable' and 'all equal'"* — so this is never absent, and what it says about
+       * being SECURED is whether anything is actually pledged against it.
+       */
+      ranking: (of) => {
+        const r = this.registry.instrumentKind(of.kind).ranking(of);
+        return some({ seniority: r.seniority, secured: r.secured.length > 0 });
+      },
+      /**
+       * Ratings A3: EVERY assessor's current opinion on this name — the last thing each of them
+       * announced. What to DO with several opinions is the reader's (a mandate takes the lowest, a
+       * CDS index takes the middle), so this hands over all of them and combines nothing.
+       */
+      gradesOn: (obligor) => {
+        const byAssessor = new Map<string, string>();
+        for (const e of this.journal.forSubject('rating.action', String(obligor))) {
+          const assessor = e.data['assessor'];
+          const grade = e.data['grade'];
+          if (typeof assessor === 'string' && typeof grade === 'string') {
+            byAssessor.set(assessor, grade);
+          }
+        }
+        return [...byAssessor.values()];
+      },
+    });
+  }
+
   private worthTo(instrument: InstrumentId, required: Ratio): Option<PerPiece> {
     finite(required, `required return for ${instrument}`);
     if (required <= 0) return none<PerPiece>();

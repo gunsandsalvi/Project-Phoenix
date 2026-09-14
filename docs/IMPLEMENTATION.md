@@ -447,7 +447,7 @@ through a segregated mandate, and what happens next is one blueprint and one set
 
 - [x] 10e.1 The classification: `registry/universe.ts` — the reads that classify any instrument, and nothing stored. It is a kernel read because three modules need the same answer (Law 4).
 - [x] 10e.2 The blueprint: bands over those reads, and ONE `admits(blueprint, instrument)` for every vehicle in the world. Replaces `MandateTerms.mayHold`.
-- [ ] 10e.3 The liquidity terms as declared data on the mandate, and the one subscription/redemption mechanism reading them. `listed` folds `EtfDecl` into the one object.
+- [x] 10e.3a The blueprint and the liquidity terms are ON THE MANDATE, and `eligible` is one `admits`. **10e.3b remains**: the subscription/redemption path reading those terms — a queue for semi-liquid, a refusal for closed, in-kind for listed — which is what makes them decide who can be forced to sell.
 - [ ] 10e.4 The manager as a business: many funds, a fee from each, a cost in labour, and launch/wind-down as decisions. `drawFunds`' fixed roster becomes an opening condition (Seed A3) rather than the industry's permanent structure.
 - [ ] 10e.5 Seed money: a manager may put its own money into a fund it launches, raised by issuing its own equity or debt, and that is the ONLY way a fund reaches its balance sheet.
 - [ ] 10e.6 Access as a POLICY, read at the door: the vehicle states what it asks of an entrant, the cell answers with its own wealth per member.

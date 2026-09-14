@@ -7950,3 +7950,56 @@ it is a `vehicle`, whose assets are the pool and nothing else (XI-11).
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4 over 209 files,
 `check:deaths` 6 of 6. Tests written, not run.
+
+---
+
+## Item 10e, second stage — the mandate speaks the language, and three hand-written constraints die
+
+**`MandateTerms.mayHold: readonly string[]` is gone.** A mandate now carries a `blueprint` and
+`liquidity` terms, and `funds/index.ts:eligible` — the one gate on what any pool may hold — is a
+single call to `admits` over the kernel's classification. What that deleted is the point:
+
+```
+DELETED from `eligible`                    WHY IT WAS WRONG
+the kind list                              could not say "credit, 3-7 years, senior" at all
+the currency test (hand-written)           a multi-currency mandate was INEXPRESSIBLE (A-47, A-50)
+the tenor test (through `cashFlows`)       failed anything promising no dated payment
+```
+
+**The tenor test was the interesting one.** It took the last cash flow and compared it to the fund's
+maximum, so ANYTHING THAT PROMISES NO DATED PAYMENT failed by having no last flow at all. A share
+promises none. That one line is why no fund in this world could ever hold a share, whatever its
+mandate said (`docs/RECORD.md` item 4 found it and patched around it). A duration BAND asks the
+question where a duration exists and says nothing where it does not, and a blueprint that wants
+shares simply does not state one — so the defect is gone rather than guarded.
+
+**`classify` is a KERNEL DOOR on all three views** (participant, mechanism, seed), because a mandate,
+a manager and an audit family all ask what an asset is and must not get three answers (Law 4). The
+reads it is built from are the kernel's stores anyway, so there was nowhere else it could honestly
+live.
+
+**A TRACKER'S MANDATE AND ITS BASKET WERE CONFLATED, and separating them is a real fix.** The ETF
+took the kinds its basket happened to name and called that its mandate. But an index fund's mandate
+is the ASSET CLASS its investors bought and the INDEX says which lines in what weights (E3) — so the
+index can change its constituents without anybody rewriting the fund's mandate, which is what an
+index doing its job looks like. Its blueprint is now the classes the basket is made of, read off the
+classification; its liquidity is `listed`, which is G1.a's reason it is not a forced seller.
+
+**The commodity fund got smaller.** `holdsPhysical` walked the mandate's kind ids asking the registry
+whether each was `physical`. It is now `classes: ['thing']` — the class the classification gives
+anything NOBODY PROMISED — so a good this world invents next year is inside the mandate without
+`physical.ts` or its test knowing the name of it.
+
+**And the money fund's mandate now says what the clause says.** `['sovereign.bill',
+'commercial.paper']` meant "the two short things I know the name of" and would have gone stale at the
+third. D1 says *short, high-quality paper*, and that is what the band says: a dated promise, under a
+year, from a name the assessors are content with. A bill and a piece of commercial paper both answer
+it without `data.ts` knowing either exists.
+
+**Not yet done, and named so it is not lost: 10e.3b.** The liquidity terms are DECLARED but the
+subscription and redemption path does not read them yet — every fund still redeems as though it were
+liquid. A queue for semi-liquid, a refusal for closed and in-kind for listed is what makes those
+terms decide who can be forced to sell, which is the whole of their point (XI-2).
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4 over 209 files,
+`check:deaths` 6 of 6. Tests written and updated, not run.

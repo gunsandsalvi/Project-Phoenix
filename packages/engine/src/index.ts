@@ -79,6 +79,7 @@ export * from './mechanisms/banks/index.js';
 export * from './mechanisms/credit-events/index.js';
 export * from './mechanisms/estate/index.js';
 export * from './mechanisms/funds/index.js';
+export { holdsPhysical } from './mechanisms/funds/physical.js';
 export * from './mechanisms/goods/index.js';
 export * from './mechanisms/capital-programme/index.js';
 export * from './mechanisms/money-market/index.js';

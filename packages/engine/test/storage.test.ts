@@ -9,6 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   GOODS,
   drawFunds,
+  holdsPhysical,
   REGION,
   STORAGE,
   addDays,
@@ -17,7 +18,6 @@ import {
   none,
   paramId,
   plantKindId,
-  instrumentKindId,
   partyId,
   plantVintageId,
   spaceFor,
@@ -268,18 +268,20 @@ describe('what the wait costs reaches the decision to hold (B4, C3)', () => {
   it('has a party on the other side of it: a fund that holds the thing itself (C3)', () => {
     const w = rig('storage-investor');
     const funds = drawFunds(rigDraw('storage-investor').banks, 'storage-investor');
-    const physical = funds.filter((d) => d.eligible.every((k) => k.startsWith('good.')));
-    // A4, Law 15: what makes it a commodity fund is its MANDATE — every kind it may hold is one
-    // nobody issued (Goods A1) — and never a flag on the row.
+    const physical = funds.filter((d) => holdsPhysical(d));
+    /**
+     * A4, Law 15: what makes it a commodity fund is its MANDATE, never a flag on the row — and
+     * item 10e says it in one band rather than by walking a list of kind ids. `classes: ['thing']`
+     * is the class the classification gives anything NOBODY PROMISED (Goods A1), so a good this
+     * world invents next year is inside the mandate without this test or that file knowing its name.
+     */
     expect(physical.length).toBeGreaterThan(0);
     for (const d of physical) {
       expect(w.parties.has(partyId(d.fund))).toBe(true);
-      // F3: its own manager, a separate party, whose income is the fund's cost.
+      // F3: the manager is a separate party, whose income is the fund's cost.
       expect(w.parties.has(partyId(d.manager))).toBe(true);
-      expect(d.manager).not.toBe(`manager.${d.bank}`);
-      for (const kind of d.eligible) {
-        expect(w.registry.instrumentKind(instrumentKindId(kind)).physical).toBe(true);
-      }
+      expect(d.manager).not.toBe(d.fund);
+      expect(d.blueprint.classes).toEqual(['thing']);
     }
   });
 });

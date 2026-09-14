@@ -26,14 +26,19 @@ import type { Order } from '../../clearing/solver.js';
 import { isGoodTerms, spacePerPiece, storageRateIn } from '../../registry/physical.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { FundDecl } from './data.js';
+import { admits } from '../../registry/blueprint.js';
 import { about } from '../../world/context.js';
 
-/** A4, Law 15: a mandate of physical things and nothing else. Structural, never a flag on the row. */
-export function holdsPhysical(view: ParticipantView, d: FundDecl): boolean {
-  if (d.eligible.length === 0) return false;
-  return d.eligible.every((k) => {
-    return view.registry.instrumentKinds.get(k as never)?.physical === true;
-  });
+/**
+ * A4, Law 15, item 10e: A MANDATE OF PHYSICAL THINGS AND NOTHING ELSE — structural, never a flag.
+ *
+ * It used to walk the mandate's list of kind ids and ask the registry whether every one of them was
+ * `physical`. The blueprint says it in one band: `classes: ['thing']` is the class the
+ * classification gives to anything NOBODY PROMISED (`liabilityOfIssuer` false), which is what makes
+ * a commodity fund a commodity fund. One read, and no list to walk.
+ */
+export function holdsPhysical(d: FundDecl): boolean {
+  return d.blueprint.classes.length > 0 && d.blueprint.classes.every((c) => c === 'thing');
 }
 
 /**
@@ -48,10 +53,12 @@ export function physicalOrders(
   m: MarketDecl,
 ): readonly Order[] {
   const d = decls.find((row) => row.fund === String(view.self.id));
-  if (d === undefined || !holdsPhysical(view, d)) return [];
+  if (d === undefined || !holdsPhysical(d)) return [];
   const i = view.instruments.get(m.instrument);
   if (!i.status.live || !isGoodTerms(i.terms)) return [];
-  if (!d.eligible.includes(String(i.kind))) return [];
+  // A4: and this particular good is inside its mandate, asked of the one `admits` every vehicle
+  // in the world asks — so a commodity fund and a credit fund refuse things the same way.
+  if (!admits(d.blueprint, view.classify(m.instrument), () => undefined)) return [];
   const expected = view.outlook(about({ on: 'price', instrument: m.instrument }));
   if (!expected.some) return [];
   const spoilage = view.params.ratio(i.terms.spoilage);

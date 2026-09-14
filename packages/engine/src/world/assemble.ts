@@ -236,6 +236,8 @@ function seedContext(w: World): SeedContext {
       w.instruments.adjustIssued(instrument, held * weightOf(p));
     },
     market: (id) => w.market(id),
+    /** Item 10e: the seed writes mandates, so it needs the same classification everybody else gets. */
+    classify: (instrument) => w.classify(instrument),
     // XI-8, Seed A3: an opening commitment is an opening stock, exactly as a holding is.
     owes: (decl) => w.openAgreement(decl),
   };

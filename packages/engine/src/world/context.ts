@@ -82,6 +82,7 @@ import type {
 } from '../register/instruments.js';
 import type { ParamRegister } from '../registry/params.js';
 import type { Registry } from '../registry/registry.js';
+import type { Classified } from '../registry/universe.js';
 import type { Prng } from '../rng/prng.js';
 import type { Qty } from '../core/tick.js';
 import type { ContractReadsFacade } from '../register/contracts.js';
@@ -403,6 +404,16 @@ export interface ParticipantView extends KernelReads {
    * at different levels, which is what gives a book two sides (§46 A3).
    */
   worth(instrument: InstrumentId, requiredPerAnnum: Ratio): Option<PerPiece>;
+  /**
+   * Fund Shares A4, item 10e: WHAT THIS ASSET IS — its class, its money, how long it has left,
+   * where a claim on it stands, whether a market prices it, and the LOWEST grade anybody published
+   * on the name (`registry/universe.ts`).
+   *
+   * Every field is a read of what the world already declares, so a kind invented next year
+   * classifies itself and nothing here goes stale. It is on the KERNEL because a mandate, a
+   * manager and an audit family all ask it and must not get three answers (Law 4).
+   */
+  classify(instrument: InstrumentId): Classified;
   /**
    * Currency C4.a, C5, A-23, A-50: WHAT THAT IS WORTH ON THIS PARTY'S OWN BOOK, at the rate in
    * force this period. A party keeps one book in one money and adding two of them is a defect, so
@@ -757,6 +768,8 @@ export interface MechanismContext extends WorldReads {
   settle(draft: InstructionDraft): SettlementRecord;
   /** Register a new instrument with nothing issued; issuance is a settlement leg (Register B1). */
   issue(decl: InstrumentDecl): Instrument;
+  /** Item 10e: the same classification every view gets, so nobody disagrees about an asset (Law 4). */
+  classify(instrument: InstrumentId): Classified;
   openMarket(decl: MarketDecl): void;
   /** Declare a venue this module clears itself (Clearing B2, Labour D1). */
   openVenue(decl: VenueDecl): void;
@@ -994,6 +1007,8 @@ export interface SeedContext {
   readonly valuation: Pick<Valuation, 'valueOfLots' | 'inOwnMoney'>;
   openMarket(decl: MarketDecl): void;
   openVenue(decl: VenueDecl): void;
+  /** Item 10e: the same classification every view gets (Law 4). A seed writes mandates too. */
+  classify(instrument: InstrumentId): Classified;
   /** Endow a party with money at its own bank, per member (Seed A4: every deposit is a liability). */
   endowMoney(party: PartyId, ccy: CurrencyCode, perMember: Cash): void;
   /** Endow a party with units of an instrument at a basis, per member (Seed C4: an opening condition). */
