@@ -24,6 +24,20 @@
  * rest of the recipe costs (Labour C1, C1.a). A bid IS the most a buyer will pay, so this is the
  * bid, and the market clears below it whenever supply is ample.
  */
+import {
+  amountOf,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  heldAsMoney,
+  minus,
+  over,
+  type PerPiece,
+  plus,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { Missing } from '../../core/errors.js';
 import { marketId, type MarketId, type PartyId } from '../../core/ids.js';
 import type { InstrumentId } from '../../core/ids.js';
@@ -72,7 +86,7 @@ import {
   type Project,
 } from './invest.js';
 import { downTick, upTick } from '../../core/tick.js';
-import { NO_QTY, asQty, type Qty } from '../../core/tick.js';
+import { NO_QTY, asQty, subQty, toTick, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
 
 /** An order the firm has decided to post, in the form the market takes it (Clearing A2). */
@@ -80,7 +94,7 @@ export interface PlannedOrder {
   readonly market: MarketId;
   readonly side: 'buy' | 'sell';
   readonly price: OrderPrice;
-  readonly qty: number;
+  readonly qty: Qty;
 }
 
 /**
@@ -206,11 +220,13 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
  * formed from what it has itself traded at; otherwise what the market last printed, which is public
  * and is all a party with no history of its own has. From its first sale its own outlook leads.
  */
-export function expectedPrice(view: ParticipantView, instrument: InstrumentId): Option<number> {
+export function expectedPrice(view: ParticipantView, instrument: InstrumentId): Option<PerPiece> {
   const own = view.outlook(about({ on: 'price', instrument: instrument }));
-  if (own.some) return some(own.value.expected);
+  if (own.some) {
+    return some(asPerPiece(own.value.expected, `what it expects ${instrument} to fetch`));
+  }
   const print = view.print(instrument);
-  return print.some ? some(print.value.price) : none<number>();
+  return print.some ? some(print.value.price) : none<PerPiece>();
 }
 
 /** The venue this firm's occupation is struck in (Clearing B2: found by what makes it itself). */
@@ -254,11 +270,12 @@ function hoursUnderContract(view: ParticipantView): number {
 }
 
 /** D1: what it must pay out that it already knows about — the payroll it is committed to. */
-function wagesDue(view: ParticipantView): number {
+function wagesDue(view: ParticipantView): Cash {
   const own = view.lastOwn('labour.wages');
-  if (!own.some) return 0;
+  if (!own.some) return asCash(0, 'a firm that has published no payroll owes none');
   const due = own.value.data['due'];
-  return typeof due === 'number' ? due : 0;
+  // Item 16: money re-entering from what this firm published, at the read that knows what it is.
+  return asCash(typeof due === 'number' ? due : 0, 'what its own payroll says it owes');
 }
 
 /**
@@ -268,29 +285,38 @@ function wagesDue(view: ParticipantView): number {
  * worth, which is what it expects a unit to fetch less what perishes in the meantime. Whatever
  * nobody takes stays where it is, which is what illiquidity in goods is.
  */
-function sellSchedule(view: ParticipantView, tech: Technology, price: Option<number>): PlannedOrder[] {
+function sellSchedule(view: ParticipantView, tech: Technology, price: Option<PerPiece>): PlannedOrder[] {
   const output = goodId(tech.terms.subUnit, tech.terms.region);
   const stock = view.quantity(output);
   if (!material(stock, 2, stock)) return [];
   const market = goodMarketId(tech.terms.subUnit, tech.terms.region);
   const ccy = view.registry.currencyOf(view.self.region);
-  const short = sub(wagesDue(view), view.cash(ccy), 'cash it is short of');
+  const short = minus(
+    wagesDue(view),
+    heldAsMoney(view.cash(ccy), 'what is in its account'),
+    'cash it is short of',
+  );
   // A firm with no idea what its stock fetches cannot say how much of it covers a payroll, so what
   // it needs is all of it: it has bills and no view (Firm D1).
-  const forced = short <= 0 ? 0 : price.some ? div(short, price.value, 'units it must sell') : stock;
+  const forced =
+    short <= 0 ? NO_QTY : price.some ? amountOf(short, price.value, 'units it must sell') : stock;
   // Law 8: a piece is the smallest thing there is, so a PART of one it cannot keep is a whole one
   // it cannot keep — a loaf a quarter stale is a stale loaf, and a payroll covered by all but a
   // cent is a payroll not covered. It rounds up for both reasons, and what is left over is exactly
   // what the register says it holds less that, so no fraction survives on either side.
   const cannotKeep = upTick(
-    add(mul(stock, tech.spoilage, 'what will perish'), forced, 'what it cannot keep'),
+    plus(
+      scale(stock, asRatio(tech.spoilage, 'what will perish'), 'what will perish'),
+      forced,
+      'what it cannot keep',
+    ),
   );
   const atMarket = atMost(cannotKeep, stock, 'it cannot sell stock it does not hold');
   const out: PlannedOrder[] = [];
   if (material(atMarket, 2, stock)) {
     out.push({ market, side: 'sell', price: 'market', qty: atMarket });
   }
-  const rest = sub(stock, atMarket, 'what it can hold');
+  const rest = subQty(stock, atMarket, 'what it can hold');
   if (price.some && material(rest, 2, stock)) {
     out.push({
       market,
@@ -301,8 +327,12 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<num
       // own print, so a world where room is scarce is a world where holding is dear and more of
       // every stock comes to market. A world with no session that cleared has no rate to read, and
       // then the reservation is what it always was — which is an answer and not a zero.
-      price: sub(
-        mul(price.value, sub(1, tech.spoilage, 'what survives'), 'the value of holding'),
+      price: minus(
+        scale(
+          price.value,
+          asRatio(sub(1, tech.spoilage, 'what survives'), 'what survives'),
+          'the value of holding',
+        ),
         carryPerPiece(view, tech),
         'less what the wait costs it',
       ),
@@ -317,15 +347,18 @@ function sellSchedule(view: ParticipantView, tech: Technology, price: Option<num
  * for. Nothing for a line nobody stores in bulk, and nothing where no room changed hands — in both
  * cases because there is no such cost, not because a number was missing (Appendix A).
  */
-function carryPerPiece(view: ParticipantView, tech: Technology): number {
+function carryPerPiece(view: ParticipantView, tech: Technology): PerPiece {
   const per = tech.terms.storagePerUnit;
-  if (per === null) return 0;
+  if (per === null) return asPerPiece(0, 'a good that needs no cover costs nothing to keep');
   const rate = storageRateIn(view, tech.terms.region);
-  if (rate === undefined) return 0;
+  if (rate === undefined) return asPerPiece(0, 'no session cleared, so there is no rate to read');
   const unit = view.instruments.get(goodId(tech.terms.subUnit, tech.terms.region)).unit;
-  return mul(
+  return scale(
     rate,
-    spacePerPiece(view, unit, view.params.ratio(per)),
+    asRatio(
+      spacePerPiece(view, unit, view.params.ratio(per)),
+      'the room a piece takes',
+    ),
     'what a period under cover costs a piece',
   );
 }
@@ -351,8 +384,12 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
       ? none<Plan>()
       : some<Plan>({ planned: false, output, orders: selling, carry: carryPerPiece(view, tech) });
   }
+  // Item 16: what the recipe's inputs cost FOR ONE UNIT of output — money per piece, like the
+  // level it will sell at, which is what lets the two meet in the contribution below.
   const inputCost = sum(
-    tech.inputs.map((i, n) => mul(i.qtyPerUnit, priceOf(inputPrices, n), 'input cost')),
+    tech.inputs.map((i, n) =>
+      scale(priceOf(inputPrices, n), asRatio(i.qtyPerUnit, 'what one takes of it'), 'input cost'),
+    ),
   ).value;
   // Capital Programme A2, A4: what its plant lets it make, and what that plant costs it to use.
   const vintages = vintagesHeld(view, view.calendar.startOf(view.period));
@@ -368,16 +405,24 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   // charge is the same wear the stock is written down by. A firm with none of a kind it needs wears
   // nothing out, because it has nothing to wear out — and it makes nothing either.
   const charge = capitalChargePerUnit(tech.plant, vintages);
-  const capitalCharge = charge.some ? charge.value : 0;
+  const capitalCharge = charge.some ? charge.value : asPerPiece(0, 'no plant, nothing wears out');
   // Labour C1, C1.a: what an hour is worth to it — the output an hour makes possible at the price
   // it expects, less what the rest of the recipe takes, which now includes what the plant that hour
   // runs on wears out by. It is the most it will pay for one.
-  const contribution = sub(
-    sub(mul(price.value, tech.yieldRate, 'what a unit of it fetches'), inputCost, 'less its inputs'),
+  const contribution = minus(
+    minus(
+      scale(price.value, asRatio(tech.yieldRate, 'what survives the line'), 'what a unit of it fetches'),
+      inputCost,
+      'less its inputs',
+    ),
     capitalCharge,
     'less what its plant wears out by',
   );
-  const perHour = div(contribution, tech.hoursPerUnit, 'the value of an hour');
+  const perHour = over(
+    contribution,
+    asRatio(tech.hoursPerUnit, 'the hours one takes'),
+    'the value of an hour',
+  );
   // B5: what a unit costs to start and what a unit that survives the line costs (Goods B4) — known
   // once it has paid a wage. A firm that has never employed anybody knows only what an hour is
   // worth to it, and posting that bid IS how it finds out what one costs (Labour C1, D1).
@@ -421,24 +466,46 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
     // Law 8: a recipe met with the piece below is a recipe not met (`produce.ts` draws the same
     // way), so what it bids for is the whole pieces the batch needs and never the fraction under.
     const need = upTick(mul(batch, input.qtyPerUnit, 'what the batch draws'));
-    const buy = sub(need, view.quantity(input.instrument), 'what it must buy');
+    const buy = subQty(need, view.quantity(input.instrument), 'what it must buy');
     if (!material(buy, 2, need) || buy <= 0) continue;
     orders.push({
       market: marketOf(view, input.instrument),
       side: 'buy',
       // What this input is worth to it: the output it makes possible at the price it expects, less
       // the wages, the plant and the other inputs that unit still needs.
-      price: div(
-        sub(
-          sub(
-            sub(mul(price.value, tech.yieldRate, 'the output it makes possible'), mul(tech.hoursPerUnit, wage.some ? wage.value : 0, 'its wages'), 'less wages'),
+      price: over(
+        minus(
+          minus(
+            minus(
+              scale(
+                price.value,
+                asRatio(tech.yieldRate, 'what survives the line'),
+                'the output it makes possible',
+              ),
+              scale(
+                asPerPiece(wage.some ? wage.value : 0, 'what an hour costs it'),
+                asRatio(tech.hoursPerUnit, 'the hours one takes'),
+                'its wages',
+              ),
+              'less wages',
+            ),
             capitalCharge,
             'less what its plant wears out by',
           ),
-          sum(tech.inputs.map((other, m) => (m === n ? 0 : mul(other.qtyPerUnit, priceOf(inputPrices, m), 'other inputs')))).value,
+          sum(
+            tech.inputs.map((other, m) =>
+              m === n
+                ? asPerPiece(0, 'the input being priced is not one of the others')
+                : scale(
+                    priceOf(inputPrices, m),
+                    asRatio(other.qtyPerUnit, 'what one takes of it'),
+                    'other inputs',
+                  ),
+            ),
+          ).value,
           'less the other inputs',
         ),
-        input.qtyPerUnit,
+        asRatio(input.qtyPerUnit, 'what one takes of this input'),
         'what a unit of the input is worth',
       ),
       qty: buy,
@@ -453,12 +520,17 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
         view,
         tech.plant,
         vintages,
-        surviving.some ? surviving.value.perPeriod : 0,
+        surviving.some ? surviving.value.perPeriod : NO_QTY,
         plantOffers(view, tech, price.value),
         // B1.a: the units it would START each period at what it expects to sell — the same number
         // its employment is decided from, read once and used in both (Law 4).
-        perPeriod,
-        div(sales.value.confidence, tech.yieldRate, 'how wide its own surprises are, per unit started'),
+        toTick(perPeriod),
+        // Law 8: a width in units started is a count, and which way it rounds is a decision with a
+        // name — the NEAREST piece, because a width is a measurement rather than something a party
+        // can or must do (`toTick`, core/tick.ts).
+        toTick(
+          div(sales.value.confidence, tech.yieldRate, 'how wide its own surprises are, per unit started'),
+        ),
         contribution,
         view.params.perAnnum(firmParam(line.firm, 'hurdle')),
         view.params.periods(firmParam(line.firm, 'horizon')),
@@ -507,18 +579,32 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
  * discipline. Both ternaries were dead as well: the filter above them has already removed every
  * `'market'` price, so the `typeof` was a check on something that could not happen.
  */
-export function committedTo(orders: readonly PlannedOrder[]): number {
+export function committedTo(orders: readonly PlannedOrder[]): Cash {
   return sum(
     orders
       .filter((o) => o.side === 'buy' && typeof o.price === 'number')
-      .map((o) => mul(o.price as number, o.qty, 'what it is about to buy')),
+      .map((o) =>
+        valueAt(
+          asPerPiece(o.price as number, 'the level it posted'),
+          o.qty,
+          'what it is about to buy',
+        ),
+      ),
   ).value;
 }
 
-function spendable(view: ParticipantView, orders: readonly PlannedOrder[]): number {
+function spendable(view: ParticipantView, orders: readonly PlannedOrder[]): Cash {
   const ccy = view.registry.currencyOf(view.self.region);
   const buying = committedTo(orders);
-  return sub(sub(view.cash(ccy), wagesDue(view), 'after its payroll'), buying, 'after what it is buying');
+  return minus(
+    minus(
+      heldAsMoney(view.cash(ccy), 'what is in its account'),
+      wagesDue(view),
+      'after its payroll',
+    ),
+    buying,
+    'after what it is buying',
+  );
 }
 
 /**
@@ -565,7 +651,11 @@ function plantOffers(
         market: i.market.value,
         price: printed.some
           ? printed.value
-          : mul(asking.value, div(left, life, 'the service it has left'), 'what a used one asks'),
+          : scale(
+              asking.value,
+              asRatio(div(left, life, 'the service it has left'), 'the service it has left'),
+              'what a used one asks',
+            ),
         periodsOfService: left,
         newBuild: false,
       });
@@ -577,7 +667,7 @@ function plantOffers(
 }
 
 /** The price of the nth input, which the caller has already established this firm knows. */
-function priceOf(prices: readonly Option<number>[], n: number): number {
+function priceOf(prices: readonly Option<PerPiece>[], n: number): PerPiece {
   const p = prices[n];
   if (p?.some !== true) {
     throw new Missing('Goods B5', `the price of input ${n} was there and is not`, { input: n });

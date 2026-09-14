@@ -22,6 +22,7 @@
  * unit is what makes A2.b enforceable: a recipe quantity is `tonnes per tonne of flour`, and a
  * number denominated in money is refused at assembly, by name.
  */
+import { downTick, type Qty } from '../core/tick.js';
 import { Missing } from '../core/errors.js';
 import {
   instrumentId,
@@ -39,7 +40,16 @@ import {
 import type { Calendar } from '../calendar/calendar.js';
 import type { Event } from '../journal/journal.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
-import { asNamed, asPerPiece, asRatio, minus, type PerPiece, scale } from '../core/measure.js';
+import {
+  asNamed,
+  asPerPiece,
+  asRatio,
+  minus,
+  type PerPiece,
+  pricedAt,
+  scale,
+  valueAt,
+} from '../core/measure.js';
 import { div, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
@@ -388,12 +398,12 @@ export interface PlantNeed {
 export interface HeldVintage {
   readonly instrument: string;
   readonly capitalKind: string;
-  readonly units: number;
-  readonly basisPerUnit: number;
+  readonly units: Qty;
+  readonly basisPerUnit: PerPiece;
   /** A6: periods of service it has left, from the two dates on it. */
   readonly periodsLeft: number;
   /** A3: what a unit of it wears out by this period. */
-  readonly wearPerUnit: number;
+  readonly wearPerUnit: PerPiece;
 }
 
 /** A6, D2: every vintage of plant this party holds in its own region, with what is left of each. */
@@ -476,17 +486,19 @@ export function plantHeld(vintages: readonly HeldVintage[], capitalKind: string)
 export function wearPerPlantUnit(
   vintages: readonly HeldVintage[],
   capitalKind: string,
-): Option<number> {
+): Option<PerPiece> {
   const mine = vintages.filter((v) => v.capitalKind === capitalKind);
   const units = sum(mine.map((v) => v.units)).value;
-  if (units <= 0) return none<number>();
-  const charge = sum(mine.map((v) => mul(v.units, v.wearPerUnit, 'what this vintage wears out by')));
-  return some(div(charge.value, units, 'what a unit of plant costs it per period'));
+  if (units <= 0) return none<PerPiece>();
+  const charge = sum(
+    mine.map((v) => valueAt(v.wearPerUnit, v.units, 'what this vintage wears out by')),
+  );
+  return some(pricedAt(charge.value, units, 'what a unit of plant costs it per period'));
 }
 
 /** A2, A4: what the stock lets it make per period, and which kind of plant is the scarcest. */
 export interface Capacity {
-  readonly perPeriod: number;
+  readonly perPeriod: Qty;
   /** A4: the kind that binds. It is what an extra unit of output has to be bought in. */
   readonly binding: string;
 }
@@ -520,7 +532,11 @@ export function capacityFrom(
   for (const need of needs) {
     if (need.unitsPerUnitPerPeriod <= 0) continue;
     const held = plantHeld(vintages, need.capitalKind) + zeroIfNone(rented.get(need.capitalKind));
-    const perPeriod = div(held, need.unitsPerUnitPerPeriod, 'what this kind of plant lets it make');
+    // Law 8: what plant it HAS over what one unit of output takes is a count of whole units it can
+    // make, and what it can DO rounds down — the fraction above is a unit it cannot start.
+    const perPeriod = downTick(
+      div(held, need.unitsPerUnitPerPeriod, 'what this kind of plant lets it make'),
+    );
     if (scarcest === undefined || perPeriod < scarcest.perPeriod) {
       scarcest = { perPeriod, binding: need.capitalKind };
     }
@@ -545,13 +561,19 @@ export function utilisation(output: number, capacity: number): Option<number> {
 export function capitalChargePerUnit(
   needs: readonly PlantNeed[],
   vintages: readonly HeldVintage[],
-): Option<number> {
-  if (needs.length === 0) return some(0);
-  const terms: number[] = [];
+): Option<PerPiece> {
+  if (needs.length === 0) return some(asPerPiece(0, 'a line with no plant wears none out'));
+  const terms: PerPiece[] = [];
   for (const need of needs) {
     const per = wearPerPlantUnit(vintages, need.capitalKind);
-    if (!per.some) return none<number>();
-    terms.push(mul(need.unitsPerUnitPerPeriod, per.value, 'what the plant a unit takes costs'));
+    if (!per.some) return none<PerPiece>();
+    terms.push(
+      scale(
+        per.value,
+        asRatio(need.unitsPerUnitPerPeriod, 'the plant a unit takes'),
+        'what the plant a unit takes costs',
+      ),
+    );
   }
   return some(sum(terms).value);
 }
@@ -691,7 +713,7 @@ export interface SessionReads {
  * is a real answer and not a zero: a world where nobody let any room is not a world where room is
  * free, it is one where a holder who needed room did not get it (Law 6, Appendix A).
  */
-export function storageRateIn(reads: SessionReads, region: RegionId): number | undefined {
+export function storageRateIn(reads: SessionReads, region: RegionId): PerPiece | undefined {
   const said = reads.lastPublic(STORAGE_SESSION);
   if (!said.some) return undefined;
   const byRegion = said.value.data['byRegion'];
@@ -699,7 +721,8 @@ export function storageRateIn(reads: SessionReads, region: RegionId): number | u
   const here = (byRegion as Record<string, unknown>)[String(region)];
   if (typeof here !== 'object' || here === null) return undefined;
   const rate = (here as Record<string, unknown>)['rate'];
-  return typeof rate === 'number' ? rate : undefined;
+  // Item 16: a level the storage session cleared at, re-entering from what it published.
+  return typeof rate === 'number' ? asPerPiece(rate, 'what a piece of room cleared at') : undefined;
 }
 
 export const standsWindParam = (capitalKind: string): ParamId =>

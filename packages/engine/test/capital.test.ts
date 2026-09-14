@@ -10,6 +10,8 @@
  * compares a return against a cost, that the cost comes from the markets and the hurdle from the
  * management, and that the plant it buys was made by somebody and wears out.
  */
+import { asPerPiece } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
 import {
   STORAGE,
@@ -271,8 +273,8 @@ describe('what capital is (Capital Programme A)', () => {
     // capital of one kind is not capital of another, so a use that needs both is limited by the
     // one it has least of, and no amount of the other makes up for it.
     const held: HeldVintage[] = [
-      { instrument: 'plant.a.1', capitalKind: 'a', units: 100, basisPerUnit: 1, periodsLeft: 10, wearPerUnit: 0.1 },
-      { instrument: 'plant.b.1', capitalKind: 'b', units: 6, basisPerUnit: 1, periodsLeft: 10, wearPerUnit: 0.1 },
+      { instrument: 'plant.a.1', capitalKind: 'a', units: asQty(100), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
+      { instrument: 'plant.b.1', capitalKind: 'b', units: asQty(6), basisPerUnit: asPerPiece(1, 'what it cost'), periodsLeft: 10, wearPerUnit: asPerPiece(0.1, 'what it wears by') },
     ];
     const needs = [
       { capitalKind: 'a', unitsPerUnitPerPeriod: 2 },

@@ -2939,6 +2939,7 @@ under a shock.
 > | ~~2~~ | ~~`seeds`~~ — **DONE**: the two SCALES are named and cannot be crossed | **71** |
 > | ~~3~~ | ~~`banks`~~ — **DONE**: capital, funding, the desk's quote and the treasury's book | **130 → 44** |
 > | ~~4~~ | ~~`funds`~~ — **DONE**: the NAV, the basket, and two `perShare`s that were not the same thing | **68 → 34** |
+> | ~~5~~ | ~~`firms`~~ — **DONE**: the plan, the reservation and the project | **77 → 31** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -3075,6 +3076,22 @@ under a shock.
 > register counts is an `Amount<'piece'>` of a currency and what a price times a quantity comes to is
 > `Money<'piece'>`: the same cents, and the same cents ONLY because money's own price is one — the
 > single hard-coded price this world has (Money D2). The crossing is named rather than assumed.
+>
+> **Measured**: the same 79.
+>
+> ### Stage 5 — the firms
+>
+> The firm's plan is where the most dimensions meet in one expression, and it shows: what it expects
+> a unit to fetch is a LEVEL, what the recipe's inputs cost for one unit is a level, what its plant
+> wears out by per unit is a level, and the contribution is the three of them subtracted — so it is
+> a level too, and the value of an hour is that over the hours a unit takes. Every one of those was
+> a bare `number` and every one of them met the others through `mul`, `sub` and `div`.
+>
+> `HeldVintage`, `Capacity`, `PlantOffer`, `PlantNeed`, `CostOfCapital` and `PlannedOrder` carry
+> their dimensions now. Three roundings that were implicit got names: capacity is `downTick` (what
+> plant it HAS over what a unit takes is what it CAN make, and the fraction above is a unit it
+> cannot start), a surprise width is `toTick` (a measurement takes the nearest piece), and a firm's
+> purchase of an input is `subQty`.
 >
 > **Measured**: the same 79.
 

@@ -5260,3 +5260,25 @@ the whole of `nav.ts` typecheck without a cast in it.
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
 forbids, `plan:check`.
+
+## Item 16, stage 5 — the firms
+
+**77 sites became 31.** The firm's plan is where the most dimensions meet in one expression, and it
+shows: what it expects a unit to fetch is a LEVEL, what the recipe's inputs cost for one unit is a
+level, what its plant wears out by per unit is a level, and the contribution is the three of them
+subtracted — so it is a level too, and the value of an hour is that over the hours a unit takes.
+Every one of those was a bare `number`, and every one of them met the others through `mul`, `sub`
+and `div` with a string saying what it was.
+
+`HeldVintage`, `Capacity`, `PlantOffer`, `CostOfCapital` and `PlannedOrder` carry their dimensions
+now; so do the module's own readers — `expectedPrice`, `wagesDue`, `priceOf`, `quotedRate`, `owes`,
+`requiredOnEquity`, `carryPerPiece`, `storageRateIn`, `wearPerPlantUnit`, `capitalChargePerUnit`.
+
+**Three roundings that were implicit got names.** Capacity is `downTick` — what plant a firm HAS
+over what one unit takes is what it CAN make, and the fraction above is a unit it cannot start. A
+surprise width is `toTick` — a measurement takes the nearest piece, because it is not something a
+party can or must do. A firm's purchase of an input is `subQty`. Each was a bare `div` or `sub`
+landing between two pieces with nobody saying which way it went (core/tick.ts's whole subject).
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
+forbids, `plan:check`.

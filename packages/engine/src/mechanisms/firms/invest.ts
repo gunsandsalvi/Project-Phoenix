@@ -34,27 +34,43 @@
  * The only way anything is bought below is that a unit of capacity was worth more to this firm than
  * what the market is asking for the plant that makes one.
  */
+import {
+  amountOf,
+  asCash,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  type PerPiece,
+  plus,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { Missing } from '../../core/errors.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
 import { period } from '../../calendar/calendar.js';
-import { add, atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
+import { atLeast, atMost, div, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParticipantView } from '../../world/context.js';
 import { capacityFrom, plantHeld, type HeldVintage, type PlantNeed } from '../../registry/physical.js';
 import type { PlannedOrder } from './decide.js';
-import { downTick, upTick } from '../../core/tick.js';
+import { downTick, subQty, upTick, type Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
 
 /** B1.b: what money costs this firm at the margin, now, and what it is made of. */
 export interface CostOfCapital {
-  readonly perAnnum: number;
+  /** Item 16: every one of these is per annum on a unit of capital — pure numbers, never money. */
+  readonly perAnnum: Ratio;
   /** The quote it has been given, per annum. None when no bank has quoted it. */
-  readonly debt: Option<number>;
+  readonly debt: Option<Ratio>;
   /** What its shareholders are paid over what a share costs. None when its shares do not trade. */
-  readonly equity: Option<number>;
-  readonly debtWeight: number;
-  readonly equityWeight: number;
+  readonly equity: Option<Ratio>;
+  /** B1.c: what it owes and what its owners hold — the two sides the blend weighs. */
+  readonly debtWeight: Cash;
+  readonly equityWeight: Cash;
 }
 
 /** B1: a project this firm could do, with everything the decision was made of on it. */
@@ -107,13 +123,13 @@ export function costOfCapital(view: ParticipantView): Option<CostOfCapital> {
     // (Equity A6), and inventing one would be exactly the imported number Law 2 forbids.
     return some({ perAnnum: debt.value, debt, equity, debtWeight, equityWeight });
   }
-  const capital = add(debtWeight, equityWeight, 'its capital');
+  const capital = plus(debtWeight, equityWeight, 'its capital');
   if (capital <= 0) return some({ perAnnum: debt.value, debt, equity, debtWeight, equityWeight });
   return some({
-    perAnnum: div(
-      add(
-        mul(debtWeight, debt.value, 'what its debt costs it'),
-        mul(equityWeight, equity.value, 'what its equity costs it'),
+    perAnnum: ratioOf(
+      plus(
+        scale(debtWeight, debt.value, 'what its debt costs it'),
+        scale(equityWeight, equity.value, 'what its equity costs it'),
         'what its capital costs it',
       ),
       capital,
@@ -130,22 +146,26 @@ export function costOfCapital(view: ParticipantView): Option<CostOfCapital> {
  * B1.b: what its debt costs AT THE MARGIN, NOW — the rate a bank has quoted it, not the average
  * coupon on debt already outstanding. XI-4 names that average as the way this joint is deleted.
  */
-function quotedRate(view: ParticipantView): Option<number> {
+function quotedRate(view: ParticipantView): Option<Ratio> {
   const own = view.lastOwn('credit.quoted');
-  if (!own.some) return none<number>();
+  if (!own.some) return none<Ratio>();
   const rate = own.value.data['rate'];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  // Item 16: a rate re-entering from what was published under this firm's name.
+  return typeof rate === 'number'
+    ? some(asRatio(rate, 'what it was quoted, per annum'))
+    : none<Ratio>();
 }
 
 /** Firm C2: what this firm owes — the liabilities it has issued, at what is outstanding. */
-function owes(view: ParticipantView): number {
-  const terms: number[] = [];
+function owes(view: ParticipantView): Cash {
+  const terms: Cash[] = [];
   // Law 19: the register already indexes what a party issued, so this reads its own lines rather
   // than every line in the world to find them.
   for (const i of view.instruments.issuedBy(view.self.id)) {
     if (!i.status.live) continue;
     if (!view.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
-    terms.push(i.issued);
+    // Money A1: a liability is owed at its face, so what is out is what it owes.
+    terms.push(asCash(i.issued, `what it owes on ${i.id}`));
   }
   return sum(terms).value;
 }
@@ -156,17 +176,17 @@ function owes(view: ParticipantView): number {
  * of its own earnings (§32 E7), and it exists only where a market prices its shares: a firm nobody
  * has ever bought a share of has no market read of what its equity costs (Equity A6).
  */
-function requiredOnEquity(view: ParticipantView): Option<number> {
+function requiredOnEquity(view: ParticipantView): Option<Ratio> {
   const line = shareLine(view);
-  if (!line.some) return none<number>();
+  if (!line.some) return none<Ratio>();
   const print = view.print(line.value);
-  if (!print.some || print.value.price <= 0) return none<number>();
+  if (!print.some || print.value.price <= 0) return none<Ratio>();
   const outlook = view.outlook(about({ on: 'earnings' }));
-  if (!outlook.some) return none<number>();
+  if (!outlook.some) return none<Ratio>();
   const shares = view.instruments.get(line.value).issued;
-  if (shares <= 0) return none<number>();
-  const cap = mul(shares, print.value.price, 'what the market says it is worth');
-  if (cap <= 0) return none<number>();
+  if (shares <= 0) return none<Ratio>();
+  const cap = valueAt(print.value.price, shares, 'what the market says it is worth');
+  if (cap <= 0) return none<Ratio>();
   // Law 8: what it earns is per period and what a return is is per annum, so the period is turned
   // into the fraction of a year the calendar says it is, and never into a periods-per-year.
   const year = yearFraction(
@@ -174,8 +194,18 @@ function requiredOnEquity(view: ParticipantView): Option<number> {
     view.calendar.startOf(view.period),
     view.calendar.startOf(period(view.period + 1)),
   );
-  if (year <= 0) return none<number>();
-  return some(div(div(outlook.value.expected, year, 'what it earns, per annum'), cap, 'what its equity costs'));
+  if (year <= 0) return none<Ratio>();
+  return some(
+    ratioOf(
+      over(
+        asCash(outlook.value.expected, 'what it expects to earn'),
+        asRatio(year, 'the fraction of a year this period is'),
+        'what it earns, per annum',
+      ),
+      cap,
+      'what its equity costs',
+    ),
+  );
 }
 
 /** Equity A1: the residual claim on this firm, if a market prices one. It is a claim nobody owes. */
@@ -195,7 +225,7 @@ export interface PlantOffer {
   readonly unitsPerUnitPerPeriod: number;
   readonly market: MarketId;
   /** What a unit of it is asking, which is what this firm expects that market to take. */
-  readonly price: number;
+  readonly price: PerPiece;
   /** A6: periods of service what is on offer still has. New plant has its whole life. */
   readonly periodsOfService: number;
   /**
@@ -217,32 +247,32 @@ export function project(
   needs: readonly PlantNeed[],
   vintages: readonly HeldVintage[],
   /** A6, D1: what its plant will still let it run at NEXT period, computed once and read here. */
-  capacityNext: number,
+  capacityNext: Qty,
   offers: readonly PlantOffer[],
   /** B1.a: the units it would START each period at what it expects to sell (Goods B4's yield in it). */
-  wantedPerPeriod: number,
+  wantedPerPeriod: Qty,
   /** B4: how wide its own surprises about that have been, in the same units. */
-  surpriseWidth: number,
+  surpriseWidth: Qty,
   /** B1.a: the contribution one unit of output brings — what it fetches less what it takes to make. */
-  contributionPerUnit: number,
-  hurdle: number,
+  contributionPerUnit: PerPiece,
+  hurdle: Ratio,
   horizonPeriods: number,
   cost: CostOfCapital,
   /** B2: what it can pay with now, after what it is already about to have to pay. */
-  spendable: number,
+  spendable: Cash,
 ): Option<Project> {
   if (needs.length === 0 || offers.length === 0) return none<Project>();
   // B4: the spend is irreversible, so what it builds for is what it would run at less the width of
   // its own recent surprises. A firm whose expectation is inside its own dispersion waits, and
   // waiting is the option being exercised. There is no coefficient: the margin IS the width.
-  const cautious = sub(wantedPerPeriod, surpriseWidth, 'what it is sure enough of to build for');
+  const cautious = subQty(wantedPerPeriod, surpriseWidth, 'what it is sure enough of to build for');
   if (cautious <= 0 || contributionPerUnit <= 0) return none<Project>();
   // B3: the gap IS utilisation as a reason, and it is the two quantities rather than their ratio.
   // What it measures against is what its plant will still let it run at NEXT period — capital now
   // minus what wears out (D1) — so a firm at its ceiling is short of what is about to go.
-  const gap = sub(cautious, capacityNext, 'what it will be short of');
+  const gap = subQty(cautious, capacityNext, 'what it will be short of');
   if (!material(gap, needs.length + 2, cautious) || gap <= 0) return none<Project>();
-  const required = add(cost.perAnnum, hurdle, 'what a project has to earn');
+  const required = plus(cost.perAnnum, hurdle, 'what a project has to earn');
   if (required <= 0) return none<Project>();
   const year = yearFraction(
     'ACT/365F',
@@ -250,14 +280,24 @@ export function project(
     view.calendar.startOf(period(view.period + 1)),
   );
   if (year <= 0) return none<Project>();
-  const contributionPerAnnum = div(contributionPerUnit, year, 'what a unit of capacity brings, per annum');
+  const contributionPerAnnum = over(
+    contributionPerUnit,
+    asRatio(year, 'the fraction of a year this period is'),
+    'what a unit of capacity brings, per annum',
+  );
   // C1: what one unit of capacity costs to BUILD, which is the bundle a project is priced against.
   // A kind nothing is building is a kind this firm cannot get, so there is no project at all.
-  const build = new Map<string, number>();
+  const build = new Map<string, PerPiece>();
   for (const o of offers) if (o.newBuild) build.set(o.capitalKind, o.price);
   if (needs.some((n) => !build.has(n.capitalKind))) return none<Project>();
   const asked = sum(
-    needs.map((n) => mul(n.unitsPerUnitPerPeriod, priceOfKind(build, n.capitalKind), 'the plant a unit takes')),
+    needs.map((n) =>
+      scale(
+        priceOfKind(build, n.capitalKind),
+        asRatio(n.unitsPerUnitPerPeriod, 'the plant a unit takes'),
+        'the plant a unit takes',
+      ),
+    ),
   ).value;
   if (asked <= 0) return none<Project>();
   // C2, B2: what it would cost is what it expects to PAY — the level the market is asking — and
@@ -266,8 +306,8 @@ export function project(
   // MORE of a thing it values less, because its bid would have fallen.
   const wanted: {
     readonly order: PlannedOrder;
-    readonly outlay: number;
-    readonly asking: number;
+    readonly outlay: Cash;
+    readonly asking: PerPiece;
   }[] = [];
   for (const o of offers) {
     // B1.d, A6: it counts the service THIS plant will give it, out to its own horizon. A vintage
@@ -275,19 +315,29 @@ export function project(
     // it fetches rather than a discount somebody wrote down (D3).
     const counted = countedYears(view, o.periodsOfService, horizonPeriods);
     if (counted <= 0) continue;
-    const recovery = add(required, div(1, counted, 'what returning the capital costs a year'), 'what a unit must earn');
+    const recovery = plus(
+      required,
+      asRatio(div(1, counted, 'what returning the capital costs a year'), 'returning the capital'),
+      'what a unit must earn',
+    );
     if (recovery <= 0) continue;
-    const worth = div(contributionPerAnnum, recovery, 'what a unit of capacity is worth to it');
+    const worth = over(contributionPerAnnum, recovery, 'what a unit of capacity is worth to it');
     // What a unit of THIS plant is worth to it: the capacity it makes possible, less what the rest
     // of the bundle costs to build. It is the same reason its bid for an input is what it is.
     const others = sum(
       needs
         .filter((n) => n.capitalKind !== o.capitalKind)
-        .map((n) => mul(n.unitsPerUnitPerPeriod, priceOfKind(build, n.capitalKind), 'the rest of the bundle')),
+        .map((n) =>
+          scale(
+            priceOfKind(build, n.capitalKind),
+            asRatio(n.unitsPerUnitPerPeriod, 'what the bundle takes of it'),
+            'the rest of the bundle',
+          ),
+        ),
     ).value;
-    const bid = div(
-      sub(worth, others, 'what this kind of plant is worth on its own'),
-      o.unitsPerUnitPerPeriod,
+    const bid = over(
+      minus(worth, others, 'what this kind of plant is worth on its own'),
+      asRatio(o.unitsPerUnitPerPeriod, 'the units of it a unit of capacity takes'),
       'the most it will pay for a unit of it',
     );
     // B1: it invests when the return exceeds its cost of capital, which is exactly the statement
@@ -295,10 +345,12 @@ export function project(
     if (bid <= 0 || bid <= o.price) continue;
     // Law 8: a machine is a whole machine, and plant that is a fraction short of what the gap
     // needs does not close it — so what it bids for is the whole ones that do.
-    const qty = upTick(mul(gap, o.unitsPerUnitPerPeriod, 'units of plant the gap needs'));
+    const qty = upTick(
+      scale(gap, asRatio(o.unitsPerUnitPerPeriod, 'the plant a unit takes'), 'units of plant the gap needs'),
+    );
     wanted.push({
       order: { market: o.market, side: 'buy', price: bid, qty },
-      outlay: mul(qty, o.price, 'what it expects to pay for them'),
+      outlay: valueAt(o.price, qty, 'what it expects to pay for them'),
       asking: o.price,
     });
   }
@@ -312,25 +364,25 @@ export function project(
   // reservation for all of it can only afford a few. That is what makes its demand for plant a
   // schedule rather than a quantity: the dearer the plant, the less of it this firm is in for.
   const orders: PlannedOrder[] = [];
-  const funded: number[] = [];
+  const funded: Cash[] = [];
   for (const x of wanted) {
     if (x.asking <= 0) continue;
     // Its money is spread over the places the plant could come from, in the proportions those
     // places are asking for — one stated rule, applied the same way to each of them (Law 4).
-    const purse = mul(
-      atLeast(spendable, 0, 'a firm with nothing spare has nothing to spread'),
-      div(x.outlay, spend, 'this line\u2019s share'),
+    const purse = scale(
+      atLeast(spendable, asCash(0, 'nothing'), 'a firm with nothing spare has nothing to spread'),
+      ratioOf(x.outlay, spend, 'this line\u2019s share'),
       'what it can put here',
     );
     // How many it can pay for is a question about the PRICE IT EXPECTS TO PAY, not about the most
     // it would pay: a firm that values a machine highly does not thereby buy fewer of them.
     // Law 8: a machine is a whole machine, and this is what its money REACHES — down, because a
     // firm that can pay for four and two thirds of one can pay for four.
-    const canPay = downTick(div(purse, x.asking, 'units it can pay for'));
+    const canPay = downTick(amountOf(purse, x.asking, 'units it can pay for'));
     const qty = atMost(canPay, x.order.qty, 'it buys with the money it has, and only what is offered');
     if (qty <= 0 || !material(qty, wanted.length + 1, x.order.qty)) continue;
     orders.push({ ...x.order, qty });
-    funded.push(mul(qty, x.asking, 'what it expects to pay for them'));
+    funded.push(valueAt(x.asking, qty, 'what it expects to pay for them'));
   }
   const affordable = sum(funded).value;
   return some({
@@ -341,19 +393,19 @@ export function project(
     hurdle,
     required,
     contributionPerAnnum,
-    worthPerUnitOfCapacity: div(contributionPerAnnum, required, 'what its capacity is worth a unit'),
+    worthPerUnitOfCapacity: over(contributionPerAnnum, required, 'what its capacity is worth a unit'),
     askedPerUnitOfCapacity: asked,
     spend,
     funded: affordable,
     // Firm E4.a: what it wants to spend and cannot — the programme it raises money into. A firm
     // with no programme raises nothing, and this is the number that says whether it has one.
-    programme: sub(spend, affordable, 'what it must fund'),
+    programme: minus(spend, affordable, 'what it must fund'),
     orders,
   });
 }
 
 /** The asking price of one kind in the replacement bundle; a kind without one is a defect above. */
-function priceOfKind(build: ReadonlyMap<string, number>, capitalKind: string): number {
+function priceOfKind(build: ReadonlyMap<string, PerPiece>, capitalKind: string): PerPiece {
   const p = build.get(capitalKind);
   if (p === undefined) {
     throw new Missing('Capital Programme C1', `nobody builds ${capitalKind}`, { capitalKind });
