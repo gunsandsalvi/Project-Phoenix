@@ -294,7 +294,7 @@ promise, dated, vehicle         →  STRUCTURED
 | **standing** | `ranking().seniority`, and whether `secured` is non-empty | a covered bond differs from a senior note by this and nothing else |
 | **size** | the obligor's own scale — for equity, shares × last print | **a company falls out of large-cap by falling.** An OUTCOME, never a label |
 | **listed** | `instrument.market.some` | public vs private, and it is the same read 10c uses for securitisable |
-| **quality** | §44's RATING — an opinion somebody holds | ⚠ see §7: this is the one dimension this world cannot yet answer |
+| **quality** | the LOWEST grade any assessor has published on this name | an opinion somebody holds, and the conservative one of them (§7) |
 
 **The test the owner set — every asset in the universe fully defined:**
 
@@ -386,19 +386,36 @@ a hedge-fund / PE party kind (unbuilt)     a manager whose blueprints permit lev
 MandateTerms.mayHold: string[]             MandateTerms.blueprint
 ```
 
-### 7. The one dimension this world cannot yet answer, and what to do about it
+### 7. Quality: the assessors exist, and the rating is the LOWEST available
 
-**QUALITY — investment grade versus high yield — needs §44's rating**, and a rating is an OPINION
-SOMEBODY HOLDS (Corporate Credit A4: *"it is not a property of the firm"*, and A4.b: assessments must
-DISAGREE). `ratings` exists as a module and `Corporate Credit E5.b` is already marked PARTIAL for
-exactly this: `banks/quote.ts:holderReservation` says in its own comment that wiring the loan model
-in was tried, measured, and produced a doom loop this world cannot yet resolve.
+**I had this wrong and the owner corrected it.** I proposed building the language without a quality
+band because §44's ratings were unbuilt. They are not: `mechanisms/ratings/` has an `ASSESSOR` party
+kind, several of them DRAWN AND DELIBERATELY UNALIKE (*"two assessors with the same thresholds and
+the same patience are one assessor with two names"*), each publishing `rating.action` on the
+kernel's ordered scale (`registry/grades.ts`: `aaa aa a bbb bb b c`). A4.b's requirement that
+assessments DISAGREE is already satisfied by construction.
 
-**The proposal is to build the blueprint language WITHOUT a quality band, and to say so.** Every other
-dimension is a read available today. A blueprint that cannot express "investment grade only" is a
-blueprint that describes a slightly wider fund than the real one — which is an honest gap, named,
-rather than a rating invented here to fill it. The band is added when §44 answers, and the blueprint
-language is designed so that adding it is adding a row.
+**THE RULE IS THE LOWEST OF THE RATINGS AVAILABLE** (owner). It is the conservative convention a
+mandate is written to, and it is a SELECTION over real published opinions rather than a blend — so
+"no decision at an average" holds, and every input is a named assessor's own view that it can be
+wrong about.
+
+It also makes ratings load-bearing in a way the alternative does not: **one assessor downgrading is
+enough to push a name out of a mandate**, so a downgrade becomes a forced sale rather than a number
+that moved. That is the transmission §44 exists for.
+
+**⚠ AND IT COLLIDES WITH A RULE ALREADY IN THE KERNEL, which is the owner's to settle.**
+`registry/grades.ts:middleGrade` implements the MIDDLE opinion and argues for it in its own words:
+*"a name moves across a boundary when a majority of those looking at it say it has. That is what
+makes a downgrade contestable rather than arithmetic — one assessor moving changes nothing."* Two
+readers use it: `CDS A5.a` (which series a name belongs in) and `Indices A1.a`.
+
+Both conventions are real — index rules and mandate rules genuinely differ in the world — but two
+combining rules in one small world is the parallel formula Law 4 hunts. **The proposal is to build
+`lowestGrade` beside it for the MANDATE boundary, and to raise the unification as a finding rather
+than silently changing what a CDS index is made of.** What `middleGrade` buys is a contestable
+downgrade; what `lowestGrade` buys is a downgrade that transmits. They cannot both be this world's
+answer to one question, and which question they are answers to is worth deciding on purpose.
 
 ### 8. The order
 
@@ -407,19 +424,35 @@ language is designed so that adding it is adding a row.
 - **13**: shrinks to a manager whose blueprints permit leverage and shorting (§28), a manager whose
   funds are closed-end over unlisted equity (§29), and prime brokerage (§15) — which is the lender
   those permissions need (B1: *"leverage is a fact about a loan, never a property of the fund"*).
-- **14**: the institutions that give them money — an insurer and a pension fund with a liability
-  schedule to match, which is what makes them ALLOCATORS rather than parties that happen to hold
-  things. The segregated mandate lands here for that reason.
+- **14**: the institutions that give them money — an insurer and a pension fund.
+
+**AND THEY DO NOT INVEST THEMSELVES** (owner): *"insurance companies and pension funds don't invest
+themselves. Their assets are always third party managed."* This is the largest simplification in the
+whole design and it should be stated as a rule:
+
+> **Nothing in this world invests except a fund, and every fund has a manager.**
+
+An insurer does not need a portfolio mechanism, an allocation rule, or a decision about which bond
+to buy — it has **liabilities with a schedule** and it hands its assets to a manager under a mandate
+whose blueprint matches that schedule (B2, B2.b's duration matching is the whole of its investment
+decision). The same is true of a pension fund. So item 14 builds a party with a liability schedule
+and a mandate, and **not** an investor: there is exactly ONE investment mechanism in the world and
+the institutions reach it through the same door as everybody else.
+
+That also removes the last reason for a separate "institutional" code path anywhere: retail money
+reaches a manager through a listed or open-ended fund, institutional money reaches the same manager
+through a segregated mandate, and what happens next is one blueprint and one set of orders.
 
 ### Steps
 
-- [ ] 10e.1 The classification: `registry/universe.ts` — the reads that classify any instrument, and nothing stored. It is a kernel read because three modules need the same answer (Law 4).
-- [ ] 10e.2 The blueprint: bands over those reads, and ONE `admits(blueprint, instrument)` for every vehicle in the world. Replaces `MandateTerms.mayHold`.
+- [x] 10e.1 The classification: `registry/universe.ts` — the reads that classify any instrument, and nothing stored. It is a kernel read because three modules need the same answer (Law 4).
+- [x] 10e.2 The blueprint: bands over those reads, and ONE `admits(blueprint, instrument)` for every vehicle in the world. Replaces `MandateTerms.mayHold`.
 - [ ] 10e.3 The liquidity terms as declared data on the mandate, and the one subscription/redemption mechanism reading them. `listed` folds `EtfDecl` into the one object.
 - [ ] 10e.4 The manager as a business: many funds, a fee from each, a cost in labour, and launch/wind-down as decisions. `drawFunds`' fixed roster becomes an opening condition (Seed A3) rather than the industry's permanent structure.
 - [ ] 10e.5 Seed money: a manager may put its own money into a fund it launches, raised by issuing its own equity or debt, and that is the ONLY way a fund reaches its balance sheet.
 - [ ] 10e.6 Access as a POLICY, read at the door: the vehicle states what it asks of an entrant, the cell answers with its own wealth per member.
-- [ ] 10e.7 COVERAGE re-marked across §13, and the record says which blueprints this world grew and which it wound down.
+- [x] 10e.7 The quality band: `lowestGrade` over what the assessors published, and the `middleGrade` collision raised as a finding for the owner rather than settled by me.
+- [ ] 10e.8 COVERAGE re-marked across §13, and the record says which blueprints this world grew and which it wound down.
 
 ### Exit
 

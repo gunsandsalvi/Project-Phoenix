@@ -7893,3 +7893,60 @@ whole reason 10c reads declared facts instead of keeping a list.
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 210 tags, `check:forbids` 4 over 207 files,
 `check:deaths` 6 of 6, `check:existence` green. Tests written and updated, not run.
+
+---
+
+## Item 10e, first stage — the investment universe and the blueprint language
+
+**Two kernel reads, no table anywhere, and a correction I had got badly wrong.**
+
+**THE RATING AGENCIES EXIST AND I SAID THEY DID NOT.** The proposal I wrote an hour earlier argued
+that a quality band could not be built because §44's ratings were unbuilt, and cited
+`banks/quote.ts`'s own comment about a doom loop to justify it. The owner asked *"There are no rating
+agencies here?"* and the answer is that there are: `mechanisms/ratings/` has an `ASSESSOR` party
+kind, several of them drawn and deliberately unalike — *"two assessors with the same thresholds and
+the same patience are one assessor with two names"* — each publishing `rating.action` on the
+kernel's ordered scale. A4.b's requirement that assessments DISAGREE was satisfied before I claimed
+it could not be. What `quote.ts` records is that a BANK's loan model is the wrong input for a
+marked-to-market issuer, which is a different question from whether this world has published grades.
+
+**THE RULE IS THE LOWEST OF THE RATINGS AVAILABLE** (owner), and it is the conservative convention a
+mandate is written to. It is a SELECTION over real opinions and never a blend, so Appendix B's "no
+decision at an average" holds: every candidate is one named assessor's view it can be wrong about,
+and what comes out is one of them. And it makes a downgrade TRANSMIT — one assessor moving is enough
+to put a name below a mandate's line, so the name has to be sold, which is the channel §44 exists
+for.
+
+**⚠ It collides with a rule already in the kernel and I did not settle it.** `grades.ts:middleGrade`
+takes the MIDDLE opinion and argues for it in its own words: *"a downgrade contestable rather than
+arithmetic — one assessor moving changes nothing"*. Two readers use it (CDS A5.a's series division,
+Indices A1.a). `lowestGrade` is built beside it for the MANDATE boundary and the collision is
+recorded as **10e.7** for the owner, because the two buy opposite things deliberately and which
+question each answers is worth deciding on purpose rather than by whichever I wrote last.
+
+**`registry/universe.ts`: what an asset IS, asked of the asset.** Three structural reads give the
+classes with no table: did somebody promise it (`liabilityOfIssuer`), does the promise end (does
+`cashFlows` end), and whose promise is it (the issuer's party kind). Then currency, duration,
+standing, secured, listed and grade. **Every one is a read and nothing is stored**, which is what
+makes two of them right rather than merely tidy:
+
+- a five-year bond BECOMES a three-year bond, because duration is measured from today;
+- a company falls out of a size band BY FALLING, because size is what the market says it is worth.
+
+A stored tenor or a stored cap does neither, and the mandate would stop biting the moment it mattered.
+
+**`registry/blueprint.ts`: bands over those reads, and one `admits` for every vehicle in the world.**
+A band not stated is silence, which is what lets one language describe a money fund (government and
+corporate, under a year, own money, `worstGrade: 'a'`) and a macro strategy (nothing stated, holds
+what it likes). And a band the asset CANNOT ANSWER is a refusal, not a pass: a fund that banded on
+duration holds dated claims, a share has no duration, and admitting it by silence would be the `?? 0`
+this codebase does not do.
+
+**The owner's own test is the test file.** `universe.test.ts` takes the assets this world issues —
+commercial paper, a securitisation note, a bill, a listed company, a private one — and asks whether
+the schedule describes them. It does, and the one that proves the design is `structured`: a
+vehicle's note is its own class not because anybody labelled it, but because the party that promised
+it is a `vehicle`, whose assets are the pool and nothing else (XI-11).
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4 over 209 files,
+`check:deaths` 6 of 6. Tests written, not run.
