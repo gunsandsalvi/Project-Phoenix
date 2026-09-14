@@ -215,7 +215,13 @@ function gift(seen: { grain: number; space: number }): SystemModule {
                 // A silo is a built thing and it is carried at what building one costs: a barn
                 // worth a penny would let its room for a fraction of a penny, and a fee below one
                 // piece of money is not a fee (Law 8).
-                costPerUnit: ctx.params.price(paramId('seed.openingPrice.machine')),
+                // `E-8`: the declared level is per NAMED unit and a cost per unit is per PIECE,
+                // so it crosses at the registry's own door rather than by coincidence.
+                costPerUnit: ctx.registry.priceOf(
+                  ctx.registry.currencyOf(ctx.parties.get(spare).region),
+                  ctx.instruments.get(id).unit,
+                  ctx.params.pricePerUnit(paramId('seed.openingPrice.machine')),
+                ),
                 toCell: none(),
               },
             ],

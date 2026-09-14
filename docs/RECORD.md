@@ -5580,3 +5580,40 @@ and `probabilityOfDefault` are `ratioOf` two counts of the same thing; the desk'
 declared and the register accepts it). **The engine suite was not run** — 2a is a no-behaviour-change
 typing stage except for `A-18`, which is a behaviour change and is named as one here rather than
 hidden inside a refactor.
+
+## Item 2, stage 2a.3 — the seed's build-out, and `E-8` closed
+
+**The seed speaks in NAMED units and the type now says so.** `started`, `sizeOfLine`,
+`wantedInAPeriod`, `plantOf`, `startsOf` and `cashOf` carry `Named`; every recipe coefficient is a
+`Ratio` read at the site, so the build-out is `scale` and `over` throughout and a coefficient can
+never become a quantity. `hoursOffered` is a `Qty` because `params.amount` answers in pieces — which
+is the half of that ratio the seed's own comment says multiplied this world's real economy by the
+subdivision of an hour the last time it was got wrong.
+
+**`E-8` is closed, and it was worse than it was written up as.** The finding said *"a declared price
+does not say which of the two scales it is in"*. Splitting `dimension: 'price'` (money per PIECE)
+from `'pricePerUnit'` (money per NAMED unit) showed that **of six declared levels, four are stated
+per named unit** — every goods opening level, the opening wage, and the FX opening rate — so the
+mis-declaration was the majority rather than the exception. `equity.openingShare` and
+`funds.openingShare` are genuinely per piece and stay as they were.
+
+**A seventh was not a price at all.** `bondFuture.size` is 100,000 units of FACE per contract — no
+money anywhere in it — declared `dimension: 'price'` and read as money-per-piece. It is a `count`
+now. A contract size converts contracts to face; it can never be paid.
+
+**And the split caught a live defect, which is why it was worth doing rather than annotating.** The
+FX opening rate was written as a PRINT — money pieces per piece — directly from a declaration stated
+in named units on both sides. `rateTickFor`, three lines away in the same registry, has always gone
+through `priceOf` for exactly this reason. The level did not, so the tick and the level agreed only
+while base and quote shared a subdivision. It crosses at `registry.priceOf` now, like the tick.
+
+**A stale reader from stage 1**: `indices.test.ts` read `index.base` with `params.price` after stage
+1 re-declared it a `ratio` — which throws at the read rather than compiling wrong. Corrected.
+
+**Worth saying about the method.** A declaration change is a RUNTIME contract the typechecker cannot
+see: `read(id, 'price')` on a `pricePerUnit` parameter throws, and nothing in `tsc` says so. Every
+reader of a re-declared parameter has to be found by hand. That is the opposite of the type work
+around it, and it is why the parameter register checks the dimension at the read at all.
+
+Arithmetic sites **372 → 350**; the seed's own **75 → 53**. Typecheck 0, lint 0, `check:spec`,
+`check:forbids`, `check:existence` green, tools suite 30 green. The engine suite was not run.

@@ -41,7 +41,7 @@ describe('the contract (I1, D3)', () => {
       // I1: a NAMED benchmark line, not a notional bond nobody issued.
       expect(w.instruments.has(t.deliverable)).toBe(true);
       expect(w.instruments.get(t.deliverable).status.live).toBe(true);
-      expect(t.contractSize).toBe(w.params.price(BOND_FUTURE_PARAMS.size));
+      expect(t.contractSize).toBe(w.params.count(BOND_FUTURE_PARAMS.size));
     }
   });
 

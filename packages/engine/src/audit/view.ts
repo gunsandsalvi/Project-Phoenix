@@ -28,7 +28,7 @@ export interface AuditView {
   readonly registry: Registry;
   /** 13c.1, Freight A3, E3: what is on the water, so an audit can say every unit of it has an owner. */
   readonly voyages: VoyagesRead;
-  readonly params: Pick<ParamRegister, 'report' | 'all' | 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'amount'>;
+  readonly params: Pick<ParamRegister, 'report' | 'all' | 'periods' | 'days' | 'months' | 'years' | 'count' | 'ratio' | 'perAnnum' | 'price' | 'pricePerUnit' | 'amount'>;
   readonly parties: Pick<Parties, 'get' | 'has' | 'all' | 'alive' | 'ofKind' | 'resolve' | 'cell'>;
   readonly instruments: Pick<Instruments, 'get' | 'has' | 'all' | 'issuedBy' | 'version'>;
   readonly register: Pick<

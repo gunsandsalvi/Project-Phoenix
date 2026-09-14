@@ -188,8 +188,12 @@ function params(): ParamDecl[] {
     {
       id: BOND_FUTURE_PARAMS.size,
       value: 100_000,
-      unit: 'of face per contract',
-      dimension: 'price',
+      unit: 'units of face per contract',
+      // `E-8`, item 2: IT IS NOT A PRICE. It is a COUNT of face-units one contract delivers — no
+      // money anywhere in it — and it was declared `price` and read as money-per-piece, which is
+      // the same mistake `E-8` names for the four levels that ARE money and are stated per named
+      // unit. A contract size converts contracts to face; it can never be paid.
+      dimension: 'count',
       kind: 'technology',
       owner: 'standardSetter',
       why: 'Sovereign I1: how much face one contract delivers. A convention of the exchange, stated with the contract, and what makes a quoted price per unit of face into a size somebody can trade.',
@@ -384,7 +388,7 @@ function openBooks(ctx: MechanismContext, house: (ccy: CurrencyCode) => PartyId,
   const open = new Set(ctx.markets.map((m) => String(m.id)));
   const window = ctx.params.periods(BOND_FUTURE_PARAMS.window);
   const life = ctx.params.periods(BOND_FUTURE_PARAMS.life);
-  const contractSize = ctx.params.price(BOND_FUTURE_PARAMS.size);
+  const contractSize = ctx.params.count(BOND_FUTURE_PARAMS.size);
   for (const market of ctx.markets) {
     if (kindOf(market) !== 'asset') continue;
     if (!ctx.instruments.has(market.instrument)) continue;

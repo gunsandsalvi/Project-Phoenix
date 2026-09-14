@@ -14,7 +14,7 @@ import { InvalidRegistry, Missing } from '../core/errors.js';
 import type { ParamId, UnitId } from '../core/ids.js';
 import { finite } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
-import { asRatio, type PerPiece, type Ratio } from '../core/measure.js';
+import { asRatio, type PerNamedUnit, type PerPiece, type Ratio } from '../core/measure.js';
 
 export type ParamKind =
   'technology' | 'preference' | 'policy' | 'resolution' | 'shape' | 'placeholder';
@@ -59,8 +59,19 @@ export type Dimension =
    */
   | 'km'
   | 'kmPerDay'
-  /** Money for one unit of something: a wage per hour, a level, a price per share. */
+  /**
+   * Money for one PIECE of something: what the state holds one of, at this world's resolution.
+   *
+   * `E-8`, item 2: THERE ARE TWO SCALES AND A DECLARED LEVEL HAS TO SAY WHICH. This world states
+   * numbers in named units — a dollar a tonne, a wage an hour, a level a share — and holds pieces
+   * of both, and `Registry.priceOf` is the door between them. Six declared levels were all read as
+   * `price` and four of them are stated per NAMED unit: `USD per unit of <good>`, `USD per hour of
+   * work`, `units of the quote money per unit of the base`, `of face per contract`. Reading one as
+   * the other multiplies by a subdivision, which is what "a share worth a hundredth of a cent" was.
+   */
   | 'price'
+  /** Money for one NAMED unit of something: a dollar a tonne, a wage an hour, read through `pricePerUnit`. */
+  | 'pricePerUnit'
   /** A declared AMOUNT of a unit the reader names (`denominated`), read through `amount`. */
   | 'amount';
 
@@ -287,6 +298,15 @@ export class ParamRegister {
    */
   price(id: ParamId): PerPiece {
     return this.read(id, 'price') as PerPiece;
+  }
+
+  /**
+   * Law 8, `E-8`: a declared level in the units A PERSON STATES IT IN — a dollar a tonne, a wage an
+   * hour — which is not the same number as money per piece and can no longer be mistaken for one.
+   * It crosses to the grid at `Registry.priceOf`, the one door between the two scales.
+   */
+  pricePerUnit(id: ParamId): PerNamedUnit {
+    return this.read(id, 'pricePerUnit') as PerNamedUnit;
   }
 
   /**

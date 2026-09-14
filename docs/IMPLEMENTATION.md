@@ -301,7 +301,8 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > | --- | --- | --- |
 > | ~~2a.1~~ | ~~`banks`, `funds`, and the household demography~~ — **DONE** | **402 → 390** |
 > | ~~2a.2~~ | ~~`firms`~~ — **DONE**: a recipe coefficient is a `Ratio` | **390 → 372** |
-> | 2a.3 | `seeds`, and the residue | 372 |
+> | ~~2a.3~~ | ~~the seed's build-out, and `E-8`~~ — **DONE** | **372 → 350** |
+> | 2a.4 | the rest of `seeds`, and the residue | 350 |
 > | 2b | the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1` (`A-18` closed in 2a.1) | |
 > | 2c | rates read as levels: `A-44`, `A-58`, `A-65` | |
 > | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |
@@ -335,7 +336,9 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 - [x] 2a.2 `firms`: every recipe coefficient — `hoursPerUnit`, `yieldRate`, `qtyPerUnit`, `unitsPerUnitPerPeriod`, `spoilage` — is a `Ratio`, so what a stock reaches is `over(stock, coefficient)` and what a batch draws is `scale(batch, coefficient)`. Four `asRatio(tech.…)` wrappers deleted as redundant (Law 12). `plannedBatch`, `productiveHours`, `hoursUnderContract` and `areaUnderUse` carry `Qty`; the sales outlook enters as an amount once rather than at each of its three readers.
 - [ ] 2.1 Take the residue in the order the file names it — `banks`, `funds`, `households`, `firms`, `seeds`, then what is left — not by site count. Run `npx tsc --noEmit` after each module; the compiler generates the list.
 - [ ] 2.2 For each site the compiler rejects, decide which of three it is: a DIMENSION that was right and unstated (type it), a DIMENSION that was wrong (that is one of the eighteen — fix it, below), or a TARGET typed with a grid door (switch to `asAmount<'piece'>` + `plus`/`minus`).
-- [ ] 2.3 `E-8` — a declared price does not say which of the two scales it is in. `registry/params.ts`: `dimension: 'price'` splits into `'price:piece'` and `'price:named'`; `equity.openingShare` is the second and every goods level is the first. This is the cause of the known "a share worth a hundredth of a cent".
+- [x] 2.3 **`E-8` is closed.** `dimension: 'price'` now means money per PIECE and `'pricePerUnit'` money per NAMED unit, read through `params.price` and `params.pricePerUnit`. **Six declared levels were all `price` and four of them are stated per named unit** — every goods opening level, the opening wage, the FX opening rate — so the mis-declaration was the majority. `equity.openingShare` and `funds.openingShare` are genuinely per piece and stay. **And a seventh was not a price at all**: `bondFuture.size` is 100,000 units of FACE per contract, no money anywhere in it, declared `price` and read as money-per-piece; it is a `count` now.
+- [x] 2.3a **The split caught a live defect.** The FX opening rate was written as a print — money PIECES per piece — straight from a declaration stated in named units on both sides, while `rateTickFor` beside it has always crossed through `registry.priceOf`. The two agreed only while base and quote shared a subdivision. It crosses at the door now.
+- [x] 2.3b A stale reader stage 1 left behind: `indices.test.ts` read `index.base` with `params.price` after stage 1 re-declared it a `ratio`, which throws at the read. Corrected to `params.ratio`.
 - [ ] 2.4 `E-9` — a dirty price adds two scales. `prices/curve.ts:readCurve` and `clearing/market.ts` add a per-piece print to a per-named-unit accrual; right today only because par and money share a subdivision. Convert at `Registry.priceOf`, which is the door.
 - [ ] 2.5 `E-10` — `Contract.struckAt` means a different dimension per kind: a price for a bond future, a **spread** for a CDS, a **rate** for a swap, an **index level** for an index future, a **basis** for a cross-currency swap. One field, five dimensions. Make `struckAt` a discriminated union keyed off the derivative kind's profile, so the kind's own `mark` and `premiumPerUnit` take what they mean. **This finding was never in the old index; it is `E-10` here.**
 

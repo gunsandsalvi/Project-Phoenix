@@ -80,6 +80,7 @@ import { keyOf, weightOf } from '../parties/party.js';
 import type { Qty } from '../core/tick.js';
 import {
   asCash,
+  asAmount,
   asNamed,
   asPerNamedUnit,
   asRatio,
@@ -92,6 +93,8 @@ import {
   type PerNamedUnit,
   type PerPiece,
   plus,
+  ratioOf,
+  type Ratio,
   scale,
   type Stated,
   valueAt,
@@ -583,7 +586,7 @@ function openingPrices(): ParamDecl[] {
       id: paramId('seed.openingWage'),
       value: OPENING_WAGE,
       unit: 'USD per hour of work',
-      dimension: 'price',
+      dimension: 'pricePerUnit',
       kind: 'shape' as const,
       owner: 'model' as const,
       why: "Seed C4: the ONE level this world opens at. Every good's opening level is walked up its own recipe from here — the hours it takes at this wage, plus the inputs at what they open at, over the yield — so what the seed claims is one number and not one per line. It is the first clearing's input and not a permanent mark: the session in period one prints a price nobody stated and nothing reads it again.",
@@ -592,7 +595,7 @@ function openingPrices(): ParamDecl[] {
       id: openingPrice(d.subUnit),
       value: zeroIfNone(level.get(d.subUnit)),
       unit: `USD per unit of ${d.subUnit}`,
-      dimension: 'price' as const,
+      dimension: 'pricePerUnit' as const,
       kind: 'shape' as const,
       owner: 'model' as const,
       why: `Seed C4: what ${d.name} opens at, walked up its own recipe from the one wage this world states — ${d.labourHoursPerUnit} hours and its inputs, over a yield of ${d.yieldRate}. It is arithmetic on one claim rather than a claim of its own, and the first session replaces it.`,
@@ -769,7 +772,7 @@ export function foundationSeedFor(
         id: P.openingRate,
         value: 1,
         unit: 'units of the quote money per unit of the base',
-        dimension: 'price',
+        dimension: 'pricePerUnit',
         kind: 'shape',
         owner: 'model',
         why: "Spot FX C1, Seed C4: what one unit of one money costs in another, before any pair has ever traded. A market that has never traded has no price (XI-6) and a world that opens with holdings in four moneys has to say what they are worth in each other, so ONE level is claimed and each pair's own first session replaces it. One, and the same one for every pair, because a level of one asserts less than any other number would: it says the moneys are all the same size, which is what a world with nothing to distinguish them yet has no reason to deny — and it opens the three crosses consistent with the three dollar rates, so the triangle starts with no gap in it rather than with one somebody put there. What it opens at is not what it stays at: America's banks earn euros, sterling and yen they have no use for and the foreign reserve managers earn dollars they have none for, and where those meet is the rate from period one.",
@@ -988,7 +991,11 @@ export function foundationSeedFor(
       // with what thirty million people can make of grain, flour, bread, machines and plant, held by
       // however many firms the world has, in the proportions their own draws gave them.
       // ------------------------------------------------------------------------------------------
-      const started = new Map<string, number>();
+      // The seed speaks in NAMED units throughout (stage 2): tonnes, machines, hours — never
+      // pieces — and crosses to the grid at `registry.pieces`. Every quantity in this build-out is
+      // one, and every recipe coefficient is a count over a count, so `scale` and `over` carry the
+      // quantity's dimension and the coefficient can never become one.
+      const started = new Map<string, Named>();
       // 13j: a firm makes its line WHERE IT IS, and a world of four countries has the same line
       // opening in more than one of them. A firm whose own place does not make its good opens with
       // nothing, which is what `madeHere` has always meant — it just used to mean it of one place.
@@ -996,9 +1003,12 @@ export function foundationSeedFor(
       const madeHere = firmRows.filter((f) =>
         ctx.instruments.has(goodId(f.subUnit, placeOf(f.firm))),
       );
-      const sizeOfLine = new Map<string, number>();
+      const sizeOfLine = new Map<string, Named>();
       for (const f of madeHere) {
-        sizeOfLine.set(f.subUnit, add(zeroIfNone(sizeOfLine.get(f.subUnit)), f.size, 'its line'));
+        sizeOfLine.set(
+          f.subUnit,
+          plus(zeroIfNone(sizeOfLine.get(f.subUnit)), asNamed(f.size, 'what this firm is'), 'its line'),
+        );
       }
       // Law 19: the recipe is read from the ONE place that writes it — the goods registry, in the
       // units a person says it in. The instrument's own terms carry the same recipe converted to
@@ -1047,13 +1057,15 @@ export function foundationSeedFor(
       // ------------------------------------------------------------------------------------------
       const retirementAge = ctx.params.years(P.retirementAge);
       const perWeek = ctx.params.amount(P.hoursPerMember, HOURS);
-      let hoursOffered = 0;
+      // `params.amount` answers in PIECES of an hour, so this total is on the grid — which is the
+      // half of the ratio below that made the unit slip worth writing down.
+      let hoursOffered = asAmount<'piece'>(0, 'a world with nobody of working age offers no hours');
       for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
         if (cell.representation !== 'cell') continue;
         if (ctx.registry.cohort(cohortId(keyOf(cell, 'cohort'))).fromAge >= retirementAge) continue;
-        hoursOffered = add(
+        hoursOffered = plus(
           hoursOffered,
-          mul(weightOf(cell), perWeek, 'what it offers'),
+          scale(perWeek, asRatio(weightOf(cell), 'the people it stands for'), 'what it offers'),
           'the hours there are',
         );
       }
@@ -1071,7 +1083,7 @@ export function foundationSeedFor(
       // fix the SIZE. A world whose people want more than their hours can make opens making the
       // same basket smaller, in proportion, and the shortage is then a price.
       // ------------------------------------------------------------------------------------------
-      const wantedInAPeriod = new Map<string, number>();
+      const wantedInAPeriod = new Map<string, Named>();
       for (const cell of ctx.parties.ofKind(HOUSEHOLD)) {
         if (cell.representation !== 'cell') continue;
         const cohort = keyOf(cell, 'cohort');
@@ -1079,11 +1091,15 @@ export function foundationSeedFor(
           if (row.cohort !== cohort) continue;
           wantedInAPeriod.set(
             row.subUnit,
-            add(
+            plus(
               zeroIfNone(wantedInAPeriod.get(row.subUnit)),
-              mul(
-                weightOf(cell),
-                add(row.neededPerMember, row.wantedPerMember, 'what a member takes in a period'),
+              scale(
+                plus(
+                  asNamed(row.neededPerMember, 'what a member needs in a period'),
+                  asNamed(row.wantedPerMember, 'and what it wants'),
+                  'what a member takes in a period',
+                ),
+                asRatio(weightOf(cell), 'the people it stands for'),
                 'what this cell takes',
               ),
               'what this world wants in a period',
@@ -1096,9 +1112,12 @@ export function foundationSeedFor(
         // A world whose basket names none of what it makes is a SCALE MODEL (`test/rig.ts`): it has
         // three lines and no shops, and there is nothing to read the mix off. It opens as it always
         // did, one unit-scale of each, and says so here rather than dividing by nothing.
-        let want = 1;
+        let want = asNamed(1, 'one unit-scale of it, in a world with nothing to read a mix off');
         if (asked > 0) want = zeroIfNone(wantedInAPeriod.get(g));
-        started.set(g, div(want, recipeOf(g).yieldRate, 'started for what is wanted of it'));
+        started.set(
+          g,
+          over(want, asRatio(recipeOf(g).yieldRate, 'what survives the line'), 'started for what is wanted of it'),
+        );
       }
       // Down the chain, deepest first: a line starts what everything it feeds draws from it.
       const upstream = [...sizeOfLine.keys()].filter(
@@ -1110,26 +1129,37 @@ export function foundationSeedFor(
           (g) => !settled.has(g) && (drawnBy.get(g) ?? []).every((d) => settled.has(d)),
         );
         if (next === undefined) break;
-        let drawn = 0;
+        let drawn = asNamed(0, 'a line nothing draws from draws nothing');
         for (const by of drawnBy.get(next) ?? []) {
           const qty = recipeOf(by).inputs.find((i) => i.subUnit === next);
           if (qty === undefined) continue;
-          drawn = add(
+          drawn = plus(
             drawn,
-            mul(zeroIfNone(started.get(by)), qty.qtyPerUnit, 'what it draws'),
+            scale(
+              zeroIfNone(started.get(by)),
+              asRatio(qty.qtyPerUnit, 'what one unit of it draws'),
+              'what it draws',
+            ),
             'drawn',
           );
         }
-        started.set(next, div(drawn, recipeOf(next).yieldRate, 'started for it'));
+        started.set(
+          next,
+          over(drawn, asRatio(recipeOf(next).yieldRate, 'what survives the line'), 'started for it'),
+        );
         settled = new Set([...settled, next]);
       }
       // Capital Programme A2: the plant those lines run on, with the headroom a going concern has.
       const headroom = ctx.params.ratio(P.plantHeadroom);
-      const plantOf = (subUnit: string, kind: string): number => {
+      const plantOf = (subUnit: string, kind: string): Named => {
         const need = recipeOf(subUnit).plant.find((q) => q.capitalKind === kind);
-        if (need === undefined) return 0;
-        return mul(
-          mul(zeroIfNone(started.get(subUnit)), need.unitsPerUnitPerPeriod, 'the plant it takes'),
+        if (need === undefined) return asNamed(0, 'a line that needs none of this kind holds none');
+        return scale(
+          scale(
+            zeroIfNone(started.get(subUnit)),
+            asRatio(need.unitsPerUnitPerPeriod, 'the plant a unit takes for a period'),
+            'the plant it takes',
+          ),
           headroom,
           'with the headroom a going concern has',
         );
@@ -1147,14 +1177,18 @@ export function foundationSeedFor(
          * resolution shift would move it. Two readable homes for one fact agreed only because both
          * happened to read the same table.
          */
-        const wearing = div(
+        const wearing = over(
           inService,
-          ctx.params.periods(lifeParam(kind.id)),
+          asRatio(ctx.params.periods(lifeParam(kind.id)), 'the periods a unit of it serves'),
           'what wears out in a period',
         );
         started.set(
           kind.madeFrom,
-          div(wearing, recipeOf(kind.madeFrom).yieldRate, 'started for it'),
+          over(
+            wearing,
+            asRatio(recipeOf(kind.madeFrom).yieldRate, 'what survives the line'),
+            'started for it',
+          ),
         );
       }
       // Goods A2.c, Labour A1: AND NOW THE SCALE. Everything above is what ONE unit of the final good
@@ -1167,7 +1201,11 @@ export function foundationSeedFor(
       // (Firm A3), and what is being sized is the line.
       const hoursForOne = sum(
         [...sizeOfLine.keys()].map((g) =>
-          mul(zeroIfNone(started.get(g)), recipeOf(g).labourHoursPerUnit, `the hours ${g} takes`),
+          scale(
+            zeroIfNone(started.get(g)),
+            asRatio(recipeOf(g).labourHoursPerUnit, `the hours one unit of ${g} takes`),
+            `the hours ${g} takes`,
+          ),
         ),
       ).value;
       forbid(
@@ -1188,7 +1226,8 @@ export function foundationSeedFor(
       const takes = ctx.registry.pieces(HOURS, asNamed(hoursForOne, 'the hours one takes'));
       // Renamed from `scale` at item 16: the imported `scale` is the dimension algebra's, and a
       // local of that name shadowed it in the middle of this function.
-      const madeByTheHours = div(
+      // Hours over hours: a pure count of how many of the final good the population's time makes.
+      const madeByTheHours = ratioOf(
         hoursOffered,
         takes,
         'how many of the final good the hours there are make',
@@ -1196,29 +1235,38 @@ export function foundationSeedFor(
       for (const g of [...started.keys()]) {
         started.set(
           g,
-          mul(zeroIfNone(started.get(g)), madeByTheHours, `what ${g} starts in a period`),
+          scale(zeroIfNone(started.get(g)), madeByTheHours, `what ${g} starts in a period`),
         );
       }
       // Seed B4: and a firm's share of its own line is its own size over the line's.
-      const shareOf = (f: FirmDecl): number =>
-        div(f.size, zeroIfNone(sizeOfLine.get(f.subUnit)), 'its share');
+      // Two sizes on the same line, so what comes out is a pure share and never a quantity.
+      const shareOf = (f: FirmDecl): Ratio =>
+        ratioOf(
+          asNamed(f.size, 'what this firm is'),
+          zeroIfNone(sizeOfLine.get(f.subUnit)),
+          'its share',
+        );
       /** What this firm starts in a period. Everything it opens holding is a period of this. */
-      const startsOf = (f: FirmDecl): number =>
-        mul(zeroIfNone(started.get(f.subUnit)), shareOf(f), 'its own');
+      const startsOf = (f: FirmDecl): Named =>
+        scale(zeroIfNone(started.get(f.subUnit)), shareOf(f), 'its own');
       const cashPeriods = ctx.params.periods(P.firmCashPeriods);
       /**
        * Seed C1: the money it opens with, as periods of its own turnover at what the good opens at.
        * It pays its wage bill and buys its inputs before it is paid for what it sells, so a firm that
        * opens with nothing fails on a timing gap rather than on its economics (Firm D1).
        */
-      const cashOf = (f: FirmDecl): number =>
-        mul(
-          mul(
-            mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what arrives'),
-            ctx.params.price(openingPrice(f.subUnit)),
+      const cashOf = (f: FirmDecl): Stated =>
+        scale(
+          valueAt(
+            ctx.params.pricePerUnit(openingPrice(f.subUnit)),
+            scale(
+              startsOf(f),
+              asRatio(recipeOf(f.subUnit).yieldRate, 'what survives the line'),
+              'what arrives',
+            ),
             'what it turns over',
           ),
-          cashPeriods,
+          asRatio(cashPeriods, 'the periods of it it opens holding'),
           'periods of it',
         );
 
@@ -1287,7 +1335,7 @@ export function foundationSeedFor(
           firmsHere.map((f) =>
             mul(
               mul(startsOf(f), recipeOf(f.subUnit).yieldRate, 'what it makes in a period'),
-              ctx.params.price(openingPrice(f.subUnit)),
+              ctx.params.pricePerUnit(openingPrice(f.subUnit)),
               'what that fetches',
             ),
           ),
@@ -1551,8 +1599,19 @@ export function foundationSeedFor(
           instrument: fxPairId(base, quote),
           market: fxMarketOf(base, quote),
           period: ctx.period,
-          // Law 8: a rate is a price and opens on its pair's own grid — its pip.
-          price: toTickOf(ctx.params.price(P.openingRate), ctx.registry.rateTickFor(base, quote)),
+          /**
+           * Law 8, `E-8`: a rate is a price and opens on its pair's own grid — its pip.
+           *
+           * AND IT CROSSES THE TWO SCALES FIRST. The declaration says *"units of the quote money
+           * per unit of the base"* — named on both sides — and a print is money PIECES per piece.
+           * `rateTickFor` beside it has always gone through `priceOf` for exactly this reason; the
+           * level itself did not, so the two agreed only while base and quote shared a subdivision.
+           * Found by splitting `price` from `pricePerUnit`, which is what `E-8` was about.
+           */
+          price: toTickOf(
+            ctx.registry.priceOf(quote, currencyUnit(base), ctx.params.pricePerUnit(P.openingRate)),
+            ctx.registry.rateTickFor(base, quote),
+          ),
           ccy: quote,
           provenance: { kind: 'opening' },
         });
@@ -1660,7 +1719,7 @@ export function foundationSeedFor(
               ctx,
               id,
               asPerNamedUnit(
-                ctx.params.price(openingPrice(row.subUnit)),
+                ctx.params.pricePerUnit(openingPrice(row.subUnit)),
                 `the opening level of ${row.subUnit}`,
               ),
             ),
@@ -1675,7 +1734,7 @@ export function foundationSeedFor(
         // have something to endow (Seed A1). `madeHere` is exactly those that do.
         const firm = partyId(row.firm);
         const here = placeOf(row.firm);
-        const price = ctx.params.price(openingPrice(row.subUnit));
+        const price = ctx.params.pricePerUnit(openingPrice(row.subUnit));
         const starts = startsOf(row);
         // Seed D1: ONE PERIOD of what it makes, finished and ready to sell; what a batch still in
         // flight comes to, which is a period of starts for every period its recipe keeps it (B3); and
@@ -1708,7 +1767,7 @@ export function foundationSeedFor(
         for (const input of recipeOf(row.subUnit).inputs) {
           if (!ctx.instruments.has(goodId(input.subUnit, here))) continue;
           const line = goodId(input.subUnit, here);
-          const paid = ctx.params.price(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
+          const paid = ctx.params.pricePerUnit(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
           const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
           if (drawn <= 0) continue;
           ctx.endowUnits(
@@ -1732,7 +1791,7 @@ export function foundationSeedFor(
           // fraction of one, and what the firm HOLDS is the machines that fraction reaches.
           const mine = downTick(mul(plantOf(row.subUnit, kind.id), shareOf(row), 'its own plant'));
           if (mine <= 0) continue;
-          const newPrice = ctx.params.price(openingPrice(kind.madeFrom));
+          const newPrice = ctx.params.pricePerUnit(openingPrice(kind.madeFrom));
           const life = ctx.params.periods(paramId(`plant.usefulLife.${kind.id}`));
           // Law 8: whole machines, and the odd one has a named vintage rather than being lost to a
           // division that does not come out (core/tick.ts).
@@ -1777,7 +1836,7 @@ export function foundationSeedFor(
         if (space > 0 && ctx.registry.instrumentKinds.has(plantKindId(STORAGE))) {
           const serviceDate = addDays(ctx.calendar.epoch, -ctx.calendar.periodDays);
           const id = seedVintage(ctx, STORAGE_KIND, here, serviceDate);
-          const newPrice = ctx.params.price(openingPrice(STORAGE_KIND.madeFrom));
+          const newPrice = ctx.params.pricePerUnit(openingPrice(STORAGE_KIND.madeFrom));
           const life = ctx.params.periods(paramId(`plant.usefulLife.${STORAGE}`));
           ctx.endowUnits(
             ctx.parties.get(firm).id,
@@ -1791,7 +1850,7 @@ export function foundationSeedFor(
       // is not a carrier, and how many it has is its own size drawn from the fleet's width (Seed
       // B1.a) — never a number typed here. The capacity that makes freight a real limit is this.
       if (ctx.registry.instrumentKinds.has(plantKindId(VESSEL))) {
-        const newPrice = ctx.params.price(openingPrice(VESSEL_KIND.madeFrom));
+        const newPrice = ctx.params.pricePerUnit(openingPrice(VESSEL_KIND.madeFrom));
         const life = ctx.params.periods(paramId(`plant.usefulLife.${VESSEL}`));
         for (const c of carrierRows) {
           const who = partyId(c.carrier);
