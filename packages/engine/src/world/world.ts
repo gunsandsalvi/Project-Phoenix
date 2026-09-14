@@ -291,6 +291,11 @@ export class World {
   /** Securities Lending B1: the one module that answers what a party of a kind must borrow. */
   private readonly borrowAskers = new Map<PartyKindId, { owner: string; needs: BorrowNeeds }>();
   /** Fund Shares A3: the one module that answers what a party of a kind may take a position in. */
+  /** Hedge Funds B1 (item 13.3): who answers whether a party of a kind may owe money at all. */
+  private readonly leverageLimits = new Map<
+    PartyKindId,
+    { owner: string; mayBorrow: (view: ParticipantView) => boolean }
+  >();
   private readonly tradingLimits = new Map<
     PartyKindId,
     { owner: string; mayTrade: (view: ParticipantView, kind: DerivativeKindId) => boolean }
@@ -734,6 +739,26 @@ export class World {
       );
     }
     this.tradingLimits.set(kind, { owner, mayTrade });
+  }
+
+  /**
+   * Hedge Funds B1 (item 13.3): exactly one module answers whether a party of a kind may owe money
+   * (Law 4). A second would be two answers to one permission, and a lender could act on the looser.
+   */
+  provideLeverageLimit(
+    owner: string,
+    kind: PartyKindId,
+    mayBorrow: (view: ParticipantView) => boolean,
+  ): void {
+    forbid(!this.sealed, 'Law 10', 'a leverage limit is declared at assembly');
+    const held = this.leverageLimits.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Hedge Funds B1',
+        `${owner} would be a second decider of whether a ${kind} may borrow, after ${held.owner}`,
+      );
+    }
+    this.leverageLimits.set(kind, { owner, mayBorrow });
   }
 
   /**
@@ -1482,6 +1507,19 @@ export class World {
       mayTrade: (kind: DerivativeKindId): boolean => {
         const held = this.tradingLimits.get(this.parties.get(party).kind);
         return held === undefined || held.mayTrade(this.participantView(party), kind);
+      },
+      /**
+       * Hedge Funds B1, Fund Shares F2 (item 13.3): the KIND says whether a thing of this sort can
+       * owe money at all; the party's own module says whether THIS one may. A kind that cannot is
+       * the end of it — no module may grant what the category does not have — and a kind nobody
+       * answers for is whatever its profile says, because the absence of a rule is not a
+       * prohibition.
+       */
+      mayBorrow: (): boolean => {
+        const kind = this.parties.get(party).kind;
+        if (!this.registry.partyKind(kind).borrows) return false;
+        const held = this.leverageLimits.get(kind);
+        return held === undefined || held.mayBorrow(this.participantView(party));
       },
       contracts: {
         mine: () => this.contractStore.openOf(party),

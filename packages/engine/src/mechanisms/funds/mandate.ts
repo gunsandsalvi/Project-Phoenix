@@ -222,6 +222,19 @@ export interface MandateTerms extends AgreementTerms {
    * Zero for every long-only pool this world opens with, which is a real term and not an absence.
    */
   readonly performanceFee: Ratio;
+  /**
+   * Hedge Funds B1, B5, Prime Brokerage B3 (item 13.3): HOW LEVERED THIS POOL MEANS TO BE — its
+   * securities book as a multiple of what its investors have in it.
+   *
+   * It is a PREFERENCE (Law 2) and it is the CLIENT's half of B1's division: *"leverage is a fact
+   * about a loan, never a property of the fund"* — so the pool states what it wants and a named
+   * lender decides what it gets, and the two are different numbers on purpose. A broker's line can
+   * be well under this, and then what the pool runs at is the LENDER's decision, which is B3.
+   *
+   * `1` for a pool whose mandate does not permit leverage at all, which is a real term and not an
+   * absence: unlevered is exactly a target of one.
+   */
+  readonly targetLeverage: Ratio;
 }
 
 /**
@@ -265,6 +278,7 @@ export interface Product {
   readonly mayWrite: MayWrite;
   readonly leverage: boolean;
   readonly performanceFee: Ratio;
+  readonly targetLeverage: Ratio;
 }
 
 export function openMandate(
@@ -321,6 +335,7 @@ export function productOf(d: FundDecl, ccy: CurrencyCode): Product {
     mayWrite: d.mayWrite,
     leverage: d.leverage,
     performanceFee: asRatio(d.performanceFee, 'the share of a gain its manager takes'),
+    targetLeverage: asRatio(d.targetLeverage, 'the multiple of its equity it means to run'),
   };
 }
 

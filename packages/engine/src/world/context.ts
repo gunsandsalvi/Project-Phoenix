@@ -477,6 +477,15 @@ export interface ParticipantView extends KernelReads {
    * reason to be short; here it means nobody has said it may not.
    */
   mayTrade(kind: DerivativeKindId): boolean;
+  /**
+   * Hedge Funds B1, Prime Brokerage B2 (item 13.3): MAY THIS PARTY OWE MONEY AT ALL — the kind's
+   * own capability, narrowed by whatever its own module says about this one. A pool answers from
+   * its mandate; a bank is under none and answers by being a bank.
+   *
+   * A lender asks it before it offers, because *"leverage is a fact about a loan, never a property
+   * of the fund"*: the permission is the borrower's and the loan is the lender's.
+   */
+  mayBorrow(): boolean;
 
   /**
    * Currency C5, Law 4: THE RATE IN FORCE between two moneys — the last thing a pair's session

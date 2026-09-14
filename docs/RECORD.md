@@ -8518,3 +8518,79 @@ sector** — four down to three (Prime Brokerage, Private Equity, Polity).
 
 Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 13.3 — prime brokerage: the lender `leverage: true` was permitting without
+
+Item 13.2 left a mandate that permits borrowing and nobody to borrow from. §15 is that lender, and it
+turned out to belong **in the banks module**: what a prime broker does is WRITE A LOAN, and the loan,
+its rate, the capital it consumes and the room the bank has for it are all already the bank's own
+economics (ARCHITECTURE 4.11b). What is new is only the decision about how much — which is the one
+thing §15 calls the core.
+
+**C1, and it is a view rather than a rule.** *"The broker sets a requirement on the whole portfolio
+from its own view of the risk — a decision by the broker, not a formula the client can rely on."* So
+the number is built out of the BROKER'S OWN OUTLOOKS: what it requires against a line is **how wide
+its own recent surprises about that line have been** (§46 B3's `confidence`). Two brokers looking at
+one portfolio want different amounts, because they have seen different things and been wrong by
+different amounts. A line it has no view of it does not finance at all — a refusal, not a zero.
+
+**C4.a falls out rather than being written, which is the point.** *"Raising margin into a falling
+market amplifies the fall — the mechanism behind most of what looks like contagion."* A market that
+moves violently makes every observer's recent surprises wider; wider surprises are a larger
+requirement; a larger requirement on a book already worth less is a call; and meeting a call means
+selling into the fall. **Nothing states a margin rate, so nothing had to remember to raise it** —
+and a stated constant would have deleted exactly this.
+
+**C3.b is asserted in a test, because a floor here is one character.** `available` is
+`portfolio − required − financed` and it is allowed to come out negative. That negative number IS the
+call. The clause says a floor *"makes the whole path unreachable — and lending the shortfall straight
+back at a penalty, from the same broker, makes it unreachable twice"*, so neither happens: what a
+client cannot pay is recorded as unmet and stays owed.
+
+**C1.b's offsets, and what is deliberately NOT one.** The requirement is measured on the client's NET
+position in each line, which is what a register holding is. Across different lines nothing offsets —
+an offset between two lines is a claim that they move together, which is a correlation, and a
+correlation nobody measured is a number invented to make a requirement smaller. The client's CONTRACT
+positions are not margined here either: the derivative layer already margins them per pair with the
+counterparty that holds them, and asking again here would be one exposure collateralised twice.
+
+**Two kernel doors it needed, both of them the documented pattern:**
+
+- **The FUND party-kind ids moved to `registry/profiles.ts`.** A prime broker has to be able to SAY
+  what kind of party its clients are, and the module that owns a bank's economics may not import the
+  one that owns a fund. An id is a name; what a pool and a manager ARE stays in `funds`.
+- **`leverageLimits` / `ParticipantView.mayBorrow`** — the mirror of `tradingLimits` / `mayTrade`,
+  and for the same reason. `PartyKindProfile.borrows` is the CATEGORY's answer; whether a given pool
+  may be levered is its MANDATE's, which is what its investors agreed. A lender asks the borrower's
+  own module rather than reading somebody else's agreement (Observer A4, Law 4). `publishQuotes` uses
+  it too, which removes the noise 13.2's `borrows: true` had just introduced: a quote published for a
+  money fund that may never borrow is a price for a trade that cannot happen.
+
+**B1's division is now literal.** The POOL holds a permission and a target (`targetLeverage`, a
+preference — what it MEANS to run at); the BROKER holds the loan and decides the amount. The pool
+ASKS, out of what its broker published about its own account, and the broker answers with a number of
+its own — *"the amount available is the lender's decision and it changes"* (B3). A house that wants
+four and is offered two runs at two.
+
+**No mirror was created.** The relationship carries the one number that is nobody else's to know —
+what the broker required — and nothing else. What is financed is a fact about the register, and a
+copy of it on the row would be a mirror the two could disagree about.
+
+**§15 goes 0 MET to 12 MET, 3 PARTIAL, 9 MISSING, and Prime Brokerage is no longer an absent
+sector** — three down to two (Private Equity, Polity).
+
+**What is left, and both are placed.** *"Meet it or be liquidated"* and the chain D1–D4 are item
+13.4, which the plan already says must FALL OUT of the parts rather than be written. And a finding
+found while building this one: **`E-24`** — a margin loan matures in a year like every other loan,
+because `write` gives every row a one-year bullet, so a broker's financing falls due rather than
+rolling. It lands with 13.4, which already has to decide what happens to a client that cannot pay.
+
+**And a caution worth stating rather than discovering later.** The strategies are not offered to the
+public (`E-22`), so until a household cell clears the accredited line or item 14's institutions
+arrive, the pools this whole path runs on may gather nothing — and a line against an empty book is
+zero. The mechanism is built and correct; whether this world exercises it is a measurement (23.0a).
+
+Typecheck 0, lint 0, `check:spec` 216 tags, `check:forbids` 4 over 213 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.

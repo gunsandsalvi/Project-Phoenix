@@ -565,27 +565,27 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Prime Brokerage A1` | MISSING |  |
-| `Prime Brokerage A2` | MISSING |  |
-| `Prime Brokerage A3` | MISSING |  |
-| `Prime Brokerage A4` | MISSING |  |
-| `Prime Brokerage B1` | MISSING |  |
-| `Prime Brokerage B2` | MISSING |  |
-| `Prime Brokerage B3` | MISSING |  |
-| `Prime Brokerage B4` | MISSING |  |
-| `Prime Brokerage B5` | MISSING |  |
-| `Prime Brokerage C1` | MISSING |  |
-| `Prime Brokerage C2` | MISSING |  |
-| `Prime Brokerage C3` | MISSING |  |
-| `Prime Brokerage C3.b` | MISSING |  |
-| `Prime Brokerage C4` | MISSING |  |
-| `Prime Brokerage C4.a` | MISSING |  |
-| `Prime Brokerage C5` | MISSING |  |
+| `Prime Brokerage A1` | MET | packages/engine/src/mechanisms/banks/prime.ts, packages/engine/src/mechanisms/banks/index.ts (item 13.3: a named bank and a named client on a `banks.prime` agreement, appointed the first period the broker looks at the account and ENDED the period the client's own module says it may no longer be levered. The row carries the one number that is nobody else's to know — what the broker required — and nothing else: what is financed is a fact about the register, and a copy of it here would be a mirror the two could disagree about (Law 19)) |
+| `Prime Brokerage A2` | PARTIAL | packages/engine/src/mechanisms/banks/prime.ts (the broker reads the client's whole position, which is what lets it lend at all — and it can because it IS the bank the client banks at, which is what holding somebody's assets means in this world). What is not built is a CUSTODY transfer distinct from banking: the assets are in the client's own register and the broker sees them because it is its bank, not because title moved |
+| `Prime Brokerage A3` | MISSING | A3's blind spot is *“the client can have more than one broker, and then no broker sees the whole position”*, and it is not reachable: a party banks in exactly one place, so a client has exactly one broker and it sees everything. When a pool can bank in two places the blind spot arrives by itself, and E3's “each broker underestimates” arrives with it |
+| `Prime Brokerage A4` | PARTIAL | packages/engine/src/mechanisms/banks/index.ts (the FINANCING SPREAD is real and is its own: a prime loan is priced by the same `quote` every other loan is — this broker's cost of funds, its own view of this borrower, its own capital charge — so what it earns is the spread between that and what it pays, booked as interest on a real row). Stock-borrow fees are §16's and reach a prime client only when B5's short side is financed; commissions do not exist in this world |
+| `Prime Brokerage B1` | MET | packages/engine/src/mechanisms/banks/prime.ts, packages/engine/src/mechanisms/banks/index.ts (item 13.3: the broker lends the difference between what the book is worth and what it requires against it — a real loan row, written by the same machinery every other loan is, so the money is created into the client's own account and the two sides are one instruction) |
+| `Prime Brokerage B2` | MET | packages/engine/src/mechanisms/banks/prime.ts, packages/engine/src/mechanisms/funds/mandate.ts, packages/engine/src/world/world.ts (item 13.3: *“the client's leverage is a loan from a named lender, not a property of the client”* — and the two halves are split exactly there. The POOL holds a permission (`MandateTerms.leverage`, what its investors agreed) and a target; the BROKER holds the loan and decides the amount. The permission reaches the lender through `ParticipantView.mayBorrow`, a kernel door answered by the party's own module, because a broker may not read somebody else's mandate) |
+| `Prime Brokerage B3` | MET | packages/engine/src/mechanisms/banks/index.ts (the rate is this broker's own quote to this client — its cost of funds plus its expected loss, capital charge and operating cost — never the keenest offer in the world, because a prime loan is secured on a book only this broker holds and the client cannot take it elsewhere; packages/engine/src/mechanisms/banks/prime.ts: and *“the amount available is the lender's decision and it changes”* is the line, recomputed from today's marks and today's view every period) |
+| `Prime Brokerage B4` | MET | packages/engine/src/mechanisms/banks/index.ts (the loan is an ordinary row on the broker's book, so its balance sheet grows by it and the same capital and funding room price it that price every other loan — nothing about prime brokerage is off balance sheet, which is the clause) |
+| `Prime Brokerage B5` | MISSING | the short side. A short needs a borrow (§16, item 9.4) and nothing yet borrows stock for a pool; financing it is the same loan seen from the other side and lands with that |
+| `Prime Brokerage C1` | MET | packages/engine/src/mechanisms/banks/prime.ts (item 13.3, and §15 calls this the core: the requirement is on the WHOLE portfolio and it is the broker's OWN VIEW OF THE RISK — against each line, how wide its own recent surprises about that line have been (§46 B3, `Outlook.confidence`). Two brokers want different amounts from one portfolio because they have seen different things and been wrong by different amounts, which is what makes it *“a decision by the broker, not a formula the client can rely on”*. A line it has no view of is not financed at all, which is a refusal and not a zero) |
+| `Prime Brokerage C2` | MET | packages/engine/src/mechanisms/banks/prime.ts (remeasured every period from today's marks and today's view — nothing is stored, so the requirement moves when either moves) |
+| `Prime Brokerage C3` | PARTIAL | packages/engine/src/mechanisms/banks/prime.ts, packages/engine/src/mechanisms/banks/index.ts (a shortfall IS a call: the broker takes the money out of the client's account in a real settled instruction, and what the client cannot pay is recorded as unmet and stays owed — never lent back to cover it, never written off, never relaxed). *“Meet it or be liquidated”*: the LIQUIDATION is item 13.4, which is where the chain D1–D4 falls out |
+| `Prime Brokerage C3.b` | MET | packages/engine/src/mechanisms/banks/prime.ts (item 13.3: `available` is a subtraction and it is ALLOWED TO COME OUT NEGATIVE — the one place the whole forced-sale path can be silently deleted. A client drawn past its line is over it, and that negative number IS the call. Nothing floors it and nothing lends the shortfall back at a penalty, which the clause names as making it unreachable twice) |
+| `Prime Brokerage C4` | MET | packages/engine/src/mechanisms/banks/prime.ts (the requirement is re-measured against a book that has moved and a view that has moved, so it rises and falls on its own) |
+| `Prime Brokerage C4.a` | MET | packages/engine/src/mechanisms/banks/prime.ts (item 13.3: *“raising margin into a falling market amplifies the fall”* FALLS OUT rather than being written. A market that moves violently makes every observer's recent surprises wider; wider surprises are a larger requirement; a larger requirement on a book already worth less is a call; and meeting a call means selling into the fall. Nothing states a margin rate, so nothing had to remember to raise it — which is exactly what a stated constant would have deleted) |
+| `Prime Brokerage C5` | MET | packages/engine/src/mechanisms/banks/index.ts (a call is a settled instruction: money out of the client's account and loan units back to it, or a refusal. Nothing here is a number that does not move money, which is the clause) |
 | `Prime Brokerage D1` | MISSING |  |
 | `Prime Brokerage D2` | MISSING |  |
 | `Prime Brokerage D3` | MISSING |  |
 | `Prime Brokerage D4` | MISSING |  |
-| `Prime Brokerage E1` | MISSING |  |
+| `Prime Brokerage E1` | MET | packages/engine/src/mechanisms/banks/prime.ts (what the broker required, what it has financed, what the book is worth and what the client's own equity in it is, published under both names every period — its exposure to a client is a thing it can look at rather than a thing it would have to add up) |
 | `Prime Brokerage E2` | MISSING |  |
 | `Prime Brokerage E3` | MISSING |  |
 | `Prime Brokerage E4` | MISSING |  |

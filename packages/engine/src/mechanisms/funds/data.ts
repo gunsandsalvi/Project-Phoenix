@@ -60,6 +60,12 @@ export interface FundDecl {
    */
   readonly performanceFee: number;
   /**
+   * Hedge Funds B1, B5 (item 13.3): the multiple of its investors' money it MEANS to run its
+   * securities book at. `1` is unlevered, which is a real term. What it actually runs at is the
+   * lesser of this and what its broker will finance — the lender's decision, not the pool's.
+   */
+  readonly targetLeverage: number;
+  /**
    * Item 10e.6: WHO MAY GET IN AT ALL. `true` is offered to the public and anybody may subscribe;
    * `false` asks an entrant to clear the accredited-investor line, which is a POLICY a regulator
    * sets (`FUND_PARAMS.accreditedWealth`) and not a number about this fund.
@@ -288,6 +294,7 @@ export function drawTrackers(
     mayWrite: [],
     leverage: false,
     performanceFee: 0,
+    targetLeverage: 1,
     blueprint: { classes: ['residual'], currencies: [], listed: true },
     ownCurrencyOnly: true,
     // E1, G1.a: its shares TRADE and its investors come and go IN KIND against the basket, which is
@@ -413,7 +420,14 @@ export const STRATEGIES: readonly StrategyDecl[] = [
 /** D5.a: periods between the windows a strategy's investors may get out at. A quarter. */
 export const STRATEGY_WINDOW = 13;
 
-export const STRATEGY_SPREAD: Readonly<Record<'fee' | 'performance' | 'buffer', Spread>> = {
+export const STRATEGY_SPREAD: Readonly<
+  Record<'fee' | 'performance' | 'buffer' | 'leverage', Spread>
+> = {
+  leverage: {
+    low: 1.5,
+    high: 4,
+    why: '\u00a728 B1, B5: the multiple of its investors\u2019 money a strategy MEANS to run its book at. It is a preference and never what it achieves: a broker finances what its own view of the risk leaves room for (Prime Brokerage C1), so a house that wants four and is offered two runs at two \u2014 and the gap between the two numbers is what B3 means by *"the amount available is the lender\u2019s decision and it changes"*. The SPREAD is what makes one house fail a call that another survives.',
+  },
   fee: {
     low: 0.01,
     high: 0.022,
@@ -460,6 +474,9 @@ export function drawStrategies(
     // B1: a permission, and nothing here supplies it. A prime broker does (13.3).
     leverage: true,
     performanceFee: between(rng, STRATEGY_SPREAD.performance),
+    // B1, B5: what it MEANS to run at. What it gets is its broker's decision, and the difference
+    // between the two is what B3 is about.
+    targetLeverage: between(rng, STRATEGY_SPREAD.leverage),
     // D5.a: a notice period, which is a real contractual term with real consequences for who gets
     // out — and the reason a shock reaches this vehicle later than it reaches a money fund.
     liquidity: { how: 'semiLiquid', everyPeriods: STRATEGY_WINDOW },
@@ -601,6 +618,7 @@ export function drawFunds(
       mayWrite: [],
       leverage: false,
       performanceFee: 0,
+      targetLeverage: 1,
       manager: houseOf(b.bank),
       managerName: houseName(b.bank),
       bank: b.bank,
@@ -660,6 +678,7 @@ export function drawFunds(
       mayWrite: [],
       leverage: false,
       performanceFee: 0,
+      targetLeverage: 1,
       // F3: the SAME HOUSE that runs the money fund at this bank. A credit fund is a second product
       // on the same shelf — different mandate, same people, same fee income — which is what lets a
       // manager carry a small product on a large one and what makes losing one survivable.
@@ -704,6 +723,7 @@ export function drawFunds(
       mayWrite: [],
       leverage: false,
       performanceFee: 0,
+      targetLeverage: 1,
       // F3, item 10e.4: the same house again, and its third product.
       manager: houseOf(sponsor.bank),
       managerName: houseName(sponsor.bank),

@@ -31,12 +31,12 @@ import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import {
   type AgreementId,
+  type CurrencyCode,
   instrumentId,
   instrumentKindId,
   currencyUnit,
   marketId,
   moneyInstrumentId,
-  partyKindId,
   venueId,
   type InstrumentId,
   type MarketId,
@@ -86,7 +86,7 @@ import { weightOf } from '../../parties/party.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
-import { SHARES } from '../../registry/profiles.js';
+import { FUND, FUND_MANAGER, SHARES } from '../../registry/profiles.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
@@ -146,8 +146,9 @@ export type { NavRead } from './nav.js';
 export const inKindVenue = (fund: string): VenueId => venueId(`inKind.${fund}`);
 export const listedMarketOf = (fund: string): MarketId => marketId(`mkt.${shareLineOf(fund)}`);
 
-export const FUND = partyKindId('fund');
-export const FUND_MANAGER = partyKindId('fundManager');
+// ARCHITECTURE 4.9b, item 13.3: the NAMES are the kernel registry's, because the prime broker has
+// to say them and may not import this module. What a pool and a manager ARE is still here.
+export { FUND, FUND_MANAGER };
 export const FUND_SHARE = instrumentKindId('fund.share');
 
 /** A2, G1.b: a claim with a SHARE COUNT — which is what makes it something an investor can redeem. */
@@ -744,6 +745,47 @@ function highWater(ctx: MechanismContext, fund: string, opening: PerPiece): PerP
   return typeof was === 'number' ? asPerPiece(was, 'the NAV at its last charge') : opening;
 }
 
+/**
+ * Hedge Funds B1, B5, Prime Brokerage B3 (item 13.3): WHAT THIS POOL ASKS ITS BROKER FOR.
+ *
+ * B1's division is that the pool has the PERMISSION and the lender has the LOAN, so what a pool can
+ * do about how levered it is, is ASK. It states what it is short of running its book at the multiple
+ * its mandate names, and a named lender answers with a number of its own — which is often smaller,
+ * and then what the pool runs at is the LENDER's decision (B3).
+ *
+ * LAW 19: IT ASKS OUT OF WHAT ITS BROKER PUBLISHED. The portfolio and what is financed are the
+ * broker's own reads, taken when it looked at the account, and they are what the line was struck
+ * against — so a pool asking out of a second valuation of its own book would be asking against a
+ * number its broker never saw. A pool nobody has looked at yet has no line and asks for nothing,
+ * which is the honest state of a client that has not been taken on (App A).
+ *
+ * It asks for what it is SHORT OF, net of the cash it already has: a fund does not borrow money to
+ * hold money, which is also why the broker's own portfolio read leaves cash out of the book it
+ * finances (`prime.ts`).
+ */
+function askToDraw(ctx: MechanismContext, m: Mandate, ccy: CurrencyCode): void {
+  if (!m.leverage) return;
+  const said = ctx.journal.lastOf('prime.line', String(m.pool));
+  if (said === undefined) return;
+  const book = said.data['portfolio'];
+  const own = said.data['equity'];
+  if (typeof book !== 'number' || typeof own !== 'number' || own <= 0) return;
+  // Item 16: two numbers its broker published about its own account, re-entering as the money
+  // they are.
+  const target = scale(asCash(own, 'what its investors have in it'), m.targetLeverage, 'the book it means to run');
+  const cash = heldAsMoney(
+    ctx.register.quantity(m.pool, moneyInstrumentId(ctx.accountOf(m.pool, ccy).issuer, ccy)),
+    'what is already in its account',
+  );
+  const wants = minus(
+    minus(target, asCash(book, 'the book it has'), 'what it is short of the book it means to run'),
+    cash,
+    'and it buys with its own money first',
+  );
+  if (wants <= 0) return;
+  ctx.record('prime.wanted', [m.pool], { fund: m.pool, wants, target, book, cash }, false);
+}
+
 function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   const fundId = m.pool;
   // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
@@ -861,6 +903,7 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
     }
   }
   payQueue(ctx, b, m);
+  askToDraw(ctx, m, ccy);
   const owed = owedOn(ctx, b, m);
   const cash = ctx.register.quantity(
     fundId,
@@ -2302,6 +2345,24 @@ export function funds(
     // derivative layer speaks for a party in every contract book, so it asks before it speaks — a
     // pool with no mandate is not a fund and trades nothing, which is the same refusal `ordersOf`
     // makes in an ordinary market.
+    /**
+     * Hedge Funds B1, Fund Shares F2 (item 13.3): WHETHER THIS POOL MAY OWE MONEY, asked of its own
+     * mandate. `fundKind.borrows` says the category is capable of it; this says which of them their
+     * investors agreed to — a money fund does not borrow, and a strategy does.
+     *
+     * *"Leverage is a fact about a loan, never a property of the fund"* (B1), and this is the half
+     * that is the fund's: a permission. The LOAN is the lender's, and a pool with this permission
+     * and no broker is levered by nobody.
+     */
+    leverageLimits: [
+      {
+        partyKind: FUND,
+        mayBorrow: (view: ParticipantView): boolean => {
+          const m = mandateFor(view);
+          return m.some && m.value.leverage;
+        },
+      },
+    ],
     tradingLimits: [
       {
         partyKind: FUND,

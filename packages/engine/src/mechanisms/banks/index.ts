@@ -43,7 +43,7 @@ import { period, type Period } from '../../calendar/calendar.js';
 import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
-import { currencyUnit, paramId, partyId } from '../../core/ids.js';
+import { currencyUnit, moneyInstrumentId, paramId, partyId } from '../../core/ids.js';
 import { weightOf } from '../../parties/party.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { atLeast, atMost, dustOf, sum, withinDust, zeroIfNone } from '../../core/num.js';
@@ -51,7 +51,7 @@ import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
-import { BANK } from '../../registry/profiles.js';
+import { BANK, FUND } from '../../registry/profiles.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { SystemModule } from '../../world/module.js';
@@ -76,6 +76,7 @@ import {
 } from './treasury.js';
 import { isSub, runRaise, subordinatedKind, SUB_PARAMS } from './subordinated.js';
 import { operatingCostOf, staffOrders, STAFF_PARAMS } from './staff.js';
+import { financedFor, type PrimeDeps, PRIME, runPrime } from './prime.js';
 import { LENDING, publishLines, roomFor } from './lines.js';
 import { LOAN, creditorOf, loanId, loanKind, isLoan, type LoanTerms } from './loan.js';
 import type { Holding } from '../../register/register.js';
@@ -541,6 +542,87 @@ function refuse(
   }
 }
 
+
+/**
+ * Prime Brokerage B1, B3, C3 (item 13.3): the three things the broker's period is allowed to do with
+ * this module's own lending machinery — and nothing else. It is passed in rather than imported the
+ * other way so that `prime.ts` decides and this file acts, which is the same split `staff.ts` has.
+ */
+function primeDeps(rows: readonly BankDecl[]): PrimeDeps {
+  return {
+    financed: (ctx, broker, client, ccy) => financedFor(ctx, broker, client, isLoan, ccy),
+    /**
+     * B3: at the rate THIS broker charges THIS client — its own cost of funds, its own view of the
+     * borrower, its own capital charge — computed by the one function that prices a bank's credit
+     * (Law 4). A broker that could not cost its own funding does not lend, which is A-45's answer
+     * everywhere else in this module.
+     */
+    lend: (ctx, broker, client, amount, ccy): boolean => {
+      const decl = declOf(rows, broker);
+      if (decl === undefined) return false;
+      const view = ctx.participant(broker);
+      const funds = costOfFunds(ctx, broker, ccy).perAnnum;
+      if (!funds.some) return false;
+      const q = quote(view, decl, client, regulationOf(view), funds.value, seenDefaults(ctx));
+      // C9, F1.a: one row per (lender, borrower) — a client that comes back is drawing on what it
+      // already has here, never taking a new loan every week.
+      return write(ctx, broker, client, amount, q.rate, ccy, true) !== undefined;
+    },
+    /**
+     * C3: the money comes back and what is owed falls by it. It is the reverse of the drawing and
+     * the same two legs: the units the broker holds go back to the party that issued them, and the
+     * money goes the other way, in ONE instruction (XI-5).
+     *
+     * It pays what the client HAS. What it has not got is not borrowed from somewhere to cover the
+     * call and is not forgiven: it stays owed, and the caller records it (Law 6, C3.b).
+     */
+    repay: (ctx, broker, client, amount, ccy): Cash => {
+      const line = lineOf(ctx, broker, client);
+      if (line === undefined) return asCash(0, 'there is no row to repay');
+      const owed = ctx.register.quantity(broker, line.id);
+      const account = ctx.accountOf(client, ccy);
+      const cash = ctx.register.quantity(client, moneyInstrumentId(account.issuer, ccy));
+      const paying = ctx.registry.payable(
+        atMost(
+          atMost(amount, heldAsMoney(owed, 'what it owes on the row'), 'it cannot repay more than it owes'),
+          heldAsMoney(cash, 'what is in its account'),
+          'it cannot pay money it has not got',
+        ),
+      );
+      if (paying <= 0) return asCash(0, 'it had nothing to pay with');
+      const r = ctx.settle({
+        legs: [
+          {
+            kind: 'asset',
+            from: broker,
+            to: client,
+            instrument: line.id,
+            qty: paying,
+            pricePerUnit: some(asPerPiece(1, 'at what it promised')),
+            accruedPerUnit: none(),
+            fromCell: none(),
+            toCell: none(),
+          },
+          {
+            kind: 'money',
+            from: ctx.accountOf(client, ccy),
+            to: ctx.accountOf(broker, ccy),
+            ccy,
+            amount: paying,
+            fromCell: none(),
+            toCell: none(),
+          },
+        ],
+        cause: 'maturity',
+        reason: `${client} meets a margin call from ${broker}`,
+      });
+      return r.outcome === 'settled'
+        ? heldAsMoney(paying, 'what it paid')
+        : asCash(0, 'the payment was refused');
+    },
+  };
+}
+
 /** Law 19: the keenest quote published under this name, most recent first. Read, never rebuilt. */
 function quotedFor(ctx: MechanismContext, borrower: PartyId): Quote | undefined {
   const e = ctx.journal.lastOf('credit.quoted', borrower);
@@ -1000,6 +1082,14 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
   // not it has firms, and a bank's answer to Money B3.a exists as soon as there is a bank.
   requires: [],
   instrumentKinds: [loanKind, subordinatedKind],
+  // Prime Brokerage A1 (item 13.3): a named bank and a named client, with a contract that can be
+  // ended. It is the ninth kind of commitment in this world and the first between a bank and a pool.
+  agreementKinds: [
+    {
+      id: PRIME,
+      what: 'a bank holds a client\u2019s book, decides what it requires against it, and finances the rest',
+    },
+  ],
   partyKinds: [],
   curveFamilies: [],
   units: [],
@@ -1278,6 +1368,27 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       },
     },
     {
+      /**
+       * Prime Brokerage A1, B1, C1-C3, E1 (item 13.3): THE BROKER'S PERIOD — value the client's
+       * book, decide what it requires against it, publish the line, call what is over it and lend
+       * what is under it.
+       *
+       * With the other lending, and for the same reason: a prime loan is a loan, it consumes the
+       * same capital and the same room, and it is priced by the same quote. What is different is
+       * only the DECISION about how much (C1), which is the one thing §15 calls the core.
+       */
+      name: 'banks.prime',
+      spec: 'Prime Brokerage A1 Prime Brokerage B1 Prime Brokerage B3 Prime Brokerage C1 Prime Brokerage C3 Prime Brokerage C3.b Prime Brokerage E1',
+      cycle: 0,
+      // After the period's lending decisions and before the session, so a client that is lent to
+      // this morning can put the money to work this afternoon, and one that is CALLED this morning
+      // knows what it must sell before the books open (C3, XI-2).
+      anchor: { after: 'lending.write' },
+      run: (ctx: MechanismContext): void => {
+        runPrime(ctx, primeDeps(rows), FUND);
+      },
+    },
+    {
       name: 'banks.buffer',
       spec: 'Banks Funding C2 Banks Funding C2.a Money Market A2.a',
       cycle: 'anchor',
@@ -1494,7 +1605,12 @@ function publishStandard(ctx: MechanismContext): void {
  */
 function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const p of ctx.parties.all()) {
-    if (!p.status.alive || !ctx.registry.partyKind(p.kind).borrows) continue;
+    // Item 13.3: the KIND's capability narrowed by what the party's own module says about THIS one
+    // (`mayBorrow`). It read the kind alone, which was right while a kind that could borrow meant
+    // every party of it could — and stopped being right the moment a pool's permission became its
+    // MANDATE's. A quote published for a money fund that may never borrow is a price for a trade
+    // that cannot happen.
+    if (!p.status.alive || !ctx.participant(p.id).mayBorrow()) continue;
     const ccy = ctx.registry.currencyOf(p.region);
     let best: Quote | undefined;
     let most = 0;

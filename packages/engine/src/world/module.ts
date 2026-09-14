@@ -404,6 +404,26 @@ export interface SystemModule {
     readonly partyKind: PartyKindId;
     readonly mayTrade: (view: ParticipantView, kind: DerivativeKindId) => boolean;
   }[];
+  /**
+   * Hedge Funds B1, Prime Brokerage B2, Fund Shares F2 (item 13.3): WHETHER A PARTY OF THIS KIND
+   * MAY BORROW AT ALL — the same door as `tradingLimits`, for the same reason and with the same
+   * rule: exactly one module answers for a kind, and a kind nobody answers for is whatever its
+   * PROFILE says, because the absence of a rule is not a prohibition.
+   *
+   * `PartyKindProfile.borrows` is the CATEGORY's answer — whether a thing of this sort is capable
+   * of owing money — and it is the wrong place for a fact about one party. A pool's is its
+   * MANDATE's: *"leverage is a fact about a loan, never a property of the fund"* (B1), and which
+   * pools may be levered is what their investors agreed, one mandate at a time. Saying it on the
+   * kind meant no pool anywhere could ever be levered, which is what 13h was built on.
+   *
+   * It is asked through `ParticipantView.mayBorrow`, by a lender deciding whether to offer — the
+   * lender owns the loan and the party's own module owns the party, and neither may answer the
+   * other's question (Observer A4, Law 4).
+   */
+  readonly leverageLimits?: readonly {
+    readonly partyKind: PartyKindId;
+    readonly mayBorrow: (view: ParticipantView) => boolean;
+  }[];
   readonly borrowNeeds?: readonly {
     readonly partyKind: PartyKindId;
     readonly needs: BorrowNeeds;

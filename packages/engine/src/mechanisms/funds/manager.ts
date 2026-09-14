@@ -425,6 +425,7 @@ export function launchToMake(
         mayWrite: rival.mayWrite,
         leverage: rival.leverage,
         performanceFee: rival.performanceFee,
+        targetLeverage: rival.targetLeverage,
       },
       rival: rival.pool,
       expects: smallest,

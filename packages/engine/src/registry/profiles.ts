@@ -60,6 +60,17 @@ export const TREASURY = partyKindId('treasury');
 export const BANK = partyKindId('bank');
 export const FIRM = partyKindId('firm');
 export const HOUSEHOLD = partyKindId('household');
+/**
+ * ARCHITECTURE 4.9b, item 13.3: A NAME A MODULE THAT DOES NOT OWN THE KIND STILL HAS TO SAY.
+ *
+ * The `funds` module owns what a pool and a manager ARE — their profiles, their objectives, what
+ * they fail on — and that stays there. What is here is only the NAME, for the same reason
+ * `registry/physical.ts` holds a good's id: a PRIME BROKER lends to a pool, and the module that
+ * owns a bank's economics may not import the module that owns a fund (`no-cross-module-import`).
+ * An id is a name, and a module that does not own a kind still has to be able to say it.
+ */
+export const FUND = partyKindId('fund');
+export const FUND_MANAGER = partyKindId('fundManager');
 
 /** The party kinds the kernel itself needs: the ones money cannot exist without (Money A1, A1.b, A1.c). */
 export const KERNEL_PARTY_KINDS: readonly PartyKindProfile[] = [
