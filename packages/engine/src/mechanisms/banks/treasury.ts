@@ -309,16 +309,28 @@ export function corridorSeen(view: ParticipantView): Option<SeenCorridor> {
 }
 
 /** What its own account has done to it lately, and what it holds against the worst of it (C2.a). */
-export interface ReserveMemory {
-  readonly moves: Record<string, number[]>;
-}
-
-/** C2.a: one more week of its own account, remembered as far back as this bank looks. */
-export function remember(memory: ReserveMemory, bank: PartyId, move: number, keep: number): void {
-  const moves = memory.moves[bank] ?? [];
-  moves.push(move);
-  while (moves.length > keep) moves.shift();
-  memory.moves[bank] = moves;
+/**
+ * A2.a, C2, C2.a, Law 19 (item 9.9): the weeks this bank's own account has had, as far back as it
+ * looks — READ OFF WHAT IT PUBLISHED, not kept beside it.
+ *
+ * `ReserveMemory` was a private `Record<bank, number[]>` of the last N moves, and every one of them
+ * was the `move` field of a `bank.buffer` event this same function had already recorded, publicly,
+ * in the same call. That is the mirror Law 19 is about, and the file's own neighbour was already
+ * doing it the other way: `worthOfMoney` reads `moneyMarket.print` over the same memory window and
+ * stores nothing.
+ *
+ * The window is the bank's own `bufferMemory`, which is what "as far back as this bank looks" means.
+ */
+function movesOf(ctx: MechanismContext, bank: PartyId): number[] {
+  const memory = ctx.params.periods(bankParam(bank, 'bufferMemory'));
+  const from = ctx.period > memory ? ctx.period - memory : 0;
+  const out: number[] = [];
+  for (const e of ctx.journal.forSubject('bank.buffer', String(bank))) {
+    if (e.period < from || e.period >= ctx.period) continue;
+    const move = e.data['move'];
+    if (typeof move === 'number') out.push(move);
+  }
+  return out;
 }
 
 /**
@@ -326,10 +338,12 @@ export function remember(memory: ReserveMemory, bank: PartyId, move: number, kee
  * account has had, over its own memory. A bank that has never had a bad week holds nothing against
  * one, which is a real (and dangerous) position and not a missing number.
  */
-export function bufferOf(memory: ReserveMemory, bank: PartyId): number {
-  const moves = memory.moves[bank] ?? [];
+export function bufferOf(ctx: MechanismContext, bank: PartyId, andThis?: number): number {
   let worst = 0;
-  for (const m of moves) if (m < worst) worst = m;
+  for (const m of movesOf(ctx, bank)) if (m < worst) worst = m;
+  // This period's own move is not on the journal until the event below writes it, so the caller
+  // that is about to write it hands it in. One read, one answer, and no ordering to remember.
+  if (andThis !== undefined && andThis < worst) worst = andThis;
   return -worst;
 }
 
@@ -716,14 +730,8 @@ function bestRival(ctx: MechanismContext, bank: PartyId, cls: string): Option<Ra
  * against a bad one. Published, because the balance either side of every leg of it already is, and
  * because everything that decides anything about this bank's funding reads this and nothing else.
  */
-export function publishBuffer(
-  ctx: MechanismContext,
-  bank: PartyId,
-  ccy: CurrencyCode,
-  memory: ReserveMemory,
-): void {
+export function publishBuffer(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): void {
   const move = reserveFlow(ctx, bank, ccy);
-  remember(memory, bank, move, ctx.params.periods(bankParam(bank, 'bufferMemory')));
   ctx.record(
     'bank.buffer',
     [bank],
@@ -731,7 +739,7 @@ export function publishBuffer(
       bank,
       ccy,
       move,
-      buffer: bufferOf(memory, bank),
+      buffer: bufferOf(ctx, bank, move),
       reserves: ctx.register.quantity(
         bank,
         moneyInstrumentId(ctx.registry.centralBankOf(ccy), ccy),

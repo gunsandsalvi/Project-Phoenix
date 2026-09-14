@@ -71,7 +71,6 @@ import {
   ownDeposits,
   sessionOrders,
   setBoard,
-  type ReserveMemory,
 } from './treasury.js';
 import { bidsFor, runRaise, subordinatedKind, SUB_PARAMS } from './subordinated.js';
 import { operatingCostOf, staffOrders, STAFF_PARAMS } from './staff.js';
@@ -961,15 +960,6 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       why:
         'a within-period memo of a walk over the settled ledger, so a read made once per bank does not re-walk the period per bank (Law 18). The ledger is the source and this is not a second copy of it.',
     },
-    {
-      name: 'reserves',
-      kind: 'noun',
-      holds:
-        'each bank’s memory of its own reserve account’s moves, as far back as that bank looks',
-      why:
-        'this is an OUTLOOK: a party’s adaptive memory of an observable, formed from its own history over its own memory length \u2014 which is exactly what the expectations module is the one writer of (§46, XI-16, Law 4). A second private implementation of one mechanism.',
-      standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
-    },
   ],
   spec: 'Banks Lending',
   // It needs nobody. What a borrower is short of and what a borrower has failed to pay both reach
@@ -1264,10 +1254,9 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
       // published, and the session reads it rather than deriving a second one (Law 4).
       anchor: { before: 'lending.book' },
       run: (ctx: MechanismContext): void => {
-        const memory = ctx.state<ReserveMemory>('reserves', () => ({ moves: {} }));
         for (const b of ctx.parties.ofKind(BANK)) {
           if (!b.status.alive || declOf(rows, b.id) === undefined) continue;
-          publishBuffer(ctx, b.id, ctx.registry.currencyOf(b.region), memory);
+          publishBuffer(ctx, b.id, ctx.registry.currencyOf(b.region));
         }
       },
     },

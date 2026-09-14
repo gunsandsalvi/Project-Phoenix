@@ -7293,3 +7293,43 @@ is about to draw one that does. So **13.6 is rewritten to open that pass FIRST**
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
 `check:deaths` 11 of 11, `check:existence` green. `9.8` and `9.9` are the rest of item 9.
+
+---
+
+## Item 9, fifteenth stage — two of the five were mirrors (9.9a)
+
+**What.** 9.9 names five stores standing in for a kernel noun. Reading them found that **two are not
+homeless nouns at all** — they are second copies of numbers the same call already publishes, which
+is the third and fourth time this item has found that shape (the invoice, the covenant memo, the
+deal's five derived fields).
+
+**`funds`' previous NAV.** `Book.previous` was written at the end of `strike`, out of the `perShare`
+the same call had already recorded on `fund.struck` — a PUBLIC event. And the fact exists for the
+public: D2 says a fund competes with a deposit, and *"the competition D2 names cannot happen against
+a number nobody can see"* is the module's own comment, three lines from the private copy of it. It
+is a read of the last strike now. One thing improves with it: a fund that missed a period returns
+over the period it actually last struck in, which the private copy said nothing about either way.
+
+**`banks/reserves`.** `ReserveMemory` kept `Record<bank, number[]>` — the last N weeks of its own
+reserve account — and every entry was the `move` field of a `bank.buffer` event `publishBuffer` had
+just recorded. **The neighbour in the same file was already doing it the other way**: `worthOfMoney`
+reads `moneyMarket.print` over the same memory window and stores nothing. `bufferOf` reads
+`bank.buffer` over the bank's own `bufferMemory` now, and the caller hands in this period's move
+because the event carrying it has not been written yet — one read, one answer, no ordering to
+remember. `banks` declares one fewer noun.
+
+**The plan's claim about `View` is false and 9.9 is re-written to say so.** It reads *"four kernel
+nouns were built and the module stores that stand in for them were never migrated"*. There is no
+`View` store in `register/`, and `docs/RECORD.md`'s own entry for old item 6 says why — it built the
+VOCABULARY (`Subject`, `about`, `subjectOf`) and states plainly: *"`credit` is expressible and
+nothing forms one yet … folding `ratings`, `research` and `banks/reserves` into the noun — three
+private stores that are this thing in three shapes — follows the same way."*
+
+So the rest of 9.9 is a BUILD, and it is **9.9b** with the question it has to answer first stated in
+it: `expectations.outlooks` IS the noun's implementation — adaptive, formed from the wire, §46 B1 —
+while `ratings` and `research` are JUDGEMENTS one party holds about another, formed from `ctx.blind`
+and not from an observable. Whether `View` is one store or two mechanisms sharing a subject is the
+decision, and it goes in the record before the code.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208, `check:forbids` 4 over 205,
+`check:deaths` 9 of 9 (two fewer, because two placeholders are gone), `check:existence` green.

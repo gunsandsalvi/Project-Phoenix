@@ -347,15 +347,13 @@ interface Book {
   queued: Queued[];
   /** The NAV struck this period, so the orders and the settlement read one number (Law 4). */
   struck: Record<string, number>;
-  /** D2.a, B1: what a share was worth last time, so what it RETURNED is a read and not a series. */
-  previous: Record<string, number>;
 }
 
 /** ACT/365F for a fee quoted per annum: a rate is not a number until its periodicity is (Law 8). */
 const FEE_DAY_COUNT = 'ACT/365F' as const;
 
 function emptyBook(): Book {
-  return { queued: [], struck: {}, previous: {} };
+  return { queued: [], struck: {} };
 }
 
 const declOf = (decls: readonly FundDecl[], fund: string): FundDecl | undefined =>
@@ -664,6 +662,28 @@ function redeem(
  * subscribed and pay out what was asked for — and say what it could not pay, because that is what
  * it must sell for (C2.a) and what the market is about to see.
  */
+/**
+ * D2, D2.a, B1, Law 19 (item 9.9): WHAT A SHARE WAS WORTH LAST TIME, read off what this fund
+ * PUBLISHED then.
+ *
+ * It was a second copy — `Book.previous`, written at the end of `strike` — of the `perShare` the
+ * very same call had already recorded on `fund.struck`, a public event. That is the mirror Law 19
+ * is about: two records of one fact, one of them private and invisible to everybody the number
+ * exists for. And it exists FOR them: D2 says a fund competes with a deposit, and a competition
+ * cannot happen against a number nobody can see.
+ *
+ * Nothing is stored now. The last strike is the last strike, whenever it was, so a fund that missed
+ * a period returns over the period it actually last struck in rather than over a gap — which the
+ * private copy said nothing about either way.
+ */
+function lastNav(ctx: MechanismContext, fund: string): Option<PerPiece> {
+  const said = ctx.journal.lastOf('fund.struck', fund);
+  if (said === undefined) return none<PerPiece>();
+  const was = said.data['perShare'];
+  // Item 16: a published number re-enters the type system here, through its dimension's own door.
+  return typeof was === 'number' ? some(asPerPiece(was, 'what a share was worth then')) : none<PerPiece>();
+}
+
 function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
   // through its estate like anybody else's (Firm Birth D5).
@@ -671,7 +691,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   const share = ctx.instruments.get(shareLineOf(d.fund));
   const opening = ctx.params.price(FUND_PARAMS.openingShare);
   const ccy = ctx.registry.currencyOf(ctx.parties.get(d.fund as PartyId).region);
-  const previous = b.previous[d.fund];
+  const previous = lastNav(ctx, d.fund);
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
   // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
   if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
@@ -733,7 +753,6 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       );
     }
   }
-  b.previous[d.fund] = perShare;
   payQueue(ctx, b, d);
   const owed = owedOn(ctx, b, d);
   const cash = ctx.register.quantity(
@@ -772,11 +791,11 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
        * is a statement about a period that did not happen.
        */
       returned:
-        previous === undefined || previous <= 0
+        !previous.some || previous.value <= 0
           ? null
           : ratioOf(
-              minus(perShare, asPerPiece(previous, 'what a share was worth then'), 'what it made'),
-              asPerPiece(previous, 'what a share was worth then'),
+              minus(perShare, previous.value, 'what it made'),
+              previous.value,
               'per share it returned',
             ),
       // C2.a: what it must find, and what it has spare. Its orders read these and nothing else,
@@ -1725,12 +1744,11 @@ export function funds(
     nouns: [
       {
         name: 'funds',
-        kind: 'noun',
+        kind: 'working',
         holds:
-          'the subscriptions and redemptions queued this cycle, the NAV struck this period, and the NAV struck last',
+          'the subscriptions and redemptions queued this cycle, and the NAV struck this period',
         why:
-          'the queue and the strike are working state within a period. The PREVIOUS NAV is not: it is a figure the fund published, which is what makes its return a read rather than a series, and no other party can see it. A published figure belongs where published figures live.',
-        standsInFor: { noun: 'PublishedStatement', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
+          'both are state one phase hands to a later phase WITHIN a period: the queue is what asked before the strike and the strike is what the orders and the settlement both read, so they are one number (Law 4). The PREVIOUS NAV was here too and was NOT this — it was a second copy of the `perShare` the same call had already published on `fund.struck`, which is what a fund\u2019s return is measured against and is public because D2\u2019s competition cannot happen against a number nobody can see. It is read off that event now (item 9.9).',
       },
     ],
     spec: 'Fund Shares, XI-2',
