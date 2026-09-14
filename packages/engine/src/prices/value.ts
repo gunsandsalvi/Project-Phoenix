@@ -135,7 +135,7 @@ export class Valuation {
     // (B1), and reading the lot's basis instead would be a stale mirror of a number the kernel can
     // read now (Law 19). What the equity account has RECOGNISED is a different question and stays
     // with the lot (carryingPerUnit).
-    if (profile.pricing !== 'derived' && profile.carry === 'cost') {
+    if (profile.pricing !== 'derived' && this.atCost(instrument)) {
       return some({ value: this.valueOfLots(instrument, lots, at), from: at, ccy });
     }
     switch (profile.pricing) {
@@ -291,6 +291,23 @@ export class Valuation {
     return this.inMoney(value, from, this.bookMoneyOf(party), at);
   }
 
+  /**
+   * §29 C5, C5.a, XI-6: WHETHER A HOLDER'S ACCOUNTS CARRY THIS AT WHAT IT COST OR AT A MARK, and
+   * it is a question about the LINE and not only about its kind.
+   *
+   * A kind says how its lines are priced; whether one of them has a MARKET is a fact about the line
+   * (Register F1). A share of a private company is the same instrument as a share of a public one
+   * and it does not trade, so there is no cleared price of it and its holders carry it at cost —
+   * *“marked, not cleared”*, which is C5.a stated where the carrying rule is read rather than
+   * policed somewhere else. Everything that values a position asks this, so there is one answer to
+   * it (Law 4): `worthOf`, `valueOfLots` and the revaluation, which is every reader there is.
+   */
+  atCost(instrument: InstrumentId): boolean {
+    const i = this.instruments.get(instrument);
+    const profile = this.registry.instrumentKind(i.kind);
+    return profile.carry === 'cost' || (profile.pricing === 'cleared' && !i.market.some);
+  }
+
   markPerUnit(instrument: InstrumentId, at: Period): PerPiece {
     const i = this.instruments.get(instrument);
     const pricing = this.registry.instrumentKind(i.kind).pricing;
@@ -299,6 +316,15 @@ export class Valuation {
         // Money D2: the only admissible hard-coded price of one.
         return asPerPiece(1, 'money is worth one of itself');
       case 'cleared':
+        if (!i.market.some) {
+          // §29 C5.a: an unlisted mark is not a cleared price, and asking for one is the caller's
+          // defect. `atCost` is the read that says so before anybody gets here.
+          throw new Unpriced(
+            'Private Equity C5.a',
+            `${instrument} has no market, so nothing ever cleared a price of it: its holders carry it at what it cost`,
+            { instrument },
+          );
+        }
         return this.prices.printOrThrow(instrument, at).price;
       case 'derived':
         return this.derived(instrument, at);
@@ -380,8 +406,7 @@ export class Valuation {
 
   /** Value of lots: at mark for cleared instruments and money, at basis for carried-at-cost. */
   valueOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): Cash {
-    const i = this.instruments.get(instrument);
-    const carry = this.registry.instrumentKind(i.kind).carry;
+    const carry = this.atCost(instrument);
     /**
      * Law 7: THROUGH `sum`, in the one class whose `equityDust` claims to derive a tolerance from
      * the arithmetic that produced the number. A `+=` accumulation drops the dust of every step it
@@ -390,7 +415,7 @@ export class Valuation {
      */
     const terms = lots.map((lot) =>
       valueAt(
-        carry === 'cost' ? lot.basisPerUnit : this.markPerUnit(instrument, at),
+        carry ? lot.basisPerUnit : this.markPerUnit(instrument, at),
         lot.qty,
         `value of ${instrument}`,
       ),

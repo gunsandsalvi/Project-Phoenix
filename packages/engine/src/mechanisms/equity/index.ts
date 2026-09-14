@@ -65,8 +65,9 @@ import type { CorporateAction } from '../../register/corporate.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
 import { weightOf } from '../../parties/party.js';
+import { prng } from '../../rng/prng.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
-import { MONEY_PIECES } from '../../registry/grid.js';
+import { CENT_TICK, MONEY_PIECES, SHARE_PIECES } from '../../registry/grid.js';
 import { displayName } from '../../registry/naming.js';
 import type { ParamDecl } from '../../registry/params.js';
 import { FIRM, HOUSEHOLD } from '../../registry/profiles.js';
@@ -77,7 +78,7 @@ import {
   equityParam,
   equityLineOf,
   equityMarketOf,
-  type ListedDecl,
+  type EquityDecl,
 } from './data.js';
 import { buybackOrder, decideEquity, dividendFor, type EquityPlan } from './decide.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
@@ -115,7 +116,7 @@ function stillItsIssuer(i: Instrument): boolean {
 /** D3, item 10: the one number the declaration needs — how long after the record date it pays. */
 export const EQUITY_PAYOUT_LAG = paramId('equity.payoutLag');
 
-function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
+function paramsOf(rows: readonly EquityDecl[]): ParamDecl[] {
   return [
     {
       id: EQUITY_PAYOUT_LAG,
@@ -128,12 +129,14 @@ function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
     },
     {
       id: OPENING_SHARE,
-      value: MONEY_PIECES,
-      unit: 'pieces of money per share at the seed (one USD)',
+      // Law 8: ONE TICK OF A SHARE, said in the grid's own terms rather than as a number — a
+      // cent a share, in the pieces of money a price is counted in (`Registry.priceOf`).
+      value: (CENT_TICK * MONEY_PIECES) / SHARE_PIECES,
+      unit: 'pieces of money per share at the seed (one cent)',
       dimension: 'price',
       kind: 'resolution',
       owner: 'model',
-      why: 'Seed C4, Law 2: a market that has never traded has no price (XI-6) and a world that opens with shares outstanding has to say what one is. It is a RESOLUTION: double it and halve every share count the seed states and no value, flow or decision moves — which is exactly what a split does (D4), so the invariance is a mechanism in this world and a test of it, not a claim about one.',
+      why: 'Seed C4, Law 2: a market that has never traded has no price (XI-6) and a world that opens with shares outstanding has to say what one is. It is a RESOLUTION: double it and halve every share count the seed states and no value, flow or decision moves — which is exactly what a split does (D4), so the invariance is a mechanism in this world and a test of it, not a claim about one. ONE TICK, because a resolution should be the finest the grid allows and this one decides HOW MANY OWNERS A LINE CAN REACH: a share is indivisible and a cell holds whole pieces per member (XI-15), so at a dollar a share a firm’s book came to fewer shares than this world has savers and every firm under thirty million dollars opened with a line nobody held at all (10f.1). A penny a share cuts the same book into a hundred times as many pieces, and by D4 that is the only thing it changes.',
     },
     ...rows.map((r): ParamDecl => ({
       id: equityParam(r.firm, 'payoutPatience'),
@@ -155,7 +158,7 @@ function paramsOf(rows: readonly ListedDecl[]): ParamDecl[] {
  * read said (Firm E4) — one number, one writer — and before the session, because a decision that
  * read the session it is about to be in would be reading its own answer (Clearing A4).
  */
-function decide(ctx: MechanismContext, seed: string, row: ListedDecl): void {
+function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
   const line = ctx.instruments.get(equityLineOf(row.firm));
   if (!line.status.live) return;
   if (!stillItsIssuer(line)) {
@@ -172,7 +175,9 @@ function decide(ctx: MechanismContext, seed: string, row: ListedDecl): void {
   const decided = decideEquity(
     view,
     line.id,
-    equityMarketOf(row.firm),
+    // §29 C5: a private company has no book to post into, and what it may do about its own shares
+    // is the whole of the difference between the two (`decideEquity`).
+    row.listed ? some(equityMarketOf(row.firm)) : none<MarketId>(),
     line.issued,
     negated(asCash(short, 'what it is short of'), 'what it has spare'),
     ctx.params.periods(equityParam(row.firm, 'payoutPatience')),
@@ -182,9 +187,9 @@ function decide(ctx: MechanismContext, seed: string, row: ListedDecl): void {
   // D1, D1.c: new shares are the ISSUER's own supply for this session, cleared by the same solver
   // at one price with everybody else's orders in the book — and withdrawn if nobody will pay the
   // least it will take, which is a failed issue and has consequences (Clearing C4.a).
-  if (plan.issue > 0) {
+  if (plan.issue > 0 && plan.market.some) {
     ctx.offer({
-      market: plan.market,
+      market: plan.market.value,
       issuer: firm,
       size: plan.issue,
       reservation: plan.reservation,
@@ -224,7 +229,7 @@ function decide(ctx: MechanismContext, seed: string, row: ListedDecl): void {
 function declareDividend(
   ctx: MechanismContext,
   seed: string,
-  row: ListedDecl,
+  row: EquityDecl,
   line: Instrument,
   plan: EquityPlan,
 ): void {
@@ -398,7 +403,7 @@ function payDividend(
  * no longer exists, the session finds no orders, and the print goes visibly stale (Clearing E4)
  * until the estate pays what it can and writes off the rest at zero.
  */
-function announceSuccession(ctx: MechanismContext, row: ListedDecl, line: Instrument): void {
+function announceSuccession(ctx: MechanismContext, row: EquityDecl, line: Instrument): void {
   const b = book(ctx);
   if (b.succeeded.includes(row.firm)) return;
   b.succeeded.push(row.firm);
@@ -500,7 +505,7 @@ function dividendLegs(view: AuditView): ReadonlyMap<string, Cash[]> {
  * worklist 12) — are one derivation with one writer. G3: every one is computed FROM the cleared
  * price and none of them is ever used to set it.
  */
-function publishReads(ctx: MechanismContext, rows: readonly ListedDecl[]): void {
+function publishReads(ctx: MechanismContext, rows: readonly EquityDecl[]): void {
   for (const row of rows) {
     const line = ctx.instruments.get(equityLineOf(row.firm));
     if (!line.status.live) continue;
@@ -587,7 +592,7 @@ export const dividendOwed = (action: CorporateActionId, line: InstrumentId): Div
   line,
 });
 
-export function equity(rows: readonly ListedDecl[], seed: string): SystemModule {
+export function equity(rows: readonly EquityDecl[], seed: string): SystemModule {
   return {
     id: 'equity',
     agreementKinds: [
@@ -665,6 +670,11 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
         markets: (view: ParticipantView): readonly MarketId[] => {
           const own = view.lastOwnSince('equity.plan', view.period);
           if (!own.some) return [];
+          // D2, §29 C5: the ONE order it has is a bid for its own shares, so a period in which it
+          // is not buying any is a period in which it is in no book at all — and a private company
+          // is never buying any, because there is no book to buy them in.
+          const buyback = own.value.data['buyback'];
+          if (typeof buyback !== 'number' || buyback <= 0) return [];
           return [equityMarketOf(view.self.id)];
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
@@ -682,6 +692,48 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
     ],
     families: [declaredIsPaid()],
     seed(ctx: SeedContext): void {
+      /**
+       * Seed A3, Law 19, Law 2, XI-15: EVERY FIRM'S LINE, AND WHO OPENS HOLDING IT.
+       *
+       * THE SAVERS HOLD IT. A share is a claim on the residual (A1), and the parties in this
+       * world with a reason to hold a claim on a firm's earnings are its households (B3). A
+       * DEALER'S INVENTORY IS NOT A REASON — it is a working position a desk takes by trading,
+       * so a seed that opens the desks holding the whole float of every line they make has
+       * stated an outcome (Seed E1) and given ownership to the one party whose holding of it is
+       * supposed to be the RESULT of a market.
+       *
+       * Item 9 opened them holding it, for a reason that was true then: "a bank that opens making
+       * a market with nothing to sell can only ever bid", and the one alternative tried — a
+       * FOUNDER, a named party that receives dividends and has nothing to spend them on — drained
+       * the sector's money into a hole (the item 9 record). A saver is not that hole: it consumes,
+       * it banks, and from item 10 it has a portfolio decision of its own, so it is on the other
+       * side of the desk's bid rather than absorbing the circuit.
+       *
+       * What that cost, measured at 11.5: a desk opened carrying six hundred million more than
+       * its own limit on the first morning, every desk in every seed (11.5's finding 12-14); and
+       * because a SHARE RAISES NOTHING AT THE CENTRAL BANK'S WINDOW (Banks Funding C1, C1.a),
+       * the float sat on the one balance sheet whose whole liquidity turns on what its assets
+       * raise there. What cannot run (capital and insured deposits) has to fund what cannot be
+       * turned into cash at par, and the float was four times the capital: the two banks in a
+       * six-bank world that made a market opened at a liquidity metric of 0.84 and 0.89 while the
+       * four that made none opened at 1.04 to 1.07.
+       */
+      const cells = ctx.parties.ofKind(HOUSEHOLD);
+      const members = cells.reduce((t, c) => t + weightOf(c), 0);
+      forbid(
+        rows.length === 0 || members > 0,
+        'Equity B3',
+        'this world has firms in it and no saver, so no residual in it has a holder with a reason to hold one',
+        { firms: rows.length },
+      );
+      /**
+       * Seed B1.a: WHICH SAVERS, and it is drawn per line rather than taken in order. The cells a
+       * line reaches are the first of them (below), so a fixed order would make one cell the owner
+       * of every small company in the world — a concentration nothing in this seed states and
+       * nobody chose. The list is rotated instead, which spreads WHOSE the small firms are without
+       * saying anything about which saver prefers which firm (Seed E1).
+       */
+      const rng = prng(seed, 'equity.float');
       for (const row of rows) {
         const firm = ctx.parties.get(row.firm as PartyId);
         const ccy = ctx.registry.currencyOf(firm.region);
@@ -690,68 +742,42 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
         // classes of vote is two lines (Register F1.a).
         const terms: ShareTerms = { kind: SHARE, issuer: row.firm as PartyId, votesPerShare: 1 };
         const id = equityLineOf(row.firm);
-        const market = equityMarketOf(row.firm);
-        ctx.instruments.add({
-          id,
-          kind: SHARE,
-          issuer: some(row.firm as PartyId),
-          ccy,
-          terms,
-          market: some(market),
-        });
-        ctx.openMarket({
-          id: market,
-          name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
-          instrument: id,
-          ccy,
-          rationing: 'proRata',
-        });
+        /**
+         * Equity E3, §29 C5, C5.a: A LINE FOR EVERY FIRM, AND A MARKET FOR THE ONES THAT ARE
+         * PUBLIC. Every firm has a residual and somebody owns it; what a listing adds is a place
+         * to sell it. A private line has no market, so it never prints, so its holders carry it at
+         * what it cost them and say so — "marked, not cleared" — which is C5.a kept by there being
+         * no price to mistake for one rather than by a rule against mistaking it.
+         */
+        const market = row.listed ? some(equityMarketOf(row.firm)) : none<MarketId>();
+        ctx.instruments.add({ id, kind: SHARE, issuer: some(row.firm as PartyId), ccy, terms, market });
         // Seed C4: the line and the level it opens at.
         const price = ctx.params.price(OPENING_SHARE);
-        ctx.prices.write({
-          instrument: id,
-          market,
-          period: ctx.period,
-          price,
-          ccy,
-          provenance: { kind: 'opening' },
-        });
-        // Seed A3, Law 19, Law 2: and who opens holding it, and HOW MUCH OF IT THERE IS.
-        //
-        // THE SAVERS HOLD IT. A share is a claim on the residual (A1), and the parties in this
-        // world with a reason to hold a claim on a firm's earnings are its households (B3). A
-        // DEALER'S INVENTORY IS NOT A REASON — it is a working position a desk takes by trading,
-        // so a seed that opens the desks holding the whole float of every line they make has
-        // stated an outcome (Seed E1) and given ownership to the one party whose holding of it is
-        // supposed to be the RESULT of a market.
-        //
-        // Item 9 opened them holding it, for a reason that was true then: "a bank that opens making
-        // a market with nothing to sell can only ever bid", and the one alternative tried — a
-        // FOUNDER, a named party that receives dividends and has nothing to spend them on — drained
-        // the sector's money into a hole (the item 9 record). A saver is not that hole: it consumes,
-        // it banks, and from item 10 it has a portfolio decision of its own, so it is on the other
-        // side of the desk's bid rather than absorbing the circuit.
-        //
-        // What that cost, measured at 11.5: a desk opened carrying six hundred million more than
-        // its own limit on the first morning, every desk in every seed (11.5's finding 12-14); and
-        // because a SHARE RAISES NOTHING AT THE CENTRAL BANK'S WINDOW (Banks Funding C1, C1.a),
-        // the float sat on the one balance sheet whose whole liquidity turns on what its assets
-        // raise there. What cannot run (capital and insured deposits) has to fund what cannot be
-        // turned into cash at par, and the float was four times the capital: the two banks in a
-        // six-bank world that made a market opened at a liquidity metric of 0.84 and 0.89 while the
-        // four that made none opened at 1.04 to 1.07.
-        //
-        // EVERY MEMBER HOLDS THE SAME SLICE OF EVERY LINE, because the seed has nothing to say
-        // about which saver prefers which firm: that is what the portfolio decision is for, and a
-        // seed that answered it would be seeding the outcome (Seed E1). It is the same statement
-        // the foundation already makes about government paper, made about equity.
-        //
-        // WHAT THE LINE COMES TO IS READ OFF THE FIRM (Law 19) and never stated. A share is a claim
-        // on the residual (A1), and at period zero a firm's residual is everything it holds:
-        // nobody has lent it anything and it owes nobody. So the line is its own opening book, in
-        // shares of whatever a share opens at — which is why a larger firm has a larger line
-        // without one number being written down beside its name, and why doubling the opening share
-        // price halves every count here and moves nothing (D4).
+        if (market.some) {
+          ctx.openMarket({
+            id: market.value,
+            name: displayName(ctx.instruments.get(id), ctx.parties, ctx.registry),
+            instrument: id,
+            ccy,
+            rationing: 'proRata',
+          });
+          ctx.prices.write({
+            instrument: id,
+            market: market.value,
+            period: ctx.period,
+            price,
+            ccy,
+            provenance: { kind: 'opening' },
+          });
+        }
+        /**
+         * WHAT THE LINE COMES TO IS READ OFF THE FIRM (Law 19) and never stated. A share is a claim
+         * on the residual (A1), and at period zero a firm's residual is everything it holds:
+         * nobody has lent it anything and it owes nobody. So the line is its own opening book, in
+         * shares of whatever a share opens at — which is why a larger firm has a larger line
+         * without one number being written down beside its name, and why doubling the opening share
+         * price halves every count here and moves nothing (D4).
+         */
         let book = asCash(0, 'nothing walked yet');
         for (const h of ctx.register.holdingsOf(firm.id)) {
           // Currency C4.a, A-51: a firm's residual is one number in the money it keeps its books
@@ -768,28 +794,48 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
             'its book',
           );
         }
-        const shares = Math.round(amountOf(book, price, 'the shares its book comes to'));
-        const cells = ctx.parties.ofKind(HOUSEHOLD);
-        const members = cells.reduce((t, c) => t + weightOf(c), 0);
-        forbid(
-          members > 0,
-          'Equity B3',
-          `${row.firm} is listed in a world with no saver in it, so its float has no holder with a reason to hold it`,
-          { firm: row.firm, line: String(id) },
+        const shares = ctx.registry.pieces(
+          ctx.instruments.get(id).unit,
+          asNamed(Math.round(amountOf(book, price, 'the shares its book comes to')), 'what is issued'),
         );
-        // Law 8, XI-15: WHOLE PIECES PER MEMBER, and the line is what the members hold. A cell is
-        // homogeneous, so the line cannot be any count that does not divide into its members — and
-        // the honest way round is not to round the holding up to a stated line but to let the line
-        // be the holding (Law 19). What the division leaves below one piece a member is never
-        // issued, so every piece of this line has a named holder from the instant it exists.
-        const perMember = downTick(
-          div(
-            ctx.registry.pieces(ctx.instruments.get(id).unit, asNamed(shares, 'what is issued')),
-            members,
-            "one member's share",
-          ),
-        );
-        if (perMember > 0) for (const cell of cells) ctx.endowUnits(cell.id, id, perMember, price);
+        /**
+         * XI-15, Law 6, Law 8: AND HOW FAR IT REACHES. A cell is homogeneous and holds WHOLE pieces
+         * per member, so a line can only be held by as many people as it has pieces to give one
+         * each — and what stood here divided every line across every saver in the world and then
+         * dropped it entirely when the division came out below one piece: `if (perMember > 0)`, a
+         * bound (Law 6) behind which every firm whose book was under thirty million dollars opened
+         * with a line NOBODY HELD. A residual with no holder is a defect Appendix B names outright,
+         * and this one was silent — the line existed, the market opened, and nothing was issued
+         * into it.
+         *
+         * So the holders are AS MANY CELLS AS THE COUNT CAN FILL: a line big enough reaches every
+         * saver in the world, a smaller one reaches one cell of them, and the bound is gone because
+         * there is nothing left for it to drop. It is also the true statement — FEWER PEOPLE OWN A
+         * SMALLER COMPANY — and it is the shape C1.b's free float and C2.e's founders take on once
+         * a firm is born rather than seeded (10f.2).
+         *
+         * EVERY MEMBER THE LINE REACHES HOLDS THE SAME SLICE OF IT, because the seed has nothing to
+         * say about which saver prefers which firm: that is what the portfolio decision is for, and
+         * a seed that answered it would be seeding the outcome (Seed E1). It is the same statement
+         * the foundation already makes about government paper, made about equity.
+         */
+        const from = rng.int(cells.length);
+        const holders: PartyId[] = [];
+        let reached = 0;
+        for (let n = 0; n < cells.length; n += 1) {
+          const cell = cells[(from + n) % cells.length];
+          if (cell === undefined) continue;
+          const w = weightOf(cell);
+          if (reached + w > shares) break;
+          reached += w;
+          holders.push(cell.id);
+        }
+        if (holders.length === 0) continue;
+        // Law 8: whole pieces per member, and the line is what the members hold. What the division
+        // leaves below one piece a member is never issued, so every piece of this line has a named
+        // holder from the instant it exists.
+        const perMember = downTick(div(shares, reached, "one member's share"));
+        for (const holder of holders) ctx.endowUnits(holder, id, perMember, price);
       }
     },
   };

@@ -49,7 +49,7 @@ checked, not assumed.
 | **Corporate Credit** | **13** | 8 | **41** | 0 | 62 |
 | Sovereign | 40 | 3 | 8 | **3** | 51 |
 | Short-Term Debt | 12 | 3 | 4 | 0 | 19 |
-| Equity | 25 | 2 | 10 | 0 | 37 |
+| Equity | 25 | 3 | 9 | 0 | 37 |
 | Money Market | 25 | 3 | 0 | 0 | 28 |
 | Spot FX | 26 | 1 | 0 | 0 | 27 |
 | Fund Shares | 23 | 3 | 0 | 0 | 26 |
@@ -68,7 +68,7 @@ checked, not assumed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 9 | 0 | 14 | **9** | 23 |
 | Hedge Funds | 12 | 3 | 9 | 0 | 24 |
-| **Private Equity** | **5** | 1 | **19** | 0 | 25 |
+| Private Equity | 7 | 1 | 17 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -185,6 +185,7 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
+| **10f** | Public and private firms, and the market for control | — | **inserted** (owner, 2026-09-14, four sentences): listing is a funding choice and not a size; every firm has equity and public is a MARKET; M&A is general — acquisition, merger, disposal, take-private — run as a formal process by a bank's IBD; and institutions invest across strategies. It takes the next letter after 10e because it is the same shape of correction, and it comes before the rest of 13 because **13.5b is an application of it** |
 | **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -220,6 +221,198 @@ two sentences and prime brokerage, which is the largest thing it did to the plan
 ---
 
 ## Part 2 — The items
+
+---
+
+## 10f. Public and private firms, and the market for control — **inserted**
+
+**Where this came from.** The owner, 2026-09-14, in four sentences:
+
+> *"There should be named public and private firms. Going public is a matter of funding choice, not
+> how large a firm is."*
+>
+> *"IPOs and take privates should exist, while also sponsor to sponsor and sales to corps should
+> exist in formal exit processes and m&a processes lead by IBD departments."*
+>
+> *"Also, insurance and pension don't only go for duration. They invest in tons of different
+> strategies."*
+>
+> *"And m&a, acquisitions, mergers and disposals should all exist, with the PE case being only an
+> application."*
+
+**Why it is numbered 10f and taken HERE** (Law 10: insert at the dependency position, and say where).
+It is the same SHAPE of correction as 10e — a declared outcome becoming a decision — from the same
+owner in the same conversation, so it takes the next letter. It is taken before the rest of item 13
+because **13.5b is an application of it**: a private-equity fund buys unlisted equity, and there is
+no unlisted equity in this world to buy. It also corrects 14.0, which is three commits old.
+
+---
+
+### 0. The defect underneath all four sentences
+
+`drawListed` opens with `if (f.size < LISTING_SIZE) continue;` — **which firms are public is decided
+by a size threshold.** Two things are wrong with that and the second is worse than the first.
+
+1. **Listing is a declared outcome** (Law 2). Whether a firm is public is a funding decision it took,
+   and here it is a fact about the draw.
+2. **A firm below the threshold has no share line at all** — so of the nine thousand firms this world
+   draws, the ones that are not listed **have no equity instrument and therefore no owner.** A firm
+   is a residual claim on its own assets, and in this world almost every one of them is a residual
+   claim nobody holds, which is the thing Appendix B names first: *no residual with no holder.*
+
+That is not a gap to fill later. It is why there is nothing for a private-equity mandate to buy, why
+a firm cannot be taken private, why nobody can sell a business, and why the only owners in this world
+are bank dealing desks holding a float.
+
+### 1. Every firm has equity. PUBLIC or PRIVATE is whether it has a MARKET
+
+One change, and everything else follows from it:
+
+```
+today     a share line exists  IF  size >= 8          and it always has a market
+10f       a share line exists  ALWAYS                 and it has a market IF the firm listed
+```
+
+The read already exists and is already load-bearing: **`instrument.market.some` is what item 10e's
+classification calls `listed`**, so a blueprint that says `listed: false` starts admitting things the
+day this lands, with no change to the language. §29's mandate over unlisted equity stops being a
+mandate over nothing.
+
+Who holds a private firm's shares at period zero is an opening condition (Seed B1) like every other:
+they are owned by somebody named, and the honest somebody in this world is the household cells where
+the firm is. A firm owned by nobody is what we have now.
+
+### 2. An IPO is a funding decision, and the price CLEARS
+
+A firm that wants money compares what it would cost from each source — which is exactly the shape
+item 10 already built for the bond (*"a firm compares two prices for the same money"*). Equity is a
+third column in that comparison, and a private firm that finds it the cheapest **lists**: it opens a
+market in its line, offers new shares into it, and takes the proceeds.
+
+**What the offering is worth has never been printed, so it is BOOK-BUILT** — the firm offers a size,
+investors bid what it is worth to them (Equity B1, §46 A3: they disagree), and the price is what
+clears (Law 3). That first print is the first price the line has ever had.
+
+**And that is the same mechanism §29 D needs** — *"the exit produces the first real price the holding
+has had"*. An IPO and a PE exit by flotation are one thing, which is the first place the owner's
+*"the PE case being only an application"* bites.
+
+A take-private is the reverse: somebody buys the line and **the market closes**. The firm does not
+die — it is owned differently.
+
+### 3. M&A is the general layer. Acquisition, merger, disposal — and PE is one caller
+
+`mechanisms/control` already has the whole of a change of control: `worthToBuyer`, `tenders`,
+`runTender`, an acceptance condition, and *"a bid is an ordinary book with an unusual buyer"*. What it
+does not have is the distinction the owner is asking for:
+
+| shape | what happens to the target | what exists today |
+|---|---|---|
+| **merger** | the two balance sheets combine and the target is terminated | `combine` — the only outcome there is |
+| **acquisition** | the target **SURVIVES** under a new owner | **missing**, and it is what a buyout, a sponsor-to-sponsor and a trade sale all are |
+| **disposal** | an owner SELLS a business it holds | **missing**, and it is a PE exit seen from the seller's side |
+| **take-private** | an acquisition, plus the market closes | **missing** |
+| **flotation** | the opposite: a market opens on a line that had none | **missing** (§2 above) |
+
+`combine` is right for a merger and wrong for everything else. **A5 of §29 says acquired firms are
+held in named vehicles** — the target has to keep its own balance sheet, because B2.a's debt is the
+TARGET's liability and *"that is why a failed buyout kills the firm and not the fund"*.
+
+### 4. The process is FORMAL, and a bank runs it
+
+*"Formal exit processes and m&a processes lead by IBD departments."* So a sale is not a bilateral
+tender that appears from nowhere:
+
+- a seller **appoints a bank** to run the process — an agreement, the eleventh kind;
+- the bank **invites bidders and runs an auction**, which is a book and it CLEARS (Law 3) — the
+  solver already does this, and a controlled auction is `runTender` with more than one buyer;
+- the winner buys; the bank earns a **fee out of the proceeds**, which is real income for real work;
+- and **what a bank can run at once is the people it employs** — `advisory` is a trade in the labour
+  market like `banking`, `dealing` and `analysis`, and an IBD's capacity is the same read
+  `banks/staff.ts:linesCovered` already makes for a dealing desk. A bank that sheds its bankers runs
+  fewer processes. Nothing states a capacity.
+
+This is also what makes a process FAIL honestly: an auction with no bidders clears nothing, and the
+seller still owns the company.
+
+### 5. Institutions invest across strategies, not only duration
+
+14.0 made an insurer match its liabilities' duration and nothing else, and the owner's correction is
+that *"they invest in tons of different strategies"*. Both halves of that are right and the fix keeps
+both:
+
+- **What it requires is what its own promises are discounted at.** An insurer's liabilities have a
+  present value at the curve, and the rate they are discounted at is the rate its assets must earn to
+  cover them. That is §27 B2's actual economics and it is a READ — no new preference, no allocation
+  percentage.
+- **What it will not take is duration it did not promise.** A pool whose stated duration runs past
+  its longest promise is refused, because holding it is taking a rate risk nobody asked it to take.
+  A pool that states NO duration is not refused — equity has no duration to mismatch, which is how
+  strategies, credit and equity all become eligible.
+- **How it spreads is by feeding the smallest.** It tops up whichever of its positions is smallest.
+  Diversification is then an OUTCOME and there is no allocation rule anywhere — no percentages, no
+  target weights, no optimiser.
+
+### 6. The order
+
+- [x] **10f.1 DONE.** Every firm has a share line and `EquityDecl.listed` says whether that line has
+  a MARKET. `LISTING_SIZE` is gone and so is `drawListed`: what is drawn is `PUBLIC_AT_THE_OPENING`,
+  one in twelve, **independently of size** — a firm is public because it once wanted money it
+  preferred not to borrow (D1.b), which a small firm may choose and a large one decline. Three things
+  came with it and none of them was foreseen in this step:
+  - **A residual with no holder, at scale, and silent.** The size gate left more than eight thousand
+    of nine thousand firms with no line at all — and among the ones it did list, the float was
+    divided across every saver in the world and then DROPPED whenever the division came out under one
+    piece a member: `if (perMember > 0)`, a bound (Law 6) behind which a line existed, a market opened
+    and nothing was ever issued into it. Both are gone. The holders are now **as many cells as the
+    count can fill**, taken in a rotated order so no one cell owns every small company: a big line
+    reaches every saver, a small one reaches one cell of them, and *fewer people own a smaller
+    company* is the true statement as well as the arithmetic one.
+  - **`OPENING_SHARE` was too coarse to be a resolution.** A share is indivisible and a cell holds
+    whole pieces per member (XI-15), so the opening price decides HOW MANY OWNERS A LINE CAN REACH:
+    at a dollar a share a firm's book came to fewer shares than this world has savers. It is now ONE
+    TICK — a cent a share, said as `CENT_TICK × MONEY_PIECES / SHARE_PIECES` rather than as a number
+    — which cuts the same book into a hundred times as many pieces and, by D4, changes nothing else.
+  - **The carrying rule had to learn to read the LINE** (§29 C5, C5.a). `pricing: 'cleared'` plus
+    `carry: 'mark'` is a property of the KIND, so the first private share line in this world would
+    have made the revaluation ask `printOrThrow` for a price that never existed and stopped the build.
+    `Valuation.atCost(instrument)` is the one reader of it now — carried at cost, or a cleared kind
+    whose line has no market — and `worthOf`, `valueOfLots` and the revaluation all ask it. **That is
+    C5.a kept by there being no price to mistake for one**, and it closes §29 C5 and C5.a outright.
+- **10f.2** The IPO: a funding comparison with a third column, and a book-built first price.
+- **10f.3** M&A generalised: acquisition (the target survives), merger (`combine`, as today),
+  disposal, take-private. One layer, four outcomes, no kind branch.
+- **10f.4** The formal process: a mandate to a bank, an auction with bidders, a fee, and `advisory`
+  as a trade with a capacity.
+- **10f.5** Institutions across strategies (corrects 14.0).
+- **10f.6** §29 B, C and D as CALLERS of 10f.3 — which is what 13.5b becomes, and it shrinks to
+  naming the vehicle and the carry.
+
+### What 10f.1 found and did not chase
+
+- **F-1 (the resolution floor).** A line can only reach a cell whose whole weight it has a piece for,
+  so a firm whose book is under one cell's worth of pieces — about twelve thousand dollars at a cent
+  a share, against thirty million people in twenty-four cells — still opens with an **unissued line**
+  and a residual nobody holds. It is two thousand four hundred times smaller a hole than the one
+  10f.1 closed, and it is not a bound: nothing drops it, the arithmetic simply cannot cut a company
+  into fewer people than a cell stands for. **The mechanism it wants is a finer population**, which is
+  `seed.households.membersPerCohort`'s own placeholder (12.6) and XI-15's cell SPLIT, or a proprietor
+  that is a party rather than a cell — Firm Birth A, where a founder is somebody who funded an entry
+  (13n). It is visible without being looked for: `equity.reads` publishes `shares` every period, and
+  for such a line it is zero. **Positioned at 13n.**
+- **F-2 (the cost of a line for every firm).** `equity.decide` now runs for nine thousand firms a
+  period instead of seven hundred and forty, and nine thousand instruments exist where there were
+  seven hundred and forty. Nothing about it is wrong — every firm decides about its own money and
+  every firm's residual is a real claim — but it is the first item to multiply the instrument table by
+  twelve, and Law 18 says that is a traversal question and not an economics one. **Positioned at 16
+  (Measure)**, where what a period costs is measured rather than guessed.
+
+### Exit
+
+A firm this world drew as small is owned by somebody named; it borrows, and one day it lists because
+equity is cheaper than its bank; a sponsor buys a listed company and the market closes behind it;
+another sponsor buys it from the first through a process a bank ran and was paid for; and an insurer
+holds six mandates because six of them cleared what its promises cost it.
 
 ---
 
@@ -352,7 +545,7 @@ its lender can cut (B1: *"leverage is a fact about a loan, never a property of t
 - [ ] 13.4b **MEASURE the chain**: one fund's loss reaching another fund's margin call through prices and named counterparties, and the path traceable party by party (§15 D4: *"a loss that stops at the fund is a broker that was never really lending"*). The events to follow are `prime.line` → `prime.call` → `fund.struck`'s shortfall → a print → the next `prime.line` falling, and every one of them names both parties. **It is a MEASUREMENT of the assembled world and not a unit test** (Law 11, and the owner's rule that the suite runs at the end), so it goes with 23.0a — and it wants the same thing that one does: read `E-22` first, because the pools this path runs on gather nothing until a cell clears the accredited line or item 14's institutions arrive.
 - [x] **14.0 INSERTED AHEAD OF 13.5 (Law 10: at its dependency position, and here is where).** 13.2 built a strategy house, 13.3 built its broker and 10e built a credit fund — **and none of them is offered to the public, so the only investors this world has cannot reach any of them.** A private-equity fund is the same shape and would have been the fourth. The money those sectors run on is INSTITUTIONAL, and nothing in this world allocated any: an insurer wrote cover, took premiums and sat on the cash for ever. So item 14's allocator half is taken here, and it is small because 10e made it small — *"insurance companies and pension funds don't invest themselves; their assets are always third party managed"*, so there is no portfolio mechanism to build. An insurer puts what it can spare at the door of the pool whose stated duration is nearest the furthest thing it has promised (B2.b), and everything after that is the manager's. **It also fixed the access ladder**: the rungs are not three kinds of investor but one structural fact — a CELL is people and answers with its wealth, a NAMED party is an institution and is qualified by being one, which is what the ladder said all along and what `E-22` was half about.
 - [x] 13.5 Private equity, **§29 A: committed capital and the call**. There is no private-equity party kind — it is a manager whose pools are CLOSED-END over UNLISTED equity, which is four terms of a mandate. The commitment is an agreement between a named investor and the pool; the call is a real payment on a date it cannot refuse; the door is shut to ordinary subscription because the only way in is a call; and shares are issued against what a call actually brought in, at the NAV, through the door every subscriber uses. **A2.b — the FORBID this item singled out — is guarded rather than commented**: a call bounded by the investor's spare cash is not an obligation, so nothing in the call path may trim a demand to fit a balance, and `tools/check-forbids.ts` refuses `atMost`, `atLeast` and `Math.min` anywhere in it (the guard was proved to bite before it was trusted). The call path is one file for exactly that reason.
-- [ ] 13.5b **The buyout, the hold and the exit** (§29 B, C, D — 19 clauses). What 13.5 built is how a PE fund is FUNDED; this is what it does with the money, and **this world has nothing for it to buy**: every share here trades, so a mandate over unlisted equity admits nothing and the fund holds the cash it called. Three pieces, and the first two are mostly reuse:
+- [ ] 13.5b **FOLDED INTO 10f.6** (owner, 2026-09-14: *"m&a, acquisitions, mergers and disposals should all exist, with the PE case being only an application"*). What is left here once 10f.3 exists is naming the vehicle and the carry; the buyout, the sponsor-to-sponsor sale, the trade sale and the flotation are all CALLERS of one M&A layer rather than a private-equity mechanism. The analysis below stands and is what 10f.3 was written from. **The buyout, the hold and the exit** (§29 B, C, D — 19 clauses). What 13.5 built is how a PE fund is FUNDED; this is what it does with the money, and **this world has nothing for it to buy**: every share here trades, so a mandate over unlisted equity admits nothing and the fund holds the cash it called. Three pieces, and the first two are mostly reuse:
   - **B, the buyout.** `mechanisms/control` already has the whole tender — `worthToBuyer`, `tenders`, `runTender`, an acceptance condition, *"a bid is an ordinary book with an unusual buyer"*. Two differences make it a BUYOUT rather than a merger: **the target must SURVIVE** (`combine` terminates it and reseats its rows, which is right for an acquirer and wrong here — A5 says acquired firms are held in named vehicles), and **the debt is the TARGET's** (B2.a, *"which is why a failed buyout kills the firm and not the fund"*), which wants the target to raise it — and that is the funding channel 17.9 opens. B2.b then falls out: if the credit market will not lend to the target, the leverage does not happen and the fund owns an unlevered company.
   - **C5.a, the hold.** *"An unlisted mark is not a cleared price … the honest answer is 'marked, not cleared'."* `pricing: 'carriedAtCost'` is already the kernel's word for exactly this, and `E-18`'s neighbourhood (item 21) is where the display of it lands.
   - **D, the exit**, which *"produces the first real price the holding has had"* — the listing or sale that turns a carried mark into a print.

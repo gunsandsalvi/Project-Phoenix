@@ -870,6 +870,15 @@ what a lot is worth to the party HOLDING it and has a different answer per holde
 refuses a derived kind that derives nothing, and the valuation refuses a book whose value depends on
 its own claim.
 
+**Whether a line is carried at a mark or at cost is a question about the LINE, not only about its
+kind** (item 10f.1, §29 C5, C5.a). A kind says how its lines are priced; whether one of them has a
+MARKET is a fact about the line. A share of a private company is the same instrument as a share of a
+public one and nobody trades it, so nothing ever cleared a price of it and its holders carry it at
+what it cost — *"marked, not cleared"*, which is C5.a kept by there being no price to mistake for
+one. `Valuation.atCost(instrument)` is the one reader of that (`carry === 'cost'`, or a cleared kind
+whose line has no market), and every valuation asks it: `worthOf`, `valueOfLots` and the revaluation,
+which skips such a line entirely rather than throwing on a print that was never going to exist.
+
 A **party kind** states four things about its life beyond its representation and its money issuance
 (item 7). `fails` says what a party of that kind can FAIL on — nothing, a cash failure it cannot
 cure, its liabilities past its assets, or both — and a kind that names neither cannot die, which is

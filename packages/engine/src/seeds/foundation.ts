@@ -155,7 +155,7 @@ import { goodId, goodMarketId, goods, isGoodTerms, wipId } from '../mechanisms/g
 import { lifeParam, spaceFor, STORAGE } from '../registry/physical.js';
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
-import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
+import { drawEquity, equityLineOf, type EquityDecl } from '../mechanisms/equity/data.js';
 import { FUND, funds } from '../mechanisms/funds/index.js';
 import {
   drawTrackers,
@@ -2184,7 +2184,12 @@ function splitPopulation(population: number, cells: number): number[] {
 export interface FoundationDraw {
   readonly banks: readonly BankDecl[];
   readonly firms: readonly FirmDecl[];
-  readonly listed: readonly ListedDecl[];
+  /**
+   * 10f.1: A ROW FOR EVERY FIRM — its share line, and whether this world opened it to a market.
+   * It is not the listed ones: a private company has a residual and named owners too, and which of
+   * them are public is one field of the row rather than which rows there are.
+   */
+  readonly equities: readonly EquityDecl[];
   readonly funds: readonly FundDecl[];
   readonly trackers: readonly FundDecl[];
   /**
@@ -2203,7 +2208,7 @@ export function foundationDraw(
   countries: readonly CountrySeed[] = COUNTRIES,
 ): FoundationDraw {
   const names = bankRows.map((b) => b.bank);
-  const listed = drawListed(firmRows, bankRows, seed);
+  const equities = drawEquity(firmRows, bankRows, seed);
   const pools = drawFunds(bankRows, seed);
   /**
    * §28 A1, A4, B1 (item 13.2): THE STRATEGY HOUSE, and it is drawn beside the long-only pools
@@ -2226,7 +2231,10 @@ export function foundationDraw(
   // Indices C2: the tracker tracks THIS world's equity index, named by the one module that
   // declares it. The seed is where the two meet, because it is the only place that may know both.
   const trackers = drawTrackers(
-      listed.map((r) => String(equityLineOf(r.firm))),
+      // Indices A2, A3: ONLY THE PUBLIC ONES. An index is its constituents' own prints and a
+      // private line never prints, so a tracker handed one would be following a level it could
+      // not read (§29 C5.a).
+      equities.filter((r) => r.listed).map((r) => String(equityLineOf(r.firm))),
       names,
       seed,
       /**
@@ -2257,7 +2265,7 @@ export function foundationDraw(
   return {
     banks: bankRows,
     firms: firmRows,
-    listed,
+    equities,
     funds: [...pools, ...strategies, ...privateEquity],
     trackers,
     // F3 (item 10e.4): the houses, drawn from the pools that name them. Trackers included: the
@@ -2317,9 +2325,11 @@ function mapSpec(countries: readonly CountrySeed[]): MapSpec {
  * is shopped, and walking every listing in the world for the one that names a line is a search that
  * grows with the number of listed companies while the answer does not.
  */
-function makersOf(listed: readonly ListedDecl[]): (i: InstrumentId) => readonly string[] | undefined {
+function makersOf(equities: readonly EquityDecl[]): (i: InstrumentId) => readonly string[] | undefined {
   const byLine = new Map<InstrumentId, readonly string[]>();
-  for (const row of listed) byLine.set(equityLineOf(row.firm), row.makers);
+  // 10f.1: every line, the private ones included — and theirs is EMPTY rather than absent, which
+  // says that nobody quotes it rather than that nothing is known about who does.
+  for (const row of equities) byLine.set(equityLineOf(row.firm), row.makers);
   return (instrument) => byLine.get(instrument);
 }
 
@@ -2646,7 +2656,7 @@ export function foundationSpec(
       // Dealer Desks A3: the desks, and WHICH LINES EACH OF THEM MAKES — drawn with the listing
       // (`ListedDecl.makers`) and handed in here, because the bank that quotes and the listing that
       // drew its makers are two systems and one fact (Law 4).
-      banks(drew.banks, makersOf(drew.listed)),
+      banks(drew.banks, makersOf(drew.equities)),
       estate,
       // Goods A1: the goods of THIS world are made in the one region that has firms in it. The
       // three abroad are a central bank, a treasury and a bond line (13i builds their economies),
@@ -2692,7 +2702,7 @@ export function foundationSpec(
       // Equity and the desks before the funds: this world's exchange-traded fund holds the listed
       // firms and is launched by the desks that make its market, and both have to exist before a
       // basket can be put in (the funds module reads that off its own data, in `needs`).
-      equity(drew.listed, seed),
+      equity(drew.equities, seed),
       funds([...drew.funds, ...drew.trackers], drew.managers),
       // 13f, Securities Lending A1-A3: title passes and the economics do not. After equity and the
       // funds, because what is lent is the paper they hold and the desks that need to deliver it

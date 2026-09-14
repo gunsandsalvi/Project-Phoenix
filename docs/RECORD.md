@@ -8797,3 +8797,98 @@ sector — there is one left in this world, the Polity.**
 
 Typecheck 0, lint 0, `check:spec` 218 tags, `check:forbids` **5** over 215 files, `check:deaths` 4 of
 4, `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 10f.1 — every firm has a share line, and being public is a MARKET and not a size
+
+**The owner's correction, in four sentences, and this is the first of them:** *"There should be named
+public and private firms. Going public is a matter of funding choice, not how large a firm is."*
+
+What stood in the way was one line of `drawListed`:
+
+```ts
+if (f.size < LISTING_SIZE) continue;   // LISTING_SIZE = 8
+```
+
+A firm was listed if it was eight times the smallest in its line, and a firm below that **had no
+share line at all**. Two things are wrong with that and the second is much the worse.
+
+**Going public is a funding CHOICE (D1.b).** A firm sells part of itself because it wants money it
+would rather not borrow. That is a decision a small firm can take and a very large one can decline,
+which is why a real economy's largest companies include private ones and its exchanges are full of
+small ones. A rule that lists the large and only the large states the answer to the question 10f.2
+exists to ask. So `PUBLIC_AT_THE_OPENING` is drawn per firm, **independently of size**, one in twelve,
+and it is read exactly once: from period one a firm floats or is taken private and nothing reads the
+draw again.
+
+**And a firm with no share line has a residual NOBODY HOLDS.** Appendix B forbids that outright. At
+nine thousand firms the threshold left more than eight thousand of them unowned — and it was silent,
+because a firm whose residual has no holder still trades, still pays wages, still fails.
+
+### Three things came out of it that the step did not foresee
+
+**1. There was a second, deeper hole, and it had a bound in it.** Even for a listed line the float
+was divided across every saver in the world and then dropped whenever the division came out under one
+piece a member:
+
+```ts
+if (perMember > 0) for (const cell of cells) ctx.endowUnits(cell.id, id, perMember, price);
+```
+
+A cell is homogeneous and holds WHOLE pieces per member (XI-15), so a line can only be held by as
+many people as it has pieces to give one each. At thirty million members a firm needed a
+thirty-million-dollar book to give everybody one share — and below that the line existed, the market
+opened, and **nothing was ever issued into it**. That `if` is a bound (Law 6) and it was hiding the
+same defect the size gate was.
+
+The holders are now **as many cells as the count can fill**, in a rotated order so that no one cell
+ends up owning every small company in the world. A big line reaches every saver; a small one reaches
+one cell of them; nothing is dropped. It is also simply true — *fewer people own a smaller company* —
+and it is the shape C1.b's free float and C2.e's founders will take once a firm is born rather than
+seeded.
+
+**2. `OPENING_SHARE` was too coarse to be a resolution.** Its own comment already called it one and
+tested it by D4's split invariance, and that was right — but a resolution has a job, and this one's
+job is to decide **how many owners a line can reach**. At a dollar a share a firm's whole book came
+to fewer shares than this world has savers. It is now ONE TICK, a cent a share, written as
+`CENT_TICK × MONEY_PIECES / SHARE_PIECES` so it says *one tick* rather than a number. The same book is
+cut into a hundred times as many pieces and reaches a hundred times as many owners, and by D4 that is
+the only thing it changes.
+
+**3. The carrying rule had to learn to read the LINE, not only the kind.** This is the structural
+change and it is in `ARCHITECTURE.md`. `pricing: 'cleared'` and `carry: 'mark'` are properties of a
+KIND, so the first private share line in this world would have sent the revaluation to
+`printOrThrow` for a price that never existed, and the build would have stopped on the first period.
+
+`Valuation.atCost(instrument)` is the one reader of it now — `carry === 'cost'`, or a cleared kind
+whose line has no market — and every valuation asks it: `worthOf`, `valueOfLots`, and the revaluation,
+which walks past such a line instead of marking it. **That is §29 C5.a — "an unlisted mark is not a
+cleared price" — kept by there being no price to mistake for one**, rather than by a rule against
+mistaking it. `markPerUnit` refuses to answer for a market-less line at all, citing the clause.
+
+§29 C5 and C5.a go MISSING → MET, and `Private Equity A5`'s *"this world has no unlisted equity,
+because every share in it trades"* is no longer true: eleven of every twelve firms in this world are
+now private companies with named owners, a residual, a dividend and no price.
+
+### What a private company can and cannot do
+
+`decideEquity` takes the market as an `Option` now, and that is the whole of the difference. With no
+market there is no print, so `dear` is false and it cannot issue; and it must not bid for its own
+shares in a book that does not meet, so the buyback branch tests the MARKET and not the price. What
+is left is what a private company actually does with spare cash: **it pays its owners**. The firm is
+in no market's participant list at all unless its published plan has a buyback in it.
+
+### What this found and did not chase (both positioned, Law 10)
+
+- **F-1, the resolution floor → 13n.** A firm whose book is under one cell's worth of pieces — about
+  twelve thousand dollars — still opens with an unissued line. It is a hole two thousand four hundred
+  times smaller than the one this item closed and it is not a bound: the arithmetic cannot cut a
+  company into fewer people than a cell stands for. What it wants is a finer population (12.6's own
+  placeholder, or XI-15's cell split) or a founder who is a party rather than a cell — Firm Birth A.
+- **F-2, the cost of a line for every firm → 16.** Nine thousand instruments and nine thousand
+  decisions a period where there were seven hundred and forty of each. Nothing about it is wrong, and
+  Law 18 says a traversal is measured rather than guessed.
+
+Typecheck 0, lint 0, `check:spec` 218 tags, `check:forbids` 5 over 215 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.

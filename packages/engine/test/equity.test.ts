@@ -41,23 +41,23 @@ import {
   type SystemModule,
   type World,
 } from '../src/index.js';
-import { listedIn, ranWorld, rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
+import { listedIn, privateIn, ranWorld, rigFor, rigSpec, rigWorld, mergeModules } from './rig.js';
 import { unexpected } from './expected.js';
 import { phx } from './units.js';
 
 /**
- * Seed B1.a, B4: WHICH FIRMS THIS WORLD LISTED IS DRAWN. A listing is what a firm large enough to
- * outlive its owner gets (`equity.LISTING_SIZE`), so the test asks for a world with two of them and
- * then asks which two they are — it never writes `firm.4` down, because a world of three thousand
- * firms lists two hundred and a world of twelve may list none.
+ * Seed B1.a, B4: WHICH FIRMS THIS WORLD OPENED PUBLIC IS DRAWN, one firm at a time and never from
+ * its size (`equity.PUBLIC_AT_THE_OPENING`), so the test asks for a world with two of them and then
+ * asks which two they are — it never writes `firm.4` down, because a world of nine thousand firms
+ * floats seven hundred of them and a world of twelve may float none.
  */
 const DREW = rigFor('equity', { listed: 2 });
 const RIG = { banks: 3, firms: DREW.firms };
 const BIG = listedIn(DREW.draw, 0);
 const LINE_4 = equityLineOf(BIG);
 const BANK_A = partyId('bank.a');
-/** A firm this world did NOT list: a firm nobody has bought a share of is a real state. */
-const UNLISTED = DREW.draw.firms.find((f) => !DREW.draw.listed.some((l) => l.firm === f.firm))?.firm ?? 'firm.1';
+/** A firm this world did NOT float: a private company, which is most of them (10f.1). */
+const PRIVATE = privateIn(DREW.draw, 0);
 
 /** A test-only paymaster: a bank creates money into named cells, so a saver has something to save. */
 function pays(
@@ -232,7 +232,7 @@ describe('what a share is (Equity A)', () => {
     // the week equity was built: 11.5 derives the seed's scale from five more of them, 12a gives
     // three assessors two boundaries apiece, and a count that has to be edited by every item that
     // declares one is a stale comment with a number in it (Law 16).
-    expect(equity(DREW.draw.listed, 'equity').params.filter((p) => p.kind === 'shape')).toEqual([]);
+    expect(equity(DREW.draw.equities, 'equity').params.filter((p) => p.kind === 'shape')).toEqual([]);
     // Law 2, "count must fall": every shape this world declares, by name. A new one fails here and
     // has to be written down, which is the ledger the clause asks for; a deleted one passes once its
     // line goes. Each of them names the item that kills it in its own `why`.
@@ -437,7 +437,7 @@ describe('what the firm does with it (Equity D)', () => {
   it('sells new shares when it is short and the market is dear, and the count rises (D1, D1.a)', () => {
     const w = rigWorld('equity', RIG.banks, RIG.firms);
     const issued = new Map<string, number>();
-    for (const row of DREW.draw.listed.map((l) => l.firm)) {
+    for (const row of listedFirms()) {
       issued.set(row, w.instruments.get(equityLineOf(row)).issued);
     }
     let sold = false;
@@ -496,7 +496,7 @@ describe('what the holder gets (Equity F)', () => {
     // and paid nothing is a period in which nothing reached anybody on account of holding it.
     const dividends = w.journal.ofKind('payout.declared').filter((e) => e.period === w.period);
     const lines = new Set(dividends.map((e) => String(e.data['line'])));
-    for (const row of DREW.draw.listed.map((l) => l.firm)) {
+    for (const row of DREW.draw.equities.map((l) => l.firm)) {
       const line = equityLineOf(row);
       if (lines.has(String(line))) continue;
       // It retained: nothing left it this period on account of that line at all.
@@ -644,7 +644,7 @@ describe('the ownership identity (Equity C1.a)', () => {
     const w = rigWorld('equity', RIG.banks, RIG.firms);
     for (let i = 0; i < 52; i += 1) {
       expect(unexpected(w.step().audit)).toEqual([]);
-      for (const row of DREW.draw.listed.map((l) => l.firm)) {
+      for (const row of DREW.draw.equities.map((l) => l.firm)) {
         const line = w.instruments.get(equityLineOf(row));
         if (!line.status.live) continue;
         const held = w.register.heldTotal(line.id);
@@ -664,14 +664,58 @@ describe('the ownership identity (Equity C1.a)', () => {
   });
 });
 
-describe('the firm that has no shares (Law 15)', () => {
-  it('is a real state: a firm this world did not list has no line and no market', () => {
+/**
+ * 10f.1: THE PRIVATE COMPANY. Every firm has a residual and somebody owns it; what a listing adds is
+ * a market to sell it in. What stood here asserted the opposite — that a firm this world did not
+ * list has no line at all — and that was the defect: at nine thousand firms it left eight thousand
+ * residuals with no holder, which Appendix B forbids outright.
+ */
+describe('the firm with no market (Equity E3, §29 C5, C5.a)', () => {
+  it('has a share line and named owners, and no market and no price', () => {
     const w = ranWorld('equity', 0, RIG.banks, RIG.firms);
-    expect(w.instruments.has(equityLineOf(UNLISTED))).toBe(false);
-    expect(w.markets.some((m) => m.id === equityMarketOf(UNLISTED))).toBe(false);
-    expect(w.parties.ofKind(FIRM).length).toBeGreaterThan(3);
+    const line = equityLineOf(PRIVATE);
+    expect(w.instruments.has(line)).toBe(true);
+    // E3: what it does not have is a place to trade, which is the whole of the difference.
+    expect(w.instruments.get(line).market.some).toBe(false);
+    expect(w.markets.some((m) => m.id === equityMarketOf(PRIVATE))).toBe(false);
+    // §29 C5.a: and therefore no print — "marked, not cleared", said by there being nothing to
+    // mistake for a price rather than by a rule against mistaking it.
+    expect(w.prices.latest(line, w.period).some).toBe(false);
+    // 10f.1: and it is not the exception — EVERY firm this world drew has a line, public or not,
+    // because every firm has a residual and Appendix B forbids one with no holder.
+    for (const f of DREW.draw.firms) expect(w.instruments.has(equityLineOf(f.firm))).toBe(true);
+    expect(w.parties.ofKind(FIRM).length).toBeGreaterThanOrEqual(DREW.draw.firms.length);
+    // Law 2, Appendix B: a residual with no holder is a defect. Its owners are named savers.
+    const holders = w.register.holdersOf(line);
+    expect(holders.length).toBeGreaterThan(0);
+    const held = w.register.heldTotal(line);
+    expect(Math.abs(held.value - w.instruments.get(line).issued)).toBeLessThanOrEqual(
+      held.dust + w.instruments.get(line).issuedDust,
+    );
+  });
+
+  it('pays its owners and never bids for its own shares (Equity D3, §29 C5)', () => {
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    const market = equityMarketOf(PRIVATE);
+    for (let i = 0; i < 12; i += 1) {
+      expect(unexpected(w.step().audit)).toEqual([]);
+      // D2: a buyback is a bid in a book, and there is no book. The plan it publishes says so.
+      const plan = w.journal
+        .ofKind('equity.plan')
+        .filter((e) => e.period === w.period && String(e.data['line']) === String(equityLineOf(PRIVATE)));
+      for (const e of plan) {
+        expect(e.data['buyback']).toBe(0);
+        expect(e.data['issue']).toBe(0);
+      }
+      expect(w.markets.some((m) => m.id === market)).toBe(false);
+    }
   });
 });
+
+/** The lines this world opened to a market, by firm. */
+function listedFirms(): readonly string[] {
+  return DREW.draw.equities.filter((r) => r.listed).map((l) => l.firm);
+}
 
 /** A claim that ranks and is carried at what it cost: the least an instrument can be (Firm D4). */
 function seniorClaimKind(id: InstrumentKindId): InstrumentKindProfile {

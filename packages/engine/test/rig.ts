@@ -179,9 +179,9 @@ export function firmIn(draw: FoundationDraw, subUnit: string, nth = 0): PartyId 
 /**
  * What a test needs a world to HAVE before it can show anything.
  *
- * A small world is a real world and a real world need not have a listed firm in it: a listing is
- * what a firm large enough to outlive its owner gets (`equity.LISTING_SIZE`), and twelve firms drawn
- * from a distribution with a tail may produce none. A test about share markets is not entitled to
+ * A small world is a real world and a real world need not have a PUBLIC firm in it: going public is
+ * a funding choice a firm made before this world started (`equity.PUBLIC_AT_THE_OPENING`), drawn one
+ * firm at a time, and twelve firms may produce none. A test about share markets is not entitled to
  * assume one — so it ASKS for a world with one, and the rig finds the smallest draw that has it.
  *
  * Nothing is fitted: the rule stays the rule and the draw stays the draw. What moves is how many
@@ -212,8 +212,8 @@ export interface RigShape {
  * The smallest world on this seed that HAS what the test needs.
  *
  * Each need lives in a different draw, so each grows a different count: how many banks deal follows
- * from what each bank will put behind a book, so a world short of dealers needs more BANKS; which
- * firms are listed follows from how big they are, so a world short of listings needs more FIRMS.
+ * from what each bank will put behind a book, so a world short of dealers needs more BANKS; whether
+ * a firm is public is drawn one firm at a time, so a world short of listings needs more FIRMS.
  * Growing the wrong one for ever is how this first went wrong — three thousand firms will not
  * produce a second dealer in a world with three banks in it.
  *
@@ -228,7 +228,7 @@ export function rigShapeFor(seed: string, need: Needs): RigShape {
     const shortOfDealers =
       need.dealsIn !== undefined && dealersIn(d, need.dealsIn).length < (need.dealers ?? 1);
     const shortOfFirmThings =
-      d.listed.length < (need.listed ?? 0) ||
+      d.equities.filter((r) => r.listed).length < (need.listed ?? 0) ||
       d.funds.length < (need.funds ?? 0) ||
       d.trackers.length < (need.trackers ?? 0);
     if (!shortOfDealers && !shortOfFirmThings) return { banks, firms };
@@ -254,12 +254,29 @@ export function rigFor(
   };
 }
 
-/** The firm behind a listed line, largest first — "the big listed one" with an answer. */
+/** The firm behind a line with a MARKET, largest first — "the big listed one" with an answer. */
 export function listedIn(draw: FoundationDraw, nth = 0): string {
   const bySize = new Map(draw.firms.map((f) => [f.firm, f.size]));
-  const rows = [...draw.listed].sort((a, b) => (bySize.get(b.firm) ?? 0) - (bySize.get(a.firm) ?? 0));
+  const rows = draw.equities
+    .filter((r) => r.listed)
+    .sort((a, b) => (bySize.get(b.firm) ?? 0) - (bySize.get(a.firm) ?? 0));
   const row = rows[nth];
   if (row === undefined) throw new Error(`this world listed ${rows.length} firms, not ${nth + 1}`);
+  return row.firm;
+}
+
+/**
+ * 10f.1: the firm behind a line with NO market — a private company, which is most of them. Largest
+ * first for the same reason as above: a test that wants one wants a named answer, not whichever the
+ * draw happened to put first.
+ */
+export function privateIn(draw: FoundationDraw, nth = 0): string {
+  const bySize = new Map(draw.firms.map((f) => [f.firm, f.size]));
+  const rows = draw.equities
+    .filter((r) => !r.listed)
+    .sort((a, b) => (bySize.get(b.firm) ?? 0) - (bySize.get(a.firm) ?? 0));
+  const row = rows[nth];
+  if (row === undefined) throw new Error(`this world has ${rows.length} private firms, not ${nth + 1}`);
   return row.firm;
 }
 

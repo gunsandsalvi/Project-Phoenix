@@ -30,7 +30,13 @@ import { downTick, NO_QTY, type Qty, upTick } from '../../core/tick.js';
 /** What the firm decided about its own line this period, in the terms the orders are posted in. */
 export interface EquityPlan {
   readonly line: InstrumentId;
-  readonly market: MarketId;
+  /**
+   * D1, D2, §29 C5: the book its own orders go into, WHERE THERE IS ONE. A private company has a
+   * residual, owners and a dividend and no market at all, so it can distribute and it cannot buy
+   * its own back at a price nobody printed and cannot sell new shares to a session that does not
+   * meet. What it does instead is pay its owners, which is the whole of what this returns for it.
+   */
+  readonly market: Option<MarketId>;
   /** What its own books say one share is a claim on: its equity account over the count (Firm C3). */
   readonly bookPerShare: number;
   /** D3: cash per share it is paying out to whoever holds it, this period. */
@@ -52,7 +58,7 @@ export interface EquityPlan {
 export function decideEquity(
   view: ParticipantView,
   line: InstrumentId,
-  market: MarketId,
+  market: Option<MarketId>,
   issued: Qty,
   spare: Cash,
   patience: number,
@@ -89,7 +95,11 @@ export function decideEquity(
   }
   const payout = over(spare, asRatio(patience, 'how patient it is'), 'what it distributes this period');
   if (!material(payout, 2, spare)) return none();
-  if (!dear) {
+  // §29 C5, C5.a: A LINE WITH NO MARKET CANNOT BE BOUGHT BACK. `dear` is already false for it —
+  // there is no print to be above the book — so without this it would bid for its own shares in a
+  // book that does not meet. A private company distributes to its owners and that is the only thing
+  // it can do with what it has spare, which is why the test is the MARKET and not the price.
+  if (!dear && market.some) {
     // D2, D2.a: cheap to itself, so it buys its own back. It bids at its own reservation, and what
     // it gets is what the session gives it — which may be nothing (B6, Clearing C4.a).
     // Law 8: whole shares again, and down — what its payout REACHES, never a share past it.
