@@ -62,7 +62,7 @@ checked, not assumed.
 | Commodity Futures | 5 | 0 | 15 | **5** | 20 |
 | **Commodities Spot** | **3** | 1 | **20** | 0 | 24 |
 | Indices | 21 | 1 | 0 | **1** | 22 |
-| Banks Lending | 21 | 4 | 7 | 0 | 32 |
+| Banks Lending | 21 | 5 | 6 | 0 | 32 |
 | Banks Funding | 28 | 4 | 0 | 0 | 32 |
 | Banks Capital | 19 | 3 | 1 | 0 | 23 |
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
@@ -178,7 +178,6 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **10c** | Securitisation is for any non-tradable claim | — | **inserted** (owner): deletes a Law 15 kind branch and adds the demand leg; before **11**, which fills the world with the small claims a bank would want to move |
 | **10d** | A bank issues a bond the way everybody else does | — | **inserted** (owner): deletes the THIRD issuance mechanism. Needs nothing — item **10**'s path and `publishReservations` are both there |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -195,75 +194,16 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 | **23** | Measure (Part XII) | 1 | worklist 16; carries `C-1`'s 82 red |
 | **24** | The app and the APK | — | worklist 17 |
 
-**Stage B is finished**: every line the old file left open is closed. **Stage C (10c–18)** builds the
+**Stage B is finished**: every line the old file left open is closed. **Stage C (10d–18)** builds the
 sectors that are not there; **10 is closed** and its section is gone. **10c and 10d are the owner's
 two corrections of 2026-09-14 turned into work, and both are net DELETIONS** — a kind branch and a
-duplicated issuance mechanism. **Stage D (19–24)** is the existing worklist tail. Items 1–10b and 7b are
+duplicated issuance mechanism. **Stage D (19–24)** is the existing worklist tail. Items 1–10c and 7b are
 closed and their sections are gone: this is the plan of what is left, and `docs/RECORD.md` is the
 ledger of what was done.
 
 ---
 
 ## Part 2 — The items
-
----
-
-## 10c. Securitisation is for any non-tradable claim, and demand can pull it — **inserted**
-
-**Where this came from.** Owner, 2026-09-14: *"the bank should be able to securitize any asset that
-is not tradable, based on demand from investors and need to free up capital."* **Inserted after 10b
-and before 11**: it needs nothing 10b does not already have, §9 is an absent sector and outranks the
-generalisation of a built mechanism — and item 11 fills the world with small non-tradable claims,
-which is exactly what a bank would want to move, so this belongs in front of it.
-
-**Why.** `securitisation/index.ts` is built and works, and it is narrower than the thing it models in
-two ways, each of which is a rule stated in the wrong place.
-
-1. **`saleable` gates on `isLoan(i.terms)`** — a kind branch in a mechanism, which Law 15 forbids
-   outright. Generalising it DELETES the branch and the `registry/credit.js` import with it (Law 12:
-   a fix removes code).
-2. **`arrange` starts a deal only when the bank is short of capital** (`if (gap <= 0) continue`), so
-   investor demand can never pull one. A bank that could sell a pool for more than it carries it at
-   does not, and the deal that a real market would do never happens.
-
-**What "not tradable" IS, structurally, with no list and no branch.** Two facts each kind already
-declares:
-
-- **`pricing === 'carriedAtCost'`** — no market exists for it. That is the whole of what the tag
-  means, and all six kinds that carry it say the same sentence in their own words. If a thing had a
-  market the bank would SELL it and need no vehicle.
-- **`liabilityOfIssuer === true`** — a named party owes it. Inventory says `false` (*"A tonne is
-  nobody's promise"*) and drops out on its own; there is no stream of payments to tranche.
-
-**The two together are the definition of securitisable, and that is not a coincidence**: a
-securitisation exists precisely for a claim that is owed but cannot be sold. It admits the loan, the
-invoice (which is most of what **17.5**'s factoring wanted) and the money-market row; it excludes
-inventory and, once **10d** gives it a market, bank subordinated debt.
-
-`derivative-layer`'s three — margin posted, default-fund contributions, close-out claims — are
-admitted by the rule and excluded in practice by `saleable`'s existing lien and free-balance tests,
-because margin is encumbered by definition. **One of them is a real edge and is recorded rather than
-chased**: a close-out claim against a defaulted counterparty DOES trade in the world (distressed
-claims trading), so its `carriedAtCost` is the narrower answer. It is not this item's to fix; it
-belongs wherever the close-out claim gets a market, and nothing needs one yet.
-
-**No maturity mismatch is expressible, so no term test is needed** — and one was proposed and
-withdrawn. `poolSchedule` aggregates the pooled rows' own cash flows and the notes are cut against
-that, so a pool of one-week rows produces one-week notes. The vehicle's promise IS the pool's
-schedule.
-
-### Steps
-
-- [ ] 10c.1 Delete the `isLoan` gate in `saleable` and the import that served it; replace with the two declared facts read off the kind's own profile. Nothing branches on which kind it is.
-- [ ] 10c.2 The demand leg: **ask the book.** Open the venue, `gather` real posted schedules, and sell only if what the book offers beats what the bank carries the rows at — read off its own lots (Law 19), never recomputed. `noDemand` is a recorded outcome and there is no forced buyer (Appendix B).
-- [ ] 10c.3 **The two reasons are not the same reason and must not be merged.** A bank below its capital line must shrink and takes what the book gives it, at a loss if that is what is there (the existing path). A bank that is not short sells only at a gain — it has no need, so a worse price is simply a deal it does not do. One mechanism, two entry conditions, and the record says which brought each deal.
-- [ ] 10c.4 The seller stays `ofKind(BANK)` (owner, 2026-09-14). A firm pooling its OWN receivables is factoring, which is **17.5**, after item 11's small firms — where the receivables actually pile up.
-- [ ] 10c.5 COVERAGE re-marked for whatever §Securitisation clauses this reaches, record entry saying which deals were brought by need and which by demand.
-
-### Exit
-
-A bank securitises an invoice pool as readily as a loan pool, and at least one deal in a long run is
-brought by demand rather than by a capital shortfall.
 
 ---
 
@@ -1397,7 +1337,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-17** (B) | 17.6 | **commercial paper is not repo collateral** (`Short-Term Debt D3`), and D3 says being collateral is *"a large part of why anyone holds it"*. `money-market/collateral.ts` already has the haircut machinery and what is missing is that it accepts this kind — 17.6 is the same shape for senior notes, so it is built once for both. **Found closing item 10b** |
 | **E-18** (C) | 21 | `funds/index.ts:1296` cites `Clearing C1.b`, which does not exist in the spec. It is a PROSE citation so `check:spec` cannot see it — the tool reads `@spec` tags only — which makes it the kind of stale comment Law 16 calls a defect and nothing guards. Two questions for 21: the right clause for that sentence, and whether the citation check should read prose citations too. **Found closing item 10b**, where the same wrong id was written into a new `@spec` tag and the tool DID catch it |
 | **E-15** (A) | 10d | **the THIRD issuance mechanism.** `banks/subordinated.ts` is a private copy of the kernel's issuance machinery: its own venue (`raiseVenue`), its own `clear()` call, a book that clears a RATE, and `subId(bank, n)` advancing per FILL — so a bank raising from three investors holds **three instruments carrying one promise** (Law 4, Law 9), and `market: none()` on each, which is why a bank's capital layer has no price. **Found answering the owner's question of 2026-09-14**; the item is a deletion |
-| **E-16** (B) | 10c | `securitisation/index.ts:saleable` gates on `isLoan` — a kind branch in a mechanism (Law 15) — and `arrange` starts a deal only on a capital shortfall (`if (gap <= 0) continue`), so investor demand can never pull one and a bank that could sell a pool above what it carries it at does not. **Found answering the owner's correction of 2026-09-14** |
 | **E-14** (B) | 13 | **Securities Lending C2, C2.a are not built.** `charge` moves the FEE every period and nothing re-marks the collateral: when the borrowed line rises the borrower owes more collateral and no leg posts it, so the lender's cover erodes silently between the strike and the return and C1's haircut is the only thing standing behind it. The same mechanism is §15 C1's — a broker marking a whole portfolio and calling the difference — which is why it lands with prime brokerage rather than here. **Found closing `A-67` at item 9.4** |
 
 ## Appendix — the lessons this file exists to keep

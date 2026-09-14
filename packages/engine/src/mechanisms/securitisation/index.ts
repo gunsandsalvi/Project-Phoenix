@@ -62,7 +62,6 @@ import { asRatio, heldAsMoney, minus, plus, asPerPiece, pricedAt, type Cash, typ
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
-import { isLoan } from '../../registry/credit.js';
 import type { CashFlow, InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import { BANK } from '../../registry/profiles.js';
@@ -300,19 +299,96 @@ function ccyOfDeal(ctx: MechanismContext, deal: Deal): CurrencyCode | undefined 
 }
 
 /**
- * D1, D2: WHAT A BANK WOULD SELL. Rows it is owed, in the money it is short of, that it can hand
- * over free and clear — a row already pledged to somebody else is not its to sell (Register D5.a).
+ * D1, D2: WHAT A BANK WOULD SELL — anything it is OWED that it cannot simply sell, in the money it
+ * is short of, and that it can hand over free and clear (a row already pledged to somebody else is
+ * not its to sell, Register D5.a).
+ *
+ * THIS GATED ON `isLoan`, WHICH WAS A KIND BRANCH IN A MECHANISM (Law 15) and also a narrower
+ * world than the one it models: a bank securitises whatever it holds that nobody will make a market
+ * in, and item 11 is about to fill this world with small firms whose invoices are exactly that.
+ * What replaces it is not a longer list but TWO FACTS EVERY KIND ALREADY DECLARES:
+ *
+ *  - `pricing === 'carriedAtCost'` — NO MARKET EXISTS FOR IT. That is the whole of what the tag
+ *    means and every kind carrying it says so in its own words. If a thing had a market the bank
+ *    would sell it and need no vehicle at all.
+ *  - `liabilityOfIssuer` — A NAMED PARTY OWES IT. Inventory says `false` (*"a tonne is nobody's
+ *    promise"*) and drops out on its own: there is no stream of payments to tranche.
+ *
+ * The two together are the definition of securitisable, and that is not a coincidence — it is what
+ * a securitisation is FOR. Neither is a property this module invents or maintains; both are read
+ * off the kind's own profile, so a kind that gains a market (item 10d does this to a bank's
+ * subordinated debt) stops being securitisable the same day, with nothing here to edit.
  */
 function saleable(view: ParticipantView, ccy: CurrencyCode): readonly Instrument[] {
   const out: Instrument[] = [];
   for (const h of view.holdings()) {
     const i = view.instruments.get(h.instrument);
-    if (!i.status.live || !isLoan(i.terms) || i.ccy !== ccy) continue;
+    if (!i.status.live || i.ccy !== ccy) continue;
+    const profile = view.registry.instrumentKind(i.kind);
+    if (profile.pricing !== 'carriedAtCost' || !profile.liabilityOfIssuer) continue;
     if (h.liens.length > 0) continue;
     if (view.free(h.instrument) <= 0) continue;
     out.push(i);
   }
   return out;
+}
+
+/**
+ * D1, D2: THE TWO REASONS A BANK BRINGS A DEAL, AND THEY ARE NOT THE SAME REASON.
+ *
+ * NEED is the one this module was built for: the bank is below its capital line, it must shrink,
+ * and it takes what the book gives it — at a loss if a loss is what is there, because a bank that
+ * refused a bad price would not be shrinking. It posts a size and NO LEVEL (Clearing C3).
+ *
+ * DEMAND is the one it was missing, and without it a bank that could sell a pool for more than it
+ * carries it at simply did not — so no deal in this world ever happened because somebody WANTED the
+ * paper, only because somebody had to shed it. Here the bank has no need, so a worse price is
+ * simply a deal it does not do: it posts its CARRYING VALUE as a level and sells what clears above
+ * it. That level is not a floor on an outcome (Law 6) — it is the alternative it already has, which
+ * is to keep the rows and be paid on them, the same construction an issuer's walk-away is.
+ *
+ * One mechanism, two entry conditions, and the record says which brought each deal.
+ */
+interface Reason {
+  /** Which of D1's two it is, published on the deal so a reader can tell them apart. */
+  readonly why: 'need' | 'demand';
+  /** How much face it brings. What it must shed, or everything it could sell. */
+  readonly wants: Qty;
+  /** The least it will take per unit, where it has a choice. Absent is C3's size-and-no-level. */
+  readonly at: Option<PerPiece>;
+}
+
+function reasonToSell(
+  view: ParticipantView,
+  rows: readonly Instrument[],
+  pool: Qty,
+): Option<Reason> {
+  const gap = shortBy(view);
+  if (gap > 0) return some({ why: 'need' as const, wants: gap, at: none<PerPiece>() });
+  // D1: it is not short, so it sells only above what it is carrying the rows at — and it has to be
+  // able to say what that is. A bank that cannot value its own book does not bring a deal.
+  const carried = carryingOf(view, rows);
+  if (!carried.some || pool <= 0) return none<Reason>();
+  return some({
+    why: 'demand' as const,
+    wants: pool,
+    at: some(pricedAt(carried.value, pool, 'what it is carrying the pool at, per unit of face')),
+  });
+}
+
+/**
+ * Law 19: WHAT THE BANK IS CARRYING THESE ROWS AT, read off its own marks and never recomputed.
+ * A row it cannot value is a row it cannot say it would profit by selling, so the answer is
+ * Missing rather than a zero that would make every deal look like a gain.
+ */
+function carryingOf(view: ParticipantView, rows: readonly Instrument[]): Option<Cash> {
+  const out: Cash[] = [];
+  for (const i of rows) {
+    const at = view.mark(i.id);
+    if (!at.some) return none<Cash>();
+    out.push(valueAt(at.value, view.quantity(i.id), 'what it carries this row at'));
+  }
+  return out.length === 0 ? none<Cash>() : some(sum(out).value);
 }
 
 /**
@@ -396,15 +472,17 @@ export function arrange(ctx: MechanismContext): void {
   for (const bank of ctx.parties.ofKind(BANK)) {
     if (!bank.status.alive) continue;
     const view = ctx.participant(bank.id);
-    const gap = shortBy(view);
-    if (gap <= 0) continue;
     const rows = saleable(view, ccy);
     if (rows.length === 0) continue;
+    const whole = sum(rows.map((i) => view.quantity(i.id))).value;
+    const reason = reasonToSell(view, rows, whole);
+    if (!reason.some) continue;
+    const { why, wants, at } = reason.value;
     const taken: InstrumentId[] = [];
     const faces: Qty[] = [];
     let got = NO_QTY;
     for (const i of rows) {
-      if (got >= gap) break;
+      if (got >= wants) break;
       const face = view.quantity(i.id);
       if (face <= 0) continue;
       taken.push(i.id);
@@ -428,12 +506,12 @@ export function arrange(ctx: MechanismContext): void {
       ctx.record(
         'securitisation.failed',
         [bank.id],
-        { arranger: String(bank.id), pool, outcome: 'noDemand' },
+        { arranger: String(bank.id), pool, outcome: 'noDemand', why },
         true,
       );
       continue;
     }
-    cut(ctx, { arranger: bank.id, ccy, vehicle, rows: taken, pool, offered: gap, bids });
+    cut(ctx, { arranger: bank.id, ccy, vehicle, rows: taken, pool, offered: wants, at, why, bids });
   }
 }
 
@@ -451,6 +529,9 @@ function cut(
     pool: Qty;
     /** D2: what it needs OFF its book. It sells this much and not a unit more (C4.a). */
     offered: Qty;
+    /** D1: the least it will take, where it HAS a choice. Absent is C3's size and no level. */
+    at: Option<PerPiece>;
+    why: 'need' | 'demand';
     bids: readonly Order[];
   },
 ): void {
@@ -473,13 +554,21 @@ function cut(
   // pool either, because a bank cannot hand over rows it does not have.
   const offering = downTick(atMost(d.offered, d.pool, 'it cannot sell rows it does not hold'));
   if (offering <= 0) return;
-  ctx.post(venue, { party: d.arranger, side: 'sell', price: 'market', qty: offering });
+  // D1: a bank that MUST shrink posts no level and wears whatever the book gives it; one that need
+  // not posts what it is carrying the rows at, because keeping them and being paid on them is the
+  // alternative it already has. The two reasons differ in exactly this one thing.
+  ctx.post(venue, {
+    party: d.arranger,
+    side: 'sell',
+    price: d.at.some ? d.at.value : 'market',
+    qty: offering,
+  });
   const outcome = clear(ctx.posted(venue), 'proRata', 'marginalBid');
   if (!isCleared(outcome)) {
     ctx.record(
       'securitisation.failed',
       [d.arranger],
-      { arranger: d.arranger, pool: d.pool, outcome: outcome.kind },
+      { arranger: d.arranger, pool: d.pool, outcome: outcome.kind, why: d.why },
       true,
     );
     return;
@@ -553,6 +642,10 @@ function cut(
       layers: junior.some ? 2 : 1,
       attachment,
       price: outcome.price,
+      // D1 (item 10c): which of the two reasons brought this deal — a bank that had to shrink, or
+      // one that was offered more than it was carrying the rows at. They are different events and
+      // a reader that could not tell them apart would read a healthy market as a wave of distress.
+      why: d.why,
     },
     true,
   );
@@ -1173,10 +1266,16 @@ function pools(): Family {
         for (const h of view.register.holdingsOf(p.id)) {
           const i = view.instruments.get(h.instrument);
           if (!i.status.live) continue;
-          // Its own notes and the money it collected are not pool assets; a pool asset is a row
+          // Its own notes and the money it collected are not pool assets; a pool asset is a claim
           // somebody owes, and E1 says every one of them names who.
-          if (isTranche(i.terms) || isLoan(i.terms)) continue;
-          if (view.registry.instrumentKind(i.kind).pricing === 'money') continue;
+          if (isTranche(i.terms)) continue;
+          const profile = view.registry.instrumentKind(i.kind);
+          if (profile.pricing === 'money') continue;
+          // Item 10c: this asked `isLoan`, which is the same kind branch `saleable` carried and
+          // fails the same way — the day a bank pools INVOICES, every one of them would be reported
+          // as naming no borrower. What a pool asset has is a NAMED OBLIGOR, which is two facts the
+          // instrument itself already states: its kind says somebody owes it, and it says who.
+          if (profile.liabilityOfIssuer && i.issuer.some) continue;
           out.push({
             family: 'names',
             spec: 'XI-11',

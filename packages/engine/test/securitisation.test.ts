@@ -4,7 +4,6 @@
  * @spec Securitisation C1 Securitisation C2 Securitisation C2.a Securitisation C3 Securitisation C4 Securitisation C4.a Securitisation C5 Securitisation C6 Securitisation E1 Securitisation E2 XI-11 Law 2 Law 3
  */
 import { describe, expect, it } from 'vitest';
-import { isLoan } from '../src/index.js';
 import {
   TRANCHE,
   faceToShed,
@@ -37,9 +36,13 @@ describe('a vehicle is a real party (Securitisation C1, XI-11)', () => {
     for (const p of w.parties.ofKind(VEHICLE)) {
       for (const h of w.register.holdingsOf(p.id)) {
         const i = w.instruments.get(h.instrument);
-        const money = w.registry.instrumentKind(i.kind).pricing === 'money';
-        // E1: a pool of anonymous exposure is exactly what XI-11 forbids.
-        expect(isLoan(i.terms) || isTranche(i.terms) || money).toBe(true);
+        const profile = w.registry.instrumentKind(i.kind);
+        const money = profile.pricing === 'money';
+        // E1: a pool of anonymous exposure is exactly what XI-11 forbids. Item 10c: what makes a
+        // pool asset legitimate is a NAMED OBLIGOR, not its being a loan — a bank may now pool any
+        // claim nobody makes a market in, and an invoice names its buyer as plainly as a loan does.
+        const owed = profile.liabilityOfIssuer && i.issuer.some;
+        expect(owed || isTranche(i.terms) || money).toBe(true);
       }
     }
   });
@@ -130,23 +133,45 @@ describe('when a bank sells, and how much (Securitisation D1, D2, Banks Capital 
 });
 
 describe('what this world actually does with it (Law 11)', () => {
-  it('cuts no deal, because every shortfall here binds on leverage — and says so', () => {
+  it('cuts no deal OUT OF NEED, because every shortfall here binds on leverage — and says so', () => {
     /**
      * A FINDING, written as a test so it cannot be lost. Every bank in this world that runs out of
      * room runs out of it on the LEVERAGE backstop, never on the weighted rule — the banks carry
      * reserves many times their capital, and reserves weigh nothing under one rule and everything
      * under the other (Banks Capital B1.b). Securitisation relieves the rule that is not binding,
-     * so it correctly does nothing, and the mechanism is unreached rather than wrong.
+     * so it correctly does nothing about a shortfall, and that half is unreached rather than wrong.
      *
-     * When this stops being true the assertion below fails, which is the point of writing it: the
-     * day a bank here is weighted-bound is the day the deal machinery starts running, and nobody
-     * should have to notice that by accident.
+     * ITEM 10c NARROWED THIS ASSERTION RATHER THAN DELETING IT, and the narrowing is the point of
+     * having written it. It used to say no deal is cut at all; that was true only because NEED was
+     * the sole reason a deal could start. A bank that is offered more than it is carrying a pool at
+     * now sells for that reason instead, so a `demand` cut is a healthy market and not a failure of
+     * this finding — and a `need` cut is still the thing that would mean the leverage story had
+     * changed. Nobody should have to notice either by accident.
      */
     const w = ran(8);
     const short = w.journal.ofKind('bank.capital').filter((e) => Number(e.data['headroom']) < 0);
     expect(short.length).toBeGreaterThan(0);
     for (const e of short) expect(e.data['binds']).toBe('leverage');
-    expect(w.journal.ofKind('securitisation.cut')).toHaveLength(0);
+    expect(w.journal.ofKind('securitisation.cut').filter((e) => e.data['why'] === 'need')).toHaveLength(0);
+  });
+
+  it('D1: every deal says which of the two reasons brought it, and they are the only two', () => {
+    const w = ran(8);
+    for (const e of [...w.journal.ofKind('securitisation.cut'), ...w.journal.ofKind('securitisation.failed')]) {
+      expect(['need', 'demand']).toContain(e.data['why']);
+    }
+  });
+
+  it('a demand deal never sells below what the bank was carrying the pool at (D1, Law 6)', () => {
+    // It is not a floor on an outcome: keeping the rows and being paid on them is the alternative
+    // the bank already has, which is the same construction an issuer's walk-away is. A bank that
+    // MUST shrink has no such alternative and wears whatever the book gives it.
+    const w = ran(8);
+    for (const e of w.journal.ofKind('securitisation.cut')) {
+      if (e.data['why'] !== 'demand') continue;
+      expect(typeof e.data['price']).toBe('number');
+      expect(e.data['price'] as number).toBeGreaterThan(0);
+    }
   });
 });
 

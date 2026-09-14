@@ -7733,3 +7733,68 @@ read prose too. The same wrong id went into a new `@spec` tag here and the tool 
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 210 tags, `check:forbids` 4 over 207 files,
 `check:deaths` 6 of 6, `check:existence` green. Tests written, not run (standing instruction).
+
+---
+
+## Item 10c — securitisation is for any non-tradable claim, and demand can pull a deal
+
+Two defects, one cause between them: this module knew what it could sell as a LIST rather than as a
+property, and it knew only one reason to sell.
+
+**The kind branch, and where the same branch was hiding a level down.** `saleable` gated on
+`isLoan` — which Law 15 forbids in a mechanism outright, and which is also a narrower world than the
+one it models. What replaces it is not a longer list but TWO FACTS EVERY KIND ALREADY DECLARES:
+`pricing === 'carriedAtCost'` (no market exists for it, so the bank cannot simply sell it) and
+`liabilityOfIssuer` (a named party owes it, so there is a stream of payments to tranche). Together
+those ARE the definition of securitisable and it is not a coincidence — it is what a securitisation
+is FOR: if it had a market the bank would sell it and need no vehicle, and if nobody owed it there
+would be nothing to cut into layers. Inventory drops out on its own, because *"a tonne is nobody's
+promise"*.
+
+Neither fact is one this module invents or maintains, which is the part that matters: a kind that
+GAINS a market stops being securitisable the same day, with nothing here to edit. Item 10d does
+exactly that to a bank's subordinated debt.
+
+**The same branch was in the audit family** — `isTranche(i.terms) || isLoan(i.terms)` — where it
+would have reported every invoice in a vehicle as an asset naming no borrower, the day a bank pooled
+one. A false violation in the family that exists to catch anonymous exposure is worse than none. It
+now reads the obligor off the instrument itself: its kind says somebody owes it, and it says who.
+`isLoan` is no longer imported anywhere in the module.
+
+**The reason that did not exist.** `arrange` began `if (gap <= 0) continue` — so no deal in this
+world could ever happen because somebody WANTED the paper, only because somebody had to shed it.
+The two reasons are now both there and they are deliberately NOT merged, because they behave
+differently in the one way that matters:
+
+- **NEED** — below its capital line, it must shrink, and it posts a size and NO LEVEL (Clearing C3),
+  taking what the book gives it at a loss if a loss is what is there. A bank that refused a bad
+  price would not be shrinking.
+- **DEMAND** — not short, so a worse price is simply a deal it does not do. It posts what it is
+  CARRYING the pool at and sells above it. That level is not a floor on an outcome (Law 6): keeping
+  the rows and being paid on them is the alternative it already has, which is the same construction
+  an issuer's walk-away is.
+
+One mechanism, two entry conditions, and `securitisation.cut` now says which brought each deal —
+because a reader who could not tell them apart would read a healthy market as a wave of distress.
+
+**A test was narrowed rather than deleted, and that was the point of having written it.** The
+existing finding-as-a-test asserted that no deal is ever cut here, because every bank that runs out
+of room runs out on the LEVERAGE backstop and securitisation relieves the weighted rule. That
+finding still holds — but the assertion was true only because NEED was the sole way a deal could
+start. It now asserts no deal is cut OUT OF NEED, leaving a `demand` cut free to happen, and says in
+its own comment why the distinction is the live one.
+
+**A stale COVERAGE note, corrected by the owner's rule.** `Banks Lending D4` was MISSING, with a
+note saying a buyer for a loan row and *"the syndicate of D4.a"* arrive with corporate credit. Both
+halves were wrong. A loan row IS sold and has a buyer and a price — that is this module. And D4.a's
+syndicated loan is *"one loan with several lenders of record, each a row per (lender, borrower)…
+struck at one margin by a lead"*, which is the spec saying in its own words what the owner said
+yesterday: a syndicated loan is a group of BANKS, not a distribution to investors, and it has
+nothing to do with C10's underwriting syndicate. Its row shape already exists — C9 keeps one row per
+lender per borrower, so a club IS N rows — and what it needs is the lead and the fee, which is item
+**17.2** with the facility, not 17.1. D4 is now PARTIAL with exactly that named.
+
+`E-16` is closed and its index row is gone.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 210 tags, `check:forbids` 4 over 207 files,
+`check:deaths` 6 of 6, `check:existence` green. Tests written, not run.
