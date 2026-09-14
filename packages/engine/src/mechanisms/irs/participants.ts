@@ -18,12 +18,20 @@
  * B2, B2.a — the pension fund matching a long liability — is DECLARED PARTIAL here and built at
  * 13h, where there is a pension fund to have one.
  */
-import { asPerNamedUnit } from '../../core/measure.js';
+import {
+  type Amount,
+  absolute,
+  amountOf,
+  asPerNamedUnit,
+  asPerPiece,
+  minus,
+  type PerPiece,
+  plus,
+} from '../../core/measure.js';
 import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
-import { add, div, sub } from '../../core/num.js';
-import { asQty, negQty } from '../../core/tick.js';
+import { addQty, asQty, negQty, NO_QTY, type Qty } from '../../core/tick.js';
 import { issuedBy } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
 import { floatingRate, isIrs, type IrsTerms } from './contract.js';
@@ -34,8 +42,8 @@ import { about } from '../../world/context.js';
  * B1: WHAT THIS PARTY OWES AT A FIXED RATE, in this money — its own liabilities, read from the
  * register. A firm that has issued a coupon bond is paying fixed whether or not it wanted to.
  */
-function fixedDebtOf(view: ParticipantView, t: IrsTerms): number {
-  let owed = 0;
+function fixedDebtOf(view: ParticipantView, t: IrsTerms): Qty {
+  let owed = NO_QTY;
   for (const i of view.instruments.all()) {
     if (!i.status.live || i.ccy !== t.ccy) continue;
     if (!issuedBy(i, view.self.id)) continue;
@@ -43,19 +51,23 @@ function fixedDebtOf(view: ParticipantView, t: IrsTerms): number {
     if (!kind.liabilityOfIssuer) continue;
     // A1.d: what makes a liability FIXED is that its own terms name a rate. One that reprices is
     // already floating and does not need a swap to become one.
-    owed = add(owed, i.issued, 'what it owes at a rate its terms fixed');
+    owed = addQty(owed, i.issued, 'what it owes at a rate its terms fixed');
   }
   return owed;
 }
 
 /** Observer A4: the swapped position it already has in this money, signed by the leg it pays. */
-function swapped(view: ParticipantView, t: IrsTerms): number {
-  let net = 0;
+function swapped(view: ParticipantView, t: IrsTerms): Qty {
+  let net = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isIrs(c.terms) || c.terms.ccy !== t.ccy) continue;
     const iAmA = c.a === view.self.id;
     const iPayFixed = iAmA === c.terms.paysFixed;
-    net = add(net, iPayFixed ? c.notional : negQty(c.notional, 'the other side of it'), 'fixed it has already agreed to pay');
+    net = addQty(
+      net,
+      iPayFixed ? c.notional : negQty(c.notional, 'the other side of it'),
+      'fixed it has already agreed to pay',
+    );
   }
   return net;
 }
@@ -84,11 +96,11 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   const outlook = view.outlook(about({ on: 'price', instrument: irsLineOf(t.ccy, t.tenorYears) }));
   // Law 8: a level is held in MONEY PIECES PER PIECE OF THE THING. Two per cent a year on a unit
   // of notional is two cents, and a schedule posted at 0.02 is below this book's own tick.
-  const mine = fixing.some
+  const mine: PerPiece = fixing.some
     ? view.registry.priceOf(m.ccy, unit, asPerNamedUnit(fixing.value, 'what the fixing says'))
     : outlook.some
-      ? outlook.value.expected
-      : 0;
+      ? asPerPiece(outlook.value.expected, 'where its own outlook puts this book')
+      : asPerPiece(0, 'a party with neither a fixing nor a view has no level');
   if (mine <= 0) return [];
   // Clearing E1: WHERE THE MARKET IS — the comparator that decides which side this party is on and
   // how hard, and never the level it posts.
@@ -105,20 +117,22 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
    * position in "fixed paid". B3, B4: a view that the floating leg will average above this book
    * pulls the other way, and how hard is what its own capital will carry.
    */
-  let want = -fixedDebtOf(view, t);
+  // A-66's shape: what it WANTS is a target and not a grid quantity, so it carries the dimension
+  // without asserting the tick — `registry.deliverable` is where a target becomes one (stage 10a).
+  let want: Amount<'piece'> = negQty(fixedDebtOf(view, t), 'it owes fixed and would rather not');
   const price = mine;
   if (at.some) {
     const book = at.value.price;
     const conviction = sizeOf(view, unit, mine);
-    if (mine > add(book, tick, 'above the book by a tick it can act on')) {
-      want = add(want, conviction, 'and the fixed it would pay on its own view');
-    } else if (mine < sub(book, tick, 'below the book by a tick it can act on')) {
-      want = sub(want, conviction, 'and the fixed it would receive on its own view');
+    if (mine > plus(book, tick, 'above the book by a tick it can act on')) {
+      want = plus(want, conviction, 'and the fixed it would pay on its own view');
+    } else if (mine < minus(book, tick, 'below the book by a tick it can act on')) {
+      want = minus(want, conviction, 'and the fixed it would receive on its own view');
     }
   }
-  const move = sub(want, held, 'from the fixed it pays to the fixed it wants to pay');
+  const move = minus(want, held, 'from the fixed it pays to the fixed it wants to pay');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, move > 0 ? move : -move);
+  const qty = view.registry.deliverable(unit, absolute(move, 'either way'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
@@ -127,8 +141,16 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
  * Derivative Layer E1: what it would carry, from its own capital at the rate it is quoting. It is
  * arithmetic on its own balance sheet and never a notional limit somebody wrote down.
  */
-function sizeOf(view: ParticipantView, unit: UnitId, rate: number): number {
+function sizeOf(view: ParticipantView, unit: UnitId, level: PerPiece): Qty {
   const own = view.equity();
-  if (own <= 0 || rate <= 0) return 0;
-  return view.registry.deliverable(unit, div(own, rate, 'what a year of this rate on its capital carries'));
+  if (own <= 0 || level <= 0) return NO_QTY;
+  // `E-11`: THIS BOOK'S LEVEL IS A RATE EXPRESSED AS MONEY PER PIECE — two per cent a year on a
+  // unit of notional is two cents, as the comment at `mine` says. So what its capital carries is
+  // money over a LEVEL, which is `amountOf` and gives a notional back; `over` would have divided by
+  // a pure number and given money. The book cannot say which of the two its level is, and that is
+  // the finding; what this site can do is use the operation that matches what it actually holds.
+  return view.registry.deliverable(
+    unit,
+    amountOf(own, level, 'what a year of this rate on its capital carries'),
+  );
 }

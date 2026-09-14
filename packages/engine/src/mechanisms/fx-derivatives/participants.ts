@@ -25,20 +25,32 @@
  * is a reason somebody has, which is what every schedule in this world is made of.
  */
 import { contractOf, type MarketDecl } from '../../clearing/market.js';
+import {
+  type PerPiece,
+  type Ratio,
+  absolute,
+  amountOf,
+  asRatio,
+  minus,
+  plus,
+  scale,
+} from '../../core/measure.js';
 import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode, UnitId } from '../../core/ids.js';
-import { add, div, mul, sub } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty, negQty } from '../../core/tick.js';
+import { addQty, asQty, negQty, NO_QTY, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isFxForward, isXccy } from './contract.js';
 
 /** The overnight fixing this money's own book published, or nothing (D3.a: no fixing, no rate). */
-export function overnightRate(view: ParticipantView, ccy: CurrencyCode): Option<number> {
+export function overnightRate(view: ParticipantView, ccy: CurrencyCode): Option<Ratio> {
   const e = view.lastPublicAbout('index.benchmark', `${String(ccy)}:secured`);
-  if (!e.some) return none<number>();
+  if (!e.some) return none<Ratio>();
   const rate = e.value.data['rate'];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  // Item 16: a published rate re-enters the type system here, through its dimension's own door.
+  return typeof rate === 'number'
+    ? some(asRatio(rate, 'what the benchmark printed'))
+    : none<Ratio>();
 }
 
 /**
@@ -47,36 +59,46 @@ export function overnightRate(view: ParticipantView, ccy: CurrencyCode): Option<
  */
 export function carryOf(
   view: ParticipantView,
-  spot: number,
+  spot: PerPiece,
   base: CurrencyCode,
   quote: CurrencyCode,
   years: number,
-): Option<number> {
+): Option<PerPiece> {
   const rb = overnightRate(view, base);
   const rq = overnightRate(view, quote);
-  if (!rb.some || !rq.some) return none<number>();
-  const grownQuote = Math.pow(add(1, rq.value, 'the quote money grows'), years);
-  const grownBase = Math.pow(add(1, rb.value, 'the base money grows'), years);
-  return some(mul(spot, grownQuote / grownBase, 'what carrying one against the other comes to'));
+  if (!rb.some || !rq.some) return none<PerPiece>();
+  const grownQuote = Math.pow(plus(asRatio(1, 'the money itself'), rq.value, 'the quote money grows'), years);
+  const grownBase = Math.pow(plus(asRatio(1, 'the money itself'), rb.value, 'the base money grows'), years);
+  return some(
+    scale(
+      spot,
+      asRatio(grownQuote / grownBase, 'what one grows against the other'),
+      'what carrying one against the other comes to',
+    ),
+  );
 }
 
 /**
  * D1, D2, Spot FX B1, B2: WHAT THIS PARTY'S POSITION IN A MONEY IS. Positive is short of one it has
  * to pay; negative is holding one nothing it owes is in. Both are the same read of its own book.
  */
-function positionIn(view: ParticipantView, ccy: CurrencyCode): number {
+function positionIn(view: ParticipantView, ccy: CurrencyCode): Qty {
   return view.owedIn(ccy);
 }
 
 /** Observer A4: what it has already fixed forward in this pair, signed by the side it is on. */
-function alreadyForward(view: ParticipantView, base: CurrencyCode, quote: CurrencyCode): number {
-  let net = 0;
+function alreadyForward(view: ParticipantView, base: CurrencyCode, quote: CurrencyCode): Qty {
+  let net = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isFxForward(c.terms)) continue;
     if (c.terms.base !== base || c.terms.quote !== quote) continue;
     const iAmA = c.a === view.self.id;
     const iTakeBase = iAmA === c.terms.buysBase;
-    net = add(net, iTakeBase ? c.notional : negQty(c.notional, 'the other side of it'), 'base it has already bought forward');
+    net = addQty(
+      net,
+      iTakeBase ? c.notional : negQty(c.notional, 'the other side of it'),
+      'base it has already bought forward',
+    );
   }
   return net;
 }
@@ -107,9 +129,9 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   // D1, D2: what it is short of the BASE money, less what it has already fixed. A party with a
   // position to cover is a HEDGER and posts one order for it — one party, one position, and the
   // kernel refuses anything else (Clearing A2).
-  const short = sub(positionIn(view, t.base), covered, 'left uncovered');
+  const short = minus(positionIn(view, t.base), covered, 'left uncovered');
   if (short !== 0) {
-    const qty = view.registry.deliverable(unit, short > 0 ? short : -short);
+    const qty = view.registry.deliverable(unit, absolute(short, 'either way'));
     if (qty <= 0) return [];
     return [{ party: view.self.id, side: short > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) }];
   }
@@ -126,10 +148,13 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   if (!carry.some) return [];
   const room = view.equity();
   if (room <= 0) return [];
-  const size = view.registry.deliverable(unit, div(room, spot.value.price, 'what its capital carries'));
+  const size = view.registry.deliverable(
+    unit,
+    amountOf(room, spot.value.price, 'what its capital carries'),
+  );
   if (size <= 0) return [];
-  const bid = sub(carry.value, tick, 'a tick inside its carry');
-  const ask = add(carry.value, tick, 'a tick outside its carry');
+  const bid = minus(carry.value, tick, 'a tick inside its carry');
+  const ask = plus(carry.value, tick, 'a tick outside its carry');
   if (bid <= 0) return [];
   return [
     { party: view.self.id, side: 'buy', price: bid, qty: asQty(size) },
@@ -163,14 +188,16 @@ export function xccyOrders(view: ParticipantView, m: MarketDecl): readonly Order
  */
 export function basisOf(
   view: ParticipantView,
-  spot: number,
-  forward: number,
+  spot: PerPiece,
+  forward: PerPiece,
   base: CurrencyCode,
   quote: CurrencyCode,
   years: number,
-): Option<number> {
+): Option<PerPiece> {
   const carry = carryOf(view, spot, base, quote, years);
-  return carry.some ? some(sub(forward, carry.value, 'the forward against the carry')) : none<number>();
+  return carry.some
+    ? some(minus(forward, carry.value, 'the forward against the carry'))
+    : none<PerPiece>();
 }
 
 /**
@@ -183,11 +210,11 @@ export function basisOf(
  */
 export interface HedgedResidual {
   /** D1, B1, B2: what it is short of the BASE money — positive short, negative holding one. */
-  readonly exposure: number;
+  readonly exposure: Qty;
   /** What it has already fixed forward in this pair, signed by the side it is on. */
-  readonly covered: number;
+  readonly covered: Qty;
   /** E4: the difference, and it is shown rather than netted away. */
-  readonly residual: number;
+  readonly residual: Qty;
 }
 
 export function hedgedResidual(
@@ -200,5 +227,5 @@ export function hedgedResidual(
   // E4: its PARTS travel with it. A single number would say how big the gap is and not what it is
   // made of, and what a reader has to be able to see is that the position and the hedge are two
   // different objects — a price that moves and a notional fixed on a date.
-  return { exposure, covered, residual: sub(exposure, covered, 'what the hedge does not cover') };
+  return { exposure, covered, residual: minus(exposure, covered, 'what the hedge does not cover') };
 }

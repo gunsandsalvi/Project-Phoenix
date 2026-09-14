@@ -16,18 +16,23 @@
  * whole system hangs on (XI-9), and it is what makes a failed auction cost something.
  */
 import {
+  type Cash,
+  type PerPiece,
   acrossMembers,
   amountOf,
+  asAmount,
   asCash,
+  asPerPiece,
   asPerMember,
   asRatio,
   asTotal,
-  type Cash,
   eachMember,
   heldAsMoney,
   minus,
   over,
   plus,
+  pricedAt,
+  ratioOf,
   scale,
   valueAt,
 } from '../../core/measure.js';
@@ -48,7 +53,7 @@ import {
   type MarketId,
   type PartyId,
 } from '../../core/ids.js';
-import { add, addTo, atLeast, atMost, combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
+import { addTo, atLeast, atMost, combineDust, mul, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../../core/rate.js';
 import { curveFamilyOf, priceAt } from '../../prices/curve.js';
@@ -82,7 +87,7 @@ import {
   SHORT_TENORS,
   TENOR_WINDOW_YEARS,
 } from './data.js';
-import { downTick, upTick } from '../../core/tick.js';
+import { downTick, type Qty, upTick } from '../../core/tick.js';
 
 export const TREASURY_PARAMS = {
   bufferPeriods: paramId('treasury.buffer.periods'),
@@ -103,7 +108,8 @@ export const TREASURY_PARAMS = {
 interface Line {
   readonly id: string;
   readonly maturity: Civil;
-  readonly issued: number;
+  /** Units of par in issue on this line. A count, so a tenor mix is a share of two of them. */
+  readonly issued: Qty;
   readonly tenorYears: number;
   readonly short: boolean;
 }
@@ -197,14 +203,19 @@ function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
 }
 
 /** What an hour costs it: what its own payroll paid for one, or what the market last printed. */
-function wageItFaces(ctx: MechanismContext, id: PartyId): number | undefined {
+function wageItFaces(ctx: MechanismContext, id: PartyId): PerPiece | undefined {
   const own = ctx.journal.forSubject('labour.wages', id);
   const mine = own[own.length - 1];
   if (mine !== undefined) {
     const due = mine.data['due'];
     const hours = mine.data['hours'];
     if (typeof due === 'number' && typeof hours === 'number' && hours > 0) {
-      return div(due, hours, 'what an hour costs it');
+      // Item 16: two published numbers re-enter here, and what an hour costs is money over hours.
+      return pricedAt(
+        asCash(due, 'what its payroll came to'),
+        asAmount<'piece'>(hours, 'the hours it paid for'),
+        'what an hour costs it',
+      );
     }
   }
   // Expectations A2.a: what the market last paid is a published fact, and it is what a state with
@@ -213,7 +224,8 @@ function wageItFaces(ctx: MechanismContext, id: PartyId): number | undefined {
   const last = prints[prints.length - 1];
   if (last === undefined) return undefined;
   const wage = last.data['wagePerHour'];
-  return typeof wage === 'number' ? wage : undefined;
+  // Item 16: a published level re-enters the type system here, through its dimension's own door.
+  return typeof wage === 'number' ? asPerPiece(wage, 'what the market last paid for an hour') : undefined;
 }
 
 /** What it collected last period, which is what it has to go on until it has an outlook (§46 C5). */
@@ -442,7 +454,7 @@ function allotmentReconciles(): Family {
     built: true,
     check: (view) => {
       const out: Violation[] = [];
-      const issued = new Map<string, number[]>();
+      const issued = new Map<string, Qty[]>();
       for (const r of view.ledger.inPeriod(view.period)) {
         if (r.outcome !== 'settled' || r.instruction.cause !== 'issuance') continue;
         for (const d of r.deltas) {
@@ -458,13 +470,13 @@ function allotmentReconciles(): Family {
         const allotted = e.data['allotted'];
         if (typeof allotted !== 'number') continue;
         const registered = sum(issued.get(line) ?? []);
-        const claimed = sum([allotted]);
+        const claimed = sum([asAmount<'piece'>(allotted, 'what the auction placed')]);
         if (!withinDust(registered.value, claimed.value, combineDust(registered, claimed))) {
           out.push({
             family: 'flows',
             spec: 'Treasury D6',
             owner: line,
-            size: sub(registered.value, claimed.value, 'allotment gap'),
+            size: minus(registered.value, claimed.value, 'allotment gap'),
             unit: 'units of par',
             period: view.period,
             message: `${line}: the auction placed ${allotted} but the register issued ${registered.value}`,
@@ -543,7 +555,9 @@ function announce(
   const lines = linesOf(ctx, id, on);
   const shortOut = sum(lines.filter((l) => l.short).map((l) => l.issued)).value;
   const total = sum(lines.map((l) => l.issued)).value;
-  const wantShort = total === 0 || div(shortOut, total, 'short share') < ctx.params.ratio(TREASURY_PARAMS.tenorMixShort);
+  const wantShort =
+    total === 0 ||
+    ratioOf(shortOut, total, 'short share') < ctx.params.ratio(TREASURY_PARAMS.tenorMixShort);
   const tenors = wantShort ? SHORT_TENORS : LONG_TENORS;
   // Within the bucket it brings the tenor it has least of, which is how a maturity profile stays
   // spread instead of piling into one date (D4.a).
@@ -763,7 +777,14 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
   const onConsumption = ctx.params.ratio(TREASURY_PARAMS.taxConsumption);
   const cells = new Set(itsPeople(ctx, id).map((p) => p.id));
   const due = new Map<PartyId, number>();
-  const bases = { interest: 0, income: 0, consumption: 0, unclassified: 0 };
+  // Every base is MONEY — what was actually paid, in this treasury's own currency — so a rate can
+  // never be added to one and a base can never be read as a rate (Law 8).
+  const bases = {
+    interest: asCash(0, 'nothing received as interest yet'),
+    income: asCash(0, 'nothing received as income yet'),
+    consumption: asCash(0, 'nothing paid for goods yet'),
+    unclassified: asCash(0, 'nothing arrived unclassified yet'),
+  };
   for (const r of ctx.ledger.inPeriod(previous)) {
     if (r.outcome !== 'settled') continue;
     // C1: what a household bought in this instruction is what it paid for the real things in it.
@@ -789,7 +810,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
        */
       if (leg.ccy !== ccy) continue;
       if (buyers.has(leg.from.holder)) {
-        bases.consumption = add(bases.consumption, leg.amount, 'what households paid for goods');
+        bases.consumption = plus(bases.consumption, heldAsMoney(leg.amount, 'what moved'), 'what households paid for goods');
         addTo(
           due,
           leg.from.holder,
@@ -813,13 +834,13 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       const receipt = leg.receipt;
       if (receipt === undefined) {
         if (cells.has(leg.to.holder) && leg.from.holder !== id) {
-          bases.unclassified = add(bases.unclassified, leg.amount, 'received and unclassified');
+          bases.unclassified = plus(bases.unclassified, heldAsMoney(leg.amount, 'what moved'), 'received and unclassified');
         }
         continue;
       }
       switch (receipt.of) {
         case 'interest': {
-          bases.interest = add(bases.interest, leg.amount, 'interest received');
+          bases.interest = plus(bases.interest, heldAsMoney(leg.amount, 'what moved'), 'interest received');
           addTo(
             due,
             leg.to.holder,
@@ -831,7 +852,7 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
         case 'rent':
         case 'dividend': {
           if (!cells.has(leg.to.holder)) break;
-          bases.income = add(bases.income, leg.amount, 'what households were paid');
+          bases.income = plus(bases.income, heldAsMoney(leg.amount, 'what moved'), 'what households were paid');
           addTo(
             due,
             leg.to.holder,
@@ -869,12 +890,12 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
       if (!cells.has(made.party)) continue;
       const gain = minus(made.proceeds, made.basis, 'what it made on the sale');
       if (gain <= 0) continue;
-      bases.income = add(bases.income, gain, 'gains households realised');
+      bases.income = plus(bases.income, gain, 'gains households realised');
       addTo(due, made.party, scale(gain, onIncome, 'tax on the gain'));
     }
   }
-  let collected = 0;
-  let unpaid = 0;
+  let collected = asCash(0, 'nothing collected yet');
+  let unpaid = asCash(0, 'nothing unpaid yet');
   for (const [payer, total] of due) {
     const p = ctx.parties.get(payer);
     if (!p.status.alive || total <= 0) continue;
@@ -901,10 +922,10 @@ function runReceipts(ctx: MechanismContext, id: PartyId): void {
     const r = ctx.settle({ legs: [leg], cause: 'transfer', reason: `tax due from ${payer}` });
     // A payer that cannot pay its tax has not paid it: nothing advances it (Money E1, D3).
     if (r.outcome === 'settled') {
-      collected = add(collected, share.total, 'collected');
+      collected = plus(collected, heldAsMoney(share.total, 'what was collected'), 'collected');
       continue;
     }
-    unpaid = add(unpaid, share.total, 'unpaid');
+    unpaid = plus(unpaid, heldAsMoney(share.total, 'what was not paid'), 'unpaid');
     /**
      * D-1, XI-8, Money E1: ARREARS. A LEVY THAT FAILED IS A CLAIM THE TREASURY HOLDS ON THE PAYER.
      *
