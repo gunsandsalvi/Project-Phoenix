@@ -18,7 +18,7 @@ The plan has two parts:
 
 <!-- progress:start -->
 **Plan completion: 92.9%** (678 of 730 steps across 51 items).
-**Requirement coverage: 60.1%** (823 MET, 90 PARTIAL, 0 OUT OF SCOPE of 1369 REASON/VERIFY/FORBID clauses).
+**Requirement coverage: 60.9%** (834 MET, 93 PARTIAL, 0 OUT OF SCOPE of 1369 REASON/VERIFY/FORBID clauses).
 
 | item | steps | done | state |
 |---|---|---|---|

@@ -7417,3 +7417,102 @@ remain in the engine and every one names an open item.
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
 `check:deaths` 5 of 5, `check:existence` green.
+
+---
+
+## Item 10 — the corporate bond is issued
+
+**The thing this world could not do.** `mechanisms/corporate-bond/index.ts` has declared the kind,
+the id, the profile with `cashFlows` and `due`, the seniority the waterfall reads, the cross-default
+and the covenant test since 13f, and **nothing anywhere issued one**. `testCovenants` walked an
+empty set every period for the life of the world; three `MET` marks stood on a line that could not
+exist; 51 more Corporate Credit clauses stood behind it. The clause the module is FOR — a firm
+funding itself in a market rather than at a bank — had no mechanism that put a firm in a market.
+That is `B-1`, and it is closed.
+
+**A firm compares two prices for the same money.** Both are prices somebody else made and neither is
+invented here. What a BANK charges it is `credit.quoted` — the keenest of the quotes it was given,
+which is already the outcome of banks competing for it (Banks Lending C3.a), published with the size
+that bank will actually lend. What the MARKET would charge is `bank.reservation` — what holders have
+published they require to hold this name (E5) — and the keenest of those is where a book for its
+paper would start. It comes when the market is cheaper, or when its bank will not lend it enough at
+any price, which is A1's *"a firm large enough to reach a market is not at the mercy of one lender"*.
+A firm nobody has quoted at all is in the second case by construction, and a firm no holder has
+published a requirement for has no book to come to and does not open one to find out (Appendix A).
+
+**It does not price its own issue off either of them (Law 3).** Those two decide whether it COMES.
+Its RESERVATION is the whole of the decision made again with money behind it: the price at which the
+issue costs it exactly what its bank quoted. Below that the market is dearer than the loan and the
+paper is withdrawn (C4) — which is not a bound but the alternative it already has — and a firm with
+no quote walks away at the keenest requirement itself, the least anybody said they would take. **No
+concession parameter was invented**, and the treasury's `concession` was deliberately not copied: a
+sovereign has no bank to compare against and needs one; a firm has the comparison itself.
+
+**What it promises is its own published accounts as this borrowing leaves them.** B2 says what a
+given firm promised is an outcome of what it had to promise to be lent to, and there is no
+negotiation in this world to produce one — so it promises not to get WORSE than this issue leaves
+it: the leverage its published balance sheet reads with this face added to what it owes, and the
+coverage its published earnings read against what this line costs it a year. Both are the arithmetic
+`testCovenants` will do on the same two published numbers, so the promise is exactly *"no worse than
+the day I made it"* and not one covenant number is invented. **A covenant struck before the face was
+added would breach on the next publication by construction** — a false breach, and worse than no
+covenant, because it is the mechanism reporting its own arithmetic as the issuer's failure. The
+headroom a real negotiation would add is what a negotiation is (item 17), and its absence makes this
+the tightest covenant a lender could ask for rather than a loose one: a breach here is never a false
+negative.
+
+**A firm that has published nothing does not borrow in a market**, and one that published a loss has
+no cover to promise. Terms nobody can test are not terms (Reporting A2), and a negative promise is
+not a promise. Reporting's lag therefore does real work: nothing issues until the first accounts are
+out.
+
+**One line per issuer per maturity, and that is C8 for free.** `corporateBondId` took a bare `n` that
+named nothing; it now takes the maturity, which is the half of the name that distinguishes one of a
+firm's lines from another (Law 9). A debut brings a fresh instrument and a return to the same date is
+a TAP — added face on paper that already prices, cleared in the same solve as its outstanding stock,
+at its own price and with the issuer's walk-away riding on it. Which of the two it is falls out of
+the NAME and needs no flag. A tap pays the line's own coupon, because a coupon is locked at issuance
+(N5.a): what moves is the price it gets, never what it promised.
+
+**One shortfall, one channel (Law 4).** A firm publishes what it is short of once and both channels
+read it, so a bank writing a loan against a number the firm has just raised in the market would fund
+the same hole twice — money nobody needed, which is the residual with no holder Appendix B forbids.
+`runRequests` now reads the issuer's own announcement off the market like anybody else and stands
+down. A book that did not clear raised nothing, the firm is short again in its next accounts, and the
+bank lends then: that is the cost of a failed auction (C4) and it is a lag, not a loss.
+
+**The blocker that would have made this a `noDemand` every period.** No bank declared `corporate.bond`
+in `makes`, so the first issue would have found an empty book and the mechanism would have looked
+built and dead. A desk that takes a view on a company's SHARE has one on its CREDIT, so the
+high-appetite desks now make both.
+
+**The book is the kernel's, and it has to be.** Holders post schedules — a size at a level, which is
+what C2.a says an indication is — one solver strikes the one level at which the book fills (C3), and
+who got how many units comes out of that book and nowhere else (C5). A second book built in the
+module would be a second answer to the question the clearing system exists to answer.
+
+**What was NOT built, and was not faked.** Step 10.1 asked for *"the size is worth the fixed cost of
+an issue"*. That cost is C6's underwriter fee, and there is no underwriter: C1's arranger, C6's fee
+out of the proceeds, C7's risk between commitment and placement, C10's syndicate and C11's basis are
+all item 17.1, and a `corporateBond.issuanceCost` invented here would be a number standing in for a
+PARTY (Law 2). Item 10 issues directly into the kernel's book, which is C2–C5 in full and C6 without
+its fee. A2.b's target — a leverage or a rating a management manages towards — is 17.1a, and A3.a's
+scheduled principal in the service number is 17.1b; `Corporate Credit A2`, `A2.c` and `A3` are marked
+PARTIAL for exactly those.
+
+**The one declared number is a market convention.** `corporateBond.tenor`, 60 months, TECHNOLOGY,
+stated in MONTHS because that is what the calendar takes (Law 8) — a tenor in years would be
+converted somewhere, and the conversion is the place a duration stops being the number it was
+declared as. It is not a forecast of how long the firm needs the money: what it needs is what it
+published it is short of, and the term is the market's. `MONTHS_PER_YEAR` lives in the treasury
+module and a module may not import another, which is the lint rule doing its job.
+
+COVERAGE re-marked: `Corporate Credit A1`, `B2`, `B3` lose **NEVER REACHED**; `C2`, `C3`, `C4`, `C5`,
+`C8` and `G1` become MET; `A2`, `A2.c`, `A3` and `C6` become PARTIAL with what is missing named.
+§7 goes from 7 MET / 4 PARTIAL / 51 MISSING to **13 MET / 7 PARTIAL / 42 MISSING**, and the world's
+NEVER REACHED count falls from 100 to 97. `B-13`'s *"almost nobody borrows"* loses one of its four
+causes — there was ONE credit channel, so a firm whose bank would not lend it enough simply stayed
+short — and what is left of `B-13` is a measurement of a finished world, which is item 23 (Law 11).
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
+`check:deaths` 5 of 5, `check:existence` green.

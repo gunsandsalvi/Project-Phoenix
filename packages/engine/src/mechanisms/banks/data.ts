@@ -264,9 +264,16 @@ export function drawBanks(count: number, seed: string): readonly BankDecl[] {
       // a market in the paper its own treasury holds for liquidity and in nothing else, because a
       // share is a claim on a business it has no view of and a bank that will not take a view does
       // not quote one. So `makes` is a consequence of a preference it already has (Law 2).
+      //
+      // Corporate Credit A1, E5 (item 10): AND A CORPORATE BOND IS ON THE SAME LIST, by the same
+      // argument read the other way. A desk that will take a view on a company's SHARE has one on
+      // its CREDIT — it is the same business assessed from the senior end — and a bank already
+      // publishes what it requires to hold that name's paper (`bank.reservation`), which is the
+      // schedule it bids with. Without this nobody was a buyer, and the first corporate issue in
+      // this world would have found `noDemand` however cheap it was.
       makes:
         appetiteOf(appetite, DEALING) > midpoint(spreadOf(BANK_SPREAD.appetite, DEALING))
-          ? ['equity.share', 'fund.share', 'sovereign.bill', 'sovereign.bond']
+          ? ['equity.share', 'fund.share', 'corporate.bond', 'sovereign.bill', 'sovereign.bond']
           : ['sovereign.bill', 'sovereign.bond'],
       appetite,
       concentration: between(rng, BANK_SPREAD.concentration),

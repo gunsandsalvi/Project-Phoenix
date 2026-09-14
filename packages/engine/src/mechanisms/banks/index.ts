@@ -37,7 +37,7 @@ import { asQty, NO_QTY, type Qty } from '../../core/tick.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { Event } from '../../journal/journal.js';
-import { period } from '../../calendar/calendar.js';
+import { period, type Period } from '../../calendar/calendar.js';
 import { civil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
@@ -1387,6 +1387,13 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // sign, so the request dies with the borrower.
     if (!party.status.alive) continue;
     const ccy = ctx.registry.currencyOf(party.region);
+    // Corporate Credit A1, C7, Law 4: ONE SHORTFALL, ONE CHANNEL. A borrower that brought paper to
+    // the market against the number it published is raising it there, and a bank writing a loan
+    // against the same published number would fund the same hole twice — which is the residual with
+    // no holder Appendix B forbids, arriving as money nobody needed. A book that did not clear
+    // raised nothing, and the firm is short again in its next accounts: that is the cost of a
+    // failed auction (C7) and it is a lag, not a loss.
+    if (broughtPaper(ctx, borrower as PartyId, said)) continue;
     const { best, lend } = shop(rows, ctx, borrower as PartyId, want);
     if (best === undefined || lend <= 0) continue;
     // C9, F1.a: one row per (lender, borrower). A borrower that comes back to the same bank is
@@ -1394,6 +1401,15 @@ function runRequests(rows: readonly BankDecl[], ctx: MechanismContext): void {
     // draws at is the one that was struck when the line was agreed (A2, A3).
     write(ctx, best.bank, borrower as PartyId, lend, best.rate, ccy, security.length === 0, security);
   }
+}
+
+/**
+ * Corporate Credit A1: whether this borrower took the OTHER channel with the shortfall it published
+ * in that period. A read of a public announcement (Law 19, Observer A3) — the issuer said what it
+ * brought and what it was short of, and a bank reads it off the market like anybody else.
+ */
+function broughtPaper(ctx: MechanismContext, borrower: PartyId, said: Period): boolean {
+  return ctx.journal.ofKindIn('bond.offered', said).some((e) => e.subjects.includes(borrower));
 }
 
 /**

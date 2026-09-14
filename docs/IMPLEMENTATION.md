@@ -46,7 +46,7 @@ checked, not assumed.
 | Currency | 24 | 0 | 1 | 0 | 25 |
 | Bond | 14 | 1 | 1 | 0 | 16 |
 | Derivative | 18 | 0 | 0 | **3** | 18 |
-| **Corporate Credit** | **7** | 4 | **51** | **3** | 62 |
+| **Corporate Credit** | **13** | 7 | **42** | 0 | 62 |
 | Sovereign | 40 | 3 | 8 | **3** | 51 |
 | **Short-Term Debt** | **0** | 0 | **19** | 0 | 19 |
 | Equity | 25 | 2 | 10 | 0 | 37 |
@@ -172,12 +172,12 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
   §42's cells, so there is nowhere for a birth to happen until that sector exists — and the
   promotion out of it (A6.c) is the other half of the same life cycle. Building birth first would
   mean firms appearing directly as named parties, which is the modelling line A6.b forbids.
-- **10 (the corporate bond is issued) before 10b (short-term debt)**: a firm that cannot issue paper
-  at five years cannot issue it at three months either; the issuance path is one mechanism.
+- **10 (the corporate bond is issued, DONE) before 10b (short-term debt)**: a firm that cannot issue
+  paper at five years cannot issue it at three months either; the issuance path is one mechanism, and
+  10b now has one to shorten rather than one to build.
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **10** | The corporate bond is issued | 2 | needs **3** (a buyer); 51 Corporate Credit clauses stand behind it |
 | **10b** | Short-term debt (§9) | — | **inserted**: the roll that can fail; one of the six lost things; needs **10**'s issuance path |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -194,51 +194,14 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 | **23** | Measure (Part XII) | 1 | worklist 16; carries `C-1`'s 82 red |
 | **24** | The app and the APK | — | worklist 17 |
 
-**Stage B is finished**: every line the old file left open is closed. **Stage C (10–18)** builds the
-sectors that are not there. **Stage D (19–24)** is the existing worklist tail. Items 1–9 and 7b are
+**Stage B is finished**: every line the old file left open is closed. **Stage C (10b–18)** builds the
+sectors that are not there; **10 is closed** and its section is gone. **Stage D (19–24)** is the existing worklist tail. Items 1–10 and 7b are
 closed and their sections are gone: this is the plan of what is left, and `docs/RECORD.md` is the
 ledger of what was done.
 
 ---
 
 ## Part 2 — The items
-
----
-
-## 10. The corporate bond is issued
-
-**Why.** `mechanisms/corporate-bond/index.ts` declares `CORPORATE_BOND`, `corporateBondId(issuer, n)`,
-a full `InstrumentKindProfile` with `cashFlows`, `due`, `ranking` and cross-default, a covenant table
-and the `covenant.test` phase.
-
-```
-$ grep -rn "kind: CORPORATE_BOND" packages/engine/src   →  nothing
-$ grep -rn "CORPORATE_BOND"       packages/engine/src   →  only its own declaration and profile
-```
-
-**No corporate bond has ever been issued and none can be: there is no issuance path.**
-`testCovenants` runs every period over an empty set. Three `MET` marks stand on it, and **51 more
-Corporate Credit clauses (item 17) stand behind it.**
-
-The clause the module is for — a firm funding itself in a market rather than at a bank — has no
-mechanism that puts a firm in it. `firms/index.ts:publishFunding` publishes what a firm is short of
-and `banks` reads it; **nothing reads it as a reason to issue paper.**
-
-### Steps
-
-- [ ] 10.1 A firm compares two prices for the same money: the rate a bank quoted it (`credit.quoted`, already published) and what a market would charge. When the market is cheaper and the size is worth the fixed cost of an issue, it issues. **Both sides must be cleared prices** — the bank's quote is (Banks Lending C3.a), and the issue's is what the auction strikes.
-- [ ] 10.2 The issuance path: a phase in `corporate-bond` that reads `firms.funding`, builds the line through `corporateBondId`, opens a market, and places it. **A placement needs a buyer** — which is item 3 (a bank's dealing desk), item 6 (nothing yet), the money funds (mandate currency, item 2.11) and the insurers (item 9). This is why 10 is after 3 and 9.
-- [ ] 10.3 `testCovenants` then runs over a non-empty set, on the issuer's PUBLISHED accounts — which `journal/published.ts` already answers typed. A breach is an EVENT, never a bound (Law 6).
-- [ ] 10.4 Cross-default: the profile already says a corporate bond cross-defaults where a sovereign does not. With a live issue, assert it.
-
-### Findings this closes
-
-`B-1`, and `B-13`'s "almost nobody borrows" (96 loans against 9,006 firms) in part.
-
-### Exit
-
-A firm issues a bond because a market was cheaper than its bank; the covenant test has something to
-test; `world/reach.ts` stops naming `instrumentKind:corporate.bond`.
 
 ---
 
@@ -709,7 +672,9 @@ missing, or `OUT OF SCOPE` with a reason. Do not delete a clause to look better.
 
 ### Steps
 
-- [ ] 17.1 Syndication and bookbuilding: a bank arranging an issue it does not hold all of.
+- [ ] 17.1 Syndication and bookbuilding: a bank arranging an issue it does not hold all of. **Item 10 brought the paper and left the ARRANGER out**: C1's named underwriter, C6's fee out of the proceeds, C7's risk between commitment and placement, C10's syndicate and C11's basis. Item 10 issues DIRECTLY into the kernel's book, which is C2–C5 in full and C6 without its fee — so this step adds a party to a path that exists rather than building the path. It is also the home of **step 10.1's "worth the fixed cost of an issue"**: that cost IS the underwriter's fee, and item 10 deliberately did not invent a `corporateBond.issuanceCost` to stand in for a party this item creates (Law 2).
+- [ ] 17.1a A2.b: **the target a management is managing towards** — a leverage, a coverage or a rating it wants, approached at its own pace. Item 10 made issuing a DECISION (a firm compares what its bank quoted against what holders require and takes the cheaper), which is A2.c's "never assigned"; what it compares is price against price and not price against a plan. Marked `Corporate Credit A2`/`A2.c` PARTIAL for exactly this.
+- [ ] 17.1b A3.a: **the service is interest PLUS SCHEDULED PRINCIPAL.** `testCovenants` covers a line's coupon against published earnings and nothing else, so an amortising line looks as serviceable as a bullet. One read of the kernel's own `due` schedule, at the one place coverage is computed (Law 4).
 - [ ] 17.2 Facilities: a committed line, with a commitment fee on undrawn headroom (the same noun item 10b.6 needs — build it once).
 - [ ] 17.3 Restructuring: placed 13f → 13h, never built. A borrower and its lenders agreeing new terms is an `Agreement` transition, not a new instrument.
 - [ ] 17.4 The covered bond (**M7**): placed 13e → 13f, never built. One of the six.
@@ -977,31 +942,6 @@ letter in each heading is the original read's: **A** structural, **B** live defe
 
 ---
 
-#### B-1 — `corporate.bond` is a kind, an id function and a covenant test, and nothing ever issues one (A)
-
-Worklist 13f, **done**:
-
-> _"**The corporate bond**: it can fail, it cross-defaults where a sovereign does not, it says where
-> it ranks on the instrument the waterfall already reads, and it carries COVENANTS tested on the
-> issuer's PUBLISHED accounts."_
-
-`mechanisms/corporate-bond/index.ts` declares `CORPORATE_BOND`, `corporateBondId(issuer, n)`, a full
-`InstrumentKindProfile` with `cashFlows`, `due`, `ranking` and cross-default, a covenant table and
-the `covenant.test` phase. Searching the whole engine for a construction site:
-
-```
-$ grep -rn "kind: CORPORATE_BOND" packages/engine/src   →  nothing
-$ grep -rn "CORPORATE_BOND"       packages/engine/src   →  only its own declaration and profile
-```
-
-**No corporate bond has ever been issued and none can be: there is no issuance path.** `testCovenants`
-runs every period over an empty set. Three `MET` marks in COVERAGE (`Corporate Credit A1`, `B2`,
-`B3`) cite this file.
-
-The clause the module is for — a firm funding itself in a market rather than at a bank — has no
-mechanism that puts a firm in it. `firms/index.ts:publishFunding` publishes what a firm is short of
-and `banks` reads it; nothing reads it as a reason to issue paper.
-
 #### B-13 — the three things a firm sector does, and this one does none of them (A)
 
 Carried from `docs/VERIFY.md`'s third sweep, and it is the finding that outranks the rest of that
@@ -1030,7 +970,9 @@ the whole of it:
   `costOfCapital`, and `requiredOnEquity` needs a share PRINT, which needs a share session that
   cleared, which needs a bank's dealing desk on the other side (A-60);
 - **almost nobody borrows** — a firm's own `credit.quoted` read is period-unbounded (A-33), and its
-  input bids are inflated by A-34, but neither explains two orders of magnitude;
+  input bids are inflated by A-34, but neither explains two orders of magnitude. **Item 10 removed
+  one cause and it was not a small one**: there was ONE credit channel, so a firm whose bank would
+  not lend it enough had nowhere else to go and simply stayed short. It can now bring paper;
 - **nobody dies** — `fails: []` on households and the treasury (A-36), and `failedWhy`'s solvency
   branch reads an equity account that A-39 is inflating every period.
 
@@ -1337,10 +1279,9 @@ option premium, where it is multiplied by the price level instead of used as the
 
 | **A-53** (B) | 15 | a household bids its entire income as rent |
 | **A-69** (C) | ~~1~~, ~~6~~, 21 | nine exported entry points that nothing calls — **closed at item 1** (the reach tally names them) and **two of them wired at 6.5**; `wantsToBorrow` was another and 9.4 DELETED it. What is left is whichever of the nine item 21 finds still dead |
-| **B-1** (A) | 10 | `corporate.bond` is declared and nothing ever issues one |
 | **B-2** (A) | ~~9~~, 14 | the insurance sector has no seed, no phase and no participant — **the seed, the phase and the way in closed at 9.5 and 9.3**; what item 14 owes it is pensions |
 | **B-9** (C) | 16 | the four countries: header and section 2 contradict each other |
-| **B-13** (A) | 10 | the three things a firm sector does, and this one does none |
+| **B-13** (A) | ~~10~~, 23 | the three things a firm sector does, and this one does none — **"almost nobody borrows" lost one of its causes at item 10**: a firm now has a second credit channel. The other three legs are each placed, and what is left of B-13 is a MEASUREMENT of the finished world, which is item 23 (Law 11) |
 
 | **C-1** (—) | 23 | 82 red, by cause |
 | **C-2** (—) | 20 | four things this world does every week that the world does not |

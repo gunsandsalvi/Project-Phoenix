@@ -253,24 +253,24 @@ of these findings has been positioned into an item yet.
 
 | requirement | status | where / why |
 |---|---|---|
-| `Corporate Credit A1` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (a `corporate.bond` kind: a firm borrows from many holders, each pricing the name from its own view) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
-| `Corporate Credit A2` | MISSING |  |
-| `Corporate Credit A2.c` | MISSING |  |
-| `Corporate Credit A3` | MISSING |  |
+| `Corporate Credit A1` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (a `corporate.bond` kind: a firm borrows from many holders, each pricing the name from its own view — and `bond.issue` is what puts it in a market, comparing what its bank quoted it against what holders published they require), packages/engine/test/corporate-bond.test.ts |
+| `Corporate Credit A2` | PARTIAL | packages/engine/src/mechanisms/corporate-bond/index.ts (a firm now has two debt channels and chooses between them on price, so its capital structure is an outcome of that choice). A2.b's TARGET — a leverage, a coverage or a rating the management is managing towards at its own pace — is not built, so what it compares is price against price and not price against a plan (item 17) |
+| `Corporate Credit A2.c` | PARTIAL | packages/engine/src/mechanisms/corporate-bond/index.ts (nothing anywhere assigns a firm a mix of debt: what it owes is what it issued, and what it issued is what a book took). The other half of the VERIFY needs A2.b's target to be an outcome OF (item 17) |
+| `Corporate Credit A3` | PARTIAL | packages/engine/src/mechanisms/corporate-bond/index.ts (`testCovenants`: coverage is a read of what the issuer PUBLISHED it earned against what its line costs it a year, and A3.b's fall below one is a breach event rather than a number pushed back). A3.a's SCHEDULED PRINCIPAL is not in the service number — only interest is (item 17) |
 | `Corporate Credit A4` | MISSING |  |
 | `Corporate Credit B1` | MISSING |  |
-| `Corporate Credit B2` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (two covenant lines, both TERMS of the issue and neither a parameter: how much it owes against what it holds, and what it earns against what falls due) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
-| `Corporate Credit B3` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (the `names` family: paper outstanding with nobody holding it is a violation) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Corporate Credit B2` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (two covenant lines, both TERMS of the issue and neither a parameter: how much it owes against what it holds, and what it earns against what falls due. `openLine` strikes them from the issuer's own published accounts AS THIS BORROWING LEAVES THEM, so the promise is "no worse than the day I made it" and no covenant number is invented), packages/engine/test/corporate-bond.test.ts |
+| `Corporate Credit B3` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (the `names` family: paper outstanding with nobody holding it is a violation — and there is now paper for it to look at) |
 | `Corporate Credit B4` | MISSING |  |
 | `Corporate Credit C1` | MISSING |  |
-| `Corporate Credit C2` | MISSING |  |
-| `Corporate Credit C3` | MISSING |  |
-| `Corporate Credit C4` | MISSING |  |
-| `Corporate Credit C5` | MISSING |  |
-| `Corporate Credit C6` | MISSING |  |
+| `Corporate Credit C2` | MET | packages/engine/src/clearing/solver.ts, packages/engine/src/mechanisms/corporate-bond/index.ts (`bond.issue` brings the paper and holders post schedules into its market: the book is real buyers at real levels, and C2.a's indication IS a schedule — a size at a level — because that is the only thing the solver takes) |
+| `Corporate Credit C3` | MET | packages/engine/src/clearing/market.ts (`allotment: 'uniformPrice'`: one level is struck at which the book fills, and every winner pays the stop-out) |
+| `Corporate Credit C4` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (the issuer's reservation is the price at which the issue costs it exactly what its bank quoted — its own alternative, not a bound — and below it the paper is withdrawn and never traded) |
+| `Corporate Credit C5` | MET | packages/engine/src/clearing/market.ts (who got how many units comes out of the book, by the market's own rationing, and nowhere else) |
+| `Corporate Credit C6` | PARTIAL | packages/engine/src/clearing/market.ts (proceeds reach the issuer as cash, in the same two-sided instruction that delivers the paper). The FEE has nowhere to go until C1's underwriter exists (item 17.1) |
 | `Corporate Credit C7` | MISSING |  |
 | `Corporate Credit C7.b` | MISSING |  |
-| `Corporate Credit C8` | MISSING |  |
+| `Corporate Credit C8` | MET | packages/engine/src/mechanisms/corporate-bond/index.ts (`corporateBondId` names a line by its issuer and its maturity, so there is one per issuer per date: a debut brings a fresh instrument and a return to the same date is a TAP — added face on paper that already prices, cleared in the same solve as its outstanding stock, at its own price and with the issuer's walk-away riding on it) |
 | `Corporate Credit C9` | MISSING |  |
 | `Corporate Credit C10` | MISSING |  |
 | `Corporate Credit C10.b` | MISSING |  |
@@ -302,7 +302,7 @@ of these findings has been positioned into an item yet.
 | `Corporate Credit F4` | MISSING |  |
 | `Corporate Credit F5` | MISSING |  |
 | `Corporate Credit F6` | MISSING |  |
-| `Corporate Credit G1` | PARTIAL | packages/engine/src/world/actions.ts (a missed payment is an event, public, so a holder observes it rather than inferring it from the issuer's accounts). A breached covenant needs covenants, which arrive with corporate paper (worklist 13f) |
+| `Corporate Credit G1` | MET | packages/engine/src/world/actions.ts (a missed payment is an event, public, so a holder observes it rather than inferring it from the issuer's accounts), packages/engine/src/mechanisms/corporate-bond/index.ts (`covenant.breached`: and now the other half — there is corporate paper with covenants on it, so a breach is an announced event with an issuer, a line and the quarter it was found in) |
 | `Corporate Credit G2` | MET | packages/engine/src/world/actions.ts (a default on one line makes the issuer's others due where their own terms say so, through the same path a maturity takes, so an issuer that cannot pay the accelerated face fails that too), packages/engine/test/credit-events.test.ts |
 | `Corporate Credit G3` | MISSING |  |
 | `Corporate Credit G4` | MET | packages/engine/src/mechanisms/estate/index.ts (the estate is realised into the markets those things trade in, at what bidders pay: there is no formula discount to book anywhere in the path) |
