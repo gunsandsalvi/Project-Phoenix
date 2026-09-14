@@ -21,17 +21,18 @@
  * world prices risk (worklist 9). Liquidity is the reason it has now, and this is the whole of it.
  */
 import {
+  type Cash,
+  type PerPiece,
   amountOf,
   asCash,
   asPerPiece,
   asRatio,
-  type Cash,
   minus,
-  type PerPiece,
+  over,
   plus,
+  ratioOf,
   scale,
   valueAt,
-  over,
 } from '../../core/measure.js';
 import { nextPeriod, period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
@@ -39,7 +40,7 @@ import { yearFraction } from '../../calendar/daycount.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
-import { atMost, div, material, sum } from '../../core/num.js';
+import { atMost, material, sum } from '../../core/num.js';
 import { downTick, scaleQty } from '../../core/tick.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -242,7 +243,12 @@ export function ownUncertainty(view: ParticipantView): number {
   if (year <= 0) return asRatio(0, 'a period of no length says nothing');
   return over(
     asRatio(
-      div(income.value.confidence, income.value.expected, 'how wrong its income has been'),
+      // Two money magnitudes about the same variable, so how wrong it has been is a pure share.
+      ratioOf(
+        asCash(income.value.confidence, 'how wide its surprises about its income are'),
+        asCash(income.value.expected, 'what it expects to take in'),
+        'how wrong its income has been',
+      ),
       'how wrong its income has been',
     ),
     asRatio(year, 'the fraction of a year that was'),

@@ -18,13 +18,14 @@
  * levels come from each of those separately. What they share is this, and it lives in one place.
  */
 import {
-  amountOf,
-  asRatio,
   type Cash,
   type PerPiece,
+  amountOf,
+  asRatio,
+  ratioOf,
   scale,
 } from '../../core/measure.js';
-import { atMost, div, material } from '../../core/num.js';
+import { atMost, material } from '../../core/num.js';
 import { downTick, NO_QTY, subQty, type Qty } from '../../core/tick.js';
 
 /** One limit order of a curve: a level, and the extra this level adds to what the cell wants. */
@@ -103,7 +104,11 @@ export function levelsBelow(opinion: PerPiece, steps: number): PerPiece[] {
     out.push(
       scale(
         opinion,
-        asRatio(div(step, steps, 'this level of the grid'), 'this level of the grid'),
+        ratioOf(
+          asRatio(step, 'this step of the grid'),
+          asRatio(steps, 'the steps there are'),
+          'this level of the grid',
+        ),
         'a level it would pay',
       ),
     );

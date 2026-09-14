@@ -15,18 +15,27 @@
  */
 import type { Period } from '../../calendar/calendar.js';
 import type { PartyId } from '../../core/ids.js';
-import { add, div, mul, sub } from '../../core/num.js';
+import {
+  absolute,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  plus,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { MechanismContext } from '../../world/context.js';
 
 /** What a bank has seen of a company, in the order it saw it. */
 export interface Seen {
   /** The per-period earnings each report it has seen came to, oldest first. */
-  readonly reports: readonly { readonly period: Period; readonly perPeriod: number }[];
+  readonly reports: readonly { readonly period: Period; readonly perPeriod: Cash }[];
   /** The last guidance this management published, per period, if it has published one. */
-  readonly guided: Option<number>;
+  readonly guided: Option<Cash>;
   /** F3, §46 B3: how far that management's own last guidance was from what it then reported. */
-  readonly managementMissedBy: Option<number>;
+  readonly managementMissedBy: Option<Cash>;
 }
 
 /**
@@ -35,15 +44,18 @@ export interface Seen {
  * differs between banks because of what each one does with them, not because of what each can see.
  */
 export function seenOf(ctx: MechanismContext, company: PartyId, from: Period, to: Period): Seen {
-  const reports: { period: Period; perPeriod: number }[] = [];
+  const reports: { period: Period; perPeriod: Cash }[] = [];
   for (const said of ctx.published.statements(company)) {
     if (said.at < from || said.at > to) continue;
-    reports.push({ period: said.at, perPeriod: div(said.earned, said.periods, 'per period') });
+    reports.push({
+      period: said.at,
+      perPeriod: over(said.earned, asRatio(said.periods, 'the periods it covers'), 'per period'),
+    });
   }
   // C4: WHAT WAS PUBLISHED IN THIS WINDOW, and nothing else. A desk that re-read the whole history
   // every period would correct towards the same observations again and again — a view moving on no
   // new information, which is §46 B2.a's defect and would make every revision a calendar entry.
-  let guided = none<number>();
+  let guided = none<Cash>();
   let guidedFor: string | undefined;
   for (const g of ctx.published.guidances(company)) {
     if (g.at < from || g.at > to) continue;
@@ -58,16 +70,16 @@ function missedBy(
   ctx: MechanismContext,
   company: PartyId,
   pending: string | undefined,
-): Option<number> {
-  const said = new Map<string, number>();
+): Option<Cash> {
+  const said = new Map<string, Cash>();
   for (const g of ctx.published.guidances(company)) {
     if (g.quarter !== pending) said.set(g.quarter, g.guided);
   }
-  let miss = none<number>();
+  let miss = none<Cash>();
   for (const report of ctx.published.statements(company)) {
     const g = said.get(report.quarter);
     if (g === undefined) continue;
-    miss = some(sub(report.earned, g, 'what the management missed by'));
+    miss = some(minus(report.earned, g, 'what the management missed by'));
   }
   return miss;
 }
@@ -83,7 +95,7 @@ function missedBy(
  * management whose last guidance was far from what it then reported is one this bank corrects
  * further away from, which is §46 B3's confidence applied to somebody else's forecast.
  */
-export function estimateFrom(seen: Seen, memory: number, standing: Option<number>): Option<number> {
+export function estimateFrom(seen: Seen, memory: number, standing: Option<Cash>): Option<Cash> {
   const observations = observationsOf(seen);
   const first = observations[0];
   if (first === undefined) return standing;
@@ -91,13 +103,17 @@ export function estimateFrom(seen: Seen, memory: number, standing: Option<number
   for (const o of observations) {
     // §46 B1: corrected TOWARDS what happened, at its own speed. A bank with a long memory moves
     // little on one report; a bank with a short one is nearly at the last thing it saw.
-    held = add(held, div(sub(o, held, 'the surprise'), memory, 'at its own speed'), 'its view');
+    held = plus(
+      held,
+      over(minus(o, held, 'the surprise'), asRatio(memory, 'its own memory'), 'at its own speed'),
+      'its view',
+    );
   }
   return some(held);
 }
 
 /** What this bank treats as an observation, in the order it saw them (C1, C4). */
-function observationsOf(seen: Seen): number[] {
+function observationsOf(seen: Seen): Cash[] {
   const out = seen.reports.map((r) => r.perPeriod);
   if (!seen.guided.some) return out;
   // C4, C5: the guidance is information and it arrives AFTER the reports that preceded it. What a
@@ -114,22 +130,26 @@ function observationsOf(seen: Seen): number[] {
     out.push(g);
     return out;
   }
-  const missed = Math.abs(seen.managementMissedBy.value);
-  const size = Math.abs(g) + Math.abs(last);
+  const missed = absolute(seen.managementMissedBy.value, 'how far it missed, either way');
+  const size = plus(absolute(g, 'the figure'), absolute(last, 'and what it saw'), 'the size of them');
   // How far this bank moves the management's figure towards what it already saw: the size of the
   // last miss against the size of the figures themselves. It is a ratio of two measured magnitudes
   // over their SUM, so it is between nothing and everything by construction and never by a clamp
   // (Law 6). A management that missed by nothing is believed as it stands; one that missed by far
   // more than the figure is worth almost nothing beyond what the bank had already seen.
-  const whole = add(size, missed, 'what the record is weighed against');
+  const whole = plus(size, missed, 'what the record is weighed against');
   if (whole <= 0) {
     out.push(g);
     return out;
   }
-  const believed = div(size, whole, 'what its record is worth');
-  const discounted = div(missed, whole, 'what its record costs it');
+  const believed = ratioOf(size, whole, 'what its record is worth');
+  const discounted = ratioOf(missed, whole, 'what its record costs it');
   out.push(
-    add(mul(g, believed, 'what it believes'), mul(last, discounted, 'what it saw'), 'weighed'),
+    plus(
+      scale(g, believed, 'what it believes'),
+      scale(last, discounted, 'what it saw'),
+      'weighed',
+    ),
   );
   return out;
 }

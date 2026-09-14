@@ -31,8 +31,14 @@
 import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { assertNever } from '../../core/assert.js';
-import { add, div, mul, sub, zeroIfNone } from '../../core/num.js';
-import { asRatio, heldAsMoney, over, scale } from '../../core/measure.js';
+import { add, mul, sub, zeroIfNone } from '../../core/num.js';
+import {
+  asRatio,
+  heldAsMoney,
+  over,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import { asQty, scaleQty } from '../../core/tick.js';
 import { partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
@@ -90,9 +96,15 @@ function crossingShare(ctx: MechanismContext, cohort: string): number | undefine
     ctx.calendar.startOf(periodOf(ctx.period + 1)),
   );
   if (ofAYear <= 0) return undefined;
-  const periods = div(years, ofAYear, 'periods this band spans');
+  // Two counts of the same thing — years — so the span is a pure number, and one over it is the
+  // share of the band standing at its boundary in any one period.
+  const periods = ratioOf(
+    asRatio(years, 'the years this band spans'),
+    asRatio(ofAYear, 'the part of a year a period is'),
+    'periods this band spans',
+  );
   if (periods <= 0) return undefined;
-  return div(1, periods, 'the share of it standing at the boundary');
+  return over(asRatio(1, 'the whole band'), periods, 'the share of it standing at the boundary');
 }
 
 /**
@@ -430,7 +442,12 @@ export function settleEstates(ctx: MechanismContext): void {
     const ccy = ctx.registry.currencyOf(office.region);
     for (const heir of heirs) {
       const legs: Leg[] = [];
-      const share = asRatio(div(heir.weight, people, 'this cell share of what is here'), 'this cell share');
+      // Two counts of people, so what each heir takes is a pure share of what is here.
+      const share = ratioOf(
+        asRatio(heir.weight, 'the people this cell stands for'),
+        asRatio(people, 'the survivors here'),
+        'this cell share of what is here',
+      );
       for (const h of view.holdings()) {
         if (isMoney(ctx, h.instrument)) continue;
         const held = view.free(h.instrument);

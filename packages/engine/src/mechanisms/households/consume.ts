@@ -34,7 +34,7 @@
  * range than one that has not.
  */
 import { scaleQty } from '../../core/tick.js';
-import {
+import { type Ratio,
   absolute,
   asAmount,
   asCash,
@@ -51,7 +51,7 @@ import {
   valueAt,
 } from '../../core/measure.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
-import { add, atLeast, atMost, div, material, mul, sub, sum } from '../../core/num.js';
+import { atLeast, atMost, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { keyOf, type CellParty } from '../../parties/party.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -75,7 +75,8 @@ export interface HouseholdParams {
   readonly patience: number;
   readonly bufferPeriods: number;
   readonly steps: number;
-  readonly consumptionTax: number;
+  /** The rate the state charges on what a household buys. A `Ratio`: never a level (A-44). */
+  readonly consumptionTax: Ratio;
 }
 
 /**
@@ -317,7 +318,7 @@ export function demandOf(
     const set = valueAt(l.perUnit, qty, 'what it set aside for this line');
     const net = over(
       set,
-      asRatio(add(1, p.consumptionTax, 'with the tax it will owe on it'), 'one and the tax'),
+      plus(asRatio(1, 'the price itself'), p.consumptionTax, 'with the tax it will owe on it'),
       'what reaches the seller',
     );
     if (!material(net, 2, spend)) continue;
@@ -371,7 +372,7 @@ function lineFor(
     market: goodMarketId(row.subUnit, self.region),
     perUnit: scale(
       expected,
-      asRatio(add(1, p.consumptionTax, 'and the tax on it'), 'one and the tax'),
+      plus(asRatio(1, 'the price itself'), p.consumptionTax, 'and the tax on it'),
       'what a unit costs it',
     ),
     expected,
@@ -387,7 +388,14 @@ function pricesOver(expected: PerPiece, width: PerPiece, steps: number): PerPiec
   if (width <= 0 || steps <= 1) return [expected];
   const out: PerPiece[] = [];
   for (let i = 0; i < steps; i += 1) {
-    const t = div(sub(mul(2, i, 'step'), sub(steps, 1, 'steps less one'), 'centred'), sub(steps, 1, 'steps less one'), 'position');
+    // A position on a symmetric grid: two steps in, less the grid's own span, over that span — a
+    // count over a count, so it is a pure number between minus one and one by construction.
+    const span = asRatio(sub(steps, 1, 'steps less one'), 'the span of the grid');
+    const t = ratioOf(
+      minus(asRatio(mul(2, i, 'step'), 'two steps in'), span, 'centred'),
+      span,
+      'position',
+    );
     const price = minus(
       expected,
       scale(width, asRatio(t, 'how far along the grid'), 'how far from what it expects'),

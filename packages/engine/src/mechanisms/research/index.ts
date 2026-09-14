@@ -19,8 +19,20 @@
  */
 import { forbid } from '../../core/assert.js';
 import { partyId, type PartyId } from '../../core/ids.js';
-import { div, mul, sub, sum } from '../../core/num.js';
-import { asPerPiece, asRatio, over, type PerPiece, valueAt, asAmount,} from '../../core/measure.js';
+import { sum } from '../../core/num.js';
+import {
+  absolute,
+  asAmount,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  type PerPiece,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import { BANK, HOUSEHOLD } from '../../registry/profiles.js';
 import { weightOf } from '../../parties/party.js';
@@ -37,7 +49,8 @@ export * from './estimate.js';
 /** What a bank is carrying: the names it covers and what it last said about each. */
 interface Desk {
   /** Company id to the per-period figure this bank last published about it. */
-  readonly said: Map<string, number>;
+  /** What this desk says a name makes IN A PERIOD. Money, so it can never be read as a rate. */
+  readonly said: Map<string, Cash>;
   /** When it initiated, so what it has SEEN of a name is what happened after that (C1). */
   readonly since: Map<string, number>;
   /** C4: the last period whose observations are already in the estimate, so none is counted twice. */
@@ -108,12 +121,12 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
   if (names <= 0) return;
   const wage = wagePrinted(ctx, bank);
   if (!wage.some) return;
-  const hours = mul(
-    ctx.params.count(RESEARCH_PARAMS.hoursPerName),
-    names,
+  const hours = scale(
+    asAmount<'piece'>(ctx.params.count(RESEARCH_PARAMS.hoursPerName), 'the hours one name takes'),
+    asRatio(names, 'the names it covers'),
     'the hours this desk takes',
   );
-  const owed = valueAt(wage.value, asAmount<'piece'>(hours, 'the hours this desk takes'), 'what the desk costs it');
+  const owed = valueAt(wage.value, hours, 'what the desk costs it');
   if (owed <= 0) return;
   // D2: THE ANALYSTS ARE PEOPLE AND THIS IS WHAT THEY ARE PAID. They are the members of the cells
   // that bank here, which is who is at hand to do the work, and the payment is split across them
@@ -200,7 +213,7 @@ function cover(seed: string, ctx: MechanismContext): void {
       const now = estimateFrom(
         seen,
         memory,
-        standing === undefined ? none<number>() : some(standing),
+        standing === undefined ? none<Cash>() : some(standing),
       );
       desk.seenTo.set(String(company), ctx.period);
       if (!now.some) continue;
@@ -219,7 +232,10 @@ function cover(seed: string, ctx: MechanismContext): void {
           reports: seen.reports.length,
           memory,
           revision: standing !== undefined,
-          movedBy: standing === undefined ? 0 : sub(now.value, standing, 'the revision'),
+          movedBy:
+            standing === undefined
+              ? asCash(0, 'a first view has not moved')
+              : minus(now.value, standing, 'the revision'),
         },
         true,
       );
@@ -229,9 +245,10 @@ function cover(seed: string, ctx: MechanismContext): void {
 }
 
 /** Law 7: a view has moved when it has moved past the dust of the arithmetic that produced it. */
-function moved(now: number, said: number): boolean {
+function moved(now: Cash, said: Cash): boolean {
   return (
-    Math.abs(sub(now, said, 'the revision')) > Number.EPSILON * (Math.abs(now) + Math.abs(said))
+    absolute(minus(now, said, 'the revision'), 'either way') >
+    Number.EPSILON * (Math.abs(now) + Math.abs(said))
   );
 }
 
@@ -256,7 +273,7 @@ function settle(ctx: MechanismContext): void {
   for (const report of ctx.published.statements()) {
     if (report.at !== ctx.period) continue;
     const company = String(report.company);
-    const observed = div(report.earned, report.periods, 'what it made a period');
+    const observed = over(report.earned, asRatio(report.periods, 'the periods it covers'), 'what it made a period');
     for (const [bank, desk] of Object.entries(all)) {
       const said = desk.said.get(company);
       if (said === undefined) continue;
@@ -269,7 +286,7 @@ function settle(ctx: MechanismContext): void {
           quarter: report.quarter,
           expected: said,
           observed,
-          surprise: sub(observed, said, 'observed minus expected'),
+          surprise: minus(observed, said, 'observed minus expected'),
         },
         true,
       );
@@ -280,9 +297,9 @@ function settle(ctx: MechanismContext): void {
 /** E1: what the estimates that exist come to, with how stale the oldest of them is. */
 export interface ConsensusRead {
   readonly count: number;
-  readonly mean: number;
+  readonly mean: Cash;
   /** C3, E1: how far apart they are, which is the read that says the disagreement is real. */
-  readonly spread: number;
+  readonly spread: Cash;
   /** §45 A5: the period the oldest estimate in it was published in, so a reader can see its age. */
   readonly oldest: number;
 }
@@ -300,13 +317,14 @@ export function consensusOf(
   ctx: { readonly journal: Pick<MechanismContext['journal'], 'ofKind'> },
   company: PartyId,
 ): Option<ConsensusRead> {
-  const latest = new Map<string, { value: number; period: number }>();
+  const latest = new Map<string, { value: Cash; period: number }>();
   for (const e of ctx.journal.ofKind('research.estimate')) {
     if (e.subjects[1] !== String(company)) continue;
     const bank = e.data['bank'];
     const value = e.data['perPeriod'];
     if (typeof bank !== 'string' || typeof value !== 'number') continue;
-    latest.set(bank, { value, period: e.period });
+    // Item 16: a published number re-enters the type system here, through its dimension's own door.
+    latest.set(bank, { value: asCash(value, 'what a desk said it makes in a period'), period: e.period });
   }
   for (const e of ctx.journal.ofKind('research.dropped')) {
     if (e.subjects[1] !== String(company)) continue;
@@ -316,7 +334,11 @@ export function consensusOf(
   const values = [...latest.values()];
   const first = values[0];
   if (first === undefined) return none<ConsensusRead>();
-  const mean = div(sum(values.map((v) => v.value)).value, values.length, 'the consensus');
+  const mean = over(
+    sum(values.map((v) => v.value)).value,
+    asRatio(values.length, 'the desks that have a view'),
+    'the consensus',
+  );
   // C3, E1: HOW FAR APART THEY ARE — the widest minus the narrowest, which is a measurement of the
   // disagreement and not a limit on it. Walked rather than reduced through a helper, because the
   // helpers that take a maximum are the ones a bound hides in (Law 6).
@@ -333,7 +355,7 @@ export function consensusOf(
     value: {
       count: values.length,
       mean,
-      spread: sub(widest, narrowest, 'how far apart they are'),
+      spread: minus(widest, narrowest, 'how far apart they are'),
       oldest,
     },
   };

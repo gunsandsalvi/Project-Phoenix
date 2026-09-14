@@ -76,8 +76,10 @@ export interface PublishedStatement {
 export interface PublishedGuidance {
   readonly company: PartyId;
   readonly quarter: string;
-  readonly perPeriod: number;
-  readonly guided: number;
+  /** What it guided the company will make IN A PERIOD. Money, like the statement's `earned`. */
+  readonly perPeriod: Cash;
+  /** What it guided for the whole span. Money. */
+  readonly guided: Cash;
   readonly periods: number;
   readonly at: Period;
 }
@@ -141,8 +143,8 @@ function guidanceOf(e: Event): PublishedGuidance {
   return {
     company: subject(e),
     quarter: str(e, 'quarter'),
-    perPeriod: num(e, 'perPeriod'),
-    guided: num(e, 'guided'),
+    perPeriod: asCash(num(e, 'perPeriod'), 'what it guided it makes in a period'),
+    guided: asCash(num(e, 'guided'), 'what it guided for the span'),
     periods: num(e, 'periods'),
     at: e.period,
   };

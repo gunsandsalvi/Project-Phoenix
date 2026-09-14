@@ -80,6 +80,7 @@ import { keyOf, weightOf } from '../parties/party.js';
 import type { Qty } from '../core/tick.js';
 import {
   acrossMembers,
+  amountOf,
   asCash,
   asPerMember,
   asAmount,
@@ -101,7 +102,7 @@ import {
   type Stated,
   valueAt,
 } from '../core/measure.js';
-import { add, div, mul, positiveCount, sub, sum, zeroIfNone } from '../core/num.js';
+import { add, div, positiveCount, sum, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
 import {
@@ -174,7 +175,7 @@ import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/in
 import { reporting } from '../mechanisms/reporting/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
-import { splitOnTick } from '../core/tick.js';
+import { roundToNamed, splitOnTick } from '../core/tick.js';
 import { displayName } from '../registry/naming.js';
 import { MONEY_PIECES, SHARE_PIECES } from '../registry/grid.js';
 import {
@@ -447,9 +448,9 @@ interface SeedLine {
   readonly paper: 'bill' | 'bond';
   readonly maturity: Civil;
   /** Units the banking system holds, split across the banks that exist by each one's size. */
-  readonly banks: number;
+  readonly banks: Named;
   /** Units one member of every household cell holds (Seed B4, XI-15). */
-  readonly perMember: number;
+  readonly perMember: Named;
 }
 
 /**
@@ -475,22 +476,32 @@ function onGrid(epoch: Civil, months: number): Civil {
  * world of thirty million people has thirty million people's worth of it and no line of data is
  * restated. Law 8: whole units, because a unit of the paper is indivisible.
  */
+/**
+ * PAR: a unit of this sovereign's paper is one unit of its money.
+ *
+ * What is stated is a DEBT — money per head — and what a line carries is UNITS, and the two are the
+ * same number only because every line here is issued at par. That was implicit; it is named here,
+ * so the crossing goes through `amountOf` like every other money-to-units read (`E-9`'s family).
+ */
+const PAR_PER_UNIT: PerNamedUnit = asPerNamedUnit(1, 'a unit of sovereign paper is one of its money');
+
 function seedLines(
   epoch: Civil,
   members: number,
-  perMember: number,
-  householdShare: number,
+  perMember: Stated,
+  householdShare: Ratio,
   /** Law 9: the stem its market names this issuer's paper by — `ust`, `bund`, `gilt`, `jgb`. */
   paper: string,
 ): SeedLine[] {
   const bankWeight = sum(SEED_PROFILE.map((t) => t.bankWeight)).value;
   const householdWeight = sum(SEED_PROFILE.map((t) => t.householdWeight)).value;
-  const atBanks = mul(
-    mul(members, perMember, 'the debt outstanding'),
-    1 - householdShare,
+  const outstanding = scale(perMember, asRatio(members, 'the people it is owed by'), 'the debt outstanding');
+  const atBanks = scale(
+    outstanding,
+    minus(asRatio(1, 'all of it'), householdShare, 'the part the households do not hold'),
     'at the banks',
   );
-  const perHead = mul(perMember, householdShare, 'what a member holds directly');
+  const perHead = scale(perMember, householdShare, 'what a member holds directly');
   return SEED_PROFILE.map((t): SeedLine => {
     const maturity = onGrid(epoch, t.months);
     const dated = formatCivil(maturity);
@@ -498,9 +509,31 @@ function seedLines(
       id: t.paper === 'bond' ? `${paper}.${dated}` : `${paper}.bill.${dated}`,
       paper: t.paper,
       maturity,
-      banks: Math.round(div(mul(atBanks, t.bankWeight, 'its weight'), bankWeight, 'this line')),
-      perMember: Math.round(
-        div(mul(perHead, t.householdWeight, 'its weight'), householdWeight, 'this line'),
+      // Law 8: a unit of the paper is indivisible, so what a line comes to is a whole number of
+      // them — the NAMED unit, because that is what a unit of a bond is (`downToNamed`).
+      banks: roundToNamed(
+        amountOf(
+          over(
+            scale(atBanks, asRatio(t.bankWeight, 'its weight'), 'its weight'),
+            asRatio(bankWeight, 'the weight there is'),
+            'this line',
+          ),
+          PAR_PER_UNIT,
+          'units of it',
+        ),
+        'whole units of this line',
+      ),
+      perMember: roundToNamed(
+        amountOf(
+          over(
+            scale(perHead, asRatio(t.householdWeight, 'its weight'), 'its weight'),
+            asRatio(householdWeight, 'the weight there is'),
+            'this line',
+          ),
+          PAR_PER_UNIT,
+          'units of it',
+        ),
+        'whole units of this line, per member',
       ),
     };
   });
@@ -1304,7 +1337,10 @@ export function foundationSeedFor(
         const held = cellsIn.get(where);
         if (held === undefined) cellsIn.set(where, [cell.id]);
         else held.push(cell.id);
-        membersIn.set(where, add(zeroIfNone(membersIn.get(where)), weightOf(cell), 'its people'));
+        membersIn.set(
+          where,
+          add(zeroIfNone(membersIn.get(where)), weightOf(cell), 'its people'),
+        );
       }
       const firmsIn = new Map<string, FirmDecl[]>();
       for (const f of madeHere) {
@@ -1315,7 +1351,7 @@ export function foundationSeedFor(
       }
 
       /** What one country's own paper came to in the hands of its own banking system. */
-      const systemPaperIn = new Map<string, number>();
+      const systemPaperIn = new Map<string, Stated>();
       /** Central Bank F4: the line a reserve manager abroad holds — the benchmark, and its price. */
       const benchmarkIn = new Map<string, { id: InstrumentId; price: PerNamedUnit }>();
 
@@ -1525,12 +1561,14 @@ export function foundationSeedFor(
         // Nothing here is fitted and nothing is capped: a bank with a large depositor is a large
         // bank because of it, which is what a deposit IS.
         const all = plus(systemPaper, reserves, 'the assets there are to go round');
-        const atBank = new Map<PartyId, number>(banksHere.map((b) => [b.id, 0]));
+        const atBank = new Map<PartyId, Stated>(
+          banksHere.map((b) => [b.id, asStated(0, 'a bank nobody banks at holds nothing for them')]),
+        );
         for (const f of firmsHere) {
           const bank = ctx.parties.get(partyId(f.firm)).bank;
           atBank.set(
             bank,
-            add(zeroIfNone(atBank.get(bank)), cashOf(f), 'what its firms hold at it'),
+            plus(zeroIfNone(atBank.get(bank)), cashOf(f), 'what its firms hold at it'),
           );
         }
         // Renamed from `over` at item 2: the imported `over` is the dimension algebra's, and a
@@ -1551,36 +1589,47 @@ export function foundationSeedFor(
           return left;
         };
         const firmsPart = sum(
-          banksHere.map((b) => div(zeroIfNone(atBank.get(b.id)), fundedBy(b), 'its firms')),
+          banksHere.map((b) =>
+            over(zeroIfNone(atBank.get(b.id)), asRatio(fundedBy(b), 'what a deposit funds'), 'its firms'),
+          ),
         ).value;
-        const sizePart = sum(banksHere.map((b) => div(b.size, fundedBy(b), 'its households'))).value;
+        // A count over a count: what a unit of stated size has to fund, summed over the banks here.
+        const sizePart = sum(
+          banksHere.map((b) =>
+            ratioOf(
+              asNamed(b.size, 'what this bank is'),
+              asNamed(fundedBy(b), 'what a deposit funds'),
+              'its households',
+            ),
+          ),
+        ).value;
         forbid(
           sizePart > 0 && all > firmsPart,
           'Seed D1',
           `${c.name}'s banks cannot carry the accounts it opens them with: ${firmsPart} of assets are needed for the firms alone and there are ${all}`,
           { country: c.country, all, firmsPart },
         );
-        const perSize = div(
-          sub(all, firmsPart, 'what is left for the households'),
-          sizePart,
+        const perSize = over(
+          minus(all, firmsPart, 'what is left for the households'),
+          asRatio(sizePart, 'the stated size there is to share it over'),
           'per unit of size',
         );
-        const assetsOf = (b: { id: PartyId; size: number }): number =>
-          div(
-            add(
-              zeroIfNone(atBank.get(b.id)),
-              mul(b.size, perSize, 'its households'),
+        const assetsOf = (bank: { id: PartyId; size: number }): Stated =>
+          over(
+            plus(
+              zeroIfNone(atBank.get(bank.id)),
+              scale(perSize, asRatio(bank.size, 'what this bank is'), 'its households'),
               'what it funds',
             ),
-            fundedBy(b),
+            asRatio(fundedBy(bank), 'what a deposit funds'),
             'its assets',
           );
-        const assets = new Map<PartyId, number>(banksHere.map((b) => [b.id, assetsOf(b)]));
+        const assets = new Map<PartyId, Stated>(banksHere.map((b) => [b.id, assetsOf(b)]));
 
         // Its assets are paper and reserves in the proportion the system holds them, because at the
         // opening nothing has yet decided otherwise — the treasury's own liquidity plan does that
         // from period one (Banks Funding C1).
-        const paperShare = div(systemPaper, all, 'the part of a book that is paper');
+        const paperShare = ratioOf(systemPaper, all, 'the part of a book that is paper');
         for (const b of banksHere) {
           const mine = zeroIfNone(assets.get(b.id));
           ctx.endowMoney(
@@ -1589,7 +1638,7 @@ export function foundationSeedFor(
             cash(
               ctx,
               c.ccy,
-              asStated(sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves'), 'its reserves'),
+              minus(mine, scale(mine, paperShare, 'its paper'), 'its reserves'),
             ),
           );
         }
@@ -1601,7 +1650,7 @@ export function foundationSeedFor(
           // odd unit goes to the largest remainder and has a named holder (core/tick.ts).
           const perBank = splitOnTick(
             line.banks,
-            banksHere.map((b) => mul(zeroIfNone(assets.get(b.id)), paperShare, 'its paper')),
+            banksHere.map((b) => scale(zeroIfNone(assets.get(b.id)), paperShare, 'its paper')),
           );
           banksHere.forEach((b, at) => {
             const units = zeroIfNone(perBank[at]);
@@ -1673,11 +1722,14 @@ export function foundationSeedFor(
       // answer to "what does this central bank hold abroad" when there is no abroad (Law 2).
       const elsewhere = countries.length - 1;
       const crossShare = ctx.params.ratio(P.crossHoldingShare);
-      const abroadShare = elsewhere <= 0 ? 0 : div(
-        crossShare,
-        elsewhere,
-        'the part of it that is any ONE other country’s',
-      );
+      const abroadShare =
+        elsewhere <= 0
+          ? asRatio(0, 'a world with no abroad holds nothing of it')
+          : over(
+              crossShare,
+              asRatio(elsewhere, 'the other countries there are'),
+              'the part of it that is any ONE other country’s',
+            );
       for (const mine of elsewhere <= 0 ? [] : countries) {
         const systemPaper = zeroIfNone(systemPaperIn.get(String(mine.country)));
         if (systemPaper <= 0) continue;
@@ -1685,13 +1737,13 @@ export function foundationSeedFor(
           if (theirs.country === mine.country) continue;
           const bench = benchmarkIn.get(String(theirs.country));
           if (bench === undefined || bench.price <= 0) continue;
-          const units = div(
-            mul(systemPaper, abroadShare, `what ${mine.name} holds of ${theirs.name}`),
+          const units = amountOf(
+            scale(systemPaper, abroadShare, `what ${mine.name} holds of ${theirs.name}`),
             bench.price,
             'units',
           );
           if (units <= 0) continue;
-          const drawn = held(ctx, bench.id, asNamed(units, 'the benchmark it takes'));
+          const drawn = held(ctx, bench.id, units);
           if (drawn <= 0) continue;
           // Law 8: WHAT IT ACTUALLY HOLDS, in the units the price is quoted in. This read multiplied
           // a count of PIECES by a price per NAMED unit, so the reserves the seed thought it had
@@ -2023,8 +2075,9 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
           { bank, assets, already, funding },
         );
         // XI-15: per member, and the cell carries it with its weight.
-        const perMember = asCash(
-          div(fromHouseholds, members, 'the deposit one member opens with'),
+        const perMember = over(
+          fromHouseholds,
+          asRatio(members, 'the people who have to hold it'),
           'the deposit one member opens with',
         );
         for (const cell of cells) ctx.endowMoney(cell.id, ccy, perMember);

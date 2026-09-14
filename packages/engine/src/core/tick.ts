@@ -169,6 +169,11 @@ export function downToNamed(value: Named, what: string): Named {
   return asNamed(n < 0 ? Math.floor(n * -1) * -1 : Math.floor(n), what);
 }
 
+/** Law 8: the NEAREST whole named unit — a measurement, so it goes to the closer of the two. */
+export function roundToNamed(value: Named, what: string): Named {
+  return asNamed(Math.round(finite(value, what)), what);
+}
+
 /**
  * The nearest quantity that exists, away from zero. Used where the number is what somebody MUST
  * put up — the input a recipe draws, the collateral a claim needs — because a requirement met with
