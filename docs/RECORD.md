@@ -7159,3 +7159,48 @@ is how the three got written.
 
 Typecheck 0 (engine, app and tools), lint 0, `check:spec` 208, `check:forbids` 4 over 205,
 `check:deaths` 11 of 11, `check:existence` green.
+
+---
+
+## Item 12 rewritten before it is taken: a firm is born in the pool and emerges from it
+
+**What.** A correction from the owner, taken before item 12 is started, and it decides the item's
+shape rather than adding to it. **Firms are born in the SME pool, and they emerge from it to named
+status when they outgrow the sector.** The whole life cycle runs through §42.
+
+**What item 12 said before.** Step 12.1: *"A firm is started by somebody, out of something. The
+founder is a named party with a reason and a balance sheet the equity cheque comes out of."* That
+describes a firm appearing directly as a NAMED party — which is the modelling line §42 A6.b forbids
+in as many words: *"a weight of one is a named firm — so the boundary between this sector and
+Corporate Credit's is not a modelling line but a SIZE."* Nobody founds a company with a bond line.
+
+**What it says now.** A birth is `cells.weight(cell, 'entry', 1, cause)` into a small-business cell,
+funded by somebody real, and the named corporate sector is where firms ARRIVE rather than where they
+come from. Two things follow and both are the point:
+
+- **Item 11's A6.c promotion cannot mean anything until births exist.** With no entry it can only
+  move firms the SEED put in the pool — a fixed stock draining upward, which is §42 E4's *"entry is
+  the accounting identity of exit"* wearing a different face. So 11.10 builds the door and the
+  threshold; **12.4 is where it fires because a firm GREW**.
+- **The boundary becomes a size a firm actually crossed**, which is what A6.b asks for, rather than
+  two sectors that never exchange a member.
+
+**The hard part is named rather than assumed.** A promotion takes one member out of a cell and makes
+a named party of it, and the member's per-member state has to go with it — the same rock `13d.1` ran
+aground on four times and solved with `reKeyCell`: nothing moves, the cell SPLITS exactly and the
+part that left carries a different key. A split of one member leaves a cell of WEIGHT ONE, and A6.b
+says a weight of one IS a named firm — so either that is the answer and `representation` is a fact
+about the weight rather than a field, or crossing to `representation: 'named'` needs a kernel event
+that does not exist. **Item 12 decides it in its record before writing the step**, and 11.10 is
+written against whatever that says.
+
+**The order changes with it.** Part 1 gains a third arrow — **11 before 12** — and item 12's row
+says `needs 11`. It was ordered 11 → 12 already, for unrelated reasons; now the dependency is real
+and stated. `A-17` is re-marked as closing across both: 11 builds the door, 12 makes it fire.
+
+Item 12's other steps keep their places: household formation (12.3) is the same door at the other
+end and is what makes `seed.membersPerCohort` deletable (12.6), `cells.merge` (12.5) is `A-18`'s
+other half, and the entry/exit pair (12.7) is §42 E4 — which is why 11.12 is written red and stays
+red until this item lands.
+
+No code changed. Typecheck 0, lint 0, `check:deaths` 11 of 11, `check:existence` green.

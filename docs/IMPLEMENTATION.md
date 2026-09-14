@@ -166,10 +166,14 @@ Three reinforcing reasons, and the third is the one to fix:
 
 ## Part 1 — The order
 
-Dependencies, not preference, and the open lines before the new ones. The two arrows that matter:
+Dependencies, not preference, and the open lines before the new ones. The three arrows that matter:
 
 - **9 (`Mandate`) before 13**: building hedge funds on today's `fund` party bakes the pool/decider
   conflation in permanently.
+- **11 (Small-Business Pools) before 12 (firm birth)**: a firm is born SMALL and small firms are
+  §42's cells, so there is nowhere for a birth to happen until that sector exists — and the
+  promotion out of it (A6.c) is the other half of the same life cycle. Building birth first would
+  mean firms appearing directly as named parties, which is the modelling line A6.b forbids.
 - **10 (the corporate bond is issued) before 10b (short-term debt)**: a firm that cannot issue paper
   at five years cannot issue it at three months either; the issuance path is one mechanism.
 
@@ -179,7 +183,7 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 | **10** | The corporate bond is issued | 2 | needs **3** (a buyer); 51 Corporate Credit clauses stand behind it |
 | **10b** | Short-term debt (§9) | — | **inserted**: the roll that can fail; one of the six lost things; needs **10**'s issuance path |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed; takeable as soon as **9** gives it an agreement |
-| **12** | Firm birth | 1 | needs **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
+| **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
 | **13** | Asset managers: §28, §29, §15 | 1 | needs **9**; worklist 13o |
 | **14** | Insurers and pensions (§27) | 2 | needs **9** (a policy is an agreement, not an instrument) |
 | **15** | Housing, the rest | — | needs **3** and **7**; worklist 13m, and `E-5` |
@@ -432,7 +436,7 @@ causes no defaults, and the entire credit content of the sector is gone"*).
 - [ ] 11.7 The loans (B1, B2): a row per (lender, cell) through item 9's agreement, with a rate the bank **quoted** (Banks Lending C3.a — one rate per loan, what was quoted), a term, an amortisation, and security on the firm's assets.
 - [ ] 11.8 Default (B3): from the individual cell's cash flow, aggregated over the pool — a **threshold event per cell**, never a hazard rate (Appendix B).
 - [ ] 11.9 Correlation (B4, B4.a): the same rates, the same demand and the same region reach every cell in a region, so the correlation is **emergent from shared causes** and is not a parameter.
-- [ ] 11.10 **A6.c, the promotion.** A cell whose weight is one and whose size clears A5's bond-market threshold becomes a named firm. This fires `cells.weight` — one of the three XI-15 events with no caller — and is half of `A-17`.
+- [ ] 11.10 **A6.c, the promotion — the DOOR and the threshold.** A cell whose size clears A5's bond-market threshold leaves the sector as a named firm. This fires `cells.weight` with kind `promotion` — one of the XI-15 events with no caller — and is half of `A-17`. Build the door, the threshold and the state that travels with the member; **item 12.4 is where it actually fires because a firm GREW**, which needs 12.1's births, so the pool is not a fixed stock draining upward. The representation question — a split of one member leaves a cell of WEIGHT ONE, and A6.b says a weight of one is a named firm — is settled in 12 and recorded there; write this step against whatever that says.
 - [ ] 11.11 The pool into item 8's vehicle: C1–C5 reuse the securitisation module. Do not write a second waterfall (Law 4).
 - [ ] 11.12 The six FORBIDs as six tests, E4 and E6 especially — E4 needs births (item 12) to be non-vacuous, so write it here and expect it red until 12 lands, and **say so in the record** rather than deleting it.
 - [ ] 11.13 COVERAGE re-marked for all 28 clauses; record entry; `check:existence` shows §42 is no longer an absent sector.
@@ -440,19 +444,20 @@ causes no defaults, and the entire credit content of the sector is gone"*).
 ### Exit
 
 A credit tightening reaches a small firm before it reaches a large one; a mean-preserving spread over
-the pool changes the count of defaults; a cell is promoted to a named firm and the boundary between
-the two sectors is a size rather than a modelling line.
+the pool changes the count of defaults; a cell can be promoted to a named firm, so the boundary
+between the two sectors is a size rather than a modelling line — and item 12 is what makes a firm
+arrive at that boundary from below rather than start there.
 
 ---
 
-## 12. Firm birth (worklist 13n)
+## 12. Firm birth, and the boundary firms cross (worklist 13n)
 
 **Why.** `world/cells.ts` implements XI-15's five weight events. The callers are:
 
 | door | callers |
 |---|---|
-| `cells.split` | `labour/matching.ts:312`, `labour/matching.ts:405`, `households/lifecycle.ts:250` |
-| `cells.reKey` | `households/lifecycle.ts` (ageing) |
+| `cells.split` | `labour/matching.ts`, `households/lifecycle.ts` |
+| `cells.reKey` | `households/lifecycle.ts` (ageing) — the only `promotion` in the world |
 | `cells.die` | `households/lifecycle.ts` (after probate) |
 | `cells.merge` | **none** |
 | `cells.weight` | **none** |
@@ -463,35 +468,67 @@ The population is monotonically non-increasing from the seed, by construction an
 `estate` kills firms and nothing creates one.
 
 Appendix B forbids a *declared birth rate*, which is right. What is absent is **the mechanism that
-would produce births as an outcome** — a household's own decision, with its own cause — and nothing
+would produce births as an outcome** — a decision somebody takes, with its own cause — and nothing
 naming it as absent. Under Part II that makes it neither MISSING nor OUT OF SCOPE but **unstated**,
 which is the one thing a clause may not be.
 
 **Entry is what makes a market contestable.** Without it a survivor's margin is never competed away
 and every concentration measure is one-way.
 
-**Unblocked by** item 7 of the old file (`Lifecycle` — the states) and item 15 (`Objective` — a party
-declares what it is FOR, which is what somebody starting a firm needs a reason from). Spec 34 is half
-built and **the birth half was PLACED forward three times (13f → 13g → 13h) without landing** — the
-worklist row says so itself.
+### A firm is born SMALL, and it is born in the pool
+
+**This is the correction that decides the item's shape** and it is why 12 now sits behind **11**.
+Nobody founds a company with a bond line and a dealing desk. A firm starts as one of many small ones
+— §42's sector — and §42 A6 already says what a small firm IS here: a **member of a cell**, an
+integer count of firms carrying its own per-member state, borrowing from a named lender on its own
+row. So a birth is **`cells.weight(cell, 'entry', 1, cause)`** into a small-business cell, funded by
+somebody real, and NOT a named party appearing with an equity cheque.
+
+Two things follow, and both are the point:
+
+- **The named corporate sector is not where firms come FROM.** It is where they ARRIVE. Item 11's
+  A6.c promotion is the arrival, and until entry exists it can only ever move firms that the SEED
+  put in the pool — a fixed stock draining upward, which is E4's "entry is the accounting identity
+  of exit" wearing a different face.
+- **The whole life cycle runs through one sector.** Born in the pool, grows or does not, is promoted
+  out of it if it clears §42 A5's bond-market threshold, and dies in either place (`estate`). The
+  boundary between §42 and Corporate Credit is then **a SIZE a firm actually crossed** rather than
+  the modelling line A6.b says it must not be.
+
+**The hard part is the representation, and this item must answer it rather than assume it.** A
+promotion takes ONE member out of a cell and makes a named party of it, and the member's per-member
+state has to go with it — which is the same rock `13d.1` ran aground on four times and solved with
+`reKeyCell`: nothing moves, the cell SPLITS (exact, per-member state and all) and the part that left
+carries a different key. A split of one member leaves a **cell of weight one**, and §42 A6.b says a
+weight of one IS a named firm — so either that is the answer and `representation` is a fact about
+the WEIGHT rather than a field, or crossing to `representation: 'named'` needs a kernel event that
+does not exist. **Decide it here, in the record, before writing the step.**
+
+**Unblocked by** item 7 of the old file (`Lifecycle` — the states), item 15 (`Objective` — a party
+declares what it is FOR, which is what somebody starting a firm needs a reason from), and now
+**item 11**, which builds the sector a firm is born into and the promotion door it leaves by. Spec 34
+is half built and **the birth half was PLACED forward three times (13f → 13g → 13h) without
+landing** — the worklist row says so itself.
 
 ### Steps
 
-- [ ] 12.1 A firm is started by somebody, out of something. The founder is a named party with a reason (`Objective`) and a balance sheet the equity cheque comes out of. **No firm appears from nowhere** — that would be a residual with no holder in reverse.
-- [ ] 12.2 `cells.weight` fires for entry with a cause and a date. This is the first caller that door has had.
-- [ ] 12.3 Household formation is the same mechanism at the other end: nothing moves into cohort 0. Give it a cause.
-- [ ] 12.4 `cells.merge` has no caller and is the other half of `A-18`: nothing recombines two cells that have become identical, so the cell count only ever rises. With 2.14's remainder fixed the micro-cells stop being created; merge is what removes the ones already there. **A-2 and A-3 guard `merge` and have never run** — closed as repairs, and this is where they first execute.
-- [ ] 12.5 Firm death already works (`estate`). Assert the pair: over a long run, entries and exits are both non-zero and neither is the accounting identity of the other (§42 E4).
-- [ ] 12.6 **Delete `seed.membersPerCohort`.** Fifteen million a cohort is a PLACEHOLDER and the plainest one in the seed: how many people there are, stated. Its own `why` says what ends it — *"a population with births and deaths in it rather than a count anybody states"* — and 12.2 and 12.3 are that mechanism. It named worklist 13f until item 9.2b, which is CLOSED and which the worklist's own header says never produced an outcome; this is where it actually dies. The seed states the opening cohorts and the count moves from there (Seed A3: a stock the flows then act on).
+- [ ] 12.1 **A firm is born into a small-business cell** (§42 A6, A1): `cells.weight(cell, 'entry', …)` with a cause and a date. It is founded by somebody — a named party with a reason (`Objective`) and a balance sheet the opening equity comes out of — because **no firm appears from nowhere**, which would be a residual with no holder in reverse. What the founder buys is a claim on the new firm, so the entry and the funding are one instruction (Law 5).
+- [ ] 12.2 **The reason to found one.** A birth is an OUTCOME and Appendix B forbids a rate, so what produces it is a party's own decision: what the sector earns against what starting costs, read from what this founder can see. It is the same shape as any other decision here — its own outlook, its own money, and a refusal is an answer.
+- [ ] 12.3 Household formation is the same door at the other end: nothing moves into cohort 0. Give it a cause. A household is not founded by anybody, so its cause is its own (Households A5), and this is the step that makes `seed.membersPerCohort` deletable.
+- [ ] 12.4 **The promotion FIRES** (§42 A6.c). Item 11.10 builds the door and the threshold; this is where a cell actually crosses it in an ordinary run, because it grew — which needs 12.1's entries so the pool is not a draining stock. Settle the representation question above and write the answer in the record.
+- [ ] 12.5 `cells.merge` has no caller and is the other half of `A-18`: nothing recombines two cells that have become identical, so the cell count only ever rises. With 2.14's remainder fixed the micro-cells stop being created; merge is what removes the ones already there. **A-2 and A-3 guard `merge` and have never run** — closed as repairs, and this is where they first execute.
+- [ ] 12.6 **Delete `seed.membersPerCohort`.** Fifteen million a cohort is a PLACEHOLDER and the plainest one in the seed: how many people there are, stated. Its own `why` says what ends it — *"a population with births and deaths in it rather than a count anybody states"* — and 12.3 is that mechanism. It named worklist 13f until item 9.2b, which is CLOSED and which the worklist's own header says never produced an outcome; this is where it actually dies. The seed states the opening cohorts and the count moves from there (Seed A3: a stock the flows then act on).
+- [ ] 12.7 Firm death already works (`estate`). Assert the pair, which is **§42 E4** and is why 11.12 is written red: over a long run, entries and exits are both non-zero and **neither is the accounting identity of the other** — and the same for promotions, which must be neither zero nor every cell.
 
 ### Findings this closes
 
-`A-17`, and `A-18`'s merge half.
+`A-17`, `A-18`'s merge half, and §42 `E4` (with item 11).
 
 ### Exit
 
-A firm is born in an ordinary run, with a founder and a reason; the population is an outcome in both
-directions; `cells.merge` and `cells.weight` have callers.
+A firm is born in the small-business pool in an ordinary run, with a founder and a reason; one that
+grows is promoted out of it and the boundary between the two sectors is a size a firm crossed; the
+population is an outcome in both directions; `cells.merge` and `cells.weight` have callers.
 
 ---
 
@@ -1398,7 +1435,7 @@ option premium, where it is multiplied by the price level instead of used as the
 | finding | item | |
 |---|---|---|
 | **A-9** (A) | ~~9~~, 14 | the whole insurer sector cannot open a single policy — **the five blockers closed at 9.3**; what item 14 owes it is the sector itself |
-| **A-17** (A) | 12 | three of XI-15's five weight events never fire, and nobody is ever born |
+| **A-17** (A) | 11, 12 | three of XI-15's five weight events never fire, and nobody is ever born. **11** builds the promotion door (§42 A6.c); **12** is the birth, and is what makes the promotion fire because a firm GREW rather than because the seed put it there |
 | **A-18** (A) | ~~2~~, 12 | the fraction of a person is discarded every period — **the fraction and the whole-cell crossing closed at 2a.1**; `cells.merge`, which removes the micro-cells already there, is item 12 |
 | **A-24** (C) | 21 | the household's plan round-trips through `unknown` and drops what it cannot parse |
 | **A-36** (C) | 16 | the treasury's immortality is unconditional where the kernel says conditional |
