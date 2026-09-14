@@ -685,6 +685,21 @@ function contractsNameTheLiving(): Family {
   };
 }
 
+/**
+ * E4, A-69: AND THE MEASUREMENT ACTUALLY HAPPENS. `refusedThisPeriod` was documented as "a standing
+ * measurement" and called by NOBODY — a docstring asserting a measurement that does not happen is
+ * worse than its absence, because a reader looking for the number believes it exists.
+ *
+ * The refusals themselves are journalled per trade by `clearing/market.ts` as they occur; this is
+ * the period's total, under the layer's own name, so a reader asks one question instead of summing
+ * a kind. Nothing anywhere raises a limit in response to it (E4: it is measured, never relieved).
+ */
+function publishRefused(ctx: MechanismContext): void {
+  const cut = refusedThisPeriod(ctx);
+  if (cut <= 0) return;
+  ctx.record('derivatives.unmargined', ['derivative-layer'], { period: ctx.period, cut }, true);
+}
+
 /** E4: what the markets struck BEYOND what their members could margin — a standing measurement. */
 export function refusedThisPeriod(ctx: MechanismContext): number {
   // `ofKind` is the journal's own index of what happened, which is the read rather than a filter
@@ -749,6 +764,7 @@ export function derivativeLayer(
         payLegs(ctx);
         marginCalls(ctx);
         trueUpFunds(ctx);
+        publishRefused(ctx);
       },
     },
     {

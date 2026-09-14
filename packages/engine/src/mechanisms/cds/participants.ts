@@ -17,6 +17,7 @@
  * it is writing on. A buyer facing a house prices the house; a buyer facing a seller whose own
  * spread widens with the reference's pays less for the cover, because it is worth less.
  */
+import type { InstrumentId } from '../../core/ids.js';
 import {
   type Cash,
   type PerPiece,
@@ -40,7 +41,7 @@ import { add } from '../../core/num.js';
 import type { ParticipantView } from '../../world/context.js';
 import { isCds, type CdsTerms } from './contract.js';
 import { cdsLineOf } from './data.js';
-import { isCdsIndex, seriesLineOf } from './series.js';
+import { isCdsIndex } from './series.js';
 import { about } from '../../world/context.js';
 
 /**
@@ -66,7 +67,7 @@ function levelFor(
   view: ParticipantView,
   m: MarketDecl,
   book: ContractBook,
-  t: CdsTerms,
+  t: { readonly obligation: InstrumentId; readonly tenorYears: number },
 ): PerPiece | undefined {
   const cash = view.print(t.obligation);
   if (!cash.some || t.tenorYears <= 0) return undefined;
@@ -216,7 +217,32 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
     }
   }
   const move = subQty(want, held, 'from the protection it has to the protection it wants');
-  if (move === 0) return [];
+  /**
+   * A-66, XI-13, §46 A3: AND A PARTY WITH NOTHING TO COVER QUOTES BOTH WAYS AROUND ITS OWN NUMBER.
+   *
+   * Everything that could make this party a WRITER stands behind `at.some`, so in a book that has
+   * never printed every party is left with `exposureTo(view, t)` — buy-only for everybody — and no
+   * session ever crosses: all 60 CDS sessions in a measured run came back `noSupply`. A party with
+   * nothing to cover on this name and capital to stand behind a naked position (B3) makes the
+   * market: a bid a tick inside its own number and an ask a tick outside. Its number is the CASH
+   * MARKET's charge for this credit (`mine`), which the header above already insists is never this
+   * book's own print.
+   */
+  if (move === 0) {
+    const room = sizeOf(view, view.equity(), mine);
+    if (room <= 0) return [];
+    const bid = minus(mine, tick, 'a tick inside its own number');
+    if (bid <= 0) return [];
+    return [
+      { party: view.self.id, side: 'buy', price: bid, qty: asQty(room) },
+      {
+        party: view.self.id,
+        side: 'sell',
+        price: plus(mine, tick, 'a tick outside its own number'),
+        qty: asQty(room),
+      },
+    ];
+  }
   const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
@@ -249,12 +275,34 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
   const decl = contractOf(m);
   if (decl === undefined || !isCdsIndex(decl.terms)) return [];
   const t = decl.terms;
-  const last = view.print(seriesLineOf(t.series, t.tenorYears));
-  if (!last.some) return [];
-  const level = last.value.price;
-  // B1.a: what it holds of the constituents' own paper, at the weights the series fixed.
+  /**
+   * A-66, XI-13, §46 A3: ITS OWN NUMBER FOR THE SERIES, AND IT IS NOT THIS BOOK'S LAST PRINT.
+   *
+   * This read `view.print(seriesLineOf(...))` as a PRECONDITION and then posted at a multiple of
+   * it, so a series that had never printed had no orders in it at all — and could therefore never
+   * print. It is the same fixed point the single-name book's own header refuses in as many words.
+   *
+   * What a series is worth is what its CONSTITUENTS are worth: each name's own cash market charge
+   * for that credit (`levelFor`, a read of the reference's bond), at the weights the series fixed.
+   * A name whose paper has never printed contributes nothing and its weight comes out of the
+   * denominator, so the answer is the weighted average of the names this party can actually price.
+   */
   const whole = t.names.reduce((n, x) => add(n, x.weight, 'the whole line'), 0);
   if (whole <= 0) return [];
+  let priced = 0;
+  let blended = asPerPiece(0, 'the series before its names are walked');
+  for (const n of t.names) {
+    const one = levelFor(view, m, decl, { obligation: n.obligation, tenorYears: t.tenorYears });
+    if (one === undefined) continue;
+    priced = add(priced, n.weight, 'the part of the line it can price');
+    blended = plus(
+      blended,
+      scale(one, asRatio(n.weight, 'this name in the line'), 'its part of the line'),
+      'the line so far',
+    );
+  }
+  if (priced <= 0) return [];
+  const level = over(blended, asRatio(priced, 'the part of the line it could price'), 'the series');
   let exposed = NO_QTY;
   for (const n of t.names) {
     if (n.reference === view.self.id) return [];
@@ -271,14 +319,39 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
     );
   }
   const want = subQty(exposed, held, 'the exposure to this line it has not covered');
-  if (want <= 0) return [];
-  const qty = view.registry.deliverable(want);
+  const facing = scale(
+    level,
+    counterpartyTerm(view, absolute(held, 'what it faces'), 'the line'),
+    'facing it',
+  );
+  /**
+   * §46 A3: and a party exposed to none of the names makes the market around its own number, sized
+   * by what its capital would stand behind a naked position with (B3). A bid a tick inside and an
+   * ask a tick outside: a spread, and not a crossing.
+   */
+  if (want === 0) {
+    const room = sizeOf(view, view.equity(), level);
+    if (room <= 0) return [];
+    const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
+    const bid = minus(level, tick, 'a tick inside its own number');
+    if (bid <= 0) return [];
+    return [
+      { party: view.self.id, side: 'buy', price: bid, qty: asQty(room) },
+      {
+        party: view.self.id,
+        side: 'sell',
+        price: plus(level, tick, 'a tick outside its own number'),
+        qty: asQty(room),
+      },
+    ];
+  }
+  const qty = view.registry.deliverable(absolute(want, 'either way'));
   if (qty <= 0) return [];
   return [
     {
       party: view.self.id,
-      side: 'buy',
-      price: scale(level, counterpartyTerm(view, absolute(held, 'what it faces'), 'the line'), 'facing it'),
+      side: want > 0 ? 'buy' : 'sell',
+      price: want > 0 ? facing : level,
       qty: asQty(qty),
     },
   ];

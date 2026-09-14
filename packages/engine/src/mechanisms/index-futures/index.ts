@@ -12,7 +12,9 @@
  * direction, and the honest way to lay that off is a contract with a named counterparty and its own
  * margin — not a coefficient that makes the position disappear from a report.
  */
-import { asCash, asPerPiece, asRatio, type Cash, minus, negated, type PerPiece, plus, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
+import { asCash, asPerPiece, asRatio, type Cash, minus, negated, type PerPiece, plus, ratioOf, scale, valueAt, asAmount,
+  absolute,
+} from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
@@ -170,7 +172,6 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
       'its book',
     );
   }
-  if (book <= 0) return [];
   // Finding E-10 again: an index LEVEL is a pure number, and what one contract covers is that
   // level in money — which is the dimension the book it hedges is in.
   const perContract = scale(
@@ -195,16 +196,45 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     hedged,
     'left to hedge',
   );
-  if (want <= 0) return [];
-  const qty = view.registry.deliverable(want);
+  const mine = asPerPiece(level.value.level, 'the index now');
+  /**
+   * A-66, E2, XI-13, §46 A3: AND THE OTHER SIDE, which this file did not have.
+   *
+   * Its docstring is "A DESK LONG A BOOK OF SHARES SELLS THE INDEX" — one true reason, and the only
+   * one implemented: `side: 'sell'` was the only side in the file and `book <= 0` sent a party with
+   * no shares away with nothing to say. So every session was sell-only and no index future book has
+   * ever crossed. §46 A3 and XI-13 need two sides, and the second is a party with CAPITAL and no
+   * book of the constituents: it makes a market around its own number, which is the index's own
+   * level — a read of the constituents' prints and never of this book (A1.a: an index may not input
+   * to its own constituents, and it does not here either).
+   *
+   * A desk that is OVER-hedged is the third case and was unreachable: `want <= 0` returned nothing,
+   * so a desk short more index than its book takes could not buy any of it back.
+   */
+  const own = view.equity();
+  const room =
+    own > 0
+      ? view.registry.deliverable(ratioOf(own, perContract, 'what its capital carries'))
+      : NO_QTY;
+  if (want === 0) {
+    if (room <= 0) return [];
+    const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
+    const bid = minus(mine, tick, 'a tick inside its own number');
+    if (bid <= 0) return [];
+    return [
+      { party: view.self.id, side: 'buy', price: bid, qty: asQty(room) },
+      {
+        party: view.self.id,
+        side: 'sell',
+        price: plus(mine, tick, 'a tick outside its own number'),
+        qty: asQty(room),
+      },
+    ];
+  }
+  const qty = view.registry.deliverable(absolute(want, 'what it has left to do either way'));
   if (qty <= 0) return [];
   return [
-    {
-      party: view.self.id,
-      side: 'sell',
-      price: asPerPiece(level.value.level, 'the index now'),
-      qty: asQty(qty),
-    },
+    { party: view.self.id, side: want > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) },
   ];
 }
 

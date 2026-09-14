@@ -335,7 +335,9 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * what that did to a bill, and reversed the same order for the same reason).
    */
   const outlook = view.outlook(about({ on: 'price', instrument: t.deliverable }));
-  const mine = outlook.some ? outlook.value.expected : cash.value.price;
+  const mine = outlook.some
+    ? asPerPiece(outlook.value.expected, `what it expects ${t.deliverable} to be worth`)
+    : cash.value.price;
   /** Where the market is: the comparator that decides the side and the size, never the level. */
   const at = view.print(t.book);
   let position = NO_QTY;
@@ -379,14 +381,22 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     'so contracts it wants to be short',
   );
   const price = mine;
-  if (at.some && own > 0) {
+  const conviction =
+    own > 0
+      ? view.registry.deliverable(
+          pricedAt(
+            own,
+            scale(
+              asAmount<'piece'>(t.contractSize, 'the face in a contract'),
+              asRatio(cash.value.price, 'at its price'),
+              'what one contract commits',
+            ),
+            'what it can carry',
+          ),
+        )
+      : NO_QTY;
+  if (at.some && conviction > 0) {
     const book = at.value.price;
-    const conviction = view.registry.deliverable(pricedAt(
-        own,
-        scale(asAmount<'piece'>(t.contractSize, 'the face in a contract'), asRatio(cash.value.price, 'at its price'), 'what one contract commits'),
-        'what it can carry',
-      ),
-    );
     if (mine > book) {
       want = plus(want, conviction, 'and the duration its own view wants');
     } else if (mine < book) {
@@ -394,7 +404,32 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     }
   }
   const move = minus(want, position, 'from the position it has to the one it wants');
-  if (move === 0) return [];
+  /**
+   * A-66, XI-13, §46 A3: AND A PARTY WITH NOTHING TO CHANGE QUOTES BOTH WAYS AROUND ITS OWN NUMBER.
+   *
+   * The conviction term above needs a PRINT to know which side of the book this party is on, so in
+   * a book that has never printed it drops out and every party is left with its hedging need —
+   * which here is `−held / contractSize`, one sign for everybody. The first session of every bond
+   * future book was therefore sell-only and never crossed, so it never printed, so the next one was
+   * the same. `fx-derivatives` hit this and built the answer: a party with nothing to hedge quotes a
+   * bid a tick below and an ask a tick above its own number — a spread, not a crossing — sized by
+   * what its own balance sheet has room for. Its number is the DELIVERABLE's, never this book's.
+   */
+  if (move === 0) {
+    if (conviction <= 0) return [];
+    const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
+    const bid = minus(price, tick, 'a tick inside its own number');
+    if (bid <= 0) return [];
+    return [
+      { party: view.self.id, side: 'buy', price: bid, qty: asQty(conviction) },
+      {
+        party: view.self.id,
+        side: 'sell',
+        price: plus(price, tick, 'a tick outside its own number'),
+        qty: asQty(conviction),
+      },
+    ];
+  }
   const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];

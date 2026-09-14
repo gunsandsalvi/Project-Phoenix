@@ -460,12 +460,14 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * per unit of the underlying, out by the multiplier, into the same book the read comes off.
    */
   const price = scale(mine, asRatio(t.multiplier, 'the multiplier'), 'per contract');
-  // What it can write comes off its own balance sheet, and that is walked only where the comparison
-  // it feeds actually happens: a book that has not printed has nothing for its number to be above.
-  const own = at.some ? view.equity() : asCash(0, 'no book to stand its capital against');
-  if (at.some && own > 0) {
+  // What it can write comes off its own balance sheet.
+  const own = view.equity();
+  const room =
+    own > 0
+      ? view.registry.deliverable(amountOf(own, price, 'what it can write'))
+      : NO_QTY;
+  if (at.some && room > 0) {
     const book = at.value.price;
-    const room = view.registry.deliverable(amountOf(own, price, 'what it can write'));
     if (price > book) {
       // It thinks these are dear against what the market last paid: it would rather be the writer.
       want = minus(want, room, 'and what it would write at its own price');
@@ -474,7 +476,35 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     }
   }
   const move = minus(want, covered, 'from the cover it has to the cover it wants');
-  if (move === 0) return [];
+  /**
+   * A-66, XI-13, §46 A3: AND A PARTY WITH NOTHING TO COVER QUOTES BOTH WAYS AROUND ITS OWN NUMBER.
+   *
+   * The branch above needs a PRINT to decide which side this party is on, so in a book that has
+   * never printed the conviction term drops out and every party is left with its hedging need — and
+   * a hedging need has ONE SIGN. A put book saw nothing but buyers and a call book saw no orders at
+   * all, so neither ever crossed, so neither ever printed: 7,510 option sessions, every one of them
+   * `noDemand`. Eight of the nine derivative classes in this world are the same shape.
+   *
+   * The answer is `fx-derivatives`', whose author hit this and built it: a party with nothing to
+   * hedge posts a bid a tick below its own number and an ask a tick above it — a spread and not a
+   * crossing — sized by what its own balance sheet has room for. Its number is its own outlook's
+   * (`worthToIt`), never this book's last print, which is the fixed point XI-13 forbids.
+   */
+  if (move === 0) {
+    if (room <= 0) return [];
+    const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
+    const bid = minus(price, tick, 'a tick inside its own number');
+    if (bid <= 0) return [];
+    return [
+      { party: view.self.id, side: 'buy', price: bid, qty: asQty(room) },
+      {
+        party: view.self.id,
+        side: 'sell',
+        price: plus(price, tick, 'a tick outside its own number'),
+        qty: asQty(room),
+      },
+    ];
+  }
   const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];

@@ -131,7 +131,32 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
     }
   }
   const move = minus(want, held, 'from the fixed it pays to the fixed it wants to pay');
-  if (move === 0) return [];
+  /**
+   * A-66, XI-13, §46 A3: AND A PARTY WITH NOTHING TO CHANGE QUOTES BOTH WAYS AROUND ITS OWN NUMBER.
+   *
+   * The conviction term stands behind `at.some`, so in a book that has never printed every party is
+   * left with `−fixedDebtOf(view, t)` — one sign for everybody — and the session is sell-only and
+   * never crosses. The IRS books in this world have never run. A party with no fixed debt to hedge
+   * and capital to carry a position makes the market instead: a bid a tick inside its own number
+   * and an ask a tick outside, which is a spread and not a crossing. Its number is the FLOATING
+   * LEG's — what the overnight book actually paid, a read of another market — and never this
+   * book's own print, which is the fixed point this file's header already refuses.
+   */
+  if (move === 0) {
+    const room = sizeOf(view, unit, mine);
+    if (room <= 0) return [];
+    const bid = minus(price, tick, 'a tick inside its own number');
+    if (bid <= 0) return [];
+    return [
+      { party: view.self.id, side: 'buy', price: bid, qty: asQty(room) },
+      {
+        party: view.self.id,
+        side: 'sell',
+        price: plus(price, tick, 'a tick outside its own number'),
+        qty: asQty(room),
+      },
+    ];
+  }
   const qty = view.registry.deliverable(absolute(move, 'either way'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];

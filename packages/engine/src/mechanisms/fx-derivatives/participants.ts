@@ -34,6 +34,7 @@ import {
   minus,
   plus,
   scale,
+  asPerNamedUnit,
 } from '../../core/measure.js';
 import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode } from '../../core/ids.js';
@@ -160,22 +161,96 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
 }
 
 /**
+ * C2, B3.b, A-66: WHAT A PARTY'S OWN BASIS IS — what IT pays for one money against what it pays for
+ * the other, each measured against what that money's own benchmark printed.
+ *
+ * A cross-currency basis is a funding fact and not a parity residual: a party that pays more than
+ * the benchmark for dollars and exactly the benchmark for euros will give up that difference to
+ * turn euros into dollars, and one that is cheap in dollars will take it. That is the two sides,
+ * and neither of them is read off this book (Appendix B: no parity-formula forward; B3.b: a level
+ * is a party's own reservation and never a formula).
+ *
+ * It reads what this party PUBLISHED about its own cost of funds — `bank.costOfFunds` carries the
+ * home money's blend and a named row for every other money it might lend in (Currency A3) — against
+ * the overnight fixing each of those moneys' own book printed. A party that publishes no funding
+ * cost has no basis of its own and says so; that is most of the world, and it is why this book's
+ * two sides are banks.
+ */
+function ownBasis(view: ParticipantView, base: CurrencyCode, quote: CurrencyCode): Option<Ratio> {
+  const said = view.lastPublicAbout('bank.costOfFunds', String(view.self.id));
+  if (!said.some) return none<Ratio>();
+  const data = said.value.data;
+  const costIn = (ccy: CurrencyCode): Option<Ratio> => {
+    const row = data['ccy'] === ccy ? data : undefined;
+    const also = data['alsoIn'];
+    const named =
+      row ?? (typeof also === 'object' && also !== null ? (also as Record<string, unknown>)[ccy] : undefined);
+    if (typeof named !== 'object' || named === null) return none<Ratio>();
+    const r = (named as Record<string, unknown>)['perAnnum'];
+    // Item 16: a published rate re-enters here, through its dimension's own door.
+    return typeof r === 'number' ? some(asRatio(r, `what ${ccy} costs it`)) : none<Ratio>();
+  };
+  const over = (ccy: CurrencyCode): Option<Ratio> => {
+    const own = costIn(ccy);
+    const market = overnightRate(view, ccy);
+    return own.some && market.some
+      ? some(minus(own.value, market.value, `what it pays over the ${ccy} benchmark`))
+      : none<Ratio>();
+  };
+  const b = over(base);
+  const q = over(quote);
+  return b.some && q.some
+    ? some(minus(b.value, q.value, 'what it pays for one money over the other'))
+    : none<Ratio>();
+}
+
+/**
  * C2: who wants a cross-currency swap — a borrower that raised in one money and needs another. Its
  * reservation is the basis it will pay to turn one into the other for the life of what it raised.
+ *
+ * A-66: this read `view.print(t.book)` as a PRECONDITION and then posted AT that print, buy-only —
+ * so a book that had never printed had no orders in it and could never print, and one that had was
+ * a set of parties agreeing with the last number. Both halves are gone: the level is this party's
+ * own basis, and a party with nothing to swap makes the market around it.
  */
 export function xccyOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const decl = contractOf(m);
   if (decl === undefined || !isXccy(decl.terms)) return [];
   const t = decl.terms;
-  const last = view.print(t.book);
-  if (!last.some) return [];
-  const needs = positionIn(view, t.base);
-  if (needs <= 0) return [];
   const spot = view.print(t.spot);
   if (!spot.some) return [];
-  const qty = view.registry.deliverable(needs);
-  if (qty <= 0) return [];
-  return [{ party: view.self.id, side: 'buy', price: last.value.price, qty: asQty(qty) }];
+  const basis = ownBasis(view, t.base, t.quote);
+  if (!basis.some) return [];
+  // Law 8: a basis is a RATE, and this book quotes one. `E-11` is why the two are the same type.
+  const mine = view.registry.priceOf(
+    m.ccy,
+    view.registry.derivativeKind(decl.kind).unit,
+    asPerNamedUnit(basis.value, 'what it pays for one money over the other, per annum'),
+  );
+  const needs = positionIn(view, t.base);
+  if (needs > 0) {
+    const qty = view.registry.deliverable(needs);
+    if (qty <= 0) return [];
+    return [{ party: view.self.id, side: 'buy', price: mine, qty: asQty(qty) }];
+  }
+  // §46 A3, B2.b: a party with nothing to swap quotes both ways around its own basis, and the size
+  // is what its own balance sheet has room for. Nothing raises that room.
+  const room = view.equity();
+  if (room <= 0) return [];
+  const size = view.registry.deliverable(amountOf(room, spot.value.price, 'what its capital carries'));
+  if (size <= 0) return [];
+  const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
+  const bid = minus(mine, tick, 'a tick inside its own basis');
+  if (bid <= 0) return [];
+  return [
+    { party: view.self.id, side: 'buy', price: bid, qty: asQty(size) },
+    {
+      party: view.self.id,
+      side: 'sell',
+      price: plus(mine, tick, 'a tick outside its own basis'),
+      qty: asQty(size),
+    },
+  ];
 }
 
 /**

@@ -324,7 +324,9 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const spot = view.print(t.deliverable);
   if (!spot.some) return [];
   const outlook = view.outlook(about({ on: 'price', instrument: t.deliverable }));
-  const mine = outlook.some ? outlook.value.expected : spot.value.price;
+  const mine = outlook.some
+    ? asPerPiece(outlook.value.expected, `what it expects ${t.deliverable} to be worth`)
+    : spot.value.price;
   const at = view.print(t.book);
   let position = NO_QTY;
   for (const c of view.contracts.mine()) {
@@ -343,17 +345,23 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     over(held, asRatio(t.lotUnits, 'what one lot is'), 'what its holding comes to in lots'),
     'so lots it wants to be short',
   );
-  // Its own balance sheet is walked only where the comparison it feeds happens: a book with no
-  // print has nothing for this party's number to stand against (Law 18).
-  const own = at.some ? view.equity() : asCash(0, 'no book to stand its capital against');
-  if (at.some && own > 0) {
+  const own = view.equity();
+  const conviction =
+    own > 0
+      ? view.registry.deliverable(
+          pricedAt(
+            own,
+            scale(
+              asAmount<'piece'>(t.lotUnits, 'the units in a lot'),
+              asRatio(spot.value.price, 'at their price'),
+              'what one lot commits',
+            ),
+            'what it can carry',
+          ),
+        )
+      : NO_QTY;
+  if (at.some && conviction > 0) {
     const book = at.value.price;
-    const conviction = view.registry.deliverable(pricedAt(
-        own,
-        scale(asAmount<'piece'>(t.lotUnits, 'the units in a lot'), asRatio(spot.value.price, 'at their price'), 'what one lot commits'),
-        'what it can carry',
-      ),
-    );
     // B2, B3: its own view against where the book stands, and nothing else decides the side.
     if (mine > book) want = plus(want, conviction, 'and the length its own view wants');
     if (mine < book) want = minus(want, conviction, 'and the length its own view would shed');
@@ -366,7 +374,30 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     }
   }
   const move = minus(want, position, 'from the position it has to the one it wants');
-  if (move === 0) return [];
+  /**
+   * A-66, XI-13, §46 A3: AND A PARTY WITH NOTHING TO CHANGE QUOTES BOTH WAYS AROUND ITS OWN NUMBER.
+   *
+   * Every term that could make this party a BUYER stands behind `at.some`, so a book that has never
+   * printed leaves everybody with `−held / lotUnits` and the session is sell-only: 3,680 commodity
+   * future sessions, every one `noDemand`, so no first print ever happened. The spread below is
+   * `fx-derivatives`' answer — a bid a tick inside its own number and an ask a tick outside, sized
+   * by what its balance sheet carries — and its number is the SPOT line's, never this book's.
+   */
+  if (move === 0) {
+    if (conviction <= 0) return [];
+    const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
+    const bid = minus(mine, tick, 'a tick inside its own number');
+    if (bid <= 0) return [];
+    return [
+      { party: view.self.id, side: 'buy', price: bid, qty: asQty(conviction) },
+      {
+        party: view.self.id,
+        side: 'sell',
+        price: plus(mine, tick, 'a tick outside its own number'),
+        qty: asQty(conviction),
+      },
+    ];
+  }
   const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) }];
