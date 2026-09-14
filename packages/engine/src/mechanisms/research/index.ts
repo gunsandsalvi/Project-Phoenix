@@ -38,6 +38,7 @@ import { BANK, HOUSEHOLD } from '../../registry/profiles.js';
 import { weightOf } from '../../parties/party.js';
 import { cellSide, totalFor } from '../../ledger/settlement.js';
 import type { MechanismContext } from '../../world/context.js';
+import type { Event } from '../../journal/journal.js';
 import type { SystemModule } from '../../world/module.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { estimateFrom, seenOf } from './estimate.js';
@@ -46,15 +47,48 @@ import { RESEARCH_PARAMS, researchParams, memoryOf } from './data.js';
 export * from './data.js';
 export * from './estimate.js';
 
-/** What a bank is carrying: the names it covers and what it last said about each. */
+/**
+ * C4: WHAT THIS DESK HAS ALREADY COUNTED, and that is all it keeps (item 9.9b).
+ *
+ * What it SAID and when it INITIATED were here too, and both were mirrors: a research estimate is
+ * published — that is what research IS — so `research.estimate`, `research.initiated` and
+ * `research.dropped` already carry every one of them, and `consensus` in this same file was already
+ * reading them that way. Two records of one fact, one of them private and invisible to the analysts
+ * it exists for (Law 19).
+ *
+ * The last period whose observations are in the estimate is not published and must not be: it is
+ * bookkeeping about a read, not a fact about a company, and publishing it would be telling the
+ * market which reports this desk has got round to.
+ */
 interface Desk {
-  /** Company id to the per-period figure this bank last published about it. */
-  /** What this desk says a name makes IN A PERIOD. Money, so it can never be read as a rate. */
-  readonly said: Map<string, Cash>;
-  /** When it initiated, so what it has SEEN of a name is what happened after that (C1). */
-  readonly since: Map<string, number>;
   /** C4: the last period whose observations are already in the estimate, so none is counted twice. */
   readonly seenTo: Map<string, number>;
+}
+
+/**
+ * C1, C4, Law 19: WHAT THIS DESK LAST SAID ABOUT THIS NAME, and WHEN IT INITIATED — off what it
+ * published. A drop ends the coverage, so an initiation before the last drop is not this one.
+ */
+interface Coverage {
+  readonly said: Option<Cash>;
+  readonly since: Option<number>;
+}
+
+function coverageOf(ctx: MechanismContext, bank: PartyId, company: string): Coverage {
+  const mine = (kind: 'research.estimate' | 'research.initiated' | 'research.dropped'): Event[] =>
+    ctx.journal.forSubject(kind, company).filter((e) => e.data['bank'] === String(bank));
+  const dropped = mine('research.dropped');
+  const lastDrop = dropped[dropped.length - 1]?.period;
+  const after = (e: Event): boolean => lastDrop === undefined || e.period > lastDrop;
+  const initiated = mine('research.initiated').filter(after);
+  const estimates = mine('research.estimate').filter(after);
+  const last = estimates[estimates.length - 1];
+  const value = last?.data['perPeriod'];
+  return {
+    // Item 16: a published number re-enters the type system through its dimension's own door.
+    said: typeof value === 'number' ? some(asCash(value, 'what it said the name makes')) : none<Cash>(),
+    since: initiated[0] === undefined ? none<number>() : some(initiated[0].period),
+  };
 }
 
 type Desks = Record<string, Desk>;
@@ -66,7 +100,7 @@ function desks(ctx: MechanismContext): Desks {
 function deskOf(all: Desks, bank: PartyId): Desk {
   const held = all[String(bank)];
   if (held !== undefined) return held;
-  const made: Desk = { said: new Map(), since: new Map(), seenTo: new Map() };
+  const made: Desk = { seenTo: new Map() };
   all[String(bank)] = made;
   return made;
 }
@@ -185,23 +219,21 @@ function cover(seed: string, ctx: MechanismContext): void {
     let covered = 0;
     for (const company of companies) {
       const wanted = needsTheView(ctx, bank.id, company);
-      const standing = desk.said.get(String(company));
+      const cover = coverageOf(ctx, bank.id, String(company));
+      const standing = cover.said.some ? cover.said.value : undefined;
       if (!wanted) {
         // D2: and it DROPS one it cannot justify. What it said stands until it says otherwise.
-        if (standing === undefined) continue;
-        desk.said.delete(String(company));
-        desk.since.delete(String(company));
+        if (!cover.since.some) continue;
         desk.seenTo.delete(String(company));
         ctx.record('research.dropped', [bank.id, company], { bank: bank.id, company }, true);
         continue;
       }
       covered += 1;
-      if (!desk.since.has(String(company))) {
-        desk.since.set(String(company), ctx.period);
+      let since = cover.since.some ? cover.since.value : undefined;
+      if (since === undefined) {
+        since = ctx.period;
         ctx.record('research.initiated', [bank.id, company], { bank: bank.id, company }, true);
       }
-      const since = desk.since.get(String(company));
-      if (since === undefined) continue;
       // C1, C4: what this desk has not yet taken account of. A bank that initiated today reads
       // everything published about the name since it did; one that has been covering it reads what
       // has been published since it last spoke, and nothing it has already counted.
@@ -219,7 +251,6 @@ function cover(seed: string, ctx: MechanismContext): void {
       // a view that has not moved says nothing — §46 B2.a: a revision no observation preceded is
       // the defect this is shaped to avoid.
       if (standing !== undefined && !moved(now.value, standing)) continue;
-      desk.said.set(String(company), now.value);
       ctx.record(
         'research.estimate',
         [bank.id, company],
@@ -272,9 +303,11 @@ function settle(ctx: MechanismContext): void {
     if (report.at !== ctx.period) continue;
     const company = String(report.company);
     const observed = over(report.earned, asRatio(report.periods, 'the periods it covers'), 'what it made a period');
-    for (const [bank, desk] of Object.entries(all)) {
-      const said = desk.said.get(company);
-      if (said === undefined) continue;
+    // The desks that have a slot are the ones that have ever covered anything; whether THIS one
+    // covers THIS name is what its published coverage says (Law 19).
+    for (const bank of Object.keys(all)) {
+      const said = coverageOf(ctx, partyId(bank), company).said;
+      if (!said.some) continue;
       ctx.record(
         'research.surprise',
         [partyId(bank), partyId(company)],
@@ -282,9 +315,9 @@ function settle(ctx: MechanismContext): void {
           bank,
           company,
           quarter: report.quarter,
-          expected: said,
+          expected: said.value,
           observed,
-          surprise: minus(observed, said, 'observed minus expected'),
+          surprise: minus(observed, said.value, 'observed minus expected'),
         },
         true,
       );
@@ -452,12 +485,11 @@ export function research(seed: string): SystemModule {
     nouns: [
       {
         name: 'research',
-        kind: 'noun',
+        kind: 'working',
         holds:
-          'each desk’s estimate for each company it covers, when it initiated, and what it has seen',
+          'the last period whose observations are already in each desk’s estimate',
         why:
-          'an estimate is one party’s assessment of another \u2014 the same noun as a rating and a credit view, kept a third time in a third shape.',
-        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9b' },
+          'C4, item 9.9b: the last period whose observations are already in each estimate, so none is counted twice. It is bookkeeping about a READ that one phase hands the next, not a fact about a company, and publishing it would be telling the market which reports this desk has got round to. What it SAID and when it INITIATED were here too and both were mirrors: an estimate is published — that is what research IS — and `consensus`, in this same file, was already reading them off the journal.',
       },
     ],
     spec: 'Reporting C Reporting D Reporting E Reporting F',

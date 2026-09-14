@@ -7370,3 +7370,50 @@ the second time in three commits it has caught a stale pointer, including one of
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
 `check:deaths` 9 of 9, `check:existence` green. `9.9b` is the last of item 9.
+
+---
+
+## Item 9, seventeenth stage — `View` is not a store this kernel is missing (9.9b)
+
+**The decision the step asked for, made before the code.** `View` was to be a kernel noun holding
+"one party's assessment of another", with four module stores folded into it. Reading the four says
+that is wrong in three different ways, and none of them is a migration.
+
+**`expectations.outlooks` is §46's own subject matter and is `physics`.** The kernel already REACHES
+it — `OutlookProvider` and `ParticipantView.outlook`, which is this architecture's answer to
+"exactly one module answers for a kind". Moving the store into the kernel would move §46 B1's
+adaptive formation with it, and Law 15 puts a mechanism in a module. A belief is also private by
+right (Observer A4: no party sees another's state), and an outlook nobody else can see is the whole
+of what A2 means by *personal*. What old item 6 built was the VOCABULARY — `Subject`, `about`,
+`subjectOf` — and **its own record says the store was never what was missing**.
+
+**`ratings.published`, `research.said` and `research.since` were mirrors.** Both are OPINIONS SOLD —
+that is what a rating and a research estimate ARE — so both are announced, and the last announcement
+is the current opinion. Two other readers already took it that way (`cds` and the observer read
+`rating.action`; `consensus`, in `research`'s own file, reads `research.estimate` and
+`research.dropped`). These two modules were each holding a private second copy of what they had just
+published. That is the **fifth and sixth** instance of this shape in item 9.
+
+What is left in each is real and stays private for a reason. `ratings` keeps the PATIENCE
+bookkeeping — the grade its measure says today and how long it has said it — because an assessor
+whose wavering was visible would be publishing the grade it is thinking about, which is the opposite
+of A3's stickiness. `research` keeps `seenTo`, which is bookkeeping about a read: publishing it would
+tell the market which reports a desk has got round to.
+
+**The labour `skill` is not an opinion.** It was pointed at `View` by 9.1b, and a trade is not an
+assessment of anything; no module but `labour` asks. Nor is it derivable from the employment history,
+and the case that proves it is `separate`: when part of a cell leaves, the leaver is a NEW cell
+holding no row, and *"an unemployed baker looks for baking"* (A3) is exactly the fact that would be
+lost. XI-10 — who can do what, and what it costs to change — is this module's subject matter.
+
+**So `registry/nouns.ts` has no `View` placeholder left, and not one of them moved.** The count of
+homeless nouns falls because four declarations were WRONG about what they held, which is what an
+ontology register is for: it made four modules say what was in their bags, and saying it is what
+showed that three of the four bags held a copy and the fourth held the module's own subject.
+
+**Item 9 is closed.** Five findings (`A-9`, `A-43`, `A-67`, `B-2`, `B-3`, `B-14`), the seven private
+books, `Mandate`, `mayTrade`, the borrow market, `C-1`'s ETF row, and a new gate. Three placeholders
+remain in the engine and every one names an open item.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
+`check:deaths` 5 of 5, `check:existence` green.

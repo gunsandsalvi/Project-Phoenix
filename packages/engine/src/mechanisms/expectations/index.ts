@@ -225,12 +225,11 @@ export const expectations: SystemModule = {
   nouns: [
     {
       name: 'outlooks',
-      kind: 'noun',
+      kind: 'physics',
       holds:
         'every party’s outlook on every variable it watches, with its memory, its last observation and its recent surprises',
       why:
-        'an outlook is what a party BELIEVES, which is a first-class fact about the world and the input to every decision in it. Keyed by a bare string, the only belief expressible is an extrapolation of an observable \u2014 there is no way to say what one party thinks of ANOTHER PARTY (§46, XI-16).',
-      standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9b' },
+        '§46 IS THIS MODULE’S SUBJECT MATTER, and a belief is private by right: Observer A4 says no party sees another’s state, and an outlook nobody else can see is the whole of what A2 means by personal. It was declared a PLACEHOLDER for a kernel `View` and the read of the code says otherwise (item 9.9b): the kernel already REACHES it, through `OutlookProvider` and `ParticipantView.outlook`, which is this architecture’s answer to “exactly one module answers for a kind”. Moving the store into the kernel would move §46 B1’s adaptive formation with it, which Law 15 puts in a module. What old item 6 built was the VOCABULARY — `Subject`, `about`, `subjectOf`, so a belief about another PARTY can be expressed at all — and its own record says the store was never what was missing.',
     },
   ],
   spec: 'Expectations, XI-16',

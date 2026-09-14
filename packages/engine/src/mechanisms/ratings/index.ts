@@ -32,7 +32,7 @@ import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { assess, forInstrument, type Measure } from './assess.js';
 import { assessorChoosesBank, ASSESSOR_SWITCHING_COST } from './bank.js';
-import { ASSESSOR, ratingParam, RATING_PARAMS, type AssessorDecl, type Grade } from './data.js';
+import { ASSESSOR, GRADES, ratingParam, RATING_PARAMS, type AssessorDecl, type Grade } from './data.js';
 
 /** A5: it is a named party with an account, because it is paid and it can fail like anybody else. */
 export const assessorKind: PartyKindProfile = {
@@ -48,12 +48,40 @@ export const assessorKind: PartyKindProfile = {
   depositClass: 'corporate',
 };
 
-/** A3: what this assessor has published, and how long the state has disagreed with it (A3). */
+/**
+ * A3: HOW LONG THIS ASSESSOR'S OWN MEASURE HAS DISAGREED WITH WHAT IT PUBLISHED.
+ *
+ * What it PUBLISHED is not here (item 9.9b): a rating is an opinion sold to whoever might hold the
+ * paper, so it is announced — `rating.action`, public — and the last announcement IS the current
+ * grade. Two other readers in the engine already take it that way (`cds`, the observer), and this
+ * module was the only one holding a private second copy of it, which is the mirror Law 19 names.
+ *
+ * What is genuinely this module's is the PATIENCE bookkeeping: the grade its own measure says today
+ * and how many periods running it has said it. That is not published and must not be — an assessor
+ * whose wavering was visible would be publishing the grade it is thinking about, which is the
+ * opposite of A3's stickiness.
+ */
 interface Held {
-  published: Grade;
   /** The grade its own measure says today, and how many periods running it has said it. */
   pending: Grade;
   since: number;
+}
+
+/**
+ * A3, Law 19: THE GRADE THIS ASSESSOR CURRENTLY PUBLISHES on this subject — the last action it
+ * announced. Nothing when it has never rated it, which is what an unrated name is.
+ */
+function published(ctx: MechanismContext, assessor: string, subject: string): Option<Grade> {
+  const said = ctx.journal
+    .forSubject('rating.action', subject)
+    .filter((e) => e.data['assessor'] === assessor);
+  const last = said[said.length - 1];
+  if (last === undefined) return none<Grade>();
+  // Item 16: a published value re-enters the type system here, through its own vocabulary's door.
+  const grade = last.data['grade'];
+  return typeof grade === 'string' && (GRADES as readonly string[]).includes(grade)
+    ? some(grade as Grade)
+    : none<Grade>();
 }
 
 type Book = Record<string, Record<string, Held>>;
@@ -145,27 +173,25 @@ function publishIfMoved(
   subjects: readonly string[],
   about: Record<string, unknown>,
 ): void {
+  const was = published(ctx, d.assessor, subject);
   const held = forMe[subject];
-  if (held === undefined) {
+  if (!was.some) {
     // A4: the first opinion is published as one. An assessor that quietly held its first grade back
     // for its patience would have a world with unrated issuers for no reason anybody stated.
-    forMe[subject] = { published: measured.grade, pending: measured.grade, since: 0 };
+    forMe[subject] = { pending: measured.grade, since: 0 };
     announce(ctx, subjects, about, none<Grade>(), measured);
     return;
   }
-  if (measured.grade === held.published) {
-    held.pending = measured.grade;
-    held.since = 0;
+  if (held === undefined || measured.grade === was.value) {
+    forMe[subject] = { pending: measured.grade, since: 0 };
     return;
   }
   held.since = measured.grade === held.pending ? held.since + 1 : 1;
   held.pending = measured.grade;
   // A3: STICKY. The state has to stay across the boundary for this assessor's own patience.
   if (held.since < ctx.params.periods(ratingParam(d.assessor, 'patience'))) return;
-  const was = held.published;
-  held.published = measured.grade;
   held.since = 0;
-  announce(ctx, subjects, about, some(was), measured);
+  announce(ctx, subjects, about, was, measured);
 }
 
 function announce(
@@ -280,12 +306,11 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
     nouns: [
       {
         name: 'ratings',
-        kind: 'noun',
+        kind: 'working',
         holds:
-          'each agency’s published grade for each issuer, the grade its measure says today, and since when',
+          'how long each assessor’s own measure has disagreed with the grade it published',
         why:
-          'a rating is one party’s assessment of another and is the same noun as a credit view, a research estimate and a depositor’s confidence. Three modules keep three private versions of it.',
-        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9b' },
+          'A3, item 9.9b: what is left here is the PATIENCE bookkeeping — the grade this assessor’s own measure says today and how many periods running it has said it — and that is working state between two periods of one mechanism. What it PUBLISHED is not here: a rating is an opinion sold to whoever might hold the paper, so it is announced (`rating.action`, public) and the last announcement IS the current grade, which `cds` and the observer already read that way. The private copy of it was a mirror (Law 19) and is deleted. An assessor whose wavering was visible would be publishing the grade it is thinking about, which is the opposite of A3’s stickiness — so the half that stays private stays private for a reason.',
       },
     ],
     spec: 'Ratings',

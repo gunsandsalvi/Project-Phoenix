@@ -370,12 +370,11 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
     nouns: [
       {
         name: 'employment',
-        kind: 'noun',
+        kind: 'physics',
         holds:
-          'the trade each household cell can work in, which is the job it last held, and the index this module finds a row by',
+          'the trade each household cell can work in, which is the job it last held',
         why:
-          'the EMPLOYMENTS moved to the kernel at item 9.1 and are agreements of kind `labour.employment`; the index over them is a traversal and wants no kernel home (Observer E3). What is left that is a NOUN is the SKILL: what a person can do is a fact about that person, not about any job — a `View` a party holds of itself — and it is still kept here.',
-        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9b' },
+          'the EMPLOYMENTS moved to the kernel at item 9.1b and are agreements of kind `labour.employment`; the index over them is a traversal and wants no kernel home (Observer E3). What is left is the SKILL, and it was declared a placeholder for a `View` — which it is not (item 9.9b): a trade is not an opinion about anything, and no module but this one asks. It is not derivable from the employment history either, and the case that says so is `separate`: when part of a cell leaves, the leaver is a NEW cell holding no row, and “an unemployed baker looks for baking” (A3) is exactly the fact that would be lost. XI-10 — who can do what, and what it costs to change — is this module’s subject matter, so the trade lives here by right.',
       },
     ],
     spec: 'Labour, XI-10',
