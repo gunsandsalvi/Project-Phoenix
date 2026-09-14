@@ -39,6 +39,8 @@ import { priceAt } from '../../prices/curve.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { percent } from '../../core/format.js';
 import {
+  agreementKindId,
+  type AgreementId,
   currencyUnit,
   instrumentId,
   instrumentKindId,
@@ -53,6 +55,7 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
+import type { Agreement, AgreementTerms } from '../../register/agreements.js';
 import { atMost, div, sum, zeroIfNone, addTo} from '../../core/num.js';
 import { addQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
 import { asRatio, heldAsMoney, minus, plus, asPerPiece, pricedAt, type Cash, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
@@ -223,23 +226,78 @@ function cashOf(ctx: MechanismContext, who: PartyId, ccy: CurrencyCode): Qty {
  * THE DEAL
  * ------------------------------------------------------------------------------------------ */
 
+/**
+ * XI-11, Law 4, Law 19: THE NEXT FREE VEHICLE NAME FOR THIS ARRANGER, asked of the world rather
+ * than of a counter this module keeps. The parties store is the one writer of who exists, so it is
+ * the one that can say which name is taken (item 9.1).
+ */
+function freeVehicle(ctx: MechanismContext, bank: PartyId): PartyId {
+  for (let n = 1; ; n += 1) {
+    const id = vehicleId(bank, n);
+    if (!ctx.parties.has(id)) return id;
+  }
+}
+
+/**
+ * XI-11, C4.a, item 9.1: A DEAL IS AN AGREEMENT BETWEEN THE VEHICLE AND ITS ARRANGER.
+ *
+ * The vehicle owes the arranger what is left when the notes are paid (C4.a: the arranger keeps the
+ * bottom, which is what makes E3's *no risk transfer without a transferee* true rather than
+ * vacuous), so the vehicle is the debtor and the arranger the creditor.
+ *
+ * It carries ONE fact, because one fact is all a deal has that the world does not already hold:
+ * WHICH ROWS LEFT THE ARRANGER'S BOOK. The vehicle, the layers, the money and the pool's face are
+ * every one of them reads — the party, what it issued, what those are denominated in, and the
+ * `pool` on each tranche's own terms — and keeping a second copy of them beside the deal was the
+ * mirror Law 19 is about. What is sold in cannot be read back once a row has run off the vehicle's
+ * book, and XI-11's traceability is exactly the question of which loans left whose book.
+ */
+export const DEAL = agreementKindId('securitisation.deal');
+
+export interface DealTerms extends AgreementTerms {
+  readonly kind: typeof DEAL;
+  /** XI-11, E3: the rows the arranger sold in. The only fact here nothing else records. */
+  readonly sold: readonly InstrumentId[];
+}
+
+/** Law 15: structural — what makes these terms a deal is that they name what was sold into it. */
+export const isDeal = (t: AgreementTerms): t is DealTerms => 'sold' in t;
+
+/** One deal as this module reads it: the two named parties, and everything else derived. */
 interface Deal {
+  readonly id: AgreementId;
   readonly vehicle: PartyId;
   readonly arranger: PartyId;
-  readonly ccy: CurrencyCode;
-  readonly rows: readonly InstrumentId[];
-  readonly pool: Qty;
-  /** XI-8: the layers in the order they are paid. One when the pool went out whole (C2.a). */
-  readonly layers: readonly InstrumentId[];
+  readonly sold: readonly InstrumentId[];
 }
 
-interface Book {
-  next: number;
-  readonly deals: Deal[];
+function dealOf(a: Agreement): Deal {
+  if (!isDeal(a.terms)) throw new InvalidRegistry('XI-11', `${a.id} is not a deal`);
+  return { id: a.id, vehicle: a.debtor, arranger: a.creditor, sold: a.terms.sold };
 }
 
-const state = (ctx: MechanismContext): Book =>
-  ctx.state<Book>('deals', () => ({ next: 1, deals: [] }));
+const dealsOpen = (ctx: MechanismContext): readonly Deal[] =>
+  ctx.agreements
+    .ofKind(DEAL)
+    .filter((a) => a.state === 'performing')
+    .map(dealOf);
+
+/**
+ * XI-8, Law 19: THE LAYERS, IN THE ORDER THEY ARE PAID — what this vehicle issued, ordered by the
+ * seniority on each one's own terms. It used to be the insertion order of a stored list, which
+ * says the same thing only while nothing is ever issued out of order.
+ */
+function layersOf(ctx: MechanismContext, vehicle: PartyId): readonly Instrument[] {
+  return ctx.instruments
+    .issuedBy(vehicle)
+    .filter((i) => isTranche(i.terms))
+    .sort((a, b) => trancheTerms(a).seniority - trancheTerms(b).seniority);
+}
+
+/** Law 8: the money a deal is in, which is what it issued its layers in. */
+function ccyOfDeal(ctx: MechanismContext, deal: Deal): CurrencyCode | undefined {
+  return layersOf(ctx, deal.vehicle)[0]?.ccy;
+}
 
 /**
  * D1, D2: WHAT A BANK WOULD SELL. Rows it is owed, in the money it is short of, that it can hand
@@ -355,8 +413,7 @@ export function arrange(ctx: MechanismContext): void {
     }
     const pool = sum(faces).value;
     if (pool <= 0) continue;
-    const book = state(ctx);
-    const vehicle = vehicleId(bank.id, book.next);
+    const vehicle = freeVehicle(ctx, bank.id);
     // C4: WHO WOULD BUY A NOTE OF IT. Each is asked with its own view and answers out of its own
     // money; none of them sees this bank's book, and none of them has to bid (Observer A4).
     const schedule = poolSchedule(view, taken, faces, pool);
@@ -376,7 +433,7 @@ export function arrange(ctx: MechanismContext): void {
       );
       continue;
     }
-    cut(ctx, { arranger: bank.id, ccy, vehicle, rows: taken, pool, offered: gap, bids, n: book.next });
+    cut(ctx, { arranger: bank.id, ccy, vehicle, rows: taken, pool, offered: gap, bids });
   }
 }
 
@@ -395,18 +452,19 @@ function cut(
     /** D2: what it needs OFF its book. It sells this much and not a unit more (C4.a). */
     offered: Qty;
     bids: readonly Order[];
-    n: number;
   },
 ): void {
   const venue = dealVenue(d.vehicle);
   if (!ctx.venues.some((v) => v.id === venue)) {
     ctx.openVenue({
       id: venue,
-      name: `${String(d.arranger)} pool ${d.n}`,
+      // Law 9: a deal is named for the vehicle that IS it, which is the name the world already
+      // carries. It used to be named for a counter this module kept beside its own book.
+      name: `${String(d.vehicle)} pool`,
       clearedBy: 'securitisation',
       unit: currencyUnit(d.ccy),
       ccy: d.ccy,
-      key: { arranger: String(d.arranger), deal: String(d.n) },
+      key: { arranger: String(d.arranger), deal: String(d.vehicle) },
     });
   }
   for (const b of d.bids) ctx.post(venue, b);
@@ -444,7 +502,7 @@ function cut(
     id: d.vehicle,
     kind: VEHICLE,
     region: arrangerParty.region,
-    name: `${String(d.arranger)} pool ${d.n}`,
+    name: `${String(d.vehicle)} pool`,
     bank: d.arranger,
     representation: 'named',
     status: { alive: true, standing: 'good' },
@@ -470,14 +528,17 @@ function cut(
     });
   }
   if (!settleDeal(ctx, d, outcome.price, senior, junior, seniorFace, juniorFace)) return;
-  state(ctx).next += 1;
-  state(ctx).deals.push({
-    vehicle: d.vehicle,
-    arranger: d.arranger,
+  // XI-11, C4.a: the deal is the relation between the vehicle and its arranger, and the vehicle
+  // owes it what is left when the notes are paid. It owes nothing yet — the residual is what a
+  // wind-up finds — which is why the store admits a zero (item 9.1a).
+  const terms: DealTerms = { kind: DEAL, sold: d.rows };
+  ctx.owes({
+    debtor: d.vehicle,
+    creditor: d.arranger,
     ccy: d.ccy,
-    rows: d.rows,
-    pool: d.pool,
-    layers: junior.some ? [senior, junior.value] : [senior],
+    owed: 0,
+    terms,
+    why: `${d.arranger} sold ${d.rows.length} rows into ${d.vehicle} and kept the bottom`,
   });
   ctx.record(
     'securitisation.cut',
@@ -627,8 +688,7 @@ function settleDeal(
  * left. A vehicle that collected nothing pays nothing; there is no buffer and nothing is smoothed.
  */
 export function distribute(ctx: MechanismContext): void {
-  const book = state(ctx);
-  for (const deal of [...book.deals]) {
+  for (const deal of dealsOpen(ctx)) {
     /**
      * XI-8, Money E4: A VEHICLE THAT HAS CEASED IS ITS ESTATE'S BUSINESS. It can fail like anything
      * else here — it owes its notes and pays them out of loans that can go wrong — and when it does,
@@ -642,19 +702,27 @@ export function distribute(ctx: MechanismContext): void {
      * estate, and the holders are creditors of that estate like any other.
      */
     if (!ctx.parties.get(deal.vehicle).status.alive) {
-      book.deals.splice(book.deals.indexOf(deal), 1);
+      ctx.endAgreement(deal.id, 'its vehicle has ceased and its estate owes the notes now');
       ctx.record(
         'securitisation.wound',
         [deal.arranger, deal.vehicle],
-        { vehicle: String(deal.vehicle), arranger: String(deal.arranger), pool: deal.pool },
+        { vehicle: String(deal.vehicle), arranger: String(deal.arranger), sold: deal.sold.length },
         true,
       );
       continue;
     }
+    const ccy = ccyOfDeal(ctx, deal);
+    // Law 8: a vehicle with no layer left has no money of its own to speak in. It has nothing to
+    // pay and nothing to pay it with, and `windUp` below is what ends it.
+    if (ccy === undefined) {
+      windUp(ctx, deal, ccy);
+      continue;
+    }
+    const layers = layersOf(ctx, deal.vehicle).map((i) => i.id);
     absorb(ctx, deal);
     // XI-8: what is left when everything ranking above the notes has been paid. A vehicle that
     // collected nothing pays nothing; there is no buffer and nothing is smoothed.
-    const cash = cashOf(ctx, deal.vehicle, deal.ccy);
+    const cash = cashOf(ctx, deal.vehicle, ccy);
     if (cash > 0) {
       /**
        * C5, B-8: INTEREST IS NOT PRINCIPAL, and paying it out as principal was the defect that
@@ -676,13 +744,13 @@ export function distribute(ctx: MechanismContext): void {
        * account this period whose receipt says what the money IS to the party getting it. Nothing is
        * inferred by subtraction.
        */
-      const earned = interestCollected(ctx, deal);
+      const earned = interestCollected(ctx, deal, ccy);
       let forInterest = downTick(atMost(earned, cash, 'no more than it actually holds'));
       const faces = new Map<InstrumentId, Qty>(
-        deal.layers.map((id) => [id, ctx.register.heldTotal(id).value]),
+        layers.map((id) => [id, ctx.register.heldTotal(id).value]),
       );
       const outstanding = sum([...faces.values()]).value;
-      for (const id of deal.layers) {
+      for (const id of layers) {
         if (forInterest <= 0) break;
         const face = zeroIfNone(faces.get(id));
         if (face <= 0 || outstanding <= 0) continue;
@@ -691,18 +759,18 @@ export function distribute(ctx: MechanismContext): void {
         const due = downTick(
           scale(earned, ratioOf(face, outstanding, 'its share of what is outstanding'), 'its interest'),
         );
-        const paid = payInterest(ctx, deal, id, atMost(due, forInterest, 'and no more than is here'));
+        const paid = payInterest(ctx, deal, ccy, id, atMost(due, forInterest, 'and no more than is here'));
         forInterest = subQty(forInterest, paid, 'what is left for the layer below');
       }
       // XI-8: and what is left is PRINCIPAL, which redeems face, senior first.
-      let left: Qty = cashOf(ctx, deal.vehicle, deal.ccy);
-      for (const id of deal.layers) {
+      let left: Qty = cashOf(ctx, deal.vehicle, ccy);
+      for (const id of layers) {
         if (left <= 0) break;
-        const paid = payTranche(ctx, deal, id, left);
+        const paid = payTranche(ctx, deal, ccy, id, left);
         left = subQty(left, paid, 'what is left after the layer above');
       }
     }
-    windUp(ctx, deal, book);
+    windUp(ctx, deal, ccy);
   }
 }
 
@@ -714,13 +782,13 @@ export function distribute(ctx: MechanismContext): void {
  * vehicle collected as interest and what it collected as principal is a READ of this period's
  * settled money legs into its own account, which is the one place the fact exists.
  */
-function interestCollected(ctx: MechanismContext, deal: Deal): Qty {
-  const account = ctx.accountOf(deal.vehicle, deal.ccy);
+function interestCollected(ctx: MechanismContext, deal: Deal, ccy: CurrencyCode): Qty {
+  const account = ctx.accountOf(deal.vehicle, ccy);
   const terms: Qty[] = [];
   for (const r of ctx.ledger.inPeriod(ctx.period)) {
     if (r.outcome !== 'settled') continue;
     for (const leg of r.instruction.legs) {
-      if (!isMoneyLeg(leg) || leg.ccy !== deal.ccy) continue;
+      if (!isMoneyLeg(leg) || leg.ccy !== ccy) continue;
       if (leg.to.holder !== account.holder || leg.to.issuer !== account.issuer) continue;
       if (leg.receipt?.of !== 'interest') continue;
       terms.push(leg.amount);
@@ -737,6 +805,7 @@ function interestCollected(ctx: MechanismContext, deal: Deal): Qty {
 function payInterest(
   ctx: MechanismContext,
   deal: Deal,
+  ccy: CurrencyCode,
   id: InstrumentId,
   available: Qty,
 ): Qty {
@@ -753,11 +822,11 @@ function payInterest(
       legs: [
         {
           kind: 'money',
-          from: ctx.accountOf(deal.vehicle, deal.ccy),
-          to: ctx.accountOf(holder, deal.ccy),
+          from: ctx.accountOf(deal.vehicle, ccy),
+          to: ctx.accountOf(holder, ccy),
           // Treasury C1: what this money IS to the party getting it. A note pays interest.
           receipt: { of: 'interest' },
-          ccy: deal.ccy,
+          ccy: ccy,
           amount: share,
           fromCell: none(),
           toCell: none(),
@@ -784,26 +853,28 @@ function payInterest(
  * the risk did not leave, and neither did the last of the return. When every layer is redeemed and
  * no row of the pool is still live, what is left goes to the arranger and the vehicle ceases to it.
  */
-function windUp(ctx: MechanismContext, deal: Deal, book: { deals: Deal[] }): void {
+function windUp(ctx: MechanismContext, deal: Deal, ccy: CurrencyCode | undefined): void {
   if (!ctx.parties.get(deal.vehicle).status.alive) return;
-  const owed = sum(deal.layers.map((id) => ctx.register.heldTotal(id).value)).value;
+  const owed = sum(layersOf(ctx, deal.vehicle).map((i) => ctx.register.heldTotal(i.id).value)).value;
   if (owed > 0) return;
-  const running = deal.rows.filter(
+  // XI-11: which of the rows it was sold are still running. The list of what was sold in is the
+  // deal's own fact; whether each is still live and still held is the world's (Law 19).
+  const running = deal.sold.filter(
     (row) =>
       ctx.instruments.get(row).status.live && ctx.register.quantity(deal.vehicle, row) > 0,
   );
   if (running.length > 0) return;
-  const left = cashOf(ctx, deal.vehicle, deal.ccy);
-  if (left > 0) {
+  const left = ccy === undefined ? NO_QTY : cashOf(ctx, deal.vehicle, ccy);
+  if (left > 0 && ccy !== undefined) {
     ctx.settle({
       legs: [
         {
           kind: 'money',
-          from: ctx.accountOf(deal.vehicle, deal.ccy),
-          to: ctx.accountOf(deal.arranger, deal.ccy),
+          from: ctx.accountOf(deal.vehicle, ccy),
+          to: ctx.accountOf(deal.arranger, ccy),
           // C4.a: the residual of a deal belongs to whoever held the bottom of it.
           receipt: { of: 'transfer' },
-          ccy: deal.ccy,
+          ccy: ccy,
           amount: left,
           fromCell: none(),
           toCell: none(),
@@ -817,14 +888,14 @@ function windUp(ctx: MechanismContext, deal: Deal, book: { deals: Deal[] }): voi
   // the party that took what was left (Register F2).
   if (ctx.register.holdingsOf(deal.vehicle).length > 0) return;
   ctx.cease(deal.vehicle, deal.arranger);
-  book.deals.splice(book.deals.indexOf(deal), 1);
+  ctx.endAgreement(deal.id, 'the pool ran off, every layer was redeemed and the vehicle has gone');
   ctx.record(
     'securitisation.wound',
     [deal.arranger, deal.vehicle],
     {
       vehicle: String(deal.vehicle),
       arranger: String(deal.arranger),
-      pool: deal.pool,
+      sold: deal.sold.length,
       residual: left,
       why: 'the pool ran off and every layer was redeemed',
     },
@@ -851,11 +922,12 @@ function windUp(ctx: MechanismContext, deal: Deal, book: { deals: Deal[] }): voi
  */
 function absorb(ctx: MechanismContext, deal: Deal): void {
   const pool: Qty = sum(
-    deal.rows
+    deal.sold
       .filter((row) => ctx.instruments.get(row).status.live)
       .map((row) => ctx.register.quantity(deal.vehicle, row)),
   ).value;
-  const notes = sum(deal.layers.map((id) => ctx.register.heldTotal(id).value)).value;
+  const layers = layersOf(ctx, deal.vehicle).map((i) => i.id);
+  const notes = sum(layers.map((id) => ctx.register.heldTotal(id).value)).value;
   const incurred = subQty(notes, pool, 'what the pool no longer covers');
   if (incurred <= 0) return;
   /**
@@ -872,7 +944,7 @@ function absorb(ctx: MechanismContext, deal: Deal): void {
   );
   let lost: Qty = incurred;
   // XI-8: from the bottom. `layers` is in the order they are PAID, so losses run the other way.
-  for (const id of [...deal.layers].reverse()) {
+  for (const id of [...layers].reverse()) {
     if (lost <= 0) break;
     lost = subQty(lost, writeDown(ctx, deal, id, lost), 'what is still not covered');
   }
@@ -930,6 +1002,7 @@ function writeDown(ctx: MechanismContext, deal: Deal, id: InstrumentId, lost: Qt
 function payTranche(
   ctx: MechanismContext,
   deal: Deal,
+  ccy: CurrencyCode,
   id: InstrumentId,
   available: Qty,
 ): Qty {
@@ -960,9 +1033,9 @@ function payTranche(
         },
         {
           kind: 'money',
-          from: ctx.accountOf(deal.vehicle, deal.ccy),
-          to: ctx.accountOf(holder, deal.ccy),
-          ccy: deal.ccy,
+          from: ctx.accountOf(deal.vehicle, ccy),
+          to: ctx.accountOf(holder, ccy),
+          ccy: ccy,
           amount: share,
           fromCell: none(),
           toCell: none(),
@@ -1275,17 +1348,14 @@ function priceFor(
 export function securitisation(): SystemModule {
   return {
     id: 'securitisation',
-    nouns: [
+    agreementKinds: [
       {
-        name: 'deals',
-        kind: 'noun',
-        holds:
-          'every securitisation: the arranger, the pool, the tranches and who holds them',
-        why:
-          'a deal is an agreement among an arranger, a vehicle and the note holders, with a waterfall for its terms. Kept here, the waterfall is nobody’s obligation and never allocates a loss (B-8).',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
+        id: DEAL,
+        what: 'a vehicle and the arranger that cut it, and which rows left the arranger\u2019s book',
       },
     ],
+    // XI-8, item 9.1: no nouns. The deal is an agreement between the vehicle and its arranger, and
+    // every other field the book carried — the layers, the money, the pool's face — is a read.
     spec: 'Securitisation',
     requires: ['banks'],
     instrumentKinds: [trancheKind],

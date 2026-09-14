@@ -6969,3 +6969,38 @@ re-read every period and produces nothing, which is what a VERIFY does.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. Two books left: the loan and the deal.
+
+---
+
+## Item 9, ninth stage — the deal is a relation, and the rest of it was a read (9.1g)
+
+**What.** The sixth of the seven. `securitisation`'s `deals` book held
+`{vehicle, arranger, ccy, rows, pool, layers}` and its `why` said *"a deal is an agreement among an
+arranger, a vehicle and the note holders"*. An agreement has exactly TWO named parties, so "among"
+is the wrong word — and reading the six fields settles what the deal actually is:
+
+- `vehicle` is a party; `ccy` is what its layers are denominated in; `layers` is what it issued;
+  `pool` is on every tranche's own terms already. All four are READS, and keeping them beside the
+  deal was a mirror.
+- `arranger` is not derivable, and it is the whole of XI-11: **the arranger keeps the bottom, so the
+  risk did not leave** (C4.a). That is a relation between two named parties — the vehicle owes the
+  arranger what is left when the notes are paid — which is exactly an agreement.
+- `rows` is not derivable either, once a row has amortised off the vehicle's book. Which loans left
+  whose book IS XI-11's traceability, so it is the deal's one carried fact.
+
+So a deal is an agreement of kind `securitisation.deal`, vehicle the debtor, arranger the creditor,
+terms carrying `sold`. `layers` is now a read ordered by each tranche's own `seniority` rather than
+by the insertion order of a stored list — which said the same thing only while nothing was ever
+issued out of order.
+
+**Two counters went the way the invoice's did.** `book.next` named the vehicle (`vehicleId(bank, n)`)
+and the deal's display name (`"<arranger> pool <n>"`). The vehicle's name is asked of the parties
+store — `freeVehicle` walks up until a name is free, because the store is the one writer of who
+exists — and the deal is named for the vehicle that IS it (Law 9), which is the name the world
+already carries.
+
+**`windUp` and `distribute` end the agreement** rather than splicing an array, in both the run-off
+case and the case where the vehicle has already ceased and its estate owes the notes.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. One book left: the loan.
