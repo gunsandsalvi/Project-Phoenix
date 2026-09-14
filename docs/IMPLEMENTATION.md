@@ -664,23 +664,48 @@ the swap line exists.
 **Why.** **7 of 62 MET — 51 MISSING, the largest single gap in the model.** Item 10 gives it the one
 thing it has never had: an issued corporate bond. What is behind that is the whole of §7 —
 syndication, bookbuilding, facilities, restructuring, the covered bond (**M7**, one of the six lost
-things), and the index-linked obligation and other schedule shapes (**M2**, placed to 13f and never
-built).
+things), the index-linked obligation and other schedule shapes (**M2**, placed to 13f and never
+built), and the **floating-rate note** — the leveraged loan, which is a security and not a loan.
 
 **Take this item's 51 clauses in the spec's own order** and mark each `MET`, `PARTIAL` with what is
 missing, or `OUT OF SCOPE` with a reason. Do not delete a clause to look better.
 
+**A CORRECTION FROM THE OWNER (2026-09-14) that removes work rather than adding it.** A bank loan is
+not distributed to investors, and the thing that is:
+
+- **IG loans stay inside the banking system** — one bank, or a club of banks. There is no loan
+  distribution mechanism to build, and **C10's syndicate is a SECURITIES underwriting group and
+  nothing else**. A club of N banks lending to one borrower is already expressible today with no
+  new mechanism: C9's shape is one row per lender per borrower, so a club is N rows.
+- **A LEVERAGED LOAN IS NOT A BANK LOAN. It is a SECURITY** — the floating-rate counterparty of the
+  fixed-rate bond — and it is issued through **exactly** item 10's path. This is what answers `B4`
+  (*"fixed or floating, and floating is the norm in the loan market"*), and it is a second
+  instrument kind sharing one issuance mechanism, never a second mechanism (Law 15, Law 4).
+- **A bank loan never reaches a party outside the banking system**, and the reaction when a borrower
+  outgrows its bank is the one item 10 already built: the bank stops increasing the line, and the
+  refusal is what pushes the issuer into the public market. It is a REACTION TO A DENIAL, not a
+  price comparison — which is why `issueBonds` has two reasons and not one.
+
+What that rules out is as load-bearing as what it builds: no loan syndication to investors, no
+secondary loan market, no "loan fund" holding rows. **It is already true of the code** — `LOAN`
+declares `market: none()` and `pricing: 'carriedAtCost'`, so a loan cannot be posted into any book —
+and it is true by CONSTRUCTION, which is exactly the kind of FORBID that breaks silently the day
+somebody gives the kind a market. 17.8 guards it.
+
 ### Steps
 
-- [ ] 17.1 Syndication and bookbuilding: a bank arranging an issue it does not hold all of. **Item 10 brought the paper and left the ARRANGER out**: C1's named underwriter, C6's fee out of the proceeds, C7's risk between commitment and placement, C10's syndicate and C11's basis. Item 10 issues DIRECTLY into the kernel's book, which is C2–C5 in full and C6 without its fee — so this step adds a party to a path that exists rather than building the path. It is also the home of **step 10.1's "worth the fixed cost of an issue"**: that cost IS the underwriter's fee, and item 10 deliberately did not invent a `corporateBond.issuanceCost` to stand in for a party this item creates (Law 2).
+- [ ] 17.0 **The leveraged loan, which is a floating-rate note** (`B4`, `A2.a`). A second instrument kind in `corporate-bond`, reusing `issueBonds`/`place`/`openLine` unchanged: same reason to come, same walk-away, same covenants off the same published accounts, same market, same tap. All that differs is the KIND'S OWN PROFILE, which is where Law 15 puts it — `cashFlows` reads the fixing instead of a locked coupon. The fixing is `index.benchmark`, which is what the overnight book PRINTED (the same read `irs/contract.ts:floatingRate` uses), so it is a cleared rate and not a posted benchmark (Appendix B). **The one thing to get right is the spread at issue**: the fixed line strikes its coupon at the keenest published requirement, so the floater strikes its SPREAD at that requirement less the current fixing — a term the issuer promises, struck once at issuance, never a spread table and never a spread on a mid. The price still clears in a book (Law 3).
+
+- [ ] 17.1 Syndication and bookbuilding **of a SECURITIES issue** — a bond or 17.0's note, never a loan. A bank arranging an issue it does not hold all of. **Item 10 brought the paper and left the ARRANGER out**: C1's named underwriter, C6's fee out of the proceeds, C7's risk between commitment and placement, C10's syndicate and C11's basis. Item 10 issues DIRECTLY into the kernel's book, which is C2–C5 in full and C6 without its fee — so this step adds a party to a path that exists rather than building the path. **The closest working precedent is in the sovereign book**: `banks/dealing.ts:primaryBid` reads `dealershipShare` off `auction.announced` and bids for that share whether it wants to or not, wearing what it gets — which is structurally what a C11.b backstop is, and C10's "each member's share sits against its own limit" already has its limit read (`lines.ts:roomFor`). It is also the home of **step 10.1's "worth the fixed cost of an issue"**: that cost IS the underwriter's fee, and item 10 deliberately did not invent a `corporateBond.issuanceCost` to stand in for a party this item creates (Law 2).
 - [ ] 17.1a A2.b: **the target a management is managing towards** — a leverage, a coverage or a rating it wants, approached at its own pace. Item 10 made issuing a DECISION (a firm compares what its bank quoted against what holders require and takes the cheaper), which is A2.c's "never assigned"; what it compares is price against price and not price against a plan. Marked `Corporate Credit A2`/`A2.c` PARTIAL for exactly this.
 - [ ] 17.1b A3.a: **the service is interest PLUS SCHEDULED PRINCIPAL.** `testCovenants` covers a line's coupon against published earnings and nothing else, so an amortising line looks as serviceable as a bullet. One read of the kernel's own `due` schedule, at the one place coverage is computed (Law 4).
-- [ ] 17.2 Facilities: a committed line, with a commitment fee on undrawn headroom (the same noun item 10b.6 needs — build it once). **The DRAW half is already built and C9 is marked PARTIAL for it**: `banks/index.ts:lineOf`/`draw` keeps one row per lender per borrower and taps it at the margin it was struck at. What this step adds is the word COMMITTED — a stated limit the bank is obliged to honour, undrawn headroom, the fee on it, and the capital an undrawn line consumes — so a borrower stops being re-underwritten at every draw. Two things found while checking: a SECURED request opens a new row instead of drawing (`write` is called with `onTheLine = security.length === 0`), and `runRequests` computes a fresh quote that `draw` then correctly ignores.
+- [ ] 17.2 Facilities: a committed line, with a commitment fee on undrawn headroom (the same noun item 10b.6 needs — build it once). **The DRAW half is already built and C9 is marked PARTIAL for it**: `banks/index.ts:lineOf`/`draw` keeps one row per lender per borrower and taps it at the margin it was struck at. What this step adds is the word COMMITTED — a stated limit the bank is obliged to honour, undrawn headroom, the fee on it, and the capital an undrawn line consumes — so a borrower stops being re-underwritten at every draw. Two things found while checking: a SECURED request opens a new row instead of drawing (`write` is called with `onTheLine = security.length === 0`), and `runRequests` computes a fresh quote that `draw` then correctly ignores. **A CLUB OF BANKS NEEDS NOTHING BUILT**: C9's one row per lender per borrower already means a borrower with three lenders has three rows, which is what "a group of banks" IS. What is missing from a club is only that nobody arranges it — and an arranger is 17.1's party, not a second kind of loan.
 - [ ] 17.3 Restructuring: placed 13f → 13h, never built. A borrower and its lenders agreeing new terms is an `Agreement` transition, not a new instrument.
 - [ ] 17.4 The covered bond (**M7**): placed 13e → 13f, never built. One of the six.
 - [ ] 17.5 Factoring and receivable pledges: placed 13e → 13f, never built. Two more of the six, and they sit on item 11's small firms, which is why this is after 11.
 - [ ] 17.6 Senior notes as repo collateral: the last of the six. `money-market/collateral.ts` already has the haircut machinery.
 - [ ] 17.7 The index-linked obligation and the other schedule shapes (**M2**).
+- [ ] 17.8 **Guard the FORBID: no bank loan held outside the banking system.** It holds today by CONSTRUCTION — `LOAN` names no market and is carried at cost, so the only transfer path is securitisation's sale into a `VEHICLE`, and what investors buy there is the `TRANCHE`, a security. A FORBID that holds is as valuable as a mechanism that works and this one breaks silently: give the kind a market one day and nothing anywhere would complain. An audit family, reported with owner and size like every other invariant, never thrown. **The design question to settle first**: "the banking system" is a set of party kinds (`bank`, `vehicle`, and `estate` while a failed lender winds up), and enumerating it in the family is the kind branch Law 15 forbids in a mechanism — so it belongs on the PARTY KIND as declared data, which is a structural decision and carries an `ARCHITECTURE.md` change in the same commit.
 
 ### Exit
 

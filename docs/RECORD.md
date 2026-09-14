@@ -7516,3 +7516,48 @@ short — and what is left of `B-13` is a measurement of a finished world, which
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
 `check:deaths` 5 of 5, `check:existence` green.
+
+---
+
+## A correction from the owner: a bank loan is not distributed, and a leveraged loan is not a loan
+
+Not an item — a correction to the mechanism (Law 1), folded into the plan at the positions its own
+dependencies put it and recorded here because it **removes** work and a removal that is not written
+down comes back.
+
+**What was wrong.** Answering what of the primary market is built, I set out C10's syndicate and
+C11's best-effort/backstop basis as things a future item would build *for corporate credit
+generally*, which reads as though a bank loan could be syndicated out to investors. It cannot, and
+not because this world has not got round to it.
+
+**What is actually true.** IG loans stay inside the banking system — one bank, or a club of banks.
+There is no distribution mechanism, so **C10's syndicate is a SECURITIES underwriting group and
+nothing else**. A club of N banks lending to one borrower needs nothing built: C9's shape is one row
+per lender per borrower, so a club is N rows, and the only thing a club has that this world lacks is
+somebody to arrange it — which is 17.1's party, not a second kind of loan.
+
+**A leveraged loan is a SECURITY** — the floating-rate counterparty of the fixed-rate bond — issued
+through exactly item 10's path. That is 17.0, and it is the cheapest step in item 17: the same reason
+to come, the same walk-away, the same covenants off the same published accounts, the same market and
+the same tap, with one instrument kind's own profile reading a fixing where the other reads a locked
+coupon. It is what answers `B4`, and it is a second KIND sharing one mechanism rather than a second
+mechanism (Law 15, Law 4). The fixing is `index.benchmark` — what the overnight book PRINTED, the
+same read the IRS floating leg uses — so it is a cleared rate and not a posted benchmark.
+
+**And the reaction is the one item 10 already built.** When a borrower outgrows its bank the bank
+stops increasing the line, and the REFUSAL is what pushes the issuer into the public market. That is
+`issueBonds`'s second reason (*"its bank will not lend it enough at any price"*), and this correction
+is why it is a reason at all rather than a special case of the first: a firm does not always reach a
+market because the market is cheaper. Sometimes it reaches it because it was told no.
+
+**The FORBID this makes explicit, and it already holds.** No bank loan reaches a party outside the
+banking system. `LOAN` declares `market: none()` and `pricing: 'carriedAtCost'`, so a loan cannot be
+posted into any book; the only transfer path is securitisation's sale into a `VEHICLE`, and what
+investors buy there is the `TRANCHE`, a security. It holds by CONSTRUCTION, which is precisely the
+kind that breaks silently — give the kind a market one day and nothing would complain — so 17.8
+guards it as an audit family, with the design question named: "the banking system" is a set of party
+kinds, and enumerating it inside the family is the kind branch Law 15 forbids, so it belongs on the
+party kind as declared data and carries an `ARCHITECTURE.md` change with it.
+
+`docs/WORKLIST.md`'s **M9** note said the leveraged loan index waits on "the loan market". There is
+no loan market to wait for; it waits on 17.0's note, and the note is corrected to say so.

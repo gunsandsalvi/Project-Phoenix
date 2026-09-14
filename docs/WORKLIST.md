@@ -104,7 +104,9 @@ file's "Read first".
   → 13b (a specified clause that no item names is a hole in the plan, not a decision to defer: `Sovereign
   I1.a` gains the COVERAGE row it never had); **M9** the index set → 13b (equity size, the global line, a
   vehicle per index, the default index in two grades) and 13f (the IG/HY cash split, then the leveraged
-  loan index after the loan market). No item is created: each lands where its own dependency argument
+  loan index after **17.0's floating-rate note** — corrected by the owner 2026-09-14: a leveraged loan
+  is a SECURITY issued exactly like a bond, so its index follows that note and there is no "loan
+  market" to wait for; a bank loan is never distributed outside the banking system). No item is created: each lands where its own dependency argument
   put it.
 - **Every quantity has a realistic minimum subunit, a price included** (owner, 2026-09-11). A price is a
   fixed subdivision declared like a unit's, not a real number that happens to be a price; how fine it is
