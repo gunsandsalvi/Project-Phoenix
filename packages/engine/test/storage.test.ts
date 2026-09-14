@@ -9,7 +9,7 @@ import { describe, expect, it } from 'vitest';
 import {
   GOODS,
   drawFunds,
-  holdsPhysical,
+  holdsThings,
   REGION,
   STORAGE,
   addDays,
@@ -268,7 +268,7 @@ describe('what the wait costs reaches the decision to hold (B4, C3)', () => {
   it('has a party on the other side of it: a fund that holds the thing itself (C3)', () => {
     const w = rig('storage-investor');
     const funds = drawFunds(rigDraw('storage-investor').banks, 'storage-investor');
-    const physical = funds.filter((d) => holdsPhysical(d));
+    const physical = funds.filter((d) => holdsThings(d.blueprint));
     /**
      * A4, Law 15: what makes it a commodity fund is its MANDATE, never a flag on the row — and
      * item 10e says it in one band rather than by walking a list of kind ids. `classes: ['thing']`

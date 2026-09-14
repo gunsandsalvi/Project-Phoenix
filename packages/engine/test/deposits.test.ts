@@ -70,7 +70,7 @@ describe('whose decision it is (Observer A4, Law 4)', () => {
     // depositor may have, which is the defect the venue door (11.1) fixed for a schedule.
     expect(moneyMarket.bankChoices ?? []).toEqual([]);
     const owners = new Map<string, string>();
-    for (const m of [households(), firms(drew.firms), funds([...drew.funds, ...drew.etfs])]) {
+    for (const m of [households(), firms(drew.firms), funds([...drew.funds, ...drew.trackers])]) {
       for (const d of m.bankChoices ?? []) {
         // Law 4: exactly one module answers for a kind. Two would be two reasons for one party.
         expect(owners.has(String(d.partyKind))).toBe(false);

@@ -190,7 +190,7 @@ export function drawTrackers(
   tracks: readonly string[],
 ): readonly FundDecl[] {
   if (lines.length === 0 || tracks.length === 0) return [];
-  const rng = prng(seed, 'etf');
+  const rng = prng(seed, 'trackers');
   const basket: Record<string, number> = {};
   for (const line of lines) basket[line] = 1;
   const manager = 'manager.etf.us';

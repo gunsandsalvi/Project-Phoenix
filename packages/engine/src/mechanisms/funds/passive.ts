@@ -1,5 +1,10 @@
 /**
- * A fund that tracks an index, and the trade a rebalance forces on it.
+ * WHAT A MANDATE THAT DOES NOT CHOOSE DOES: it holds what its index says, and a rebalance is a
+ * trade it has no say in.
+ *
+ * Item 10e: this file is named for the TERM and not for a kind of fund. `MandateTerms.tracks` is
+ * what puts a pool here — an exchange-traded one, an index mutual fund, a passive segregated
+ * mandate, all the same — and a pool whose mandate tracks nothing is ACTIVE and never reaches it.
  *
  * @spec Fund Shares A4 Fund Shares D1 Indices C1 Indices C2 Indices C2.a Equity C2.c Clearing C3 XI-2 Law 3 Law 8 Law 19
  *
@@ -39,12 +44,12 @@ import { downTick, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { FundDecl } from './data.js';
 
-export function trackerOrders(
-  etfs: readonly FundDecl[],
+export function passiveOrders(
+  decls: readonly FundDecl[],
   view: ParticipantView,
   m: MarketDecl,
 ): readonly Order[] {
-  const d = etfs.find((e) => e.fund === String(view.self.id));
+  const d = decls.find((e) => e.fund === String(view.self.id));
   if (d === undefined || !view.self.status.alive) return [];
   /**
    * Indices C2, item 10e: A FUND THAT TRACKS NOTHING IS ACTIVE, and this is not its path.

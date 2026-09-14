@@ -1,6 +1,10 @@
 /**
- * The exchange-traded fund: a fund whose shares trade, so it has two values and they are different
- * numbers — and whose investors come and go IN KIND, so it never has to sell anything.
+ * WHAT `liquidity: 'listed'` MEANS: the shares trade, so there are two values and they are
+ * different numbers — and investors come and go IN KIND, so the pool never has to sell anything.
+ *
+ * Item 10e: named for the TERM and not for a kind of fund. Coming and going in kind is what makes a
+ * vehicle NOT a forced seller (G1.a), and that is a fact about how its investors get out rather
+ * than about what it is called — so it is the liquidity term that puts a pool here.
  *
  * @spec Fund Shares E1 Fund Shares E2 Fund Shares E3 Fund Shares E3.a Fund Shares E4 Fund Shares G1.a Fund Shares B1 Fund Shares C3 Fund Shares C5 Fund Shares F1 Equity C2.c Clearing B2 Clearing E1 XI-2 XI-6 Law 4 Law 19
  *
@@ -211,7 +215,7 @@ export function create(
     reason: `${party} creates ${shares} of ${share} in kind`,
   });
   ctx.record(
-    'etf.created',
+    'fund.created',
     [d.fund, party, share],
     { fund: d.fund, by: party, shares, perShare, settled: r.outcome === 'settled' },
     true,
@@ -284,7 +288,7 @@ export function redeemInKind(
     reason: `${party} redeems ${shares} of ${share} in kind`,
   });
   ctx.record(
-    'etf.redeemed',
+    'fund.redeemed',
     [d.fund, party, share],
     { fund: d.fund, by: party, shares, perShare, settled: r.outcome === 'settled' },
     true,

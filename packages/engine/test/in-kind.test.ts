@@ -14,8 +14,8 @@ import { describe, expect, it } from 'vitest';
 import {
   USD,
   assemble,
-  etfMarketOf,
-  etfVenue,
+  listedMarketOf,
+  inKindVenue,
   funds,
   instrumentId,
   partyId,
@@ -33,8 +33,8 @@ import { asQty, type Qty } from '../src/core/tick.js';
 const FUND = partyId('etf.us');
 const MANAGER = partyId('manager.etf.us');
 const SHARE = shareLineOf('etf.us');
-const MARKET = etfMarketOf('etf.us');
-const VENUE = etfVenue('etf.us');
+const MARKET = listedMarketOf('etf.us');
+const VENUE = inKindVenue('etf.us');
 const LINE_4 = instrumentId('equity.firm.4');
 
 /**
@@ -46,7 +46,7 @@ function saversWorld(seed: string, extra: readonly SystemModule[] = []): World {
   // Seed B1.a: a world with an exchange-traded fund in it, ASKED FOR rather than assumed. Which
   // firms list is a draw, and a world that listed none launches none — so a test that took the
   // default rig would be measuring a fund that is not there.
-  const shape = rigShapeFor(seed, { etfs: 1 });
+  const shape = rigShapeFor(seed, { trackers: 1 });
   const spec = rigSpec(seed, shape.banks, shape.firms);
   const modules = spec.modules.map((m) =>
     m.id === 'households'
@@ -85,7 +85,7 @@ function holdsTheBasket(drew: FoundationDraw): SystemModule {
     participants: [],
     families: [],
     seed(ctx) {
-      for (const e of drew.etfs) {
+      for (const e of drew.trackers) {
         const share = shareLineOf(e.fund);
         if (!ctx.instruments.has(share)) continue;
         for (const holder of Object.keys(inKindOf(e).by)) {
@@ -142,7 +142,7 @@ describe('two values for one claim (Fund Shares E1, E2)', () => {
     // E1: its shares trade. A session in them printed a price out of a queue of orders, which is
     // the whole of what makes this an exchange-traded fund rather than another fund.
     const traded = w.journal
-      .ofKind('etf.struck')
+      .ofKind('fund.listedStruck')
       .filter((e) => e.data['stale'] === false && typeof e.data['price'] === 'number');
     expect(traded.length).toBeGreaterThan(0);
     // E2: and the same event carries what the book comes to per share, read off the fund's own
@@ -160,7 +160,7 @@ describe('two values for one claim (Fund Shares E1, E2)', () => {
   it('reads its book over the claims on it, at every ask (B1, XI-6)', () => {
     const w = saversWorld('etf-nav');
     for (let i = 0; i < 8; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const struck = w.journal.ofKind('etf.struck').filter((e) => e.period === w.period);
+    const struck = w.journal.ofKind('fund.listedStruck').filter((e) => e.period === w.period);
     const nav = Number(struck[0]?.data['perShare']);
     const issued = w.instruments.get(SHARE).issued;
     // B1, A3: what the fund holds is what its shares are claims on, so the two sides of its own
@@ -177,7 +177,7 @@ describe('two values for one claim (Fund Shares E1, E2)', () => {
 
 describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
   it('takes a slice of its own book and gives shares against it, in one instruction', () => {
-    const shape = rigShapeFor('etf-create', { etfs: 1 });
+    const shape = rigShapeFor('etf-create', { trackers: 1 });
     const drew = rigDraw('etf-create', shape.banks, shape.firms);
     const w = saversWorld('etf-create', [
       holdsTheBasket(drew),
@@ -186,7 +186,7 @@ describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
     const before = w.instruments.get(SHARE).issued;
     const basketBefore = w.register.quantity(FUND, LINE_4) / before;
     for (let i = 0; i < 3; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const made = w.journal.ofKind('etf.created').filter((e) => e.period === w.period);
+    const made = w.journal.ofKind('fund.created').filter((e) => e.period === w.period);
     expect(made.length).toBeGreaterThan(0);
     expect(made.every((e) => e.data['settled'] === true)).toBe(true);
     expect(w.instruments.get(SHARE).issued).toBeGreaterThan(before);
@@ -206,7 +206,7 @@ describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
   it('gives the slice back and takes the shares, and sells nothing to do it (XI-2)', () => {
     const w = saversWorld('etf-redeem', [bringsABasket('bank.a', 'sell', asQty(5), 4)]);
     for (let i = 0; i < 4; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const back = w.journal.ofKind('etf.redeemed').filter((e) => e.period === w.period);
+    const back = w.journal.ofKind('fund.redeemed').filter((e) => e.period === w.period);
     expect(back.length).toBeGreaterThan(0);
     expect(back.every((e) => e.data['settled'] === true)).toBe(true);
     // XI-2: this is why an exchange-traded fund is NOT the forced seller. The fund posted nothing
@@ -222,7 +222,7 @@ describe('in kind (Fund Shares E3, G1.a, XI-2)', () => {
 
 describe('the gap, and what it takes to close it (E3.a, E4)', () => {
   it('is closed by a bank when it is worth more than carrying it costs, and only then', () => {
-    const shape = rigShapeFor('etf-arb', { etfs: 1 });
+    const shape = rigShapeFor('etf-arb', { trackers: 1 });
     const w = saversWorld('etf-arb', [holdsTheBasket(rigDraw('etf-arb', shape.banks, shape.firms))]);
     for (let i = 0; i < 26; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
     const acted = w.journal.ofKind('bank.arbitrage');
@@ -248,7 +248,7 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
   });
 
   it('never acts on a mark nobody traded at (Clearing E4, Law 3)', () => {
-    const shape = rigShapeFor('etf-stale', { etfs: 1 });
+    const shape = rigShapeFor('etf-stale', { trackers: 1 });
     const w = saversWorld('etf-stale', [holdsTheBasket(rigDraw('etf-stale', shape.banks, shape.firms))]);
     const printedIn = new Set<number>();
     for (let i = 0; i < 20; i += 1) {
@@ -284,7 +284,7 @@ describe('the gap, and what it takes to close it (E3.a, E4)', () => {
       ),
     });
     for (let i = 0; i < 30; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
-    const struck = w.journal.ofKind('etf.struck');
+    const struck = w.journal.ofKind('fund.listedStruck');
     const last = struck[struck.length - 1];
     const premium = Number(last?.data['premium']);
     // The gap is bigger than what closing it would earn — which is the module's OWN condition for
@@ -341,13 +341,13 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
     // Only the sponsor turned up — the desks that would make its market are not in this world, so
     // what they were down to take is not what anybody took.
     // Seed B1.a: a world that HAS an exchange-traded fund, asked for rather than assumed — which
-    // firms list is a draw, and the default rig on this seed lists none, so `drew.etfs` was empty
+    // firms list is a draw, and the default rig on this seed lists none, so `drew.trackers` was empty
     // and the line this test reads did not exist at all.
-    const shape = rigShapeFor('etf-small', { etfs: 1 });
+    const shape = rigShapeFor('etf-small', { trackers: 1 });
     const drew = rigDraw('etf-small', shape.banks, shape.firms);
     // PLAN §7: WHAT THE SPONSOR WAS DOWN FOR, which is a share of the launch and not a count of
     // shares — how many shares a launch comes to is read off the lines it tracks (`ETF_LAUNCH_SHARE`).
-    const sponsorOnly = drew.etfs.map((e) => ({
+    const sponsorOnly = drew.trackers.map((e) => ({
       ...e,
       launchedBy: { 'manager.etf.us': inKindOf(e).by['manager.etf.us'] ?? 0 },
     }));
@@ -382,7 +382,7 @@ describe('a world whose launch nobody joined (Seed A3, Law 15)', () => {
     // A fund holding more than its shares claim, or less, has mislaid somebody's money, and the
     // accounts family checks this every period (it caught both directions while this was written).
     expect(w.register.equity(FUND)).toBe(0);
-    const struck = w.journal.ofKind('etf.struck').filter((e) => e.period === w.period);
+    const struck = w.journal.ofKind('fund.listedStruck').filter((e) => e.period === w.period);
     expect(Number(struck[0]?.data['perShare'])).toBeGreaterThan(0);
   });
 });

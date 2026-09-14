@@ -1,5 +1,10 @@
 /**
- * A FUND THAT HOLDS THE THING ITSELF (Commodities Spot C3).
+ * WHAT A MANDATE OVER THINGS DOES: it buys what nobody promised, because it expects to be paid
+ * more for it later than keeping it costs (Commodities Spot C3).
+ *
+ * Item 10e: named for the TERM. What puts a pool here is its blueprint admitting only `thing` —
+ * the class the classification gives anything with no issuer behind it — and never a flag saying
+ * what sort of fund it is.
  *
  * @spec Commodities Spot C3 Commodities Spot B4 Commodities Spot D3 Clearing A2 Clearing A3 Expectations A2 Law 3 Law 6
  *
@@ -26,7 +31,7 @@ import type { Order } from '../../clearing/solver.js';
 import { isGoodTerms, spacePerPiece, storageRateIn } from '../../registry/physical.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { FundDecl } from './data.js';
-import { admits } from '../../registry/blueprint.js';
+import { admits, type Blueprint } from '../../registry/blueprint.js';
 import { about } from '../../world/context.js';
 
 /**
@@ -37,8 +42,10 @@ import { about } from '../../world/context.js';
  * classification gives to anything NOBODY PROMISED (`liabilityOfIssuer` false), which is what makes
  * a commodity fund a commodity fund. One read, and no list to walk.
  */
-export function holdsPhysical(d: FundDecl): boolean {
-  return d.blueprint.classes.length > 0 && d.blueprint.classes.every((c) => c === 'thing');
+export function holdsThings(b: Blueprint): boolean {
+  // A blueprint that states NO class band holds anything, which is not a mandate over things —
+  // and `[].every(...)` is `true`, so the empty case has to be said rather than fallen into.
+  return b.classes.length > 0 && b.classes.every((c) => c === 'thing');
 }
 
 /**
@@ -47,13 +54,13 @@ export function holdsPhysical(d: FundDecl): boolean {
  * survive the wait. A fund with no outlook of its own has nothing to say here and says nothing,
  * which is the honest answer for a party that has never seen this book (Expectations A2.a).
  */
-export function physicalOrders(
+export function thingOrders(
   decls: readonly FundDecl[],
   view: ParticipantView,
   m: MarketDecl,
 ): readonly Order[] {
   const d = decls.find((row) => row.fund === String(view.self.id));
-  if (d === undefined || !holdsPhysical(d)) return [];
+  if (d === undefined) return [];
   const i = view.instruments.get(m.instrument);
   if (!i.status.live || !isGoodTerms(i.terms)) return [];
   // A4: and this particular good is inside its mandate, asked of the one `admits` every vehicle

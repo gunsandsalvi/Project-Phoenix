@@ -1068,7 +1068,7 @@ function indicesOf(w: World): readonly IndexView[] {
   // Fund Shares E1, Indices B2: which trackers were launched on which rule, as each of them
   // published it at the moment it was launched (Law 19: never a list this surface maintains).
   const vehicles = new Map<string, { fund: string; shares: number }[]>();
-  for (const e of w.journal.ofKind('etf.launched')) {
+  for (const e of w.journal.ofKind('fund.launched')) {
     const tracks = e.data['tracks'];
     const fund = e.data['fund'];
     const shares = e.data['shares'];

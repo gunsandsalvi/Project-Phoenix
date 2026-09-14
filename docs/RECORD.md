@@ -8067,3 +8067,55 @@ of this step.
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4, `check:deaths`
 5 of 5, `check:existence` green. Tests written and updated, not run.
+
+---
+
+## Item 10e, fourth stage — three files named after three kinds of fund, folded into terms
+
+**The dispatch was already conceptually right and implemented as three separate answers.** The
+participant said it in its own comment — *"three mandates, three reasons, and a fund has exactly one
+of them"* — and then called all three, letting each re-find the fund and decide it was not theirs.
+Three functions each carrying a copy of "which kind of fund am I for" is the separation this item
+exists to delete. It is one read of the mandate now, and the reason follows from its TERMS: it
+tracks, or its blueprint is things, or it chooses.
+
+**A bug the fold surfaced.** The dispatch I first wrote asked
+`blueprint.classes.every((c) => c === 'thing')` — and `[].every(...)` is `true`, so a macro mandate
+that states NO class band, which holds anything, would have been routed to the commodity path. The
+fix is Law 4 rather than a guard: `holdsThings` is the one writer of that test and it is the one
+that says the empty case out loud.
+
+**Three files renamed for what they do, because a file named after a kind of fund IS a system that
+separates them:**
+
+```
+tracker.ts  ->  passive.ts   what a mandate that DOES NOT CHOOSE does
+physical.ts ->  things.ts    what a mandate over THINGS does
+etf.ts      ->  inkind.ts    what `liquidity: 'listed'` means
+```
+
+Each header used to open *"A fund that tracks an index"*, *"A FUND THAT HOLDS THE THING ITSELF"*,
+*"The exchange-traded fund"*. They now name the term, and say which term puts a pool there — so an
+index mutual fund, an exchange-traded one and a passive segregated mandate all arrive at `passive.ts`
+by the same door.
+
+**And the machinery underneath: `runEtf` → `runInKind`, `seedEtf` → `seedInKind`, `readEtf` →
+`readListed`, `etfVenue` → `inKindVenue`, `etfMarketOf` → `listedMarketOf`, `launchTracker` →
+`launchInKind`, the `funds.etf` phase → `funds.inKind`, and the events `etf.launched`, `etf.struck`,
+`etf.created`, `etf.redeemed` → `fund.*`.** The venue key went from `kind: 'etf'` to `kind: 'inKind'`,
+which is the door stating a FACT ABOUT ITSELF rather than a label — the same discipline the
+`minWealth` key follows.
+
+**THE RENAME CAUGHT A BREAK I HAD MADE AND NOT NOTICED.** `banks/dealing.ts` matches the venue key to
+find creation gaps to arbitrage, and it still read `v.key['kind'] !== 'etf'` after I renamed the key
+— so **the dealer's ETF arbitrage had gone silently dead**. A sweep for the word found it; nothing
+else would have, because a desk that finds no gaps posts no orders and that is indistinguishable
+from a desk with nothing to do. It is the exact failure `world/reach.ts` exists to catch, and the
+lesson is that renaming a key is a two-sided change like everything else here.
+
+What is left of the word in the engine is three occurrences, and all three are the NAME OF A PARTY
+this world draws (`etf.us`, `manager.etf.us`) — a name, not a type, and Law 9 says an internal id is
+never a display name. The display name is derived from the mandate now.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 212 tags, `check:forbids` 4 over 209 files,
+`check:deaths` 5 of 5, `check:existence` green. Tests written and updated, not run.

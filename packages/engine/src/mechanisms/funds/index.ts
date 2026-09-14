@@ -23,7 +23,7 @@
  * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
  */
 import { period as periodOf } from '../../calendar/calendar.js';
-import { trackerOrders } from './tracker.js';
+import { passiveOrders } from './passive.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type { AuditView } from '../../audit/view.js';
@@ -96,21 +96,25 @@ import type { ParamDecl } from '../../registry/params.js';
 import type { MechanismContext, ParticipantView, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
-import { physicalOrders } from './physical.js';
+import { holdsThings, thingOrders } from './things.js';
 import { FUND_PARAMS, fundParam, inKindOf, nameOf, type FundDecl } from './data.js';
-import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
+import { basketOf, basketValue, create, premiumOf, redeemInKind } from './inkind.js';
 import { navOf } from './nav.js';
 
 export * from './data.js';
 export { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
-export { holdsPhysical, physicalOrders } from './physical.js';
-export * from './etf.js';
+export { holdsThings, thingOrders } from './things.js';
+export * from './inkind.js';
 export { navOf } from './nav.js';
 export type { NavRead } from './nav.js';
 
 /** E1: the venue an exchange-traded fund's shares are created and redeemed in, in kind (G1.a). */
-export const etfVenue = (fund: string): VenueId => venueId(`etf.${fund}`);
-export const etfMarketOf = (fund: string): MarketId => marketId(`mkt.${shareLineOf(fund)}`);
+/**
+ * G1.a: the venue a pool's shares are created and redeemed IN KIND. Item 10e: named for the term —
+ * what puts a pool here is `liquidity: 'listed'`, not what anybody calls it.
+ */
+export const inKindVenue = (fund: string): VenueId => venueId(`inKind.${fund}`);
+export const listedMarketOf = (fund: string): MarketId => marketId(`mkt.${shareLineOf(fund)}`);
 
 export const FUND = partyKindId('fund');
 export const FUND_MANAGER = partyKindId('fundManager');
@@ -518,7 +522,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
  * B3, F3: what a fund owes its manager for the days this period actually has.
  *
  * ONE ACCRUAL, read by every fund there is (Law 4). It was written twice — once here and once
- * inline in `runEtf` — and the two copies did not agree about the case that matters, which is what
+ * inline in `runInKind` — and the two copies did not agree about the case that matters, which is what
  * a second copy of a formula is for.
  *
  * Law 8: a per annum rate is not a per period one, and a fee is money, so what comes out is whole
@@ -1039,7 +1043,7 @@ function payQueue(ctx: MechanismContext, b: Book, d: FundDecl): void {
  * a tracker needs somebody to put the market in, and until a party holds the market there is
  * nobody to do it.
  */
-function launchTracker(ctx: MechanismContext, e: FundDecl): void {
+function launchInKind(ctx: MechanismContext, e: FundDecl): void {
   const fund = e.fund as PartyId;
   if (ctx.parties.has(fund)) return;
   // Indices D5.a: before its own rule has answered there is no index, and a tracker on one is a
@@ -1112,7 +1116,7 @@ function launchTracker(ctx: MechanismContext, e: FundDecl): void {
     some(index),
   );
   const share = shareLineOf(e.fund);
-  const market = etfMarketOf(e.fund);
+  const market = listedMarketOf(e.fund);
   const terms: FundShareTerms = { kind: FUND_SHARE, fund };
   ctx.issue({
     id: share,
@@ -1134,16 +1138,18 @@ function launchTracker(ctx: MechanismContext, e: FundDecl): void {
   // G1.a: where it is created and redeemed IN KIND — not a market and it does not clear, so the
   // module that owns it runs it itself (Clearing B2).
   ctx.openVenue({
-    id: etfVenue(e.fund),
+    id: inKindVenue(e.fund),
     name: `${nameOf(e)} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
     ccy: ctx.registry.currencyOf(region.id),
-    key: { kind: 'etf', fund: e.fund, share },
+    // Item 10e: the key says WHAT HAPPENS HERE — creation and redemption in kind — rather than
+    // naming a kind of fund, so a household reading the door reads a fact and not a label.
+    key: { kind: 'inKind', fund: e.fund, share },
   });
   const launched = firstCreation(ctx, e, share, size);
   ctx.record(
-    'etf.launched',
+    'fund.launched',
     [e.fund, index, String(share)],
     { fund: e.fund, tracks: index, shares: launched },
     true,
@@ -1228,7 +1234,7 @@ function couldCreate(ctx: MechanismContext, e: FundDecl, party: PartyId): Qty {
   return most;
 }
 
-function runEtf(ctx: MechanismContext, d: FundDecl): void {
+function runInKind(ctx: MechanismContext, d: FundDecl): void {
   const fund = d.fund as PartyId;
   if (!ctx.parties.get(fund).status.alive) return;
   const share = ctx.instruments.get(shareLineOf(d.fund));
@@ -1244,7 +1250,7 @@ function runEtf(ctx: MechanismContext, d: FundDecl): void {
   if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
   // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
   // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
-  for (const o of ctx.posted(etfVenue(d.fund))) {
+  for (const o of ctx.posted(inKindVenue(d.fund))) {
     if (o.qty <= 0) continue;
     if (o.side === 'buy') create(ctx, d, share.id, o.party, o.qty);
     else redeemInKind(ctx, d, share.id, o.party, o.qty);
@@ -1378,7 +1384,7 @@ function distribute(ctx: MechanismContext, d: FundDecl, share: InstrumentId, mon
  * the difference: what closes a gap is somebody creating or redeeming because it is worth their
  * while (E3.a), and a gap that stays is a finding about liquidity (E4).
  */
-function readEtf(ctx: MechanismContext, d: FundDecl): void {
+function readListed(ctx: MechanismContext, d: FundDecl): void {
   const fund = d.fund as PartyId;
   if (!ctx.parties.get(fund).status.alive) return;
   const share = ctx.instruments.get(shareLineOf(d.fund));
@@ -1390,7 +1396,7 @@ function readEtf(ctx: MechanismContext, d: FundDecl): void {
   const print = ctx.prices.latest(share.id, ctx.period);
   const premium = premiumOf(print.some ? some(print.value.price) : none<PerPiece>(), nav);
   ctx.record(
-    'etf.struck',
+    'fund.listedStruck',
     [d.fund, share.id],
     {
       fund: d.fund,
@@ -1673,7 +1679,7 @@ function totalAsked(view: AuditView, data: Record<string, unknown>): number {
  * the seed states (A3): what nobody may state is what its shares are worth from then on, which is
  * why its market opens at the basket it holds and is repriced by its first session (C4.a).
  */
-function seedEtf(ctx: SeedContext, e: FundDecl): void {
+function seedInKind(ctx: SeedContext, e: FundDecl): void {
   const bank = ctx.parties.get(e.bank as PartyId);
   const region = ctx.registry.region(bank.region);
   for (const [id, kind, name] of [
@@ -1695,7 +1701,7 @@ function seedEtf(ctx: SeedContext, e: FundDecl): void {
     });
   }
   const share = shareLineOf(e.fund);
-  const market = etfMarketOf(e.fund);
+  const market = listedMarketOf(e.fund);
   const terms: FundShareTerms = { kind: FUND_SHARE, fund: e.fund as PartyId };
   ctx.instruments.add({
     id: share,
@@ -1719,12 +1725,12 @@ function seedEtf(ctx: SeedContext, e: FundDecl): void {
   // everybody who brings a basket gets the shares that basket is worth — so the module that owns
   // it runs it itself (Clearing B2).
   ctx.openVenue({
-    id: etfVenue(e.fund),
+    id: inKindVenue(e.fund),
     name: `${nameOf(e)} creations and redemptions`,
     clearedBy: 'funds',
     unit: SHARES,
     ccy: ctx.registry.currencyOf(region.id),
-    key: { kind: 'etf', fund: e.fund, share },
+    key: { kind: 'inKind', fund: e.fund, share },
   });
   // Seed A3: only what somebody who EXISTS actually took. A world without the banks that launch it
   // has a smaller fund, and its basket has to back the shares that were taken and no more — a
@@ -1870,7 +1876,7 @@ export function funds(
    * G1.a, E1: the ones whose shares TRADE and whose investors come and go in kind — read off the
    * LIQUIDITY TERM, which is the fact that decides it, and not off the launch data beside it.
    */
-  const etfs = decls.filter((d) => d.liquidity.how === 'listed');
+  const listed = decls.filter((d) => d.liquidity.how === 'listed');
   const state = emptyBook();
   // The observer sees the book as the data it is; the slot holds this very object (Law 4).
   const book = (ctx: MechanismContext): Book => ctx.state<Book>('funds', () => state);
@@ -1878,7 +1884,7 @@ export function funds(
   // parties somebody else created, so those modules have to have run first. It is a dependency of
   // THIS WORLD's funds and not of funds, which is why it is read off the data rather than written
   // into the module (Law 15): a world with no such fund in it needs none of them.
-  const needs = [...new Set(etfs.flatMap((e) => inKindOf(e).needs))];
+  const needs = [...new Set(listed.flatMap((e) => inKindOf(e).needs))];
   return {
     id: 'funds',
     nouns: [
@@ -1942,7 +1948,7 @@ export function funds(
         },
       },
       {
-        name: 'funds.etf',
+        name: 'funds.inKind',
         spec: 'Fund Shares B3 Fund Shares E3 Fund Shares G1.a',
         cycle: 0,
         // With the other fund's own strike, and before the session: what a dealing line brought in this
@@ -1950,37 +1956,52 @@ export function funds(
         // revaluation that closes it carries the claim at what the book then comes to (A3).
         anchor: { after: 'funds.strike' },
         run: (ctx: MechanismContext) => {
-          for (const d of etfs) launchTracker(ctx, d);
+          for (const d of listed) launchInKind(ctx, d);
           // E3.a: a vehicle whose index has not answered yet has not been launched, and there is
           // nothing of it to run. It is not absent — it is declared and waiting for its own rule.
-          for (const d of etfs) if (ctx.parties.has(d.fund as PartyId)) runEtf(ctx, d);
+          for (const d of listed) if (ctx.parties.has(d.fund as PartyId)) runInKind(ctx, d);
         },
       },
       {
-        name: 'funds.etf.read',
+        name: 'funds.listed.read',
         spec: 'Fund Shares E1 Fund Shares E2 Fund Shares E4',
         cycle: 'anchor',
         // After the marks are in the books, because the NAV is a read of those marks and the
         // premium is a read of that NAV against what the session printed (Clearing F1.a).
         anchor: { after: 'revaluation' },
         run: (ctx: MechanismContext) => {
-          for (const d of etfs) if (ctx.parties.has(d.fund as PartyId)) readEtf(ctx, d);
+          for (const d of listed) if (ctx.parties.has(d.fund as PartyId)) readListed(ctx, d);
         },
       },
     ],
     participants: [
       {
         partyKind: FUND,
-        // Three mandates, three reasons, and a fund has exactly one of them: a money fund puts its
-        // spare cash to work at a yield it requires (D2), a tracker holds the index whatever it
-        // costs (Indices C2), and a commodity fund holds the thing itself because it expects to be
-        // paid more for it than the wait costs (Commodities Spot C3). None answers for a fund that
-        // is not its own, so no two ever speak for one party (Law 4).
-        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => [
-          ...ordersOf(decls, view, m),
-          ...trackerOrders(etfs, view, m),
-          ...physicalOrders(decls, view, m),
-        ],
+        /**
+         * Clearing B2, A4, Law 15 (item 10e): ONE QUESTION — why is this fund in this book — and
+         * the MANDATE answers it. Three reasons, and a fund has exactly one of them.
+         *
+         * It used to call all three and let each decide it was not theirs, which is three functions
+         * carrying three copies of "which kind of fund am I for" — the separation this item exists
+         * to delete. Now the mandate is read ONCE and the reason follows from its terms:
+         *
+         *  - it TRACKS, so it holds what the index says at whatever the book gives (Indices C2);
+         *  - its blueprint is THINGS, so it buys what it expects to be paid more for than the wait
+         *    costs it (Commodities Spot C3);
+         *  - otherwise it CHOOSES, and what it will pay is what its investors require of it (D2).
+         *
+         * A pool with no mandate is not a fund and has no reason to be anywhere (App A).
+         */
+        orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
+          const mandate = mandateFor(view);
+          if (!mandate.some || !view.self.status.alive) return [];
+          if (mandate.value.tracks.some) return passiveOrders(decls, view, m);
+          // Law 4: `holdsThings` is the one writer of "is this a mandate over things" — and it is
+          // the one that gets the empty case right, because a blueprint that states NO class band
+          // holds anything and `[].every(...)` would have called that a commodity fund.
+          if (holdsThings(mandate.value.blueprint)) return thingOrders(decls, view, m);
+          return ordersOf(decls, view, m);
+        },
       },
     ],
     families: [equityIsZero(), noRequestVanishes(state)],
@@ -2070,7 +2091,7 @@ export function funds(
         ctx.openVenue(venue);
       }
       // E3.a: only the vehicle whose index the seed can see; the rest are a phase's.
-      for (const e of etfs) if (inKindOf(e).seeded) seedEtf(ctx, e);
+      for (const e of listed) if (inKindOf(e).seeded) seedInKind(ctx, e);
     },
   };
 }

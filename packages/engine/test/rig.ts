@@ -190,7 +190,7 @@ export function firmIn(draw: FoundationDraw, subUnit: string, nth = 0): PartyId 
 export interface Needs {
   readonly listed?: number;
   readonly funds?: number;
-  readonly etfs?: number;
+  readonly trackers?: number;
   /**
    * Dealer Desks C5: an instrument kind at least one of this world's banks makes a market in.
    * WHICH banks deal is drawn — it follows from what a bank will put behind a book, which is its
@@ -230,7 +230,7 @@ export function rigShapeFor(seed: string, need: Needs): RigShape {
     const shortOfFirmThings =
       d.listed.length < (need.listed ?? 0) ||
       d.funds.length < (need.funds ?? 0) ||
-      d.etfs.length < (need.etfs ?? 0);
+      d.trackers.length < (need.trackers ?? 0);
     if (!shortOfDealers && !shortOfFirmThings) return { banks, firms };
     if (shortOfDealers) banks += RIG_BANKS;
     if (shortOfFirmThings) firms *= 2;

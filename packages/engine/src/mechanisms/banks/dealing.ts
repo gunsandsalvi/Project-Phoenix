@@ -366,12 +366,12 @@ export function deskBorrows(
  * redeem into. That is the arbitrage as it actually works, and every leg of it is real.
  *
  * It borrows ONLY what it is short of, and only for units it has room for and would actually
- * create: the gap and the room are `etfGaps`' answer, the same one `arbitrage` posts on, so a desk
+ * create: the gap and the room are `inKindGaps`' answer, the same one `arbitrage` posts on, so a desk
  * cannot borrow for a trade it will not do (Law 4).
  */
 function toCreate(view: ParticipantView, d: BankDecl, state: DeskState): BorrowNeed[] {
   const out: BorrowNeed[] = [];
-  for (const g of etfGaps(view, d, state, view.venues)) {
+  for (const g of inKindGaps(view, d, state, view.venues)) {
     // A discount closes by REDEEMING, which delivers shares it already holds. There is nothing to
     // borrow for that; only a premium asks the desk to deliver a basket.
     if (g.premium <= 0) continue;
@@ -623,7 +623,7 @@ interface EtfGap {
   readonly fund: string;
 }
 
-function etfGaps(
+function inKindGaps(
   view: ParticipantView,
   d: BankDecl,
   state: DeskState,
@@ -631,14 +631,16 @@ function etfGaps(
 ): EtfGap[] {
   const out: EtfGap[] = [];
   for (const v of venues) {
-    if (v.key['kind'] !== 'etf') continue;
+    // Item 10e: the venue says WHAT HAPPENS THERE — creation and redemption in kind — rather than
+    // naming a kind of fund. A desk reads the door, and the door states a fact about itself.
+    if (v.key['kind'] !== 'inKind') continue;
     const fund = v.key['fund'];
     const line = v.key['share'];
     if (fund === undefined || line === undefined) continue;
     const share = instrumentId(line);
     if (!view.instruments.has(share) || !view.instruments.get(share).status.live) continue;
     if (!d.makes.includes(String(view.instruments.get(share).kind))) continue;
-    const struck = view.lastPublicAbout('etf.struck', fund);
+    const struck = view.lastPublicAbout('fund.listedStruck', fund);
     const nav = struck.some ? struck.value.data['perShare'] : undefined;
     const print = view.print(share);
     if (typeof nav !== 'number' || nav <= 0 || !print.some) continue;
@@ -689,7 +691,7 @@ export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly B
   const view = ctx.participant(bank);
   const state = stateOf(view, d);
   if (state === undefined) return;
-  for (const g of etfGaps(view, d, state, ctx.venues)) {
+  for (const g of inKindGaps(view, d, state, ctx.venues)) {
     const shares: Qty =
       g.premium > 0
         ? deliverable(view, g.basket, subQty(g.room, g.held, 'room it has for more of this line'))
