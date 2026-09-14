@@ -68,7 +68,7 @@ checked, not assumed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 9 | 0 | 14 | **9** | 23 |
 | Hedge Funds | 12 | 3 | 9 | 0 | 24 |
-| Private Equity | 7 | 1 | 17 | 0 | 25 |
+| Private Equity | 8 | 2 | 15 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -379,7 +379,35 @@ both:
     `Valuation.atCost(instrument)` is the one reader of it now — carried at cost, or a cleared kind
     whose line has no market — and `worthOf`, `valueOfLots` and the revaluation all ask it. **That is
     C5.a kept by there being no price to mistake for one**, and it closes §29 C5 and C5.a outright.
-- **10f.2** The IPO: a funding comparison with a third column, and a book-built first price.
+- [x] **10f.2 DONE.** A private firm floats when equity is the cheaper money, and the first price is
+  the one the session strikes. `mechanisms/equity/float.ts` is the decision and the offering;
+  `Instruments.list`/`delist` and the kernel's `ctx.list` are the door that seats a market on a line
+  that had none and opens the book in the same call, so the two halves cannot disagree.
+  - **The comparison, and neither side is invented.** What debt costs it is `credit.quoted` — the
+    keenest quote it was given, which is already banks competing for it; what its own money earns is
+    its PUBLISHED accounts, annualised by the span of its own report. **Borrow at more than the
+    business earns and the owners are worse off**, so a book earning twenty per cent borrows at eight
+    and stays private however large it is, and one earning four floats however small. Nothing in it
+    reads a size, which is the owner's correction stated as a mechanism. The other two reasons are
+    REFUSALS — nobody has quoted it at any price, or its bank will not lend it enough — which is
+    Corporate Credit A1 from the borrower's side.
+  - **It does not price its own issue** (Law 3, B3). It brings a size and the least it will take (its
+    own book per share) and the solver strikes the level out of what the bidders posted. **That first
+    print is §29 D2 word for word** — an exit produces the first real price the holding has had — so
+    a flotation and a PE exit by flotation are one mechanism and D2 goes MET on the strength of it.
+  - **It can fail, and what a failed IPO leaves behind is a listed company that raised nothing**
+    (D1.c, Clearing C4.a). The listing happened; the offering did not. Its existing owners can now
+    sell into the book, which is a direct listing and a real thing.
+  - **F-4 is fixed here because it had to be.** A fund priced its bid off `cashFlows` and a share
+    promises none, so no fund had ever bid for a share while `eligible` three lines above said its
+    mandate admitted one. It reads `view.worth` now — the kernel's one valuation door, which
+    discounts a promise where there is one and capitalises what a company published where there is
+    not — and the duplicate, with its own different day count, is gone (Law 4, Law 12).
+  - **And `atCost` got simpler and truer.** It asked whether the line had a MARKET; it asks whether
+    anything ever PRINTED one. A line that listed this morning and whose first book found no bidder
+    has a market and no price, and the revaluation would have thrown on it — as would
+    `carryingPerUnit`, which asked the store for last period's print of a line that did not trade
+    last period. Both read `atCost` now, and a lot nothing ever priced has recognised its basis.
 - **10f.3** M&A generalised: acquisition (the target survives), merger (`combine`, as today),
   disposal, take-private. One layer, four outcomes, no kind branch.
 - **10f.4** The formal process: a mandate to a bank, an auction with bidders, a fee, and `advisory`

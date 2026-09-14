@@ -80,10 +80,9 @@ const ONE_PIECE = asQty(1);
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor, totalFor } from '../../ledger/settlement.js';
-import { curveFamilyOf, priceAt } from '../../prices/curve.js';
 import { wasTraded } from '../../prices/price-store.js';
 import { weightOf } from '../../parties/party.js';
-import { issuerOf, type Instrument } from '../../register/instruments.js';
+import type { Instrument } from '../../register/instruments.js';
 import { MONEY_PIECES } from '../../registry/grid.js';
 import type { InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
 import { FUND, FUND_MANAGER, SHARES } from '../../registry/profiles.js';
@@ -1793,20 +1792,21 @@ function ordersOf(
     return [{ party: view.self.id, side: 'sell', price: 'market', qty }];
   }
   if (spare <= 0 || !eligible(view, mandate, i)) return [];
-  // C1.a: it must buy something with the cash, and what it will pay is what makes the paper return
-  // what its own investors require of it (D2). A price it will not pay does not fill.
-  const on = view.calendar.startOf(view.period);
-  const family = view.registry.curveFamily(curveFamilyOf(issuerOf(i), i.ccy));
-  const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar, view.registry);
-  if (flows.length === 0) return [];
-  const price = priceAt(
-    flows,
-    mandate.requiredYieldPerAnnum,
-    on,
-    family.dayCount,
-    `what ${i.id} is worth to ${mandate.pool}`,
-  );
-  if (price <= 0) return [];
+  /**
+   * C1.a, A4, Equity B1, §46 A3: what it will pay is what makes the claim return what its own
+   * investors require of it (D2) — **asked at the one door that answers for every kind**, which is
+   * the same door `eligible` two lines above already asks. A price it will not pay does not fill.
+   *
+   * It used to discount `cashFlows` here and refuse anything that promised none (item 10f.2, F-4).
+   * A SHARE PROMISES NOTHING DATED, so the flows were always empty and **no fund in this world had
+   * ever bid for one** — while `eligible`, through `view.worth`, said its mandate admitted it. Two
+   * valuations of one thing (Law 4) that disagreed about whether a share could be valued at all,
+   * and the day count differed between them as well. `view.worth` discounts a promise where there
+   * is one and capitalises what a company published where there is not, and it is the kernel's.
+   */
+  const worth = view.worth(i.id, mandate.requiredYieldPerAnnum);
+  if (!worth.some || worth.value <= 0) return [];
+  const price = worth.value;
   const lines = eligibleLines(view, mandate);
   if (lines === 0) return [];
   const each = over(

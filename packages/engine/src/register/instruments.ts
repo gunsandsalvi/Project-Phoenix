@@ -18,7 +18,7 @@ import type {
 } from '../core/ids.js';
 import { finite, moveDust } from '../core/num.js';
 import { NO_QTY, asQty, onTick, type Qty } from '../core/tick.js';
-import { some, type Option } from '../core/option.js';
+import { none, some, type Option } from '../core/option.js';
 import type { Registry } from '../registry/registry.js';
 
 /**
@@ -249,6 +249,43 @@ export class Instruments {
     const now = this.byIssuer.get(issuer);
     if (now === undefined) this.byIssuer.set(issuer, [id]);
     else now.push(id);
+  }
+
+  /**
+   * Equity E3, D1, §29 D2, item 10f.2: A LINE THAT DID NOT TRADE NOW DOES.
+   *
+   * It is the one thing a flotation changes about the INSTRUMENT: same terms, same issuer, same
+   * holders, same count — a place to sell it. Everything else a listing means is elsewhere, and
+   * that is the point: the shares a private company's owners hold are the shares its public
+   * shareholders hold, which is why an IPO is a sale and not a conversion.
+   *
+   * `delist` is the same door the other way and a take-private is what walks through it (10f.3):
+   * the register is bought out, the market closes, and the firm does not die — it is owned
+   * differently. Neither may be called on a line whose kind is not priced by clearing at all: a
+   * loan row has nothing to list.
+   */
+  list(id: InstrumentId, market: MarketId): void {
+    const i = this.get(id);
+    forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; it cannot be listed`);
+    forbid(!i.market.some, 'Clearing D1', `${id} already trades in ${i.market.some ? i.market.value : ''}`);
+    forbid(
+      this.registry.instrumentKind(i.kind).pricing === 'cleared',
+      'XI-6',
+      `${id} is not priced by clearing, so a market in it would print nothing`,
+    );
+    this.map.set(id, Object.freeze({ ...i, market: some(market) }));
+    this.everything = undefined;
+    this.changes += 1;
+  }
+
+  /** Equity E3: the line stops trading and the holders keep their shares (10f.3's take-private). */
+  delist(id: InstrumentId): void {
+    const i = this.get(id);
+    forbid(i.status.live, 'Register B4', `instrument ${id} has ceased; it does not trade`);
+    forbid(i.market.some, 'Clearing D1', `${id} has no market to close`);
+    this.map.set(id, Object.freeze({ ...i, market: none<MarketId>() }));
+    this.everything = undefined;
+    this.changes += 1;
   }
 
   /**

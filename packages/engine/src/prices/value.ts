@@ -135,7 +135,7 @@ export class Valuation {
     // (B1), and reading the lot's basis instead would be a stale mirror of a number the kernel can
     // read now (Law 19). What the equity account has RECOGNISED is a different question and stays
     // with the lot (carryingPerUnit).
-    if (profile.pricing !== 'derived' && this.atCost(instrument)) {
+    if (profile.pricing !== 'derived' && this.atCost(instrument, at)) {
       return some({ value: this.valueOfLots(instrument, lots, at), from: at, ccy });
     }
     switch (profile.pricing) {
@@ -295,17 +295,24 @@ export class Valuation {
    * §29 C5, C5.a, XI-6: WHETHER A HOLDER'S ACCOUNTS CARRY THIS AT WHAT IT COST OR AT A MARK, and
    * it is a question about the LINE and not only about its kind.
    *
-   * A kind says how its lines are priced; whether one of them has a MARKET is a fact about the line
-   * (Register F1). A share of a private company is the same instrument as a share of a public one
-   * and it does not trade, so there is no cleared price of it and its holders carry it at cost —
-   * *“marked, not cleared”*, which is C5.a stated where the carrying rule is read rather than
-   * policed somewhere else. Everything that values a position asks this, so there is one answer to
-   * it (Law 4): `worthOf`, `valueOfLots` and the revaluation, which is every reader there is.
+   * A kind says how its lines are priced; **whether a market ever made a price of one of them is a
+   * fact about the line**. A share of a private company is the same instrument as a share of a
+   * public one and nobody trades it; a line that listed this morning and whose first book found no
+   * bidder has a market and has still never printed. Both are held at what they cost — *“marked,
+   * not cleared”* (C5.a), stated where the carrying rule is read rather than policed somewhere
+   * else. Everything that values a position asks this, so there is one answer to it (Law 4):
+   * `worthOf`, `valueOfLots` and the revaluation, which is every reader there is.
+   *
+   * It asks for a PRINT and not for a market because the market is not the question: a book that
+   * has never met has told nobody anything, and a holder cannot carry a position at a number that
+   * does not exist. What a stale print does is separate (Clearing E4) — it IS a mark, and one that
+   * says how old it is.
    */
-  atCost(instrument: InstrumentId): boolean {
+  atCost(instrument: InstrumentId, at: Period): boolean {
     const i = this.instruments.get(instrument);
     const profile = this.registry.instrumentKind(i.kind);
-    return profile.carry === 'cost' || (profile.pricing === 'cleared' && !i.market.some);
+    if (profile.carry === 'cost') return true;
+    return profile.pricing === 'cleared' && !this.prices.latest(instrument, at).some;
   }
 
   markPerUnit(instrument: InstrumentId, at: Period): PerPiece {
@@ -316,12 +323,12 @@ export class Valuation {
         // Money D2: the only admissible hard-coded price of one.
         return asPerPiece(1, 'money is worth one of itself');
       case 'cleared':
-        if (!i.market.some) {
+        if (!this.prices.latest(instrument, at).some) {
           // §29 C5.a: an unlisted mark is not a cleared price, and asking for one is the caller's
           // defect. `atCost` is the read that says so before anybody gets here.
           throw new Unpriced(
             'Private Equity C5.a',
-            `${instrument} has no market, so nothing ever cleared a price of it: its holders carry it at what it cost`,
+            `nothing has ever cleared a price of ${instrument}${i.market.some ? '' : ', which has no market'}: its holders carry it at what it cost`,
             { instrument },
           );
         }
@@ -359,17 +366,32 @@ export class Valuation {
       case 'carriedAtCost':
         return lot.basisPerUnit;
       case 'cleared':
-        // Goods E1: a lot carried at cost stays at cost until something writes it down; a lot
-        // carried at the mark has already recognised last period's print — or THIS period's, once
-        // revaluation has put it in the account (above).
-        if (this.registry.instrumentKind(i.kind).carry === 'cost') return lot.basisPerUnit;
+        /**
+         * Goods E1: a lot carried at cost stays at cost until something writes it down; a lot
+         * carried at the mark has already recognised last period's print — or THIS period's, once
+         * revaluation has put it in the account (above).
+         *
+         * §29 C5, item 10f.2: AND A LOT NOTHING HAS EVER PRINTED A PRICE OF HAS RECOGNISED ITS
+         * BASIS, because nothing else exists to have recognised. That is the private company's
+         * shares, and it is the first period of a line that has just listed: its owners have held
+         * it since the world opened, so `lot.acquired < now`, and asking the store for last
+         * period's print of a line that did not trade last period threw. `atCost` answers both,
+         * and it answers `true` for every kind carried at cost as well — which is the line this
+         * replaces.
+         */
+        if (this.atCost(instrument, now)) return lot.basisPerUnit;
         if (this.recognisedThrough >= now) return this.markPerUnit(instrument, now);
-        return lot.acquired < now
-          ? this.prices.printOrThrow(instrument, period(now - 1)).price
-          : lot.basisPerUnit;
+        if (lot.acquired >= now) return lot.basisPerUnit;
+        return this.lastMarkBefore(instrument, now, lot.basisPerUnit);
       default:
         return assertNever(pricing, 'Pricing');
     }
+  }
+
+  /** What the line was last marked at before `now`, or the lot's basis where it never was. */
+  private lastMarkBefore(instrument: InstrumentId, now: Period, basis: PerPiece): PerPiece {
+    const before = this.prices.latest(instrument, period(now - 1));
+    return before.some ? before.value.price : basis;
   }
 
   /**
@@ -406,7 +428,7 @@ export class Valuation {
 
   /** Value of lots: at mark for cleared instruments and money, at basis for carried-at-cost. */
   valueOfLots(instrument: InstrumentId, lots: readonly Lot[], at: Period): Cash {
-    const carry = this.atCost(instrument);
+    const carry = this.atCost(instrument, at);
     /**
      * Law 7: THROUGH `sum`, in the one class whose `equityDust` claims to derive a tolerance from
      * the arithmetic that produced the number. A `+=` accumulation drops the dust of every step it

@@ -780,6 +780,13 @@ export interface MechanismContext extends WorldReads {
   /** Item 10e: the same classification every view gets, so nobody disagrees about an asset (Law 4). */
   classify(instrument: InstrumentId): Classified;
   openMarket(decl: MarketDecl): void;
+  /**
+   * Equity D1, E3, §29 D2 (item 10f.2): LIST A LINE THAT DID NOT TRADE — seat the market on the
+   * instrument and open it, in one call, because a flotation is one event and the two halves of it
+   * must not be able to disagree. It is the only way a line's `market` ever changes, and `delist`
+   * is the same door the other way (10f.3's take-private).
+   */
+  list(instrument: InstrumentId, decl: MarketDecl): void;
   /** Declare a venue this module clears itself (Clearing B2, Labour D1). */
   openVenue(decl: VenueDecl): void;
   /** Announce the issuer's supply for this period's session (Sovereign C1); cleared by the market. */

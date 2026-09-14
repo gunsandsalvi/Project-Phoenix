@@ -2327,9 +2327,20 @@ function mapSpec(countries: readonly CountrySeed[]): MapSpec {
  */
 function makersOf(equities: readonly EquityDecl[]): (i: InstrumentId) => readonly string[] | undefined {
   const byLine = new Map<InstrumentId, readonly string[]>();
-  // 10f.1: every line, the private ones included — and theirs is EMPTY rather than absent, which
-  // says that nobody quotes it rather than that nothing is known about who does.
-  for (const row of equities) byLine.set(equityLineOf(row.firm), row.makers);
+  /**
+   * 10f.2: ONLY THE LINES THIS WORLD OPENED PUBLIC. A private line answers `undefined` and not an
+   * empty list, and the difference matters the day it floats: `[]` says nobody may ever quote it,
+   * and the makers draw is an OPENING condition about the companies this world already had. A
+   * firm that lists afterwards has no drawn makers, so the fallback this function already documents
+   * takes over — the bank's own `makes` decides — until 10f.4, where the bank that RAN the
+   * flotation is the one that quotes it, which is what an underwriter is.
+   *
+   * Nothing is lost by leaving a private line out: a desk covers what has a market
+   * (`banks/dealing.ts:coveredLines`), and a private line has none.
+   */
+  for (const row of equities) {
+    if (row.listed) byLine.set(equityLineOf(row.firm), row.makers);
+  }
   return (instrument) => byLine.get(instrument);
 }
 

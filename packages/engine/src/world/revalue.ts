@@ -96,10 +96,11 @@ export function revalue(period: Period, cycle: Cycle, d: RevalueDeps): void {
     const profile = d.registry.instrumentKind(inst.kind);
     const written = profile.carriedAt;
     let moved: Moved;
-    // §29 C5, C5.a: a line with no market never cleared a price, so there is no mark for it to be
-    // brought to and its holders go on carrying it at cost. `atCost` is the one reader of that
-    // (prices/value.ts), and it already answers `true` for every kind carried at cost.
-    if (profile.pricing === 'cleared' && !d.valuation.atCost(inst.id)) {
+    // §29 C5, C5.a: a line nothing has ever printed a price of has no mark to be brought to, and
+    // its holders go on carrying it at cost — a private company's shares, and a line whose first
+    // book found no bidder. `atCost` is the one reader of that (prices/value.ts), and it already
+    // answers `true` for every kind carried at cost.
+    if (profile.pricing === 'cleared' && !d.valuation.atCost(inst.id, period)) {
       moved = toTheMark(inst, h, period, d);
     } else if (written !== undefined) {
       moved = toWhatTheKindSays(inst, h, period, d);

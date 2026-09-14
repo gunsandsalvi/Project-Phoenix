@@ -717,6 +717,72 @@ function listedFirms(): readonly string[] {
   return DREW.draw.equities.filter((r) => r.listed).map((l) => l.firm);
 }
 
+/**
+ * 10f.2: THE FLOTATION. *"Going public is a matter of funding choice, not how large a firm is."*
+ */
+describe('going public (Equity D1.b, E3, §29 D1, D2)', () => {
+  it('is not a size: this world opened public firms smaller than private ones', () => {
+    const size = new Map(DREW.draw.firms.map((f) => [f.firm, f.size]));
+    const smallestPublic = Math.min(
+      ...DREW.draw.equities.filter((r) => r.listed).map((r) => size.get(r.firm) ?? 0),
+    );
+    const largestPrivate = Math.max(
+      ...DREW.draw.equities.filter((r) => !r.listed).map((r) => size.get(r.firm) ?? 0),
+    );
+    // The two sets OVERLAP, which is exactly what a threshold could not produce. It is the whole
+    // of the owner's correction, and it is a property of the draw rather than of a run.
+    expect(largestPrivate).toBeGreaterThan(smallestPublic);
+  });
+
+  it('lists the line it floats, and does it once (E3)', () => {
+    const w = rigWorld('equity', RIG.banks, RIG.firms);
+    for (let i = 0; i < 52; i += 1) expect(unexpected(w.step().audit)).toEqual([]);
+    const floats = w.journal.ofKind('equity.float');
+    const seen = new Set<string>();
+    for (const e of floats) {
+      const line = String(e.data['line']);
+      // A firm floats ONCE: after it lists, its line names a market and it is never asked again.
+      expect(seen.has(line)).toBe(false);
+      seen.add(line);
+      const inst = w.instruments.get(instrumentId(line));
+      expect(inst.market.some).toBe(true);
+      // Clearing D1: and the book it names is open. The two halves cannot disagree, because one
+      // door does both (`ctx.list`).
+      expect(w.markets.some((m) => m.id === String(e.data['market']))).toBe(true);
+      // D1.c: it brought a size and the least it will take, and never a price (Law 3).
+      expect(typeof e.data['size']).toBe('number');
+      expect(Number(e.data['size'])).toBeGreaterThan(0);
+      expect(Number(e.data['reservation'])).toBeGreaterThan(0);
+    }
+  });
+
+  it('comes for a reason a management has, and never because it is large (D1.b)', () => {
+    const w = ranWorld('equity', 26, RIG.banks, RIG.firms);
+    for (const e of w.journal.ofKind('equity.float')) {
+      const why = String(e.data['why']);
+      // The three reasons, and only the first is a preference: the other two are what the credit
+      // market decided about it (Corporate Credit A1).
+      expect(
+        why.includes('costs more than its own book earns') ||
+          why.includes('will not lend it enough') ||
+          why.includes('nobody has quoted it'),
+      ).toBe(true);
+      expect(why).not.toContain('size');
+    }
+  });
+
+  it('never prints a price of a line nobody trades (§29 C5.a)', () => {
+    const w = ranWorld('equity', 12, RIG.banks, RIG.firms);
+    for (const row of DREW.draw.equities) {
+      const line = w.instruments.get(equityLineOf(row.firm));
+      if (line.market.some) continue;
+      // No market, so no session, so nothing ever cleared a price of it. What its holders carry it
+      // at is what it cost, and there is nothing here for them to mistake for a price.
+      expect(w.prices.latest(line.id, w.period).some).toBe(false);
+    }
+  });
+});
+
 /** A claim that ranks and is carried at what it cost: the least an instrument can be (Firm D4). */
 function seniorClaimKind(id: InstrumentKindId): InstrumentKindProfile {
   return {

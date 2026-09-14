@@ -8892,3 +8892,87 @@ in no market's participant list at all unless its published plan has a buyback i
 
 Typecheck 0, lint 0, `check:spec` 218 tags, `check:forbids` 5 over 215 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 10f.2 — a firm goes public because equity is the cheaper money
+
+**The owner's second sentence:** *"IPOs and take privates should exist."* This is the IPO. The
+take-private is 10f.3, and the door it walks through (`Instruments.delist`) is built here, because
+it is the same door the other way and writing one without the other would have been writing half a
+fact.
+
+### The decision, and neither side of it is invented
+
+D1.b already said what an issuance is — *"a decision with a reason: a funding need it prefers to
+meet with equity"* — and 10f.1 removed the size threshold that was standing in for the decision.
+What a firm compares is two numbers somebody else published:
+
+- **what debt costs it** is `credit.quoted`, the keenest quote it was given, which is already the
+  outcome of banks competing for it (Banks Lending C3.a) and comes with the SIZE that bank will lend;
+- **what its own money earns** is its published accounts (Reporting A2): what it made over the book
+  it made it on, annualised by the span of its own report. No second set of accounts, no forecast.
+
+And the comparison is the one a management actually makes. **Borrow at more than the business earns
+and the owners are worse off; sell part of it and the new owners share what there is.** So a firm
+whose book earns twenty per cent borrows at eight and keeps the difference — it stays private however
+large it is — and one whose book earns four floats, however small. **Nothing in it reads a size.**
+
+The other two reasons are refusals rather than preferences, and they are what the credit market
+decided about the firm: nobody has quoted it at any price, or its bank will not lend it enough.
+That is Corporate Credit A1's *"a firm large enough to reach a market is not at the mercy of one
+lender"* seen from the borrower's side.
+
+### It does not price its own issue
+
+It brings a SIZE and the least it will take — its own book per share, which is a reservation and not
+a price (B3) — and the session strikes the level out of what the bidders posted (B1, B2). **That
+first print is the first price the line has ever had, and that sentence is §29 D2 verbatim**: an
+exit produces a cleared price, which is the first real price the holding has had. A flotation and a
+private-equity exit by flotation are ONE mechanism, which is where the owner's *"the PE case being
+only an application"* first bites. D2 goes MISSING → MET on the strength of the same code.
+
+It can fail (D1.c, Clearing C4.a), and what a failed IPO leaves behind is a listed company that
+raised nothing. The listing happened; the offering did not. Its existing owners can now sell into
+the book, which is a direct listing and a real thing rather than an artefact.
+
+### Three things it needed, and two of them were defects
+
+**`Instruments.list` and `delist`.** A line's market was fixed at issue, so nothing in this world
+could ever start or stop trading. They are the only writers of it, and `ctx.list` opens the book in
+the same call — one door, because `addMarket` refuses a market whose instrument does not name it and
+a module that seated one and forgot the other would leave a line pointing at a book that is not
+there.
+
+**F-4: a fund could never bid for a share.** `ordersOf` priced its bid by discounting `cashFlows`
+and returned nothing when there were none — and a share promises nothing dated, so the flows were
+always empty. Meanwhile `eligible`, three lines above, used `view.worth` and said the mandate
+admitted it. Two valuations of one thing that disagreed about whether a share can be valued at all,
+with two different day counts (Law 4). It reads `view.worth` now, which is the kernel's one door: a
+bond discounts its promise, a company capitalises what it published. **Without this an IPO would
+have had no bid side at all** — households deliberately do not read accounts (item 13d), so the only
+parties in this world that can value a line that has never printed are the ones with mandates.
+
+**`atCost` asked the wrong question, and it would have stopped the build.** It asked whether a line
+had a MARKET. A line that lists this morning and whose first book finds no bidder HAS a market and
+has never printed, and the revaluation would have gone to `printOrThrow` for a price that does not
+exist. It asks whether anything ever printed one now, which is simpler and truer, and
+`carryingPerUnit` reads it too — that one asked the store for *last* period's print of a line that
+did not trade last period, which is every line's first print. A lot nothing has ever priced has
+recognised its basis, because there is nothing else it could have recognised.
+
+### What is now true that was not
+
+- Every firm in this world has a residual and named owners (10f.1), and a private one can become a
+  public one by deciding to (10f.2).
+- `EquityDecl.listed` is an OPENING CONDITION and nothing at runtime reads it: whether a line trades
+  is a fact about the line, and `decide` and `float` both read the register (Law 19).
+- A line's makers are an opening draw, so a firm that lists afterwards has none and the fallback this
+  world already documented takes over — the bank's own `makes` decides. **What it wants is 10f.4**,
+  where the bank that RAN the flotation is the one that quotes it, which is what an underwriter is.
+
+§29 D1 goes MISSING → PARTIAL and D2 MISSING → MET; Equity E3 stays PARTIAL with the flotation built
+and the take-private not.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5 over 216 files, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.

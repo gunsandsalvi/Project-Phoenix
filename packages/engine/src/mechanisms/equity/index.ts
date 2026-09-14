@@ -81,6 +81,7 @@ import {
   type EquityDecl,
 } from './data.js';
 import { buybackOrder, decideEquity, dividendFor, type EquityPlan } from './decide.js';
+import { floatations } from './float.js';
 import { freeFloat, marketCapitalisation } from './opinion.js';
 import { SHARE, shareKind, shareTerms, votesOf, type ShareTerms } from './share.js';
 import { asQty } from '../../core/tick.js';
@@ -88,6 +89,7 @@ import { asQty } from '../../core/tick.js';
 export * from './data.js';
 export * from './share.js';
 export { decideEquity, buybackOrder, dividendFor } from './decide.js';
+export { wouldFloat, float, floatations, type Flotation } from './float.js';
 export type { EquityPlan } from './decide.js';
 export { marketCapitalisation, freeFloat } from './opinion.js';
 
@@ -175,9 +177,15 @@ function decide(ctx: MechanismContext, seed: string, row: EquityDecl): void {
   const decided = decideEquity(
     view,
     line.id,
-    // §29 C5: a private company has no book to post into, and what it may do about its own shares
-    // is the whole of the difference between the two (`decideEquity`).
-    row.listed ? some(equityMarketOf(row.firm)) : none<MarketId>(),
+    /**
+     * §29 C5: a private company has no book to post into, and what it may do about its own shares
+     * is the whole of the difference between the two (`decideEquity`).
+     *
+     * Law 19: off the LINE. `EquityDecl.listed` is the opening condition (Seed B1.a) and it goes
+     * stale the instant a firm floats (10f.2) or is taken private; whether a line trades is a fact
+     * about the line, and the register is where it is kept.
+     */
+    line.market,
     line.issued,
     negated(asCash(short, 'what it is short of'), 'what it has spare'),
     ctx.params.periods(equityParam(row.firm, 'payoutPatience')),
@@ -642,6 +650,19 @@ export function equity(rows: readonly EquityDecl[], seed: string): SystemModule 
           payDividends(ctx);
           recordDividends(ctx);
           for (const row of rows) decide(ctx, seed, row);
+        },
+      },
+      {
+        name: 'equity.float',
+        spec: 'Equity D1 Equity D1.b Equity D1.c Equity E3 Firm E4 Reporting A2 Private Equity D1 Private Equity D2',
+        // Clearing F1: after everything it reads has been published this period — what it is short
+        // of (`firms.decide`) and what its bank quoted it (`lending.write`) — and before the
+        // session, because an offer that arrives after the book has cleared is not an offer. It is
+        // the same slot an issuer of paper stands in (`bond.issue`), for the same reason.
+        anchor: { before: 'markets' },
+        cycle: 'anchor',
+        run: (ctx: MechanismContext) => {
+          floatations(ctx, rows);
         },
       },
       {

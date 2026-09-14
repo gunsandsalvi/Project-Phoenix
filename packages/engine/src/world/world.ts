@@ -617,6 +617,25 @@ export class World {
     this.marketList.push(m);
   }
 
+  /**
+   * Equity D1, E3, §29 D2 (item 10f.2): LIST A LINE THAT DID NOT TRADE — seat the market on the
+   * instrument and open it, in one call.
+   *
+   * It is one door because the two halves cannot be allowed to disagree: `addMarket` refuses a
+   * market whose instrument does not name it, so a module that seated one and forgot the other
+   * would have a line pointing at a book that is not there (or the reverse, which the names audit
+   * reports). A flotation is one event and this is it.
+   */
+  listLine(instrument: InstrumentId, m: MarketDecl): void {
+    forbid(
+      'instrument' in m && m.instrument === instrument,
+      'Law 4',
+      `market ${m.id} was opened for ${instrument} and clears something else`,
+    );
+    this.instruments.list(instrument, m.id);
+    this.addMarket(m);
+  }
+
   /** Declare a venue a module clears itself (Clearing B2); like a market, it is declared once. */
   addVenue(v: VenueDecl): void {
     forbid(!this.venueList.some((x) => x.id === v.id), 'Law 4', `venue ${v.id} declared twice`);
@@ -1731,6 +1750,9 @@ export class World {
       classify: (instrument) => this.classifyAsset(instrument),
       openMarket: (decl) => {
         this.addMarket(decl);
+      },
+      list: (instrument, decl) => {
+        this.listLine(instrument, decl);
       },
       openVenue: (decl) => {
         this.addVenue(decl);
