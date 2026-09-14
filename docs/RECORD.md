@@ -6644,3 +6644,115 @@ institution.
 `9.1`, `9.2`, `9.4`, `9.6`–`9.9` are the rest of item 9 and are next.
 
 Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.
+
+---
+
+## Item 9, second stage — nothing was ever short, so nothing ever borrowed (`docs/IMPLEMENTATION.md` 9.4)
+
+**What.** `A-67` and `B-3`: the securities-lending module builds the venue, the fee clearing, the
+title transfer, the collateral pledge, the manufactured payment and the recall, and **every way in
+was called by nobody**. `runBorrows`, `wantsToBorrow` and `returnLoans` were exported and referenced
+nowhere; the one phase walked `state(ctx).open`, which nothing ever pushed to. Nine `MET` marks
+stood against it.
+
+**The cause was not a missing call site.** Being short is a POSITION a party takes, out of its own
+view of a line it holds none of, and this module can see neither — so there was nowhere for the
+first call to come from. `wantsToBorrow` is the tell: it was exported from a module, and a module
+never imports another module, so the only party that could ever have called it was one
+securities-lending owns, and it owns none. The function could have no caller by construction.
+
+**The door.** `SystemModule.borrowNeeds`, the shape `termsOffered`, `bankChoices` and
+`creditDecisions` are: the module that owns a party kind answers what a party of that kind must
+deliver that it has not got, the most it will pay per period for the use of it, and what it will
+pledge. Exactly one module may answer for a kind (Law 4); `ctx.borrowsWanted()` asks once a period
+and stamps each answer with the party that gave it. It is declared in the reach tally, so a door
+nobody ever answers is visible as never-reached rather than as an absence of evidence.
+`docs/ARCHITECTURE.md` §4.9b carries the decision.
+
+**The first answerer is the dealing desk** (`banks/dealing.ts:deskBorrows`), and it is the only
+honest short this world has: a market maker whose own view of a line is BELOW what the book last
+printed, which already holds less of it than it is prepared to have a position in. A desk that can
+only offer what it holds is not making a market in a line it thinks is dear — it sells down to
+nothing and then stands there with a bid nobody hits, which is `binds: 'position'` in every period
+after the first. What it does instead is borrow the line and offer that, and the position it then
+has is a short. Three numbers decide it and none of them is new: its own view against the print
+(XI-13), the same three constraints its bid is cut to (its own limit, the room in its whole book,
+the money it has — D1, D4, F1), and what a period of it costs it.
+
+**Two phases.** `borrow.session` runs BEFORE the markets, so borrowed paper is in the desk's free
+balance when it quotes — a borrow struck after the session it was for is paper nobody could sell.
+The return is folded into `borrow.economics`, which was already there and walking an empty book.
+
+**The fee clears, because there is one book per line and both sides carry levels.** It used to clear
+a session PER BORROWER against every lender posting `price: 'market'`: one bidder and no seller with
+a level to compete on, so `outcome.price` was that borrower's own reservation however much paper was
+on offer, and the docstring's *"scarce paper is dear and abundant paper is cheap"* could not happen
+at any supply. Now every borrower of a line bids in the same book and every holder of it offers at a
+floor of its own — its own recent surprises about the line over what it thinks a unit is worth
+(§46 B3), which is what a period of the loan puts at risk. Two holders of one line who have been
+differently wrong about it want differently much to lend it, so the supply side is a CURVE and
+scarcity moves the level: the cheap lenders run out before the bidders do. A holder with no outlook
+on the line has no number and does not lend — a refusal and not a zero, which is E3 (*a fee of zero
+is a cleared price only if somebody posted it*).
+
+**The double-post goes with the grouping.** `post` appends and the book is emptied only at the top
+of a period, so a second borrower of the same line re-posted every lender's offer into the same
+venue and the book showed twice the supply that exists. One book per line posts each lender once.
+`allot` then pairs them: the borrower that bid most is served out of the lender that asked least,
+ties in the parties' own order, so a run is the same run twice from one seed.
+
+**`wantsToBorrow` is deleted** (Law 12: a fix removes code). Its `willPay` was `owed/(owed+equity)`
+— the debt share of funding, dimensionless, with no periodicity — called *"what a period of its own
+money costs it"*: `A-58`'s non-rate with `A-58`'s comment, in a second module. The sentence the
+comment was reaching for is right and is true where it now lives: a borrower will not pay more for a
+period of somebody else's paper than a period of its own money and capital costs it, which is
+`dealing-quote.ts:rateOf` — the rate the desk already prices its own quotes off.
+
+**Three things the read of the code found that the step did not name.**
+
+- **The haircut came in on the BORROWER's side**, which is C1 inverted: the party at risk asking the
+  party that owes it how much cover it would like to give. It is the lender's now, and it is how far
+  apart it thinks the two marks can move in a period — its own surprises on the borrowed line and on
+  the collateral, which is the same read its floor is, used for the other question C1 asks.
+- **A failed return built an instruction with no legs.** `returnLoans` cleared its leg list in the
+  failure branch and pushed back only what had come back, so a borrower with nothing to return
+  settled an empty instruction — which throws `Money D1` at the settlement door. That is the COMMON
+  case for a short that sold the paper, so the mechanism would have stopped the world on the first
+  failed return, which is why it is fixed here and not written down (the exception the three rules
+  name). The dead `legs.shift()` before `legs.length = 0` went with it.
+- **D1 says the lender KEEPS the collateral**, and keeping it is title, not a lien: a loan that has
+  terminated cannot go on securing anything, and collateral encumbered to a row that no longer
+  exists is units nobody can reach. The lien is released and the units are delivered to the lender,
+  in that order and as two instructions — the register answers *can this move?* against what is
+  bound BEFORE the instruction runs, so a release and a move of the same units in one instruction
+  fails its own pre-check.
+
+**And the term.** `securitiesLending.borrowTermPeriods` (4), declared TECHNOLOGY with an owner: how
+long the paper stays out before it goes back. It is what makes D2 possible — a borrower that still
+wants the position has to buy the line back before the term is up, which is what *"shorts must buy"*
+means — and it is not a forecast of when a short is closed: a borrower that still needs the line
+asks again in the same book, at whatever the fee has become by then.
+
+`covers` in `banks/dealing.ts` is factored into `coveredLines`, one writer of which lines a desk is
+in, because the borrow answer needs the list and the quote needs the membership test.
+
+**COVERAGE**: `Securities Lending` A4, B1, B2, D1 and E3 go MISSING → MET, 9 of 21 to 14 of 21, and
+Part 0's row with them. Every one of the fourteen keeps `B-12`'s **NEVER REACHED** marker: a way in
+is not an outcome, and whether the module has now produced one is a MEASUREMENT that waits for 23.0
+like every other. `E-14` is the finding this raised — `Securities Lending C2/C2.a` are not built,
+nothing re-marks the collateral — and it is positioned at **13.8**, with prime brokerage, because
+marking both sides of a position and calling the difference is §15 C1's mechanism with two callers.
+
+**And `docs/IMPLEMENTATION.md` is pruned to what is left.** It was 3,900 lines and is 1,434: items
+1–8 and 7b are closed, so their sections, their steps and their findings are deleted — this file is
+the ledger of what was done and that one is the plan of what is not. Four things were carried out
+before the sections went, not dropped: `2.22` (run `npm run check`) is **23.0**, where the owner put
+it; `7.1` (housing's mortgage guard) is **15.0**; `3.5` is already `9.6`; `7.2` and `7.3` were
+superseded by 7b, which closed. Part 4 keeps only findings that are still open.
+
+`9.1`, `9.2`, `9.6`–`9.9` are the rest of item 9. **`9.1` is next, and it should have been first** —
+the two steps that touch seven modules were left while the two that touch one each were taken, which
+is Law 10's "appended rather than inserted" in miniature.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green.

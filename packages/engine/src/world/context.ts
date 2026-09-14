@@ -649,6 +649,31 @@ export interface WorldReads extends KernelReads {
   sovereignCurveIn(ccy: CurrencyCode): Option<CurveFamilyDecl>;
 }
 
+/**
+ * Securities Lending B1, C1: WHAT A PARTY MUST DELIVER THAT IT HAS NOT GOT, and what it will pay
+ * for the use of it — the reason one side of a borrow book is there.
+ *
+ * It is a decision and not a read, which is why it comes through a door and not out of a store: a
+ * desk that would sell more than it holds because it thinks the line is dear, a vehicle that must
+ * hand over a basket it has not assembled, a party covering a fail — the reason belongs to the
+ * party, and the module that owns its kind is the only one that has it (Observer A4). The lending
+ * module knows how to clear a fee and nothing at all about why anybody is short.
+ */
+export interface BorrowNeed {
+  readonly instrument: InstrumentId;
+  readonly units: Qty;
+  readonly ccy: CurrencyCode;
+  /** A5: the most it will pay per period, as a share of what the borrowed paper is worth. */
+  readonly willPay: Ratio;
+  /** C1: what it will pledge against it, which the lender's haircut is then taken over. */
+  readonly collateral: InstrumentId;
+}
+
+/** The same, with the party whose reason it was (the kernel stamps it; a module cannot). */
+export interface Borrowing extends BorrowNeed {
+  readonly borrower: PartyId;
+}
+
 export interface MechanismContext extends WorldReads {
   /**
    * A module's own state, under a name of its choosing (Law 4: its module is the one writer). It is
@@ -717,6 +742,20 @@ export interface MechanismContext extends WorldReads {
    * post every schedule twice.
    */
   gather(venue: VenueId): void;
+  /**
+   * Securities Lending B1, A5.a, Observer A4: ASK EVERY PARTY WHAT IT MUST BORROW — the same door
+   * `gather` and `chooseBanks` are, for the same reason.
+   *
+   * Who is short is not a fact the lending module can see: it is a decision taken inside another
+   * module, out of that party's own view of a line it holds none of. Without this door the module
+   * that clears the fee would have to walk every party in the world and work out for each of them
+   * why it might want to be short — one module deciding for parties it does not own, which is what
+   * A4 forbids and is exactly why `runBorrows` was reachable from nowhere at all (`A-67`).
+   *
+   * The answers come back stamped with the party that gave them, in the parties' own order, so a
+   * run is the same run twice from one seed.
+   */
+  borrowsWanted(): readonly Borrowing[];
   /** What every party has posted into a venue this period (the module that clears it reads this). */
   posted(venue: VenueId): readonly Order[];
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */

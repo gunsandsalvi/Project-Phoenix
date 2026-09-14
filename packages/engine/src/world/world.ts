@@ -108,6 +108,7 @@ import { type Prng, prng } from '../rng/prng.js';
 import { accountResolver, runCorporateActions } from './actions.js';
 import { dieCell, mergeCells, reKeyCell, splitCell, weightEvent } from './cells.js';
 import type { Subject,
+  Borrowing,
   ContractsRead,
   MechanismContext,
   WorldReads,
@@ -121,6 +122,7 @@ import type { DerivativeClassDecl } from './context.js';
 import type { OverdraftContext, OverdraftDecision } from '../registry/kinds.js';
 import type {
   BankChoice,
+  BorrowNeeds,
   CreditDecision,
   OutlookProvider,
   ParticipantDecl,
@@ -275,6 +277,8 @@ export class World {
       decide: TermsDecision;
     }
   >();
+  /** Securities Lending B1: the one module that answers what a party of a kind must borrow. */
+  private readonly borrowAskers = new Map<PartyKindId, { owner: string; needs: BorrowNeeds }>();
   /** Banks Funding E1: the one module that answers where a depositor of a kind wants to bank. */
   private readonly bankChoosers = new Map<
     PartyKindId,
@@ -682,6 +686,23 @@ export class World {
       );
     }
     this.termsDeciders.set(kind, { owner, decide });
+  }
+
+  /**
+   * Securities Lending B1, A5.a: exactly one module answers what a party of a kind must borrow
+   * (Law 4). A second would be two reasons for one short, and the party could act on both.
+   */
+  provideBorrowNeeds(owner: string, kind: PartyKindId, needs: BorrowNeeds): void {
+    forbid(!this.sealed, 'Law 10', 'a borrow need is declared at assembly');
+    const held = this.borrowAskers.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Securities Lending B1',
+        `${owner} would be a second decider of what a ${kind} borrows, after ${held.owner}`,
+      );
+    }
+    this.borrowAskers.set(kind, { owner, needs });
+    this.reachTally.declare('borrowNeeds', declId(owner, kind), owner);
   }
 
   provideCreditDecision(owner: string, kind: PartyKindId, decide: CreditDecision): void {
@@ -1163,6 +1184,32 @@ export class World {
     }
   }
 
+  /**
+   * Securities Lending B1, Observer A4: ask each party, through the module that owns its kind, with
+   * that party's own view. The order is the kinds' and then the parties' own, so a run is the same
+   * run twice from one seed (Audit D3).
+   *
+   * It is asked once a period by the module that clears the book, and a need that came back is a
+   * reservation and not an order: what is struck is what the fee cleared at.
+   */
+  borrowsWanted(): readonly Borrowing[] {
+    const out: Borrowing[] = [];
+    for (const [kind, asker] of [...this.borrowAskers].sort((a, b) => (a[0] < b[0] ? -1 : 1))) {
+      for (const party of this.parties.ofKind(kind)) {
+        if (!party.status.alive) continue;
+        const wants = asker.needs(this.participantView(party.id));
+        this.reachTally.produced(
+          'borrowNeeds',
+          declId(asker.owner, kind),
+          wants.length,
+          this.currentPeriod,
+        );
+        for (const w of wants) out.push({ ...w, borrower: party.id });
+      }
+    }
+    return out;
+  }
+
   seal(): AuditReport {
     forbid(!this.sealed, 'Seed A2', 'the world is already sealed');
     this.requireCreditDeciders();
@@ -1625,6 +1672,7 @@ export class World {
       chooseBanks: () => {
         this.chooseBanks();
       },
+      borrowsWanted: () => this.borrowsWanted(),
       owes: (decl) => {
         const row = this.agreementStore.open(decl, this.currentPeriod);
         this.journal.record(

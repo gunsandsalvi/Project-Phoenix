@@ -517,7 +517,8 @@ order (`requires`), seeds, states equity as the read, and seals the world with t
 it had not asked before: `curveFamilies` (sovereign curves), `indices?`, `outlooks?` (XI-16),
 `marks?` (Banks Lending D1), `creditDecisions?` (Money B3.a), `bankChoices?` (Banks Funding E1),
 `venueParticipants?` (the labour venue), `resolves?` (bank resolution), `derivativeKinds?` and
-`clearingCapacity?` (13a), `seed?`. Every one is argued correctly in place and the argument is the
+`clearingCapacity?` (13a), `borrowNeeds?` (Securities Lending B1, item 9.4), `seed?`. Every one is
+argued correctly in place and the argument is the
 same each time: the answer belongs to the module that owns the party or the instrument, exactly one
 module may answer, and a world where nobody answers must not seal. The problem is not any one hook —
 it is that inventing a hook was the only way a module could teach the kernel a new question, and
@@ -676,6 +677,25 @@ banks where it transacts and moves off a bank that drew the window, A1.c's whole
 market all day and leaves the one its own session refused — so each is written where its kind lives,
 and E4.a (a run is a wholesale phenomenon first) falls out of who sees what, rather than being
 stated.
+
+**Why a party is short comes through the same door** (Securities Lending B1, Observer A4, item
+9.4). A module declares `borrowNeeds` per party kind it owns — `needs(view)` answering what that
+party must deliver that it has not got, how much it will pay per period for the use of it, and what
+it will pledge — and the securities-lending module calls `ctx.borrowsWanted()` once a period, groups
+the answers by LINE, and clears one book for each. The division is the one every door on this list
+makes: the lending module knows how to strike a fee, pass title, bind collateral and manufacture a
+payment, and knows nothing whatever about why anybody wants to be short — that is a position taken
+out of a party's own view of a line it holds none of, and it lives in the module that owns the
+party (today: a dealing desk whose own view of a line is below what the book last printed,
+`banks/dealing.ts:deskBorrows`).
+
+Without the door the whole system was unreachable and had been since it was built (`A-67`, `B-3`):
+`runBorrows` and `wantsToBorrow` were exported and called by nobody, the one phase walked a book
+nothing ever pushed to, and E1's *no short without a borrow* held vacuously because there was no
+short in the world for a borrow to be behind. The alternative — the lending module walking every
+party and deciding for each whether it should be short — is A4's prohibition exactly, and it is what
+made `wantsToBorrow` a function that could have no caller: a module never imports another module, so
+the only party that could ever have called it was one securities-lending owns, and it owns none.
 
 **Two more reads, and why they are reads and not imports.** `ParticipantView.mark(instrument)`
 answers what a unit of a line is carried at — the print, or, for a claim on a book, what that book

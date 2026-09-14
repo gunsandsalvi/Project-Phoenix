@@ -1,7 +1,7 @@
 /**
  * Securities lending: title passes, the economics do not.
  *
- * @spec Securities Lending A1 Securities Lending A2 Securities Lending A3 Securities Lending A4 Securities Lending A5 Securities Lending A5.a Securities Lending A5.b Securities Lending B1 Securities Lending B2 Securities Lending B2.a Securities Lending B4 Securities Lending C1 Securities Lending C2 Securities Lending C2.a Securities Lending C4 Securities Lending D1 Securities Lending D3 Securities Lending E1 Securities Lending E2 Securities Lending E3 Equity C7 Register D5.a Law 3 Law 4 Law 8 Law 19
+ * @spec Securities Lending A1 Securities Lending A2 Securities Lending A3 Securities Lending A4 Securities Lending A5 Securities Lending A5.a Securities Lending A5.b Securities Lending B1 Securities Lending B2 Securities Lending B2.a Securities Lending B4 Securities Lending C1 Securities Lending C2 Securities Lending C2.a Securities Lending C4 Securities Lending D1 Securities Lending D2 Securities Lending D3 Securities Lending E1 Securities Lending E2 Securities Lending E3 Equity C7 Register D5.a Observer A4 Law 3 Law 4 Law 8 Law 19
  *
  * THE DEFINING PROPERTY IS THAT TWO THINGS COME APART. Legal title moves to the borrower — it can
  * sell what it borrowed, and that is the entire point (A2) — while the economics stay with the
@@ -19,10 +19,22 @@
  * security, and until there was a borrow market the only honest answer was to forbid the short. The
  * lendable pool is a read of who actually holds the paper and is willing (B4), and it is what caps
  * how large a short can get — a real constraint, and the reason a squeeze is possible (D2).
+ *
+ * WHY ANYBODY IS SHORT IS NOT THIS MODULE'S BUSINESS (`A-67`, `B-3`). All of the above was built and
+ * reachable from nowhere: the two ways in were exported and called by no one, and the one phase
+ * walked a book nothing ever pushed to. The reason is that being short is a POSITION a party takes,
+ * out of its own view of a line it holds none of, and this module can see neither — so it asks
+ * (`ctx.borrowsWanted`, the door `termsOffered` and `chooseBanks` are), collects what comes back
+ * per LINE, and clears one book for each. One book per line is also what makes the fee a price: the
+ * borrowers in it bid against each other and the holders of the line undercut each other, and what
+ * the session strikes is the level where the two curves meet. It used to clear one session per
+ * borrower against every lender posting `price: 'market'`, which is a book with a single level in
+ * it — the bidder's own reservation, whatever the supply.
  */
 import {
   amountOf,
   asCash,
+  asPerPiece,
   heldAsMoney,
   asRatio,
   type Cash,
@@ -33,8 +45,9 @@ import {
   scale,
   valueAt,
 } from '../../core/measure.js';
-import { clear, isCleared } from '../../clearing/solver.js';
+import { clear, isCleared, type Fill } from '../../clearing/solver.js';
 import {
+  paramId,
   venueId,
   type CurrencyCode,
   type InstrumentId,
@@ -42,13 +55,17 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { atMost, sum } from '../../core/num.js';
-import { downTick, type Qty } from '../../core/tick.js';
+import { downTick, subQty, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { LienId } from '../../core/ids.js';
 import type { Violation, Family } from '../../audit/audit.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import { about } from '../../world/context.js';
+import type { Borrowing, MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
+
+/** A4: how long the paper stays out before it goes back — a term of the contract (Law 2). */
+export const BORROW_TERM = paramId('securitiesLending.borrowTermPeriods');
 
 /** Law 9: one book per line, because what is being priced is the scarcity of THAT paper (A5.a). */
 export const borrowVenue = (instrument: InstrumentId): VenueId =>
@@ -79,19 +96,50 @@ const state = (ctx: MechanismContext): Book => ctx.state<Book>('loans', () => ({
 /** The open loans, for anything that needs to know what is out on loan (Law 19: one writer). */
 export const loansOpen = (ctx: MechanismContext): readonly StockLoan[] => state(ctx).open;
 
+/** B2, A5: one holder's offer into a borrow book — what it has free and the least it will take. */
+export interface Offer {
+  readonly lender: PartyId;
+  readonly units: Qty;
+  readonly floor: Ratio;
+}
+
+/**
+ * A5, A5.a, E3, B2: WHAT A LENDER MUST BE PAID, per period, as a share of what the paper is worth.
+ *
+ * While the paper is out the lender is exposed to a borrower that does not bring it back (D1): it
+ * then keeps the collateral and buys the line back at whatever it costs, and what that costs is how
+ * far this line moves. So the least it will take for a period of that exposure is how far this line
+ * has moved ON IT in a period — its own recent surprises about the line, over what it thinks a unit
+ * is worth (§46 B3). It is its OWN number and not the market's: two holders of one line who have
+ * been differently wrong about it want differently much to lend it, and that disagreement is what
+ * gives the book a supply curve instead of a single level (§46 A3).
+ *
+ * A holder with no outlook on the line has no number to lend at and does not lend. That is a
+ * refusal and not a zero: E3 says a fee of zero is a cleared price only if somebody posted it.
+ */
+function floorOf(view: ParticipantView, instrument: InstrumentId): Option<Ratio> {
+  const own = view.outlook(about({ on: 'price', instrument }));
+  if (!own.some || own.value.expected <= 0 || own.value.confidence <= 0) return none<Ratio>();
+  return some(
+    ratioOf(
+      asPerPiece(own.value.confidence, 'how wide its own surprises on this line have been'),
+      asPerPiece(own.value.expected, 'what it thinks a unit of it is worth'),
+      'what a period of the loan puts at risk, as a share of what is out',
+    ),
+  );
+}
+
 /**
  * B4, E1: THE LENDABLE POOL — who actually holds this paper and is willing to part with title for a
  * fee. It is a READ of the register and never a stored number, and it is what caps how large a short
  * can get, because a borrower cannot borrow what nobody has free.
  *
- * Willing is not a flag: a holder is willing with what it holds FREE. Units already pledged or
- * already lent out are not in the pool, which the register answers without being asked twice.
+ * Willing is not a flag: a holder is willing with what it holds FREE, at a price of its own. Units
+ * already pledged or already lent out are not in the pool, which the register answers without being
+ * asked twice; a holder with no view of the line is not in it either, because it has no level.
  */
-export function lendable(
-  ctx: MechanismContext,
-  instrument: InstrumentId,
-): readonly { readonly lender: PartyId; readonly units: Qty }[] {
-  const out: { lender: PartyId; units: Qty }[] = [];
+export function lendable(ctx: MechanismContext, instrument: InstrumentId): readonly Offer[] {
+  const out: Offer[] = [];
   for (const holder of ctx.register.holdersOf(instrument)) {
     const p = ctx.parties.get(holder);
     // B2: the lender has it sitting there. A CELL does not lend: a million households each lending
@@ -100,72 +148,140 @@ export function lendable(
     if (!p.status.alive || p.representation === 'cell') continue;
     const free = downTick(ctx.register.free(holder, instrument));
     if (free <= 0) continue;
-    out.push({ lender: holder, units: free });
+    const floor = floorOf(ctx.participant(holder), instrument);
+    if (!floor.some) continue;
+    out.push({ lender: holder, units: free, floor: floor.value });
   }
   return out;
 }
 
 /**
- * A5, A5.a, Law 3: THE FEE IS A PRICE AND IT CLEARS. Lenders offer what they hold free; borrowers
- * bid what they will pay per period per unit of value. Scarce paper is dear and abundant paper is
- * cheap, and neither is a table.
+ * A5, A5.a, E3, Law 3: THE FEE IS A PRICE AND IT CLEARS — ONE BOOK PER LINE, and everybody who
+ * wants that line in it.
+ *
+ * Every holder of the line that has a view of it offers what it holds free at its own floor, and
+ * every borrower bids its own reservation, so both sides are CURVES and the level the session
+ * strikes is where they meet: scarce paper is dear because the cheap lenders run out before the
+ * bidders do, and abundant paper is cheap because the last lender allotted is one of many
+ * undercutting each other (`sellersCompete`).
+ *
+ * The old shape could not do that and is the second half of `A-67`. It cleared a session PER
+ * BORROWER against every lender posting `price: 'market'` — a book with exactly one level in it, so
+ * `outcome.price` was that borrower's own reservation however much paper was on offer — and,
+ * because `post` appends and the book is emptied only at the top of a period, a second borrower of
+ * the same line posted every lender's offer AGAIN into the same venue, showing twice the supply
+ * that exists. Grouping by line is one fix for both: each lender is posted once, the level is
+ * struck once, and the allotment is shared.
  *
  * A5.b: where the collateral is cash the same number is quoted as a REBATE on that cash — the
  * lender keeps the difference between what it earns on the cash and what it pays back. It is one
  * number seen from two sides, so there is one number here and the second form is a read of it.
  */
-export function runBorrows(ctx: MechanismContext, wanted: readonly Want[]): void {
+export function runBorrows(ctx: MechanismContext, wanted: readonly Borrowing[]): void {
+  // Law 9, A5.a: what is being priced is the scarcity of THAT paper, so the book is the line's.
+  const byLine = new Map<InstrumentId, Borrowing[]>();
   for (const w of wanted) {
-    const supply = lendable(ctx, w.instrument);
+    if (w.units <= 0) continue;
+    const held = byLine.get(w.instrument);
+    if (held === undefined) byLine.set(w.instrument, [w]);
+    else held.push(w);
+  }
+  for (const [instrument, bids] of byLine) {
+    const supply = lendable(ctx, instrument);
     if (supply.length === 0) {
       // D2, E3: nothing to borrow is a real answer with a consequence — the short cannot be put on.
-      ctx.record(
-        'borrow.none',
-        [w.borrower, w.instrument],
-        { borrower: String(w.borrower), instrument: String(w.instrument), wanted: w.units },
-        true,
-      );
+      for (const w of bids) {
+        ctx.record(
+          'borrow.none',
+          [w.borrower, instrument],
+          { borrower: String(w.borrower), instrument: String(instrument), wanted: w.units },
+          true,
+        );
+      }
       continue;
     }
-    const venue = borrowVenue(w.instrument);
+    // Law 8: one book is one money, and it is the money the line itself is in — a bid in another
+    // currency is a bid in another book. A borrower that named a different money is not in this one.
+    const ccy = ctx.instruments.get(instrument).ccy;
+    const here = bids.filter((w) => w.ccy === ccy);
+    if (here.length === 0) continue;
+    const venue = borrowVenue(instrument);
     if (!ctx.venues.some((v) => v.id === venue)) {
       ctx.openVenue({
         id: venue,
-        name: `${String(w.instrument)} borrow`,
+        name: `${String(instrument)} borrow`,
         clearedBy: 'securities-lending',
-        unit: ctx.instruments.get(w.instrument).unit,
-        ccy: w.ccy,
-        key: { instrument: String(w.instrument) },
+        unit: ctx.instruments.get(instrument).unit,
+        ccy,
+        key: { instrument: String(instrument) },
       });
     }
-    for (const s of supply) {
-      ctx.post(venue, { party: s.lender, side: 'sell', price: 'market', qty: s.units });
-    }
-    ctx.post(venue, { party: w.borrower, side: 'buy', price: w.willPay, qty: w.units });
+    // A5.a, E3: EVERY POSTING CARRIES A LEVEL. A lender with no level is not undercutting anybody,
+    // which is why `price: 'market'` on the whole supply side made the fee the bidder's own number.
+    for (const o of supply) ctx.post(venue, { party: o.lender, side: 'sell', price: o.floor, qty: o.units });
+    for (const w of here) ctx.post(venue, { party: w.borrower, side: 'buy', price: w.willPay, qty: w.units });
     const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
     if (!isCleared(outcome)) continue;
-    for (const f of outcome.fills) {
-      if (f.side !== 'sell') continue;
-      const units = downTick(f.qty);
-      if (units <= 0) continue;
-      // A5: what the borrow book cleared at is a FEE — a share of what the paper is worth, per
-      // period — and not a price per unit of it. Named where the book that struck it says so.
-      openLoan(ctx, { ...w, lender: f.party, units, fee: asRatio(outcome.price, 'what the borrow cleared at') });
-    }
+    // A5: what the borrow book cleared at is a FEE — a share of what the paper is worth, per period
+    // — and not a price per unit of it. This is the one book in the world whose level is a rate,
+    // and it is named where the book that struck it says so.
+    const fee = asRatio(outcome.price, 'what the borrow cleared at');
+    allot(ctx, instrument, ccy, fee, outcome.fills, here);
   }
 }
 
-/** B1: why a borrower is here — it has to deliver something it has not got, and what it will pay. */
-export interface Want {
-  readonly borrower: PartyId;
-  readonly instrument: InstrumentId;
-  readonly units: Qty;
-  readonly ccy: CurrencyCode;
-  /** A5: the most it will pay per period per unit of value, from its own reason for being short. */
-  readonly willPay: Ratio;
-  /** C1: what it will put up, which must be worth more than what it takes away. */
-  readonly collateral: InstrumentId;
-  readonly haircut: Ratio;
+/**
+ * A1, C3 (Clearing C3's sibling): WHICH LENDER LENT TO WHICH BORROWER. The session says what the
+ * fee is and how much paper changed hands; a loan is between two named parties, so somebody has to
+ * be paired with somebody.
+ *
+ * The rule is the venue's and it is stated once: the borrower that bid most is served first, out of
+ * the lender that asked least — what a borrower desperate enough to outbid the others gets for it
+ * is the cheapest paper in the book. Ties go in the parties' own order, which is stable, so a run
+ * is the same run twice from one seed (Audit D3).
+ */
+function allot(
+  ctx: MechanismContext,
+  instrument: InstrumentId,
+  ccy: CurrencyCode,
+  fee: Ratio,
+  fills: readonly Fill[],
+  bids: readonly Borrowing[],
+): void {
+  const lenders = fills
+    .filter((f) => f.side === 'sell' && f.qty > 0)
+    .map((f) => ({ lender: f.party, left: downTick(f.qty) }))
+    .sort((a, b) => (a.left === b.left ? (a.lender < b.lender ? -1 : 1) : 0));
+  const wanted = fills
+    .filter((f) => f.side === 'buy' && f.qty > 0)
+    .sort((a, b) => (a.at === b.at ? (a.party < b.party ? -1 : 1) : b.at - a.at));
+  let next = 0;
+  for (const f of wanted) {
+    const w = bids.find((b) => b.borrower === f.party);
+    if (w === undefined) continue;
+    let owed = downTick(f.qty);
+    while (owed > 0 && next < lenders.length) {
+      const from = lenders[next];
+      if (from === undefined) break;
+      if (from.left <= 0) {
+        next += 1;
+        continue;
+      }
+      const taken = downTick(atMost(owed, from.left, 'it lends what it has in the book'));
+      if (taken <= 0) break;
+      openLoan(ctx, {
+        borrower: w.borrower,
+        lender: from.lender,
+        instrument,
+        units: taken,
+        ccy,
+        collateral: w.collateral,
+        fee,
+      });
+      from.left = subQty(from.left, taken, 'what it has left to lend');
+      owed = subQty(owed, taken, 'what it still has to find');
+    }
+  }
 }
 
 /** C1: what must be posted for a borrow of this value, at this lender's own haircut. */
@@ -175,6 +291,31 @@ const collateralFor = (worth: Cash, haircut: Ratio): Cash =>
     plus(asRatio(1, 'the whole of it'), haircut, 'the margin over what it took'),
     'what the borrower must put up',
   );
+
+/**
+ * C1: THE HAIRCUT IS THE LENDER'S, and it is the gap the lender has to be able to cover.
+ *
+ * It has to be able to sell the collateral and be whole, and it is not whole if the borrowed line
+ * has risen or the collateral has fallen before it gets there — so the margin it wants over the
+ * loan is how far apart it thinks the two marks can move in a period. Both halves are the same read
+ * for the same reason as `floorOf`: this lender's own surprises, on each of the two lines, over
+ * what it thinks each is worth.
+ *
+ * It used to come in on the BORROWER's side, which is the transaction the wrong way round: a
+ * borrower naming its own haircut is the party at risk asking the party that owes it how much cover
+ * it would like to give. Nothing when it has no view of the collateral — a lender that does not
+ * know what it is being given does not take it.
+ */
+function haircutOf(
+  view: ParticipantView,
+  instrument: InstrumentId,
+  collateral: InstrumentId,
+): Option<Ratio> {
+  const onLoan = floorOf(view, instrument);
+  const onPledge = floorOf(view, collateral);
+  if (!onLoan.some || !onPledge.some) return none<Ratio>();
+  return some(plus(onLoan.value, onPledge.value, 'how far apart the two marks can move'));
+}
 
 /**
  * A1, A2, C1, C4: THE TRANSACTION, and both legs of it in one numbered instruction. The security
@@ -187,14 +328,24 @@ const collateralFor = (worth: Cash, haircut: Ratio): Cash =>
  */
 function openLoan(
   ctx: MechanismContext,
-  d: Want & { lender: PartyId; units: Qty; fee: Ratio },
+  d: {
+    readonly lender: PartyId;
+    readonly borrower: PartyId;
+    readonly instrument: InstrumentId;
+    readonly units: Qty;
+    readonly ccy: CurrencyCode;
+    readonly collateral: InstrumentId;
+    readonly fee: Ratio;
+  },
 ): void {
   if (d.lender === d.borrower) return;
   // XI-6: what it is worth is what the market printed for it, at a price a reader can look up.
   const mark = ctx.valuation.markPerUnit(d.instrument, ctx.period);
   if (mark <= 0) return;
+  const haircut = haircutOf(ctx.participant(d.lender), d.instrument, d.collateral);
+  if (!haircut.some) return;
   const worth = valueAt(mark, d.units, 'what the borrowed paper is worth');
-  const needed = collateralFor(worth, d.haircut);
+  const needed = collateralFor(worth, haircut.value);
   const price = ctx.prices.latest(d.collateral, ctx.period);
   if (!price.some || price.value.price <= 0) return;
   const posted = downTick(amountOf(needed, price.value.price, 'units of collateral'));
@@ -338,8 +489,14 @@ function receivedOn(ctx: MechanismContext, loan: StockLoan): Cash {
 }
 
 /**
- * A5, C2, C2.a: THE FEE, every period, real money between two named parties — and the re-mark that
- * goes with it, because when the borrowed security rises the borrower owes more collateral.
+ * A5: THE FEE, every period, real money between two named parties, on what the paper is worth NOW —
+ * so a line that has risen costs more to have borrowed, without anybody re-striking anything.
+ *
+ * C2 and C2.a are NOT here and the comment used to say they were: nothing re-marks the COLLATERAL,
+ * so when the borrowed line rises the borrower owes more of it and no leg posts it. Between the
+ * strike and the return the lender's cover erodes and C1's haircut is all that stands behind it.
+ * It is `E-14`, and it lands with prime brokerage (item 13.8), because marking both sides of a
+ * position and calling the difference is one mechanism with two callers (§15 C1) and not two.
  */
 export function charge(ctx: MechanismContext): void {
   for (const loan of state(ctx).open) {
@@ -372,6 +529,20 @@ export function charge(ctx: MechanismContext): void {
 }
 
 /**
+ * A4, D3: WHICH LOANS COME BACK THIS PERIOD — the ones whose term is up.
+ *
+ * A borrow that never ends is a position with no cost of staying on and no moment where the
+ * borrower has to find the paper, and D2's squeeze is exactly that moment: the term falls due, the
+ * shorts must buy, and the pool they are buying out of is the one B4 measures. A borrower that
+ * still wants the position bids for the line again in the same book the same period, at whatever
+ * the fee has become — which is a roll, and it is not free.
+ */
+function due(ctx: MechanismContext): readonly StockLoan[] {
+  const term = ctx.params.periods(BORROW_TERM);
+  return state(ctx).open.filter((l) => ctx.period - l.opened >= term);
+}
+
+/**
  * A4, D1, D3: IT TERMINATES. The security comes back and the collateral goes back, in one
  * instruction, so there is no instant where the borrower has both.
  *
@@ -385,18 +556,29 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
     const held = downTick(ctx.register.free(loan.borrower, loan.instrument));
     const back = downTick(atMost(held, loan.units, 'it returns what it borrowed'));
     const failed = back < loan.units;
-    const legs: Leg[] = [
-      {
-        kind: 'release',
-        pledgor: loan.borrower,
-        beneficiary: loan.lender,
-        instrument: loan.collateral,
-        lien: loan.lien,
-      },
-    ];
+    // Register D5: the lien ends either way. What differs is who has the units when it does — the
+    // borrower, because the paper came back, or the lender, because it did not.
+    const freed = ctx.settle({
+      legs: [
+        {
+          kind: 'release',
+          pledgor: loan.borrower,
+          beneficiary: loan.lender,
+          instrument: loan.collateral,
+          lien: loan.lien,
+        },
+      ],
+      cause: failed ? 'default' : 'transfer',
+      reason: `${String(loan.borrower)} ends the borrow of ${String(loan.instrument)}`,
+    });
+    if (freed.outcome !== 'settled') continue;
+    // A4, D1: the paper goes back, or the collateral does not. They are two instructions and not
+    // one because the register answers "can this move?" against what is bound BEFORE the
+    // instruction runs — units the same instruction is about to free are still bound when it asks.
+    const legs: Leg[] = [];
     if (back > 0) {
       const mark = ctx.valuation.markPerUnit(loan.instrument, ctx.period);
-      legs.unshift({
+      legs.push({
         kind: 'asset',
         from: loan.borrower,
         to: loan.lender,
@@ -409,30 +591,34 @@ export function returnLoans(ctx: MechanismContext, closing: readonly StockLoan[]
       });
     }
     if (failed) {
-      // D1: the collateral is the lender's now. It is released to the borrower only when the paper
-      // comes back, and it did not — so the lender keeps it and buys the line back itself.
-      legs.shift();
-      legs.length = 0;
-      if (back > 0) {
-        legs.push({
-          kind: 'asset',
-          from: loan.borrower,
-          to: loan.lender,
-          instrument: loan.instrument,
-          qty: back,
-          pricePerUnit: none(),
-          accruedPerUnit: none(),
-          fromCell: none(),
-          toCell: none(),
-        });
-      }
+      // D1: THE LENDER KEEPS THE COLLATERAL and is left to buy the line back in the market at
+      // whatever it costs. Keeping it is title and not a lien: a loan that has terminated cannot go
+      // on securing anything, and collateral encumbered to a row that no longer exists is units
+      // nobody can reach. Whether the two are worth the same is not asked — that is what a haircut
+      // is for, and whether it was enough is the lender's outcome (C1).
+      const at = ctx.valuation.markPerUnit(loan.collateral, ctx.period);
+      legs.push({
+        kind: 'asset',
+        from: loan.borrower,
+        to: loan.lender,
+        instrument: loan.collateral,
+        qty: downTick(atMost(loan.posted, ctx.register.free(loan.borrower, loan.collateral), 'what is there to take')),
+        pricePerUnit: at > 0 ? some(at) : none(),
+        accruedPerUnit: none(),
+        fromCell: none(),
+        toCell: none(),
+      });
     }
-    const r = ctx.settle({
-      legs,
-      cause: failed ? 'default' : 'transfer',
-      reason: `${String(loan.borrower)} returns ${back} of ${String(loan.instrument)}`,
-    });
-    if (r.outcome !== 'settled') continue;
+    // Money D1: an instruction with no legs is not an instruction. A borrow that came back in full
+    // against collateral already freed has nothing left to move, and the row simply closes.
+    if (legs.length > 0) {
+      const r = ctx.settle({
+        legs,
+        cause: failed ? 'default' : 'transfer',
+        reason: `${String(loan.borrower)} returns ${back} of ${String(loan.instrument)}`,
+      });
+      if (r.outcome !== 'settled') continue;
+    }
     const at = book.open.indexOf(loan);
     if (at >= 0) book.open.splice(at, 1);
     ctx.record(
@@ -507,11 +693,21 @@ export function securitiesLending(): SystemModule {
     partyKinds: [],
     curveFamilies: [],
     units: [],
-    params: [],
+    params: [
+      {
+        id: BORROW_TERM,
+        value: 4,
+        unit: 'periods',
+        dimension: 'periods',
+        kind: 'technology',
+        owner: 'standardSetter',
+        why: 'Securities Lending A4: how long the paper stays out before it goes back. A term of the contract, stated with it, and it is what makes D2 possible: a borrower that still wants the position has to BUY THE LINE BACK before the term is up, which is what "shorts must buy" means. It is not a forecast of when a short is closed — a borrower that still needs the line asks again in the same book, at whatever the fee has become by then.',
+      },
+    ],
     phases: [
       {
         name: 'borrow.economics',
-        spec: 'Securities Lending A3 Securities Lending A5 Securities Lending C2',
+        spec: 'Securities Lending A3 Securities Lending A4 Securities Lending A5 Securities Lending C2 Securities Lending D1',
         // A3: after the issuer has paid the registered holder, because what is passed on is what
         // arrived. A phase that manufactured a payment before the payment existed would be
         // inventing the lender's income rather than passing it through (Law 19).
@@ -520,6 +716,20 @@ export function securitiesLending(): SystemModule {
         run: (ctx: MechanismContext): void => {
           manufacture(ctx);
           charge(ctx);
+          returnLoans(ctx, due(ctx));
+        },
+      },
+      {
+        name: 'borrow.session',
+        spec: 'Securities Lending A5 Securities Lending A5.a Securities Lending B1 Securities Lending B4 Securities Lending E3',
+        // A2, B1: BEFORE THE MARKETS, because the entire point of borrowing paper is to be able to
+        // deliver it — a borrow struck after the session it was for is paper nobody could sell. It
+        // is after `borrow.economics` so that what went back this period is back in its lender's
+        // free balance before the book counts what there is to lend (B4).
+        anchor: { after: 'borrow.economics' },
+        cycle: 'anchor',
+        run: (ctx: MechanismContext): void => {
+          runBorrows(ctx, ctx.borrowsWanted());
         },
       },
     ],
@@ -528,34 +738,21 @@ export function securitiesLending(): SystemModule {
   };
 }
 
-/** B1, C1: what a party will pay to borrow, from its own reason for needing the paper. */
-export function wantsToBorrow(
-  view: ParticipantView,
-  instrument: InstrumentId,
-  units: Qty,
-  ccy: CurrencyCode,
-  collateral: InstrumentId,
-  haircut: Ratio,
-): Option<Want> {
-  if (units <= 0) return none<Want>();
-  const equity = view.equity();
-  const owed = heldAsMoney(view.owedIn(ccy), 'what falls due');
-  if (equity <= 0) return none<Want>();
-  /**
-   * A5, Law 3: THE MOST IT WILL PAY, per period per unit of value, and it comes out of its own
-   * position rather than a table: what its own money costs it is what a period of anything costs
-   * it, and it will not pay more for the use of somebody else's paper than for the use of money.
-   */
-  return some({
-    borrower: view.self.id,
-    instrument,
-    units,
-    ccy,
-    willPay: ratioOf(owed, plus(owed, equity, 'what funds it'), 'what a period of its own money costs'),
-    collateral,
-    haircut,
-  });
-}
+/**
+ * A5, B1, Law 12: THE BORROWER'S RESERVATION IS NOT MADE HERE, and that is the point of the door.
+ *
+ * `wantsToBorrow` used to be exported from this file for a caller that could not exist: a module
+ * never imports another module, so the only party that could have called it was one this module
+ * owns, and it owns none. What it computed was `owed/(owed + equity)` — the debt share of funding,
+ * a dimensionless ratio with no periodicity, called "what a period of its own money costs it", the
+ * identical mistake `A-58` found in `securitisation:priceFor` with the identical comment.
+ *
+ * The sentence the comment was reaching for is right and is now true where it belongs: a borrower
+ * will not pay more for a period of somebody else's paper than a period of its own money costs it,
+ * and the party that knows that number is the party, in the module that owns it — a dealing desk
+ * already prices its own quotes off it (`banks/dealing-quote.ts:rateOf`). It arrives here through
+ * `ctx.borrowsWanted` as the reservation on a `Borrowing`, and this module never forms one.
+ */
 
 /** A5.b: the same fee seen from the cash side — what the lender pays back on cash it was given. */
 export const rebateOf = (fee: Ratio, earns: Ratio): Ratio =>

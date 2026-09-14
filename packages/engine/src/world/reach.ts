@@ -30,6 +30,7 @@ import { none, type Option, some } from '../core/option.js';
 export type CapabilityKind =
   | 'participant'
   | 'venueParticipant'
+  | 'borrowNeeds'
   | 'market'
   | 'instrumentKind'
   | 'partyKind'

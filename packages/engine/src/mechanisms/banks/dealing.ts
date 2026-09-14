@@ -16,7 +16,6 @@
  * the capital the position consumes has to earn. A bank that carried inventory for free would have
  * to be a bank that paid nothing for its money.
  */
-import type { Instrument } from '../../register/instruments.js';
 import { linesCovered } from './staff.js';
 import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
@@ -40,7 +39,7 @@ import { upTick } from '../../core/tick.js';
 import { delivers, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { wasTraded } from '../../prices/price-store.js';
-import type { MechanismContext, ParticipantView } from '../../world/context.js';
+import type { BorrowNeed, MechanismContext, ParticipantView } from '../../world/context.js';
 import {
   bankOf,
   bankParam,
@@ -55,6 +54,7 @@ import { periodOfYear, quoteFor, rateOf, type DeskQuote, type DeskState } from '
 import { downTick, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
 import { NO_QTY } from '../../core/tick.js';
+import { none, some, type Option } from '../../core/option.js';
 
 /**
  * D1, XI-4: its own appetite, and what its treasury allotted it to GROW BY. A line's limit is what
@@ -263,27 +263,104 @@ export function stateOf(view: ParticipantView, d: BankDecl): DeskState | undefin
  * made its kind. The candidate set is the desk's own now, so the cutoff is too — which is what A3
  * means by dealing in a name being a second decision from dealing in a kind.
  */
+export function coveredLines(
+  view: ParticipantView,
+  d: BankDecl,
+  makersOf?: (instrument: InstrumentId) => readonly string[] | undefined,
+): readonly InstrumentId[] {
+  const room = linesCovered(view);
+  if (room <= 0) return [];
+  const out: InstrumentId[] = [];
+  for (const x of view.instruments.all()) {
+    if (!x.status.live || !x.market.some || !d.makes.includes(String(x.kind))) continue;
+    const makers = makersOf?.(x.id);
+    if (makers !== undefined && !makers.includes(String(view.self.id))) continue;
+    out.push(x.id);
+    if (out.length >= room) break;
+  }
+  return out;
+}
+
 function covers(
   view: ParticipantView,
   d: BankDecl,
   line: InstrumentId,
   makersOf?: (instrument: InstrumentId) => readonly string[] | undefined,
 ): boolean {
-  const room = linesCovered(view);
-  if (room <= 0) return false;
-  const mine = (x: Instrument): boolean => {
-    if (!x.status.live || !x.market.some || !d.makes.includes(String(x.kind))) return false;
-    const makers = makersOf?.(x.id);
-    return makers === undefined || makers.includes(String(view.self.id));
-  };
-  let seen = 0;
-  for (const x of view.instruments.all()) {
-    if (!mine(x)) continue;
-    if (x.id === line) return seen < room;
-    seen += 1;
-    if (seen >= room) return false;
+  return coveredLines(view, d, makersOf).some((id) => id === line);
+}
+
+/**
+ * Securities Lending B1, B4, E1, Dealer Desks D1, D5: WHAT A DESK MUST BORROW TO SELL WHAT IT HAS
+ * NOT GOT — the answer to the kernel's `borrowNeeds`, and the reason the borrow book has a side.
+ *
+ * A market maker that can only offer what it holds is not making a market in a line it thinks is
+ * dear: it sells down to nothing and then stands there with a bid nobody hits, which is `binds:
+ * 'position'` in every period after the first. What a desk does instead is BORROW THE LINE and
+ * offer that, and the position it then has is a short — which is why E1 could hold vacuously for
+ * the life of this world (`A-67`): there was no way to be short, so there was nothing for the
+ * borrow to be behind, so nothing ever borrowed.
+ *
+ * Three things decide it, all of them the desk's own and none of them new:
+ *  - it thinks the line is DEAR — its own view of what a unit is worth is below what the book last
+ *    printed (C1, XI-13). A desk that agrees with the market has no reason to be short.
+ *  - how much of the line it is prepared to have a position in at all, which is the same three
+ *    constraints its bid is cut to (D1, D4, F1: its own limit, the room in its whole book, and the
+ *    money it has), less what it already holds. A position is a position whichever way round it is.
+ *  - what a period of it costs it — A5, and the sentence `wantsToBorrow` was reaching for: it will
+ *    not pay more for the use of somebody else's paper than a period of its own money and capital
+ *    costs it, which is the rate it already prices its own quotes off (`rateOf`).
+ */
+export function deskBorrows(
+  view: ParticipantView,
+  rows: readonly BankDecl[],
+  makersOf?: (instrument: InstrumentId) => readonly string[] | undefined,
+): readonly BorrowNeed[] {
+  const d = bankOf(rows, view.self.id);
+  if (d === undefined || !view.self.status.alive) return [];
+  const state = stateOf(view, d);
+  if (state === undefined) return [];
+  const out: BorrowNeed[] = [];
+  for (const line of coveredLines(view, d, makersOf)) {
+    const printed = view.mark(line);
+    if (!printed.some) continue;
+    const quoted = quoteFor(view, line, state);
+    if (!quoted.some) continue;
+    const q = quoted.value;
+    // XI-13: it is short because it disagrees with the book, and it puts its own money behind that.
+    if (q.view >= printed.value) continue;
+    const want = subQty(q.bidSize, view.free(line), 'beyond what it already holds');
+    if (want <= 0) continue;
+    const ccy = view.instruments.get(line).ccy;
+    const rate = state.rateIn(ccy);
+    if (rate === undefined) continue;
+    const pledge = pledges(view, line);
+    if (!pledge.some) continue;
+    out.push({ instrument: line, units: want, ccy, willPay: rate, collateral: pledge.value });
   }
-  return false;
+  return out;
+}
+
+/**
+ * Securities Lending C1: WHAT IT PLEDGES — the biggest free position it has that is not the line it
+ * is borrowing and that the market has printed a price for, because what a lender takes is
+ * something it could sell. The lender's haircut is then taken over that (C1), not over this.
+ *
+ * Nothing when it has no free position anybody has priced, and then it does not borrow: a borrow
+ * against nothing is an unsecured loan of a security, which is not this transaction.
+ */
+function pledges(view: ParticipantView, borrowing: InstrumentId): Option<InstrumentId> {
+  let best: { id: InstrumentId; worth: Cash } | undefined;
+  for (const h of view.holdings()) {
+    if (h.instrument === borrowing) continue;
+    const free = view.free(h.instrument);
+    if (free <= 0) continue;
+    const mark = view.mark(h.instrument);
+    if (!mark.some) continue;
+    const worth = valueAt(mark.value, free, 'what it has free of that line');
+    if (best === undefined || worth > best.worth) best = { id: h.instrument, worth };
+  }
+  return best === undefined ? none<InstrumentId>() : some(best.id);
 }
 
 export function dealingOrders(

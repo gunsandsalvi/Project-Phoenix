@@ -34,6 +34,7 @@ import type { Period } from '../calendar/calendar.js';
 import type { Instrument } from '../register/instruments.js';
 import type { Leg } from '../ledger/instruction.js';
 import type {
+  BorrowNeed,
   DerivativeClassDecl,
   MechanismContext,
   Outlook,
@@ -271,6 +272,12 @@ export interface TermsSale {
 
 export type TermsDecision = (ctx: MechanismContext, sale: TermsSale) => Option<InstrumentId>;
 
+/**
+ * Securities Lending B1: what this party must deliver that it has not got, evaluated with its own
+ * view (Observer A4). Nothing is a party with no reason to be short, which is most of them.
+ */
+export type BorrowNeeds = (view: ParticipantView) => readonly BorrowNeed[];
+
 export interface SystemModule {
   /** Stable id, also the directory name under src/mechanisms or src/seeds. */
   readonly id: string;
@@ -357,6 +364,21 @@ export interface SystemModule {
   readonly termsOffered?: readonly {
     readonly partyKind: PartyKindId;
     readonly decide: TermsDecision;
+  }[];
+  /**
+   * Securities Lending B1, A5.a, Observer A4: WHAT A PARTY OF THIS KIND MUST BORROW, and the most
+   * it will pay for it. Exactly one module may answer for a kind, and a kind nobody answers for
+   * never borrows — which is what every kind did while the borrow book had no way in (`A-67`).
+   *
+   * It is the same door `termsOffered`, `creditDecisions` and `bankChoices` are, for the same
+   * reason: being short is a POSITION a party took for a reason of its own, and the module that
+   * clears the fee has no business inventing one. What comes back is the NEED — a line, a size, a
+   * money, a reservation and what it will pledge; the lending module strikes the fee against every
+   * other need in the same line and writes the loan, because the loan is its instrument.
+   */
+  readonly borrowNeeds?: readonly {
+    readonly partyKind: PartyKindId;
+    readonly needs: BorrowNeeds;
   }[];
   /**
    * XI-3, Banks Capital C3.b: party kinds whose FAILURE this module takes charge of itself, so the

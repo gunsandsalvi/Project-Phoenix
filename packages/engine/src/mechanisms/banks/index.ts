@@ -61,7 +61,7 @@ import {
   type BankDecl,
 } from './data.js';
 import { capitalOf, publish, type CapitalRules } from './capital.js';
-import { arbitrage, dealingOrders, publishDealing } from './dealing.js';
+import { arbitrage, dealingOrders, deskBorrows, publishDealing } from './dealing.js';
 import {
   classesSeen,
   liquidityPlan,
@@ -1286,6 +1286,10 @@ export function banks(rows: readonly BankDecl[], makersOf?: MakersOf): SystemMod
     { instrumentKind: LOAN, value: (ctx, i) => worthToItsLender(rows, ctx, i) },
   ],
   creditDecisions: [{ partyKind: BANK, decide: (ctx, o) => overdraft(rows, ctx, o) }],
+  // Securities Lending B1, E1: WHY A BANK IS SHORT, answered where the desk's own view of a line
+  // lives. The lending module clears the fee and writes the loan; what it may not do is decide for
+  // a party it does not own that the party wants to be short (Observer A4).
+  borrowNeeds: [{ partyKind: BANK, needs: (view: ParticipantView) => deskBorrows(view, rows, makersOf) }],
   families: [bookMoves(), tradingBookIsCapitalised()],
   };
 }

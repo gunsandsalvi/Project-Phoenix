@@ -542,10 +542,10 @@ of these findings has been positioned into an item yet.
 | `Securities Lending A1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the security one way and the collateral the other, both legs in one numbered instruction) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending A2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title passes: the units move in the register and the borrower can sell what it borrowed) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending A3` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`manufacture`: the issuer pays the registered holder and the borrower passes it on, read off what actually arrived) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
-| `Securities Lending A4` | MISSING |  |
+| `Securities Lending A4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`due` picks the loans whose term is up; `returnLoans` gives the paper back and frees the collateral, and a failed return terminates) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending A5` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the fee is a price and it clears; `charge` moves real money between two named parties every period) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
-| `Securities Lending B1` | MISSING |  |
-| `Securities Lending B2` | MISSING |  |
+| `Securities Lending B1` | MET | packages/engine/src/mechanisms/banks/dealing.ts:deskBorrows, through the kernel door `SystemModule.borrowNeeds` — a desk whose own view of a line is below the print and which holds less of it than it would take a position in — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
+| `Securities Lending B2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`lendable`: a named holder with units free AND a floor of its own — its own surprises on the line over what it thinks a unit is worth) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending B3` | MISSING |  |
 | `Securities Lending B4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`lendable` is a read of who holds it FREE — never a stored number, and it is what caps a short) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending C1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (`collateralFor`: worth more than the loan by the lender own haircut) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
@@ -553,13 +553,13 @@ of these findings has been positioned into an item yet.
 | `Securities Lending C3` | MISSING |  |
 | `Securities Lending C4` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (a pledge, so posted collateral leaves the poster free balance and the register refuses to move it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending C5` | MISSING |  |
-| `Securities Lending D1` | MISSING |  |
+| `Securities Lending D1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the borrower that cannot return it fails: the lien is released and the collateral is DELIVERED to the lender, which is left to buy the line back) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending D2` | MISSING |  |
 | `Securities Lending D2.a` | MISSING |  |
 | `Securities Lending D3` | MISSING |  |
 | `Securities Lending E1` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (the `ownership` family measures a negative holding as a finding with an owner, and never enforces it) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 | `Securities Lending E2` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (title moves and holdings still sum to issued, because the units are the same units) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
-| `Securities Lending E3` | MISSING |  |
+| `Securities Lending E3` | MET | packages/engine/src/mechanisms/securities-lending/index.ts (every posting into a borrow book carries a level — a lender with no view of the line does not lend, so a fee of zero can only be one somebody posted) — **NEVER REACHED**: the module is assembled and has never produced an outcome (`docs/IMPLEMENTATION.md` B-12) |
 
 ## Prime Brokerage
 

@@ -114,6 +114,7 @@ export function assemble(spec: AssemblySpec): World {
       world.provideBankChoice(m.id, d.partyKind, (view) => d.chooses(view));
     }
     for (const d of m.termsOffered ?? []) world.provideTerms(m.id, d.partyKind, d.decide);
+    for (const d of m.borrowNeeds ?? []) world.provideBorrowNeeds(m.id, d.partyKind, d.needs);
     for (const k of m.resolves ?? []) world.provideResolution(m.id, k);
     const capacity = m.clearingCapacity;
     if (capacity !== undefined) world.provideCapacity(m.id, capacity);
