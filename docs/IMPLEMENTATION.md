@@ -185,7 +185,6 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **10e** | Asset management: one object, a blueprint language, a manager that is a business | — | **inserted** (owner, over four corrections): everything is a fund; a universal language says what one holds; liquidity terms decide who can be forced to sell; a manager launches and winds down and fails from neither. The demand side of 10, 10b and 10c, and it SHRINKS 13 |
 | **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -208,270 +207,21 @@ duplicated issuance mechanism. **Stage D (19–24)** is the existing worklist ta
 closed and their sections are gone: this is the plan of what is left, and `docs/RECORD.md` is the
 ledger of what was done.
 
+**10e is closed and its section is gone.** It was the asset-management redesign the owner dictated
+over five corrections — one object, a universal blueprint language over reads of the investment
+universe, liquidity terms that decide who can be forced to sell, a manager that is a business with a
+cost in people, and access as a policy asked at a door. Two of its steps left it by being PLACED and
+not by being dropped: **17.9** (one funding-request channel, so a manager can borrow to seed a
+launch — it lands with corporate credit because it is `corporate-bond` and `short-term-debt` that
+also read the event it replaces) and **23.0a** (which blueprints this world grew and which it wound
+down, which is a MEASUREMENT and belongs with the measurement pass). It also **shrinks item 13** to
+two sentences and prime brokerage, which is the largest thing it did to the plan.
+
 ---
 
 ## Part 2 — The items
 
 ---
-
-## 10e. Asset management: one object, a blueprint language, and a manager that is a business — **inserted**
-
-**Where this came from.** The owner, 2026-09-14, over four corrections, each of which deleted
-something I had just built. Set down in full because the design is worth more than the code it
-replaces:
-
-> *"HFs exist in multiple strategies (long short equity, long short credit, macro, futures,
-> commodities) and they exist to exploit arbitrages. Institutional accounts like pension funds and
-> insurance give them money; then there are asset managers that have various single line mandates but
-> also funds (long equity, long credit, long commodity) and they manage ETFs (equity, credit, govies,
-> commodities) and MMF; both institutional and retail give them money, with retail able to access ETF
-> and MMF, rich retail able to access funds and institutional being also able to do mandates."*
->
-> *"There is not a single fund per region. There are fund blueprints that each manager can create or
-> winddown depending on competition and cost Vs fees. Funds are connected to a manager, there is no
-> fund without manager. The blueprint should be universal, a language to define what a fund invests
-> into (that can be applied to an HF strategy or PE or ETF or MMF or mandate)."*
->
-> *"And they also need to include if one currency or multi currency assets, durations for credit and
-> govies, large, mid small cap for public and private equity, etc. A schedule of these should be able
-> to fully define each asset in the investment universe (like securitization, CP, etc.)"*
->
-> *"Everything is a fund. An HF runs funds, same as PE. Nothing sits on the balance sheet unless the
-> entity decides to put in their own seed money (raised by issuing their own debt or equity for
-> example). An HF doesn't go bankrupt because a fund does bad by itself. Also this allows a unique
-> structure to raise money from. Each should use a single method, with differences based on the type
-> of fund (semi-liquid, liquid, closed end, etc)."*
-
----
-
-### 1. There is ONE object, and everything in this sector is an instance of it
-
-A **fund** is a pool with a manager. That is all. §28's hedge fund, §29's private equity vehicle, an
-ETF, a money fund and a segregated institutional mandate are **not five kinds of thing** — they are
-one thing with four terms set differently:
-
-| term | what varies |
-|---|---|
-| **BLUEPRINT** | what it may hold — §2 below, and it is one language for all of them |
-| **LIQUIDITY** | how you get in and out — §3, and it is what decides who becomes a forced seller |
-| **ACCESS** | who may get in at all — §5 |
-| **PERMISSIONS** | may it borrow, may it be short — already on `MandateTerms` (item 9.2a) |
-
-**This deletes far more than it adds.** There is no hedge-fund party kind, no private-equity party
-kind, no ETF declaration beside a fund declaration. §28 is a manager running funds whose blueprints
-permit leverage and shorting; §29 is a manager running funds whose liquidity terms are closed-end and
-whose blueprint is unlisted equity. Item 13 shrinks to those two sentences plus prime brokerage.
-
-### 2. The blueprint: a universal language over the investment universe
-
-**The rule that makes it work: every dimension is a READ of the asset, never a label stuck on it.**
-A table mapping instrument ids to asset classes is a kind branch in a registry and it goes stale the
-first time somebody issues something new. What follows is derived from facts the world already
-declares, so a kind invented next year classifies itself.
-
-**Three structural reads give the classes, with no labels anywhere:**
-
-| read | source |
-|---|---|
-| **did somebody promise it?** | `kind.liabilityOfIssuer` |
-| **is it dated?** | does `kind.cashFlows` end? |
-| **whose promise?** | the issuer's PARTY KIND |
-
-```
-no promise                      →  THING          (grain, and 13c's location is part of it)
-promise, undated                →  RESIDUAL       (equity: it promises nothing, it is what is left)
-promise, dated, treasury        →  GOVERNMENT
-promise, dated, bank or firm    →  CORPORATE
-promise, dated, vehicle         →  STRUCTURED
-```
-
-**Then the dimensions within, each also a read:**
-
-| dimension | the read | why it must be a read |
-|---|---|---|
-| **currency** | `instrument.ccy` | single- or multi-currency is a blueprint's choice over this |
-| **duration** | last cash flow date − today | **a 5-year bond BECOMES a 3-year bond.** A stored tenor would not |
-| **standing** | `ranking().seniority`, and whether `secured` is non-empty | a covered bond differs from a senior note by this and nothing else |
-| **size** | the obligor's own scale — for equity, shares × last print | **a company falls out of large-cap by falling.** An OUTCOME, never a label |
-| **listed** | `instrument.market.some` | public vs private, and it is the same read 10c uses for securitisable |
-| **quality** | the LOWEST grade any assessor has published on this name | an opinion somebody holds, and the conservative one of them (§7) |
-
-**The test the owner set — every asset in the universe fully defined:**
-
-```
-commercial paper        promise · dated · firm     · duration < 1y            →  CORPORATE, short
-a securitisation note   promise · dated · VEHICLE  · standing = attachment    →  STRUCTURED
-a covered bond          promise · dated · bank     · secured non-empty        →  CORPORATE, secured
-a private company       promise · undated          · market.some = false      →  RESIDUAL, unlisted
-a small listed firm     promise · undated          · shares × print is small  →  RESIDUAL, small cap
-a bill                  promise · dated · treasury · duration < 1y            →  GOVERNMENT, short
-```
-
-**A blueprint is a set of BANDS over those reads**, and eligibility is one function for every vehicle
-in the world: *does this asset's read fall inside every band this blueprint states?* A band not
-stated is not a constraint, which is how one language describes both a money fund (`CORPORATE ∪
-GOVERNMENT`, duration < 1y, own currency, highest standing) and a macro hedge fund (no class band at
-all, every currency, leverage true).
-
-It replaces `mayHold: readonly string[]` on `MandateTerms` — a list of kind ids, which is the kind
-branch this whole design is getting rid of.
-
-### 3. One way in and out, with terms that differ by type
-
-§13 G1 already says every open-ended vehicle has *"a claim its investor can redeem: a share count, a
-redemption request, a sale in the same period's books, and the cost of a late sale landing on the
-holders who stayed"*. So there is **one subscription/redemption mechanism**, and the terms decide
-what it does — and, crucially, **whether the fund can be forced to sell**, which is XI-2's subject:
-
-| terms | in | out | forced seller? |
-|---|---|---|---|
-| **liquid** | at NAV, any period | at NAV, any period | **YES** — it sells to pay (C2.b), and this is the channel |
-| **semi-liquid** | at NAV, any period | at NAV, in a window, QUEUED | **YES, with a lag** — the queue is the mechanism, and what it costs the holders who stayed is C4.a |
-| **closed-end** | COMMITTED up front, drawn when the fund calls it | only when the fund realises something | **NO** — nobody can demand money from it, which is the whole reason the structure exists |
-| **listed** | you buy the share from a HOLDER | you sell it to a holder; creation/redemption in kind | **NO** (G1.a) — it is pushed to the authorised participant |
-
-That table is the sector's contribution to financial stability: a shock reaches a closed-end fund and
-stops, and reaches a liquid one and becomes a forced sale into whatever the market gives.
-
-### 4. The manager is a business, and the roster of funds is an OUTCOME
-
-**There is no fund without a manager** — the pool is run by somebody, and that somebody is a
-different party from the pool (F3, and item 9.2a already split them).
-
-A manager **launches** a fund when a blueprint looks like it will earn a fee over what running it
-costs, and **winds one down** when it will not. Both are decisions, so:
-
-- **the set of funds in this world is an outcome, not a roster somebody drew.** That is Law 2 applied
-  to the sector: today `drawFunds` declares one money fund per big bank and that is a declared
-  equilibrium of the industry's structure.
-- **competition is real.** Fees fall where several managers run the same blueprint, and a fund whose
-  fee income stops covering its cost is wound down and its holders are paid out.
-- **the cost of running a fund is LABOUR** — this world has a labour market, and an asset manager
-  employs people out of it. That is the cost side of the decision and it is not a coefficient.
-
-**Nothing sits on the manager's balance sheet unless it puts it there.** A manager may SEED a fund
-with its own money, which it raises like any other firm — by issuing its own equity or its own debt.
-That seed is the only way a fund's assets touch the manager.
-
-**And so a manager does not fail because a fund does.** Its exposure to a fund going wrong is exactly
-two things, both real and both bounded by what it actually did: the seed it chose to put in, and the
-fee income it stops earning. A fund's holders bear the fund's losses, which is what `A3` means by
-*"a fund with equity has mislaid somebody's money"*.
-
-### 5. Who may invest, and it is a POLICY
-
-| investor | reaches |
-|---|---|
-| **retail** (a household cell) | listed funds and money funds |
-| **rich retail** (a cell over the line) | + open-ended funds |
-| **institutional** (insurer, pension, treasury, firm) | + segregated mandates, closed-end, and the levered ones |
-
-The line is an **accredited-investor threshold**: a POLICY owned by `parliament` (Law 2), because it
-is a number a regulator sets and changes — which also gives item 19 a real channel into this sector.
-In a world of CELLS it is a threshold on a cell's own wealth **per member**, and a cell straddling it
-**splits** (XI-15) rather than being decided at its own average.
-
-Access says **where** a cell's money may go and never **how much**: what actually goes in stays a
-consequence of the cell's own budget and what it requires of anything it holds instead of money (D5).
-
-### 6. What this replaces in the code
-
-```
-DELETED                                    REPLACED BY
-FundDecl.eligible: string[]                a blueprint: bands over reads
-EtfDecl as a separate declaration          a fund whose liquidity terms are `listed`
-drawFunds' fixed roster                    managers launching and winding down
-one manager per fund                       one manager, many funds, a fee from each
-a hedge-fund / PE party kind (unbuilt)     a manager whose blueprints permit leverage
-MandateTerms.mayHold: string[]             MandateTerms.blueprint
-```
-
-### 7. Quality: the assessors exist, and the rating is the LOWEST available
-
-**I had this wrong and the owner corrected it.** I proposed building the language without a quality
-band because §44's ratings were unbuilt. They are not: `mechanisms/ratings/` has an `ASSESSOR` party
-kind, several of them DRAWN AND DELIBERATELY UNALIKE (*"two assessors with the same thresholds and
-the same patience are one assessor with two names"*), each publishing `rating.action` on the
-kernel's ordered scale (`registry/grades.ts`: `aaa aa a bbb bb b c`). A4.b's requirement that
-assessments DISAGREE is already satisfied by construction.
-
-**THE RULE IS THE LOWEST OF THE RATINGS AVAILABLE** (owner). It is the conservative convention a
-mandate is written to, and it is a SELECTION over real published opinions rather than a blend — so
-"no decision at an average" holds, and every input is a named assessor's own view that it can be
-wrong about.
-
-It also makes ratings load-bearing in a way the alternative does not: **one assessor downgrading is
-enough to push a name out of a mandate**, so a downgrade becomes a forced sale rather than a number
-that moved. That is the transmission §44 exists for.
-
-**⚠ AND IT COLLIDES WITH A RULE ALREADY IN THE KERNEL, which is the owner's to settle.**
-`registry/grades.ts:middleGrade` implements the MIDDLE opinion and argues for it in its own words:
-*"a name moves across a boundary when a majority of those looking at it say it has. That is what
-makes a downgrade contestable rather than arithmetic — one assessor moving changes nothing."* Two
-readers use it: `CDS A5.a` (which series a name belongs in) and `Indices A1.a`.
-
-Both conventions are real — index rules and mandate rules genuinely differ in the world — but two
-combining rules in one small world is the parallel formula Law 4 hunts. **The proposal is to build
-`lowestGrade` beside it for the MANDATE boundary, and to raise the unification as a finding rather
-than silently changing what a CDS index is made of.** What `middleGrade` buys is a contestable
-downgrade; what `lowestGrade` buys is a downgrade that transmits. They cannot both be this world's
-answer to one question, and which question they are answers to is worth deciding on purpose.
-
-### 8. The order
-
-- **10e** (this): the blueprint language, the one object, the liquidity terms, access. It is the
-  demand side of items 10, 10b and 10c, and it is where every long-only fund comes from.
-- **13**: shrinks to a manager whose blueprints permit leverage and shorting (§28), a manager whose
-  funds are closed-end over unlisted equity (§29), and prime brokerage (§15) — which is the lender
-  those permissions need (B1: *"leverage is a fact about a loan, never a property of the fund"*).
-- **14**: the institutions that give them money — an insurer and a pension fund.
-
-**AND THEY DO NOT INVEST THEMSELVES** (owner): *"insurance companies and pension funds don't invest
-themselves. Their assets are always third party managed."* This is the largest simplification in the
-whole design and it should be stated as a rule:
-
-> **Nothing in this world invests except a fund, and every fund has a manager.**
-
-An insurer does not need a portfolio mechanism, an allocation rule, or a decision about which bond
-to buy — it has **liabilities with a schedule** and it hands its assets to a manager under a mandate
-whose blueprint matches that schedule (B2, B2.b's duration matching is the whole of its investment
-decision). The same is true of a pension fund. So item 14 builds a party with a liability schedule
-and a mandate, and **not** an investor: there is exactly ONE investment mechanism in the world and
-the institutions reach it through the same door as everybody else.
-
-That also removes the last reason for a separate "institutional" code path anywhere: retail money
-reaches a manager through a listed or open-ended fund, institutional money reaches the same manager
-through a segregated mandate, and what happens next is one blueprint and one set of orders.
-
-### Steps
-
-- [x] 10e.1 The classification: `registry/universe.ts` — the reads that classify any instrument, and nothing stored. It is a kernel read because three modules need the same answer (Law 4).
-- [x] 10e.2 The blueprint: bands over those reads, and ONE `admits(blueprint, instrument)` for every vehicle in the world. Replaces `MandateTerms.mayHold`.
-- [x] 10e.3a The blueprint and the liquidity terms are ON THE MANDATE, and `eligible` is one `admits`. **10e.3b remains**: the subscription/redemption path reading those terms — a queue for semi-liquid, a refusal for closed, in-kind for listed — which is what makes them decide who can be forced to sell.
-- [x] 10e.4 The manager as a business: many funds, a fee from each, a cost in labour, and launch/wind-down as decisions. `drawFunds`' fixed roster becomes an opening condition (Seed A3) rather than the industry's permanent structure. **The fee placeholder is dead** — `check:deaths` counts four scheduled deaths where it counted five.
-- [x] 10e.5 Seed money: a manager puts its own money into a pool it launches — the book at which that pool's own fee covers what a pool costs it, out of what it holds over what its own people are owed — and it subscribes for it through the pool's own venue like any other investor, so nothing is endowed. It is the ONLY way a pool's assets reach a manager's balance sheet, and it comes back the way every holder's does, through the redemption queue at whatever a wind-down realises.
-- [ ] 10e.5b A manager RAISES to seed, rather than seeding only out of fee income. **The lender side already exists and is general**: `banks/index.ts:publishQuotes` walks every party whose KIND borrows and `fundManagerKind.borrows` is `true`, so a credit quote is already published under a manager's own name every period, priced off its own risk. What is missing is one step further on: `runRequests` reads `firms.funding` and `housing.funding` — **two named event kinds where there should be ONE**, which is a kind branch wearing a list's clothes (Law 15) and which no third borrower can join without making it three. The fix is a single published kind meaning *"a named party said what it is short of"*, which is also what lets an insurer, a vehicle or a manager borrow without anybody adding a row. It is NOT free: `corporate-bond` and `short-term-debt` both read `firms.funding` to decide whether a FIRM should come to market instead, and a generic kind means they must say they mean firms. **Placed here rather than done at 10e.5** because it is a change to the bank's request channel and to two issuance modules, and the seed does not need it: a house seeds out of the fee income it has, which is a real source and a real limit on what it can seed.
-- [x] 10e.6 Access as a POLICY, read at the door: the vehicle states what it asks of an entrant (`MandateTerms.offeredPublicly`, and the VENUE's key names the policy so a saver reads it as public data about a door), the cell answers by CERTIFYING what it is worth per member, and the fund checks that against the line as the line stands that day. **The split the plan expected is not there and does not need to be**: every member of a cell holds the same thing (XI-15: per-member state), so a cell is never half over a threshold.
-- [x] 10e.7 The quality band: `lowestGrade` over what the assessors published, and the `middleGrade` collision raised as a finding for the owner rather than settled by me.
-- [ ] 10e.8 COVERAGE re-marked across §13, and the record says which blueprints this world grew and which it wound down.
-
-### Exit
-
-One language describes a money fund, a credit fund, an ETF and a levered strategy; a corporate bond
-issued at item 10 is bought by somebody whose business is holding credit with money a saver gave
-them; a manager runs several funds and fails from neither; and the set of funds at period 50 is not
-the set at period 0.
-
----
-
-> **MOVED AHEAD OF 11 AND 12** (owner, 2026-09-14: *"until we have actual asset managers with
-> appetite nothing will get demand"*). Its number is unchanged, because renumbering would break every
-> reference to it; what changed is where it is TAKEN FROM. The dependency argument is that items 10,
-> 10b and 10c all built SUPPLY — a corporate bond, commercial paper, a securitisation that can now
-> pool any claim — into a world whose only buyers are bank dealing desks and bank liquidity books.
-> Items 11 and 12 add more issuers still. **This is the item that adds a buyer**, and building two
-> more sectors of supply in front of it would be building them into books that cannot clear. Nothing
-> in 11 or 12 depends on it, and its own blocker (`Mandate`) closed at item 9.2a.
 
 ## 13. Asset managers: hedge funds (§28), private equity (§29), prime brokerage (§15)
 
@@ -941,6 +691,8 @@ somebody gives the kind a market. 17.8 guards it.
 - [ ] 17.5 Factoring and receivable pledges: placed 13e → 13f, never built. Two more of the six, and they sit on item 11's small firms, which is why this is after 11.
 - [ ] 17.6 Senior notes as repo collateral: the last of the six. `money-market/collateral.ts` already has the haircut machinery.
 - [ ] 17.7 The index-linked obligation and the other schedule shapes (**M2**).
+- [ ] 17.9 **ONE FUNDING-REQUEST CHANNEL, so any borrower can use it** (from 10e.5b). `banks/index.ts:runRequests` reads `firms.funding` and `housing.funding` — two named event kinds where there should be one, which is a kind branch wearing a list's clothes (Law 15) and which no third borrower can join without making it three. **The lender side is already general**: `publishQuotes` walks every party whose KIND borrows, so a credit quote is already published under a fund manager's own name every period, priced off its own risk — what stops a manager borrowing to seed a launch (`Fund Shares F3`) is only the shape of the request. The fix is one published kind meaning *"a named party said what it is short of"*, which also lets an insurer, a vehicle or a small pool borrow with nothing added. **It lands HERE because it is not free**: `corporate-bond` and `short-term-debt` both read `firms.funding` to decide whether a FIRM should come to market instead, so a generic kind means each of them must say it means firms — which is this item's files, opened for this item's reasons.
+
 - [ ] 17.8 **Guard the FORBID: no bank loan held outside the banking system.** It holds today by CONSTRUCTION — `LOAN` names no market and is carried at cost, so the only transfer path is securitisation's sale into a `VEHICLE`, and what investors buy there is the `TRANCHE`, a security. A FORBID that holds is as valuable as a mechanism that works and this one breaks silently: give the kind a market one day and nothing anywhere would complain. An audit family, reported with owner and size like every other invariant, never thrown. **The design question to settle first**: "the banking system" is a set of party kinds (`bank`, `vehicle`, and `estate` while a failed lender winds up), and enumerating it in the family is the kind branch Law 15 forbids in a mechanism — so it belongs on the PARTY KIND as declared data, which is a structural decision and carries an `ARCHITECTURE.md` change in the same commit.
 
 ### Exit
@@ -1169,6 +921,8 @@ so **a world's count of countries is a RESOLUTION like its count of banks.**
 ### Steps
 
 - [ ] 23.0 **Run `npm run check`** — the first suite run since the plan opened. It was item 2's last step (`2.22`) and it is here because the owner moved it here: a suite run mid-build measures a half-built world and reports the half that is missing (Law 11). Read what it says and write every finding into this file under the item that should fix it before changing anything. Nothing is chased.
+
+- [ ] 23.0a **Which blueprints this world grew, and which it wound down** (from 10e.8b). Item 10e made the roster of funds an OUTCOME — a manager launches a product it can see working at a fee under the cheapest incumbent, and closes one whose fee stops covering what running it costs — and nobody has yet run the world to see what that produces. Read `fund.launched`, `fund.notice` and `fund.woundUp` over a long run, against `fund.fee` and the wage bill on the other side. **Read `E-22` first**: if no household cell clears the accredited line then two of the three products this world opens with have no investors at all, and what the run is measuring is the LINE rather than the industry.
 
 - [ ] 23.1 Resize the scale model as **one bounded change** and re-derive what every affected test asserts. A test never names a party (`packages/engine/test/rig.ts`): it asks the draw for a mill, a dealer, a listed line.
 - [ ] 23.2 Diagnose "a bank that is insolvent is never resolved" **before** this item, on its own. It is the one row of `C-1` that is a live defect rather than a specific test.

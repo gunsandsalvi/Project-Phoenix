@@ -8319,3 +8319,66 @@ answer for the whole of it. Worth saying out loud rather than leaving as a mecha
 
 Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
 `check:existence` green. Tests written and updated, not run.
+
+---
+
+## Item 10e CLOSED — asset management: one object, a language, and a business
+
+Five stages and five owner corrections. What the sector was when it opened: a fixed roster of funds
+drawn before period zero, each with a manager of its own that had one pool and no cost of any kind,
+a mandate that was a LIST OF INSTRUMENT KIND IDS, three files named after three kinds of fund, and a
+fee that was a placeholder naming its own missing mechanism. What it is now:
+
+- **ONE OBJECT.** A fund is a pool with a manager. §28's hedge fund, §29's vehicle, an ETF, a money
+  fund and a segregated mandate are one thing with its terms set differently — blueprint, liquidity,
+  access, permissions — and there is no ETF declaration, no fund-type flag and no file named after a
+  kind of vehicle anywhere in the module.
+- **A LANGUAGE.** `registry/universe.ts` classifies any instrument from three structural reads (did
+  somebody promise it, is it dated, whose promise) and answers every dimension as a READ: duration
+  from today, so a five-year bond becomes a three-year bond; size from shares times the last print,
+  so a company falls out of large-cap by falling; quality as the LOWEST grade any assessor
+  published. `registry/blueprint.ts` bands over those reads, and one `admits` answers for every
+  vehicle in the world.
+- **TERMS THAT DECIDE WHO CAN BE FORCED TO SELL.** Liquid, semi-liquid with a window, closed, listed
+  — one subscription and redemption path, and what differs is what the terms say. A shock reaches a
+  closed fund and stops; it reaches a liquid one and becomes a sale into whatever the market gives.
+- **A BUSINESS.** A manager runs several pools, employs people out of the labour market in a trade
+  that had a venue in every region and nobody bidding in it, winds a pool up when its fee stops
+  covering what running it costs, and launches one by copying a product it can see working at a fee
+  under the cheapest incumbent. The roster of funds is an OUTCOME and the draw is an opening
+  condition.
+- **SEED MONEY,** which is the only way a pool's assets reach a manager's balance sheet, and
+  therefore the whole of what a house can lose from a pool going wrong.
+- **ACCESS AS A POLICY,** asked at a door and answered by the entrant, with `parliament` owning the
+  line — the first real channel item 19 has into this sector.
+
+**What it deleted.** `EtfDecl`; `MandateTerms.mayHold`; `fundParam` and three per-fund parameters
+including the fee PLACEHOLDER; `liquidityOf`; the three fund-type-named files; two copies of the
+wage read; a dead venue-key match in the dealer's arbitrage; the hand-written currency, tenor and
+kind tests in `eligible`; and one manager per pool. `check:deaths` counts four scheduled deaths where
+it counted five.
+
+**What it found, by reading rather than running.** `E-19` (the wage read written twice with two
+different keys, so a bank with no payroll put no staff cost in any quote), `E-20` (a read of a
+parameter 10e.2 had deleted, in the strike of every fund — a build-stopper), `E-21` (a saver
+committing one budget to every fund it could reach, which would have made the whole fee mechanism
+pointless). All three closed here. `E-22` and `E-23` are recorded and placed rather than tuned away.
+
+**Two steps left it by being PLACED, which is the only way a step leaves this file.** **17.9**: one
+funding-request channel, so a manager can borrow to seed a launch — the lender side is already
+general (`publishQuotes` walks every kind that borrows and a manager's does), and what stops it is
+that `runRequests` reads two named event kinds where there should be one; it lands with corporate
+credit because `corporate-bond` and `short-term-debt` read the same event. **23.0a**: which
+blueprints this world grew and which it wound down, which is a measurement and belongs with the
+measurement pass.
+
+**And it SHRANK item 13**, which was the point of taking it first: §28 is a manager whose blueprints
+permit leverage and shorting, §29 is a manager whose liquidity terms are closed-end over unlisted
+equity, and what is left to build there is prime brokerage — the lender those permissions need.
+
+§13 is 23 MET, 3 PARTIAL, 0 MISSING over 26 clauses. Plan completion 92.9%; requirement coverage
+61.9% (847 MET of 1369).
+
+Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
+`check:existence` green. **Tests written and updated, not run** — the suite is the owner's to call
+for, and item 23.0 is where it is called.
