@@ -49,7 +49,7 @@ checked, not assumed.
 | **Corporate Credit** | **13** | 8 | **41** | 0 | 62 |
 | Sovereign | 40 | 3 | 8 | **3** | 51 |
 | Short-Term Debt | 12 | 3 | 4 | 0 | 19 |
-| Equity | 25 | 3 | 9 | 0 | 37 |
+| Equity | 26 | 2 | 9 | 0 | 37 |
 | Money Market | 25 | 3 | 0 | 0 | 28 |
 | Spot FX | 26 | 1 | 0 | 0 | 27 |
 | Fund Shares | 23 | 3 | 0 | 0 | 26 |
@@ -68,14 +68,14 @@ checked, not assumed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 9 | 0 | 14 | **9** | 23 |
 | Hedge Funds | 12 | 3 | 9 | 0 | 24 |
-| Private Equity | 8 | 2 | 15 | 0 | 25 |
+| Private Equity | 9 | 1 | 15 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
 | Firm | 20 | 7 | 3 | 0 | 30 |
 | Capital Programme | 22 | 3 | 0 | 0 | 25 |
 | Firm Birth | 7 | 6 | 12 | 0 | 25 |
-| M&A | 10 | 0 | 12 | **10** | 22 |
+| M&A | 11 | 0 | 11 | **7** | 22 |
 | Trade Credit | 8 | 3 | 11 | 0 | 22 |
 | Goods | 27 | 2 | 10 | 0 | 39 |
 | Freight | 17 | 3 | 0 | 0 | 20 |
@@ -408,8 +408,33 @@ both:
     has a market and no price, and the revaluation would have thrown on it — as would
     `carryingPerUnit`, which asked the store for last period's print of a line that did not trade
     last period. Both read `atCost` now, and a lot nothing ever priced has recognised its basis.
-- **10f.3** M&A generalised: acquisition (the target survives), merger (`combine`, as today),
-  disposal, take-private. One layer, four outcomes, no kind branch.
+- [x] **10f.3 DONE.** One layer, four outcomes, and which one a deal has is READ off the register and
+  off what the buyer is — never declared and never a flag on the bid (Law 15).
+  - **Merger and acquisition are the two ends of "it bought all of it", and the test is whether the
+    buyer could RUN it.** A wage bill, read off the wire: a party that has never paid anybody has
+    nobody to operate a factory, so what it bought is a company and not a business, and it OWNS one
+    rather than becoming one. The target goes on standing — same party, same balance sheet, same
+    name, same debts — which is §29 A5's named vehicle and B2.a's *"a failed buyout kills the firm
+    and not the fund"*, **arrived at without this module knowing that a fund exists.**
+  - **The take-private is the same path with one more fact**: the line had a market, and the market
+    closes (`ctx.delist`, whose other half 10f.2 built). Its prints stay where they are and go
+    visibly stale, which is §29 C5's *"a value that is not a market price"* reached by the book
+    closing rather than by a rule about unlisted things. A company that had no market is bought by
+    the same code and nothing is delisted, because there was nothing to delist.
+  - **F-6 fixed, and it is what made a private company buyable at all.** A holder answered a tender
+    from its OUTLOOK of the price; an outlook is formed from prints; a private line makes none. So
+    every bid for a private company failed with *"nobody tendered"* — the acquisition the owner
+    asked for, refused by the one read that cannot answer for it. A holder with no outlook answers
+    from **what its own books carry it at**, which is its lots: its own number, and the one number a
+    holder of something with no price has. A holder carrying it above the bid keeps its shares,
+    which is C2, so the refusal is still where it was.
+  - **The disposal is the seller's side of the same book.** A holder that published it is short of
+    what it wants to build takes what the book gives rather than naming a level (XI-2), which is the
+    difference between selling something and valuing it. It is the same `firms.funding` read the
+    bond channel and the flotation use — a firm has one hole and three ways to fill it, and a second
+    number here would be a second hole.
+  - **M&A B2 goes MET**: the premium is what the tender book struck, and `premiumOver` is a read of
+    the distance between it and the last print. Equity E3 and §29 A5 go MET with it.
 - **10f.4** The formal process: a mandate to a bank, an auction with bidders, a fee, and `advisory`
   as a trade with a capacity.
 - **10f.5** Institutions across strategies (corrects 14.0).

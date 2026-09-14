@@ -1,11 +1,11 @@
 /**
  * The market for control (13g): what somebody will pay for a whole firm, and what its owners take.
  *
- * @spec M&A A1 M&A A3 M&A B1 M&A B2.a M&A C2 M&A E2 Equity A1 Equity B1 Law 2 Law 3 Law 11
+ * @spec M&A A1 M&A A3 M&A A4 M&A A5 M&A B1 M&A B2.a M&A C1 M&A C2 M&A E2 Equity A1 Equity B1 Equity E3 Private Equity A5 Law 2 Law 3 Law 11 Law 15
  */
 import { asPerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
-import { control, premiumOver } from '../src/index.js';
+import { control, instrumentId, partyId, premiumOver } from '../src/index.js';
 import { ranWorld, rigWorld } from './rig.js';
 
 describe('a premium is a distance between two numbers (B2.a, Law 3)', () => {
@@ -71,6 +71,69 @@ describe('what this world actually does with it (Law 11)', () => {
       const report = w.step();
       const names = report.audit.families.find((f) => f.family === 'names');
       for (const v of names?.violations ?? []) expect(v.spec).not.toContain('M&A');
+    }
+  });
+});
+
+/**
+ * 10f.3: THE FOUR SHAPES. *"m&a, acquisitions, mergers and disposals should all exist, with the PE
+ * case being only an application"* — one layer, and which outcome a deal has is read off the
+ * register and off what the buyer is, never declared.
+ */
+describe('a deal has four shapes and one mechanism (M&A A4, A5, Equity E3, §29 A5)', () => {
+  it('leaves the target standing when the buyer employs nobody, and combines when it does', () => {
+    const w = ranWorld('ctrl-shapes', 26);
+    for (const e of w.journal.ofKind('control.owned')) {
+      const target = String(e.data['target']);
+      // §29 A5, B2.a: it goes on being a company with its own balance sheet. That is the whole of
+      // why a buyout that fails kills the firm and not the buyer.
+      expect(w.parties.has(partyId(target))).toBe(true);
+      expect(w.parties.get(partyId(target)).status.alive).toBe(true);
+      // And the buyer never paid anybody a wage: that is the test, and it is not a kind.
+      expect(w.journal.lastOf('labour.wages', String(e.data['buyer']))).toBeUndefined();
+    }
+    for (const e of w.journal.ofKind('control.combined')) {
+      if (e.data['combined'] !== true) continue;
+      // §35 A4: the two balance sheets are one party now, and the target has a successor.
+      expect(w.parties.get(partyId(String(e.data['target']))).status.alive).toBe(false);
+    }
+  });
+
+  it('closes the book behind a take-private, and only where there was one (E3)', () => {
+    const w = ranWorld('ctrl-shapes', 26);
+    for (const e of w.journal.ofKind('control.owned')) {
+      const line = instrumentId(String(e.data['line']));
+      // Either way the line does not trade afterwards: one of them had a market this morning and
+      // does not now, and the other never had one. The record says which it was.
+      expect(w.instruments.get(line).market.some).toBe(false);
+      if (e.data['tookPrivate'] === true) {
+        // Clearing E4, §29 C5: the prints it made stay where they are and go visibly stale. The
+        // holding is a MARK from here and it is never mistaken for a cleared price.
+        expect(w.prices.latest(line, w.period).some).toBe(true);
+      }
+    }
+  });
+
+  it('lets the owners of a company nobody trades answer a bid at all (C1, C2)', () => {
+    /**
+     * F-6, and it is what made a private company unbuyable: a holder answered from its OUTLOOK of
+     * the price, an outlook is formed from prints, and a private line makes none — so every bid for
+     * one failed with "nobody tendered". A holder with no outlook answers from its own books now.
+     */
+    const w = ranWorld('ctrl-shapes', 26);
+    const failed = w.journal
+      .ofKind('control.failed')
+      .filter((e) => String(e.data['why']) === 'nobody tendered');
+    for (const e of failed) {
+      // Whatever else is true of a refusal, it is not that the holders could not speak: every
+      // holder of a live line has either an outlook or a basis, so a silence here means the line
+      // has no holder at all — which 10f.1 says is a defect and F-1 says is a resolution floor.
+      const target = partyId(String(e.data['target']));
+      const lines = w.instruments.issuedBy(target).filter((i) => i.status.live);
+      for (const i of lines) {
+        if (w.registry.instrumentKind(i.kind).liabilityOfIssuer) continue;
+        if (i.issued > 0) expect(w.register.holdersOf(i.id).length).toBeGreaterThan(0);
+      }
     }
   });
 });

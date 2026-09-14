@@ -636,6 +636,23 @@ export class World {
     this.addMarket(m);
   }
 
+  /**
+   * Equity E3 (item 10f.3): THE LINE STOPS TRADING — the take-private, and the reverse of
+   * `listLine` in the same one-door sense: the market comes off the instrument and off the world's
+   * list together, so nothing is left pointing at a book that no longer meets.
+   *
+   * The prints it made stay where they are. A holder carries it at the last price anybody paid and
+   * that price goes visibly stale (Clearing E4), which is §29 C5's *"a value that is not a market
+   * price"* arrived at by the market closing rather than by a rule about unlisted things.
+   */
+  delistLine(instrument: InstrumentId): void {
+    const was = this.instruments.get(instrument).market;
+    this.instruments.delist(instrument);
+    if (!was.some) return;
+    const at = this.marketList.findIndex((m) => m.id === was.value);
+    if (at >= 0) this.marketList.splice(at, 1);
+  }
+
   /** Declare a venue a module clears itself (Clearing B2); like a market, it is declared once. */
   addVenue(v: VenueDecl): void {
     forbid(!this.venueList.some((x) => x.id === v.id), 'Law 4', `venue ${v.id} declared twice`);
@@ -1753,6 +1770,9 @@ export class World {
       },
       list: (instrument, decl) => {
         this.listLine(instrument, decl);
+      },
+      delist: (instrument) => {
+        this.delistLine(instrument);
       },
       openVenue: (decl) => {
         this.addVenue(decl);

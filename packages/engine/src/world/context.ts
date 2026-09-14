@@ -787,6 +787,8 @@ export interface MechanismContext extends WorldReads {
    * is the same door the other way (10f.3's take-private).
    */
   list(instrument: InstrumentId, decl: MarketDecl): void;
+  /** Equity E3 (item 10f.3): the take-private — the line stops trading and the book closes. */
+  delist(instrument: InstrumentId): void;
   /** Declare a venue this module clears itself (Clearing B2, Labour D1). */
   openVenue(decl: VenueDecl): void;
   /** Announce the issuer's supply for this period's session (Sovereign C1); cleared by the market. */

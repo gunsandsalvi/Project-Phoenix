@@ -1,7 +1,7 @@
 /**
  * The market for control: what somebody will pay for a whole firm, and what its owners will take.
  *
- * @spec M&A A1 M&A A2 M&A A3 M&A A4 M&A A5 M&A B1 M&A B2 M&A B2.a M&A B3 M&A C1 M&A C2 M&A D4 M&A D5 M&A E1 M&A E2 Equity B1 Equity F3 XI-8 Law 2 Law 3 Law 4 Law 6 Law 19
+ * @spec M&A A1 M&A A2 M&A A3 M&A A4 M&A A5 M&A B1 M&A B2 M&A B2.a M&A B3 M&A C1 M&A C2 M&A D4 M&A D5 M&A E1 M&A E2 Equity B1 Equity E3 Equity F3 Private Equity A5 Private Equity C5 XI-2 XI-8 Law 2 Law 3 Law 4 Law 6 Law 15 Law 19
  *
  * A PREMIUM IS A PRICE AND IT HAS TO CLEAR. Every share in this world already has a market, and
  * every holder already has its own number for what a share is worth to it (Equity B1, §46 A3). A
@@ -25,6 +25,7 @@
  * and there is one way to write it (XI-8, Register F2).
  */
 import {
+  asPerPiece,
   asRatio,
   type Cash,
   minus,
@@ -176,11 +177,63 @@ export function tenders(
 ): readonly Order[] {
   const units = downTick(holder.free(line));
   if (units <= 0) return [];
-  const own = holder.outlook(about({ on: 'price', instrument: line }));
-  if (!own.some) return [];
+  /**
+   * §35 A1, XI-2 (item 10f.3): THE DISPOSAL — an owner sells a business it holds, and the reason is
+   * the reason anybody sells anything: it needs the money. A holder that has published it is short
+   * of what it wants to build takes what the book gives it rather than naming a level, which is
+   * what makes this a SALE and not a valuation: a seller that would only part with it at its own
+   * number is not disposing of anything.
+   *
+   * It is one read (`firms.funding`) and it is the same one the bond channel and the flotation use,
+   * because a firm has one hole and three ways to fill it — borrow, issue, or sell something — and
+   * a second number here would be a second hole (Law 4).
+   */
+  if (mustSell(holder)) {
+    return [{ party: holder.self.id, side: 'sell', price: 'market', qty: units }];
+  }
+  const at = wouldTakeFor(holder, line);
+  if (!at.some) return [];
   // It sells at its own number or better. What it gets is the clearing price, which is at or above
   // it — the ordinary meaning of an offer, and the reason a tender clears rather than being taken.
-  return [{ party: holder.self.id, side: 'sell', price: own.value.expected, qty: units }];
+  return [{ party: holder.self.id, side: 'sell', price: at.value, qty: units }];
+}
+
+/** Firm E4: whether this holder published, this period, that it is short of what it wants to build. */
+function mustSell(holder: ParticipantView): boolean {
+  const own = holder.lastOwnSince('firms.funding', holder.period);
+  if (!own.some) return false;
+  const short = own.value.data['shortTerm'];
+  return typeof short === 'number' && short > 0;
+}
+
+/**
+ * C1, C2, §29 C5 (item 10f.3): WHAT A HOLDER WOULD TAKE FOR ONE, and it is its own number.
+ *
+ * Its OUTLOOK of the price where it has formed one, which is what a holder of something that trades
+ * has: it watches the tape and it knows what a share of this goes for. **And what its own accounts
+ * carry it at where it has not** — which is the holder of a company that has never traded, and
+ * there are eight thousand of those in this world (10f.1). Without the second half nobody could
+ * ever answer a tender for a private company: an outlook is formed from prints, a private line
+ * makes none, and every bid for one failed with *"nobody tendered"* — the acquisition the owner
+ * asked for, refused by the one read that cannot answer for it.
+ *
+ * A carrying value is not a price and is not used as one (Law 3, B3): it is what this holder would
+ * take, and a book of them meeting a buyer's own number is what strikes the level. A holder
+ * carrying it above the bid keeps its shares, which is C2 exactly and is where the refusal lives.
+ */
+function wouldTakeFor(holder: ParticipantView, line: InstrumentId): Option<PerPiece> {
+  const own = holder.outlook(about({ on: 'price', instrument: line }));
+  if (own.some) return some(asPerPiece(own.value.expected, `what it expects ${line} to be worth`));
+  // Register A1.c: its own LOTS — what it paid, which is what its accounts carry it at and is the
+  // one number a holder of something with no price has. It reads its own books and nobody else's.
+  const held = holder.holdings().find((h) => h.instrument === line);
+  if (held === undefined) return none<PerPiece>();
+  const units = sum(held.lots.map((l) => l.qty)).value;
+  const cost = sum(
+    held.lots.map((l) => valueAt(l.basisPerUnit, l.qty, 'what it paid for them')),
+  ).value;
+  if (units <= 0 || cost <= 0) return none<PerPiece>();
+  return some(pricedAt(cost, units, 'what its own books carry one at'));
 }
 
 /**
@@ -337,13 +390,71 @@ function settleTender(
     ctx.takeControl(bid.buyer, bid.target, 'shares', `holds ${held} of ${inIssue} shares in issue`);
   }
   /**
-   * A5, D4: AND WHEN NOTHING IS LEFT OUTSIDE, the two balance sheets combine. A majority makes a
-   * subsidiary — which is what the world above records — and it is holding ALL of it that makes the
-   * residual claim entirely the acquirer's, so that combining is a description of what is true
-   * rather than a decision somebody has to take. That is why `combine` needed no new caller and no
-   * new rule: it needed the one condition under which it is not a lie.
+   * A5, D4, §29 A5, B2.a (item 10f.3): AND WHEN NOTHING IS LEFT OUTSIDE, ONE OF TWO THINGS HAPPENS.
+   *
+   * A majority makes a SUBSIDIARY — which is what the world above records — and it is holding ALL
+   * of it that settles what the acquirer may do with the residual, because it is entirely its own.
+   * Then there are two deals and they are different deals:
+   *
+   *  - **a MERGER**: the two balance sheets combine and the combined firm is one party (§35 A4);
+   *  - **an ACQUISITION**: the target goes on being a company with its own balance sheet, its own
+   *    name and its own debts (§29 A5), and if it had a market that market CLOSES — which is the
+   *    take-private, and is why *"a failed buyout kills the firm and not the fund"* (§29 B2.a).
+   *
+   * WHICH ONE IS NOT A KIND BRANCH AND NOT A FLAG (Law 15): it is whether the acquirer could RUN
+   * what it bought, and running a business is having people do the work. A buyer that has never
+   * had a wage bill cannot absorb a factory into itself — it has nobody to operate it — so it owns
+   * it instead, which is what a fund is and what §29 A5 describes without this module knowing that
+   * a fund exists. A buyer that employs can take the plant, the stock and the workers inside.
    */
-  if (held >= inIssue) combine(ctx, bid.buyer, bid.target);
+  if (held < inIssue) return;
+  if (couldRunIt(ctx, bid.buyer)) combine(ctx, bid.buyer, bid.target);
+  else own(ctx, bid.buyer, bid.target, bid.line);
+}
+
+/**
+ * §35 A4, §29 A5, Law 15: WHETHER THE ACQUIRER COULD RUN WHAT IT BOUGHT.
+ *
+ * A wage bill, read off the wire (Law 19). It is the whole test and it is a fact rather than a
+ * label: a party that has never paid anybody has nobody to operate a factory, so what it has bought
+ * is a company and not a business, and it owns one rather than becoming one. A pool of money is in
+ * that position permanently and this module never has to know what a pool of money is.
+ */
+function couldRunIt(ctx: MechanismContext, buyer: PartyId): boolean {
+  return ctx.journal.lastOf('labour.wages', String(buyer)) !== undefined;
+}
+
+/**
+ * §29 A5, B2.a, Equity E3 (item 10f.3): IT OWNS IT, AND THE MARKET CLOSES.
+ *
+ * The target survives: same party, same balance sheet, same name, same debts — which is the whole
+ * of why a buyout that fails kills the company and not the buyer. What ends is the market, because
+ * every share is in one pair of hands and there is nobody left to trade with; the prints it made
+ * stay where they are and go visibly stale (Clearing E4), which is §29 C5's *"a value that is not
+ * a market price"* arrived at by the book closing rather than by a rule about unlisted things.
+ *
+ * A company that had no market is bought the same way and nothing is delisted, because there was
+ * nothing to delist — one path, two starting states, and no branch on which (Law 15).
+ */
+function own(ctx: MechanismContext, buyer: PartyId, target: PartyId, line: InstrumentId): void {
+  if (ctx.control.controllerOf(target) === undefined) {
+    ctx.takeControl(buyer, target, 'shares', 'wholly owned, and it goes on being a company');
+  }
+  const wasListed = ctx.instruments.get(line).market.some;
+  if (wasListed) ctx.delist(line);
+  ctx.record(
+    'control.owned',
+    [buyer, target, line],
+    {
+      buyer: String(buyer),
+      target: String(target),
+      line: String(line),
+      // E3: whether this was a TAKE-PRIVATE — a line that traded this morning and does not now.
+      tookPrivate: wasListed,
+      why: 'the buyer employs nobody, so it owns the company rather than absorbing the business',
+    },
+    true,
+  );
 }
 
 /**

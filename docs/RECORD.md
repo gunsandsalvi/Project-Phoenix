@@ -8976,3 +8976,69 @@ and the take-private not.
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5 over 216 files, `check:deaths` 4 of 4,
 `check:existence` green with Part 0 regenerated. Tests written and not run.
+
+---
+
+## Item 10f.3 — one M&A layer, four outcomes, and not one of them is a flag
+
+**The owner's fourth sentence:** *"m&a, acquisitions, mergers and disposals should all exist, with
+the PE case being only an application."* The plan's table said acquisition, disposal and take-private
+were all missing and that `combine` was *"right for a merger and wrong for everything else"*. That
+was right about the outcome and wrong about how much was missing: `control` already had the tender,
+the acceptance condition, the majority and the combination. What it did not have was **a way to be
+anything but a merger**, and **anybody to sell**.
+
+### Which outcome a deal has is a READ
+
+A buyer that ends up holding all of a company does one of two things, and they are different deals:
+
+- a **MERGER** — the two balance sheets combine and the combined firm is one party (§35 A4);
+- an **ACQUISITION** — the target goes on being a company with its own balance sheet, its own name
+  and its own debts (§29 A5), and if it had a market that market closes, which is the TAKE-PRIVATE.
+
+Which one is not a kind branch and not a flag on the bid. **It is whether the acquirer could run
+what it bought, and running a business is having people do the work.** A wage bill, read off the
+wire: a party that has never paid anybody has nobody to operate a factory, so it owns the company
+rather than absorbing the business.
+
+That one read is what makes §29 A5 — *"the acquired firms are held in named vehicles, each a party
+with its own balance sheet"* — **fall out instead of being written for private equity.** A pool of
+money employs nobody, permanently, and this module never has to know that a pool of money exists.
+It is also B2.a's whole point arriving as a consequence: the target keeps its own debts, so a failed
+buyout kills the firm and not the fund.
+
+### F-6: nobody could sell a company nobody trades
+
+A holder answered a tender from its OUTLOOK of the line's price. An outlook is formed from prints. A
+private line makes none. So every bid for a private company failed with `control.failed` / *"nobody
+tendered"* — **the acquisition the owner asked for, refused by the one read that cannot answer for
+it**, and it would have refused every one of the eight thousand private companies 10f.1 created.
+
+A holder with no outlook answers from what its own books carry it at: its LOTS, which is what it
+paid. Its own number, read off its own books, and the one number a holder of something with no price
+has. It is not a price and is not used as one — the book strikes the level where the holders' numbers
+meet the buyer's — and a holder carrying it above the bid keeps its shares, which is C2 unchanged.
+
+### The disposal is the seller's side of the same book
+
+*"An owner SELLS a business it holds"* needed no new venue and no new instruction: it needed a
+REASON, and the reason anybody sells anything is that it needs the money. A holder that published it
+is short of what it wants to build takes what the book gives rather than naming a level (XI-2), which
+is the difference between selling something and valuing it. It is the same `firms.funding` read the
+bond channel and the flotation use — **a firm has one hole and three ways to fill it: borrow, issue,
+or sell something** — and a second number here would have been a second hole.
+
+### What this leaves
+
+`M&A B2` goes MISSING → MET (the premium is what the tender book struck, and `premiumOver` is a read
+of the distance between it and the last print, with no premium number anywhere). `Equity E3`
+PARTIAL → MET and `Private Equity A5` PARTIAL → MET. M&A's ABSENT-SECTOR marks fall from ten to
+seven.
+
+`M&A B4` — a competing bidder — is still missing and is the honest gap: `runTender` opens one venue
+per bid with one buyer in it, so a contested auction has nowhere to happen. **That is 10f.4's**,
+where a seller appoints a bank and the bank invites bidders, and it is the same book with more than
+one name in it.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.
