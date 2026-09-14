@@ -185,7 +185,7 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **10e** | The asset management sector: managers, vehicles, access | — | **inserted** (owner): separates the vehicle, the manager and WHO MAY INVEST, which is what decides whose money reaches which market. The long-only demand side of 10, 10b and 10c |
+| **10e** | Asset management: one object, a blueprint language, a manager that is a business | — | **inserted** (owner, over four corrections): everything is a fund; a universal language says what one holds; liquidity terms decide who can be forced to sell; a manager launches and winds down and fails from neither. The demand side of 10, 10b and 10c, and it SHRINKS 13 |
 | **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -214,79 +214,219 @@ ledger of what was done.
 
 ---
 
-## 10e. The asset management sector: managers, vehicles, and who may invest — **inserted**
+## 10e. Asset management: one object, a blueprint language, and a manager that is a business — **inserted**
 
-**Where this came from.** Owner, 2026-09-14, correcting my reading that item 13 was "the demand
-item": *"HFs exist in multiple strategies… and they exist to exploit arbitrages. Institutional
-accounts like pension funds and insurance give them money; then there are asset managers that have
-various single line mandates but also funds (long equity, long credit, long commodity) and they
-manage ETFs (equity, credit, govies, commodities) and MMF; both institutional and retail give them
-money, with retail able to access ETF and MMF, rich retail able to access funds and institutional
-being also able to do mandates."*
+**Where this came from.** The owner, 2026-09-14, over four corrections, each of which deleted
+something I had just built. Set down in full because the design is worth more than the code it
+replaces:
 
-**Inserted before 13**, because 13 is the LEVERAGED, speculative slice and this is the bulk: a hedge
-fund's investors are the institutions this item makes into allocators, so building 13 first would
-build a sector funded by nobody.
+> *"HFs exist in multiple strategies (long short equity, long short credit, macro, futures,
+> commodities) and they exist to exploit arbitrages. Institutional accounts like pension funds and
+> insurance give them money; then there are asset managers that have various single line mandates but
+> also funds (long equity, long credit, long commodity) and they manage ETFs (equity, credit, govies,
+> commodities) and MMF; both institutional and retail give them money, with retail able to access ETF
+> and MMF, rich retail able to access funds and institutional being also able to do mandates."*
+>
+> *"There is not a single fund per region. There are fund blueprints that each manager can create or
+> winddown depending on competition and cost Vs fees. Funds are connected to a manager, there is no
+> fund without manager. The blueprint should be universal, a language to define what a fund invests
+> into (that can be applied to an HF strategy or PE or ETF or MMF or mandate)."*
+>
+> *"And they also need to include if one currency or multi currency assets, durations for credit and
+> govies, large, mid small cap for public and private equity, etc. A schedule of these should be able
+> to fully define each asset in the investment universe (like securitization, CP, etc.)"*
+>
+> *"Everything is a fund. An HF runs funds, same as PE. Nothing sits on the balance sheet unless the
+> entity decides to put in their own seed money (raised by issuing their own debt or equity for
+> example). An HF doesn't go bankrupt because a fund does bad by itself. Also this allows a unique
+> structure to raise money from. Each should use a single method, with differences based on the type
+> of fund (semi-liquid, liquid, closed end, etc)."*
 
-**Why.** Three things are welded together today and the real sector has them apart.
+---
 
-| | today | what it is |
+### 1. There is ONE object, and everything in this sector is an instance of it
+
+A **fund** is a pool with a manager. That is all. §28's hedge fund, §29's private equity vehicle, an
+ETF, a money fund and a segregated institutional mandate are **not five kinds of thing** — they are
+one thing with four terms set differently:
+
+| term | what varies |
+|---|---|
+| **BLUEPRINT** | what it may hold — §2 below, and it is one language for all of them |
+| **LIQUIDITY** | how you get in and out — §3, and it is what decides who becomes a forced seller |
+| **ACCESS** | who may get in at all — §5 |
+| **PERMISSIONS** | may it borrow, may it be short — already on `MandateTerms` (item 9.2a) |
+
+**This deletes far more than it adds.** There is no hedge-fund party kind, no private-equity party
+kind, no ETF declaration beside a fund declaration. §28 is a manager running funds whose blueprints
+permit leverage and shorting; §29 is a manager running funds whose liquidity terms are closed-end and
+whose blueprint is unlisted equity. Item 13 shrinks to those two sentences plus prime brokerage.
+
+### 2. The blueprint: a universal language over the investment universe
+
+**The rule that makes it work: every dimension is a READ of the asset, never a label stuck on it.**
+A table mapping instrument ids to asset classes is a kind branch in a registry and it goes stale the
+first time somebody issues something new. What follows is derived from facts the world already
+declares, so a kind invented next year classifies itself.
+
+**Three structural reads give the classes, with no labels anywhere:**
+
+| read | source |
+|---|---|
+| **did somebody promise it?** | `kind.liabilityOfIssuer` |
+| **is it dated?** | does `kind.cashFlows` end? |
+| **whose promise?** | the issuer's PARTY KIND |
+
+```
+no promise                      →  THING          (grain, and 13c's location is part of it)
+promise, undated                →  RESIDUAL       (equity: it promises nothing, it is what is left)
+promise, dated, treasury        →  GOVERNMENT
+promise, dated, bank or firm    →  CORPORATE
+promise, dated, vehicle         →  STRUCTURED
+```
+
+**Then the dimensions within, each also a read:**
+
+| dimension | the read | why it must be a read |
 |---|---|---|
-| the VEHICLE | a pool with a mandate | right already |
-| the MANAGER | **one per vehicle** | a firm running MANY vehicles |
-| ACCESS | **does not exist** — anybody may subscribe to anything | who may put money into which vehicle |
+| **currency** | `instrument.ccy` | single- or multi-currency is a blueprint's choice over this |
+| **duration** | last cash flow date − today | **a 5-year bond BECOMES a 3-year bond.** A stored tenor would not |
+| **standing** | `ranking().seniority`, and whether `secured` is non-empty | a covered bond differs from a senior note by this and nothing else |
+| **size** | the obligor's own scale — for equity, shares × last print | **a company falls out of large-cap by falling.** An OUTCOME, never a label |
+| **listed** | `instrument.market.some` | public vs private, and it is the same read 10c uses for securitisable |
+| **quality** | §44's RATING — an opinion somebody holds | ⚠ see §7: this is the one dimension this world cannot yet answer |
 
-**ACCESS is the one that decides whose money reaches which market**, and its absence is why every
-book this world has built lately has only bank desks bidding into it. A dealing desk is not demand:
-it makes a market, carries what it cannot place and is bounded by its own balance sheet (Dealer
-Desks D3.b). What absorbs an issue is somebody's SAVINGS, managed by somebody paid to manage them.
+**The test the owner set — every asset in the universe fully defined:**
 
-**The manager being 1:1 is defended by a comment that is wrong.** `funds/data.ts` says two funds at
-one bank need two managers because *"a shared name would be two funds' fees arriving in one account
-nobody could take apart (Law 4)"*. Each fee is a two-sided flow from a NAMED vehicle to the manager,
-so three vehicles is three attributable flows and there is nothing to take apart. The workaround goes
-with the change.
+```
+commercial paper        promise · dated · firm     · duration < 1y            →  CORPORATE, short
+a securitisation note   promise · dated · VEHICLE  · standing = attachment    →  STRUCTURED
+a covered bond          promise · dated · bank     · secured non-empty        →  CORPORATE, secured
+a private company       promise · undated          · market.some = false      →  RESIDUAL, unlisted
+a small listed firm     promise · undated          · shares × print is small  →  RESIDUAL, small cap
+a bill                  promise · dated · treasury · duration < 1y            →  GOVERNMENT, short
+```
 
-### The shape
+**A blueprint is a set of BANDS over those reads**, and eligibility is one function for every vehicle
+in the world: *does this asset's read fall inside every band this blueprint states?* A band not
+stated is not a constraint, which is how one language describes both a money fund (`CORPORATE ∪
+GOVERNMENT`, duration < 1y, own currency, highest standing) and a macro hedge fund (no class band at
+all, every currency, leverage true).
 
-**A VEHICLE is a pool with a mandate, and its TYPE is who may enter it and how.** The mandate itself
-is already the right noun: item 9.2a built `MANDATE` as an agreement `{pool, manager, mayHold,
-mayWrite, leverage}`, and a segregated institutional mandate is exactly that with the pool being the
-institution's own money rather than commingled. One noun, not two — which is a sign the structure is
-right rather than a coincidence.
+It replaces `mayHold: readonly string[]` on `MandateTerms` — a list of kind ids, which is the kind
+branch this whole design is getting rid of.
 
-| vehicle | who may enter | what it is |
-|---|---|---|
-| **MMF** | anybody | short high-grade paper; a deposit substitute (§13 D) |
-| **ETF** | anybody | listed shares, in-kind creation, so NOT a forced seller (§13 E, G1.a) |
-| **FUND** | rich retail and institutions | long-only by asset class: equity, credit, commodity |
-| **MANDATE** | institutions only | a segregated account; the owner keeps the assets |
+### 3. One way in and out, with terms that differ by type
 
-**ACCESS is a POLICY, and it is the regulator's** (Law 2, owner `parliament`). The
-accredited-investor / professional-client line is a number a regulator sets, not a taste and not a
-technology, which also gives item 19's polity a real channel into this sector. In a world of CELLS
-it is a threshold on a cell's OWN wealth — and a cell straddling it SPLITS (XI-15), which is the
-weight machinery doing its job rather than a rule about an average.
+§13 G1 already says every open-ended vehicle has *"a claim its investor can redeem: a share count, a
+redemption request, a sale in the same period's books, and the cost of a late sale landing on the
+holders who stayed"*. So there is **one subscription/redemption mechanism**, and the terms decide
+what it does — and, crucially, **whether the fund can be forced to sell**, which is XI-2's subject:
 
-**WHAT THE LONG-ONLY FUNDS ADD is the demand side of everything built this week**: long credit buys
-§7's bonds, §9's paper and XI-11's notes; long equity buys §10's shares; long commodity buys what
-§13c produces. Each is a mandate, and A4 is why that is the whole mechanism — *"a flow into the fund
-becomes a purchase of what the mandate allows"*.
+| terms | in | out | forced seller? |
+|---|---|---|---|
+| **liquid** | at NAV, any period | at NAV, any period | **YES** — it sells to pay (C2.b), and this is the channel |
+| **semi-liquid** | at NAV, any period | at NAV, in a window, QUEUED | **YES, with a lag** — the queue is the mechanism, and what it costs the holders who stayed is C4.a |
+| **closed-end** | COMMITTED up front, drawn when the fund calls it | only when the fund realises something | **NO** — nobody can demand money from it, which is the whole reason the structure exists |
+| **listed** | you buy the share from a HOLDER | you sell it to a holder; creation/redemption in kind | **NO** (G1.a) — it is pushed to the authorised participant |
+
+That table is the sector's contribution to financial stability: a shock reaches a closed-end fund and
+stops, and reaches a liquid one and becomes a forced sale into whatever the market gives.
+
+### 4. The manager is a business, and the roster of funds is an OUTCOME
+
+**There is no fund without a manager** — the pool is run by somebody, and that somebody is a
+different party from the pool (F3, and item 9.2a already split them).
+
+A manager **launches** a fund when a blueprint looks like it will earn a fee over what running it
+costs, and **winds one down** when it will not. Both are decisions, so:
+
+- **the set of funds in this world is an outcome, not a roster somebody drew.** That is Law 2 applied
+  to the sector: today `drawFunds` declares one money fund per big bank and that is a declared
+  equilibrium of the industry's structure.
+- **competition is real.** Fees fall where several managers run the same blueprint, and a fund whose
+  fee income stops covering its cost is wound down and its holders are paid out.
+- **the cost of running a fund is LABOUR** — this world has a labour market, and an asset manager
+  employs people out of it. That is the cost side of the decision and it is not a coefficient.
+
+**Nothing sits on the manager's balance sheet unless it puts it there.** A manager may SEED a fund
+with its own money, which it raises like any other firm — by issuing its own equity or its own debt.
+That seed is the only way a fund's assets touch the manager.
+
+**And so a manager does not fail because a fund does.** Its exposure to a fund going wrong is exactly
+two things, both real and both bounded by what it actually did: the seed it chose to put in, and the
+fee income it stops earning. A fund's holders bear the fund's losses, which is what `A3` means by
+*"a fund with equity has mislaid somebody's money"*.
+
+### 5. Who may invest, and it is a POLICY
+
+| investor | reaches |
+|---|---|
+| **retail** (a household cell) | listed funds and money funds |
+| **rich retail** (a cell over the line) | + open-ended funds |
+| **institutional** (insurer, pension, treasury, firm) | + segregated mandates, closed-end, and the levered ones |
+
+The line is an **accredited-investor threshold**: a POLICY owned by `parliament` (Law 2), because it
+is a number a regulator sets and changes — which also gives item 19 a real channel into this sector.
+In a world of CELLS it is a threshold on a cell's own wealth **per member**, and a cell straddling it
+**splits** (XI-15) rather than being decided at its own average.
+
+Access says **where** a cell's money may go and never **how much**: what actually goes in stays a
+consequence of the cell's own budget and what it requires of anything it holds instead of money (D5).
+
+### 6. What this replaces in the code
+
+```
+DELETED                                    REPLACED BY
+FundDecl.eligible: string[]                a blueprint: bands over reads
+EtfDecl as a separate declaration          a fund whose liquidity terms are `listed`
+drawFunds' fixed roster                    managers launching and winding down
+one manager per fund                       one manager, many funds, a fee from each
+a hedge-fund / PE party kind (unbuilt)     a manager whose blueprints permit leverage
+MandateTerms.mayHold: string[]             MandateTerms.blueprint
+```
+
+### 7. The one dimension this world cannot yet answer, and what to do about it
+
+**QUALITY — investment grade versus high yield — needs §44's rating**, and a rating is an OPINION
+SOMEBODY HOLDS (Corporate Credit A4: *"it is not a property of the firm"*, and A4.b: assessments must
+DISAGREE). `ratings` exists as a module and `Corporate Credit E5.b` is already marked PARTIAL for
+exactly this: `banks/quote.ts:holderReservation` says in its own comment that wiring the loan model
+in was tried, measured, and produced a doom loop this world cannot yet resolve.
+
+**The proposal is to build the blueprint language WITHOUT a quality band, and to say so.** Every other
+dimension is a read available today. A blueprint that cannot express "investment grade only" is a
+blueprint that describes a slightly wider fund than the real one — which is an honest gap, named,
+rather than a rating invented here to fill it. The band is added when §44 answers, and the blueprint
+language is designed so that adding it is adding a row.
+
+### 8. The order
+
+- **10e** (this): the blueprint language, the one object, the liquidity terms, access. It is the
+  demand side of items 10, 10b and 10c, and it is where every long-only fund comes from.
+- **13**: shrinks to a manager whose blueprints permit leverage and shorting (§28), a manager whose
+  funds are closed-end over unlisted equity (§29), and prime brokerage (§15) — which is the lender
+  those permissions need (B1: *"leverage is a fact about a loan, never a property of the fund"*).
+- **14**: the institutions that give them money — an insurer and a pension fund with a liability
+  schedule to match, which is what makes them ALLOCATORS rather than parties that happen to hold
+  things. The segregated mandate lands here for that reason.
 
 ### Steps
 
-- [ ] 10e.1 A manager runs MANY vehicles: one `manager` party with N `fund` parties under it, N fee flows each from its own named vehicle. Delete the comment defending the 1:1 and the draw that implements it.
-- [ ] 10e.2 The vehicle TYPE as declared data on the vehicle, and the access rule as a POLICY parameter owned by `parliament`. No kind branch in any mechanism: who may enter is read off the vehicle's type and the entrant's own wealth (Law 15).
-- [ ] 10e.3 The long-only funds by asset class — **credit, equity, commodity** — each a mandate over the kinds that class names. The credit fund is the one every book built at 10, 10b and 10c is waiting for.
-- [ ] 10e.4 The segregated MANDATE as a vehicle an institution opens: the same `MANDATE` agreement, a pool the institution owns, and a manager paid a fee on it. `insurance` is the institution this world has today; pensions arrive at 14.
-- [ ] 10e.5 Households reach MMF and ETF as they do now; a cell above the threshold also reaches the funds. The flow stays a CONSEQUENCE of the cell's own budget and required return (D5) — access says where its money MAY go, never how much goes there.
-- [ ] 10e.6 COVERAGE re-marked across §13, and the record says which vehicles this world now has and who is in each.
+- [ ] 10e.1 The classification: `registry/universe.ts` — the reads that classify any instrument, and nothing stored. It is a kernel read because three modules need the same answer (Law 4).
+- [ ] 10e.2 The blueprint: bands over those reads, and ONE `admits(blueprint, instrument)` for every vehicle in the world. Replaces `MandateTerms.mayHold`.
+- [ ] 10e.3 The liquidity terms as declared data on the mandate, and the one subscription/redemption mechanism reading them. `listed` folds `EtfDecl` into the one object.
+- [ ] 10e.4 The manager as a business: many funds, a fee from each, a cost in labour, and launch/wind-down as decisions. `drawFunds`' fixed roster becomes an opening condition (Seed A3) rather than the industry's permanent structure.
+- [ ] 10e.5 Seed money: a manager may put its own money into a fund it launches, raised by issuing its own equity or debt, and that is the ONLY way a fund reaches its balance sheet.
+- [ ] 10e.6 Access as a POLICY, read at the door: the vehicle states what it asks of an entrant, the cell answers with its own wealth per member.
+- [ ] 10e.7 COVERAGE re-marked across §13, and the record says which blueprints this world grew and which it wound down.
 
 ### Exit
 
-A corporate bond issued at item 10 is bought by somebody whose business is holding credit, with money
-a saver gave them; an ETF and an MMF take retail money and a segregated mandate takes an insurer's;
-and one manager's fee income is the sum of what several named vehicles paid it.
+One language describes a money fund, a credit fund, an ETF and a levered strategy; a corporate bond
+issued at item 10 is bought by somebody whose business is holding credit with money a saver gave
+them; a manager runs several funds and fails from neither; and the set of funds at period 50 is not
+the set at period 0.
 
 ---
 
@@ -314,10 +454,18 @@ commodity fund, or an index tracker, and the trackers hold nothing.
 speculative side of every derivative book"*. Item 6 gives each book a maker with its own number; this
 gives it a party whose whole reason is to hold the other side.
 
-**ITS STRATEGIES ARE SEVERAL AND ITS INVESTORS ARE INSTITUTIONS** (owner, 2026-09-14): long/short
-equity, long/short credit, macro, futures, commodities — and the money comes from pension funds and
-insurers, which item **10e** turns into allocators. That is the dependency, and it is why 10e goes
-first: a hedge fund funded by nobody is a sector that cannot open.
+**ITEM 10e SHRINKS THIS ITEM TO TWO SENTENCES AND A LENDER** (owner, 2026-09-14): *"everything is a
+fund. An HF runs funds, same as PE."* So there is no hedge-fund party kind and no private-equity
+party kind to build. §28 is **a manager whose blueprints permit leverage and shorting**; §29 is **a
+manager whose funds are closed-end over unlisted equity**; and §15 prime brokerage is the LENDER
+those permissions need, which is the one genuinely new party here (B1: *"leverage is a fact about a
+loan, never a property of the fund"*).
+
+**Its strategies are several and its investors are institutions**: long/short equity, long/short
+credit, macro, futures, commodities — each a blueprint in 10e's language, not a mechanism — and the
+money comes from pension funds and insurers, which item **14** turns into allocators. **An HF does
+not go bankrupt because a fund does badly**: its exposure is the seed it chose to put in and the fee
+income it stops earning, and the fund's holders bear the fund's losses (A3).
 
 **AND ITS REASON MUST BE A VIEW, NOT AN ARBITRAGE IT CANNOT LOSE.** The owner's phrasing is that
 hedge funds *"exist to exploit arbitrages"*, and the mechanism has to express that WITHOUT becoming
