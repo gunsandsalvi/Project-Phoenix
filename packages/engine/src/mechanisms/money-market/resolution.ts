@@ -125,7 +125,17 @@ export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCod
   const held: Cash[] = [];
   for (const h of ctx.register.holdingsOf(bank)) {
     if (h.instrument === own) continue;
-    held.push(ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period));
+    // Currency C4.a, A-51: IN THE MONEY THIS RESOLUTION IS MEASURED IN. A hole is one number in one
+    // money — it decides who is paid and who is not — and this added the face of a foreign holding
+    // to it, so a bank holding paper abroad was resolved against a total of two currencies.
+    held.push(
+      ctx.valuation.inMoney(
+        ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
+        ctx.instruments.get(h.instrument).ccy,
+        ccy,
+        ctx.period,
+      ),
+    );
   }
   const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
   const deposits: Cash[] = [];
@@ -155,10 +165,15 @@ export function valueBook(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCod
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);
       if (!worth.some) continue;
       borrowings.push(
-        acrossMembers(
-          asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
-          weightOf(ctx.parties.get(holder)),
-          'what it owes on this row',
+        ctx.valuation.inMoney(
+          acrossMembers(
+            asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
+            weightOf(ctx.parties.get(holder)),
+            'what it owes on this row',
+          ),
+          worth.value.ccy,
+          ccy,
+          ctx.period,
         ),
       );
     }
@@ -364,10 +379,15 @@ function allocate(
       if (holder === bank) continue;
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);
       if (!worth.some || worth.value.value <= 0) continue;
-      const claim = acrossMembers(
-        asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
-        weightOf(ctx.parties.get(holder)),
-        'what it is owed',
+      const claim = ctx.valuation.inMoney(
+        acrossMembers(
+          asPerMember<'money:piece'>(worth.value.value, 'what one member is owed'),
+          weightOf(ctx.parties.get(holder)),
+          'what it is owed',
+        ),
+        worth.value.ccy,
+        ccy,
+        ctx.period,
       );
       const owed = minus(claim, secured, 'what its security does not reach');
       if (owed > 0) exposed.push({ holder, owed, rank: rankOf(i.id), row: i.id });

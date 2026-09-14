@@ -37,6 +37,7 @@ import {
   instrumentKindId,
   currencyUnit,
   marketId,
+  moneyInstrumentId,
   partyKindId,
   venueId,
   type InstrumentId,
@@ -464,7 +465,10 @@ function redeem(
   const asked = atMost(ctx.registry.deliverable(share.unit, sharesAsked), held, 'it cannot hand back shares it does not hold');
   if (asked <= 0) return 0;
   // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
-  const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
+  const cash = ctx.register.quantity(
+    fund.id,
+    moneyInstrumentId(ctx.accountOf(fund.id, ccy).issuer, ccy),
+  );
   const owedNow = ctx.registry.payable(
     ccy,
     valueAt(perShare, totalFor(party, asked), 'what it owes this holder'),
@@ -530,12 +534,6 @@ function redeem(
     }
   }
   return asked;
-}
-
-/** The fund's own money account, which is where its buffer is (Money D2). */
-function moneyOf(ctx: MechanismContext, party: PartyId, ccy: string): InstrumentId {
-  const bank = ctx.parties.get(party).bank;
-  return instrumentId(`money:${bank}:${ccy}`);
 }
 
 /**
@@ -617,7 +615,10 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   b.previous[d.fund] = perShare;
   payQueue(ctx, b, d);
   const owed = owedOn(ctx, b, d);
-  const cash = ctx.register.quantity(d.fund as PartyId, moneyOf(ctx, d.fund as PartyId, ccy));
+  const cash = ctx.register.quantity(
+    d.fund as PartyId,
+    moneyInstrumentId(ctx.accountOf(d.fund as PartyId, ccy).issuer, ccy),
+  );
   // C2.a, Law 8: WHAT IT KEEPS BACK IS MONEY, so it is a whole number of the smallest piece of it.
   // Up, because it is what the fund insists on holding: a buffer a cent short of what its own rule
   // asks for is a buffer it did not keep. What is left over after it — what the fund has spare —
@@ -944,7 +945,10 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
   // the NAV is a read of the book and the book is smaller once it has left. The same accrual and
   // the same convention as every other fund (Law 4): what it owes goes to the wire whole, and a
   // fund without the money has a refused payment rather than a discount nobody granted it.
-  const money = moneyOf(ctx, fund, ctx.registry.currencyOf(ctx.parties.get(fund).region));
+  const money = moneyInstrumentId(
+    ctx.accountOf(fund, ctx.registry.currencyOf(ctx.parties.get(fund).region)).issuer,
+    ctx.registry.currencyOf(ctx.parties.get(fund).region),
+  );
   if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
   // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
   // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
@@ -972,7 +976,10 @@ function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
   const fund = ctx.parties.get(d.fund as PartyId);
   if (!fund.status.alive) return;
   const ccy = ctx.registry.currencyOf(fund.region);
-  const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
+  const cash = ctx.register.quantity(
+    fund.id,
+    moneyInstrumentId(ctx.accountOf(fund.id, ccy).issuer, ccy),
+  );
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
   const buffer = scale(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
   const spare = ctx.registry.payable(
@@ -1194,13 +1201,24 @@ function ordersOf(
   return [{ party: view.self.id, side: 'buy', price, qty }];
 }
 
-/** What everything it holds is worth, at the last marks — the base a pro-rata sale is struck on. */
+/**
+ * What everything it holds is worth, at the last marks — the base a pro-rata sale is struck on.
+ *
+ * Currency C4.a, A-50: IN ITS OWN MONEY. This summed a print in whatever money the line is in, so
+ * the denominator of the fraction a forced sale is struck on added dollars to euros and the fund
+ * sold the wrong number of units of everything.
+ */
 function holdingsWorth(view: ParticipantView): Cash {
   const terms: Cash[] = [];
   for (const h of view.holdings()) {
     const print = view.print(h.instrument);
     if (!print.some) continue;
-    terms.push(valueAt(print.value.price, sum(h.lots.map((l) => l.qty)).value, 'what it holds'));
+    terms.push(
+      view.inOwnMoney(
+        valueAt(print.value.price, sum(h.lots.map((l) => l.qty)).value, 'what it holds'),
+        view.instruments.get(h.instrument).ccy,
+      ),
+    );
   }
   return sum(terms).value;
 }
@@ -1208,6 +1226,19 @@ function holdingsWorth(view: ParticipantView): Cash {
 /** A4, D1: what the mandate allows — the kind, and how long it may still have to run. */
 function eligible(view: ParticipantView, d: FundDecl, i: Instrument): boolean {
   if (!i.status.live || !d.eligible.includes(i.kind)) return false;
+  /**
+   * A-47, Currency C4, A4: AND A MANDATE IS A MANDATE IN A MONEY.
+   *
+   * This tested live, kind and tenor and never the currency, and `d.eligible` for every money fund
+   * is `['sovereign.bill']` — which is EVERY SOVEREIGN BILL IN THE WORLD. `eligibleLines` counted
+   * the Japanese and the European ones beside the American, so what it spread its cash over was
+   * three times what it could actually buy, and `ordersOf` then divided money in one currency by a
+   * price in another to get a size (A-50).
+   *
+   * The money is the fund's own — where it banks and what its shares are struck in — and it is an
+   * OUTCOME of where the fund is rather than a field somebody declared beside it (Law 2, Law 4).
+   */
+  if (i.ccy !== view.registry.currencyOf(view.self.region)) return false;
   /**
    * A4, D1, Equity B1: THE MANDATE'S TWO QUESTIONS, AND THEY ARE NOT THE SAME QUESTION.
    *

@@ -674,6 +674,17 @@ another system's decision reads the event it PUBLISHED rather than importing the
 it. A saver values a share off `payout.declared` and a desk arbitrages off `etf.struck`, and neither
 knows which module wrote it.
 
+**A third: `ParticipantView.inOwnMoney(value, from)`** — what an amount in another money comes to on
+THIS party's own book, at the rate in force this period. A balance sheet is kept in one money
+(Currency C4.a) and adding two of them is a defect, so anything that walks a party's holdings and
+sums them converts here. It leaks nothing: an FX rate is a print and prints are public (Clearing E1).
+The same read is `Valuation.inOwnMoney(party, value, from, at)` on `MechanismContext` and
+`DerivedReads`, and settlement's own `inOwn` is now a call to it rather than the conversion written
+out a second time (Law 4). Which money a party's book is in is a fact about its REGION, injected into
+the valuer as `bookMoneyOf` the way the curve and the calendar are, because the parties store is
+built after it. `worthOf` carries the currency of its answer with the value for the same reason
+(Law 8): six readers summed those across a book without it.
+
 Kinds are registered at assembly, not closed unions: adding an instrument kind is one profile in
 one module; the kernel learns how a kind behaves only by asking its profile (pricing, liability,
 unit, terms validation, display name, actions due). An instrument whose kind has no profile cannot

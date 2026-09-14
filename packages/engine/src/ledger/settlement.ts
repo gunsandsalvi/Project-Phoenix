@@ -1132,12 +1132,9 @@ export class Settlement {
      * does the thing the guard was standing in for.
      */
     const inOwn = (party: PartyId, delta: Cash, ccy: CurrencyCode): Cash =>
-      this.d.valuation.inMoney(
-        delta,
-        ccy,
-        this.d.registry.currencyOf(this.d.parties.get(party).region),
-        ins.period,
-      );
+      // A-51: through the kernel's one door. This was the same conversion written out here, and it
+      // was the only place in the engine that did it — six readers of a party's own book did not.
+      this.d.valuation.inOwnMoney(party, delta, ccy, ins.period);
 
     ops.forEach((op, index) => {
       switch (op.op) {

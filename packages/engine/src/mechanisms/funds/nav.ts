@@ -67,7 +67,10 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
         instrument: h.instrument,
       });
     }
-    assets.push(worth.value.value);
+    // Currency C4.a, A-50: ON THE FUND'S OWN BOOK. A NAV is a price in one money, and this added
+    // whatever money each holding happened to be in — a mandate with no currency in it (A-47) put
+    // foreign bills here, and their face went straight into the per-share number.
+    assets.push(reads.inOwnMoney(fund, worth.value.value, worth.value.ccy, at));
     if (worth.value.from < oldest) oldest = worth.value.from;
   }
   const owed: Cash[] = [];
@@ -77,7 +80,7 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
     if (!reads.kindOf(other.id).liabilityOfIssuer) continue;
     for (const holder of reads.holdersOf(other.id)) {
       const worth = reads.worthOf(holder, other.id, at);
-      if (worth.some) owed.push(worth.value.value);
+      if (worth.some) owed.push(reads.inOwnMoney(fund, worth.value.value, worth.value.ccy, at));
     }
   }
   const a = sum(assets);

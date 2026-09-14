@@ -389,6 +389,13 @@ export interface ParticipantView extends KernelReads {
    * at different levels, which is what gives a book two sides (§46 A3).
    */
   worth(instrument: InstrumentId, requiredPerAnnum: Ratio): Option<PerPiece>;
+  /**
+   * Currency C4.a, C5, A-23, A-50: WHAT THAT IS WORTH ON THIS PARTY'S OWN BOOK, at the rate in
+   * force this period. A party keeps one book in one money and adding two of them is a defect, so
+   * anything that walks its own holdings and sums them comes through here. The rate is a PRINT and
+   * public, so nothing private is reachable by asking (Observer A4).
+   */
+  inOwnMoney(value: Cash, from: CurrencyCode): Cash;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): PerPiece;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
@@ -581,7 +588,13 @@ export interface WorldReads extends KernelReads {
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history'>;
   readonly valuation: Pick<
     Valuation,
-    'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust' | 'inMoney' | 'rateInForce'
+    | 'markPerUnit'
+    | 'valueOfLots'
+    | 'worthOf'
+    | 'equityDust'
+    | 'inMoney'
+    | 'inOwnMoney'
+    | 'rateInForce'
   >;
   readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
   readonly contracts: ContractsRead;
@@ -617,7 +630,13 @@ export interface MechanismContext extends WorldReads {
   readonly prices: Pick<PriceStore, 'read' | 'latest' | 'history'>;
   readonly valuation: Pick<
     Valuation,
-    'markPerUnit' | 'valueOfLots' | 'worthOf' | 'equityDust' | 'inMoney' | 'rateInForce'
+    | 'markPerUnit'
+    | 'valueOfLots'
+    | 'worthOf'
+    | 'equityDust'
+    | 'inMoney'
+    | 'inOwnMoney'
+    | 'rateInForce'
   >;
   readonly journal: Pick<Journal, 'inPeriod' | 'ofKind' | 'ofKindIn' | 'forSubject' | 'tail' | 'lastOf'>;
   readonly ledger: Pick<Ledger, 'inPeriod' | 'length'>;
@@ -847,8 +866,11 @@ export interface SeedContext {
    * A seed module that needs it — one deriving what stands behind a bank from what the bank turned
    * out to hold — would otherwise value lots itself, which is a second valuation beside the one
    * every other reader uses, disagreeing about a kind carried at cost the day one of them changes.
+   *
+   * Currency C4.a, A-51: and `inOwnMoney` with it, because a seed adding up a party's opening book
+   * is adding up whatever money each opening holding is in.
    */
-  readonly valuation: Pick<Valuation, 'valueOfLots'>;
+  readonly valuation: Pick<Valuation, 'valueOfLots' | 'inOwnMoney'>;
   openMarket(decl: MarketDecl): void;
   openVenue(decl: VenueDecl): void;
   /** Endow a party with money at its own bank, per member (Seed A4: every deposit is a liability). */

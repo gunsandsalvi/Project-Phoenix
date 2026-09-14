@@ -72,6 +72,12 @@ export class Valuation {
     private readonly curveAt: (family: CurveFamilyId, at: Period) => CurveRead,
     /** The day a period starts, from the world's one calendar (Law 4). */
     private readonly dayOf: (at: Period) => Civil,
+    /**
+     * Currency C4.a: the money a party keeps its book in, from the one place that knows which
+     * (its region). Injected like the curve and the calendar, because the parties store is built
+     * after this and a second answer to "whose money is this" would be a second answer (Law 4).
+     */
+    private readonly bookMoneyOf: (party: PartyId) => CurrencyCode,
   ) {}
 
   /** Fund Shares B1: the reads a derived value is given — the kernel's own, and nothing else. */
@@ -81,6 +87,7 @@ export class Valuation {
       holdersOf: (instrument) => this.register.holdersOf(instrument),
       quantity: (holder, instrument) => this.register.quantity(holder, instrument),
       worthOf: (holder, instrument, at) => this.worthOf(holder, instrument, at),
+      inOwnMoney: (party, value, from, at) => this.inOwnMoney(party, value, from, at),
       instruments: () => this.instruments.all(),
       issued: (instrument) => this.instruments.get(instrument).issued,
       kindOf: (instrument) => this.registry.instrumentKind(this.instruments.get(instrument).kind),
@@ -99,24 +106,28 @@ export class Valuation {
     holder: PartyId,
     instrument: InstrumentId,
     at: Period,
-  ): Option<{ readonly value: Cash; readonly from: Period }> {
+  ): Option<{ readonly value: Cash; readonly from: Period; readonly ccy: CurrencyCode }> {
     const held = this.register.holding(holder, instrument);
     if (!held.some) return none();
     const lots = held.value.lots;
     const i = this.instruments.get(instrument);
     const profile = this.registry.instrumentKind(i.kind);
     const qty = sum(lots.map((l) => l.qty)).value;
+    // Law 8, A-50: THE MONEY IS PART OF THE NUMBER. Six readers summed these across a book without
+    // it, so every one of them added dollars to euros; a caller that must add two of them converts
+    // through `inOwnMoney` below, and one that cannot has at least been told what it is holding.
+    const ccy = i.ccy;
     // A derived value is asked FIRST, before the carrying rule: it is available fresh at every ask
     // (B1), and reading the lot's basis instead would be a stale mirror of a number the kernel can
     // read now (Law 19). What the equity account has RECOGNISED is a different question and stays
     // with the lot (carryingPerUnit).
     if (profile.pricing !== 'derived' && profile.carry === 'cost') {
-      return some({ value: this.valueOfLots(instrument, lots, at), from: at });
+      return some({ value: this.valueOfLots(instrument, lots, at), from: at, ccy });
     }
     switch (profile.pricing) {
       case 'money':
         // Money D2: a balance is worth its own face, which is the one price that is not read.
-        return some({ value: asCash(qty, `what ${instrument} is worth`), from: at });
+        return some({ value: asCash(qty, `what ${instrument} is worth`), from: at, ccy });
       case 'cleared': {
         /**
          * Observer A1.a, XI-6: `latest` HERE AND `printOrThrow` IN `markPerUnit`, and they are two
@@ -137,6 +148,7 @@ export class Valuation {
           ? some({
               value: valueAt(p.value.price, qty, `what ${instrument} is worth`),
               from: struckIn(p.value),
+              ccy,
             })
           : none();
       }
@@ -144,9 +156,10 @@ export class Valuation {
         return some({
           value: valueAt(this.derived(instrument, at), qty, `what ${instrument} is worth`),
           from: at,
+          ccy,
         });
       case 'carriedAtCost':
-        return some({ value: this.valueOfLots(instrument, lots, at), from: at });
+        return some({ value: this.valueOfLots(instrument, lots, at), from: at, ccy });
       default:
         return assertNever(profile.pricing, 'Pricing');
     }
@@ -249,6 +262,19 @@ export class Valuation {
   inMoney(value: Cash, from: CurrencyCode, to: CurrencyCode, at: Period): Cash {
     const held = asCash(value, `${from} in ${to}`);
     return from === to ? held : scale(held, this.rateInForce(from, to, at), `${from} in ${to}`);
+  }
+
+  /**
+   * Currency C4.a, A-23, A-51: WHAT THIS IS WORTH ON THAT PARTY'S OWN BOOK.
+   *
+   * A balance sheet is kept in one money, and which money that is, is a fact about the PARTY — its
+   * region's. Every reader that walks a party's holdings and adds them up has this question, and
+   * before this each of them either asked it privately (settlement's own `inOwn`) or did not ask it
+   * at all and added two currencies (`navOf`, `holdingsWorth`, `capitalOf`, `valueBook`, `wealthOf`,
+   * `atRisk`). One door, so a new reader cannot invent a seventh answer (Law 4).
+   */
+  inOwnMoney(party: PartyId, value: Cash, from: CurrencyCode, at: Period): Cash {
+    return this.inMoney(value, from, this.bookMoneyOf(party), at);
   }
 
   markPerUnit(instrument: InstrumentId, at: Period): PerPiece {

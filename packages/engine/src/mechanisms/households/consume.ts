@@ -205,11 +205,17 @@ function atRisk(view: ParticipantView): Cash {
     if (!outlook.some || outlook.value.confidence <= 0) continue;
     const units = sum(h.lots.map((l) => l.qty));
     if (units.value <= 0) continue;
+    // Currency C4.a, A-23: IN ITS OWN MONEY. What a cell is exposed to is one number in the money
+    // it spends, and a household paid a coupon in a money it does not bank in (C4) has holdings in
+    // two — so this added the move on a foreign line straight into the total.
     terms.push(
-      valueAt(
-        asPerPiece(outlook.value.confidence, 'how far it thinks this line can move'),
-        units.value,
-        'what this line could move by',
+      view.inOwnMoney(
+        valueAt(
+          asPerPiece(outlook.value.confidence, 'how far it thinks this line can move'),
+          units.value,
+          'what this line could move by',
+        ),
+        view.instruments.get(h.instrument).ccy,
       ),
     );
   }
@@ -229,7 +235,14 @@ function wealthOf(view: ParticipantView, cash: Cash): Cash {
     const print = view.print(h.instrument);
     if (!print.some) continue;
     const units = sum(h.lots.map((l) => l.qty));
-    terms.push(valueAt(print.value.price, units.value, 'what it holds is worth'));
+    // Currency C4.a, A-23: and the same for what it is worth. `cash` is its own money's balance,
+    // so every term added to it has to be in that money.
+    terms.push(
+      view.inOwnMoney(
+        valueAt(print.value.price, units.value, 'what it holds is worth'),
+        view.instruments.get(h.instrument).ccy,
+      ),
+    );
   }
   return sum(terms).value;
 }

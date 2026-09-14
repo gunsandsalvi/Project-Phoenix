@@ -167,7 +167,11 @@ export function subordinatedOf(ctx: MechanismContext, bank: PartyId): Cash {
     for (const holder of ctx.register.holdersOf(i.id)) {
       if (holder === bank) continue;
       const worth = ctx.valuation.worthOf(holder, i.id, ctx.period);
-      if (worth.some) terms.push(worth.value.value);
+      // Currency C4.a, A-51: on the ISSUER's book, which is where this number goes — a bank that
+      // raised a layer abroad owes it in that money and carries it in its own.
+      if (worth.some) {
+        terms.push(ctx.valuation.inOwnMoney(bank, worth.value.value, worth.value.ccy, ctx.period));
+      }
     }
   }
   return sum(terms).value;

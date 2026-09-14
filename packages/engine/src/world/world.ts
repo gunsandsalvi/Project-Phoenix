@@ -365,6 +365,8 @@ export class World {
       // are reading one thing (Law 4). Lazy, because the world is still being built here.
       (family, at) => this.curveAt(family, at),
       (at) => this.calendar.startOf(at),
+      // Currency C4.a: whose money a party's book is in. One read, one writer (Law 4).
+      (party) => this.registry.currencyOf(this.parties.get(party).region),
     );
     this.root = prng(spec.seed);
     this.accountOf = accountResolver(
@@ -1313,6 +1315,8 @@ export class World {
       offer: (market) => this.offer(market),
       accrued: (instrument) => this.accruedPerUnit(instrument, this.currentPeriod),
       worth: (instrument, required) => this.worthTo(instrument, required),
+      inOwnMoney: (value, from) =>
+        this.valuation.inOwnMoney(party, value, from, this.currentPeriod),
       curve: (family) => this.curve(family),
       // Money E1.b: its own, and only its own. The ledger itself is not reachable from a view (A4).
       failedPayments: (since: Period) => this.ledger.failedFor(party, since),

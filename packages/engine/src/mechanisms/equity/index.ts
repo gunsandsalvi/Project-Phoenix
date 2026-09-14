@@ -705,7 +705,19 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
         // price halves every count here and moves nothing (D4).
         let book = asCash(0, 'nothing walked yet');
         for (const h of ctx.register.holdingsOf(firm.id)) {
-          book = plus(book, ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period), 'its book');
+          // Currency C4.a, A-51: a firm's residual is one number in the money it keeps its books
+          // in. A firm opening with imported stock holds it in the seller's money and this added
+          // the two, so its line came out in a total of two currencies.
+          book = plus(
+            book,
+            ctx.valuation.inOwnMoney(
+              firm.id,
+              ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
+              ctx.instruments.get(h.instrument).ccy,
+              ctx.period,
+            ),
+            'its book',
+          );
         }
         const shares = Math.round(amountOf(book, price, 'the shares its book comes to'));
         const cells = ctx.parties.ofKind(HOUSEHOLD);

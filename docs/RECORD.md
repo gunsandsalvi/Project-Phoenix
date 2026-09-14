@@ -5839,3 +5839,78 @@ calculation use that same number.
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. The engine suite is still not run.
+
+---
+
+## Item 2, stage 2d — the currency reads, and the one door they were all missing
+
+Five findings with one shape: a number in one money added to a number in another, in a place whose
+answer has to be a single number in a single money. `Measure<D>` carries the DIMENSION and not the
+currency, so nothing in a `Cash` says which money it is and the compiler could not see any of these.
+
+**`A-61` — every central bank remitted its income to the same treasury.** `remit` sent to
+`ctx.parties.ofKind(TREASURY).filter(alive)[0]`: whichever the parties store happened to return
+first, an insertion-order artefact of the seed's draw and not a fact about who owns anything. In the
+four-country world 13j built, all four central banks remitted to ONE country's treasury, each in its
+own money, into accounts that treasury holds at three foreign central banks. Three governments never
+received the seigniorage on their own money and one received all of it, as an unexplained foreign
+transfer; E3 says *"the treasury owns it"*. Every neighbouring module had had the multi-country pass
+— `declareVenues` opens a money-market book per currency, `runReceipts` skips foreign legs with a
+worked example, the resolution auction filters bidders by currency — and this one was missed.
+
+It is the treasury of the central bank's own region now. Not by importing `money-market`'s
+`treasuryOf` (a module never imports a module) but by the same three-line read of the parties store
+that `heirsOf` makes: the store is the one writer and both are reads of it. A central bank whose
+sovereign has no live treasury records `centralBank.unremitted` and remits to nobody — a refusal is
+an answer (Law 1), and defaulting to a stranger is what the old line did.
+
+**`A-47` — a fund's mandate had no money in it, and `A-50` is what that cost.** `eligible` tested
+three things — live, kind in `d.eligible`, maturing inside `maxTenorPeriods` — and never the
+currency. `d.eligible` for every money fund is `['sovereign.bill']`, which is EVERY SOVEREIGN BILL IN
+THE WORLD: `eligibleLines` counted the Japanese and the European ones beside the American, so a fund
+divided its spare cash over three times the lines it could actually buy and each bid was a third of
+what it meant to be. Then `ordersOf` divided money in one currency by a price in another to get a
+size, and `navOf` summed two moneys into a per-share number.
+
+The currency is the fund's own — where it banks, and what its shares are struck in. It is an OUTCOME
+of where the fund is and not a field declared beside the mandate (Law 2: a declared number would be a
+second representation of a fact the parties store already holds).
+
+**`A-51` and `A-23` — and the reason `inMoney` had no callers.** `inMoney(value, from, to, at)` was
+exported on `MechanismContext.valuation` and called by no module at all. The reason is its `to`:
+every reader that needed it wanted the same one — the party's own book — and none of them had a
+tidy way to say so, so each of them simply added. `Valuation.inOwnMoney(party, value, from, at)` is
+that door. It is on `MechanismContext`, `DerivedReads` and `SeedContext`, and on `ParticipantView` as
+`inOwnMoney(value, from)` where a participant summing its own holdings asks it. Nothing private is
+reachable through it: an FX rate is a print and a print is public (Clearing E1).
+
+Which money a party's book is in is a fact about its REGION, and the valuer is built before the
+parties store, so it takes `bookMoneyOf` as an injected read the way it already takes the curve and
+the calendar (Law 4: one answer to "whose money is this").
+
+**`worthOf` carries the currency of its answer** beside the value and the period it was marked in.
+That is what its readers were missing and it is Law 8: the money is part of the number.
+
+Closed at eight sites, and each was a different consequence of the same omission: `navOf` (a NAV is a
+price in one money; a foreign bill's face went into the per-share number), `holdingsWorth` (the
+denominator a forced sale's pro-rata fraction is struck on, so a fund short of cash sold the wrong
+number of units of everything it held), `capitalOf` (a published capital ratio built out of two
+currencies added together), `valueBook` and its exposure ladder (a resolution hole decides who is
+paid and who is not, and who ranks where), `wealthOf` and `atRisk` (**A-23** — and a household paid a
+coupon in a money it does not bank in is precisely the case Currency C4 exists for), `equity`'s
+opening book walk (a listed line's share count is its firm's residual, so the count came out of a
+total of two currencies), and `subordinatedOf`.
+
+**And it removed code**, which is what a fix to a cause does (Law 12). `ledger/settlement.ts:inOwn`
+was this exact conversion written out by hand, and it was the ONLY place in the engine performing it
+— the kernel converted currencies when it booked an equity delta and nothing else in the world did.
+It is a call to the door now.
+
+**`moneyOf` is deleted.** It built `money:${bank}:${ccy}` out of a string, beside `ctx.accountOf`,
+which is the one writer of which account a party holds a money in. Four call sites read it instead.
+Every deletion names the read that replaces it (Law 19).
+
+`docs/ARCHITECTURE.md` carries the structural decision, in this commit.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. The engine suite is still not run.

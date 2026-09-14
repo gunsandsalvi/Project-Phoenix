@@ -304,7 +304,12 @@ export interface DerivedReads {
     holder: PartyId,
     instrument: InstrumentId,
     at: Period,
-  ): Option<{ readonly value: Cash; readonly from: Period }>;
+  ): Option<{ readonly value: Cash; readonly from: Period; readonly ccy: CurrencyCode }>;
+  /**
+   * Currency C4.a, A-50: what that is worth on this party's OWN book. A book is kept in one money
+   * and adding two of them is a defect, so a reader that sums a party's positions converts here.
+   */
+  inOwnMoney(party: PartyId, value: Cash, from: CurrencyCode, at: Period): Cash;
   /** Every instrument, so a book's liabilities can be found by who issued them (Register B3). */
   instruments(): readonly Instrument[];
   /** How many units of a line exist (Register B2): a share count is `issued`, never a stored total. */

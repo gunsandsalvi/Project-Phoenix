@@ -152,15 +152,31 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
     }
   }
   const income = sum(terms).value;
-  const treasuries = ctx.parties.ofKind(TREASURY).filter((t) => t.status.alive);
-  const to = treasuries[0];
-  if (to === undefined) return;
+  /**
+   * A-61, E3: THE TREASURY THAT OWNS THIS CENTRAL BANK, which is the one in its own region.
+   *
+   * This was `ofKind(TREASURY).filter(alive)[0]` — whichever the parties store happened to return
+   * first, an insertion-order artefact of the seed's draw and not a fact about who owns anything.
+   * In a world with four countries (which 13j built and which the rest of the engine is careful
+   * about) ALL FOUR central banks remitted to one country's treasury, each in its own money, into
+   * accounts that treasury holds at three foreign central banks: three governments never received
+   * the seigniorage on their own money and one received all of it, as an unexplained transfer.
+   *
+   * A central bank whose sovereign has no live treasury remits to nobody — recorded, not defaulted
+   * to a stranger (Law 1: a refusal is an answer).
+   */
+  const region = ctx.parties.get(cb).region;
+  const to = ctx.parties.ofKind(TREASURY).find((t) => t.region === region && t.status.alive);
+  if (to === undefined) {
+    ctx.record('centralBank.unremitted', [cb], { income, since: previous, region }, true);
+    return;
+  }
   if (income <= 0) {
     // E4: a loss is not remitted. It reduces its equity and stands there until income covers it.
     ctx.record('centralBank.loss', [cb], { income, since: previous }, true);
     return;
   }
-  const ccy = ctx.registry.currencyOf(ctx.parties.get(cb).region);
+  const ccy = ctx.registry.currencyOf(region);
   // Law 8: it remits whole pieces of the money it issues; the piece it cannot divide stays on its
   // own books and is remitted with next period's income (E3).
   // XI-15: a central bank is a NAMED party and not a cell, so what its equity account moved by is

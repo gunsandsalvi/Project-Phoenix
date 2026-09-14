@@ -324,7 +324,7 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 >
 > | ~~2b~~ | ~~the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1`~~ (`A-18` closed in 2a.1) — **DONE** | |
 > | ~~2c~~ | ~~rates read as levels: `A-44`, `A-58`, `A-65`~~ — **DONE**, and each was a rate that was not one | |
-> | 2d | the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61` | |
+> | ~~2d~~ | ~~the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61`~~ — **DONE**; it took one kernel door | |
 > | 2e | the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38` | |
 >
 > ### Stage 2a.1 — as built
@@ -436,6 +436,56 @@ half a transmission, where D5.a says *"paper bought directly"* explicitly. Posit
 **Not measured.** The suite does not run until the plan is done; lint, typecheck, `check:spec`,
 `check:forbids` and `check:existence` are green.
 
+### Stage 2d — as built: the currency reads, and the door they were all missing
+
+Five findings, one shape: a number in one money added to a number in another, in a place where the
+answer has to be a single number in a single money.
+
+**`A-61` — every central bank remitted to the same treasury.** `remit` took
+`ofKind(TREASURY).filter(alive)[0]` — whichever the parties store happened to return first, an
+insertion-order artefact of the seed's draw. In the four-country world 13j built, ALL FOUR central
+banks remitted to one country's treasury, each in its own money, into accounts that treasury holds at
+three foreign central banks: three governments never received the seigniorage on their own money and
+one received all of it as an unexplained foreign transfer. E3 says the opposite — *"the treasury owns
+it"*. It is the treasury of the central bank's own region now, read off the parties store directly
+rather than by importing `money-market`'s `treasuryOf` (a module never imports a module). A central
+bank whose sovereign has no live treasury records `centralBank.unremitted` and remits to nobody.
+
+**`A-47` — a fund's mandate had no money in it.** `eligible` tested live, kind and tenor and never
+the currency, and `d.eligible` for every money fund is `['sovereign.bill']` — every sovereign bill in
+the world. `eligibleLines` counted the Japanese and European ones beside the American, so a fund
+spread its spare cash over three times the lines it could actually buy, and then **`A-50`** divided
+money in one currency by a price in another to get a size. The currency is the fund's own, an OUTCOME
+of where it banks rather than a field declared beside the mandate.
+
+**`A-51` and `A-23` — and they turned out to be one door.** `inMoney` was exported on
+`MechanismContext.valuation` and called by NO module. The reason it was never called is that it
+needs a `to`, and every reader that needed it wanted the same `to`: the party's own book. So
+`Valuation.inOwnMoney(party, value, from, at)` is that door — on `MechanismContext`, `DerivedReads`,
+`SeedContext`, and as `inOwnMoney(value, from)` on `ParticipantView`, where a participant summing its
+own holdings asks it. It leaks nothing: an FX rate is a print and prints are public.
+
+`worthOf` now carries the CURRENCY of its answer beside the value and the period it was marked in.
+That is what its six readers were missing — nothing in a `Cash` says which money it is (the phantom
+carries the dimension, not the currency), so each of them added whatever came back.
+
+Closed at: `navOf` (a NAV is a price in one money and a foreign bill's face went straight into the
+per-share number), `holdingsWorth` (the denominator a forced sale is struck on, so the fund sold the
+wrong number of units of everything), `capitalOf` (a capital ratio built out of two currencies),
+`valueBook` and its exposure ladder (a resolution hole decides who is paid and who is not),
+`wealthOf` and `atRisk` (a household paid a coupon abroad, which is the case C4 exists for),
+`equity`'s opening book walk (a listed line's share count), and `subordinatedOf`.
+
+**And it removed code**, which is what a fix to a cause does (Law 12): `ledger/settlement.ts:inOwn`
+was this same conversion written out by hand, and it was the ONLY place in the engine that did it.
+It is a call to the door now. `ARCHITECTURE.md` carries the decision.
+
+**`moneyOf` is deleted.** It built `money:${bank}:${ccy}` from a string beside `ctx.accountOf`, which
+is the one writer of which account a party holds a money in (Law 4). Four call sites read it instead.
+
+**Not measured.** Lint, typecheck, `check:spec`, `check:forbids`, `check:existence` green; the suite
+waits for the end of the plan.
+
 ### Steps — stage 2a, the typing
 
 - [x] 2a.1 `banks` and `funds`: `LoanTerms.rate` and `SubTerms.rate` → `Ratio`; `interestTo` → `scale`; `PAR` named in both files; `hoursNeeded` → `scale`, `linesCovered` and `probabilityOfDefault` → `ratioOf`; the desk's one-sided flow → `plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall → `minus`. `mul`, `div`, `add` and `sub` leave five files.
@@ -455,9 +505,9 @@ half a transmission, where D5.a says *"paper bought directly"* explicitly. Posit
 - [x] 2.8 **A-65**. `options/index.ts:optionOrders`: `mul(outlook.expected, outlook.confidence)` is money² per unit². The premium must be built from `confidence` as the WIDTH it is, and must depend on `t.strike`, `t.right` and `t.expiry` — today none of the three appears in `mine`. The reservation is the party's own; D7's "the premium is what clears" stays. **DONE.** `worthToIt` replaces `expected × confidence`: the distance exercise would pay AT THE PRICE IT EXPECTS (`expected − strike` for a call, the other way for a put — the same distance `intrinsic` takes at a print), plus its own CONFIDENCE over the root of the time the contract runs, which is `impliedMove` read backwards so the quote and the read are inverses (Law 4). Strike, right and expiry all enter. **And a third defect the fix exposed**: `price: mine` posted money per unit of the UNDERLYING into a book whose unit is contracts and whose print `impliedMove` divides BY the multiplier — out by the multiplier against its own reader. It posts per contract now, and the `mine > book` comparison with it.
 - [x] 2.9 **A-58**. `securitisation:priceFor` is `1 − (owed/(owed+equity))²` — a leverage ratio squared called a cost of funds, with no periodicity and no dependence on the pool. Discount the note's own cash flows at the bank's published `FundingCost.perAnnum` (`banks/index.ts:publishCostOfFunds`) with the same `priceAt(flows, required, on, dayCount)` the money funds use. And `noteBids` posts a single point for the whole spare cash — post a schedule (Clearing A2). **DONE, the price half.** `poolSchedule` builds what the pool pays per unit of face — every row's own dated flows, scaled by how much of that row is in the pool, added by date, over the pool's face — and `priceFor` discounts it at `costOfFundsIn`, a read of the bank's own published `bank.costOfFunds` (home `perAnnum`, or the named `alsoIn` row for the deal's money). A bank that has published no funding cost, or a pool that promises nothing, returns `Missing` and does not bid: a refusal, not a zero. **The schedule half is NOT done and is carried to 2.19**, where `levelsBelow` is opened anyway — see the note there.
 - [x] 2.10 **A-44**. `HOUSEHOLD_PARAMS.liquidityPremium` is declared `per annum OVER WHAT A DEPOSIT RETURNS` and used as the bare 0.005. Deposits pay now (`money-market/deposits.ts:payDepositInterest`). `portfolio.ts:fundOrders` must compare `p.offered` against `depositRate + premium`, reading the board through `households/bank.ts:board()`. **DONE.** `bank.ts:ownDepositRate` is the read — its own bank's board for its own deposit class — and `required` is that plus the premium. **The remainder is `E-12`**: `required` reaches the fund comparison and not the paper bid, which is its outlook less its own error (§46 B3), so a rise in the board still does not make a cell bid lower for a bill. Two stale comments went with it: `portfolio.ts`'s header said a deposit "returns nothing at all here", and both it and `index.ts` claimed `required` was posted down from the opinion, which it never was.
-- [ ] 2.11 **A-47** and **A-50** together. `funds/index.ts:eligible` admits a line on live/kind/tenor with **no currency test**, so every money fund's mandate is every sovereign bill in the world; `ordersOf` then divides one currency by another; `nav.ts:navOf` sums two moneys. Add the currency to the mandate, convert through `ctx.valuation.inMoney` in `navOf` and `holdingsWorth`, and delete `moneyOf` — `ctx.accountOf` is the one writer of which account a party holds a money in.
-- [ ] 2.12 **A-51**. `inMoney` is exported on `MechanismContext.valuation` and called by **no module**. Close it at the reads that walk `holdingsOf`: `funds/nav.ts`, `funds/index.ts:holdingsWorth`, `banks/capital.ts:capitalOf`, `money-market/resolution.ts:valueBook`, `households/consume.ts:wealthOf` and `atRisk` (**A-23**), `equity/index.ts:531`.
-- [ ] 2.13 **A-61**. `central-bank-omo/index.ts:remit` sends to `treasuries[0]` — an insertion-order artefact — in its own money. Use `registry.centralBankOf(ccy)` paired with `treasuryOf(ctx, bank)` (already in `money-market/resolution.ts`) so each treasury owns its own central bank.
+- [x] 2.11 **A-47** and **A-50** together. `funds/index.ts:eligible` admits a line on live/kind/tenor with **no currency test**, so every money fund's mandate is every sovereign bill in the world; `ordersOf` then divides one currency by another; `nav.ts:navOf` sums two moneys. Add the currency to the mandate, convert through `ctx.valuation.inMoney` in `navOf` and `holdingsWorth`, and delete `moneyOf` — `ctx.accountOf` is the one writer of which account a party holds a money in. **DONE.** `eligible` tests the currency — the fund's own, an OUTCOME of where it banks rather than a field declared beside the mandate (Law 2) — so `eligibleLines` stops counting the Japanese and European bills a dollar fund can never buy, and `ordersOf`'s division is one money throughout. `navOf` and `holdingsWorth` convert through the new `inOwnMoney`. `moneyOf` is deleted: it built `money:${bank}:${ccy}` by hand beside `ctx.accountOf`, which is the one writer of which account a party holds a money in — four call sites now read it.
+- [x] 2.12 **A-51**. `inMoney` is exported on `MechanismContext.valuation` and called by **no module**. Close it at the reads that walk `holdingsOf`: `funds/nav.ts`, `funds/index.ts:holdingsWorth`, `banks/capital.ts:capitalOf`, `money-market/resolution.ts:valueBook`, `households/consume.ts:wealthOf` and `atRisk` (**A-23**), `equity/index.ts:531`. **DONE, and it needed a kernel door.** `inMoney` needed a `to`, and every one of the seven readers wanted the same `to`: the party's own book. So `Valuation.inOwnMoney(party, value, from, at)` is that door, exposed on `MechanismContext`, `DerivedReads`, `SeedContext` and — as `inOwnMoney(value, from)` — on `ParticipantView`; `worthOf` now carries the currency of its answer (Law 8), which is what the readers were missing. Closed at `navOf`, `holdingsWorth`, `capitalOf`, `valueBook` and its exposure ladder, `wealthOf`, `atRisk` (**A-23**), `equity/index.ts`'s opening book walk, and `subordinatedOf`. **And it removed code**: `settlement.ts:inOwn` was the same conversion written out, and was the only place in the engine doing it. `ARCHITECTURE.md` updated in this change.
+- [x] 2.13 **A-61**. `central-bank-omo/index.ts:remit` sends to `treasuries[0]` — an insertion-order artefact — in its own money. Use `registry.centralBankOf(ccy)` paired with `treasuryOf(ctx, bank)` (already in `money-market/resolution.ts`) so each treasury owns its own central bank. **DONE**, and without importing another module: the treasury of the central bank's OWN region, read off the parties store the same way `heirsOf` reads it. A central bank whose sovereign has no live treasury records `centralBank.unremitted` and remits to nobody — a refusal, not a default to a stranger.
 - [x] 2.14 **A-18**. `households/lifecycle.ts`, twice: `Math.floor(mul(weightOf(cell), share))` with a comment claiming the fraction "stays where it is until enough of it has accumulated". Nothing accumulates. Add the per-cell remainder the comment describes, carried forward, so `floor` times an event rather than deleting it. Then `crossing >= weightOf(cell)` moves the cell as itself rather than skipping it. **DONE in 2a.1** — `households.waiting`, both ends. Left in place because it is where the step is recorded; the prose above says what was built.
 - [x] 2.15 **A-19**. `settleEstates` pays out in one currency (`currencyOf(office.region)`) where `handToProbate` takes in every money a dead cell held. Pay out in every money probate holds; a foreign balance there is otherwise permanent. **DONE**: the office builds the same `monies` set `handToProbate` builds and pays out in every one of them. What arrives by every door leaves by every door.
 - [x] 2.16 **A-1**. `ledger/settlement.ts:reseat` books a TOTAL into the per-member equity account; `issue` and `redeem` wrap in `perMemberOf` and `reseat` does not, nor does the issuer re-mark in the `credit` case. Make `bump` take the total and divide, so there is one door and a new writer cannot forget. **DONE, and not as written.** `bump` could not "take the total" — three of its eight callers hold a PER-MEMBER number (the register's own), and making them multiply would put the rounding back. There are two named doors instead: `bumpPerMember` and `bumpTotal`, and no `bump`, so every existing caller had to say which of the two it held. `perMemberOf` is now reachable only from `bumpTotal`.
@@ -470,9 +520,9 @@ half a transmission, where D5.a says *"paper bought directly"* explicitly. Posit
 
 ### Findings this closes (18)
 
-Done: ~~`A-1`~~ ~~`A-18`~~ ~~`A-19`~~ ~~`A-39`~~ ~~`A-44`~~ ~~`A-65`~~ ~~`A-68`~~, ~~`E-8`~~, and
-`A-58`'s price. Open: `A-5` `A-6` `A-23` `A-32` `A-33` `A-38` `A-47` `A-50` `A-51` `A-58` (its
-schedule) `A-61`, and `E-9`, `E-10`. Bodies in Part 3.
+Done: ~~`A-1`~~ ~~`A-18`~~ ~~`A-19`~~ ~~`A-23`~~ ~~`A-39`~~ ~~`A-44`~~ ~~`A-47`~~ ~~`A-50`~~
+~~`A-51`~~ ~~`A-61`~~ ~~`A-65`~~ ~~`A-68`~~, ~~`E-8`~~, and `A-58`'s price. Open: `A-5` `A-6`
+`A-32` `A-33` `A-38` `A-58` (its schedule), and `E-9`, `E-10`. Bodies in Part 3.
 
 Two came OUT of closing them and are positioned, not chased: **`E-11`** (2a.2, 6) and **`E-12`**
 (21). `A-18`'s `merge` half is item 12. A finding leaves this file only by being placed.
@@ -3554,7 +3604,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-14** (A) | 4 | that same household check is an identity that cannot fail |
 | **A-17** (A) | 12 | three of XI-15's five weight events never fire, and nobody is ever born |
 | **A-18** (A) | ~~2~~, 12 | the fraction of a person is discarded every period — **the fraction and the whole-cell crossing closed at 2a.1**; `cells.merge`, which removes the micro-cells already there, is item 12 |
-| **A-23** (C) | 2 | `wealthOf` and `atRisk` add currencies |
 | **A-24** (C) | 21 | the household's plan round-trips through `unknown` and drops what it cannot parse |
 | **A-25** (C) | 5 | an unpriced physical leg is valued at zero inside an audit family |
 | **A-30** (C) | 5 | numeric defaults where the discipline is `Missing` |
@@ -3566,10 +3615,7 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-42** (A) | 4 | two `units` families switch off in any period with a weight event |
 | **A-43** (C) | 9, 21 | the labour module builds the household's schedule |
 | **A-45** (C) | 5 | a bank that owes nothing has a cost of funds of zero |
-| **A-47** (A) | 2 | a fund's mandate has no currency in it |
 | **A-48** (C) | 4 | `equityIsZero` cannot fail for the reason it says it checks |
-| **A-50** (C) | 2 | `moneyOf` hand-builds an account id |
-| **A-51** (A) | 2 | the kernel converts currencies and five module reads do not |
 | **A-53** (B) | 15 | a household bids its entire income as rent |
 | **A-54** (A) | 3 | `gather` is called by exactly one module |
 | **A-55** (A) | 7 | nobody can buy a dwelling, so Housing B1–C4 never runs |
@@ -3577,7 +3623,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-57** (A) | 8 | a securitisation vehicle keeps the whole interest stream, for ever |
 | **A-58** (A) | 2 (2.19) | the price a bank will pay for a note is a leverage ratio squared — **the price closed at 2c**; what is left is that `noteBids` posts a point where Clearing A2 wants a schedule, carried to 2.19 with `A-32` |
 | **A-60** (A) | 3 | no bank makes a market, because no bank employs anybody |
-| **A-61** (A) | 2 | every central bank remits to the same treasury, in its own money |
 | **A-66** (A) | 6 | eight of nine derivative books can never produce a first print |
 | **A-67** (A) | 9 | nothing ever borrows a security |
 | **A-69** (C) | 6, 21 | nine exported entry points that nothing calls |
@@ -3633,6 +3678,7 @@ carries each in full.
 | item 2, stage 2a | `E-8`; `A-18`'s two ends (its `merge` half is item 12) |
 | item 2, stage 2b | `A-1`, `A-19`, `A-39`, `A-68` |
 | item 2, stage 2c | `A-44` (its paper-bid half is `E-12`), `A-65`; `A-58`'s price (its schedule half is 2.19) |
+| item 2, stage 2d | `A-23`, `A-47`, `A-50`, `A-51`, `A-61` |
 
 ### What the reads covered, and what they did not
 

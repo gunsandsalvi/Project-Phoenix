@@ -145,7 +145,15 @@ export function capitalOf(
   };
   for (const h of ctx.register.holdingsOf(bank)) {
     if (h.instrument === own) continue;
-    const value = ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period);
+    // Currency C4.a, A-51: ON THIS BANK'S OWN BOOK. Capital is a residual in one money and this
+    // added a euro bill's face to a dollar book, so a bank holding foreign paper reported a
+    // capital ratio built out of two currencies added together.
+    const value = ctx.valuation.inOwnMoney(
+      bank,
+      ctx.valuation.valueOfLots(h.instrument, h.lots, ctx.period),
+      ctx.instruments.get(h.instrument).ccy,
+      ctx.period,
+    );
     if (value === 0) continue;
     held.push(value);
     // B1.a, Dealer Desks D2, F2: WHAT AN ASSET WEIGHS DEPENDS ON WHY IT IS HELD. A holding up to
