@@ -9142,3 +9142,62 @@ line the owner's correction turns on.
 
 Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5, `check:deaths` 4 of 4,
 `check:existence` green. Tests written and not run.
+
+---
+
+## Item 10f.6 — §29 B, C and D turned out to be two reads
+
+**The owner's fourth sentence, second half:** *"with the PE case being only an application."* 13.5b
+was written as nineteen clauses of private-equity mechanism. After 10f.3 it is two reads, and
+`control` gained no private-equity branch, no vehicle type and no buyout flag.
+
+### A pool bids because it published a cost of money
+
+M&A B1 values a target as *"what it would get out of it, against what its own money costs it"*, and
+a company reads what a bank quoted it. A pool has never been quoted by anybody — but it has a cost
+of money, and it is what its own investors require of it. That is a public fact in the world this
+models (a prospectus states a target return), so `fund.struck` carries it beside the duration band
+it already published for the insurer's allocator, and `costOfMoneyOf` reads whichever of the two
+sources answered.
+
+**One question, two sources, and nothing here knows what a pool is.** It is the same shape
+`wageFacing` has for what an hour costs an employer: its own experience where it has one, what was
+published where it has not.
+
+And the buyers are a walk of the JOURNAL now rather than of the party list: whoever published a cost
+of money this period. That is B3 — *"it must be able to fund it, so the credit market decides which
+deals happen"* — and Law 18 at the same time, because the buyers are the handful who published
+rather than every party in the world asked one at a time.
+
+### A pool exits because it must find money
+
+§29 D1's three exits are the flotation (10f.2), the sale to another fund and the sale to a corporate
+(10f.3's tender). What was missing was the fund's REASON to sell, and it is the same reason a company
+disposing of a business has: it needs the money. A company publishes what it is short of for the
+thing it wants to build; a pool publishes what it must find — redeemers owed, a broker's call it
+could not pay, or a wind-up that queued everybody. `mustSell` reads both.
+
+The proceeds reach the investors through the redemption queue that was already there (D3), and **D4
+falls out with nothing written**: *"in a bad market it does not happen, the hold extends"* is the
+tender book striking what it strikes and a seller with no buyer keeping what it holds.
+
+A5 was already done at 10f.3 — a buyer that employs nobody owns the company rather than absorbing it,
+so an acquired firm is a named vehicle with its own balance sheet.
+
+§29 goes 9 MET to **12 MET, 1 PARTIAL, 12 MISSING**.
+
+### What it did NOT build, said plainly
+
+**The LEVERAGE (B2, B2.a, B4, B5, and C3's recapitalisation).** *"Most of the price is debt raised
+against the target itself"* needs the TARGET to borrow, conditional on a tender that has not settled
+yet, and to pay the sellers in the same breath. That is a two-phase deal, and the period loop has no
+shape for a funding request that depends on an outcome later in the same period. What exists instead
+is honest and smaller: the pool pays out of the capital it called (13.5), so a buyout here is
+unlevered and B2.b's *"the credit market decides which buyouts occur"* is not yet biting. It is
+inserted as its own item at 17.9's dependency position, where the bank's request channel opens.
+
+**Item 10f is CLOSED.** Four corrections, six steps, and the count it moves: Equity 26 MET of 37,
+M&A 13 of 22, Private Equity 12 of 25 — from 5, 10 and 5 when the item was inserted.
+
+Typecheck 0, lint 0, `check:spec` 219 tags, `check:forbids` 5, `check:deaths` 4 of 4,
+`check:existence` green with Part 0 regenerated. Tests written and not run.

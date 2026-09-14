@@ -198,3 +198,32 @@ describe('a bank runs the sale, and what it can run is its people (M&A B4, Labou
     }
   });
 });
+
+/**
+ * 10f.6: §29 B, C and D AS CALLERS. *"The PE case being only an application"* — there is no
+ * private-equity mechanism here and there is not going to be one.
+ */
+describe('a pool buys a company through the same layer a company does (§29 B1, D1)', () => {
+  it('qualifies a buyer by what it PUBLISHED, not by what kind of party it is (B3, Law 15)', () => {
+    const w = ranWorld('ctrl-pe', 26);
+    for (const e of w.journal.ofKind('control.acquired')) {
+      const buyer = partyId(String(e.data['buyer']));
+      // M&A B3: it must be able to fund it, so it had a cost of money — either a bank quoted it or
+      // its own investors require something of it. A party with neither cannot value a company.
+      const quoted = w.journal.lastOf('credit.quoted', buyer);
+      const struck = w.journal.lastOf('fund.struck', buyer);
+      const hasRate =
+        typeof quoted?.data['rate'] === 'number' || typeof struck?.data['requires'] === 'number';
+      expect(hasRate).toBe(true);
+    }
+  });
+
+  it('declares nothing about private equity anywhere in the control module (Law 15)', () => {
+    // §29 B, C and D are callers of this layer. If any of it had needed a private-equity branch,
+    // it would be here — and there is no kind test, no vehicle type and no buyout flag.
+    const m = control();
+    expect(m.params).toEqual([]);
+    expect(m.instrumentKinds).toEqual([]);
+    expect(m.partyKinds).toEqual([]);
+  });
+});

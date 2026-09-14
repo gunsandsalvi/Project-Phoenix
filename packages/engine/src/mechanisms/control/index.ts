@@ -59,7 +59,6 @@ import { asQty } from '../../core/tick.js';
 import type { Violation, Family } from '../../audit/audit.js';
 import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { FIRM } from '../../registry/profiles.js';
 import { weightOf } from '../../parties/party.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { period as periodOf } from '../../calendar/calendar.js';
@@ -83,7 +82,7 @@ export function worthToBuyer(
   target: PartyId,
   line: InstrumentId,
 ): Option<PerPiece> {
-  return worthAt(buyer, ctx, target, line, quotedTo(ctx, buyer.self.id));
+  return worthAt(buyer, ctx, target, line, costOfMoneyOf(ctx, buyer.self.id));
 }
 
 /**
@@ -141,17 +140,33 @@ function worthAt(
 }
 
 /**
- * Law 19: what a bank quoted THIS name, per annum. Its own cost of money, read off the wire.
+ * M&A B1, B3, §29 B1 (item 10f.6): WHAT THIS BUYER'S OWN MONEY COSTS IT, per annum, read off the
+ * wire — and there are two kinds of buyer in this world, with one source each.
+ *
+ * A COMPANY reads what a bank quoted it: its own cost of money, published under its own name, and
+ * a firm nobody will lend to does not buy companies (B3). A POOL reads what its investors require
+ * of it, which its own NAV pass publishes beside its duration band for exactly this kind of reader
+ * — a prospectus states a target return, and a closed-end fund raised to buy companies has one
+ * whether or not a bank has ever quoted it.
+ *
+ * It is ONE question with two sources and not two questions (Law 4): the same `worthAt` divides by
+ * whatever comes back, and nothing here knows what a pool is — it knows that one published a number
+ * under this name and the other did not. It is the same shape `wageFacing` has for what an hour
+ * costs an employer: its own experience where it has one, what was published where it has not.
  *
  * The journal already keeps the last event of a kind a party is a subject of, so this asks it
  * rather than walking every quote the world has ever published back to the beginning.
  */
-function quotedTo(ctx: MechanismContext, who: PartyId): Option<Ratio> {
-  const e = ctx.journal.lastOf('credit.quoted', who);
-  if (e === undefined) return none<Ratio>();
-  const rate = e.data['rate'];
+function costOfMoneyOf(ctx: MechanismContext, who: PartyId): Option<Ratio> {
+  const quoted = ctx.journal.lastOf('credit.quoted', who);
+  const rate = quoted?.data['rate'];
   // Item 16: what a bank quoted it re-enters here — a rate per annum on what it would borrow.
-  return typeof rate === 'number' ? some(asRatio(rate, 'what a bank quoted it')) : none<Ratio>();
+  if (typeof rate === 'number') return some(asRatio(rate, 'what a bank quoted it'));
+  const struck = ctx.journal.lastOf('fund.struck', who);
+  const requires = struck?.data['requires'];
+  return typeof requires === 'number'
+    ? some(asRatio(requires, 'what its own investors require of it'))
+    : none<Ratio>();
 }
 
 /** A1: the bid. A price, and how much of the firm it has to get for the bid to mean anything. */
@@ -200,12 +215,29 @@ export function tenders(
   return [{ party: holder.self.id, side: 'sell', price: at.value, qty: units }];
 }
 
-/** Firm E4: whether this holder published, this period, that it is short of what it wants to build. */
+/**
+ * Firm E4, §29 D1, D3, D4 (items 10f.3, 10f.6): WHETHER THIS HOLDER IS SELLING BECAUSE IT NEEDS THE
+ * MONEY, which is the reason a disposal and a private-equity exit both have.
+ *
+ * Two kinds of holder publish it and the question is the same for both (Law 4). A COMPANY publishes
+ * what it is short of for the thing it wants to build (`firms.funding`) — it sells a business to
+ * fund one. A POOL publishes what it must find (`fund.struck`'s shortfall) — its redeemers are owed
+ * money, or its broker called and it could not pay, or it is winding up and everything it holds is
+ * on the queue (A4). **That is §29 D**: the exit happens because the fund has to produce cash, the
+ * proceeds reach the investors through the redemption queue that was already there (D3), and
+ * *"in a bad market it does not happen"* (D4) because the book strikes what it strikes and a seller
+ * with no buyer keeps what it holds (Equity B6).
+ *
+ * Neither of them names a price when it is in this position (XI-2): a forced seller that named one
+ * would not be one.
+ */
 function mustSell(holder: ParticipantView): boolean {
   const own = holder.lastOwnSince('firms.funding', holder.period);
-  if (!own.some) return false;
-  const short = own.value.data['shortTerm'];
-  return typeof short === 'number' && short > 0;
+  const short = own.some ? own.value.data['shortTerm'] : undefined;
+  if (typeof short === 'number' && short > 0) return true;
+  const pool = holder.lastOwnSince('fund.struck', holder.period);
+  const owed = pool.some ? pool.value.data['shortfall'] : undefined;
+  return typeof owed === 'number' && owed > 0;
 }
 
 /**
@@ -818,6 +850,32 @@ export function equityLines(ctx: MechanismContext): readonly Instrument[] {
   return out;
 }
 
+/**
+ * M&A B3, §29 B1 (item 10f.6): WHO COULD BUY A COMPANY — everybody who published a cost of money
+ * this period, and nobody else.
+ *
+ * It is a walk of the JOURNAL and not of the party list, which is two things at once. It is the
+ * right ANSWER — *"it must be able to fund it, so the credit market decides which deals happen"*
+ * (B3), so a party nobody has quoted and no investors have required anything of cannot value a
+ * company at all — and it is the right TRAVERSAL (Law 18): the buyers are the handful who published
+ * rather than every party in the world asked one by one.
+ *
+ * It is also what lets a POOL buy a company without this module knowing what a pool is: it
+ * published a number under its own name and that is the whole of the qualification.
+ */
+function couldBuy(ctx: MechanismContext): readonly PartyId[] {
+  const out = new Set<PartyId>();
+  for (const kind of ['credit.quoted', 'fund.struck'] as const) {
+    for (const e of ctx.journal.ofKindIn(kind, ctx.period)) {
+      for (const named of e.subjects) {
+        const who = partyId(named);
+        if (ctx.parties.has(who)) out.add(who);
+      }
+    }
+  }
+  return [...out];
+}
+
 export function controlBidsFor(
   view: ParticipantView,
   ctx: MechanismContext,
@@ -828,7 +886,7 @@ export function controlBidsFor(
   if (cash <= 0) return [];
   // B1: what this buyer's own money costs it, which is the same number for every company on the
   // list, and a firm nobody will lend to does not look at the list at all.
-  const required = quotedTo(ctx, view.self.id);
+  const required = costOfMoneyOf(ctx, view.self.id);
   if (!required.some || required.value <= 0) return [];
   const out: Bid[] = [];
   for (const i of lines) {
@@ -890,9 +948,9 @@ export function control(): SystemModule {
            * which let the first bidder past the post buy it before the second was asked.
            */
           const byTarget = new Map<PartyId, Bid[]>();
-          for (const p of ctx.parties.ofKind(FIRM)) {
-            if (!p.status.alive) continue;
-            for (const bid of controlBidsFor(ctx.participant(p.id), ctx, lines)) {
+          for (const p of couldBuy(ctx)) {
+            if (!ctx.parties.get(p).status.alive) continue;
+            for (const bid of controlBidsFor(ctx.participant(p), ctx, lines)) {
               const held = byTarget.get(bid.target);
               if (held === undefined) byTarget.set(bid.target, [bid]);
               else held.push(bid);

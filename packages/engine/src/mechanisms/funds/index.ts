@@ -1040,6 +1040,16 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
        * that says nothing about duration is not a thing a liability schedule can be matched to.
        */
       ...(m.blueprint.duration?.to === undefined ? {} : { durationYears: m.blueprint.duration.to }),
+      /**
+       * D2, §29 B1, M&A B1 (item 10f.6): WHAT ITS INVESTORS REQUIRE OF IT, per annum — public for
+       * the same reason its duration band is, and it is what a prospectus states as a target.
+       *
+       * It is this pool's COST OF MONEY, and a pool that buys a company needs one for the same
+       * reason a firm does: what a company is worth to a buyer is what it would get out of it
+       * against what its own money costs it (M&A B1). A firm reads what a bank quoted it; a pool
+       * reads this, and there is no other source for either of them.
+       */
+      requires: m.requiredYieldPerAnnum,
     },
     true,
   );

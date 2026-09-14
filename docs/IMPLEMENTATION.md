@@ -68,7 +68,7 @@ checked, not assumed.
 | Dealer Desks | 26 | 1 | 0 | **2** | 27 |
 | Insurers | 9 | 0 | 14 | **9** | 23 |
 | Hedge Funds | 12 | 3 | 9 | 0 | 24 |
-| Private Equity | 9 | 1 | 15 | 0 | 25 |
+| Private Equity | 12 | 1 | 12 | 0 | 25 |
 | Treasury | 20 | 1 | 4 | 0 | 25 |
 | Central Bank | 22 | 3 | 4 | 0 | 29 |
 | **Polity** | **0** | 0 | **32** | 0 | 32 |
@@ -185,7 +185,8 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 
 | # | item | closes | why here |
 |---|---|---|---|
-| **10f** | Public and private firms, and the market for control | — | **inserted** (owner, 2026-09-14, four sentences): listing is a funding choice and not a size; every firm has equity and public is a MARKET; M&A is general — acquisition, merger, disposal, take-private — run as a formal process by a bank's IBD; and institutions invest across strategies. It takes the next letter after 10e because it is the same shape of correction, and it comes before the rest of 13 because **13.5b is an application of it** |
+| ~~**10f**~~ | Public and private firms, and the market for control | 13.5b | **CLOSED.** Six steps. Every firm has a share line and public is a MARKET, not a size; the flotation is a funding comparison whose first price the session strikes; M&A is one layer with four outcomes read off the register; a bank's IBD runs the sale out of the people it employs; institutions invest across strategies; and §29 B, C and D are callers of the layer rather than a private-equity mechanism. **Equity 26/37, M&A 13/22, Private Equity 12/25** — from 25, 10 and 5. The LEVERAGE (B2, B2.a, B4, B5, C3) is inserted at 17.9's position |
+| **10g** | The leveraged buyout: the TARGET raises the debt | B2, B2.a, B4, B5, C3 | **inserted at 10f.6's close, at 17.9's dependency position**: *“most of the price is debt raised against the target itself … which is why a failed buyout kills the firm and not the fund”*. It needs the target to borrow CONDITIONAL on a tender that has not settled yet and to pay the sellers in the same breath — a two-phase deal the period loop has no shape for — and it needs 17.9's bank request channel. Until it lands, a buyout here is unlevered and B2.b's *“the credit market decides which buyouts occur”* does not bite |
 | **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
@@ -477,8 +478,23 @@ both:
     bought is worth nothing to it and is therefore next.
   - `matchFor` is gone and `acceptable` + `feedTheSmallest` replace it; the 14.0 test that asserted
     *"refuses a pool that states no duration at all"* asserted the defect and is rewritten.
-- **10f.6** §29 B, C and D as CALLERS of 10f.3 — which is what 13.5b becomes, and it shrinks to
-  naming the vehicle and the carry.
+- [x] **10f.6 DONE, and it shrank to two reads.** *"The PE case being only an application"* — §29 B,
+  C and D are callers of the layer 10f.3 built, and `control` gained no private-equity branch, no
+  vehicle type and no buyout flag.
+  - **A pool bids because it published a cost of money.** `fund.struck` carries `requires` — what its
+    own investors require of it — beside the duration band it already published, and `costOfMoneyOf`
+    reads a bank's quote for a company and that for a pool. **One question, two sources**, the same
+    shape `wageFacing` has for what an hour costs an employer. And the buyers are now a walk of the
+    JOURNAL rather than of the party list: whoever published a cost of money this period, which is
+    B3's *"the credit market decides which deals happen"* and Law 18 at once.
+  - **A pool exits because it must find money.** `mustSell` reads `fund.struck`'s shortfall as well
+    as `firms.funding`'s: redeemers owed, a broker's call it could not pay, or a wind-up that queued
+    everybody. The proceeds reach the investors through the redemption queue that was already there.
+    D4 falls out with nothing written — *"in a bad market it does not happen"* is the book striking
+    what it strikes, and a seller with no buyer keeps what it holds.
+  - **A5 was already done at 10f.3**: a buyer that employs nobody owns the company rather than
+    absorbing it, so an acquired firm is a named vehicle with its own balance sheet.
+  - §29 goes 9 MET to **12 MET, 1 PARTIAL, 12 MISSING**. B1, D1 and D4 go MET; D3 PARTIAL.
 
 ### What 10f.1 found and did not chase
 
@@ -523,6 +539,24 @@ both:
   every firm's residual is a real claim — but it is the first item to multiply the instrument table by
   twelve, and Law 18 says that is a traversal question and not an economics one. **Positioned at 16
   (Measure)**, where what a period costs is measured rather than guessed.
+
+### What 10f.6 did NOT build, and where it went
+
+- **B2, B2.a, B4 — the LEVERAGE.** *"Most of the price is debt raised against the target itself"*,
+  and *"the target's balance sheet is transformed at the moment of purchase"*. The debt has to be
+  raised by the TARGET, conditional on a tender that has not settled yet, and paid to the sellers in
+  the same breath: a two-phase deal, and the period loop has no shape for a funding request that
+  depends on an outcome later in the same period. What exists instead is honest and smaller: the
+  pool pays out of the capital it called (13.5), so a buyout here is unlevered and B2.b's *"the
+  credit market decides which buyouts occur"* is not yet biting. **Positioned as its own item at
+  17.9's dependency position**, where the bank's request channel opens.
+- **B5's sources-and-uses VERIFY** waits on B2: with no debt leg there is nothing for the two sides
+  to fail to balance that the wire does not already check.
+- **C3, the recapitalisation.** A controlled firm raising debt to pay its owner a distribution is the
+  same missing piece from the other end, and it lands with B2.
+- **D3's distribution** as distinct from a redemption: a closed-end pool returning capital mid-life
+  rather than queueing everybody at a wind-up. **Positioned at 14.1** with the rest of what a
+  long-dated investor needs.
 
 ### Exit
 
@@ -662,7 +696,7 @@ its lender can cut (B1: *"leverage is a fact about a loan, never a property of t
 - [ ] 13.4b **MEASURE the chain**: one fund's loss reaching another fund's margin call through prices and named counterparties, and the path traceable party by party (§15 D4: *"a loss that stops at the fund is a broker that was never really lending"*). The events to follow are `prime.line` → `prime.call` → `fund.struck`'s shortfall → a print → the next `prime.line` falling, and every one of them names both parties. **It is a MEASUREMENT of the assembled world and not a unit test** (Law 11, and the owner's rule that the suite runs at the end), so it goes with 23.0a — and it wants the same thing that one does: read `E-22` first, because the pools this path runs on gather nothing until a cell clears the accredited line or item 14's institutions arrive.
 - [x] **14.0 INSERTED AHEAD OF 13.5 (Law 10: at its dependency position, and here is where).** 13.2 built a strategy house, 13.3 built its broker and 10e built a credit fund — **and none of them is offered to the public, so the only investors this world has cannot reach any of them.** A private-equity fund is the same shape and would have been the fourth. The money those sectors run on is INSTITUTIONAL, and nothing in this world allocated any: an insurer wrote cover, took premiums and sat on the cash for ever. So item 14's allocator half is taken here, and it is small because 10e made it small — *"insurance companies and pension funds don't invest themselves; their assets are always third party managed"*, so there is no portfolio mechanism to build. An insurer puts what it can spare at the door of the pool whose stated duration is nearest the furthest thing it has promised (B2.b), and everything after that is the manager's. **It also fixed the access ladder**: the rungs are not three kinds of investor but one structural fact — a CELL is people and answers with its wealth, a NAMED party is an institution and is qualified by being one, which is what the ladder said all along and what `E-22` was half about.
 - [x] 13.5 Private equity, **§29 A: committed capital and the call**. There is no private-equity party kind — it is a manager whose pools are CLOSED-END over UNLISTED equity, which is four terms of a mandate. The commitment is an agreement between a named investor and the pool; the call is a real payment on a date it cannot refuse; the door is shut to ordinary subscription because the only way in is a call; and shares are issued against what a call actually brought in, at the NAV, through the door every subscriber uses. **A2.b — the FORBID this item singled out — is guarded rather than commented**: a call bounded by the investor's spare cash is not an obligation, so nothing in the call path may trim a demand to fit a balance, and `tools/check-forbids.ts` refuses `atMost`, `atLeast` and `Math.min` anywhere in it (the guard was proved to bite before it was trusted). The call path is one file for exactly that reason.
-- [ ] 13.5b **FOLDED INTO 10f.6** (owner, 2026-09-14: *"m&a, acquisitions, mergers and disposals should all exist, with the PE case being only an application"*). What is left here once 10f.3 exists is naming the vehicle and the carry; the buyout, the sponsor-to-sponsor sale, the trade sale and the flotation are all CALLERS of one M&A layer rather than a private-equity mechanism. The analysis below stands and is what 10f.3 was written from. **The buyout, the hold and the exit** (§29 B, C, D — 19 clauses). What 13.5 built is how a PE fund is FUNDED; this is what it does with the money, and **this world has nothing for it to buy**: every share here trades, so a mandate over unlisted equity admits nothing and the fund holds the cash it called. Three pieces, and the first two are mostly reuse:
+- [x] 13.5b **FOLDED INTO 10f.6 AND CLOSED THERE** (B1, D1, D4 MET; D3 PARTIAL; the LEVERAGE — B2, B2.a, B4, B5 and C3 — inserted as its own item at 17.9's position, because the target has to raise the debt conditional on a tender that has not settled yet and the period loop has no shape for that yet). (owner, 2026-09-14: *"m&a, acquisitions, mergers and disposals should all exist, with the PE case being only an application"*). What is left here once 10f.3 exists is naming the vehicle and the carry; the buyout, the sponsor-to-sponsor sale, the trade sale and the flotation are all CALLERS of one M&A layer rather than a private-equity mechanism. The analysis below stands and is what 10f.3 was written from. **The buyout, the hold and the exit** (§29 B, C, D — 19 clauses). What 13.5 built is how a PE fund is FUNDED; this is what it does with the money, and **this world has nothing for it to buy**: every share here trades, so a mandate over unlisted equity admits nothing and the fund holds the cash it called. Three pieces, and the first two are mostly reuse:
   - **B, the buyout.** `mechanisms/control` already has the whole tender — `worthToBuyer`, `tenders`, `runTender`, an acceptance condition, *"a bid is an ordinary book with an unusual buyer"*. Two differences make it a BUYOUT rather than a merger: **the target must SURVIVE** (`combine` terminates it and reseats its rows, which is right for an acquirer and wrong here — A5 says acquired firms are held in named vehicles), and **the debt is the TARGET's** (B2.a, *"which is why a failed buyout kills the firm and not the fund"*), which wants the target to raise it — and that is the funding channel 17.9 opens. B2.b then falls out: if the credit market will not lend to the target, the leverage does not happen and the fund owns an unlevered company.
   - **C5.a, the hold.** *"An unlisted mark is not a cleared price … the honest answer is 'marked, not cleared'."* `pricing: 'carriedAtCost'` is already the kernel's word for exactly this, and `E-18`'s neighbourhood (item 21) is where the display of it lands.
   - **D, the exit**, which *"produces the first real price the holding has had"* — the listing or sale that turns a carried mark into a print.
