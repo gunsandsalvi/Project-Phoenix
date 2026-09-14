@@ -308,8 +308,9 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
     instrumentKinds: [],
     partyKinds: [],
     curveFamilies: [],
-    // Labour A1, Law 8: time has a smallest piece too. A thousandth of an hour is about four
-    // seconds, which is finer than any contract in this world states and coarse enough to be real.
+    // Labour A1, Law 8: time has a smallest piece too, and it is THE HOUR (`TIME_PIECES = 1`).
+    // Labour is contracted, supplied and paid for by the hour here and no wage is struck for part
+    // of one. A-6: this described a thousandth of an hour, which is what the grid used to be.
     units: [{ id: HOURS, name: 'hours', perUnit: TIME_PIECES }],
     params: paramsOf(),
     phases: [

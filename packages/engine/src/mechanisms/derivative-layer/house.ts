@@ -58,9 +58,7 @@ export function coverOne(
     const need = requirement(ctx, m, house, ccy);
     if (need > largest) largest = need;
   }
-  return ctx.registry.cashFor(
-    ccy,
-    scale(largest, asRatio(Math.sqrt(horizon), 'over the horizon'), 'cover one over the horizon'),
+  return ctx.registry.cashFor(scale(largest, asRatio(Math.sqrt(horizon), 'over the horizon'), 'cover one over the horizon'),
   );
 }
 
@@ -134,7 +132,7 @@ export function moveFund(
   }
   const up = by > 0;
   // Law 8: a contribution to the fund is money, so it is a whole number of the money's own pieces.
-  const qty = ctx.registry.payable(ccy, up ? by : absolute(by, 'what comes back'));
+  const qty = ctx.registry.payable(up ? by : absolute(by, 'what comes back'));
   const legs: Leg[] = [
     {
       kind: 'asset',
@@ -192,9 +190,7 @@ export function runWaterfall(
   let left = loss;
   const take = (line: Round['line'], from: PartyId, instrument: InstrumentId, most: Qty): void => {
     if (left <= 0 || most <= 0) return;
-    const paid = ctx.registry.cashFor(
-      ccy,
-      atMost(left, heldAsMoney(most, 'what this line has in it'), 'a claim takes no more than is left of the hole'),
+    const paid = ctx.registry.cashFor(atMost(left, heldAsMoney(most, 'what this line has in it'), 'a claim takes no more than is left of the hole'),
     );
     if (paid <= 0) return;
     // The claim is extinguished without payment: the holder loses it and the issuer stops owing it,
@@ -242,9 +238,7 @@ export function runWaterfall(
       // Law 8: WHAT IS SPLIT IS A COUNT OF PIECES. The loss arrived as a mark and the lines above
       // paid it in whole pieces, so what is left carries the dust of those subtractions — and a
       // residue smaller than one piece is not a loss anybody can be allocated a share of.
-      const share = ctx.registry.cashFor(
-        ccy,
-        atMost(left, heldAsMoney(pool, 'what the fund has in it'), 'the fund pays out of what is in it'),
+      const share = ctx.registry.cashFor(atMost(left, heldAsMoney(pool, 'what the fund has in it'), 'the fund pays out of what is in it'),
       );
       const shares = splitOnTick(share, held);
       survivors.forEach((m, i) => {

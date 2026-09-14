@@ -153,8 +153,8 @@ export function publishLines(
 
 /** What this line was allotted, as the line itself reads it back (Law 19: never derived twice). */
 export function roomFor(view: ParticipantView, line: string): Option<Cash> {
-  const said = view.lastOwn('bank.lines');
-  if (!said.some || said.value.period !== view.period) return none<Cash>();
+  const said = view.lastOwnSince('bank.lines', view.period);
+  if (!said.some) return none<Cash>();
   const lines = said.value.data['lines'];
   if (!Array.isArray(lines)) return none<Cash>();
   for (const r of lines) {

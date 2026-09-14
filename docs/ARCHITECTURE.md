@@ -316,6 +316,19 @@ A search bracket is never returned as a price (C4.c). Trades are emitted as inst
 the print becomes the mark (D4). The solver is a pure function of the schedules (C5) and is tested for
 determinism with property tests.
 
+**The posted curve** (`clearing/schedule.ts`, Clearing A2, A2.a). A party spends the same money
+whatever the price, so what it wants at a price is its budget divided by it — a curve, and the size on
+a limit order is the EXTRA that level adds, so a book adding up the orders at or above a level sees
+exactly the curve there. `rungsOver` samples it, `rungsUpTo` samples it under a want or a published
+limit, and the LEVELS come from three separate reasons: `pricesOver` (what a consumer expects to be
+charged, §46 B3), `levelsBelow` (down from what a saver will pay, over its own width, Equity B3) and
+`levelsUpTo` (down to nothing, for a bidder that is stopped by a size rather than a price). Both ends
+of every span are numbers the party itself named and the STEP COUNT only samples between them — which
+is what makes the count a RESOLUTION (Law 2, `A-32`: `levelsBelow` used to run `top × k/steps`, so its
+bottom was `top / steps` and the count decided how far down a saver bid at all). It lives beside the
+solver rather than inside `households` because a module never imports another module and three of them
+post curves: the household's basket, the saver's ladder, and a bank bidding for a securitisation note.
+
 **A quantity with no level** (Central Bank C3). A participant may post `price: 'market'`: a size and no
 level. It is resolved before price formation to the worst level the other side actually posted — the
 highest ask for a buyer, the lowest bid for a seller — so it is a level somebody posted (C4.c) and

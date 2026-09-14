@@ -24,6 +24,7 @@
  * rest of the recipe costs (Labour C1, C1.a). A bid IS the most a buyer will pay, so this is the
  * bid, and the market clears below it whenever supply is ample.
  */
+import { period, type Period } from '../../calendar/calendar.js';
 import {
   amountOf,
   asAmount,
@@ -241,12 +242,25 @@ export function venueOf(view: ParticipantView, line: FirmDecl): VenueDecl | unde
 }
 
 /**
+ * A-33, Law 8: THE PERIOD A WAGE BILL IS STILL CURRENT IN.
+ *
+ * `labour.pay` settles in cycle 2, so a reader in an earlier cycle of period p means the bill of
+ * p−1 and one after it means p's own; either is current. Anything older belongs to an employer that
+ * has employed NOBODY since — `payWages` writes an event only for an employer with rows — and
+ * reading it as current is how a firm that shed its last worker went on force-selling stock to
+ * cover a payroll of nobody, and publishing that payroll to its lenders, for the rest of the run.
+ */
+export function payrollSince(at: Period): Period {
+  return at > 0 ? period(at - 1) : at;
+}
+
+/**
  * Goods B5, Labour E2: the wage this firm's own hour costs. Its own wage bill over its own hours is
  * what it actually pays; a firm employing nobody has none of its own and faces what the market
  * published (Labour D1.c, Expectations A2.a) — and one that has neither cannot cost a unit at all.
  */
 function wageFacing(view: ParticipantView, venue: VenueDecl): Option<PerPiece> {
-  const own = view.lastOwn('labour.wages');
+  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
   if (own.some) {
     const due = own.value.data['due'];
     const hours = own.value.data['hours'];
@@ -278,7 +292,7 @@ function wageFacing(view: ParticipantView, venue: VenueDecl): Option<PerPiece> {
  * to know. Nobody hired since is in it, and that is right: they are not productive yet.
  */
 function hoursUnderContract(view: ParticipantView): Qty {
-  const own = view.lastOwn('labour.wages');
+  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
   const none = asAmount<'piece'>(0, 'a firm that has employed nobody has no hours');
   if (!own.some) return none;
   const hours = own.value.data['hours'];
@@ -288,7 +302,7 @@ function hoursUnderContract(view: ParticipantView): Qty {
 
 /** D1: what it must pay out that it already knows about — the payroll it is committed to. */
 function wagesDue(view: ParticipantView): Cash {
-  const own = view.lastOwn('labour.wages');
+  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
   if (!own.some) return asCash(0, 'a firm that has published no payroll owes none');
   const due = own.value.data['due'];
   // Item 16: money re-entering from what this firm published, at the read that knows what it is.

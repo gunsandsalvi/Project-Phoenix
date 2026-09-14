@@ -132,7 +132,7 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   }
   const move = minus(want, held, 'from the fixed it pays to the fixed it wants to pay');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, absolute(move, 'either way'));
+  const qty = view.registry.deliverable(absolute(move, 'either way'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
@@ -149,8 +149,6 @@ function sizeOf(view: ParticipantView, unit: UnitId, level: PerPiece): Qty {
   // money over a LEVEL, which is `amountOf` and gives a notional back; `over` would have divided by
   // a pure number and given money. The book cannot say which of the two its level is, and that is
   // the finding; what this site can do is use the operation that matches what it actually holds.
-  return view.registry.deliverable(
-    unit,
-    amountOf(own, level, 'what a year of this rate on its capital carries'),
+  return view.registry.deliverable(amountOf(own, level, 'what a year of this rate on its capital carries'),
   );
 }

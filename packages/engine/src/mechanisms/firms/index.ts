@@ -40,7 +40,7 @@ import type { MechanismContext, ParticipantView } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
 import { firmChoosesBank, FIRM_SWITCHING_COST } from './bank.js';
 import { firmParam, labourScaleId, type FirmDecl } from './data.js';
-import { committedTo, marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder } from './decide.js';
+import { committedTo, marketsIn, ordersFrom, plan, venueOf, type Planned, type PlannedOrder, payrollSince } from './decide.js';
 import { publishExpectation, runLine } from './produce.js';
 import { NO_QTY } from '../../core/tick.js';
 
@@ -278,16 +278,16 @@ export function firms(rows: readonly FirmDecl[]): SystemModule {
         // there are three thousand firms and 261 markets, and a firm is in two or three of them.
         markets: (view: ParticipantView): readonly MarketId[] => {
           if (lineOf(byName, view.self.id) === undefined) return [];
-          const own = view.lastOwn('firms.plan');
-          if (!own.some || own.value.period !== view.period) return [];
+          const own = view.lastOwnSince('firms.plan', view.period);
+          if (!own.some) return [];
           return marketsIn(own.value);
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
           if (lineOf(byName, view.self.id) === undefined) return [];
-          const own = view.lastOwn('firms.plan');
+          const own = view.lastOwnSince('firms.plan', view.period);
           // Clearing F1: an order is the decision it took this period, read back rather than taken
           // again. A firm that decided nothing this period posts nothing.
-          if (!own.some || own.value.period !== view.period) return [];
+          if (!own.some) return [];
           return ordersFrom(own.value, m.id, view.self.id);
         },
       },
@@ -402,7 +402,7 @@ function publishFunding(ctx: MechanismContext, view: ParticipantView, p: Planned
 
 /** D1: the payroll it has already promised, read from its own last wage bill (Law 19). */
 function wagesPromised(view: ParticipantView): Cash {
-  const own = view.lastOwn('labour.wages');
+  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
   if (!own.some) return asCash(0, 'it has promised nobody anything');
   const due = own.value.data['due'];
   return typeof due === 'number' ? asCash(due, 'what its last wage bill came to') : asCash(0, 'nothing');

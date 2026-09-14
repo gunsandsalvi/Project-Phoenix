@@ -206,7 +206,7 @@ function lease(
       // Law 6: a letter cannot let more space than it has, and a taker cannot take more
       // than it is short of. Arithmetic impossibility on both sides, named at the site.
       const space = atMost(letter.qty, want, 'a letter has only the space it has');
-      const due = ctx.registry.payable(ccy, valueAt(rate, space, 'what the space costs for the period'));
+      const due = ctx.registry.payable(valueAt(rate, space, 'what the space costs for the period'));
       // Law 8, Money A2: A PAYMENT BELOW ONE PIECE OF MONEY IS NOT A PAYMENT. Space let for nothing
       // is free storage, which is the thing this module exists to remove — so the space is NOT let,
       // the taker keeps looking and the letter keeps its room. It is the same answer the wire gives

@@ -91,9 +91,7 @@ function penalty(at: number, share: number): SystemModule {
           // there is nobody to fine.
           if (!ctx.parties.get(BANK_A).status.alive) return;
           if (ctx.period === at) {
-            each = ctx.registry.payable(
-              USD,
-              scale(ctx.participant(BANK_A).equity(), asRatio(share, 'its share'), 'the fine'),
+            each = ctx.registry.payable(scale(ctx.participant(BANK_A).equity(), asRatio(share, 'its share'), 'the fine'),
             );
           }
           if (each <= 0) return;

@@ -126,7 +126,10 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
     out.push({
       id: labourParam(d.subUnit),
       value: (d.labourHoursPerUnit * TIME_PIECES) / PIECES_PER_UNIT,
-      unit: `minutes per piece of ${d.subUnit}`,
+      // A-6, Law 8: HOURS. A piece of time is an hour (`registry/grid.ts`: `TIME_PIECES = 1`), so
+      // `hoursPerUnit x TIME_PIECES / PIECES_PER_UNIT` is hours per piece of the good — and this
+      // said minutes, which is the same number claiming to be sixty times itself.
+      unit: `hours per piece of ${d.subUnit}`,
       dimension: 'ratio',
       kind: 'technology',
       owner: 'model',

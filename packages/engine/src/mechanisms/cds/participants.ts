@@ -35,7 +35,6 @@ import {
 } from '../../core/measure.js';
 import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
-import type { UnitId } from '../../core/ids.js';
 import { asQty, negQty , addQty, NO_QTY, subQty, type Qty} from '../../core/tick.js';
 import { add } from '../../core/num.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -188,7 +187,6 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   const facing = decl.house === null ? 'the other side' : String(decl.house);
   const term = counterpartyTerm(view, absolute(held, 'what it faces'), facing);
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
-  const unit = view.registry.derivativeKind(decl.kind).unit;
   // Clearing E1: WHERE THE MARKET IS. It decides which side this party is on and how hard, and it
   // is never the level posted: a party that posted where the market last was would be agreeing with
   // it rather than saying anything, and a book of those prints one number for ever.
@@ -206,7 +204,7 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   let price = scale(mine, term, 'what cover is worth facing this side');
   if (at.some) {
     const book = at.value.price;
-    const conviction = sizeOf(view, unit, view.equity(), mine);
+    const conviction = sizeOf(view, view.equity(), mine);
     if (mine > plus(book, tick, 'wider than the book by a tick it can act on')) {
       want = addQty(want, conviction, 'and what its own view is worth to it');
     } else if (mine < minus(book, tick, 'tighter than the book by a tick it can act on')) {
@@ -219,7 +217,7 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   }
   const move = subQty(want, held, 'from the protection it has to the protection it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
+  const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
@@ -228,13 +226,12 @@ export function cdsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
  * Derivative Layer E1: how much it would write, from its own balance sheet — never a limit, and
  * never more than its own capital could stand behind (B3: a naked seller is capitalised).
  */
-function sizeOf(view: ParticipantView, unit: UnitId, own: Cash, spread: PerPiece): Qty {
+function sizeOf(view: ParticipantView, own: Cash, spread: PerPiece): Qty {
   if (own <= 0 || spread <= 0) return NO_QTY;
   // What it would carry is what a year of that spread on its own capital comes to at the spread it
   // is quoting: a bigger book on a wider spread is the same risk, which is the arithmetic a party
   // actually does rather than a notional limit somebody wrote down.
   return view.registry.deliverable(
-    unit,
     amountOf(own, spread, 'what a year of this spread on its own capital would carry'),
   );
 }
@@ -255,7 +252,6 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
   const last = view.print(seriesLineOf(t.series, t.tenorYears));
   if (!last.some) return [];
   const level = last.value.price;
-  const unit = view.registry.derivativeKind(decl.kind).unit;
   // B1.a: what it holds of the constituents' own paper, at the weights the series fixed.
   const whole = t.names.reduce((n, x) => add(n, x.weight, 'the whole line'), 0);
   if (whole <= 0) return [];
@@ -276,7 +272,7 @@ export function cdsIndexOrders(view: ParticipantView, m: MarketDecl): readonly O
   }
   const want = subQty(exposed, held, 'the exposure to this line it has not covered');
   if (want <= 0) return [];
-  const qty = view.registry.deliverable(unit, want);
+  const qty = view.registry.deliverable(want);
   if (qty <= 0) return [];
   return [
     {

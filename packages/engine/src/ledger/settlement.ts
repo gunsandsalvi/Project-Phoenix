@@ -1513,7 +1513,7 @@ export function shareFor(
   unit: UnitId,
   perMemberWanted: number,
 ): { readonly perMember: Qty; readonly total: Qty } {
-  const perMember = registry.deliverable(unit, perMemberWanted);
+  const perMember = registry.deliverable(perMemberWanted);
   return { perMember, total: totalFor(party, perMember) };
 }
 

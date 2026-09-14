@@ -281,6 +281,13 @@ export type Subject =
   | { readonly on: 'bought'; readonly instrument: InstrumentId }
   | { readonly on: 'sold'; readonly instrument: InstrumentId }
   | { readonly on: 'income' }
+  /**
+   * Labour B1.a, A-38: what reaches a party that it did not WORK for — the standing mandate the
+   * treasury pays it, and what probate hands it. It is `income` less the wage, and it is separate
+   * because it answers a different question: `income` is what a party lives on, and this is what it
+   * would live on WITHOUT THE JOB, which is the only thing an outside option can be made of.
+   */
+  | { readonly on: 'benefit' }
   | { readonly on: 'earnings' }
   /** What this party thinks of THAT one: whether it is good for what it owes (Banks Lending A2). */
   | { readonly on: 'credit'; readonly party: PartyId };
@@ -301,6 +308,7 @@ export function about(s: Subject): OutlookVariable {
     case 'credit':
       return `credit.${String(s.party)}` as OutlookVariable;
     case 'income':
+    case 'benefit':
     case 'earnings':
       return s.on as OutlookVariable;
     default:
@@ -317,7 +325,7 @@ export function about(s: Subject): OutlookVariable {
  */
 export function subjectOf(v: OutlookVariable): Option<Subject> {
   const s = String(v);
-  if (s === 'income' || s === 'earnings') return some({ on: s });
+  if (s === 'income' || s === 'benefit' || s === 'earnings') return some({ on: s });
   const dot = s.indexOf('.');
   if (dot < 0) return none<Subject>();
   const on = s.slice(0, dot);
@@ -467,6 +475,22 @@ export interface ParticipantView extends KernelReads {
    * instead of computing it again.
    */
   lastOwn(kind: EventKind): Option<Event>;
+  /**
+   * Law 8, A-33: THE SAME READ WITH THE PERIOD IN THE ASK — the most recent event of a kind this
+   * party is a subject of, IF it was written no earlier than `since`. Nothing when the last one is
+   * older than that, which is a different answer from a stale one.
+   *
+   * `lastOwn` answers from any period ever, and most of its callers mean "what did it say about
+   * NOW". A writer that only writes when it has something to say — `payWages` writes for employers
+   * that have rows, `publishQuotes` for banks that quoted — then leaves its last event standing for
+   * ever, and a reader with no bound treats it as current: a firm that shed its last worker went on
+   * force-selling stock to cover the payroll of nobody, and publishing it to its lenders, for the
+   * rest of the run. Four reads of `labour.wages` and one of `credit.quoted` did exactly that.
+   *
+   * Callers that meant this period asked `lastOwn` and then tested the period themselves; they ask
+   * for it here instead, so the bound is in the question and a new reader cannot forget it.
+   */
+  lastOwnSince(kind: EventKind, since: Period): Option<Event>;
   /** Derivative Layer C1, G3, Observer A4: its own side of the contract store, and no wider read. */
   readonly contracts: OwnContracts;
   /** A random stream that is this party's own, deterministic in (seed, party, period). */

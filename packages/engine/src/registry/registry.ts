@@ -439,8 +439,14 @@ export class Registry {
    * pays rounds down, because paying up would be paying a tick nobody has; whoever splits a payment
    * between several payees uses `splitOnTick` instead, so that the parts sum to exactly the whole
    * and the odd tick has a named holder.
+   *
+   * A-5: it took a `CurrencyCode` and ignored it, and so did the two below. A PIECE is the smallest
+   * thing there is in any money and any unit — that is what `core/tick.ts` means by the piece grid —
+   * so the answer never depended on which money it was, and the parameter was a claim the function
+   * did not honour. Where the subdivision DOES matter the reader is `named`/`downToNamed`, and it
+   * asks the registry for that unit's own subdivision by name.
    */
-  payable(_ccy: CurrencyCode, amount: Cash): Qty {
+  payable(amount: Cash): Qty {
     return downTick(amount);
   }
 
@@ -449,12 +455,12 @@ export class Registry {
    * where a quantity meets a price and the answer is what somebody owes: rounding it always down
    * would hand the payer a fraction of a piece on every trade it ever did.
    */
-  cashFor(_ccy: CurrencyCode, value: Cash): Qty {
+  cashFor(value: Cash): Qty {
     return toTick(value);
   }
 
   /** Register A1.c: the same question for units of anything else — the most that can be delivered. */
-  deliverable(_unit: UnitId, qty: number): Qty {
+  deliverable(qty: number): Qty {
     return downTick(qty);
   }
 

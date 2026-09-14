@@ -461,15 +461,12 @@ export function settleEstates(ctx: MechanismContext): void {
         if (isMoney(ctx, h.instrument)) continue;
         const held = view.free(h.instrument);
         if (held <= 0) continue;
-        const unit = ctx.instruments.get(h.instrument).unit;
         /**
          * Law 8, XI-15: WHOLE PIECES, to each member of this cell. What will not divide stays with
          * the office and is divided when enough of it has arrived — nothing is rounded away, which
          * is the same rule the office already applied to one heir and now applies to all of them.
          */
-        const perMember = ctx.registry.deliverable(
-          unit,
-          over(
+        const perMember = ctx.registry.deliverable(over(
             scale(held, share, 'this cell share'),
             asRatio(heir.weight, 'the members it has'),
             'each of them gets',
@@ -492,9 +489,7 @@ export function settleEstates(ctx: MechanismContext): void {
       for (const ccy of monies) {
         const cash = view.cash(ccy);
         if (cash <= 0) continue;
-        const perMember = ctx.registry.payable(
-          ccy,
-          over(
+        const perMember = ctx.registry.payable(over(
             scale(heldAsMoney(cash, 'what the estate holds'), share, 'this cell share'),
             asRatio(heir.weight, 'the members it has'),
             'each of them gets',

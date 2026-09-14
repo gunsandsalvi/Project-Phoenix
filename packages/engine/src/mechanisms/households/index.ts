@@ -61,8 +61,6 @@ import {
 export * from './data.js';
 export { householdChoosesBank, HOUSEHOLD_SWITCHING_COST } from './bank.js';
 export { demandOf, spendPerMember } from './consume.js';
-export { levelsBelow, rungsOver, rungsUpTo } from './demand.js';
-export type { Rung } from './demand.js';
 export {
   cushionForFund,
   fundOrders,
@@ -357,13 +355,13 @@ export function households(rows: readonly ConsumptionDecl[] = CONSUMPTION): Syst
         // in has 261 markets, and asking it about every one of them was four fifths of what a
         // period cost.
         markets: (view: ParticipantView): readonly MarketId[] => {
-          const own = view.lastOwn('households.plan');
-          if (!own.some || own.value.period !== view.period) return [];
+          const own = view.lastOwnSince('households.plan', view.period);
+          if (!own.some) return [];
           return marketsIn(own.value.data['orders']);
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          const own = view.lastOwn('households.plan');
-          if (!own.some || own.value.period !== view.period) return [];
+          const own = view.lastOwnSince('households.plan', view.period);
+          if (!own.some) return [];
           return ordersFrom(own.value.data['orders'], m.id, view.self.id);
         },
       },

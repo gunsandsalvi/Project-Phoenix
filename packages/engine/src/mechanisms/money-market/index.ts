@@ -406,7 +406,7 @@ function clearBook(
     // what it has already placed in this session comes off what it can still place in the next one.
     const room = capacityOf(ctx, s.lender, ccy);
     if (room <= 0) continue;
-    if (s.amount > room) s = { ...s, amount: ctx.registry.payable(ccy, heldAsMoney(room, 'what it has left to place')) };
+    if (s.amount > room) s = { ...s, amount: ctx.registry.payable(heldAsMoney(room, 'what it has left to place')) };
     let cover: readonly Pledged[] = [];
     let amount = s.amount;
     if (book.secured) {
@@ -415,9 +415,7 @@ function clearBook(
       // Less than it asked for is the constraint biting, not a failure of the session — and what
       // it gets is a whole number of pieces of money (Law 8), because that is what is lent.
       const covered = sum(cover.map((x) => valueAt(x.valuedAt, x.qty, 'covered'))).value;
-      amount = ctx.registry.payable(
-        ccy,
-        atMost(covered, heldAsMoney(s.amount, 'what it asked for'), 'a guarantee pays no more than was owed'),
+      amount = ctx.registry.payable(atMost(covered, heldAsMoney(s.amount, 'what it asked for'), 'a guarantee pays no more than was owed'),
       );
       if (amount <= 0) continue;
       cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), heldAsMoney(amount, 'what it is lent'));
@@ -1035,16 +1033,14 @@ function bookOverdrafts(ctx: MechanismContext): void {
     const c = corridor(ctx, ccy);
     const cb = ctx.registry.centralBankOf(ccy);
     const short = negQty(ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy)), 'its overdraft');
-    const need = ctx.registry.payable(ccy, heldAsMoney(short, 'its overdraft'));
+    const need = ctx.registry.payable(heldAsMoney(short, 'its overdraft'));
     if (need <= 0) continue;
     const book = BOOKS.find((b) => b.tenor === 'overnight' && b.secured);
     if (book === undefined) continue;
     const rate = plus(c.ceiling, ctx.params.perAnnum(MM_PARAMS.overdraftPenalty), 'the penalty rate');
     const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), heldAsMoney(need, 'what it is short of'));
     const covered = sum(cover.map((x) => valueAt(x.valuedAt, x.qty, 'covered'))).value;
-    const amount = ctx.registry.payable(
-      ccy,
-      atMost(covered, heldAsMoney(need, 'what it is short of'), 'a guarantee pays no more than was owed'),
+    const amount = ctx.registry.payable(atMost(covered, heldAsMoney(need, 'what it is short of'), 'a guarantee pays no more than was owed'),
     );
     if (amount <= 0) continue;
     const n = m.next;

@@ -1347,6 +1347,10 @@ export class World {
         const e = this.journal.lastOf(kind, party);
         return e === undefined ? none() : some(e);
       },
+      lastOwnSince: (kind, since) => {
+        const e = this.journal.lastOf(kind, party);
+        return e === undefined || e.period < since ? none() : some(e);
+      },
       index: (id: string) => this.index(id),
       // Law 18: asked once per money per party per period. It walks every line the party issued —
       // and a bank issues a row every time it lends — so the six pair markets asking it four times

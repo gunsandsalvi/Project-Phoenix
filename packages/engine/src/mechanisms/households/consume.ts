@@ -51,13 +51,13 @@ import { type Ratio,
   valueAt,
 } from '../../core/measure.js';
 import type { InstrumentId, MarketId } from '../../core/ids.js';
-import { atLeast, atMost, material, mul, sub, sum } from '../../core/num.js';
+import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { keyOf, type CellParty } from '../../parties/party.js';
 import type { ParticipantView } from '../../world/context.js';
 import { goodId, goodMarketId } from '../../registry/physical.js';
 import type { ConsumptionDecl } from './data.js';
-import { rungsUpTo } from './demand.js';
+import { pricesOver, rungsUpTo } from '../../clearing/schedule.js';
 import { about } from '../../world/context.js';
 
 /** One line of a cell's demand: a size at a level, in the market it is posted in. */
@@ -396,25 +396,3 @@ function lineFor(
   };
 }
 
-/** The levels a cell posts over, highest first: what it expects, spread by its own surprises. */
-function pricesOver(expected: PerPiece, width: PerPiece, steps: number): PerPiece[] {
-  if (width <= 0 || steps <= 1) return [expected];
-  const out: PerPiece[] = [];
-  for (let i = 0; i < steps; i += 1) {
-    // A position on a symmetric grid: two steps in, less the grid's own span, over that span — a
-    // count over a count, so it is a pure number between minus one and one by construction.
-    const span = asRatio(sub(steps, 1, 'steps less one'), 'the span of the grid');
-    const t = ratioOf(
-      minus(asRatio(mul(2, i, 'step'), 'two steps in'), span, 'centred'),
-      span,
-      'position',
-    );
-    const price = minus(
-      expected,
-      scale(width, asRatio(t, 'how far along the grid'), 'how far from what it expects'),
-      'a level it would pay',
-    );
-    if (price > 0) out.push(price);
-  }
-  return out;
-}

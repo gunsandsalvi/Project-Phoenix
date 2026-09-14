@@ -325,7 +325,7 @@ packages/engine/src/core/measure.ts     if an operation is genuinely missing —
 > | ~~2b~~ | ~~the conservation breaks: `A-39`, `A-68`, `A-19`, `A-1`~~ (`A-18` closed in 2a.1) — **DONE** | |
 > | ~~2c~~ | ~~rates read as levels: `A-44`, `A-58`, `A-65`~~ — **DONE**, and each was a rate that was not one | |
 > | ~~2d~~ | ~~the currency reads: `A-23`, `A-47`, `A-50`, `A-51`, `A-61`~~ — **DONE**; it took one kernel door | |
-> | 2e | the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38` | |
+> | ~~2e~~ | ~~the local ones: `A-5`, `A-6`, `A-32`, `A-33`, `A-38`~~ — **DONE. STAGE 2 IS CLOSED** apart from `E-9` and `E-10` | |
 >
 > ### Stage 2a.1 — as built
 >
@@ -486,6 +486,76 @@ is the one writer of which account a party holds a money in (Law 4). Four call s
 **Not measured.** Lint, typecheck, `check:spec`, `check:forbids`, `check:existence` green; the suite
 waits for the end of the plan.
 
+### Stage 2e — as built: the local ones, and what they removed
+
+**`A-5` — three registry functions took a unit and ignored it.** `payable(_ccy, amount)`,
+`cashFor(_ccy, value)` and `deliverable(_unit, qty)`. The step said "drop the parameter, or make it do
+the conversion it claims. Not both", and the read of the code settles which: a PIECE is the smallest
+thing there is in any money and any unit — that is what `core/tick.ts` means by the piece grid — so
+the answer never depended on which money it was. Where the subdivision DOES matter the reader is
+`named`/`downToNamed`, which asks the registry for that unit's own subdivision by name.
+
+Dropped at 73 call sites in the engine and 8 in the tests. Then the lint found what the parameter had
+been keeping alive: **nine locals and one function parameter that existed only to be passed to it**,
+and six imports behind those. All deleted. A fix to a cause removes code (Law 12), and this one
+removed a line for every place the lie had been repeated.
+
+**`A-6` — a unit string that said minutes and held hours.** `goods/index.ts` declares
+`labourHoursPerUnit × TIME_PIECES / PIECES_PER_UNIT` — hours per piece of the good, since a piece of
+time is an hour — under the unit `minutes per piece of <subUnit>`: the same number claiming to be
+sixty times itself. `labour/index.ts` carried the stale premise it came from, a comment about a
+thousandth of an hour being "about four seconds", which is what the grid was before `TIME_PIECES = 1`.
+
+**`A-33` — `lastOwn` has no period bound, and the fix put the bound in the ask.**
+`ParticipantView.lastOwnSince(kind, since)` answers only if the last event is no older than `since`.
+Eight callers had written `own.value.period !== view.period` by hand after calling `lastOwn`; they ask
+for it now and the hand guards are deleted. Five did not guard at all, and all five read a number that
+a writer only writes when it has something to say: `payWages` writes for an employer WITH ROWS, so a
+firm that shed its last worker kept force-selling stock to cover the payroll of nobody, publishing
+that payroll to its lenders as what it is about to have to pay, and planning production on hours it no
+longer employed — for the rest of the run. `quotedRate` was the same shape on `credit.quoted`: "what
+its debt costs AT THE MARGIN, NOW" was the last quote the firm was ever given. The bound is
+`payrollSince(period)` — this period or the one before, because `labour.pay` settles in cycle 2 — and
+`treasury`'s two readers, which walk `journal.forSubject` directly, go through one `currentPayroll`.
+
+**`A-38` — a cell's outside option was every kind of money it received.** `reservation` read
+`outlook('income')`, which is everything that reached it INCLUDING ITS OWN WAGE, so an employed cell's
+reservation was its current wage over its own hours and it could never be matched below what it
+already earned: a wage that goes up and never down, which is a downward rigidity Appendix B forbids as
+a stated rule and which had arrived through a read. The other half was its capital: its demanded wage
+rose one-for-one with every coupon, as though a saver were less willing to work.
+
+There is a new outlook subject, `{ on: 'benefit' }` — what reached a party that it did not WORK for —
+observed in the same ledger pass as `income`, off the money leg's own `receipt` (anything but `wage`).
+No second walk of the ledger. `reservation` reads it, and its docstring is now true.
+
+**`A-32`, and `A-58`'s schedule with it.** `levelsBelow(opinion, steps)` put its levels at
+`opinion × k/steps`, so its BOTTOM was `opinion / steps`: a grid of five bid down to 55% of the cell's
+own opinion and a grid of 200 to 0.5%, and the number declared a RESOLUTION was deciding how far down
+a saver bid at all. It is `levelsBelow(top, width, steps)` now, spanning the cell's own width below
+its top price — the same width that put its bid below its expectation, so both ends are numbers the
+cell named and `steps` only samples between them.
+
+**And `pricesOver` was NOT a defect.** The step said "same for `pricesOver` in `consume.ts`"; the read
+of the code says otherwise — its span is `expected ± width`, both ends already the cell's own, and
+`steps` already only sampled it. It is the pattern `levelsBelow` now follows. Written down because
+"MISSING and OUT OF SCOPE are different answers" cuts both ways: a finding that turns out to be wrong
+is said so, not quietly dropped.
+
+**The ladder is in the kernel.** `clearing/schedule.ts` holds `Rung`, `rungsOver`, `rungsUpTo`,
+`levelsBelow`, `levelsUpTo` and `pricesOver`; `households/demand.ts` is deleted. It had to move,
+because `securitisation:noteBids` needed it and a module never imports another module — and copying it
+would be Law 4. `levelsUpTo` is the second curve: a bidder stopped by a SIZE rather than a price takes
+more of a thing the cheaper it is, all the way down, and what bounds it is the `limitPerName` it
+already publishes. That is `A-58`'s second half: `noteBids` posted ONE order for its whole spare cash
+at its own reservation, and posts a curve now. `securitisation.demand.steps` is its resolution.
+`ARCHITECTURE.md` 4.6 carries the decision.
+
+**Not measured.** Lint, typecheck, `check:spec`, `check:forbids`, `check:existence` green. The
+resolution test `test/resolution/demand.test.ts` was rewritten as the stage went — it now asserts the
+SPAN is invariant, which is the property `A-32` names — and it runs at the end of the plan with the
+rest.
+
 ### Steps — stage 2a, the typing
 
 - [x] 2a.1 `banks` and `funds`: `LoanTerms.rate` and `SubTerms.rate` → `Ratio`; `interestTo` → `scale`; `PAR` named in both files; `hoursNeeded` → `scale`, `linesCovered` and `probabilityOfDefault` → `ratioOf`; the desk's one-sided flow → `plus`/`minus`/`absolute`/`ratioOf`; the fund's redemption shortfall → `minus`. `mul`, `div`, `add` and `sub` leave five files.
@@ -511,18 +581,23 @@ waits for the end of the plan.
 - [x] 2.14 **A-18**. `households/lifecycle.ts`, twice: `Math.floor(mul(weightOf(cell), share))` with a comment claiming the fraction "stays where it is until enough of it has accumulated". Nothing accumulates. Add the per-cell remainder the comment describes, carried forward, so `floor` times an event rather than deleting it. Then `crossing >= weightOf(cell)` moves the cell as itself rather than skipping it. **DONE in 2a.1** — `households.waiting`, both ends. Left in place because it is where the step is recorded; the prose above says what was built.
 - [x] 2.15 **A-19**. `settleEstates` pays out in one currency (`currencyOf(office.region)`) where `handToProbate` takes in every money a dead cell held. Pay out in every money probate holds; a foreign balance there is otherwise permanent. **DONE**: the office builds the same `monies` set `handToProbate` builds and pays out in every one of them. What arrives by every door leaves by every door.
 - [x] 2.16 **A-1**. `ledger/settlement.ts:reseat` books a TOTAL into the per-member equity account; `issue` and `redeem` wrap in `perMemberOf` and `reseat` does not, nor does the issuer re-mark in the `credit` case. Make `bump` take the total and divide, so there is one door and a new writer cannot forget. **DONE, and not as written.** `bump` could not "take the total" — three of its eight callers hold a PER-MEMBER number (the register's own), and making them multiply would put the rounding back. There are two named doors instead: `bumpPerMember` and `bumpTotal`, and no `bump`, so every existing caller had to say which of the two it held. `perMemberOf` is now reachable only from `bumpTotal`.
-- [ ] 2.17 **A-33**. `world/world.ts:1204 lastOwn` has no period bound. Add one predicate at the four `labour.wages` readers (`firms/decide.ts:wagesDue`, `wageFacing`, `hoursUnderContract`; `firms/index.ts:wagesPromised`), at `firms/invest.ts:quotedRate`, at `treasury/index.ts:lastWageBill`/`wageItFaces`, and at `banks/staff.ts:linesCovered`.
-- [ ] 2.18 **A-38**. `labour/matching.ts:reservation` reads `outlook('income')` — which includes coupons, distributions and (per A-37, closed) sale proceeds. A cell's outside option is what it lives on WITHOUT the job. Read the benefit and the non-labour income separately.
-- [ ] 2.19 **A-32**, **and `A-58`'s second half with it** — `levelsBelow`/`rungsOver` live in `households/demand.ts`, a module, and `securitisation:noteBids` posts a single point for its whole spare cash where Clearing A2 wants a schedule. It cannot import them (a module never imports a module), and duplicating them is Law 4. So the ladder moves to the kernel — `clearing/`, whose A2 `demand.ts` already cites — and both post through it. **That is a kernel change and this is where it is inserted** (Law 10): it is the dependency position, because A-32 opens the same function. The kernel move and `ARCHITECTURE.md` go in the same commit. `levelsBelow` declares `households.demand.steps` a RESOLUTION and its levels are `opinion × k/steps` — a grid of 5 and a grid of 7 share only the top level, and the grid's BOTTOM is `opinion/steps`, so the count sets how far down the cell bids at all. Either make it invariant under refinement, or re-declare it a SHAPE whose count must fall. Same for `pricesOver` in `consume.ts`.
-- [ ] 2.20 **A-5**. `registry/registry.ts`: `payable(_ccy, amount)`, `cashFor(_ccy, value)`, `deliverable(_unit, qty)` take a unit and ignore it. Drop the parameter, or make it do the conversion it claims. Not both.
-- [ ] 2.21 **A-6**. `goods/index.ts:122-129` declares `minutes per piece of <subUnit>` and holds hours (`TIME_PIECES = 1`, and `registry/grid.ts` says the piece of time is the hour). Correct the unit string. Same stale premise at `labour/index.ts`, whose comment describes a thousandth of an hour.
+- [x] 2.17 **A-33**. `world/world.ts:1204 lastOwn` has no period bound. Add one predicate at the four `labour.wages` readers (`firms/decide.ts:wagesDue`, `wageFacing`, `hoursUnderContract`; `firms/index.ts:wagesPromised`), at `firms/invest.ts:quotedRate`, at `treasury/index.ts:lastWageBill`/`wageItFaces`, and at `banks/staff.ts:linesCovered`. **DONE, and it removed code.** `ParticipantView.lastOwnSince(kind, since)` puts the bound in the ASK, so the eight callers that had written `own.value.period !== view.period` by hand now ask for it and the hand guards are gone. The four `labour.wages` readers and `quotedRate` take `payrollSince(period)` — this period or the one before, because `labour.pay` settles in cycle 2 — and `treasury`'s two, which read `journal.forSubject` directly, go through one `currentPayroll` helper.
+- [x] 2.18 **A-38**. `labour/matching.ts:reservation` reads `outlook('income')` — which includes coupons, distributions and (per A-37, closed) sale proceeds. A cell's outside option is what it lives on WITHOUT the job. Read the benefit and the non-labour income separately. **DONE.** A new outlook subject `{ on: 'benefit' }`: what reached a party that it did not WORK for, observed in the same ledger pass as `income` off the money leg's own `receipt` (anything but `wage`). `reservation` reads it, so an employed cell's reservation is no longer its own current wage over its own hours — a wage that could go up and never down, which is a rigidity Appendix B forbids as a stated rule and which arrived through a read.
+- [x] 2.19 **A-32**, **and `A-58`'s second half with it** — `levelsBelow`/`rungsOver` live in `households/demand.ts`, a module, and `securitisation:noteBids` posts a single point for its whole spare cash where Clearing A2 wants a schedule. It cannot import them (a module never imports a module), and duplicating them is Law 4. So the ladder moves to the kernel — `clearing/`, whose A2 `demand.ts` already cites — and both post through it. **That is a kernel change and this is where it is inserted** (Law 10): it is the dependency position, because A-32 opens the same function. The kernel move and `ARCHITECTURE.md` go in the same commit. `levelsBelow` declares `households.demand.steps` a RESOLUTION and its levels are `opinion × k/steps` — a grid of 5 and a grid of 7 share only the top level, and the grid's BOTTOM is `opinion/steps`, so the count sets how far down the cell bids at all. Either make it invariant under refinement, or re-declare it a SHAPE whose count must fall. Same for `pricesOver` in `consume.ts`. **DONE, both halves.** The ladder is `clearing/schedule.ts` now — `Rung`, `rungsOver`, `rungsUpTo`, `levelsBelow`, `levelsUpTo`, `pricesOver` — and `households/demand.ts` is deleted. `levelsBelow(top, width, steps)` spans the party's OWN width below its top price, both ends fixed; `levelsUpTo(top, steps)` is the other curve, for a bidder stopped by a SIZE rather than a price, and `noteBids` posts that against its published `limitPerName`. **And `pricesOver` was not a defect**: its span is `expected ± width`, already fixed, and `steps` already only sampled it — the step said "same for `pricesOver`" and the read of the code says otherwise. `ARCHITECTURE.md` 4.6 carries the decision.
+- [x] 2.20 **A-5**. `registry/registry.ts`: `payable(_ccy, amount)`, `cashFor(_ccy, value)`, `deliverable(_unit, qty)` take a unit and ignore it. Drop the parameter, or make it do the conversion it claims. Not both. **DONE**, by dropping the parameter — the answer never depended on it, because a PIECE is the smallest thing there is in any money and any unit. 73 call sites in the engine, 8 in the tests. The lint then found **nine dead locals and one dead parameter** that existed only to feed it, and six now-unused imports; all deleted, which is what a fix to a cause does (Law 12).
+- [x] 2.21 **A-6**. `goods/index.ts:122-129` declares `minutes per piece of <subUnit>` and holds hours (`TIME_PIECES = 1`, and `registry/grid.ts` says the piece of time is the hour). Correct the unit string. Same stale premise at `labour/index.ts`, whose comment describes a thousandth of an hour. **DONE.** `hours per piece of <subUnit>` — a piece of time is an hour (`TIME_PIECES = 1`), so the declaration was the same number claiming to be sixty times itself. `labour/index.ts`'s comment described a thousandth of an hour, which is what the grid used to be; it says what the grid is.
 - [ ] 2.22 Run `npm run check`. Read what it says and write every new finding into this file under the item that should fix it — do not chase one.
 
 ### Findings this closes (18)
 
-Done: ~~`A-1`~~ ~~`A-18`~~ ~~`A-19`~~ ~~`A-23`~~ ~~`A-39`~~ ~~`A-44`~~ ~~`A-47`~~ ~~`A-50`~~
-~~`A-51`~~ ~~`A-61`~~ ~~`A-65`~~ ~~`A-68`~~, ~~`E-8`~~, and `A-58`'s price. Open: `A-5` `A-6`
-`A-32` `A-33` `A-38` `A-58` (its schedule), and `E-9`, `E-10`. Bodies in Part 3.
+**All eighteen are closed**, and `E-8` with them. What is left of item 2 is `E-9` (a dirty price adds
+two scales) and `E-10` (`Contract.struckAt` means a different dimension per kind), which are steps
+2.4 and 2.5 and are the two that need a type change rather than a fix. Bodies in Part 3.
+
+Three came OUT of closing them and are positioned, not chased: **`E-11`** (2a.2, 6), **`E-12`** (21),
+and `A-18`'s `merge` half (item 12). **One turned out not to be a defect**: `pricesOver` was named
+beside `A-32` and its span was already the cell's own. A finding leaves this file only by being
+placed, and that includes being placed in the record as answered.
 
 Two came OUT of closing them and are positioned, not chased: **`E-11`** (2a.2, 6) and **`E-12`**
 (21). `A-18`'s `merge` half is item 12. A finding leaves this file only by being placed.
@@ -3594,8 +3669,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | finding | item | |
 |---|---|---|
 | **A-4** (B) | 4 | a claimed assembly guard on `exposedTo` does not exist |
-| **A-5** (C) | 2 | `payable`, `cashFor` and `deliverable` take a unit and ignore it |
-| **A-6** (C) | 2 | `labourParam` is declared in minutes and holds hours |
 | **A-9** (A) | 9, 14 | the whole insurer sector cannot open a single policy |
 | **A-10** (A) | 4 | the currency audit family compares a number against itself |
 | **A-11** (C) | 4 | `flows` switches Money D3 off for a whole cell for a whole period |
@@ -3607,11 +3680,8 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-24** (C) | 21 | the household's plan round-trips through `unknown` and drops what it cannot parse |
 | **A-25** (C) | 5 | an unpriced physical leg is valued at zero inside an audit family |
 | **A-30** (C) | 5 | numeric defaults where the discipline is `Missing` |
-| **A-32** (C) | 2 | `levelsBelow` claims a refinement invariance its arithmetic does not have |
-| **A-33** (B) | 2 | `lastOwn` has no period bound |
 | **A-34** (B) | 5 | a firm with no wage history bids for inputs as if labour were free |
 | **A-36** (C) | 16 | the treasury's immortality is unconditional where the kernel says conditional |
-| **A-38** (B) | 2 | a cell's outside option is every kind of money it received |
 | **A-42** (A) | 4 | two `units` families switch off in any period with a weight event |
 | **A-43** (C) | 9, 21 | the labour module builds the household's schedule |
 | **A-45** (C) | 5 | a bank that owes nothing has a cost of funds of zero |
@@ -3621,7 +3691,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-55** (A) | 7 | nobody can buy a dwelling, so Housing B1–C4 never runs |
 | **A-56** (A) | 7 | three lines have a firm, a recipe, a market and no buyer |
 | **A-57** (A) | 8 | a securitisation vehicle keeps the whole interest stream, for ever |
-| **A-58** (A) | 2 (2.19) | the price a bank will pay for a note is a leverage ratio squared — **the price closed at 2c**; what is left is that `noteBids` posts a point where Clearing A2 wants a schedule, carried to 2.19 with `A-32` |
 | **A-60** (A) | 3 | no bank makes a market, because no bank employs anybody |
 | **A-66** (A) | 6 | eight of nine derivative books can never produce a first print |
 | **A-67** (A) | 9 | nothing ever borrows a security |
@@ -3679,6 +3748,7 @@ carries each in full.
 | item 2, stage 2b | `A-1`, `A-19`, `A-39`, `A-68` |
 | item 2, stage 2c | `A-44` (its paper-bid half is `E-12`), `A-65`; `A-58`'s price (its schedule half is 2.19) |
 | item 2, stage 2d | `A-23`, `A-47`, `A-50`, `A-51`, `A-61` |
+| item 2, stage 2e | `A-5`, `A-6`, `A-32`, `A-33`, `A-38`, and `A-58`'s schedule |
 
 ### What the reads covered, and what they did not
 

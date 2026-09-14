@@ -42,6 +42,7 @@ export * from './prices/contract-value.js';
 export * from './clearing/solver.js';
 export * from './clearing/market.js';
 export * from './clearing/venue.js';
+export * from './clearing/schedule.js';
 export * from './journal/journal.js';
 export * from './audit/audit.js';
 export * from './audit/view.js';

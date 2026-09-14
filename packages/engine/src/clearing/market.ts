@@ -682,7 +682,6 @@ function contractTrade(
   if (size <= 0) return none<InstructionDraft>();
   // Law 8: a premium is MONEY, so it is a whole number of the money's own smallest piece.
   const premium = deps.registry.cashFor(
-    m.ccy,
     valueAt(profile.premiumPerUnit(price, decl.terms), size, 'the premium at inception'),
   );
   const house = decl.house;

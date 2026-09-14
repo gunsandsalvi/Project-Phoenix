@@ -181,9 +181,7 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
   // own books and is remitted with next period's income (E3).
   // XI-15: a central bank is a NAMED party and not a cell, so what its equity account moved by is
   // what it earned — `acrossMembers` at one is the door that says so in the type.
-  const paid = ctx.registry.payable(
-    ccy,
-    acrossMembers(income, 1, 'what a central bank of one earned'),
+  const paid = ctx.registry.payable(acrossMembers(income, 1, 'what a central bank of one earned'),
   );
   if (paid <= 0) return;
   const leg: Leg = {

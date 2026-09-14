@@ -197,7 +197,7 @@ function gift(seen: { grain: number; space: number }): SystemModule {
                 kind: 'create',
                 party: short,
                 instrument: good,
-                qty: ctx.registry.deliverable(ctx.instruments.get(good).unit, more),
+                qty: ctx.registry.deliverable(more),
                 costPerUnit: asPerPiece(1, 'what a unit cost'),
                 toCell: none(),
               },
@@ -214,7 +214,7 @@ function gift(seen: { grain: number; space: number }): SystemModule {
                 kind: 'create',
                 party: spare,
                 instrument: id,
-                qty: ctx.registry.deliverable(ctx.instruments.get(id).unit, more),
+                qty: ctx.registry.deliverable(more),
                 // A silo is a built thing and it is carried at what building one costs: a barn
                 // worth a penny would let its room for a fraction of a penny, and a fee below one
                 // piece of money is not a fee (Law 8).

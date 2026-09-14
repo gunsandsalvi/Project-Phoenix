@@ -47,7 +47,7 @@ import { atMost, material, sum } from '../../core/num.js';
 import { downTick, scaleQty } from '../../core/tick.js';
 import type { Instrument } from '../../register/instruments.js';
 import type { ParticipantView } from '../../world/context.js';
-import { levelsBelow, rungsOver } from './demand.js';
+import { levelsBelow, rungsOver } from '../../clearing/schedule.js';
 import type { Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
 
@@ -73,6 +73,12 @@ export interface SavingLine {
    * at. Uncertainty made it a seller, which is the opposite of what uncertainty does.
    */
   readonly bid: PerPiece;
+  /**
+   * §46 B3, A-32: HOW WRONG IT HAS BEEN ABOUT THIS LINE, which is the half-width of the range it
+   * thinks the price is in. The bid is the bottom of that range; this is how far the range reaches,
+   * and it is what the cell's posted ladder spans, so the ladder's ends are both its own numbers.
+   */
+  readonly width: PerPiece;
   /** What it will TAKE: the same expectation with the margin on the other side (§46 B3, A3). */
   readonly ask: PerPiece;
   /**
@@ -171,10 +177,10 @@ export function savingLines(
     if (last !== undefined) {
       // D5: it promises dated payments, so the question is whether the money comes back in time.
       if (compareCivil(last.date, by) > 0) continue;
-      paper.push({ instrument: i, bid, ask, tracks: profile.pricing === 'derived' });
+      paper.push({ instrument: i, bid, ask, width: spread, tracks: profile.pricing === 'derived' });
       continue;
     }
-    shares.push({ instrument: i, bid, ask, tracks: profile.pricing === 'derived' });
+    shares.push({ instrument: i, bid, ask, width: spread, tracks: profile.pricing === 'derived' });
   }
   return { paper, shares };
 }
@@ -330,7 +336,10 @@ export function shareOrders(
      * its own outlook now, not from a capitalisation of published earnings) and the bound was not
      * deleted with it. It is deleted with this.
      */
-    for (const rung of rungsOver(levelsBelow(line.bid, steps), perLine)) {
+    // A-32: the span it ladders over is its OWN width — the same "how wrong it has been about this
+    // line" that put its bid below its expectation — so both ends of the ladder are numbers the cell
+    // named and `steps` only samples between them.
+    for (const rung of rungsOver(levelsBelow(line.bid, line.width, steps), perLine)) {
       const wanted = scaleQty(rung.qty, weight, 'what the cell puts in');
       const qty = downTick(wanted);
       if (qty <= 0) continue;

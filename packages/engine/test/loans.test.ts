@@ -112,9 +112,7 @@ function overspendsItsLimit(at = 2): SystemModule {
             // per-name limit is only one of the three. What this module is for is an overdraft the
             // bank ALLOWS, so it asks for one small enough that the other two are not the binding
             // constraint.
-            amount: ctx.registry.payable(
-              USD,
-              plus(
+            amount: ctx.registry.payable(plus(
                 heldAsMoney(held, 'what it holds'),
                 asCash(limit / 100, 'a little over it'),
                 'a touch more than it holds',

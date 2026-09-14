@@ -83,7 +83,7 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
       covered.push(insuredAt(ctx, bank, holder, ccy, limit));
     }
     const base = sum(covered).value;
-    const due = ctx.registry.payable(ccy, scale(base, rate, 'the premium on what is covered'));
+    const due = ctx.registry.payable(scale(base, rate, 'the premium on what is covered'));
     if (due <= 0) continue;
     const r = ctx.settle({
       legs: [

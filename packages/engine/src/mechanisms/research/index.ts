@@ -137,9 +137,7 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
   if (members <= 0) return;
   const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
   for (const cell of cells) {
-    const share = ctx.registry.payable(
-      ccy,
-      over(owed, asRatio(members, 'the analysts there are'), "one analyst's share"),
+    const share = ctx.registry.payable(over(owed, asRatio(members, 'the analysts there are'), "one analyst's share"),
     );
     if (share <= 0) continue;
     const side = cellSide(cell, share);

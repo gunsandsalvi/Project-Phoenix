@@ -210,7 +210,7 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
       const ccy: CurrencyCode = ctx.registry.currencyOf(ctx.parties.get(who).region);
       const worth = ctx.participant(who).equity();
       if (worth <= 0) continue;
-      const due = ctx.registry.payable(ccy, scale(worth, rate, 'what the opinion costs the issuer'));
+      const due = ctx.registry.payable(scale(worth, rate, 'what the opinion costs the issuer'));
       if (due <= 0) continue;
       const r = ctx.settle({
         legs: [

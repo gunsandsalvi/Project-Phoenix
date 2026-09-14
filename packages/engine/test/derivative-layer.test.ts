@@ -609,7 +609,7 @@ function drain(who: PartyId, after: number): SystemModule {
           const other = MOVERS.find((m) => m !== who && ctx.parties.has(m));
           if (other === undefined) return;
           const cash = ctx.participant(who).cash(USD);
-          const amount = ctx.registry.cashFor(USD, heldAsMoney(cash, 'what it holds'));
+          const amount = ctx.registry.cashFor(heldAsMoney(cash, 'what it holds'));
           if (amount <= 0) return;
           ctx.settle({
             legs: [
@@ -648,7 +648,7 @@ describe('the payment has a cash test (D2.c, X2, Money E1)', () => {
     const cashBefore = ctx.participant(member).cash(USD);
     const postedBefore = posted(ctx, member, house, USD);
     // More than it has, by a margin nothing rounds away.
-    const tooMuch = ctx.registry.cashFor(USD, asCash(cashBefore * 2 + 1_000_000, 'more than it has'));
+    const tooMuch = ctx.registry.cashFor(asCash(cashBefore * 2 + 1_000_000, 'more than it has'));
     const r = ctx.settle({
       legs: moveMargin(ctx, member, house, USD, heldAsMoney(tooMuch, 'more than it has')),
       cause: 'transfer',

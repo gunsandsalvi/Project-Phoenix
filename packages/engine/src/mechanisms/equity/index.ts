@@ -614,13 +614,13 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
         // twenty-five seconds a period cost. It is a TRAVERSAL and nothing else: the answer below
         // already returns nothing for any other book, so the same firms post the same orders.
         markets: (view: ParticipantView): readonly MarketId[] => {
-          const own = view.lastOwn('equity.plan');
-          if (!own.some || own.value.period !== view.period) return [];
+          const own = view.lastOwnSince('equity.plan', view.period);
+          if (!own.some) return [];
           return [equityMarketOf(view.self.id)];
         },
         orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
-          const own = view.lastOwn('equity.plan');
-          if (!own.some || own.value.period !== view.period) return [];
+          const own = view.lastOwnSince('equity.plan', view.period);
+          if (!own.some) return [];
           if (own.value.data['line'] !== m.instrument) return [];
           const buyback = own.value.data['buyback'];
           const bookPerShare = own.value.data['bookPerShare'];

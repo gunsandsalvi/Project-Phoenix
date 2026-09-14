@@ -43,7 +43,7 @@ import { asQty, type Qty } from '../../core/tick.js';
 import { isLoan } from '../../registry/credit.js';
 import type { ParticipantView } from '../../world/context.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import { period as periodOf } from '../../calendar/calendar.js';
+import { period as periodOf, type Period } from '../../calendar/calendar.js';
 
 /** A3: the trade a bank's lending staff are in. Data, and the venue is found by it. */
 export const BANKING = 'banking';
@@ -87,12 +87,23 @@ export function hoursNeeded(view: ParticipantView): Qty {
 }
 
 /**
+ * A-33, Law 8: THE PERIOD A WAGE BILL IS STILL CURRENT IN. `labour.pay` settles in cycle 2, so a
+ * reader before it means the bill of the period before and one after it means this period's own.
+ * Anything older belongs to a desk that has paid NOBODY since — `payWages` writes only for an
+ * employer with rows — and `linesCovered` read it as current, so a desk that shed its staff went on
+ * quoting the lines its last payroll covered for ever (A-60).
+ */
+function payrollSince(at: Period): Period {
+  return at > 0 ? periodOf(at - 1) : at;
+}
+
+/**
  * Labour D1.c, Expectations A2.a: what an hour of this trade costs, as this bank can see it — what
  * its OWN wage bill came to per hour where it has one, and the published going rate where it has
  * not. A bank that has neither has no idea what staff cost and cannot put a cost in its quote.
  */
 export function wageFacing(view: ParticipantView, occupation: string): PerPiece | undefined {
-  const own = view.lastOwn('labour.wages');
+  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
   if (own.some) {
     const due = own.value.data['due'];
     const hours = own.value.data['hours'];
@@ -174,7 +185,7 @@ export const staffVenue = (view: ParticipantView): VenueDecl | undefined =>
  * with nobody on it is not a desk, and a line nobody quotes journals `market.noView` and says so.
  */
 export function linesCovered(view: ParticipantView): number {
-  const own = view.lastOwn('labour.wages');
+  const own = view.lastOwnSince('labour.wages', payrollSince(view.period));
   if (!own.some) return 0;
   const hours = own.value.data['hours'];
   if (typeof hours !== 'number' || hours <= 0) return 0;

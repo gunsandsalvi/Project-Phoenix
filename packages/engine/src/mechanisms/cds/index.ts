@@ -269,7 +269,7 @@ function settleSeriesNames(ctx: MechanismContext): void {
       );
       const buyer = c.terms.buysProtection ? c.a : c.b;
       const seller = c.terms.buysProtection ? c.b : c.a;
-      const amount = ctx.registry.cashFor(c.ccy, owed);
+      const amount = ctx.registry.cashFor(owed);
       if (amount > 0) {
         ctx.settle({
           legs: [
@@ -316,7 +316,7 @@ function settleEvents(ctx: MechanismContext): void {
     const owed = ctx.contracts.mark(c, ctx.period);
     const buyer = c.terms.buysProtection ? c.a : c.b;
     const seller = c.terms.buysProtection ? c.b : c.a;
-    const amount = ctx.registry.cashFor(c.ccy, absolute(owed, 'what the seller owes'));
+    const amount = ctx.registry.cashFor(absolute(owed, 'what the seller owes'));
     const legs: Leg[] = [
       {
         kind: 'contract',

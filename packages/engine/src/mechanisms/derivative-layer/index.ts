@@ -166,7 +166,6 @@ function capacity(): ClearingCapacity {
       // What this trade would ask of it, per unit of notional: the kind's own initial margin on one
       // unit at the level that cleared. A trade it cannot margin is a trade it cannot make, and the
       // market cuts it to what it can (E2) rather than anybody raising the room.
-      const profile = ctx.registry.derivativeKind(decl.kind);
       const one = ctx.contracts.marginFor(
         {
           kind: decl.kind,
@@ -185,7 +184,7 @@ function capacity(): ClearingCapacity {
       // admitted at nothing.
       if (!one.some) return 0;
       if (one.value <= 0) return wanted;
-      const affordable = ctx.registry.deliverable(profile.unit, room / one.value);
+      const affordable = ctx.registry.deliverable(room / one.value);
       return atMost(affordable, wanted, 'it posts out of the money in its account');
     },
     /**
@@ -227,7 +226,7 @@ function capacity(): ClearingCapacity {
       );
       if (!need.some) return [];
       const amount = heldAsMoney(
-        ctx.registry.cashFor(m.ccy, need.value),
+        ctx.registry.cashFor(need.value),
         'what the kind asks for, on the money’s own grid',
       );
       if (amount > 0) return moveMargin(ctx, party, against, m.ccy, amount);
@@ -362,7 +361,7 @@ function marginCalls(ctx: MechanismContext): void {
 function payLegs(ctx: MechanismContext): void {
   for (const c of ctx.contracts.open_()) {
     for (const due of ctx.contracts.legsDue(c, ctx.period)) {
-      const amount = ctx.registry.cashFor(due.ccy, due.amount);
+      const amount = ctx.registry.cashFor(due.amount);
       if (amount <= 0) continue;
       const r = ctx.settle({
         legs: [
@@ -454,7 +453,7 @@ function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): vo
   const c = ctx.contracts.get(id);
   const value = ctx.contracts.closeOut(c, ctx.period);
   const legs: Leg[] = [{ kind: 'contract', act: 'close', contract: id, why }];
-  const owed = ctx.registry.cashFor(c.ccy, absolute(value, 'what the close-out came to'));
+  const owed = ctx.registry.cashFor(absolute(value, 'what the close-out came to'));
   // Money E4: THE ROW CLOSES EITHER WAY, AND THE MONEY ONLY MOVES BETWEEN THE LIVING. Both sides
   // of a row can cease in one period — a member and the house it faced — and a termination that
   // insisted on paying would be an instruction addressed to somebody who is not there. What is
@@ -562,7 +561,7 @@ function issueCloseOutClaim(
   // smallest piece is not a claim anybody could be paid — it is the dust of the close-out's own
   // subtraction. Rounded here, before the instrument exists, so that a world where the mark and the
   // collateral agree to within a cent does not open a claim nobody can settle (Register C1).
-  const qty = ctx.registry.cashFor(ccy, amount);
+  const qty = ctx.registry.cashFor(amount);
   if (qty <= 0) return;
   // Register F2: EVERY REFERENCE RESOLVES TO SOMEBODY WHO EXISTS. Both sides of a row can have
   // ceased by the time it is closed out — a member and the house it faced, in one period — and a

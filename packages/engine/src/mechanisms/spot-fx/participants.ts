@@ -234,8 +234,8 @@ function least(a: Amount<'piece'>, b: Amount<'piece'>): Qty {
  * where the rate should be, and nobody decides that (Law 3).
  */
 export function arbitrageOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
-  const said = view.lastOwn('fx.arbitrage');
-  if (!said.some || said.value.period !== view.period) return [];
+  const said = view.lastOwnSince('fx.arbitrage', view.period);
+  if (!said.some) return [];
   const legs = said.value.data['legs'];
   if (!Array.isArray(legs)) return [];
   const out: Order[] = [];

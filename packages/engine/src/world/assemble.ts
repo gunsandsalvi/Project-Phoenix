@@ -215,7 +215,7 @@ function seedContext(w: World): SeedContext {
       const p = w.parties.get(party);
       const inst = moneyInstrumentId(p.bank, ccy);
       forbid(w.instruments.has(inst), 'Money A1', `${p.bank} issues no money in ${ccy}`);
-      const held = w.registry.payable(ccy, perMember);
+      const held = w.registry.payable(perMember);
       if (held <= 0) return;
       store.moneyDelta(p.id, inst, held, w.period);
       w.instruments.adjustIssued(inst, held * weightOf(p));
@@ -227,7 +227,7 @@ function seedContext(w: World): SeedContext {
       basisPerUnit: number,
     ) => {
       const p = w.parties.get(party);
-      const held = w.registry.deliverable(w.instruments.get(instrument).unit, perMember);
+      const held = w.registry.deliverable(perMember);
       if (held <= 0) return;
       store.credit(p.id, instrument, held, basisPerUnit, w.period);
       w.instruments.adjustIssued(instrument, held * weightOf(p));

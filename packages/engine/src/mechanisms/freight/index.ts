@@ -287,7 +287,7 @@ function load(
       // Law 6: a carrier cannot take more than it has room for and a shipper cannot ship more
       // than it wanted. Arithmetic impossibility on both sides, named at the site.
       const moved = atMost(carrier.qty, want, 'a carrier has only the room it has');
-      const paid = ctx.registry.payable(ccy, valueAt(rate, moved, 'the freight on what it shipped'));
+      const paid = ctx.registry.payable(valueAt(rate, moved, 'the freight on what it shipped'));
       if (paid > 0 && cargo(ctx, from, to, leg, room, shipper.party, carrier.party, moved, paid, ccy)) {
         want = subQty(want, moved, 'what it still wants moved');
         carriers[at] = { ...carrier, qty: subQty(carrier.qty, moved, 'the room it has left') };
@@ -323,7 +323,7 @@ function cargo(
     if (!ctx.instruments.has(transit)) continue;
     const free = ctx.register.free(shipper, i.id);
     const left = minus(units, shipped, 'what is still to go aboard');
-    const take = ctx.registry.deliverable(i.unit, atMost(free, left, 'it ships what it holds'));
+    const take = ctx.registry.deliverable(atMost(free, left, 'it ships what it holds'));
     if (take <= 0) continue;
     // E2: the hulls this cargo needs, and never more than the carrier has free. One hull's worth
     // of cargo takes one hull, which is what a hold IS.
@@ -335,9 +335,7 @@ function cargo(
       ),
     );
     if (need <= 0) continue;
-    const share = ctx.registry.payable(
-      ccy,
-      scale(
+    const share = ctx.registry.payable(scale(
         heldAsMoney(paid, 'the freight on the whole cargo'),
         ratioOf(take, units, 'its share'),
         'its freight',
@@ -476,7 +474,7 @@ function arrive(ctx: MechanismContext): void {
     if (!ctx.instruments.has(there)) continue;
     const held = ctx.register.holdingsOf(v.shipper).find((x) => x.instrument === v.cargo);
     if (held === undefined) continue;
-    const units = ctx.registry.deliverable(i.unit, atMost(v.aboard, ctx.register.free(v.shipper, v.cargo), 'what it still has aboard'));
+    const units = ctx.registry.deliverable(atMost(v.aboard, ctx.register.free(v.shipper, v.cargo), 'what it still has aboard'));
     if (units <= 0) continue;
     const cost = sum(held.lots.map((lot) => valueAt(lot.basisPerUnit, lot.qty, 'what it cost'))).value;
     const total = sum(held.lots.map((lot) => lot.qty)).value;

@@ -287,9 +287,7 @@ function weather(ctx: MechanismContext, rows: readonly CapitalKindDecl[]): void 
       'what the weather left standing',
     );
     const units = ctx.register.free(h.holder, i.id);
-    const lost = ctx.registry.deliverable(
-      i.unit,
-      scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
+    const lost = ctx.registry.deliverable(scale(units, asRatio(1 - survived, 'what the weather took'), 'what the wind took'),
     );
     if (!material(lost, 2, units) || lost <= 0) continue;
     const party = ctx.parties.get(h.holder);
@@ -378,7 +376,7 @@ function commissionOne(
   const free = ctx.register.free(buyer, good);
   // It commissions what it bought, and it cannot commission what it no longer has: a firm that
   // sold the machine on before it was installed installed nothing.
-  const qty = atMost(free, ctx.registry.deliverable(ctx.instruments.get(good).unit, bought), 'only what is unencumbered can be built into plant');
+  const qty = atMost(free, ctx.registry.deliverable(bought), 'only what is unencumbered can be built into plant');
   if (!material(qty, holding.value.lots.length + 1, bought)) return;
   const cost = costOfDraw(holding.value.lots, qty);
   const serviceDate = ctx.calendar.startOf(ctx.period);

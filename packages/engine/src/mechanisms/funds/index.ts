@@ -318,10 +318,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
  * pieces of it. Below one piece there is nothing to pay, and `payable` has already said so.
  */
 function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): Qty {
-  const party = ctx.parties.get(fund as PartyId);
-  return ctx.registry.payable(
-    ctx.registry.currencyOf(party.region),
-    scale(
+  return ctx.registry.payable(scale(
       valueAt(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
       scale(
         ctx.params.perAnnum(fundParam(fund, 'fee')),
@@ -405,10 +402,10 @@ function subscribe(
   // is paid is what they come to at the NAV — the nearest piece, so the fund is not shaved by a
   // fraction on every subscription it ever takes.
   let shares = downTick(amountOf(budget, perShare, 'shares it gets'));
-  let paid = ctx.registry.cashFor(ccy, valueAt(perShare, shares, 'what it pays'));
+  let paid = ctx.registry.cashFor(valueAt(perShare, shares, 'what it pays'));
   if (paid > cash) {
     shares = subQty(shares, ONE_PIECE, 'a piece less');
-    paid = ctx.registry.cashFor(ccy, valueAt(perShare, shares, 'what it pays'));
+    paid = ctx.registry.cashFor(valueAt(perShare, shares, 'what it pays'));
   }
   if (shares <= 0 || paid <= 0 || !material(shares, 2, sharesAsked)) return;
   const side = cellSide(party, shares);
@@ -462,16 +459,14 @@ function redeem(
   // XI-15: the register holds a cell's position PER MEMBER, which is the unit a request is in.
   const held = ctx.register.quantity(holder, share.id);
   const weight = weightOf(party);
-  const asked = atMost(ctx.registry.deliverable(share.unit, sharesAsked), held, 'it cannot hand back shares it does not hold');
+  const asked = atMost(ctx.registry.deliverable(sharesAsked), held, 'it cannot hand back shares it does not hold');
   if (asked <= 0) return 0;
   // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
   const cash = ctx.register.quantity(
     fund.id,
     moneyInstrumentId(ctx.accountOf(fund.id, ccy).issuer, ccy),
   );
-  const owedNow = ctx.registry.payable(
-    ccy,
-    valueAt(perShare, totalFor(party, asked), 'what it owes this holder'),
+  const owedNow = ctx.registry.payable(valueAt(perShare, totalFor(party, asked), 'what it owes this holder'),
   );
   const paying = atMost(owedNow, cash, 'it pays out of the money there is');
   // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
@@ -483,9 +478,7 @@ function redeem(
       'per member',
     ),
   );
-  const perMemberCash = ctx.registry.cashFor(
-    ccy,
-    valueAt(perShare, sharesNow, 'what a member is paid'),
+  const perMemberCash = ctx.registry.cashFor(valueAt(perShare, sharesNow, 'what a member is paid'),
   );
   /**
    * Law 8, C2.b: A PAYMENT BELOW ONE PIECE OF MONEY IS NOT A PAYMENT.
@@ -577,9 +570,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
     // so what a member can ask for or hand back is a whole number of them — whoever posted it has
     // already decided in whole shares, and this is where a posting that did not is refused rather
     // than quietly queued for ever.
-    const asked = ctx.registry.deliverable(
-      share.unit,
-      over(o.qty, asRatio(weightOf(ctx.parties.get(o.party)), 'the members it has'), 'shares per member'),
+    const asked = ctx.registry.deliverable(over(o.qty, asRatio(weightOf(ctx.parties.get(o.party)), 'the members it has'), 'shares per member'),
     );
     if (asked <= 0) continue;
     if (o.side === 'buy') {
@@ -982,9 +973,7 @@ function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
   );
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
   const buffer = scale(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
-  const spare = ctx.registry.payable(
-    ccy,
-    heldAsMoney(minus(cash, buffer, 'what it can place'), 'what it can place'),
+  const spare = ctx.registry.payable(heldAsMoney(minus(cash, buffer, 'what it can place'), 'what it can place'),
   );
   if (spare <= 0) return;
   const floor = floorRate(ctx);
@@ -1132,8 +1121,8 @@ function ordersOf(
 ): readonly Order[] {
   const d = declOf(decls, view.self.id);
   if (d === undefined) return [];
-  const own = view.lastOwn('fund.struck');
-  if (!own.some || own.value.period !== view.period) return [];
+  const own = view.lastOwnSince('fund.struck', view.period);
+  if (!own.some) return [];
   const shortfall = own.value.data['shortfall'];
   const saidSpare = own.value.data['spare'];
   if (typeof shortfall !== 'number' || typeof saidSpare !== 'number') return [];

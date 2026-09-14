@@ -442,9 +442,7 @@ function close(ctx: MechanismContext, estate: PartyId, p: Process, ccy: Currency
   }
   for (const c of claimsOn(ctx, estate)) {
     const holder = ctx.parties.get(c.holder);
-    const perMember = ctx.registry.deliverable(
-      ctx.instruments.get(c.instrument).unit,
-      holder.representation === 'cell'
+    const perMember = ctx.registry.deliverable(holder.representation === 'cell'
         ? over(c.units, asRatio(holder.weight, 'the members it has'), 'per member')
         : c.units,
     );

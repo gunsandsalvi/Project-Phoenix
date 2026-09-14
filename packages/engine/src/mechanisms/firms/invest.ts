@@ -34,6 +34,7 @@
  * The only way anything is bought below is that a unit of capacity was worth more to this firm than
  * what the market is asking for the plant that makes one.
  */
+import { payrollSince } from './decide.js';
 import {
   amountOf,
   asCash,
@@ -147,7 +148,11 @@ export function costOfCapital(view: ParticipantView): Option<CostOfCapital> {
  * coupon on debt already outstanding. XI-4 names that average as the way this joint is deleted.
  */
 function quotedRate(view: ParticipantView): Option<Ratio> {
-  const own = view.lastOwn('credit.quoted');
+  // A-33: AT THE MARGIN means NOW, and `lastOwn` answers from any period ever — so this was the
+  // last quote the firm was ever given, carried into its cost of capital for ever after. A bank
+  // quotes when it quotes; a firm nobody has quoted lately has no marginal cost of debt, which is
+  // Missing and not the rate it got once.
+  const own = view.lastOwnSince('credit.quoted', payrollSince(view.period));
   if (!own.some) return none<Ratio>();
   const rate = own.value.data['rate'];
   // Item 16: a rate re-entering from what was published under this firm's name.

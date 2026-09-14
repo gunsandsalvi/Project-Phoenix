@@ -36,7 +36,7 @@ import {
   scale,
 } from '../../core/measure.js';
 import type { Order } from '../../clearing/solver.js';
-import type { CurrencyCode, UnitId } from '../../core/ids.js';
+import type { CurrencyCode } from '../../core/ids.js';
 import { none, some, type Option } from '../../core/option.js';
 import { addQty, asQty, negQty, NO_QTY, type Qty } from '../../core/tick.js';
 import type { ParticipantView } from '../../world/context.js';
@@ -109,7 +109,6 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   const t = decl.terms;
   const spot = view.print(t.spot);
   if (!spot.some) return [];
-  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   const tick = view.registry.tickForDerivative(decl.kind, m.ccy);
   /**
    * B2, XI-13: ITS OWN NUMBER — what carrying one money against the other for this term costs IT,
@@ -131,7 +130,7 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   // kernel refuses anything else (Clearing A2).
   const short = minus(positionIn(view, t.base), covered, 'left uncovered');
   if (short !== 0) {
-    const qty = view.registry.deliverable(unit, absolute(short, 'either way'));
+    const qty = view.registry.deliverable(absolute(short, 'either way'));
     if (qty <= 0) return [];
     return [{ party: view.self.id, side: short > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) }];
   }
@@ -148,9 +147,7 @@ export function fxForwardOrders(view: ParticipantView, m: MarketDecl): readonly 
   if (!carry.some) return [];
   const room = view.equity();
   if (room <= 0) return [];
-  const size = view.registry.deliverable(
-    unit,
-    amountOf(room, spot.value.price, 'what its capital carries'),
+  const size = view.registry.deliverable(amountOf(room, spot.value.price, 'what its capital carries'),
   );
   if (size <= 0) return [];
   const bid = minus(carry.value, tick, 'a tick inside its carry');
@@ -172,12 +169,11 @@ export function xccyOrders(view: ParticipantView, m: MarketDecl): readonly Order
   const t = decl.terms;
   const last = view.print(t.book);
   if (!last.some) return [];
-  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   const needs = positionIn(view, t.base);
   if (needs <= 0) return [];
   const spot = view.print(t.spot);
   if (!spot.some) return [];
-  const qty = view.registry.deliverable(unit, needs);
+  const qty = view.registry.deliverable(needs);
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: 'buy', price: last.value.price, qty: asQty(qty) }];
 }

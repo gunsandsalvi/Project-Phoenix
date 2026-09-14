@@ -37,7 +37,7 @@ import {
 import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -321,7 +321,6 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const t = decl.terms;
   const cash = view.print(t.deliverable);
   if (!cash.some) return [];
-  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   /**
    * XI-13, Clearing E1: ITS OWN NUMBER, and it is about the DELIVERABLE rather than about this
    * book — its own outlook of that line where it has one, and what the line last printed
@@ -359,7 +358,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     worth < 0 &&
     absolute(worth, 'what it is down') > scale(own, tolerance, 'what it will stand')
   ) {
-    const qty = view.registry.deliverable(unit, absolute(position, 'the position it would close'));
+    const qty = view.registry.deliverable(absolute(position, 'the position it would close'));
     if (qty <= 0) return [];
     return [{ party: view.self.id, side: position > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) }];
   }
@@ -377,9 +376,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const price = mine;
   if (at.some && own > 0) {
     const book = at.value.price;
-    const conviction = view.registry.deliverable(
-      unit,
-      pricedAt(
+    const conviction = view.registry.deliverable(pricedAt(
         own,
         scale(asAmount<'piece'>(t.contractSize, 'the face in a contract'), asRatio(cash.value.price, 'at its price'), 'what one contract commits'),
         'what it can carry',
@@ -393,7 +390,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   }
   const move = minus(want, position, 'from the position it has to the one it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
+  const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
@@ -496,7 +493,7 @@ function deliver(ctx: MechanismContext): void {
         from: short,
         to: long,
         instrument: t.deliverable,
-        qty: ctx.registry.deliverable(ctx.instruments.get(t.deliverable).unit, face),
+        qty: ctx.registry.deliverable(face),
         pricePerUnit: some(price.value.price),
         accruedPerUnit: none(),
         fromCell: none(),
@@ -507,7 +504,7 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(row.ccy, valueAt(price.value.price, face, 'what the face costs')),
+        amount: ctx.registry.cashFor(valueAt(price.value.price, face, 'what the face costs')),
         fromCell: none(),
         toCell: none(),
       });

@@ -47,7 +47,7 @@ import {
 } from '../../core/measure.js';
 import { nextCycle, type Calendar, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import type { CurrencyCode, InstrumentId, MarketId, ParamId, PartyId, UnitId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId, MarketId, ParamId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { div, mul } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -318,7 +318,6 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const t = decl.terms;
   const spot = view.print(t.deliverable);
   if (!spot.some) return [];
-  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   const outlook = view.outlook(about({ on: 'price', instrument: t.deliverable }));
   const mine = outlook.some ? outlook.value.expected : spot.value.price;
   const at = view.print(t.book);
@@ -344,9 +343,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const own = at.some ? view.equity() : asCash(0, 'no book to stand its capital against');
   if (at.some && own > 0) {
     const book = at.value.price;
-    const conviction = view.registry.deliverable(
-      unit,
-      pricedAt(
+    const conviction = view.registry.deliverable(pricedAt(
         own,
         scale(asAmount<'piece'>(t.lotUnits, 'the units in a lot'), asRatio(spot.value.price, 'at their price'), 'what one lot commits'),
         'what it can carry',
@@ -365,7 +362,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   }
   const move = minus(want, position, 'from the position it has to the one it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
+  const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) }];
 }
@@ -591,7 +588,7 @@ function deliver(ctx: MechanismContext): void {
         from: short,
         to: long,
         instrument: t.deliverable,
-        qty: ctx.registry.deliverable(ctx.instruments.get(t.deliverable).unit, units),
+        qty: ctx.registry.deliverable(units),
         pricePerUnit: some(price.value.price),
         accruedPerUnit: none(),
         fromCell: none(),
@@ -602,7 +599,7 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(row.ccy, valueAt(price.value.price, units, 'what the lot costs')),
+        amount: ctx.registry.cashFor(valueAt(price.value.price, units, 'what the lot costs')),
         fromCell: none(),
         toCell: none(),
       });

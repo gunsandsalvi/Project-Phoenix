@@ -411,7 +411,7 @@ function allocate(
     for (const e of layer) {
       // Clearing C3: pro rata, in whole pieces, and the odd piece has a named holder.
       const share = heldAsMoney(
-        ctx.registry.payable(ccy, scale(cut, ratioOf(e.owed, pool, 'its share'), 'its loss')),
+        ctx.registry.payable(scale(cut, ratioOf(e.owed, pool, 'its share'), 'its loss')),
         'what this holder loses',
       );
       if (share <= 0) continue;
@@ -489,9 +489,7 @@ function writeDownDeposit(
   share: Cash,
 ): Qty {
   const p = ctx.parties.get(holder);
-  const perMember = ctx.registry.payable(
-    ccy,
-    // XI-15, Law 8: what ONE MEMBER'S OWN ACCOUNT moves by is a money in that account, and it is a
+  const perMember = ctx.registry.payable(// XI-15, Law 8: what ONE MEMBER'S OWN ACCOUNT moves by is a money in that account, and it is a
     // whole number of the money's own pieces like every other balance. `acrossMembers` at one is
     // the door that says so: one member's share of a per-member number is that number.
     acrossMembers(
@@ -542,14 +540,10 @@ function writeDownRow(
   const units = ctx.register.quantity(holder, row);
   if (units <= 0 || owed <= 0) return NO_QTY;
   const total = scaleQty(units, weightOf(p), 'what it holds');
-  const wiped = ctx.registry.deliverable(
-    ctx.instruments.get(row).unit,
-    scale(total, ratioOf(share, owed, 'the share of it that is lost'), 'units written off'),
+  const wiped = ctx.registry.deliverable(scale(total, ratioOf(share, owed, 'the share of it that is lost'), 'units written off'),
   );
   if (wiped <= 0) return NO_QTY;
-  const perMember = ctx.registry.deliverable(
-    ctx.instruments.get(row).unit,
-    over(wiped, asRatio(weightOf(p), 'the members of the cell'), 'per member'),
+  const perMember = ctx.registry.deliverable(over(wiped, asRatio(weightOf(p), 'the members of the cell'), 'per member'),
   );
   if (perMember <= 0) return NO_QTY;
   const moved = totalFor(p, perMember);
@@ -604,7 +598,7 @@ function payFrom(
     ctx.register.quantity(from, moneyInstrumentId(ctx.accountOf(from, ccy).issuer, ccy)),
     'what it has to pay with',
   );
-  const amount = ctx.registry.payable(ccy, atMost(wanted, has, 'it pays out of the money there is'));
+  const amount = ctx.registry.payable(atMost(wanted, has, 'it pays out of the money there is'));
   if (amount <= 0) return NO_QTY;
   const r = ctx.settle({
     legs: [

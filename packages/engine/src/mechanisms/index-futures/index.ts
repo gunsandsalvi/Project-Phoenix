@@ -14,7 +14,7 @@
  */
 import { asCash, asPerPiece, asRatio, type Cash, minus, negated, type PerPiece, plus, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
-import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { none, some, type Option } from '../../core/option.js';
 import { addQty, asQty, negQty, NO_QTY, type Qty } from '../../core/tick.js';
@@ -156,7 +156,6 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const t = decl.terms;
   const level = view.index(t.index);
   if (!level.some || level.value.level <= 0) return [];
-  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   // E1: the position it TOOK, at the prints its own constituents made.
   let book = asCash(0, 'its book before it is walked');
   for (const constituent of level.value.basket) {
@@ -196,7 +195,7 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
     'left to hedge',
   );
   if (want <= 0) return [];
-  const qty = view.registry.deliverable(unit, want);
+  const qty = view.registry.deliverable(want);
   if (qty <= 0) return [];
   return [
     {

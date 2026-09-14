@@ -93,17 +93,24 @@ function participates(ctx: MechanismContext, p: Party, retirementAge: number): b
 }
 
 /**
- * B1.a: the least a cell will work for. Its outside option is what it lives on without the job —
- * read from its own outlook of its own income, which for somebody not working is the benefit this
- * world pays it. A cell that has never observed an income has no outside option to compare against
- * and does not post: it cannot say what it will not work for.
+ * B1.a: the least a cell will work for. Its outside option is what it lives on WITHOUT the job —
+ * the standing mandate the treasury pays it, what an estate hands it, what its paper pays it. A
+ * cell that has never observed one has no outside option to compare against and does not post: it
+ * cannot say what it will not work for.
+ *
+ * A-38: this read `income`, which is everything that reached it — INCLUDING ITS OWN WAGE. An
+ * employed cell's reservation was therefore its current wage over its own hours, so it could never
+ * be matched below what it already earned: a wage that can go up and never down, which is a
+ * downward rigidity nobody declared and which Appendix B forbids arriving as a stated rule. It
+ * arrived through a read instead. The other half was the paper: a cell's demanded wage rose
+ * one-for-one with every coupon it was paid, as though a saver were less willing to work.
  */
 function reservation(ctx: MechanismContext, cell: PartyId, hours: Qty): PerPiece | undefined {
-  // `income` is what the expectations module names what a party observes reaching it (A2).
-  const outlook = ctx.participant(cell).outlook(about({ on: 'income' }));
+  // `benefit` is what the expectations module names what reached a party that it did not work for.
+  const outlook = ctx.participant(cell).outlook(about({ on: 'benefit' }));
   if (!outlook.some) return undefined;
   return pricedAt(
-    asCash(outlook.value.expected, 'what it expects to earn'),
+    asCash(outlook.value.expected, 'what it expects to live on without the job'),
     hours,
     'reservation wage',
   );

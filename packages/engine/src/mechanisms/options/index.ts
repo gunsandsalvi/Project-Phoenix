@@ -38,7 +38,7 @@ import {
 } from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
-import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
+import type { CurrencyCode, InstrumentId, MarketId, PartyId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
 import { atLeast, mul } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -421,7 +421,6 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   // in the world is asked about every book, and its own book and its own equity were both walked
   // before this line to arrive at the same nothing.
   if (mine <= 0) return [];
-  const unit: UnitId = view.registry.derivativeKind(decl.kind).unit;
   let covered: Amount<'piece'> = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isOption(c.terms) || c.terms.underlying !== t.underlying || c.terms.right !== t.right) continue;
@@ -461,7 +460,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const own = at.some ? view.equity() : asCash(0, 'no book to stand its capital against');
   if (at.some && own > 0) {
     const book = at.value.price;
-    const room = view.registry.deliverable(unit, amountOf(own, price, 'what it can write'));
+    const room = view.registry.deliverable(amountOf(own, price, 'what it can write'));
     if (price > book) {
       // It thinks these are dear against what the market last paid: it would rather be the writer.
       want = minus(want, room, 'and what it would write at its own price');
@@ -471,7 +470,7 @@ function optionOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   }
   const move = minus(want, covered, 'from the cover it has to the cover it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
+  const qty = view.registry.deliverable(absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }

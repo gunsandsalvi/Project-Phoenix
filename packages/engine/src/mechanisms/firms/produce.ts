@@ -72,9 +72,9 @@ function wagesThisPeriod(ctx: MechanismContext, firm: PartyId): Cash {
 
 /** The batch this firm said it would start, read back from its own published plan. */
 function plannedBatch(view: ParticipantView): Qty {
-  const own = view.lastOwn('firms.plan');
+  const own = view.lastOwnSince('firms.plan', view.period);
   const none = asAmount<'piece'>(0, 'a firm with no plan this period starts nothing');
-  if (!own.some || own.value.period !== view.period) return none;
+  if (!own.some) return none;
   const batch = own.value.data['batch'];
   // Item 16: a published number re-enters the type system here, through the dimension's own door.
   return typeof batch === 'number' ? asAmount<'piece'>(batch, 'the batch it said it would start') : none;
@@ -169,7 +169,7 @@ function start(
   const binding = limits.reduce((a, b) => (b.qty < a.qty ? b : a));
   const wip = wipId(tech.terms.subUnit, tech.terms.region);
   // Law 8: what goes on the line is a whole number of the smallest piece of it.
-  const batch = ctx.registry.deliverable(ctx.instruments.get(wip).unit, binding.qty);
+  const batch = ctx.registry.deliverable(binding.qty);
   const bound = binding.bound;
   const room = capacity.some ? capacity.value.perPeriod : null;
   if (!material(batch, tech.inputs.length + tech.plant.length + 2, planned)) {
@@ -274,9 +274,7 @@ function yieldBatch(
     Math.pow(tech.yieldRate, 1 / (season * ground)),
     'what this season and this ground left of the line',
   );
-  const finished = ctx.registry.deliverable(
-    ctx.instruments.get(good).unit,
-    scale(due, asRatio(survived, 'what the line left of it'), 'what came off the line'),
+  const finished = ctx.registry.deliverable(scale(due, asRatio(survived, 'what the line left of it'), 'what came off the line'),
   );
   if (!material(finished, 2, due) || finished <= 0) return;
   const record = ctx.settle({

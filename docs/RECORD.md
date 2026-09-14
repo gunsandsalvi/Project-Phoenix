@@ -5914,3 +5914,99 @@ Every deletion names the read that replaces it (Law 19).
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. The engine suite is still not run.
+
+---
+
+## Item 2, stage 2e — the local ones, and what they removed
+
+Five findings that each live in one place, and between them they deleted more code than they added.
+
+**`A-5` — three registry functions took a unit and ignored it.** `payable(_ccy, amount)`,
+`cashFor(_ccy, value)`, `deliverable(_unit, qty)`. The step offered two answers — drop the parameter,
+or make it do the conversion it claims, not both — and reading the code settles it: a PIECE is the
+smallest thing there is in any money and any unit, which is what `core/tick.ts` means by the piece
+grid, so the answer never depended on which money it was. Where a subdivision DOES matter the reader
+is `named`/`downToNamed`, and it asks the registry for that unit's own subdivision by name.
+
+Dropped at 73 call sites in the engine and 8 in the tests. The lint then found what the parameter had
+been keeping alive: **nine locals and one function parameter that existed only to be passed to it**
+(`const unit = view.registry.derivativeKind(decl.kind).unit` in six modules, `cds:sizeOf`'s `unit`
+argument, `funds:feeAccrued`'s `party`), and six imports behind those. All deleted. A fix to a cause
+removes code (Law 12) and this one removed a line for every place the claim had been repeated.
+
+**`A-6` — a unit string that said minutes and held hours.** `goods/index.ts` declares
+`labourHoursPerUnit × TIME_PIECES / PIECES_PER_UNIT` as `minutes per piece of <subUnit>`. A piece of
+time is an HOUR (`registry/grid.ts`: `TIME_PIECES = 1`), so the number is hours per piece and the
+declaration claimed it was sixty times itself. `labour/index.ts` still carried the premise that unit
+string came from — a comment about a thousandth of an hour being "about four seconds" — which is what
+the grid was before. Law 8 says the unit is part of the number; a wrong one is a wrong number waiting
+for a reader.
+
+**`A-33` — `lastOwn` has no period bound, and the fix put the bound in the ask.** `lastOwn(kind)` is
+the most recent event of a kind for a party from any period ever. `ParticipantView.lastOwnSince(kind,
+since)` is the same read with the period in the question, and it answers Missing when the last one is
+older — a different answer from a stale one.
+
+Eight callers had written `own.value.period !== view.period` by hand after calling `lastOwn`. They ask
+for it now and the hand guards are deleted, which is the half of this that removes code. Five callers
+did not guard at all, and every one of them read a number a writer only writes when it has something
+to say: `payWages` writes for an employer WITH ROWS. So a firm that shed its last worker went on
+force-selling stock at `price: 'market'` to cover the payroll of nobody — XI-2's forced seller firing
+on a phantom obligation — publishing that payroll in `firms.funding` as what it is about to have to
+pay, which is what a bank lends against, and planning production on hours it no longer employed, for
+the rest of the run. `quotedRate` was the same shape on `credit.quoted`: XI-4's "what its debt costs
+AT THE MARGIN, NOW, not the average coupon on debt already outstanding" was the last quote the firm
+was ever given, carried into its cost of capital for ever.
+
+The bound is `payrollSince(period)` — this period or the one before, because `labour.pay` settles in
+cycle 2 and `firms.decide` runs in cycle 0, so a reader before it means the previous period's bill and
+one after it means this period's. `treasury`'s two readers walk `journal.forSubject` directly and go
+through one `currentPayroll` helper instead.
+
+**`A-38` — a cell's outside option was every kind of money it received.** `reservation` read
+`outlook('income')`: everything that reached it, INCLUDING ITS OWN WAGE. So an employed cell's
+reservation was its current wage over its own hours and it could never be matched below what it
+already earned — a wage that goes up and never down. Appendix B forbids a stated wage rule; this was
+one arriving through a read. The other half was its capital: a cell's demanded wage rose one-for-one
+with every coupon it was paid, as though a saver were less willing to work.
+
+There is a new outlook subject, **`{ on: 'benefit' }`** — what reached a party that it did not WORK
+for. It is observed in the same pass over the ledger as `income`, off the money leg's own `receipt`
+(anything but `wage`), so there is no second walk and no second definition of what a party received.
+`reservation` reads it, and B1.a's "what it lives on without the job" is now what the code does.
+
+**`A-32`, and `A-58`'s schedule with it.** `levelsBelow(opinion, steps)` placed its levels at
+`opinion × k/steps`, so its BOTTOM was `opinion / steps`: a grid of five bid down to 55% of the cell's
+own opinion and a grid of 200 down to 0.5%. The number declared a RESOLUTION was deciding how far down
+a saver bid at all, which is a SHAPE wearing a resolution's name. It is `levelsBelow(top, width,
+steps)` now, spanning the cell's own width below its top price — the same width that put its bid below
+its expectation, used once — so both ends are numbers the cell named and `steps` only samples between.
+
+**`pricesOver` was not a defect.** The step said "same for `pricesOver` in `consume.ts`". It is not:
+its span is `expected ± width`, both ends the cell's own, and `steps` already only sampled it. It is
+the pattern `levelsBelow` now follows. Recorded rather than dropped — "MISSING and OUT OF SCOPE are
+different answers" cuts both ways, and a finding that turns out to be wrong is answered, not deleted.
+
+**The ladder moved into the kernel.** `packages/engine/src/clearing/schedule.ts` holds `Rung`,
+`rungsOver`, `rungsUpTo`, `levelsBelow`, `levelsUpTo` and `pricesOver`; `households/demand.ts` is
+deleted. It had to move: `securitisation:noteBids` needs it and a module never imports another module,
+and copying it would be two representations of one thing (Law 4). Its own header already cited
+Clearing A2 and A2.a, so it was a clearing concern living in a sector.
+
+`levelsUpTo` is the second curve and it is `A-58`'s remaining half. A bidder stopped by a SIZE rather
+than a price takes more of a thing the cheaper it is, all the way down, and what bounds it is the
+`limitPerName` it already publishes — so its span is `(0, top]`, which is fixed, and the quantity
+converges as the grid refines instead of diverging the way a budget over a price would. That is why
+this one may run to zero and `levelsBelow` may not. `noteBids` posted ONE order for the whole of its
+spare cash at its own reservation; it posts a curve now, with `securitisation.demand.steps` as its
+resolution. `docs/ARCHITECTURE.md` 4.6 carries the decision, in this commit.
+
+`test/resolution/demand.test.ts` was rewritten as the stage went: it asserts the SPAN is invariant at
+every grain, which is the property `A-32` names and the one the old ladder failed, and it covers
+`levelsUpTo` under a limit. It runs at the end of the plan with the rest.
+
+**Stage 2 is closed apart from `E-9` and `E-10`** (steps 2.4 and 2.5), which are type changes rather
+than fixes. All eighteen findings the item named are done.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence` green.
+The engine suite is still not run.

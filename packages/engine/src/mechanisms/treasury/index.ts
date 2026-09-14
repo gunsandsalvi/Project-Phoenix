@@ -41,6 +41,7 @@ import type { Civil } from '../../calendar/civil.js';
 import { addMonths, compareCivil, formatCivil } from '../../calendar/civil.js';
 import { yearFraction, type DayCount } from '../../calendar/daycount.js';
 import { period, type Period } from '../../calendar/calendar.js';
+import type { Event } from '../../journal/journal.js';
 import { Impossible, Missing } from '../../core/errors.js';
 import {
   currencyUnit,
@@ -193,10 +194,23 @@ function mandatePerPeriod(ctx: MechanismContext, id: PartyId): Cash {
   return sum(terms).value;
 }
 
-/** What its own payroll came to last time it was paid, read from its own record (Law 19). */
-function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
+/**
+ * A-33, Law 8: ITS OWN PAYROLL, IF IT IS STILL CURRENT. `payWages` writes an event only for an
+ * employer that has rows, so taking the last one from any period ever meant a state that stopped
+ * employing kept both its wage bill and the wage it bids for an hour frozen at its final period.
+ * `labour.pay` settles in cycle 2, so this period's and the one before it are current and older is
+ * a payroll of nobody.
+ */
+function currentPayroll(ctx: MechanismContext, id: PartyId): Event | undefined {
   const events = ctx.journal.forSubject('labour.wages', id);
   const last = events[events.length - 1];
+  const since = ctx.period > 0 ? period(ctx.period - 1) : ctx.period;
+  return last === undefined || last.period < since ? undefined : last;
+}
+
+/** What its own payroll came to last time it was paid, read from its own record (Law 19). */
+function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
+  const last = currentPayroll(ctx, id);
   if (last === undefined) return asCash(0, 'a treasury that has published no payroll');
   const due = last.data['due'];
   return asCash(typeof due === 'number' ? due : 0, 'what its own payroll says it owes');
@@ -204,8 +218,7 @@ function lastWageBill(ctx: MechanismContext, id: PartyId): Cash {
 
 /** What an hour costs it: what its own payroll paid for one, or what the market last printed. */
 function wageItFaces(ctx: MechanismContext, id: PartyId): PerPiece | undefined {
-  const own = ctx.journal.forSubject('labour.wages', id);
-  const mine = own[own.length - 1];
+  const mine = currentPayroll(ctx, id);
   if (mine !== undefined) {
     const due = mine.data['due'];
     const hours = mine.data['hours'];

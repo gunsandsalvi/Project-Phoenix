@@ -34,6 +34,7 @@
  */
 import { dayNumber, type Civil } from '../../calendar/civil.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
+import { levelsUpTo, rungsUpTo } from '../../clearing/schedule.js';
 import { priceAt } from '../../prices/curve.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import { percent } from '../../core/format.js';
@@ -42,6 +43,7 @@ import {
   instrumentId,
   instrumentKindId,
   marketId,
+  paramId,
   partyId,
   partyKindId,
   venueId,
@@ -53,7 +55,7 @@ import {
 } from '../../core/ids.js';
 import { atMost, div, sum } from '../../core/num.js';
 import { addQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
-import { asRatio, minus, plus, asPerPiece, pricedAt, type Cash, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
+import { asRatio, heldAsMoney, minus, plus, asPerPiece, pricedAt, type Cash, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
@@ -78,6 +80,9 @@ export const trancheId = (vehicle: PartyId, layer: 'senior' | 'junior'): Instrum
   instrumentId(`tranche:${vehicle}:${layer}`);
 
 export const dealVenue = (vehicle: PartyId): VenueId => venueId(`securitisation:${vehicle}`);
+
+/** Clearing A2: how many levels of its own curve a bidder posts. A RESOLUTION (Law 2). */
+export const DEAL_STEPS = paramId('securitisation.demand.steps');
 
 export interface TrancheTerms extends Terms {
   readonly kind: typeof TRANCHE;
@@ -898,11 +903,24 @@ export function noteBids(
   if (!published.some) return [];
   const limit = published.value.data['limitPerName'];
   if (typeof limit !== 'number' || limit <= 0) return [];
-  const qty = downTick(atMost(spare, limit, 'what it will have out to one name'));
-  if (qty <= 0) return [];
   const price = priceFor(view, ccy, schedule);
   if (!price.some) return [];
-  return [{ party: view.self.id, side: 'buy', price: price.value, qty }];
+  /**
+   * Clearing A2, A2.a, A-58: A CURVE, NOT A POINT. This posted one order for the whole of its spare
+   * cash at its own reservation, which says nothing about what it would do at any other level — and
+   * the cheaper a note is the MORE face the same money buys, up to the limit it publishes for every
+   * name it funds. So it posts what its money reaches at each level, stopped by that limit, which is
+   * the same ladder a household posts a loaf's demand over (`clearing/schedule.ts`).
+   */
+  const steps = view.params.count(DEAL_STEPS);
+  // Item 16: a balance is a COUNT of the money's own pieces; what it will buy is that as money.
+  const budget = heldAsMoney(spare, 'what it holds against what falls due');
+  return rungsUpTo(levelsUpTo(price.value, steps), budget, limit).map((r) => ({
+    party: view.self.id,
+    side: 'buy' as const,
+    price: r.price,
+    qty: r.qty,
+  }));
 }
 
 /** Law 8: one day count for discounting what a pool pays, stated once, in the file that does it. */
@@ -1028,7 +1046,17 @@ export function securitisation(): SystemModule {
     partyKinds: [vehicleKind],
     curveFamilies: [],
     units: [],
-    params: [],
+    params: [
+      {
+        id: DEAL_STEPS,
+        value: 5,
+        unit: 'count',
+        dimension: 'count',
+        kind: 'resolution',
+        owner: 'model',
+        why: 'Clearing A2, Securitisation C4: how finely a bank posts its own demand for a note into the deal book. Its shape is the bank own — what its spare money takes at a price, up to what it will have out to one name — and this is only how many levels of it the book sees; change it and the answer must not move.',
+      },
+    ],
     phases: [
       {
         name: 'securitisation.arrange',

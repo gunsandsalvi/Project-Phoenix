@@ -73,7 +73,7 @@ export function requirement(
   const net = sum(rows.map((c) => ctx.contracts.valueTo(c, poster, ctx.period)));
   const owing = net.value < 0 ? absolute(net.value, 'what it is down by') : asCash(0, 'the marks are for it');
   return heldAsMoney(
-    ctx.registry.cashFor(ccy, plus(initial.value, owing, 'what it must have posted')),
+    ctx.registry.cashFor(plus(initial.value, owing, 'what it must have posted')),
     'what it must have posted',
   );
 }
@@ -111,7 +111,7 @@ export function moveMargin(
   }
   const up = by > 0;
   // Law 8: margin is money, so what is posted is a whole number of the money's own pieces.
-  const qty = ctx.registry.payable(ccy, up ? by : absolute(by, 'what comes back'));
+  const qty = ctx.registry.payable(up ? by : absolute(by, 'what comes back'));
   return [
     {
       kind: 'asset',
@@ -206,7 +206,7 @@ export function pledgeInstead(
     // real answer about a real line and not a reason to reach for a number somewhere else.
     if (!print.some || print.value.price <= 0) continue;
     const per = print.value.price;
-    const want = ctx.registry.deliverable(i.unit, amountOf(left, per, 'units this line would cover'));
+    const want = ctx.registry.deliverable(amountOf(left, per, 'units this line would cover'));
     const units = atMost(want, free, 'it can pledge no more than it holds unencumbered');
     if (units <= 0) continue;
     legs.push({
