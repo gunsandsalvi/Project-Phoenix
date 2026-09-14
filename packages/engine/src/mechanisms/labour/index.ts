@@ -375,7 +375,7 @@ export function labour(occupations: readonly OccupationDecl[] = OCCUPATIONS): Sy
           'the trade each household cell can work in, which is the job it last held, and the index this module finds a row by',
         why:
           'the EMPLOYMENTS moved to the kernel at item 9.1 and are agreements of kind `labour.employment`; the index over them is a traversal and wants no kernel home (Observer E3). What is left that is a NOUN is the SKILL: what a person can do is a fact about that person, not about any job — a `View` a party holds of itself — and it is still kept here.',
-        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
+        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9b' },
       },
     ],
     spec: 'Labour, XI-10',

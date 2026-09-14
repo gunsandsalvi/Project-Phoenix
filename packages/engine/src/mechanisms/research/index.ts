@@ -457,7 +457,7 @@ export function research(seed: string): SystemModule {
           'each desk’s estimate for each company it covers, when it initiated, and what it has seen',
         why:
           'an estimate is one party’s assessment of another \u2014 the same noun as a rating and a credit view, kept a third time in a third shape.',
-        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
+        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9b' },
       },
     ],
     spec: 'Reporting C Reporting D Reporting E Reporting F',

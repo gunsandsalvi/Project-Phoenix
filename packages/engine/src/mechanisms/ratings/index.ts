@@ -285,7 +285,7 @@ export function ratings(rows: readonly AssessorDecl[]): SystemModule {
           'each agency’s published grade for each issuer, the grade its measure says today, and since when',
         why:
           'a rating is one party’s assessment of another and is the same noun as a credit view, a research estimate and a depositor’s confidence. Three modules keep three private versions of it.',
-        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9' },
+        standsInFor: { noun: 'View', planItem: 'docs/IMPLEMENTATION.md item 9.9b' },
       },
     ],
     spec: 'Ratings',

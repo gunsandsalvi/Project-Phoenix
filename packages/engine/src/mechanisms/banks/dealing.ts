@@ -1,7 +1,7 @@
 /**
  * A bank's DEALING LINE: the only face it shows any market.
  *
- * @spec Dealer Desks A1 Dealer Desks A2 Dealer Desks A3 Dealer Desks A4 Dealer Desks C1 Dealer Desks C2 Dealer Desks C2.a Dealer Desks C5 Dealer Desks D1 Dealer Desks D2 Dealer Desks D3 Dealer Desks D4 Dealer Desks D5 Dealer Desks E3 Dealer Desks E4 Dealer Desks F1 Dealer Desks F2 Dealer Desks F3 Fund Shares E3 Fund Shares E3.a Clearing A3 Clearing B2 XI-4 Law 4 Law 15
+ * @spec Dealer Desks A1 Dealer Desks A2 Dealer Desks A3 Dealer Desks A4 Dealer Desks C1 Dealer Desks C2 Dealer Desks C2.a Dealer Desks C5 Dealer Desks D1 Dealer Desks D2 Dealer Desks D3 Dealer Desks D4 Dealer Desks D5 Dealer Desks E3 Dealer Desks E4 Dealer Desks F1 Dealer Desks F2 Dealer Desks F3 Fund Shares E3 Fund Shares E3.a Securities Lending B1 Securities Lending E1 Clearing A3 Clearing B2 XI-4 Law 4 Law 15
  *
  * A1 says a dealer is "a named party, usually a bank's trading arm, WITH ITS OWN BALANCE SHEET
  * INSIDE A BANK'S", and F2 says no desk is exempt from its own bank's capital and funding. Both are
@@ -17,9 +17,16 @@
  * to be a bank that paid nothing for its money.
  */
 import { linesCovered } from './staff.js';
-import { instrumentId, type CurrencyCode, type InstrumentId, type PartyId } from '../../core/ids.js';
+import {
+  instrumentId,
+  type CurrencyCode,
+  type InstrumentId,
+  type PartyId,
+  type VenueId,
+} from '../../core/ids.js';
 import { Missing } from '../../core/errors.js';
 import {
+  type PerPiece,
   amountOf,
   asAmount,
   asCash,
@@ -37,6 +44,7 @@ import {
 import { atLeast, atMost, material, sum } from '../../core/num.js';
 import { upTick } from '../../core/tick.js';
 import { delivers, type MarketDecl } from '../../clearing/market.js';
+import type { VenueDecl } from '../../clearing/venue.js';
 import type { Order } from '../../clearing/solver.js';
 import { wasTraded } from '../../prices/price-store.js';
 import type { BorrowNeed, MechanismContext, ParticipantView } from '../../world/context.js';
@@ -320,7 +328,7 @@ export function deskBorrows(
   if (d === undefined || !view.self.status.alive) return [];
   const state = stateOf(view, d);
   if (state === undefined) return [];
-  const out: BorrowNeed[] = [];
+  const out: BorrowNeed[] = [...toCreate(view, d, state)];
   for (const line of coveredLines(view, d, makersOf)) {
     const printed = view.mark(line);
     if (!printed.some) continue;
@@ -337,6 +345,57 @@ export function deskBorrows(
     const pledge = pledges(view, line);
     if (!pledge.some) continue;
     out.push({ instrument: line, units: want, ccy, willPay: rate, collateral: pledge.value });
+  }
+  return out;
+}
+
+/**
+ * Fund Shares E3, E3.a, Securities Lending B1, `C-1`'s ETF row (item 9.8): WHOEVER MUST DELIVER MAY
+ * BORROW.
+ *
+ * A creation is delivered IN KIND — a pro-rata slice of the fund's own book — so a desk that does
+ * not hold every line of the basket cannot create, whatever the premium. `deliverable` says so in
+ * one line: what it can make is what the line it holds LEAST of backs, and a line it holds NONE of
+ * makes that zero. Measured: a premium of **0.28 of NAV**, twenty-six times a period of carry, with
+ * nobody able to close it, and `E3` running one way for the life of the world because the only
+ * desks who could create were the ones who happened to hold the whole basket already.
+ *
+ * The missing mechanism was the borrow market, and it is there now (item 9.4). What this does is
+ * the sentence `C-1` ends on: a desk short of a line it must deliver borrows it, delivers the
+ * basket, and takes the shares — and it owes the line back, which the shares it now holds can
+ * redeem into. That is the arbitrage as it actually works, and every leg of it is real.
+ *
+ * It borrows ONLY what it is short of, and only for units it has room for and would actually
+ * create: the gap and the room are `etfGaps`' answer, the same one `arbitrage` posts on, so a desk
+ * cannot borrow for a trade it will not do (Law 4).
+ */
+function toCreate(view: ParticipantView, d: BankDecl, state: DeskState): BorrowNeed[] {
+  const out: BorrowNeed[] = [];
+  for (const g of etfGaps(view, d, state, view.venues)) {
+    // A discount closes by REDEEMING, which delivers shares it already holds. There is nothing to
+    // borrow for that; only a premium asks the desk to deliver a basket.
+    if (g.premium <= 0) continue;
+    const basket = g.basket;
+    if (typeof basket !== 'object' || basket === null) continue;
+    const wanted = downTick(subQty(g.room, g.held, 'room it has for more of this line'));
+    if (wanted <= 0) continue;
+    const ccy = view.instruments.get(g.share).ccy;
+    const rate = state.rateIn(ccy);
+    if (rate === undefined) continue;
+    for (const [line, perShare] of Object.entries(basket as Record<string, unknown>)) {
+      if (typeof perShare !== 'number' || perShare <= 0) continue;
+      const id = instrumentId(line);
+      if (!view.instruments.has(id)) continue;
+      // Law 8, E3: a creation unit is a WHOLE unit, so what this line must deliver is a whole
+      // number of its own pieces — UP, because a basket short of a piece is a basket it cannot
+      // deliver, and what it must find is what it must find.
+      const needs = upTick(scale(wanted, asRatio(perShare, 'what one unit draws of this line'), 'units'));
+      const short = subQty(needs, view.free(id), 'what it has not got');
+      if (short <= 0) continue;
+      const pledge = pledges(view, id);
+      if (!pledge.some) continue;
+      out.push({ instrument: id, units: short, ccy, willPay: rate, collateral: pledge.value });
+    }
   }
   return out;
 }
@@ -537,20 +596,48 @@ function primaryBid(
  * values — and its reason not to. What it costs is one period of carrying the position it is about
  * to take on (D3); what limits it is what it holds and what its own limits leave it room for (D1).
  */
-export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly BankDecl[]): void {
-  const d = bankOf(rows, bank);
-  if (d === undefined || !ctx.parties.has(bank) || !ctx.parties.get(bank).status.alive) return;
-  const view = ctx.participant(bank);
-  const state = stateOf(view, d);
-  if (state === undefined) return;
-  for (const v of ctx.venues) {
+/**
+ * Fund Shares E3, E3.a: ONE EXCHANGE-TRADED FUND'S TWO VALUES, AND WHAT THIS DESK COULD DO ABOUT
+ * THE GAP — read once, because two things act on it and Law 4 admits one writer of a fact.
+ *
+ * `arbitrage` posts the creation or the redemption; `deskBorrows` (item 9.8) asks what the desk is
+ * SHORT OF to deliver a basket at all. Both are the same read of the same numbers and they must
+ * agree about whether a gap is worth closing, or a desk would borrow for a trade it will not do.
+ */
+interface EtfGap {
+  readonly venue: VenueId;
+  readonly share: InstrumentId;
+  /** What one share of the BOOK is worth, which is what a premium is measured against. */
+  readonly perShare: PerPiece;
+  /** E3: what the market pays over the book. Negative is a discount and closes the other way. */
+  readonly premium: PerPiece;
+  /** E3: what a unit is made of, as this fund published it. */
+  readonly basket: unknown;
+  /** D1: what its own limit leaves it room for, in whole creation units. */
+  readonly room: Qty;
+  readonly held: Qty;
+  /** What the market last printed for the share, and what a period of carrying one costs it. */
+  readonly printed: PerPiece;
+  readonly worth: PerPiece;
+  /** The fund whose book this is, for a record that names it. */
+  readonly fund: string;
+}
+
+function etfGaps(
+  view: ParticipantView,
+  d: BankDecl,
+  state: DeskState,
+  venues: readonly VenueDecl[],
+): EtfGap[] {
+  const out: EtfGap[] = [];
+  for (const v of venues) {
     if (v.key['kind'] !== 'etf') continue;
     const fund = v.key['fund'];
     const line = v.key['share'];
     if (fund === undefined || line === undefined) continue;
     const share = instrumentId(line);
-    if (!ctx.instruments.has(share) || !ctx.instruments.get(share).status.live) continue;
-    if (!d.makes.includes(String(ctx.instruments.get(share).kind))) continue;
+    if (!view.instruments.has(share) || !view.instruments.get(share).status.live) continue;
+    if (!d.makes.includes(String(view.instruments.get(share).kind))) continue;
     const struck = view.lastPublicAbout('etf.struck', fund);
     const nav = struck.some ? struck.value.data['perShare'] : undefined;
     const print = view.print(share);
@@ -570,7 +657,6 @@ export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly B
       'what a share costs it to carry for a period',
     );
     if (Math.abs(premium) <= worth) continue;
-    const held = view.quantity(share);
     // Law 8, D1: what its own limit leaves it room for, in WHOLE creation units — the limit is
     // money and a unit has a price, so the division lands between two of them and the one below is
     // what it has room for.
@@ -581,29 +667,53 @@ export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly B
         'creation units that comes to',
       ),
     );
+    out.push({
+      venue: v.id,
+      share,
+      perShare,
+      premium,
+      basket: struck.some ? struck.value.data['basket'] : undefined,
+      room,
+      held: view.quantity(share),
+      printed: print.value.price,
+      worth,
+      fund,
+    });
+  }
+  return out;
+}
+
+export function arbitrage(ctx: MechanismContext, bank: PartyId, rows: readonly BankDecl[]): void {
+  const d = bankOf(rows, bank);
+  if (d === undefined || !ctx.parties.has(bank) || !ctx.parties.get(bank).status.alive) return;
+  const view = ctx.participant(bank);
+  const state = stateOf(view, d);
+  if (state === undefined) return;
+  for (const g of etfGaps(view, d, state, ctx.venues)) {
     const shares: Qty =
-      premium > 0
-        ? deliverable(
-            view,
-            struck.some ? struck.value.data['basket'] : undefined,
-            subQty(room, held, 'room it has for more of this line'),
-          )
-        : held;
-    if (shares <= 0 || !material(shares, 2, room)) continue;
-    ctx.post(v.id, { party: bank, side: premium > 0 ? 'buy' : 'sell', price: 'market', qty: shares });
+      g.premium > 0
+        ? deliverable(view, g.basket, subQty(g.room, g.held, 'room it has for more of this line'))
+        : g.held;
+    if (shares <= 0 || !material(shares, 2, g.room)) continue;
+    ctx.post(g.venue, {
+      party: bank,
+      side: g.premium > 0 ? 'buy' : 'sell',
+      price: 'market',
+      qty: shares,
+    });
     ctx.record(
       'bank.arbitrage',
-      [bank, fund, share],
+      [bank, g.fund, g.share],
       {
         bank,
-        fund,
-        share,
-        nav,
-        price: print.value.price,
-        premium,
-        worth,
+        fund: g.fund,
+        share: g.share,
+        nav: g.perShare,
+        price: g.printed,
+        premium: g.premium,
+        worth: g.worth,
         shares,
-        side: premium > 0 ? 'create' : 'redeem',
+        side: g.premium > 0 ? 'create' : 'redeem',
       },
       false,
     );

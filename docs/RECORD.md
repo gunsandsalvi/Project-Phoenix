@@ -7333,3 +7333,40 @@ decision, and it goes in the record before the code.
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208, `check:forbids` 4 over 205,
 `check:deaths` 9 of 9 (two fewer, because two placeholders are gone), `check:existence` green.
+
+---
+
+## Item 9, sixteenth stage — whoever must deliver may borrow (9.8, `C-1`'s ETF row)
+
+**What.** `C-1`'s largest single row, seven tests: **an ETF cannot create.** A creation is delivered
+IN KIND — a pro-rata slice of the fund's own book (G1.a) — so a desk that does not hold every line
+of the basket cannot create, whatever the premium. `deliverable` says it in one line: what a desk
+can make is what the line it holds LEAST of backs, and a line it holds NONE of makes that zero.
+
+Measured: **a premium of 0.28 of NAV**, twenty-six times a period of carry, with nobody able to
+close it — and `E3` running one way for the life of the world, because the only desks that could
+create were the ones that happened to hold the whole basket already.
+
+**The missing mechanism was the borrow market**, which item 9.4 made reachable, and this is the
+sentence the finding ends on: *whoever must deliver may borrow.* A desk short of a line it must
+deliver borrows it, delivers the basket, and takes the shares — and it owes the line back, which the
+shares it now holds can redeem into. That is the arbitrage as it actually works and every leg of it
+is real: a lender who is paid, a fee that cleared, collateral that left the desk's free balance, and
+a position that has to be closed.
+
+`deskBorrows` is the borrow door's **second answerer** (the first, from 9.4, is the desk that thinks
+a line is dear). It borrows only what it is SHORT of, and only for units it has room for and would
+actually create.
+
+**One read, two actors.** `arbitrage` and `toCreate` both need the same numbers — is this premium
+worth closing, what is a share of the book worth, what room does the desk have, what is the basket —
+and if they disagreed a desk would borrow for a trade it will not do. So the per-venue read is
+factored into `etfGaps` and both act on its answer (Law 4: one writer of a fact). Nothing about what
+`arbitrage` posts changed; the numbers on `bank.arbitrage` are the same numbers from the same read.
+
+**And the new check earned itself.** Splitting 9.9 into 9.9a/9.9b left four `View` placeholders
+naming a step id that no longer existed. `check:deaths` failed the build and named all four. That is
+the second time in three commits it has caught a stale pointer, including one of my own making.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
+`check:deaths` 9 of 9, `check:existence` green. `9.9b` is the last of item 9.
