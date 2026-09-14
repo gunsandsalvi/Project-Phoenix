@@ -8261,3 +8261,61 @@ not need it.
 
 Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
 `check:existence` green. Tests written and updated, not run.
+
+---
+
+## Item 10e.6 — access is a POLICY, asked at a door and answered by the entrant
+
+The owner's ladder — *"retail able to access ETF and MMF, rich retail able to access funds,
+institutional being also able to do mandates"* — is **not three kinds of vehicle and not three kinds
+of investor**. It is one question a vehicle asks at its door and one answer an entrant gives, and
+what separates the rungs is a number a regulator sets.
+
+**The vehicle states whether it is offered to the public** (`MandateTerms.offeredPublicly`), which is
+a real term of a real product — a public offering against a private placement — and a boolean rather
+than a tier, because a tier would be a taxonomy of vehicles and this item exists to delete those.
+A money fund and a listed tracker are offered publicly; a fund is not.
+
+**The line is a POLICY owned by `parliament`** (`funds.accreditedWealthPerMember`), which is the
+first real channel item 19 has into this sector. A round million, which is what the actual
+accredited-investor and professional-client tests are built on — and deliberately NOT a quantile of
+this world's own wealth, which would be an outcome wearing a rule's clothes, moving with the thing
+it is meant to sort.
+
+**The door carries the NAME of the policy and not the number.** A venue key is public data about
+itself, so a saver reads what a vehicle asks without knowing how this module names anything (Law 15,
+the same discipline `kind: 'inKind'` follows) — and a key with the figure baked into it would state
+last year's rule for ever. A publicly offered vehicle carries no such key, and its absence is the
+answer.
+
+**The entrant ANSWERS, because the fund cannot look.** No party sees another's register (Observer
+A4), so a cell that wants into a restricted vehicle CERTIFIES: it publishes what it is worth per
+member, and the fund checks that against the line as the line stands that day. A cell with no
+interest in such a vehicle publishes nothing — the disclosure is the price of access, which is what
+certification is, rather than a surveillance of every saver in the world. A stale certification is
+as good as none, because the line can move under somebody who qualified last year.
+
+**A pool's own manager is not an entrant to it** — a house putting seed money into a product it is
+opening is the sponsor, not somebody being sold it. That is a RELATIONSHIP (the party the mandate
+names) and not a kind, so nothing here asks what sort of party anybody is.
+
+**The SPLIT the plan expected is not there, and does not need to be.** The design said a cell
+straddling the threshold splits per XI-15. Every member of a cell holds the same thing — per-member
+state is what a cell IS — so a cell is never half over a line, and a threshold read is a clean
+answer for the whole of it. Worth saying out loud rather than leaving as a mechanism nobody built.
+
+**Two findings this made visible, both recorded rather than tuned away (Law 11):**
+
+- **`E-22`**: whether any household cell in THIS world ever clears a million dollars per member is a
+  question about this world's price level and its wealth distribution, and the answer is a
+  measurement (item 23). If nothing clears it, the credit fund and the commodity fund gather nothing
+  and the demand side arrives only with item 14's institutions. If it is the LINE that is wrong
+  rather than the world, it is item 19's to move — which is exactly why the number is a policy with
+  an owner and not a constant.
+- **`E-23`**: retail's route into credit is a credit ETF, and this world has none. Every tracker it
+  draws follows an equity index, because §26's indices are equity indices. The ladder made the
+  absence visible for the first time; a credit index and a tracker on it is item 17's, and the same
+  argument holds for commodities at 18.
+
+Typecheck 0, lint 0, `check:spec` 215 tags, `check:forbids` 4 over 212 files, `check:deaths` 4 of 4,
+`check:existence` green. Tests written and updated, not run.

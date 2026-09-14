@@ -589,8 +589,23 @@ function decide(ctx: MechanismContext, cell: PartyId, rows: readonly Consumption
   // offers is compared against the same requirement a bill is.
   const short = shortForSpending(decided.value.cash, decided.value.spend);
   const toFund = cushionForFund(decided.value.cash, decided.value.spend, spare);
-  for (const o of fundOrders(positions, required, toFund, short)) {
+  for (const o of fundOrders(positions, required, toFund, short, decided.value.wealth)) {
     if (!material(o.sharesPerMember, 2, o.sharesPerMember)) continue;
+    /**
+     * Fund Shares A1 (item 10e.6): A DOOR THAT ASKS GETS AN ANSWER, and the answer is public.
+     *
+     * A vehicle that is not offered to the public cannot see what a saver is worth — no party sees
+     * another's register (Observer A4) — so a cell that wants in CERTIFIES: it publishes what it is
+     * worth per member, and the fund checks that against the line as the line stands that day. A
+     * cell with no interest in such a vehicle publishes nothing, which is why the disclosure is the
+     * price of access and not a surveillance of every saver in the world.
+     */
+    const asks = positions.find((f) => f.venue === o.venue)?.asksOfEntrants;
+    if (o.side === 'buy' && asks !== undefined) {
+      // `funds` reads this under the cell's own name (`CERTIFIED`), the way every cross-module
+      // read works here: one public kind, written at one end and read at the other.
+      ctx.record('investor.wealth', [cell], { wealthPerMember: decided.value.wealth }, true);
+    }
     ctx.post(o.venue, {
       party: cell,
       side: o.side,

@@ -43,7 +43,15 @@ import { nextPeriod, period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { instrumentId, type InstrumentId, type MarketId, type PartyId, type VenueId } from '../../core/ids.js';
+import {
+  currencyUnit,
+  instrumentId,
+  paramId,
+  type InstrumentId,
+  type MarketId,
+  type PartyId,
+  type VenueId,
+} from '../../core/ids.js';
 import type { Event } from '../../journal/journal.js';
 import { atMost, material, sum } from '../../core/num.js';
 import { downTick, scaleQty } from '../../core/tick.js';
@@ -388,6 +396,16 @@ export interface FundPosition {
   /** XI-15, Law 8: whole shares for each member. A member cannot redeem part of one. */
   readonly sharesPerMember: Qty;
   readonly worthPerMember: Cash;
+  /**
+   * Fund Shares A1 (item 10e.6): WHAT THE DOOR ASKS OF AN ENTRANT, per member, or nothing because
+   * this vehicle is offered to the public. The venue's key names the POLICY and this reads it —
+   * so a saver learns what a fund asks the same way it learns which line its shares are, out of
+   * public data about a door, without knowing how the funds module names anything (Law 15).
+   *
+   * It bars the way IN and never the way out: a holder that stops clearing the line still owns what
+   * it bought, which is why this is read on the buy side only.
+   */
+  readonly asksOfEntrants: Cash | undefined;
 }
 
 /**
@@ -425,6 +443,16 @@ export function fundPositions(
      */
     if (typeof offered !== 'number') continue;
     const held = view.quantity(instrumentId(line));
+    // Item 10e.6: what this door asks, read off the policy it names. A key naming a parameter that
+    // is not declared is a door nobody could ever answer, so it throws where it is read (XI-14).
+    const asks = v.key['asks'];
+    const asksOfEntrants: Cash | undefined =
+      asks === undefined
+        ? undefined
+        : asCash(
+            view.params.amount(paramId(asks), currencyUnit(view.registry.currencyOf(view.self.region))),
+            'what this door asks of an entrant, per member',
+          );
     out.push({
       venue: v.id,
       fund,
@@ -433,6 +461,7 @@ export function fundPositions(
       offered,
       sharesPerMember: held,
       worthPerMember: valueAt(perShare, held, 'what its shares are worth'),
+      asksOfEntrants,
     });
   }
   return out;
@@ -450,6 +479,14 @@ export function fundOrders(
   required: number,
   toFund: Cash,
   short: Cash,
+  /**
+   * Item 10e.6: WHAT THIS CELL IS WORTH PER MEMBER, which is its answer to what a door asks. It is
+   * its own private number and stays that way unless it decides to go through a door that asks —
+   * and because every member of a cell holds the same thing (XI-15: per-member state), a cell is
+   * never half over the line. The plan expected a SPLIT here; there is nothing to split, and that
+   * is worth saying rather than leaving as a mechanism nobody built.
+   */
+  wealthPerMember: Cash,
 ): FundOrder[] {
   const out: FundOrder[] = [];
   // C2: it asks for its money back because it needs it. Nothing else in a household's life is a
@@ -496,6 +533,9 @@ export function fundOrders(
     let best: FundPosition | undefined;
     for (const p of positions) {
       if (p.offered < required) continue;
+      // Item 10e.6: and whether it may go in at all. A cell under the line does not ask: access
+      // says WHERE its money may go, and a fund it cannot enter is simply not one of the places.
+      if (p.asksOfEntrants !== undefined && wealthPerMember < p.asksOfEntrants) continue;
       if (best === undefined || p.offered > best.offered) best = p;
       else if (p.offered === best.offered && p.fund < best.fund) best = p;
     }

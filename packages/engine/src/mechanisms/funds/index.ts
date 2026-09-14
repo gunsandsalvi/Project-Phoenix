@@ -105,6 +105,7 @@ import {
   staffOrders,
 } from './manager.js';
 import {
+  ACCREDITED_WEALTH,
   FUND_PARAMS,
   inKindOf,
   MANAGER_NUMBERS,
@@ -153,6 +154,13 @@ export interface FundShareTerms {
   readonly kind: typeof FUND_SHARE;
   readonly fund: PartyId;
 }
+
+/**
+ * Item 10e.6: what a saver publishes about itself to get into a vehicle that asks. Public, because
+ * a certification nobody can read is not one — and it is the only thing about a cell's own wealth
+ * that anybody outside it ever sees.
+ */
+export const CERTIFIED = 'investor.wealth';
 
 export const shareLineOf = (fund: string): InstrumentId => instrumentId(`share.${fund}`);
 /** A2: the claim a pool issues, and one writer of what its terms are (Law 4). */
@@ -342,6 +350,16 @@ function paramsOf(managers: readonly ManagerDecl[]): ParamDecl[] {
       kind: 'preference',
       owner: 'model',
       why: 'Banks Funding A1.c, A1.d, E1: what it costs a fund to move its account, ONCE, as an amount of its own money. It is the largest of the three because a fund moves the most money at once and has the most to redirect — and it holds it back the least, because the balance it is weighed against is larger still. That is what "rate-sensitive" IS when the test is an amount against an amount: what a quarter point has already cost this depositor passes the cost in a week, where a household waits a year and never gets there.',
+    },
+    {
+      id: FUND_PARAMS.accreditedWealth,
+      value: ACCREDITED_WEALTH,
+      denominated: true,
+      unit: 'of the money the entrant is in, per member',
+      dimension: 'amount',
+      kind: 'policy',
+      owner: 'parliament',
+      why: "Fund Shares A1, item 10e.6: what an entrant must be worth PER MEMBER to get into a vehicle that is not offered to the public. It is the owner's ladder in one number — retail reaches a listed fund and a money fund, and a cell over this line reaches the rest — and it is a POLICY because it is a figure a regulator chooses and changes, not an outcome. A quantile of this world's own wealth would be an outcome wearing a rule's clothes, moving with the thing it is meant to sort; a round million is what the real tests are built on. It is also item 19's first channel into this sector: a parliament that moved it would move who can own what.",
     },
     {
       id: FUND_PARAMS.openingShare,
@@ -639,6 +657,35 @@ function queueEverybody(
   }
 }
 
+/**
+ * Item 10e.6, A1: THE ENTRANT'S ANSWER. A vehicle that is not offered to the public asks what a
+ * subscriber is worth per member; the subscriber answers by PUBLISHING it, which is the only way
+ * this fund can know — no party sees another's register (Observer A4), and a door that read one
+ * would be a surveillance of every saver in the world rather than a question at a door.
+ *
+ * So a cell that wants in discloses, and a cell that has no interest in a restricted vehicle
+ * discloses nothing. The disclosure IS the price of access, which is what certification is, and a
+ * stale one is as good as none: the line can move under a cell that qualified last year, and the
+ * fund asks against the line as it stands today.
+ *
+ * THE POOL'S OWN MANAGER IS NOT AN ENTRANT. A house putting seed money into a product it is opening
+ * is the sponsor of the thing, not somebody being sold it (item 10e.5). That is a RELATIONSHIP and
+ * not a kind: it is the party the mandate names, and nothing here asks what sort of party it is.
+ */
+function mayEnter(ctx: MechanismContext, m: Mandate, who: PartyId): boolean {
+  if (m.offeredPublicly || who === m.manager) return true;
+  const said = ctx.journal.lastOf(CERTIFIED, String(who));
+  if (said === undefined) return false;
+  const worth = said.data['wealthPerMember'];
+  if (typeof worth !== 'number') return false;
+  const ccy = ctx.registry.currencyOf(ctx.parties.get(who).region);
+  // Item 16: a published number re-entering as the money it is, against the line as it stands now.
+  return (
+    asCash(worth, 'what it published it is worth per member') >=
+    ctx.params.amount(FUND_PARAMS.accreditedWealth, currencyUnit(ccy))
+  );
+}
+
 function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
   const fundId = m.pool;
   // XI-3, Register F2: a fund that has ceased strikes nothing. Its investors' claims resolve
@@ -688,11 +735,14 @@ function strike(ctx: MechanismContext, b: Book, m: Mandate): void {
       // C1, F3: A FUND BEING WOUND UP TAKES NOBODY NEW. Selling a claim on a book that is being
       // sold off is selling somebody a share of a queue, and the refusal is recorded because a
       // saver whose subscription did not happen has a real fact about its own money (App A).
-      if (m.windingUp) {
+      // A1, item 10e.6: TWO REASONS A SUBSCRIPTION DOES NOT HAPPEN, and both are refusals with a
+      // name on them rather than an order quietly dropped (App A: a refusal is an answer).
+      const why = m.windingUp ? 'windingUp' : mayEnter(ctx, m, o.party) ? undefined : 'notEligible';
+      if (why !== undefined) {
         ctx.record(
           'fund.notSubscribing',
           [fundId, o.party],
-          { fund: fundId, holder: o.party, sharesPerMember: asked, why: 'windingUp' },
+          { fund: fundId, holder: o.party, sharesPerMember: asked, why },
           true,
         );
         continue;
@@ -1314,6 +1364,21 @@ function readListed(ctx: MechanismContext, m: Mandate, d: FundDecl): void {
   );
 }
 
+/**
+ * Item 10e.6, Clearing B2, Observer A3: WHAT THE DOOR ASKS OF WHOEVER COMES THROUGH IT.
+ *
+ * A venue's key is public data about itself, so a saver reads what a vehicle asks WITHOUT knowing
+ * how this module names anything (Law 15) — the same discipline `kind: 'inKind'` follows. What it
+ * carries is the NAME OF THE POLICY, not the number: the line is a regulator's to move, and a key
+ * with the figure baked into it would be stating last year's rule for ever. A publicly offered
+ * vehicle carries no such key at all, and its absence is the answer (App A).
+ */
+function doorOf(share: InstrumentId, fund: string, offeredPublicly: boolean): Record<string, string> {
+  return offeredPublicly
+    ? { kind: 'fund', fund, share }
+    : { kind: 'fund', fund, share, asks: String(FUND_PARAMS.accreditedWealth) };
+}
+
 /* --------------------------------------------------------------------------------------------
  * THE MANAGER'S PERIOD: what it closed, and what it opened
  * ------------------------------------------------------------------------------------------ */
@@ -1414,7 +1479,7 @@ function openPool(ctx: MechanismContext, manager: PartyId, launch: Launch): void
     clearedBy: 'funds',
     unit: SHARES,
     ccy,
-    key: { kind: 'fund', fund: String(pool), share },
+    key: doorOf(share, String(pool), launch.product.offeredPublicly),
   });
   /**
    * A3, C1, F3, item 10e.5: THE SEED GOES IN THROUGH THE FRONT DOOR.
@@ -2227,7 +2292,7 @@ export function funds(
           clearedBy: 'funds',
           unit: SHARES,
           ccy,
-          key: { kind: 'fund', fund: d.fund, share: shareLineOf(d.fund) },
+          key: doorOf(shareLineOf(d.fund), d.fund, d.offeredPublicly),
         };
         // Seed E: the fund opens with NOBODY in it and nothing in its account. Everything anybody
         // has in this world is something they were paid or something they decided to buy, and that

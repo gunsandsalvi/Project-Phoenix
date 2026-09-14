@@ -15,7 +15,7 @@
  *  - two products are the same product when their BLUEPRINTS say the same thing, never their names.
  */
 import { describe, expect, it } from 'vitest';
-import { drawFunds, drawManagers, nameOf } from '../src/mechanisms/funds/data.js';
+import { drawFunds, drawManagers, drawTrackers, nameOf } from '../src/mechanisms/funds/data.js';
 import { sameProduct } from '../src/mechanisms/funds/manager.js';
 import { holdsThings } from '../src/mechanisms/funds/things.js';
 import { admits } from '../src/registry/blueprint.js';
@@ -125,6 +125,22 @@ describe('what the seed is, and what it is not', () => {
     // Every pool this world OPENS with has no seed at all: they are an opening condition, and the
     // seed is what a manager does when it opens one itself (Seed A3).
     expect(pools.every((p) => !('seed' in p))).toBe(true);
+  });
+});
+
+describe('who may get in', () => {
+  it('offers a deposit substitute and a listed vehicle to anybody, and asks of the rest', () => {
+    const pools = drawFunds(BANKS, 'a-seed');
+    // The owner's ladder: retail reaches a money fund and a listed one; a fund asks.
+    for (const p of pools) {
+      const isMoney = p.blueprint.duration?.to === 1;
+      expect(p.offeredPublicly).toBe(isMoney);
+    }
+    for (const t of drawTrackers(['equity.firm.1'], ['bank.a'], 'a-seed', ['idx'])) {
+      // E1, G1.a: you buy a listed share from a HOLDER, in a market anybody can trade in. A vehicle
+      // whose shares are listed cannot ask anything of whoever ends up with one.
+      expect(t.offeredPublicly).toBe(true);
+    }
   });
 });
 

@@ -166,6 +166,26 @@ export interface MandateTerms extends AgreementTerms {
    * bookkeeping detail.
    */
   readonly windingUp: boolean;
+  /**
+   * §13 A1, item 10e.6: IS THIS OFFERED TO THE PUBLIC, or only to an entrant that clears the line?
+   *
+   * The owner's ladder — *"retail able to access ETF and MMF, rich retail able to access funds,
+   * institutional being also able to do mandates"* — is not three kinds of vehicle and not three
+   * kinds of investor. It is ONE question a vehicle asks at its door and one answer an entrant
+   * gives, and what separates the two rungs this world has is a POLICY: the accredited-investor
+   * threshold (`FUND_PARAMS.accreditedWealth`), a number a regulator sets and changes, owned by
+   * `parliament` (Law 2) — which is also item 19's first real channel into this sector.
+   *
+   * It is a BOOLEAN and not a tier, because a tier would be a taxonomy of vehicles and this item
+   * exists to delete those. What the vehicle states is whether it is publicly offered; what the LINE
+   * is, is nobody's business but the regulator's, and it can move under a fund that has already
+   * been sold.
+   *
+   * Access says WHERE a cell's money may go and never HOW MUCH: what actually goes in stays a
+   * consequence of the cell's own budget and of what it requires of anything it holds (D5). And it
+   * never bars the way OUT — a holder that stops clearing the line still owns what it bought.
+   */
+  readonly offeredPublicly: boolean;
 }
 
 /**
@@ -205,6 +225,7 @@ export interface Product {
   readonly feePerAnnum: Ratio;
   readonly buffer: Ratio;
   readonly requiredYieldPerAnnum: Ratio;
+  readonly offeredPublicly: boolean;
 }
 
 export function openMandate(
@@ -250,6 +271,7 @@ export function productOf(d: FundDecl, ccy: CurrencyCode): Product {
     // ITS OWN money — which is where the fund is, not a field declared beside it.
     blueprint: d.ownCurrencyOnly ? { ...d.blueprint, currencies: [ccy] } : d.blueprint,
     liquidity: d.liquidity,
+    offeredPublicly: d.offeredPublicly,
     // C2: a pool that names no index is ACTIVE — it picks within its blueprint on its own view,
     // which is why two of them bid different levels for the same paper.
     tracks: d.tracks === undefined ? none<string>() : some(d.tracks),

@@ -9,6 +9,7 @@
  * what the mandate allows and nothing else. That is what makes a fund a transmission channel.
  */
 import { paramId } from '../../core/ids.js';
+import { MONEY_PIECES } from '../../registry/grid.js';
 import { InvalidRegistry } from '../../core/errors.js';
 import type { Blueprint } from '../../registry/blueprint.js';
 import type { Liquidity } from './mandate.js';
@@ -39,6 +40,12 @@ export interface FundDecl {
   readonly ownCurrencyOnly: boolean;
   /** G1: how its investors get in and out, which is what decides if it can be forced to sell. */
   readonly liquidity: Liquidity;
+  /**
+   * Item 10e.6: WHO MAY GET IN AT ALL. `true` is offered to the public and anybody may subscribe;
+   * `false` asks an entrant to clear the accredited-investor line, which is a POLICY a regulator
+   * sets (`FUND_PARAMS.accreditedWealth`) and not a number about this fund.
+   */
+  readonly offeredPublicly: boolean;
   /**
    * Indices C2, C2.a: WHETHER IT CHOOSES. Absent is ACTIVE — it picks within its blueprint on its
    * own view. Present is PASSIVE: it holds whatever that index says is in it at whatever the index
@@ -160,7 +167,25 @@ export function nameOf(d: Named): string {
 
 export const FUND_PARAMS = {
   openingShare: paramId('fund.openingSharePrice'),
+  /**
+   * Item 10e.6, Law 2: THE ACCREDITED-INVESTOR LINE — what an entrant must be worth PER MEMBER to
+   * get into a vehicle that is not offered to the public. It is a POLICY: a number a regulator sets
+   * and changes, owned by `parliament`, and it is the first real channel item 19 has into this
+   * sector. Nothing in this world produces it and nothing should: it is not an outcome.
+   */
+  accreditedWealth: paramId('funds.accreditedWealthPerMember'),
 } as const;
+
+/**
+ * Item 10e.6: the line, in money per member.
+ *
+ * WHY IT IS A ROUND NUMBER AND WHY THAT IS RIGHT. A regulator's threshold is a round number chosen
+ * by somebody, not a quantile of a distribution — and if it were a quantile it would be an OUTCOME
+ * dressed as a rule, moving with the wealth it is supposed to sort. A million dollars is the figure
+ * the real accredited-investor and professional-client tests are built on, net of a home, which is
+ * what this world's `wealthOf` already excludes (a home is a thing its people live in, not a claim).
+ */
+export const ACCREDITED_WEALTH = 1_000_000 * MONEY_PIECES;
 
 /**
  * E1-E3: a fund whose shares are LISTED. It is not another kind of thing — its shares are the same
@@ -236,6 +261,10 @@ export function drawTrackers(
     // E1, G1.a: its shares TRADE and its investors come and go IN KIND against the basket, which is
     // why it is not a forced seller and why some other vehicle has to carry that.
     liquidity: { how: 'listed' },
+    // Item 10e.6: you buy the share from a HOLDER, in a market anybody can trade in. A vehicle
+    // whose shares are listed cannot ask anything of whoever ends up holding one, and that is the
+    // first rung of the owner's ladder: retail reaches listed funds and money funds.
+    offeredPublicly: true,
     tracks: index,
     buffer: between(rng, FUND_SPREAD.buffer),
     fee: between(rng, FUND_SPREAD.fee),
@@ -456,6 +485,10 @@ export function drawFunds(
       // D2: in and out at NAV whenever a saver wants, which is what a deposit substitute IS — and
       // what makes this the vehicle XI-2 door 2 runs through.
       liquidity: { how: 'liquid' },
+      // Item 10e.6: a deposit substitute that asked anything of a saver would not be one. This is
+      // the other rung retail reaches, and it is why a money fund is where a household's cushion
+      // lives (D2) rather than an investment it has to qualify for.
+      offeredPublicly: true,
       buffer: between(rng, FUND_SPREAD.buffer),
       fee: between(rng, FUND_SPREAD.fee),
       requiredYield: between(rng, FUND_SPREAD.requiredYield),
@@ -496,6 +529,10 @@ export function drawFunds(
       // A fund of company paper is open-ended: its investors may have their money back at NAV, and
       // meeting that out of a market for credit is a real sale at whatever that market gives.
       liquidity: { how: 'liquid' },
+      // Item 10e.6: *"rich retail able to access funds"* (the owner). An entrant clears the
+      // accredited line or it does not get in — which is what makes that line, and the parliament
+      // that sets it, reach this sector at all.
+      offeredPublicly: false,
 
       buffer: between(rng, FUND_SPREAD.buffer),
       fee: between(rng, FUND_SPREAD.fee),
@@ -522,6 +559,9 @@ export function drawFunds(
       blueprint: { classes: ['thing'], currencies: [] },
       ownCurrencyOnly: true,
       liquidity: { how: 'liquid' },
+      // Item 10e.6: a fund, and not a deposit substitute — so it asks the same of an entrant that
+      // every other fund does.
+      offeredPublicly: false,
       buffer: between(rng, FUND_SPREAD.buffer),
       fee: between(rng, FUND_SPREAD.fee),
       requiredYield: between(rng, FUND_SPREAD.requiredYield),

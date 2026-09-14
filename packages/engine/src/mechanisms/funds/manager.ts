@@ -413,6 +413,11 @@ export function launchToMake(
         // investors require of it are terms of the thing it is copying, not of the copier.
         buffer: rival.buffer,
         requiredYieldPerAnnum: rival.requiredYieldPerAnnum,
+        // Item 10e.6: and WHO IT IS OFFERED TO, which is part of the product it is copying. A
+        // manager entering somebody's market enters the market they are in — offering the same
+        // mandate to a wider audience would be a different product, and it would be competing for
+        // savers who were never on the other side of the fee it just undercut.
+        offeredPublicly: rival.offeredPublicly,
       },
       rival: rival.pool,
       expects: smallest,
