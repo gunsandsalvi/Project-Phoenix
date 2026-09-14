@@ -186,7 +186,7 @@ Dependencies, not preference, and the open lines before the new ones. The four a
 | ~~**6**~~ | ~~The derivative books open~~ | 3 | **DONE.** Eight classes gained a second side; the margin gate admits somebody |
 | **7** | The three closed lines | 2 | **7.4 DONE** — the bootstrap, which is what held all three at zero. 7.1 waits on **9**; 7.2 and 7.3 are inserted as **7b** with their reasons |
 | ~~**7b**~~ | ~~Durables and overheads~~ | — | **DONE.** A household buys the home its people live in; a recipe names what having the plant costs per period |
-| **8** | The securitisation waterfall | 2 | independent; the subtraction has gone the wrong way round since 13e |
+| ~~**8**~~ | ~~The securitisation waterfall~~ | 2 | **DONE.** A loss can reach the junior; a noteholder earns interest; a run-off vehicle winds up |
 | **9** | The seven private books, and `Mandate` | 5 | the larger half of item 8 of the old file; blocks 13, and `A-43` behind it |
 | **10** | The corporate bond is issued | 2 | needs **3** (a buyer); 51 Corporate Credit clauses stand behind it |
 | **10b** | Short-term debt (§9) | — | **inserted**: the roll that can fail; one of the six lost things; needs **10**'s issuance path |
@@ -992,11 +992,11 @@ Three consequences, and the third disables the module's own subject:
 
 ### Steps
 
-- [ ] 8.1 `securitisation/index.ts:payTranche` — separate **interest** from **principal** in what the vehicle pays out. The module's own header states the invariant twice (*"Σ tranche face equals the pool's face after every event"*) and both readings are only true if the two are separated. Interest goes out as interest by seniority; principal redeems face.
-- [ ] 8.2 `trancheKind` gets real `cashFlows` and `due`, so a noteholder's return is the interest it is owed and its yield derives from the price it paid (C3).
-- [ ] 8.3 With 8.1, `absorb`'s `notes − pool` is a real comparison and a loss reaches the junior. Assert C6: **losses allocated sum to losses incurred, exactly. No tranching creates or destroys loss.**
-- [ ] 8.4 The residual: the vehicle's equity has a holder. C4.a — *"often the originating bank keeps the bottom, which means the risk did not leave"* — is the honest answer and makes E3 (*no risk transfer without a transferee*) true rather than vacuous.
-- [ ] 8.5 `A-57`'s last part: nothing ceases a vehicle whose pool has run off; `distribute` removes a deal only when the vehicle has already ceased. Give it a wind-up through item 14's `Process`, which exists.
+- [x] 8.1 `securitisation/index.ts:payTranche` — separate **interest** from **principal** in what the vehicle pays out. The module's own header states the invariant twice (*"Σ tranche face equals the pool's face after every event"*) and both readings are only true if the two are separated. Interest goes out as interest by seniority; principal redeems face. **DONE.** `distribute` pays INTEREST first, by seniority, and then principal. What the vehicle collected as interest is READ off the wire — this period's settled money legs into its own account whose `receipt` says `interest` — and never inferred by subtraction (Law 19). Each layer's entitlement is its share of what is outstanding; senior first when there is not enough, which is what a waterfall is.
+- [x] 8.2 `trancheKind` gets real `cashFlows` and `due`, so a noteholder's return is the interest it is owed and its yield derives from the price it paid (C3). **DONE, and NOT as written — building the schedule would have been the defect.** What a pass-through will pay depends on what borrowers who have not paid yet do, so a `cashFlows` schedule would be a FORECAST with no falsification test (Law 17), and a real `due` would make the KERNEL pay a coupon this module's own waterfall already pays (Law 4, two writers). The plan's actual aim — that a noteholder should EARN something — is 8.1. Its yield is what the payments came to against the price it paid, which is a measurement (item 23) and never an input to a price. The docstring says all of that where the empty schedule is.
+- [x] 8.3 With 8.1, `absorb`'s `notes − pool` is a real comparison and a loss reaches the junior. Assert C6: **losses allocated sum to losses incurred, exactly. No tranching creates or destroys loss.** **DONE.** `absorb` journals `securitisation.absorbed` — what the pool lost, before any of it is allocated — and the ownership family reads it against the `tranche.writtenDown` events, per vehicle per period. Two records of one fact from opposite ends (Audit A1.a), and it fires both ways: a pool that lost more than was written off, and a layer written down against a pool that lost nothing.
+- [x] 8.4 The residual: the vehicle's equity has a holder. C4.a — *"often the originating bank keeps the bottom, which means the risk did not leave"* — is the honest answer and makes E3 (*no risk transfer without a transferee*) true rather than vacuous. **DONE.** The arranger already keeps the bottom (C4.a, `settleDeal`), so the deal's equity has a named holder; what had none was what was left in the vehicle after the notes were redeemed. `windUp` pays that residual to the arranger. XI-11 is true rather than vacuous: the risk did not leave, and neither did the last of the return.
+- [x] 8.5 `A-57`'s last part: nothing ceases a vehicle whose pool has run off; `distribute` removes a deal only when the vehicle has already ceased. Give it a wind-up through item 14's `Process`, which exists. **DONE, and without item 14's `Process`.** A vehicle whose every layer is redeemed and whose pool has no live row left pays its residual to the arranger and CEASES to it (`ctx.cease`, Register F2: every reference resolves to the party that took what was left). It can only go when it holds nothing, which is XI-3's rule and not a special case. `distribute` no longer waits for something else to have killed it.
 
 ### Findings this closes
 
@@ -3798,13 +3798,11 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-36** (C) | 16 | the treasury's immortality is unconditional where the kernel says conditional |
 | **A-43** (C) | 9, 21 | the labour module builds the household's schedule |
 | **A-53** (B) | 15 | a household bids its entire income as rent |
-| **A-57** (A) | 8 | a securitisation vehicle keeps the whole interest stream, for ever |
 | **A-67** (A) | 9 | nothing ever borrows a security |
 | **A-69** (C) | 6, 21 | nine exported entry points that nothing calls |
 | **B-1** (A) | 10 | `corporate.bond` is declared and nothing ever issues one |
 | **B-2** (A) | 9, 14 | the insurance sector has no seed, no phase and no participant |
 | **B-3** (A) | 9 | securities lending is claimed to clear a fee and has no way in |
-| **B-8** (A) | 8 | the securitisation waterfall never allocates a loss |
 | **B-9** (C) | 16 | the four countries: header and section 2 contradict each other |
 | **B-12** (A) | 1 | 99 `MET` marks stand on mechanisms that have never produced anything |
 | **B-13** (A) | 10 | the three things a firm sector does, and this one does none |
@@ -3855,6 +3853,7 @@ carries each in full.
 | item 5, Missing is Missing | `A-25`, `A-30`, `A-34`, `A-45` |
 | item 6, the derivative books | `A-66`, `B-7`, `C-6`, and `A-69`'s `refusedThisPeriod` and `cdsBookOrders` rows |
 | item 7 and 7b | `A-55`, `A-56` (7.1 stays open for item 9) |
+| item 8, the waterfall | `A-57`, `B-8` |
 
 ### What the reads covered, and what they did not
 

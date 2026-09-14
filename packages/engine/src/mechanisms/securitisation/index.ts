@@ -53,11 +53,11 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { atMost, div, sum } from '../../core/num.js';
+import { atMost, div, sum, zeroIfNone, addTo} from '../../core/num.js';
 import { addQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
 import { asRatio, heldAsMoney, minus, plus, asPerPiece, pricedAt, type Cash, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
-import type { Leg } from '../../ledger/instruction.js';
+import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
 import { isLoan } from '../../registry/credit.js';
 import type { CashFlow, InstrumentKindProfile, PartyKindProfile } from '../../registry/kinds.js';
@@ -180,8 +180,21 @@ export const trancheKind: InstrumentKindProfile = {
     // asset to reach, so naming one would be naming something that does not exist.
     claim: 'a layer of a pool, paid in its turn out of what the borrowers paid',
   }),
-  // C5: a tranche pays what the pool paid, when the pool paid it. There is no schedule to promise
-  // and nothing to accrue: this is a pass-through, and what it passes through is an outcome.
+  /**
+   * C5, Law 17, item 8.2: A TRANCHE PAYS WHAT THE POOL PAID, WHEN THE POOL PAID IT, and there is no
+   * schedule to promise. This is a pass-through and what it passes through is an OUTCOME.
+   *
+   * The plan asked for real `cashFlows` and `due` here so a noteholder's yield could be derived from
+   * them. It cannot be, and building them would be the defect rather than the fix: what a
+   * pass-through will pay depends on what borrowers who have not paid yet do, so a schedule would be
+   * a FORECAST with no falsification test (Law 17) — and `due` would make the KERNEL pay a coupon
+   * this module's own waterfall is already paying, which is one fact with two writers (Law 4).
+   *
+   * What the plan was actually after was that a noteholder should EARN something, and it does now:
+   * `distribute` separates interest from principal and pays the interest out by seniority (`B-8`).
+   * Its yield is what those payments came to against the price it paid, which is a measurement of
+   * what happened (item 23) and never an input to a price (C3, Law 3).
+   */
   cashFlows: (): readonly CashFlow[] => [],
   due: () => [],
   accrued: () => 0,
@@ -642,14 +655,181 @@ export function distribute(ctx: MechanismContext): void {
     // XI-8: what is left when everything ranking above the notes has been paid. A vehicle that
     // collected nothing pays nothing; there is no buffer and nothing is smoothed.
     const cash = cashOf(ctx, deal.vehicle, deal.ccy);
-    if (cash <= 0) continue;
-    let left: Qty = cash;
-    for (const id of deal.layers) {
-      if (left <= 0) break;
-      const paid = payTranche(ctx, deal, id, left);
-      left = subQty(left, paid, 'what is left after the layer above');
+    if (cash > 0) {
+      /**
+       * C5, B-8: INTEREST IS NOT PRINCIPAL, and paying it out as principal was the defect that
+       * disabled this module's own subject.
+       *
+       * The vehicle collects PRINCIPAL AND INTEREST — `LOAN.due` emits a coupon every period and a
+       * maturity at the end, both paid to the holder of record, which is the vehicle. What went out
+       * was principal ONLY: `payTranche` redeems face at par, so `Σ out ≤ Σ face = the pool's
+       * opening principal` and the interest — the whole economic return of the deal — never left.
+       *
+       * Three things followed. A noteholder earned nothing but its discount. The interest piled up
+       * in a vehicle nobody owns, which is a residual with no holder (Appendix B). And `absorb`'s
+       * `notes − pool` went the wrong way round for ever, because notes fell faster than the pool
+       * when interest redeemed face — so the junior/senior waterfall, the attachment points, the
+       * write-down leg and D4's senior losses were all downstream of a subtraction that could not
+       * be positive, and NO LOSS WAS EVER ALLOCATED TO ANY TRANCHE whatever the borrowers did.
+       *
+       * What it collected as interest is READ off the wire (Law 19): the money legs into its own
+       * account this period whose receipt says what the money IS to the party getting it. Nothing is
+       * inferred by subtraction.
+       */
+      const earned = interestCollected(ctx, deal);
+      let forInterest = downTick(atMost(earned, cash, 'no more than it actually holds'));
+      const faces = new Map<InstrumentId, Qty>(
+        deal.layers.map((id) => [id, ctx.register.heldTotal(id).value]),
+      );
+      const outstanding = sum([...faces.values()]).value;
+      for (const id of deal.layers) {
+        if (forInterest <= 0) break;
+        const face = zeroIfNone(faces.get(id));
+        if (face <= 0 || outstanding <= 0) continue;
+        // C5: each layer's share of what the pool earned is its share of what is outstanding, and
+        // SENIOR FIRST when there is not enough of it — which is what a waterfall is.
+        const due = downTick(
+          scale(earned, ratioOf(face, outstanding, 'its share of what is outstanding'), 'its interest'),
+        );
+        const paid = payInterest(ctx, deal, id, atMost(due, forInterest, 'and no more than is here'));
+        forInterest = subQty(forInterest, paid, 'what is left for the layer below');
+      }
+      // XI-8: and what is left is PRINCIPAL, which redeems face, senior first.
+      let left: Qty = cashOf(ctx, deal.vehicle, deal.ccy);
+      for (const id of deal.layers) {
+        if (left <= 0) break;
+        const paid = payTranche(ctx, deal, id, left);
+        left = subQty(left, paid, 'what is left after the layer above');
+      }
+    }
+    windUp(ctx, deal, book);
+  }
+}
+
+/**
+ * C5, Law 19, B-8: WHAT THE POOL EARNED THIS PERIOD, read off the wire and never by subtraction.
+ *
+ * A coupon carries `receipt: { of: 'interest' }` — what the money IS to the party getting it, said
+ * by the payer (`world/actions.ts`) — and a redemption does not. So the split between what the
+ * vehicle collected as interest and what it collected as principal is a READ of this period's
+ * settled money legs into its own account, which is the one place the fact exists.
+ */
+function interestCollected(ctx: MechanismContext, deal: Deal): Qty {
+  const account = ctx.accountOf(deal.vehicle, deal.ccy);
+  const terms: Qty[] = [];
+  for (const r of ctx.ledger.inPeriod(ctx.period)) {
+    if (r.outcome !== 'settled') continue;
+    for (const leg of r.instruction.legs) {
+      if (!isMoneyLeg(leg) || leg.ccy !== deal.ccy) continue;
+      if (leg.to.holder !== account.holder || leg.to.issuer !== account.issuer) continue;
+      if (leg.receipt?.of !== 'interest') continue;
+      terms.push(leg.amount);
     }
   }
+  return sum(terms).value;
+}
+
+/**
+ * C5: a layer's share of what the pool EARNED, paid as interest — no face is redeemed, because the
+ * note still owes what it owes. This is the return a noteholder actually gets, and its yield is what
+ * that return comes to against the price it paid (C3: derived from price, never into it).
+ */
+function payInterest(
+  ctx: MechanismContext,
+  deal: Deal,
+  id: InstrumentId,
+  available: Qty,
+): Qty {
+  const holders = ctx.register.holdersOf(id);
+  const face = ctx.register.heldTotal(id).value;
+  if (available <= 0 || face <= 0 || holders.length === 0) return NO_QTY;
+  let paid = NO_QTY;
+  for (const holder of holders) {
+    const held = ctx.register.quantity(holder, id);
+    if (held <= 0) continue;
+    const share = downTick(scale(available, ratioOf(held, face, 'its share of the layer'), 'its share'));
+    if (share <= 0) continue;
+    const r = ctx.settle({
+      legs: [
+        {
+          kind: 'money',
+          from: ctx.accountOf(deal.vehicle, deal.ccy),
+          to: ctx.accountOf(holder, deal.ccy),
+          // Treasury C1: what this money IS to the party getting it. A note pays interest.
+          receipt: { of: 'interest' },
+          ccy: deal.ccy,
+          amount: share,
+          fromCell: none(),
+          toCell: none(),
+        },
+      ],
+      cause: 'corporateAction',
+      reason: `${String(deal.vehicle)} pays interest on ${String(id)}`,
+    });
+    if (r.outcome === 'settled') paid = addQty(paid, share, 'paid out');
+  }
+  return paid;
+}
+
+/**
+ * A-57, C4.a, XI-3, XI-8: A VEHICLE WHOSE POOL HAS RUN OFF WINDS UP, AND ITS RESIDUAL HAS A HOLDER.
+ *
+ * Nothing ceased a vehicle: `fails: ['cash','solvency']` will not fire on a party with positive
+ * equity, the kind has no owner and no distribution, and `distribute` removed a deal only when the
+ * vehicle had ALREADY ceased. So a run-off deal sat on the book for ever holding whatever was left,
+ * which is Appendix B's residual with no holder wearing a party's name.
+ *
+ * The arranger keeps the bottom (C4.a) — it holds the junior, which is the equity of the deal — so
+ * the arranger is who the residual belongs to, and that is what makes XI-11 true rather than vacuous:
+ * the risk did not leave, and neither did the last of the return. When every layer is redeemed and
+ * no row of the pool is still live, what is left goes to the arranger and the vehicle ceases to it.
+ */
+function windUp(ctx: MechanismContext, deal: Deal, book: { deals: Deal[] }): void {
+  if (!ctx.parties.get(deal.vehicle).status.alive) return;
+  const owed = sum(deal.layers.map((id) => ctx.register.heldTotal(id).value)).value;
+  if (owed > 0) return;
+  const running = deal.rows.filter(
+    (row) =>
+      ctx.instruments.get(row).status.live && ctx.register.quantity(deal.vehicle, row) > 0,
+  );
+  if (running.length > 0) return;
+  const left = cashOf(ctx, deal.vehicle, deal.ccy);
+  if (left > 0) {
+    ctx.settle({
+      legs: [
+        {
+          kind: 'money',
+          from: ctx.accountOf(deal.vehicle, deal.ccy),
+          to: ctx.accountOf(deal.arranger, deal.ccy),
+          // C4.a: the residual of a deal belongs to whoever held the bottom of it.
+          receipt: { of: 'transfer' },
+          ccy: deal.ccy,
+          amount: left,
+          fromCell: none(),
+          toCell: none(),
+        },
+      ],
+      cause: 'corporateAction',
+      reason: `${String(deal.vehicle)} winds up and pays its residual to ${String(deal.arranger)}`,
+    });
+  }
+  // XI-3, Money E4: it can only go when it holds nothing, and every reference to it resolves to
+  // the party that took what was left (Register F2).
+  if (ctx.register.holdingsOf(deal.vehicle).length > 0) return;
+  ctx.cease(deal.vehicle, deal.arranger);
+  book.deals.splice(book.deals.indexOf(deal), 1);
+  ctx.record(
+    'securitisation.wound',
+    [deal.arranger, deal.vehicle],
+    {
+      vehicle: String(deal.vehicle),
+      arranger: String(deal.arranger),
+      pool: deal.pool,
+      residual: left,
+      why: 'the pool ran off and every layer was redeemed',
+    },
+    true,
+  );
 }
 
 /**
@@ -676,8 +856,21 @@ function absorb(ctx: MechanismContext, deal: Deal): void {
       .map((row) => ctx.register.quantity(deal.vehicle, row)),
   ).value;
   const notes = sum(deal.layers.map((id) => ctx.register.heldTotal(id).value)).value;
-  let lost = subQty(notes, pool, 'what the pool no longer covers');
-  if (lost <= 0) return;
+  const incurred = subQty(notes, pool, 'what the pool no longer covers');
+  if (incurred <= 0) return;
+  /**
+   * C6, B-8: WHAT THE POOL LOST, said out loud, before any of it is allocated. The audit's C6 line
+   * reads this against the write-downs the loop below journals, which is a second record of the
+   * same fact reached from the other end (Audit A1.a) — and neither number existed at all while
+   * interest was paid out as principal, because `notes − pool` could not be positive.
+   */
+  ctx.record(
+    'securitisation.absorbed',
+    [deal.arranger, deal.vehicle],
+    { vehicle: String(deal.vehicle), pool, notes, lost: incurred },
+    true,
+  );
+  let lost: Qty = incurred;
   // XI-8: from the bottom. `layers` is in the order they are PAID, so losses run the other way.
   for (const id of [...deal.layers].reverse()) {
     if (lost <= 0) break;
@@ -818,6 +1011,18 @@ function deals(): Family {
             message: `${i.id}: a layer with a face and nobody holding it`,
           });
         }
+        /**
+         * C6, B-8: WHAT WAS WRITTEN DOWN, AGAINST WHAT THE POOL ACTUALLY LOST — no tranching
+         * creates or destroys loss.
+         *
+         * Two records that are not two readings of one number: the write-down events this module
+         * journals per layer (`tranche.writtenDown`, what it took off a holder's book), against the
+         * pool's own arithmetic as `absorb` measured it (`securitisation.absorbed`, the notes over
+         * what the vehicle still holds of the rows). They agree only if every unit of loss landed on
+         * exactly one layer — and for a long time neither number existed at all, because interest
+         * paid out as principal made `notes − pool` negative for ever and no loss was ever allocated
+         * to any tranche whatever the borrowers did.
+         */
         // C6: the layers are cut FROM the pool, so what they claim can never exceed it.
         const claimed = scale(t.pool, minus(t.detachment, t.attachment, 'the depth of the layer'), 'its face at the cut');
         if (claimed > t.pool) {
@@ -831,6 +1036,47 @@ function deals(): Family {
             message: `${i.id}: claims ${claimed} of a pool of ${t.pool}`,
           });
         }
+      }
+      /**
+       * C6: LOSSES ALLOCATED SUM TO LOSSES INCURRED, EXACTLY. Per vehicle, this period: what the
+       * write-downs took off the layers against what `absorb` measured the pool to have lost.
+       */
+      const takenBy = new Map<string, number>();
+      for (const e of view.journal.ofKindIn('tranche.writtenDown', view.period)) {
+        const vehicle = e.data['vehicle'];
+        const units = e.data['units'];
+        if (typeof vehicle !== 'string' || typeof units !== 'number') continue;
+        addTo(takenBy, vehicle, units);
+      }
+      for (const e of view.journal.ofKindIn('securitisation.absorbed', view.period)) {
+        const vehicle = e.data['vehicle'];
+        const lost = e.data['lost'];
+        if (typeof vehicle !== 'string' || typeof lost !== 'number' || lost <= 0) continue;
+        const taken = zeroIfNone(takenBy.get(vehicle));
+        takenBy.delete(vehicle);
+        if (taken === lost) continue;
+        out.push({
+          family: 'ownership',
+          spec: 'Securitisation C6',
+          owner: vehicle,
+          size: taken - lost,
+          unit: 'units of face',
+          period: view.period,
+          message: `${vehicle}: the pool lost ${lost} and ${taken} was written off the layers`,
+        });
+      }
+      // A layer written down against a pool that lost nothing is the same defect the other way.
+      for (const [vehicle, taken] of takenBy) {
+        if (taken <= 0) continue;
+        out.push({
+          family: 'ownership',
+          spec: 'Securitisation C6',
+          owner: vehicle,
+          size: taken,
+          unit: 'units of face',
+          period: view.period,
+          message: `${vehicle}: ${taken} was written off the layers and the pool lost nothing`,
+        });
       }
       return out;
     },

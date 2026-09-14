@@ -6539,3 +6539,60 @@ loop with nobody outside it.
 
 Closes `A-55` and `A-56`. Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence`
 green. Not measured.
+
+---
+
+## Item 8 — the securitisation waterfall: interest is not principal
+
+Worklist 13e says *"a waterfall paying by seniority out of what was actually collected … with a loss
+landing from the bottom and nothing stopping it reaching the senior"*, and it is marked **done**. **No
+loss was ever allocated to any tranche, whatever the borrowers did.**
+
+The vehicle collects PRINCIPAL AND INTEREST — `LOAN.due` emits a coupon every period and a maturity
+at the end, both paid to the holder of record, which is the vehicle. What went out was PRINCIPAL
+ONLY: `payTranche` redeems face at par, so `Σ out ≤ Σ face = the pool's opening principal` and the
+interest, the whole economic return of the deal, never left.
+
+Three things followed, and the third disabled the module's own subject.
+
+1. A noteholder earned nothing but its discount: it paid `priceFor(...)` per unit of face and
+   received exactly face.
+2. The interest piled up in a vehicle nobody owns — a residual with no holder (Appendix B) wearing a
+   party's name.
+3. **`absorb` went inert.** `lost = notes − pool`, and because interest redeemed face, notes fell
+   FASTER than the pool: `lost ≤ 0` early and permanently, so the junior/senior waterfall, the
+   attachment points, the write-down leg and D4's senior losses were all downstream of a subtraction
+   that could not be positive.
+
+**`distribute` pays interest first, by seniority, and then principal.** What the vehicle collected as
+interest is READ off the wire — this period's settled money legs into its own account whose `receipt`
+says what the money IS to the party getting it (`world/actions.ts` sets `{of: 'interest'}` on a
+coupon) — and never inferred by subtraction (Law 19). Each layer's entitlement is its share of what
+is outstanding; senior first when there is not enough of it, which is what a waterfall is.
+
+**8.2 is done and NOT as written, and building it as written would have been the defect.** The plan
+asked for real `cashFlows` and `due` on `trancheKind`. A pass-through's payments depend on what
+borrowers who have not paid yet do, so a schedule would be a FORECAST with no falsification test
+(Law 17) — and a real `due` would have the KERNEL pay a coupon this module's own waterfall is already
+paying, one fact with two writers (Law 4). What the step was after is that a noteholder should EARN
+something, and that is 8.1. Its yield is what the payments came to against the price it paid: a
+measurement of what happened (item 23), never an input to a price (C3, Law 3). The docstring where
+the empty schedule sits now says all of that instead of just asserting the emptiness.
+
+**C6 is asserted, both ways.** `absorb` journals `securitisation.absorbed` — what the pool lost,
+before any of it is allocated — and the ownership family reads it against the `tranche.writtenDown`
+events per vehicle per period. Two records of one fact reached from opposite ends (Audit A1.a), and
+it fires in both directions: a pool that lost more than was written off the layers, and a layer
+written down against a pool that lost nothing. Neither number existed at all before this, because
+`notes − pool` could not be positive.
+
+**The residual has a holder and the vehicle winds up.** The arranger already keeps the bottom (C4.a)
+so the deal's equity is named; what had no holder was what was left INSIDE the vehicle once the notes
+were redeemed. Nothing ceased it: `fails: ['cash','solvency']` will not fire on a party with positive
+equity, the kind has no owner and no distribution, and `distribute` removed a deal only when the
+vehicle had ALREADY ceased by some other route. `windUp` pays the residual to the arranger and ceases
+the vehicle to it — and only when it holds nothing, which is XI-3's rule rather than a special case.
+Item 14's `Process` was not needed: `ctx.cease` is the door and Register F2 is what makes every
+reference resolve.
+
+Closes `A-57` and `B-8`. Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.
