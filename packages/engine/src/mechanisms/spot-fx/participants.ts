@@ -19,14 +19,18 @@
 import { pairOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { CurrencyCode } from '../../core/ids.js';
+import { atMost } from '../../core/num.js';
+import { asQty, downTick, negQty, NO_QTY, type Qty } from '../../core/tick.js';
 import {
-  add,
-  atMost,
-  div,
-  mul,
-  sub,
-} from '../../core/num.js';
-import { asQty, downTick, type Qty } from '../../core/tick.js';
+  absolute,
+  type Amount,
+  amountOf,
+  heldAsMoney,
+  minus,
+  plus,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import type { ParticipantView } from '../../world/context.js';
 import type { FxDeskDecl } from './data.js';
 import { fxParam } from './data.js';
@@ -71,7 +75,7 @@ function ownMoneyIsTheQuote(view: ParticipantView, foreign: CurrencyCode): reado
     return want > 0 ? [{ party: view.self.id, side: 'buy', price: 'market', qty: want }] : [];
   }
   // It can only sell what it actually holds, which is arithmetic and not a limit (Law 6).
-  const spare = least(-position, view.cash(foreign));
+  const spare = least(negQty(position, 'what it is sitting on'), view.cash(foreign));
   return spare > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: spare }] : [];
 }
 
@@ -92,11 +96,21 @@ function ownMoneyIsTheBase(
   const position = view.owedIn(foreign);
   if (position > 0) {
     // Short of the quote: it sells its own money to raise it, and never more than it holds.
-    const want = least(div(position, rate, 'base it must sell'), view.cash(pair.base));
+    const want = least(
+      amountOf(heldAsMoney(position, 'what it is short of'), rate, 'base it must sell'),
+      view.cash(pair.base),
+    );
     return want > 0 ? [{ party: view.self.id, side: 'sell', price: 'market', qty: want }] : [];
   }
   // Sitting on the quote: it buys its own money back with it, and never more than that balance buys.
-  const spare = least(div(-position, rate, 'base its spare quote buys'), div(view.cash(foreign), rate, 'what it holds, in base'));
+  const spare = least(
+    amountOf(
+      heldAsMoney(negQty(position, 'what it is sitting on'), 'what it is sitting on'),
+      rate,
+      'base its spare quote buys',
+    ),
+    amountOf(heldAsMoney(view.cash(foreign), 'what it holds'), rate, 'what it holds, in base'),
+  );
   return spare > 0 ? [{ party: view.self.id, side: 'buy', price: 'market', qty: spare }] : [];
 }
 
@@ -131,25 +145,33 @@ export function dealerOrders(
   const print = view.print(m.instrument);
   if (!print.some || print.value.price <= 0) return [];
   const rate = print.value.price;
-  const edge = mul(rate, view.params.ratio(fxParam(d.bank, 'edge')), 'what standing in the middle costs it');
+  const edge = scale(rate, view.params.ratio(fxParam(d.bank, 'edge')), 'what standing in the middle costs it');
   // D1: what it will have behind a position in this pair — its own share of its own capital, which
   // is a read of its own account and is in its OWN money, carried across to the base at the rate
   // in force so the room is a size in the units this book trades in.
   const home = view.registry.currencyOf(view.self.region);
-  const risk = mul(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk');
-  const room = downTick(mul(risk, view.rateIn(home, pair.base), 'in the base'));
+  const risk = scale(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk');
+  const room = downTick(scale(risk, view.rateIn(home, pair.base), 'in the base'));
   if (room <= 0) return [];
   // D4: how far its book is from flat, as a share of the room it has — signed, because a desk can
   // be either way round. Flat is where a desk wants to be: it is paid for turning the position
   // over, not for holding it.
-  const held = sub(
+  const held = minus(
     positionIn(view, pair.base, home),
-    div(positionIn(view, pair.quote, home), rate, 'the quote it is carrying, in base'),
+    amountOf(
+      heldAsMoney(positionIn(view, pair.quote, home), 'the quote it is carrying'),
+      rate,
+      'the quote it is carrying, in base',
+    ),
     'its book in this pair, in the base',
   );
-  const skew = mul(div(held, room, 'how much of its room its book uses'), edge, 'what its own position does to both sides');
-  const bid = sub(sub(rate, edge, 'what it will pay'), skew, 'less what it is carrying');
-  const offer = sub(add(rate, edge, 'what it wants'), skew, 'less what it wants to shed');
+  const skew = scale(
+    edge,
+    ratioOf(held, room, 'how much of its room its book uses'),
+    'what its own position does to both sides',
+  );
+  const bid = minus(minus(rate, edge, 'what it will pay'), skew, 'less what it is carrying');
+  const offer = minus(plus(rate, edge, 'what it wants'), skew, 'less what it wants to shed');
   const out: Order[] = [];
   // D2, XI-2, Clearing C3: PAST ITS OWN LIMIT IT IS NOT QUOTING, IT IS GETTING OUT. A desk that
   // decided how much it would risk and is carrying more than that does not sit on the excess at a
@@ -157,12 +179,15 @@ export function dealerOrders(
   // they posted. That is the same rung its paper book has (`urgentSale`), and it is what moves a
   // rate when everybody is on the same side: a limit that nobody crosses is a desk waiting, and a
   // market full of desks waiting is a market with one side (XI-13).
-  const over = sub(absolute(held), room, 'how far past its own limit it is');
+  const over = minus(sizeOf(held), room, 'how far past its own limit it is');
   if (over > 0) {
     const side = held > 0 ? 'sell' : 'buy';
     const size = side === 'sell'
       ? least(over, view.cash(pair.base))
-      : least(over, div(view.cash(pair.quote), rate, 'what its quote balance buys'));
+      : least(
+          over,
+          amountOf(heldAsMoney(view.cash(pair.quote), 'what it holds'), rate, 'what its quote balance buys'),
+        );
     if (size > 0) out.push({ party: view.self.id, side, price: 'market', qty: size });
     return out;
   }
@@ -171,18 +196,18 @@ export function dealerOrders(
   // than the base it holds. Neither pair is a cap: one side is a decision it made about its own
   // capital and the other is the arithmetic of delivery.
   const buy = least(
-    sub(room, held, 'room left long the base'),
-    div(view.cash(pair.quote), rate, 'what its quote balance buys'),
+    minus(room, held, 'room left long the base'),
+    amountOf(heldAsMoney(view.cash(pair.quote), 'what it holds'), rate, 'what its quote balance buys'),
   );
-  const sell = least(add(room, held, 'room left short the base'), view.cash(pair.base));
+  const sell = least(plus(room, held, 'room left short the base'), view.cash(pair.base));
   if (bid > 0 && buy > 0) out.push({ party: view.self.id, side: 'buy', price: bid, qty: buy });
   if (offer > 0 && sell > 0) out.push({ party: view.self.id, side: 'sell', price: offer, qty: sell });
   return out;
 }
 
 /** How big a position is, whichever way round it is. Not a bound: a size has no sign (Law 6). */
-function absolute(x: number): number {
-  return x < 0 ? sub(0, x, 'the size of it') : x;
+function sizeOf(x: Amount<'piece'>): Amount<'piece'> {
+  return absolute(x, 'the size of it');
 }
 
 /**
@@ -190,12 +215,12 @@ function absolute(x: number): number {
  * Its balance in its own money funds everything it does and is not a view of anything; a balance in
  * somebody else's is a position it took and has to close.
  */
-function positionIn(view: ParticipantView, ccy: CurrencyCode, home: CurrencyCode): number {
-  return ccy === home ? 0 : view.cash(ccy);
+function positionIn(view: ParticipantView, ccy: CurrencyCode, home: CurrencyCode): Qty {
+  return ccy === home ? NO_QTY : view.cash(ccy);
 }
 
 /** Law 8, Law 6: the smaller of two sizes, on the grid. Arithmetic of delivery, not a limit. */
-function least(a: number, b: number): Qty {
+function least(a: Amount<'piece'>, b: Amount<'piece'>): Qty {
   return downTick(atMost(a, b, 'the smaller of the two is how far both reach'));
 }
 

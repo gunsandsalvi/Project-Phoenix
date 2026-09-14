@@ -15,7 +15,7 @@
  * contract and D1.b would be checking a coincidence. `ContractReads` is therefore the kernel's own
  * reads — prints, marks, indices, curves, public events — and no view of anybody.
  */
-import type { PerPiece } from '../core/measure.js';
+import type { Cash, PerPiece } from '../core/measure.js';
 import type { Qty } from '../core/tick.js';
 import type { Calendar, Period } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
@@ -63,7 +63,7 @@ export interface ContractPayment {
   readonly from: PartyId;
   readonly to: PartyId;
   readonly ccy: CurrencyCode;
-  readonly amount: number;
+  readonly amount: Cash;
   readonly date: Civil;
   readonly why: string;
 }
@@ -113,7 +113,7 @@ export interface Contract {
    * zero for a contract struck at par (D7.b) and the premium for one bought outright. It is the
    * basis, not a mark: what the equity account has recognised until revaluation moves it.
    */
-  readonly basis: number;
+  readonly basis: Cash;
   readonly opened: Period;
   readonly state: 'open' | 'terminated';
   readonly terminated: Option<Period>;
@@ -156,7 +156,7 @@ export interface DerivativeKindProfile {
    * separately — but the profile must be able to STATE the same contract from `b`'s side (`flip`),
    * and the zero-sum family asks for both and requires them to negate exactly (D1.b).
    */
-  readonly mark: (c: Contract, at: Period, reads: ContractReads) => number;
+  readonly mark: (c: Contract, at: Period, reads: ContractReads) => Cash;
   /**
    * A3, D1.b: the same contract as the OTHER side states it. Swapping `a` and `b` is not enough
    * whenever the terms carry a direction (a forward's buy and sell, a swap's payer and receiver), so
@@ -173,7 +173,7 @@ export interface DerivativeKindProfile {
    * answer is what the contract is then WORTH to the buyer: a thing is worth what it cost until
    * something re-marks it (Register D4).
    */
-  readonly premiumPerUnit: (struckAt: PerPiece, terms: ContractTerms) => number;
+  readonly premiumPerUnit: (struckAt: PerPiece, terms: ContractTerms) => PerPiece;
   /** D4, D6: what falls due this period under the terms, both directions (D5: each in its money). */
   readonly legs: (c: Contract, at: Period, reads: ContractReads) => readonly ContractPayment[];
   /**
@@ -184,9 +184,9 @@ export interface DerivativeKindProfile {
    * exposure with no margin only with A STATED REASON, and "nobody can say" is not one: the layer
    * refuses the trade and journals the refusal (E2, E4) rather than admitting it at nothing.
    */
-  readonly initialMargin: (c: Contract, at: Period, reads: ContractReads) => Option<number>;
+  readonly initialMargin: (c: Contract, at: Period, reads: ContractReads) => Option<Cash>;
   /** D11.a: the stated value an early termination closes out at, to `a`. */
-  readonly closeOut: (c: Contract, at: Period, reads: ContractReads) => number;
+  readonly closeOut: (c: Contract, at: Period, reads: ContractReads) => Cash;
   /** D6, D11: whether the term has run out at `at`, so the contract expires this period. */
   readonly expires: (c: Contract, at: Period, calendar: Calendar) => boolean;
   /**
@@ -202,7 +202,7 @@ export interface DerivativeKindProfile {
    * week it can see, and closes overdrawn at the central bank with nothing lent to it — which is
    * not a bank failing, it is a bank nobody told (worklist 13b, finding `13b-1`).
    */
-  readonly cashDue?: (c: Contract, at: Period, reads: ContractReads, party: PartyId) => number;
+  readonly cashDue?: (c: Contract, at: Period, reads: ContractReads, party: PartyId) => Cash;
 }
 
 /**

@@ -17,9 +17,9 @@
  * Law 6: nothing here bounds a rate. What is bounded is one desk's willingness, by its own capital
  * and its own stated edge, and both are its own.
  */
+import { amountOf, asRatio, minus, ratioOf, scale } from '../../core/measure.js';
 import { pairOf, type MarketDecl } from '../../clearing/market.js';
 import type { CurrencyCode } from '../../core/ids.js';
-import { div, mul, sub } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { BANK } from '../../registry/profiles.js';
 import type { MechanismContext } from '../../world/context.js';
@@ -93,14 +93,22 @@ export function arbitrage(ctx: MechanismContext, rows: ReadonlyMap<string, FxDes
       if (!ab.some || !bc.some || !ac.some) continue;
       if (ab.value.price <= 0 || bc.value.price <= 0 || ac.value.price <= 0) continue;
       // C3: what a unit of A costs in C the long way round, against what it costs directly.
-      const crossed = mul(ab.value.price, bc.value.price, `${t.a} through ${t.b} into ${t.c}`);
-      const gap = div(sub(crossed, ac.value.price, 'what the two routes disagree by'), ac.value.price, 'as a share');
+      const crossed = scale(
+        ab.value.price,
+        asRatio(bc.value.price, 'and on into the third'),
+        `${t.a} through ${t.b} into ${t.c}`,
+      );
+      const gap = ratioOf(
+        minus(crossed, ac.value.price, 'what the two routes disagree by'),
+        ac.value.price,
+        'as a share',
+      );
       if (Math.abs(gap) <= cost) continue;
       // D1: and only as much of it as its own capital is behind. The size is in units of A, which
       // is what both routes start from, so one number sizes all three legs.
       const size = downTick(
-        div(
-          mul(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk'),
+        amountOf(
+          scale(view.equity(), view.params.ratio(fxParam(d.bank, 'inventoryLimit')), 'what it will risk'),
           ab.value.price,
           'units of the base it can carry',
         ),

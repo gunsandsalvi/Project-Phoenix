@@ -11,7 +11,7 @@
  * - SeedContext: what a seed module may do at period zero, which is the only time endowments are
  *   written directly (Seed A3: a stock the flows then act on).
  */
-import type { Cash, PerPiece } from '../core/measure.js';
+import type { Cash, PerPiece, Ratio } from '../core/measure.js';
 import type { Calendar, Cycle, Period } from '../calendar/calendar.js';
 import type { Periodicity } from '../core/rate.js';
 import type { ContractMarketDecl, MarketDecl, PrimaryOffer } from '../clearing/market.js';
@@ -388,7 +388,7 @@ export interface ParticipantView extends KernelReads {
    * a bid rather than a price (Law 3): two parties requiring different things want the same claim
    * at different levels, which is what gives a book two sides (§46 A3).
    */
-  worth(instrument: InstrumentId, requiredPerAnnum: number): Option<number>;
+  worth(instrument: InstrumentId, requiredPerAnnum: Ratio): Option<PerPiece>;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
   accrued(instrument: InstrumentId): PerPiece;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
@@ -407,14 +407,14 @@ export interface ParticipantView extends KernelReads {
    * it has to pay (B1); NEGATIVE is holding one nothing it owes is in (B2). Both are the same read
    * because they are the same balance.
    */
-  owedIn(ccy: CurrencyCode): number;
+  owedIn(ccy: CurrencyCode): Qty;
   /**
    * Currency C5, Law 4: THE RATE IN FORCE between two moneys — the last thing a pair's session
    * printed, at or before now. It is public like every other print (Clearing E1), and it is one
    * read rather than each participant finding the pair, inverting it when it is quoted the other
    * way round and deciding what to do when neither direction has ever traded.
    */
-  rateIn(from: CurrencyCode, to: CurrencyCode): number;
+  rateIn(from: CurrencyCode, to: CurrencyCode): Ratio;
   /**
    * Expectations A1, A2: what THIS party expects of a variable, formed from what it observed. A
    * party that has never observed the variable has no outlook, and gets none rather than a default
@@ -478,13 +478,13 @@ export interface OwnContracts {
   /** A4: the rows this party is a side of, open ones only. */
   mine(): readonly Contract[];
   /** D1: what one of them is worth to this party — an asset to one side, a liability to the other. */
-  valueOf(contract: Contract): number;
+  valueOf(contract: Contract): Cash;
   /**
    * C1, C1.a: the net of the marks on the rows this party has with ONE named counterparty. What it
    * holds of that counterparty's collateral is its own module's to subtract: the kernel does not
    * know which instrument a margin claim is, and would be guessing (Law 15).
    */
-  exposureTo(counterparty: PartyId): number;
+  exposureTo(counterparty: PartyId): Cash;
   /**
    * D4, Money Market A2: WHAT ITS OWN ROWS WILL COST IT IN CASH AT `at`, in one money.
    *
@@ -493,7 +493,7 @@ export interface OwnContracts {
    * It is the sum of what each kind says this row will take (`cashDue`, defaulting to its legs),
    * and nothing about anybody else's position is reachable through it.
    */
-  cashDue(ccy: CurrencyCode, at: Period): number;
+  cashDue(ccy: CurrencyCode, at: Period): Cash;
 }
 
 /** What a phase may read of the contract store: everything public, and no writer (Law 4). */
@@ -505,7 +505,7 @@ export interface ContractsRead extends ContractReadsFacade {
   /** Clearing D4: what the two equity accounts have recognised, to `a`. */
   carrying(contract: Contract, at: Period): Cash;
   /** D1 (layer): what the kind says must be posted against this row, or none when it cannot say. */
-  initialMargin(contract: Contract, at: Period): Option<number>;
+  initialMargin(contract: Contract, at: Period): Option<Cash>;
   /**
    * E1, E2: the same question about a row that DOES NOT EXIST YET — what this kind would require
    * against a notional of this size struck at this level. It is what a member sizing a trade has to
@@ -525,11 +525,11 @@ export interface ContractsRead extends ContractReadsFacade {
       readonly b: PartyId;
     },
     at: Period,
-  ): Option<number>;
+  ): Option<Cash>;
   /** D4, D6: the payments the terms put in this period, both ways. */
   legsDue(contract: Contract, at: Period): readonly ContractPayment[];
   /** D11.a: the stated close-out value, to `a`. */
-  closeOut(contract: Contract, at: Period): number;
+  closeOut(contract: Contract, at: Period): Cash;
   /** D6, D11: whether the term has run out this period. */
   expires(contract: Contract, at: Period): boolean;
   /** D3: what this row settles against, which this world produces somewhere else. */
@@ -852,7 +852,7 @@ export interface SeedContext {
   openMarket(decl: MarketDecl): void;
   openVenue(decl: VenueDecl): void;
   /** Endow a party with money at its own bank, per member (Seed A4: every deposit is a liability). */
-  endowMoney(party: PartyId, ccy: CurrencyCode, perMember: number): void;
+  endowMoney(party: PartyId, ccy: CurrencyCode, perMember: Cash): void;
   /** Endow a party with units of an instrument at a basis, per member (Seed C4: an opening condition). */
   endowUnits(
     party: PartyId,

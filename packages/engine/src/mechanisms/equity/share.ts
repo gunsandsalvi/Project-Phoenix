@@ -15,15 +15,15 @@
  * happens instead is E4, and it happens through the ranking: a share ranks behind every debt
  * (A1.a), so an estate reaches it last, and reaching it last with nothing left is the wipe.
  */
+import { scaleQty, type Qty } from '../../core/tick.js';
+import { asCash, asRatio, over, pricedAt, type PerPiece } from '../../core/measure.js';
 import type { InstrumentKindId, PartyId } from '../../core/ids.js';
-import { none, some } from '../../core/option.js';
-import { div } from '../../core/num.js';
+import { none, some, type Option } from '../../core/option.js';
 import { period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import { instrumentKindId } from '../../core/ids.js';
 import { InvalidRegistry } from '../../core/errors.js';
-import { mul } from '../../core/num.js';
 import { weightOf, type Party } from '../../parties/party.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
 import type { InstrumentKindProfile } from '../../registry/kinds.js';
@@ -62,9 +62,9 @@ export function shareTerms(i: Instrument): ShareTerms {
  * so it casts weight × member × votes per share — a represented holder is not disenfranchised by
  * its representation, and a majority is therefore a thing that can be bought (A5.a).
  */
-export function votesOf(holder: Party, perMemberUnits: number, terms: ShareTerms): number {
-  return mul(
-    mul(perMemberUnits, weightOf(holder), 'shares the holder casts'),
+export function votesOf(holder: Party, perMemberUnits: Qty, terms: ShareTerms): Qty {
+  return scaleQty(
+    scaleQty(perMemberUnits, weightOf(holder), 'shares the holder casts'),
     terms.votesPerShare,
     'votes',
   );
@@ -131,11 +131,11 @@ export const shareKind: InstrumentKindProfile = {
    * that has published nothing is still worth nothing THROUGH THIS DOOR — that is an absence of
    * evidence and it is returned as one, not as a zero (App A).
    */
-  worthTo: (i, required, reads) => {
+  worthTo: (i, required, reads): Option<PerPiece> => {
     const issuer = i.issuer;
-    if (!issuer.some) return none<number>();
+    if (!issuer.some) return none<PerPiece>();
     const said = reads.lastReport(issuer.value);
-    if (!said.some || said.value.earned <= 0 || said.value.periods <= 0) return none<number>();
+    if (!said.some || said.value.earned <= 0 || said.value.periods <= 0) return none<PerPiece>();
     // Law 8: the periodicity is part of the number. The report covers a span of PERIODS and a
     // required return is quoted per YEAR, so the calendar puts them in one unit — never a factor.
     const ofAYear = yearFraction(
@@ -143,11 +143,19 @@ export const shareKind: InstrumentKindProfile = {
       reads.calendar.startOf(reads.period),
       reads.calendar.startOf(period(reads.period + said.value.periods)),
     );
-    if (ofAYear <= 0) return none<number>();
-    const annual = div(said.value.earned, ofAYear, 'what it earns a year, as it published it');
-    const whole = div(annual, required, 'what that stream is worth at what this holder requires');
+    if (ofAYear <= 0) return none<PerPiece>();
+    const annual = over(
+      asCash(said.value.earned, 'what it published it earned'),
+      asRatio(ofAYear, 'the fraction of a year that was'),
+      'what it earns a year, as it published it',
+    );
+    const whole = over(
+      annual,
+      asRatio(required, 'what this holder requires'),
+      'what that stream is worth at what this holder requires',
+    );
     const shares = reads.issued(i.id);
-    if (shares <= 0) return none<number>();
-    return some(div(whole, shares, 'what one share of it is worth to this holder'));
+    if (shares <= 0) return none<PerPiece>();
+    return some(pricedAt(whole, shares, 'what one share of it is worth to this holder'));
   },
 };

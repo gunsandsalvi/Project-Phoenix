@@ -17,7 +17,7 @@ import { triangleGap } from '../../audit/families/cross-market.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
 import { fxPairId } from '../../core/ids.js';
-import { sub } from '../../core/num.js';
+import { absolute } from '../../core/measure.js';
 import { fxParam } from './data.js';
 import { triangles } from './arbitrage.js';
 import type { FxDeskDecl } from './data.js';
@@ -40,7 +40,7 @@ export function triangularConsistency(rows: readonly FxDeskDecl[]): Family {
           fxPairId(t.a, t.c),
         );
         if (!read.some) continue;
-        const size = read.value.gap < 0 ? sub(0, read.value.gap, 'the size of it') : read.value.gap;
+        const size = absolute(read.value.gap, 'the size of it');
         if (size <= cheapest) continue;
         out.push({
           family: 'crossMarket',

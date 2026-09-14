@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { period, period as periodOf } from '../src/calendar/calendar.js';
 import { agreementId, currencyCode, instrumentId, partyId } from '../src/core/ids.js';
 import type { InstrumentId, PartyId } from '../src/core/ids.js';
+import { asPerPiece, type PerPiece } from '../src/core/measure.js';
 import { CorporateActions } from '../src/register/corporate.js';
 import { assemble, equityLineOf, type SystemModule } from '../src/index.js';
 import { listedIn, mergeModules, rigDraw, rigSpec } from './rig.js';
@@ -27,7 +28,7 @@ const decl = (over: Partial<Parameters<CorporateActions['announce']>[0]> = {}) =
   ex: period(3),
   record: period(3),
   payable: period(5),
-  perUnit: 4,
+  perUnit: asPerPiece(4, 'declared per share'),
   ccy: USD,
   why: 'declared with the results',
   ...over,
@@ -50,7 +51,7 @@ describe('the four dates, and they are not the same date', () => {
     }).toThrow(/ex date in the past/);
     // Law 2: an action of nothing is not an action.
     expect(() => {
-      b.announce(decl({ perUnit: 0 }), period(1));
+      b.announce(decl({ perUnit: asPerPiece(0, 'declared per share') }), period(1));
     }).toThrow(/action of nothing/);
   });
 
@@ -119,7 +120,7 @@ describe('the four dates, and they are not the same date', () => {
  * them publishes a LOSS, so there is no spare to distribute — which `control.test.ts` already
  * records, and which item 1's reach read is what publishes.
  */
-function declaresOnce(line: InstrumentId, issuer: PartyId, perUnit: number): SystemModule {
+function declaresOnce(line: InstrumentId, issuer: PartyId, perUnit: PerPiece): SystemModule {
   return {
     id: 'test.declares',
     spec: 'Equity D3',
@@ -166,7 +167,7 @@ describe('a declaration, a record date and a payment (D3, D3.a, XI-8)', () => {
     const issuer = partyId(listed);
     const w = assemble({
       ...spec,
-      modules: mergeModules(spec.modules, [declaresOnce(line, issuer, 1)]),
+      modules: mergeModules(spec.modules, [declaresOnce(line, issuer, asPerPiece(1, 'a dollar a share'))]),
     });
     for (let i = 0; i < 8; i += 1) w.step();
 
@@ -214,7 +215,7 @@ describe('a declaration, a record date and a payment (D3, D3.a, XI-8)', () => {
     const issuer = partyId(listed);
     const w = assemble({
       ...spec,
-      modules: mergeModules(spec.modules, [declaresOnce(line, issuer, 1)]),
+      modules: mergeModules(spec.modules, [declaresOnce(line, issuer, asPerPiece(1, 'a dollar a share'))]),
     });
     for (let i = 0; i < 4; i += 1) w.step();
     const onRecord = new Set(

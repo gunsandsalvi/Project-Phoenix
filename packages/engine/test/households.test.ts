@@ -4,6 +4,7 @@
  *
  * @spec Households A2 Households A2.a Households A2.e Households A2.f Households A2.g Households B4 Households B5 Households C1 Households C1.a Households C1.c Households C1.d Households C2 Households C3 Households C4 Households C5 Households D5 Households D5.a Households D6 Goods C1 Treasury C1 Treasury C1.a Treasury C2 Treasury C3 Expectations C1 XI-15
  */
+import { asCash, asRatio, scale } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { asQty } from '../src/core/tick.js';
 import {
@@ -98,8 +99,11 @@ function payer(spreadShare: number): SystemModule {
       // A spread is mean-preserving only if what it adds to one cell is exactly what it takes from
       // another, and `base × (1 ± share)` rounded at the payment is not: the two roundings do not
       // cancel, and the run paid 61,008 more into the spread world than into the flat one.
-      base = ctx.registry.payable(USD, share);
-      off = ctx.registry.payable(USD, share * spreadShare);
+      base = ctx.registry.payable(USD, asCash(share, 'what each gets'));
+      off = ctx.registry.payable(
+        USD,
+        scale(asCash(share, 'what each gets'), asRatio(spreadShare, 'the spread'), 'the spread on it'),
+      );
       // Seed A4: a deposit is a bank's liability, and a bank that owes it holds something against
       // it. Without the reserves, the first payment across banks would be an overdraft this world
       // has no lender for yet (Money B3.c, worklist 11) — an artefact of the seed, not of anything

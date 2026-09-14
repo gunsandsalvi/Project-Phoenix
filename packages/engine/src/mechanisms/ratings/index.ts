@@ -21,7 +21,7 @@
 import { period as asPeriod } from '../../calendar/calendar.js';
 import { forbid } from '../../core/assert.js';
 import { partyId, type CurrencyCode, type PartyId } from '../../core/ids.js';
-import { mul } from '../../core/num.js';
+import { scale } from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { ParamDecl } from '../../registry/params.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
@@ -210,7 +210,7 @@ function collectFees(ctx: MechanismContext, rows: readonly AssessorDecl[]): void
       const ccy: CurrencyCode = ctx.registry.currencyOf(ctx.parties.get(who).region);
       const worth = ctx.participant(who).equity();
       if (worth <= 0) continue;
-      const due = ctx.registry.payable(ccy, mul(worth, rate, 'what the opinion costs the issuer'));
+      const due = ctx.registry.payable(ccy, scale(worth, rate, 'what the opinion costs the issuer'));
       if (due <= 0) continue;
       const r = ctx.settle({
         legs: [

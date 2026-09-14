@@ -34,14 +34,28 @@
  * owns none rents all of them. A party that owns more than it lives in is a landlord, and that is
  * the whole of what makes one.
  */
-import { asNamed } from '../../core/measure.js';
+import {
+  amountOf,
+  asCash,
+  asPerPiece,
+  heldAsMoney,
+  asNamed,
+  asRatio,
+  type Cash,
+  minus,
+  over,
+  type PerPiece,
+  pricedAt,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import type { Order } from '../../clearing/solver.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { currencyUnit, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
-import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
+import { atMost, div, mul, sub, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
-import { asQty, downTick, type Qty } from '../../core/tick.js';
+import { addQty, asQty, downTick, NO_QTY, type Qty, scaleQty, subQty } from '../../core/tick.js';
 import { TONNE_PIECES } from '../../registry/grid.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
@@ -81,7 +95,7 @@ export interface Lease {
   readonly landlord: PartyId;
   readonly region: RegionId;
   /** A2: struck at the letting and moving only by a new letting. */
-  readonly rentPerDwelling: number;
+  readonly rentPerDwelling: PerPiece;
   dwellings: Qty;
 }
 
@@ -160,30 +174,30 @@ function goodUnitOf(view: ParticipantView, region: RegionId): UnitId {
 }
 
 /** A3, D1: dwellings this party OWNS in a place, IN PIECES — the register's own answer. */
-function owned(view: ParticipantView, region: RegionId): number {
+function owned(view: ParticipantView, region: RegionId): Qty {
   const id = goodId(DWELLING, region);
-  if (!view.instruments.has(id)) return 0;
+  if (!view.instruments.has(id)) return NO_QTY;
   // XI-15: a cell's holdings are per MEMBER and a venue speaks in totals, so the weight goes on
   // here and nowhere else. A named party stands for one of itself, and its weight is one.
-  return mul(view.free(id), weightOf(view.self), 'what the people it stands for own between them');
+  return scaleQty(view.free(id), weightOf(view.self), 'what the people it stands for own between them');
 }
 
 /** How many dwellings this party has LET OUT, and how many it has taken (Law 19: off the rows). */
-function letOut(b: LeaseBook, who: PartyId): number {
+function letOut(b: LeaseBook, who: PartyId): Qty {
   return sum((indexOf(b).byLandlord.get(who) ?? []).map((l) => l.dwellings)).value;
 }
 
-function taken(b: LeaseBook, who: PartyId): number {
+function taken(b: LeaseBook, who: PartyId): Qty {
   return sum((indexOf(b).byTenant.get(who) ?? []).map((l) => l.dwellings)).value;
 }
 
 /** E1, XI-15: how many dwellings the people in this cell live in. Whole dwellings, per cell. */
-function needs(view: ParticipantView, rows: readonly TenureDecl[]): number {
+function needs(view: ParticipantView, rows: readonly TenureDecl[]): Qty {
   const self = view.self;
-  if (self.representation !== 'cell') return 0;
+  if (self.representation !== 'cell') return NO_QTY;
   const cohort = keyOf(self, 'cohort');
   const row = rows.find((r) => r.cohort === cohort);
-  if (row === undefined) return 0;
+  if (row === undefined) return NO_QTY;
   const per = view.params.ratio(HOUSING_PARAMS.perMember(cohort));
   /**
    * Law 8, 13c.1's lesson twice over: THE DECLARED RATIO IS IN NAMED UNITS AND THE STATE COUNTS IN
@@ -204,12 +218,12 @@ function needs(view: ParticipantView, rows: readonly TenureDecl[]): number {
  * which is its own declared spoilage against its own cleared price. Two reads and a multiplication;
  * nothing here is a required yield and nothing targets one (Law 3).
  */
-function wearOf(view: ParticipantView, region: RegionId): number | undefined {
+function wearOf(view: ParticipantView, region: RegionId): PerPiece | undefined {
   const id = goodId(DWELLING, region);
   if (!view.instruments.has(id)) return undefined;
   const print = view.print(id);
   if (!print.some) return undefined;
-  return mul(view.params.ratio(spoilageParam(DWELLING)), print.value.price, 'what a period of it wears');
+  return scale(print.value.price, view.params.ratio(spoilageParam(DWELLING)), 'what a period of it wears');
 }
 
 /**
@@ -217,7 +231,7 @@ function wearOf(view: ParticipantView, region: RegionId): number | undefined {
  * is nowhere to live. Its own outlook of its own income, over the dwellings a member of it lives
  * in. A cell that has never observed an income cannot say what it would pay and does not bid.
  */
-function reservation(view: ParticipantView, rows: readonly TenureDecl[]): number | undefined {
+function reservation(view: ParticipantView, rows: readonly TenureDecl[]): PerPiece | undefined {
   const self = view.self;
   if (self.representation !== 'cell') return undefined;
   const row = rows.find((r) => r.cohort === keyOf(self, 'cohort'));
@@ -234,7 +248,11 @@ function reservation(view: ParticipantView, rows: readonly TenureDecl[]): number
   if (per <= 0) return undefined;
   // Law 8: money pieces a member expects, over the PIECES of occupancy a member lives under — so
   // what it bids is money per piece, which is what the venue's book is in.
-  return div(income.value.expected, per, 'what a member would pay for the roof it lives under');
+  return pricedAt(
+    asCash(income.value.expected, 'what a member expects to earn'),
+    per,
+    'what a member would pay for the roof it lives under',
+  );
 }
 
 /** Clearing B2: what a party has to say in the venue for the place it is in. */
@@ -250,8 +268,8 @@ function ordersOf(
   const out: Order[] = [];
   // The owner offers what it owns and nobody is living in — its own, less what it has already let
   // and less what its own people are under.
-  const spare = sub(
-    sub(owned(view, region), letOut(book, mine), 'less what it has already let'),
+  const spare = subQty(
+    subQty(owned(view, region), letOut(book, mine), 'less what it has already let'),
     needs(view, rows),
     'less what its own people live in',
   );
@@ -260,9 +278,13 @@ function ordersOf(
     out.push({ party: mine, side: 'sell', price: floor, qty: asQty(downTick(spare)) });
   }
   // And a household takes what it is short of, at what it would pay rather than have nowhere.
-  const short = sub(
+  const short = subQty(
     needs(view, rows),
-    add(atMost(owned(view, region), needs(view, rows), 'it lives in what it owns, up to what it needs'), taken(book, mine), 'what it already has a roof from'),
+    addQty(
+      atMost(owned(view, region), needs(view, rows), 'it lives in what it owns, up to what it needs'),
+      taken(book, mine),
+      'what it already has a roof from',
+    ),
     'what it is short of',
   );
   if (short > 0) {
@@ -285,7 +307,7 @@ function letIn(ctx: MechanismContext, book: LeaseBook, venue: VenueDecl): void {
     ctx.record(RENT_PRINT, [venue.id], { venue: venue.id, region, outcome: outcome.kind }, true);
     return;
   }
-  let struck: number | undefined;
+  let struck: PerPiece | undefined;
   for (const f of outcome.fills) {
     if (f.side !== 'buy' || f.qty <= 0) continue;
     if (struck === undefined || f.at < struck) struck = f.at;
@@ -359,9 +381,13 @@ function collect(ctx: MechanismContext, book: LeaseBook): void {
       continue;
     }
     const ccy = ctx.registry.currencyOf(lease.region);
-    const whole = mul(lease.rentPerDwelling, lease.dwellings, 'the rent on this tenancy');
+    const whole = valueAt(lease.rentPerDwelling, lease.dwellings, 'the rent on this tenancy');
     // XI-15: a cell pays per member, because every member of it is paying its own rent.
-    const perMember = div(whole, weightOf(tenant), 'per member of the cell that pays it');
+    const perMember = over(
+      whole,
+      asRatio(weightOf(tenant), 'the members it has'),
+      'per member of the cell that pays it',
+    );
     const share = shareFor(ctx.registry, tenant, currencyUnit(ccy), perMember);
     if (share.total <= 0) continue;
     const side = cellSide(tenant, share.perMember);
@@ -435,16 +461,20 @@ function mortgagesOf(
 function shortOfMoney(
   ctx: MechanismContext,
   who: PartyId,
-  lettings: number,
+  lettings: Qty,
   rows: readonly TenureDecl[],
-): number | undefined {
+): Cash | undefined {
   const view = ctx.participant(who);
   const region = view.self.region;
   const id = goodId(DWELLING, region);
   if (!ctx.instruments.has(id)) return undefined;
   const outlook = view.outlook(about({ on: 'price', instrument: id }));
   const print = view.print(id);
-  const price = outlook.some ? outlook.value.expected : print.some ? print.value.price : undefined;
+  const price = outlook.some
+    ? asPerPiece(outlook.value.expected, 'what it expects a roof to cost')
+    : print.some
+      ? print.value.price
+      : undefined;
   if (price === undefined || price <= 0) return undefined;
   const has = owned(view, region);
   /**
@@ -458,11 +488,11 @@ function shortOfMoney(
    *
    * Whether it gets it is the BANK's decision either way, taken on the bank's own book (C5).
    */
-  let want = sub(needs(view, rows), has, 'the roofs it is short of owning');
+  let want = subQty(needs(view, rows), has, 'the roofs it is short of owning');
   if (want <= 0) {
-    const spare = sub(has, lettings, 'what it owns and nobody is in');
+    const spare = subQty(has, lettings, 'what it owns and nobody is in');
     if (has <= 0 || spare > 0) return undefined;
-    want = 1;
+    want = asQty(1, 'one more to let');
   }
   /**
    * Law 8, XI-15: `want` is PIECES of the thing and `price` is money a piece, so the product is the
@@ -470,13 +500,16 @@ function shortOfMoney(
    * because `want` was struck on the whole cell. What it already has is per member, so it is
    * multiplied out to meet it rather than subtracted from a number in a different denomination.
    */
-  const cost = mul(want, price, 'what buying them would cost it');
-  const money = mul(
-    view.cash(ctx.registry.currencyOf(region)),
-    weightOf(view.self),
+  const cost: Cash = valueAt(price, want, 'what buying them would cost it');
+  const money = heldAsMoney(
+    scaleQty(
+      view.cash(ctx.registry.currencyOf(region)),
+      weightOf(view.self),
+      'the money its people have between them',
+    ),
     'the money its people have between them',
   );
-  const short = sub(cost, money, 'less the money it has');
+  const short = minus(cost, money, 'less the money it has');
   if (short <= 0) return undefined;
   return short;
 }
@@ -521,7 +554,7 @@ function askForMortgages(ctx: MechanismContext, book: LeaseBook, rows: readonly 
         // A4: what it would put up. The quantity is what the money would buy at the price the
         // market last printed, which is the only quantity either side can check.
         security: [
-          { instrument: String(id), qty: div(short, print.value.price, 'what the loan would buy') },
+          { instrument: String(id), qty: amountOf(short, print.value.price, 'what the loan would buy') },
         ],
       },
       true,

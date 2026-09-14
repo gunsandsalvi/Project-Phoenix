@@ -22,6 +22,7 @@ import {
   asPerPiece,
   asRatio,
   type Cash,
+  type PerPiece,
   minus,
   negated,
   plus,
@@ -106,8 +107,8 @@ function yearsLeft(t: CdsIndexTerms, at: Period, reads: ContractReads): number {
  * at, on the part of the line that is still running, plus what each defaulted name is worth that
  * nobody has settled yet.
  */
-function markOf(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isCdsIndex(c.terms)) return 0;
+function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isCdsIndex(c.terms)) return asCash(0, 'not a credit index');
   const t = c.terms;
   const print = reads.print(t.book, at);
   const running = runningShare(t, reads);
@@ -202,11 +203,11 @@ export const cdsIndexKind: DerivativeKindProfile = {
       ? [{ from, to, ccy: c.ccy, amount, date: reads.calendar.endOf(at), why: 'the index premium' }]
       : [];
   },
-  premiumPerUnit: () => 0,
-  initialMargin: (c, at, reads): Option<number> => {
-    if (!isCdsIndex(c.terms)) return none();
+  premiumPerUnit: (): PerPiece => asPerPiece(0, 'struck at the spread, so nothing changes hands'),
+  initialMargin: (c, at, reads): Option<Cash> => {
+    if (!isCdsIndex(c.terms)) return none<Cash>();
     const move = reads.measuredMove(c.terms.book, c.terms.window);
-    if (!move.some) return none();
+    if (!move.some) return none<Cash>();
     return some(
       scale(
         valueAt(

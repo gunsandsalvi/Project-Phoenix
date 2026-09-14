@@ -287,7 +287,8 @@ export type Named = Amount<'named'>;
  * because money's own price is one — the single hard-coded price this world has. That is why the
  * crossing gets a name instead of being assumed: it is `valueAt(one, held)` with the one left out.
  */
-export const heldAsMoney = (held: Amount<'piece'>, what: string): Cash => finite(held, what) as Cash;
+export const heldAsMoney = (held: Amount<'piece'>, what: string): Cash =>
+  finite(held, what) as unknown as Cash;
 
 /** The doors for the two above, so a kernel site does not have to spell the parameters out. */
 export const asCash = (x: number, what: string): Cash => finite(x, what) as Cash;
@@ -322,5 +323,7 @@ export function absolute<D extends string>(a: Measure<D>, what: string): Measure
 
 /** Law 5: the other side of it — what is owed rather than held. A direction, not a new dimension. */
 export function negated<D extends string>(a: Measure<D>, what: string): Measure<D> {
-  return -finite(a, what) as Measure<D>;
+  // Times minus one rather than a unary minus: `finite` carries the dimension out now, and a
+  // dimensioned number is an intersection that the unary-minus rule will not take.
+  return (finite(a, what) * -1) as Measure<D>;
 }

@@ -49,8 +49,9 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
-import { downTick, type Qty } from '../../core/tick.js';
+import { atMost, div, mul, sub, sum } from '../../core/num.js';
+import { addQty, downTick, NO_QTY, type Qty, subQty } from '../../core/tick.js';
+import { asRatio, heldAsMoney, minus, plus, asPerPiece, type PerPiece, type Ratio, ratioOf, scale, valueAt, asAmount,} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { Instrument, Terms } from '../../register/instruments.js';
@@ -85,12 +86,12 @@ export interface TrancheTerms extends Terms {
    * exposed to; both are outcomes of what cleared, because what a market would take is not a
    * number anybody may write down (Law 3).
    */
-  readonly attachment: number;
-  readonly detachment: number;
+  readonly attachment: Ratio;
+  readonly detachment: Ratio;
   /** XI-8: what the waterfall orders by. Smaller is paid first, as everywhere else. */
   readonly seniority: number;
   /** C6: the pool's face at the moment the deal was cut, which is what the fractions are OF. */
-  readonly pool: number;
+  readonly pool: Qty;
 }
 
 export const isTranche = (t: Terms): t is TrancheTerms =>
@@ -188,8 +189,8 @@ function moneyOf(ctx: MechanismContext): Option<CurrencyCode> {
 }
 
 /** What a party holds in money of a currency, summed over the accounts it banks in. */
-function cashOf(ctx: MechanismContext, who: PartyId, ccy: CurrencyCode): number {
-  const amounts: number[] = [];
+function cashOf(ctx: MechanismContext, who: PartyId, ccy: CurrencyCode): Qty {
+  const amounts: Qty[] = [];
   for (const h of ctx.register.holdingsOf(who)) {
     const i = ctx.instruments.get(h.instrument);
     if (ctx.registry.instrumentKind(i.kind).pricing !== 'money' || i.ccy !== ccy) continue;
@@ -207,7 +208,7 @@ interface Deal {
   readonly arranger: PartyId;
   readonly ccy: CurrencyCode;
   readonly rows: readonly InstrumentId[];
-  readonly pool: number;
+  readonly pool: Qty;
   /** XI-8: the layers in the order they are paid. One when the pool went out whole (C2.a). */
   readonly layers: readonly InstrumentId[];
 }
@@ -253,15 +254,15 @@ function saleable(view: ParticipantView, ccy: CurrencyCode): readonly Instrument
  * A bank with room sells nothing, because the shortfall is not positive. That is arithmetic, not a
  * threshold (Law 6).
  */
-function shortBy(view: ParticipantView): number {
+function shortBy(view: ParticipantView): Qty {
   const published = view.lastPublicAbout('bank.capital', String(view.self.id));
-  if (!published.some) return 0;
+  if (!published.some) return NO_QTY;
   const d = published.value.data;
   const headroom = d['headroom'];
   const perUnit = d['minWeighted'];
   const binds = d['binds'];
   if (typeof headroom !== 'number' || typeof perUnit !== 'number' || typeof binds !== 'string') {
-    return 0;
+    return NO_QTY;
   }
   return faceToShed({ headroom, minWeighted: perUnit, binds });
 }
@@ -275,8 +276,8 @@ export function faceToShed(p: {
   readonly headroom: number;
   readonly minWeighted: number;
   readonly binds: string;
-}): number {
-  if (p.headroom >= 0 || p.minWeighted <= 0) return 0;
+}): Qty {
+  if (p.headroom >= 0 || p.minWeighted <= 0) return NO_QTY;
   /**
    * AND ONLY IF THE RULE THIS WOULD RELIEVE IS THE ONE THAT BINDS.
    *
@@ -290,11 +291,14 @@ export function faceToShed(p: {
    * This is a READ of the bank's own published position (B3), not a rule stated here: which of its
    * two requirements binds is its own fact and it says so every period (Law 4, Law 19).
    */
-  if (p.binds !== 'weighted') return 0;
+  if (p.binds !== 'weighted') return NO_QTY;
   // D2: its capital is freed because the ROW LEFT, not because a weight changed. This is the
   // shortfall divided by the capital its own rule asks per unit of weighted assets — two published
   // numbers and a division, and nothing here is a coefficient anybody chose.
-  return div(-p.headroom, p.minWeighted, 'the face it must shed for the room it is short of');
+  return asAmount<'piece'>(
+    div(-p.headroom, p.minWeighted, 'the face it must shed for the room it is short of'),
+    'the face it must shed',
+  );
 }
 
 /**
@@ -319,15 +323,15 @@ export function arrange(ctx: MechanismContext): void {
     const rows = saleable(view, ccy);
     if (rows.length === 0) continue;
     const taken: InstrumentId[] = [];
-    const faces: number[] = [];
-    let got = 0;
+    const faces: Qty[] = [];
+    let got = NO_QTY;
     for (const i of rows) {
       if (got >= gap) break;
       const face = view.quantity(i.id);
       if (face <= 0) continue;
       taken.push(i.id);
       faces.push(face);
-      got = add(got, face, 'pool face');
+      got = addQty(got, face, 'pool face');
     }
     const pool = sum(faces).value;
     if (pool <= 0) continue;
@@ -366,9 +370,9 @@ function cut(
     ccy: CurrencyCode;
     vehicle: PartyId;
     rows: readonly InstrumentId[];
-    pool: number;
+    pool: Qty;
     /** D2: what it needs OFF its book. It sells this much and not a unit more (C4.a). */
-    offered: number;
+    offered: Qty;
     bids: readonly Order[];
     n: number;
   },
@@ -412,8 +416,8 @@ function cut(
    * with nobody underneath them, which is a real instrument and an honest answer. A junior is not
    * invented so that there can be one.
    */
-  const juniorFace = sub(d.pool, seniorFace, 'what it kept');
-  const attachment = div(juniorFace, d.pool, 'where the senior starts taking losses');
+  const juniorFace = subQty(d.pool, seniorFace, 'what it kept');
+  const attachment = ratioOf(juniorFace, d.pool, 'where the senior starts taking losses');
   const arrangerParty = ctx.parties.get(d.arranger);
   ctx.enter({
     id: d.vehicle,
@@ -429,7 +433,7 @@ function cut(
     kind: TRANCHE,
     vehicle: d.vehicle,
     attachment,
-    detachment: 1,
+    detachment: asRatio(1, 'up to the whole of the pool'),
     seniority: 0,
     pool: d.pool,
   });
@@ -438,7 +442,7 @@ function cut(
     issueTranche(ctx, d.vehicle, d.ccy, junior.value, {
       kind: TRANCHE,
       vehicle: d.vehicle,
-      attachment: 0,
+      attachment: asRatio(0, 'from the first loss'),
       detachment: attachment,
       seniority: 1,
       pool: d.pool,
@@ -512,14 +516,14 @@ function settleDeal(
     ccy: CurrencyCode;
     vehicle: PartyId;
     rows: readonly InstrumentId[];
-    pool: number;
+    pool: Qty;
     bids: readonly Order[];
   },
-  price: number,
+  price: PerPiece,
   senior: InstrumentId,
   junior: Option<InstrumentId>,
   seniorFace: Qty,
-  juniorFace: number,
+  juniorFace: Qty,
 ): boolean {
   const legs: Leg[] = [];
   for (const row of d.rows) {
@@ -539,12 +543,12 @@ function settleDeal(
   }
   if (legs.length === 0) return false;
   // C4: the notes go to NAMED holders, and each pays for what it took.
-  let placed = 0;
+  let placed = NO_QTY;
   for (const b of d.bids) {
     if (b.side !== 'buy') continue;
-    const want = downTick(atMost(b.qty, sub(seniorFace, placed, 'left to place'), 'its fill'));
+    const want = downTick(atMost(b.qty, subQty(seniorFace, placed, 'left to place'), 'its fill'));
     if (want <= 0) continue;
-    const cash = downTick(mul(want, price, 'what it pays for the note'));
+    const cash = downTick(valueAt(price, want, 'what it pays for the note'));
     if (cash <= 0) continue;
     legs.push({
       kind: 'asset',
@@ -566,7 +570,7 @@ function settleDeal(
       fromCell: none(),
       toCell: none(),
     });
-    placed = add(placed, want, 'placed');
+    placed = addQty(placed, want, 'placed');
   }
   // C4.a: and the arranger keeps the bottom, which is the rest of the price of its own pool. A bank
   // that sold the whole pool kept nothing and there is no leg for it.
@@ -631,11 +635,11 @@ export function distribute(ctx: MechanismContext): void {
     // collected nothing pays nothing; there is no buffer and nothing is smoothed.
     const cash = cashOf(ctx, deal.vehicle, deal.ccy);
     if (cash <= 0) continue;
-    let left: number = cash;
+    let left: Qty = cash;
     for (const id of deal.layers) {
       if (left <= 0) break;
       const paid = payTranche(ctx, deal, id, left);
-      left = sub(left, paid, 'what is left after the layer above');
+      left = subQty(left, paid, 'what is left after the layer above');
     }
   }
 }
@@ -658,32 +662,32 @@ export function distribute(ctx: MechanismContext): void {
  * are not the same thing, and the one that breaks silently is the one worth checking.
  */
 function absorb(ctx: MechanismContext, deal: Deal): void {
-  const pool = sum(
+  const pool: Qty = sum(
     deal.rows
       .filter((row) => ctx.instruments.get(row).status.live)
       .map((row) => ctx.register.quantity(deal.vehicle, row)),
   ).value;
   const notes = sum(deal.layers.map((id) => ctx.register.heldTotal(id).value)).value;
-  let lost = sub(notes, pool, 'what the pool no longer covers');
+  let lost = subQty(notes, pool, 'what the pool no longer covers');
   if (lost <= 0) return;
   // XI-8: from the bottom. `layers` is in the order they are PAID, so losses run the other way.
   for (const id of [...deal.layers].reverse()) {
     if (lost <= 0) break;
-    lost = sub(lost, writeDown(ctx, deal, id, lost), 'what is still not covered');
+    lost = subQty(lost, writeDown(ctx, deal, id, lost), 'what is still not covered');
   }
 }
 
 /** XI-1: the write-down itself — an event on a date, on every holder's units in proportion. */
-function writeDown(ctx: MechanismContext, deal: Deal, id: InstrumentId, lost: number): number {
+function writeDown(ctx: MechanismContext, deal: Deal, id: InstrumentId, lost: Qty): Qty {
   const face = ctx.register.heldTotal(id).value;
-  if (face <= 0) return 0;
+  if (face <= 0) return NO_QTY;
   const take = downTick(atMost(lost, face, 'a layer cannot lose more than it is owed'));
-  if (take <= 0) return 0;
-  let taken = 0;
+  if (take <= 0) return NO_QTY;
+  let taken = NO_QTY;
   for (const holder of ctx.register.holdersOf(id)) {
     const held = ctx.register.quantity(holder, id);
     if (held <= 0) continue;
-    const share = downTick(mul(take, div(held, face, 'its share of the layer'), 'its share'));
+    const share = downTick(scale(take, ratioOf(held, face, 'its share of the layer'), 'its share'));
     if (share <= 0) continue;
     const r = ctx.settle({
       legs: [
@@ -705,7 +709,7 @@ function writeDown(ctx: MechanismContext, deal: Deal, id: InstrumentId, lost: nu
       reason: `${String(id)} is written down by ${share}: the pool no longer covers it`,
     });
     if (r.outcome !== 'settled') continue;
-    taken = add(taken, share, 'written down');
+    taken = addQty(taken, share, 'written down');
     ctx.record(
       'tranche.writtenDown',
       [id, holder, deal.vehicle],
@@ -714,7 +718,7 @@ function writeDown(ctx: MechanismContext, deal: Deal, id: InstrumentId, lost: nu
         holder: String(holder),
         vehicle: String(deal.vehicle),
         units: share,
-        left: sub(held, share, 'what it still holds'),
+        left: subQty(held, share, 'what it still holds'),
       },
       true,
     );
@@ -726,19 +730,19 @@ function payTranche(
   ctx: MechanismContext,
   deal: Deal,
   id: InstrumentId,
-  available: number,
-): number {
+  available: Qty,
+): Qty {
   const holders = ctx.register.holdersOf(id);
   const face = ctx.register.heldTotal(id).value;
-  if (face <= 0 || holders.length === 0) return 0;
+  if (face <= 0 || holders.length === 0) return NO_QTY;
   // XI-8: a layer takes what it is owed and no more; what it is owed is its face.
   const toLayer = downTick(atMost(available, face, 'a layer takes no more than its face'));
-  if (toLayer <= 0) return 0;
-  let paid = 0;
+  if (toLayer <= 0) return NO_QTY;
+  let paid = NO_QTY;
   for (const holder of holders) {
     const held = ctx.register.quantity(holder, id);
     if (held <= 0) continue;
-    const share = downTick(mul(toLayer, div(held, face, 'its share of the layer'), 'its share'));
+    const share = downTick(scale(toLayer, ratioOf(held, face, 'its share of the layer'), 'its share'));
     if (share <= 0) continue;
     const r = ctx.settle({
       legs: [
@@ -766,7 +770,7 @@ function payTranche(
       cause: 'corporateAction',
       reason: `${String(deal.vehicle)} pays ${String(id)}`,
     });
-    if (r.outcome === 'settled') paid = add(paid, share, 'paid out');
+    if (r.outcome === 'settled') paid = addQty(paid, share, 'paid out');
   }
   return paid;
 }
@@ -807,13 +811,13 @@ function deals(): Family {
           });
         }
         // C6: the layers are cut FROM the pool, so what they claim can never exceed it.
-        const claimed = mul(sub(t.detachment, t.attachment, 'the depth of the layer'), t.pool, 'its face at the cut');
+        const claimed = scale(t.pool, minus(t.detachment, t.attachment, 'the depth of the layer'), 'its face at the cut');
         if (claimed > t.pool) {
           out.push({
             family: 'ownership',
             spec: 'XI-11',
             owner: i.id,
-            size: sub(claimed, t.pool, 'more than the pool'),
+            size: minus(claimed, t.pool, 'more than the pool'),
             unit: i.unit,
             period: view.period,
             message: `${i.id}: claims ${claimed} of a pool of ${t.pool}`,
@@ -876,7 +880,7 @@ function pools(): Family {
  * would price these the same way, because the price is what somebody paid.
  */
 export function noteBids(view: ParticipantView, ccy: CurrencyCode): readonly Order[] {
-  const spare = sub(view.cash(ccy), view.owedIn(ccy), 'what it holds against what falls due');
+  const spare = minus(view.cash(ccy), view.owedIn(ccy), 'what it holds against what falls due');
   if (spare <= 0) return [];
   // F3, C4: AND NO MORE THAN IT WILL HAVE OUT TO ANY ONE NAME. A vehicle is one name — a buyer of
   // its notes is exposed to that pool and to nothing else — so the limit a bank already publishes
@@ -896,16 +900,19 @@ export function noteBids(view: ParticipantView, ccy: CurrencyCode): readonly Ord
  * a buyer that could have lent the money itself — the discount is what its own money costs it,
  * which it reads off what it actually pays for money and never off a table.
  */
-function priceFor(view: ParticipantView, ccy: CurrencyCode): number {
-  const owed = view.owedIn(ccy);
+function priceFor(view: ParticipantView, ccy: CurrencyCode): PerPiece {
+  const owed = heldAsMoney(view.owedIn(ccy), 'what falls due');
   const equity = view.equity();
   if (equity <= 0 || owed <= 0) {
     // A buyer that owes nothing has nothing to compare a note against, and pays face for it. That
     // is not a floor: it is what "my money costs me nothing this period" arithmetically comes to.
-    return 1;
+    return asPerPiece(1, 'it owes nothing, so its money costs it nothing');
   }
-  const cost = div(owed, add(owed, equity, 'what funds it'), 'what its own money costs it');
-  return sub(1, mul(cost, cost, 'the discount it wants'), 'what it will pay per unit of face');
+  const cost = ratioOf(owed, plus(owed, equity, 'what funds it'), 'what its own money costs it');
+  return asPerPiece(
+    sub(1, mul(cost, cost, 'the discount it wants'), 'what it will pay per unit of face'),
+    'what it will pay per unit of face',
+  );
 }
 
 export function securitisation(): SystemModule {

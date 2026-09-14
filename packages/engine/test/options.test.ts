@@ -3,6 +3,7 @@
  *
  * @spec Derivative D1 Derivative D1.b Derivative D2 Derivative D3 Derivative D3.a Derivative D7 Derivative D7.a Derivative D7.b Derivative D8 Derivative D8.a Derivative D9 Derivative D11 Derivative D11.a Bond N7.b Law 3 Law 6 §46 A3
  */
+import { heldAsMoney } from '../src/core/measure.js';
 import { asPerPiece } from '../src/core/measure.js';
 import { asQty, type Qty } from '../src/core/tick.js';
 import { describe, expect, it } from 'vitest';
@@ -41,7 +42,7 @@ function rowOn(w: World, m: MarketDecl, a: string, b: string, notional: Qty): Co
     ccy: m.ccy,
     notional,
     struckAt: asPerPiece(1, 'the level it was struck at'),
-    basis: notional,
+    basis: heldAsMoney(notional, 'what the position cost'),
     opened: w.period,
     state: 'open',
     terminated: { some: false },

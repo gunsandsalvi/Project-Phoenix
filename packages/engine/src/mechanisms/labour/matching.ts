@@ -20,19 +20,21 @@
  * trade; one that has never worked can enter any occupation (A3.b, at the bottom, since it posts at
  * its own reservation and not at the going rate).
  */
+import {
+  asCash,
+  asRatio,
+  type Cash,
+  type PerPiece,
+  plus,
+  pricedAt,
+  scale,
+} from '../../core/measure.js';
 import { period as periodOf, type Period } from '../../calendar/calendar.js';
 import { clear, isCleared, type Cleared, type Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { cohortId, currencyUnit } from '../../core/ids.js';
 import type { PartyId, RegionId } from '../../core/ids.js';
-import {
-  add,
-  atMost,
-  div,
-  material,
-  mul,
-  sub,
-} from '../../core/num.js';
+import { add, atMost, div, material, sub } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import { cellSide, shareFor } from '../../ledger/settlement.js';
@@ -53,7 +55,7 @@ import {
   type EmploymentRow,
   employmentId,
 } from './register.js';
-import { asQty, scaleQty } from '../../core/tick.js';
+import { addQty, asQty, negQty, NO_QTY, scaleQty, subQty } from '../../core/tick.js';
 import type { Qty } from '../../core/tick.js';
 import { about } from '../../world/context.js';
 
@@ -94,11 +96,15 @@ function participates(ctx: MechanismContext, p: Party, retirementAge: number): b
  * world pays it. A cell that has never observed an income has no outside option to compare against
  * and does not post: it cannot say what it will not work for.
  */
-function reservation(ctx: MechanismContext, cell: PartyId, hours: number): number | undefined {
+function reservation(ctx: MechanismContext, cell: PartyId, hours: Qty): PerPiece | undefined {
   // `income` is what the expectations module names what a party observes reaching it (A2).
   const outlook = ctx.participant(cell).outlook(about({ on: 'income' }));
   if (!outlook.some) return undefined;
-  return div(outlook.value.expected, hours, 'reservation wage');
+  return pricedAt(
+    asCash(outlook.value.expected, 'what it expects to earn'),
+    hours,
+    'reservation wage',
+  );
 }
 
 /**
@@ -174,8 +180,8 @@ export function runVenue(
   for (const posting of ctx.posted(v.id)) {
     if (posting.side !== 'buy' || posting.price === 'market') continue;
     const held = hoursAt(book, posting.party, occupation, region as RegionId);
-    const gap = sub(posting.qty, held, 'employment gap');
-    if (!material(gap, 2, add(posting.qty, held, 'employment'))) continue;
+    const gap = subQty(posting.qty, held, 'employment gap');
+    if (!material(gap, 2, addQty(posting.qty, held, 'employment'))) continue;
     // Both sides of this subtraction are counts of hours — what it posted and what it employs —
     // so the gap is one too, and nothing was rounded to get it.
     if (gap > 0) bids.push({ party: posting.party, side: 'buy', price: posting.price, qty: asQty(gap, 'the hours it is short') });
@@ -184,7 +190,9 @@ export function runVenue(
     // C3: and only once. An employer posts its desired employment for the period, so the round
     // that follows it is the same posting still being filled — separating twice against one
     // posting would be paying severance for a decision it took once.
-    else if (round === 'trade') shed(ctx, book, posting.party, occupation, region as RegionId, -gap, p);
+    else if (round === 'trade') {
+      shed(ctx, book, posting.party, occupation, region as RegionId, negQty(gap, 'the hours it is over'), p);
+    }
   }
   const offers = supply(ctx, book, v, p, round);
   // D1: the highest bids fill first, and THE BID THAT TOOK THE LAST MATCH IS THE PRINT. That is the
@@ -247,8 +255,8 @@ export function runVenue(
  * D1: the lowest level among the bids that were allotted — the bid that took the last match. None
  * means nothing on the buy side filled, and then there is no wage to print and nobody is hired.
  */
-function marginalBid(outcome: Cleared): number | undefined {
-  let lowest: number | undefined;
+function marginalBid(outcome: Cleared): PerPiece | undefined {
+  let lowest: PerPiece | undefined;
   for (const f of outcome.fills) {
     if (f.side !== 'buy' || f.qty <= 0) continue;
     if (lowest === undefined || f.at < lowest) lowest = f.at;
@@ -262,7 +270,7 @@ function match(
   outcome: Cleared,
   offers: readonly Order[],
   /** D1: the lowest allotted bid, which is what every match is struck at. */
-  struck: number,
+  struck: PerPiece,
   occupation: string,
   region: RegionId,
   p: LabourParams,
@@ -301,7 +309,7 @@ function hire(
   employer: PartyId,
   worker: PartyId,
   members: number,
-  wagePerHour: number,
+  wagePerHour: PerPiece,
   occupation: string,
   region: RegionId,
   p: LabourParams,
@@ -366,7 +374,7 @@ function shed(
   employer: PartyId,
   occupation: string,
   region: RegionId,
-  hours: number,
+  hours: Qty,
   p: LabourParams,
 ): void {
   let left = hours;
@@ -377,7 +385,7 @@ function shed(
     if (members <= 0) break;
     const taken = atMost(members, row.headcount, 'the row employs no more than it employs');
     separate(ctx, book, row, taken, `${employer} cut its hours`, p);
-    left = sub(left, mul(taken, row.hoursPerMember, 'hours shed'), 'hours left to shed');
+    left = subQty(left, scaleQty(row.hoursPerMember, taken, 'hours shed'), 'hours left to shed');
   }
 }
 
@@ -417,7 +425,11 @@ export function separate(
   }
   // The trade stays with the person who has it: an unemployed baker looks for baking (A3).
   book.skill[gone] = row.occupation;
-  const perMember = mul(wagePerMember(row), p.severancePeriods, 'severance per member');
+  const perMember = scale(
+    wagePerMember(row),
+    asRatio(p.severancePeriods, 'the periods of it'),
+    'severance per member',
+  );
   // C3, XI-8: severance is a cost the employer pays — while there is an employer to pay it. One
   // that has ceased owes it to the claimants on its estate, and Firm Birth D2.b says a claim like
   // that RANKS with the other unsecured ones and is paid in the distribution, not in cash at the
@@ -479,20 +491,33 @@ export function separate(
  * not paid, and the difference between what was due and what was paid says so.
  */
 export function payWages(ctx: MechanismContext, book: EmploymentBook): void {
-  const bills = new Map<PartyId, { due: number; paid: number; hours: number; productive: number; headcount: number }>();
+  const bills = new Map<
+    PartyId,
+    { due: Cash; paid: Cash; hours: Qty; productive: Qty; headcount: number }
+  >();
   for (const row of allRows(book)) {
     if (!ctx.parties.get(row.employer).status.alive) continue;
     const perMember = wagePerMember(row);
     const settled = payFrom(ctx, row.employer, row.worker, perMember, `wages from ${row.employer}`);
-    const bill = bills.get(row.employer) ?? { due: 0, paid: 0, hours: 0, productive: 0, headcount: 0 };
-    const total = mul(perMember, row.headcount, 'wage bill');
-    const hours = mul(row.hoursPerMember, row.headcount, 'hours under contract');
+    const bill = bills.get(row.employer) ?? {
+      due: asCash(0, 'nothing due yet'),
+      paid: asCash(0, 'nothing paid yet'),
+      hours: NO_QTY,
+      productive: NO_QTY,
+      headcount: 0,
+    };
+    const total = scale(perMember, asRatio(row.headcount, 'the people on it'), 'wage bill');
+    const hours = scaleQty(row.hoursPerMember, row.headcount, 'hours under contract');
     bills.set(row.employer, {
-      due: add(bill.due, total, 'wages due'),
-      paid: add(bill.paid, settled ? total : 0, 'wages paid'),
-      hours: add(bill.hours, hours, 'hours'),
+      due: plus(bill.due, total, 'wages due'),
+      paid: plus(bill.paid, settled ? total : asCash(0, 'nothing was paid'), 'wages paid'),
+      hours: addQty(bill.hours, hours, 'hours'),
       // C2: hours that can make something. Somebody found last period is paid and not yet working.
-      productive: add(bill.productive, row.productiveFrom <= ctx.period ? hours : 0, 'productive hours'),
+      productive: addQty(
+        bill.productive,
+        row.productiveFrom <= ctx.period ? hours : NO_QTY,
+        'productive hours',
+      ),
       headcount: add(bill.headcount, row.headcount, 'headcount'),
     });
   }

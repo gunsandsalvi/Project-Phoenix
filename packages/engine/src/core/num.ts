@@ -17,12 +17,18 @@ export const EPS: number = Number.EPSILON;
 /** The smallest double that still carries a full mantissa; below it there is no relative precision. */
 const SMALLEST_NORMAL: number = Number.MIN_VALUE / EPS;
 
-/** Validate that a number is finite and normalise -0 to 0. Throws NonFinite otherwise. */
-export function finite(x: number, what: string): number {
+/**
+ * Validate that a number is finite and normalise -0 to 0. Throws NonFinite otherwise.
+ *
+ * Item 16: IT CARRIES ITS ARGUMENT'S DIMENSION out, for the same reason `sum` does. Checking that a
+ * money is a number is not a reason for it to stop being a money — a `finite` that returned bare
+ * `number` was a hole every branded value fell through on its way into the state.
+ */
+export function finite<T extends number = number>(x: T, what: string): T {
   if (!Number.isFinite(x)) {
     throw new NonFinite('Law 7', `${what} is ${String(x)}`, { what, value: x });
   }
-  return x === 0 ? 0 : x;
+  return (x === 0 ? 0 : x) as T;
 }
 
 /**
@@ -275,7 +281,7 @@ export function largest(values: readonly number[], what: string): number {
  * value, a price or a rate (Appendix A: a missing number is missing).
  */
 export function zeroIfNone<T extends number = number>(q: T | undefined): T {
-  return q === undefined ? (0 as T) : (finite(q, 'quantity') as T);
+  return q === undefined ? (0 as T) : finite(q, 'quantity');
 }
 
 /**

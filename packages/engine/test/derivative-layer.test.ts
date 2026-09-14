@@ -6,6 +6,7 @@
  * Everything here runs through the kernel's own book: a fill in a contract market becomes a row on
  * two balance sheets, cut to what its two sides can margin, with the margin in the same instruction.
  */
+import { asCash, heldAsMoney } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {pairOf, BANK,
   LAYER_PARAMS,
@@ -150,8 +151,8 @@ function book(opts: {
         // endowment is a liability of whoever issued what it holds (Seed A4), so a fixture that
         // opened with a billion would be handing a bank a billion of deposits against nothing and
         // testing the layer in a world whose banks it had just made insolvent.
-        const level = print.some ? print.value.price : 1;
-        ctx.endowMoney(id, USD, level * SMALL_SIZE * 40);
+        const level = print.some ? print.value.price : asPerPiece(1, 'nothing has printed');
+        ctx.endowMoney(id, USD, asCash(level * SMALL_SIZE * 40, 'what it opens with'));
         if (n === 1) ctx.endowUnits(id, line.id, SMALL_SIZE * 4, level);
       }
     },
@@ -172,7 +173,7 @@ function book(opts: {
             market: line.id,
             underlying: line.instrument,
             expiry: period(ctx.period + 6),
-            strike: opts.strike,
+            strike: asPerPiece(opts.strike, 'the level it was struck at'),
             long: true,
             window: 8,
             // Clearing A2, Law 4: WHO TRADES THIS BOOK AND HOW MUCH, carried by the book itself.
@@ -463,7 +464,7 @@ describe('capacity (E1, E2, E4)', () => {
       market: line.id,
       underlying: line.instrument,
       expiry: period(6),
-      strike: 1,
+      strike: asPerPiece(1, 'the level it was struck at'),
       long: true,
       window: 8,
       size: 0,
@@ -540,7 +541,7 @@ describe('the waterfall (C4, C4.a, C4.d, C5)', () => {
     const fund = inFund(ctx, defaulter, house, USD);
     // A loss larger than everything the defaulter put up, so the waterfall has to walk past its
     // own first two lines and report what it could not fund (C5: past the end is a real event).
-    const loss = (margin + fund) * 2 + 1_000_000;
+    const loss = asCash((margin + fund) * 2 + 1_000_000, 'more than it put up');
     const rounds = runWaterfall(ctx, house, defaulter, USD, loss);
     const lines = rounds.map((r) => r.line);
     // C4: in order. Its margin, then its fund contribution, then the house's own capital, then the
@@ -608,7 +609,7 @@ function drain(who: PartyId, after: number): SystemModule {
           const other = MOVERS.find((m) => m !== who && ctx.parties.has(m));
           if (other === undefined) return;
           const cash = ctx.participant(who).cash(USD);
-          const amount = ctx.registry.cashFor(USD, cash);
+          const amount = ctx.registry.cashFor(USD, heldAsMoney(cash, 'what it holds'));
           if (amount <= 0) return;
           ctx.settle({
             legs: [
@@ -647,9 +648,9 @@ describe('the payment has a cash test (D2.c, X2, Money E1)', () => {
     const cashBefore = ctx.participant(member).cash(USD);
     const postedBefore = posted(ctx, member, house, USD);
     // More than it has, by a margin nothing rounds away.
-    const tooMuch = ctx.registry.cashFor(USD, cashBefore * 2 + 1_000_000);
+    const tooMuch = ctx.registry.cashFor(USD, asCash(cashBefore * 2 + 1_000_000, 'more than it has'));
     const r = ctx.settle({
-      legs: moveMargin(ctx, member, house, USD, tooMuch),
+      legs: moveMargin(ctx, member, house, USD, heldAsMoney(tooMuch, 'more than it has')),
       cause: 'transfer',
       reason: `${member} is asked for more margin than it has`,
     });

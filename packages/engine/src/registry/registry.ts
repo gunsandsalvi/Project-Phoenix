@@ -11,6 +11,7 @@
 import { InvalidRegistry, Missing } from '../core/errors.js';
 import {
   asPerNamedUnit,
+  type Cash,
   type Named,
   type PerNamedUnit,
   type PerPiece,
@@ -439,7 +440,7 @@ export class Registry {
    * between several payees uses `splitOnTick` instead, so that the parts sum to exactly the whole
    * and the odd tick has a named holder.
    */
-  payable(_ccy: CurrencyCode, amount: number): Qty {
+  payable(_ccy: CurrencyCode, amount: Cash): Qty {
     return downTick(amount);
   }
 
@@ -448,7 +449,7 @@ export class Registry {
    * where a quantity meets a price and the answer is what somebody owes: rounding it always down
    * would hand the payer a fraction of a piece on every trade it ever did.
    */
-  cashFor(_ccy: CurrencyCode, value: number): Qty {
+  cashFor(_ccy: CurrencyCode, value: Cash): Qty {
     return toTick(value);
   }
 

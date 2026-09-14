@@ -20,7 +20,8 @@
  */
 import { currencyUnit, moneyInstrumentId, paramId, partyId, partyKindId } from '../../core/ids.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { mul, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
+import { acrossMembers, asCash, asPerMember, type Cash, scale } from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { weightOf } from '../../parties/party.js';
 import type { PartyKindProfile } from '../../registry/kinds.js';
@@ -76,13 +77,13 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
     const insurer = insurerOf(ccy);
     if (!ctx.parties.has(insurer) || !ctx.parties.get(insurer).status.alive) continue;
     const limit = ctx.params.amount(MM_PARAMS.insuranceLimit, currencyUnit(ccy));
-    const covered: number[] = [];
+    const covered: Cash[] = [];
     for (const holder of ctx.register.holdersOf(moneyInstrumentId(bank, ccy))) {
       if (holder === bank) continue;
       covered.push(insuredAt(ctx, bank, holder, ccy, limit));
     }
     const base = sum(covered).value;
-    const due = ctx.registry.payable(ccy, mul(base, rate, 'the premium on what is covered'));
+    const due = ctx.registry.payable(ccy, scale(base, rate, 'the premium on what is covered'));
     if (due <= 0) continue;
     const r = ctx.settle({
       legs: [
@@ -109,12 +110,15 @@ export function collectPremiums(ctx: MechanismContext, banks: readonly PartyId[]
 }
 
 /** What the fund has to meet a guarantee with, for the reads that need it (D4). */
-export function fundOf(ctx: MechanismContext, ccy: CurrencyCode): number {
+export function fundOf(ctx: MechanismContext, ccy: CurrencyCode): Cash {
   const insurer = insurerOf(ccy);
-  if (!ctx.parties.has(insurer)) return 0;
+  if (!ctx.parties.has(insurer)) return asCash(0, 'there is no insurer in this money');
   const p = ctx.parties.get(insurer);
-  return mul(
-    ctx.register.quantity(insurer, moneyInstrumentId(p.bank, ccy)),
+  return acrossMembers(
+    asPerMember<'money:piece'>(
+      ctx.register.quantity(insurer, moneyInstrumentId(p.bank, ccy)),
+      'what it holds',
+    ),
     weightOf(p),
     'the fund',
   );

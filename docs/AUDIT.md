@@ -2952,7 +2952,8 @@ under a shock.
 > | 7 | `money-market` | 56 |
 > | 8 | `cds` | 45 |
 > | 9 | `treasury` | 33 |
-> | 10 | everything else (34 modules) | 382 |
+> | ~~10a~~ | ~~the derivative tree~~ — **DONE**: the profile, the layer, and four kernel doors | **382 → 271** |
+> | 10b | what is left of everything else | 271 |
 >
 > Gate every stage on the instruction digest the Law 18 items use: mechanisms, economics and
 > boundaries do not change. **Stage 1 is done; nine remain**, and the eighteen findings below stay
@@ -3171,6 +3172,51 @@ under a shock.
 > purchase of an input is `subQty`.
 >
 > **Measured**: the same 79.
+>
+> ### Stage 10a — the derivative tree, and the doors the kernel was missing
+>
+> The last stage is "everything else", and it starts where everything else meets the kernel:
+> `DerivativeKindProfile`. A mark, a close-out, an initial margin and what a row will cost in cash
+> are all MONEY, a premium per unit is a LEVEL, a payment's amount is money and a contract's basis
+> is money — and every one of them was `number`, so the eight kinds under it were free to return
+> whatever their arithmetic happened to produce. Typing that one interface generated the work list
+> for `cds`, `irs`, `options`, the three futures families, `fx-derivatives` and the layer itself,
+> and then for `securitisation`, `spot-fx`, `labour`, `housing`, `research`, `freight`,
+> `commodities`, `ratings`, `money-market`'s collateral and the deposit insurer.
+>
+> **Four kernel doors were the real blockers**, and each of them was one line:
+>
+> - **`finite` erased the dimension.** `finite(x: number): number` sat between every branded value
+>   and the state it was written into, and checking that a money is a number was turning it back
+>   into one. `finite<T extends number = number>(x: T): T` is the same runtime and the hole is gone.
+> - **`Registry.cashFor` and `Registry.payable` take a `Cash` now** — they are the doors where a
+>   computed VALUE lands on the money's own grid, and they were taking anything.
+> - **`OwnContracts` and `ContractsRead`** say `Cash` for `valueOf`, `exposureTo`, `cashDue`,
+>   `initialMargin`, `marginFor` and `closeOut`.
+> - **`EquityEffect.delta` is `PerMember<'money:piece'>`**, which is what its own comment already
+>   said ("per member for a cell") and what nothing enforced. It cost one cascade — the central
+>   bank's remittance, where `acrossMembers(income, 1, …)` is the door that says a central bank is
+>   a named party of one.
+>
+> **THE GRID IS NOT THE TYPE, and this stage is where that stopped being a detail.** `asQty`,
+> `addQty`, `subQty` and `negQty` all CHECK that the number is a whole piece, and a desired
+> position is not one: `want`, `move`, `left to hedge`, `what falls due`, `its book in this pair`
+> are targets that reach the grid once, at `registry.deliverable`. Typing them with the grid doors
+> made 330 tests throw `[Law 8] … is not a whole number of the unit's pieces` — which is the
+> measurement doing exactly what it is for. `asAmount<'piece'>` and `plus`/`minus` carry the same
+> dimension without asserting the grid, and the grid assertion stays where a quantity becomes one
+> the register can hold. It is worth saying plainly: **`Qty` is two claims in one name** — a
+> dimension (pieces of something) and an invariant (a whole number of them) — and only the first of
+> them belongs to a target.
+>
+> **Three findings of the type's own making**, all named at the site that knows which dimension it is:
+> the cross-currency swap's `struckAt` is a BASIS where a forward's is a price (E-10 again); an
+> index level times a multiplier is money where the constituents' book is money; and `phx` in the
+> test rig is a VALUE in cents, which is why four order quantities now say `asQty(phx(…))` — they
+> are sizes in the money instrument, not amounts of money.
+>
+> **Measured**: **79 red of 793** before and after, the same 79, test for test. Arithmetic sites
+> 697 → 506.
 
 **Why.** Eighteen findings, and one signature:
 

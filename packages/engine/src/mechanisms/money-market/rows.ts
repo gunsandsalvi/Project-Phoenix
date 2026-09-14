@@ -13,7 +13,7 @@
  * B6: the tenor is in the terms, because overnight and term are the same instrument for a different
  * number of days, and A2.a's roll is what happens when the day arrives and the row is not renewed.
  */
-import { asPerPiece } from '../../core/measure.js';
+import { asPerPiece, type PerPiece } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import { type Qty } from '../../core/tick.js';
 import { compareCivil, formatCivil, type Civil } from '../../calendar/civil.js';
@@ -42,7 +42,7 @@ export interface Pledged {
   /** Law 8: total units bound, as a count of the instrument's own smallest piece. */
   readonly qty: Qty;
   /** B3.b: what the lender valued a unit at when it lent — its own number, not the market's. */
-  readonly valuedAt: number;
+  readonly valuedAt: PerPiece;
 }
 
 /**

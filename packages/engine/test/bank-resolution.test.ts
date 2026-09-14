@@ -15,6 +15,7 @@
  * liabilities are past its assets and the resolution opens. Nothing here makes a bank fail; one
  * payment does, and the model does the rest.
  */
+import { asRatio, scale } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import { asQty } from '../src/core/tick.js';
 import {
@@ -90,7 +91,10 @@ function penalty(at: number, share: number): SystemModule {
           // there is nobody to fine.
           if (!ctx.parties.get(BANK_A).status.alive) return;
           if (ctx.period === at) {
-            each = ctx.registry.payable(USD, ctx.participant(BANK_A).equity() * share);
+            each = ctx.registry.payable(
+              USD,
+              scale(ctx.participant(BANK_A).equity(), asRatio(share, 'its share'), 'the fine'),
+            );
           }
           if (each <= 0) return;
           ctx.settle({

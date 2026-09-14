@@ -7,7 +7,7 @@
  * Denomination on a cell (XI-15): a leg side on a cell carries the PER-MEMBER amount and the weight
  * it was struck at; the total is perMember x weight. Settlement refuses a cell side without one.
  */
-import type { Cash, PerPiece } from '../core/measure.js';
+import type { Cash, PerMember, PerPiece } from '../core/measure.js';
 import type { Cycle, Period } from '../calendar/calendar.js';
 import type { Qty } from '../core/tick.js';
 import type {
@@ -255,7 +255,7 @@ export interface OpenContractLeg {
    */
   readonly book: InstrumentId;
   /** What it is worth to `a` at inception, in `ccy`. */
-  readonly value: number;
+  readonly value: Cash;
   /** C2: the house both sides face when it is cleared; null bilaterally. */
   readonly house: PartyId | null;
 }
@@ -395,7 +395,7 @@ export interface Realised {
 export interface EquityEffect {
   readonly party: PartyId;
   /** Per member for a cell, in the party's home currency. */
-  readonly delta: number;
+  readonly delta: PerMember<'money:piece'>;
 }
 
 export interface Settled {

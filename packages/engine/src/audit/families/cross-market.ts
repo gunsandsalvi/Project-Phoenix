@@ -8,8 +8,8 @@
  * kind of claim that rots quietly. Neither repairs anything: a triangular gap is a measurement about
  * this world (E3) and an index that has stopped matching its prints is a defect with an owner.
  */
-import type { PerPiece } from '../../core/measure.js';
-import { div, mul, sub, sum, withinDust } from '../../core/num.js';
+import { asRatio, minus, type PerPiece, type Ratio, ratioOf, scale } from '../../core/measure.js';
+import { sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { indexCache, readIndex, type IndexCache, type IndexDeps } from '../../prices/index-read.js';
 import type { Family, Violation } from '../audit.js';
@@ -108,19 +108,21 @@ export function triangleGap(
   ab: string,
   bc: string,
   ac: string,
-): Option<{ crossed: number; direct: number; gap: number }> {
-  const one = (id: string): Option<number> => {
+): Option<{ crossed: PerPiece; direct: PerPiece; gap: Ratio }> {
+  const one = (id: string): Option<PerPiece> => {
     const p = view.prices.latest(id as never, view.period);
-    return p.some && p.value.period === view.period ? some(p.value.price) : none<number>();
+    return p.some && p.value.period === view.period ? some(p.value.price) : none<PerPiece>();
   };
   const x = one(ab);
   const y = one(bc);
   const z = one(ac);
   if (!x.some || !y.some || !z.some || z.value <= 0) return none();
-  const crossed = mul(x.value, y.value, 'the long way round');
+  // Item 16: one money's price in another times a second is the first's price in the third — the
+  // one place a price times a price is a price, because what cancels is the money in the middle.
+  const crossed = scale(x.value, asRatio(y.value, 'and on into the third'), 'the long way round');
   return some({
     crossed,
     direct: z.value,
-    gap: div(sub(crossed, z.value, 'what the two routes disagree by'), z.value, 'as a share'),
+    gap: ratioOf(minus(crossed, z.value, 'what the two routes disagree by'), z.value, 'as a share'),
   });
 }

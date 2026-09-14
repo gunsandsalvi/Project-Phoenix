@@ -10,7 +10,7 @@
  * world/context.ts. Replacing a system is replacing its module.
  */
 import type { Qty } from '../core/tick.js';
-import type { PerPiece } from '../core/measure.js';
+import type { Cash, PerPiece } from '../core/measure.js';
 import type { Family } from '../audit/audit.js';
 import type { IndexDecl } from '../prices/index-read.js';
 import type { Order } from '../clearing/solver.js';
@@ -234,7 +234,7 @@ export interface ClearingCapacity {
    * instrument (Law 15). So the module that owns the layer answers, and the party reads it through
    * its own view like everything else it knows about its own book.
    */
-  readonly dueNext?: (ctx: MechanismContext, party: PartyId, ccy: CurrencyCode, at: Period) => number;
+  readonly dueNext?: (ctx: MechanismContext, party: PartyId, ccy: CurrencyCode, at: Period) => Cash;
   /** D9, C3.a: the legs that post it — money out, a claim in, never an expense. */
   margin(
     ctx: MechanismContext,

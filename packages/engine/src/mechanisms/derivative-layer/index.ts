@@ -13,6 +13,7 @@
  * what a call is (D4), what a close-out leaves owing (D11.a, F2), what a waterfall absorbs (C4).
  */
 import { asQty } from '../../core/tick.js';
+import { absolute, asCash, type Cash, heldAsMoney, minus, negated } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { Period } from '../../calendar/calendar.js';
 import {
@@ -185,11 +186,15 @@ function capacity(): ClearingCapacity {
      * funding for the number it will actually be asked. It never nets across counterparties (G3):
      * what it will get back from one is not cash it can post to another.
      */
-    dueNext(ctx, party, ccy): number {
-      const terms: number[] = [];
+    dueNext(ctx, party, ccy): Cash {
+      const terms: Cash[] = [];
       for (const pair of marginPairsOf(ctx, party)) {
         if (pair.ccy !== ccy) continue;
-        const by = sub(requirement(ctx, party, pair.other, ccy), posted(ctx, party, pair.other, ccy), 'the top-up');
+        const by = minus(
+          requirement(ctx, party, pair.other, ccy),
+          heldAsMoney(posted(ctx, party, pair.other, ccy), 'what it has posted'),
+          'the top-up',
+        );
         if (by > 0) terms.push(by);
       }
       return sum(terms).value;
@@ -211,7 +216,10 @@ function capacity(): ClearingCapacity {
         ctx.period,
       );
       if (!need.some) return [];
-      const amount = ctx.registry.cashFor(m.ccy, need.value);
+      const amount = heldAsMoney(
+        ctx.registry.cashFor(m.ccy, need.value),
+        'what the kind asks for, on the money’s own grid',
+      );
       if (amount > 0) return moveMargin(ctx, party, against, m.ccy, amount);
       /**
        * G2, Law 8: NO EXPOSURE WITHOUT MARGIN, OR A STATED REASON THERE IS NONE — and here there
@@ -260,7 +268,11 @@ function marginCalls(ctx: MechanismContext): void {
         done.add(key);
         const need = requirement(ctx, side, pair.other, pair.ccy);
         const have = posted(ctx, side, pair.other, pair.ccy);
-        const by = sub(need, have, 'what the margin must move by');
+        const by = minus(
+          need,
+          heldAsMoney(have, 'what it has posted'),
+          'what the margin must move by',
+        );
         if (by === 0) continue;
         const legs = moveMargin(ctx, side, pair.other, pair.ccy, by);
         if (legs.length === 0) continue;
@@ -270,7 +282,7 @@ function marginCalls(ctx: MechanismContext): void {
           reason:
             by > 0
               ? `${side} posts ${by} of margin to ${pair.other}`
-              : `${pair.other} returns ${-by} of margin to ${side}`,
+              : `${pair.other} returns ${absolute(by, 'what comes back')} of margin to ${side}`,
         });
         /**
          * D4.a, D9, D9.a: A CALL HAS THREE ANSWERS, and cash is only one of them. A party that
@@ -432,7 +444,7 @@ function settleAndTearUp(ctx: MechanismContext, id: ContractId, why: string): vo
   const c = ctx.contracts.get(id);
   const value = ctx.contracts.closeOut(c, ctx.period);
   const legs: Leg[] = [{ kind: 'contract', act: 'close', contract: id, why }];
-  const owed = ctx.registry.cashFor(c.ccy, value < 0 ? -value : value);
+  const owed = ctx.registry.cashFor(c.ccy, absolute(value, 'what the close-out came to'));
   // Money E4: THE ROW CLOSES EITHER WAY, AND THE MONEY ONLY MOVES BETWEEN THE LIVING. Both sides
   // of a row can cease in one period — a member and the house it faced — and a termination that
   // insisted on paying would be an instruction addressed to somebody who is not there. What is
@@ -485,7 +497,8 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
     return;
   }
   const value = ctx.contracts.closeOut(before, ctx.period);
-  const owedToSurvivor = before.a === survivor ? value : -value;
+  const owedToSurvivor =
+    before.a === survivor ? value : negated(value, 'and the other side of it');
   const moved = ctx.settle({
     legs: [{ kind: 'contract', act: 'novate', contract: id, from: dead, to: estate }],
     cause: 'default',
@@ -497,7 +510,14 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
   // is and is closed out next period — a recorded state, not a payment into the dark.
   if (moved.outcome !== 'settled') return;
   const collateral = posted(ctx, dead, survivor, before.ccy);
-  const claim = owedToSurvivor > 0 ? sub(owedToSurvivor, collateral, 'the mark less what it holds') : 0;
+  const claim =
+    owedToSurvivor > 0
+      ? minus(
+          owedToSurvivor,
+          heldAsMoney(collateral, 'what it holds of the dead party’s margin'),
+          'the mark less what it holds',
+        )
+      : asCash(0, 'the row was in the dead party’s favour, so nothing is owed to the survivor');
   settleAndTearUp(ctx, id, `${dead} ceased`);
   if (claim > 0) issueCloseOutClaim(ctx, estate, survivor, before.ccy, claim);
   const house = before.house;
@@ -506,7 +526,17 @@ function closeOutOnDefault(ctx: MechanismContext, id: ContractId, dead: PartyId)
   // gone is two defaults and not one — and the house's own is its estate's business now. Every
   // line of a waterfall is an instruction naming the house, and it is not there to be named.
   if (house !== null && survivor === house && ctx.parties.get(house).status.alive) {
-    runWaterfall(ctx, house, dead, before.ccy, atLeast(claim, 0, 'a position that was in the defaulter\u2019s favour leaves the house no hole'));
+    runWaterfall(
+      ctx,
+      house,
+      dead,
+      before.ccy,
+      atLeast(
+        claim,
+        asCash(0, 'a position that was in the defaulter\u2019s favour leaves the house no hole'),
+        'a position that was in the defaulter\u2019s favour leaves the house no hole',
+      ),
+    );
   }
 }
 
@@ -516,7 +546,7 @@ function issueCloseOutClaim(
   owedBy: PartyId,
   owedTo: PartyId,
   ccy: CurrencyCode,
-  amount: number,
+  amount: Cash,
 ): void {
   // Law 8: a claim is a COUNT OF PIECES of the money it is owed in, and a residue smaller than the
   // smallest piece is not a claim anybody could be paid — it is the dust of the close-out's own
@@ -568,7 +598,7 @@ function returnMargin(ctx: MechanismContext, a: PartyId, b: PartyId, ccy: Curren
   ] as const) {
     const need = requirement(ctx, poster, holder, ccy);
     const have = posted(ctx, poster, holder, ccy);
-    const by = sub(need, have, 'margin to return');
+    const by = minus(need, heldAsMoney(have, 'what it has posted'), 'margin to return');
     if (by >= 0) continue;
     const legs = moveMargin(ctx, poster, holder, ccy, by);
     if (legs.length > 0) {

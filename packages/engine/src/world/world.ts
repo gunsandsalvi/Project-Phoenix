@@ -48,9 +48,11 @@ import {
   minus,
   over,
   type PerPiece,
-  scale,
-} from '../core/measure.js';
-import { finite, add, addTo, mul, sub, sum } from '../core/num.js';
+  plus,
+  valueAt,
+  type Ratio,
+  scale, asAmount,} from '../core/measure.js';
+import { finite, addTo, sum } from '../core/num.js';
 import { none, type Option, some } from '../core/option.js';
 import {
   asContractMarket,
@@ -127,7 +129,7 @@ import type {
   TermsDecision,
 } from './module.js';
 import { revalue } from './revalue.js';
-import type { Qty } from '../core/tick.js';
+import { NO_QTY, type Qty } from '../core/tick.js';
 import { indexCache, readIndex, type IndexDecl, type IndexDeps, type IndexRead } from '../prices/index-read.js';
 
 
@@ -1262,7 +1264,7 @@ export class World {
   }
 
   private buildParticipantView(party: PartyId): ParticipantView {
-    const owed = new Map<CurrencyCode, number>();
+    const owed = new Map<CurrencyCode, Qty>();
     const view = {
       period: this.currentPeriod,
       cycle: this.currentCycle,
@@ -1342,7 +1344,7 @@ export class World {
       // and a bank issues a row every time it lends — so the six pair markets asking it four times
       // each was the same walk twelve times over. The view is rebuilt every period and every cycle,
       // so what this remembers cannot outlive the state it was read from.
-      owedIn: (ccy: CurrencyCode) => {
+      owedIn: (ccy: CurrencyCode): Qty => {
         const held = owed.get(ccy);
         if (held !== undefined) return held;
         const now = this.owedIn(party, ccy);
@@ -1374,9 +1376,9 @@ export class World {
           const held = this.capacity;
           const margining =
             held?.capacity.dueNext === undefined
-              ? 0
+              ? asCash(0, 'no house asks this party to post anything')
               : held.capacity.dueNext(this.mechanismContext(held.owner), party, ccy, at);
-          return add(margining, sum(
+          return plus(margining, sum(
             this.contractStore
               .openOf(party)
               .filter((c) => c.ccy === ccy)
@@ -2076,21 +2078,25 @@ export class World {
    * It is a READ of what the instruments themselves say (Law 19): the due actions of every line
    * this party issued, priced per unit and multiplied by what is outstanding.
    */
-  owedIn(party: PartyId, ccy: CurrencyCode): number {
-    let owed = 0;
+  owedIn(party: PartyId, ccy: CurrencyCode): Qty {
+    let owed = NO_QTY;
     for (const inst of this.instruments.issuedBy(party)) {
       if (inst.ccy !== ccy || !inst.status.live) continue;
       for (const ahead of [0, 1]) {
         const at = period(this.currentPeriod + ahead);
         for (const action of this.registry.instrumentKind(inst.kind).due(inst, at, this.calendar)) {
           if (action.kind === 'coupon') {
-            owed = add(owed, mul(inst.issued, action.amountPerUnit, 'a coupon it owes'), 'owed');
-          } else owed = add(owed, inst.issued, 'a line it must repay');
+            owed = plus(
+              owed,
+              asAmount<'piece'>(valueAt(action.amountPerUnit, inst.issued, 'a coupon it owes'), 'a coupon it owes'),
+              'owed',
+            );
+          } else owed = plus(owed, inst.issued, 'a line it must repay');
         }
       }
     }
     // XI-15: a cell owes per member and holds per member, so the two are already comparable.
-    return sub(owed, this.cash(party, ccy), `${party}'s position in ${ccy}`);
+    return minus(owed, this.cash(party, ccy), `${party}'s position in ${ccy}`);
   }
 
   /**
@@ -2212,20 +2218,20 @@ export class World {
    * count for the whole door (Law 4: a world with two valuation conventions has two answers to one
    * question), and it is the one `control` was already using for the same arithmetic.
    */
-  private worthTo(instrument: InstrumentId, required: number): Option<number> {
+  private worthTo(instrument: InstrumentId, required: Ratio): Option<PerPiece> {
     finite(required, `required return for ${instrument}`);
-    if (required <= 0) return none<number>();
+    if (required <= 0) return none<PerPiece>();
     const i = this.instruments.get(instrument);
     const profile = this.registry.instrumentKind(i.kind);
     const on = this.calendar.startOf(this.currentPeriod);
     const own = profile.worthTo;
     if (own !== undefined) return own(i, required, this.worthReads());
     const flows = profile.cashFlows(i, on, this.calendar);
-    if (flows.length === 0) return none<number>();
+    if (flows.length === 0) return none<PerPiece>();
     return some(
       priceAt(
         flows,
-        asRatio(required, `required return for ${instrument}`),
+        required,
         on,
         WORTH_DAY_COUNT,
         `what ${instrument} is worth at ${required}`,
@@ -2240,7 +2246,12 @@ export class World {
       period: this.currentPeriod,
       lastReport: (issuer: PartyId) => {
         const said = this.published.lastStatement(issuer);
-        return said === undefined ? none() : some({ earned: said.earned, periods: said.periods });
+        return said === undefined
+          ? none()
+          : some({
+              earned: asCash(said.earned, `what ${issuer} published it earned`),
+              periods: said.periods,
+            });
       },
       issued: (id: InstrumentId) => this.instruments.get(id).issued,
     };

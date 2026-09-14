@@ -20,6 +20,7 @@
  * when it does not; what comes out is never "the payoff, floored at zero" — it is the payoff of the
  * choice it made, and the choice is the mechanism.
  */
+import { asCash, asPerPiece, asRatio, minus, negated, scale, type Cash, type PerPiece, valueAt } from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
@@ -94,16 +95,23 @@ export const isOption = (t: ContractTerms): t is OptionTerms =>
  * is the distance. Nothing is floored: an option nobody exercises pays nothing because nobody
  * exercised it (Law 6), which is a different statement from a number clamped at zero.
  */
-export function intrinsic(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isOption(c.terms)) return 0;
+export function intrinsic(c: Contract, at: Period, reads: ContractReads): Cash {
+  const nothing = asCash(0, 'an option out of the money is worth nothing to exercise');
+  if (!isOption(c.terms)) return nothing;
   const t = c.terms;
   const print = reads.print(t.underlying, at);
-  if (!print.some) return 0;
-  const worth = t.right === 'call'
-    ? sub(print.value.price, t.strike, 'the print above the strike')
-    : sub(t.strike, print.value.price, 'the strike above the print');
-  if (worth <= 0) return 0;
-  return mul(mul(worth, c.notional, 'per contract'), t.multiplier, 'of the thing each');
+  if (!print.some) return nothing;
+  const strike = asPerPiece(t.strike, 'the level it is struck at');
+  const worth =
+    t.right === 'call'
+      ? minus(print.value.price, strike, 'the print above the strike')
+      : minus(strike, print.value.price, 'the strike above the print');
+  if (worth <= 0) return nothing;
+  return valueAt(
+    worth,
+    scale(c.notional, asRatio(t.multiplier, 'the multiplier'), 'per contract'),
+    'of the thing each',
+  );
 }
 
 /**
@@ -113,18 +121,18 @@ export function intrinsic(c: Contract, at: Period, reads: ContractReads): number
  * Before expiry it is the PREMIUM the market is printing, which is a price somebody paid. After it,
  * it is what exercise came to. Neither is a model and neither has a volatility in it.
  */
-function markOf(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isOption(c.terms)) return 0;
+function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isOption(c.terms)) return asCash(0, 'a row that is not an option is worth nothing here');
   const t = c.terms;
   const worth = at >= t.expiry ? intrinsic(c, at, reads) : premiumNow(c, at, reads);
-  return t.holds ? worth : -worth;
+  return t.holds ? worth : negated(worth, 'and the other side of it');
 }
 
-function premiumNow(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isOption(c.terms)) return 0;
+function premiumNow(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isOption(c.terms)) return asCash(0, 'a row that is not an option is worth nothing here');
   const p = reads.print(c.terms.book, at);
   if (!p.some) return intrinsic(c, at, reads);
-  return mul(mul(p.value.price, c.notional, 'per contract'), c.terms.multiplier, 'of the thing each');
+  return valueAt(p.value.price, scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'), 'of the thing each');
 }
 
 export const optionKind: DerivativeKindProfile = {
@@ -156,25 +164,31 @@ export const optionKind: DerivativeKindProfile = {
    * D7, D7.a: THE CLEARED PRICE IS THE PREMIUM. Unlike every par-struck contract in this tree, an
    * option is BOUGHT: what the session agreed is what the holder pays the writer, per unit, now.
    */
-  premiumPerUnit: (struckAt, terms) => (isOption(terms) ? mul(struckAt, terms.multiplier, 'per contract') : 0),
-  initialMargin: (c, at, reads): Option<number> => {
-    if (!isOption(c.terms)) return none();
+  premiumPerUnit: (struckAt, terms): PerPiece =>
+    isOption(terms)
+      ? scale(struckAt, asRatio(terms.multiplier, 'the multiplier'), 'per contract')
+      : asPerPiece(0, 'not an option, so nothing is paid for it'),
+  initialMargin: (c, at, reads): Option<Cash> => {
+    if (!isOption(c.terms)) return none<Cash>();
     const move = reads.measuredMove(c.terms.underlying, c.terms.window);
-    if (!move.some) return none();
+    if (!move.some) return none<Cash>();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
     const horizon = reads.params.periods(
       'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
-      mul(
-        mul(mul(move.value, c.notional, 'per contract'), c.terms.multiplier, 'of the thing each'),
-        Math.sqrt(left > 0 ? left / horizon : 1),
+      scale(
+        valueAt(move.value, scale(c.notional, asRatio(c.terms.multiplier, 'the multiplier'), 'per contract'), 'of the thing each'),
+        asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
     );
   },
   // D11.a: closed out at what exercise would come to, which is the stated value of the position.
-  closeOut: (c, at, reads) => (isOption(c.terms) && c.terms.holds ? intrinsic(c, at, reads) : -intrinsic(c, at, reads)),
+  closeOut: (c, at, reads) =>
+    isOption(c.terms) && c.terms.holds
+      ? intrinsic(c, at, reads)
+      : negated(intrinsic(c, at, reads), 'and the other side of it'),
   expires: (c, at): boolean => isOption(c.terms) && at >= c.terms.expiry,
 };
 

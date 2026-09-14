@@ -14,6 +14,7 @@ import { Calendar } from '../calendar/calendar.js';
 import type { Civil } from '../calendar/civil.js';
 import { forbid } from '../core/assert.js';
 import { InvalidRegistry } from '../core/errors.js';
+import type { Cash } from '../core/measure.js';
 import { combineDust, sum } from '../core/num.js';
 import {
   type CurrencyCode,
@@ -210,7 +211,7 @@ function seedContext(w: World): SeedContext {
     // so many tonnes — and what a party can actually hold is the whole pieces of it, per member,
     // like every movement afterwards. The seed does not get to open the world off the grid that
     // every later payment has to land on.
-    endowMoney: (party: PartyId, ccy: CurrencyCode, perMember: number) => {
+    endowMoney: (party: PartyId, ccy: CurrencyCode, perMember: Cash) => {
       const p = w.parties.get(party);
       const inst = moneyInstrumentId(p.bank, ccy);
       forbid(w.instruments.has(inst), 'Money A1', `${p.bank} issues no money in ${ccy}`);

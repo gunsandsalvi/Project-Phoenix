@@ -8,6 +8,7 @@
  * read from the same marks everything else is valued at, never stored, and the same number for
  * every holder. What it is a claim on is the funds module's business.
  */
+import { asCash } from '../src/core/measure.js';
 import type { PerPiece } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
@@ -94,7 +95,7 @@ function aBookAndItsClaims(claims: number, countsItsOwn = false): SystemModule {
         terms: { kind: CLAIM_KIND },
         market: none(),
       });
-      ctx.endowMoney(BOOK, USD, 1000);
+      ctx.endowMoney(BOOK, USD, asCash(1000, 'what it opens with'));
       ctx.endowUnits(HOLDER, CLAIM, claims / 2, 1);
       ctx.endowUnits(OTHER, CLAIM, claims / 2, 1);
     },

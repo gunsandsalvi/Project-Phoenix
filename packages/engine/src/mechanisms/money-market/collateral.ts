@@ -17,11 +17,21 @@
  * rather than being stated. A lender that has published no view of an issuer will not take its
  * paper: no view, no advance.
  */
-import { asRatio } from '../../core/measure.js';
+import {
+  asRatio,
+  type Cash,
+  minus,
+  type PerPiece,
+  type Ratio,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
+import type { Qty } from '../../core/tick.js';
 import type { Civil } from '../../calendar/civil.js';
 import type { DayCount } from '../../calendar/daycount.js';
 import type { InstrumentId, PartyId } from '../../core/ids.js';
-import {div, mul, sub, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { priceAt } from '../../prices/curve.js';
 import type { Instrument } from '../../register/instruments.js';
@@ -58,12 +68,12 @@ function published(view: ParticipantView, key: string, about: PartyId): Option<n
 }
 
 /** B3.b: what one unit of this paper is worth to this lender — its own yield, that paper's flows. */
-export function valueToLender(view: ParticipantView, i: Instrument, on: Civil): Option<number> {
-  if (!i.issuer.some) return none<number>();
+export function valueToLender(view: ParticipantView, i: Instrument, on: Civil): Option<PerPiece> {
+  if (!i.issuer.some) return none<PerPiece>();
   const required = requiredOf(view, i.issuer.value);
-  if (!required.some) return none<number>();
+  if (!required.some) return none<PerPiece>();
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
-  if (flows.length === 0) return none<number>();
+  if (flows.length === 0) return none<PerPiece>();
   return some(
     priceAt(
       flows,
@@ -80,20 +90,26 @@ export function valueToLender(view: ParticipantView, i: Instrument, on: Civil): 
  * valuation sits. Nothing prices off it; it is what a reader (and Part XII) measures. None when the
  * market has never printed the paper, because there is nothing to take a haircut from.
  */
-export function haircut(view: ParticipantView, i: Instrument, on: Civil): Option<number> {
+export function haircut(view: ParticipantView, i: Instrument, on: Civil): Option<Ratio> {
   const value = valueToLender(view, i, on);
   const print = view.print(i.id);
-  if (!value.some || !print.some || print.value.price <= 0) return none<number>();
-  return some(div(sub(print.value.price, value.value, 'below the market'), print.value.price, 'haircut'));
+  if (!value.some || !print.some || print.value.price <= 0) return none<Ratio>();
+  return some(
+    ratioOf(
+      minus(print.value.price, value.value, 'below the market'),
+      print.value.price,
+      'haircut',
+    ),
+  );
 }
 
 /** A parcel of paper a borrower could put up, and what this lender would advance against it. */
 export interface Advance {
   readonly instrument: InstrumentId;
   /** Units free to bind: what is held less what already stands behind something else (B3.c). */
-  readonly free: number;
-  readonly valuePerUnit: number;
-  readonly total: number;
+  readonly free: Qty;
+  readonly valuePerUnit: PerPiece;
+  readonly total: Cash;
   /** Law 8: the smallest piece of this paper, which is what a lien can be struck in. */
 }
 
@@ -123,7 +139,7 @@ export function advances(
       instrument: i.id,
       free,
       valuePerUnit: value.value,
-      total: mul(free, value.value, 'what this parcel would raise'),
+      total: valueAt(value.value, free, 'what this parcel would raise'),
     });
   }
   return out.sort((a, b) => (a.total === b.total ? (a.instrument < b.instrument ? -1 : 1) : b.total - a.total));
@@ -142,7 +158,7 @@ export function windowAdvances(
   cb: ParticipantView,
   borrower: ParticipantView,
   on: Civil,
-  policyHaircut: number,
+  policyHaircut: Ratio,
 ): readonly Advance[] {
   const out: Advance[] = [];
   for (const h of borrower.holdings()) {
@@ -152,13 +168,17 @@ export function windowAdvances(
     if (!print.some || print.value.price <= 0) continue;
     const free = borrower.free(h.instrument);
     if (free <= 0) continue;
-    const per = mul(print.value.price, sub(1, policyHaircut, 'after the haircut'), 'window value');
+    const per = scale(
+      print.value.price,
+      minus(asRatio(1, 'the whole of it'), policyHaircut, 'after the haircut'),
+      'window value',
+    );
     if (per <= 0) continue;
     out.push({
       instrument: i.id,
       free,
       valuePerUnit: per,
-      total: mul(free, per, 'what it would raise'),
+      total: valueAt(per, free, 'what it would raise'),
     });
   }
   return out.sort((a, b) => (a.total === b.total ? (a.instrument < b.instrument ? -1 : 1) : b.total - a.total));

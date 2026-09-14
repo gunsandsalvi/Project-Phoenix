@@ -17,12 +17,13 @@
  * there is no path through this file that moves the notional, which is what E1 asks and what the
  * test that reads every leg of a year of swaps checks.
  */
+import { absolute, asCash, asPerPiece, asRatio, type Cash, minus, negated, scale, type PerPiece, valueAt } from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
 import type { DerivativeClassDecl } from '../../world/module.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId } from '../../core/ids.js';
 import { derivativeKindId, unitId } from '../../core/ids.js';
-import { mul, sub } from '../../core/num.js';
+
 import { none, some, type Option } from '../../core/option.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import type {
@@ -65,11 +66,18 @@ export const isIrs = (t: ContractTerms): t is IrsTerms =>
  * happened, per annum, and none at all when the book did not trade (D3.a: a benchmark this world
  * did not produce is not one this contract may use).
  */
-export function floatingRate(t: IrsTerms, reads: Pick<ContractReads, 'lastEvent'>): Option<number> {
+export function floatingRate(
+  t: IrsTerms,
+  reads: Pick<ContractReads, 'lastEvent'>,
+): Option<PerPiece> {
   const e = reads.lastEvent('index.benchmark', t.benchmark);
-  if (!e.some) return none<number>();
+  if (!e.some) return none<PerPiece>();
   const rate = e.value.data['rate'];
-  return typeof rate === 'number' ? some(rate) : none<number>();
+  // Item 16: the fixing re-enters here. A swap's LEVEL is a rate on a unit of notional, which is
+  // the same dimension its struck rate is in — which is why the two legs can be netted at all.
+  return typeof rate === 'number'
+    ? some(asPerPiece(rate, `the fixing of ${t.benchmark}`))
+    : none<PerPiece>();
 }
 
 function yearsLeft(t: IrsTerms, at: Period, reads: ContractReads): number {
@@ -81,18 +89,18 @@ function yearsLeft(t: IrsTerms, at: Period, reads: ContractReads): number {
  * A3, D8: what it is worth to `a` — the fixed rate the curve is now clearing at against the one
  * this contract pays, over what it has left. A payer of fixed gains when rates rise.
  */
-function markOf(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isIrs(c.terms)) return 0;
+function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isIrs(c.terms)) return asCash(0, 'not an interest-rate swap');
   const t = c.terms;
   const now = reads.print(t.book, at);
-  if (!now.some) return 0;
-  const richer = sub(now.value.price, c.struckAt, 'the rate now against the rate struck');
-  const worth = mul(
-    mul(richer, c.notional, 'over the notional'),
-    yearsLeft(t, at, reads),
+  if (!now.some) return asCash(0, 'this swap book has not printed');
+  const richer = minus(now.value.price, c.struckAt, 'the rate now against the rate struck');
+  const worth = scale(
+    valueAt(richer, c.notional, 'over the notional'),
+    asRatio(yearsLeft(t, at, reads), 'the years it has left'),
     'over the years it has left',
   );
-  return t.paysFixed ? worth : -worth;
+  return t.paysFixed ? worth : negated(worth, 'and the other side of it');
 }
 
 /** B2, C3: why a party swaps, and what the cleared fixed rate says against the sovereign's own. */
@@ -149,12 +157,20 @@ export const irsKind: DerivativeKindProfile = {
         reads.calendar.endOf(at),
       );
     const fixedLeg = fixedDue
-      ? mul(mul(c.struckAt, c.notional, 'the fixed rate on the notional'), accrualFor(t.fixedEvery), 'accrued')
-      : 0;
+      ? scale(
+          valueAt(c.struckAt, c.notional, 'the fixed rate on the notional'),
+          asRatio(accrualFor(t.fixedEvery), 'this period of a year'),
+          'accrued',
+        )
+      : asCash(0, 'nothing fell due on the fixed leg');
     const floatLeg = floatDue
-      ? mul(mul(float.value, c.notional, 'the fixing on the notional'), accrualFor(t.floatEvery), 'accrued')
-      : 0;
-    const net = sub(floatLeg, fixedLeg, 'what the floating leg owes over the fixed');
+      ? scale(
+          valueAt(float.value, c.notional, 'the fixing on the notional'),
+          asRatio(accrualFor(t.floatEvery), 'this period of a year'),
+          'accrued',
+        )
+      : asCash(0, 'nothing fell due on the floating leg');
+    const net = minus(floatLeg, fixedLeg, 'what the floating leg owes over the fixed');
     if (net === 0) return [];
     // A1.b: one payment, in the direction the net went. The payer of fixed receives when the
     // floating leg came out higher.
@@ -167,22 +183,22 @@ export const irsKind: DerivativeKindProfile = {
         from,
         to,
         ccy: c.ccy,
-        amount: net > 0 ? net : -net,
+        amount: absolute(net, 'the net of the two legs'),
         date: reads.calendar.endOf(at),
         why: 'the net of the two legs',
       },
     ];
   },
   // D7.b: struck at par. The cleared fixed rate IS what makes it worth nothing today.
-  premiumPerUnit: () => 0,
-  initialMargin: (c, at, reads): Option<number> => {
-    if (!isIrs(c.terms)) return none();
+  premiumPerUnit: (): PerPiece => asPerPiece(0, 'struck at par, so nothing changes hands'),
+  initialMargin: (c, at, reads): Option<Cash> => {
+    if (!isIrs(c.terms)) return none<Cash>();
     const move = reads.measuredMove(c.terms.book, c.terms.window);
-    if (!move.some) return none();
+    if (!move.some) return none<Cash>();
     return some(
-      mul(
-        mul(move.value, c.notional, 'over the notional'),
-        yearsLeft(c.terms, at, reads),
+      scale(
+        valueAt(move.value, c.notional, 'over the notional'),
+        asRatio(yearsLeft(c.terms, at, reads), 'the years it has left'),
         'over the years it has left',
       ),
     );

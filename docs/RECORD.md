@@ -5375,3 +5375,34 @@ was indistinguishable from one.
 
 **Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
 forbids, `plan:check`.
+
+## Item 16, stage 10a — the derivative tree, and the doors the kernel was missing
+
+**111 sites went (697 → 506)**, and almost none of them by hand: typing
+`DerivativeKindProfile` generated the list. A mark, a close-out, an initial margin and what a row
+will cost in cash are `Cash`; a premium per unit of notional is a `PerPiece`; `ContractPayment.
+amount` and `Contract.basis` are `Cash`. Eight kinds then said what each of their own numbers was,
+and the layer that margins them said it too: `posted` and `inFund` are register reads (`Qty`),
+`requirement` is a computed value (`Cash`), and the waterfall's rounds carry both.
+
+**Four kernel doors were the blockers, one line each.** `finite` was erasing every dimension on its
+way into the state — it is `finite<T extends number = number>(x: T): T` now, same runtime, no hole.
+`Registry.cashFor` and `Registry.payable` take a `Cash`, because they are where a computed value
+lands on the money's own grid. `OwnContracts`/`ContractsRead` answer in `Cash`. And
+`EquityEffect.delta` is `PerMember<'money:piece'>`, which its own comment already said.
+
+**The grid is not the type, and this stage is where that stopped being a detail.** `asQty`,
+`addQty`, `subQty` and `negQty` assert a whole number of pieces; a DESIRED position is not one.
+Typing `want`, `move`, `left to hedge`, `what falls due` and a dealer's book in a pair with those
+doors made 330 tests throw `[Law 8] … is not a whole number of the unit's pieces`. `Qty` is two
+claims in one name — a dimension and an invariant — and a target only has the first: those sites
+use `asAmount<'piece'>` with `plus`/`minus`, and the grid assertion stays at
+`registry.deliverable`, where a target becomes a quantity somebody can hold.
+
+**Three crossings named at the site that knows which dimension it is**: a cross-currency swap's
+`struckAt` is a BASIS where a forward's is a price (E-10 again); an index level times a multiplier
+is money, which is the dimension of the book it hedges; and the test rig's `phx` is a VALUE in
+cents, so an order sized in the money instrument says `asQty(phx(…))`.
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations
+(208), forbids (205 files), `plan:check`.

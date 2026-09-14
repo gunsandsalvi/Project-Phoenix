@@ -15,6 +15,7 @@
  * pieces of money per piece of a good is a real number and always was.
  */
 import { asQty, type Qty } from '../src/core/tick.js';
+import { type Cash, heldAsMoney } from '../src/core/measure.js';
 import {
   MONEY_PIECES,
   SHARE_PIECES,
@@ -23,8 +24,13 @@ import {
   WHOLE_PIECES,
 } from '../src/registry/grid.js';
 
-/** An amount of money, in USD, as the pieces of it the state holds. */
-export const phx = (amount: number): Qty => asQty(Math.round(amount * MONEY_PIECES));
+/**
+ * An amount of money, in USD, as the pieces of it the state holds — and a VALUE in them, which is
+ * what money's own price being one means (Money D2). A test states an endowment, a bill or a purse
+ * in dollars and this is where the dollars become the cents everything else in the state is in.
+ */
+export const phx = (amount: number): Cash =>
+  heldAsMoney(asQty(Math.round(amount * MONEY_PIECES)), 'an amount of money stated in dollars');
 
 /** A weight of a good measured in tonnes, as the pieces of it the state holds. */
 export const tonnes = (weight: number): Qty => asQty(Math.round(weight * TONNE_PIECES));

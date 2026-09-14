@@ -22,13 +22,14 @@
  * fetched falls on the holders who stayed, which is why a redemption is a real cost to them and why
  * runs are a thing (C4.a). Dropping the unfilled part would delete the entire system.
  */
+import { period as periodOf } from '../../calendar/calendar.js';
+import { trackerOrders } from './tracker.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
-import { period as periodOf } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import {
@@ -94,7 +95,6 @@ import { fundChoosesBank, FUND_SWITCHING_COST } from './bank.js';
 import { physicalOrders } from './physical.js';
 import { FUND_PARAMS, fundParam, type EtfDecl, type FundDecl } from './data.js';
 import { basketOf, basketValue, create, premiumOf, redeemInKind } from './etf.js';
-import { trackerOrders } from './tracker.js';
 import { navOf } from './nav.js';
 
 export * from './data.js';
@@ -318,7 +318,7 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
  * Law 8: a per annum rate is not a per period one, and a fee is money, so what comes out is whole
  * pieces of it. Below one piece there is nothing to pay, and `payable` has already said so.
  */
-function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): number {
+function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): Qty {
   const party = ctx.parties.get(fund as PartyId);
   return ctx.registry.payable(
     ctx.registry.currencyOf(party.region),
@@ -555,7 +555,7 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   const previous = b.previous[d.fund];
   // B3: the fee is charged on what the book was worth before anybody transacted, and then the NAV
   // is read again — which is what "fees reduce NAV" means when the reduction is a real payment.
-  if (share.issued > 0) payFee(ctx, d, ctx.registry.payable(ccy, feeAccrued(ctx, d.fund, share)));
+  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
   const perShare = share.issued > 0 ? ctx.valuation.markPerUnit(share.id, ctx.period) : opening;
   b.struck[d.fund] = perShare;
   // B2.a: how old the oldest mark behind it is. A stale mark makes a stale NAV and somebody
@@ -943,8 +943,7 @@ function runEtf(ctx: MechanismContext, d: EtfDecl): void {
   // the same convention as every other fund (Law 4): what it owes goes to the wire whole, and a
   // fund without the money has a refused payment rather than a discount nobody granted it.
   const money = moneyOf(ctx, fund, ctx.registry.currencyOf(ctx.parties.get(fund).region));
-  const ccy = ctx.registry.currencyOf(ctx.parties.get(fund).region);
-  if (share.issued > 0) payFee(ctx, d, ctx.registry.payable(ccy, feeAccrued(ctx, d.fund, share)));
+  if (share.issued > 0) payFee(ctx, d, feeAccrued(ctx, d.fund, share));
   // G1.a: in kind, against a pro-rata slice of its own book. Nothing is sold and no market is
   // touched, which is why this vehicle is not the forced seller (the money fund is, C2.b).
   for (const o of ctx.posted(etfVenue(d.fund))) {
@@ -974,7 +973,10 @@ function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
   const buffer = scale(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
-  const spare = ctx.registry.payable(ccy, minus(cash, buffer, 'what it can place'));
+  const spare = ctx.registry.payable(
+    ccy,
+    heldAsMoney(minus(cash, buffer, 'what it can place'), 'what it can place'),
+  );
   if (spare <= 0) return;
   const floor = floorRate(ctx);
   if (!floor.some) return;

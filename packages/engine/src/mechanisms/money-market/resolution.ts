@@ -471,7 +471,14 @@ function writeDownDeposit(
   const p = ctx.parties.get(holder);
   const perMember = ctx.registry.payable(
     ccy,
-    eachMember(asTotal<'money:piece'>(share, 'what the cell is owed'), weightOf(p), 'per member'),
+    // XI-15, Law 8: what ONE MEMBER'S OWN ACCOUNT moves by is a money in that account, and it is a
+    // whole number of the money's own pieces like every other balance. `acrossMembers` at one is
+    // the door that says so: one member's share of a per-member number is that number.
+    acrossMembers(
+      eachMember(asTotal<'money:piece'>(share, 'what the cell is owed'), weightOf(p), 'per member'),
+      1,
+      'what one member’s account moves by',
+    ),
   );
   if (perMember <= 0) return NO_QTY;
   const total = totalFor(p, perMember);

@@ -24,6 +24,7 @@ import { compareCivil } from '../../calendar/civil.js';
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type PartyId } from '../../core/ids.js';
 import { add, atMost, material, mul, sub, sum } from '../../core/num.js';
+import { acrossMembers, type PerMember } from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { months } from '../../core/rate.js';
 import type { Order } from '../../clearing/solver.js';
@@ -135,7 +136,7 @@ export const centralBankOmo: SystemModule = {
 function remit(ctx: MechanismContext, cb: PartyId): void {
   if (!dueThisPeriod(ctx)) return;
   const previous = lastRemittance(ctx, cb);
-  const terms: number[] = [];
+  const terms: PerMember<'money:piece'>[] = [];
   for (let p = previous; p <= ctx.period; p = period(p + 1)) {
     for (const r of ctx.ledger.inPeriod(p)) {
       if (r.outcome !== 'settled') continue;
@@ -154,7 +155,12 @@ function remit(ctx: MechanismContext, cb: PartyId): void {
   const ccy = ctx.registry.currencyOf(ctx.parties.get(cb).region);
   // Law 8: it remits whole pieces of the money it issues; the piece it cannot divide stays on its
   // own books and is remitted with next period's income (E3).
-  const paid = ctx.registry.payable(ccy, income);
+  // XI-15: a central bank is a NAMED party and not a cell, so what its equity account moved by is
+  // what it earned — `acrossMembers` at one is the door that says so in the type.
+  const paid = ctx.registry.payable(
+    ccy,
+    acrossMembers(income, 1, 'what a central bank of one earned'),
+  );
   if (paid <= 0) return;
   const leg: Leg = {
     kind: 'money',

@@ -38,7 +38,8 @@ import type { CurrencyCode, InstrumentId, PartyId, RegionId } from '../../core/i
 import { instrumentId, marketId, partyId } from '../../core/ids.js';
 import { FIRM } from '../../registry/profiles.js';
 import { add, atMost, div, finite, mul, sub, sum, zeroIfNone } from '../../core/num.js';
-import { asQty, downTick } from '../../core/tick.js';
+import { asQty, downTick, subQty, type Qty } from '../../core/tick.js';
+import { heldAsMoney, type PerPiece, ratioOf, scale, valueAt } from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import { WIND, conditionsFor } from '../../registry/environment.js';
@@ -241,25 +242,25 @@ function load(
   to: RegionId,
   leg: Path,
   room: ReadonlyMap<PartyId, { readonly hull: InstrumentId; readonly hulls: number }>,
-  fills: readonly { readonly party: PartyId; readonly side: string; readonly qty: number }[],
-  rate: number,
+  fills: readonly { readonly party: PartyId; readonly side: string; readonly qty: Qty }[],
+  rate: PerPiece,
   ccy: CurrencyCode,
 ): void {
   const carriers = fills.filter((f) => f.side === 'sell' && f.qty > 0).map((f) => ({ ...f }));
   let at = 0;
   for (const shipper of fills) {
     if (shipper.side !== 'buy' || shipper.qty <= 0) continue;
-    let want = shipper.qty;
+    let want: Qty = shipper.qty;
     while (want > 0 && at < carriers.length) {
       const carrier = carriers[at];
       if (carrier === undefined) break;
       // Law 6: a carrier cannot take more than it has room for and a shipper cannot ship more
       // than it wanted. Arithmetic impossibility on both sides, named at the site.
       const moved = atMost(carrier.qty, want, 'a carrier has only the room it has');
-      const paid = ctx.registry.payable(ccy, mul(moved, rate, 'the freight on what it shipped'));
+      const paid = ctx.registry.payable(ccy, valueAt(rate, moved, 'the freight on what it shipped'));
       if (paid > 0 && cargo(ctx, from, to, leg, room, shipper.party, carrier.party, moved, paid, ccy)) {
-        want = sub(want, moved, 'what it still wants moved');
-        carriers[at] = { ...carrier, qty: sub(carrier.qty, moved, 'the room it has left') };
+        want = subQty(want, moved, 'what it still wants moved');
+        carriers[at] = { ...carrier, qty: subQty(carrier.qty, moved, 'the room it has left') };
       } else {
         at += 1;
       }
@@ -277,8 +278,8 @@ function cargo(
   room: ReadonlyMap<PartyId, { readonly hull: InstrumentId; readonly hulls: number }>,
   shipper: PartyId,
   carrier: PartyId,
-  units: number,
-  paid: number,
+  units: Qty,
+  paid: Qty,
   ccy: CurrencyCode,
 ): boolean {
   if (ctx.parties.get(shipper).region !== from) return false;
@@ -304,7 +305,14 @@ function cargo(
       ),
     );
     if (need <= 0) continue;
-    const share = ctx.registry.payable(ccy, mul(paid, div(take, units, 'its share'), 'its freight'));
+    const share = ctx.registry.payable(
+      ccy,
+      scale(
+        heldAsMoney(paid, 'the freight on the whole cargo'),
+        ratioOf(take, units, 'its share'),
+        'its freight',
+      ),
+    );
     const r = ctx.settle({
       legs: [
         { kind: 'destroy', party: shipper, instrument: i.id, qty: asQty(take), why: 'consumed', fromCell: none() },

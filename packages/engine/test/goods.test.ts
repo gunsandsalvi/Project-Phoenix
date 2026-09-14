@@ -397,7 +397,7 @@ m.id === 'sovereign-instruments' ||
       .filter((e) => e.subjects.includes(baker()) && e.subjects.includes(BREAD_ID));
     expect(ev).toHaveLength(1);
     expect(ev[0]?.data['unitsPerMember']).toBe(tonnes(2.5));
-    expect(ev[0]?.data['chargePerMember']).toBe(negQty(phx(2.5 * 2)));
+    expect(ev[0]?.data['chargePerMember']).toBe(negQty(asQty(phx(2.5 * 2))));
     expect(ev[0]?.public).toBe(false);
   });
 

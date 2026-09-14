@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 import { Calendar, period } from '../src/calendar/calendar.js';
 import { instrumentId, partyId } from '../src/core/ids.js';
 import { none, some } from '../src/core/option.js';
+import { asCash, asRatio } from '../src/core/measure.js';
+import { asQty } from '../src/core/tick.js';
 import type { WorthReads } from '../src/registry/kinds.js';
 import { shareKind } from '../src/mechanisms/equity/share.js';
 import type { Instrument } from '../src/register/instruments.js';
@@ -22,8 +24,8 @@ describe('worth: the half of an instrument profile that was missing (§46, Equit
     expect(party).toBeDefined();
     if (bill === undefined || party === undefined) return;
     const view = w.participantView(party.id);
-    const cheap = view.worth(bill.id, 0.01);
-    const dear = view.worth(bill.id, 0.08);
+    const cheap = view.worth(bill.id, asRatio(0.01, 'what this holder requires'));
+    const dear = view.worth(bill.id, asRatio(0.08, 'what this holder requires'));
     expect(cheap.some).toBe(true);
     expect(dear.some).toBe(true);
     // Nothing states this: it falls out of discounting the same dated payments at two rates, which
@@ -40,8 +42,8 @@ describe('worth: the half of an instrument profile that was missing (§46, Equit
     const view = w.participantView(party.id);
     // Law 6, App A: nothing is worth anything at a required return of nothing. The arithmetic is a
     // division by zero and the honest answer is that there is no answer, never an infinity.
-    expect(view.worth(bill.id, 0).some).toBe(false);
-    expect(() => view.worth(bill.id, Number.NaN)).toThrow();
+    expect(view.worth(bill.id, asRatio(0, 'what this holder requires')).some).toBe(false);
+    expect(() => view.worth(bill.id, asRatio(Number.NaN, 'what this holder requires'))).toThrow();
   });
 });
 
@@ -67,12 +69,15 @@ describe('a share, which had no answer at all before (Equity B1, B3)', () => {
   const reads = (earned: number | undefined, shares: number): WorthReads => ({
     calendar,
     period: period(10),
-    lastReport: () => (earned === undefined ? none() : some({ earned, periods: 13 })),
-    issued: () => shares,
+    lastReport: () =>
+      earned === undefined
+        ? none()
+        : some({ earned: asCash(earned, 'what it published it earned'), periods: 13 }),
+    issued: () => asQty(shares, 'shares in issue'),
   });
 
   it('capitalises what the company PUBLISHED, at what this holder requires', () => {
-    const worth = shareKind.worthTo?.(line, 0.08, reads(1_300_000, 1000));
+    const worth = shareKind.worthTo?.(line, asRatio(0.08, 'what this holder requires'), reads(1_300_000, 1000));
     expect(worth?.some).toBe(true);
     // A quarter's earnings annualised, capitalised at 8%, over the shares there are. Nothing here
     // is a multiple and nothing is a forecast: it is one published number and one required return.
@@ -80,8 +85,8 @@ describe('a share, which had no answer at all before (Equity B1, B3)', () => {
   });
 
   it('two holders requiring different returns want it at different levels (§46 A3)', () => {
-    const patient = shareKind.worthTo?.(line, 0.04, reads(1_300_000, 1000));
-    const impatient = shareKind.worthTo?.(line, 0.12, reads(1_300_000, 1000));
+    const patient = shareKind.worthTo?.(line, asRatio(0.04, 'what this holder requires'), reads(1_300_000, 1000));
+    const impatient = shareKind.worthTo?.(line, asRatio(0.12, 'what this holder requires'), reads(1_300_000, 1000));
     expect(patient?.some).toBe(true);
     expect(impatient?.some).toBe(true);
     if (patient?.some === true && impatient?.some === true) {
@@ -90,12 +95,12 @@ describe('a share, which had no answer at all before (Equity B1, B3)', () => {
   });
 
   it('a company that has published nothing is an ABSENCE, never a zero (App A)', () => {
-    expect(shareKind.worthTo?.(line, 0.08, reads(undefined, 1000)).some).toBe(false);
+    expect(shareKind.worthTo?.(line, asRatio(0.08, 'what this holder requires'), reads(undefined, 1000)).some).toBe(false);
     // And one that published a loss: there is no stream to capitalise, and saying "worth nothing"
     // would be a claim this door has no business making — a loss-making company is worth what
     // somebody will pay for it, which is a market's answer and not this one's.
-    expect(shareKind.worthTo?.(line, 0.08, reads(-5000, 1000)).some).toBe(false);
+    expect(shareKind.worthTo?.(line, asRatio(0.08, 'what this holder requires'), reads(-5000, 1000)).some).toBe(false);
     // A line with no shares in issue has no per-share anything.
-    expect(shareKind.worthTo?.(line, 0.08, reads(1_300_000, 0)).some).toBe(false);
+    expect(shareKind.worthTo?.(line, asRatio(0.08, 'what this holder requires'), reads(1_300_000, 0)).some).toBe(false);
   });
 });

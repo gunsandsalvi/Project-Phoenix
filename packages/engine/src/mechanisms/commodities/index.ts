@@ -23,8 +23,9 @@
  * somebody owns and sells (Law 6: the compensating mechanism, not a bound).
  */
 import type { CurrencyCode, PartyId, RegionId } from '../../core/ids.js';
-import { add, atMost, div, mul, sub, sum, zeroIfNone } from '../../core/num.js';
-import { asQty, downTick } from '../../core/tick.js';
+import { add, atMost, div, sub, sum, zeroIfNone } from '../../core/num.js';
+import { downTick, subQty, type Qty } from '../../core/tick.js';
+import { valueAt } from '../../core/measure.js';
 import { none } from '../../core/option.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
 import {
@@ -188,14 +189,14 @@ function lease(
   let at = 0;
   for (const taker of outcome.fills) {
     if (taker.side !== 'buy' || taker.qty <= 0) continue;
-    let want: number = taker.qty;
+    let want: Qty = taker.qty;
     while (want > 0 && at < letters.length) {
       const letter = letters[at];
       if (letter === undefined) break;
       // Law 6: a letter cannot let more space than it has, and a taker cannot take more
       // than it is short of. Arithmetic impossibility on both sides, named at the site.
-      const space = atMost(letter.qty as number, want, 'a letter has only the space it has');
-      const due = ctx.registry.payable(ccy, mul(space, rate, 'what the space costs for the period'));
+      const space = atMost(letter.qty, want, 'a letter has only the space it has');
+      const due = ctx.registry.payable(ccy, valueAt(rate, space, 'what the space costs for the period'));
       // Law 8, Money A2: A PAYMENT BELOW ONE PIECE OF MONEY IS NOT A PAYMENT. Space let for nothing
       // is free storage, which is the thing this module exists to remove — so the space is NOT let,
       // the taker keeps looking and the letter keeps its room. It is the same answer the wire gives
@@ -238,8 +239,8 @@ function lease(
           true,
         );
       }
-      want = sub(want, space, 'what it is still short of');
-      letters[at] = { ...letter, qty: asQty(sub(letter.qty, space, 'what it has left to let')) };
+      want = subQty(want, space, 'what it is still short of');
+      letters[at] = { ...letter, qty: subQty(letter.qty, space, 'what it has left to let') };
       if (letters[at]?.qty === 0) at += 1;
     }
   }

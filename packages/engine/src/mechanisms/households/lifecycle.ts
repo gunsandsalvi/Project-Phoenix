@@ -32,6 +32,7 @@ import { period as periodOf } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import { assertNever } from '../../core/assert.js';
 import { add, div, mul, sub } from '../../core/num.js';
+import { asRatio, heldAsMoney, over, scale } from '../../core/measure.js';
 import { none, some } from '../../core/option.js';
 import { asQty } from '../../core/tick.js';
 import { partyId, partyKindId, type CurrencyCode, type PartyId, type RegionId } from '../../core/ids.js';
@@ -363,7 +364,7 @@ export function settleEstates(ctx: MechanismContext): void {
     const ccy = ctx.registry.currencyOf(office.region);
     for (const heir of heirs) {
       const legs: Leg[] = [];
-      const share = div(heir.weight, people, 'this cell share of what is here');
+      const share = asRatio(div(heir.weight, people, 'this cell share of what is here'), 'this cell share');
       for (const h of view.holdings()) {
         if (isMoney(ctx, h.instrument)) continue;
         const held = view.free(h.instrument);
@@ -396,7 +397,11 @@ export function settleEstates(ctx: MechanismContext): void {
       if (cash > 0) {
         const perMember = ctx.registry.payable(
           ccy,
-          div(mul(cash, share, 'this cell share'), heir.weight, 'each of them gets'),
+          over(
+            scale(heldAsMoney(cash, 'what the estate holds'), share, 'this cell share'),
+            asRatio(heir.weight, 'the members it has'),
+            'each of them gets',
+          ),
         );
         if (perMember > 0) {
           legs.push({

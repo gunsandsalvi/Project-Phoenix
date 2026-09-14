@@ -17,10 +17,13 @@
  * is DERIVED: nothing here computes one, and nothing here needs one.
  */
 import {
+  asCash,
   asPerPiece,
   asRatio,
+  type Cash,
   minus,
   negated,
+  type PerPiece,
   type Ratio,
   scale,
   valueAt,
@@ -82,11 +85,11 @@ export function creditState(
 }
 
 /** A1.b, D2: par less what a unit of the reference's own defaulted debt is worth. */
-function payoff(c: Contract, t: CdsTerms, at: Period, reads: ContractReads): number {
+function payoff(c: Contract, t: CdsTerms, at: Period, reads: ContractReads): Cash {
   const recovery = reads.mark(t.obligation, at);
   // Law 19: nobody assumes a recovery. Until the defaulted line is worth something somebody can
   // read, what protection pays is not knowable and the mark says so rather than inventing a rate.
-  if (!recovery.some) return 0;
+  if (!recovery.some) return asCash(0, 'nothing has marked the defaulted line');
   return valueAt(
     minus(asPerPiece(1, 'par'), recovery.value, 'par less recovery'),
     c.notional,
@@ -101,16 +104,16 @@ function yearsLeft(t: CdsTerms, at: Period, calendar: Calendar): number {
 }
 
 /** A3, C2: what it is worth to `a`, from two prints and nothing else. */
-function markOf(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isCds(c.terms)) return 0;
+function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isCds(c.terms)) return asCash(0, 'not a credit default swap');
   const t = c.terms;
   const state = creditState(t.reference, reads);
   if (state.defaulted) {
     const owed = payoff(c, t, at, reads);
-    return t.buysProtection ? owed : -owed;
+    return t.buysProtection ? owed : negated(owed, 'and the other side of it');
   }
   const now = reads.print(t.book, at);
-  if (!now.some) return 0;
+  if (!now.some) return asCash(0, 'this protection book has not printed');
   const richer = minus(now.value.price, c.struckAt, 'the spread now against the spread struck');
   const worth = scale(
     valueAt(richer, c.notional, 'over the notional'),
@@ -177,7 +180,7 @@ export const cdsKind: DerivativeKindProfile = {
     ];
   },
   // D7.b: struck at par. The cleared spread IS what makes it worth nothing, so nothing is paid now.
-  premiumPerUnit: () => 0,
+  premiumPerUnit: (): PerPiece => asPerPiece(0, 'struck at the spread, so nothing changes hands'),
   /**
    * Derivative Layer D1, G2: the spread's OWN measured move over the life the contract has left.
    *
@@ -185,8 +188,8 @@ export const cdsKind: DerivativeKindProfile = {
    * every year it has left, so that is what the margin is. None when the book has not printed
    * enough to have a record: G2 takes a refusal over a number nobody can stand behind.
    */
-  initialMargin: (c, at, reads): Option<number> => {
-    if (!isCds(c.terms)) return none();
+  initialMargin: (c, at, reads): Option<Cash> => {
+    if (!isCds(c.terms)) return none<Cash>();
     /**
      * Derivative Layer D1, G2: THE MOVE OF THIS CREDIT, measured wherever this world has a record
      * of it. A protection book that has not printed yet has no record of its own — but the credit
@@ -197,7 +200,7 @@ export const cdsKind: DerivativeKindProfile = {
      */
     const own = reads.measuredMove(c.terms.book, c.terms.window);
     const move = own.some ? own : reads.measuredMove(c.terms.obligation, c.terms.window);
-    if (!move.some) return none();
+    if (!move.some) return none<Cash>();
     const life = yearsLeft(c.terms, at, reads.calendar);
     return some(
       scale(

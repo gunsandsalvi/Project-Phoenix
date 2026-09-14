@@ -534,9 +534,9 @@ describe('a market with reasons on both sides', () => {
         // Sized to the cash the buyer holds: what this tests is delivery against payment, not a
         // buyer that cannot pay — that is the next test.
         if (party === 'firm.1')
-          return [{ party: partyId(party), side: 'buy', price: 0.99, qty: phx(60_000) }];
+          return [{ party: partyId(party), side: 'buy', price: 0.99, qty: asQty(phx(60_000)) }];
         if (party === 'bank.b')
-          return [{ party: partyId(party), side: 'sell', price: 0.97, qty: phx(60_000) }];
+          return [{ party: partyId(party), side: 'sell', price: 0.97, qty: asQty(phx(60_000)) }];
         return [];
       }),
     );
@@ -572,8 +572,8 @@ describe('a market with reasons on both sides', () => {
       traders((instrument, party) => {
         if (instrument !== GOV_LINE || party !== 'bank.a') return [];
         return [
-          { party: BANK_A, side: 'buy', price: 1.2, qty: phx(10_000) },
-          { party: BANK_A, side: 'sell', price: 0.8, qty: phx(10_000) },
+          { party: BANK_A, side: 'buy', price: 1.2, qty: asQty(phx(10_000)) },
+          { party: BANK_A, side: 'sell', price: 0.8, qty: asQty(phx(10_000)) },
         ];
       }),
     );
@@ -738,7 +738,7 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
  * cents. Half a cent is not one, and the wire refuses it, which is the rule doing its job on the
  * person writing the test as much as on the engine.
  */
-const PAYMENT = phx(1);
+const PAYMENT = asQty(phx(1));
 
 describe('settlement contracts', () => {
   it('refuses a cell side without a per-member amount (XI-15)', () => {

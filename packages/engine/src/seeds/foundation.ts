@@ -79,10 +79,13 @@ import { forbid } from '../core/assert.js';
 import { keyOf, weightOf } from '../parties/party.js';
 import type { Qty } from '../core/tick.js';
 import {
+  asCash,
   asNamed,
   asPerNamedUnit,
   asRatio,
   asStated,
+  type Cash,
+  heldAsMoney,
   minus,
   type Named,
   over,
@@ -156,14 +159,14 @@ import { derivativeLayer, houseIdFor, TRADES_CONTRACTS } from '../mechanisms/der
 import { cds } from '../mechanisms/cds/index.js';
 import { irs } from '../mechanisms/irs/index.js';
 import { fxDerivatives } from '../mechanisms/fx-derivatives/index.js';
-import { indexFutures } from '../mechanisms/index-futures/index.js';
 import { options } from '../mechanisms/options/index.js';
 import { bondFutures } from '../mechanisms/bond-futures/index.js';
+import { research } from '../mechanisms/research/index.js';
+import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
+import { indexFutures } from '../mechanisms/index-futures/index.js';
 import { EQUITY_INDEX, GLOBAL_INDEX, SIZE_INDEX, indices } from '../mechanisms/indices/index.js';
 import { ASSESSOR_COUNT, drawAssessors, ratings } from '../mechanisms/ratings/index.js';
 import { reporting } from '../mechanisms/reporting/index.js';
-import { research } from '../mechanisms/research/index.js';
-import { sovereignCurve } from '../mechanisms/sovereign-curve/index.js';
 import { treasury } from '../mechanisms/treasury/index.js';
 import type { CellParty, NamedParty } from '../parties/party.js';
 import { downTick, splitOnTick } from '../core/tick.js';
@@ -1908,7 +1911,10 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
           { bank, assets, already, funding },
         );
         // XI-15: per member, and the cell carries it with its weight.
-        const perMember = div(fromHouseholds, members, 'the deposit one member opens with');
+        const perMember = asCash(
+          div(fromHouseholds, members, 'the deposit one member opens with'),
+          'the deposit one member opens with',
+        );
         for (const cell of cells) ctx.endowMoney(cell.id, ccy, perMember);
       }
     },
@@ -1926,10 +1932,14 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
  * holding; a seed with four banking systems in it has to say whose cents it means (Money A2.b),
  * and every money has its own smallest piece (Currency A3).
  */
-function cash(ctx: SeedContext, ccy: CurrencyCode, phx: Stated): Qty {
+function cash(ctx: SeedContext, ccy: CurrencyCode, phx: Stated): Cash {
   // Item 16: money in its named unit IS an amount of that currency's named unit, and this is where
-  // it becomes the pieces the state holds — the one door between the two scales (Law 8).
-  return ctx.registry.pieces(currencyUnit(ccy), asNamed(phx, 'what is stated'));
+  // it becomes the pieces the state holds — the one door between the two scales (Law 8). What comes
+  // out is a VALUE in those pieces, which is what money's own price being one means (Money D2).
+  return heldAsMoney(
+    ctx.registry.pieces(currencyUnit(ccy), asNamed(phx, 'what is stated')),
+    'what is stated, in the pieces the state holds',
+  );
 }
 
 /** Units of an instrument, in whatever its own unit is named in. */

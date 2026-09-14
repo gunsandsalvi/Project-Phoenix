@@ -4,6 +4,7 @@
  *
  * @spec Labour A1 Labour A2 Labour A3 Labour A4 Labour A4.a Labour A4.b Labour A4.c Labour B1 Labour B1.a Labour B3 Labour B4 Labour B5 Labour C2 Labour C3 Labour C5 Labour D1 Labour D1.a Labour D1.c Labour D2 Labour D2.b Labour D3 Labour E1 Labour F1 Labour F2 XI-10 XI-15
  */
+import { heldAsMoney } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 import {
   type PartyId,
@@ -144,8 +145,9 @@ function deepPockets(...firms: readonly PartyId[]): SystemModule {
             'far deeper pockets than a firm',
           ),
         );
-        ctx.endowMoney(firm, USD, deep);
-        ctx.endowMoney(bank, USD, deep);
+        const purse = heldAsMoney(deep, 'deep pockets');
+        ctx.endowMoney(firm, USD, purse);
+        ctx.endowMoney(bank, USD, purse);
       }
     },
   };

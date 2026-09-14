@@ -251,7 +251,7 @@ export class Register {
   }
 
   /** B2: the sum of holdings, weight x member for cells, as a Sum with its dust. */
-  heldTotal(instrument: InstrumentId): Sum {
+  heldTotal(instrument: InstrumentId): Sum<Qty> {
     return sum(this.holdersOf(instrument).map((h) => this.totalQuantity(h, instrument)));
   }
 

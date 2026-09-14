@@ -33,6 +33,7 @@ import {
   type VenueId,
 } from '../../core/ids.js';
 import { add, atMost, div, mul, sub, sum } from '../../core/num.js';
+import { amountOf, type Cash, minus, type Ratio, valueAt } from '../../core/measure.js';
 import { downTick, upTick, type Qty } from '../../core/tick.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
@@ -137,7 +138,7 @@ export function windowOffer(
   book: BookDecl,
   corridor: Corridor,
   on: Civil,
-  policyHaircut: number,
+  policyHaircut: Ratio,
 ): readonly Order[] {
   // C4: only against paper. The window has no unsecured seat at all, which is C5 in the one place
   // it would otherwise be quietly broken.
@@ -184,7 +185,7 @@ export function strike(
 }
 
 /** The collateral a borrower puts up for one row, at the lender's own valuation (B3.b). */
-export function coverFor(available: readonly Advance[], amount: number): readonly Pledged[] {
+export function coverFor(available: readonly Advance[], amount: Cash): readonly Pledged[] {
   const out: Pledged[] = [];
   let left = amount;
   for (const a of available) {
@@ -192,12 +193,12 @@ export function coverFor(available: readonly Advance[], amount: number): readonl
     // — collateral a piece short is collateral that does not cover — unless the parcel runs out
     // first, in which case it binds every whole piece of it there is.
     if (left <= 0) break;
-    const want = div(left, a.valuePerUnit, 'units to cover');
+    const want = amountOf(left, a.valuePerUnit, 'units to cover');
     const enough = upTick(want);
     const units = atMost(enough, downTick(a.free), 'it binds no more of a parcel than there is of it');
     if (units <= 0) continue;
     out.push({ instrument: a.instrument, qty: units, valuedAt: a.valuePerUnit });
-    left = sub(left, mul(units, a.valuePerUnit, 'covered'), 'left to cover');
+    left = minus(left, valueAt(a.valuePerUnit, units, 'covered'), 'left to cover');
   }
   return out;
 }

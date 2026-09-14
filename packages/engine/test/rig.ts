@@ -18,6 +18,7 @@
  * which line is an outcome of the draw, so `firm.1` means nothing until a draw has happened and
  * means something different in the next world. A test that wants a mill asks for one.
  */
+import { heldAsMoney } from '../src/core/measure.js';
 import {
   BANK,
   CENTRAL_BANK,
@@ -476,8 +477,9 @@ export function deepBuyer(
         status: { alive: true, standing: 'good' },
       });
       const deep = upTick(mul(firmMoney(ctx, draw), DEEP, 'far deeper pockets than a firm'));
-      ctx.endowMoney(DEEP_BUYER, USD, deep);
-      ctx.endowMoney(bank, USD, deep);
+      const purse = heldAsMoney(deep, 'far deeper pockets than a firm');
+      ctx.endowMoney(DEEP_BUYER, USD, purse);
+      ctx.endowMoney(bank, USD, purse);
     },
     participants: [
       {

@@ -28,6 +28,7 @@
  * 13k IS NOT PERIODICITY. `Periodicity` is a proper discriminated union in `core/rate.ts` and the
  * fiscal calendar was fully built and unused. What was missing was this.
  */
+import type { PerPiece } from '../core/measure.js';
 import type { Period } from '../calendar/calendar.js';
 import { forbid } from '../core/assert.js';
 import { finite } from '../core/num.js';
@@ -61,7 +62,7 @@ export interface CorporateActionDecl {
    * Cash per unit for a dividend; the ratio for a split. Law 8: the unit is part of the number and
    * the kind says which — a dispatch, not a branch (Law 15).
    */
-  readonly perUnit: number;
+  readonly perUnit: PerPiece;
   readonly ccy: CurrencyCode;
   readonly why: string;
 }

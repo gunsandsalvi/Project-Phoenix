@@ -34,7 +34,15 @@ import {
   type PartyId,
   type UnitId,
 } from '../core/ids.js';
-import { asCash, asPerPiece, asTotal, eachMember, heldAsMoney } from '../core/measure.js';
+import {
+  asCash,
+  asPerPiece,
+  asTotal,
+  eachMember,
+  heldAsMoney,
+  negated,
+  type PerMember,
+} from '../core/measure.js';
 import { addTo, atMost, finite, mul, sum, zeroIfNone } from '../core/num.js';
 import { none } from '../core/option.js';
 import { negQty, onTick, scaleQty, type Qty } from '../core/tick.js';
@@ -1030,7 +1038,7 @@ export class Settlement {
      */
     const sold = new Map<string, number>();
     const realised: Realised[] = [];
-    const equity = new Map<PartyId, number>();
+    const equity = new Map<PartyId, PerMember<'money:piece'>>();
     /** Derivative D1: the rows this instruction wrote, so its drafter can name what it opened. */
     const written: ContractId[] = [];
     const drawnByOp = new Map<number, DrawnLot[]>();
@@ -1314,7 +1322,7 @@ export class Settlement {
           );
           written.push(row.id);
           bumpIn(leg.a, leg.value, leg.ccy);
-          bumpIn(leg.b, -leg.value, leg.ccy);
+          bumpIn(leg.b, negated(leg.value, 'and the other side of it'), leg.ccy);
           break;
         }
         case 'voyage': {

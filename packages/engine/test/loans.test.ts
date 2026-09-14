@@ -4,6 +4,7 @@
  *
  * @spec Banks Lending A1 Banks Lending A1.a Banks Lending A2 Banks Lending A4 Banks Lending B1 Banks Lending B1.a Banks Lending B1.b Banks Lending B1.c Banks Lending B2 Banks Lending B2.a Banks Lending B2.c Banks Lending B2.d Banks Lending C1 Banks Lending C1.a Banks Lending C1.b Banks Lending C1.c Banks Lending C1.d Banks Lending C2 Banks Lending C2.a Banks Lending C3 Banks Lending C3.a Banks Lending C4 Banks Lending D1 Banks Lending D3 Banks Lending E1 Banks Lending F1 Banks Lending F1.a Banks Lending F3 Money B3.a Money B3.c Bond N13.a Corporate Credit G8 XI-4
  */
+import { asCash, heldAsMoney, plus } from '../src/core/measure.js';
 import { describe, expect, it } from 'vitest';
 
 import {
@@ -111,7 +112,14 @@ function overspendsItsLimit(at = 2): SystemModule {
             // per-name limit is only one of the three. What this module is for is an overdraft the
             // bank ALLOWS, so it asks for one small enough that the other two are not the binding
             // constraint.
-            amount: ctx.registry.payable(USD, held + limit / 100),
+            amount: ctx.registry.payable(
+              USD,
+              plus(
+                heldAsMoney(held, 'what it holds'),
+                asCash(limit / 100, 'a little over it'),
+                'a touch more than it holds',
+              ),
+            ),
             fromCell: none(),
             toCell: none(),
           };

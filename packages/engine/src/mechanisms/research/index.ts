@@ -20,6 +20,7 @@
 import { forbid } from '../../core/assert.js';
 import { partyId, type PartyId } from '../../core/ids.js';
 import { div, mul, sub, sum } from '../../core/num.js';
+import { asPerPiece, asRatio, over, type PerPiece, valueAt, asAmount,} from '../../core/measure.js';
 import { none, some, type Option } from '../../core/option.js';
 import { BANK, HOUSEHOLD } from '../../registry/profiles.js';
 import { weightOf } from '../../parties/party.js';
@@ -112,7 +113,7 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
     names,
     'the hours this desk takes',
   );
-  const owed = mul(hours, wage.value, 'what the desk costs it');
+  const owed = valueAt(wage.value, asAmount<'piece'>(hours, 'the hours this desk takes'), 'what the desk costs it');
   if (owed <= 0) return;
   // D2: THE ANALYSTS ARE PEOPLE AND THIS IS WHAT THEY ARE PAID. They are the members of the cells
   // that bank here, which is who is at hand to do the work, and the payment is split across them
@@ -123,7 +124,10 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
   if (members <= 0) return;
   const ccy = ctx.registry.currencyOf(ctx.parties.get(bank).region);
   for (const cell of cells) {
-    const share = ctx.registry.payable(ccy, div(owed, members, "one analyst's share"));
+    const share = ctx.registry.payable(
+      ccy,
+      over(owed, asRatio(members, 'the analysts there are'), "one analyst's share"),
+    );
     if (share <= 0) continue;
     const side = cellSide(cell, share);
     if (side === undefined) continue;
@@ -146,15 +150,17 @@ function pay(ctx: MechanismContext, bank: PartyId, names: number): void {
 }
 
 /** Law 19: what an hour of somebody's time last went for, read off the wage this world printed. */
-function wagePrinted(ctx: MechanismContext, bank: PartyId): Option<number> {
+function wagePrinted(ctx: MechanismContext, bank: PartyId): Option<PerPiece> {
   const region = ctx.parties.get(bank).region;
-  let best: number | undefined;
+  let best: PerPiece | undefined;
   for (const e of ctx.journal.ofKind('labour.print')) {
     if (e.data['region'] !== String(region)) continue;
     const wage = e.data['wagePerHour'];
-    if (typeof wage === 'number' && wage > 0) best = wage;
+    // Item 16: a wage re-enters from what the labour venue published — a level per hour, in the
+    // same money an hour is paid in.
+    if (typeof wage === 'number' && wage > 0) best = asPerPiece(wage, 'what an hour cleared at');
   }
-  return best === undefined ? none<number>() : some(best);
+  return best === undefined ? none<PerPiece>() : some(best);
 }
 
 /** C1–C4: form, publish and revise. Every estimate is this bank's own and none of them is a price. */

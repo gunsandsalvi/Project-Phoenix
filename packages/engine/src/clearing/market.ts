@@ -21,6 +21,8 @@ import { assertNever, forbid } from '../core/assert.js';
 import { type CurrencyCode, type InstrumentId, type MarketId, type PartyId, type UnitId } from '../core/ids.js';
 import {
   asPerPiece,
+  type Cash,
+  heldAsMoney,
   minus,
   type PerPiece,
   plus,
@@ -681,15 +683,11 @@ function contractTrade(
   // Law 8: a premium is MONEY, so it is a whole number of the money's own smallest piece.
   const premium = deps.registry.cashFor(
     m.ccy,
-    valueAt(
-      asPerPiece(profile.premiumPerUnit(price, decl.terms), 'the premium per contract'),
-      size,
-      'the premium at inception',
-    ),
+    valueAt(profile.premiumPerUnit(price, decl.terms), size, 'the premium at inception'),
   );
   const house = decl.house;
   const legs: Leg[] = [];
-  const open = (a: PartyId, b: PartyId, value: number): Leg => ({
+  const open = (a: PartyId, b: PartyId, value: Cash): Leg => ({
     kind: 'contract',
     act: 'open',
     a,
@@ -705,11 +703,14 @@ function contractTrade(
     value,
     house,
   });
+  // Register D4: what the two equity accounts recognise is the premium AS A VALUE, which is the
+  // same cents the grid just landed it on (`heldAsMoney`, Money D2).
+  const basis = heldAsMoney(premium, 'what the position cost at inception');
   if (house === null) {
-    legs.push(open(t.buyer, t.seller, premium));
+    legs.push(open(t.buyer, t.seller, basis));
   } else {
     // C2: the house is buyer to the seller and seller to the buyer, and no member pays another.
-    legs.push(open(t.buyer, house, premium), open(house, t.seller, premium));
+    legs.push(open(t.buyer, house, basis), open(house, t.seller, basis));
   }
   if (premium > 0) {
     const pay = (from: PartyId, to: PartyId): Leg => ({

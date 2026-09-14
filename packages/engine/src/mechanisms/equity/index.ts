@@ -25,7 +25,7 @@
  * there is one. What this module does is stop pricing the line: a claim on a liquidation is not the
  * claim anybody formed an opinion of, so nobody posts and the print goes visibly stale.
  */
-import { asNamed } from '../../core/measure.js';
+import { asCash, asNamed, negated, asAmount,} from '../../core/measure.js';
 import { forbid } from '../../core/assert.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
@@ -151,7 +151,7 @@ function decide(ctx: MechanismContext, seed: string, row: ListedDecl): void {
     line.id,
     equityMarketOf(row.firm),
     line.issued,
-    sub(0, short, 'what it has spare'),
+    negated(asCash(short, 'what it is short of'), 'what it has spare'),
     ctx.params.periods(equityParam(row.firm, 'payoutPatience')),
   );
   if (!decided.some) return;
@@ -497,7 +497,7 @@ function publishReads(ctx: MechanismContext, rows: readonly ListedDecl[]): void 
         line: line.id,
         shares: line.issued,
         // C1.b: what is genuinely tradeable — the count less what is bound and cannot move.
-        freeFloat: freeFloat(line.issued, strategic),
+        freeFloat: freeFloat(line.issued, asAmount<'piece'>(strategic, 'what is bound and cannot move')),
         strategic,
         // B4, B4.a: a read. Nothing compares it against its own two inputs and calls that a check.
         marketCapitalisation: print.some

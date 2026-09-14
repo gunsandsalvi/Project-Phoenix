@@ -18,14 +18,15 @@
  * repo demand it creates is the largest single source of real demand in a secured market, and here
  * it is a read of that market's own rows rather than a number anybody set.
  */
+import { absolute, asCash, asPerPiece, asRatio, minus, negated, plus, pricedAt, scale, type Cash, type PerPiece, valueAt, asAmount,} from '../../core/measure.js';
 import { nextCycle, type Period } from '../../calendar/calendar.js';
 import { compareCivil } from '../../calendar/civil.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, PartyId, UnitId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import { div, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty, negQty } from '../../core/tick.js';
+import { addQty, asQty, negQty, NO_QTY, scaleQty } from '../../core/tick.js';
 import { FACE_TICK } from '../../registry/grid.js';
 import { issuedBy } from '../../register/instruments.js';
 import type {
@@ -79,13 +80,13 @@ export const isBondFuture = (t: ContractTerms): t is BondFutureTerms =>
   'deliverable' in t && 'contractSize' in t && 'long' in t;
 
 /** D8: what it is worth to `a` — the future's own print against the level it was struck at. */
-function markOf(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isBondFuture(c.terms)) return 0;
+function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isBondFuture(c.terms)) return asCash(0, 'not a bond future');
   const p = reads.print(c.terms.book, at);
-  if (!p.some) return 0;
-  const move = sub(p.value.price, c.struckAt, 'the future now against the level struck');
-  const worth = mul(mul(move, c.notional, 'per contract'), c.terms.contractSize, 'of face each');
-  return c.terms.long ? worth : -worth;
+  if (!p.some) return asCash(0, 'this book has not printed');
+  const move = minus(p.value.price, c.struckAt, 'the future now against the level struck');
+  const worth = valueAt(move, scale(c.notional, asRatio(c.terms.contractSize, 'the face in a contract'), 'per contract'), 'of face each');
+  return c.terms.long ? worth : negated(worth, 'and the other side of it');
 }
 
 export const bondFutureKind: DerivativeKindProfile = {
@@ -112,19 +113,19 @@ export const bondFutureKind: DerivativeKindProfile = {
   // leg in one instruction — not a payment. This module's own delivery phase writes it, because a
   // periodic payment cannot carry a thing being handed over.
   legs: (): readonly ContractPayment[] => [],
-  premiumPerUnit: () => 0,
-  initialMargin: (c, at, reads): Option<number> => {
-    if (!isBondFuture(c.terms)) return none();
+  premiumPerUnit: (): PerPiece => asPerPiece(0, 'a future costs nothing to enter'),
+  initialMargin: (c, at, reads): Option<Cash> => {
+    if (!isBondFuture(c.terms)) return none<Cash>();
     const move = reads.measuredMove(c.terms.deliverable, c.terms.window);
-    if (!move.some) return none();
+    if (!move.some) return none<Cash>();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
     const horizon = reads.params.periods(
       'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
-      mul(
-        mul(mul(move.value, c.notional, 'per contract'), c.terms.contractSize, 'of face each'),
-        Math.sqrt(left > 0 ? left / horizon : 1),
+      scale(
+        valueAt(move.value, scale(c.notional, asRatio(c.terms.contractSize, 'the face in a contract'), 'per contract'), 'of face each'),
+        asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
     );
@@ -137,14 +138,18 @@ export const bondFutureKind: DerivativeKindProfile = {
    * carry a thing being handed over — so the kind says it here, and a bank that must take a
    * hundred thousand of face next week knows this week.
    */
-  cashDue: (c, at, reads, party): number => {
+  cashDue: (c, at, reads, party): Cash => {
     const t = c.terms;
-    if (!isBondFuture(t) || at < t.expiry) return 0;
+    if (!isBondFuture(t) || at < t.expiry) return asCash(0, 'nothing is delivered yet');
     const long = t.long ? c.a : c.b;
-    if (long !== party) return 0;
+    if (long !== party) return asCash(0, 'the short delivers the bond, not the cash');
     const price = reads.print(t.deliverable, at);
-    if (!price.some) return 0;
-    return mul(mul(c.notional, t.contractSize, 'the face it takes'), price.value.price, 'at its price');
+    if (!price.some) return asCash(0, 'the deliverable has not printed');
+    return valueAt(
+      price.value.price,
+      scale(c.notional, asRatio(t.contractSize, 'the face in a contract'), 'the face it takes'),
+      'at its price',
+    );
   },
   closeOut: markOf,
   // D11: the term runs out when the module has DELIVERED it. Until then it is open, and the layer's
@@ -230,7 +235,7 @@ export function bondCarryOf(
   ctx: WorldReads,
   deliverable: InstrumentId,
   to: Period,
-): Option<number> {
+): Option<PerPiece> {
   const i = ctx.instruments.get(deliverable);
   const on = ctx.calendar.startOf(ctx.period);
   const flows = ctx.registry.instrumentKind(i.kind).cashFlows(i, on, ctx.calendar);
@@ -244,14 +249,18 @@ export function bondCarryOf(
     .ofKind('index.benchmark')
     .filter((e) => e.subjects.includes(`${String(i.ccy)}:secured`))
     .at(-1);
-  if (fixing === undefined) return none<number>();
+  if (fixing === undefined) return none<PerPiece>();
   const rate = fixing.data['rate'];
-  if (typeof rate !== 'number') return none<number>();
+  if (typeof rate !== 'number') return none<PerPiece>();
   const price = ctx.prices.latest(deliverable, ctx.period);
-  if (!price.some) return none<number>();
+  if (!price.some) return none<PerPiece>();
   const years = yearFraction(FUTURE_DAY_COUNT, on, until);
-  const financing = mul(mul(price.value.price, rate, 'what financing it costs a year'), years, 'to delivery');
-  return some(sub(coupon, financing, 'what the coupon earns over what the money costs'));
+  const financing = scale(
+    scale(price.value.price, asRatio(rate, 'what financing it costs a year'), 'the cost of the money'),
+    asRatio(years, 'the year this wait is a fraction of'),
+    'to delivery',
+  );
+  return some(minus(coupon, financing, 'what the coupon earns over what the money costs'));
 }
 
 /**
@@ -262,13 +271,17 @@ export function netBasis(
   ctx: WorldReads,
   deliverable: InstrumentId,
   expiry: Period,
-): Option<number> {
+): Option<PerPiece> {
   const future = ctx.prices.latest(bondFutureLineOf(deliverable, expiry), ctx.period);
   const cash = ctx.prices.latest(deliverable, ctx.period);
   const carry = bondCarryOf(ctx, deliverable, expiry);
-  if (!future.some || !cash.some || !carry.some) return none<number>();
+  if (!future.some || !cash.some || !carry.some) return none<PerPiece>();
   return some(
-    sub(future.value.price, sub(cash.value.price, carry.value, 'the cash price less the carry'), 'the net basis'),
+    minus(
+      future.value.price,
+      minus(cash.value.price, carry.value, 'the cash price less the carry'),
+      'the net basis',
+    ),
   );
 }
 
@@ -302,13 +315,17 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const mine = outlook.some ? outlook.value.expected : cash.value.price;
   /** Where the market is: the comparator that decides the side and the size, never the level. */
   const at = view.print(t.book);
-  let position = 0;
-  let worth = 0;
+  let position = NO_QTY;
+  let worth = asCash(0, 'what its book is worth before it is walked');
   for (const c of view.contracts.mine()) {
     if (!isBondFuture(c.terms) || c.terms.deliverable !== t.deliverable) continue;
     const iAmA = c.a === view.self.id;
-    position = add(position, iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'), 'its position');
-    worth = add(worth, view.contracts.valueOf(c), 'what its book is worth');
+    position = addQty(
+      position,
+      iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'),
+      'its position',
+    );
+    worth = plus(worth, view.contracts.valueOf(c), 'what its book is worth');
   }
   const own = view.equity();
   /**
@@ -317,8 +334,13 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * anywhere makes it whole.
    */
   const tolerance = view.params.ratio(BOND_FUTURE_PARAMS.tolerance);
-  if (position !== 0 && own > 0 && worth < 0 && -worth > mul(own, tolerance, 'what it will stand')) {
-    const qty = view.registry.deliverable(unit, position > 0 ? position : -position);
+  if (
+    position !== 0 &&
+    own > 0 &&
+    worth < 0 &&
+    absolute(worth, 'what it is down') > scale(own, tolerance, 'what it will stand')
+  ) {
+    const qty = view.registry.deliverable(unit, absolute(position, 'the position it would close'));
     if (qty <= 0) return [];
     return [{ party: view.self.id, side: position > 0 ? 'sell' : 'buy', price: mine, qty: asQty(qty) }];
   }
@@ -329,23 +351,30 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
    * two terms in one target, and what it posts is the distance from where it is (Clearing A2).
    */
   const held = view.free(t.deliverable);
-  let want = -div(held, t.contractSize, 'what its holding comes to in contracts');
+  let want = negated(
+    asAmount<'piece'>(div(held, t.contractSize, 'what its holding comes to in contracts'), 'contracts it is long'),
+    'so contracts it wants to be short',
+  );
   const price = mine;
   if (at.some && own > 0) {
     const book = at.value.price;
     const conviction = view.registry.deliverable(
       unit,
-      div(own, mul(cash.value.price, t.contractSize, 'what one contract commits'), 'what it can carry'),
+      pricedAt(
+        own,
+        scale(asAmount<'piece'>(t.contractSize, 'the face in a contract'), asRatio(cash.value.price, 'at its price'), 'what one contract commits'),
+        'what it can carry',
+      ),
     );
     if (mine > book) {
-      want = add(want, conviction, 'and the duration its own view wants');
+      want = plus(want, conviction, 'and the duration its own view wants');
     } else if (mine < book) {
-      want = sub(want, conviction, 'and the duration its own view would shed');
+      want = minus(want, conviction, 'and the duration its own view would shed');
     }
   }
-  const move = sub(want, position, 'from the position it has to the one it wants');
+  const move = minus(want, position, 'from the position it has to the one it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, move > 0 ? move : -move);
+  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price, qty: asQty(qty) }];
 }
@@ -440,7 +469,7 @@ function deliver(ctx: MechanismContext): void {
         deliverable = false;
         break;
       }
-      const face = mul(row.notional, row.terms.contractSize, 'the face this contract delivers');
+      const face = scaleQty(row.notional, row.terms.contractSize, 'the face this contract delivers');
       legs.push({ kind: 'contract', act: 'close', contract: row.id, why: 'delivered' });
       if (face <= 0) continue;
       legs.push({
@@ -459,7 +488,7 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(row.ccy, mul(face, price.value.price, 'what the face costs')),
+        amount: ctx.registry.cashFor(row.ccy, valueAt(price.value.price, face, 'what the face costs')),
         fromCell: none(),
         toCell: none(),
       });
@@ -474,7 +503,7 @@ function deliver(ctx: MechanismContext): void {
         contract: String(c.id),
         deliverable: String(t.deliverable),
         rows: rows.length,
-        face: mul(c.notional, t.contractSize, 'the face this contract delivers'),
+        face: scaleQty(c.notional, t.contractSize, 'the face this contract delivers'),
         at: price.value.price,
         settled: r.outcome === 'settled',
       },

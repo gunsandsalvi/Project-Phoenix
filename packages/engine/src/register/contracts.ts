@@ -24,6 +24,7 @@ import { Missing } from '../core/errors.js';
 import { contractId, type ContractId, type DerivativeKindId, type PartyId } from '../core/ids.js';
 import { finite } from '../core/num.js';
 import type { Qty } from '../core/tick.js';
+import type { Cash } from '../core/measure.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Period } from '../calendar/calendar.js';
 import type { Contract, DerivativeKindProfile } from '../registry/derivatives.js';
@@ -37,7 +38,7 @@ export interface ContractDecl {
   readonly notional: Qty;
   readonly struckAt: PerPiece;
   /** Register D4: what it is worth to `a` at inception — the basis the equity account recognised. */
-  readonly basis: number;
+  readonly basis: Cash;
   readonly house: PartyId | null;
 }
 

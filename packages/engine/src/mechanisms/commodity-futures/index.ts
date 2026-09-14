@@ -28,13 +28,14 @@
  * settles into the spot print itself — and if it did not converge that would be a defect in this
  * module rather than a number to correct.
  */
+import { absolute, asCash, asPerPiece, asRatio, minus, negated, plus, pricedAt, type Ratio, scale, type Cash, type PerPiece, valueAt, asAmount,} from '../../core/measure.js';
 import { nextCycle, type Calendar, type Period } from '../../calendar/calendar.js';
 import { yearFraction } from '../../calendar/daycount.js';
 import type { CurrencyCode, InstrumentId, MarketId, ParamId, PartyId, UnitId } from '../../core/ids.js';
 import { derivativeKindId, instrumentId, marketId, paramId, unitId } from '../../core/ids.js';
-import { add, div, mul, sub, sum } from '../../core/num.js';
+import { div, mul } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
-import { asQty, negQty } from '../../core/tick.js';
+import { addQty, asQty, negQty, NO_QTY, scaleQty } from '../../core/tick.js';
 import { CENT_TICK } from '../../registry/grid.js';
 import {
   isGoodTerms,
@@ -98,13 +99,13 @@ export const isCommodityFuture = (t: ContractTerms): t is CommodityFutureTerms =
   'deliverable' in t && 'lotUnits' in t && 'long' in t;
 
 /** D8: what it is worth to `a` — this book's own print against the level the row was struck at. */
-function markOf(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isCommodityFuture(c.terms)) return 0;
+function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isCommodityFuture(c.terms)) return asCash(0, 'not a commodity future');
   const p = reads.print(c.terms.book, at);
-  if (!p.some) return 0;
-  const move = sub(p.value.price, c.struckAt, 'the future now against the level struck');
-  const worth = mul(mul(move, c.notional, 'per lot'), c.terms.lotUnits, 'of the grade each');
-  return c.terms.long ? worth : -worth;
+  if (!p.some) return asCash(0, 'this book has not printed');
+  const move = minus(p.value.price, c.struckAt, 'the future now against the level struck');
+  const worth = valueAt(move, scale(c.notional, asRatio(c.terms.lotUnits, 'the units in a lot'), 'per lot'), 'of the grade each');
+  return c.terms.long ? worth : negated(worth, 'and the other side of it');
 }
 
 export const commodityFutureKind: DerivativeKindProfile = {
@@ -129,19 +130,19 @@ export const commodityFutureKind: DerivativeKindProfile = {
   // A1, XI-5: what settles at delivery is the GRADE against cash — an asset leg and a money leg in
   // one instruction, which a periodic payment cannot carry. This module's own phase writes it.
   legs: (): readonly ContractPayment[] => [],
-  premiumPerUnit: () => 0,
-  initialMargin: (c, at, reads): Option<number> => {
-    if (!isCommodityFuture(c.terms)) return none();
+  premiumPerUnit: (): PerPiece => asPerPiece(0, 'a future costs nothing to enter'),
+  initialMargin: (c, at, reads): Option<Cash> => {
+    if (!isCommodityFuture(c.terms)) return none<Cash>();
     const move = reads.measuredMove(c.terms.deliverable, c.terms.window);
-    if (!move.some) return none();
+    if (!move.some) return none<Cash>();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
     const horizon = reads.params.periods(
       'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
-      mul(
-        mul(mul(move.value, c.notional, 'per lot'), c.terms.lotUnits, 'of the grade each'),
-        Math.sqrt(left > 0 ? left / horizon : 1),
+      scale(
+        valueAt(move.value, scale(c.notional, asRatio(c.terms.lotUnits, 'the units in a lot'), 'per lot'), 'of the grade each'),
+        asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
     );
@@ -150,14 +151,18 @@ export const commodityFutureKind: DerivativeKindProfile = {
    * A1, Money Market A2: WHAT TAKING DELIVERY COSTS, said in advance so a treasury can fund it. The
    * long pays for the whole lot at the grade's own spot price on the delivery date.
    */
-  cashDue: (c, at, reads, party): number => {
+  cashDue: (c, at, reads, party): Cash => {
     const t = c.terms;
-    if (!isCommodityFuture(t) || at < t.expiry) return 0;
+    if (!isCommodityFuture(t) || at < t.expiry) return asCash(0, 'nothing is delivered yet');
     const long = t.long ? c.a : c.b;
-    if (long !== party) return 0;
+    if (long !== party) return asCash(0, 'the short delivers the grade, not the cash');
     const price = reads.print(t.deliverable, at);
-    if (!price.some) return 0;
-    return mul(mul(c.notional, t.lotUnits, 'the units it takes'), price.value.price, 'at their price');
+    if (!price.some) return asCash(0, 'the grade has not printed');
+    return valueAt(
+      price.value.price,
+      scale(c.notional, asRatio(t.lotUnits, 'the units in a lot'), 'the units it takes'),
+      'at their price',
+    );
   },
   closeOut: markOf,
   // D11: the term runs out when this module has DELIVERED it. Until then it is open, and the
@@ -179,7 +184,7 @@ export interface CarryReads {
   readonly period: Period;
   readonly calendar: Calendar;
   readonly instruments: { has(id: InstrumentId): boolean; get(id: InstrumentId): Instrument };
-  readonly params: { ratio(id: ParamId): number };
+  readonly params: { ratio(id: ParamId): Ratio };
   price(id: InstrumentId): Option<Print>;
   lastPublic(kind: EventKind): Option<Event>;
 }
@@ -210,33 +215,37 @@ export const carryFromView = (view: ParticipantView): CarryReads => ({
   lastPublic: (kind) => view.lastPublic(kind),
 });
 
-export function commodityCarryOf(ctx: CarryReads, deliverable: InstrumentId, to: Period): Option<number> {
-  if (!ctx.instruments.has(deliverable)) return none<number>();
+export function commodityCarryOf(
+  ctx: CarryReads,
+  deliverable: InstrumentId,
+  to: Period,
+): Option<PerPiece> {
+  if (!ctx.instruments.has(deliverable)) return none<PerPiece>();
   const i = ctx.instruments.get(deliverable);
-  if (!isGoodTerms(i.terms)) return none<number>();
+  if (!isGoodTerms(i.terms)) return none<PerPiece>();
   const terms: GoodTerms = i.terms;
   const spot = ctx.price(deliverable);
-  if (!spot.some) return none<number>();
+  if (!spot.some) return none<PerPiece>();
   const periods = to > ctx.period ? to - ctx.period : 0;
-  if (terms.storagePerUnit === null) return none<number>();
+  if (terms.storagePerUnit === null) return none<PerPiece>();
   const rate = storageRateIn(ctx, terms.region);
-  if (rate === undefined) return none<number>();
-  const room = mul(
-    mul(ctx.params.ratio(terms.storagePerUnit), rate, 'what the room for one unit costs a period'),
-    periods,
+  if (rate === undefined) return none<PerPiece>();
+  const room = scale(
+    scale(rate, ctx.params.ratio(terms.storagePerUnit), 'what the room for one unit costs a period'),
+    asRatio(periods, 'the periods of waiting'),
     'over the wait',
   );
-  const lost = mul(
-    mul(ctx.params.ratio(terms.spoilage), spot.value.price, 'what a period in store spoils'),
-    periods,
+  const lost = scale(
+    scale(spot.value.price, ctx.params.ratio(terms.spoilage), 'what a period in store spoils'),
+    asRatio(periods, 'the periods of waiting'),
     'over the wait',
   );
   const fixing = ctx.lastPublic('index.benchmark');
   if (!fixing.some || !fixing.value.subjects.includes(`${String(i.ccy)}:secured`)) {
-    return none<number>();
+    return none<PerPiece>();
   }
   const secured = fixing.value.data['rate'];
-  if (typeof secured !== 'number') return none<number>();
+  if (typeof secured !== 'number') return none<PerPiece>();
   // Law 8: the benchmark is a rate A YEAR and the wait is in periods, so the two are put in the
   // same unit by the calendar's own day count and never by a number of weeks anybody typed.
   const years = yearFraction(
@@ -244,12 +253,12 @@ export function commodityCarryOf(ctx: CarryReads, deliverable: InstrumentId, to:
     ctx.calendar.startOf(ctx.period),
     ctx.calendar.startOf(to),
   );
-  const money = mul(
-    mul(spot.value.price, secured, 'what the money costs a year'),
-    years,
+  const money = scale(
+    scale(spot.value.price, asRatio(secured, 'what the money costs a year'), 'the cost of the money'),
+    asRatio(years, 'the year this wait is a fraction of'),
     'over the wait',
   );
-  return some(sum([room, lost, money]).value);
+  return some(plus(plus(room, lost, 'room and spoilage'), money, 'and what the money costs'));
 }
 
 /**
@@ -261,13 +270,17 @@ export function commodityBasis(
   ctx: WorldReads,
   deliverable: InstrumentId,
   expiry: Period,
-): Option<number> {
+): Option<PerPiece> {
   const future = ctx.prices.latest(commodityFutureLineOf(deliverable, expiry), ctx.period);
   const spot = ctx.prices.latest(deliverable, ctx.period);
   const carry = commodityCarryOf(carryFromWorld(ctx), deliverable, expiry);
-  if (!future.some || !spot.some || !carry.some) return none<number>();
+  if (!future.some || !spot.some || !carry.some) return none<PerPiece>();
   return some(
-    sub(future.value.price, add(spot.value.price, carry.value, 'the spot and the carry'), 'the basis'),
+    minus(
+      future.value.price,
+      plus(spot.value.price, carry.value, 'the spot and the carry'),
+      'the basis',
+    ),
   );
 }
 
@@ -293,39 +306,50 @@ function futureOrders(view: ParticipantView, m: MarketDecl): readonly Order[] {
   const outlook = view.outlook(about({ on: 'price', instrument: t.deliverable }));
   const mine = outlook.some ? outlook.value.expected : spot.value.price;
   const at = view.print(t.book);
-  let position = 0;
+  let position = NO_QTY;
   for (const c of view.contracts.mine()) {
     if (!isCommodityFuture(c.terms) || c.terms.deliverable !== t.deliverable) continue;
     if (c.terms.expiry !== t.expiry) continue;
     const iAmA = c.a === view.self.id;
-    position = add(position, iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'), 'its position');
+    position = addQty(
+      position,
+      iAmA === c.terms.long ? c.notional : negQty(c.notional, 'the other side of it'),
+      'its position',
+    );
   }
   // B1: short by what it is holding. It made the thing, or it bought it; either way it is exposed.
   const held = view.free(t.deliverable);
-  let want = -div(held, t.lotUnits, 'what its holding comes to in lots');
+  let want = negated(
+    asAmount<'piece'>(div(held, t.lotUnits, 'what its holding comes to in lots'), 'lots it is long of the thing'),
+    'so lots it wants to be short',
+  );
   // Its own balance sheet is walked only where the comparison it feeds happens: a book with no
   // print has nothing for this party's number to stand against (Law 18).
-  const own = at.some ? view.equity() : 0;
+  const own = at.some ? view.equity() : asCash(0, 'no book to stand its capital against');
   if (at.some && own > 0) {
     const book = at.value.price;
     const conviction = view.registry.deliverable(
       unit,
-      div(own, mul(spot.value.price, t.lotUnits, 'what one lot commits'), 'what it can carry'),
+      pricedAt(
+        own,
+        scale(asAmount<'piece'>(t.lotUnits, 'the units in a lot'), asRatio(spot.value.price, 'at their price'), 'what one lot commits'),
+        'what it can carry',
+      ),
     );
     // B2, B3: its own view against where the book stands, and nothing else decides the side.
-    if (mine > book) want = add(want, conviction, 'and the length its own view wants');
-    if (mine < book) want = sub(want, conviction, 'and the length its own view would shed');
+    if (mine > book) want = plus(want, conviction, 'and the length its own view wants');
+    if (mine < book) want = minus(want, conviction, 'and the length its own view would shed');
     // C3: and the carry trade, for a party that has somewhere to put the thing. It is the same
     // conviction pointed at a different fact: the book above spot plus carry is money on the table
     // for whoever can hold the grade, and nothing bounds contango except somebody taking it.
     const carry = commodityCarryOf(carryFromView(view), t.deliverable, t.expiry);
-    if (carry.some && book > add(spot.value.price, carry.value, 'spot and the carry')) {
-      want = sub(want, conviction, 'and the lots it would sell against room it has');
+    if (carry.some && book > plus(spot.value.price, carry.value, 'spot and the carry')) {
+      want = minus(want, conviction, 'and the lots it would sell against room it has');
     }
   }
-  const move = sub(want, position, 'from the position it has to the one it wants');
+  const move = minus(want, position, 'from the position it has to the one it wants');
   if (move === 0) return [];
-  const qty = view.registry.deliverable(unit, move > 0 ? move : -move);
+  const qty = view.registry.deliverable(unit, absolute(move, 'the size of the move'));
   if (qty <= 0) return [];
   return [{ party: view.self.id, side: move > 0 ? 'buy' : 'sell', price: mine, qty: asQty(qty) }];
 }
@@ -384,13 +408,17 @@ const commodityFutureClass: DerivativeClassDecl = {
      * has sold three times the crop cannot all deliver, and what happens then is a fail (E1) rather
      * than a price anybody corrects.
      */
-    let promised = 0;
+    let promised = NO_QTY;
     for (const c of reads.contracts.open_()) {
       const terms = c.terms;
       if (!isCommodityFuture(terms)) continue;
       if (terms.deliverable !== t.deliverable || terms.expiry !== t.expiry) continue;
       if (!terms.long) continue;
-      promised = add(promised, mul(c.notional, terms.lotUnits, 'the units it promises'), 'open interest');
+      promised = addQty(
+        promised,
+        scaleQty(c.notional, terms.lotUnits, 'the units it promises'),
+        'open interest',
+      );
     }
     // Law 19: what exists is what the instrument says is issued, read from the one place that
     // writes it. The two are published side by side rather than as a ratio, because a ratio is a
@@ -539,7 +567,7 @@ function deliver(ctx: MechanismContext): void {
         deliverable = false;
         break;
       }
-      const units = mul(row.notional, row.terms.lotUnits, 'the units this lot delivers');
+      const units = scaleQty(row.notional, row.terms.lotUnits, 'the units this lot delivers');
       legs.push({ kind: 'contract', act: 'close', contract: row.id, why: 'delivered' });
       if (units <= 0) continue;
       legs.push({
@@ -558,7 +586,7 @@ function deliver(ctx: MechanismContext): void {
         from: ctx.accountOf(long, row.ccy),
         to: ctx.accountOf(short, row.ccy),
         ccy: row.ccy,
-        amount: ctx.registry.cashFor(row.ccy, mul(units, price.value.price, 'what the lot costs')),
+        amount: ctx.registry.cashFor(row.ccy, valueAt(price.value.price, units, 'what the lot costs')),
         fromCell: none(),
         toCell: none(),
       });
@@ -573,7 +601,7 @@ function deliver(ctx: MechanismContext): void {
         contract: String(c.id),
         deliverable: String(t.deliverable),
         rows: rows.length,
-        units: mul(c.notional, t.lotUnits, 'the units this lot delivers'),
+        units: scaleQty(c.notional, t.lotUnits, 'the units this lot delivers'),
         at: price.value.price,
         // E1: a delivery that did not settle is a FAIL, and it says so. Nothing pays a difference
         // instead, and the row stays open for the layer to resolve at its stated value.

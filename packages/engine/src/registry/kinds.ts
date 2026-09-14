@@ -25,7 +25,7 @@ import type { Instrument, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { Option } from '../core/option.js';
-import type { Cash, PerPiece } from '../core/measure.js';
+import type { Cash, PerPiece, Ratio } from '../core/measure.js';
 import type { Qty } from '../core/tick.js';
 import type { Namer } from './naming.js';
 
@@ -75,9 +75,9 @@ export interface WorthReads {
    * Reporting A1, A2: the issuer's last published accounts — what it said it earned and over how
    * many periods. There is no second set of accounts and no forecast (Reporting A2.a).
    */
-  lastReport(issuer: PartyId): Option<{ readonly earned: number; readonly periods: number }>;
+  lastReport(issuer: PartyId): Option<{ readonly earned: Cash; readonly periods: number }>;
   /** How many units of this line exist, so a per-unit figure is per unit. */
-  issued(instrument: InstrumentId): number;
+  issued(instrument: InstrumentId): Qty;
 }
 
 export interface CashFlow {
@@ -213,7 +213,7 @@ export interface InstrumentKindProfile {
    * brings the required return out of its own circumstances, and what comes out is one participant's
    * bid meeting another's in a book.
    */
-  readonly worthTo?: (i: Instrument, required: number, reads: WorthReads) => Option<number>;
+  readonly worthTo?: (i: Instrument, required: Ratio, reads: WorthReads) => Option<PerPiece>;
   /**
    * Goods E2, Capital Programme A3: what a LOT of this kind is carried at now, per unit.
    *

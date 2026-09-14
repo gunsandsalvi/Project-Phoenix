@@ -10,15 +10,16 @@
  * has printed — and G3 is the rule about all of it: a derived statistic is computed FROM the
  * cleared price and is never used to set it.
  */
-import { mul, sub } from '../../core/num.js';
+import { subQty, type Qty } from '../../core/tick.js';
+import { type Cash, type PerPiece, valueAt } from '../../core/measure.js';
 
 /**
  * B4: market capitalisation is a READ — shares times price. Nothing compares it against shares
  * times price and calls that a check (B4.a): that is a tautology and cannot fail. It is here so
  * that whoever reports it reports the one derivation, and so that its two inputs are named.
  */
-export function marketCapitalisation(shares: number, price: number): number {
-  return mul(shares, price, 'market capitalisation');
+export function marketCapitalisation(shares: Qty, price: PerPiece): Cash {
+  return valueAt(price, shares, 'market capitalisation');
 }
 
 /**
@@ -26,6 +27,6 @@ export function marketCapitalisation(shares: number, price: number): number {
  * sell are holding. It is a read of the register and of who those holders are, never a stored
  * number and never a fraction anybody stated.
  */
-export function freeFloat(issued: number, strategic: number): number {
-  return sub(issued, strategic, 'the free float');
+export function freeFloat(issued: Qty, strategic: Qty): Qty {
+  return subQty(issued, strategic, 'the free float');
 }

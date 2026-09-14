@@ -21,17 +21,7 @@ import {
   type PartyId,
   type RegionId,
 } from '../../core/ids.js';
-import {
-  add,
-  atMost,
-  div,
-  dustOf,
-  material,
-  mul,
-  sub,
-  sum,
-  withinDust,
-} from '../../core/num.js';
+import { add, atMost, div, dustOf, material, sub, sum, withinDust } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { downTick } from '../../core/tick.js';
 import type { OverdraftContext, OverdraftDecision } from '../../registry/kinds.js';
@@ -77,7 +67,8 @@ import {
   writeRow,
   type Corridor,
 } from './session.js';
-import { asQty, type Qty } from '../../core/tick.js';
+import { asQty, subQty, type Qty } from '../../core/tick.js';
+import { heldAsMoney, valueAt, asAmount,} from '../../core/measure.js';
 import { negQty } from '../../core/tick.js';
 
 export * from './data.js';
@@ -399,18 +390,21 @@ function clearBook(
     // what it has already placed in this session comes off what it can still place in the next one.
     const room = capacityOf(ctx, s.lender, ccy);
     if (room <= 0) continue;
-    if (s.amount > room) s = { ...s, amount: ctx.registry.payable(ccy, room) };
+    if (s.amount > room) s = { ...s, amount: ctx.registry.payable(ccy, heldAsMoney(room, 'what it has left to place')) };
     let cover: readonly Pledged[] = [];
     let amount = s.amount;
     if (book.secured) {
-      cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), s.amount);
+      cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), heldAsMoney(s.amount, 'what it asked for'));
       // B3.c: what its remaining paper covers is what it gets, at THIS lender's valuation of it.
       // Less than it asked for is the constraint biting, not a failure of the session — and what
       // it gets is a whole number of pieces of money (Law 8), because that is what is lent.
-      const covered = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
-      amount = ctx.registry.payable(ccy, atMost(covered, s.amount, 'a guarantee pays no more than was owed'));
+      const covered = sum(cover.map((x) => valueAt(x.valuedAt, x.qty, 'covered'))).value;
+      amount = ctx.registry.payable(
+        ccy,
+        atMost(covered, heldAsMoney(s.amount, 'what it asked for'), 'a guarantee pays no more than was owed'),
+      );
       if (amount <= 0) continue;
-      cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), amount);
+      cover = coverFor(advancesFrom(ctx, s.lender, borrower, on), heldAsMoney(amount, 'what it is lent'));
     }
     const n = m.next;
     // The count moves whether or not the row settles: a row that failed still took its name, and
@@ -513,16 +507,18 @@ function parkTheRest(ctx: MechanismContext, pos: ReadonlyMap<PartyId, Standing>)
  * only thing it could hand over. The central bank is the one party this does not bind: it issues
  * the money it lends, and what stops it is the borrower's collateral (C4.b) and nothing else.
  */
-function capacityOf(ctx: MechanismContext, lender: PartyId, ccy: CurrencyCode): number {
+function capacityOf(ctx: MechanismContext, lender: PartyId, ccy: CurrencyCode): Qty {
   const cb = ctx.registry.centralBankOf(ccy);
-  if (lender === cb) return Number.MAX_SAFE_INTEGER;
+  if (lender === cb) {
+    return asAmount<'piece'>(Number.MAX_SAFE_INTEGER, 'a central bank places its own money');
+  }
   const held = ctx.register.quantity(lender, moneyInstrumentId(ctx.parties.get(lender).bank, ccy));
-  return sub(held, lentThisPeriod(ctx, lender), 'what it has left to place');
+  return subQty(held, lentThisPeriod(ctx, lender), 'what it has left to place');
 }
 
 /** What this bank has already placed in this period's session, so it does not place it twice. */
-function lentThisPeriod(ctx: MechanismContext, lender: PartyId): number {
-  const terms: number[] = [];
+function lentThisPeriod(ctx: MechanismContext, lender: PartyId): Qty {
+  const terms: Qty[] = [];
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !isRow(i.terms) || i.terms.lender !== lender) continue;
     if (ctx.calendar.periodOf(i.terms.drawn) !== ctx.period) continue;
@@ -1011,14 +1007,17 @@ function bookOverdrafts(ctx: MechanismContext): void {
     const c = corridor(ctx, ccy);
     const cb = ctx.registry.centralBankOf(ccy);
     const short = negQty(ctx.register.quantity(d.bank, moneyInstrumentId(cb, ccy)), 'its overdraft');
-    const need = ctx.registry.payable(ccy, short);
+    const need = ctx.registry.payable(ccy, heldAsMoney(short, 'its overdraft'));
     if (need <= 0) continue;
     const book = BOOKS.find((b) => b.tenor === 'overnight' && b.secured);
     if (book === undefined) continue;
     const rate = add(c.ceiling, ctx.params.perAnnum(MM_PARAMS.overdraftPenalty), 'the penalty rate');
-    const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), need);
-    const covered = sum(cover.map((x) => mul(x.qty, x.valuedAt, 'covered'))).value;
-    const amount = ctx.registry.payable(ccy, atMost(covered, need, 'a guarantee pays no more than was owed'));
+    const cover = coverFor(advancesFrom(ctx, cb, d.bank, on), heldAsMoney(need, 'what it is short of'));
+    const covered = sum(cover.map((x) => valueAt(x.valuedAt, x.qty, 'covered'))).value;
+    const amount = ctx.registry.payable(
+      ccy,
+      atMost(covered, heldAsMoney(need, 'what it is short of'), 'a guarantee pays no more than was owed'),
+    );
     if (amount <= 0) continue;
     const n = m.next;
     m.next += 1;
@@ -1027,7 +1026,7 @@ function bookOverdrafts(ctx: MechanismContext): void {
       { lender: cb, borrower: d.bank, amount, rate, book },
       n,
       ccy,
-      coverFor(advancesFrom(ctx, cb, d.bank, on), amount),
+      coverFor(advancesFrom(ctx, cb, d.bank, on), heldAsMoney(amount, 'what it is lent')),
     );
     if (!id.some) continue;
     // C4.a: DRAWING THE FACILITY IS INFORMATION, and this is the dearest way of drawing it. It is

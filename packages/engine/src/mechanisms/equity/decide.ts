@@ -19,13 +19,13 @@
  * The book value is not a price and never becomes one (B3): it is the firm's own reservation, which
  * is what a participant brings to a market (Clearing B2). The market can refuse it (D1.c).
  */
+import { amountOf, asPerPiece, asRatio, negated, over, pricedAt, type Cash, type PerPiece, valueAt } from '../../core/measure.js';
 import type { InstrumentId, MarketId, PartyId } from '../../core/ids.js';
-import { div, material, mul, sub } from '../../core/num.js';
+import { material } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import type { Order } from '../../clearing/solver.js';
 import type { ParticipantView } from '../../world/context.js';
-import { downTick, upTick } from '../../core/tick.js';
-import { NO_QTY, type Qty } from '../../core/tick.js';
+import { downTick, NO_QTY, type Qty, upTick } from '../../core/tick.js';
 
 /** What the firm decided about its own line this period, in the terms the orders are posted in. */
 export interface EquityPlan {
@@ -34,7 +34,7 @@ export interface EquityPlan {
   /** What its own books say one share is a claim on: its equity account over the count (Firm C3). */
   readonly bookPerShare: number;
   /** D3: cash per share it is paying out to whoever holds it, this period. */
-  readonly dividendPerShare: number;
+  readonly dividendPerShare: PerPiece;
   /** D2: shares it is bidding for, at `bookPerShare`, to cancel. */
   /** Law 8: whole shares. A share is indivisible, as a register of members holds it. */
   readonly buyback: Qty;
@@ -53,12 +53,12 @@ export function decideEquity(
   view: ParticipantView,
   line: InstrumentId,
   market: MarketId,
-  issued: number,
-  spare: number,
+  issued: Qty,
+  spare: Cash,
   patience: number,
 ): Option<EquityPlan> {
   if (issued <= 0 || patience < 1) return none();
-  const book = div(view.equity(), issued, 'what its books say a share is a claim on');
+  const book = pricedAt(view.equity(), issued, 'what its books say a share is a claim on');
   // A firm whose liabilities are past its assets has nothing to distribute and nothing to price a
   // share of itself at. What happens to it is the estate's business (XI-3), not this decision's.
   if (book <= 0) return none();
@@ -68,7 +68,7 @@ export function decideEquity(
     line,
     market,
     bookPerShare: book,
-    dividendPerShare: 0,
+    dividendPerShare: asPerPiece(0, 'nothing declared'),
     buyback: NO_QTY,
     issue: NO_QTY,
     reservation: book,
@@ -79,27 +79,27 @@ export function decideEquity(
     // then is worth less than what it takes in. Short and cheap, it does not sell: it would be
     // handing away more of itself than the money is worth, and it borrows instead (worklist 6).
     if (!print.some || print.value.price <= book) return none();
-    const wanted = sub(0, spare, 'what it is short of');
+    const wanted = negated(spare, 'what it is short of');
     // Law 8: a share is INDIVISIBLE, so what it brings to the session is a whole number of them.
     // Up, because the ask is the MONEY: an issue a fraction of a share short of what it needs is
     // short of it, and the fraction is not a share anybody could buy.
-    const size = upTick(div(wanted, print.value.price, 'shares it must sell to raise it'));
+    const size = upTick(amountOf(wanted, print.value.price, 'shares it must sell to raise it'));
     if (size <= 0 || !material(size, 2, size)) return none();
     return some({ ...plan, issue: size });
   }
-  const payout = div(spare, patience, 'what it distributes this period');
+  const payout = over(spare, asRatio(patience, 'how patient it is'), 'what it distributes this period');
   if (!material(payout, 2, spare)) return none();
   if (!dear) {
     // D2, D2.a: cheap to itself, so it buys its own back. It bids at its own reservation, and what
     // it gets is what the session gives it — which may be nothing (B6, Clearing C4.a).
     // Law 8: whole shares again, and down — what its payout REACHES, never a share past it.
-    const shares = downTick(div(payout, book, 'shares its payout would buy'));
+    const shares = downTick(amountOf(payout, book, 'shares its payout would buy'));
     if (shares <= 0 || !material(shares, 2, shares)) return none();
     return some({ ...plan, buyback: shares });
   }
   // D3, D3.a: cash per share to whoever holds it. D3.b: the number is the decision, and a firm with
   // less to spare this period declares less — which is the cut others react to.
-  return some({ ...plan, dividendPerShare: div(payout, issued, 'the dividend per share') });
+  return some({ ...plan, dividendPerShare: pricedAt(payout, issued, 'the dividend per share') });
 }
 
 /**
@@ -118,6 +118,6 @@ export function buybackOrder(
 }
 
 /** D3.a: what one holder is owed of a declared dividend, per member of it (XI-15). */
-export function dividendFor(perShare: number, perMemberUnits: number): number {
-  return mul(perMemberUnits, perShare, 'the dividend on what it holds');
+export function dividendFor(perShare: PerPiece, perMemberUnits: Qty): Cash {
+  return valueAt(perShare, perMemberUnits, 'the dividend on what it holds');
 }

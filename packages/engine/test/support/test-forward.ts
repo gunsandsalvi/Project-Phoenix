@@ -11,27 +11,8 @@
  * It lives under `test/` and is deleted when 13b's first class replaces it in the year-long run.
  * Nothing in `src/` may import it, which is the point of where it is.
  */
-import {
-  none,
-  some,
-  mul,
-  sub,
-  unitId,
-  type Contract,
-  type ContractPayment,
-  type ContractReads,
-  type ContractTerms,
-  type DerivativeClassDecl,
-  type DerivativeKindProfile,
-  type Option,
-  type InstrumentId,
-  type MarketId,
-  type Period,
-  derivativeKindId,
-  partyKindId,
-  asQty,
-  CENT_TICK,
-} from '../../src/index.js';
+import { asCash, asPerPiece, asRatio, type Cash, minus, negated, type PerPiece, scale, valueAt } from '../../src/core/measure.js';
+import { none, some, unitId, type Contract, type ContractPayment, type ContractReads, type ContractTerms, type DerivativeClassDecl, type DerivativeKindProfile, type Option, type InstrumentId, type MarketId, type Period, derivativeKindId, partyKindId, asQty, CENT_TICK } from '../../src/index.js';
 
 export const TEST_FORWARD = derivativeKindId('test.forward');
 /** D2: the notional is a count of contracts, each for one unit of the underlying. */
@@ -44,7 +25,7 @@ export interface ForwardTerms extends ContractTerms {
   /** D6: the period it settles in. */
   readonly expiry: Period;
   /** D12: part of the identity. Two forwards at two strikes are two contracts. */
-  readonly strike: number;
+  readonly strike: PerPiece;
   /** Which way `a` is: long the underlying, or short it. The book writes `true`; `flip` writes false. */
   readonly long: boolean;
   /** D1 (layer): how many periods of the underlying's own prints the margin is measured over. */
@@ -58,12 +39,13 @@ export const isForward = (t: ContractTerms): t is ForwardTerms =>
   'strike' in t && 'long' in t && 'underlying' in t;
 
 /** D8: what it is worth to `a` — the print against the strike, one way or the other. */
-function markOf(c: Contract, at: Period, reads: ContractReads): number {
-  if (!isForward(c.terms)) return 0;
+function markOf(c: Contract, at: Period, reads: ContractReads): Cash {
+  if (!isForward(c.terms)) return asCash(0, 'not a forward');
   const p = reads.print(c.terms.underlying, at);
-  if (!p.some) return 0;
-  const move = sub(p.value.price, c.terms.strike, 'the print against the strike');
-  return mul(mul(move, c.notional, 'per contract'), c.terms.long ? 1 : -1, 'to this side');
+  if (!p.some) return asCash(0, 'the underlying has not printed');
+  const move = minus(p.value.price, c.terms.strike, 'the print against the strike');
+  const worth = valueAt(move, c.notional, 'per contract');
+  return c.terms.long ? worth : negated(worth, 'to this side');
 }
 
 export const testForwardKind: DerivativeKindProfile = {
@@ -88,19 +70,19 @@ export const testForwardKind: DerivativeKindProfile = {
   // D4: nothing falls due before expiry; what moves in between is the margin (D9).
   legs: (): readonly ContractPayment[] => [],
   // D7.b: struck at par. The cleared price IS the strike, so nothing changes hands at inception.
-  premiumPerUnit: () => 0,
-  initialMargin: (c, at, reads): Option<number> => {
-    if (!isForward(c.terms)) return none();
+  premiumPerUnit: (): PerPiece => asPerPiece(0, 'struck at par, so nothing changes hands'),
+  initialMargin: (c, at, reads): Option<Cash> => {
+    if (!isForward(c.terms)) return none<Cash>();
     const move = reads.measuredMove(c.terms.underlying, c.terms.window);
-    if (!move.some) return none();
+    if (!move.some) return none<Cash>();
     const left = c.terms.expiry > at ? c.terms.expiry - at : 0;
     const horizon = reads.params.periods(
       'clearingHouse.closeOutHorizon' as Parameters<ContractReads['params']['periods']>[0],
     );
     return some(
-      mul(
-        mul(move.value, c.notional, 'over the notional'),
-        Math.sqrt(left > 0 ? left / horizon : 1),
+      scale(
+        valueAt(move.value, c.notional, 'over the notional'),
+        asRatio(Math.sqrt(left > 0 ? left / horizon : 1), 'over the life it has left'),
         'over the life it has left',
       ),
     );

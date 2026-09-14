@@ -15,7 +15,9 @@
  */
 import type { Period } from '../../calendar/calendar.js';
 import { moduleKey, type ModuleKey, type PartyId, type RegionId } from '../../core/ids.js';
-import { div, mul, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
+import { asRatio, type Cash, over, type PerPiece, scale, valueAt } from '../../core/measure.js';
+import { NO_QTY, type Qty, scaleQty } from '../../core/tick.js';
 
 /**
  * Labour A4, XI-10: the identity of one employment RELATIONSHIP. It is the labour module's own —
@@ -34,8 +36,8 @@ export interface EmploymentRow {
   readonly occupation: string;
   readonly region: RegionId;
   /** D2: the wage is the contract's, struck at the match; it moves only by renegotiation. */
-  readonly wagePerHour: number;
-  readonly hoursPerMember: number;
+  readonly wagePerHour: PerPiece;
+  readonly hoursPerMember: Qty;
   readonly start: Period;
   /** C2: the period from which the person is productive — finding a job is not starting it. */
   readonly productiveFrom: Period;
@@ -148,10 +150,10 @@ export function hoursAt(
   employer: PartyId,
   occupation: string,
   region: RegionId,
-): number {
+): Qty {
   const rows = indexOf(book).byEmployer.get(employerKey(employer, occupation, region));
-  if (rows === undefined) return 0;
-  return sum(rows.map((r) => mul(r.headcount, r.hoursPerMember, 'hours under contract'))).value;
+  if (rows === undefined) return NO_QTY;
+  return sum(rows.map((r) => scaleQty(r.hoursPerMember, r.headcount, 'hours under contract'))).value;
 }
 
 /** The rows in one trade in one place: what a going rate averages and what a cut sheds. */
@@ -181,12 +183,14 @@ export function goingRate(
   book: EmploymentBook,
   occupation: string,
   region: RegionId,
-): number | undefined {
+): PerPiece | undefined {
   const rows = rowsInTrade(book, occupation, region);
   const heads = sum(rows.map((r) => r.headcount));
   if (heads.value === 0) return undefined;
-  const paid = sum(rows.map((r) => mul(r.wagePerHour, r.headcount, 'wage weight')));
-  return div(paid.value, heads.value, 'going rate');
+  const paid = sum(
+    rows.map((r) => scale(r.wagePerHour, asRatio(r.headcount, 'the people on it'), 'wage weight')),
+  );
+  return over(paid.value, asRatio(heads.value, 'the people employed'), 'going rate');
 }
 
 /** F2: the headcount employed, which is a count of people and can never exceed the workforce. */
@@ -197,6 +201,6 @@ export function employed(book: EmploymentBook): number {
 }
 
 /** What the employer owes this period on one row: the wage, per member of the worker cell. */
-export function wagePerMember(row: EmploymentRow): number {
-  return mul(row.wagePerHour, row.hoursPerMember, 'wage per member');
+export function wagePerMember(row: EmploymentRow): Cash {
+  return valueAt(row.wagePerHour, row.hoursPerMember, 'wage per member');
 }

@@ -12,11 +12,11 @@
  * somebody fits: it is the set of levels these books cleared, and a tenor nobody traded has no
  * point on it (Law 3, Law 19).
  */
-import { absolute } from '../../core/measure.js';
+import { absolute, asPerPiece, asRatio, minus, scale, valueAt } from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { addYears } from '../../calendar/civil.js';
 import type { CurrencyCode, PartyId } from '../../core/ids.js';
-import { mul, sub, sum } from '../../core/num.js';
+import { sum } from '../../core/num.js';
 import { none } from '../../core/option.js';
 import type { Leg } from '../../ledger/instruction.js';
 import type { ParamDecl } from '../../registry/params.js';
@@ -257,8 +257,16 @@ function settleSeriesNames(ctx: MechanismContext): void {
       if (paid.has(`${String(c.id)}|${String(n.reference)}`)) continue;
       if (!recoveryIsKnown(ctx, n.reference)) continue;
       const recovery = ctx.valuation.markPerUnit(n.obligation, ctx.period);
-      const share = mul(c.notional, n.weight / whole, 'this name’s share of the line');
-      const owed = mul(sub(1, recovery, 'par less recovery'), share, 'what this name owes');
+      const share = scale(
+        c.notional,
+        asRatio(n.weight / whole, 'this name’s share of the line'),
+        'this name’s share of the line',
+      );
+      const owed = valueAt(
+        minus(asPerPiece(1, 'par'), recovery, 'par less recovery'),
+        share,
+        'what this name owes',
+      );
       const buyer = c.terms.buysProtection ? c.a : c.b;
       const seller = c.terms.buysProtection ? c.b : c.a;
       const amount = ctx.registry.cashFor(c.ccy, owed);
