@@ -57,6 +57,22 @@ export const TRADE_CREDIT_PARAMS = {
 export const invoiceId = (seller: PartyId, buyer: PartyId, n: number): InstrumentId =>
   instrumentId(`invoice:${seller}:${buyer}:${n}`);
 
+/**
+ * A1, Law 4, Law 19: THE NEXT FREE ROW BETWEEN THIS PAIR, asked of the register rather than of a
+ * counter this module keeps.
+ *
+ * One pair can trade twice in a period — two goods, two books — so the period alone does not name a
+ * row, and a second sale would collide with the first at `ctx.issue`. The register is the one
+ * writer of what exists, so it is the one that can say which name is free: no second copy of the
+ * sequence, and nothing to keep true.
+ */
+function freeRow(ctx: MechanismContext, seller: PartyId, buyer: PartyId): InstrumentId {
+  for (let n = 1; ; n += 1) {
+    const id = invoiceId(seller, buyer, n);
+    if (!ctx.instruments.has(id)) return id;
+  }
+}
+
 export interface InvoiceTerms extends Terms {
   readonly kind: typeof INVOICE;
   readonly seller: PartyId;
@@ -149,9 +165,7 @@ function shipsOnTerms(ctx: MechanismContext, sale: TermsSale): Option<Instrument
   if (letDown(ctx, seller, buyer)) return none<InstrumentId>();
   const days = ctx.params.days(TRADE_CREDIT_PARAMS.days);
   const on = ctx.calendar.startOf(ctx.period);
-  const book = state(ctx);
-  const id = invoiceId(seller, buyer, book.next);
-  book.next += 1;
+  const id = freeRow(ctx, seller, buyer);
   const invoice: InvoiceTerms = {
     kind: INVOICE,
     seller,
@@ -166,7 +180,6 @@ function shipsOnTerms(ctx: MechanismContext, sale: TermsSale): Option<Instrument
     terms: invoice,
     market: none(),
   });
-  book.written.push({ id, seller, buyer, due: invoice.due });
   return some(id);
 }
 
@@ -186,26 +199,38 @@ function letDown(ctx: MechanismContext, seller: PartyId, buyer: PartyId): boolea
 }
 
 /**
- * D1: THE RECEIVABLES AGEING, which is one read and not a stored number. What this seller shipped,
- * has not been paid for, and should have been paid for by now.
+ * D1, Law 19: THE RECEIVABLES AGEING, which is one read and not a stored number. What this seller
+ * shipped, has not been paid for, and should have been paid for by now.
  *
- * The rows come from this module's own book — every one of them is an invoice because this module
- * wrote it — so nothing asks an instrument what kind it is (Law 15), and whether it is still owed
- * comes from the register, which is the one writer of who holds what (Law 4, Law 19).
+ * IT IS A READ OF THE REGISTER, and item 9.1 is why. An invoice is an INSTRUMENT — it has an
+ * issuer, a holder, an issued amount and terms, and the register is its kernel home — so the
+ * `invoices` book beside it was a second copy of facts the world already held: the id, the seller,
+ * the buyer and the due date were every one of them on the instrument. A mirror is the defect Law
+ * 19 names, and the docstring's reason for keeping it (*"so nothing asks an instrument what kind it
+ * is"*) was a misreading of Law 15: filtering a list by kind is not branching a MECHANISM on one,
+ * and `isInvoice` is this module's own predicate, declared for exactly this.
+ *
+ * What the seller holds is the register's answer; what each row promises is the instrument's; and
+ * it is overdue when the day on its own terms has gone by.
  */
 export function overdue(ctx: MechanismContext, seller: PartyId): readonly Written[] {
   const today = ctx.calendar.endOf(ctx.period);
-  return state(ctx).written.filter(
-    (row) =>
-      row.seller === seller &&
-      // A2: one sum on one day. A day past its day, with the row still on the seller's book, is a
-      // buyer that has not paid.
-      compareCivil(row.due, today) <= 0 &&
-      ctx.register.quantity(seller, row.id) > 0,
-  );
+  const out: Written[] = [];
+  for (const h of ctx.register.holdingsOf(seller)) {
+    if (ctx.register.quantity(seller, h.instrument) <= 0) continue;
+    const i = ctx.instruments.get(h.instrument);
+    // Law 15: the structural predicate, not a comparison of kind ids — what makes these terms an
+    // invoice is that they name a seller, a buyer and the day the whole of it falls due.
+    if (!isInvoice(i.terms)) continue;
+    // A2: one sum on one day. A day past its day, with the row still on the seller's book, is a
+    // buyer that has not paid.
+    if (compareCivil(i.terms.due, today) > 0) continue;
+    out.push({ id: i.id, seller: i.terms.seller, buyer: i.terms.buyer, due: i.terms.due });
+  }
+  return out;
 }
 
-/** One invoice this module wrote: who shipped, who owes, which row and when it falls due. */
+/** One invoice, as this module reads it: who shipped, who owes, which row and when it falls due. */
 export interface Written {
   readonly id: InstrumentId;
   readonly seller: PartyId;
@@ -213,29 +238,14 @@ export interface Written {
   readonly due: Civil;
 }
 
-interface Book {
-  next: number;
-  /** A1: every row this module wrote, so its own reads never have to ask what kind a thing is. */
-  readonly written: Written[];
-}
-
-const state = (ctx: MechanismContext): Book =>
-  ctx.state<Book>('invoices', () => ({ next: 1, written: [] }));
-
 export function tradeCredit(): SystemModule {
   return {
     id: 'trade-credit',
-    nouns: [
-      {
-        name: 'invoices',
-        kind: 'noun',
-        holds:
-          'every invoice written: the supplier, the customer, the amount and when it falls due',
-        why:
-          'an employment is a bilateral commitment — two named parties, dated terms, a state — and so is a lease, an invoice, a repo and a policy. Seven modules each invented their own book of them. Kept here it ranks nowhere in an estate, which is why an unpaid severance leaves no obligation anywhere.',
-        standsInFor: { noun: 'Agreement', planItem: 'docs/IMPLEMENTATION.md item 9' },
-      },
-    ],
+    // XI-8, item 9.1: NO NOUNS. The `invoices` book was declared a placeholder for `Agreement`,
+    // and it was not one: an invoice is an INSTRUMENT and the register is its kernel home already.
+    // What the book held — the id, the seller, the buyer, the due date — was on the instrument, so
+    // it was a mirror of the world (Law 19), not a noun with nowhere to live. It is deleted and the
+    // ageing reads the register.
     spec: 'Trade Credit',
     requires: ['firms', 'goods'],
     instrumentKinds: [invoiceKind],

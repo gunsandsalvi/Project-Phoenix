@@ -6882,3 +6882,36 @@ say whether it is already employed without the labour module building its schedu
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
 green. Five books left: invoice, stock loan, loan, covenant, deal.
+
+---
+
+## Item 9, sixth stage — the invoice book was a mirror, not a noun (9.1d)
+
+**What.** The third of the seven, and **the plan's text was wrong about it, which the read of the
+code settled.** `trade-credit`'s `invoices` slot was declared a placeholder for `Agreement`, with
+the same boilerplate `why` the other six carry. It is not one: **an invoice is an INSTRUMENT** in
+this world — it has an issuer, a holder, an issued amount and terms, it is carried at amortised cost
+and it can be discounted — and the register is its kernel home already.
+
+What the book held was `{ id, seller, buyer, due }`, and every one of those four is on the
+instrument: the id is the instrument's, and the other three are its `InvoiceTerms`. So it was a
+second copy of facts the world already held, which is the mirror Law 19 is about, and the fifth row
+of Appendix B's "stale mirror". Its docstring gave a reason for keeping it — *"so nothing asks an
+instrument what kind it is (Law 15)"* — and that is a misreading: filtering a list by kind is not
+branching a MECHANISM on one, `isInvoice` is this module's own structural predicate declared for
+exactly that, and the lint rule that enforces Law 15 accepts it.
+
+**The book is deleted and the ageing reads the register**: what the seller holds is the register's
+answer, what each row promises is the instrument's, and it is overdue when the day on its own terms
+has gone by. Nothing is stored and nothing can go stale.
+
+**The counter was the one thing in it that was not a copy**, and it is replaced by a read rather
+than kept: `freeRow` asks the register which `invoice:<seller>:<buyer>:<n>` is free. One pair can
+trade twice in a period — two goods, two books — so the period does not name a row on its own, and
+naming it by the period would have collided at `ctx.issue` and stopped the world. The register is
+the one writer of what exists, so it is the one that can say which name is free.
+
+`tradeCredit` declares no nouns at all now.
+
+Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:existence`
+green. Four books left: stock loan, loan, covenant, deal.
