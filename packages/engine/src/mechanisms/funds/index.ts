@@ -43,7 +43,23 @@ import {
   type PartyId,
   type VenueId,
 } from '../../core/ids.js';
-import { type Cash, pricedAt, valueAt } from '../../core/measure.js';
+import {
+  amountOf,
+  asCash,
+  asPerPiece,
+  asRatio,
+  type Ratio,
+  type Cash,
+  heldAsMoney,
+  type PerPiece,
+  minus,
+  over,
+  plus,
+  pricedAt,
+  ratioOf,
+  scale,
+  valueAt,
+} from '../../core/measure.js';
 import {
   add,
   addTo,
@@ -194,7 +210,7 @@ interface Queued {
   /** Law 8: shares are indivisible, so what one member asked back is a whole number of them. */
   sharesPerMember: Qty;
   /** C4: the NAV of the day it asked, which is what it is owed at. */
-  readonly navStruck: number;
+  readonly navStruck: PerPiece;
   readonly since: number;
 }
 
@@ -306,14 +322,17 @@ function feeAccrued(ctx: MechanismContext, fund: string, share: Instrument): num
   const party = ctx.parties.get(fund as PartyId);
   return ctx.registry.payable(
     ctx.registry.currencyOf(party.region),
-    mul(
-      mul(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
-      mul(
+    scale(
+      valueAt(ctx.valuation.markPerUnit(share.id, ctx.period), share.issued, 'net assets'),
+      scale(
         ctx.params.perAnnum(fundParam(fund, 'fee')),
-        yearFraction(
-          FEE_DAY_COUNT,
-          ctx.calendar.startOf(ctx.period),
-          ctx.calendar.endOf(ctx.period),
+        asRatio(
+          yearFraction(
+            FEE_DAY_COUNT,
+            ctx.calendar.startOf(ctx.period),
+            ctx.calendar.endOf(ctx.period),
+          ),
+          'this period of a year',
         ),
         'this period of a year',
       ),
@@ -361,8 +380,8 @@ function subscribe(
   d: FundDecl,
   share: Instrument,
   holder: PartyId,
-  sharesAsked: number,
-  perShare: number,
+  sharesAsked: Qty,
+  perShare: PerPiece,
 ): void {
   // Fund Shares B1, C1: A SUBSCRIPTION IS AT THE NAV, AND THERE HAS TO BE ONE. A fund whose share
   // is worth nothing has no price for anybody to buy a claim at — there is nothing to have a claim
@@ -379,18 +398,18 @@ function subscribe(
   const ccy = ctx.registry.currencyOf(fund.region);
   // C1.d of the buyer's own budget: it subscribes with the money it has, and what it cannot pay
   // for it does not buy. That is a budget, not a bound on the decision.
-  const cash = ctx.participant(holder).cash(ccy);
-  const wanted = mul(sharesAsked, perShare, 'what it asked to put in');
+  const cash = heldAsMoney(ctx.participant(holder).cash(ccy), 'what this holder has');
+  const wanted = valueAt(perShare, sharesAsked, 'what it asked to put in');
   const budget = atMost(wanted, cash, 'it cannot spend money it does not hold');
   // Law 8: SHARES ARE ISSUED IN WHOLE PIECES and paid for in whole pieces of money, per member of a
   // cell (XI-15). The shares are struck first, because they are the thing being bought, and what
   // is paid is what they come to at the NAV — the nearest piece, so the fund is not shaved by a
   // fraction on every subscription it ever takes.
-  let shares = downTick(div(budget, perShare, 'shares it gets'));
-  let paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
+  let shares = downTick(amountOf(budget, perShare, 'shares it gets'));
+  let paid = ctx.registry.cashFor(ccy, valueAt(perShare, shares, 'what it pays'));
   if (paid > cash) {
     shares = subQty(shares, ONE_PIECE, 'a piece less');
-    paid = ctx.registry.cashFor(ccy, mul(shares, perShare, 'what it pays'));
+    paid = ctx.registry.cashFor(ccy, valueAt(perShare, shares, 'what it pays'));
   }
   if (shares <= 0 || paid <= 0 || !material(shares, 2, sharesAsked)) return;
   const side = cellSide(party, shares);
@@ -435,8 +454,8 @@ function redeem(
   d: FundDecl,
   share: Instrument,
   holder: PartyId,
-  sharesAsked: number,
-  perShare: number,
+  sharesAsked: Qty,
+  perShare: PerPiece,
 ): number {
   const party = ctx.parties.get(holder);
   const fund = ctx.parties.get(d.fund as PartyId);
@@ -448,12 +467,24 @@ function redeem(
   if (asked <= 0) return 0;
   // C2.a: from its buffer, or by selling. What it can pay now is what it holds now.
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
-  const owedNow = ctx.registry.payable(ccy, mul(totalFor(party, asked), perShare, 'what it owes this holder'));
+  const owedNow = ctx.registry.payable(
+    ccy,
+    valueAt(perShare, totalFor(party, asked), 'what it owes this holder'),
+  );
   const paying = atMost(owedNow, cash, 'it pays out of the money there is');
   // Law 8: shares come back in whole pieces, per member, and the cash is what they come to at the
   // NAV — the nearest piece of money. What cannot be paid for stays in the queue (C2.b).
-  const sharesNow = downTick(div(div(paying, perShare, 'shares it can pay for'), weight, 'per member'));
-  const perMemberCash = ctx.registry.cashFor(ccy, mul(sharesNow, perShare, 'what a member is paid'));
+  const sharesNow = downTick(
+    over(
+      amountOf(heldAsMoney(paying, 'what it can pay with'), perShare, 'shares it can pay for'),
+      asRatio(weight, 'the members of this cell'),
+      'per member',
+    ),
+  );
+  const perMemberCash = ctx.registry.cashFor(
+    ccy,
+    valueAt(perShare, sharesNow, 'what a member is paid'),
+  );
   /**
    * Law 8, C2.b: A PAYMENT BELOW ONE PIECE OF MONEY IS NOT A PAYMENT.
    *
@@ -595,9 +626,9 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
   // is then a count too, and the schedule its orders are built from is on the grid by arithmetic
   // rather than by a rounding somewhere further down.
   const buffer = upTick(
-    mul(
+    scale(
+      valueAt(perShare, share.issued, 'net assets'),
       ctx.params.ratio(fundParam(d.fund, 'buffer')),
-      mul(perShare, share.issued, 'net assets'),
       'the cash it keeps back',
     ),
   );
@@ -623,7 +654,11 @@ function strike(ctx: MechanismContext, b: Book, d: FundDecl): void {
       returned:
         previous === undefined || previous <= 0
           ? null
-          : div(sub(perShare, previous, 'what it made'), previous, 'per share it returned'),
+          : ratioOf(
+              minus(perShare, asPerPiece(previous, 'what a share was worth then'), 'what it made'),
+              asPerPiece(previous, 'what a share was worth then'),
+              'per share it returned',
+            ),
       // C2.a: what it must find, and what it has spare. Its orders read these and nothing else,
       // so the decision and the schedule are one decision (Law 4).
       shortfall: owed,
@@ -659,7 +694,7 @@ function offeredYield(ctx: MechanismContext, d: FundDecl): Option<number> {
    * no curve to read published a NEGATIVE offer of exactly its own fee, which is a saver being told
    * to pay for the privilege rather than a fund with nothing to say (App A: missing is missing).
    */
-  let best: Option<number> = none();
+  let best: Option<Ratio> = none();
   for (const family of ctx.registry.curveFamilies.values()) {
     if (family.ccy !== ctx.registry.currencyOf(region.id)) continue;
     const read = ctx.curve(family.id).at(yearFraction(family.dayCount, on, by));
@@ -667,7 +702,7 @@ function offeredYield(ctx: MechanismContext, d: FundDecl): Option<number> {
     if (!best.some || read.yield.value > best.value) best = some(read.yield.value);
   }
   if (!best.some) return none();
-  return some(sub(best.value, fee, 'what a saver gets after the manager'));
+  return some(minus(best.value, asRatio(fee, "the manager's fee"), 'what a saver gets after the manager'));
 }
 
 /** What this fund still owes its redeemers, at the NAV each of them struck (C4). */
@@ -679,7 +714,9 @@ function owedOn(ctx: MechanismContext, b: Book, d: FundDecl): Qty {
     // C2, Law 8: what a redemption COMES TO is shares at a NAV, so it lands between two pieces of
     // money — and what the fund must find is the piece above, because paying all but a fraction of
     // a cent is not paying. It is the same rounding a subscription takes the other way (`cashFor`).
-    terms.push(upTick(mul(totalFor(holder, q.sharesPerMember), q.navStruck, 'what it is owed')));
+    terms.push(
+      upTick(valueAt(q.navStruck, totalFor(holder, q.sharesPerMember), 'what it is owed')),
+    );
   }
   return asQty(sum(terms).value, 'what its queue is owed');
 }
@@ -880,8 +917,14 @@ function couldCreate(ctx: MechanismContext, e: EtfDecl, party: PartyId): number 
   for (const [line, perShare] of Object.entries(e.basket)) {
     const id = instrumentId(line);
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
-    const free = mul(ctx.register.free(party, id), weight, 'what it holds free of this line');
-    const backs = downTick(div(free, perShare, 'shares this line of its basket backs'));
+    const free = scaleQty(
+      ctx.register.free(party, id),
+      weight,
+      'what it holds free of this line',
+    );
+    const backs = downTick(
+      over(free, asRatio(perShare, 'what one share draws of it'), 'shares this line of its basket backs'),
+    );
     if (most === undefined || backs < most) most = backs;
   }
   // A basket naming no line this world has is not a basket, and nothing backs a share of it. That
@@ -930,8 +973,8 @@ function placeSpareCash(ctx: MechanismContext, d: FundDecl): void {
   const ccy = ctx.registry.currencyOf(fund.region);
   const cash = ctx.register.quantity(fund.id, moneyOf(ctx, fund.id, ccy));
   // C2.a: it keeps its own buffer against the redemptions it expects and places the rest.
-  const buffer = mul(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
-  const spare = ctx.registry.payable(ccy, sub(cash, buffer, 'what it can place'));
+  const buffer = scale(cash, ctx.params.ratio(fundParam(d.fund, 'buffer')), 'what it keeps liquid');
+  const spare = ctx.registry.payable(ccy, minus(cash, buffer, 'what it can place'));
   if (spare <= 0) return;
   const floor = floorRate(ctx);
   if (!floor.some) return;
@@ -970,7 +1013,7 @@ function distribute(ctx: MechanismContext, d: EtfDecl, share: InstrumentId, mone
   const issued = ctx.instruments.get(share).issued;
   const cash = ctx.register.quantity(fund.id, money);
   if (issued <= 0 || cash <= 0) return;
-  const perShare = div(cash, issued, 'what it passes on per share');
+  const perShare = pricedAt(heldAsMoney(cash, 'what it has to pass on'), issued, 'what it passes on per share');
   if (!material(perShare, 2, perShare)) return;
   const ccy = ctx.registry.currencyOf(fund.region);
   const paid: number[] = [];
@@ -983,7 +1026,12 @@ function distribute(ctx: MechanismContext, d: EtfDecl, share: InstrumentId, mone
     // Law 8: what reaches a holder is whole pieces of money, per member. A holding whose share of
     // the pass-through is less than one piece is paid nothing this period, and the cash stays in
     // the fund for the next one — which is where it was anyway.
-    const share2 = shareFor(ctx.registry, party, currencyUnit(ccy), mul(perMemberUnits, perShare, 'what a member is paid'));
+    const share2 = shareFor(
+      ctx.registry,
+      party,
+      currencyUnit(ccy),
+      valueAt(perShare, perMemberUnits, 'what a member is paid'),
+    );
     const perMemberCash = share2.perMember;
     const total = share2.total;
     if (!material(total, 2, total) || total <= 0) continue;
@@ -1076,8 +1124,10 @@ function ordersOf(
   const own = view.lastOwn('fund.struck');
   if (!own.some || own.value.period !== view.period) return [];
   const shortfall = own.value.data['shortfall'];
-  const spare = own.value.data['spare'];
-  if (typeof shortfall !== 'number' || typeof spare !== 'number') return [];
+  const saidSpare = own.value.data['spare'];
+  if (typeof shortfall !== 'number' || typeof saidSpare !== 'number') return [];
+  // Item 16: money re-entering from what this fund published, at the read that knows what it is.
+  const spare = asCash(saidSpare, 'what it published it has spare');
   const i = view.instruments.get(m.instrument);
   if (shortfall > 0) {
     // Clearing C1.b, Treasury D3.a: in a primary market the seller is the ISSUER. A holder with
@@ -1110,16 +1160,29 @@ function ordersOf(
   const flows = view.registry.instrumentKind(i.kind).cashFlows(i, on, view.calendar);
   if (flows.length === 0) return [];
   const required = view.params.perAnnum(fundParam(d.fund, 'requiredYield'));
-  const price = priceAt(flows, required, on, family.dayCount, `what ${i.id} is worth to ${d.fund}`);
+  const price = priceAt(
+    flows,
+    asRatio(required, 'what it requires of this name'),
+    on,
+    family.dayCount,
+    `what ${i.id} is worth to ${d.fund}`,
+  );
   if (price <= 0) return [];
   const lines = eligibleLines(view, d);
   if (lines === 0) return [];
-  const each = div(spare, lines, 'what it puts into each line it may hold');
-  const dirty = add(price, view.accrued(i.id), 'what a unit costs it');
+  const each = over(
+    spare,
+    asRatio(lines, 'the lines it may hold'),
+    'what it puts into each line it may hold',
+  );
+  const dirty = plus(price, view.accrued(i.id), 'what a unit costs it');
   // Law 8: whole units. Down, because it is what the cash it has spare actually reaches.
-  const qty = downTick(div(each, dirty, 'units it bids for'));
+  const qty = downTick(amountOf(each, dirty, 'units it bids for'));
   // Law 7: this line's share against what the whole of what it has spare would have bought.
-  if (qty <= 0 || !material(qty, lines + 1, div(spare, dirty, 'what the whole of it would buy'))) return [];
+  const whole = amountOf(spare, dirty, 'what the whole of it would buy');
+  if (qty <= 0 || !material(qty, lines + 1, whole)) {
+    return [];
+  }
   return [{ party: view.self.id, side: 'buy', price, qty }];
 }
 
@@ -1129,7 +1192,7 @@ function holdingsWorth(view: ParticipantView): number {
   for (const h of view.holdings()) {
     const print = view.print(h.instrument);
     if (!print.some) continue;
-    terms.push(mul(sum(h.lots.map((l) => l.qty)).value, print.value.price, 'what it holds'));
+    terms.push(valueAt(print.value.price, sum(h.lots.map((l) => l.qty)).value, 'what it holds'));
   }
   return sum(terms).value;
 }

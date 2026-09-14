@@ -22,8 +22,18 @@
  * whose largest vehicles redeemed only in kind would have no fund-driven forced selling at all, and
  * would need some other vehicle to carry it. That vehicle is the money fund (item 8), and it does.
  */
+import {
+  asRatio,
+  type Cash,
+  type PerPiece,
+  valueAt,
+  pricedAt,
+  type Ratio,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import type { Period } from '../../calendar/calendar.js';
-import { type Qty } from '../../core/tick.js';
+import { scaleQty, type Qty } from '../../core/tick.js';
 import { instrumentId, type InstrumentId, type PartyId } from '../../core/ids.js';
 import { div, material, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
@@ -37,9 +47,14 @@ import type { EtfDecl } from './data.js';
 export interface BasketLine {
   readonly instrument: InstrumentId;
   /** Units of this line per share of the fund. */
-  readonly perShare: number;
+  /**
+   * Item 16, Law 9: UNITS OF THIS LINE BEHIND ONE SHARE — a count over a count, which is a pure
+   * number. It shares a name with the fund's NAV per share (`nav.ts`) and is not the same thing:
+   * that one is MONEY per share. The type is what tells them apart now.
+   */
+  readonly perShare: Ratio;
   /** What one unit of it is marked at, which is what the fund's own NAV is read off (B2). */
-  readonly markPerUnit: number;
+  readonly markPerUnit: PerPiece;
 }
 
 /**
@@ -68,7 +83,7 @@ export function basketOf(ctx: MechanismContext, d: EtfDecl, share: InstrumentId)
       if (!mark.some) return [];
       out.push({
         instrument: h.instrument,
-        perShare: div(units, issued, 'units of this line behind one share'),
+        perShare: ratioOf(units, issued, 'units of this line behind one share'),
         markPerUnit: mark.value,
       });
     }
@@ -79,7 +94,11 @@ export function basketOf(ctx: MechanismContext, d: EtfDecl, share: InstrumentId)
     if (!ctx.instruments.has(id) || perShare <= 0) continue;
     const mark = lastMark(ctx, id);
     if (!mark.some) return [];
-    out.push({ instrument: id, perShare, markPerUnit: mark.value });
+    out.push({
+      instrument: id,
+      perShare: asRatio(perShare, 'units of this line behind one share'),
+      markPerUnit: mark.value,
+    });
   }
   return out;
 }
@@ -89,16 +108,18 @@ export function basketOf(ctx: MechanismContext, d: EtfDecl, share: InstrumentId)
  * period's session has to go on. A claim on a book is worth what the book comes to whenever anybody
  * asks (Fund Shares B1), so that one is read fresh; everything else is what it last printed.
  */
-function lastMark(ctx: MechanismContext, instrument: InstrumentId): Option<number> {
+function lastMark(ctx: MechanismContext, instrument: InstrumentId): Option<PerPiece> {
   const kind = ctx.registry.instrumentKind(ctx.instruments.get(instrument).kind);
   if (kind.pricing === 'derived') return some(ctx.valuation.markPerUnit(instrument, ctx.period));
   const p = ctx.prices.latest(instrument, ctx.period);
-  return p.some ? some(p.value.price) : none<number>();
+  return p.some ? some(p.value.price) : none<PerPiece>();
 }
 
 /** What one share's worth of basket is marked at — which is the NAV when the basket is the book. */
-export function basketValue(basket: readonly BasketLine[]): number {
-  return sum(basket.map((b) => mul(b.perShare, b.markPerUnit, 'what this line contributes'))).value;
+export function basketValue(basket: readonly BasketLine[]): PerPiece {
+  return sum(
+    basket.map((b) => scale(b.markPerUnit, b.perShare, 'what this line contributes')),
+  ).value;
 }
 
 /**
@@ -143,13 +164,15 @@ export function create(
   const shares = made.total;
   if (shares <= 0) return false;
   const legs: Leg[] = [];
-  const delivered: number[] = [];
+  const delivered: Cash[] = [];
   for (const line of basket) {
-    const put = onGrid(ctx, holder, line.instrument, mul(shares, line.perShare, 'units of this line'));
+    const put = onGrid(ctx, holder, line.instrument, scale(shares, line.perShare, 'units of this line'));
     const units = put.total;
     if (!material(units, 2, units)) return false;
     // F1: it delivers what it holds. A creator that has not got the basket does not create.
-    if (mul(ctx.register.free(party, line.instrument), weight, 'what it holds') < units) return false;
+    if (scaleQty(ctx.register.free(party, line.instrument), weight, 'what it holds') < units) {
+      return false;
+    }
     legs.push({
       kind: 'asset',
       from: party,
@@ -161,9 +184,9 @@ export function create(
       fromCell: cellOf(holder, put.perMember),
       toCell: none(),
     });
-    delivered.push(mul(units, line.markPerUnit, 'what this line delivered'));
+    delivered.push(valueAt(line.markPerUnit, units, 'what this line delivered'));
   }
-  const perShare = div(sum(delivered).value, shares, 'what a share was issued at');
+  const perShare = pricedAt(sum(delivered).value, shares, 'what a share was issued at');
   legs.push({
     kind: 'asset',
     from: d.fund as PartyId,

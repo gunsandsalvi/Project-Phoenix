@@ -2938,6 +2938,7 @@ under a shock.
 > | ~~1~~ | ~~kernel~~ — **DONE**: every money arithmetic in it carries its dimension | **119 → 68** |
 > | ~~2~~ | ~~`seeds`~~ — **DONE**: the two SCALES are named and cannot be crossed | **71** |
 > | ~~3~~ | ~~`banks`~~ — **DONE**: capital, funding, the desk's quote and the treasury's book | **130 → 44** |
+> | ~~4~~ | ~~`funds`~~ — **DONE**: the NAV, the basket, and two `perShare`s that were not the same thing | **68 → 34** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -3057,6 +3058,25 @@ under a shock.
 > is not a whole number of pieces is refused where it arrives rather than three phases later.
 >
 > **Measured**: **79 red of 793**, the same 79 test for test, with **714 passing**.
+>
+> ### Stage 4 — the funds, and a name that meant two things
+>
+> `NavRead` is the heart of it: assets and what is owed are `Cash`, shares outstanding is a `Qty`,
+> and **`perShare` is `pricedAt(net, shares)`** — money over the claims on it, which is what a price
+> IS. `claimOf` was `quantity * perShare`, a bare `*` of a count and a level; it is `valueAt` now,
+> the second such site the sweep has found (the seed had the first).
+>
+> **And `perShare` meant two different things.** `nav.ts`'s is MONEY per share; `etf.ts`'s is UNITS
+> OF A LINE per share — a count over a count. They are one identifier in one module and the type is
+> what tells them apart: `PerPiece` and `Ratio`. Law 9's "an internal id is never a display name"
+> has a sibling here, and this is it: one NAME for two dimensions is the same defect one step up.
+>
+> `heldAsMoney` joins the doors, and it is not a cast. Money is an INSTRUMENT here, so what the
+> register counts is an `Amount<'piece'>` of a currency and what a price times a quantity comes to is
+> `Money<'piece'>`: the same cents, and the same cents ONLY because money's own price is one — the
+> single hard-coded price this world has (Money D2). The crossing is named rather than assumed.
+>
+> **Measured**: the same 79.
 
 **Why.** Eighteen findings, and one signature:
 

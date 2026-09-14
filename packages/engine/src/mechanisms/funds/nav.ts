@@ -18,16 +18,24 @@
 import type { Period } from '../../calendar/calendar.js';
 import { Unpriced } from '../../core/errors.js';
 import type { PartyId } from '../../core/ids.js';
-import { div, sub, sum } from '../../core/num.js';
+import {
+  type Cash,
+  minus,
+  type PerPiece,
+  pricedAt,
+  valueAt,
+} from '../../core/measure.js';
+import { sum } from '../../core/num.js';
+import type { Qty } from '../../core/tick.js';
 import { issuerOf, type Instrument } from '../../register/instruments.js';
 import type { DerivedReads } from '../../registry/kinds.js';
 
 /** What the read found: the value, and the oldest mark that went into it (B2.a). */
 export interface NavRead {
-  readonly perShare: number;
-  readonly assets: number;
-  readonly owed: number;
-  readonly shares: number;
+  readonly perShare: PerPiece;
+  readonly assets: Cash;
+  readonly owed: Cash;
+  readonly shares: Qty;
   /** The oldest period any of its marks came from; equal to `at` when nothing is stale. */
   readonly oldestMark: Period;
 }
@@ -46,7 +54,7 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
     });
   }
   let oldest = at;
-  const assets: number[] = [];
+  const assets: Cash[] = [];
   for (const h of reads.holdingsOf(fund)) {
     // A fund does not hold its own shares: a claim on itself is not an asset (F2, and the kernel
     // refuses to value a book that depends on its own value).
@@ -62,7 +70,7 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
     assets.push(worth.value.value);
     if (worth.value.from < oldest) oldest = worth.value.from;
   }
-  const owed: number[] = [];
+  const owed: Cash[] = [];
   for (const other of reads.instruments()) {
     if (other.id === share.id || !other.status.live) continue;
     if (!other.issuer.some || other.issuer.value !== fund) continue;
@@ -74,9 +82,11 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
   }
   const a = sum(assets);
   const l = sum(owed);
-  const net = sub(a.value, l.value, 'what the fund is worth');
+  const net = minus(a.value, l.value, 'what the fund is worth');
   return {
-    perShare: div(net, shares, 'net asset value per share'),
+    // B1: money over the claims on it, which is what a price IS — and `pricedAt` is the only way
+    // to make one out of a payment and a count (item 16).
+    perShare: pricedAt(net, shares, 'net asset value per share'),
     assets: a.value,
     owed: l.value,
     shares,
@@ -85,6 +95,12 @@ export function navOf(share: Instrument, at: Period, reads: DerivedReads): NavRe
 }
 
 /** A2, B4: what one holder's claim on the book comes to — its shares at the value of a share. */
-export function claimOf(holder: PartyId, share: Instrument, perShare: number, reads: DerivedReads): number {
-  return reads.quantity(holder, share.id) * perShare;
+export function claimOf(
+  holder: PartyId,
+  share: Instrument,
+  perShare: PerPiece,
+  reads: DerivedReads,
+): Cash {
+  // Item 16: this was a bare `*` of a count and a level — the one shape `valueAt` exists to stop.
+  return valueAt(perShare, reads.quantity(holder, share.id), "what this holder's claim comes to");
 }

@@ -390,7 +390,7 @@ export interface ParticipantView extends KernelReads {
    */
   worth(instrument: InstrumentId, requiredPerAnnum: number): Option<number>;
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
-  accrued(instrument: InstrumentId): number;
+  accrued(instrument: InstrumentId): PerPiece;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
   curve(family: CurveFamilyId): CurveRead;
   /**
@@ -670,7 +670,7 @@ export interface MechanismContext extends WorldReads {
   /** What every party has posted into a venue this period (the module that clears it reads this). */
   posted(venue: VenueId): readonly Order[];
   /** What has accrued per unit on a line at this period's session date (Bond N9.b). */
-  accrued(instrument: InstrumentId): number;
+  accrued(instrument: InstrumentId): PerPiece;
   /** A curve family's points and what they are made of, built at the read (Sovereign D3). */
   curve(family: CurveFamilyId): CurveRead;
   /**

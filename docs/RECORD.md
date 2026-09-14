@@ -5232,3 +5232,31 @@ ratio. Typing them separately is what made the distinction visible; both were `n
 **Measured.** **79 red of 793, the same 79 test for test**, with 714 passing. (791 became 793
 because stage 2's own two assertions were written after stage 2's run.) Green: lint, typecheck,
 spec citations, forbids, `plan:check`.
+
+## Item 16, stage 4 — the funds, and a name that meant two things
+
+**68 sites became 37.** `NavRead` is the heart of it: assets and what is owed are `Cash`, shares
+outstanding is a `Qty`, and **`perShare` is `pricedAt(net, shares)`** — money over the claims on it,
+which is what a price IS. `claimOf` was `quantity * perShare`, a bare `*` of a count and a level; it
+is `valueAt` now, the second such site this sweep has found (the seed had the first).
+
+**AND `perShare` MEANT TWO DIFFERENT THINGS.** `nav.ts`'s is MONEY per share. `etf.ts`'s is UNITS OF
+A LINE per share — a count over a count, which is a pure number. One identifier, one module, two
+dimensions, and nothing said so: `basketValue` multiplied one by a mark and `create` multiplied the
+other by a share count, and both compiled. They are `PerPiece` and `Ratio` now. Law 9 says an
+internal id is never a display name; this is the same defect one level up — one NAME for two
+dimensions — and the type is what tells them apart.
+
+**`heldAsMoney` joins the doors, and it is not a cast.** Money is an INSTRUMENT in this world and an
+account is a holding of it, so what the register counts is an `Amount<'piece'>` of a currency, and
+what a price times a quantity comes to is `Money<'piece'>`. They are the same cents, and they are
+the same cents ONLY because money's own price is one — the single hard-coded price this world has
+(Money D2). Every read of a balance into a decision crosses that, and it is named now rather than
+assumed.
+
+`DerivedReads` — the kernel's own reads, which every derived value is given — carries its dimensions
+too: `quantity` and `issued` are counts, `worthOf` is money. That one interface change is what let
+the whole of `nav.ts` typecheck without a cast in it.
+
+**Measured.** **79 red of 793, the same 79 test for test.** Green: lint, typecheck, spec citations,
+forbids, `plan:check`.

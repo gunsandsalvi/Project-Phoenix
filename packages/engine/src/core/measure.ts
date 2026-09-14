@@ -268,6 +268,17 @@ export type PerNamedUnit = Price<'named', 'named'>;
 /** Law 8: an amount of a named unit — tonnes, hours, shares — before it is counted in pieces. */
 export type Named = Amount<'named'>;
 
+/**
+ * Money D2: A BALANCE, READ AS MONEY — and it is a real conversion rather than a cast.
+ *
+ * Money is an INSTRUMENT here and an account is a holding of it, so what the register counts is an
+ * `Amount<'piece'>` of a currency: cents, as a count. What a price times a quantity comes to is
+ * `Money<'piece'>`: cents, as a value. They are the same cents, and they are the same cents ONLY
+ * because money's own price is one — the single hard-coded price this world has. That is why the
+ * crossing gets a name instead of being assumed: it is `valueAt(one, held)` with the one left out.
+ */
+export const heldAsMoney = (held: Amount<'piece'>, what: string): Cash => finite(held, what) as Cash;
+
 /** The doors for the two above, so a kernel site does not have to spell the parameters out. */
 export const asCash = (x: number, what: string): Cash => finite(x, what) as Cash;
 

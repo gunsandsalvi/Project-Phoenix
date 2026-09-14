@@ -25,7 +25,8 @@ import type { Instrument, Terms } from '../register/instruments.js';
 import type { Holding } from '../register/register.js';
 import type { CurveRead } from '../prices/curve.js';
 import type { Option } from '../core/option.js';
-import type { PerPiece } from '../core/measure.js';
+import type { Cash, PerPiece } from '../core/measure.js';
+import type { Qty } from '../core/tick.js';
 import type { Namer } from './naming.js';
 
 /** Named individually or represented as cells with a weight (XI-15). */
@@ -292,7 +293,7 @@ export interface DerivedReads {
   /** Every holding of a party, and every holder of an instrument (Register B2, both directions). */
   holdingsOf(holder: PartyId): readonly Holding[];
   holdersOf(instrument: InstrumentId): readonly PartyId[];
-  quantity(holder: PartyId, instrument: InstrumentId): number;
+  quantity(holder: PartyId, instrument: InstrumentId): Qty;
   /**
    * XI-6, Fund Shares B2, B2.a: what a holder's whole position in one instrument is worth at the
    * last mark on or before `at`, and WHICH period that mark came from. A stale mark is neither an
@@ -303,11 +304,11 @@ export interface DerivedReads {
     holder: PartyId,
     instrument: InstrumentId,
     at: Period,
-  ): Option<{ readonly value: number; readonly from: Period }>;
+  ): Option<{ readonly value: Cash; readonly from: Period }>;
   /** Every instrument, so a book's liabilities can be found by who issued them (Register B3). */
   instruments(): readonly Instrument[];
   /** How many units of a line exist (Register B2): a share count is `issued`, never a stored total. */
-  issued(instrument: InstrumentId): number;
+  issued(instrument: InstrumentId): Qty;
   /** A kind's profile, for a book that must ask what its own holdings are (Law 15). */
   kindOf(instrument: InstrumentId): InstrumentKindProfile;
   /**
