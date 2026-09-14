@@ -25,6 +25,7 @@
  * there is one. What this module does is stop pricing the line: a claim on a liquidation is not the
  * claim anybody formed an opinion of, so nobody posts and the print goes visibly stale.
  */
+import { asNamed } from '../../core/measure.js';
 import { forbid } from '../../core/assert.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import type { AuditView } from '../../audit/view.js';
@@ -698,7 +699,7 @@ export function equity(rows: readonly ListedDecl[], seed: string): SystemModule 
         // issued, so every piece of this line has a named holder from the instant it exists.
         const perMember = downTick(
           div(
-            ctx.registry.pieces(ctx.instruments.get(id).unit, shares),
+            ctx.registry.pieces(ctx.instruments.get(id).unit, asNamed(shares, 'what is issued')),
             members,
             "one member's share",
           ),

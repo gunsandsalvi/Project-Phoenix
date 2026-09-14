@@ -17,6 +17,7 @@
  * it is writing on. A buyer facing a house prices the house; a buyer facing a seller whose own
  * spread widens with the reference's pays less for the cover, because it is worth less.
  */
+import { asPerNamedUnit } from '../../core/measure.js';
 import { contractOf, type ContractBook, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
@@ -65,7 +66,7 @@ function levelFor(
   return view.registry.priceOf(
     m.ccy,
     view.registry.derivativeKind(book.kind).unit,
-    perAnnum,
+    asPerNamedUnit(perAnnum, 'what a year of protection costs a unit of notional'),
   );
 }
 

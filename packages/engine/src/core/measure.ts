@@ -218,7 +218,16 @@ export const asTotal = <D extends string>(x: number, what: string): Total<D> =>
  * literal. The generics are still worth carrying: a kernel function generic in `C` cannot reach its
  * return currency except through the rate, whatever a caller instantiates it at.
  */
-export type Cash = Money<string>;
+export type Cash = Money<'piece'>;
+
+/**
+ * Law 8: MONEY IN ITS NAMED UNIT — dollars rather than cents — which is what a seed states, what a
+ * parameter declares and what a report shows. It is a DIFFERENT TYPE from `Cash` and that is the
+ * point: the scale is part of the number (Law 8), the two differ by the currency's subdivision, and
+ * the one door between them is `Registry.pieces` (`cash` in the seed). Adding a stated amount to a
+ * balance was arithmetic nothing refused.
+ */
+export type Stated = Money<'named'>;
 
 /**
  * Law 8: MONEY PER PIECE, which is what every price in this engine is. `Qty` is `Amount<'piece'>`
@@ -226,12 +235,30 @@ export type Cash = Money<string>;
  * one representation of one thing (Law 4) — so `valueAt(price, qty)` takes the register's own
  * quantity with nothing in between.
  */
-export type PerPiece = Price<string, 'piece'>;
+export type PerPiece = Price<'piece', 'piece'>;
+
+/**
+ * Law 8: MONEY FOR ONE OF A NAMED UNIT — a dollar a tonne, a wage an hour, a level per share — as a
+ * recipe, a wage and an opening level are all stated. `Registry.priceOf` is the one door onto the
+ * grid, and 12b.1 is the whole reason there is a type here: a stated level that never went through
+ * it is a level its market could not print.
+ */
+export type PerNamedUnit = Price<'named', 'named'>;
+
+/** Law 8: an amount of a named unit — tonnes, hours, shares — before it is counted in pieces. */
+export type Named = Amount<'named'>;
 
 /** The doors for the two above, so a kernel site does not have to spell the parameters out. */
 export const asCash = (x: number, what: string): Cash => finite(x, what) as Cash;
 
 export const asPerPiece = (x: number, what: string): PerPiece => finite(x, what) as PerPiece;
+
+export const asStated = (x: number, what: string): Stated => finite(x, what) as Stated;
+
+export const asPerNamedUnit = (x: number, what: string): PerNamedUnit =>
+  finite(x, what) as PerNamedUnit;
+
+export const asNamed = (x: number, what: string): Named => finite(x, what) as Named;
 
 /**
  * Law 8: A DIMENSION DIVIDED BY A PURE NUMBER IS THAT DIMENSION — `scale` read the other way, and

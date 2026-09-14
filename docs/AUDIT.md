@@ -16,7 +16,8 @@
 > **79 red of 791** now — *the same 79, test for test* — with **712 passing where there were 638**.
 > Every one of the 74 new tests is a test of a thing that did not exist.
 >
-> **Seven findings of my own are in the index as `E-1` to `E-7`**, each positioned. One of them
+> **Nine findings of my own are in the index as `E-1` to `E-9`**, each positioned — the last two
+> found by the dimension type itself, which is what it was built to do. One of them
 > (`E-1`) was closed in the same item that found it; one (**the land ordering bug**) cost this world
 > its entire merchant fleet for four commits and is written up in `docs/RECORD.md` under item 17,
 > because the way it was found — running the whole suite instead of the files I thought were
@@ -2935,6 +2936,7 @@ under a shock.
 > | stage | area | sites |
 > | --- | --- | --- |
 > | ~~1~~ | ~~kernel~~ — **DONE**: every money arithmetic in it carries its dimension | **119 → 68** |
+> | ~~2~~ | ~~`seeds`~~ — **DONE**: the two SCALES are named and cannot be crossed | **71** |
 > | 2 | `seeds` | 79 |
 > | 3 | `banks` | 124 |
 > | 4 | `funds` | 74 |
@@ -2994,6 +2996,37 @@ under a shock.
 > **Measured**: the whole suite was **79 red of 786** before this stage and is **79 red of 791**
 > after — *the same 79, test for test* — the five new ones being the stage's own. Which is the
 > guarantee the type was built to make: it erases, so behaviour cannot change (Law 18).
+>
+> ### Stage 2 — the seed, and the SECOND scale
+>
+> **This world states its numbers in two scales and only one of them was in the type.** A price is
+> money for one NAMED unit — a dollar a tonne, a wage an hour, a level a share — and the state holds
+> PIECES of both: cents, and the smallest piece of a tonne. `Registry.priceOf` and `Registry.pieces`
+> are the doors between them, and the seed's `cash`, `held`, `inNamedUnits` and `priced` are the
+> seed's own four names for the same two doors. Nothing said which side of them a number was on.
+>
+> So `Stated` (money in its named unit), `Named` (an amount of a named unit) and `PerNamedUnit` join
+> `Cash` and `PerPiece`, and the two doors are the only crossings. The seed speaks in named units
+> throughout and converts at them; the count of its `mul`/`add` sites is unchanged at 71 because
+> what closed here is not the arithmetic but the SCALE — and the seed's own comment at the central
+> bank's benchmark says why that is the half worth closing first: *"This read multiplied a count of
+> PIECES by a price per NAMED unit, so the reserves the seed thought it had bought were the
+> subdivision of a bond times too big."* That was found by hand, once, after it had shipped. It is
+> now a type error.
+>
+> Its money arithmetic went through the algebra with it: the recipe's cost-of-one-unit table (a
+> `PerNamedUnit` all the way down, the wage scaled by the hours and the inputs by what a unit takes),
+> the system's paper, the central bank's assets, the treasury's buffer and the banks' reserves —
+> including **a bare `line.banks * price`**, a count times a level with no function around it at all,
+> which is the one shape `valueAt` exists to make unwriteable.
+>
+> **And the type found two things nobody had written down**, which is what it was built for: **E-8**
+> (a declared price does not say which of the two scales it is in, and `equity.openingShare` and
+> every goods level are in different ones — the cause of the known *"a share worth a hundredth of a
+> cent"*) and **E-9** (a dirty price adds a per-piece print to a per-named-unit accrual, right today
+> only because par and money happen to share a subdivision). Both are in the index, positioned.
+>
+> **Measured**: **79 red of 791** before and after, the same 79.
 
 **Why.** Eighteen findings, and one signature:
 
@@ -4557,6 +4590,8 @@ Polity B1.a, B2.a, C3.a, D3.a, F1–F4; Central Bank A4; XI-17 ("no policy set d
 | **C-7** (—) | 17 | the confidence question, answered and closed (carried from `VERIFY.md`) |
 | **D-1** (A) | 8 | a levy that fails is recorded and then forgotten: no arrears (`12d-5`) |
 | **D-2** (B) | 18 | the central bank is a marginal price-setter in the sovereign book (`13b.1-10`) |
+| **E-9** (B) | 16, stage 3 (`banks`, `money-market`) | *(found by the type, at item 16 stage 2)* **A DIRTY PRICE ADDS TWO SCALES.** `readCurve` and `market.ts` both add a print — money PIECES per piece — to what a kind's `accrued` returns, which its writers state per NAMED unit (`claims.ts` builds it from the coupon amount, and a bill's par is `1`). It is right today ONLY because `PAR` is declared `perUnit: MONEY_PIECES`, the same subdivision the money has, so the two scales coincide for par-denominated paper and for nothing else. A coupon-bearing instrument whose unit is not par — or a `pieceShift` that moves one and not the other — makes the dirty price wrong by the subdivision, silently. The seed carries the same coincidence at its opening bond level, named there in a comment. What is missing is that `accrued` and `cashFlows` say which scale they are in; the type can hold it once they do |
+| **E-8** (B) | 16, stage 10 (`registry`) | *(found by the type, at item 16 stage 2)* **A DECLARED PRICE DOES NOT SAY WHICH SCALE IT IS IN.** `dimension: 'price'` is one dimension and this world states levels in two: `equity.openingShare` is declared in PIECES of money per share (`value: MONEY_PIECES`, written straight into a print), and every goods opening level is money for a NAMED unit (put through `Registry.priceOf` first). Only the declaration's free-text `unit` says which, and `params.price` cannot tell them apart — so a level declared in one scale and read in the other is off by the subdivision and nothing refuses it. `SHARE_PIECES` is 1 and `MONEY_PIECES` is 100, so the two are a hundred apart for exactly the line the known finding *"a share worth a hundredth of a cent"* (worklist 16, step 214) is about. The fix is a `Dimension` that distinguishes them, which makes the reader's return type say it |
 | **E-7** (B) | 18 (13l) | *(found while building item 18)* a policy rate of zero puts the corridor floor below zero and the solver refuses a negative price — right for the price of a thing, wrong for the price of TIME. A negative policy rate is real and this world cannot express one, so the yen sits a tenth of a point above its own floor |
 | **E-6** (B) | 18 | *(found while building item 17)* an acquirer's consideration in a bank resolution is a missing mechanism. The auction ranks bidders by what the book is worth to each, faithfully; what the winner should be PAID for taking it on is not modelled, and used to be invisible because `pays` stood in the record where it would have been |
 | **E-5** (B) | 18 (13m) | *(found while building item 12)* the state holds the ground of every place in its country and can only SELL in the one it sits in, because a seller in another place reads as a cross-border trade. What is missing is a party present in each place — a local authority, the same noun a port and a planning consent need |

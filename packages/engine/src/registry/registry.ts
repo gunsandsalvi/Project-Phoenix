@@ -9,7 +9,12 @@
  * world is built, because parties are state, not data.
  */
 import { InvalidRegistry, Missing } from '../core/errors.js';
-import type { PerPiece } from '../core/measure.js';
+import {
+  asPerNamedUnit,
+  type Named,
+  type PerNamedUnit,
+  type PerPiece,
+} from '../core/measure.js';
 import { downTick, piecesPerUnit, toTick, toTickOf } from '../core/tick.js';
 import { currencyUnit } from '../core/ids.js';
 import type {
@@ -334,7 +339,12 @@ export class Registry {
   }
 
   /** What a declared amount of this unit IS, as a count of pieces: 188.49 USD is 18849 cents. */
-  pieces(id: UnitId, named: number): Qty {
+  /**
+   * Item 16, Law 8: THE ONE DOOR BETWEEN THE TWO SCALES. What is stated in a named unit — dollars,
+   * tonnes, hours — becomes the count of pieces the state actually holds, and a `Named` cannot get
+   * here except through this call. Which is why a stated amount can no longer be added to a balance.
+   */
+  pieces(id: UnitId, named: Named): Qty {
     return toTick(named * this.subdivision(id));
   }
 
@@ -344,7 +354,12 @@ export class Registry {
    * price of 400 USD the tonne is four hundredths of a cent the gram, and value = units x price
    * comes out in cents without anybody converting anything downstream.
    */
-  priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: number): PerPiece {
+  /**
+   * Item 16, Law 8, 12b.1: AND THE SAME DOOR FOR A LEVEL. A price stated per named unit — a dollar
+   * a tonne — becomes pieces of money per piece of the thing, and there is no other way onto the
+   * grid. A stated level that skipped it is a level its own market could never print.
+   */
+  priceOf(ccy: CurrencyCode, unit: UnitId, perNamedUnit: PerNamedUnit): PerPiece {
     return ((perNamedUnit * this.subdivision(currencyUnit(ccy))) /
       this.subdivision(unit)) as PerPiece;
   }
@@ -364,7 +379,11 @@ export class Registry {
     if (declared === undefined) {
       throw new InvalidRegistry('Law 8', `instrument kind ${kind} is never posted at a level and has no tick`);
     }
-    return this.priceOf(ccy, k.unit(ccy), declared / this.tickShift);
+    return this.priceOf(
+      ccy,
+      k.unit(ccy),
+      asPerNamedUnit(declared / this.tickShift, `the tick of ${kind}`),
+    );
   }
 
   /**
@@ -375,7 +394,11 @@ export class Registry {
    */
   tickForDerivative(kind: DerivativeKindId, ccy: CurrencyCode): PerPiece {
     const k = this.derivativeKind(kind);
-    return this.priceOf(ccy, k.unit, k.priceTick / this.tickShift);
+    return this.priceOf(
+      ccy,
+      k.unit,
+      asPerNamedUnit(k.priceTick / this.tickShift, `the tick of ${kind}`),
+    );
   }
 
   /**
@@ -401,7 +424,7 @@ export class Registry {
     return this.priceOf(
       quote,
       currencyUnit(base),
-      this.currency(quote).quoteTick / this.tickShift,
+      asPerNamedUnit(this.currency(quote).quoteTick / this.tickShift, `the pip of ${base}/${quote}`),
     );
   }
 

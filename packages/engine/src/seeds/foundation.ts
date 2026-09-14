@@ -77,7 +77,22 @@ import type { DayCount } from '../calendar/daycount.js';
 import { priceAt } from '../prices/curve.js';
 import { forbid } from '../core/assert.js';
 import { keyOf, weightOf } from '../parties/party.js';
-import type { PerPiece } from '../core/measure.js';
+import type { Qty } from '../core/tick.js';
+import {
+  asNamed,
+  asPerNamedUnit,
+  asRatio,
+  asStated,
+  minus,
+  type Named,
+  over,
+  type PerNamedUnit,
+  type PerPiece,
+  plus,
+  scale,
+  type Stated,
+  valueAt,
+} from '../core/measure.js';
 import { add, div, mul, positiveCount, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some } from '../core/option.js';
 import { ANNUAL, SEMI_ANNUAL, rate } from '../core/rate.js';
@@ -511,7 +526,7 @@ const SEED_STOCK_BASIS = 0.8;
  * So ONE number is claimed — what an hour of work opens at — and every good's level is walked up
  * its own recipe from there, which turns thirty-five shapes into arithmetic (Law 2).
  */
-const OPENING_WAGE = 40;
+const OPENING_WAGE = asPerNamedUnit(40, 'what an hour of work opens at');
 
 /**
  * Capital Programme A6, Seed C3: the vintages the world opens with, as ages in periods. Three of
@@ -588,17 +603,37 @@ function openingPrices(): ParamDecl[] {
  * only once everything it is made of has been.
  */
 function openingLevels(): ReadonlyMap<string, number> {
-  const out = new Map<string, number>();
+  const out = new Map<string, PerNamedUnit>();
   const left = new Map(GOODS.map((d) => [d.subUnit, d]));
   while (left.size > 0) {
     let moved = false;
     for (const [subUnit, d] of [...left]) {
       if (!d.inputs.every((i) => out.has(i.subUnit))) continue;
+      // Item 16: what one unit of a good costs is MONEY FOR ONE NAMED UNIT all the way down —
+      // the inputs are that same level scaled by how many of each a unit takes, the work is the
+      // wage scaled by the hours, and the yield divides what one takes over what survives.
       const inputs = sum(
-        d.inputs.map((i) => mul(i.qtyPerUnit, zeroIfNone(out.get(i.subUnit)), 'the inputs in one')),
+        d.inputs.map((i) =>
+          scale(
+            zeroIfNone(out.get(i.subUnit)),
+            asRatio(i.qtyPerUnit, `what one takes of ${i.subUnit}`),
+            'the inputs in one',
+          ),
+        ),
       ).value;
-      const work = mul(d.labourHoursPerUnit, OPENING_WAGE, 'the work in one');
-      out.set(subUnit, div(add(work, inputs, 'what one takes'), d.yieldRate, 'over what survives'));
+      const work = scale(
+        OPENING_WAGE,
+        asRatio(d.labourHoursPerUnit, 'the hours one takes'),
+        'the work in one',
+      );
+      out.set(
+        subUnit,
+        over(
+          plus(work, inputs, 'what one takes'),
+          asRatio(d.yieldRate, 'what survives the line'),
+          'over what survives',
+        ),
+      );
       left.delete(subUnit);
       moved = true;
     }
@@ -1147,10 +1182,19 @@ export function foundationSeedFor(
       // hundredth of a cent the money stock went past exact arithmetic and Law 8 refused to open the
       // world at all. That is the resolution invariance (Law 2) failing at its own first step, and
       // the test that reported it was right: `test/tick.test.ts` is what caught it.
-      const takes = ctx.registry.pieces(HOURS, hoursForOne);
-      const scale = div(hoursOffered, takes, 'how many of the final good the hours there are make');
+      const takes = ctx.registry.pieces(HOURS, asNamed(hoursForOne, 'the hours one takes'));
+      // Renamed from `scale` at item 16: the imported `scale` is the dimension algebra's, and a
+      // local of that name shadowed it in the middle of this function.
+      const madeByTheHours = div(
+        hoursOffered,
+        takes,
+        'how many of the final good the hours there are make',
+      );
       for (const g of [...started.keys()]) {
-        started.set(g, mul(zeroIfNone(started.get(g)), scale, `what ${g} starts in a period`));
+        started.set(
+          g,
+          mul(zeroIfNone(started.get(g)), madeByTheHours, `what ${g} starts in a period`),
+        );
       }
       // Seed B4: and a firm's share of its own line is its own size over the line's.
       const shareOf = (f: FirmDecl): number =>
@@ -1179,7 +1223,7 @@ export function foundationSeedFor(
       // carries the coupon that makes it par at the opening yield, so nothing but a level is claimed,
       // and how much of it there is, is the population it is owed by (Law 2: one number, not a table).
       const y = ctx.params.perAnnum(P.openingYield);
-      const opening = new Map<string, number>();
+      const opening = new Map<string, PerNamedUnit>();
 
       /**
        * 13j: EVERY COUNTRY'S OPENING BALANCE SHEET, BUILT THE SAME WAY.
@@ -1220,7 +1264,7 @@ export function foundationSeedFor(
       /** What one country's own paper came to in the hands of its own banking system. */
       const systemPaperIn = new Map<string, number>();
       /** Central Bank F4: the line a reserve manager abroad holds — the benchmark, and its price. */
-      const benchmarkIn = new Map<string, { id: InstrumentId; price: number }>();
+      const benchmarkIn = new Map<string, { id: InstrumentId; price: PerNamedUnit }>();
 
       for (const c of countries) {
         const where = String(c.country);
@@ -1289,7 +1333,16 @@ export function foundationSeedFor(
           const flows = ctx.registry
             .instrumentKind(line.paper === 'bond' ? SOVEREIGN_BOND : SOVEREIGN_BILL)
             .cashFlows(ctx.instruments.get(id), ctx.calendar.epoch, ctx.calendar);
-          const price = priceAt(flows, y, ctx.calendar.epoch, SEED_DAY_COUNT, `opening ${line.id}`);
+          // Item 16, and it is a finding (E-8): `priceAt` discounts a schedule whose flows the
+          // kernel types per PIECE, and what comes out is used here as a level stated per NAMED
+          // unit. The two coincide for par-denominated paper and only for it — `PAR` is declared
+          // `perUnit: MONEY_PIECES`, the same subdivision the money has, so `priceOf` is the
+          // identity — and nothing anywhere says so. The scale is named here rather than left to
+          // that coincidence.
+          const price = asPerNamedUnit(
+            priceAt(flows, y, ctx.calendar.epoch, SEED_DAY_COUNT, `opening ${line.id}`),
+            `the opening level of ${line.id}, per unit of par`,
+          );
           opening.set(line.id, price);
           ctx.prices.write({
             instrument: id,
@@ -1311,19 +1364,25 @@ export function foundationSeedFor(
         // from, and no number here was chosen by looking at the answer (the 11.3 record is what that
         // costs).
         // ----------------------------------------------------------------------------------------
-        let systemPaper = 0;
-        let centralBankAssets = 0;
+        let systemPaper = asStated(0, 'what the banking system holds');
+        let centralBankAssets = asStated(0, 'the central bank’s assets');
         for (const line of seedLineRows) {
           const id = instrumentId(line.id);
           const price = openingOf(opening, line.id);
           const par = priced(ctx, id, price);
-          systemPaper = add(systemPaper, line.banks * price, 'what the banking system holds');
+          // Item 16: a COUNT of units at a LEVEL, which is what a value is — this was a bare `*`
+          // of the two, the one shape `valueAt` exists to make unwriteable.
+          systemPaper = plus(
+            systemPaper,
+            valueAt(price, asNamed(line.banks, 'what the banks hold of it'), 'at this level'),
+            'what the banking system holds',
+          );
           // Seed E2, XI-15: every member of every cell holds the same stated amount, and the cell
           // carries it with its weight. Its own country's paper: a household saving in a money it
           // is not paid in would be a currency position nobody took (Currency D2).
           if (line.perMember > 0) {
             for (const cell of cellsHere) {
-              ctx.endowUnits(cell, id, held(ctx, id, line.perMember), par);
+              ctx.endowUnits(cell, id, held(ctx, id, asNamed(line.perMember, 'its units')), par);
             }
           }
           // Central Bank C1, Seed E2: WHAT THE CENTRAL BANK OPENS HOLDING, as a share of each line.
@@ -1338,14 +1397,14 @@ export function foundationSeedFor(
           const others = line.banks + line.perMember * membersHere;
           const share = ctx.params.ratio(P.cbOpeningShare);
           const cbUnits = div(mul(others, share, 'the share it targets'), 1 - share, 'its holding');
-          const cbDrawn = held(ctx, id, cbUnits);
+          const cbDrawn = held(ctx, id, asNamed(cbUnits, 'what it opens holding'));
           if (cbDrawn > 0) {
             ctx.endowUnits(c.centralBank, id, cbDrawn, par);
             // Law 19: what it holds, not what the division asked for — the whole pieces it was
             // actually endowed with, read back in the units this price is quoted in.
-            centralBankAssets = add(
+            centralBankAssets = plus(
               centralBankAssets,
-              mul(inNamedUnits(ctx, id, cbDrawn), price, 'central bank assets'),
+              valueAt(price, inNamedUnits(ctx, id, cbDrawn), 'central bank assets'),
               'its assets',
             );
           }
@@ -1366,13 +1425,13 @@ export function foundationSeedFor(
         // Treasury D4.b: it opens with a buffer, because the alternative to one is dependence on
         // every single auction clearing — and the buffer is CENTRAL-BANK MONEY, so what is stated
         // about it is ITS SHARE of that balance sheet. The banks hold the rest as reserves.
-        const buffer = mul(
+        const buffer = scale(
           centralBankAssets,
           ctx.params.ratio(P.treasuryBufferShare),
           "the treasury's buffer",
         );
         ctx.endowMoney(c.treasury, c.ccy, cash(ctx, c.ccy, buffer));
-        const reserves = sub(centralBankAssets, buffer, 'what the banks hold in reserve');
+        const reserves = minus(centralBankAssets, buffer, 'what the banks hold in reserve');
         // Seed C1, Banks Capital B1.b: A BANK'S BALANCE SHEET FOLLOWS ITS DEPOSITORS, and this is
         // the line of causality the whole sheet turns on.
         //
@@ -1392,7 +1451,7 @@ export function foundationSeedFor(
         //
         // Nothing here is fitted and nothing is capped: a bank with a large depositor is a large
         // bank because of it, which is what a deposit IS.
-        const all = systemPaper + reserves;
+        const all = plus(systemPaper, reserves, 'the assets there are to go round');
         const atBank = new Map<PartyId, number>(banksHere.map((b) => [b.id, 0]));
         for (const f of firmsHere) {
           const bank = ctx.parties.get(partyId(f.firm)).bank;
@@ -1451,7 +1510,11 @@ export function foundationSeedFor(
           ctx.endowMoney(
             b.id,
             c.ccy,
-            cash(ctx, c.ccy, sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves')),
+            cash(
+              ctx,
+              c.ccy,
+              asStated(sub(mine, mul(mine, paperShare, 'its paper'), 'its reserves'), 'its reserves'),
+            ),
           );
         }
         for (const line of seedLineRows) {
@@ -1467,11 +1530,11 @@ export function foundationSeedFor(
           banksHere.forEach((b, at) => {
             const units = zeroIfNone(perBank[at]);
             if (units <= 0) return;
-            ctx.endowUnits(b.id, id, held(ctx, id, units), par);
+            ctx.endowUnits(b.id, id, held(ctx, id, asNamed(units, 'its paper')), par);
           });
         }
         for (const f of firmsHere) {
-          ctx.endowMoney(partyId(f.firm), c.ccy, cash(ctx, c.ccy, cashOf(f)));
+          ctx.endowMoney(partyId(f.firm), c.ccy, cash(ctx, c.ccy, asStated(cashOf(f), 'its cash')));
         }
       }
 
@@ -1541,7 +1604,7 @@ export function foundationSeedFor(
             'units',
           );
           if (units <= 0) continue;
-          const drawn = held(ctx, bench.id, units);
+          const drawn = held(ctx, bench.id, asNamed(units, 'the benchmark it takes'));
           if (drawn <= 0) continue;
           // Law 8: WHAT IT ACTUALLY HOLDS, in the units the price is quoted in. This read multiplied
           // a count of PIECES by a price per NAMED unit, so the reserves the seed thought it had
@@ -1586,7 +1649,18 @@ export function foundationSeedFor(
             instrument: id,
             market: goodMarketId(row.subUnit, where),
             period: ctx.period,
-            price: priced(ctx, id, ctx.params.price(openingPrice(row.subUnit))),
+            // Item 16, and it is a finding (E-8): `params.price` cannot say which scale a declared
+            // level is in — `equity.openingShare` is declared in PIECES of money and this one in
+            // money for a NAMED unit — and only the declaration's free-text `unit` says which. Named
+            // at the site that knows, until the declaration itself carries the scale.
+            price: priced(
+              ctx,
+              id,
+              asPerNamedUnit(
+                ctx.params.price(openingPrice(row.subUnit)),
+                `the opening level of ${row.subUnit}`,
+              ),
+            ),
             ccy: ctx.registry.currencyOf(where),
             provenance: { kind: 'opening' },
           });
@@ -1613,15 +1687,17 @@ export function foundationSeedFor(
         // Seed C4: what it cost whoever holds it is the seed's, and it is below what the market
         // opens at — a firm holding stock it could only sell at a loss would never have made it.
         const good = goodId(row.subUnit, here);
-        const basis = priced(ctx, good, price * SEED_STOCK_BASIS);
-        if (finished > 0) ctx.endowUnits(firm, good, held(ctx, good, finished), basis);
+        const basis = priced(ctx, good, asPerNamedUnit(price * SEED_STOCK_BASIS, 'what it cost'));
+        if (finished > 0) {
+          ctx.endowUnits(firm, good, held(ctx, good, asNamed(finished, 'its stock')), basis);
+        }
         if (onTheLine > 0) {
           const wip = wipId(row.subUnit, here);
           ctx.endowUnits(
             firm,
             wip,
-            held(ctx, wip, onTheLine),
-            priced(ctx, wip, price * SEED_STOCK_BASIS),
+            held(ctx, wip, asNamed(onTheLine, 'what is on the line')),
+            priced(ctx, wip, asPerNamedUnit(price * SEED_STOCK_BASIS, 'what it has cost so far')),
           );
         }
         // Seed D1: what its recipe draws, so its first batch is not waiting on a market session.
@@ -1632,7 +1708,12 @@ export function foundationSeedFor(
           const paid = ctx.params.price(openingPrice(input.subUnit)) * SEED_STOCK_BASIS;
           const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
           if (drawn <= 0) continue;
-          ctx.endowUnits(firm, line, held(ctx, line, drawn), priced(ctx, line, paid));
+          ctx.endowUnits(
+            firm,
+            line,
+            held(ctx, line, asNamed(drawn, 'what it holds of it')),
+            priced(ctx, line, asPerNamedUnit(paid, 'what it paid for one')),
+          );
         }
         // Capital Programme A2, A6, Seed D1: the plant its line runs on, spread over three vintages
         // of different ages, each carried at what is left of what a new one costs. WHICH kind of
@@ -1664,8 +1745,12 @@ export function foundationSeedFor(
             ctx.endowUnits(
               ctx.parties.get(firm).id,
               id,
-              held(ctx, id, zeroIfNone(perVintage[at])),
-              priced(ctx, id, (newPrice * (life - age)) / life),
+              held(ctx, id, asNamed(zeroIfNone(perVintage[at]), 'this vintage')),
+              priced(
+                ctx,
+                id,
+                asPerNamedUnit((newPrice * (life - age)) / life, 'what a unit of it is carried at'),
+              ),
             );
           });
         }
@@ -1678,12 +1763,12 @@ export function foundationSeedFor(
         // A3: room for EVERYTHING it opens holding that needs room — what it made and what its
         // recipe drew. A mill holds grain it did not grow, and it keeps that under cover too.
         const space = [
-          spaceOf(ctx, row.subUnit, held(ctx, goodId(row.subUnit, here), finished), here),
+          spaceOf(ctx, row.subUnit, held(ctx, goodId(row.subUnit, here), asNamed(finished, 'its stock')), here),
           ...recipeOf(row.subUnit).inputs.map((input) => {
             const line = goodId(input.subUnit, here);
             if (!ctx.instruments.has(line)) return 0;
             const drawn = mul(starts, input.qtyPerUnit, 'what a period of starting draws');
-            return spaceOf(ctx, input.subUnit, held(ctx, line, drawn), here);
+            return spaceOf(ctx, input.subUnit, held(ctx, line, asNamed(drawn, 'what it draws')), here);
           }),
         ].reduce((a, b) => a + b, 0);
         if (space > 0 && ctx.registry.instrumentKinds.has(plantKindId(STORAGE))) {
@@ -1695,7 +1780,7 @@ export function foundationSeedFor(
             ctx.parties.get(firm).id,
             id,
             space,
-            priced(ctx, id, (newPrice * (life - 1)) / life),
+            priced(ctx, id, asPerNamedUnit((newPrice * (life - 1)) / life, 'a year-old unit')),
           );
         }
       }
@@ -1710,9 +1795,18 @@ export function foundationSeedFor(
           if (!ctx.parties.has(who)) continue;
           const serviceDate = addDays(ctx.calendar.epoch, -ctx.calendar.periodDays);
           const id = seedVintage(ctx, VESSEL_KIND, c.region, serviceDate);
-          const hulls = held(ctx, id, downTick(mul(c.size, HULLS_PER_UNIT_OF_SIZE, 'its fleet')));
+          const hulls = held(
+            ctx,
+            id,
+            asNamed(downTick(mul(c.size, HULLS_PER_UNIT_OF_SIZE, 'its fleet')), 'its fleet'),
+          );
           if (hulls <= 0) continue;
-          ctx.endowUnits(who, id, hulls, priced(ctx, id, (newPrice * (life - 1)) / life));
+          ctx.endowUnits(
+            who,
+            id,
+            hulls,
+            priced(ctx, id, asPerNamedUnit((newPrice * (life - 1)) / life, 'a year-old hull')),
+          );
         }
       }
     },
@@ -1832,12 +1926,14 @@ export function foundationFundingFor(bankRows: readonly BankDecl[]): SystemModul
  * holding; a seed with four banking systems in it has to say whose cents it means (Money A2.b),
  * and every money has its own smallest piece (Currency A3).
  */
-function cash(ctx: SeedContext, ccy: CurrencyCode, phx: number): number {
-  return ctx.registry.pieces(currencyUnit(ccy), phx);
+function cash(ctx: SeedContext, ccy: CurrencyCode, phx: Stated): Qty {
+  // Item 16: money in its named unit IS an amount of that currency's named unit, and this is where
+  // it becomes the pieces the state holds — the one door between the two scales (Law 8).
+  return ctx.registry.pieces(currencyUnit(ccy), asNamed(phx, 'what is stated'));
 }
 
 /** Units of an instrument, in whatever its own unit is named in. */
-function held(ctx: SeedContext, instrument: InstrumentId, amount: number): number {
+function held(ctx: SeedContext, instrument: InstrumentId, amount: Named): Qty {
   return ctx.registry.pieces(ctx.instruments.get(instrument).unit, amount);
 }
 
@@ -1847,16 +1943,15 @@ function held(ctx: SeedContext, instrument: InstrumentId, amount: number): numbe
  * count times one: the two differ by the subdivision, which is a RESOLUTION and must not reach a
  * number anybody acts on (Law 2).
  */
-function inNamedUnits(ctx: SeedContext, instrument: InstrumentId, pieces: number): number {
-  return div(
-    pieces,
-    ctx.registry.subdivision(ctx.instruments.get(instrument).unit),
+function inNamedUnits(ctx: SeedContext, instrument: InstrumentId, pieces: Qty): Named {
+  return asNamed(
+    div(pieces, ctx.registry.subdivision(ctx.instruments.get(instrument).unit), 'in named units'),
     'in named units',
   );
 }
 
 /** And for a price: money for one NAMED unit becomes money pieces for one piece. */
-function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: number): PerPiece {
+function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: PerNamedUnit): PerPiece {
   const i = ctx.instruments.get(instrument);
   // Law 8, Seed C4: AN OPENING LEVEL IS A PRICE AND SITS ON THE SAME GRID AS ONE. Nobody posted it
   // and nobody promised anything at it, so there is no side to take a direction from and the
@@ -1866,7 +1961,7 @@ function priced(ctx: SeedContext, instrument: InstrumentId, perNamedUnit: number
 }
 
 /** The opening price the seed computed for a line; a line with none is a defect, never a default. */
-function openingOf(opening: ReadonlyMap<string, number>, id: string): number {
+function openingOf(opening: ReadonlyMap<string, PerNamedUnit>, id: string): PerNamedUnit {
   const p = opening.get(id);
   if (p === undefined) throw new Missing('Seed C4', `no opening price for ${id}`, { id });
   return p;

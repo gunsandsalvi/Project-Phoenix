@@ -5144,3 +5144,54 @@ belongs with the stage that owns its module.
 — the same 79, test for test — the five new ones being this stage's own, which assert that a bare
 number can no longer be a print, a basis, a cash flow or a total. Green: lint, typecheck, spec
 citations, forbids, `plan:check`.
+
+## Item 16, stage 2 — the seed, and the second scale
+
+**This world states its numbers in two scales and only one of them was in the type.** A price is
+money for one NAMED unit — a dollar a tonne, a wage an hour, a level a share — and the state holds
+PIECES of both: cents, and the smallest piece of a tonne. `Registry.priceOf` and `Registry.pieces`
+are the two doors between them, and the seed's `cash`, `held`, `inNamedUnits` and `priced` are the
+seed's own four names for the same two. Nothing said which side of them a number was on.
+
+So `Stated` (money in its named unit), `Named` (an amount of a named unit) and `PerNamedUnit` join
+`Cash` and `PerPiece` in `core/measure.ts`, and the two doors are the only crossings. The seed
+speaks in named units throughout and converts at them.
+
+**The count of the seed's `mul`/`add` sites is unchanged at 71, and that is not the measure of this
+stage.** What closed is the SCALE, and the seed's own comment at the central bank's benchmark says
+why that is the half worth closing first: *"This read multiplied a count of PIECES by a price per
+NAMED unit, so the reserves the seed thought it had bought were the subdivision of a bond times too
+big — eight per cent of the system's paper became eight times it."* That was found by hand, once,
+after it had shipped. It is a type error now.
+
+**Its money arithmetic went through the algebra with it**: the recipe's cost-of-one-unit table (a
+`PerNamedUnit` all the way down — the wage scaled by the hours a unit takes, the inputs by how many
+of each, the whole divided over what survives the line), the system's paper, the central bank's
+assets, the treasury's buffer and the banks' reserves. Including **a bare `line.banks * price`** — a
+count of units times a level, with no function around it at all, which is the one shape `valueAt`
+exists to make unwriteable.
+
+**A local `scale` shadowed the imported one** in the middle of the largest function in the seed and
+the compiler caught it as "this expression is not callable". Renamed `madeByTheHours`, which is what
+it is.
+
+**THE TYPE FOUND TWO THINGS NOBODY HAD WRITTEN DOWN, which is what it was built for.**
+
+**E-8 — a declared price does not say which scale it is in.** `dimension: 'price'` is one dimension
+and this world states levels in two. `equity.openingShare` is declared in PIECES of money per share
+(`value: MONEY_PIECES`) and written straight into a print; every goods opening level is money for a
+NAMED unit and goes through `Registry.priceOf` first. Only the declaration's free-text `unit` says
+which, and `params.price` cannot tell them apart. `SHARE_PIECES` is 1 and `MONEY_PIECES` is 100, so
+the two scales are a hundred apart for exactly the line the known finding *"a share worth a
+hundredth of a cent"* (worklist 16, step 214) is about. Positioned at stage 10, with the registry.
+
+**E-9 — a dirty price adds two scales.** `readCurve` and `market.ts` both add a print — money pieces
+per piece — to what a kind's `accrued` returns, which its writers state per named unit. It is right
+today ONLY because `PAR` is declared `perUnit: MONEY_PIECES`, the same subdivision the money has, so
+the two coincide for par-denominated paper and for nothing else. A coupon-bearing instrument whose
+unit is not par, or a `pieceShift` that moves one and not the other, makes every dirty price wrong
+by the subdivision, silently. Positioned at stage 3, with the banks and the money market.
+
+**Measured.** **79 red of 791 before and after, the same 79 test for test.** Two new assertions in
+`measure.test.ts` (13 now): dollars do not add to cents, and a count of pieces is not an amount of a
+named unit. Green: lint, typecheck, spec citations, forbids, `plan:check`.

@@ -39,7 +39,7 @@ import {
 import type { Calendar } from '../calendar/calendar.js';
 import type { Event } from '../journal/journal.js';
 import { compareCivil, dayNumber, formatCivil, type Civil } from '../calendar/civil.js';
-import { asPerPiece, asRatio, minus, type PerPiece, scale } from '../core/measure.js';
+import { asNamed, asPerPiece, asRatio, minus, type PerPiece, scale } from '../core/measure.js';
 import { div, mul, sub, sum, zeroIfNone } from '../core/num.js';
 import { none, some, type Option } from '../core/option.js';
 import type { Instrument, InstrumentsReads, Terms } from '../register/instruments.js';
@@ -253,7 +253,10 @@ export interface SpaceReads {
 
 export function spaceFor(reads: SpaceReads, unit: UnitId, pieces: number, perUnit: number): number {
   const named = div(pieces, reads.registry.subdivision(unit), 'what it holds, in its own named unit');
-  return reads.registry.pieces(plantUnitId(STORAGE), mul(named, perUnit, 'the space that takes'));
+  return reads.registry.pieces(
+    plantUnitId(STORAGE),
+    asNamed(mul(named, perUnit, 'the space that takes'), 'the space that takes'),
+  );
 }
 
 /**

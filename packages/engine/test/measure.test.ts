@@ -21,7 +21,11 @@ import {
   asAmount,
   asCash,
   asMoney,
+  asNamed,
+  asPerNamedUnit,
   asPerPiece,
+  asStated,
+  type Stated,
   negated,
   over,
   type Cash,
@@ -168,6 +172,32 @@ describe('stage 1: the kernel carries its dimensions', () => {
     expect(negated(asCash(10, 'ten'), 'what is owed')).toBe(-10);
     expect(absolute(asCash(-10, 'owed'), 'how big it is')).toBe(10);
     expect(() => over(asCash(10, 'ten'), asRatio(0, 'none'), 'restated')).toThrow(/into nothing/);
+  });
+});
+
+describe('stage 2: the two scales, and they do not meet', () => {
+  it('a stated amount is not a balance and a stated level is not a print', () => {
+    // This world says its numbers in NAMED units — dollars, tonnes, hours — and holds them in
+    // PIECES: cents, and the smallest piece of a tonne. The doors are `Registry.pieces` and
+    // `Registry.priceOf`, and before item 16 nothing said which side of them a number was on.
+    const stated = asStated(40, 'forty dollars');
+    const held = asCash(4000, 'four thousand cents');
+    // @ts-expect-error dollars and cents are the same money at two scales, and they do not add
+    expect(() => plus(stated, held, 'what it has')).toBeDefined();
+    const perTonne = asPerNamedUnit(12.5, 'twelve fifty a tonne');
+    const perPiece = asPerPiece(12.5, 'twelve and a half pieces a piece');
+    // @ts-expect-error a level per named unit is not a level on the grid
+    expect(() => plus(perTonne, perPiece, 'the level')).toBeDefined();
+  });
+
+  it('a named amount at a named level is a stated value, and the units still cancel', () => {
+    const tonnes = asNamed(4, 'four tonnes');
+    const perTonne = asPerNamedUnit(12.5, 'twelve fifty a tonne');
+    const worth: Stated = valueAt(perTonne, tonnes, 'what four tonnes come to');
+    expect(worth).toBe(50);
+    // The seed wrote `line.banks * price` — a count times a level, with no function around it.
+    // @ts-expect-error a count of pieces is not an amount of a named unit
+    expect(() => valueAt(perTonne, asQty(4, 'four pieces'), 'what it comes to')).toBeDefined();
   });
 });
 

@@ -34,6 +34,7 @@
  * owns none rents all of them. A party that owns more than it lives in is a landlord, and that is
  * the whole of what makes one.
  */
+import { asNamed } from '../../core/measure.js';
 import type { Order } from '../../clearing/solver.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
@@ -191,7 +192,10 @@ function needs(view: ParticipantView, rows: readonly TenureDecl[]): number {
    */
   return view.registry.pieces(
     goodUnitOf(view, self.region),
-    mul(weightOf(self), per, 'the occupancy the people in it need between them'),
+    asNamed(
+      mul(weightOf(self), per, 'the occupancy the people in it need between them'),
+      'the occupancy they need between them',
+    ),
   );
 }
 
@@ -222,7 +226,10 @@ function reservation(view: ParticipantView, rows: readonly TenureDecl[]): number
   if (!income.some || income.value.expected <= 0) return undefined;
   const per = view.registry.pieces(
     goodUnitOf(view, self.region),
-    view.params.ratio(HOUSING_PARAMS.perMember(keyOf(self, 'cohort'))),
+    asNamed(
+      view.params.ratio(HOUSING_PARAMS.perMember(keyOf(self, 'cohort'))),
+      'the occupancy a member lives under',
+    ),
   );
   if (per <= 0) return undefined;
   // Law 8: money pieces a member expects, over the PIECES of occupancy a member lives under — so

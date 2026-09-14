@@ -18,6 +18,7 @@
  * B2, B2.a — the pension fund matching a long liability — is DECLARED PARTIAL here and built at
  * 13h, where there is a pension fund to have one.
  */
+import { asPerNamedUnit } from '../../core/measure.js';
 import { contractOf, type MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import type { UnitId } from '../../core/ids.js';
@@ -84,7 +85,7 @@ export function irsOrders(view: ParticipantView, m: MarketDecl): readonly Order[
   // Law 8: a level is held in MONEY PIECES PER PIECE OF THE THING. Two per cent a year on a unit
   // of notional is two cents, and a schedule posted at 0.02 is below this book's own tick.
   const mine = fixing.some
-    ? view.registry.priceOf(m.ccy, unit, fixing.value)
+    ? view.registry.priceOf(m.ccy, unit, asPerNamedUnit(fixing.value, 'what the fixing says'))
     : outlook.some
       ? outlook.value.expected
       : 0;
