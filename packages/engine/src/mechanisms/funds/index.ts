@@ -355,8 +355,8 @@ function etfParamsOf(etfs: readonly EtfDecl[]): ParamDecl[] {
     dimension: 'perAnnum' as const,
     kind: 'placeholder' as const,
     owner: 'model' as const,
-    why: `Fund Shares B3, F3: what ${e.managerName} charges for running ${e.name}. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be. The MANDATE exists now (item 9.2a) and the competition does not — what a manager would bid against is what running a pool costs it, and a manager in this world employs nobody, so a book with two of them in it would clear at the tick. The missing mechanism is a manager with a cost base, which is worklist 13o.`,
-    standsInFor: { mechanism: 'Fund Shares F3', worklistItem: '13o' },
+    why: `Fund Shares B3, F3: what ${e.managerName} charges for running ${e.name}. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be. The MANDATE exists now (item 9.2a) and the competition does not — what a manager would bid against is what running a pool costs it, and a manager in this world employs nobody, so a book with two of them in it would clear at the tick. The missing mechanism is a manager with a cost base, which is item 13.9.`,
+    standsInFor: { mechanism: 'Fund Shares F3', item: '13.9' },
   }));
 }
 
@@ -398,8 +398,8 @@ function paramsOf(decls: readonly FundDecl[]): ParamDecl[] {
         dimension: 'perAnnum',
         kind: 'placeholder',
         owner: 'model',
-        why: `Fund Shares B3, F3: what ${f.managerName} charges. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be. The MANDATE exists now (item 9.2a) and the competition does not — what a manager would bid against is what running a pool costs it, and a manager in this world employs nobody, so a book with two of them in it would clear at the tick. The missing mechanism is a manager with a cost base, which is worklist 13o.`,
-        standsInFor: { mechanism: 'Fund Shares F3', worklistItem: '13o' },
+        why: `Fund Shares B3, F3: what ${f.managerName} charges. Nothing in this world produces it: no manager competes for the mandate, so the number stands where a competition should be. The MANDATE exists now (item 9.2a) and the competition does not — what a manager would bid against is what running a pool costs it, and a manager in this world employs nobody, so a book with two of them in it would clear at the tick. The missing mechanism is a manager with a cost base, which is item 13.9.`,
+        standsInFor: { mechanism: 'Fund Shares F3', item: '13.9' },
       },
       {
         id: fundParam(f.fund, 'requiredYield'),

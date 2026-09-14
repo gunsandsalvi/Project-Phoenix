@@ -7121,3 +7121,41 @@ reminder — which is the project's own instruction, applied to the project's ow
 
 Typecheck 0, lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files, `check:deaths` 11 of
 11, `check:existence` green. `9.6`–`9.9` are the rest of item 9.
+
+---
+
+## Item 9, twelfth stage, second half — what was left open is queued where it will be done
+
+**What.** `9.2b` left two things undone for stated reasons and pointed four placeholders at worklist
+rows. Pointing a placeholder at an item is worth nothing if that item does not carry the work — **it
+is the same hole one level up**, and the check as first written could not see it: a worklist row is
+one line in a table, and "13o is open" says nothing about whether 13o will delete `fund.fee.*`.
+
+**`PlaceholderDeath.worklistItem` is renamed `item`, and a death may name either list.** The name
+had gone stale with the project: `docs/IMPLEMENTATION.md` is the ordered plan and is where the first
+open item is taken from, and three of these four deaths belong to plan items with no worklist row at
+all. `check:deaths` resolves an `item` against the worklist's open rows AND the plan's headings and
+unticked steps, so a death can name the list the work is actually queued on.
+
+**Three steps are INSERTED, each at its dependency position** (Law 10, said out loud):
+
+- **12.6** — delete `seed.membersPerCohort`. Fifteen million a cohort is the plainest placeholder in
+  the seed, and its own `why` already named what ends it: a population with births and deaths in it.
+  12.2 and 12.3 ARE that mechanism, so item 12 is where it dies. It named worklist 13f, closed.
+- **13.9** — the management fee, and what a manager COSTS. Two things in one order, because the
+  second cannot work without the first: a manager HIRES in the labour venue and what it can run is
+  the hours it pays for over the assets a mandate carries (`banks/staff.ts:linesCovered`'s shape);
+  then the mandate is competed for, one book per pool, each manager's own cost base its floor. The
+  placeholder dies in the same change and `fee` moves off `params` onto `MandateTerms`, because at
+  that point it is an OUTCOME. It named worklist 13h, closed.
+- **16.6** — delete `seed.crossHoldingShare`. What a central bank's reserves are MADE of is a
+  cross-border question, so it belongs with the cross-border item rather than with asset managers: a
+  reserve manager BUYS foreign paper, in the market 16.2 and 16.3 open, and what it ends up holding
+  is then an outcome. It named worklist 13h, closed. It is the last cross-border placeholder.
+
+The check now refuses a death that names something in neither list, so a step cannot be re-pointed
+at a plan item that does not exist — which is what it did when these three were first written, and
+is how the three got written.
+
+Typecheck 0 (engine, app and tools), lint 0, `check:spec` 208, `check:forbids` 4 over 205,
+`check:deaths` 11 of 11, `check:existence` green.

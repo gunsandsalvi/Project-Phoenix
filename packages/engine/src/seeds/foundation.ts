@@ -764,7 +764,7 @@ export function foundationSeedFor(
         dimension: 'count',
         kind: 'placeholder',
         owner: 'model',
-        standsInFor: { mechanism: 'Households A5', worklistItem: '13n' },
+        standsInFor: { mechanism: 'Households A5', item: '12.6' },
         why: "HOW MANY PEOPLE THERE ARE. Fifteen million a cohort and two cohorts, so thirty million in the region — which is a country, and the scale every other number in this seed is a ratio against. It was six thousand, and six thousand was a test rig wearing a world's name: a labour venue with a handful of employers in it, a bank sector whose smallest member was the size of one firm, and a bill line a single household cell could have bought outright. Every mechanism that needs somebody else to be there — a second bidder, another lender, a market that does not move when one party leaves — was being tested against a world too small to have one. It is a PLACEHOLDER and not a resolution: the answer MOVES with it, which is the whole reason it had to change, and what ends it is a population with births and deaths in it (worklist 13f) rather than a count anybody states.",
       },
       {
@@ -819,10 +819,10 @@ export function foundationSeedFor(
         dimension: 'ratio',
         kind: 'placeholder',
         owner: 'model',
-        why: "Currency D2, Central Bank F4: how much of every central bank's reserves is another country's paper, split evenly between the countries that issue it. A central bank holds it because that is what reserves ARE (F4), and it is the only holder for whom foreign paper is what it is for — what a COMMERCIAL bank holds abroad is a position it takes with its own capital, which is 13h's decision and not the seed's. Eight per cent, small enough that this is a reserve holding rather than a currency fund and large enough that a week of exchange rates is visible in what a central bank is worth. Evenly, because the seed has nothing to say about which foreign government a reserve manager prefers. It is a PLACEHOLDER: what replaces it is the portfolio decision, after which what anybody holds abroad is an outcome of what it bought and sold. It pointed at 13h, which closed without one; a party that takes a position abroad with its own capital is an asset manager with a strategy, which is 13o.",
+        why: "Currency D2, Central Bank F4: how much of every central bank's reserves is another country's paper, split evenly between the countries that issue it. A central bank holds it because that is what reserves ARE (F4), and it is the only holder for whom foreign paper is what it is for — what a COMMERCIAL bank holds abroad is a position it takes with its own capital, which is 13h's decision and not the seed's. Eight per cent, small enough that this is a reserve holding rather than a currency fund and large enough that a week of exchange rates is visible in what a central bank is worth. Evenly, because the seed has nothing to say about which foreign government a reserve manager prefers. It is a PLACEHOLDER: what replaces it is the portfolio decision, after which what anybody holds abroad is an outcome of what it bought and sold. It pointed at 13h, which closed without one; what a central bank's reserves are MADE of is a cross-border question and item 16.6 is where it is answered.",
         standsInFor: {
           mechanism: 'Central Bank F4',
-          worklistItem: '13o',
+          item: '16.6',
         },
       },
       ...openingPrices(),

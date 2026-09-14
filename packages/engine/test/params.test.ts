@@ -80,7 +80,7 @@ describe('a shape with a scheduled death is a placeholder (Law 2)', () => {
     expect(
       () =>
         new ParamRegister([
-          decl({ kind: 'technology', standsInFor: { mechanism: 'Goods A2', worklistItem: '15' } }),
+          decl({ kind: 'technology', standsInFor: { mechanism: 'Goods A2', item: '15' } }),
         ]),
     ).toThrow(/scheduled death/);
   });
@@ -97,7 +97,7 @@ describe('what the foundation world declares (XI-14)', () => {
     expect(report.placeholders.length).toBeGreaterThan(0);
     for (const p of report.placeholders) {
       expect(p.mechanism.length, `${p.id} stands in for nothing`).toBeGreaterThan(0);
-      expect(p.worklistItem, `${p.id} names no item that kills it`).not.toBe('');
+      expect(p.item, `${p.id} names no item that kills it`).not.toBe('');
     }
     // And the count is a READ of the register, never a number anybody wrote beside it (Law 19).
     expect(report.counts.placeholder).toBe(report.placeholders.length);

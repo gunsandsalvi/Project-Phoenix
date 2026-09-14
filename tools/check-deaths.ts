@@ -72,7 +72,8 @@ function planItems(): Set<string> {
 interface Death {
   readonly file: string;
   readonly line: number;
-  readonly kind: 'worklistItem' | 'planItem';
+  /** `item` is a placeholder number's death; `planItem` is a noun's kernel home. */
+  readonly kind: 'item' | 'planItem';
   readonly names: string;
 }
 
@@ -88,10 +89,14 @@ function deathsIn(file: string): Death[] {
   const out: Death[] = [];
   const lines = readFileSync(file, 'utf8').split('\n');
   lines.forEach((text, i) => {
-    const w = /worklistItem:\s*'([^']+)'/.exec(text);
-    if (w?.[1] !== undefined) out.push({ file, line: i + 1, kind: 'worklistItem', names: w[1] });
+    // `planItem` ends in `item`, so the placeholder's field is matched on its own word boundary.
     const p = /planItem:\s*'([^']+)'/.exec(text);
-    if (p?.[1] !== undefined) out.push({ file, line: i + 1, kind: 'planItem', names: p[1] });
+    if (p?.[1] !== undefined) {
+      out.push({ file, line: i + 1, kind: 'planItem', names: p[1] });
+      return;
+    }
+    const w = /\bitem:\s*'([^']+)'/.exec(text);
+    if (w?.[1] !== undefined) out.push({ file, line: i + 1, kind: 'item', names: w[1] });
   });
   return out;
 }
@@ -109,13 +114,19 @@ function main(): void {
     for (const d of deathsIn(file)) {
       seen += 1;
       const where = `${relative(root, d.file)}:${d.line}`;
-      if (d.kind === 'worklistItem') {
+      if (d.kind === 'item') {
+        /**
+         * Law 10: EITHER LIST, because there are two and the plan is the one taken first. A death
+         * may name an open row of the worklist or an item or step of `docs/IMPLEMENTATION.md`; what
+         * it may not name is something closed, or something in neither.
+         */
         const state = worklist.get(d.names);
-        if (state === undefined) {
-          bad.push(`${where}: names worklist item ${d.names}, which is not in docs/WORKLIST.md`);
-        } else if (state !== 'open') {
-          bad.push(`${where}: names worklist item ${d.names}, which is ${state}`);
-        }
+        if (state === 'open' || plan.has(d.names)) continue;
+        bad.push(
+          state === undefined
+            ? `${where}: names item ${d.names}, which is in neither docs/WORKLIST.md nor the plan`
+            : `${where}: names worklist item ${d.names}, which is ${state}, and the plan has no ${d.names}`,
+        );
         continue;
       }
       const id = planId(d.names);

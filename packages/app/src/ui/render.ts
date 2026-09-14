@@ -579,7 +579,7 @@ export function render(root: HTMLElement, s: Snapshot | null, actions: Actions, 
   if (s.params.placeholders.length > 0) {
     const ul = el('ul');
     for (const p of s.params.placeholders)
-      ul.append(el('li', {}, `${p.id} stands in for ${p.mechanism} (worklist ${p.worklistItem})`));
+      ul.append(el('li', {}, `${p.id} stands in for ${p.mechanism} (item ${p.item})`));
     params.append(ul);
   }
   root.append(params);

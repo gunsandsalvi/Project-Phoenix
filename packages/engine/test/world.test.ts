@@ -240,7 +240,7 @@ describe('the seed (Seed A2)', () => {
     // carries the bank it was launched at, and WHICH bank is an outcome of the draw (Seed B1.a).
     expect(
       snapshot(w, { kind: 'inspector' }, 10)
-        .params.placeholders.map((p) => `${p.mechanism} at ${p.worklistItem}`)
+        .params.placeholders.map((p) => `${p.mechanism} at ${p.item}`)
         .sort(),
     ).toEqual([
       "Banks Lending C1.d — the credit officer's hours, paid to a named person at 13d",
@@ -686,7 +686,7 @@ describe('the observer surface (Observer A2, A4, D3)', () => {
     expect(Object.keys(inspector.state ?? {})).toContain('labour/employment');
     expect(inspector.outlooks.length).toBeGreaterThan(0);
     // XI-14: every number that shapes behaviour is declared, and the placeholders name their death.
-    expect(inspector.params.placeholders.every((x) => x.worklistItem.length > 0)).toBe(true);
+    expect(inspector.params.placeholders.every((x) => x.item.length > 0)).toBe(true);
     // A2: a party sees its own outlooks and nobody else's, and no module state at all.
     const firm = partyId('firm.1');
     const own = snapshot(w, { kind: 'party', party: firm }, 10);

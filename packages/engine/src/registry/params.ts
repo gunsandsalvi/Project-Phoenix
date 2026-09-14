@@ -34,8 +34,17 @@ export type ParamOwner = 'parliament' | 'centralBank' | 'standardSetter' | 'cons
 export interface PlaceholderDeath {
   /** The mechanism whose absence this number stands in for, cited by spec system. */
   readonly mechanism: string;
-  /** The worklist item that builds it and deletes this number in the same change. */
-  readonly worklistItem: string;
+  /**
+   * THE ITEM THAT BUILDS IT and deletes this number in the same change — an open row of
+   * `docs/WORKLIST.md`, or an item or step of `docs/IMPLEMENTATION.md`, which is the ORDERED PLAN
+   * and is where the first open item is taken from.
+   *
+   * It was `worklistItem`, and the name had gone stale with the project: four placeholders named
+   * worklist rows that were closed, one of them a row the worklist's own header says never produced
+   * an outcome. `npm run check:deaths` is what now refuses that, and it resolves against both files
+   * — so a death can name the list the work is actually queued on (item 9.2b).
+   */
+  readonly item: string;
 }
 
 /** Law 8: the closed vocabulary a declared number's unit belongs to. */
@@ -145,7 +154,7 @@ export interface UnitSource {
 
 export interface ParamReport {
   readonly counts: Readonly<Record<ParamKind, number>>;
-  readonly placeholders: readonly { id: ParamId; mechanism: string; worklistItem: string }[];
+  readonly placeholders: readonly { id: ParamId; mechanism: string; item: string }[];
   readonly shapes: readonly ParamId[];
 }
 
@@ -201,7 +210,7 @@ export class ParamRegister {
       if ((d.kind === 'shape' || d.kind === 'technology') && namesAnItem(d.why)) {
         throw new InvalidRegistry(
           'Law 2',
-          `${d.kind} ${d.id} names a worklist item in its reason: a ${d.kind} with a scheduled death IS a placeholder. Declare kind 'placeholder' with standsInFor { mechanism, worklistItem }`,
+          `${d.kind} ${d.id} names a worklist item in its reason: a ${d.kind} with a scheduled death IS a placeholder. Declare kind 'placeholder' with standsInFor { mechanism, item }`,
           { id: d.id },
         );
       }
@@ -356,7 +365,7 @@ export class ParamRegister {
       shape: 0,
       placeholder: 0,
     };
-    const placeholders: { id: ParamId; mechanism: string; worklistItem: string }[] = [];
+    const placeholders: { id: ParamId; mechanism: string; item: string }[] = [];
     const shapes: ParamId[] = [];
     for (const d of this.decls.values()) {
       counts[d.kind] += 1;
@@ -364,7 +373,7 @@ export class ParamRegister {
         placeholders.push({
           id: d.id,
           mechanism: d.standsInFor.mechanism,
-          worklistItem: d.standsInFor.worklistItem,
+          item: d.standsInFor.item,
         });
       }
       if (d.kind === 'shape') shapes.push(d.id);
