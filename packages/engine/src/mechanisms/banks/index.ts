@@ -196,14 +196,10 @@ function runRaises(rows: readonly BankDecl[], ctx: MechanismContext): void {
       const decl = declOf(rows, other.id);
       if (decl === undefined || !other.status.alive || other.id === p.id) continue;
       const view = ctx.participant(other.id);
-      const q = quote(
-        view,
-        decl,
-        p.id,
-        regulationOf(view),
-        costOfFunds(ctx, other.id, ccy).perAnnum,
-        seenDefaults(ctx),
-      );
+      // A-45: a bank that cannot cost its own funding does not quote a rate, so it does not bid.
+      const funds = costOfFunds(ctx, other.id, ccy).perAnnum;
+      if (!funds.some) continue;
+      const q = quote(view, decl, p.id, regulationOf(view), funds.value, seenDefaults(ctx));
       bids.push(...bidsFor(view, p.id, ccy, q.rate, room(view, decl, p.id).most));
     }
     const taken = runRaise(ctx, p.id, ccy, short, bids, b.next);
@@ -252,8 +248,17 @@ function declOf(rows: readonly BankDecl[], bank: PartyId): BankDecl | undefined 
  * asset consumes has to earn on top.
  */
 export interface FundingCost {
-  /** B2: the blend — what one unit of what funds this bank's book costs it, per annum. */
-  readonly perAnnum: Ratio;
+  /**
+   * B2: the blend — what one unit of what funds this bank's book costs it, per annum.
+   *
+   * A-45, Missing is Missing: NONE where the bank cannot cost its funding, which is three real
+   * states — a bank funded by nothing at all, the opening period before anything has been paid, and
+   * a period of no length. Zero is not "unknown" here, it is "MONEY IS FREE", and it used to flow
+   * straight into `quote()` and into the desk's edge: in period 0 every bank in the world quoted as
+   * if its funding cost it nothing. A bank that cannot cost its funding does not quote a rate,
+   * which is what the surrounding code does everywhere else.
+   */
+  readonly perAnnum: Option<Ratio>;
   /** B2.b: what it ACTUALLY PAID on what it owes last period, annualised. Read off the wire. */
   readonly interest: Cash;
   /** XI-4: what its owners require on the part of the book they fund. Nothing where they fund none. */
@@ -293,14 +298,25 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
   const blend = (interest: Cash): FundingCost => ({
     perAnnum:
       funding <= 0
-        ? asRatio(0, 'a bank funding nothing pays nothing for it')
-        : ratioOf(plus(interest, onCapital, 'what its funding costs it'), funding, 'per annum'),
+        ? none<Ratio>()
+        : some(ratioOf(plus(interest, onCapital, 'what its funding costs it'), funding, 'per annum')),
     interest,
     onCapital,
     owed,
     capital,
   });
-  if (funding <= 0 || ctx.period === 0) return blend(asCash(0, 'nothing paid'));
+  const unknown = (why: string): FundingCost => ({
+    perAnnum: none<Ratio>(),
+    interest: asCash(0, why),
+    onCapital,
+    owed,
+    capital,
+  });
+  // A-45: three states, and none of them is "money is free". A bank funded by nothing has no blend
+  // to strike; the opening period has nothing paid to strike it from; a period of no length has no
+  // year to annualise over. Each says so, and a reader that cannot go on without one stops.
+  if (funding <= 0) return unknown('a bank funded by nothing has no cost of funds');
+  if (ctx.period === 0) return unknown('nothing has been paid yet, so nothing says what funds cost');
   const previous = period(ctx.period - 1);
   // Law 8: a rate is per annum, so what it paid over this period is divided by the fraction of a
   // year the period actually was — read off the calendar's own dates, never a periods-per-year.
@@ -309,7 +325,7 @@ function costOfFunds(ctx: MechanismContext, bank: PartyId, ccy: CurrencyCode): F
     ctx.calendar.startOf(previous),
     ctx.calendar.startOf(ctx.period),
   );
-  if (year <= 0) return blend(asCash(0, 'a period of no length'));
+  if (year <= 0) return unknown('a period of no length annualises to nothing');
   return blend(
     over(
       couponsPaid(ctx, bank, ccy),
@@ -738,14 +754,22 @@ function bookDraws(rows: readonly BankDecl[], ctx: MechanismContext): void {
     const decl = declOf(rows, bank);
     if (decl === undefined) continue;
     const view = ctx.participant(bank);
-    const q = quote(
-      view,
-      decl,
-      d.holder as PartyId,
-      regulationOf(view),
-      costOfFunds(ctx, bank, d.ccy as CurrencyCode).perAnnum,
-      seenDefaults(ctx),
-    );
+    /**
+     * A-45, Money B3.a: WHOEVER ALLOWED THE DRAWING WRITES THE ROW THAT PRICES IT — and a bank that
+     * cannot cost its own funding cannot price it. This used to reach `quote` with a cost of zero in
+     * the opening period, so the first overdraft of every run was written at a rate struck off free
+     * money. An unpriced drawing is a defect in the money issuer that allowed it, and it says so
+     * rather than inventing a rate.
+     */
+    const funds = costOfFunds(ctx, bank, d.ccy as CurrencyCode).perAnnum;
+    if (!funds.some) {
+      throw new Missing(
+        'Money B3.a',
+        `${bank} allowed ${d.holder} an overdraft and cannot cost its own funding to price it`,
+        { bank: String(bank), ccy: d.ccy },
+      );
+    }
+    const q = quote(view, decl, d.holder as PartyId, regulationOf(view), funds.value, seenDefaults(ctx));
     // C9: an overdraft is a drawing on the borrower's line, not a new loan every week.
     write(ctx, bank, d.holder as PartyId, d.amount, q.rate, d.ccy as CurrencyCode, true);
   }
@@ -1421,7 +1445,11 @@ function publishQuotes(rows: readonly BankDecl[], ctx: MechanismContext): void {
       const reg = regulationOf(view);
       const r = room(view, decl, p.id);
       if (r.most <= 0) continue;
-      const q = quote(view, decl, p.id, reg, costOfFunds(ctx, b.id, ccy).perAnnum, seenDefaults(ctx));
+      // A-45: a bank that cannot cost its funding does not quote. It is not the cheapest lender in
+      // the world, which is what a zero made it in every opening period.
+      const funds = costOfFunds(ctx, b.id, ccy).perAnnum;
+      if (!funds.some) continue;
+      const q = quote(view, decl, p.id, reg, funds.value, seenDefaults(ctx));
       if (best === undefined || q.rate < best.rate) {
         best = q;
         most = r.most;
@@ -1473,7 +1501,10 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
     if (decl === undefined || !b.status.alive) continue;
     const view = ctx.participant(b.id);
     const ccy = ctx.registry.currencyOf(b.region);
-    const funds = costOfFunds(ctx, b.id, ccy).perAnnum;
+    // A-45: it publishes what it would require only where it can say what money costs it.
+    const own = costOfFunds(ctx, b.id, ccy).perAnnum;
+    if (!own.some) continue;
+    const funds = own.value;
     const reg = { ...regulationOf(view), riskWeight: view.params.ratio(LENDING_PARAMS.sovereignWeight) };
     const required: Record<string, number> = {};
     const expectedLoss: Record<string, number> = {};
@@ -1516,6 +1547,22 @@ function publishReservations(rows: readonly BankDecl[], ctx: MechanismContext): 
  * what borrowing costs, and a schedule in a bond market is built on it. It is a read of what
  * already left the bank (Observer A5) and it causes nothing by itself.
  */
+/**
+ * A-45, Observer A3: what a bank PUBLISHES about what money costs it, as a record a reader can take
+ * a number out of. `perAnnum` is an `Option` inside the engine and a published event is data, so
+ * the field is PRESENT with the rate or ABSENT altogether — never an option object a reader would
+ * have to know the shape of, and never a zero standing in for "it cannot say".
+ */
+function published(cost: FundingCost): Record<string, unknown> {
+  const parts = {
+    interest: cost.interest,
+    onCapital: cost.onCapital,
+    owed: cost.owed,
+    capital: cost.capital,
+  };
+  return cost.perAnnum.some ? { ...parts, perAnnum: cost.perAnnum.value } : parts;
+}
+
 function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): void {
   for (const b of ctx.parties.ofKind(BANK)) {
     if (declOf(rows, b.id) === undefined || !b.status.alive) continue;
@@ -1535,9 +1582,9 @@ function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): v
     // It stays ONE event per bank, because a reader asking a bank what money costs it means its own
     // money and `lastOwn` must not depend on which currency a loop reached last. The others are
     // beside it, named, and the home one is not repeated among them.
-    const alsoIn: Record<string, FundingCost> = {};
+    const alsoIn: Record<string, Record<string, unknown>> = {};
     for (const ccy of ctx.registry.currencies.keys()) {
-      if (ccy !== home) alsoIn[ccy] = costOfFunds(ctx, b.id, ccy);
+      if (ccy !== home) alsoIn[ccy] = published(costOfFunds(ctx, b.id, ccy));
     }
     ctx.record(
       'bank.costOfFunds',
@@ -1545,7 +1592,7 @@ function publishCostOfFunds(rows: readonly BankDecl[], ctx: MechanismContext): v
       // B2.b, Law 4: the blend AND ITS PARTS, so what it paid and what its capital costs it are
       // readable separately by whoever needs one of them — and so that nobody has to re-derive
       // either from the other (Law 19).
-      { bank: b.id, ccy: home, ...costOfFunds(ctx, b.id, home), alsoIn },
+      { bank: b.id, ccy: home, ...published(costOfFunds(ctx, b.id, home)), alsoIn },
       true,
     );
   }

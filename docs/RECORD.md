@@ -6253,3 +6253,66 @@ paragraph is deleted either way (Law 12).
 Closes `A-4`, `A-10`, `A-11`, `A-12`, `A-13`, `A-14`, `A-42`, `A-48`, `B-10`. Typecheck 0, lint 0,
 `check:spec`, `check:forbids`, `check:existence` green. Not measured — the suite runs when the plan
 is done, and several of these families are now capable of red for the first time, which is the point.
+
+---
+
+## Item 5 — Missing is Missing, carried
+
+The old file's item 2 turned the lint rule on in `core/num.ts` and carried four sites out of it,
+correctly, because they are missing MECHANISMS rather than missing values (Law 11). Then nothing
+built the mechanisms. These are the four.
+
+**`A-25` — a zero standing where a defect belongs.** `consumptionIsBought` read
+`leg.pricePerUnit.some ? value : 0` and carried the zero into the comparison, so a cell that bought
+and paid was reported as `took 0 of goods and paid X` — a violation whose SIZE and MESSAGE are about
+a missing price and whose citation is about the flow. A physical thing handed to a household with no
+stated price is a real defect in whoever drafted the instruction (C2.a: a trade carries its print),
+and it is reported as itself now, under Goods F1, with the line and the units.
+
+**`A-34` — labour priced at zero in the one place that reaches a market.** `firms/decide.ts` handles
+a missing wage correctly twice — `unitCost` answers `none()`, `worthMaking` switches its test — and
+then the INPUT BID read `wage.some ? wage.value : asPerPiece(0, …)`. What an input is worth to a firm
+is the output it makes possible LESS the wages that unit still needs, so a zero there makes the bid
+too high by `hoursPerUnit × wage`, which for most recipes is the largest term in it. And EVERY firm
+is in that state until it has employed somebody, so at world open every input market cleared against
+systematically inflated bids and the firms that had never hired outbid the ones that had.
+
+`wagesPerUnit` is an `Option` now: the wage where the firm has one, an honest zero where the recipe
+takes no hours at all, Missing otherwise. A firm that cannot price an hour posts no input bid — it
+still offers what it is holding, because selling stock needs no view of what labour costs.
+`wageFacing` already falls back to the published going rate, so this is the firm that knows neither
+its own wage bill nor what an hour last cleared at anywhere.
+
+**`A-45` — "money is free" in every opening period.** `costOfFunds` returned exactly zero on three
+paths: a bank funded by nothing, period 0, and a zero-length year. Zero is not "unknown" here, it is
+a statement that funding costs nothing, and it flowed straight into `quote()` and into the desk's
+edge — so in period 0 every bank in the world quoted as if its money were free, and the cheapest
+lender in the world was whichever bank had never paid anybody.
+
+`FundingCost.perAnnum` is an `Option<Ratio>` and each of the three says Missing with its own reason.
+A bank that cannot cost its funding does not quote a loan, does not bid in another bank's
+subordinated raise, and publishes no reservation. An OVERDRAFT is the one that throws: Money B3.a
+says whoever ALLOWED the drawing writes the row that prices it, so a money issuer that allowed one
+and cannot price it is a defect at the site, not a rate to be invented.
+
+`publishCostOfFunds` publishes the rate as a bare number or omits the field entirely — a published
+event is data, and a reader should never meet an option object inside one. That also keeps stage 2c's
+`costOfFundsIn` (the securitisation note price) reading exactly what it read before.
+
+**`A-30` — ignorance reported as certainty.** `ownUncertainty` returned 0 for a cell with no income
+outlook, which is not "it has no view": it is "it wants NOTHING EXTRA for holding a claim that
+promises it nothing", which is what a CERTAIN cell would want. A cell with no history is the opposite
+of certain. It answers `Option<Ratio>` now, and so does the period-of-no-length case.
+
+`heirOf`'s `?? ''` is confirmed gone with the function at old item 14, and a world that does not key
+its cells on a cohort says so — `keyOf` throws `Missing` naming the dimension rather than answering
+with an empty string.
+
+**And `ownUncertainty` has no caller at all** (`E-13`, positioned at item 21). A saver's bid is built
+from its PRICE outlook's confidence (§46 B3, `savingLines`), and the income-uncertainty channel this
+function implements reaches nothing. Either it is wired or it is deleted; a mechanism nobody reads is
+not a mechanism. It is written down rather than resolved here because which of the two is right is a
+decision about §46 B3's shape, not a defect in this function.
+
+Closes `A-25`, `A-30`, `A-34`, `A-45`. Typecheck 0, lint 0, `check:spec`, `check:forbids`,
+`check:existence` green.

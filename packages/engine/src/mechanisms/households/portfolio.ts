@@ -23,6 +23,8 @@
  * reasons D5 names — yield against risk — which a household cannot weigh until something in this
  * world prices risk (worklist 9). Liquidity is the reason it has now, and this is the whole of it.
  */
+import { none, some, type Option } from '../../core/option.js';
+import type { Ratio } from '../../core/measure.js';
 import {
   type Cash,
   type PerPiece,
@@ -241,16 +243,24 @@ export function paperBids(
  * never been surprised wants nothing extra, and one whose income has been all over the place wants
  * a great deal, which is why the same firm is worth different amounts to two of them.
  */
-export function ownUncertainty(view: ParticipantView): number {
+export function ownUncertainty(view: ParticipantView): Option<Ratio> {
+  /**
+   * A-30, Missing is Missing: NONE, for a cell that has never observed an income.
+   *
+   * This returned 0, which is not "it has no view" — it is "it wants NOTHING EXTRA for holding a
+   * claim that promises it nothing", which is the answer of a cell that is CERTAIN. A cell with no
+   * history is the opposite of certain, and reporting ignorance as confidence is the shape §46 B3
+   * exists to stop. The same for a period of no length: there is no year to annualise over.
+   */
   const income = view.outlook(about({ on: 'income' }));
-  if (!income.some || income.value.expected <= 0) return 0;
+  if (!income.some || income.value.expected <= 0) return none<Ratio>();
   const year = yearFraction(
     'ACT/365F',
     view.calendar.startOf(view.period),
     view.calendar.startOf(nextPeriod(view.period)),
   );
-  if (year <= 0) return asRatio(0, 'a period of no length says nothing');
-  return over(
+  if (year <= 0) return none<Ratio>();
+  return some(over(
     asRatio(
       // Two money magnitudes about the same variable, so how wrong it has been is a pure share.
       ratioOf(
@@ -262,7 +272,7 @@ export function ownUncertainty(view: ParticipantView): number {
     ),
     asRatio(year, 'the fraction of a year that was'),
     'per annum',
-  );
+  ));
 }
 
 /** A bid or an offer in a share line, at the level this cell's own opinion puts on it. */

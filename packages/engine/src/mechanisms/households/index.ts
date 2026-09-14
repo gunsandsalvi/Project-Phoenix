@@ -191,13 +191,30 @@ function consumptionIsBought(): Family {
               view.instruments.get(leg.instrument).kind,
             ).physical;
             if (physical !== true) continue;
-            addTo(
-              bought,
-              leg.to,
-              leg.pricePerUnit.some
-                ? valueAt(leg.pricePerUnit.value, leg.qty, 'what it took')
-                : asCash(0, 'a leg with no price on it moved nothing anybody paid for'),
-            );
+            /**
+             * A-25, Goods F1, Audit A1.a: AN UNPRICED PHYSICAL LEG IS ITS OWN DEFECT, not a zero.
+             *
+             * This read `pricePerUnit.some ? value : 0` and carried the zero into the comparison, so
+             * a cell that bought and paid was reported as `took 0 of goods and paid X` — a violation
+             * whose size and message are about the MISSING PRICE and whose spec citation is about
+             * the flow. The reader then has a number that is neither what moved nor what is wrong.
+             *
+             * A physical thing handed to a household at no stated price is a real defect in whoever
+             * drafted the instruction (C2.a: a trade carries its print), and it is named as itself.
+             */
+            if (!leg.pricePerUnit.some) {
+              out.push({
+                family: 'flows',
+                spec: 'Goods F1',
+                owner: leg.to,
+                size: leg.qty,
+                unit: view.instruments.get(leg.instrument).unit,
+                period: view.period,
+                message: `${leg.to} was handed ${leg.qty} of ${leg.instrument} with no price on the leg`,
+              });
+              continue;
+            }
+            addTo(bought, leg.to, valueAt(leg.pricePerUnit.value, leg.qty, 'what it took'));
           } else if (isMoneyLeg(leg) && cells.has(leg.from.holder)) {
             addTo(paid, leg.from.holder, leg.amount);
           }

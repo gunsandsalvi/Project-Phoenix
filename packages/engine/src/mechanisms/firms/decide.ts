@@ -498,7 +498,30 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
   const batch = !worthMaking || wanted <= 0 ? NO_QTY : downTick(binding.qty);
   const bound = !worthMaking ? 'margin' : binding.bound;
   const orders = [...selling];
+  /**
+   * A-34, Missing is Missing: A FIRM THAT CANNOT PRICE AN HOUR DOES NOT BID FOR AN INPUT.
+   *
+   * The input bid below read `wage.some ? wage.value : asPerPiece(0, …)` — labour priced at ZERO in
+   * the one place in this function that reaches a market, while the same `wage` is handled
+   * correctly twice above (`unitCost` answers `none()`, `worthMaking` switches its test). What an
+   * input is worth to a firm is the output it makes possible LESS the wages that unit still needs,
+   * so a zero there makes the bid too high by `hoursPerUnit × wage` — for most recipes the largest
+   * term in it. And every firm is in that state until it has employed somebody, so at world open
+   * every input market cleared against systematically inflated bids and the firms that had never
+   * hired outbid the ones that had.
+   *
+   * A recipe that takes no hours pays no wages, and that zero is a real answer rather than a
+   * default. Anything else: `wageFacing` already falls back to the published going rate, so a firm
+   * that knows neither its own wage bill nor what an hour last cleared at knows nothing about the
+   * cost of making this — and it does not bid until it does.
+   */
+  const wagesPerUnit = wage.some
+    ? some(scale(wage.value, tech.hoursPerUnit, 'its wages'))
+    : tech.hoursPerUnit <= 0
+      ? some(asPerPiece(0, 'a recipe that takes no hours pays no wages'))
+      : none<PerPiece>();
   for (const [n, input] of tech.inputs.entries()) {
+    if (!wagesPerUnit.some) break;
     // Law 8: a recipe met with the piece below is a recipe not met (`produce.ts` draws the same
     // way), so what it bids for is the whole pieces the batch needs and never the fraction under.
     const need = upTick(scale(batch, input.qtyPerUnit, 'what the batch draws'));
@@ -518,11 +541,7 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
                 tech.yieldRate,
                 'the output it makes possible',
               ),
-              scale(
-                wage.some ? wage.value : asPerPiece(0, 'what an hour costs it'),
-                tech.hoursPerUnit,
-                'its wages',
-              ),
+              wagesPerUnit.value,
               'less wages',
             ),
             capitalCharge,

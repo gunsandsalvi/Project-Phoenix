@@ -182,7 +182,7 @@ Dependencies, not preference, and the open lines before the new ones. The four a
 | **2** | The dimension sweep, finished | 18 | the last open row of a half-done item; it makes 18 findings compile errors, which must then be fixed |
 | ~~**3**~~ | ~~The gather~~ | 4 | **DONE** but for 3.5 (`A-43`), which item 9 closes. It also found a second global list nobody filtered — see the record |
 | ~~**4**~~ | ~~The families that cannot fail~~ | 9 | **DONE.** Every family that reports green can now report red |
-| **5** | Missing is Missing, carried | 4 | a defaulted zero defeats 1 and 2 |
+| ~~**5**~~ | ~~Missing is Missing, carried~~ | 4 | **DONE** |
 | **6** | The derivative books open | 3 | needs **3** (a dealer), and everything in the layer is downstream of a first print |
 | **7** | The three closed lines | 2 | needs **3**; `dwelling` takes the whole housing module with it |
 | **8** | The securitisation waterfall | 2 | independent; the subtraction has gone the wrong way round since 13e |
@@ -808,10 +808,10 @@ carried four out, correctly, because they are **missing mechanisms rather than m
 
 ### Steps
 
-- [ ] 5.1 **A-25**. `households/index.ts:consumptionIsBought`: `mul(leg.qty, leg.pricePerUnit.some ? leg.pricePerUnit.value : 0, 'what it took')` — a `? : 0` on an Option inside a mechanism. The family then reports `took 0 of goods and paid X`, a violation whose size and message are about the missing price rather than the flow. Either report the unpriced leg as its own defect, or refuse it as inadmissible. Not a zero.
-- [ ] 5.2 **A-34**. `firms/decide.ts`, the input bid: `wage.some ? wage.value : 0`. The same function handles a missing wage correctly twice (`unitCost` returns `none()`; `worthMaking` switches its test) and then prices labour at zero in the one place that reaches a market — making the bid too high by `hoursPerUnit × wage`, which for most recipes is the largest term. Every firm is in this state until it has employed somebody, so at world open every input market clears against systematically inflated bids and firms that have never hired outbid the ones that have. `wageFacing` already has the right fallback (`labour.goingRate`); a firm that knows neither is a `Missing`.
-- [ ] 5.3 **A-45**. `banks/index.ts:costOfFunds` returns exactly **zero** on three paths: a bank funded by nothing, period 0, and a zero-length year. Zero is not "unknown" here, it is "money is free", and it flows straight into `quote()` and into the desk's edge — so in period 0 every bank in the world quotes as if its funding cost nothing. `FundingCost` says `Missing`, and a bank that cannot cost its funding does not quote a rate (which is what the surrounding code does everywhere else).
-- [ ] 5.4 **A-30**, first and third bullets. `portfolio.ts:ownUncertainty` returns 0 for a cell with no income outlook — reported as wanting no extra return for a claim that promises nothing, which reads as certainty and is ignorance. `lifecycle.ts:heirOf`'s `?? ''` went with the function at item 14 of the old file; confirm it is gone and that a world with no cohorts SAYS so.
+- [x] 5.1 **A-25**. `households/index.ts:consumptionIsBought`: `mul(leg.qty, leg.pricePerUnit.some ? leg.pricePerUnit.value : 0, 'what it took')` — a `? : 0` on an Option inside a mechanism. The family then reports `took 0 of goods and paid X`, a violation whose size and message are about the missing price rather than the flow. Either report the unpriced leg as its own defect, or refuse it as inadmissible. Not a zero. **DONE.** An unpriced physical leg to a household is reported as ITSELF, under Goods F1, with the units and the line — not folded into the flow comparison as a zero whose violation then says `took 0 of goods and paid X`.
+- [x] 5.2 **A-34**. `firms/decide.ts`, the input bid: `wage.some ? wage.value : 0`. The same function handles a missing wage correctly twice (`unitCost` returns `none()`; `worthMaking` switches its test) and then prices labour at zero in the one place that reaches a market — making the bid too high by `hoursPerUnit × wage`, which for most recipes is the largest term. Every firm is in this state until it has employed somebody, so at world open every input market clears against systematically inflated bids and firms that have never hired outbid the ones that have. `wageFacing` already has the right fallback (`labour.goingRate`); a firm that knows neither is a `Missing`. **DONE.** `wagesPerUnit` is an `Option`: the wage where the firm has one, an honest zero where the recipe takes no hours, and Missing otherwise — and a firm that cannot price an hour posts no input bid at all. It still offers what it is holding.
+- [x] 5.3 **A-45**. `banks/index.ts:costOfFunds` returns exactly **zero** on three paths: a bank funded by nothing, period 0, and a zero-length year. Zero is not "unknown" here, it is "money is free", and it flows straight into `quote()` and into the desk's edge — so in period 0 every bank in the world quotes as if its funding cost nothing. `FundingCost` says `Missing`, and a bank that cannot cost its funding does not quote a rate (which is what the surrounding code does everywhere else). **DONE.** `FundingCost.perAnnum` is an `Option<Ratio>` and all three zero paths answer Missing. A bank that cannot cost its funding does not quote, does not bid in a subordinated raise, and publishes no reservation; an OVERDRAFT it allowed and cannot price throws (Money B3.a), because whoever allowed a drawing writes the row that prices it. `publishCostOfFunds` publishes the rate as a bare number or omits the field, so a reader never meets an option object in an event.
+- [x] 5.4 **A-30**, first and third bullets. `portfolio.ts:ownUncertainty` returns 0 for a cell with no income outlook — reported as wanting no extra return for a claim that promises nothing, which reads as certainty and is ignorance. `lifecycle.ts:heirOf`'s `?? ''` went with the function at item 14 of the old file; confirm it is gone and that a world with no cohorts SAYS so. **DONE.** `ownUncertainty` answers `Option<Ratio>`: a cell that has never observed an income has no view of how wrong its income has been, and 0 said it was certain. `heirOf`'s `?? ''` is confirmed gone with the function, and a world that does not key cells on a cohort says so — `keyOf` throws `Missing` naming the dimension. **It also has no caller**, which is `E-13`, positioned at item 21.
 
 ### Findings this closes
 
@@ -3755,12 +3755,8 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-17** (A) | 12 | three of XI-15's five weight events never fire, and nobody is ever born |
 | **A-18** (A) | ~~2~~, 12 | the fraction of a person is discarded every period — **the fraction and the whole-cell crossing closed at 2a.1**; `cells.merge`, which removes the micro-cells already there, is item 12 |
 | **A-24** (C) | 21 | the household's plan round-trips through `unknown` and drops what it cannot parse |
-| **A-25** (C) | 5 | an unpriced physical leg is valued at zero inside an audit family |
-| **A-30** (C) | 5 | numeric defaults where the discipline is `Missing` |
-| **A-34** (B) | 5 | a firm with no wage history bids for inputs as if labour were free |
 | **A-36** (C) | 16 | the treasury's immortality is unconditional where the kernel says conditional |
 | **A-43** (C) | 9, 21 | the labour module builds the household's schedule |
-| **A-45** (C) | 5 | a bank that owes nothing has a cost of funds of zero |
 | **A-53** (B) | 15 | a household bids its entire income as rent |
 | **A-55** (A) | 7 | nobody can buy a dwelling, so Housing B1–C4 never runs |
 | **A-56** (A) | 7 | three lines have a firm, a recipe, a market and no buyer |
@@ -3792,6 +3788,7 @@ option premium, where it is multiplied by the price level instead of used as the
 | **E-7** (B) | 19 | a negative policy rate is real and this world cannot express one |
 | **E-11** (B) | 2a.2, 6 | `Outcome.price` is a `PerPiece` and some books clear a RATE — the subordinated raise, the money market, the IRS, the CDS. `E-10`'s shape at the clearing layer. **Found by the type at stage 2a.1** |
 | **E-12** (B) | 21 | what a household requires of a claim reaches the fund comparison and not the paper bid, so a change in the deposit board does not move what it will pay for a bill — half of D5.a's substitution. **Found closing `A-44` at stage 2c** |
+| **E-13** (C) | 21 | `households/portfolio.ts:ownUncertainty` implements §46 B3's income channel and has NO CALLER — a saver's bid is built from its PRICE outlook's confidence and its income uncertainty reaches nothing. Either wire it or delete it; a mechanism nobody reads is not one. **Found closing `A-30` at item 5** |
 
 ### Findings already closed, and where
 
@@ -3820,6 +3817,7 @@ carries each in full.
 | item 2, stage 2f | `E-9`, `E-10` |
 | item 3, the gather | `A-54`, `A-60`, `B-5`, `B-6` (`A-43` stays for item 9) |
 | item 4, the families | `A-4`, `A-10`, `A-11`, `A-12`, `A-13`, `A-14`, `A-42`, `A-48`, `B-10` |
+| item 5, Missing is Missing | `A-25`, `A-30`, `A-34`, `A-45` |
 
 ### What the reads covered, and what they did not
 
