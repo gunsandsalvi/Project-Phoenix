@@ -22,6 +22,13 @@
  * A3, XI-3: equity is assets minus liabilities, it is a READ, and it can go negative — which is a
  * solvency event with consequences, because these institutions can fail like anything else.
  */
+import { none, some } from '../../core/option.js';
+import { period, type Period } from '../../calendar/calendar.js';
+import { valueAt } from '../../core/measure.js';
+import { Missing } from '../../core/errors.js';
+import type { Fill } from '../../clearing/solver.js';
+import type { SeedContext } from '../../world/context.js';
+import type { RegionId } from '../../core/ids.js';
 import {
   asCash,
   asPerPiece,
@@ -49,8 +56,9 @@ import {
   type InstrumentId,
   type PartyId,
   type VenueId,
+  paramId,
 } from '../../core/ids.js';
-import { InvalidRegistry } from '../../core/errors.js';
+import { InvalidRegistry, Unpriced } from '../../core/errors.js';
 import { sum } from '../../core/num.js';
 import { downTick } from '../../core/tick.js';
 import { clear, isCleared, type Order } from '../../clearing/solver.js';
@@ -70,6 +78,9 @@ import type { SystemModule } from '../../world/module.js';
 export const INSURANCE = partyKindId('insurance');
 export const POLICY = instrumentKindId('policy');
 export const COVER = unitId('cover');
+
+/** B1: how long a unit of cover runs for, which is a convention of the contract (Law 2). */
+export const COVER_TERM = paramId('insurers.coverTermPeriods');
 
 /** A4: a claim this insurer actually paid, which is the only experience it has (A4.c). */
 export const CLAIM_PAID = 'insurer.claim';
@@ -138,7 +149,15 @@ export const policyKind: InstrumentKindProfile = {
    * first: a fund share moves because the ASSETS moved, a policy because the DISCOUNT RATE did.
    */
   owes: 'value',
-  unit: (ccy) => ccy as unknown as ReturnType<InstrumentKindProfile['unit']>,
+  /**
+   * A-9, Law 8, Appendix A: A POLICY IS COUNTED IN UNITS OF COVER, which this module declares.
+   *
+   * This returned the CURRENCY CODE where a `UnitId` is wanted, through the file's one
+   * `as unknown as` cast — so `Instruments.add` threw `Missing [Appendix A] unit USD does not
+   * exist` and NO POLICY COULD BE REGISTERED IN ANY WORLD. The module declared `COVER` in its own
+   * `units` and never used it. The cast is what let it compile; without it the type said so.
+   */
+  unit: () => COVER,
   validateTerms: (t) => {
     if (!isPolicy(t)) throw new InvalidRegistry('Insurers A2', 'not policy terms');
     if (t.schedule.length === 0) {
@@ -182,9 +201,22 @@ export const policyKind: InstrumentKindProfile = {
     if (!isPolicy(i.terms)) return 0;
     const curve = reads.curve(i.terms.discountedAt, at);
     const priced = curve.priceOf(i.terms.schedule, reads.on(at));
-    // XI-6: a curve with nothing on it prices nothing. Missing is Missing — never a zero that would
-    // read as a liability the institution has discharged.
-    return priced.some ? priced.value : 0;
+    /**
+     * A-9, XI-6: A CURVE WITH NOTHING ON IT PRICES NOTHING, and this returned 0 directly under a
+     * comment forbidding exactly that. A zero here is not "unknown": it reads as a liability the
+     * institution has DISCHARGED, and it would flow into its equity as a solvent book.
+     *
+     * `derive` answers a number or it does not answer, so the honest form is the throw the kernel
+     * already makes for a derived kind that derives nothing — at the site, with a citation, never
+     * caught in the engine (§5).
+     */
+    if (!priced.some) {
+      throw new Unpriced('Insurers B2', `${i.id} is discounted at a curve with nothing on it`, {
+        instrument: String(i.id),
+        curve: String(i.terms.discountedAt),
+      });
+    }
+    return priced.value;
   },
 };
 
@@ -247,10 +279,17 @@ export function quoteCover(view: ParticipantView, ccy: CurrencyCode): readonly O
 function claimsSeen(view: ParticipantView): PerPiece {
   const paid: Cash[] = [];
   const written: Qty[] = [];
-  for (const h of view.holdings()) {
-    const i = view.instruments.get(h.instrument);
-    if (!isPolicy(i.terms) || i.terms.insurer !== view.self.id) continue;
-    written.push(view.quantity(h.instrument));
+  /**
+   * A-9, Register B3, Law 19: THE POLICIES IT HAS WRITTEN ARE ITS LIABILITIES, NOT ITS HOLDINGS.
+   *
+   * This walked `view.holdings()` for policies whose `insurer` is itself — and an insurer does not
+   * HOLD the cover it wrote: the beneficiary does. So `written` was always empty, `experience` was
+   * always the claims over nothing, and the price of cover was never made of anything it had seen.
+   * What it has written is what it ISSUED, which the register indexes both ways (Register B2).
+   */
+  for (const i of view.instruments.issuedBy(view.self.id)) {
+    if (!i.status.live || !isPolicy(i.terms)) continue;
+    written.push(i.issued);
   }
   // A4.c: its OWN claims, which are the ones it was a side of. `lastOwn` asks that question
   // directly rather than filtering everything public by a name (Observer A4).
@@ -317,11 +356,80 @@ export function insurers(): SystemModule {
     partyKinds: [insuranceKind],
     curveFamilies: [],
     units: [{ id: COVER, name: 'units of cover', perUnit: MONEY_PIECES }],
-    params: [],
-    phases: [],
+    params: [
+      {
+        id: COVER_TERM,
+        value: 52,
+        unit: 'periods',
+        dimension: 'periods',
+        kind: 'technology',
+        owner: 'standardSetter',
+        why: 'Insurers B1: how long one unit of cover runs for. A convention of the contract, stated with it — a year, which is what a policy is written for. It is not a forecast of when a claim arrives: what a claim COSTS is read off what this insurer has actually paid (A4.c), and it is the price that carries it.',
+      },
+    ],
+    phases: [
+      {
+        name: 'insurers.cover',
+        spec: 'Insurers A4 Insurers A4.a Insurers A4.b Insurers A4.c Clearing C3',
+        cycle: 1,
+        // Before the goods and paper sessions, because what an insurer writes this period is
+        // capacity it then has to stand behind: a session it cannot see cannot be a reason.
+        anchor: { before: 'markets' },
+        run: (ctx: MechanismContext): void => {
+          /**
+           * B-2, A-9: THE SECTOR RUNS. `phases: []` and `participants: []` meant nothing in this
+           * module was ever asked anything, in any period of any run — the price of cover, the
+           * capacity, the venue and the audit family were all reachable only from a test.
+           *
+           * What is here is the SELL side: every insurer quotes what a unit of cover costs it out
+           * of its own claims experience and its own capital (A4.b), and what clears is written.
+           * The BUY side — a firm that stands in a physical fact and would rather not (B4) — is
+           * item 14's, and until it exists these sessions come back `noDemand`, which is a
+           * measured state and not an absence.
+           */
+          for (const ccy of ctx.registry.currencies.keys()) {
+            const bids: Order[] = [];
+            for (const p of ctx.parties.ofKind(INSURANCE)) {
+              if (!p.status.alive || ctx.registry.currencyOf(p.region) !== ccy) continue;
+              bids.push(...quoteCover(ctx.participant(p.id), ccy));
+            }
+            runCover(ctx, ccy, bids);
+          }
+        },
+      },
+    ],
     participants: [],
     families: [promises()],
+    seed(ctx: SeedContext): void {
+      /**
+       * B-2, A1: AN INSURER EXISTS BEFORE ANYBODY BUYS COVER. `insurers()` had no `seed`, so no
+       * party of the kind was ever created in any world — the sector was a declaration and nothing
+       * else. One per region that has a bank to hold its money, named and banked like any other
+       * institution, because an insurer is one: it has a balance sheet, it can fail, and what it
+       * writes is a claim on it.
+       */
+      for (const region of ctx.registry.regions.values()) {
+        const bank = [...ctx.parties.all()].find(
+          (p) => p.region === region.id && ctx.registry.issuesMoney(p.kind) && p.bank !== p.id,
+        );
+        if (bank === undefined) continue;
+        ctx.parties.add({
+          id: insurerIdFor(region.id),
+          kind: INSURANCE,
+          region: region.id,
+          name: `${region.name} Assurance`,
+          bank: bank.id,
+          representation: 'named',
+          status: { alive: true, standing: 'good' },
+        });
+      }
+    },
   };
+}
+
+/** Law 9: an insurer is named for where it writes. An id is an id and never a display name. */
+export function insurerIdFor(region: RegionId): PartyId {
+  return `insurance.${region}` as PartyId;
 }
 
 /**
@@ -371,10 +479,104 @@ export const runCover = (ctx: MechanismContext, ccy: CurrencyCode, bids: readonl
   for (const b of bids) ctx.post(venue, b);
   const outcome = clear(ctx.posted(venue), 'proRata', 'sellersCompete');
   if (!isCleared(outcome)) return;
-  ctx.record(
-    'cover.cleared',
-    [],
-    { ccy, price: outcome.price, written: outcome.fills.length },
-    true,
-  );
+  /**
+   * A-9, Law 5, Clearing D2: A SESSION THAT STRIKES A PRICE AND MOVES NO MONEY IS NOT A SESSION.
+   *
+   * This cleared the book and then DISCARDED `outcome.fills`, recording only how many there were.
+   * Every other market in this world turns a fill into an instruction (D2, D3); this one turned it
+   * into a count. So even in a world where somebody bid for cover, no policy was ever registered,
+   * no premium was ever paid, and the number in the record was about a trade that did not happen.
+   *
+   * A fill is a policy: the buyer pays the premium and the insurer ISSUES it the cover, which is a
+   * claim on the insurer for the schedule the policy carries (B1). Both legs, one instruction, same
+   * period (Law 5).
+   */
+  let written = 0;
+  for (const fill of outcome.fills) {
+    if (fill.side !== 'buy') continue;
+    const insurer = sellerOf(outcome.fills, fill);
+    if (insurer === undefined) continue;
+    const qty = downTick(fill.qty);
+    if (qty <= 0) continue;
+    const premium = ctx.registry.cashFor(valueAt(outcome.price, qty, 'the premium at inception'));
+    if (premium <= 0) continue;
+    const id = policyIdFor(insurer, fill.party, ctx.period);
+    if (!ctx.instruments.has(id)) {
+      ctx.issue({
+        id,
+        kind: POLICY,
+        issuer: some(insurer),
+        ccy,
+        terms: coverTerms(ctx, insurer, ccy),
+        market: none(),
+      });
+    }
+    const r = ctx.settle({
+      legs: [
+        {
+          kind: 'asset',
+          from: insurer,
+          to: fill.party,
+          instrument: id,
+          qty,
+          pricePerUnit: some(outcome.price),
+          accruedPerUnit: none(),
+          fromCell: none(),
+          toCell: none(),
+        },
+        {
+          kind: 'money',
+          from: ctx.accountOf(fill.party, ccy),
+          to: ctx.accountOf(insurer, ccy),
+          // Treasury C1: what this money is to the party getting it — a premium is revenue.
+          receipt: { of: 'sale' },
+          ccy,
+          amount: premium,
+          fromCell: none(),
+          toCell: none(),
+        },
+      ],
+      cause: 'corporateAction',
+      reason: `${String(insurer)} writes cover for ${String(fill.party)}`,
+    });
+    if (r.outcome === 'settled') written += 1;
+  }
+  ctx.record('cover.cleared', [], { ccy, price: outcome.price, written }, true);
 };
+
+/** Clearing D2: who was on the other side of this fill, from the book's own record of it. */
+function sellerOf(fills: readonly Fill[], buy: Fill): PartyId | undefined {
+  return fills.find((f) => f.side === 'sell' && f.party !== buy.party)?.party;
+}
+
+/**
+ * B1, B2, B2.b: WHAT A UNIT OF COVER PROMISES. One payment, at the end of the term the exchange
+ * writes cover for, discounted at the sovereign curve of its own money — which is what gives the
+ * sector its duration (B2.b: a liability with no schedule is a cash balance).
+ *
+ * The TERM is a convention of the policy and not a forecast of when a claim arrives: what a claim
+ * costs is `claimsSeen`, read off what this insurer has actually paid, and it is the PRICE that
+ * carries it (A4.c). Nothing here draws from a distribution anybody stated.
+ */
+function coverTerms(ctx: MechanismContext, insurer: PartyId, ccy: CurrencyCode): PolicyTerms {
+  const family = ctx.sovereignCurveIn(ccy);
+  if (!family.some) {
+    throw new Missing('Insurers B2', `cover in ${ccy} has no curve to be discounted at`, { ccy });
+  }
+  return {
+    kind: POLICY,
+    insurer,
+    // B1: one unit of cover promises one unit of its money, at the end of the term.
+    schedule: [
+      {
+        date: ctx.calendar.startOf(period(ctx.period + ctx.params.periods(COVER_TERM))),
+        perUnit: asPerPiece(1, 'a unit of cover promises a unit of its money'),
+      },
+    ],
+    discountedAt: family.value.id,
+  };
+}
+
+/** Law 9: a policy is named for who wrote it, for whom, and when. An id is never a display name. */
+export const policyIdFor = (insurer: PartyId, holder: PartyId, at: Period): InstrumentId =>
+  instrumentId(`policy:${insurer}:${holder}:${at}`);

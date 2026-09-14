@@ -6596,3 +6596,51 @@ Item 14's `Process` was not needed: `ctx.cease` is the door and Register F2 is w
 reference resolve.
 
 Closes `A-57` and `B-8`. Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.
+
+---
+
+## Item 9, first stage — the insurer exists and can write a policy
+
+`A-9`: four independent blockers, each alone fatal, and a fifth inside the pricing. `B-2`: the module
+had no `seed`, so no party of the kind was ever created. Between them the sector was a set of
+declarations that nothing in any world could reach.
+
+**(1) It could not register a policy in any world.** `policyKind.unit` returned the CURRENCY CODE
+where a `UnitId` is wanted, through the file's one `as unknown as` cast — so `Instruments.add` threw
+`Missing [Appendix A] unit USD does not exist` at the first policy anybody tried to issue. The module
+declares `COVER` in its own `units` and never used it. The cast is what let that compile; without it
+the type said so.
+
+**(2) Nothing ran.** `phases: []` and `participants: []`, so the price of cover, the capacity, the
+venue and the audit family were all reachable only from a test. There is a phase now: every insurer
+quotes what a unit of cover costs it out of its own claims experience and its own capital (A4.b),
+once per money, before the markets — because what it writes this period is capacity it then has to
+stand behind. The BUY side (a firm that stands in a physical fact and would rather not, B4) is item
+14's; until it exists these sessions come back `noDemand`, which is a measured state and not an
+absence.
+
+**(3) A session that struck a price and moved no money.** `runCover` cleared the book and DISCARDED
+`outcome.fills`, recording only how many there were. Every other market in this world turns a fill
+into an instruction (Clearing D2, D3); this one turned it into a count. It writes the policies now:
+the buyer pays the premium and the insurer ISSUES it the cover, both legs in one instruction in the
+same period (Law 5). A unit of cover promises one unit of its money at the end of its term, discounted
+at the sovereign curve of that money — which is what gives the sector its duration (B2.b). The TERM
+is a convention of the contract and not a forecast of when a claim arrives: what a claim costs is
+`claimsSeen`, read off what this insurer has actually paid, and it is the PRICE that carries it.
+
+**(4) A zero that reads as a discharged liability.** `derive` returned `priced.some ? priced.value :
+0` directly under a comment saying *"Missing is Missing — never a zero that would read as a liability
+the institution has discharged"*. `derive` answers a number or it does not answer, so it throws
+`Unpriced` at the site with a citation, which is what the kernel already does for a derived kind that
+derives nothing.
+
+**(5) It read its own holdings for policies it had written.** A policy is the insurer's LIABILITY —
+the beneficiary holds it — so `written` was always empty and `experience` was always its claims over
+nothing. It reads `instruments.issuedBy(self)` now, which the register indexes both ways.
+
+**`B-2`: one insurer per region** that has a bank to hold its money, seeded and banked like any other
+institution.
+
+`9.1`, `9.2`, `9.4`, `9.6`–`9.9` are the rest of item 9 and are next.
+
+Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.
