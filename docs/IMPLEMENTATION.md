@@ -236,13 +236,13 @@ claimed to have built hedge funds on.
 - [x] 9.2a **`Mandate` exists**: an agreement between a POOL and a MANAGER, carrying what the pool may hold and whether it may be levered. `fundKind.borrows`'s hard-coded `false` is re-declared as the SHAPE it is, with 13.2 named as its death. **DONE** — `docs/RECORD.md`.
 - [x] 9.2b **The fee does NOT clear, and `fundManagerKind` is NOT deleted — both are corrections.** A manager in this world employs nobody, so a book with two of them in it clears at the tick: the missing mechanism is a manager with a cost base, and it is worklist **13o**. The placeholder's death is re-pointed there (it named 13h, which is CLOSED — `B-14`'s exact shape, found three more times in the same read), and that rule is a CHECK now: `npm run check:deaths`. **DONE** — `docs/RECORD.md`.
 - [x] 9.6 **A-43** — `households` declares the venue participant and `labour/matching.ts:supply` deletes. **DONE** — `docs/RECORD.md`.
-- [ ] 9.7 **B-14** is unpositioned in the old file and lands here: whether a fund should hold contracts at all is `Fund Shares A3`'s question, and `TRADES_CONTRACTS` is still `[BANK, FIRM]`. A mandate says what a pool may hold; that is the answer.
+- [x] 9.7 **B-14** — `FUND` is on `TRADES_CONTRACTS` and being on it is NOT permission: `ParticipantView.mayTrade` asks the party's own module, and for a pool the answer is its mandate's `mayWrite`. **DONE** — `docs/RECORD.md`.
 - [ ] 9.8 **C-1's ETF row** (`12d-8`): a creation delivers a slice of the book and a desk without the basket does not create; nothing moves a share back to a desk, so `E3` runs one way and a premium of 0.28 of NAV has nobody able to close it. **9.4 landed that door**: `SystemModule.borrowNeeds` answers what a party must deliver that it has not got, and `securities-lending` clears the fee against every other borrower of the line. The ETF desk is its second answerer — *whoever must deliver may borrow*.
 - [ ] 9.9 **The stores that stand in for a noun that now exists.** Four kernel nouns were built and the module stores that stand in for them were never migrated, so `registry/nouns.ts` still declares each a PLACEHOLDER pointing at a closed item. Same shape as 9.1, same change: `expectations.outlooks`, `research`, `ratings` and `banks/reserves` → `View` (old item 6 named these three in as many words: *"three private stores that are this noun in three shapes"*); `funds`' previous NAV → `PublishedStatement` (*"a published figure belongs where published figures live"*). Each placeholder's `standsInFor.planItem` points at **this item** until it is migrated, and the declaration is deleted when it is.
 
 ### Findings this closes
 
-`B-14`. (`A-9`, `A-43`, `A-67`, `B-2` and `B-3` are closed — `docs/RECORD.md`.)
+(`A-9`, `A-43`, `A-67`, `B-2`, `B-3` and `B-14` are closed — `docs/RECORD.md`.)
 
 ### Exit
 
@@ -627,18 +627,18 @@ gives it a party whose whole reason is to hold the other side.
 ### Steps
 
 - [ ] 13.1 `Mandate` (item 9.2) is the spine: a hedge fund is **a mandate with leverage**, a separate account is a mandate whose pool is the client's own balance sheet, an ETF and an MMF are pools with different redemption rules. Build the three sectors on it and nothing else.
-- [ ] 13.2 Hedge funds: the party, the manager, the two fees, the wide mandate. `borrows` comes off the mandate, not off `fundKind` where it is hard-coded `false`.
+- [ ] 13.2 Hedge funds: the party, the manager, the two fees, the wide mandate — `mayWrite` and `leverage` are the two terms that make a mandate a hedge fund's, and both exist (item 9.2a, 9.7). `borrows` comes off the mandate, not off `fundKind` where it is hard-coded `false`. **Not before 13.6**: a mandate that writes contracts before the NAV pass reads them is a fund with equity.
 - [ ] 13.3 Prime brokerage: the relationship as an `Agreement`; portfolio margin as the broker's own decision (C1.b) held as a `View`; **no floor on the line** (C3.b).
 - [ ] 13.4 The loop D1→D4 must fall out of the parts. Do not write a contagion step. Test: one fund's loss reaches another fund's margin call through prices and named counterparties, and the path is traceable.
 - [ ] 13.5 Private equity: committed capital, the call as an obligation the investor cannot bound by its spare cash (A2.b), the buyout with debt on the target, the mark that is not a price, the exit that produces the first cleared price. Needs item 9 of the old file (`Control`), which is built.
-- [ ] 13.6 Wire hedge funds into every derivative book as the speculative side (§28 C1) — the other half of item 6.
+- [ ] 13.6 **The pass that re-marks a fund's claim on itself must read the CONTRACT store, and it must land before 13.2 draws a mandate that writes anything.** A fund's equity is zero by construction (Fund Shares A3) because its own claim on itself absorbs whatever its book comes to — and that pass reads the REGISTER, where a contract is not (Derivative X1). A pool with a derivative position would carry a mark its share value had never been told about, which is a fund WITH equity: **measured at 83,247,864 on `etf.us`** the first time funds were let into the contract books. Item 9.7 put `FUND` on `TRADES_CONTRACTS` and made every drawn mandate say `mayWrite: []`, so nothing reaches this today — **by a term of a contract, which 13.2 is about to change.** Open the pass first. Then wire hedge funds into every derivative book as the speculative side (§28 C1), which is the other half of item 6.
 - [ ] 13.7 COVERAGE re-marked for all 73 clauses across the three; `check:existence` shows three fewer absent sectors.
 - [ ] 13.8 **`E-14`** — `Securities Lending C2, C2.a` are not built, and they are §15 C1's mechanism seen from the other end: both sides of a position marked every period and the difference CALLED in real money between two named parties. `securities-lending:charge` moves the fee and nothing re-marks the collateral, so between the strike and the return the lender's cover erodes silently and C1's haircut is all that stands behind it. Build it once, here, for the portfolio and the stock loan together — two callers of one mechanism, not two mechanisms (Law 4).
 - [ ] 13.9 **The management fee, and what a manager COSTS.** `fund.fee.<fund>` is a `placeholder` per pool whose own `why` says *"no manager competes for the mandate, so the number stands where a competition should be"*. Item 9.2a built the `Mandate` and 9.2b measured why that is not enough: **a manager in this world employs nobody**, funds nothing and pays for nothing, so two of them in a book bid each other to the tick — which is a competition between parties with no reason to refuse, not a cleared price (Law 11: the missing mechanism, not the number). So this step is two things in one order: (a) a manager HIRES, in the labour venue, like anything else that needs people, and what it can run is the hours it pays for over the assets a mandate carries — the shape `banks/staff.ts:linesCovered` already has for a dealing desk; (b) then the mandate is COMPETED FOR, one book per pool, each manager bidding a fee with its own cost base as its floor, and the winner's bid is the mandate's `fee`. The placeholder dies in the same change (Law 2) and `fee` moves off `params` onto `MandateTerms`, because at that point it is an OUTCOME. A separate account is a mandate whose pool is the client's own balance sheet, so the same book prices that too (§15).
 
 ### Findings this closes
 
-`B-14` (a fund holding contracts on purpose is `Fund Shares A3`, answered by a mandate), `E-14`.
+`E-14`. (`B-14` closed at item 9.7: a pool's mandate is what answers whether it may hold contracts, and 13.6 is the pass that must open before 13.2 draws one that does.)
 
 ### Exit
 
@@ -1025,34 +1025,6 @@ letter in each heading is the original read's: **A** structural, **B** live defe
 
 ### For item 9. The seven private books, and Mandate
 
-#### B-14 — a finding was positioned into item 13h, 13h closed, and the finding was not done (B)
-
-`seeds/foundation.ts`, on the derivative layer's list of who may hold a contract, said: _"13h is
-where a fund holds derivatives on purpose — and where the one pass that re-marks a fund's claim on
-itself is next opened (`docs/BUGS.md`, finding `13b-2`)."_ `docs/RECORD.md` (item 13b.1's entry)
-confirms the placement: `13b-2` "to **13h**, folded into two steps there".
-
-13h is **done** on the worklist. `TRADES_CONTRACTS` is still `[BANK, FIRM]`; no fund kind is on it,
-and the pass that would re-mark a fund's claim on itself does not exist. The receiving item closed
-without the step the positioning was for, and nothing anywhere says so: the record's entry for 13h
-does not carry it forward, and the comment in the source went on naming a future that had already
-passed and a file that had been deleted.
-
-This is the failure mode of positioning as a protocol. A finding leaves the audit file by being
-placed into an item, and from that moment nothing checks that the item ever did it — the finding is
-out of the one place findings live and into a plan file that gets deleted when the item closes. Six
-of Part II's thirteen findings (**B-1** through **B-8**) have the same shape read from the other end:
-an item closed and the thing it was for was not there.
-
-The comment is corrected in this change to say what is true. The finding itself is **unpositioned**:
-whether a fund should hold contracts at all is `Fund Shares A3`'s question and it belongs with 13o
-(asset managers with strategies), which is where a fund that takes a position on purpose first has a
-reason to exist.
-
----
-
-### For item 10. The corporate bond is issued
-
 #### B-1 — `corporate.bond` is a kind, an id function and a covenant test, and nothing ever issues one (A)
 
 Worklist 13f, **done**:
@@ -1417,7 +1389,7 @@ option premium, where it is multiplied by the price level instead of used as the
 | **B-2** (A) | ~~9~~, 14 | the insurance sector has no seed, no phase and no participant — **the seed, the phase and the way in closed at 9.5 and 9.3**; what item 14 owes it is pensions |
 | **B-9** (C) | 16 | the four countries: header and section 2 contradict each other |
 | **B-13** (A) | 10 | the three things a firm sector does, and this one does none |
-| **B-14** (B) | 9, 13 | a finding positioned into 13h; 13h closed; the finding was not done |
+
 | **C-1** (—) | 23 | 82 red, by cause |
 | **C-2** (—) | 20 | four things this world does every week that the world does not |
 | **C-4** (—) | **0.2, 0.3, and items 10b–19** | the sectors that are not there — **promoted from a finding to the work itself**; its six rows are the absent sectors in Part 0 |

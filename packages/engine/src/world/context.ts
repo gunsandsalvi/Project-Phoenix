@@ -451,6 +451,23 @@ export interface ParticipantView extends KernelReads {
    */
   commitments(): readonly Agreement[];
   /**
+   * Fund Shares A3, Derivative Layer B2, `B-14` (item 9.7): MAY THIS PARTY TAKE A POSITION IN A
+   * CONTRACT OF THIS KIND AT ALL — asked of the module that owns its kind, not of the book.
+   *
+   * The derivative layer speaks for a party in every contract book (one face per book, Law 4), so
+   * it is the layer that posts on a pool's behalf — and it cannot know what that pool was set up to
+   * do. A POOL is run under a mandate and the mandate says what it may hold (`funds.mandate`); a
+   * bank is under none and may trade anything. So the question goes to the owner and the layer
+   * asks it before it speaks.
+   *
+   * A kind NO module answers for is unconstrained, which is what every kind did before mandates
+   * existed and is the honest default: the absence of a rule is not a prohibition. That is the
+   * opposite default from `borrowNeeds`, and deliberately — there, silence means a party has no
+   * reason to be short; here it means nobody has said it may not.
+   */
+  mayTrade(kind: DerivativeKindId): boolean;
+
+  /**
    * Currency C5, Law 4: THE RATE IN FORCE between two moneys — the last thing a pair's session
    * printed, at or before now. It is public like every other print (Clearing E1), and it is one
    * read rather than each participant finding the pair, inverting it when it is quoted the other

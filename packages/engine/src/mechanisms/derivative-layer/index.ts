@@ -80,6 +80,11 @@ export const CLEARING_HOUSE = partyKindId('clearingHouse');
  * A world with funds or insurers in it has more, and the world that assembles them says so — a
  * module cannot declare a participant for a kind this world never registered (`addParticipant`
  * refuses it, and rightly: that guard is what catches a mistyped kind).
+ *
+ * BEING ON THIS LIST IS NOT PERMISSION (`B-14`, item 9.7). It says the layer speaks for parties of
+ * this kind when a book asks; whether a given party may take a position at all is that party's own
+ * module's answer (`ParticipantView.mayTrade`), and for a pool it is what its MANDATE says it may
+ * write. The two were one question while the only kinds here were kinds under no mandate.
  */
 export const TRADES_CONTRACTS: readonly PartyKindId[] = [BANK, FIRM];
 
@@ -873,6 +878,10 @@ export function derivativeLayer(
       const out: MarketId[] = [];
       for (const cls of view.derivativeClasses) {
         if (cls.orders === undefined) continue;
+        // Fund Shares A3, `B-14`: and only where this party MAY take a position at all. A pool is
+        // run under a mandate and the mandate says what it may write; a bank is under none. The
+        // layer owns the book and the party's own module owns the party, so it asks (Law 4).
+        if (!view.mayTrade(cls.kind)) continue;
         if (cls.reasons === undefined || cls.subject === undefined) {
           out.push(...view.contractBooks(cls.kind));
           continue;
@@ -895,6 +904,9 @@ export function derivativeLayer(
     orders: (view: ParticipantView, m: MarketDecl): readonly Order[] => {
       const book = asContractMarket(m);
       if (book === undefined) return [];
+      // The same question `markets` asks, asked again here because `everyone` can add a book that
+      // `markets` never named — a mandate that forbids a kind forbids it however the book arrived.
+      if (!view.mayTrade(book.contract.kind)) return [];
       return view.derivativeClass(book.contract.kind)?.orders?.(view, book) ?? [];
     },
   })),

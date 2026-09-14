@@ -7249,3 +7249,47 @@ the decision now is. `A-43` is closed and its text deleted; 21.2 is ticked, havi
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
 `check:deaths` 11 of 11, `check:existence` green. `9.7`–`9.9` are the rest of item 9.
+
+---
+
+## Item 9, fourteenth stage — being on the list is not permission (9.7, `B-14`)
+
+**What.** `B-14` is the finding about positioning as a protocol: a finding was placed into worklist
+13h, 13h closed, the work was not done, and the source went on naming a future that had already
+passed. Its subject is `TRADES_CONTRACTS = [BANK, FIRM]` — whose reasons a contract book asks for —
+with no fund on it and *"none scheduled to be"*.
+
+**The fix is not adding `FUND` to a list, and finding that out is the work.** Whether a pool may take
+a position is `Fund Shares A3`'s question and a MANDATE is what answers it — so the two facts that
+were one while every kind on the list was under no mandate come apart:
+
+- **Being on `TRADES_CONTRACTS` says the layer SPEAKS for parties of this kind** when a book asks. It
+  has to, because a contract book is the layer's and one face per book is Law 4.
+- **Whether a given party may take a position is its own module's answer.** `ParticipantView.mayTrade`
+  is the door, `SystemModule.tradingLimits` is how a module answers, and a kind nobody answers for
+  may trade anything — the absence of a rule is not a prohibition. That is the OPPOSITE default from
+  `borrowNeeds` and deliberately so: there, silence means a party has no reason to be short; here it
+  means nobody has said it may not.
+
+`MandateTerms.mayWrite` is the term, and every mandate this world draws says `[]`. A money fund does
+not write derivatives, and **saying so is what lets the layer speak for a pool at all**. So no fund
+posts in a contract book today — by a term of its own contract rather than by its kind being left
+off a list, which is the difference the finding is about. The layer asks in `markets` and again in
+`orders`, because `everyone` can add a book `markets` never named and a mandate that forbids a kind
+forbids it however the book arrived.
+
+`FUND` goes onto the list in the SEED and not in the layer, because `FUND` is a module's kind and a
+module never imports another module — which is what the constant's own docstring already said would
+happen: *"a world with funds or insurers in it has more, and the world that assembles them says so."*
+
+**The seed comment named a blocker I would otherwise have walked into, and it is now queued rather
+than repeated.** A fund's equity is zero by construction because its own claim on itself absorbs
+whatever its book comes to — and the pass that re-marks that claim reads the REGISTER, where a
+contract is not (Derivative X1). A pool with a derivative position carries a mark its share value
+was never told about, which is a fund WITH equity: **83,247,864 on `etf.us`**, measured the first
+time funds were let in here. Nothing reaches it today because no mandate writes anything, but 13.2
+is about to draw one that does. So **13.6 is rewritten to open that pass FIRST**, and 13.2 now says
+"not before 13.6" in as many words. That is the whole lesson of `B-14` applied to `B-14`'s own fix.
+
+Typecheck 0 (engine, app, tools), lint 0, `check:spec` 208 tags, `check:forbids` 4 over 205 files,
+`check:deaths` 11 of 11, `check:existence` green. `9.8` and `9.9` are the rest of item 9.

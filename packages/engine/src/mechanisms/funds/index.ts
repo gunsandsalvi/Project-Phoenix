@@ -150,6 +150,17 @@ export interface MandateTerms extends AgreementTerms {
   /** A4: the instrument kinds this pool may hold. Anything else it may not buy, at any price. */
   readonly mayHold: readonly string[];
   /**
+   * A3, A4, `B-14` (item 9.7): THE CONTRACT KINDS IT MAY TAKE A POSITION IN, and an empty list is a
+   * real term and not an absence — a money fund does not write derivatives, and saying so is what
+   * lets the derivative layer speak for a pool at all.
+   *
+   * It is a separate list from `mayHold` because a contract is not an instrument: nobody issued it,
+   * nobody holds units of it, and it sits on both sides' balance sheets at once (Derivative D1). A
+   * WIDE mandate — long, short, levered, many markets — is §28's hedge fund, and this is the term
+   * that makes it one.
+   */
+  readonly mayWrite: readonly string[];
+  /**
    * B1, F2, XI-3: whether this pool may be levered — and `false` is a real term of a mandate and
    * not an absence. A levered pool borrows from a NAMED lender, which is what makes its leverage a
    * fact about a loan rather than a property of the pool (item 13's B1.a).
@@ -162,7 +173,7 @@ export interface MandateTerms extends AgreementTerms {
  * these terms a mandate is that they say what the pool may hold and whether it may be levered.
  */
 export const isMandate = (t: AgreementTerms): t is MandateTerms =>
-  'mayHold' in t && 'leverage' in t;
+  'mayHold' in t && 'mayWrite' in t && 'leverage' in t;
 
 /** One mandate as this module reads it: the pool, its manager, and what it may do. */
 export interface Mandate extends MandateTerms {
@@ -187,7 +198,10 @@ function openMandate(
   ccy: CurrencyCode,
   mayHold: readonly string[],
 ): void {
-  const terms: MandateTerms = { kind: MANDATE, mayHold, leverage: false };
+  // A3, B-14: every mandate this world draws writes NO derivatives — a money fund and a commodity
+  // fund do not, and an index tracker does not. It is a term, and §28's hedge fund is the mandate
+  // that says otherwise (item 13.2).
+  const terms: MandateTerms = { kind: MANDATE, mayHold, mayWrite: [], leverage: false };
   ctx.owes({
     debtor: pool,
     creditor: manager,
@@ -1818,6 +1832,19 @@ export function funds(
       {
         id: MANDATE,
         what: 'what a pool may hold and whether it may be levered, and which manager runs it',
+      },
+    ],
+    // Fund Shares A3, `B-14` (item 9.7): WHAT A POOL MAY TAKE A POSITION IN IS ITS MANDATE'S. The
+    // derivative layer speaks for a party in every contract book, so it asks before it speaks — a
+    // pool with no mandate is not a fund and trades nothing, which is the same refusal `ordersOf`
+    // makes in an ordinary market.
+    tradingLimits: [
+      {
+        partyKind: FUND,
+        mayTrade: (view: ParticipantView, kind): boolean => {
+          const m = mandateFor(view);
+          return m.some && m.value.mayWrite.includes(String(kind));
+        },
       },
     ],
     bankChoices: [

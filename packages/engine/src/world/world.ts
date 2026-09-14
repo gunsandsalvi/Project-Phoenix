@@ -288,6 +288,11 @@ export class World {
   >();
   /** Securities Lending B1: the one module that answers what a party of a kind must borrow. */
   private readonly borrowAskers = new Map<PartyKindId, { owner: string; needs: BorrowNeeds }>();
+  /** Fund Shares A3: the one module that answers what a party of a kind may take a position in. */
+  private readonly tradingLimits = new Map<
+    PartyKindId,
+    { owner: string; mayTrade: (view: ParticipantView, kind: DerivativeKindId) => boolean }
+  >();
   /** Banks Funding E1: the one module that answers where a depositor of a kind wants to bank. */
   private readonly bankChoosers = new Map<
     PartyKindId,
@@ -697,6 +702,26 @@ export class World {
       );
     }
     this.termsDeciders.set(kind, { owner, decide });
+  }
+
+  /**
+   * Fund Shares A3, `B-14`: exactly one module answers what a party of a kind may trade (Law 4). A
+   * second would be two mandates over one pool, and the pool could act on the looser.
+   */
+  provideTradingLimit(
+    owner: string,
+    kind: PartyKindId,
+    mayTrade: (view: ParticipantView, k: DerivativeKindId) => boolean,
+  ): void {
+    forbid(!this.sealed, 'Law 10', 'a trading limit is declared at assembly');
+    const held = this.tradingLimits.get(kind);
+    if (held !== undefined) {
+      throw new InvalidRegistry(
+        'Fund Shares A3',
+        `${owner} would be a second decider of what a ${kind} may trade, after ${held.owner}`,
+      );
+    }
+    this.tradingLimits.set(kind, { owner, mayTrade });
   }
 
   /**
@@ -1439,6 +1464,12 @@ export class World {
         ...this.agreementStore.owedBy(party),
         ...this.agreementStore.owedTo(party),
       ],
+      // Fund Shares A3: the module that owns this party's kind answers, and a kind nobody answers
+      // for may trade anything — the absence of a rule is not a prohibition.
+      mayTrade: (kind: DerivativeKindId): boolean => {
+        const held = this.tradingLimits.get(this.parties.get(party).kind);
+        return held === undefined || held.mayTrade(this.participantView(party), kind);
+      },
       contracts: {
         mine: () => this.contractStore.openOf(party),
         valueOf: (c) => this.contractValue(c, party, this.currentPeriod),

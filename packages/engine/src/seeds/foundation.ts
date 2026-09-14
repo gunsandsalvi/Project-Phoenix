@@ -155,7 +155,7 @@ import { lifeParam, spaceFor, STORAGE } from '../registry/physical.js';
 import { GOODS, type GoodDecl } from '../mechanisms/goods/data.js';
 import { equity } from '../mechanisms/equity/index.js';
 import { drawListed, equityLineOf, type ListedDecl } from '../mechanisms/equity/data.js';
-import { funds } from '../mechanisms/funds/index.js';
+import { FUND, funds } from '../mechanisms/funds/index.js';
 import { drawEtfs, drawFunds, type EtfDecl, type FundDecl } from '../mechanisms/funds/data.js';
 import { households } from '../mechanisms/households/index.js';
 import { HOURS, labour } from '../mechanisms/labour/index.js';
@@ -2699,20 +2699,24 @@ export function foundationSpec(
       /**
        * XI-3, Clearing B2: the layer, and WHO TRADES CONTRACTS in this world.
        *
-       * Its banks and its firms. NOT its funds, and the reason is Fund Shares A3: a fund's equity
-       * is zero by construction because its own claim on itself absorbs whatever its book comes
-       * to — and the pass that re-marks that claim reads the register, where a contract is not
-       * (Derivative X1). A tracker that took a derivative position would carry a mark its own
-       * share value had never been told about, which is a fund with equity: measured at 83,247,864
-       * on `etf.us` the first time funds were let in here.
+       * Its banks, its firms AND its funds — and being on this list is not permission (item 9.7).
+       * It says the layer speaks for parties of this kind when a book asks; whether a given pool may
+       * take a position is its MANDATE's answer (Fund Shares A3, `ParticipantView.mayTrade`), and
+       * every mandate this world draws says it may write nothing. So no fund posts in a contract
+       * book today, by a term of its own contract rather than by its kind being left off a list.
        *
-       * 13h was where a fund would hold derivatives on purpose, and it closed without opening the
-       * pass that re-marks a fund's claim on itself: no fund kind is on this list and none is
-       * scheduled to be. That is `docs/IMPLEMENTATION.md` B-14, and what a pool may hold is a
-       * MANDATE's answer (Fund Shares A3) — so the list changes at item 9, and item 13 is where a
-       * fund first has a reason to take a position on purpose.
+       * **THE THING THAT MUST BE TRUE BEFORE ANY MANDATE SAYS OTHERWISE**, and it is why this used
+       * to read `NOT its funds`: a fund's equity is zero by construction because its own claim on
+       * itself absorbs whatever its book comes to — and the pass that re-marks that claim reads the
+       * REGISTER, where a contract is not (Derivative X1). A tracker that took a derivative position
+       * would carry a mark its own share value had never been told about, which is a fund with
+       * equity: measured at 83,247,864 on `etf.us` the first time funds were let in here.
+       *
+       * That pass is **item 13.6**, and 13.2's hedge-fund mandate may not be drawn before it opens.
+       * 13h was where a fund would hold derivatives on purpose and it closed without either, which
+       * is what `B-14` is.
        */
-      derivativeLayer([...TRADES_CONTRACTS]),
+      derivativeLayer([...TRADES_CONTRACTS, FUND]),
       // CDS: the first class on the layer (13b). After it, because a book clears through the house
       // it opened; before the indices, because a default index is an index OF these books.
       cds(houseIdFor),

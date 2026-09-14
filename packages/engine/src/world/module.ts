@@ -18,6 +18,7 @@ import type { ContractMarketDecl, MarketDecl, MarketKind } from '../clearing/mar
 import type { VenueDecl } from '../clearing/venue.js';
 import type { InstrumentId, InstrumentKindId, MarketId, PartyKindId } from '../core/ids.js';
 import type { CurveFamilyDecl } from '../prices/curve.js';
+import type { DerivativeKindId } from '../core/ids.js';
 import type {
   InstrumentKindProfile,
   OverdraftContext,
@@ -387,6 +388,22 @@ export interface SystemModule {
    * "in arrears" across six modules, none of which any reader could dispatch on.
    */
   readonly agreementKinds?: readonly AgreementKindDecl[];
+  /**
+   * Fund Shares A3, `B-14` (item 9.7): WHAT A PARTY OF THIS KIND MAY TAKE A POSITION IN.
+   *
+   * Exactly one module may answer for a kind, and a kind nobody answers for may trade anything —
+   * which is what every kind did before mandates existed, and is right: the absence of a rule is
+   * not a prohibition. What a POOL may hold is its mandate's (`funds.mandate`), and a bank is under
+   * no mandate at all.
+   *
+   * It is asked through `ParticipantView.mayTrade`, by the derivative layer, before the layer
+   * speaks for a party in a book — because the layer owns the book and the party's own module owns
+   * the party, and neither may answer the other's question (Observer A4, Law 4).
+   */
+  readonly tradingLimits?: readonly {
+    readonly partyKind: PartyKindId;
+    readonly mayTrade: (view: ParticipantView, kind: DerivativeKindId) => boolean;
+  }[];
   readonly borrowNeeds?: readonly {
     readonly partyKind: PartyKindId;
     readonly needs: BorrowNeeds;
