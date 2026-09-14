@@ -26,13 +26,17 @@
  * claim anybody formed an opinion of, so nobody posts and the print goes visibly stale.
  */
 import {
+  type Cash,
+  type PerPiece,
+  acrossMembers,
   amountOf,
   asAmount,
   asCash,
   asNamed,
-  type Cash,
+  asPerMember,
+  heldAsMoney,
+  minus,
   negated,
-  type PerPiece,
   plus,
   pricedAt,
 } from '../../core/measure.js';
@@ -42,7 +46,7 @@ import type { AuditView } from '../../audit/view.js';
 import type { MarketDecl } from '../../clearing/market.js';
 import type { Order } from '../../clearing/solver.js';
 import { currencyUnit, paramId, type InstrumentId, type MarketId, type PartyId } from '../../core/ids.js';
-import { combineDust, div, mul, sub, sum, withinDust } from '../../core/num.js';
+import { combineDust, div, sum, withinDust } from '../../core/num.js';
 import { downTick, type Qty, scaleQty } from '../../core/tick.js';
 import { none, some } from '../../core/option.js';
 import { period as periodOf } from '../../calendar/calendar.js';
@@ -428,13 +432,15 @@ function declaredIsPaid(): Family {
         const paid = e.data['paid'];
         const firm = e.subjects[0];
         if (typeof line !== 'string' || typeof paid !== 'number' || firm === undefined) continue;
+        // Item 16: a published number re-enters the type system here, through its own door.
+        const said = asCash(paid, 'what the declaration said was paid');
         const moved = sum(paidOut.get(`${line}\u0000${firm}`) ?? []);
-        if (withinDust(paid, moved.value, combineDust(sum([paid]), moved))) continue;
+        if (withinDust(said, moved.value, combineDust(sum([said]), moved))) continue;
         out.push({
           family: 'flows',
           spec: 'Equity D3.a',
           owner: firm,
-          size: sub(paid, moved.value, 'recorded paid against what left the firm'),
+          size: minus(said, moved.value, 'recorded paid against what left the firm'),
           unit: view.registry.currencyOf(view.parties.get(firm as PartyId).region),
           period: view.period,
           message: `${line}: ${paid} of payout was recorded paid and ${moved.value} left ${firm}`,
@@ -454,8 +460,8 @@ function declaredIsPaid(): Family {
  * for every line that declared one. The sums are the same sums over the same legs in the same
  * order; what changes is that the ledger is read once.
  */
-function dividendLegs(view: AuditView): ReadonlyMap<string, number[]> {
-  const out = new Map<string, number[]>();
+function dividendLegs(view: AuditView): ReadonlyMap<string, Cash[]> {
+  const out = new Map<string, Cash[]>();
   for (const r of view.ledger.inPeriod(view.period)) {
     if (r.outcome !== 'settled') continue;
     const reason = r.instruction.reason;
@@ -467,8 +473,9 @@ function dividendLegs(view: AuditView): ReadonlyMap<string, number[]> {
       if (!isMoneyLeg(leg)) continue;
       const key = `${line}\u0000${String(leg.from.holder)}`;
       const held = out.get(key);
-      if (held === undefined) out.set(key, [leg.amount]);
-      else held.push(leg.amount);
+      const paidOnIt = heldAsMoney(leg.amount, 'what left the firm on this line');
+      if (held === undefined) out.set(key, [paidOnIt]);
+      else held.push(paidOnIt);
     }
   }
   return out;
@@ -495,7 +502,14 @@ function publishReads(ctx: MechanismContext, rows: readonly ListedDecl[]): void 
       const party = ctx.parties.get(holder);
       voteTerms.push(votesOf(party, ctx.register.quantity(holder, line.id), terms));
       boundTerms.push(
-        mul(ctx.register.encumbered(holder, line.id), weightOf(party), 'units bound'),
+        acrossMembers(
+          asPerMember<'amount:piece'>(
+            ctx.register.encumbered(holder, line.id),
+            'what one member has bound',
+          ),
+          weightOf(party),
+          'units bound',
+        ),
       );
     }
     const strategic = sum(boundTerms).value;

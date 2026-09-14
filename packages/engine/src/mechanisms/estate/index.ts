@@ -24,14 +24,22 @@
  * that names neither cannot die, and the central bank is the one that names neither because it
  * cannot run out of what it alone issues.
  */
-import { asRatio, type Cash, heldAsMoney, over, scale , asPerPiece} from '../../core/measure.js';
+import {
+  type Cash,
+  asPerPiece,
+  asRatio,
+  heldAsMoney,
+  over,
+  ratioOf,
+  scale,
+} from '../../core/measure.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import { holdsSomething, type AuditView } from '../../audit/view.js';
 import type { CurrencyCode, InstrumentId, PartyId } from '../../core/ids.js';
 import { currencyUnit, paramId, partyId, partyKindId } from '../../core/ids.js';
 import { period as periodOf } from '../../calendar/calendar.js';
 import type { Process } from '../../register/processes.js';
-import { div, material, sub, sum, withinDust } from '../../core/num.js';
+import { material, sub, sum, withinDust } from '../../core/num.js';
 import { Impossible } from '../../core/errors.js';
 import { none, some, type Option } from '../../core/option.js';
 import { isMoneyLeg, type Leg } from '../../ledger/instruction.js';
@@ -221,7 +229,11 @@ function offers(view: ParticipantView, m: MarketDecl, closesAfter: number): read
       side: 'sell',
       price: scale(
         print.value.price,
-        asRatio(div(left, total, 'how much of its patience is left'), 'how much of its patience is left'),
+        ratioOf(
+          asRatio(left, 'the periods left in its programme'),
+          asRatio(total, 'the periods it has'),
+          'how much of its patience is left',
+        ),
         'reservation',
       ),
       qty: units,

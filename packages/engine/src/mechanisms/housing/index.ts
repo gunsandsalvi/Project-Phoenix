@@ -35,16 +35,16 @@
  * the whole of what makes one.
  */
 import {
+  type Cash,
+  type PerPiece,
   amountOf,
   asCash,
-  asPerPiece,
-  heldAsMoney,
   asNamed,
+  asPerPiece,
   asRatio,
-  type Cash,
+  heldAsMoney,
   minus,
   over,
-  type PerPiece,
   pricedAt,
   scale,
   valueAt,
@@ -53,7 +53,7 @@ import type { Order } from '../../clearing/solver.js';
 import { clear, isCleared } from '../../clearing/solver.js';
 import type { VenueDecl } from '../../clearing/venue.js';
 import { currencyUnit, unitId, type PartyId, type RegionId, type UnitId } from '../../core/ids.js';
-import { atMost, div, mul, sub, sum } from '../../core/num.js';
+import { atMost, sum } from '../../core/num.js';
 import { none, some } from '../../core/option.js';
 import { addQty, asQty, downTick, NO_QTY, type Qty, scaleQty, subQty } from '../../core/tick.js';
 import { TONNE_PIECES } from '../../registry/grid.js';
@@ -207,7 +207,7 @@ function needs(view: ParticipantView, rows: readonly TenureDecl[]): Qty {
   return view.registry.pieces(
     goodUnitOf(view, self.region),
     asNamed(
-      mul(weightOf(self), per, 'the occupancy the people in it need between them'),
+      scale(per, asRatio(weightOf(self), 'the people in it'), 'the occupancy the people in it need between them'),
       'the occupancy they need between them',
     ),
   );
@@ -347,8 +347,8 @@ function letIn(ctx: MechanismContext, book: LeaseBook, venue: VenueDecl): void {
         rentPerDwelling: struck,
         dwellings,
       });
-      want = asQty(sub(want, dwellings, 'what it is still short of'));
-      left = asQty(sub(left, dwellings, 'what this owner has left'));
+      want = subQty(want, dwellings, 'what it is still short of');
+      left = subQty(left, dwellings, 'what this owner has left');
     }
   }
   ctx.record(
@@ -434,8 +434,8 @@ export const FORECLOSED = 'housing.foreclosed';
 function mortgagesOf(
   ctx: MechanismContext,
   borrower: PartyId,
-): readonly { readonly id: InstrumentId; readonly lender: PartyId; readonly outstanding: number }[] {
-  const out: { id: InstrumentId; lender: PartyId; outstanding: number }[] = [];
+): readonly { readonly id: InstrumentId; readonly lender: PartyId; readonly outstanding: Cash }[] {
+  const out: { id: InstrumentId; lender: PartyId; outstanding: Cash }[] = [];
   // Law 19: A LOAN IS ISSUED BY ITS BORROWER (`banks/index.ts`: `issuer: some(borrower)`), so the
   // register already indexes a party's own rows and this asks it. Walking every instrument in the
   // world to find one household's mortgages is a search that grows with everything the world has
@@ -449,7 +449,11 @@ function mortgagesOf(
     const owed = creditorOf((held) => ctx.register.holdersOf(held), i);
     // A mortgage nobody is owed is a mortgage that is paid off; there is nothing left to foreclose.
     if (!owed.some) continue;
-    out.push({ id: i.id, lender: owed.value, outstanding: ctx.register.heldTotal(i.id).value });
+    out.push({
+      id: i.id,
+      lender: owed.value,
+      outstanding: heldAsMoney(ctx.register.heldTotal(i.id).value, 'what is still owed on it'),
+    });
   }
   return out;
 }
@@ -580,7 +584,9 @@ function charge(ctx: MechanismContext): void {
       if (m.outstanding <= 0) continue;
       const print = ctx.prices.latest(id, ctx.period);
       if (!print.some || print.value.price <= 0) continue;
-      const covers = downTick(div(m.outstanding, print.value.price, 'the roofs the debt stands on'));
+      const covers = downTick(
+        amountOf(m.outstanding, print.value.price, 'the roofs the debt stands on'),
+      );
       /**
        * XI-15, Law 8: what a cell pledges is whole pieces for every member it stands for, and the
        * lien is on the total. `free` is already per member for a cell, so the share is struck the

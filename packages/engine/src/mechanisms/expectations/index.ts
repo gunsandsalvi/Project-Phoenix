@@ -19,6 +19,21 @@
  */
 import { period, type Period } from '../../calendar/calendar.js';
 import { paramId, type InstrumentId, type PartyId } from '../../core/ids.js';
+/**
+ * Item 2: THE ARITHMETIC HERE IS DELIBERATELY UNDIMENSIONED, and this is the one place in the engine
+ * where that is the right answer rather than a gap.
+ *
+ * An `Outlook` is generic over its SUBJECT (`about({on: 'price' | 'bought' | 'sold' | …})`), so what
+ * `expected` and `confidence` are denominated in depends on which variable this outlook is about: a
+ * price outlook carries a level, a `sold` outlook carries units, an `income` outlook carries money.
+ * `Measure<D>` is a static type and the subject is a runtime value, so no single `D` is true of this
+ * store — and picking one would be a lie at every reader that holds a different kind.
+ *
+ * So the dimension is asserted AT THE READ, by the module that knows what it asked about: `firms`
+ * enters its sales outlook as an amount, `research` as money, `banks` as a level. The correction,
+ * the mean surprise and the width below are the same arithmetic whatever the unit, and they stay
+ * `add`/`sub`/`mul`/`div` so that no reader is handed a dimension this file invented.
+ */
 import { add, atLeast, div, mul, sub, sum } from '../../core/num.js';
 import { none, some, type Option } from '../../core/option.js';
 import { PER_PERIOD } from '../../core/rate.js';
