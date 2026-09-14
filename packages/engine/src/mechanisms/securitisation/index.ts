@@ -652,10 +652,11 @@ function cut(
 }
 
 /**
- * C3: EVERY TRANCHE HAS A MARKET, and it is opened with the tranche because a claim that is priced
- * by clearing and names no book is a claim nobody can value (Clearing D1: the kernel refuses one).
- * What a note is worth after the deal is what somebody will pay for it, which is the same rule as
- * everything else here.
+ * C3: EVERY TRANCHE HAS A MARKET, and it is opened with the tranche because a note nobody can
+ * trade is a note nobody can price, and what a tranche is worth after the deal is what somebody
+ * will pay for it — the same rule as everything else here. (The kernel no longer refuses a cleared
+ * line with no market: a private company's shares are one, and they are carried at cost, §29 C5.
+ * This is a decision of the deal's and not a rule the register enforces.)
  */
 function issueTranche(
   ctx: MechanismContext,

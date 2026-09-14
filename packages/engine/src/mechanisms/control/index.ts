@@ -511,9 +511,14 @@ function deals(): Family {
  *
  * Law 18: it is the same list for every bidder, so it is found ONCE for the session rather than
  * once per firm. Asked per firm it was a walk over every instrument in the world for each of three
- * thousand of them, to arrive at the same handful of listed lines every time.
+ * thousand of them, to arrive at the same list every time.
+ *
+ * 10f.1: it is EVERY firm's residual and not only the ones with a market, which is what it always
+ * said and could not deliver — a private company is bought by buying its shares, and until this
+ * world had private companies in it there were none to buy. What a tender does not need is a
+ * market: it opens a venue of its own (`runTender`), which is what a controlled process IS.
  */
-export function listedLines(ctx: MechanismContext): readonly Instrument[] {
+export function equityLines(ctx: MechanismContext): readonly Instrument[] {
   const out: Instrument[] = [];
   for (const i of ctx.instruments.all()) {
     if (!i.status.live || !i.issuer.some) continue;
@@ -577,7 +582,7 @@ export function control(): SystemModule {
         anchor: { before: 'lending.book' },
         cycle: 'anchor',
         run: (ctx: MechanismContext): void => {
-          const lines = listedLines(ctx);
+          const lines = equityLines(ctx);
           if (lines.length === 0) return;
           for (const p of ctx.parties.ofKind(FIRM)) {
             if (!p.status.alive) continue;

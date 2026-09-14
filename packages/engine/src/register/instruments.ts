@@ -129,14 +129,19 @@ export class Instruments {
     this.registry.currency(decl.ccy);
     const unit = profile.unit(decl.ccy);
     this.registry.unit(unit);
-    if (profile.pricing === 'cleared') {
-      forbid(
-        decl.market.some,
-        'Clearing D1',
-        `${decl.id} is priced by clearing but names no market`,
-      );
-    } else if (profile.pricing !== 'derived') {
-      // XI-6: a thing whose value is what it cost, or one of itself, has nothing to clear.
+    /**
+     * XI-6: a thing whose value is what it cost, or one of itself, has nothing to clear.
+     *
+     * The other half of this used to be here and is GONE (item 10f.1): a cleared kind with no
+     * market was refused as *"priced by clearing but names no market"*, and that is a real state
+     * rather than a defect. A share of a private company is the same instrument as a share of a
+     * public one and NOBODY TRADES IT, so it names no market, nothing ever clears a price of it,
+     * and its holders carry it at what it cost — §29 C5, and C5.a's *"an unlisted mark is not a
+     * cleared price"* is kept by there being no price to mistake for one. What answers the
+     * question this forbid was asking is `Valuation.atCost`, which reads the LINE and not only its
+     * kind, and every valuation in this world goes through it (Law 4).
+     */
+    if (profile.pricing !== 'cleared' && profile.pricing !== 'derived') {
       forbid(!decl.market.some, 'XI-6', `${decl.id} is not priced by clearing but names a market`);
     }
     // Fund Shares E1, E2: a DERIVED line may also trade, and then it has TWO VALUES and they are

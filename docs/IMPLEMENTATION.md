@@ -400,6 +400,31 @@ both:
   that is a party rather than a cell — Firm Birth A, where a founder is somebody who funded an entry
   (13n). It is visible without being looked for: `equity.reads` publishes `shares` every period, and
   for such a line it is zero. **Positioned at 13n.**
+- **F-3 (a build-stopper, and it was fixed where it stood).** `Instruments.add` FORBADE a cleared
+  kind with no market — *"priced by clearing but names no market"* (Clearing D1) — so the very first
+  private share line this world declared would have thrown at the seed. It is a real state and not a
+  defect: §29 C5 says a holding with no clearing is a MARK, so the forbid is deleted and what answers
+  the question it was asking is `Valuation.atCost`, which reads the line and not only its kind. **Not
+  a finding to position: the engine will not run past it (the exception the owner's three rules name),
+  so it is fixed and written down.**
+- **F-4 (a fund cannot bid for a share, and 10f.2 needs it to).** `funds/index.ts:ordersOf` prices
+  its bid with `priceAt(flows, …)` and returns nothing when `flows.length === 0` — and a share
+  promises no dated payment, so **the flows are always empty and no fund in this world has ever bid
+  for a share**, even though `eligible` (three lines above, through `view.worth`) says its mandate
+  admits one. Two valuations of one thing (Law 4) that disagree about whether a share can be valued
+  at all, and the kernel already answers it: `view.worth` discounts a promise where there is one and
+  capitalises what a company published where there is not. **Positioned at 10f.2**, which is where
+  the bid side of an IPO comes from and cannot come from anywhere else.
+- **F-5 (`control.tender` is now nine thousand by nine thousand).** It walks every FIRM against every
+  equity line, and the line count went from seven hundred and forty to nine thousand. The guards are
+  real — a bidder needs `credit.quoted` and cash, a target needs published accounts — but the walk
+  itself is twelve times what it was. **Positioned at 16** with F-2, for the same reason.
+- **F-6 (nobody can tender for a private company).** `control.tenders` asks a holder for its OUTLOOK
+  on the line's PRICE, and an outlook is formed from prints. A private line never prints, so no
+  holder ever has one, so every tender for a private company fails with `control.failed`/"nobody
+  tendered" — the acquisition the owner asked for, refused by the one read that cannot answer for
+  it. A holder of an untraded company answers from what the company published, which is the same
+  `worthTo` door the buyer uses on the other side of the same book. **Positioned at 10f.3.**
 - **F-2 (the cost of a line for every firm).** `equity.decide` now runs for nine thousand firms a
   period instead of seven hundred and forty, and nine thousand instruments exist where there were
   seven hundred and forty. Nothing about it is wrong — every firm decides about its own money and
