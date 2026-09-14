@@ -18,6 +18,7 @@
  * and who bids for it is the buyer (C3, worklist 4.6). What the firm draws when it makes something
  * is not its choice, though — the recipe is the good's own technology, and the audit says so.
  */
+import { overheadParam } from '../../registry/physical.js';
 import type { Family, Violation } from '../../audit/audit.js';
 import {
   minus,
@@ -38,7 +39,7 @@ import { TIME_PIECES, TONNE_PIECES, WHOLE_PIECES } from '../../registry/grid.js'
 import type { UnitDecl } from '../../registry/registry.js';
 import type { MechanismContext, SeedContext } from '../../world/context.js';
 import type { SystemModule } from '../../world/module.js';
-import { GOODS, spoilageOf, type GoodDecl } from './data.js';
+import { GOODS, OVERHEADS, spoilageOf, type GoodDecl } from './data.js';
 import { goodProfile, perish, wipProfile } from './inventory.js';
 import {
   goodId,
@@ -186,6 +187,25 @@ function paramsOf(rows: readonly GoodDecl[]): ParamDecl[] {
         kind: 'technology',
         owner: 'model',
         why: `Goods A2.a: ${decl.why} It is a fixed physical quantity, so a price that doubles does not halve the draw (A2.b).`,
+      });
+    }
+    /**
+     * A2.a, item 7b: what having the plant costs per period, whatever the line makes. The
+     * coefficient is per unit of PLANT — a site is cleaned and a machine is supported whether or
+     * not anything is started — and which plant this line has, it already declares, so there are
+     * two declared numbers here rather than one per line per service.
+     */
+    for (const o of OVERHEADS) {
+      if (d.subUnit === o.subUnit) continue;
+      if (!d.plant.some((r) => r.capitalKind === o.capitalKind)) continue;
+      out.push({
+        id: overheadParam(d.subUnit, o.subUnit, o.capitalKind),
+        value: o.perPlantUnit,
+        unit: `units of ${o.subUnit} per unit of ${o.capitalKind} in service, per period`,
+        dimension: 'ratio',
+        kind: 'technology',
+        owner: 'model',
+        why: `Goods A2.a: ${o.why} It is bought because the plant EXISTS and not because the line ran, which is what makes it an overhead rather than an input (item 7b).`,
       });
     }
   }

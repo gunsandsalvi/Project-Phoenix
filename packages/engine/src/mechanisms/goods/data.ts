@@ -39,6 +39,37 @@ import { InvalidRegistry } from '../../core/errors.js';
  * line start one unit per period. It is technology like the recipe's tonnages and its hours, and it
  * is what makes capacity a function of the stock (Capital Programme A2) rather than a number.
  */
+/**
+ * Goods A2.a, item 7b: THE TWO SERVICES EVERY SITE BUYS, and they are derived from the plant a line
+ * declares rather than written onto each of sixty-three recipes.
+ *
+ * `facilities` and `itServices` are real lines with real firms and, before this, no buyer in any
+ * period of any run: nothing named either as an input, because neither IS one. A firm buys cleaning
+ * and guarding per SITE per period and software support per MACHINE per period, and the amount does
+ * not fall when the line stands idle. So the coefficient is per unit of PLANT, and which plant a
+ * line has, it already declares.
+ *
+ * Two declared numbers instead of a hundred and twenty-six, and each is a TECHNOLOGY: what it takes
+ * to keep a site open and a machine running, in this world, per period.
+ */
+export const FACILITIES_PER_PREMISES = 0.02;
+export const FACILITIES_WHY =
+  'A2.a: a site week of cleaning, guarding and keeping the heat on, per unit of premises in service per period. A fiftieth, because one site week covers a large building for a week and a unit of premises is a room.';
+export const IT_PER_MACHINE = 0.01;
+export const IT_WHY =
+  'A2.a: a support week per unit of machinery in service per period. A hundredth, because one person supports a great many machines and the ratio is what makes a support business a business.';
+
+/** The kind of plant each service is bought FOR, and the service that is bought for it. */
+export const OVERHEADS: readonly {
+  readonly subUnit: string;
+  readonly capitalKind: string;
+  readonly perPlantUnit: number;
+  readonly why: string;
+}[] = [
+  { subUnit: 'facilities', capitalKind: 'premises', perPlantUnit: FACILITIES_PER_PREMISES, why: FACILITIES_WHY },
+  { subUnit: 'itServices', capitalKind: 'machinery', perPlantUnit: IT_PER_MACHINE, why: IT_WHY },
+];
+
 export interface RecipePlantDecl {
   /** Capital Programme A4: the kind of plant. Plant of one kind is not plant of another. */
   readonly capitalKind: string;

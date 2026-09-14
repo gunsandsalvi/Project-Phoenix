@@ -34,6 +34,7 @@ export {
   type WipTerms,
 } from '../../registry/physical.js';
 
+import { OVERHEADS } from './data.js';
 import type { RegionId } from '../../core/ids.js';
 import {
   goodId,
@@ -48,6 +49,8 @@ import {
   yieldParam,
   type GoodTerms,
   type WipTerms,
+  overheadParam,
+  type RecipeOverhead,
 } from '../../registry/physical.js';
 import type { GoodDecl } from './data.js';
 
@@ -71,6 +74,9 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
         subUnit: i.subUnit,
         qtyPerUnit: recipeParam(d.subUnit, i.subUnit),
       })),
+      // A2.a, item 7b: what having the plant costs per period, whatever it makes. Derived from the
+      // plant this line already declares, so a line that needs no premises buys no cleaning.
+      overheads: overheadsFor(d),
       labourHoursPerUnit: labourParam(d.subUnit),
       plant: d.plant.map((r) => ({
         capitalKind: r.capitalKind,
@@ -84,6 +90,25 @@ export function goodTermsOf(d: GoodDecl, region: RegionId, inputs: readonly Good
       leadTimePeriods: leadTimeParam(d.subUnit),
     },
   };
+}
+
+/**
+ * A2.a, item 7b: the services this line buys because it HAS the plant — one per (service, kind of
+ * plant) the line declares, and none for the service lines themselves, which would otherwise clean
+ * and support each other into a loop with nobody outside it.
+ */
+export function overheadsFor(d: GoodDecl): RecipeOverhead[] {
+  const out: RecipeOverhead[] = [];
+  for (const o of OVERHEADS) {
+    if (d.subUnit === o.subUnit) continue;
+    if (!d.plant.some((r) => r.capitalKind === o.capitalKind)) continue;
+    out.push({
+      subUnit: o.subUnit,
+      capitalKind: o.capitalKind,
+      qtyPerPlantUnitPerPeriod: overheadParam(d.subUnit, o.subUnit, o.capitalKind),
+    });
+  }
+  return out;
 }
 
 /** B3: the terms of a batch of one good, in one region, on its way to being that good. */

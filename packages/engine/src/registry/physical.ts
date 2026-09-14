@@ -92,9 +92,34 @@ export interface RecipePlant {
   readonly unitsPerUnitPerPeriod: ParamId;
 }
 
+/**
+ * Goods A2.a, item 7b (`A-56`): WHAT A LINE BUYS BECAUSE IT HAS A SITE, not because it made anything.
+ *
+ * Facilities management and IT support are not recipe inputs: a firm buys them per SITE and per
+ * MACHINE per period, and the amount does not fall when the line stands idle. `RecipeInput` is per
+ * unit of OUTPUT and cannot say that, which is why `facilities` and `itServices` had a firm, a
+ * recipe, a market and no buyer in any period of any run.
+ *
+ * It is a SEPARATE list from `inputs` and that is load-bearing in two ways. A line's OVERHEADS do
+ * not decide what it can make — a site with no cleaner still runs — so they are not in the limits;
+ * and the seed's build-out (`foundation.ts`) orders lines by their INPUTS, so a line can open
+ * without its overheads and buy them from the first period. Putting them in `inputs` would have made
+ * `power` require `facilities` while `facilities` requires `power` and neither would ever be built,
+ * which is a real circularity that a topological order cannot express and a period loop can.
+ */
+export interface RecipeOverhead {
+  readonly subUnit: string;
+  /** The kind of plant it is bought for: a site is cleaned, a machine is supported. */
+  readonly capitalKind: string;
+  /** How much of it one unit of that plant takes per period, whatever the line makes. */
+  readonly qtyPerPlantUnitPerPeriod: ParamId;
+}
+
 /** A2: the fixed way one unit of a good is made. Leontief: no substitution, no value share. */
 export interface Recipe {
   readonly inputs: readonly RecipeInput[];
+  /** A2.a: what having the plant costs per period, whatever it makes (item 7b). */
+  readonly overheads: readonly RecipeOverhead[];
   /** A2.c: hours of labour per unit of output. */
   readonly labourHoursPerUnit: ParamId;
   /** A2.c: the plant a unit of it takes, per kind. Empty is a line that needs none. */
@@ -177,6 +202,10 @@ export const goodUnitId = (unit: string): UnitId => unitId(unit);
 export const spoilageParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.spoilage`);
 export const recipeParam = (output: string, input: string): ParamId =>
   paramId(`goods.${output}.recipe.${input}`);
+
+/** A2.a, item 7b: what one unit of a kind of plant takes of a service, per period, on this line. */
+export const overheadParam = (output: string, service: string, capitalKind: string): ParamId =>
+  paramId(`goods.overhead.${output}.${service}.${capitalKind}`);
 export const labourParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.labourHours`);
 export const leadTimeParam = (subUnit: string): ParamId => paramId(`goods.${subUnit}.leadTime`);
 export const plantParam = (subUnit: string, capitalKind: string): ParamId =>

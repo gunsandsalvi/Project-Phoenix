@@ -185,7 +185,7 @@ Dependencies, not preference, and the open lines before the new ones. The four a
 | ~~**5**~~ | ~~Missing is Missing, carried~~ | 4 | **DONE** |
 | ~~**6**~~ | ~~The derivative books open~~ | 3 | **DONE.** Eight classes gained a second side; the margin gate admits somebody |
 | **7** | The three closed lines | 2 | **7.4 DONE** — the bootstrap, which is what held all three at zero. 7.1 waits on **9**; 7.2 and 7.3 are inserted as **7b** with their reasons |
-| **7b** | Durables and overheads | — | **inserted** (Law 10, at 7's dependency position): a household buys a dwelling out of its own budget, and a recipe names the services every site buys per period rather than per unit. Both are missing MECHANISMS that 7.2 and 7.3 assumed were wiring |
+| ~~**7b**~~ | ~~Durables and overheads~~ | — | **DONE.** A household buys the home its people live in; a recipe names what having the plant costs per period |
 | **8** | The securitisation waterfall | 2 | independent; the subtraction has gone the wrong way round since 13e |
 | **9** | The seven private books, and `Mandate` | 5 | the larger half of item 8 of the old file; blocks 13, and `A-43` behind it |
 | **10** | The corporate bond is issued | 2 | needs **3** (a buyer); 51 Corporate Credit clauses stand behind it |
@@ -943,16 +943,16 @@ deadlocked the seed's build-out in the other. Inserted at 7's dependency positio
   leases it holds are `housing`'s, and a module never imports a module. `housing` publishes what each
   cell needs against what it owns (the same read `ordersOf` already makes), and the household reads
   the event — the `lastPublicAbout` route every other cross-module read uses.
-- [ ] 7b.3 **An overhead is not a recipe input.** `GoodDecl.inputs` is per unit of OUTPUT; facilities
+- [x] 7b.3 **An overhead is not a recipe input.** `GoodDecl.inputs` is per unit of OUTPUT; facilities **DONE.** `Recipe.overheads` is a SECOND list: `{subUnit, capitalKind, qtyPerPlantUnitPerPeriod}`, derived from the plant each line already declares, so there are TWO declared coefficients (`FACILITIES_PER_PREMISES`, `IT_PER_MACHINE`) instead of one per line per service. `decide.ts` bids for what its plant in service takes less what it holds, at its own expected price; `produce.ts` draws what it HAS and capitalises it into what a unit cost, beside the wage. It is a cost and never a gate — a site with no cleaner still runs — so it is not in the production limits. A service line buys no service of its own kind.
   management is per site per period and IT support is per machine per period. Give the recipe a
   second list — what a line draws per unit of PLANT in service — with two declared coefficients
   instead of 126, derived from each line's own `plant`.
-- [ ] 7b.4 **And the seed's build-out has to take a cycle.** `foundation.ts:652` builds a line only
+- [x] 7b.4 **And the seed's build-out has to take a cycle.** `foundation.ts:652` builds a line only **DONE, and the separate list is what does it.** The seed's build-out orders lines by `d.inputs`, which overheads are not in — so a line opens on what it can make WITHOUT them and buys them from the first period, and `power` requiring `facilities` while `facilities` requires `power` never reaches the topological order at all. That is also what happens: a new site is cleaned after it opens. No change to `foundation.ts` was needed, which is the point of putting them in their own list.
   when every input of it is already built. Overheads make `power` buy `facilities` and `facilities`
   buy `power`, which is true of a real economy and is what a topological order cannot express. The
   build-out opens a line on what it can make WITHOUT its overheads and lets the overheads arrive in
   the first period, which is also what actually happens: a new site is cleaned after it opens.
-- [ ] 7b.5 Do not measure. Lint and typecheck; the suite runs when the plan is done.
+- [x] 7b.5 Do not measure. Lint and typecheck; the suite runs when the plan is done. **DONE**: typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green. Not measured.
 
 ### Findings this closes
 
@@ -3798,8 +3798,6 @@ option premium, where it is multiplied by the price level instead of used as the
 | **A-36** (C) | 16 | the treasury's immortality is unconditional where the kernel says conditional |
 | **A-43** (C) | 9, 21 | the labour module builds the household's schedule |
 | **A-53** (B) | 15 | a household bids its entire income as rent |
-| **A-55** (A) | 7 | nobody can buy a dwelling, so Housing B1–C4 never runs |
-| **A-56** (A) | 7 | three lines have a firm, a recipe, a market and no buyer |
 | **A-57** (A) | 8 | a securitisation vehicle keeps the whole interest stream, for ever |
 | **A-67** (A) | 9 | nothing ever borrows a security |
 | **A-69** (C) | 6, 21 | nine exported entry points that nothing calls |
@@ -3856,6 +3854,7 @@ carries each in full.
 | item 4, the families | `A-4`, `A-10`, `A-11`, `A-12`, `A-13`, `A-14`, `A-42`, `A-48`, `B-10` |
 | item 5, Missing is Missing | `A-25`, `A-30`, `A-34`, `A-45` |
 | item 6, the derivative books | `A-66`, `B-7`, `C-6`, and `A-69`'s `refusedThisPeriod` and `cdsBookOrders` rows |
+| item 7 and 7b | `A-55`, `A-56` (7.1 stays open for item 9) |
 
 ### What the reads covered, and what they did not
 

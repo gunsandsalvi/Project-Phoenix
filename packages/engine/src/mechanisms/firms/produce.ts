@@ -35,7 +35,7 @@ import {
   pricedAt,
   scale,
 } from '../../core/measure.js';
-import { finite, material, sub, sum } from '../../core/num.js';
+import { finite, material, sub, sum, atMost} from '../../core/num.js';
 import type { Qty } from '../../core/tick.js';
 import { NO_QTY, asQty, upTick } from '../../core/tick.js';
 import { none } from '../../core/option.js';
@@ -179,6 +179,39 @@ function start(
   }
   const legs: Leg[] = [];
   const costs: Cash[] = [wages];
+  /**
+   * Goods A2.a, B5, item 7b: AND WHAT HAVING THE PLANT COST THIS PERIOD. Cleaning per site, support
+   * per machine — drawn because the plant EXISTS, so the quantity does not move with the batch, and
+   * it is capitalised into what a unit cost like the wage beside it.
+   *
+   * It draws what it HAS: a firm that could not buy enough of the service ran a site that was not
+   * fully cleaned, which is a real state and not a bound — nothing here refuses to start, because
+   * an overhead is a cost and never a gate (`start`'s limits do not contain it).
+   */
+  for (const o of tech.overheads) {
+    const units = sum(
+      vintages.filter((v) => v.capitalKind === o.capitalKind && v.periodsLeft > 0).map((v) => v.units),
+    ).value;
+    if (units <= 0) continue;
+    const takes = upTick(
+      scale(
+        asAmount<'piece'>(units, 'the plant it has in service'),
+        o.qtyPerPlantUnitPerPeriod,
+        'what it takes a period',
+      ),
+    );
+    const drawn = atMost(takes, ctx.register.free(firm, o.instrument), 'what it actually has of it');
+    if (drawn <= 0) continue;
+    costs.push(heldCost(ctx, firm, o.instrument, asQty(drawn)));
+    legs.push({
+      kind: 'destroy',
+      party: firm,
+      instrument: o.instrument,
+      qty: asQty(drawn),
+      why: 'consumed',
+      fromCell: none(),
+    });
+  }
   for (const input of tech.inputs) {
     const qty = upTick(scale(batch, input.qtyPerUnit, 'what the recipe draws'));
     costs.push(heldCost(ctx, firm, input.instrument, qty));

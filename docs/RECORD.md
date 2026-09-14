@@ -6503,3 +6503,39 @@ state and is said as one rather than clipped to zero.
 `7b.3` and `7b.4` — the overheads and the seed's build-out cycle — are the second half and are next.
 
 Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence` green.
+
+---
+
+## Item 7b, second half — an overhead is not a recipe input
+
+`facilities` and `itServices` are real lines with real firms and, before this, no buyer in any period
+of any run. Nothing named either as an input — because neither IS one.
+
+**A firm buys facilities management per SITE per period and IT support per MACHINE per period.** The
+amount does not fall when the line stands idle, and `RecipeInput` is per unit of OUTPUT and cannot
+say that. So `Recipe` has a second list: `overheads`, each `{subUnit, capitalKind,
+qtyPerPlantUnitPerPeriod}`, derived from the plant each line already declares. **Two declared
+coefficients instead of a hundred and twenty-six**, and each is a technology: what it takes to keep a
+site open and a machine running, per period.
+
+`decide.ts` bids for what its plant in service takes, less what it holds, at its own expected price
+for the line — its outlook where it has one, the last print where it has not, the same ladder it buys
+an input on. `produce.ts` draws what it HAS and capitalises it into what a unit cost, beside the
+wage: a firm that could not buy enough ran a site that was not fully cleaned, which is a real state.
+Nothing refuses to start over it — **an overhead is a cost and never a gate**, so it is not in the
+production limits.
+
+**And the separate list is what solves the build-out cycle.** `foundation.ts:652` opens a line only
+once every INPUT of it is built. Had the services gone into `inputs`, `power` would require
+`facilities` while `facilities` requires `power`, neither would ever be built, and a large part of
+the economy would go with them — a real circularity that a topological order cannot express. In their
+own list they never reach that order: a line opens on what it can make without them and buys them
+from the first period, which is also what happens, since a new site is cleaned after it opens.
+**`foundation.ts` needed no change at all**, and that is the point of the shape rather than an
+accident of it.
+
+A service line buys no service of its own kind, so the two do not clean and support each other into a
+loop with nobody outside it.
+
+Closes `A-55` and `A-56`. Typecheck 0, lint 0, `check:spec`, `check:forbids`, `check:existence`
+green. Not measured.

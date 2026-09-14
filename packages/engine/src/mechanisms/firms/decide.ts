@@ -169,6 +169,15 @@ interface Technology {
   readonly yieldRate: Ratio;
   readonly leadTime: number;
   readonly inputs: readonly { readonly instrument: InstrumentId; readonly qtyPerUnit: Ratio }[];
+  /**
+   * Goods A2.a, item 7b: what having the plant costs per PERIOD, whatever it makes — cleaning per
+   * site, support per machine. It is a cost and never a limit: a site with no cleaner still runs.
+   */
+  readonly overheads: readonly {
+    readonly instrument: InstrumentId;
+    readonly capitalKind: string;
+    readonly qtyPerPlantUnitPerPeriod: Ratio;
+  }[];
   /** Goods A2.c, Capital Programme A2: the plant a unit takes, per kind, at the declared numbers. */
   readonly plant: readonly PlantNeed[];
 }
@@ -192,6 +201,13 @@ export function technologyOf(view: ParticipantView, line: FirmDecl): Technology 
     inputs: terms.recipe.inputs.map((i) => ({
       instrument: goodId(i.subUnit, terms.region),
       qtyPerUnit: view.params.ratio(i.qtyPerUnit),
+    })),
+    // A2.a, item 7b: what having the plant costs per period, whatever it makes. It is not in the
+    // limits below, because a site with no cleaner still runs — an overhead is a cost, not a gate.
+    overheads: terms.recipe.overheads.map((o) => ({
+      instrument: goodId(o.subUnit, terms.region),
+      capitalKind: o.capitalKind,
+      qtyPerPlantUnitPerPeriod: view.params.ratio(o.qtyPerPlantUnitPerPeriod),
     })),
     plant: [
       ...terms.recipe.plant.map((r) => ({
@@ -587,6 +603,32 @@ export function plan(view: ParticipantView, line: FirmDecl): Option<Plan> {
       ),
       qty: buy,
     });
+  }
+
+  /**
+   * Goods A2.a, item 7b: AND WHAT HAVING THE PLANT COSTS PER PERIOD. Cleaning per site, support per
+   * machine — bought because the plant EXISTS and not because the line ran, which is why it is not
+   * in the limits above and not scaled by the batch. `facilities` and `itServices` had a firm, a
+   * recipe, a market and no buyer in any period of any run; this is the buyer.
+   *
+   * What it will pay is what the service is worth to it, which for an overhead is what it costs to
+   * do without — and nothing in this world prices that yet. So it bids what it EXPECTS to pay: its
+   * own outlook of the line where it has one, the last print where it has not, the same ladder it
+   * buys an input on (Expectations A2.a). It is a reservation and not a valuation.
+   */
+  for (const o of tech.overheads) {
+    const units = sum(
+      vintages.filter((v) => v.capitalKind === o.capitalKind && v.periodsLeft > 0).map((v) => v.units),
+    ).value;
+    if (units <= 0) continue;
+    const need = upTick(
+      scale(asAmount<'piece'>(units, 'the plant it has in service'), o.qtyPerPlantUnitPerPeriod, 'what it takes a period'),
+    );
+    const buy = subQty(need, view.quantity(o.instrument), 'what it must buy');
+    if (!material(buy, 2, need) || buy <= 0) continue;
+    const level = expectedPrice(view, o.instrument);
+    if (!level.some) continue;
+    orders.push({ market: marketOf(view, o.instrument), side: 'buy', price: level.value, qty: buy });
   }
   // Firm E3, Capital Programme B: the investment decision. It is taken last because it is measured
   // against what the rest of the plan leaves it — the cash it is not about to need — and it adds
