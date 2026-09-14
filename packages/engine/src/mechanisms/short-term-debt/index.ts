@@ -735,16 +735,22 @@ function profile(): Family {
 }
 
 /**
- * C1: THE CASH INVESTORS THIS WORLD HAS — a bank's liquidity book and a corporate treasurer, which
- * are party kinds the kernel names, and a MONEY FUND, which is the `funds` module's.
+ * C1: THE CASH INVESTORS THIS MODULE SPEAKS FOR — a bank's liquidity book and a corporate treasurer.
  *
- * A module never imports another (Law 15), so the kinds arrive as an argument and `seeds/foundation`
- * composes the list. That is the same door `derivative-layer` uses for the same reason: the party
- * kind's PROFILE belongs to one module, and its ID is a name anybody may say.
+ * A MONEY FUND IS THE THIRD AND IT IS NOT HERE, which was a defect in the first draft of this item.
+ * A fund may only hold what its MANDATE lets it hold (Fund Shares A4), and `funds/index.ts:eligible`
+ * is the one gate that asks: the mandate's kinds, the fund's own money, the tenor its investors
+ * agreed to, and whether it can value the thing at the yield it requires. A participant declared
+ * here would have bid for a fund without asking any of those — a fund whose mandate says bills-only
+ * buying commercial paper, which is the mandate not binding at all (Law 4: one writer of what a
+ * fund may hold).
+ *
+ * So a money fund's appetite for this paper is expressed where a fund's appetite lives: in the
+ * mandate it was launched under, which now names this kind.
  */
-export const CASH_INVESTORS: readonly PartyKindId[] = [BANK, FIRM];
+const CASH_INVESTORS: readonly PartyKindId[] = [BANK, FIRM];
 
-export function shortTermDebt(buyers: readonly PartyKindId[] = CASH_INVESTORS): SystemModule {
+export function shortTermDebt(): SystemModule {
   return {
     id: 'short-term-debt',
     spec: 'Short-Term Debt',
@@ -843,7 +849,7 @@ export function shortTermDebt(buyers: readonly PartyKindId[] = CASH_INVESTORS): 
     // C1: a cash investor with a horizon. A money fund, a corporate treasurer, a bank's liquidity
     // book — several party kinds with ONE reason, which is why this is one participant declared
     // once per kind and not three mechanisms (Law 15).
-    participants: buyers.map((partyKind) => ({ partyKind, orders: buys })),
+    participants: CASH_INVESTORS.map((partyKind) => ({ partyKind, orders: buys })),
     families: [profile()],
   };
 }

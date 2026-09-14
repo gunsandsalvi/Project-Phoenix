@@ -274,8 +274,24 @@ export function drawFunds(
       manager: `manager.${b.bank}`,
       managerName: `North Asset Management ${at}`,
       bank: b.bank,
-      // D1: bills, and bills only. It is the shortest paper this world issues.
-      eligible: ['sovereign.bill'],
+      /**
+       * D1, Short-Term Debt C1, C2: SHORT GOVERNMENT PAPER AND HIGH-GRADE COMMERCIAL PAPER, which
+       * is what a money fund holds and what makes it the thing a saver holds instead of a deposit.
+       *
+       * It was bills and bills only, and that was the whole demand side of §9 missing: a firm could
+       * bring paper and the only buyers in the world were bank liquidity books. A money fund IS the
+       * cash investor C1 names first, and its appetite is why commercial paper is a market at all.
+       *
+       * IT IS ALSO WHAT MAKES B3.b's RUN REACH ANYBODY. A fund that holds a firm's paper and meets
+       * a redemption it cannot cover out of its buffer sells into that market at whatever it gives
+       * (XI-2 door 2) — so an issuer that cannot roll and a saver who wants their money back are
+       * connected, which is the transmission the clause is about and which bills alone cannot carry.
+       *
+       * The mandate is the ONE gate on what a fund may hold (`eligible`), so naming the kind here is
+       * naming it once: the tenor its investors agreed to, its own money and the yield it requires
+       * are all still asked, and paper that fails any of them is paper it does not buy.
+       */
+      eligible: ['sovereign.bill', 'commercial.paper'],
       maxTenorPeriods: 52,
       buffer: between(rng, FUND_SPREAD.buffer),
       fee: between(rng, FUND_SPREAD.fee),

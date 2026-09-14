@@ -7798,3 +7798,44 @@ lender per borrower, so a club IS N rows — and what it needs is the lead and t
 
 Typecheck 0 (engine, app, tools), lint 0, `check:spec` 210 tags, `check:forbids` 4 over 207 files,
 `check:deaths` 6 of 6, `check:existence` green. Tests written, not run.
+
+---
+
+## The demand side: a defect of mine, and an item that moved
+
+**The observation** (owner, 2026-09-14): *"Until we have actual asset managers with appetite nothing
+will get demand."* It is right, and checking it turned up a defect I had introduced the same day.
+
+**Every fund in this world may hold bills or grain.** `funds/data.ts` declares
+`eligible: ['sovereign.bill']` for every money fund and `['good.grain']` for the one commodity fund;
+the trackers hold an index. So items 10, 10b and 10c built a corporate bond, commercial paper and a
+securitisation that can pool any claim — into a world whose only buyers are bank dealing desks and
+bank liquidity books.
+
+**And in 10b I had papered over exactly that.** I declared a `FUND` participant in
+`short-term-debt` so that money funds would bid for commercial paper. That bids for a fund WITHOUT
+ASKING ITS MANDATE — nor its currency, nor the tenor its investors agreed to, nor the yield it
+requires, all four of which `funds/index.ts:eligible` asks and is the one gate for. A money fund
+whose mandate says bills-only would have bought commercial paper, which is the mandate not binding
+at all (Law 4: one writer of what a fund may hold). The participant is deleted.
+
+**What replaces it is the mandate itself**, which is where a fund's appetite lives: a money fund's
+`eligible` now names `commercial.paper` beside the bill. That is not a workaround for the missing
+appetite — it is what a money fund IS. D1's saver holds it instead of a deposit, and §9 C1 names the
+money fund first among cash investors precisely because its appetite is why commercial paper is a
+market at all.
+
+**It also connects B3.b's run to somebody.** A fund holding a firm's paper that meets a redemption it
+cannot cover out of its buffer sells into that market at whatever it gives (XI-2 door 2) — so an
+issuer that cannot roll and a saver who wants their money back are joined. Bills alone cannot carry
+that transmission, because the issuer of a bill does not fail to roll.
+
+**Item 13 moves ahead of 11 and 12**, keeping its number so nothing that references it breaks. The
+dependency argument is the owner's observation stated as an ordering: three items have now built
+things to sell and none has built anybody to buy them, and 11 and 12 add more issuers still. A
+sector of supply built in front of the demand item is a sector whose books say `noDemand` — an
+honest outcome and a wasted one, because nothing about a mechanism is tested by a book nobody comes
+to. Item 13 is unblocked (its own blocker, `Mandate`, closed at 9.2a) and nothing in 11 or 12 needs
+it.
+
+Typecheck 0 (engine, app, tools), lint 0.

@@ -172,6 +172,10 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
   §42's cells, so there is nowhere for a birth to happen until that sector exists — and the
   promotion out of it (A6.c) is the other half of the same life cycle. Building birth first would
   mean firms appearing directly as named parties, which is the modelling line A6.b forbids.
+- **13 (asset managers) before 11 and 12**: three items have now built things to sell and none has
+  built anybody to buy them. A sector of supply added in front of the demand item is a sector whose
+  books say `noDemand` — which is an honest outcome and a wasted one, because nothing about the
+  mechanism gets tested by a book nobody comes to.
 - **10 (the corporate bond is issued, DONE) before 10b (short-term debt)**: a firm that cannot issue
   paper at five years cannot issue it at three months either; the issuance path is one mechanism, and
   10b now has one to shorten rather than one to build.
@@ -179,9 +183,9 @@ Dependencies, not preference, and the open lines before the new ones. The two ar
 | # | item | closes | why here |
 |---|---|---|---|
 | **10d** | A bank issues a bond the way everybody else does | — | **inserted** (owner): deletes the THIRD issuance mechanism. Needs nothing — item **10**'s path and `publishReservations` are both there |
+| **13** | Asset managers: §28, §29, §15 | 1 | **MOVED AHEAD OF 11 AND 12** (owner): 10, 10b and 10c all built SUPPLY into a world whose only buyers are bank desks and bank liquidity books, and 11 and 12 add more issuers. This is the item that adds a BUYER. Unblocked since `Mandate` at 9.2a, and nothing in 11 or 12 needs it |
 | **11** | Small-Business Pools (§42) | — | **inserted**: dependencies (trade credit 13e, bank lending 13d) are both closed and item 9 gave it the agreement; takeable now, and **12 needs it** |
 | **12** | Firm birth, and the boundary firms cross | 3 | **needs 11**: a firm is born SMALL, which is §42's sector, and is promoted out of it when it outgrows one. Also **7** (`Lifecycle`, built) and **15** (`Objective`, built); worklist 13n |
-| **13** | Asset managers: §28, §29, §15 | 1 | `Mandate` exists (item 9.2a), so it is unblocked; worklist 13o |
 | **14** | Insurers and pensions (§27) | 2 | the insurer exists and can write a policy (items 9.3, 9.5); what is left is the sector and pensions |
 | **15** | Housing, the rest | — | needs **3** and **7**; worklist 13m, and `E-5` |
 | **16** | Cross-border, the rest | — | needs **10b** (foreign-currency issuance) and **13** |
@@ -270,6 +274,131 @@ now"* — so the holders' schedules a book needs are already published every per
 A bank's subordinated paper is one named line with a cleared price that falls when the bank does, a
 bail-in writes down a layer somebody was already watching, and **there is one issuance mechanism in
 this world, used by a treasury, a firm and a bank alike.**
+
+---
+
+> **MOVED AHEAD OF 11 AND 12** (owner, 2026-09-14: *"until we have actual asset managers with
+> appetite nothing will get demand"*). Its number is unchanged, because renumbering would break every
+> reference to it; what changed is where it is TAKEN FROM. The dependency argument is that items 10,
+> 10b and 10c all built SUPPLY — a corporate bond, commercial paper, a securitisation that can now
+> pool any claim — into a world whose only buyers are bank dealing desks and bank liquidity books.
+> Items 11 and 12 add more issuers still. **This is the item that adds a buyer**, and building two
+> more sectors of supply in front of it would be building them into books that cannot clear. Nothing
+> in 11 or 12 depends on it, and its own blocker (`Mandate`) closed at item 9.2a.
+
+## 13. Asset managers: hedge funds (§28), private equity (§29), prime brokerage (§15)
+
+**Why.** Three systems, **0 / 24, 0 / 25 and 0 / 24 MET**. Worklist 13o, open, and correctly blocked:
+*"item 8 built `Agreement` and did NOT migrate the seven private books, so `Mandate` does not exist
+yet. Building this on today's `fund` party would bake the pool/decider conflation in permanently."*
+Item 9 unblocks it.
+
+**Measured**: 13 funds, of which **4 hold anything at all** after four periods — 8 holdings between
+them against 1,274 subscriptions settled in one period. Every fund here is a money fund, one
+commodity fund, or an index tracker, and the trackers hold nothing.
+
+**§28 C1 is why this is not an optional sector**: a hedge fund *"is the natural home of the
+speculative side of every derivative book"*. Item 6 gives each book a maker with its own number; this
+gives it a party whose whole reason is to hold the other side.
+
+### Hedge funds (§28)
+
+- **A1–A5**: a named party with investors, a register and accounts; **investor capital is equity** and
+  investors hold a redeemable share count; a **manager** is a separate party earning a management fee
+  on assets and a **performance fee on gains**, *"and the asymmetry of that second fee is a reason for
+  risk-taking"*; a **wide mandate** — long, short, levered, many markets; everything **marked at
+  cleared prices**.
+- **B1–B5**: it borrows from a **named lender** — *"leverage is a fact about a loan, never a property
+  of the fund"*; it levers through **derivatives** (notional over margin) and through **repo**; the
+  amount available is the **lender's decision** and it changes. B5: gross, net and equity are **three
+  reads** and a single "leverage" number hides which one moved.
+- **C1–C4**: positions for reasons — relative value, direction, a liquidity premium it is paid to
+  hold; it is the **buyer when others are forced sellers, if it has capacity**; it **shorts**, which
+  requires a borrow (item 9.4); real trades at cleared prices.
+- **D1–D7, the failure mode, and it must be emergent**: a loss reduces equity → with fixed borrowing
+  leverage rises → the lender calls margin → meeting the call requires selling → **which moves
+  prices** → the move hits other levered holders and D1 starts again for them. **D4.a: never a
+  contagion parameter.** D5: redemptions arrive at the same time for the same reason and are a second
+  forced-seller channel; D5.a a **gate or notice period** is a real contractual term with real
+  consequences for who gets out.
+- **E1–E3**: no leverage without a lender; no position that does not mark; **no fund that cannot
+  fail** — *"a vehicle that absorbs losses indefinitely is the buyer of last resort in a different
+  costume"*.
+
+### Private equity (§29)
+
+- **A1–A5**: committed capital from named investors; **capital is committed, not paid** — it is
+  **called** when a deal needs it, *"and the call is a real payment from the investor's account on a
+  date it cannot refuse"*. A2.a: an investor must hold liquidity against calls it did not choose the
+  timing of. **A2.b is a FORBID and it is the one to get right**: *"a call bounded by the investor's
+  spare cash is not an obligation"* — the investor funds it from its own liquidity ladder, selling if
+  it must, **or it defaults on the call**, which is itself an event with consequences. A manager on
+  committed capital plus carry; the fund has a **life** and **winds up** (item 14's `Process`);
+  acquired firms are held in **named vehicles**.
+- **B1–B5, the buyout**: a price agreed with the sellers; **most of it debt raised against the target
+  itself** — B2.a the debt is the **target's** liability, *"which is why a failed buyout kills the
+  firm and not the fund"*; B2.b **the credit market decides which buyouts occur**, a real constraint
+  and not a rate applied to a plan. B5: **sources and uses must balance exactly** and the money must
+  come out of named accounts.
+- **C1–C5, the hold**: the firm services its debt out of cash flow with less room; the owner
+  influences investment, costs and distributions; it can **recapitalise** — *"a real transfer from the
+  firm's future to the owner's present"*; it can **fail**; and the holding has **a value that is not a
+  market price** — C5.a, *"an unlisted mark is not a cleared price … the honest answer is 'marked, not
+  cleared'"*.
+- **D1–D5, the exit**: it sells, and **the exit produces the first real price the holding has had**;
+  proceeds distributed in cash; **the exit depends on the market being open** — in a bad market the
+  hold extends and the distributions do not arrive, which feeds back to A2.a.
+- **E1–E3**: no buyout without a lender who agreed; no capital call not paid from a real balance; no
+  exit at a price nobody paid.
+
+### Prime brokerage (§15)
+
+- **A1–A4**: a named bank and a named client with a contract that can be ended; the broker **holds the
+  client's assets and knows the whole position** — that knowledge is what lets it lend; **A3: the
+  client can have more than one broker, and then no broker sees the whole position**, a real and
+  material blind spot; the broker earns financing spread, stock-borrow fees and commissions.
+- **B1–B5**: the broker lends the difference against the assets; **the client's leverage is a loan
+  from a named lender, not a property of the client**; the loan has a rate above the broker's own cost
+  of funds; **the broker's balance sheet grows by the loan** and it consumes capital and liquidity;
+  the short side is financed too.
+- **C1–C5, margin, and the spec calls it the core**: the broker sets a requirement **on the whole
+  portfolio from its own view of the risk**, accounting for **offsetting positions** — *"a decision by
+  the broker, not a formula the client can rely on"*; remeasured as prices move; a shortfall is a
+  **call: real money, now**; meet it or be liquidated, and to meet it the client may have to **sell
+  into a market that must clear**. **C3.b: the available line is never floored at zero** — *"a client
+  drawn past its line is over the line, and the shortfall is what forces the sale. Flooring it makes
+  the whole path unreachable — and lending the shortfall straight back at a penalty, from the same
+  broker, makes it unreachable twice."* C4.a: **raising margin into a falling market amplifies the
+  fall**, *"the mechanism behind most of what looks like contagion"* — and a stated constant margin
+  rate deletes exactly that. C5: no margin that is only a number.
+- **D1–D4**: the client fails a call → the broker closes the positions, **selling collateral at market
+  prices** → proceeds may be less than the loan and the shortfall hits the broker's capital → the
+  liquidation **moves prices, which can margin-call other clients**. D4: the chain must be traceable
+  party by party; *"a loss that stops at the fund is a broker that was never really lending"*.
+- **E1–E4**: exposure per client, known; concentration means collateral is worth less in liquidation
+  than marked; A3's multi-broker case means **each broker underestimates**; **no unlimited exposure**.
+
+### Steps
+
+- [ ] 13.1 `Mandate` (item 9.2) is the spine: a hedge fund is **a mandate with leverage**, a separate account is a mandate whose pool is the client's own balance sheet, an ETF and an MMF are pools with different redemption rules. Build the three sectors on it and nothing else.
+- [ ] 13.2 Hedge funds: the party, the manager, the two fees, the wide mandate — `mayWrite` and `leverage` are the two terms that make a mandate a hedge fund's, and both exist (item 9.2a, 9.7). `borrows` comes off the mandate, not off `fundKind` where it is hard-coded `false`. **Not before 13.6**: a mandate that writes contracts before the NAV pass reads them is a fund with equity.
+- [ ] 13.3 Prime brokerage: the relationship as an `Agreement`; portfolio margin as the broker's own decision (C1.b) held as a `View`; **no floor on the line** (C3.b).
+- [ ] 13.4 The loop D1→D4 must fall out of the parts. Do not write a contagion step. Test: one fund's loss reaches another fund's margin call through prices and named counterparties, and the path is traceable.
+- [ ] 13.5 Private equity: committed capital, the call as an obligation the investor cannot bound by its spare cash (A2.b), the buyout with debt on the target, the mark that is not a price, the exit that produces the first cleared price. Needs item 9 of the old file (`Control`), which is built.
+- [ ] 13.6 **The pass that re-marks a fund's claim on itself must read the CONTRACT store, and it must land before 13.2 draws a mandate that writes anything.** A fund's equity is zero by construction (Fund Shares A3) because its own claim on itself absorbs whatever its book comes to — and that pass reads the REGISTER, where a contract is not (Derivative X1). A pool with a derivative position would carry a mark its share value had never been told about, which is a fund WITH equity: **measured at 83,247,864 on `etf.us`** the first time funds were let into the contract books. Item 9.7 put `FUND` on `TRADES_CONTRACTS` and made every drawn mandate say `mayWrite: []`, so nothing reaches this today — **by a term of a contract, which 13.2 is about to change.** Open the pass first. Then wire hedge funds into every derivative book as the speculative side (§28 C1), which is the other half of item 6.
+- [ ] 13.7 COVERAGE re-marked for all 73 clauses across the three; `check:existence` shows three fewer absent sectors.
+- [ ] 13.8 **`E-14`** — `Securities Lending C2, C2.a` are not built, and they are §15 C1's mechanism seen from the other end: both sides of a position marked every period and the difference CALLED in real money between two named parties. `securities-lending:charge` moves the fee and nothing re-marks the collateral, so between the strike and the return the lender's cover erodes silently and C1's haircut is all that stands behind it. Build it once, here, for the portfolio and the stock loan together — two callers of one mechanism, not two mechanisms (Law 4).
+- [ ] 13.9 **The management fee, and what a manager COSTS.** `fund.fee.<fund>` is a `placeholder` per pool whose own `why` says *"no manager competes for the mandate, so the number stands where a competition should be"*. Item 9.2a built the `Mandate` and 9.2b measured why that is not enough: **a manager in this world employs nobody**, funds nothing and pays for nothing, so two of them in a book bid each other to the tick — which is a competition between parties with no reason to refuse, not a cleared price (Law 11: the missing mechanism, not the number). So this step is two things in one order: (a) a manager HIRES, in the labour venue, like anything else that needs people, and what it can run is the hours it pays for over the assets a mandate carries — the shape `banks/staff.ts:linesCovered` already has for a dealing desk; (b) then the mandate is COMPETED FOR, one book per pool, each manager bidding a fee with its own cost base as its floor, and the winner's bid is the mandate's `fee`. The placeholder dies in the same change (Law 2) and `fee` moves off `params` onto `MandateTerms`, because at that point it is an OUTCOME. A separate account is a mandate whose pool is the client's own balance sheet, so the same book prices that too (§15).
+
+### Findings this closes
+
+`E-14`. (`B-14` closed at item 9.7: a pool's mandate is what answers whether it may hold contracts, and 13.6 is the pass that must open before 13.2 draws one that does.)
+
+### Exit
+
+A hedge fund takes the speculative side of a derivative book; a margin call forces a sale that moves a
+price that calls margin on somebody else; a buyout puts debt on a target and the credit market decides
+whether it happens.
 
 ---
 
@@ -451,122 +580,6 @@ landing** — the worklist row says so itself.
 A firm is born in the small-business pool in an ordinary run, with a founder and a reason; one that
 grows is promoted out of it and the boundary between the two sectors is a size a firm crossed; the
 population is an outcome in both directions; `cells.merge` and `cells.weight` have callers.
-
----
-
-## 13. Asset managers: hedge funds (§28), private equity (§29), prime brokerage (§15)
-
-**Why.** Three systems, **0 / 24, 0 / 25 and 0 / 24 MET**. Worklist 13o, open, and correctly blocked:
-*"item 8 built `Agreement` and did NOT migrate the seven private books, so `Mandate` does not exist
-yet. Building this on today's `fund` party would bake the pool/decider conflation in permanently."*
-Item 9 unblocks it.
-
-**Measured**: 13 funds, of which **4 hold anything at all** after four periods — 8 holdings between
-them against 1,274 subscriptions settled in one period. Every fund here is a money fund, one
-commodity fund, or an index tracker, and the trackers hold nothing.
-
-**§28 C1 is why this is not an optional sector**: a hedge fund *"is the natural home of the
-speculative side of every derivative book"*. Item 6 gives each book a maker with its own number; this
-gives it a party whose whole reason is to hold the other side.
-
-### Hedge funds (§28)
-
-- **A1–A5**: a named party with investors, a register and accounts; **investor capital is equity** and
-  investors hold a redeemable share count; a **manager** is a separate party earning a management fee
-  on assets and a **performance fee on gains**, *"and the asymmetry of that second fee is a reason for
-  risk-taking"*; a **wide mandate** — long, short, levered, many markets; everything **marked at
-  cleared prices**.
-- **B1–B5**: it borrows from a **named lender** — *"leverage is a fact about a loan, never a property
-  of the fund"*; it levers through **derivatives** (notional over margin) and through **repo**; the
-  amount available is the **lender's decision** and it changes. B5: gross, net and equity are **three
-  reads** and a single "leverage" number hides which one moved.
-- **C1–C4**: positions for reasons — relative value, direction, a liquidity premium it is paid to
-  hold; it is the **buyer when others are forced sellers, if it has capacity**; it **shorts**, which
-  requires a borrow (item 9.4); real trades at cleared prices.
-- **D1–D7, the failure mode, and it must be emergent**: a loss reduces equity → with fixed borrowing
-  leverage rises → the lender calls margin → meeting the call requires selling → **which moves
-  prices** → the move hits other levered holders and D1 starts again for them. **D4.a: never a
-  contagion parameter.** D5: redemptions arrive at the same time for the same reason and are a second
-  forced-seller channel; D5.a a **gate or notice period** is a real contractual term with real
-  consequences for who gets out.
-- **E1–E3**: no leverage without a lender; no position that does not mark; **no fund that cannot
-  fail** — *"a vehicle that absorbs losses indefinitely is the buyer of last resort in a different
-  costume"*.
-
-### Private equity (§29)
-
-- **A1–A5**: committed capital from named investors; **capital is committed, not paid** — it is
-  **called** when a deal needs it, *"and the call is a real payment from the investor's account on a
-  date it cannot refuse"*. A2.a: an investor must hold liquidity against calls it did not choose the
-  timing of. **A2.b is a FORBID and it is the one to get right**: *"a call bounded by the investor's
-  spare cash is not an obligation"* — the investor funds it from its own liquidity ladder, selling if
-  it must, **or it defaults on the call**, which is itself an event with consequences. A manager on
-  committed capital plus carry; the fund has a **life** and **winds up** (item 14's `Process`);
-  acquired firms are held in **named vehicles**.
-- **B1–B5, the buyout**: a price agreed with the sellers; **most of it debt raised against the target
-  itself** — B2.a the debt is the **target's** liability, *"which is why a failed buyout kills the
-  firm and not the fund"*; B2.b **the credit market decides which buyouts occur**, a real constraint
-  and not a rate applied to a plan. B5: **sources and uses must balance exactly** and the money must
-  come out of named accounts.
-- **C1–C5, the hold**: the firm services its debt out of cash flow with less room; the owner
-  influences investment, costs and distributions; it can **recapitalise** — *"a real transfer from the
-  firm's future to the owner's present"*; it can **fail**; and the holding has **a value that is not a
-  market price** — C5.a, *"an unlisted mark is not a cleared price … the honest answer is 'marked, not
-  cleared'"*.
-- **D1–D5, the exit**: it sells, and **the exit produces the first real price the holding has had**;
-  proceeds distributed in cash; **the exit depends on the market being open** — in a bad market the
-  hold extends and the distributions do not arrive, which feeds back to A2.a.
-- **E1–E3**: no buyout without a lender who agreed; no capital call not paid from a real balance; no
-  exit at a price nobody paid.
-
-### Prime brokerage (§15)
-
-- **A1–A4**: a named bank and a named client with a contract that can be ended; the broker **holds the
-  client's assets and knows the whole position** — that knowledge is what lets it lend; **A3: the
-  client can have more than one broker, and then no broker sees the whole position**, a real and
-  material blind spot; the broker earns financing spread, stock-borrow fees and commissions.
-- **B1–B5**: the broker lends the difference against the assets; **the client's leverage is a loan
-  from a named lender, not a property of the client**; the loan has a rate above the broker's own cost
-  of funds; **the broker's balance sheet grows by the loan** and it consumes capital and liquidity;
-  the short side is financed too.
-- **C1–C5, margin, and the spec calls it the core**: the broker sets a requirement **on the whole
-  portfolio from its own view of the risk**, accounting for **offsetting positions** — *"a decision by
-  the broker, not a formula the client can rely on"*; remeasured as prices move; a shortfall is a
-  **call: real money, now**; meet it or be liquidated, and to meet it the client may have to **sell
-  into a market that must clear**. **C3.b: the available line is never floored at zero** — *"a client
-  drawn past its line is over the line, and the shortfall is what forces the sale. Flooring it makes
-  the whole path unreachable — and lending the shortfall straight back at a penalty, from the same
-  broker, makes it unreachable twice."* C4.a: **raising margin into a falling market amplifies the
-  fall**, *"the mechanism behind most of what looks like contagion"* — and a stated constant margin
-  rate deletes exactly that. C5: no margin that is only a number.
-- **D1–D4**: the client fails a call → the broker closes the positions, **selling collateral at market
-  prices** → proceeds may be less than the loan and the shortfall hits the broker's capital → the
-  liquidation **moves prices, which can margin-call other clients**. D4: the chain must be traceable
-  party by party; *"a loss that stops at the fund is a broker that was never really lending"*.
-- **E1–E4**: exposure per client, known; concentration means collateral is worth less in liquidation
-  than marked; A3's multi-broker case means **each broker underestimates**; **no unlimited exposure**.
-
-### Steps
-
-- [ ] 13.1 `Mandate` (item 9.2) is the spine: a hedge fund is **a mandate with leverage**, a separate account is a mandate whose pool is the client's own balance sheet, an ETF and an MMF are pools with different redemption rules. Build the three sectors on it and nothing else.
-- [ ] 13.2 Hedge funds: the party, the manager, the two fees, the wide mandate — `mayWrite` and `leverage` are the two terms that make a mandate a hedge fund's, and both exist (item 9.2a, 9.7). `borrows` comes off the mandate, not off `fundKind` where it is hard-coded `false`. **Not before 13.6**: a mandate that writes contracts before the NAV pass reads them is a fund with equity.
-- [ ] 13.3 Prime brokerage: the relationship as an `Agreement`; portfolio margin as the broker's own decision (C1.b) held as a `View`; **no floor on the line** (C3.b).
-- [ ] 13.4 The loop D1→D4 must fall out of the parts. Do not write a contagion step. Test: one fund's loss reaches another fund's margin call through prices and named counterparties, and the path is traceable.
-- [ ] 13.5 Private equity: committed capital, the call as an obligation the investor cannot bound by its spare cash (A2.b), the buyout with debt on the target, the mark that is not a price, the exit that produces the first cleared price. Needs item 9 of the old file (`Control`), which is built.
-- [ ] 13.6 **The pass that re-marks a fund's claim on itself must read the CONTRACT store, and it must land before 13.2 draws a mandate that writes anything.** A fund's equity is zero by construction (Fund Shares A3) because its own claim on itself absorbs whatever its book comes to — and that pass reads the REGISTER, where a contract is not (Derivative X1). A pool with a derivative position would carry a mark its share value had never been told about, which is a fund WITH equity: **measured at 83,247,864 on `etf.us`** the first time funds were let into the contract books. Item 9.7 put `FUND` on `TRADES_CONTRACTS` and made every drawn mandate say `mayWrite: []`, so nothing reaches this today — **by a term of a contract, which 13.2 is about to change.** Open the pass first. Then wire hedge funds into every derivative book as the speculative side (§28 C1), which is the other half of item 6.
-- [ ] 13.7 COVERAGE re-marked for all 73 clauses across the three; `check:existence` shows three fewer absent sectors.
-- [ ] 13.8 **`E-14`** — `Securities Lending C2, C2.a` are not built, and they are §15 C1's mechanism seen from the other end: both sides of a position marked every period and the difference CALLED in real money between two named parties. `securities-lending:charge` moves the fee and nothing re-marks the collateral, so between the strike and the return the lender's cover erodes silently and C1's haircut is all that stands behind it. Build it once, here, for the portfolio and the stock loan together — two callers of one mechanism, not two mechanisms (Law 4).
-- [ ] 13.9 **The management fee, and what a manager COSTS.** `fund.fee.<fund>` is a `placeholder` per pool whose own `why` says *"no manager competes for the mandate, so the number stands where a competition should be"*. Item 9.2a built the `Mandate` and 9.2b measured why that is not enough: **a manager in this world employs nobody**, funds nothing and pays for nothing, so two of them in a book bid each other to the tick — which is a competition between parties with no reason to refuse, not a cleared price (Law 11: the missing mechanism, not the number). So this step is two things in one order: (a) a manager HIRES, in the labour venue, like anything else that needs people, and what it can run is the hours it pays for over the assets a mandate carries — the shape `banks/staff.ts:linesCovered` already has for a dealing desk; (b) then the mandate is COMPETED FOR, one book per pool, each manager bidding a fee with its own cost base as its floor, and the winner's bid is the mandate's `fee`. The placeholder dies in the same change (Law 2) and `fee` moves off `params` onto `MandateTerms`, because at that point it is an OUTCOME. A separate account is a mandate whose pool is the client's own balance sheet, so the same book prices that too (§15).
-
-### Findings this closes
-
-`E-14`. (`B-14` closed at item 9.7: a pool's mandate is what answers whether it may hold contracts, and 13.6 is the pass that must open before 13.2 draws one that does.)
-
-### Exit
-
-A hedge fund takes the speculative side of a derivative book; a margin call forces a sale that moves a
-price that calls margin on somebody else; a buyout puts debt on a target and the credit market decides
-whether it happens.
 
 ---
 
